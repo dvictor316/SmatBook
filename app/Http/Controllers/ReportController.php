@@ -3471,7 +3471,7 @@ public function destroy($id)
             $operatingExpenseBreakdown = $expenseBreakdownQuery
                 ->selectRaw("{$expenseNameExpression} as name, SUM(COALESCE(expenses.amount, 0)) as total")
                 ->groupByRaw($expenseNameExpression)
-                ->orderByRaw("LOWER({$expenseNameExpression})")
+                ->orderBy('name')
                 ->get();
         }
 
