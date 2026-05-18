@@ -195,10 +195,11 @@
     }
     .brand-name {
         font-size: clamp(1rem, 1.18vw, 1.24rem);
-        font-weight: 900;
+        font-weight: 700;
         line-height: 1;
         white-space: nowrap;
         color: #0b2b6d;
+        letter-spacing: -0.02em;
     }
     .brand-tagline {
         margin-top: 3px;
@@ -228,7 +229,7 @@
         border: 1px solid rgba(255, 255, 255, 0.32);
         border-radius: 100px;
         font-size: 9px;
-        font-weight: 800;
+        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
@@ -238,8 +239,8 @@
         font-size: 1.48rem;
         line-height: 1.12;
         color: #ffffff;
-        font-weight: 800;
-        letter-spacing: -0.03em;
+        font-weight: 700;
+        letter-spacing: -0.02em;
     }
 
     .aside-copy {
@@ -251,8 +252,8 @@
     }
 
     .info-row { display: flex; justify-content: space-between; font-size: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
-    .info-label { color: rgba(255, 255, 255, 0.58); font-size: 9px; text-transform: uppercase; font-weight: 700; }
-    .info-value { color: #ffffff; font-weight: 700; }
+    .info-label { color: rgba(255, 255, 255, 0.58); font-size: 9px; text-transform: uppercase; font-weight: 600; }
+    .info-value { color: #ffffff; font-weight: 600; }
 
     .aside-meta {
         margin-top: 2px;
@@ -266,7 +267,7 @@
         border: 1px solid rgba(255, 255, 255, 0.14);
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
-    .amount-value { font-size: 1.38rem; font-weight: 800; color: #ffffff; letter-spacing: -0.04em; }
+    .amount-value { font-size: 1.38rem; font-weight: 700; color: #ffffff; letter-spacing: -0.03em; }
     .aside-points { margin-top: 14px; display: grid; gap: 8px; }
     .aside-point {
         display: flex;
@@ -278,7 +279,7 @@
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
     .aside-point i { color: #ffffff; margin-top: 2px; }
-    .aside-point strong { display: block; color: #ffffff; font-size: 0.8rem; margin-bottom: 2px; }
+    .aside-point strong { display: block; color: #ffffff; font-size: 0.8rem; margin-bottom: 2px; font-weight: 600; }
     .aside-point span { color: rgba(255, 250, 240, 0.92); font-size: 0.72rem; line-height: 1.45; }
 
     .smat-main {
@@ -303,7 +304,7 @@
         color: #0b2a63;
         border: 1px solid #d8e0ec;
         font-size: 0.66rem;
-        font-weight: 800;
+        font-weight: 700;
         letter-spacing: 0.08em;
         text-transform: uppercase;
         margin-bottom: 10px;
@@ -316,8 +317,8 @@
         background: #173b92;
         box-shadow: 0 0 0 4px rgba(15, 58, 138, 0.08);
     }
-    .form-title { font-weight: 900; color: var(--spa-text); font-size: 1.46rem; margin-bottom: 4px; letter-spacing: -0.03em; }
-    .form-subtitle { color: #475569; font-size: 0.86rem; margin-bottom: 14px; line-height: 1.55; max-width: 44ch; font-weight: 600; }
+    .form-title { font-weight: 700; color: var(--spa-text); font-size: 1.46rem; margin-bottom: 4px; letter-spacing: -0.02em; }
+    .form-subtitle { color: #475569; font-size: 0.86rem; margin-bottom: 14px; line-height: 1.55; max-width: 44ch; font-weight: 500; }
     .form-shell {
         border: 1px solid #d8e0ec;
         border-radius: 20px;
@@ -335,7 +336,7 @@
         border: 1px solid #d8e0ec;
         color: #0b2a63;
         font-size: 0.76rem;
-        font-weight: 700;
+        font-weight: 600;
         line-height: 1.5;
         margin-bottom: 14px;
     }
@@ -347,13 +348,13 @@
     }
 
     .label-caps {
-        font-size: 10px; font-weight: 900; text-transform: uppercase;
+        font-size: 10px; font-weight: 700; text-transform: uppercase;
         color: #0b2a63; margin-bottom: 5px; display: block; letter-spacing: 0.6px;
     }
 
     .input-smat {
         padding: 11px 14px; border-radius: 14px; border: 1px solid #cfd8e6;
-        background: #ffffff; font-size: 12.5px; transition: all 0.2s; font-weight: 800;
+        background: #ffffff; font-size: 12.5px; transition: all 0.2s; font-weight: 500;
         color: #061a44;
     }
 
@@ -376,7 +377,7 @@
         padding: 12px;
         border-radius: 16px;
         width: 100%;
-        font-weight: 800;
+        font-weight: 700;
         font-size: 12px;
         box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
         transition: 0.3s;
@@ -395,7 +396,7 @@
     .error-pill {
         background: #fff1f1; border-left: 4px solid #e11d48;
         color: #e11d48; padding: 10px; border-radius: 8px;
-        margin-bottom: 16px; font-size: 12px; font-weight: 600; list-style: none;
+        margin-bottom: 16px; font-size: 12px; font-weight: 500; list-style: none;
     }
     .error-pill ul {
         margin: 0;
@@ -407,7 +408,7 @@
         border-radius: 10px;
         margin-bottom: 12px;
         font-size: 12px;
-        font-weight: 700;
+        font-weight: 600;
         line-height: 1.5;
     }
     .flash-pill.error {
@@ -434,13 +435,13 @@
         display: block;
         margin-top: 6px;
         font-size: 11px;
-        font-weight: 700;
+        font-weight: 600;
         color: #be123c;
         line-height: 1.45;
     }
 
-    .bottom-link { margin-top: 14px; text-align: center; font-size: 11px; color: #475569; font-weight: 700; }
-    .bottom-link a { color: var(--spa-primary); text-decoration: none; font-weight: 800; }
+    .bottom-link { margin-top: 14px; text-align: center; font-size: 11px; color: #475569; font-weight: 500; }
+    .bottom-link a { color: var(--spa-primary); text-decoration: none; font-weight: 700; }
     .bottom-actions {
         margin-top: 12px;
         display: grid;
@@ -454,7 +455,7 @@
         text-decoration: none;
         color: #0b2a63 !important;
         font-size: 10px;
-        font-weight: 800;
+        font-weight: 700;
         background: #ffffff;
         box-shadow: 0 12px 24px rgba(15, 23, 42, 0.055);
         transition: all 0.2s ease;
@@ -486,7 +487,7 @@
         padding: 0 10px;
         font-size: 9px;
         color: #64748b;
-        font-weight: 900;
+        font-weight: 700;
         text-transform: uppercase;
     }
     .btn-social {
@@ -499,7 +500,7 @@
         justify-content: center;
         gap: 10px;
         font-size: 12px;
-        font-weight: 800;
+        font-weight: 600;
         color: #0b2a63;
         text-decoration: none;
         transition: 0.2s;

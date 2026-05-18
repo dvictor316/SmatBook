@@ -3,9 +3,20 @@
 
 @section('content')
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
     /* 1. Global Reset for Auth Pages */
     .header, .sidebar, .footer { display: none !important; }
     .page-wrapper { margin-left: 0 !important; padding: 0 !important; }
+    .auth-container,
+    .loginbox,
+    .login-left-panel,
+    .login-right-panel,
+    .form-control,
+    .form-label,
+    .btn,
+    .form-check-label {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
 
     /* 2. Professional Layout Styling */
     .auth-container {
@@ -56,13 +67,34 @@
     }
 
     /* Component Styling */
-    .form-control { border-radius: 8px; padding: 12px; border: 1px solid #e0e0e0; }
+    .form-control { border-radius: 8px; padding: 12px; border: 1px solid #e0e0e0; font-weight: 500; color: #0f172a; }
     .btn-primary { background: linear-gradient(135deg, #0f3a8a 0%, #2563eb 100%); border: 1px solid #0f3a8a; border-radius: 8px; color: #ffffff; padding: 12px; font-weight: 600; transition: all 0.3s ease; }
     .btn-primary:hover { background: #ffffff; border-color: #d7a928; color: #0f3a8a; transform: translateY(-1px); }
     .btn-google { background-color: #ffffff; color: #444; border: 1px solid #ddd; }
     .btn-facebook { background-color: #3b5998; color: white; border: none; }
     .btn-google:hover { background-color: #f8f9fa; }
     .register-brand { margin-bottom: 1.75rem; }
+    .login-left-panel h2,
+    .login-right-panel h2 {
+        font-weight: 700 !important;
+        letter-spacing: -0.02em;
+    }
+    .login-left-panel p,
+    .login-right-panel p,
+    .form-check-label,
+    .text-muted,
+    small.text-muted {
+        font-weight: 500;
+    }
+    .form-label {
+        font-weight: 600 !important;
+        letter-spacing: 0.01em;
+        color: #334155;
+    }
+    .btn-google,
+    .btn-facebook {
+        font-weight: 600;
+    }
 
     /* Responsive */
     @media (max-width: 991px) {
