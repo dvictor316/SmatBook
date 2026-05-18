@@ -30,7 +30,7 @@
 @endphp
 
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
     :root {
         --spa-bg: #fbfcff;
         --spa-surface: rgba(255, 255, 255, 0.99);
@@ -70,6 +70,11 @@
         overflow: visible;
         transform: translateX(-50%);
         -webkit-overflow-scrolling: touch;
+        font-family: 'Manrope', sans-serif;
+        font-optical-sizing: auto;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
     }
 
     /* Hard reset wrapper overrides to prevent theme conflict */
@@ -200,10 +205,11 @@
     }
     .brand-name {
         font-size: clamp(1.2rem, 1.4vw, 1.5rem);
-        font-weight: 900;
+        font-weight: 700;
         line-height: 1;
         white-space: nowrap;
         color: #0b2b6d;
+        letter-spacing: -0.02em;
     }
     .brand-tagline {
         margin-top: 4px;
@@ -234,7 +240,7 @@
         border: 1px solid rgba(255, 255, 255, 0.32);
         border-radius: 100px;
         font-size: 10px;
-        font-weight: 800;
+        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
@@ -244,8 +250,8 @@
         font-size: 1.72rem;
         line-height: 1.14;
         color: #ffffff;
-        font-weight: 800;
-        letter-spacing: -0.03em;
+        font-weight: 700;
+        letter-spacing: -0.02em;
     }
     .aside-copy {
         color: rgba(255, 255, 255, 0.92);
@@ -265,10 +271,10 @@
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
     .aside-point i { color: #ffffff; margin-top: 2px; }
-    .aside-point strong { display: block; color: #ffffff; font-size: 0.88rem; margin-bottom: 2px; }
+    .aside-point strong { display: block; color: #ffffff; font-size: 0.88rem; margin-bottom: 2px; font-weight: 600; }
     .aside-point span { color: rgba(255, 250, 240, 0.92); font-size: 0.78rem; line-height: 1.55; }
 
-    .side-footer-info { font-size: 10px; font-weight: 700; color: rgba(255, 255, 255, 0.56); text-transform: uppercase; letter-spacing: 1px; }
+    .side-footer-info { font-size: 10px; font-weight: 600; color: rgba(255, 255, 255, 0.56); text-transform: uppercase; letter-spacing: 1px; }
 
     /* Main Panel (Login Form) */
     .smat-main {
@@ -292,8 +298,8 @@
         color: #0b2a63;
         border: 1px solid #d8e0ec;
         font-size: 0.85rem;
-        font-weight: 800;
-        letter-spacing: 0.08em;
+        font-weight: 700;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
         margin-bottom: 14px;
     }
@@ -322,17 +328,20 @@
         margin-bottom: 18px;
         font-size: 14px;
         line-height: 1.55;
-        font-weight: 700;
+        font-weight: 600;
     }
     .login-instruction-box strong {
         color: #061a44;
-        font-weight: 900;
+        font-weight: 600;
     }
 
     .uplink-badge {
         font-size: 13px; background: #ffffff; color: #0b2a63;
         padding: 9px 12px; border-radius: 12px; border: 1px solid #d8e0ec;
-        margin-bottom: 18px; font-weight: 900; display: flex; align-items: center; gap: 8px;
+        margin-bottom: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+    }
+    .uplink-badge strong {
+        font-weight: 600;
     }
 
     .logout-success {
@@ -343,18 +352,18 @@
         padding: 10px 12px;
         margin-bottom: 16px;
         font-size: 14px;
-        font-weight: 700;
+        font-weight: 500;
     }
 
     /* Input Styles */
     .label-caps {
-        font-size: 13px; font-weight: 900; text-transform: uppercase;
-        color: #0b2a63; margin-bottom: 6px; display: block; letter-spacing: 0.7px;
+        font-size: 13px; font-weight: 700; text-transform: uppercase;
+        color: #0b2a63; margin-bottom: 6px; display: block; letter-spacing: 0.5px;
     }
 
     .input-smat {
         padding: 13px 16px; border-radius: 14px; border: 1px solid #cfd8e6;
-        background: #ffffff; font-size: 15px; transition: all 0.2s; font-weight: 800;
+        background: #ffffff; font-size: 15px; transition: all 0.2s; font-weight: 500;
         color: #061a44;
     }
 
@@ -378,12 +387,12 @@
         padding: 14px;
         border-radius: 16px;
         width: 100%;
-        font-weight: 800;
+        font-weight: 700;
         font-size: 15px;
         transition: 0.3s;
         margin-top: 10px;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 0.5px;
         box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
     }
     .btn-smat-navy:hover {
@@ -396,7 +405,7 @@
     .divider { position: relative; text-align: center; margin: 24px 0; border-top: 1px solid #f1f5f9; }
     .divider span { 
         position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        background: #fff; padding: 0 15px; font-size: 10px; color: #64748b; font-weight: 900;
+        background: #fff; padding: 0 15px; font-size: 10px; color: #64748b; font-weight: 700;
     }
 
     .btn-social {
@@ -409,7 +418,7 @@
         justify-content: center;
         font-size: 15px;
         gap: 10px;
-        font-weight: 800;
+        font-weight: 600;
         color: #0b2a63;
         text-decoration: none;
         transition: 0.2s;
@@ -447,9 +456,14 @@
         text-align: center;
         font-size: 13px;
         color: #475569;
-        font-weight: 700;
+        font-weight: 500;
     }
-    .bottom-link a { color: var(--spa-primary); text-decoration: none; font-weight: 800; }
+    .bottom-link a { color: var(--spa-primary); text-decoration: none; font-weight: 700; }
+    .smat-main .fw-bold,
+    .smat-main b,
+    .smat-main strong {
+        font-weight: 600 !important;
+    }
     .bottom-actions {
         margin-top: 14px;
         display: grid;
@@ -463,7 +477,7 @@
         text-decoration: none;
         color: #0b2a63;
         font-size: 11px;
-        font-weight: 800;
+        font-weight: 600;
         background: #ffffff;
         box-shadow: 0 12px 24px rgba(15, 23, 42, 0.055);
         transition: all 0.2s ease;
