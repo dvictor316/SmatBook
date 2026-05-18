@@ -215,7 +215,6 @@
             $reportCompany = optional(auth()->user())->company;
             $reportCompanyName = optional($reportCompany)->company_name
                 ?? optional($reportCompany)->name
-                ?? \App\Models\Setting::where('key', 'company_name')->value('value')
                 ?? 'SmartProbook';
         @endphp
         <div class="page-header">
