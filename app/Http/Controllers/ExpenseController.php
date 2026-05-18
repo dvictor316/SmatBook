@@ -207,6 +207,16 @@ class ExpenseController extends Controller
         ];
     }
 
+    private function generatedVendorEmail(string $name): string
+    {
+        $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $slug = strtolower(trim((string) preg_replace('/[^a-z0-9]+/i', '-', $name), '-'));
+        $slug = $slug !== '' ? $slug : 'supplier';
+        $localPart = substr('supplier-' . ($companyId ?: 'global') . '-' . $slug, 0, 150);
+
+        return $localPart . '@no-email.smartprobook.local';
+    }
+
     public function index(Request $request)
     {
         $this->syncBanksToAssetAccounts();
@@ -788,30 +798,54 @@ class ExpenseController extends Controller
 
         try {
             if (Schema::hasTable('vendors')) {
-                $attributes = ['name' => $validated['name']];
-                if (!empty($validated['email'])) {
-                    $attributes['email'] = $validated['email'];
-                }
+                $companyId = Auth::user()?->company_id ?? session('current_tenant_id');
+                $email = trim((string) ($validated['email'] ?? ''));
+                $email = $email !== '' ? $email : $this->generatedVendorEmail($validated['name']);
+
+                $vendorQuery = Vendor::query()->where(function ($query) use ($validated, $email) {
+                    $query->where('name', $validated['name'])
+                        ->orWhere('email', $email);
+                });
                 if (Schema::hasColumn('vendors', 'company_id')) {
-                    $attributes['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
-                }
-                if (Schema::hasColumn('vendors', 'branch_id')) {
-                    $attributes['branch_id'] = session('active_branch_id');
-                }
-                if (Schema::hasColumn('vendors', 'branch_name')) {
-                    $attributes['branch_name'] = session('active_branch_name');
+                    $vendorQuery->where('company_id', $companyId);
                 }
 
+                $vendor = $vendorQuery->first();
                 $values = [
-                    'email'   => $validated['email'] ?? null,
-                    'phone'   => $validated['phone'] ?? null,
+                    'name' => $validated['name'],
+                    'email' => $email,
+                    'phone' => $validated['phone'] ?? null,
                     'address' => $validated['address'] ?? null,
                     'balance' => 0,
                 ];
+                if (Schema::hasColumn('vendors', 'company_id')) {
+                    $values['company_id'] = $companyId;
+                }
                 if (Schema::hasColumn('vendors', 'user_id')) {
                     $values['user_id'] = Auth::id();
                 }
-                Vendor::firstOrCreate($attributes, $values);
+                if (Schema::hasColumn('vendors', 'branch_id')) {
+                    $values['branch_id'] = session('active_branch_id');
+                }
+                if (Schema::hasColumn('vendors', 'branch_name')) {
+                    $values['branch_name'] = session('active_branch_name');
+                }
+
+                if ($vendor) {
+                    $updateValues = $values;
+                    unset($updateValues['balance']);
+
+                    if (empty($validated['email']) && filled($vendor->email)) {
+                        unset($updateValues['email']);
+                    }
+
+                    $vendor->fill(collect($updateValues)
+                        ->reject(fn ($value) => blank($value))
+                        ->all());
+                    $vendor->save();
+                } else {
+                    Vendor::create($values);
+                }
             }
 
             return redirect()->route('expenses.index')->with('success', 'Supplier "' . $validated['name'] . '" added successfully.');
