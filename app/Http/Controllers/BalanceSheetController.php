@@ -824,7 +824,7 @@ class BalanceSheetController extends Controller
             'retainedEarningsLines' => $retainedEarningsLines,
         ], $isAllBranches, $consolidate);
 
-        $fixedAssetBridge = $this->fixedAssetRegisterBridgeAmount($request, $reportDate, $activeBranch);
+        $fixedAssetBridge = $this->fixedAssetRegisterBridgeAmount($request, $reportDate, $activeBranch, $fixedAssets);
         if ($fixedAssetBridge > 0.005) {
             $fixedAssets->push($this->syntheticLine(
                 'Registered Fixed Assets Pending Ledger Sync',
@@ -885,7 +885,7 @@ class BalanceSheetController extends Controller
         ];
     }
 
-    private function fixedAssetRegisterBridgeAmount(Request $request, Carbon $reportDate, array $activeBranch): float
+    private function fixedAssetRegisterBridgeAmount(Request $request, Carbon $reportDate, array $activeBranch, Collection $displayedFixedAssets): float
     {
         if (!Schema::hasTable('fixed_assets') || !Schema::hasTable('transactions')) {
             return 0.0;
@@ -925,37 +925,18 @@ class BalanceSheetController extends Controller
             return 0.0;
         }
 
-        $postedQuery = Transaction::withoutGlobalScopes()
-            ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
-            ->whereNull('accounts.deleted_at')
-            ->where('transactions.related_type', \App\Models\FixedAsset::class)
-            ->where('transactions.transaction_type', Transaction::TYPE_JOURNAL)
-            ->where('transactions.reference', 'like', 'FA-ACQ-%')
-            ->where('transactions.debit', '>', 0)
-            ->whereDate('transactions.transaction_date', '<=', $reportDate->toDateString())
-            ->where(function ($query) {
-                $query->whereRaw('LOWER(accounts.sub_type) like ?', ['%fixed%'])
-                    ->orWhereRaw('LOWER(accounts.sub_type) like ?', ['%non-current%'])
-                    ->orWhereRaw('LOWER(accounts.sub_type) like ?', ['%non current%'])
-                    ->orWhereRaw('LOWER(accounts.sub_type) like ?', ['%intangible%'])
-                    ->orWhereRaw('LOWER(accounts.name) like ?', ['%fixed asset%'])
-                    ->orWhereRaw('LOWER(accounts.name) like ?', ['%equipment%'])
-                    ->orWhereRaw('LOWER(accounts.name) like ?', ['%generator%'])
-                    ->orWhereRaw('LOWER(accounts.name) like ?', ['%vehicle%'])
-                    ->orWhereRaw('LOWER(accounts.name) like ?', ['%furniture%'])
-                    ->orWhereRaw('LOWER(accounts.name) like ?', ['%property%'])
-                    ->orWhereRaw('LOWER(accounts.name) like ?', ['%plant%'])
-                    ->orWhereRaw('LOWER(accounts.name) like ?', ['%building%']);
-            });
+        $displayedCost = round((float) $displayedFixedAssets
+            ->filter(fn ($line) => (float) ($line->balance ?? 0) > 0)
+            ->reject(function ($line) {
+                $name = strtolower(trim((string) ($line->_display_name ?? $line->name ?? '')));
+                $group = strtolower(trim((string) ($line->_bs_group ?? '')));
 
-        $this->applyTransactionScope($postedQuery, $request);
-        if (($activeBranch['scope'] ?? 'branch') !== 'all') {
-            $this->applyLegacyOpeningBalanceBranchScope($postedQuery, $activeBranch, 'transactions');
-        }
+                return str_contains($name, 'accumulated depreciation')
+                    || str_contains($group, 'accumulated depreciation');
+            })
+            ->sum(fn ($line) => (float) ($line->balance ?? 0)), 2);
 
-        $postedCost = round((float) ($postedQuery->sum('transactions.debit') ?? 0), 2);
-
-        return round(max(0, $registeredCost - $postedCost), 2);
+        return round(max(0, $registeredCost - $displayedCost), 2);
     }
 
     public function index(Request $request)
