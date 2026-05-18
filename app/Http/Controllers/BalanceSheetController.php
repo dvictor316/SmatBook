@@ -841,6 +841,57 @@ class BalanceSheetController extends Controller
             ));
         }
 
+        $legacyInventoryBridge = $this->getLegacyInventoryBridgeAmount($request, $reportDate, $currentAssets, $activeBranch);
+        if ($legacyInventoryBridge > 0.005) {
+            $currentAssets->push($this->syntheticLine(
+                'Inventory Register',
+                'Asset',
+                $legacyInventoryBridge,
+                ['_bs_group' => 'Inventory', '_display_name' => 'Inventory Register', '_bs_section' => 'current']
+            ));
+
+            $equityReserves->push($this->syntheticLine(
+                'Opening Balance Equity - Inventory',
+                'Equity',
+                $legacyInventoryBridge,
+                ['_bs_group' => 'Opening Balance Equity', '_display_name' => 'Opening Balance Equity - Inventory']
+            ));
+        }
+
+        $customerOpeningBridge = $this->getUnpostedCustomerOpeningBalanceSum($request, $reportDate, $activeBranch);
+        if ($customerOpeningBridge > 0.005) {
+            $currentAssets->push($this->syntheticLine(
+                'Customer Opening Balances',
+                'Asset',
+                $customerOpeningBridge,
+                ['_bs_group' => 'Accounts Receivable', '_display_name' => 'Customer Opening Balances', '_bs_section' => 'current']
+            ));
+
+            $equityReserves->push($this->syntheticLine(
+                'Opening Balance Equity - Customers',
+                'Equity',
+                $customerOpeningBridge,
+                ['_bs_group' => 'Opening Balance Equity', '_display_name' => 'Opening Balance Equity - Customers']
+            ));
+        }
+
+        $supplierOpeningBridge = $this->getUnpostedSupplierOpeningBalanceSum($request, $reportDate, $activeBranch);
+        if ($supplierOpeningBridge > 0.005) {
+            $currentLiabilities->push($this->syntheticLine(
+                'Supplier Opening Balances',
+                'Liability',
+                $supplierOpeningBridge,
+                ['_bs_group' => 'Accounts Payable', '_display_name' => 'Supplier Opening Balances', '_bs_section' => 'current']
+            ));
+
+            $equityReserves->push($this->syntheticLine(
+                'Opening Balance Equity - Suppliers',
+                'Equity',
+                -$supplierOpeningBridge,
+                ['_bs_group' => 'Opening Balance Equity', '_display_name' => 'Opening Balance Equity - Suppliers']
+            ));
+        }
+
         $equity = $equityCapital
             ->concat($equityRetained)
             ->concat($equityReserves)
