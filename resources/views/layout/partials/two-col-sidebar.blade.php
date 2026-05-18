@@ -155,8 +155,8 @@
                                     Invoices</span></a>
                         </li>
                         <li>
-                            <a class="{{ Request::is('credit-notes') ? 'active' : '' }}"
-                                href="{{ url('credit-notes') }}"><i class="fe fe-edit"></i> <span>Credit
+                            <a class="{{ Request::is('reports/sales-return-report') ? 'active' : '' }}"
+                                href="{{ route('reports.sales-return') }}"><i class="fe fe-edit"></i> <span>Credit
                                     Notes</span></a>
                         </li>
                         

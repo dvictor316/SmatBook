@@ -363,7 +363,7 @@
                                                             </li>
                                                             <li>
                                                                 <a class="dropdown-item" href="{{ route('customers.receive-payment', $customer->id) }}">
-                                                                    <i class="far fa-credit-card me-2 text-success"></i>Receive
+                                                                    <i class="far fa-credit-card me-2 text-success"></i>Receive Payment
                                                                 </a>
                                                             </li>
                                                             <li><hr class="dropdown-divider"></li>

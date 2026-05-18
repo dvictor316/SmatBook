@@ -293,6 +293,11 @@
                                                 <i class="fas fa-edit me-2 text-primary"></i>Edit
                                             </a>
                                         </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ route('reports.create-sales-return', ['invoice_id' => $sale->id]) }}">
+                                                <i class="fas fa-undo me-2 text-warning"></i>Return
+                                            </a>
+                                        </li>
                                     </ul>
                                 </div>
                             </td>
