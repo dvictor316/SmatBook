@@ -1,8 +1,8 @@
 @php
     $stripCompany = optional(auth()->user())->company;
-    $stripCompanyName = optional($stripCompany)->company_name
+    $stripCompanyName = $reportCompanyName
+        ?? optional($stripCompany)->company_name
         ?? optional($stripCompany)->name
-        ?? \App\Models\Setting::where('key', 'company_name')->value('value')
         ?? 'SmartProbook';
     $activeBranch = $activeBranch ?? [];
     $stripBranchName = data_get($activeBranch, 'name') ?? session('active_branch_name') ?? null;
@@ -11,14 +11,16 @@
     $stripReportLabel = $reportLabel ?? 'Business Report';
     $stripPeriodLabel = $periodLabel ?? null;
 
-    // Load all branches for this company so we can show the switcher
-    $stripCompanyId = (int)(optional(auth()->user())->company_id ?? session('current_tenant_id') ?? 0);
-    $stripAvailableBranches = [];
-    if ($stripCompanyId > 0 && \Illuminate\Support\Facades\Schema::hasTable('settings')) {
-        $stripBranchRaw = (string)(\Illuminate\Support\Facades\DB::table('settings')
-            ->where('key', 'branches_json_company_' . $stripCompanyId)
-            ->value('value') ?? '');
-        $stripAvailableBranches = json_decode($stripBranchRaw, true) ?: [];
+    // Prefer controller-provided branch data to avoid extra page-level DB queries.
+    $stripAvailableBranches = collect($allBranches ?? [])->values()->all();
+    if (empty($stripAvailableBranches)) {
+        $stripCompanyId = (int)(optional(auth()->user())->company_id ?? session('current_tenant_id') ?? 0);
+        if ($stripCompanyId > 0 && \Illuminate\Support\Facades\Schema::hasTable('settings')) {
+            $stripBranchRaw = (string)(\Illuminate\Support\Facades\DB::table('settings')
+                ->where('key', 'branches_json_company_' . $stripCompanyId)
+                ->value('value') ?? '');
+            $stripAvailableBranches = json_decode($stripBranchRaw, true) ?: [];
+        }
     }
     $stripMultiBranch = count($stripAvailableBranches) > 1;
 @endphp

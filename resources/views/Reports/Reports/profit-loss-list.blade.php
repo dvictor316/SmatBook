@@ -7,7 +7,6 @@
     $reportCompany = optional(auth()->user())->company;
     $reportCompanyName = optional($reportCompany)->company_name
         ?? optional($reportCompany)->name
-        ?? \App\Models\Setting::where('key', 'company_name')->value('value')
         ?? 'SmartProbook';
     $activeBranchName = trim((string) (session('active_branch_name') ?? ''));
     $fmt = fn ($amount) => \App\Support\GeoCurrency::format((float) $amount, 'NGN', $currencyCode, $currencyLocale);
