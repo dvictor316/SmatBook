@@ -771,7 +771,9 @@ class BalanceSheetController extends Controller
         }
         if (abs($currentYearEarnings) >= 0.005) {
             $retainedEarningsLines->push($this->syntheticLine(
-                $currentYearEarnings < 0 ? 'Current Year Deficit' : 'Current Year Earnings',
+                $currentYearEarnings < 0
+                    ? 'Current Year Deficit (includes Sales Revenue impact)'
+                    : 'Current Year Earnings (includes Sales Revenue)',
                 'Equity',
                 $currentYearEarnings,
                 ['_bs_group' => 'Current Year Earnings / Deficit', '_deficit' => $currentYearEarnings < 0]
