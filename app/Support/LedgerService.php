@@ -279,6 +279,14 @@ class LedgerService
         $assetAccount = Account::withoutGlobalScopes()->find($asset->account_id)
             ?? self::resolveFixedAssetAccount('Fixed Assets', 'AUTO-AST-FA');
 
+        // Auto-correct sub_type: Balance Sheet classifies by sub_type, so the
+        // account MUST be 'Fixed Asset' to appear under Non-Current Assets.
+        $fixedSubTypes = [Account::SUBTYPE_FIXED_ASSET, 'Non-Current Asset', 'Intangible Asset'];
+        if ($assetAccount && !in_array($assetAccount->sub_type, $fixedSubTypes)) {
+            $assetAccount->update(['sub_type' => Account::SUBTYPE_FIXED_ASSET]);
+            $assetAccount->refresh();
+        }
+
         $payableAccount = self::resolveAccount('Accounts Payable', 'Liability', ['payable', 'creditor'], 'AUTO-LIB-AP');
 
         $reference  = 'FA-ACQ-' . $asset->id;
