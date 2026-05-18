@@ -1,5 +1,31 @@
 @extends('layout.mainlayout')
 
+@section('style')
+<style>
+    .report-ui-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 8px 16px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #fff;
+        background: #2563eb;
+        border: none;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: background .15s, box-shadow .15s;
+        box-shadow: 0 2px 8px rgba(37,99,235,.22);
+    }
+    .report-ui-btn:hover {
+        background: #1d4ed8;
+        box-shadow: 0 4px 12px rgba(37,99,235,.3);
+        color: #fff;
+        text-decoration: none;
+    }
+</style>
+@endsection
+
 @section('content')
 <div class="page-wrapper">
     <div class="content container-fluid">
@@ -23,7 +49,7 @@
                 @endif
 
                 <div class="mt-3">
-                    <a href="{{ route('user.dashboard') }}" class="btn btn-primary">
+                    <a href="{{ route('user.dashboard') }}" class="report-ui-btn">
                         Back to Dashboard
                     </a>
                 </div>

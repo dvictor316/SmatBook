@@ -3339,7 +3339,7 @@ public function destroy($id)
                 ? 'COALESCE(NULLIF(sales.total_amount, 0), sales.amount_paid, 0)'
                 : 'COALESCE(sales.amount_paid, 0)');
         $purchaseAmountExpr = Schema::hasColumn('purchases', 'total_amount')
-            ? 'ABS(COALESCE(purchases.total_amount, purchases.amount, 0))'
+            ? 'ABS(COALESCE(purchases.total_amount, 0))'
             : (Schema::hasColumn('purchases', 'amount')
                 ? 'ABS(COALESCE(purchases.amount, 0))'
                 : '0');
