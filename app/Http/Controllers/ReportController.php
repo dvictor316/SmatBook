@@ -3533,18 +3533,84 @@ public function destroy($id)
                 ->keyBy('txn_date');
         }
 
+        // ── Manual Journal Adjustments: include revenue/expense journals ─────
+        $journalIncomeByDate = collect();
+        $journalExpenseByDate = collect();
+        $manualExpenseBreakdown = collect();
+        if (Schema::hasTable('transactions') && Schema::hasTable('accounts')) {
+            $journalBaseQuery = DB::table('transactions')
+                ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
+                ->where('transactions.transaction_type', \App\Models\Transaction::TYPE_JOURNAL)
+                ->whereBetween(DB::raw('DATE(transactions.transaction_date)'), [$startDate, $endDate])
+                ->where(function ($query) {
+                    $query->whereRaw('LOWER(COALESCE(accounts.type, "")) = ?', ['revenue'])
+                        ->orWhereRaw('LOWER(COALESCE(accounts.type, "")) = ?', ['expense']);
+                });
+
+            if (Schema::hasColumn('transactions', 'deleted_at')) {
+                $journalBaseQuery->whereNull('transactions.deleted_at');
+            }
+            if (Schema::hasColumn('accounts', 'deleted_at')) {
+                $journalBaseQuery->whereNull('accounts.deleted_at');
+            }
+            if ($companyId > 0 && Schema::hasColumn('transactions', 'company_id')) {
+                $journalBaseQuery->where('transactions.company_id', $companyId);
+            }
+            $applyBranch($journalBaseQuery, 'transactions');
+
+            $journalIncomeByDate = (clone $journalBaseQuery)
+                ->whereRaw('LOWER(COALESCE(accounts.type, "")) = ?', ['revenue'])
+                ->selectRaw('DATE(transactions.transaction_date) as txn_date, SUM(COALESCE(transactions.credit, 0) - COALESCE(transactions.debit, 0)) as total')
+                ->groupByRaw('DATE(transactions.transaction_date)')
+                ->get()
+                ->keyBy('txn_date');
+
+            $journalExpenseByDate = (clone $journalBaseQuery)
+                ->whereRaw('LOWER(COALESCE(accounts.type, "")) = ?', ['expense'])
+                ->selectRaw('DATE(transactions.transaction_date) as txn_date, SUM(COALESCE(transactions.debit, 0) - COALESCE(transactions.credit, 0)) as total')
+                ->groupByRaw('DATE(transactions.transaction_date)')
+                ->get()
+                ->keyBy('txn_date');
+
+            $manualExpenseBreakdown = (clone $journalBaseQuery)
+                ->whereRaw('LOWER(COALESCE(accounts.type, "")) = ?', ['expense'])
+                ->selectRaw('COALESCE(NULLIF(TRIM(accounts.name), ""), "Manual Journal Expense") as name, SUM(COALESCE(transactions.debit, 0) - COALESCE(transactions.credit, 0)) as total')
+                ->groupByRaw('COALESCE(NULLIF(TRIM(accounts.name), ""), "Manual Journal Expense")')
+                ->havingRaw('ABS(SUM(COALESCE(transactions.debit, 0) - COALESCE(transactions.credit, 0))) > 0.0001')
+                ->orderBy('name')
+                ->get();
+        }
+
+        if ($manualExpenseBreakdown->isNotEmpty()) {
+            $operatingExpenseBreakdown = $operatingExpenseBreakdown
+                ->concat($manualExpenseBreakdown)
+                ->groupBy('name')
+                ->map(function ($group, $name) {
+                    return (object) [
+                        'name' => $name,
+                        'total' => (float) collect($group)->sum(fn ($row) => (float) ($row->total ?? 0)),
+                    ];
+                })
+                ->sortBy('name')
+                ->values();
+        }
+
         // ── Merge all dates and build daily rows ──────────────────────────────
         $allDates = collect($salesByDate->keys())
             ->merge($purchasesByDate->keys())
             ->merge($expensesByDate->keys())
             ->merge($depreciationByDate->keys())
+            ->merge($journalIncomeByDate->keys())
+            ->merge($journalExpenseByDate->keys())
             ->unique()->sort()->values();
 
-        $dailyRows = $allDates->map(function ($date) use ($salesByDate, $purchasesByDate, $expensesByDate, $depreciationByDate) {
-            $income    = (float) ($salesByDate[$date]->total     ?? 0);
+        $dailyRows = $allDates->map(function ($date) use ($salesByDate, $purchasesByDate, $expensesByDate, $depreciationByDate, $journalIncomeByDate, $journalExpenseByDate) {
+            $income    = (float) ($salesByDate[$date]->total     ?? 0)
+                + (float) ($journalIncomeByDate[$date]->total ?? 0);
             $purchases = (float) ($purchasesByDate[$date]->total ?? 0);
             $opex      = (float) ($expensesByDate[$date]->total  ?? 0)
-                + (float) ($depreciationByDate[$date]->total ?? 0);
+                + (float) ($depreciationByDate[$date]->total ?? 0)
+                + (float) ($journalExpenseByDate[$date]->total ?? 0);
             return (object) [
                 'report_date'       => $date,
                 'income'            => $income,
