@@ -36,14 +36,14 @@
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
     :root {
-        --spa-bg: #eff5ff;
-        --spa-surface: rgba(255, 255, 255, 0.95);
+        --spa-bg: #fbfcff;
+        --spa-surface: rgba(255, 255, 255, 0.99);
         --spa-aside: linear-gradient(145deg, #061a44 0%, #0f3a8a 58%, #2563eb 100%);
-        --spa-border: #e2e8f0;
+        --spa-border: #d8e0ec;
         --spa-primary: #0f3a8a;
         --spa-primary-dark: #061a44;
-        --spa-text: #0f172a;
-        --spa-muted: #64748b;
+        --spa-text: #071b3f;
+        --spa-muted: #475569;
         --spa-gold: #d7a928;
     }
 
@@ -82,9 +82,9 @@
         min-height: 100%;
         padding: 16px 12px 40px;
         background:
-            radial-gradient(circle at top left, rgba(215, 169, 40, 0.20), transparent 24%),
-            radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.18), transparent 28%),
-            linear-gradient(180deg, #f4f9ff 0%, #e8f2ff 100%);
+            radial-gradient(circle at top left, rgba(215, 169, 40, 0.12), transparent 24%),
+            radial-gradient(circle at bottom right, rgba(15, 58, 138, 0.07), transparent 30%),
+            linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
         z-index: 9999;
         display: grid !important;
         place-items: center !important;
@@ -130,11 +130,11 @@
         max-width: 920px !important;
         min-height: 0;
         border-radius: 24px;
-        box-shadow: 0 30px 90px rgba(15, 23, 42, 0.12), 0 10px 24px rgba(37, 99, 235, 0.08);
+        box-shadow: 0 28px 80px rgba(15, 23, 42, 0.10), 0 8px 22px rgba(15, 58, 138, 0.05);
         display: flex;
         overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(18px);
+        border: 1px solid rgba(216, 224, 236, 0.95);
+        backdrop-filter: blur(10px);
         margin: 24px auto !important;
         justify-self: center !important;
     }
@@ -288,7 +288,7 @@
         display: flex;
         flex-direction: column;
         justify-content: center;
-        color: #0f172a;
+        color: var(--spa-text);
         position: relative;
     }
 
@@ -299,9 +299,9 @@
         align-self: flex-start;
         padding: 5px 10px;
         border-radius: 999px;
-        background: #eff6ff;
-        color: #173b92;
-        border: 1px solid #dbeafe;
+        background: #ffffff;
+        color: #0b2a63;
+        border: 1px solid #d8e0ec;
         font-size: 0.66rem;
         font-weight: 800;
         letter-spacing: 0.08em;
@@ -314,16 +314,16 @@
         height: 7px;
         border-radius: 50%;
         background: #173b92;
-        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+        box-shadow: 0 0 0 4px rgba(15, 58, 138, 0.08);
     }
-    .form-title { font-weight: 800; color: #0f172a; font-size: 1.46rem; margin-bottom: 4px; letter-spacing: -0.03em; }
-    .form-subtitle { color: #64748b; font-size: 0.86rem; margin-bottom: 14px; line-height: 1.55; max-width: 44ch; }
+    .form-title { font-weight: 900; color: var(--spa-text); font-size: 1.46rem; margin-bottom: 4px; letter-spacing: -0.03em; }
+    .form-subtitle { color: #475569; font-size: 0.86rem; margin-bottom: 14px; line-height: 1.55; max-width: 44ch; font-weight: 600; }
     .form-shell {
-        border: 1px solid #e5edf8;
+        border: 1px solid #d8e0ec;
         border-radius: 20px;
-        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        background: #ffffff;
         padding: 18px 18px 16px;
-        box-shadow: 0 18px 38px rgba(15, 23, 42, 0.05);
+        box-shadow: 0 18px 38px rgba(15, 23, 42, 0.045);
     }
     .info-banner {
         display: flex;
@@ -331,14 +331,15 @@
         gap: 10px;
         padding: 10px 12px;
         border-radius: 14px;
-        background: #f8fbff;
-        border: 1px solid #e0ecff;
-        color: #173b92;
+        background: #ffffff;
+        border: 1px solid #d8e0ec;
+        color: #0b2a63;
         font-size: 0.76rem;
+        font-weight: 700;
         line-height: 1.5;
         margin-bottom: 14px;
     }
-    .info-banner i { color: #173b92; }
+    .info-banner i { color: #0b2a63; }
     .field-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -346,18 +347,19 @@
     }
 
     .label-caps {
-        font-size: 10px; font-weight: 700; text-transform: uppercase;
-        color: #173b92; margin-bottom: 5px; display: block; letter-spacing: 0.5px;
+        font-size: 10px; font-weight: 900; text-transform: uppercase;
+        color: #0b2a63; margin-bottom: 5px; display: block; letter-spacing: 0.6px;
     }
 
     .input-smat {
-        padding: 11px 14px; border-radius: 14px; border: 1px solid #dbe5f2;
-        background: #fcfdfe; font-size: 12.5px; transition: all 0.2s; font-weight: 500;
+        padding: 11px 14px; border-radius: 14px; border: 1px solid #cfd8e6;
+        background: #ffffff; font-size: 12.5px; transition: all 0.2s; font-weight: 800;
+        color: #061a44;
     }
 
     .input-smat:focus {
         background: #fff; border-color: var(--spa-primary);
-        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.16); outline: none;
+        box-shadow: 0 0 0 4px rgba(15, 58, 138, 0.10); outline: none;
         transform: translateY(-1px);
     }
 
@@ -368,15 +370,15 @@
     }
 
     .btn-smat-red {
-        background: linear-gradient(180deg, #edf4ff 0%, #dce9ff 100%);
-        color: #173b92;
-        border: 1px solid #c7d8f8;
+        background: #ffffff;
+        color: #0b2a63;
+        border: 1px solid #cfd8e6;
         padding: 12px;
         border-radius: 16px;
         width: 100%;
         font-weight: 800;
         font-size: 12px;
-        box-shadow: 0 14px 28px rgba(37, 99, 235, 0.12);
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
         transition: 0.3s;
         margin-top: 8px;
         text-transform: uppercase;
@@ -385,9 +387,9 @@
 
     .btn-smat-red:hover {
         transform: translateY(-2px);
-        box-shadow: 0 18px 32px rgba(37, 99, 235, 0.16);
-        color: #0f2f80;
-        background: linear-gradient(180deg, #e4efff 0%, #d1e2ff 100%);
+        box-shadow: 0 16px 30px rgba(15, 23, 42, 0.10);
+        color: #061a44;
+        background: #f8fafc;
     }
 
     .error-pill {
@@ -437,7 +439,7 @@
         line-height: 1.45;
     }
 
-    .bottom-link { margin-top: 14px; text-align: center; font-size: 11px; color: #64748b; }
+    .bottom-link { margin-top: 14px; text-align: center; font-size: 11px; color: #475569; font-weight: 700; }
     .bottom-link a { color: var(--spa-primary); text-decoration: none; font-weight: 800; }
     .bottom-actions {
         margin-top: 12px;
@@ -446,26 +448,26 @@
         gap: 10px;
     }
     .bottom-action-link {
-        border: 1px solid #cfe0fb;
+        border: 1px solid #cfd8e6;
         border-radius: 14px;
         padding: 10px 12px;
         text-decoration: none;
-        color: #173b92 !important;
+        color: #0b2a63 !important;
         font-size: 10px;
         font-weight: 800;
-        background: linear-gradient(180deg, #eef5ff 0%, #dce9ff 100%);
-        box-shadow: 0 12px 24px rgba(37, 99, 235, 0.1);
+        background: #ffffff;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.055);
         transition: all 0.2s ease;
         text-align: center;
         display: block;
     }
     .bottom-link .bottom-action-link,
     .bottom-link .bottom-action-link:visited {
-        color: #173b92 !important;
+        color: #0b2a63 !important;
     }
     .bottom-action-link:hover {
-        border-color: #b9d0fb;
-        color: #0f2f80 !important;
+        border-color: #b8c4d6;
+        color: #061a44 !important;
         transform: translateY(-2px);
     }
 
@@ -483,13 +485,13 @@
         background: #fff;
         padding: 0 10px;
         font-size: 9px;
-        color: #94a3b8;
-        font-weight: 700;
+        color: #64748b;
+        font-weight: 900;
         text-transform: uppercase;
     }
     .btn-social {
-        background: linear-gradient(180deg, #f6faff 0%, #e8f0ff 100%);
-        border: 1px solid #d4e2fa;
+        background: #ffffff;
+        border: 1px solid #cfd8e6;
         padding: 10px;
         border-radius: 14px;
         display: flex;
@@ -498,15 +500,15 @@
         gap: 10px;
         font-size: 12px;
         font-weight: 800;
-        color: #173b92;
+        color: #0b2a63;
         text-decoration: none;
         transition: 0.2s;
-        box-shadow: 0 12px 24px rgba(37, 99, 235, 0.08);
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.05);
     }
     .btn-social:hover {
-        background: linear-gradient(180deg, #eef5ff 0%, #deeaff 100%);
-        border-color: #bfd4fb;
-        color: #0f2f80;
+        background: #f8fafc;
+        border-color: #b8c4d6;
+        color: #061a44;
         transform: translateY(-1px);
     }
     .social-mark {

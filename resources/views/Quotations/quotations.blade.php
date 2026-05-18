@@ -49,6 +49,15 @@
                                                 $customerName = $quotation->customer->name
                                                     ?? $quotation->customer->customer_name
                                                     ?? 'Walk-in Customer';
+                                                $quotationStatus = strtolower(trim((string) ($quotation->status ?? '')));
+                                                $isConverted = str_contains($quotationStatus, 'converted')
+                                                    || filled($quotation->converted_to_type ?? null)
+                                                    || filled($quotation->converted_sale_id ?? null)
+                                                    || filled($quotation->converted_receipt_no ?? null)
+                                                    || filled($quotation->converted_at ?? null);
+                                                $statusBadgeClass = $isConverted
+                                                    ? 'bg-success-light text-success'
+                                                    : (strtolower((string) $quotation->status) === 'sent' ? 'bg-info-light text-info' : 'bg-warning-light text-warning');
                                             @endphp
                                             <tr>
                                                 <td>{{ $quotation->id }}</td>
@@ -66,7 +75,7 @@
                                                 <td>{{ optional($quotation->created_at)->format('d M Y') }}</td>
                                                 <td class="fw-semibold">₦{{ number_format((float) ($quotation->total ?? 0), 2) }}</td>
                                                 <td><span
-                                                        class="badge {{ strtolower((string) $quotation->status) === 'sent' ? 'bg-info-light text-info' : 'bg-warning-light text-warning' }}">{{ $quotation->status }}</span>
+                                                        class="badge {{ $statusBadgeClass }}">{{ $quotation->status }}</span>
                                                 </td>
                                                 <td class="d-flex align-items-center">
                                                     <div class="dropdown dropdown-action">
@@ -93,18 +102,26 @@
                                                                     <a class="dropdown-item" href="{{ route('quotations.show', $quotation->id) }}"><i
                                                                             class="fe fe-eye me-2"></i>View</a>
                                                                 </li>
-                                                                <li>
-                                                                    <a class="dropdown-item"
-                                                                        href="{{ route('quotations.convert-invoice', $quotation->id) }}"><i
-                                                                            class="fe fe-file-text me-2"></i>Convert to
-                                                                        Invoice</a>
-                                                                </li>
-                                                                <li>
-                                                                    <a class="dropdown-item"
-                                                                        href="{{ route('quotations.convert-cash-sale', $quotation->id) }}"><i
-                                                                            class="fe fe-shopping-cart me-2"></i>Convert to
-                                                                        Cash Sale</a>
-                                                                </li>
+                                                                @if($isConverted)
+                                                                    <li>
+                                                                        <span class="dropdown-item text-muted disabled" aria-disabled="true">
+                                                                            <i class="fe fe-lock me-2"></i>Payment already completed
+                                                                        </span>
+                                                                    </li>
+                                                                @else
+                                                                    <li>
+                                                                        <a class="dropdown-item"
+                                                                            href="{{ route('quotations.convert-invoice', $quotation->id) }}"><i
+                                                                                class="fe fe-file-text me-2"></i>Convert to
+                                                                            Invoice</a>
+                                                                    </li>
+                                                                    <li>
+                                                                        <a class="dropdown-item"
+                                                                            href="{{ route('quotations.convert-cash-sale', $quotation->id) }}"><i
+                                                                                class="fe fe-shopping-cart me-2"></i>Convert to
+                                                                            Cash Sale</a>
+                                                                    </li>
+                                                                @endif
                                                                 <li>
                                                                     <form action="{{ route('quotations.mark-sent', $quotation->id) }}" method="POST" class="d-inline">
                                                                         @csrf

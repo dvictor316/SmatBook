@@ -980,6 +980,32 @@ public function store(Request $request)
                 throw new \RuntimeException('The source quotation could not be found for this tenant.');
             }
 
+            $quotationStatus = strtolower(trim((string) ($sourceQuotation->status ?? '')));
+            $alreadyConverted = str_contains($quotationStatus, 'converted')
+                || (Schema::hasColumn('quotations', 'converted_to_type') && filled($sourceQuotation->converted_to_type))
+                || (Schema::hasColumn('quotations', 'converted_sale_id') && filled($sourceQuotation->converted_sale_id))
+                || (Schema::hasColumn('quotations', 'converted_receipt_no') && filled($sourceQuotation->converted_receipt_no))
+                || (Schema::hasColumn('quotations', 'converted_at') && filled($sourceQuotation->converted_at));
+
+            if (!$alreadyConverted && Schema::hasTable('sales')
+                && Schema::hasColumn('sales', 'source_type')
+                && Schema::hasColumn('sales', 'source_id')) {
+                $alreadyConverted = Sale::query()
+                    ->where('source_type', 'quotation')
+                    ->where('source_id', $sourceQuotation->id)
+                    ->when(Schema::hasColumn('sales', 'company_id') && (auth()->user()?->company_id ?? session('current_tenant_id')), function ($query) {
+                        $query->where('company_id', auth()->user()?->company_id ?? session('current_tenant_id'));
+                    })
+                    ->when(Schema::hasColumn('sales', 'payment_status'), function ($query) {
+                        $query->where('payment_status', 'paid');
+                    })
+                    ->exists();
+            }
+
+            if ($alreadyConverted) {
+                throw new \RuntimeException('This quotation has already been converted and paid. Further conversion or payment is blocked to prevent duplicate transactions.');
+            }
+
             $sourceReference = $sourceReference !== ''
                 ? $sourceReference
                 : (string) ($sourceQuotation->quotation_id ?? ('Quotation #' . $sourceQuotation->id));

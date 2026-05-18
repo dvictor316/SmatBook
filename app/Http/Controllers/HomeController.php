@@ -149,6 +149,28 @@ class HomeController extends Controller
         ];
     }
 
+    private function quotationIsConverted(Quotation $quotation): bool
+    {
+        $status = strtolower(trim((string) ($quotation->status ?? '')));
+
+        return str_contains($status, 'converted')
+            || filled($quotation->converted_to_type ?? null)
+            || filled($quotation->converted_sale_id ?? null)
+            || filled($quotation->converted_receipt_no ?? null)
+            || filled($quotation->converted_at ?? null);
+    }
+
+    private function quotationConversionLockedResponse(Quotation $quotation)
+    {
+        $reference = $quotation->converted_receipt_no
+            ? ' Receipt: ' . $quotation->converted_receipt_no . '.'
+            : '';
+
+        return redirect()
+            ->route('quotations')
+            ->with('error', 'This quotation has already been converted and paid. Further conversion or payment is blocked to prevent duplicate transactions.' . $reference);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | INDEX — Master router for all user types
@@ -1092,6 +1114,10 @@ class HomeController extends Controller
     {
         $quotation = $this->findScopedQuotation($id);
 
+        if ($this->quotationIsConverted($quotation)) {
+            return $this->quotationConversionLockedResponse($quotation);
+        }
+
         return redirect()->route('add-invoice')
             ->with('quotation_prefill', $this->quotationInvoicePrefill($quotation))
             ->with('info', 'Quotation loaded into the invoice form with customer and item details ready.');
@@ -1100,6 +1126,10 @@ class HomeController extends Controller
     public function convertQuotationToCashSale($id)
     {
         $quotation = $this->findScopedQuotation($id);
+
+        if ($this->quotationIsConverted($quotation)) {
+            return $this->quotationConversionLockedResponse($quotation);
+        }
 
         session()->flash('pos_prefill', [
             'source' => 'quotation',
