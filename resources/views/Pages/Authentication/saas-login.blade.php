@@ -199,7 +199,7 @@
         min-width: 0;
     }
     .brand-name {
-        font-size: clamp(1rem, 1.14vw, 1.22rem);
+        font-size: clamp(1.2rem, 1.4vw, 1.5rem);
         font-weight: 900;
         line-height: 1;
         white-space: nowrap;
@@ -207,7 +207,7 @@
     }
     .brand-tagline {
         margin-top: 4px;
-        font-size: 0.62rem;
+        font-size: 0.75rem;
         letter-spacing: 0.12em;
         text-transform: uppercase;
         color: #2563eb;
@@ -291,7 +291,7 @@
         background: #ffffff;
         color: #0b2a63;
         border: 1px solid #d8e0ec;
-        font-size: 0.72rem;
+        font-size: 0.85rem;
         font-weight: 800;
         letter-spacing: 0.08em;
         text-transform: uppercase;
@@ -320,7 +320,7 @@
         border-radius: 14px;
         padding: 12px 14px;
         margin-bottom: 18px;
-        font-size: 12px;
+        font-size: 14px;
         line-height: 1.55;
         font-weight: 700;
     }
@@ -330,7 +330,7 @@
     }
 
     .uplink-badge {
-        font-size: 10px; background: #ffffff; color: #0b2a63;
+        font-size: 13px; background: #ffffff; color: #0b2a63;
         padding: 9px 12px; border-radius: 12px; border: 1px solid #d8e0ec;
         margin-bottom: 18px; font-weight: 900; display: flex; align-items: center; gap: 8px;
     }
@@ -342,19 +342,19 @@
         border-radius: 12px;
         padding: 10px 12px;
         margin-bottom: 16px;
-        font-size: 12px;
+        font-size: 14px;
         font-weight: 700;
     }
 
     /* Input Styles */
     .label-caps {
-        font-size: 11px; font-weight: 900; text-transform: uppercase;
+        font-size: 13px; font-weight: 900; text-transform: uppercase;
         color: #0b2a63; margin-bottom: 6px; display: block; letter-spacing: 0.7px;
     }
 
     .input-smat {
         padding: 13px 16px; border-radius: 14px; border: 1px solid #cfd8e6;
-        background: #ffffff; font-size: 13px; transition: all 0.2s; font-weight: 800;
+        background: #ffffff; font-size: 15px; transition: all 0.2s; font-weight: 800;
         color: #061a44;
     }
 
@@ -379,7 +379,7 @@
         border-radius: 16px;
         width: 100%;
         font-weight: 800;
-        font-size: 13px;
+        font-size: 15px;
         transition: 0.3s;
         margin-top: 10px;
         text-transform: uppercase;
@@ -407,7 +407,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 13px;
+        font-size: 15px;
         gap: 10px;
         font-weight: 800;
         color: #0b2a63;
