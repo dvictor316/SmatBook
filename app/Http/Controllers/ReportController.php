@@ -3332,11 +3332,18 @@ public function destroy($id)
         $isAllBranches = ($activeBranch['scope'] ?? 'branch') === 'all';
         $companyId     = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
         $salesHasDeletedAt = Schema::hasColumn('sales', 'deleted_at');
-        $salesAmountExpr = Schema::hasColumn('sales', 'total_amount')
-            ? 'COALESCE(NULLIF(sales.total_amount, 0), sales.total, sales.amount_paid, 0)'
-            : (Schema::hasColumn('sales', 'total')
-                ? 'COALESCE(sales.total, sales.amount_paid, 0)'
+        $salesHasOrderStatus = Schema::hasColumn('sales', 'order_status');
+        $salesAmountExpr = Schema::hasColumn('sales', 'total')
+            ? 'COALESCE(NULLIF(sales.total, 0), sales.total_amount, sales.amount_paid, 0)'
+            : (Schema::hasColumn('sales', 'total_amount')
+                ? 'COALESCE(NULLIF(sales.total_amount, 0), sales.amount_paid, 0)'
                 : 'COALESCE(sales.amount_paid, 0)');
+        $purchaseAmountExpr = Schema::hasColumn('purchases', 'total_amount')
+            ? 'ABS(COALESCE(purchases.total_amount, purchases.amount, 0))'
+            : (Schema::hasColumn('purchases', 'amount')
+                ? 'ABS(COALESCE(purchases.amount, 0))'
+                : '0');
+        $purchasesHasStatus = Schema::hasColumn('purchases', 'status');
         $expensesHasStatus = Schema::hasTable('expenses') && Schema::hasColumn('expenses', 'status');
         $expenseStatusExpr = $expensesHasStatus
             ? "LOWER(COALESCE(expenses.status, 'pending'))"
@@ -3409,6 +3416,12 @@ public function destroy($id)
         if ($salesHasDeletedAt) {
             $salesQuery->whereNull('sales.deleted_at');
         }
+        if ($salesHasOrderStatus) {
+            $salesQuery->where(function ($query) {
+                $query->whereNull('sales.order_status')
+                    ->orWhereRaw('LOWER(sales.order_status) <> ?', ['draft']);
+            });
+        }
         $applyBranch($salesQuery, 'sales');
 
         $salesByDate = $salesQuery
@@ -3432,10 +3445,22 @@ public function destroy($id)
                     ->orWhereRaw('LOWER(purchases.purchase_type) <> ?', ['fixed_asset']);
             });
         }
+        if ($purchasesHasStatus) {
+            $purchQuery->where(function ($query) {
+                $query->whereNull('purchases.status')
+                    ->orWhereRaw('LOWER(purchases.status) not in (?, ?, ?, ?, ?)', [
+                        'draft',
+                        'cancelled',
+                        'canceled',
+                        'rejected',
+                        'returned',
+                    ]);
+            });
+        }
         $applyBranch($purchQuery, 'purchases');
 
         $purchasesByDate = $purchQuery
-            ->selectRaw("{$purchDateExpr} as txn_date, SUM(COALESCE(purchases.total_amount, 0)) as total")
+            ->selectRaw("{$purchDateExpr} as txn_date, SUM({$purchaseAmountExpr}) as total")
             ->groupByRaw($purchDateExpr)
             ->get()->keyBy('txn_date');
 
