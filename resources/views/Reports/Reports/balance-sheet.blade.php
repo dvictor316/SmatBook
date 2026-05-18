@@ -237,24 +237,27 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
 .bs-method-toggle a.active { background: #6366f1; color: #fff; }
 .bs-filter-actions { align-self: flex-end; }
 .bs-btn-run {
-    background: #1e40af;
+    background: linear-gradient(135deg, var(--spb-theme-blue, #1e40af) 0%, var(--spb-theme-blue-bright, #3b82f6) 100%);
     color: #fff;
-    border: none;
+    border: 1px solid var(--spb-theme-gold, #d7a928);
     border-radius: 7px;
     padding: 9px 24px;
     font-size: 0.845rem;
     font-weight: 700;
     cursor: pointer;
     letter-spacing: 0.02em;
+    box-shadow: 0 10px 20px rgba(6, 26, 68, 0.12);
 }
-.bs-btn-run:hover { background: #1d3fa0; }
+.bs-btn-run:hover {
+    background: linear-gradient(135deg, var(--report-accent-deep, #0f2d5c) 0%, var(--spb-theme-blue, #1e40af) 100%);
+}
 
 /* ── Toolbar ─────────────────────────────────────────────── */
 .bs-toolbar { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 14px; }
 .bs-action-btn {
-    border: 1px solid #e2e8f0;
-    background: #fff;
-    color: #334155;
+    border: 1px solid var(--spb-theme-gold, #d7a928);
+    background: linear-gradient(135deg, var(--spb-theme-blue, #1e40af) 0%, var(--spb-theme-blue-bright, #3b82f6) 100%);
+    color: #fff;
     border-radius: 7px;
     padding: 7px 16px;
     font-size: 0.78rem;
@@ -263,8 +266,12 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
     display: inline-flex;
     align-items: center;
     gap: 5px;
+    box-shadow: 0 10px 18px rgba(6, 26, 68, 0.10);
 }
-.bs-action-btn:hover { border-color: #94a3b8; background: #f8fafc; }
+.bs-action-btn:hover {
+    border-color: var(--spb-theme-gold, #d7a928);
+    background: linear-gradient(135deg, var(--report-accent-deep, #0f2d5c) 0%, var(--spb-theme-blue, #1e40af) 100%);
+}
 .bs-action-btn svg { width: 14px; height: 14px; }
 
 /* ── Report wrapper ──────────────────────────────────────── */
