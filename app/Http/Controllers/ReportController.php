@@ -3331,6 +3331,25 @@ public function destroy($id)
         $branchName    = trim((string) ($activeBranch['name'] ?? ''));
         $isAllBranches = ($activeBranch['scope'] ?? 'branch') === 'all';
         $companyId     = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
+        $salesHasDeletedAt = Schema::hasColumn('sales', 'deleted_at');
+        $salesTotalColumn = Schema::hasColumn('sales', 'total_amount') ? 'total_amount' : 'total';
+        $expensesHasStatus = Schema::hasTable('expenses') && Schema::hasColumn('expenses', 'status');
+        $expenseStatusExpr = $expensesHasStatus
+            ? "LOWER(COALESCE(expenses.status, 'pending'))"
+            : null;
+        $canQueryDepreciation = Schema::hasTable('fixed_assets')
+            && Schema::hasTable('transactions')
+            && Schema::hasTable('accounts')
+            && Schema::hasColumn('transactions', 'transaction_date')
+            && Schema::hasColumn('transactions', 'account_id')
+            && Schema::hasColumn('transactions', 'debit')
+            && Schema::hasColumn('transactions', 'credit')
+            && Schema::hasColumn('accounts', 'id')
+            && Schema::hasColumn('accounts', 'name')
+            && Schema::hasColumn('accounts', 'type')
+            && Schema::hasColumn('accounts', 'sub_type');
+        $transactionsHasDeletedAt = $canQueryDepreciation && Schema::hasColumn('transactions', 'deleted_at');
+        $accountsHasDeletedAt = $canQueryDepreciation && Schema::hasColumn('accounts', 'deleted_at');
 
         // ── Date presets ──────────────────────────────────────────────────────
         $now = Carbon::now();
@@ -3382,12 +3401,14 @@ public function destroy($id)
         $salesQuery = DB::table('sales')
             ->when($companyId > 0 && Schema::hasColumn('sales', 'company_id'),
                 fn ($q) => $q->where('sales.company_id', $companyId))
-            ->whereNull('sales.deleted_at')
             ->whereBetween(DB::raw($salesDateExpr), [$startDate, $endDate]);
+        if ($salesHasDeletedAt) {
+            $salesQuery->whereNull('sales.deleted_at');
+        }
         $applyBranch($salesQuery, 'sales');
 
         $salesByDate = $salesQuery
-            ->selectRaw("{$salesDateExpr} as txn_date, SUM(COALESCE(sales.total, 0)) as total")
+            ->selectRaw("{$salesDateExpr} as txn_date, SUM(COALESCE(sales.{$salesTotalColumn}, 0)) as total")
             ->groupByRaw($salesDateExpr)
             ->get()->keyBy('txn_date');
 
@@ -3426,8 +3447,10 @@ public function destroy($id)
             $expQuery = DB::table('expenses')
                 ->when($companyId > 0 && Schema::hasColumn('expenses', 'company_id'),
                     fn ($q) => $q->where('expenses.company_id', $companyId))
-                ->where(DB::raw('LOWER(COALESCE(expenses.status, \'pending\'))'), '!=', 'rejected')
                 ->whereBetween(DB::raw($expDateExpr), [$startDate, $endDate]);
+            if ($expenseStatusExpr !== null) {
+                $expQuery->where(DB::raw($expenseStatusExpr), '!=', 'rejected');
+            }
             $applyBranch($expQuery, 'expenses');
 
             $expensesByDate = $expQuery
@@ -3439,8 +3462,10 @@ public function destroy($id)
             $expenseBreakdownQuery = DB::table('expenses')
                 ->when($companyId > 0 && Schema::hasColumn('expenses', 'company_id'),
                     fn ($q) => $q->where('expenses.company_id', $companyId))
-                ->where(DB::raw('LOWER(COALESCE(expenses.status, \'pending\'))'), '!=', 'rejected')
                 ->whereBetween(DB::raw($expDateExpr), [$startDate, $endDate]);
+            if ($expenseStatusExpr !== null) {
+                $expenseBreakdownQuery->where(DB::raw($expenseStatusExpr), '!=', 'rejected');
+            }
             $applyBranch($expenseBreakdownQuery, 'expenses');
 
             $operatingExpenseBreakdown = $expenseBreakdownQuery
@@ -3451,17 +3476,21 @@ public function destroy($id)
         }
 
         $depreciationByDate = collect();
-        if (Schema::hasTable('transactions') && Schema::hasTable('accounts')) {
+        if ($canQueryDepreciation) {
             $depQuery = DB::table('transactions')
                 ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
-                ->whereNull('transactions.deleted_at')
-                ->whereNull('accounts.deleted_at')
                 ->whereBetween('transactions.transaction_date', [$startDate, $endDate])
                 ->whereRaw('LOWER(accounts.type) = ?', ['expense'])
                 ->where(function ($query) {
                     $query->whereRaw('LOWER(accounts.sub_type) = ?', ['depreciation expense'])
                         ->orWhereRaw('LOWER(accounts.name) like ?', ['%depreciation%']);
                 });
+            if ($transactionsHasDeletedAt) {
+                $depQuery->whereNull('transactions.deleted_at');
+            }
+            if ($accountsHasDeletedAt) {
+                $depQuery->whereNull('accounts.deleted_at');
+            }
 
             if ($companyId > 0 && Schema::hasColumn('transactions', 'company_id')) {
                 $depQuery->where('transactions.company_id', $companyId);
