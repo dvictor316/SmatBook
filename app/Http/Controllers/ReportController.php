@@ -3401,6 +3401,12 @@ public function destroy($id)
             ->when($companyId > 0 && Schema::hasColumn('purchases', 'company_id'),
                 fn ($q) => $q->where('purchases.company_id', $companyId))
             ->whereBetween(DB::raw($purchDateExpr), [$startDate, $endDate]);
+        if (Schema::hasColumn('purchases', 'purchase_type')) {
+            $purchQuery->where(function ($query) {
+                $query->whereNull('purchases.purchase_type')
+                    ->orWhereRaw('LOWER(purchases.purchase_type) <> ?', ['fixed_asset']);
+            });
+        }
         $applyBranch($purchQuery, 'purchases');
 
         $purchasesByDate = $purchQuery
@@ -3429,16 +3435,43 @@ public function destroy($id)
                 ->get()->keyBy('txn_date');
         }
 
+        $depreciationByDate = collect();
+        if (Schema::hasTable('transactions') && Schema::hasTable('accounts')) {
+            $depQuery = DB::table('transactions')
+                ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
+                ->whereNull('transactions.deleted_at')
+                ->whereNull('accounts.deleted_at')
+                ->whereBetween('transactions.transaction_date', [$startDate, $endDate])
+                ->whereRaw('LOWER(accounts.type) = ?', ['expense'])
+                ->where(function ($query) {
+                    $query->whereRaw('LOWER(accounts.sub_type) = ?', ['depreciation expense'])
+                        ->orWhereRaw('LOWER(accounts.name) like ?', ['%depreciation%']);
+                });
+
+            if ($companyId > 0 && Schema::hasColumn('transactions', 'company_id')) {
+                $depQuery->where('transactions.company_id', $companyId);
+            }
+            $applyBranch($depQuery, 'transactions');
+
+            $depreciationByDate = $depQuery
+                ->selectRaw('transactions.transaction_date as txn_date, SUM(COALESCE(transactions.debit, 0) - COALESCE(transactions.credit, 0)) as total')
+                ->groupBy('transactions.transaction_date')
+                ->get()
+                ->keyBy('txn_date');
+        }
+
         // ── Merge all dates and build daily rows ──────────────────────────────
         $allDates = collect($salesByDate->keys())
             ->merge($purchasesByDate->keys())
             ->merge($expensesByDate->keys())
+            ->merge($depreciationByDate->keys())
             ->unique()->sort()->values();
 
-        $dailyRows = $allDates->map(function ($date) use ($salesByDate, $purchasesByDate, $expensesByDate) {
+        $dailyRows = $allDates->map(function ($date) use ($salesByDate, $purchasesByDate, $expensesByDate, $depreciationByDate) {
             $income    = (float) ($salesByDate[$date]->total     ?? 0);
             $purchases = (float) ($purchasesByDate[$date]->total ?? 0);
-            $opex      = (float) ($expensesByDate[$date]->total  ?? 0);
+            $opex      = (float) ($expensesByDate[$date]->total  ?? 0)
+                + (float) ($depreciationByDate[$date]->total ?? 0);
             return (object) [
                 'report_date'       => $date,
                 'income'            => $income,

@@ -277,16 +277,21 @@ class LedgerService
             ?? session('current_tenant_id')
             ?? 0) ?: null;
 
-        // Debit the asset's own ledger account (must be a Fixed Asset sub_type account)
+        // Debit a real fixed-asset ledger account. If the UI received a bank/current
+        // asset account, do not reclassify that account because it would distort cash reports.
         $assetAccount = Account::withoutGlobalScopes()->find($asset->account_id)
             ?? self::resolveFixedAssetAccount('Fixed Assets', 'AUTO-AST-FA');
 
-        // Auto-correct sub_type: Balance Sheet classifies by sub_type, so the
-        // account MUST be 'Fixed Asset' to appear under Non-Current Assets.
         $fixedSubTypes = [Account::SUBTYPE_FIXED_ASSET, 'Non-Current Asset', 'Intangible Asset'];
-        if ($assetAccount && !in_array($assetAccount->sub_type, $fixedSubTypes)) {
+        if (!$assetAccount || self::accountLooksLikeCashOrBank($assetAccount)) {
+            $assetAccount = self::resolveFixedAssetAccount('Fixed Assets', 'AUTO-AST-FA');
+        } elseif (!in_array($assetAccount->sub_type, $fixedSubTypes, true)) {
             $assetAccount->update(['sub_type' => Account::SUBTYPE_FIXED_ASSET]);
             $assetAccount->refresh();
+        }
+
+        if ((int) ($asset->account_id ?? 0) !== (int) $assetAccount->id) {
+            $asset->forceFill(['account_id' => $assetAccount->id])->saveQuietly();
         }
 
         $payableAccount = self::resolveAccount('Accounts Payable', 'Liability', ['payable', 'creditor'], 'AUTO-LIB-AP');
@@ -1571,6 +1576,14 @@ class LedgerService
         // 2. Any fixed-asset sub_type account (use the first one found)
         $account = (clone $base)
             ->whereIn('sub_type', $fixedSubTypes)
+            ->whereRaw('LOWER(name) not like ?', ['%bank%'])
+            ->whereRaw('LOWER(name) not like ?', ['%cash%'])
+            ->whereRaw('LOWER(name) not like ?', ['%wallet%'])
+            ->whereRaw('LOWER(name) not like ?', ['%petty%'])
+            ->whereRaw('LOWER(name) not like ?', ['%moniepoint%'])
+            ->whereRaw('LOWER(name) not like ?', ['%opay%'])
+            ->whereRaw('LOWER(name) not like ?', ['%palmpay%'])
+            ->whereRaw('LOWER(name) not like ?', ['%kuda%'])
             ->orderBy('id')
             ->first();
         if ($account) {
@@ -1589,6 +1602,24 @@ class LedgerService
         ], self::resolveTenantPayload('accounts'));
 
         return Account::create(self::filterAccountPayload($payload));
+    }
+
+    private static function accountLooksLikeCashOrBank(Account $account): bool
+    {
+        $name = strtolower(trim((string) ($account->name ?? '')));
+        $subType = strtolower(trim((string) ($account->sub_type ?? '')));
+
+        return str_contains($name, 'bank')
+            || str_contains($name, 'cash')
+            || str_contains($name, 'wallet')
+            || str_contains($name, 'petty')
+            || str_contains($name, 'moniepoint')
+            || str_contains($name, 'opay')
+            || str_contains($name, 'palmpay')
+            || str_contains($name, 'kuda')
+            || str_contains($subType, 'bank')
+            || str_contains($subType, 'cash')
+            || str_contains($subType, 'wallet');
     }
 
     private static function nextCode(string $prefix): string
