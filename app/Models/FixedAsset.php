@@ -27,10 +27,12 @@ class FixedAsset extends Model
         'salvage_value',
         'useful_life_months',
         'depreciation_method',
+        'depreciation_frequency',
         'status',
         'accumulated_depreciation',
         'book_value',
         'last_depreciated_on',
+        'next_depreciation_on',
         'notes',
     ];
 
@@ -41,6 +43,7 @@ class FixedAsset extends Model
         'accumulated_depreciation' => 'decimal:2',
         'book_value' => 'decimal:2',
         'last_depreciated_on' => 'date',
+        'next_depreciation_on' => 'date',
     ];
 
     public function assetAccount(): BelongsTo

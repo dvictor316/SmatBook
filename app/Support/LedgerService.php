@@ -202,20 +202,21 @@ class LedgerService
             ->where('transaction_type', Transaction::TYPE_PURCHASE)
             ->delete();
 
-        $inventoryOrPurchase = self::resolveAccount('Inventory', 'Asset', ['inventory', 'stock'], 'AUTO-AST-INV');
+        $inventoryOrPurchase = self::resolveInventoryOrAssetAccount($purchase);
         $payableAccount = self::resolveAccount('Accounts Payable', 'Liability', ['payable', 'creditor'], 'AUTO-LIB-AP');
         $inputVatAccount = $tax > 0
             ? self::resolveAccount('Input VAT', 'Asset', ['input vat', 'vat receivable', 'recoverable vat', 'tax receivable'], 'AUTO-AST-TAX')
             : null;
 
         if ($netInventory > 0) {
+            $purchaseType = strtolower(trim((string) ($purchase->purchase_type ?? 'inventory')));
             self::postDoubleEntry(
                 debitAccountId: $inventoryOrPurchase->id,
                 creditAccountId: $payableAccount->id,
                 amount: $netInventory,
                 date: $date,
                 reference: $reference,
-                description: 'Purchase posted: ' . $reference,
+                description: ($purchaseType === 'fixed_asset' ? 'Fixed asset purchase: ' : 'Purchase posted: ') . $reference,
                 transactionType: Transaction::TYPE_PURCHASE,
                 relatedId: $purchase->id,
                 relatedType: Purchase::class,
@@ -241,6 +242,64 @@ class LedgerService
                 branchName: $branchName
             );
         }
+    }
+
+    /**
+     * Post the acquisition journal for a fixed asset registered through the Fixed Assets module.
+     *
+     * DR Fixed Asset Account (account_id on the FixedAsset)
+     * CR Accounts Payable
+     *
+     * Idempotent: safe to call multiple times for the same asset.
+     */
+    public static function postFixedAssetAcquisition(\App\Models\FixedAsset $asset): void
+    {
+        if (!self::isReady()) {
+            return;
+        }
+
+        $cost = round((float) ($asset->cost ?? 0), 2);
+        if ($cost <= 0) {
+            return;
+        }
+
+        // Idempotent guard – delete any existing acquisition journal for this asset
+        Transaction::withoutGlobalScopes()
+            ->where('related_id', $asset->id)
+            ->where('related_type', \App\Models\FixedAsset::class)
+            ->where('transaction_type', Transaction::TYPE_JOURNAL)
+            ->delete();
+
+        self::$currentCompanyId = (int) ($asset->company_id
+            ?? Auth::user()?->company_id
+            ?? session('current_tenant_id')
+            ?? 0) ?: null;
+
+        // Debit the asset's own ledger account (must be a Fixed Asset sub_type account)
+        $assetAccount = Account::withoutGlobalScopes()->find($asset->account_id)
+            ?? self::resolveFixedAssetAccount('Fixed Assets', 'AUTO-AST-FA');
+
+        $payableAccount = self::resolveAccount('Accounts Payable', 'Liability', ['payable', 'creditor'], 'AUTO-LIB-AP');
+
+        $reference  = 'FA-ACQ-' . $asset->id;
+        $date       = $asset->acquired_on ?? now()->toDateString();
+        $branchId   = $asset->branch_id   ?? null;
+        $branchName = $asset->branch_name ?? null;
+
+        self::postDoubleEntry(
+            debitAccountId:  $assetAccount->id,
+            creditAccountId: $payableAccount->id,
+            amount:          $cost,
+            date:            $date,
+            reference:       $reference,
+            description:     'Fixed asset acquired: ' . $asset->name,
+            transactionType: Transaction::TYPE_JOURNAL,
+            relatedId:       $asset->id,
+            relatedType:     \App\Models\FixedAsset::class,
+            userId:          $asset->created_by ?? auth()->id(),
+            branchId:        $branchId,
+            branchName:      $branchName
+        );
     }
 
     public static function postPurchasePayment(
@@ -1448,6 +1507,77 @@ class LedgerService
             'is_active' => 1,
         ];
         $payload = array_merge($payload, self::resolveTenantPayload('accounts'));
+
+        return Account::create(self::filterAccountPayload($payload));
+    }
+
+    /**
+     * Resolve the debit account for a purchase based on its purchase_type.
+     * – fixed_asset → use asset_account_id (or auto-create a Fixed Asset account)
+     * – anything else → Inventory
+     */
+    private static function resolveInventoryOrAssetAccount(Purchase $purchase): Account
+    {
+        $purchaseType  = strtolower(trim((string) ($purchase->purchase_type ?? 'inventory')));
+        $assetAcctId   = (int) ($purchase->asset_account_id ?? 0);
+
+        if ($purchaseType === 'fixed_asset') {
+            if ($assetAcctId > 0) {
+                $account = Account::withoutGlobalScopes()->find($assetAcctId);
+                if ($account) {
+                    return $account;
+                }
+            }
+            return self::resolveFixedAssetAccount('Fixed Assets', 'AUTO-AST-FA');
+        }
+
+        return self::resolveAccount('Inventory', 'Asset', ['inventory', 'stock'], 'AUTO-AST-INV');
+    }
+
+    /**
+     * Find or auto-create a Fixed Asset (non-current asset) ledger account.
+     * Uses sub_type = Account::SUBTYPE_FIXED_ASSET ('Fixed Asset') so it appears
+     * in the Balance Sheet's Non-Current Assets section.
+     */
+    private static function resolveFixedAssetAccount(string $name, string $autoCode): Account
+    {
+        $cid = self::$currentCompanyId;
+
+        $base = Account::withoutGlobalScopes()->where('type', Account::TYPE_ASSET);
+        if ($cid && Schema::hasColumn('accounts', 'company_id')) {
+            $base->where('company_id', $cid);
+        }
+
+        $fixedSubTypes = [Account::SUBTYPE_FIXED_ASSET, 'Non-Current Asset', 'Intangible Asset'];
+
+        // 1. Exact name match with a fixed-asset sub_type
+        $account = (clone $base)
+            ->where('name', $name)
+            ->whereIn('sub_type', $fixedSubTypes)
+            ->first();
+        if ($account) {
+            return $account;
+        }
+
+        // 2. Any fixed-asset sub_type account (use the first one found)
+        $account = (clone $base)
+            ->whereIn('sub_type', $fixedSubTypes)
+            ->orderBy('id')
+            ->first();
+        if ($account) {
+            return $account;
+        }
+
+        // 3. Auto-create with sub_type = Fixed Asset
+        $payload = array_merge([
+            'code'            => self::nextCode($autoCode),
+            'name'            => $name,
+            'type'            => Account::TYPE_ASSET,
+            'sub_type'        => Account::SUBTYPE_FIXED_ASSET,
+            'opening_balance' => 0,
+            'current_balance' => 0,
+            'is_active'       => 1,
+        ], self::resolveTenantPayload('accounts'));
 
         return Account::create(self::filterAccountPayload($payload));
     }

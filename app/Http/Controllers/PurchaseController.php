@@ -24,6 +24,7 @@ use App\Models\Transaction;
 use App\Support\BranchInventoryService;
 use App\Support\LedgerService;
 use App\Support\TaxComputationService;
+use App\Models\Account;
 use App\Models\Transaction as LedgerTransaction;
 // -----------------------------
 
@@ -371,6 +372,16 @@ private function applyBranchScope($query, string $table = 'purchases')
             }
         }
         
+        $fixedAssetAccounts = collect();
+        if (Schema::hasTable('accounts')) {
+            $faQuery = Account::query()
+                ->where('is_active', true)
+                ->whereIn('sub_type', ['Fixed Asset', 'Non-Current Asset', 'Intangible Asset'])
+                ->orderBy('name');
+            $this->applyTenantScope($faQuery, 'accounts');
+            $fixedAssetAccounts = $faQuery->get();
+        }
+
         return view('Purchases.add-purchases', compact(
             'vendors',
             'suppliers',
@@ -381,7 +392,8 @@ private function applyBranchScope($query, string $table = 'purchases')
             'referenceNo',
             'invoiceSerialNo',
             'activeBranch',
-            'initialProducts'
+            'initialProducts',
+            'fixedAssetAccounts'
         ));
     }
 
@@ -403,6 +415,8 @@ private function applyBranchScope($query, string $table = 'purchases')
 
         $request->merge(['products' => $filteredProducts]);
 
+        $isFixedAsset = $request->input('purchase_type') === 'fixed_asset';
+
         // Validate the request (schema-safe)
         $validated = $request->validate([
             'purchase_id' => 'nullable|string|max:50',
@@ -413,9 +427,11 @@ private function applyBranchScope($query, string $table = 'purchases')
             'due_date' => 'nullable|date|after_or_equal:purchase_date',
             'reference_no' => 'nullable|string|max:50',
             'invoice_serial_no' => 'nullable|string|max:50',
-            'products' => 'required|array|min:1',
-            'products.*.product_id' => 'required|exists:products,id',
-            'products.*.quantity' => 'required|numeric|min:0.01',
+            'purchase_type' => 'nullable|in:inventory,fixed_asset',
+            'asset_account_id' => 'nullable|exists:accounts,id',
+            'products' => $isFixedAsset ? 'nullable|array' : 'required|array|min:1',
+            'products.*.product_id' => $isFixedAsset ? 'nullable' : 'required|exists:products,id',
+            'products.*.quantity' => 'required_unless:purchase_type,fixed_asset|nullable|numeric|min:0.01',
             'products.*.rate' => 'required|numeric|min:0',
             'products.*.unit' => 'nullable|string|max:20',
             'products.*.discount' => 'nullable|numeric|min:0',
@@ -502,10 +518,17 @@ private function applyBranchScope($query, string $table = 'purchases')
             if (Schema::hasColumn('purchases', 'user_id')) {
                 $purchasePayload['user_id'] = auth()->id();
             }
+            if (Schema::hasColumn('purchases', 'purchase_type')) {
+                $purchasePayload['purchase_type'] = $request->input('purchase_type') ?? 'inventory';
+            }
+            if (Schema::hasColumn('purchases', 'asset_account_id')) {
+                $purchasePayload['asset_account_id'] = $request->input('asset_account_id') ?: null;
+            }
 
             $purchase = Purchase::create($purchasePayload);
 
-            // Create purchase items
+            // Create purchase items (skip for fixed asset purchases — no stock to increment)
+            if (!$isFixedAsset) {
             foreach ($request->products as $item) {
                 $itemAmount = ($item['quantity'] * $item['rate']) - ($item['discount'] ?? 0);
                 $product = Product::query()->lockForUpdate()->findOrFail($item['product_id']);
@@ -556,6 +579,7 @@ private function applyBranchScope($query, string $table = 'purchases')
                     (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
                 );
             }
+            } // end if (!$isFixedAsset)
 
             LedgerService::postPurchase($purchase->fresh());
 

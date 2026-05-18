@@ -13,6 +13,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('subscriptions:expire-due')->hourly();
+        $schedule->command('fixed-assets:depreciate-due')->dailyAt('01:15')->withoutOverlapping();
 
         // Recurring invoice engine – runs every morning at 07:00
         $schedule->job(new \App\Jobs\ProcessRecurringInvoicesJob)

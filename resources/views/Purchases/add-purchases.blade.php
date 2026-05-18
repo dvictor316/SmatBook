@@ -147,8 +147,72 @@
                 </div>
             </div>
 
-            
+            {{-- ========== Purchase Type Selector ========== --}}
             <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card p-3">
+                        <h5 class="card-title mb-3">Purchase Type</h5>
+                        <div class="row g-3 align-items-start">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">What are you purchasing?</label>
+                                <div class="d-flex gap-4 mt-1">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="purchase_type"
+                                               id="type_inventory" value="inventory"
+                                               {{ old('purchase_type', 'inventory') === 'inventory' ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="type_inventory">
+                                            <strong>Inventory / Goods</strong>
+                                            <small class="text-muted d-block">Products that go into stock</small>
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="purchase_type"
+                                               id="type_fixed_asset" value="fixed_asset"
+                                               {{ old('purchase_type') === 'fixed_asset' ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="type_fixed_asset">
+                                            <strong>Fixed Asset</strong>
+                                            <small class="text-muted d-block">Equipment, furniture, vehicles, etc.</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6" id="fixedAssetAccountWrapper" style="display:none;">
+                                <label for="asset_account_id" class="form-label fw-semibold">Asset Ledger Account</label>
+                                <select id="asset_account_id" name="asset_account_id"
+                                        class="form-select @error('asset_account_id') is-invalid @enderror">
+                                    <option value="">-- Select Fixed Asset Account --</option>
+                                    @foreach($fixedAssetAccounts ?? collect() as $acct)
+                                        <option value="{{ $acct->id }}"
+                                            {{ old('asset_account_id') == $acct->id ? 'selected' : '' }}>
+                                            {{ $acct->name }}{{ $acct->code ? ' (' . $acct->code . ')' : '' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('asset_account_id')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                                @if(($fixedAssetAccounts ?? collect())->isEmpty())
+                                    <small class="text-warning d-block mt-1">
+                                        No fixed asset accounts found. Create one in Chart of Accounts with sub-type "Fixed Asset".
+                                    </small>
+                                @endif
+                                <small class="text-muted d-block mt-1">
+                                    This purchase will appear in the Balance Sheet under Non-Current Assets.
+                                </small>
+                            </div>
+                        </div>
+                        <div id="fixedAssetPurchaseNote" class="alert alert-info mt-3 mb-0" style="display:none;">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>Fixed Asset Purchase:</strong>
+                            Enter the asset cost as a single line item below. No stock will be incremented.
+                            The amount is posted as: DR Asset Account / CR Accounts Payable.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
+            <div class="row mb-4" id="inventoryItemsSection">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
@@ -624,6 +688,8 @@
             document.getElementById('purchaseForm').addEventListener('submit', function(e) {
                 const supplierId = document.getElementById('supplier_id').value;
                 const purchaseDate = document.getElementById('purchase_date').value;
+                const purchaseType = document.querySelector('input[name="purchase_type"]:checked')?.value ?? 'inventory';
+                const isFixedAsset = purchaseType === 'fixed_asset';
                 const productRows = Array.from(document.querySelectorAll('#productsTableBody tr:not(#noProductsRow)'));
                 const filledRows = productRows.filter(rowHasSelectedProduct);
 
@@ -639,7 +705,7 @@
                     return;
                 }
 
-                if (filledRows.length === 0) {
+                if (!isFixedAsset && filledRows.length === 0) {
                     e.preventDefault();
                     alert('Please select at least one product before saving this purchase');
                     return;
@@ -650,5 +716,27 @@
                 });
             });
         });
+    </script>
+
+    <script>
+        // Purchase type toggle: show/hide asset account selector and products section label
+        (function () {
+            function togglePurchaseTypeUI() {
+                var isFixedAsset = (document.querySelector('input[name="purchase_type"]:checked') || {}).value === 'fixed_asset';
+                var faWrapper    = document.getElementById('fixedAssetAccountWrapper');
+                var faNote       = document.getElementById('fixedAssetPurchaseNote');
+                var addProductBtn = document.getElementById('addProductBtn');
+
+                if (faWrapper)    faWrapper.style.display    = isFixedAsset ? 'block' : 'none';
+                if (faNote)       faNote.style.display       = isFixedAsset ? 'block' : 'none';
+                if (addProductBtn) addProductBtn.style.display = isFixedAsset ? 'none'  : '';
+            }
+
+            document.querySelectorAll('input[name="purchase_type"]').forEach(function (radio) {
+                radio.addEventListener('change', togglePurchaseTypeUI);
+            });
+
+            togglePurchaseTypeUI(); // run on page load
+        })();
     </script>
 @endsection

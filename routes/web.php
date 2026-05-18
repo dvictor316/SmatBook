@@ -833,6 +833,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::middleware('plan.access:enterprise')->group(function () {
             Route::get('/fixed-assets', [FixedAssetController::class, 'index'])->name('fixed-assets.index');
             Route::post('/fixed-assets', [FixedAssetController::class, 'store'])->name('fixed-assets.store');
+            Route::post('/fixed-assets/depreciate-due', [FixedAssetController::class, 'depreciateDue'])->name('fixed-assets.depreciate-due');
             Route::post('/fixed-assets/{fixedAsset}/depreciate', [FixedAssetController::class, 'depreciate'])->name('fixed-assets.depreciate');
             Route::get('/budgets', [BudgetController::class, 'index'])->name('budgets.index');
             Route::post('/budgets', [BudgetController::class, 'store'])->name('budgets.store');

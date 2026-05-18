@@ -30,7 +30,9 @@ class Purchase extends Model
         'paid_amount',  // Added this based on your tinker output
         'paid_at',      // Added this based on your tinker output
         'notes',
-        'status'
+        'status',
+        'purchase_type',
+        'asset_account_id',
     ];
 
     public function getBranchLabelAttribute(): ?string
