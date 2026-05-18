@@ -263,11 +263,13 @@ class LedgerService
             return;
         }
 
-        // Idempotent guard – delete any existing acquisition journal for this asset
+        // Idempotent guard: only replace the acquisition journal, not depreciation lines.
+        $reference  = 'FA-ACQ-' . $asset->id;
         Transaction::withoutGlobalScopes()
             ->where('related_id', $asset->id)
             ->where('related_type', \App\Models\FixedAsset::class)
             ->where('transaction_type', Transaction::TYPE_JOURNAL)
+            ->where('reference', $reference)
             ->delete();
 
         self::$currentCompanyId = (int) ($asset->company_id
@@ -289,7 +291,6 @@ class LedgerService
 
         $payableAccount = self::resolveAccount('Accounts Payable', 'Liability', ['payable', 'creditor'], 'AUTO-LIB-AP');
 
-        $reference  = 'FA-ACQ-' . $asset->id;
         $date       = $asset->acquired_on ?? now()->toDateString();
         $branchId   = $asset->branch_id   ?? null;
         $branchName = $asset->branch_name ?? null;

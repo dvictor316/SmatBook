@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Account;
 use App\Models\FixedAsset;
 use App\Models\FixedAssetDepreciation;
 use App\Models\Transaction;
@@ -146,6 +147,8 @@ class FixedAssetDepreciationService
             return ['posted' => false, 'message' => 'This asset is already fully depreciated.'];
         }
 
+        $this->prepareReportingAccounts($asset);
+
         $runDate = $periodEnd->toDateString();
         $reference = 'FADP-' . now()->format('Ymd-His') . '-' . $asset->id . '-' . $periodEnd->format('Ym');
         $description = 'Depreciation for fixed asset ' . ($asset->asset_code ?: $asset->name) . ' through ' . $periodEnd->format('M Y');
@@ -200,6 +203,25 @@ class FixedAssetDepreciationService
             'related_type' => FixedAsset::class,
             'user_id' => $userId,
         ]);
+    }
+
+    private function prepareReportingAccounts(FixedAsset $asset): void
+    {
+        $depreciationAccount = Account::withoutGlobalScopes()->find($asset->depreciation_account_id);
+        if ($depreciationAccount && ($depreciationAccount->type !== Account::TYPE_ASSET || $depreciationAccount->sub_type !== Account::SUBTYPE_FIXED_ASSET)) {
+            $depreciationAccount->update([
+                'type' => Account::TYPE_ASSET,
+                'sub_type' => Account::SUBTYPE_FIXED_ASSET,
+            ]);
+        }
+
+        $expenseAccount = Account::withoutGlobalScopes()->find($asset->expense_account_id);
+        if ($expenseAccount && ($expenseAccount->type !== Account::TYPE_EXPENSE || $expenseAccount->sub_type !== 'Depreciation Expense')) {
+            $expenseAccount->update([
+                'type' => Account::TYPE_EXPENSE,
+                'sub_type' => 'Depreciation Expense',
+            ]);
+        }
     }
 
     private function isDue(FixedAsset $asset, Carbon $asOf): bool
