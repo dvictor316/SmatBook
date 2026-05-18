@@ -745,7 +745,7 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                         @foreach($caGroups as $group)
                             @php
                             $trivialCaLabels = ['current assets', 'current asset', 'other current assets', 'current', 'assets', 'asset'];
-                            $showCaGroupHead = $caGroups->count() > 1 && !in_array(strtolower(trim($group['label'])), $trivialCaLabels, true);
+                            $showCaGroupHead = $group['items']->count() > 1 && !in_array(strtolower(trim($group['label'])), $trivialCaLabels, true);
                             @endphp
                             @if($showCaGroupHead)
                                 <tr class="bs-group-head">
@@ -800,7 +800,7 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                         @foreach($faGroups as $group)
                             @php
                             $trivialFaLabels = ['fixed assets', 'fixed asset', 'non-current assets', 'non-current asset', 'property plant and equipment', 'ppe'];
-                            $showFaGroupHead = $faGroups->count() > 1 && !in_array(strtolower(trim($group['label'])), $trivialFaLabels, true);
+                            $showFaGroupHead = $group['items']->count() > 1 && !in_array(strtolower(trim($group['label'])), $trivialFaLabels, true);
                             @endphp
                             @if($showFaGroupHead)
                                 <tr class="bs-group-head">
