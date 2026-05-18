@@ -389,10 +389,19 @@ class BalanceSheetController extends Controller
         if (str_contains($name, 'vehicle') || str_contains($subType, 'vehicle')) {
             return ['section' => 'fixed', 'group' => 'Vehicles', 'display' => (string) ($account->name ?? 'Vehicles')];
         }
-        if (str_contains($name, 'equipment') || str_contains($subType, 'equipment')) {
+        if (str_contains($name, 'equipment') || str_contains($name, 'generator')
+            || str_contains($name, 'machinery') || str_contains($name, 'machine')
+            || str_contains($name, 'appliance') || str_contains($name, 'motor')
+            || str_contains($name, 'tools') || str_contains($name, 'computer')
+            || str_contains($name, 'laptop') || str_contains($name, 'printer')
+            || str_contains($name, 'server') || str_contains($name, 'air condition')
+            || str_contains($subType, 'equipment')) {
             return ['section' => 'fixed', 'group' => 'Equipment', 'display' => (string) ($account->name ?? 'Equipment')];
         }
-        if (str_contains($name, 'property') || str_contains($name, 'plant') || str_contains($subType, 'property') || str_contains($subType, 'plant')) {
+        if (str_contains($name, 'property') || str_contains($name, 'plant')
+            || str_contains($name, 'land') || str_contains($name, 'building')
+            || str_contains($name, 'warehouse') || str_contains($name, 'factory')
+            || str_contains($subType, 'property') || str_contains($subType, 'plant')) {
             return ['section' => 'fixed', 'group' => 'Property, Plant & Equipment', 'display' => (string) ($account->name ?? 'Property, Plant & Equipment')];
         }
         if ($this->accountLooksLikeFixedAsset($account)) {
