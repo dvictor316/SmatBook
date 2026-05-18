@@ -3416,6 +3416,7 @@ public function destroy($id)
 
         // ── Operating Expenses: query expenses table directly ─────────────────
         $expensesByDate = collect();
+        $operatingExpenseBreakdown = collect();
         if (Schema::hasTable('expenses') && Schema::hasColumn('expenses', 'amount')) {
             // expense_date may not exist or be null; fall back to created_at
             $expDateExpr = Schema::hasColumn('expenses', 'expense_date')
@@ -3433,6 +3434,20 @@ public function destroy($id)
                 ->selectRaw("{$expDateExpr} as txn_date, SUM(COALESCE(expenses.amount, 0)) as total")
                 ->groupByRaw($expDateExpr)
                 ->get()->keyBy('txn_date');
+
+            $expenseNameExpression = "COALESCE(NULLIF(TRIM(expenses.category), ''), NULLIF(TRIM(expenses.reference), ''), NULLIF(TRIM(expenses.notes), ''), 'Other Operating Expense')";
+            $expenseBreakdownQuery = DB::table('expenses')
+                ->when($companyId > 0 && Schema::hasColumn('expenses', 'company_id'),
+                    fn ($q) => $q->where('expenses.company_id', $companyId))
+                ->where(DB::raw('LOWER(COALESCE(expenses.status, \'pending\'))'), '!=', 'rejected')
+                ->whereBetween(DB::raw($expDateExpr), [$startDate, $endDate]);
+            $applyBranch($expenseBreakdownQuery, 'expenses');
+
+            $operatingExpenseBreakdown = $expenseBreakdownQuery
+                ->selectRaw("{$expenseNameExpression} as name, SUM(COALESCE(expenses.amount, 0)) as total")
+                ->groupByRaw($expenseNameExpression)
+                ->orderByRaw("LOWER({$expenseNameExpression})")
+                ->get();
         }
 
         $depreciationByDate = collect();
@@ -3511,7 +3526,8 @@ public function destroy($id)
 
         return $this->renderReportView('profit-loss-list', compact(
             'profitLossData', 'totals', 'presets', 'activePreset',
-            'activeBranch', 'allBranches', 'startDate', 'endDate'
+            'activeBranch', 'allBranches', 'startDate', 'endDate',
+            'operatingExpenseBreakdown'
         ));
     }
 

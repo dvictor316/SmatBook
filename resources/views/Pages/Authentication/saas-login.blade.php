@@ -712,7 +712,7 @@
                 <div class="mb-4">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <label class="label-caps m-0">Secure Passcode</label>
-                        <a href="{{ route('password.request', ['plan' => $persistedPlan, 'cycle' => $persistedCycle]) }}" class="text-decoration-none fw-bold" style="color: #dc2626; font-size: 10px; text-transform: uppercase;">Lost Key?</a>
+                        <a href="{{ route('password.request', ['plan' => $persistedPlan, 'cycle' => $persistedCycle]) }}" class="text-decoration-none fw-bold" style="color: #dc2626; font-size: 10px; text-transform: uppercase;">Forgot Password?</a>
                     </div>
                     <div class="pass-container">
                         <input type="password" name="password" id="pass_input" class="form-control input-smat w-100" placeholder="••••••••" required>

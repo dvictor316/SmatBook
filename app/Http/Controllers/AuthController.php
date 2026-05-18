@@ -408,9 +408,10 @@ class AuthController extends Controller
     {
         $this->clearClientAuthState($request);
 
+        $request->session()->flash('success', 'Logout successful. You have been signed out.');
+
         return $this->applyNoStoreHeaders(
-            redirect()->route('login', ['logout' => 1, 'flush' => 1])
-                ->with('success', 'Logged out successfully. You can now sign in with another account.'),
+            redirect()->route('login', ['logout' => 1, 'flush' => 1]),
             true
         );
     }

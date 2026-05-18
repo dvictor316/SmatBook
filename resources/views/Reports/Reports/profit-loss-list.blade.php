@@ -409,10 +409,17 @@
                             <td>Operating Expenses</td>
                             <td></td>
                         </tr>
-                        <tr class="pl-line">
-                            <td>Operating Expenses</td>
-                            <td class="pl-amount">{{ $fmt($grandOperatingExpense) }}</td>
-                        </tr>
+                        @forelse(($operatingExpenseBreakdown ?? collect()) as $expenseLine)
+                            <tr class="pl-line">
+                                <td>{{ $expenseLine->name ?? 'Other Operating Expense' }}</td>
+                                <td class="pl-amount">{{ $fmt((float) ($expenseLine->total ?? 0)) }}</td>
+                            </tr>
+                        @empty
+                            <tr class="pl-line">
+                                <td>Operating Expenses</td>
+                                <td class="pl-amount">{{ $fmt($grandOperatingExpense) }}</td>
+                            </tr>
+                        @endforelse
                         <tr class="pl-total">
                             <td>Total Operating Expenses</td>
                             <td class="pl-amount">{{ $fmt($grandOperatingExpense) }}</td>
