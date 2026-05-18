@@ -13,7 +13,7 @@ class SyncFixedAssetLedger extends Command
 
     public function handle(): int
     {
-        $query = FixedAsset::query()->orderBy('id');
+        $query = FixedAsset::withoutGlobalScopes()->orderBy('id');
 
         if ($this->option('id')) {
             $query->whereKey((int) $this->option('id'));

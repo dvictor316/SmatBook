@@ -824,6 +824,23 @@ class BalanceSheetController extends Controller
             'retainedEarningsLines' => $retainedEarningsLines,
         ], $isAllBranches, $consolidate);
 
+        $fixedAssetBridge = $this->fixedAssetRegisterBridgeAmount($request, $reportDate, $activeBranch);
+        if ($fixedAssetBridge > 0.005) {
+            $fixedAssets->push($this->syntheticLine(
+                'Registered Fixed Assets Pending Ledger Sync',
+                'Asset',
+                $fixedAssetBridge,
+                ['_bs_group' => 'Other Fixed Assets', '_display_name' => 'Registered Fixed Assets Pending Ledger Sync', '_bs_section' => 'fixed']
+            ));
+
+            $currentLiabilities->push($this->syntheticLine(
+                'Fixed Asset Payables Pending Ledger Sync',
+                'Liability',
+                $fixedAssetBridge,
+                ['_bs_group' => 'Accounts Payable', '_display_name' => 'Fixed Asset Payables Pending Ledger Sync', '_bs_section' => 'current']
+            ));
+        }
+
         $equity = $equityCapital
             ->concat($equityRetained)
             ->concat($equityReserves)
@@ -866,6 +883,62 @@ class BalanceSheetController extends Controller
             'reconciliationReserveNeedsReview' => abs($statementDifference) >= $reviewThreshold,
             'unplacedAccounts' => $unplacedAccounts,
         ];
+    }
+
+    private function fixedAssetRegisterBridgeAmount(Request $request, Carbon $reportDate, array $activeBranch): float
+    {
+        if (!Schema::hasTable('fixed_assets') || !Schema::hasTable('transactions')) {
+            return 0.0;
+        }
+
+        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $userId = (int) ($request->user()?->id ?? 0);
+
+        $registerQuery = DB::table('fixed_assets')
+            ->whereDate('acquired_on', '<=', $reportDate->toDateString())
+            ->whereNotIn('status', ['disposed', 'archived']);
+
+        if ($companyId > 0 && Schema::hasColumn('fixed_assets', 'company_id')) {
+            $registerQuery->where('company_id', $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn('fixed_assets', 'created_by')) {
+            $registerQuery->where('created_by', $userId);
+        }
+
+        if (($activeBranch['scope'] ?? 'branch') !== 'all') {
+            $branchId = trim((string) ($activeBranch['id'] ?? ''));
+            $branchName = trim((string) ($activeBranch['name'] ?? ''));
+            if ($branchId !== '' || $branchName !== '') {
+                $registerQuery->where(function ($query) use ($branchId, $branchName) {
+                    if ($branchId !== '' && Schema::hasColumn('fixed_assets', 'branch_id')) {
+                        $query->where('branch_id', $branchId);
+                    }
+                    if ($branchName !== '' && Schema::hasColumn('fixed_assets', 'branch_name')) {
+                        $method = ($branchId !== '' && Schema::hasColumn('fixed_assets', 'branch_id')) ? 'orWhere' : 'where';
+                        $query->{$method}('branch_name', $branchName);
+                    }
+                });
+            }
+        }
+
+        $registeredCost = round((float) ($registerQuery->sum('cost') ?? 0), 2);
+        if ($registeredCost <= 0.005) {
+            return 0.0;
+        }
+
+        $postedQuery = Transaction::withoutGlobalScopes()
+            ->where('related_type', \App\Models\FixedAsset::class)
+            ->where('transaction_type', Transaction::TYPE_JOURNAL)
+            ->where('reference', 'like', 'FA-ACQ-%')
+            ->whereDate('transaction_date', '<=', $reportDate->toDateString());
+
+        $this->applyTransactionScope($postedQuery, $request);
+        if (($activeBranch['scope'] ?? 'branch') !== 'all') {
+            $this->applyLegacyOpeningBalanceBranchScope($postedQuery, $activeBranch, 'transactions');
+        }
+
+        $postedCost = round((float) ($postedQuery->sum('debit') ?? 0), 2);
+
+        return round(max(0, $registeredCost - $postedCost), 2);
     }
 
     public function index(Request $request)
