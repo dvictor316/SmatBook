@@ -827,17 +827,17 @@ class BalanceSheetController extends Controller
         $fixedAssetBridge = $this->fixedAssetRegisterBridgeAmount($request, $reportDate, $activeBranch, $fixedAssets);
         if ($fixedAssetBridge > 0.005) {
             $fixedAssets->push($this->syntheticLine(
-                'Registered Fixed Assets Pending Ledger Sync',
+                'Fixed Assets Register',
                 'Asset',
                 $fixedAssetBridge,
-                ['_bs_group' => 'Other Fixed Assets', '_display_name' => 'Registered Fixed Assets Pending Ledger Sync', '_bs_section' => 'fixed']
+                ['_bs_group' => 'Other Fixed Assets', '_display_name' => 'Fixed Assets Register', '_bs_section' => 'fixed']
             ));
 
             $currentLiabilities->push($this->syntheticLine(
-                'Fixed Asset Payables Pending Ledger Sync',
+                'Fixed Asset Payables',
                 'Liability',
                 $fixedAssetBridge,
-                ['_bs_group' => 'Accounts Payable', '_display_name' => 'Fixed Asset Payables Pending Ledger Sync', '_bs_section' => 'current']
+                ['_bs_group' => 'Accounts Payable', '_display_name' => 'Fixed Asset Payables', '_bs_section' => 'current']
             ));
         }
 
