@@ -72,11 +72,12 @@
                     </ul>
                 </li>
 
-                <li class="submenu {{ Request::is('expenses*', 'payments*', 'finance/*', 'cheques*', 'loans*', 'chart-of-accounts', 'bank-reconciliation', 'manual-journal') ? 'active subdrop' : '' }}">
+                <li class="submenu {{ Request::is('expenses*', 'payments*', 'advance-payments*', 'finance/*', 'cheques*', 'loans*', 'chart-of-accounts', 'bank-reconciliation', 'manual-journal') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-credit-card"></i><span>Money</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('expenses.index') }}">Expenses</a></li>
                         <li><a href="{{ route('payments.index') }}">Payments</a></li>
+                        @include('layout.partials.sidebars.advance-payments-menu')
                         @if(Route::has('finance.recurring.index'))
                             <li><a href="{{ route('finance.recurring.index') }}">Recurring Transactions</a></li>
                         @endif

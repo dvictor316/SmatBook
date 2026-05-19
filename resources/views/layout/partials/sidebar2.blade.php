@@ -148,6 +148,16 @@
                             <a href="{{ route('finance.collections.index') }}" class="{{ Request::is('finance/collections*') ? 'active' : '' }}"><i class="fe fe-layers"></i> <span>Collections Hub</span></a>
                         </li>
                         @endif
+                        @if(Route::has('advance-payments.customers'))
+                        <li>
+                            <a href="{{ route('advance-payments.customers') }}" class="{{ request()->routeIs('advance-payments.customers') ? 'active' : '' }}"><i class="fe fe-trending-up"></i> <span>Customer Advances</span></a>
+                        </li>
+                        @endif
+                        @if(Route::has('advance-payments.suppliers'))
+                        <li>
+                            <a href="{{ route('advance-payments.suppliers') }}" class="{{ request()->routeIs('advance-payments.suppliers') ? 'active' : '' }}"><i class="fe fe-truck"></i> <span>Supplier Advances</span></a>
+                        </li>
+                        @endif
                         @if($sidebarHasProfessional && Route::has('finance.follow-ups.index'))
                         <li>
                             <a href="{{ route('finance.follow-ups.index') }}" class="{{ Request::is('finance/follow-ups*') ? 'active' : '' }}"><i class="fe fe-calendar"></i> <span>Follow-Ups</span></a>
@@ -389,6 +399,16 @@
                         @if($sidebarHasProfessional && Route::has('finance.collections.index'))
                         <li>
                             <a href="{{ route('finance.collections.index') }}" class="{{ Request::is('finance/collections*') ? 'active' : '' }}"><i class="fe fe-layers"></i> <span>Collections Hub</span></a>
+                        </li>
+                        @endif
+                        @if(Route::has('advance-payments.customers'))
+                        <li>
+                            <a href="{{ route('advance-payments.customers') }}" class="{{ request()->routeIs('advance-payments.customers') ? 'active' : '' }}"><i class="fe fe-trending-up"></i> <span>Customer Advances</span></a>
+                        </li>
+                        @endif
+                        @if(Route::has('advance-payments.suppliers'))
+                        <li>
+                            <a href="{{ route('advance-payments.suppliers') }}" class="{{ request()->routeIs('advance-payments.suppliers') ? 'active' : '' }}"><i class="fe fe-truck"></i> <span>Supplier Advances</span></a>
                         </li>
                         @endif
                         @if($sidebarHasProfessional && Route::has('finance.follow-ups.index'))

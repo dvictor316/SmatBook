@@ -87,7 +87,7 @@
                     </ul>
                 </li>
 
-                <li class="submenu {{ Request::is('bank-*', 'cheques*', 'loans*', 'expenses*', 'payments*', 'finance/*', 'chart-of-accounts', 'manual-journal', 'exchange-rates*', 'intercompany*', 'cost-centers*', 'compliance/tax*') ? 'active subdrop' : '' }}">
+                <li class="submenu {{ Request::is('bank-*', 'cheques*', 'loans*', 'expenses*', 'payments*', 'advance-payments*', 'finance/*', 'chart-of-accounts', 'manual-journal', 'exchange-rates*', 'intercompany*', 'cost-centers*', 'compliance/tax*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-credit-card"></i><span>Money</span><span class="menu-arrow"></span></a>
                     <ul>
                         @if(Route::has('bank-accounts.index'))
@@ -110,6 +110,7 @@
                         <li><a href="{{ route('loans.index') }}">Loans & Overdraft</a></li>
                         <li><a href="{{ route('expenses.index') }}">Expenses</a></li>
                         <li><a href="{{ route('payments.index') }}">Payments</a></li>
+                        @include('layout.partials.sidebars.advance-payments-menu')
                         @if(Route::has('finance.expense-claims.index'))
                             <li><a href="{{ route('finance.expense-claims.index') }}">Expense Claims</a></li>
                         @endif

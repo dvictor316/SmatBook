@@ -14,7 +14,8 @@ use App\Http\Controllers\{
     SuperAdminDashboardController, MessageController, CalendarController, EventController,
     NotificationController, ActivityLogController, BackupController, AuditController,
     TaxCenterController, TaxFilingController, PeriodCloseController, ProjectManagementController
-    , AiQuickAgentController, RecurringTransactionController, FinanceApprovalController, FixedAssetController, BudgetController
+    , AiQuickAgentController, RecurringTransactionController, FinanceApprovalController, FixedAssetController, BudgetController,
+    AdvancePaymentController
 };
 use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\SuperAdmin\DeploymentManagerController;
@@ -651,6 +652,11 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     Route::get('/deactive-customers', [CustomerController::class, 'deactiveView'])->name('deactive-customers');
     Route::post('/customers/{id}/export', [CustomerController::class, 'export'])->name('customers.export');
     Route::get('/api/customers', [CustomerController::class, 'apiIndex'])->name('api.customers');
+
+    Route::prefix('advance-payments')->name('advance-payments.')->middleware('plan.access:basic,professional,enterprise')->group(function () {
+        Route::get('/customers', [AdvancePaymentController::class, 'customers'])->name('customers');
+        Route::get('/suppliers', [AdvancePaymentController::class, 'suppliers'])->name('suppliers');
+    });
     
     // Vendors
     Route::controller(VendorController::class)->prefix('vendors')->name('vendors.')->middleware('plan.access:basic,professional,enterprise')->group(function () {

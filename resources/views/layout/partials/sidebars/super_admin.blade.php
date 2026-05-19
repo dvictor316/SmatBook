@@ -799,6 +799,12 @@
                 <li><a href="{{ route('expenses.index') }}"><i class="fas fa-receipt"></i><span>Expenses</span></a></li>
 
                 <li><a href="{{ route('payments.index') }}"><i class="fas fa-credit-card"></i><span>Payments</span></a></li>
+                @if(Route::has('advance-payments.customers'))
+                    <li><a href="{{ route('advance-payments.customers') }}"><i class="fas fa-user-clock"></i><span>Customer Advances</span></a></li>
+                @endif
+                @if(Route::has('advance-payments.suppliers'))
+                    <li><a href="{{ route('advance-payments.suppliers') }}"><i class="fas fa-truck-ramp-box"></i><span>Supplier Advances</span></a></li>
+                @endif
                 @if(Route::has('finance.recurring.index'))
                     <li><a href="{{ route('finance.recurring.index') }}"><i class="fas fa-repeat"></i><span>Recurring Transactions</span></a></li>
                 @endif
@@ -1163,6 +1169,12 @@
                 <li><a href="{{ route('expenses.index') }}"><i class="fe fe-file-plus"></i><span>Expenses</span></a></li>
 
                 <li><a href="{{ route('payments.index') }}"><i class="fe fe-credit-card"></i><span>Payments</span></a></li>
+                @if(Route::has('advance-payments.customers'))
+                    <li><a href="{{ route('advance-payments.customers') }}"><i class="fe fe-trending-up"></i><span>Customer Advances</span></a></li>
+                @endif
+                @if(Route::has('advance-payments.suppliers'))
+                    <li><a href="{{ route('advance-payments.suppliers') }}"><i class="fe fe-truck"></i><span>Supplier Advances</span></a></li>
+                @endif
                 <li class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
                     <a href="{{ route('branches.index') }}" class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
                         <i class="fe fe-git-branch"></i><span>Branches</span>
@@ -1291,6 +1303,12 @@
                 <li><a href="{{ route('expenses.index') }}"><i class="fe fe-file-plus"></i><span>Expenses</span></a></li>
 
                 <li><a href="{{ route('payments.index') }}"><i class="fe fe-credit-card"></i><span>Payments</span></a></li>
+                @if(Route::has('advance-payments.customers'))
+                    <li><a href="{{ route('advance-payments.customers') }}"><i class="fe fe-trending-up"></i><span>Customer Advances</span></a></li>
+                @endif
+                @if(Route::has('advance-payments.suppliers'))
+                    <li><a href="{{ route('advance-payments.suppliers') }}"><i class="fe fe-truck"></i><span>Supplier Advances</span></a></li>
+                @endif
                 <li class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
                     <a href="{{ route('branches.index') }}" class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
                         <i class="fe fe-git-branch"></i><span>Branches</span>

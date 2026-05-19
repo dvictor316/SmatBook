@@ -69,7 +69,7 @@
         </ul>
     </li>
 
-    <li class="submenu {{ Request::is('payments*', 'expenses*') ? 'active subdrop' : '' }}">
+    <li class="submenu {{ Request::is('payments*', 'expenses*', 'advance-payments*') ? 'active subdrop' : '' }}">
         <a href="#"><i class="fe fe-credit-card"></i><span>Money</span><span class="menu-arrow"></span></a>
         <ul>
             @if(Route::has('payments.index'))
@@ -78,6 +78,7 @@
             @if(Route::has('expenses.index'))
                 <li><a href="{{ route('expenses.index') }}">Expenses</a></li>
             @endif
+            @include('layout.partials.sidebars.advance-payments-menu')
         </ul>
     </li>
 
