@@ -489,6 +489,11 @@ class BalanceSheetController extends Controller
 
     private function computeIncomeExpenseNet(Request $request, Carbon $fromDate, Carbon $toDate, array $activeBranch): float
     {
+        $operationalNet = $this->computeOperationalProfitLossNet($request, $fromDate, $toDate, $activeBranch);
+        if ($operationalNet !== null) {
+            return $operationalNet;
+        }
+
         $query = Transaction::withoutGlobalScopes()
             ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
             ->whereNull('transactions.deleted_at')
@@ -525,6 +530,176 @@ class BalanceSheetController extends Controller
         }
 
         return round($revenue - $expenses, 2);
+    }
+
+    private function computeOperationalProfitLossNet(Request $request, Carbon $fromDate, Carbon $toDate, array $activeBranch): ?float
+    {
+        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $userId = (int) ($request->user()?->id ?? 0);
+        $startDate = $fromDate->toDateString();
+        $endDate = $toDate->toDateString();
+        $hasOperationalSource = false;
+
+        $applyTenant = function ($query, string $table) use ($companyId, $userId) {
+            if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
+                $query->where("{$table}.company_id", $companyId);
+            } elseif ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
+                $query->where("{$table}.user_id", $userId);
+            }
+        };
+
+        $applyBranch = function ($query, string $table) use ($activeBranch) {
+            if (($activeBranch['scope'] ?? 'branch') === 'all') {
+                return;
+            }
+
+            $branchId = trim((string) ($activeBranch['id'] ?? ''));
+            $branchName = trim((string) ($activeBranch['name'] ?? ''));
+            if ($branchId === '' && $branchName === '') {
+                return;
+            }
+
+            $query->where(function ($branchQuery) use ($table, $branchId, $branchName) {
+                if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
+                    $branchQuery->where("{$table}.branch_id", $branchId);
+                }
+
+                if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
+                    $method = ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) ? 'orWhere' : 'where';
+                    $branchQuery->{$method}("{$table}.branch_name", $branchName);
+                }
+
+                if (Schema::hasColumn($table, 'branch_id')) {
+                    $branchQuery->orWhereNull("{$table}.branch_id")
+                        ->orWhere("{$table}.branch_id", '');
+                }
+            });
+        };
+
+        $salesTotal = 0.0;
+        if (Schema::hasTable('sales')) {
+            $hasOperationalSource = true;
+            $salesDateExpr = Schema::hasColumn('sales', 'order_date')
+                ? 'COALESCE(DATE(sales.order_date), DATE(sales.created_at))'
+                : 'DATE(sales.created_at)';
+            $salesAmountExpr = Schema::hasColumn('sales', 'total')
+                ? 'COALESCE(NULLIF(sales.total, 0), sales.total_amount, sales.amount_paid, 0)'
+                : (Schema::hasColumn('sales', 'total_amount')
+                    ? 'COALESCE(NULLIF(sales.total_amount, 0), sales.amount_paid, 0)'
+                    : 'COALESCE(sales.amount_paid, 0)');
+
+            $salesQuery = DB::table('sales')
+                ->whereBetween(DB::raw($salesDateExpr), [$startDate, $endDate]);
+            $applyTenant($salesQuery, 'sales');
+            $applyBranch($salesQuery, 'sales');
+            if (Schema::hasColumn('sales', 'deleted_at')) {
+                $salesQuery->whereNull('sales.deleted_at');
+            }
+            if (Schema::hasColumn('sales', 'order_status')) {
+                $salesQuery->where(function ($query) {
+                    $query->whereNull('sales.order_status')
+                        ->orWhereRaw('LOWER(sales.order_status) <> ?', ['draft']);
+                });
+            }
+
+            $salesTotal = (float) $salesQuery->sum(DB::raw($salesAmountExpr));
+        }
+
+        $purchaseTotal = 0.0;
+        if (Schema::hasTable('purchases')) {
+            $hasOperationalSource = true;
+            $purchaseDateExpr = Schema::hasColumn('purchases', 'purchase_date')
+                ? 'COALESCE(DATE(purchases.purchase_date), DATE(purchases.created_at))'
+                : 'DATE(purchases.created_at)';
+            $purchaseAmountExpr = Schema::hasColumn('purchases', 'total_amount')
+                ? 'ABS(COALESCE(purchases.total_amount, 0))'
+                : (Schema::hasColumn('purchases', 'amount')
+                    ? 'ABS(COALESCE(purchases.amount, 0))'
+                    : '0');
+
+            $purchaseQuery = DB::table('purchases')
+                ->whereBetween(DB::raw($purchaseDateExpr), [$startDate, $endDate]);
+            $applyTenant($purchaseQuery, 'purchases');
+            $applyBranch($purchaseQuery, 'purchases');
+            if (Schema::hasColumn('purchases', 'purchase_type')) {
+                $purchaseQuery->where(function ($query) {
+                    $query->whereNull('purchases.purchase_type')
+                        ->orWhereRaw('LOWER(purchases.purchase_type) <> ?', ['fixed_asset']);
+                });
+            }
+            if (Schema::hasColumn('purchases', 'status')) {
+                $purchaseQuery->where(function ($query) {
+                    $query->whereNull('purchases.status')
+                        ->orWhereRaw('LOWER(purchases.status) not in (?, ?, ?, ?, ?)', [
+                            'draft',
+                            'cancelled',
+                            'canceled',
+                            'rejected',
+                            'returned',
+                        ]);
+                });
+            }
+
+            $purchaseTotal = (float) $purchaseQuery->sum(DB::raw($purchaseAmountExpr));
+        }
+
+        $expenseTotal = 0.0;
+        if (Schema::hasTable('expenses') && Schema::hasColumn('expenses', 'amount')) {
+            $hasOperationalSource = true;
+            $expenseDateExpr = Schema::hasColumn('expenses', 'expense_date')
+                ? 'COALESCE(DATE(expenses.expense_date), DATE(expenses.created_at))'
+                : 'DATE(expenses.created_at)';
+
+            $expenseQuery = DB::table('expenses')
+                ->whereBetween(DB::raw($expenseDateExpr), [$startDate, $endDate]);
+            $applyTenant($expenseQuery, 'expenses');
+            $applyBranch($expenseQuery, 'expenses');
+            if (Schema::hasColumn('expenses', 'status')) {
+                $expenseQuery->whereRaw("LOWER(COALESCE(expenses.status, 'pending')) <> ?", ['rejected']);
+            }
+
+            $expenseTotal = (float) $expenseQuery->sum(DB::raw('COALESCE(expenses.amount, 0)'));
+        }
+
+        $journalIncome = 0.0;
+        $journalExpense = 0.0;
+        if (Schema::hasTable('transactions') && Schema::hasTable('accounts')) {
+            $journalQuery = DB::table('transactions')
+                ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
+                ->where('transactions.transaction_type', Transaction::TYPE_JOURNAL)
+                ->whereBetween(DB::raw('DATE(transactions.transaction_date)'), [$startDate, $endDate])
+                ->where(function ($query) {
+                    $query->whereRaw('LOWER(COALESCE(accounts.type, "")) = ?', ['revenue'])
+                        ->orWhereRaw('LOWER(COALESCE(accounts.type, "")) = ?', ['expense']);
+                });
+            if (Schema::hasColumn('transactions', 'deleted_at')) {
+                $journalQuery->whereNull('transactions.deleted_at');
+            }
+            if (Schema::hasColumn('accounts', 'deleted_at')) {
+                $journalQuery->whereNull('accounts.deleted_at');
+            }
+            $applyTenant($journalQuery, 'transactions');
+            $applyBranch($journalQuery, 'transactions');
+
+            $journalRows = $journalQuery
+                ->selectRaw('LOWER(COALESCE(accounts.type, "")) as account_type, SUM(COALESCE(transactions.debit, 0)) as total_debit, SUM(COALESCE(transactions.credit, 0)) as total_credit')
+                ->groupByRaw('LOWER(COALESCE(accounts.type, ""))')
+                ->get();
+
+            foreach ($journalRows as $row) {
+                if (($row->account_type ?? '') === 'revenue') {
+                    $journalIncome += (float) ($row->total_credit ?? 0) - (float) ($row->total_debit ?? 0);
+                } elseif (($row->account_type ?? '') === 'expense') {
+                    $journalExpense += (float) ($row->total_debit ?? 0) - (float) ($row->total_credit ?? 0);
+                }
+            }
+        }
+
+        if (!$hasOperationalSource) {
+            return null;
+        }
+
+        return round(($salesTotal + $journalIncome) - ($purchaseTotal + $expenseTotal + $journalExpense), 2);
     }
 
     private function computeEarningsRollup(Request $request, Carbon $reportDate, array $activeBranch): array
