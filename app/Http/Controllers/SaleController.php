@@ -1684,7 +1684,11 @@ public function create()
 
         DB::transaction(function () use ($request, $sale) {
             $companyId  = (int) ($sale->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
-            $branchCtx  = $this->getActiveBranchContext();
+            $activeBranch = $this->getActiveBranchContext();
+            $branchCtx  = [
+                'id' => $sale->branch_id ? (string) $sale->branch_id : ($activeBranch['id'] ?? null),
+                'name' => $sale->branch_name ? (string) $sale->branch_name : ($activeBranch['name'] ?? null),
+            ];
             $totalAmount = 0;
 
             // Insert credit_notes header
@@ -1692,17 +1696,26 @@ public function create()
                 'sale_id'      => $sale->id,
                 'credit_date'  => $request->return_date,
                 'total_amount' => 0,
-                'note'         => $request->input('note', 'POS Stock Return'),
                 'created_at'   => now(),
                 'updated_at'   => now(),
             ];
+            if (Schema::hasColumn('credit_notes', 'note')) {
+                $cnInsert['note'] = $request->input('note', 'POS Stock Return');
+            }
+            if (Schema::hasColumn('credit_notes', 'notes')) {
+                $cnInsert['notes'] = $request->input('note', 'POS Stock Return');
+            }
             if (Schema::hasColumn('credit_notes', 'company_id')) {
                 $cnInsert['company_id'] = $companyId;
             }
             if (Schema::hasColumn('credit_notes', 'branch_id')) {
                 $cnInsert['branch_id'] = $branchCtx['id'];
             }
-            $creditNoteId = DB::table('credit_notes')->insertGetId($cnInsert);
+            if (Schema::hasColumn('credit_notes', 'branch_name')) {
+                $cnInsert['branch_name'] = $branchCtx['name'];
+            }
+            $creditNoteColumns = array_flip(Schema::getColumnListing('credit_notes'));
+            $creditNoteId = DB::table('credit_notes')->insertGetId(array_intersect_key($cnInsert, $creditNoteColumns));
 
             foreach ($request->items as $productId => $data) {
                 $qty = (float) ($data['qty'] ?? 0);
@@ -1735,8 +1748,12 @@ public function create()
                         $unitType,
                         null
                     );
-                    Product::setInventoryContext('Sales Return');
+                    Product::setInventoryContext('Stock Return');
                     $product->increment('stock', $stockUnits);
+                    if (Schema::hasColumn('products', 'stock_quantity')) {
+                        $product->increment('stock_quantity', $stockUnits);
+                    }
+                    $product->refresh();
                     $this->branchInventory->adjustBranchStock(
                         $product,
                         $stockUnits,
