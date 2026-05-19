@@ -61,7 +61,8 @@ class ProductObserver
             ];
 
             if (Schema::hasColumn('inventory_history', 'reference')) {
-                $payload['reference'] = 'Stock Update';
+                $contextLabel = Product::consumeInventoryContext();
+                $payload['reference'] = $contextLabel ?? ($diff > 0 ? 'Stock In' : 'Stock Out');
             }
             if (Schema::hasColumn('inventory_history', 'user_id')) {
                 $payload['user_id'] = auth()->id() ?? (int) DB::table('users')->min('id');

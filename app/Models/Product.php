@@ -17,6 +17,25 @@ class Product extends Model
 
     protected $appends = ['image_url'];
 
+    /**
+     * Thread-local label used by ProductObserver to write a meaningful
+     * reference string instead of the generic "Stock Update".
+     * Set this before calling increment/decrement, then it auto-clears.
+     */
+    private static ?string $inventoryContext = null;
+
+    public static function setInventoryContext(string $label): void
+    {
+        self::$inventoryContext = $label;
+    }
+
+    public static function consumeInventoryContext(): ?string
+    {
+        $label = self::$inventoryContext;
+        self::$inventoryContext = null;
+        return $label;
+    }
+
     protected $fillable = [
         'user_id',
         'company_id',

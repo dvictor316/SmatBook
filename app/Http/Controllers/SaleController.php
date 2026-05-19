@@ -908,6 +908,7 @@ public function store(Request $request)
 
 	    $paidAmount = (float) $request->paid;
 	    $totalAmount = (float) $request->total;
+        $saleItems = $this->mergeMatchingPosSaleItems($request->input('items', []));
 	    $requestedWalletAmount = round(max(0, (float) $request->input('wallet_amount', 0)), 2);
 	    $paymentMethod = strtolower((string) $request->payment_method);
 	    $splitDetails = $this->normalizeSplitDetails($request->input('split_details', []));
@@ -1069,7 +1070,7 @@ $sale = Sale::create([
         $runningDiscount = 0;
 
         // --- 3. PROCESS ITEMS ---
-        foreach ($request->items as $itemData) {
+        foreach ($saleItems as $itemData) {
             $product = Product::lockForUpdate()->find($itemData['id']);
             if (!$product) {
                 throw new \RuntimeException('One or more selected products are not available for this tenant/branch.');
@@ -1365,6 +1366,69 @@ $sale = Sale::create([
         );
     }
 
+    private function mergeMatchingPosSaleItems(array $items): array
+    {
+        $merged = [];
+
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $productId = (int) ($item['id'] ?? 0);
+            $qty = round(max(0, (float) ($item['qty'] ?? 0)), 2);
+            if ($productId <= 0 || $qty <= 0) {
+                continue;
+            }
+
+            $unitType = strtolower(trim((string) ($item['unitType'] ?? 'unit')));
+            $price = round((float) ($item['price'] ?? 0), 2);
+            $priceLevel = strtolower(trim((string) ($item['priceLevel'] ?? 'retail')));
+            $discountType = strtolower(trim((string) ($item['discountType'] ?? $item['discount_type'] ?? 'percent')));
+            $discountValue = round((float) ($item['discountValue'] ?? $item['discount_value'] ?? ($item['discount'] ?? 0)), 2);
+            $discountPercent = round((float) ($item['discount'] ?? ($discountType === 'percent' ? $discountValue : 0)), 4);
+            $tax = round((float) ($item['tax'] ?? 0), 4);
+
+            $key = implode('|', [
+                $productId,
+                $unitType,
+                number_format($price, 2, '.', ''),
+                $priceLevel,
+                $discountType,
+                number_format($discountValue, 2, '.', ''),
+                number_format($discountPercent, 4, '.', ''),
+                number_format($tax, 4, '.', ''),
+            ]);
+
+            if (!isset($merged[$key])) {
+                $item['id'] = $productId;
+                $item['qty'] = $qty;
+                $item['unitType'] = $unitType;
+                $item['price'] = $price;
+                $item['priceLevel'] = $priceLevel;
+                $item['discountType'] = $discountType;
+                $item['discountValue'] = $discountValue;
+                $item['discount'] = $discountPercent;
+                $item['tax'] = $tax;
+                if (isset($item['stockUnits'])) {
+                    $item['stockUnits'] = round(max(0, (float) $item['stockUnits']), 2);
+                }
+                $merged[$key] = $item;
+                continue;
+            }
+
+            $merged[$key]['qty'] = round(((float) ($merged[$key]['qty'] ?? 0)) + $qty, 2);
+            if (isset($item['stockUnits']) || isset($merged[$key]['stockUnits'])) {
+                $merged[$key]['stockUnits'] = round(
+                    max(0, (float) ($merged[$key]['stockUnits'] ?? 0)) + max(0, (float) ($item['stockUnits'] ?? 0)),
+                    2
+                );
+            }
+        }
+
+        return array_values($merged);
+    }
+
     private function generateInvoiceNo() {
         return $this->generateUniqueSaleReference('invoice_no', 'INV-' . strtoupper(Carbon::now()->format('ymd')) . '-');
     }
@@ -1550,5 +1614,124 @@ public function create()
             'card_account_id' => !empty($splitDetails['card_account_id']) ? (int) $splitDetails['card_account_id'] : null,
             'transfer_account_id' => !empty($splitDetails['transfer_account_id']) ? (int) $splitDetails['transfer_account_id'] : null,
         ];
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // POS Stock Returns
+    // ─────────────────────────────────────────────────────────────
+
+    public function showPosReturn(Request $request)
+    {
+        $query = Sale::with(['customer', 'items.product']);
+        $this->applyTenantScope($query, 'sales');
+        $this->applyBranchScope($query, 'sales');
+
+        // Filter to POS sales only
+        if (Schema::hasColumn('sales', 'terminal_id')) {
+            $query->whereNotNull('terminal_id');
+        } elseif (Schema::hasColumn('sales', 'payment_details')) {
+            $query->where(function ($builder) {
+                $builder->where('payment_details->source', 'pos')
+                    ->orWhere('payment_details', 'like', '%"source":"pos"%');
+            });
+        }
+
+        $sales = $query->orderByDesc('created_at')->get();
+
+        $selectedSale = null;
+        if ($request->filled('sale_id')) {
+            $selectedSale = Sale::with('items.product')->find((int) $request->sale_id);
+        }
+
+        return view('pos.return', compact('sales', 'selectedSale'));
+    }
+
+    public function storePosReturn(Request $request)
+    {
+        $request->validate([
+            'sale_id'     => 'required|exists:sales,id',
+            'return_date' => 'required|date',
+            'items'       => 'required|array|min:1',
+        ]);
+
+        $sale = Sale::with('items.product')->findOrFail((int) $request->sale_id);
+
+        DB::transaction(function () use ($request, $sale) {
+            $companyId  = (int) ($sale->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $branchCtx  = $this->getActiveBranchContext();
+            $totalAmount = 0;
+
+            // Insert credit_notes header
+            $cnInsert = [
+                'sale_id'      => $sale->id,
+                'credit_date'  => $request->return_date,
+                'total_amount' => 0,
+                'note'         => $request->input('note', 'POS Stock Return'),
+                'created_at'   => now(),
+                'updated_at'   => now(),
+            ];
+            if (Schema::hasColumn('credit_notes', 'company_id')) {
+                $cnInsert['company_id'] = $companyId;
+            }
+            if (Schema::hasColumn('credit_notes', 'branch_id')) {
+                $cnInsert['branch_id'] = $branchCtx['id'];
+            }
+            $creditNoteId = DB::table('credit_notes')->insertGetId($cnInsert);
+
+            foreach ($request->items as $productId => $data) {
+                $qty = (float) ($data['qty'] ?? 0);
+                if ($qty <= 0) {
+                    continue;
+                }
+
+                $unitPrice  = (float) ($data['unit_price'] ?? 0);
+                $unitType   = $data['unit_type'] ?? 'unit';
+                $lineTotal  = $qty * $unitPrice;
+                $totalAmount += $lineTotal;
+
+                // Insert credit_note_items
+                DB::table('credit_note_items')->insert([
+                    'credit_note_id' => $creditNoteId,
+                    'product_id'     => $productId,
+                    'qty'            => $qty,
+                    'unit_price'     => $unitPrice,
+                    'total_price'    => $lineTotal,
+                    'created_at'     => now(),
+                    'updated_at'     => now(),
+                ]);
+
+                // Return stock
+                $product = Product::lockForUpdate()->find((int) $productId);
+                if ($product) {
+                    $stockUnits = InventoryQuantity::resolveSaleStockUnits(
+                        $product,
+                        $qty,
+                        $unitType,
+                        null
+                    );
+                    Product::setInventoryContext('Sales Return');
+                    $product->increment('stock', $stockUnits);
+                    $this->branchInventory->adjustBranchStock(
+                        $product,
+                        $stockUnits,
+                        $branchCtx,
+                        $companyId
+                    );
+                }
+            }
+
+            // Update credit_notes total
+            DB::table('credit_notes')->where('id', $creditNoteId)->update(['total_amount' => $totalAmount]);
+
+            // Post accounting entry
+            LedgerService::postSalesReturn(
+                $sale,
+                $totalAmount,
+                (int) $creditNoteId,
+                'CN-' . $creditNoteId
+            );
+        });
+
+        return redirect()->route('pos.sales')->with('success', 'POS return processed successfully.');
     }
 }

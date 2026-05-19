@@ -1824,7 +1824,7 @@ label {
                             <small class="text-muted">Label only — does not affect accounting entries.</small>
                         </div>
                         <div class="col-md-6">
-                            <label class="fw-semibold">Deposit Account <span class="text-danger">*</span></label>
+                            <label class="fw-semibold">Cash / Deposit Account <span class="text-danger">*</span></label>
                             <select id="deposit-account" class="form-select">
                                 <option value="">-- Select Account --</option>
                                 @foreach($depositAccounts as $acct)
@@ -1842,14 +1842,10 @@ label {
                         </div>
                         <div class="col-md-6">
                             <label>Cash Amount</label>
-                            <input type="number" id="amount-paid" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--success-500);">
-                        </div>
-                        <div class="col-md-6 d-none" id="split-transfer-wrap">
-                            <label>Transfer Amount</label>
-                            <input type="number" id="transfer-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
+                            <input type="number" min="0" step="0.01" id="amount-paid" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--success-500);">
                         </div>
                         <div class="col-md-6 d-none" id="split-transfer-account-wrap">
-                            <label>Transfer Account (COA)</label>
+                            <label>Bank Account (COA)</label>
                             <select id="transfer-account" class="form-select">
                                 <option value="">-- Select Account --</option>
                                 @foreach($depositAccounts as $acct)
@@ -1863,9 +1859,9 @@ label {
                                 </small>
                             @endif
                         </div>
-                        <div class="col-md-6 d-none" id="split-card-wrap">
-                            <label>POS Amount</label>
-                            <input type="number" id="card-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
+                        <div class="col-md-6 d-none" id="split-transfer-wrap">
+                            <label>Bank Amount</label>
+                            <input type="number" min="0" step="0.01" id="transfer-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
                         </div>
 	                        <div class="col-md-6 d-none" id="split-card-account-wrap">
                             <label>POS Account (COA)</label>
@@ -1882,6 +1878,10 @@ label {
                                 </small>
 	                            @endif
 	                        </div>
+                        <div class="col-md-6 d-none" id="split-card-wrap">
+                            <label>POS Amount</label>
+                            <input type="number" min="0" step="0.01" id="card-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
+                        </div>
 	                        <div class="col-md-6 d-none" id="wallet-payment-wrap">
 	                            <label>Wallet Credit Applied</label>
 	                            <input type="number" id="wallet-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" value="0.00" readonly style="font-size: 1rem; color: var(--primary-700);">
@@ -2984,6 +2984,7 @@ window.POS_ENABLE_FALLBACK = function () {
     const hdrCartCount = document.getElementById('hdr-cart-count');
     const amountPaid = document.getElementById('amount-paid');
     const paymentMethod = document.getElementById('payment-method');
+    const depositAccount = document.getElementById('deposit-account');
     const transferAmount = document.getElementById('transfer-amount');
     const transferAccount = document.getElementById('transfer-account');
     const cardAmount = document.getElementById('card-amount');
@@ -3029,6 +3030,19 @@ window.POS_ENABLE_FALLBACK = function () {
 	        const totalText = grandTotal?.textContent || '0';
 	        return parseFloat(totalText.replace(/[^\d.]/g, '')) || 0;
 	    }
+
+    function moneyValue(input) {
+        return Math.max(0, parseFloat(input?.value || '0') || 0);
+    }
+
+    function normalizeMoneyInput(input) {
+        if (!input) return 0;
+
+        const value = moneyValue(input);
+        input.value = value.toFixed(2);
+
+        return value;
+    }
 
 	    function refreshWalletApplication() {
 	        const total = cartGrandTotalValue();
@@ -3519,6 +3533,70 @@ window.POS_ENABLE_FALLBACK = function () {
         return { sub, discVal, taxVal, total, discountType, discount };
     }
 
+    function calculateCartItem(item) {
+        const qty = Math.max(0.01, parseFloat(item.qty || '0') || 0.01);
+        const price = Math.max(0, parseFloat(item.price || '0') || 0);
+        const discountValue = Math.max(0, parseFloat(item.discountValue ?? item.discount ?? '0') || 0);
+        const discountType = item.discountType || 'percent';
+        const tax = Math.max(0, parseFloat(item.tax || '0') || 0);
+        const multiplier = Math.max(0.01, parseFloat(item.unitMultiplier || '1') || 1);
+        const sub = price * qty;
+        const discVal = discountType === 'fixed' ? Math.min(discountValue, sub) : (sub * (discountValue / 100));
+        const afterDisc = Math.max(0, sub - discVal);
+        const taxVal = afterDisc * (tax / 100);
+
+        item.qty = qty;
+        item.stockUnits = multiplier * qty;
+        item.sub = sub;
+        item.discVal = discVal;
+        item.taxVal = taxVal;
+        item.total = afterDisc + taxVal;
+        item.discountType = discountType;
+        item.discountValue = discountValue;
+
+        return item;
+    }
+
+    function cartMergeKey(item) {
+        return [
+            item.id,
+            item.unitType || 'unit',
+            Number(item.price || 0).toFixed(2),
+            item.priceLevel || 'retail',
+            item.discountType || 'percent',
+            Number(item.discountValue ?? item.discount ?? 0).toFixed(2),
+            Number(item.tax || 0).toFixed(2),
+        ].join('|');
+    }
+
+    function addOrMergeCartItem(newItem) {
+        const preparedItem = calculateCartItem(newItem);
+        const existingIndex = cart.findIndex((item) => cartMergeKey(item) === cartMergeKey(preparedItem));
+        const maxStockUnits = Math.max(0, parseFloat(preparedItem.stockAvailable || '0') || 0);
+
+        if (existingIndex >= 0) {
+            const existingItem = cart[existingIndex];
+            const nextStockUnits = (parseFloat(existingItem.stockUnits || '0') || 0) + (parseFloat(preparedItem.stockUnits || '0') || 0);
+
+            if (maxStockUnits > 0 && nextStockUnits > maxStockUnits + 0.0001) {
+                alertFallback(`Only ${maxStockUnits.toFixed(2).replace(/\.00$/, '')} ${preparedItem.baseUnit || 'units'} available for ${preparedItem.name}.`);
+                return false;
+            }
+
+            existingItem.qty = (parseFloat(existingItem.qty || '0') || 0) + preparedItem.qty;
+            calculateCartItem(existingItem);
+            return true;
+        }
+
+        if (maxStockUnits > 0 && preparedItem.stockUnits > maxStockUnits + 0.0001) {
+            alertFallback(`Only ${maxStockUnits.toFixed(2).replace(/\.00$/, '')} ${preparedItem.baseUnit || 'units'} available for ${preparedItem.name}.`);
+            return false;
+        }
+
+        cart.push(preparedItem);
+        return true;
+    }
+
     customerSearchInput?.addEventListener('input', function () {
         const query = customerSearchInput.value;
         filterCustomerOptions(query);
@@ -3541,10 +3619,10 @@ window.POS_ENABLE_FALLBACK = function () {
 
 	    function updateChange() {
 	        const total = cartGrandTotalValue();
-	        const walletPaid = parseFloat(walletAmount?.value || '0') || 0;
-	        const cashPaid = parseFloat(amountPaid?.value || '0') || 0;
-	        const transferPaid = parseFloat(transferAmount?.value || '0') || 0;
-	        const cardPaid = parseFloat(cardAmount?.value || '0') || 0;
+	        const walletPaid = moneyValue(walletAmount);
+	        const cashPaid = moneyValue(amountPaid);
+	        const transferPaid = moneyValue(transferAmount);
+	        const cardPaid = moneyValue(cardAmount);
 	        const isSplit = paymentMethod?.value === 'Split';
 	        const externalPaid = isSplit ? (cashPaid + transferPaid + cardPaid) : cashPaid;
 	        const paid = externalPaid + walletPaid;
@@ -3565,9 +3643,9 @@ window.POS_ENABLE_FALLBACK = function () {
 
         const totalText = grandTotal?.textContent || '0';
         const total = parseFloat(totalText.replace(/[^\d.]/g, '')) || 0;
-        const cashPaid = parseFloat(amountPaid?.value || '0') || 0;
-        const transferPaid = parseFloat(transferAmount?.value || '0') || 0;
-        const cardPaid = parseFloat(cardAmount?.value || '0') || 0;
+        const cashPaid = moneyValue(amountPaid);
+        const transferPaid = moneyValue(transferAmount);
+        const cardPaid = moneyValue(cardAmount);
 
         splitAutoSync = true;
         const remainingBase = Math.max(0, total - cashPaid);
@@ -3592,7 +3670,7 @@ window.POS_ENABLE_FALLBACK = function () {
         splitCardAccountWrap?.classList.toggle('d-none', !isSplit);
 
         if (isSplit && amountPaid) {
-            const currentCash = parseFloat(amountPaid.value || '0') || 0;
+            const currentCash = moneyValue(amountPaid);
             const totalText = grandTotal?.textContent || '0';
             const total = parseFloat(totalText.replace(/[^\d.]/g, '')) || 0;
             if (Math.abs(currentCash - total) < 0.01) {
@@ -3624,6 +3702,7 @@ window.POS_ENABLE_FALLBACK = function () {
         filterCustomerOptions('');
 
         if (paymentMethod) paymentMethod.value = 'Cash';
+        if (depositAccount) depositAccount.value = '';
         if (amountPaid) amountPaid.value = '0.00';
         if (transferAmount) transferAmount.value = '0.00';
         if (transferAccount) transferAccount.value = '';
@@ -3809,21 +3888,26 @@ window.POS_ENABLE_FALLBACK = function () {
             const index = parseInt(target.getAttribute('data-index') || '0', 10);
             if (Number.isNaN(index) || !cart[index]) return;
             const parsedQty = parseFloat(target.value);
+            const previousQty = Math.max(0.01, parseFloat(cart[index].qty || '1') || 0.01);
             const qty = Number.isFinite(parsedQty) ? Math.max(0.01, parsedQty) : Math.max(0.01, parseFloat(cart[index].qty || '1') || 0.01);
             target.value = String(qty);
-            cart[index].qty = qty;
             const price = cart[index].price;
             const discount = cart[index].discountValue ?? cart[index].discount ?? 0;
             const discountType = cart[index].discountType || 'percent';
             const tax = cart[index].tax || 0;
-            const sub = price * qty;
-            const discVal = discountType === 'fixed' ? Math.min(discount, sub) : (sub * (discount / 100));
-            const afterDisc = sub - discVal;
-            const taxVal = afterDisc * (tax / 100);
-            cart[index].sub = sub;
-            cart[index].discVal = discVal;
-            cart[index].taxVal = taxVal;
-            cart[index].total = afterDisc + taxVal;
+            const multiplier = Math.max(0.01, parseFloat(cart[index].unitMultiplier || '1') || 1);
+            const stockAvailable = Math.max(0, parseFloat(cart[index].stockAvailable || '0') || 0);
+            if (stockAvailable > 0 && qty * multiplier > stockAvailable + 0.0001) {
+                alertFallback(`Only ${stockAvailable.toFixed(2).replace(/\.00$/, '')} ${cart[index].baseUnit || 'units'} available for ${cart[index].name}.`);
+                target.value = String(previousQty);
+                return;
+            }
+
+            cart[index].qty = qty;
+            cart[index].discountValue = discount;
+            cart[index].discountType = discountType;
+            cart[index].tax = tax;
+            calculateCartItem(cart[index]);
             renderCart();
         };
 
@@ -3883,13 +3967,15 @@ window.POS_ENABLE_FALLBACK = function () {
                 return;
             }
             const calc = updateItemTotal();
-            cart.push({
+            const added = addOrMergeCartItem({
                 id: option.value,
                 name: data.name || option.textContent || 'Product',
                 qty,
                 unitType: unitMeta.type,
                 unitLabel: unitMeta.unitLabel,
-                stockUnits: unitMeta.multiplier * qty,
+                unitMultiplier: unitMeta.multiplier,
+                stockAvailable: unitMeta.stock,
+                baseUnit: unitMeta.baseUnit,
                 priceLevel: priceMeta.key,
                 priceLevelLabel: priceMeta.label,
                 price,
@@ -3901,6 +3987,9 @@ window.POS_ENABLE_FALLBACK = function () {
                 taxVal: calc.taxVal,
                 total: calc.total
             });
+            if (!added) {
+                return;
+            }
             renderCart();
             if (productSelect) productSelect.value = '';
 	            syncProductSearchDropdown('');
@@ -4002,6 +4091,12 @@ window.POS_ENABLE_FALLBACK = function () {
         }
         updateChange();
     });
+    [amountPaid, transferAmount, cardAmount].forEach((input) => {
+        input?.addEventListener('blur', function () {
+            normalizeMoneyInput(input);
+            updateChange();
+        });
+    });
     transferAmount?.addEventListener('input', function () {
         syncSplitCounterpart('transfer');
     });
@@ -4028,15 +4123,21 @@ window.POS_ENABLE_FALLBACK = function () {
         }
 
 	        const { total, paid, externalPaid } = updateChange();
-	        const walletApplied = parseFloat(walletAmount?.value || '0') || 0;
+        const walletApplied = moneyValue(walletAmount);
 	        if (paid <= 0 && walletApplied <= 0) {
 	            alertFallback('Enter payment before processing the sale.');
 	            return;
 	        }
 
+        const cashValue = moneyValue(amountPaid);
+        if (cashValue > 0 && !depositAccount?.value) {
+            alertFallback('Choose the cash/deposit account.');
+            return;
+        }
+
         if (paymentMethod?.value === 'Split') {
-            const transferValue = parseFloat(transferAmount?.value || '0') || 0;
-            const cardValue = parseFloat(cardAmount?.value || '0') || 0;
+            const transferValue = moneyValue(transferAmount);
+            const cardValue = moneyValue(cardAmount);
             if (transferValue > 0 && !transferAccount?.value) {
                 alertFallback('Choose the transfer account.');
                 return;
@@ -4072,13 +4173,14 @@ window.POS_ENABLE_FALLBACK = function () {
                     tax: cart.reduce((sum, item) => sum + item.taxVal, 0),
                     discount: cart.reduce((sum, item) => sum + item.discVal, 0),
                     total,
+                    deposit_account_id: depositAccount?.value || null,
 	                    paid: externalPaid,
 	                    wallet_amount: walletApplied,
 	                    split_details: {
-                        cash: parseFloat(amountPaid?.value || '0') || 0,
-                        transfer: parseFloat(transferAmount?.value || '0') || 0,
+                        cash: moneyValue(amountPaid),
+                        transfer: moneyValue(transferAmount),
                         transfer_account_id: transferAccount?.value || null,
-                        card: parseFloat(cardAmount?.value || '0') || 0,
+                        card: moneyValue(cardAmount),
                         card_account_id: cardAccount?.value || null,
                     },
                 }),
