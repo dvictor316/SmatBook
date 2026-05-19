@@ -1667,6 +1667,39 @@ public function create()
             $companyId  = (int) ($sale->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
             $branchCtx  = $this->getActiveBranchContext();
             $totalAmount = 0;
+            $returnLines = [];
+
+            foreach ($request->items as $productId => $data) {
+                $qty = (float) ($data['qty'] ?? 0);
+                if ($qty <= 0) {
+                    continue;
+                }
+
+                $remainingSoldQty = (float) $sale->items
+                    ->where('product_id', (int) $productId)
+                    ->sum(fn ($item) => (float) ($item->qty ?? 0));
+
+                if ($qty > $remainingSoldQty) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'items' => 'Return quantity cannot exceed the remaining sold quantity.',
+                    ]);
+                }
+
+                $unitPrice = (float) ($data['unit_price'] ?? 0);
+                $returnLines[(int) $productId] = [
+                    'qty' => $qty,
+                    'unit_price' => $unitPrice,
+                    'unit_type' => $data['unit_type'] ?? 'unit',
+                    'line_total' => round($qty * $unitPrice, 2),
+                ];
+                $totalAmount += $returnLines[(int) $productId]['line_total'];
+            }
+
+            if (empty($returnLines)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'items' => 'Enter at least one return quantity before processing the return.',
+                ]);
+            }
 
             // Insert credit_notes header
             $cnInsert = [
@@ -1699,16 +1732,11 @@ public function create()
             }
             $creditNoteId = DB::table('credit_notes')->insertGetId($cnInsert);
 
-            foreach ($request->items as $productId => $data) {
-                $qty = (float) ($data['qty'] ?? 0);
-                if ($qty <= 0) {
-                    continue;
-                }
-
-                $unitPrice  = (float) ($data['unit_price'] ?? 0);
-                $unitType   = $data['unit_type'] ?? 'unit';
-                $lineTotal  = $qty * $unitPrice;
-                $totalAmount += $lineTotal;
+            foreach ($returnLines as $productId => $data) {
+                $qty = (float) $data['qty'];
+                $unitPrice = (float) $data['unit_price'];
+                $unitType = $data['unit_type'];
+                $lineTotal = (float) $data['line_total'];
 
                 $stockUnits = 0.0;
                 $product = Product::lockForUpdate()->find((int) $productId);
@@ -1720,6 +1748,8 @@ public function create()
                         null
                     );
                 }
+
+                $this->reduceSaleItemsForReturn($sale, (int) $productId, $qty);
 
                 $creditNoteItem = [
                     'credit_note_id' => $creditNoteId,
@@ -1756,6 +1786,7 @@ public function create()
 
             // Update credit_notes total
             DB::table('credit_notes')->where('id', $creditNoteId)->update(['total_amount' => $totalAmount]);
+            $this->recalculateSaleAfterReturn($sale);
 
             // Post accounting entry
             LedgerService::postSalesReturn(
@@ -1766,5 +1797,117 @@ public function create()
         });
 
         return redirect()->route('pos.sales')->with('success', 'POS return processed successfully.');
+    }
+
+    private function reduceSaleItemsForReturn(Sale $sale, int $productId, float $returnQty): void
+    {
+        $remainingReturnQty = round(max(0, $returnQty), 4);
+        if ($remainingReturnQty <= 0) {
+            return;
+        }
+
+        $items = $sale->items
+            ->where('product_id', $productId)
+            ->sortBy('id');
+
+        foreach ($items as $item) {
+            if ($remainingReturnQty <= 0) {
+                break;
+            }
+
+            $currentQty = (float) ($item->qty ?? 0);
+            if ($currentQty <= 0) {
+                continue;
+            }
+
+            $deductQty = min($currentQty, $remainingReturnQty);
+            $newQty = round($currentQty - $deductQty, 4);
+
+            if ($newQty <= 0) {
+                $item->delete();
+            } else {
+                $lineSubtotal = round($newQty * (float) ($item->unit_price ?? 0), 2);
+                $discountPercent = (float) ($item->discount ?? 0);
+                $taxPercent = (float) ($item->tax ?? 0);
+                $discountAmount = round($lineSubtotal * ($discountPercent / 100), 2);
+                $taxAmount = round(($lineSubtotal - $discountAmount) * ($taxPercent / 100), 2);
+
+                $updates = ['qty' => $newQty];
+                if (Schema::hasColumn('sale_items', 'stock_units')) {
+                    $stockUnits = (float) ($item->stock_units ?? 0);
+                    $unitStock = $currentQty > 0 ? $stockUnits / $currentQty : 0;
+                    $updates['stock_units'] = round(max(0, $stockUnits - ($unitStock * $deductQty)), 2);
+                }
+                if (Schema::hasColumn('sale_items', 'subtotal')) {
+                    $updates['subtotal'] = $lineSubtotal;
+                }
+                if (Schema::hasColumn('sale_items', 'total_price')) {
+                    $updates['total_price'] = round(($lineSubtotal - $discountAmount) + $taxAmount, 2);
+                }
+
+                $item->update($updates);
+            }
+
+            $remainingReturnQty = round($remainingReturnQty - $deductQty, 4);
+        }
+
+        $sale->unsetRelation('items');
+        $sale->load('items.product');
+    }
+
+    private function recalculateSaleAfterReturn(Sale $sale): void
+    {
+        $sale->refresh();
+        $items = $sale->items()->get();
+
+        $subtotal = round($items->sum(function ($item) {
+            if (Schema::hasColumn('sale_items', 'subtotal') && $item->subtotal !== null) {
+                return (float) $item->subtotal;
+            }
+
+            return (float) ($item->qty ?? 0) * (float) ($item->unit_price ?? 0);
+        }), 2);
+
+        $lineTotal = round($items->sum(function ($item) {
+            if (Schema::hasColumn('sale_items', 'total_price')) {
+                return (float) DB::table('sale_items')->where('id', $item->id)->value('total_price');
+            }
+
+            return (float) ($item->qty ?? 0) * (float) ($item->unit_price ?? 0);
+        }), 2);
+
+        $discount = (float) ($sale->discount ?? 0);
+        $tax = (float) ($sale->tax ?? 0);
+        $shipping = (float) ($sale->shipping_cost ?? 0);
+        $newTotal = $items->isEmpty()
+            ? 0.0
+            : max(0, round(($lineTotal > 0 ? $lineTotal : $subtotal) + $tax + $shipping - $discount, 2));
+        $currentPaid = (float) ($sale->amount_paid ?? $sale->paid ?? 0);
+        $newPaid = min($currentPaid, $newTotal);
+        $newBalance = max(0, round($newTotal - $newPaid, 2));
+
+        $updates = [];
+        if (Schema::hasColumn('sales', 'subtotal')) {
+            $updates['subtotal'] = $subtotal;
+        }
+        if (Schema::hasColumn('sales', 'total')) {
+            $updates['total'] = $newTotal;
+        }
+        if (Schema::hasColumn('sales', 'amount_paid')) {
+            $updates['amount_paid'] = $newPaid;
+        }
+        if (Schema::hasColumn('sales', 'paid')) {
+            $updates['paid'] = $newPaid;
+        }
+        if (Schema::hasColumn('sales', 'balance')) {
+            $updates['balance'] = $newBalance;
+        }
+        if (Schema::hasColumn('sales', 'payment_status')) {
+            $updates['payment_status'] = $newBalance <= 0 ? 'paid' : ($newPaid > 0 ? 'partial' : 'unpaid');
+        }
+
+        if (!empty($updates)) {
+            $sale->update($updates);
+        }
     }
 }
