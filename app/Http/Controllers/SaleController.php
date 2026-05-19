@@ -1725,9 +1725,8 @@ public function create()
 
             // Post accounting entry
             LedgerService::postSalesReturn(
-                $sale,
-                $totalAmount,
                 (int) $creditNoteId,
+                $totalAmount,
                 'CN-' . $creditNoteId
             );
         });

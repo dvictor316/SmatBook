@@ -172,6 +172,8 @@ use App\Http\Controllers\{
         Route::get('/sales/invoice/{id}/print', 'printInvoice')->name('sales.invoice.print');
         Route::get('/sales/chart-data', 'getChartData')->name('sales.chart-data');
       Route::get('/sales/return-to-pos', [SaleController::class, 'returnToPos'])->name('sales.returnToPos');
+      Route::get('/pos/return', [SaleController::class, 'showPosReturn'])->name('pos.return.show');
+      Route::post('/pos/return', [SaleController::class, 'storePosReturn'])->name('pos.return.store');
 
  });
       Route::middleware(['auth'])->group(function () {

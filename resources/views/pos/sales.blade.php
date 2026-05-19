@@ -431,6 +431,7 @@
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
                                         <li><a class="dropdown-item" href="{{ route('sales.show', $sale->id) }}">View Items</a></li>
+                                        <li><a class="dropdown-item text-warning" href="{{ route('pos.return.show', ['sale_id' => $sale->id]) }}"><i class="fas fa-undo me-1"></i> Process Return</a></li>
                                         <li><a class="dropdown-item" href="{{ route('sales.edit', $sale->id) }}">Edit Sale</a></li>
                                         <li>
                                             <form method="POST" action="{{ route('sales.destroy', $sale->id) }}" onsubmit="return confirm('Delete this sale?');">
