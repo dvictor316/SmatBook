@@ -1728,16 +1728,24 @@ public function create()
                 $lineTotal  = $qty * $unitPrice;
                 $totalAmount += $lineTotal;
 
-                // Insert credit_note_items
-                DB::table('credit_note_items')->insert([
+                $creditNoteItem = [
                     'credit_note_id' => $creditNoteId,
                     'product_id'     => $productId,
                     'qty'            => $qty,
+                    'quantity'       => $qty,
+                    'unit_type'      => $unitType,
                     'unit_price'     => $unitPrice,
                     'total_price'    => $lineTotal,
+                    'subtotal'       => $lineTotal,
+                    'company_id'     => $companyId,
+                    'branch_id'      => $branchCtx['id'],
+                    'branch_name'    => $branchCtx['name'],
+                    'user_id'        => auth()->id(),
                     'created_at'     => now(),
                     'updated_at'     => now(),
-                ]);
+                ];
+                $creditNoteItemColumns = array_flip(Schema::getColumnListing('credit_note_items'));
+                DB::table('credit_note_items')->insert(array_intersect_key($creditNoteItem, $creditNoteItemColumns));
 
                 // Return stock
                 $product = Product::lockForUpdate()->find((int) $productId);
@@ -1764,7 +1772,9 @@ public function create()
             }
 
             // Update credit_notes total
-            DB::table('credit_notes')->where('id', $creditNoteId)->update(['total_amount' => $totalAmount]);
+            if (Schema::hasColumn('credit_notes', 'total_amount')) {
+                DB::table('credit_notes')->where('id', $creditNoteId)->update(['total_amount' => $totalAmount]);
+            }
 
             // Post accounting entry
             LedgerService::postSalesReturn(
