@@ -81,16 +81,14 @@
                             · Projected Outstanding: <strong>₦{{ number_format((float) ($creditWarning['projected_outstanding'] ?? 0), 2) }}</strong>
                             · Excess: <strong>₦{{ number_format((float) ($creditWarning['excess'] ?? 0), 2) }}</strong>
                         </div>
-                        <button type="submit" form="invoice-form" name="action" value="{{ old('action', 'send') }}" class="btn btn-primary me-2" id="credit-limit-continue-btn">
-                            Continue Transaction
-                        </button>
-                        <a href="{{ route('invoices.index') }}" class="btn btn-white border">Reject Transaction</a>
+                        <div class="fw-semibold mb-2 text-danger">Transaction blocked until the customer pays down the balance or the credit limit is increased.</div>
+                        <a href="{{ route('invoices.index') }}" class="btn btn-white border">Back to Invoices</a>
                     </div>
                 @endif
 
                 <form action="{{ $formAction }}" method="POST" enctype="multipart/form-data" id="invoice-form">
                     @csrf
-                    <input type="hidden" name="credit_limit_override" id="credit-limit-override" value="{{ old('credit_limit_override', 0) }}">
+                    <input type="hidden" name="credit_limit_override" id="credit-limit-override" value="0">
                     @if($isEditMode)
                         @method('PUT')
                     @endif
@@ -384,14 +382,7 @@
         }
     }
 
-    function bindCreditLimitContinue() {
-        document.getElementById('credit-limit-continue-btn')?.addEventListener('click', function() {
-            const overrideInput = document.getElementById('credit-limit-override');
-            if (overrideInput) {
-                overrideInput.value = '1';
-            }
-        });
-    }
+    function bindCreditLimitContinue() {}
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {

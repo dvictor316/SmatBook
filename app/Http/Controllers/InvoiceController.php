@@ -58,7 +58,7 @@ class InvoiceController extends Controller
     {
         $creditLimit = (float) ($customer->credit_limit ?? 0);
 
-        if ($creditLimit <= 0 || $newCreditAmount <= 0 || $request->boolean('credit_limit_override')) {
+        if ($creditLimit <= 0 || $newCreditAmount <= 0) {
             return null;
         }
 
@@ -76,6 +76,7 @@ class InvoiceController extends Controller
             'new_credit' => $newCreditAmount,
             'projected_outstanding' => $projectedOutstanding,
             'excess' => round($projectedOutstanding - $creditLimit, 2),
+            'blocked' => true,
         ]);
     }
 
