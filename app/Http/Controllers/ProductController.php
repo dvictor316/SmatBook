@@ -1587,7 +1587,7 @@ public function inventory(Request $request)
                         CONCAT('purchase-', purchase_items.id) as id,
                         purchases.created_at as created_at,
                         'in' as type,
-                        COALESCE(" . ($purchaseReferenceColumn ? "purchases.{$purchaseReferenceColumn}" : 'NULL') . ", purchases.purchase_no, CONCAT('PUR-', purchases.id)) as reference,
+                        CONCAT('Purchase - ', COALESCE(" . ($purchaseReferenceColumn ? "purchases.{$purchaseReferenceColumn}" : 'NULL') . ", purchases.purchase_no, CONCAT('PUR-', purchases.id))) as reference,
                         COALESCE(purchase_items.{$purchaseQtyColumn}, 0) as quantity,
                         products.name as name,
                         products.sku as sku,
@@ -1682,7 +1682,7 @@ public function inventory(Request $request)
                         CONCAT('sale-', sale_items.id) as id,
                         sales.created_at as created_at,
                         'out' as type,
-                        COALESCE(" . ($saleReferenceColumn ? "sales.{$saleReferenceColumn}" : 'NULL') . ", CONCAT('SALE-', sales.id)) as reference,
+                        CONCAT('Sales - ', COALESCE(" . ($saleReferenceColumn ? "sales.{$saleReferenceColumn}" : 'NULL') . ", CONCAT('SALE-', sales.id))) as reference,
                         COALESCE(sale_items.{$saleQtyColumn}, 0) as quantity,
                         {$saleUnitTypeColumn} as unit_type,
                         " . InventoryQuantity::saleStockUnitsExpression('sale_items', 'products') . " as stock_quantity,
@@ -1761,6 +1761,19 @@ public function inventory(Request $request)
         }
 
         $inventoryHistories = $inventoryHistories
+            ->map(function ($row) {
+                $reference = trim((string) ($row->reference ?? ''));
+                $normalizedReference = strtolower($reference);
+
+                if (in_array($normalizedReference, ['sales return', 'stock return'], true)) {
+                    $row->reference = 'Stock Return';
+                } elseif ($reference === '' || strcasecmp($reference, 'Stock Update') === 0) {
+                    $isStockIn = in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true);
+                    $row->reference = $isStockIn ? 'Stock Adjustment - Increase' : 'Stock Adjustment - Reduction';
+                }
+
+                return $row;
+            })
             ->sortByDesc(fn ($row) => strtotime((string) ($row->created_at ?? '1970-01-01 00:00:00')))
             ->values();
 

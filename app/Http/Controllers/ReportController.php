@@ -3179,7 +3179,7 @@ public function destroy($id)
 	                            $data['unit_type'] ?? null,
 	                            isset($data['stock_units']) ? (float) $data['stock_units'] : null
 	                        );
-	                        Product::setInventoryContext('Sales Return');
+	                        Product::setInventoryContext('Stock Return');
 	                        $product->increment('stock', $stockUnits);
 	                        app(BranchInventoryService::class)->adjustBranchStock(
 	                            $product,

@@ -51,6 +51,7 @@ class ProductObserver
             $oldStock = $product->getOriginal('stock');
             $newStock = $product->stock;
             $diff = $newStock - $oldStock;
+            $contextLabel = Product::consumeInventoryContext();
 
             $payload = [
                 'product_id' => $product->id,
@@ -61,7 +62,6 @@ class ProductObserver
             ];
 
             if (Schema::hasColumn('inventory_history', 'reference')) {
-                $contextLabel = Product::consumeInventoryContext();
                 $payload['reference'] = $contextLabel ?? ($diff > 0 ? 'Stock In' : 'Stock Out');
             }
             if (Schema::hasColumn('inventory_history', 'user_id')) {
@@ -79,10 +79,22 @@ class ProductObserver
 
             $historyId = DB::table('inventory_history')->insertGetId($payload);
 
-            if ($diff > 0) {
+            if ($diff > 0 && $this->shouldMirrorStockInToPurchase($contextLabel)) {
                 $this->mirrorStockInToPurchase($product, (float) abs($diff), (int) $historyId);
             }
         }
+    }
+
+    private function shouldMirrorStockInToPurchase(?string $contextLabel): bool
+    {
+        $context = strtolower(trim((string) $contextLabel));
+
+        if ($context === '') {
+            return true;
+        }
+
+        return !str_contains($context, 'return')
+            && !str_contains($context, 'transfer');
     }
 
     private function mirrorStockInToPurchase(Product $product, float $quantity, int $historyId): void

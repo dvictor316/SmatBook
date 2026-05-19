@@ -431,7 +431,12 @@
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
                                         <li><a class="dropdown-item" href="{{ route('sales.show', $sale->id) }}">View Items</a></li>
-                                        <li><a class="dropdown-item text-warning" href="{{ route('pos.return.show', ['sale_id' => $sale->id]) }}"><i class="fas fa-undo me-1"></i> Process Return</a></li>
+                                        @php
+                                            $posReturnUrl = \Illuminate\Support\Facades\Route::has('pos.return.show')
+                                                ? route('pos.return.show', ['sale_id' => $sale->id])
+                                                : url('/pos/return') . '?sale_id=' . urlencode((string) $sale->id);
+                                        @endphp
+                                        <li><a class="dropdown-item text-warning" href="{{ $posReturnUrl }}"><i class="fas fa-undo me-1"></i> Process Return</a></li>
                                         <li><a class="dropdown-item" href="{{ route('sales.edit', $sale->id) }}">Edit Sale</a></li>
                                         <li>
                                             <form method="POST" action="{{ route('sales.destroy', $sale->id) }}" onsubmit="return confirm('Delete this sale?');">

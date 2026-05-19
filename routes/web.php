@@ -744,6 +744,8 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     Route::get('/pos', [SaleController::class, 'showPos'])->name('sales.showPos');
     Route::get('/pos/reports', [SaleController::class, 'report'])->name('pos.reports');
     Route::get('/pos/sales', [SaleController::class, 'posSales'])->name('pos.sales');
+    Route::get('/pos/return', [SaleController::class, 'showPosReturn'])->name('pos.return.show');
+    Route::post('/pos/return', [SaleController::class, 'storePosReturn'])->name('pos.return.store');
     Route::get('/sales/items/{item}/delete', [SaleItemController::class, 'destroy'])->name('sales.items.delete');
     
     // Invoices
