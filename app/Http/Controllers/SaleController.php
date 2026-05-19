@@ -1685,25 +1685,44 @@ public function create()
 
         DB::transaction(function () use ($request, $sale) {
             $companyId  = (int) ($sale->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
-            $branchCtx  = $this->getActiveBranchContext();
+            $activeBranch = $this->getActiveBranchContext();
+            $branchCtx  = [
+                'id' => $sale->branch_id ? (string) $sale->branch_id : ($activeBranch['id'] ?? null),
+                'name' => $sale->branch_name ? (string) $sale->branch_name : ($activeBranch['name'] ?? null),
+            ];
             $totalAmount = 0;
+            $creditNoteColumns = array_flip(Schema::getColumnListing('credit_notes'));
 
             // Insert credit_notes header
             $cnInsert = [
                 'sale_id'      => $sale->id,
                 'credit_date'  => $request->return_date,
                 'total_amount' => 0,
-                'note'         => $request->input('note', 'POS Stock Return'),
                 'created_at'   => now(),
                 'updated_at'   => now(),
             ];
-            if (Schema::hasColumn('credit_notes', 'company_id')) {
+            if (isset($creditNoteColumns['credit_note_no'])) {
+                $cnInsert['credit_note_no'] = 'CN-' . strtoupper(Str::random(8));
+            }
+            if (isset($creditNoteColumns['note'])) {
+                $cnInsert['note'] = $request->input('note', 'POS Stock Return');
+            }
+            if (isset($creditNoteColumns['notes'])) {
+                $cnInsert['notes'] = $request->input('note', 'POS Stock Return');
+            }
+            if (isset($creditNoteColumns['company_id'])) {
                 $cnInsert['company_id'] = $companyId;
             }
-            if (Schema::hasColumn('credit_notes', 'branch_id')) {
+            if (isset($creditNoteColumns['branch_id'])) {
                 $cnInsert['branch_id'] = $branchCtx['id'];
             }
-            $creditNoteId = DB::table('credit_notes')->insertGetId($cnInsert);
+            if (isset($creditNoteColumns['branch_name'])) {
+                $cnInsert['branch_name'] = $branchCtx['name'];
+            }
+            if (isset($creditNoteColumns['user_id'])) {
+                $cnInsert['user_id'] = auth()->id();
+            }
+            $creditNoteId = DB::table('credit_notes')->insertGetId(array_intersect_key($cnInsert, $creditNoteColumns));
 
             foreach ($request->items as $productId => $data) {
                 $qty = (float) ($data['qty'] ?? 0);
@@ -1716,16 +1735,24 @@ public function create()
                 $lineTotal  = $qty * $unitPrice;
                 $totalAmount += $lineTotal;
 
-                // Insert credit_note_items
-                DB::table('credit_note_items')->insert([
+                $creditNoteItem = [
                     'credit_note_id' => $creditNoteId,
                     'product_id'     => $productId,
                     'qty'            => $qty,
+                    'quantity'       => $qty,
+                    'unit_type'      => $unitType,
                     'unit_price'     => $unitPrice,
                     'total_price'    => $lineTotal,
+                    'subtotal'       => $lineTotal,
+                    'company_id'     => $companyId,
+                    'branch_id'      => $branchCtx['id'],
+                    'branch_name'    => $branchCtx['name'],
+                    'user_id'        => auth()->id(),
                     'created_at'     => now(),
                     'updated_at'     => now(),
-                ]);
+                ];
+                $creditNoteItemColumns = array_flip(Schema::getColumnListing('credit_note_items'));
+                DB::table('credit_note_items')->insert(array_intersect_key($creditNoteItem, $creditNoteItemColumns));
 
                 // Return stock
                 $product = Product::lockForUpdate()->find((int) $productId);
@@ -1736,8 +1763,12 @@ public function create()
                         $unitType,
                         null
                     );
-                    Product::setInventoryContext('Sales Return');
+                    Product::setInventoryContext('Stock Return');
                     $product->increment('stock', $stockUnits);
+                    if (Schema::hasColumn('products', 'stock_quantity')) {
+                        $product->increment('stock_quantity', $stockUnits);
+                    }
+                    $product->refresh();
                     $this->branchInventory->adjustBranchStock(
                         $product,
                         $stockUnits,
@@ -1748,7 +1779,9 @@ public function create()
             }
 
             // Update credit_notes total
-            DB::table('credit_notes')->where('id', $creditNoteId)->update(['total_amount' => $totalAmount]);
+            if (isset($creditNoteColumns['total_amount'])) {
+                DB::table('credit_notes')->where('id', $creditNoteId)->update(['total_amount' => $totalAmount]);
+            }
 
             // Post accounting entry
             LedgerService::postSalesReturn(
