@@ -757,7 +757,7 @@
         border-color: rgba(215, 169, 40, 0.38) !important;
         color: #ffffff !important;
         -webkit-text-fill-color: #ffffff !important;
-        box-shadow: inset 4px 0 0 var(--spb-theme-gold) !important;
+        box-shadow: 0 10px 24px rgba(3, 18, 51, 0.14) !important;
     }
 
     .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li.submenu ul {

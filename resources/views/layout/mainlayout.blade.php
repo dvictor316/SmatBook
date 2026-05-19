@@ -836,14 +836,8 @@
         .sidebar .sidebar-menu ul li.active > a::before,
         .deployment-sidebar .sidebar-menu ul li.active > a::before,
         .deployment-sidebar .dm-menu-link.active::before {
-            content: "";
-            position: absolute;
-            left: -1px;
-            top: 12px;
-            bottom: 12px;
-            width: 4px;
-            border-radius: 999px;
-            background: linear-gradient(180deg, #2563eb 0%, #7c3aed 100%);
+            content: none !important;
+            display: none !important;
         }
 
         .sidebar .sidebar-menu::-webkit-scrollbar,
