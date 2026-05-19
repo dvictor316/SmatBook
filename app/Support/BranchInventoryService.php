@@ -23,43 +23,38 @@ class BranchInventoryService
     {
         $branch = $branch ?: $this->getActiveBranchContext();
         $savedStock = (float) ($product->stock ?? $product->stock_quantity ?? 0);
-        $transactionalStock = $this->calculateTransactionalStock($product, $branch);
 
-        if ($transactionalStock !== null && $this->hasTransactionalStockRecords($product, $branch)) {
-            return max(0, (float) $transactionalStock);
-        }
+        // ── Branch-specific stock (most precise) ────────────────────────────
+        // product_branch_stocks.quantity is kept up-to-date by adjustBranchStock()
+        // after every purchase, sale, return, and stock adjustment, so it is
+        // always the correct figure for a given branch.
+        if (Schema::hasTable('product_branch_stocks') && !empty($branch['id'])) {
+            $branchStock = $product->relationLoaded('branchStocks')
+                ? $product->branchStocks->firstWhere('branch_id', (string) $branch['id'])
+                : $product->branchStocks()->where('branch_id', (string) $branch['id'])->first();
 
-        if (!Schema::hasTable('product_branch_stocks') || empty($branch['id'])) {
-            if ($savedStock !== 0.0) {
-                return $savedStock;
+            if ($branchStock) {
+                $branchQuantity = (float) ($branchStock->quantity ?? 0);
+
+                // Branch row exists but is zero while products.stock is positive:
+                // the branch row has not been seeded yet — fall back to products.stock
+                // so we never incorrectly report "Out of Stock".
+                if ($branchQuantity === 0.0 && $savedStock > 0.0) {
+                    return max(0.0, $savedStock);
+                }
+
+                return max(0.0, $branchQuantity);
             }
 
-            return (float) ($transactionalStock ?? 0);
+            // Branch table exists but no row for this product/branch yet.
+            // Fall through to products.stock below.
         }
 
-        $branchStock = $product->relationLoaded('branchStocks')
-            ? $product->branchStocks->firstWhere('branch_id', (string) $branch['id'])
-            : $product->branchStocks()->where('branch_id', (string) $branch['id'])->first();
-
-        if ($branchStock) {
-            $branchQuantity = (float) ($branchStock->quantity ?? 0);
-
-            if ($branchQuantity === 0.0 && $savedStock > 0.0) {
-                return $savedStock;
-            }
-
-            return $branchQuantity;
-        }
-
-        if ($savedStock !== 0.0) {
-            return $savedStock;
-        }
-
-        if ($transactionalStock !== null) {
-            return $transactionalStock;
-        }
-
-        return $savedStock;
+        // ── products.stock is the ground truth ──────────────────────────────
+        // It is decremented by both raw-DB paths (POS / Invoice sales) and
+        // Eloquent paths (purchases, returns, adjustments), so it is always
+        // current regardless of whether an inventory_history entry was written.
+        return max(0.0, $savedStock);
     }
 
     private function hasTransactionalStockRecords(Product $product, array $branch): bool

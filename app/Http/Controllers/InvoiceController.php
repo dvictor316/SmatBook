@@ -130,6 +130,7 @@ class InvoiceController extends Controller
                 ->where('id', $product->id)
                 ->update($updates);
 
+            $this->writeInventoryHistorySale($product, $quantity, $branch);
             return;
         }
 
@@ -150,6 +151,38 @@ class InvoiceController extends Controller
         if ($updated === 0) {
             throw new \RuntimeException("Insufficient stock for {$product->name}. Negative stock is not allowed.");
         }
+
+        $this->writeInventoryHistorySale($product, $quantity, $branch);
+    }
+
+    private function writeInventoryHistorySale(Product $product, float $quantity, ?array $branch = null): void
+    {
+        if (!Schema::hasTable('inventory_history')) {
+            return;
+        }
+
+        $branch     = $branch ?: $this->getActiveBranchContext();
+        $companyId  = (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+
+        $row = [
+            'product_id' => $product->id,
+            'quantity'   => $quantity,
+            'type'       => 'out',
+            'reference'  => 'Sales',
+            'user_id'    => auth()->id(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+        if (Schema::hasColumn('inventory_history', 'company_id') && $companyId > 0) {
+            $row['company_id'] = $companyId;
+        }
+        if (!empty($branch['id']) && Schema::hasColumn('inventory_history', 'branch_id')) {
+            $row['branch_id'] = $branch['id'];
+        }
+        if (!empty($branch['name']) && Schema::hasColumn('inventory_history', 'branch_name')) {
+            $row['branch_name'] = $branch['name'];
+        }
+        DB::table('inventory_history')->insert($row);
     }
 
     private function incrementSellableStock(Product $product, float $quantity, ?array $branch = null): void
