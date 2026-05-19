@@ -26705,4 +26705,41 @@ td .invoice-detail i {
   }
 }
 
+/* SmartProbook primary action hover: keep white hover states readable across plans. */
+.btn-primary:not(.tax):hover,
+.btn-primary:not(.tax):focus:hover,
+.btn-primary:not(.tax).text-white:hover,
+.btn-primary:not(.tax):hover i,
+.btn-primary:not(.tax):hover span {
+  color: #06285f !important;
+}
+
+.btn-primary:not(.tax):hover {
+  border-color: #d7a928 !important;
+}
+
+.btn-white:hover,
+.btn-white:focus,
+.btn.btn-white.border:hover,
+.btn.btn-white.border:focus,
+.btn-light.border:hover,
+.btn-light.border:focus {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  border-color: #d7a928 !important;
+  color: #06285f !important;
+  -webkit-text-fill-color: #06285f !important;
+  box-shadow: 0 10px 22px rgba(6, 26, 68, 0.08) !important;
+}
+
+.btn-white:hover i,
+.btn-white:hover span,
+.btn.btn-white.border:hover i,
+.btn.btn-white.border:hover span,
+.btn-light.border:hover i,
+.btn-light.border:hover span {
+  color: #06285f !important;
+  -webkit-text-fill-color: #06285f !important;
+}
+
 /*# sourceMappingURL=style.css.map */
