@@ -1441,6 +1441,12 @@ function showUpgradeModal(planName) {
                 <li><a href="{{ route('sales.showPos') }}"><i class="fe fe-shopping-cart"></i><span>POS</span></a></li>
 
                 <li><a href="{{ route('payments.index') }}"><i class="fe fe-credit-card"></i><span>Payments</span></a></li>
+                @if(Route::has('advance-payments.customers'))
+                    <li><a href="{{ route('advance-payments.customers') }}"><i class="fe fe-trending-up"></i><span>Customer Advances</span></a></li>
+                @endif
+                @if(Route::has('advance-payments.suppliers'))
+                    <li><a href="{{ route('advance-payments.suppliers') }}"><i class="fe fe-truck"></i><span>Supplier Advances</span></a></li>
+                @endif
 
                 <li class="menu-title"><span>Premium Features</span></li>
 
