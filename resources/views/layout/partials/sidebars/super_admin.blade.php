@@ -35,7 +35,6 @@
         --sa-line: rgba(215, 169, 40, 0.26);
         background:
             radial-gradient(circle at 16% 8%, rgba(215, 169, 40, 0.22), transparent 28%),
-            radial-gradient(circle at 84% 22%, rgba(37, 99, 235, 0.24), transparent 34%),
             linear-gradient(180deg, var(--sa-navy) 0%, var(--sa-blue) 52%, #071635 100%) !important;
         border-right: 1px solid rgba(215, 169, 40, 0.22) !important;
         box-shadow: 10px 0 32px rgba(6, 26, 68, 0.22) !important;
@@ -132,10 +131,19 @@
         border: 0 !important;
         border-radius: 12px !important;
         margin: 2px 6px !important;
-        padding: 8px 10px 8px 28px !important;
+        padding: 8px 10px 8px 18px !important;
         font-size: 0.86rem !important;
         font-weight: 650 !important;
         box-shadow: none !important;
+    }
+
+    .spb-super-admin-sidebar::before,
+    .spb-super-admin-sidebar .sidebar-menu ul li > a::before,
+    .spb-super-admin-sidebar .sidebar-menu ul li > a::after,
+    .spb-super-admin-sidebar .sidebar-menu ul li.submenu ul li a::before,
+    .spb-super-admin-sidebar .sidebar-menu ul li.submenu ul li a::after {
+        content: none !important;
+        display: none !important;
     }
 
     .spb-super-admin-sidebar .sidebar-menu ul li.submenu ul li a:hover,
