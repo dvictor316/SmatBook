@@ -29,8 +29,9 @@ class TrialBalanceExport implements FromCollection, WithHeadings
 
     public function collection()
     {
-        $txnQuery = \App\Models\Transaction::query()
+        $txnQuery = \App\Models\Transaction::withoutGlobalScopes()
             ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->whereNull('deleted_at')
             ->where('transaction_date', '<=', $this->endDate)
             ->groupBy('account_id');
 
@@ -142,13 +143,72 @@ class TrialBalanceExport implements FromCollection, WithHeadings
         }
 
         $query->where(function ($sub) use ($branchId, $branchName) {
-            if ($branchId !== '') {
-                $sub->where('branch_id', $branchId);
-            }
-            if ($branchName !== '') {
-                $method = $branchId !== '' ? 'orWhere' : 'where';
-                $sub->{$method}('branch_name', $branchName);
-            }
+            $sub->where(function ($exact) use ($branchId, $branchName) {
+                if ($branchId !== '') {
+                    $exact->where('transactions.branch_id', $branchId);
+                }
+                if ($branchName !== '') {
+                    $method = $branchId !== '' ? 'orWhere' : 'where';
+                    $exact->{$method}('transactions.branch_name', $branchName);
+                }
+            })->orWhere(function ($pairedBlankLeg) use ($branchId, $branchName) {
+                $pairedBlankLeg->where(function ($missing) {
+                    $missing->where(function ($branchIdGap) {
+                        $branchIdGap->whereNull('transactions.branch_id')
+                            ->orWhere('transactions.branch_id', '');
+                    })->where(function ($branchNameGap) {
+                        $branchNameGap->whereNull('transactions.branch_name')
+                            ->orWhere('transactions.branch_name', '');
+                    });
+                })->whereExists(function ($anchor) use ($branchId, $branchName) {
+                    $anchor->select(\DB::raw('1'))
+                        ->from('transactions as branch_anchor')
+                        ->whereNull('branch_anchor.deleted_at')
+                        ->whereColumn('branch_anchor.transaction_type', 'transactions.transaction_type')
+                        ->where(function ($groupMatch) {
+                            $groupMatch->where(function ($byReference) {
+                                $byReference->whereNotNull('transactions.reference')
+                                    ->where('transactions.reference', '<>', '')
+                                    ->whereColumn('branch_anchor.reference', 'transactions.reference');
+                            })->orWhere(function ($byRelatedModel) {
+                                $byRelatedModel->whereNotNull('transactions.related_id')
+                                    ->whereNotNull('transactions.related_type')
+                                    ->whereColumn('branch_anchor.related_id', 'transactions.related_id')
+                                    ->whereColumn('branch_anchor.related_type', 'transactions.related_type');
+                            });
+                        });
+
+                    if (\Schema::hasColumn('transactions', 'company_id')) {
+                        $anchor->where(function ($sameCompany) {
+                            $sameCompany->whereColumn('branch_anchor.company_id', 'transactions.company_id')
+                                ->orWhere(function ($bothNull) {
+                                    $bothNull->whereNull('branch_anchor.company_id')
+                                        ->whereNull('transactions.company_id');
+                                });
+                        });
+                    }
+
+                    if (\Schema::hasColumn('transactions', 'user_id')) {
+                        $anchor->where(function ($sameUser) {
+                            $sameUser->whereColumn('branch_anchor.user_id', 'transactions.user_id')
+                                ->orWhere(function ($bothNull) {
+                                    $bothNull->whereNull('branch_anchor.user_id')
+                                        ->whereNull('transactions.user_id');
+                                });
+                        });
+                    }
+
+                    $anchor->where(function ($anchorBranch) use ($branchId, $branchName) {
+                        if ($branchId !== '') {
+                            $anchorBranch->where('branch_anchor.branch_id', $branchId);
+                        }
+                        if ($branchName !== '') {
+                            $method = $branchId !== '' ? 'orWhere' : 'where';
+                            $anchorBranch->{$method}('branch_anchor.branch_name', $branchName);
+                        }
+                    });
+                });
+            });
         });
     }
 

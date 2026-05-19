@@ -248,7 +248,7 @@ class TrialBalanceController extends Controller
         });
     }
 
-    private function applyLegacyOpeningBalanceBranchScope(
+    private function applyBalancedTransactionGroupBranchScope(
         $query,
         array $activeBranch,
         string $table = 'transactions'
@@ -270,8 +270,7 @@ class TrialBalanceController extends Controller
             $this->applyExactBranchScope($scoped, $branchId, $branchName, $qualifiedBranchId, $qualifiedBranchName);
 
             $scoped->orWhere(function ($legacy) use ($activeBranch, $table, $qualifiedBranchId, $qualifiedBranchName) {
-                $legacy->where("{$table}.transaction_type", Transaction::TYPE_OPENING_BALANCE)
-                    ->where(function ($missing) use ($qualifiedBranchId, $qualifiedBranchName) {
+                $legacy->where(function ($missing) use ($qualifiedBranchId, $qualifiedBranchName) {
                         $missing->where(function ($branchIdGap) use ($qualifiedBranchId) {
                             $branchIdGap->whereNull($qualifiedBranchId)
                                 ->orWhere($qualifiedBranchId, '');
@@ -284,10 +283,19 @@ class TrialBalanceController extends Controller
                         $anchor->select(DB::raw('1'))
                             ->from('transactions as branch_anchor')
                             ->whereNull('branch_anchor.deleted_at')
-                            ->where('branch_anchor.transaction_type', Transaction::TYPE_OPENING_BALANCE)
-                            ->whereColumn('branch_anchor.reference', "{$table}.reference")
-                            ->whereColumn('branch_anchor.related_id', "{$table}.related_id")
-                            ->whereColumn('branch_anchor.related_type', "{$table}.related_type");
+                            ->whereColumn('branch_anchor.transaction_type', "{$table}.transaction_type")
+                            ->where(function ($groupMatch) use ($table) {
+                                $groupMatch->where(function ($byReference) use ($table) {
+                                    $byReference->whereNotNull("{$table}.reference")
+                                        ->where("{$table}.reference", '<>', '')
+                                        ->whereColumn('branch_anchor.reference', "{$table}.reference");
+                                })->orWhere(function ($byRelatedModel) use ($table) {
+                                    $byRelatedModel->whereNotNull("{$table}.related_id")
+                                        ->whereNotNull("{$table}.related_type")
+                                        ->whereColumn('branch_anchor.related_id', "{$table}.related_id")
+                                        ->whereColumn('branch_anchor.related_type', "{$table}.related_type");
+                                });
+                            });
 
                         if (Schema::hasColumn('transactions', 'company_id')) {
                             $anchor->where(function ($sameCompany) use ($table) {
@@ -353,7 +361,7 @@ class TrialBalanceController extends Controller
             ->whereNull('deleted_at')
             ->whereDate('transaction_date', '<=', $end->toDateString())
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
-                $this->applyLegacyOpeningBalanceBranchScope($query, $activeBranch, 'transactions');
+                $this->applyBalancedTransactionGroupBranchScope($query, $activeBranch, 'transactions');
             });
         $this->applyTransactionScope($txnTotalsQuery, $request);
 
@@ -367,7 +375,7 @@ class TrialBalanceController extends Controller
             ->whereNull('deleted_at')
             ->whereDate('transaction_date', '<=', $end->toDateString())
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
-                $this->applyLegacyOpeningBalanceBranchScope($query, $activeBranch, 'transactions');
+                $this->applyBalancedTransactionGroupBranchScope($query, $activeBranch, 'transactions');
             });
         $this->applyTransactionScope($ledgerTotalsQuery, $request);
 
@@ -381,7 +389,7 @@ class TrialBalanceController extends Controller
             ->whereNull('deleted_at')
             ->whereDate('transaction_date', '<=', $end->toDateString())
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
-                $this->applyLegacyOpeningBalanceBranchScope($query, $activeBranch, 'transactions');
+                $this->applyBalancedTransactionGroupBranchScope($query, $activeBranch, 'transactions');
             });
         $this->applyTransactionScope($imbalancedEntriesQuery, $request);
 
