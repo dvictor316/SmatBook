@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\Expense;
 use App\Models\FinanceApproval;
+use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\RecurringTransaction;
@@ -409,6 +410,7 @@ class RecurringTransactionController extends Controller
             $product = $item->product()->lockForUpdate()->first();
             if ($product) {
                 $quantity = (float) ($itemPayload['qty'] ?? $itemPayload['quantity'] ?? 0);
+                Product::setInventoryContext('Purchase');
                 $product->increment('stock', $quantity);
                 if (Schema::hasColumn('products', 'stock_quantity')) {
                     $product->increment('stock_quantity', $quantity);
