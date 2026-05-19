@@ -1673,10 +1673,15 @@ public function create()
                 'sale_id'      => $sale->id,
                 'credit_date'  => $request->return_date,
                 'total_amount' => 0,
-                'note'         => $request->input('note', 'POS Stock Return'),
                 'created_at'   => now(),
                 'updated_at'   => now(),
             ];
+            if (Schema::hasColumn('credit_notes', 'note')) {
+                $cnInsert['note'] = $request->input('note', 'POS Stock Return');
+            }
+            if (Schema::hasColumn('credit_notes', 'notes')) {
+                $cnInsert['notes'] = $request->input('note', 'POS Stock Return');
+            }
             if (Schema::hasColumn('credit_notes', 'credit_note_no')) {
                 $cnInsert['credit_note_no'] = 'CN-' . strtoupper(Str::random(8));
             }
