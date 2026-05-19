@@ -717,6 +717,12 @@
         background: transparent !important;
     }
 
+    .sidebar:not(.spb-super-admin-sidebar)::before,
+    .deployment-sidebar::before {
+        content: none !important;
+        display: none !important;
+    }
+
     .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu .menu-title,
     .deployment-sidebar .menu-title {
         color: var(--spb-theme-gold-soft) !important;
@@ -776,6 +782,16 @@
         border: 0 !important;
         border-radius: 12px !important;
         box-shadow: none !important;
+    }
+
+    .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li > a::before,
+    .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li > a::after,
+    .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li.submenu ul li a::before,
+    .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li.submenu ul li a::after,
+    .deployment-sidebar a::before,
+    .deployment-sidebar a::after {
+        content: none !important;
+        display: none !important;
     }
 
     .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li.submenu ul li a:hover,
