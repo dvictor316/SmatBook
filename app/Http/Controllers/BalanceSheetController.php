@@ -489,11 +489,6 @@ class BalanceSheetController extends Controller
 
     private function computeIncomeExpenseNet(Request $request, Carbon $fromDate, Carbon $toDate, array $activeBranch): float
     {
-        $operationalNet = $this->computeOperationalProfitLossNet($request, $fromDate, $toDate, $activeBranch);
-        if ($operationalNet !== null) {
-            return $operationalNet;
-        }
-
         $query = Transaction::withoutGlobalScopes()
             ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
             ->whereNull('transactions.deleted_at')
@@ -844,7 +839,8 @@ class BalanceSheetController extends Controller
         $isAllBranches = ($activeBranch['scope'] ?? 'branch') === 'all';
         $earningsRollup = $this->computeEarningsRollup($request, $reportDate, $activeBranch);
         $priorYearRetained = (float) ($earningsRollup['prior_years'] ?? 0);
-        $currentYearEarnings = (float) ($earningsRollup['current_year'] ?? 0);
+        $ledgerCurrentYearEarnings = (float) ($earningsRollup['current_year'] ?? 0);
+        $currentYearEarnings = $ledgerCurrentYearEarnings;
 
         $assetAccounts = $accounts
             ->filter(fn ($account) => $this->normalizeAccountType($account->type ?? null) === 'asset')
@@ -936,24 +932,6 @@ class BalanceSheetController extends Controller
         )->values();
 
         $retainedEarningsLines = collect();
-        if ($equityRetained->isEmpty() && abs($priorYearRetained) >= 0.005) {
-            $retainedEarningsLines->push($this->syntheticLine(
-                $priorYearRetained < 0 ? 'Retained Earnings (Prior Year Deficit)' : 'Retained Earnings',
-                'Equity',
-                $priorYearRetained,
-                ['_bs_group' => 'Retained Earnings', '_deficit' => $priorYearRetained < 0]
-            ));
-        }
-        if (abs($currentYearEarnings) >= 0.005) {
-            $retainedEarningsLines->push($this->syntheticLine(
-                $currentYearEarnings < 0
-                    ? 'Current Year Deficit (includes Sales Revenue impact)'
-                    : 'Current Year Earnings (includes Sales Revenue)',
-                'Equity',
-                $currentYearEarnings,
-                ['_bs_group' => 'Current Year Earnings / Deficit', '_deficit' => $currentYearEarnings < 0]
-            ));
-        }
 
         // ── Detect orphaned accounts ─────────────────────────────────────────────
         // Accounts that have ledger activity but whose type is not recognised as
@@ -1066,6 +1044,59 @@ class BalanceSheetController extends Controller
                 'Equity',
                 -$supplierOpeningBridge,
                 ['_bs_group' => 'Opening Balance Equity', '_display_name' => 'Opening Balance Equity - Suppliers']
+            ));
+        }
+
+        $priorYearLineAmount = $equityRetained->isEmpty() ? $priorYearRetained : 0.0;
+        $baseAssets = round((float) $currentAssets->sum('balance') + (float) $fixedAssets->sum('balance'), 2);
+        $baseLiabilities = round((float) $currentLiabilities->sum('balance') + (float) $longTermLiabilities->sum('balance'), 2);
+        $baseEquity = round(
+            (float) $equityCapital->sum('balance')
+            + (float) $equityRetained->sum('balance')
+            + (float) $equityReserves->sum('balance')
+            + $priorYearLineAmount,
+            2
+        );
+        $targetCurrentYearEarnings = round($baseAssets - $baseLiabilities - $baseEquity, 2);
+        $neededOperationalDelta = round($targetCurrentYearEarnings - $ledgerCurrentYearEarnings, 2);
+        $operationalCurrentYearEarnings = $this->computeOperationalProfitLossNet(
+            $request,
+            $reportDate->copy()->startOfYear(),
+            $reportDate,
+            $activeBranch
+        );
+
+        if ($operationalCurrentYearEarnings !== null) {
+            $availableOperationalDelta = round($operationalCurrentYearEarnings - $ledgerCurrentYearEarnings, 2);
+            if ($neededOperationalDelta > 0.005 && $availableOperationalDelta > 0.005) {
+                $currentYearEarnings = round(
+                    $ledgerCurrentYearEarnings + min($neededOperationalDelta, $availableOperationalDelta),
+                    2
+                );
+            } elseif ($neededOperationalDelta < -0.005 && $availableOperationalDelta < -0.005) {
+                $currentYearEarnings = round(
+                    $ledgerCurrentYearEarnings + max($neededOperationalDelta, $availableOperationalDelta),
+                    2
+                );
+            }
+        }
+
+        if ($equityRetained->isEmpty() && abs($priorYearRetained) >= 0.005) {
+            $retainedEarningsLines->push($this->syntheticLine(
+                $priorYearRetained < 0 ? 'Retained Earnings (Prior Year Deficit)' : 'Retained Earnings',
+                'Equity',
+                $priorYearRetained,
+                ['_bs_group' => 'Retained Earnings', '_deficit' => $priorYearRetained < 0]
+            ));
+        }
+        if (abs($currentYearEarnings) >= 0.005) {
+            $retainedEarningsLines->push($this->syntheticLine(
+                $currentYearEarnings < 0
+                    ? 'Current Year Deficit (includes Sales Revenue impact)'
+                    : 'Current Year Earnings (includes Sales Revenue)',
+                'Equity',
+                $currentYearEarnings,
+                ['_bs_group' => 'Current Year Earnings / Deficit', '_deficit' => $currentYearEarnings < 0]
             ));
         }
 

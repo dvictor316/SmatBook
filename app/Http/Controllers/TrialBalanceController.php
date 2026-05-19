@@ -248,6 +248,79 @@ class TrialBalanceController extends Controller
         });
     }
 
+    private function applyLegacyOpeningBalanceBranchScope(
+        $query,
+        array $activeBranch,
+        string $table = 'transactions'
+    ): void {
+        if (($activeBranch['scope'] ?? 'branch') === 'all') {
+            return;
+        }
+
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+        if ($branchId === '' && $branchName === '') {
+            return;
+        }
+
+        $qualifiedBranchId = "{$table}.branch_id";
+        $qualifiedBranchName = "{$table}.branch_name";
+
+        $query->where(function ($scoped) use ($activeBranch, $branchId, $branchName, $table, $qualifiedBranchId, $qualifiedBranchName) {
+            $this->applyExactBranchScope($scoped, $branchId, $branchName, $qualifiedBranchId, $qualifiedBranchName);
+
+            $scoped->orWhere(function ($legacy) use ($activeBranch, $table, $qualifiedBranchId, $qualifiedBranchName) {
+                $legacy->where("{$table}.transaction_type", Transaction::TYPE_OPENING_BALANCE)
+                    ->where(function ($missing) use ($qualifiedBranchId, $qualifiedBranchName) {
+                        $missing->where(function ($branchIdGap) use ($qualifiedBranchId) {
+                            $branchIdGap->whereNull($qualifiedBranchId)
+                                ->orWhere($qualifiedBranchId, '');
+                        })->where(function ($branchNameGap) use ($qualifiedBranchName) {
+                            $branchNameGap->whereNull($qualifiedBranchName)
+                                ->orWhere($qualifiedBranchName, '');
+                        });
+                    })
+                    ->whereExists(function ($anchor) use ($activeBranch, $table) {
+                        $anchor->select(DB::raw('1'))
+                            ->from('transactions as branch_anchor')
+                            ->whereNull('branch_anchor.deleted_at')
+                            ->where('branch_anchor.transaction_type', Transaction::TYPE_OPENING_BALANCE)
+                            ->whereColumn('branch_anchor.reference', "{$table}.reference")
+                            ->whereColumn('branch_anchor.related_id', "{$table}.related_id")
+                            ->whereColumn('branch_anchor.related_type', "{$table}.related_type");
+
+                        if (Schema::hasColumn('transactions', 'company_id')) {
+                            $anchor->where(function ($sameCompany) use ($table) {
+                                $sameCompany->whereColumn('branch_anchor.company_id', "{$table}.company_id")
+                                    ->orWhere(function ($bothNull) use ($table) {
+                                        $bothNull->whereNull('branch_anchor.company_id')
+                                            ->whereNull("{$table}.company_id");
+                                    });
+                            });
+                        }
+
+                        if (Schema::hasColumn('transactions', 'user_id')) {
+                            $anchor->where(function ($sameUser) use ($table) {
+                                $sameUser->whereColumn('branch_anchor.user_id', "{$table}.user_id")
+                                    ->orWhere(function ($bothNull) use ($table) {
+                                        $bothNull->whereNull('branch_anchor.user_id')
+                                            ->whereNull("{$table}.user_id");
+                                    });
+                            });
+                        }
+
+                        $this->applyExactBranchScope(
+                            $anchor,
+                            trim((string) ($activeBranch['id'] ?? '')),
+                            trim((string) ($activeBranch['name'] ?? '')),
+                            'branch_anchor.branch_id',
+                            'branch_anchor.branch_name'
+                        );
+                    });
+            });
+        });
+    }
+
     /**
      * Display the trial balance
      */
@@ -280,9 +353,7 @@ class TrialBalanceController extends Controller
             ->whereNull('deleted_at')
             ->whereDate('transaction_date', '<=', $end->toDateString())
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
-                $branchId = trim((string) ($activeBranch['id'] ?? ''));
-                $branchName = trim((string) ($activeBranch['name'] ?? ''));
-                $this->applyExactBranchScope($query, $branchId, $branchName);
+                $this->applyLegacyOpeningBalanceBranchScope($query, $activeBranch, 'transactions');
             });
         $this->applyTransactionScope($txnTotalsQuery, $request);
 
@@ -296,9 +367,7 @@ class TrialBalanceController extends Controller
             ->whereNull('deleted_at')
             ->whereDate('transaction_date', '<=', $end->toDateString())
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
-                $branchId = trim((string) ($activeBranch['id'] ?? ''));
-                $branchName = trim((string) ($activeBranch['name'] ?? ''));
-                $this->applyExactBranchScope($query, $branchId, $branchName);
+                $this->applyLegacyOpeningBalanceBranchScope($query, $activeBranch, 'transactions');
             });
         $this->applyTransactionScope($ledgerTotalsQuery, $request);
 
@@ -312,9 +381,7 @@ class TrialBalanceController extends Controller
             ->whereNull('deleted_at')
             ->whereDate('transaction_date', '<=', $end->toDateString())
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
-                $branchId = trim((string) ($activeBranch['id'] ?? ''));
-                $branchName = trim((string) ($activeBranch['name'] ?? ''));
-                $this->applyExactBranchScope($query, $branchId, $branchName);
+                $this->applyLegacyOpeningBalanceBranchScope($query, $activeBranch, 'transactions');
             });
         $this->applyTransactionScope($imbalancedEntriesQuery, $request);
 
