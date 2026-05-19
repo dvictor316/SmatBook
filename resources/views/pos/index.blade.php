@@ -1823,6 +1823,7 @@ label {
                             </select>
                             <small class="text-muted">Label only — does not affect accounting entries.</small>
                         </div>
+                        <div class="col-12"></div>
                         <div class="col-md-6">
                             <label class="fw-semibold">Cash / Deposit Account <span class="text-danger">*</span></label>
                             <select id="deposit-account" class="form-select">
