@@ -2972,6 +2972,7 @@ window.POS_ENABLE_FALLBACK = function () {
     const categoryPills = document.querySelectorAll('.category-pill');
     const categoryToggle = document.getElementById('category-toggle');
     const categoryPillsWrap = document.getElementById('category-pills');
+    const isStarterPos = @json($isStarterPos);
     const quickSearch = document.getElementById('quick-search');
     const barcodeInput = document.getElementById('barcode-input');
     const productSelect = document.getElementById('product-select');
