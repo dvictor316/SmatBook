@@ -4141,7 +4141,7 @@ window.POS_ENABLE_FALLBACK = function () {
 	        }
 
         const cashValue = moneyValue(amountPaid);
-        if (cashValue > 0 && !depositAccount?.value) {
+        if (!isStarterPos && cashValue > 0 && !depositAccount?.value) {
             alertFallback('Choose the cash/deposit account.');
             return;
         }
