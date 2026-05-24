@@ -327,8 +327,8 @@
     $monthlySalesRows = collect($monthlySalesData ?? [])->take(-6)->values();
     $salesChartLabels = $monthlySalesRows->map(fn ($row) => $row->month ?? 'Month')->all();
     $salesChartTotals = $monthlySalesRows->map(fn ($row) => (float) ($row->total_sales ?? 0))->all();
-    $topProductLabels = $topSelling->map(fn ($product) => $product['name'] ?? $product->name ?? 'Product')->all();
-    $topProductTotals = $topSelling->map(fn ($product) => (float) ($product['total_qty'] ?? $product->total_qty ?? 0))->all();
+    $topProductLabels = $topSelling->map(fn ($product) => data_get($product, 'name', 'Product'))->all();
+    $topProductTotals = $topSelling->map(fn ($product) => (float) data_get($product, 'total_qty', 0))->all();
     $hasSalesChartData = count(array_filter($salesChartTotals, fn ($value) => (float) $value > 0)) > 0;
     $hasProductChartData = count(array_filter($topProductTotals, fn ($value) => (float) $value > 0)) > 0;
 @endphp
@@ -446,10 +446,10 @@
                     @forelse($topSelling as $product)
                         <div class="starter-row">
                             <div>
-                                <div class="starter-row-title">{{ $product['name'] ?? $product->name ?? 'Product' }}</div>
+                                <div class="starter-row-title">{{ data_get($product, 'name', 'Product') }}</div>
                                 <div class="starter-row-sub">Best seller in current scope</div>
                             </div>
-                            <span class="starter-pill">{{ number_format((float) ($product['total_qty'] ?? $product->total_qty ?? 0), 0) }} sold</span>
+                            <span class="starter-pill">{{ number_format((float) data_get($product, 'total_qty', 0), 0) }} sold</span>
                         </div>
                     @empty
                         <div class="starter-empty">No product sales data yet.</div>
