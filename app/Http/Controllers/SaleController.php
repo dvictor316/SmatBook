@@ -28,6 +28,7 @@ use App\Support\BranchInventoryService;
 use App\Support\GeoCurrency;
 use App\Support\InventoryQuantity;
 use App\Support\LedgerService;
+use App\Support\PlanAccess;
 use App\Support\PriceListUsage;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -866,6 +867,7 @@ public function customerDetails($id = null)
 
 public function store(Request $request)
 {
+    $isStarterPlan = PlanAccess::resolveTierForUser(auth()->user()) === 'starter';
     $validator = Validator::make($request->all(), [
         'customer_id'    => 'nullable|integer',
         'payment_method' => 'required|string|in:Cash,cash,Split,split',
@@ -1039,12 +1041,12 @@ public function store(Request $request)
                 : (string) ($sourceQuotation->quotation_id ?? ('Quotation #' . $sourceQuotation->id));
         }
         // Resolve deposit/collection accounts from Chart of Accounts
-        $depositAccountId = (int) ($request->deposit_account_id ?? $request->payment_account_id ?? 0);
+        $depositAccountId = $isStarterPlan ? 0 : (int) ($request->deposit_account_id ?? $request->payment_account_id ?? 0);
         $paymentAccount = $this->findScopedDepositAccount($depositAccountId);
-        $cardSplitAccount = !empty($splitDetails['card_account_id'])
+        $cardSplitAccount = !$isStarterPlan && !empty($splitDetails['card_account_id'])
             ? $this->findScopedDepositAccount((int) $splitDetails['card_account_id'])
             : null;
-        $transferSplitAccount = !empty($splitDetails['transfer_account_id'])
+        $transferSplitAccount = !$isStarterPlan && !empty($splitDetails['transfer_account_id'])
             ? $this->findScopedDepositAccount((int) $splitDetails['transfer_account_id'])
             : null;
 

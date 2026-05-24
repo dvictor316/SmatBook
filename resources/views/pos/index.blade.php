@@ -1,6 +1,9 @@
 @extends('layout.mainlayout')
 
 @section('content')
+@php
+    $isStarterPos = \App\Support\PlanAccess::resolveTierForUser(auth()->user()) === 'starter';
+@endphp
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
@@ -1824,61 +1827,67 @@ label {
                             <small class="text-muted">Label only — does not affect accounting entries.</small>
                         </div>
                         <div class="col-12"></div>
-                        <div class="col-md-6">
-                            <label class="fw-semibold">Cash / Deposit Account <span class="text-danger">*</span></label>
-                            <select id="deposit-account" class="form-select">
-                                <option value="">-- Select Account --</option>
-                                @foreach($depositAccounts as $acct)
-                                    <option value="{{ $acct->id }}">{{ $acct->name }}@if($acct->code) ({{ $acct->code }})@endif</option>
-                                @endforeach
-                            </select>
-                            @if($depositAccounts->isEmpty())
-                                <small class="text-danger d-block mt-1">
-                                    No active asset accounts found.
-                                    <a href="{{ route('chart-of-accounts') }}" class="fw-bold">Add one in Chart of Accounts</a>
-                                </small>
-                            @else
-                                <small class="text-muted">This COA account will be debited in the journal entry.</small>
-                            @endif
-                        </div>
+                        @unless($isStarterPos)
+                            <div class="col-md-6">
+                                <label class="fw-semibold">Cash / Deposit Account <span class="text-danger">*</span></label>
+                                <select id="deposit-account" class="form-select">
+                                    <option value="">-- Select Account --</option>
+                                    @foreach($depositAccounts as $acct)
+                                        <option value="{{ $acct->id }}">{{ $acct->name }}@if($acct->code) ({{ $acct->code }})@endif</option>
+                                    @endforeach
+                                </select>
+                                @if($depositAccounts->isEmpty())
+                                    <small class="text-danger d-block mt-1">
+                                        No active asset accounts found.
+                                        <a href="{{ route('chart-of-accounts') }}" class="fw-bold">Add one in Chart of Accounts</a>
+                                    </small>
+                                @else
+                                    <small class="text-muted">This COA account will be debited in the journal entry.</small>
+                                @endif
+                            </div>
+                        @endunless
                         <div class="col-md-6">
                             <label>Cash Amount</label>
                             <input type="number" min="0" step="0.01" id="amount-paid" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--success-500);">
                         </div>
-                        <div class="col-md-6 d-none" id="split-transfer-account-wrap">
-                            <label>Bank Account (COA)</label>
-                            <select id="transfer-account" class="form-select">
-                                <option value="">-- Select Account --</option>
-                                @foreach($depositAccounts as $acct)
-                                    <option value="{{ $acct->id }}">{{ $acct->name }}@if($acct->code) ({{ $acct->code }})@endif</option>
-                                @endforeach
-                            </select>
-                            @if($depositAccounts->isEmpty())
-                                <small class="text-muted d-block mt-2">
-                                    No asset accounts yet.
-                                    <a href="{{ route('chart-of-accounts') }}" class="fw-bold text-primary">Add in Chart of Accounts</a>
-                                </small>
-                            @endif
-                        </div>
+                        @unless($isStarterPos)
+                            <div class="col-md-6 d-none" id="split-transfer-account-wrap">
+                                <label>Bank Account (COA)</label>
+                                <select id="transfer-account" class="form-select">
+                                    <option value="">-- Select Account --</option>
+                                    @foreach($depositAccounts as $acct)
+                                        <option value="{{ $acct->id }}">{{ $acct->name }}@if($acct->code) ({{ $acct->code }})@endif</option>
+                                    @endforeach
+                                </select>
+                                @if($depositAccounts->isEmpty())
+                                    <small class="text-muted d-block mt-2">
+                                        No asset accounts yet.
+                                        <a href="{{ route('chart-of-accounts') }}" class="fw-bold text-primary">Add in Chart of Accounts</a>
+                                    </small>
+                                @endif
+                            </div>
+                        @endunless
                         <div class="col-md-6 d-none" id="split-transfer-wrap">
                             <label>Bank Amount</label>
                             <input type="number" min="0" step="0.01" id="transfer-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
                         </div>
+                        @unless($isStarterPos)
 	                        <div class="col-md-6 d-none" id="split-card-account-wrap">
-                            <label>POS Account (COA)</label>
-                            <select id="card-account" class="form-select">
-                                <option value="">-- Select Account --</option>
-                                @foreach($depositAccounts as $acct)
-                                    <option value="{{ $acct->id }}">{{ $acct->name }}@if($acct->code) ({{ $acct->code }})@endif</option>
-                                @endforeach
-                            </select>
-                            @if($depositAccounts->isEmpty())
-                                <small class="text-muted d-block mt-2">
-                                    No asset accounts yet.
-                                    <a href="{{ route('chart-of-accounts') }}" class="fw-bold text-primary">Add in Chart of Accounts</a>
-                                </small>
+                                <label>POS Account (COA)</label>
+                                <select id="card-account" class="form-select">
+                                    <option value="">-- Select Account --</option>
+                                    @foreach($depositAccounts as $acct)
+                                        <option value="{{ $acct->id }}">{{ $acct->name }}@if($acct->code) ({{ $acct->code }})@endif</option>
+                                    @endforeach
+                                </select>
+                                @if($depositAccounts->isEmpty())
+                                    <small class="text-muted d-block mt-2">
+                                        No asset accounts yet.
+                                        <a href="{{ route('chart-of-accounts') }}" class="fw-bold text-primary">Add in Chart of Accounts</a>
+                                    </small>
 	                            @endif
 	                        </div>
+                        @endunless
                         <div class="col-md-6 d-none" id="split-card-wrap">
                             <label>POS Amount</label>
                             <input type="number" min="0" step="0.01" id="card-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
@@ -1936,6 +1945,7 @@ $(document).ready(function() {
     let lastSelectedProductId = null;
     let isSyncingProductSearch = false;
     const fmt = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' });
+    const isStarterPos = @json($isStarterPos);
     const posPriceLists = @json($priceListData ?? []);
     const posPriceListById = new Map(posPriceLists.map(list => [String(list.id), list]));
     const showAlert = (options) => {
@@ -2869,7 +2879,7 @@ $(document).ready(function() {
                 _token: "{{ csrf_token() }}",
                 customer_id: $('#customer-select').val(),
                 payment_method: $('#payment-method').val(),
-                deposit_account_id: $('#deposit-account').val() || null,
+                deposit_account_id: isStarterPos ? null : ($('#deposit-account').val() || null),
                 items: cart,
                 subtotal: cart.reduce((s, i) => s + i.sub, 0),
                 tax: cart.reduce((s, i) => s + i.taxVal, 0),
@@ -2879,9 +2889,9 @@ $(document).ready(function() {
                 split_details: {
                     cash: parseFloat($('#amount-paid').val()) || 0,
                     transfer: parseFloat($('#transfer-amount').val()) || 0,
-                    transfer_account_id: $('#transfer-account').val() || null,
+                    transfer_account_id: isStarterPos ? null : ($('#transfer-account').val() || null),
                     card: parseFloat($('#card-amount').val()) || 0,
-                    card_account_id: $('#card-account').val() || null
+                    card_account_id: isStarterPos ? null : ($('#card-account').val() || null)
                 }
             },
             success: function(res) {
@@ -4139,11 +4149,11 @@ window.POS_ENABLE_FALLBACK = function () {
         if (paymentMethod?.value === 'Split') {
             const transferValue = moneyValue(transferAmount);
             const cardValue = moneyValue(cardAmount);
-            if (transferValue > 0 && !transferAccount?.value) {
+            if (!isStarterPos && transferValue > 0 && !transferAccount?.value) {
                 alertFallback('Choose the transfer account.');
                 return;
             }
-            if (cardValue > 0 && !cardAccount?.value) {
+            if (!isStarterPos && cardValue > 0 && !cardAccount?.value) {
                 alertFallback('Choose the POS account.');
                 return;
             }
@@ -4174,15 +4184,15 @@ window.POS_ENABLE_FALLBACK = function () {
                     tax: cart.reduce((sum, item) => sum + item.taxVal, 0),
                     discount: cart.reduce((sum, item) => sum + item.discVal, 0),
                     total,
-                    deposit_account_id: depositAccount?.value || null,
+                    deposit_account_id: isStarterPos ? null : (depositAccount?.value || null),
 	                    paid: externalPaid,
 	                    wallet_amount: walletApplied,
 	                    split_details: {
                         cash: moneyValue(amountPaid),
                         transfer: moneyValue(transferAmount),
-                        transfer_account_id: transferAccount?.value || null,
+                        transfer_account_id: isStarterPos ? null : (transferAccount?.value || null),
                         card: moneyValue(cardAmount),
-                        card_account_id: cardAccount?.value || null,
+                        card_account_id: isStarterPos ? null : (cardAccount?.value || null),
                     },
                 }),
             });
