@@ -167,10 +167,86 @@
     .starter-chart-wrap {
         position: relative;
         height: 280px;
+        border: 1px solid #e7eefb;
+        border-radius: 16px;
+        background:
+            linear-gradient(180deg, #fbfdff 0%, #f7faff 100%);
+        padding: 14px;
     }
 
     .starter-chart-wrap.is-doughnut {
         height: 250px;
+    }
+
+    .starter-chart-empty {
+        height: 100%;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background:
+            radial-gradient(circle at top, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0) 58%),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(247, 250, 255, 0.96) 100%);
+    }
+
+    .starter-chart-empty-shell {
+        width: min(100%, 320px);
+        text-align: center;
+    }
+
+    .starter-chart-empty-title {
+        color: #0f172a;
+        font-size: 0.92rem;
+        font-weight: 800;
+        margin-bottom: 6px;
+    }
+
+    .starter-chart-empty-copy {
+        color: #64748b;
+        font-size: 0.82rem;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    .starter-chart-bars {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 10px;
+        height: 120px;
+        margin-bottom: 16px;
+    }
+
+    .starter-chart-bars span {
+        width: 28px;
+        border-radius: 10px 10px 4px 4px;
+        background: linear-gradient(180deg, #2563eb 0%, #93c5fd 100%);
+        box-shadow: 0 10px 18px rgba(37, 99, 235, 0.12);
+    }
+
+    .starter-chart-bars span:nth-child(1) { height: 42px; }
+    .starter-chart-bars span:nth-child(2) { height: 76px; }
+    .starter-chart-bars span:nth-child(3) { height: 58px; }
+    .starter-chart-bars span:nth-child(4) { height: 96px; }
+    .starter-chart-bars span:nth-child(5) { height: 68px; }
+
+    .starter-chart-donut {
+        width: 126px;
+        height: 126px;
+        border-radius: 50%;
+        margin: 0 auto 16px;
+        background:
+            conic-gradient(#0f3a8a 0 28%, #2563eb 28% 52%, #60a5fa 52% 72%, #d7a928 72% 86%, #10b981 86% 100%);
+        position: relative;
+        box-shadow: 0 14px 28px rgba(6, 26, 68, 0.12);
+    }
+
+    .starter-chart-donut::after {
+        content: '';
+        position: absolute;
+        inset: 24px;
+        border-radius: 50%;
+        background: #ffffff;
+        box-shadow: inset 0 0 0 1px #e7eefb;
     }
 
     .starter-list {
@@ -253,6 +329,8 @@
     $salesChartTotals = $monthlySalesRows->map(fn ($row) => (float) ($row->total_sales ?? 0))->all();
     $topProductLabels = $topSelling->map(fn ($product) => $product['name'] ?? $product->name ?? 'Product')->all();
     $topProductTotals = $topSelling->map(fn ($product) => (float) ($product['total_qty'] ?? $product->total_qty ?? 0))->all();
+    $hasSalesChartData = count(array_filter($salesChartTotals, fn ($value) => (float) $value > 0)) > 0;
+    $hasProductChartData = count(array_filter($topProductTotals, fn ($value) => (float) $value > 0)) > 0;
 @endphp
 
 <div class="starter-dashboard">
@@ -304,7 +382,19 @@
                     <span class="starter-pill">Bar Chart</span>
                 </div>
                 <div class="starter-chart-wrap">
-                    <canvas id="starterSalesBarChart"></canvas>
+                    @if($hasSalesChartData)
+                        <canvas id="starterSalesBarChart"></canvas>
+                    @else
+                        <div class="starter-chart-empty">
+                            <div class="starter-chart-empty-shell">
+                                <div class="starter-chart-bars" aria-hidden="true">
+                                    <span></span><span></span><span></span><span></span><span></span>
+                                </div>
+                                <div class="starter-chart-empty-title">Sales chart will appear here</div>
+                                <p class="starter-chart-empty-copy">Process a few sales and this card will start plotting your monthly performance automatically.</p>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </article>
 
@@ -317,7 +407,17 @@
                     <span class="starter-pill">Doughnut</span>
                 </div>
                 <div class="starter-chart-wrap is-doughnut">
-                    <canvas id="starterProductDoughnutChart"></canvas>
+                    @if($hasProductChartData)
+                        <canvas id="starterProductDoughnutChart"></canvas>
+                    @else
+                        <div class="starter-chart-empty">
+                            <div class="starter-chart-empty-shell">
+                                <div class="starter-chart-donut" aria-hidden="true"></div>
+                                <div class="starter-chart-empty-title">Product mix will appear here</div>
+                                <p class="starter-chart-empty-copy">Once products start selling, this card will break down the strongest contributors visually.</p>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </article>
         </section>
@@ -414,6 +514,10 @@
 </div>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        if (typeof Chart === 'undefined') {
+            return;
+        }
+
         const salesLabels = @json($salesChartLabels);
         const salesTotals = @json($salesChartTotals);
         const productLabels = @json($topProductLabels);
@@ -510,5 +614,4 @@
         }
     });
 </script>
-</div>
 @endsection
