@@ -2922,6 +2922,10 @@ $(document).ready(function() {
 
     // Process Sale
     $('#process-btn').on('click', function(e) {
+        if (window.POS_VANILLA_BOUND) {
+            return;
+        }
+
         e.preventDefault();
         e.stopPropagation();
 
