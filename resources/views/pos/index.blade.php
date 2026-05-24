@@ -2984,7 +2984,7 @@ window.POS_ENABLE_FALLBACK = function () {
     const discountInput = document.getElementById('discount');
     const discountTypeInput = document.getElementById('discount-type');
     const taxInput = document.getElementById('tax');
-    const addBtn = document.getElementById('add-btn');
+    let addBtn = document.getElementById('add-btn');
     const cartBody = document.getElementById('cart-body');
     const productImg = document.getElementById('product-img');
     const noImg = document.getElementById('no-img');
@@ -3024,9 +3024,9 @@ window.POS_ENABLE_FALLBACK = function () {
     const changeAmount = document.getElementById('change-amount');
     const customerSelect = document.getElementById('customer-select');
     const customerSearchInput = document.getElementById('customer-search-input');
-    const processBtn = document.getElementById('process-btn');
-    const btnText = document.getElementById('btn-text');
-    const btnLoading = document.getElementById('btn-loading');
+    let processBtn = document.getElementById('process-btn');
+    let btnText = document.getElementById('btn-text');
+    let btnLoading = document.getElementById('btn-loading');
     const itemTotal = document.getElementById('item-total');
     const fmt = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' });
     const cart = [];
@@ -3102,6 +3102,25 @@ window.POS_ENABLE_FALLBACK = function () {
 	        }
 	        : null;
 	    let splitAutoSync = false;
+
+    function replaceNodeWithClone(node) {
+        if (!node || !node.parentNode) {
+            return node;
+        }
+
+        const clone = node.cloneNode(true);
+        node.parentNode.replaceChild(clone, node);
+        return clone;
+    }
+
+    if (isStarterPos) {
+        // Starter POS uses its own streamlined flow, so strip any legacy listeners
+        // by rebinding on fresh nodes before attaching the active handlers below.
+        addBtn = replaceNodeWithClone(addBtn);
+        processBtn = replaceNodeWithClone(processBtn);
+        btnText = document.getElementById('btn-text');
+        btnLoading = document.getElementById('btn-loading');
+    }
 	    const hasProductSelect2 = Boolean(window.jQuery && window.jQuery.fn && window.jQuery.fn.select2 && productSearch);
 	    if (hasProductSelect2) {
 	        window.jQuery(productSearch).select2({
