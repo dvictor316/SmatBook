@@ -8,37 +8,61 @@
         </a>
     </li>
 
-    <li class="submenu {{ Request::is('pos*', 'sales*') ? 'active subdrop' : '' }}">
-        <a href="#"><i class="fe fe-shopping-cart"></i><span>POS & Sales</span><span class="menu-arrow"></span></a>
-        <ul>
-            <li><a href="{{ route('sales.showPos') }}">New Sale</a></li>
-            <li><a href="{{ route('pos.reports') }}">POS Reports</a></li>
-        </ul>
+    <li class="{{ Request::routeIs('sales.showPos') ? 'active' : '' }}">
+        <a href="{{ route('sales.showPos') }}">
+            <i class="fe fe-shopping-cart"></i>
+            <span>New Sale</span>
+        </a>
     </li>
 
-    <li class="submenu {{ Request::is('product-list*', 'add-products*', 'inventory*', 'categories*', 'units*') ? 'active subdrop' : '' }}">
-        <a href="#"><i class="fe fe-package"></i><span>Inventory</span><span class="menu-arrow"></span></a>
-        <ul>
-            <li><a href="{{ route('product-list') }}">Products</a></li>
-            <li><a href="{{ route('inventory.Products') }}">Stock Overview</a></li>
-        </ul>
+    <li class="{{ Request::routeIs('pos.reports') ? 'active' : '' }}">
+        <a href="{{ route('pos.reports') }}">
+            <i class="fe fe-bar-chart-2"></i>
+            <span>POS Reports</span>
+        </a>
+    </li>
+
+    <li class="{{ Request::routeIs('product-list') ? 'active' : '' }}">
+        <a href="{{ route('product-list') }}">
+            <i class="fe fe-package"></i>
+            <span>Products</span>
+        </a>
+    </li>
+
+    <li class="{{ Request::routeIs('inventory.Products') ? 'active' : '' }}">
+        <a href="{{ route('inventory.Products') }}">
+            <i class="fe fe-archive"></i>
+            <span>Stock Overview</span>
+        </a>
     </li>
 
     @if(auth()->user()?->role === 'super_admin' || auth()->user()?->role === 'administrator')
-        <li class="submenu {{ Request::is('users*', 'roles*') ? 'active subdrop' : '' }}">
-            <a href="#"><i class="fe fe-user-plus"></i><span>Team</span><span class="menu-arrow"></span></a>
-            <ul>
-                <li><a href="{{ route('users.index') }}">Users</a></li>
-                <li><a href="{{ route('roles.index') }}">Roles & Permission</a></li>
-            </ul>
+        <li class="{{ Request::routeIs('users.index') ? 'active' : '' }}">
+            <a href="{{ route('users.index') }}">
+                <i class="fe fe-user-plus"></i>
+                <span>Users</span>
+            </a>
+        </li>
+
+        <li class="{{ Request::routeIs('roles.index') ? 'active' : '' }}">
+            <a href="{{ route('roles.index') }}">
+                <i class="fe fe-shield"></i>
+                <span>Roles & Permission</span>
+            </a>
         </li>
     @endif
 
-    <li class="submenu {{ Request::is('profile*', 'settings*') ? 'active subdrop' : '' }}">
-        <a href="#"><i class="fe fe-settings"></i><span>Account</span><span class="menu-arrow"></span></a>
-        <ul>
-            <li><a href="{{ route('profile') }}">Profile</a></li>
-            <li><a href="{{ route('membership-plans') }}">Billing & Subscription</a></li>
-        </ul>
+    <li class="{{ Request::routeIs('profile') ? 'active' : '' }}">
+        <a href="{{ route('profile') }}">
+            <i class="fe fe-user"></i>
+            <span>Profile</span>
+        </a>
+    </li>
+
+    <li class="{{ Request::routeIs('membership-plans') ? 'active' : '' }}">
+        <a href="{{ route('membership-plans') }}">
+            <i class="fe fe-settings"></i>
+            <span>Billing & Subscription</span>
+        </a>
     </li>
 </ul>

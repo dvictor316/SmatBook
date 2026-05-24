@@ -1,6 +1,7 @@
 @extends('layout.mainlayout')
 
 @section('content')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
     .starter-dashboard {
         margin-left: var(--sb-sidebar-w, 270px);
@@ -135,6 +136,43 @@
         gap: 18px;
     }
 
+    .starter-chart-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 18px;
+    }
+
+    .starter-chart-card {
+        border: 1px solid #d8e3f5;
+        border-radius: 18px;
+        background: #fff;
+        padding: 18px;
+        box-shadow: 0 18px 28px -30px rgba(6, 26, 68, 0.65);
+    }
+
+    .starter-chart-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .starter-chart-copy {
+        color: #64748b;
+        font-size: 0.84rem;
+        margin: 4px 0 0;
+    }
+
+    .starter-chart-wrap {
+        position: relative;
+        height: 280px;
+    }
+
+    .starter-chart-wrap.is-doughnut {
+        height: 250px;
+    }
+
     .starter-list {
         display: grid;
         gap: 12px;
@@ -189,6 +227,7 @@
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
+        .starter-chart-grid,
         .starter-split {
             grid-template-columns: 1fr;
         }
@@ -209,6 +248,11 @@
     $recentSales = collect($latestInvoices ?? collect())->take(6);
     $topSelling = collect($topProducts ?? [])->take(6);
     $lowStockItems = collect($lowStockProducts ?? collect())->take(6);
+    $monthlySalesRows = collect($monthlySalesData ?? [])->take(-6)->values();
+    $salesChartLabels = $monthlySalesRows->map(fn ($row) => $row->month ?? 'Month')->all();
+    $salesChartTotals = $monthlySalesRows->map(fn ($row) => (float) ($row->total_sales ?? 0))->all();
+    $topProductLabels = $topSelling->map(fn ($product) => $product['name'] ?? $product->name ?? 'Product')->all();
+    $topProductTotals = $topSelling->map(fn ($product) => (float) ($product['total_qty'] ?? $product->total_qty ?? 0))->all();
 @endphp
 
 <div class="starter-dashboard">
@@ -247,6 +291,34 @@
                 <div class="starter-label">Inventory Summary</div>
                 <div class="starter-value">{{ number_format((float) ($metrics['activeStock'] ?? 0), 0) }}</div>
                 <p class="starter-meta">Units on hand. Value: ₦{{ number_format((float) ($metrics['inventoryValue'] ?? 0), 0) }}</p>
+            </article>
+        </section>
+
+        <section class="starter-chart-grid">
+            <article class="starter-chart-card">
+                <div class="starter-chart-head">
+                    <div>
+                        <div class="starter-label">Monthly Sales Trend</div>
+                        <p class="starter-chart-copy">A quick view of recent sales performance across the last visible months.</p>
+                    </div>
+                    <span class="starter-pill">Bar Chart</span>
+                </div>
+                <div class="starter-chart-wrap">
+                    <canvas id="starterSalesBarChart"></canvas>
+                </div>
+            </article>
+
+            <article class="starter-chart-card">
+                <div class="starter-chart-head">
+                    <div>
+                        <div class="starter-label">Top Product Mix</div>
+                        <p class="starter-chart-copy">See which products are taking the biggest share of current sales volume.</p>
+                    </div>
+                    <span class="starter-pill">Doughnut</span>
+                </div>
+                <div class="starter-chart-wrap is-doughnut">
+                    <canvas id="starterProductDoughnutChart"></canvas>
+                </div>
             </article>
         </section>
 
@@ -339,5 +411,104 @@
             </article>
         </section>
     </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const salesLabels = @json($salesChartLabels);
+        const salesTotals = @json($salesChartTotals);
+        const productLabels = @json($topProductLabels);
+        const productTotals = @json($topProductTotals);
+
+        const salesCanvas = document.getElementById('starterSalesBarChart');
+        if (salesCanvas && salesLabels.length) {
+            new Chart(salesCanvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: salesLabels,
+                    datasets: [{
+                        label: 'Sales',
+                        data: salesTotals,
+                        backgroundColor: [
+                            '#0f3a8a',
+                            '#1d4ed8',
+                            '#2563eb',
+                            '#3b82f6',
+                            '#60a5fa',
+                            '#93c5fd'
+                        ],
+                        borderRadius: 10,
+                        borderSkipped: false,
+                        maxBarThickness: 42
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(6, 26, 68, 0.94)',
+                            callbacks: {
+                                label: (context) => 'Sales: ₦' + Number(context.parsed.y || 0).toLocaleString()
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#64748b' }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(148, 163, 184, 0.16)' },
+                            ticks: {
+                                color: '#64748b',
+                                callback: (value) => '₦' + Number(value).toLocaleString()
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        const doughnutCanvas = document.getElementById('starterProductDoughnutChart');
+        if (doughnutCanvas && productLabels.length) {
+            new Chart(doughnutCanvas.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: productLabels,
+                    datasets: [{
+                        data: productTotals,
+                        backgroundColor: ['#0f3a8a', '#2563eb', '#60a5fa', '#d7a928', '#10b981', '#f97316'],
+                        borderColor: '#ffffff',
+                        borderWidth: 3,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '64%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                color: '#475569',
+                                padding: 14
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(6, 26, 68, 0.94)',
+                            callbacks: {
+                                label: (context) => `${context.label}: ${Number(context.parsed || 0).toLocaleString()} sold`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
 </div>
 @endsection
