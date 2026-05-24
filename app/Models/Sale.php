@@ -161,7 +161,7 @@ class Sale extends Model
         return $this->customer?->customer_name
             ?? $this->customer?->name
             ?? $this->customer_name
-            ?? 'Walk-in Customer';
+            ?? 'Customer';
     }
 
     public function getBranchLabelAttribute(): ?string

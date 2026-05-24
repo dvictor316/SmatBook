@@ -11,8 +11,8 @@ class PlanSeeder extends Seeder
     {
         $plans = [
             // Monthly Plans
-            ['name' => 'Starter Solo Monthly', 'price' => 2700, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 1],
-            ['name' => 'Starter Monthly', 'price' => 3300, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 2],
+            ['name' => 'Starter Solo Monthly', 'price' => 1000, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 1],
+            ['name' => 'Starter Monthly', 'price' => 1000, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 1],
             ['name' => 'Basic Solo Monthly', 'price' => 3000, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 1],
             ['name' => 'Basic Monthly', 'price' => 5500, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 3],
             ['name' => 'Pro Solo Monthly', 'price' => 7000, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 2],
@@ -21,8 +21,8 @@ class PlanSeeder extends Seeder
             ['name' => 'Enterprise Monthly', 'price' => 28500, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 8],
             
             // Yearly Plans
-            ['name' => 'Starter Solo Yearly', 'price' => 27000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 1],
-            ['name' => 'Starter Yearly', 'price' => 33000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 2],
+            ['name' => 'Starter Solo Yearly', 'price' => 10000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 1],
+            ['name' => 'Starter Yearly', 'price' => 10000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 1],
             ['name' => 'Basic Solo Yearly', 'price' => 30000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 1],
             ['name' => 'Basic Yearly', 'price' => 55000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 3],
             ['name' => 'Pro Solo Yearly', 'price' => 70000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 2],

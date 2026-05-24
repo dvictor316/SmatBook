@@ -1757,7 +1757,7 @@ label {
                     <label>Customer</label>
                     <input type="text" id="customer-search-input" class="form-control mb-2" placeholder="Search customer name...">
                     <select id="customer-select" class="form-select">
-	                        <option value="">Walk-in Customer</option>
+	                        <option value="">Customer</option>
 	                        @foreach($customers as $c)
 	                        <option value="{{ $c->id }}" data-wallet="{{ (float) ($c->wallet_balance ?? 0) }}">{{ $c->name ?? $c->customer_name ?? ('Customer #' . $c->id) }}</option>
 	                        @endforeach

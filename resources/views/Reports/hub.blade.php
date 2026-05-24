@@ -358,11 +358,13 @@
                 </div>
                 <div class="rh-col-grid">
 
+                    @unless($isStarterReportAccess)
                     <div class="rl-row" data-section="sales" data-tab="sales" data-id="sales-report" data-url="{{ route('reports.sales') }}" data-keywords="sales report revenue transactions customers">
                         <button class="rl-star" data-id="sales-report" title="Favourite"><i class="far fa-star"></i></button>
                         <a href="{{ route('reports.sales') }}" class="rl-name">Sales Report</a>
                         <a href="{{ route('reports.sales') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
+                    @endunless
 
                     @unless($isStarterReportAccess)
                     <div class="rl-row" data-section="sales" data-tab="sales" data-id="purchase-report" data-url="{{ route('reports.purchase') }}" data-keywords="purchase report suppliers buying orders">
@@ -420,23 +422,29 @@
                         </div>
                     @endif
 
+                    @unless($isStarterReportAccess)
                     <div class="rl-row" data-section="sales" data-tab="sales" data-id="sales-by-customer" data-url="{{ route('reports.sales-by-customer') }}" data-keywords="sales by customer revenue per customer breakdown">
                         <button class="rl-star" data-id="sales-by-customer" title="Favourite"><i class="far fa-star"></i></button>
                         <a href="{{ route('reports.sales-by-customer') }}" class="rl-name">Sales by Customer</a>
                         <a href="{{ route('reports.sales-by-customer') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
+                    @endunless
 
+                    @unless($isStarterReportAccess)
                     <div class="rl-row" data-section="sales" data-tab="sales" data-id="sales-by-product" data-url="{{ route('reports.sales-by-product') }}" data-keywords="sales by product item revenue qty sold breakdown">
                         <button class="rl-star" data-id="sales-by-product" title="Favourite"><i class="far fa-star"></i></button>
                         <a href="{{ route('reports.sales-by-product') }}" class="rl-name">Sales by Product</a>
                         <a href="{{ route('reports.sales-by-product') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
+                    @endunless
 
+                    @unless($isStarterReportAccess)
                     <div class="rl-row" data-section="sales" data-tab="sales" data-id="sales-summary" data-url="{{ route('reports.sales-summary') }}" data-keywords="sales summary totals kpi overview period status">
                         <button class="rl-star" data-id="sales-summary" title="Favourite"><i class="far fa-star"></i></button>
                         <a href="{{ route('reports.sales-summary') }}" class="rl-name">Sales Summary</a>
                         <a href="{{ route('reports.sales-summary') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
+                    @endunless
 
                     @unless($isStarterReportAccess)
                     <div class="rl-row" data-section="sales" data-tab="sales" data-id="purchase-by-supplier" data-url="{{ route('reports.purchase-by-supplier') }}" data-keywords="purchases by supplier vendor breakdown orders">
@@ -475,11 +483,13 @@
                         <a href="{{ route('reports.stock') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
 
+                    @unless($isStarterReportAccess)
                     <div class="rl-row" data-section="inventory" data-tab="inventory" data-id="low-stock" data-url="{{ route('reports.low-stock') }}" data-keywords="low stock alert reorder threshold products">
                         <button class="rl-star" data-id="low-stock" title="Favourite"><i class="far fa-star"></i></button>
                         <a href="{{ route('reports.low-stock') }}" class="rl-name">Low Stock Report</a>
                         <a href="{{ route('reports.low-stock') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
+                    @endunless
 
                     <div class="rl-row" data-section="inventory" data-tab="inventory" data-id="pos-stock" data-url="{{ route('pos.reports') }}" data-keywords="pos stock position sold units remaining movement">
                         <button class="rl-star" data-id="pos-stock" title="Favourite"><i class="far fa-star"></i></button>
@@ -487,17 +497,21 @@
                         <a href="{{ route('pos.reports') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
 
+                    @unless($isStarterReportAccess)
                     <div class="rl-row" data-section="inventory" data-tab="inventory" data-id="stock-valuation" data-url="{{ route('reports.stock-valuation') }}" data-keywords="stock valuation inventory value cost price total worth">
                         <button class="rl-star" data-id="stock-valuation" title="Favourite"><i class="far fa-star"></i></button>
                         <a href="{{ route('reports.stock-valuation') }}" class="rl-name">Stock Valuation</a>
                         <a href="{{ route('reports.stock-valuation') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
+                    @endunless
 
+                    @unless($isStarterReportAccess)
                     <div class="rl-row" data-section="inventory" data-tab="inventory" data-id="stock-by-category" data-url="{{ route('reports.stock-by-category') }}" data-keywords="stock by category inventory group product type">
                         <button class="rl-star" data-id="stock-by-category" title="Favourite"><i class="far fa-star"></i></button>
                         <a href="{{ route('reports.stock-by-category') }}" class="rl-name">Stock by Category</a>
                         <a href="{{ route('reports.stock-by-category') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
+                    @endunless
 
                 </div>
             </div>

@@ -10,7 +10,7 @@ class Plan extends Model
     use HasFactory;
 
     public const DEFAULT_USER_LIMITS = [
-        'starter' => 2,
+        'starter' => 1,
         'basic' => 3,
         'professional' => 5,
         'enterprise' => 8,
@@ -119,7 +119,7 @@ class Plan extends Model
                 'POS sales and receipts',
                 'Products, customers, and inventory',
                 'Sales and stock reporting',
-                'Low stock alerts and movement tracking',
+                'Single-user workspace access',
             ],
             'professional' => [
                 $seatLabel,

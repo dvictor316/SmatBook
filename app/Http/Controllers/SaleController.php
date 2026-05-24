@@ -578,7 +578,7 @@ class SaleController extends Controller
 
                         return [
                             'invoice_no' => (string) ($sale->invoice_no ?? ''),
-                            'customer' => (string) ($sale->customer_name ?? optional($sale->customer)->customer_name ?? optional($sale->customer)->name ?? 'Walk-in Customer'),
+                            'customer' => (string) ($sale->customer_name ?? optional($sale->customer)->customer_name ?? optional($sale->customer)->name ?? 'Customer'),
                             'items_count' => (int) ($sale->items?->count() ?? 0),
                             'quantity' => (float) ($sale->items?->sum('qty') ?? 0),
                             'total_amount' => (float) ($sale->total ?? 0),
@@ -986,7 +986,7 @@ public function store(Request $request)
             : null;
         $resolvedCustomerName = $selectedCustomer?->customer_name
             ?? $selectedCustomer?->name
-            ?? 'Walk-in Customer';
+            ?? 'Customer';
 
         $activeBranch = $this->getActiveBranchContext();
         $splitDetails = $this->normalizeSplitDetails($request->input('split_details', []));

@@ -1193,11 +1193,11 @@ class AuthController extends Controller
         return [
             'starter-solo' => [
                 'label' => 'Starter Solo',
-                'prices' => ['monthly' => 2700, 'yearly' => 27000],
+                'prices' => ['monthly' => 1000, 'yearly' => 10000],
             ],
             'starter' => [
                 'label' => 'Starter',
-                'prices' => ['monthly' => 3300, 'yearly' => 33000],
+                'prices' => ['monthly' => 1000, 'yearly' => 10000],
             ],
             'basic-solo' => [
                 'label' => 'Basic Solo',

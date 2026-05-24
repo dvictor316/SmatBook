@@ -12,8 +12,6 @@
         <a href="#"><i class="fe fe-shopping-cart"></i><span>POS & Sales</span><span class="menu-arrow"></span></a>
         <ul>
             <li><a href="{{ route('sales.showPos') }}">New Sale</a></li>
-            <li><a href="{{ route('pos.sales') }}">Sales History</a></li>
-            <li><a href="{{ route('sales.index') }}">Sales Records</a></li>
             <li><a href="{{ route('pos.reports') }}">POS Reports</a></li>
         </ul>
     </li>
@@ -22,20 +20,7 @@
         <a href="#"><i class="fe fe-package"></i><span>Inventory</span><span class="menu-arrow"></span></a>
         <ul>
             <li><a href="{{ route('product-list') }}">Products</a></li>
-            <li><a href="{{ route('add-products') }}">Add Product</a></li>
             <li><a href="{{ route('inventory.Products') }}">Stock Overview</a></li>
-            <li><a href="{{ route('inventory.stock-valuation') }}">Stock Valuation</a></li>
-            <li><a href="{{ route('inventory.transfer-audit') }}">Stock Movement</a></li>
-            <li><a href="{{ route('categories.index') }}">Categories</a></li>
-            <li><a href="{{ route('units') }}">Units</a></li>
-        </ul>
-    </li>
-
-    <li class="submenu {{ Request::is('customers*') ? 'active subdrop' : '' }}">
-        <a href="#"><i class="fe fe-users"></i><span>Customers</span><span class="menu-arrow"></span></a>
-        <ul>
-            <li><a href="{{ route('customers.index') }}">Customer List</a></li>
-            <li><a href="{{ route('customers.add') }}">Add Customer</a></li>
         </ul>
     </li>
 

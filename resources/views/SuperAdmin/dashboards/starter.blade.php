@@ -61,6 +61,7 @@
         font-size: clamp(1.5rem, 3vw, 2.1rem);
         font-weight: 800;
         letter-spacing: -0.03em;
+        color: #fff;
     }
 
     .starter-copy {
@@ -222,7 +223,6 @@
                 <a href="{{ route('sales.showPos') }}" class="starter-action"><i class="fas fa-plus-circle"></i> New Sale</a>
                 <a href="{{ route('product-list') }}" class="starter-action"><i class="fas fa-box"></i> Products</a>
                 <a href="{{ route('inventory.Products') }}" class="starter-action"><i class="fas fa-warehouse"></i> Inventory</a>
-                <a href="{{ route('customers.index') }}" class="starter-action"><i class="fas fa-users"></i> Customers</a>
                 <a href="{{ route('reports.hub') }}" class="starter-action"><i class="fas fa-chart-line"></i> Reports</a>
             </div>
         </section>

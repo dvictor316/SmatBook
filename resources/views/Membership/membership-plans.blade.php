@@ -7,7 +7,7 @@
         $currentPlanTier = $currentPlanTier ?? null;
         $suggestedUpgradePlan = $suggestedUpgradePlan ?? null;
         $tierBenefits = [
-            'starter' => \App\Models\Plan::marketingBenefitsForTier('starter', 2),
+            'starter' => \App\Models\Plan::marketingBenefitsForTier('starter', 1),
             'basic' => \App\Models\Plan::marketingBenefitsForTier('basic', 3),
             'pro' => \App\Models\Plan::marketingBenefitsForTier('professional', 5),
             'enterprise' => \App\Models\Plan::marketingBenefitsForTier('enterprise', 8),
@@ -15,7 +15,7 @@
         $planActions = [
             'starter' => $currentPlanTier === 'starter'
                 ? ['secondary' => 'Current Plan', 'primary' => 'Upgrade to Basic']
-                : ['secondary' => 'Start 1 User', 'primary' => 'Start 2 Users'],
+                : ['secondary' => 'Start 1 User', 'primary' => 'Select Starter'],
             'basic' => $currentPlanTier === 'basic'
                 ? ['secondary' => 'Current Plan', 'primary' => 'Upgrade to Pro']
                 : ['secondary' => 'Start 1 User', 'primary' => 'Start 3 Users'],
@@ -424,9 +424,9 @@
                     <h3 class="plan-name">Starter POS</h3>
                     <p class="plan-desc">For businesses that only need POS, inventory, customers, and sales operations.</p>
                     <div class="price-display">
-                        <span id="price-starter-solo">₦2,700</span><small id="period-starter-solo">/mo</small>
+                        <span id="price-starter-solo">₦1,000</span><small id="period-starter-solo">/mo</small>
                     </div>
-                    <p class="price-secondary">2 users: <strong id="price-starter">₦3,300</strong><span id="period-starter">/mo</span></p>
+                    <p class="price-secondary">1 user only: <strong id="price-starter">₦1,000</strong><span id="period-starter">/mo</span></p>
                     <ul class="feature-list">
                         @foreach($tierBenefits['starter'] as $benefit)
                             <li><i class="fas fa-check-circle"></i> {{ $benefit }}</li>
@@ -596,8 +596,8 @@
 
     const prices = {
         monthly: {
-            starter: '₦3,300',
-            starterSolo: '₦2,700',
+            starter: '₦1,000',
+            starterSolo: '₦1,000',
             basic: '₦5,500',
             basicSolo: '₦3,000',
             pro: '₦19,500',
@@ -606,8 +606,8 @@
             enterpriseSolo: '₦15,000'
         },
         annual: {
-            starter: '₦33,000',
-            starterSolo: '₦27,000',
+            starter: '₦10,000',
+            starterSolo: '₦10,000',
             basic: '₦55,000',
             basicSolo: '₦30,000',
             pro: '₦195,000',
