@@ -2632,6 +2632,10 @@ $(document).ready(function() {
 
     // Add to Cart
     $('#add-btn').on('click', function(e) {
+        if (window.POS_VANILLA_BOUND) {
+            return;
+        }
+
         e.preventDefault();
         let opt = $('#product-select').find(':selected');
         if(!opt.val()) {
