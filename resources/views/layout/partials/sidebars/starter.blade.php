@@ -29,8 +29,8 @@
         </a>
     </li>
 
-    <li class="{{ Request::routeIs('inventory.Products') ? 'active' : '' }}">
-        <a href="{{ route('inventory.Products') }}">
+    <li class="{{ Request::routeIs('inventory.Products', 'product-list') ? 'active' : '' }}">
+        <a href="{{ route('product-list') }}">
             <i class="fe fe-archive"></i>
             <span>Stock Overview</span>
         </a>
