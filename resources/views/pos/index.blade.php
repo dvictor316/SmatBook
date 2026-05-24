@@ -2963,6 +2963,11 @@ window.POS_ENABLE_FALLBACK = function () {
     if (window.POS_VANILLA_BOUND) return;
     window.POS_VANILLA_BOUND = true;
 
+    if (window.jQuery) {
+        window.jQuery('#add-btn').off('click');
+        window.jQuery('#process-btn').off('click');
+    }
+
     const productCards = document.querySelectorAll('.product-card');
     const categoryPills = document.querySelectorAll('.category-pill');
     const categoryToggle = document.getElementById('category-toggle');
