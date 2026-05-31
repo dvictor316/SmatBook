@@ -273,10 +273,15 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     margin-bottom: clamp(6px,0.7vw,10px); white-space: nowrap;
 }
 .hero-h1 {
-    font-family: var(--font-display); font-size: clamp(0.86rem,1.22vw,1.32rem);
+    font-family: var(--font-display); font-size: clamp(0.82rem,1.12vw,1.2rem);
     font-weight: 900; color: #fff; line-height: 1.04; letter-spacing: 0;
-    max-width: 15ch;
+    max-width: 16ch;
     margin: 0 auto clamp(8px,0.65vw,10px);
+}
+.hero-title-line {
+    display: inline-block;
+    white-space: nowrap;
+    font-size: 0.78em;
 }
 .hero-h1 .gold-text {
     background: linear-gradient(135deg, #ffd98a 0%, #fff7cc 55%, #ffd98a 100%);
@@ -297,9 +302,9 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     display: flex; align-items: center; justify-content: center; gap: 9px;
     background: var(--crimson); color: #fff !important;
     width: 100%;
-    min-height: clamp(44px,3.45vw,52px);
-    padding: clamp(11px,0.95vw,14px) clamp(18px,1.55vw,24px);
-    font-weight: 900; border-radius: 999px; font-size: clamp(0.68rem,0.74vw,0.84rem);
+    min-height: clamp(50px,3.95vw,58px);
+    padding: clamp(13px,1.08vw,16px) clamp(20px,1.8vw,28px);
+    font-weight: 900; border-radius: 999px; font-size: clamp(0.76rem,0.82vw,0.94rem);
     letter-spacing: 0.9px; text-transform: uppercase; text-decoration: none; border: none;
     transition: all 0.3s; box-shadow: 0 8px 24px rgba(188,0,45,0.45);
     white-space: nowrap; position: relative; overflow: hidden;
@@ -317,6 +322,11 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     font-weight: 900; border-radius: 999px; font-size: clamp(0.68rem,0.74vw,0.84rem);
     letter-spacing: 0.7px; text-transform: uppercase; text-decoration: none;
     border: 1.5px solid rgba(255,223,145,0.50); transition: all 0.3s; white-space: nowrap;
+}
+.hero-btn-manager {
+    min-height: clamp(50px,3.95vw,58px);
+    padding: clamp(13px,1.08vw,16px) clamp(20px,1.8vw,28px);
+    font-size: clamp(0.76rem,0.82vw,0.94rem);
 }
 .hero-btn-ghost:hover { background: rgba(255,223,145,0.18); border-color: var(--gold-bright); color: #fff8e0 !important; transform: translateY(-2px); }
 .hero-trust { display: flex; align-items: center; gap: 8px; margin-top: clamp(0px,0.25vw,4px); }
@@ -1226,6 +1236,12 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         font-size: clamp(0.58rem, 0.64vw, 0.72rem) !important;
         letter-spacing: 0.5px !important;
     }
+    .hero-btn-red,
+    .hero-btn-manager {
+        min-height: 45px !important;
+        padding: 11px 16px !important;
+        font-size: clamp(0.66rem, 0.72vw, 0.8rem) !important;
+    }
     .hero-trust { margin-top: 8px !important; }
     .trust-text { font-size: clamp(7.5px, 0.52vw, 8.5px) !important; }
 }
@@ -1260,6 +1276,12 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         padding: 9px 13px !important;
         font-size: clamp(0.58rem,1.85vw,0.7rem) !important;
         letter-spacing: 0.45px !important;
+    }
+    .hero-btn-red,
+    .hero-btn-manager {
+        min-height: 43px !important;
+        padding: 10px 15px !important;
+        font-size: clamp(0.64rem,2vw,0.78rem) !important;
     }
     .hero-cta-stack { width: min(100%, 246px) !important; gap: 7px !important; transform: translateY(-5px) !important; }
     .hero-trust { margin-top: 7px !important; }
@@ -1361,6 +1383,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .hero-h1 { font-size: clamp(0.64rem,2.95vw,0.86rem) !important; max-width: 15ch !important; line-height: 1.02 !important; }
     .hero-body { font-size: clamp(7.8px,2.25vw,9.4px) !important; line-height: 1.32 !important; max-width: 20ch !important; }
     .hero-btn-red, .hero-btn-ghost { min-height: 37px !important; padding: 8px 12px !important; font-size: clamp(0.54rem,2vw,0.66rem) !important; letter-spacing: 0.3px !important; }
+    .hero-btn-red, .hero-btn-manager { min-height: 40px !important; padding: 9px 13px !important; font-size: clamp(0.58rem,2.15vw,0.7rem) !important; }
     .hero-cta-stack { width: min(100%, 236px) !important; gap: 6px !important; transform: translateY(-4px) !important; }
     .hero-trust { gap: 6px !important; margin-top: 6px !important; }
     .trust-text { font-size: clamp(6.8px,1.9vw,8px) !important; }
@@ -1389,6 +1412,12 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         font-size: 0.5rem !important;
         letter-spacing: 0.25px !important;
         gap: 6px !important;
+    }
+    .hero-btn-red,
+    .hero-btn-manager {
+        min-height: 36px !important;
+        padding: 8px 10px !important;
+        font-size: 0.53rem !important;
     }
     .hero-trust { margin-top: 5px !important; }
     .trust-dot { width: 5px !important; height: 5px !important; }
@@ -1573,11 +1602,11 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                 <div class="hero-circle">
                     <div class="hero-circle-orbit"></div>
                     <div class="hero-eyebrow">SmartProbook</div>
-                    <h1 class="hero-h1">Run Your Business.<br><span class="gold-text">Know Your Money.</span></h1>
+                    <h1 class="hero-h1"><span class="hero-title-line">Run Your Business.</span><br><span class="gold-text">Know Your Money.</span></h1>
                     <p class="hero-body">Accounting-first workflow for sales, invoices, expenses, payroll and tax — all in one platform.</p>
                     <div class="hero-cta-stack">
                         <a href="{{ route('membership-plans') }}" class="hero-btn-red"><i class="fas fa-shopping-cart"></i> Start Today</a>
-                        <a href="{{ route('saas-register', ['type'=>'manager']) }}" class="hero-btn-ghost"><i class="fas fa-handshake"></i> Become a Manager</a>
+                        <a href="{{ route('saas-register', ['type'=>'manager']) }}" class="hero-btn-ghost hero-btn-manager"><i class="fas fa-handshake"></i> Become a Manager</a>
                         <a href="{{ route('demo.request.form') }}" class="hero-btn-ghost"><i class="fas fa-envelope-open-text"></i> Request Demo</a>
                     </div>
                     <div class="hero-trust">
