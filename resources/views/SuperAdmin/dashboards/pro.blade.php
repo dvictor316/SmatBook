@@ -163,14 +163,15 @@
     .glass-card-pro h3 { font-size: 0.96rem; line-height: 1.1; letter-spacing: -0.02em; }
     .pro-dashboard-actions {
         gap: 12px !important;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         justify-content: flex-end;
-        max-width: 68%;
+        max-width: none;
+        flex: 0 0 auto;
     }
     .pro-dashboard-actions .btn,
     .pro-dashboard-actions .branch-chip {
-        padding: 0.58rem 1rem !important;
-        border-radius: 12px !important;
+        padding: 0.68rem 1.28rem !important;
+        border-radius: 999px !important;
         font-size: 0.78rem !important;
         line-height: 1.2;
         white-space: nowrap;
@@ -181,7 +182,7 @@
         margin-right: 0.45rem !important;
     }
     .pro-dashboard-logo {
-        height: 68px !important;
+        height: 80px !important;
         width: auto;
         flex: 0 0 auto;
     }
@@ -384,7 +385,7 @@
         $allBranchesUrl = $dashboardBaseUrl . '?all_branches=1&branch_scope=all';
     @endphp
 
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap pro-dashboard-head">
+    <div class="d-flex justify-content-between align-items-center mb-4 pro-dashboard-head">
         <div class="pro-header">
             <div class="d-flex align-items-center gap-3 mb-1">
                 <h3 class="fw-bold mb-0" style="color: var(--deep-sapphire);">Professional Node Dashboard</h3>
