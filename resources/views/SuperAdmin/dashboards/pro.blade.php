@@ -161,64 +161,8 @@
     .mini-metric .label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
     .mini-metric .value { font-size: 0.88rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
     .glass-card-pro h3 { font-size: 0.96rem; line-height: 1.1; letter-spacing: -0.02em; }
-    .pro-dashboard-head {
-        gap: 18px;
-    }
-    .pro-header {
-        flex: 0 1 290px;
-        min-width: 220px;
-        margin-bottom: 0;
-    }
-    .pro-dashboard-title {
-        color: var(--deep-sapphire);
-        font-size: 1.05rem;
-        line-height: 1.15;
-        white-space: nowrap;
-    }
     .pro-dashboard-actions {
-        gap: 8px !important;
-        flex-wrap: nowrap;
-        justify-content: flex-end;
-        flex: 1 1 auto;
-        min-width: 0;
-    }
-    .pro-dashboard-actions .btn,
-    .pro-dashboard-actions .branch-chip {
         align-items: center;
-        background: #fff !important;
-        border: 1px solid rgba(15, 58, 138, 0.12) !important;
-        border-radius: 999px !important;
-        box-shadow: 0 8px 20px rgba(6, 26, 68, 0.07) !important;
-        color: #061a44 !important;
-        display: inline-flex;
-        font-size: 0.7rem !important;
-        font-weight: 800 !important;
-        line-height: 1.2;
-        max-width: 230px;
-        min-height: 42px;
-        overflow: hidden;
-        padding: 0.5rem 0.78rem !important;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-    .pro-dashboard-actions .btn i,
-    .pro-dashboard-actions .branch-chip i {
-        align-items: center;
-        background: rgba(15, 58, 138, 0.08);
-        border-radius: 50%;
-        color: #0f3a8a !important;
-        display: inline-flex;
-        flex: 0 0 28px;
-        font-size: 0.72rem;
-        height: 28px;
-        justify-content: center;
-        margin-right: 0.42rem !important;
-        width: 28px;
-    }
-    .pro-dashboard-logo {
-        height: 56px !important;
-        width: auto;
-        flex: 0 0 auto;
     }
     .pro-metric-row .glass-card-pro {
         border-radius: 18px;
@@ -345,53 +289,9 @@
 
         .pro-dashboard-actions .btn,
         .pro-dashboard-actions .branch-chip {
-            max-width: none;
             width: 100%;
             justify-content: center;
             text-align: center;
-        }
-
-        .pro-dashboard-actions {
-            max-width: 100%;
-        }
-
-        .pro-dashboard-logo {
-            height: 56px !important;
-        }
-    }
-
-    @media (min-width: 768px) and (max-width: 1399.98px) {
-        .pro-dashboard-head {
-            gap: 12px;
-        }
-
-        .pro-header {
-            flex-basis: 220px;
-            min-width: 190px;
-        }
-
-        .pro-dashboard-title {
-            font-size: 0.92rem;
-        }
-
-        .pro-dashboard-actions .btn,
-        .pro-dashboard-actions .branch-chip {
-            font-size: 0.66rem !important;
-            max-width: 190px;
-            min-height: 38px;
-            padding: 0.42rem 0.68rem !important;
-        }
-
-        .pro-dashboard-actions .btn i,
-        .pro-dashboard-actions .branch-chip i {
-            flex-basis: 24px;
-            height: 24px;
-            margin-right: 0.32rem !important;
-            width: 24px;
-        }
-
-        .pro-dashboard-logo {
-            height: 46px !important;
         }
     }
 
@@ -408,16 +308,6 @@
         letter-spacing: 0.02em;
     }
 
-    /* Override btn-white hover to use theme blue instead of purple */
-    .pos-content-area .btn-white {
-        color: #061a44;
-    }
-    .pos-content-area .btn-white:hover {
-        background-color: #0f3a8a !important;
-        border-color: #0f3a8a !important;
-        color: #fff !important;
-        box-shadow: none !important;
-    }
     /* Override btn-outline-primary to use theme blue */
     .pos-content-area .btn-outline-primary {
         border-color: #0f3a8a;
@@ -455,35 +345,35 @@
         $allBranchesUrl = $dashboardBaseUrl . '?all_branches=1&branch_scope=all';
     @endphp
 
-    <div class="d-flex justify-content-between align-items-center mb-4 pro-dashboard-head">
-        <div class="pro-header">
-            <div class="d-flex align-items-center gap-3 mb-1">
-                <h3 class="fw-bold mb-0 pro-dashboard-title">Professional Node Dashboard</h3>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h3 class="fw-bold mb-0" style="color: var(--deep-sapphire);">Professional Node Dashboard</h3>
                 <span class="badge-pro">PRO TIER</span>
             </div>
-            <p class="text-muted small mb-0">Domain: <code>{{ env('SESSION_DOMAIN', 'Live Node') }}</code> | Instance: <strong>{{ request()->getHost() }}</strong></p>
+            <p class="text-muted small">Live analytics for <strong>{{ request()->getHost() }}</strong> | Domain: <code>{{ env('SESSION_DOMAIN', 'Live Node') }}</code></p>
         </div>
-        <div class="d-flex align-items-center pro-dashboard-actions">
+        <div class="d-flex gap-2 pro-dashboard-actions">
             <span class="branch-chip">
                 <i class="fas fa-code-branch"></i>
                 Active Branch: {{ $branchLabel }}
             </span>
             @if($branchScope === 'all')
-                <a href="{{ $dashboardBaseUrl }}" class="btn btn-white shadow-sm border-0" style="font-weight: 700; color: var(--deep-sapphire);">
-                    <i class="fas fa-filter me-2 text-primary"></i> CURRENT BRANCH
+                <a href="{{ $dashboardBaseUrl }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                    <i class="fas fa-filter me-2"></i> Current Branch
                 </a>
             @else
-                <a href="{{ $allBranchesUrl }}" class="btn btn-white shadow-sm border-0" style="font-weight: 700; color: var(--deep-sapphire);">
-                    <i class="fas fa-layer-group me-2 text-primary"></i> ALL BRANCHES
+                <a href="{{ $allBranchesUrl }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                    <i class="fas fa-layer-group me-2"></i> All Branches
                 </a>
             @endif
-            <a href="{{ route('branches.index') }}" class="btn btn-white shadow-sm border-0" style="font-weight: 700; color: var(--deep-sapphire);">
-                <i class="fas fa-code-branch me-2 text-primary"></i> MANAGE BRANCHES
+            <a href="{{ route('branches.index') }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                <i class="fas fa-code-branch me-2"></i> Manage Branches
             </a>
-            <button onclick="printReport()" class="btn btn-white shadow-sm border-0" style="font-weight: 700; color: var(--deep-sapphire);">
-                <i class="fas fa-print me-2 text-primary"></i> PRINT ANALYTICS
+            <button onclick="printReport()" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                <i class="fas fa-print me-2"></i> Print Report
             </button>
-            <img src="{{ asset('assets/img/logos.png') }}" class="pro-dashboard-logo">
+            <img src="{{ asset('assets/img/logos.png') }}" style="height: 70px;">
         </div>
     </div>
 
