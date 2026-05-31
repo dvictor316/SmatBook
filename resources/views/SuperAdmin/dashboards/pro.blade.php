@@ -163,8 +163,7 @@
     .glass-card-pro h3 { font-size: 0.96rem; line-height: 1.1; letter-spacing: -0.02em; }
     .pro-dashboard-actions {
         align-items: center;
-        flex-wrap: wrap;
-        justify-content: flex-end;
+        flex-wrap: nowrap;
     }
     .pro-metric-row .glass-card-pro {
         border-radius: 18px;
@@ -349,7 +348,7 @@
         }
     }
 
-    @media (min-width: 768px) and (max-width: 1199.98px) {
+    @media (min-width: 768px) and (max-width: 991.98px) {
         .pos-content-area > .d-flex.justify-content-between {
             align-items: flex-start !important;
             flex-direction: column;
@@ -370,12 +369,12 @@
         }
     }
 
-    @media (min-width: 1200px) and (max-width: 1450px) {
+    @media (min-width: 992px) and (max-width: 1199.98px) {
         .pro-dashboard-actions .btn,
         .pro-dashboard-actions .branch-chip {
-            font-size: 0.74rem;
-            padding-left: 0.78rem !important;
-            padding-right: 0.78rem !important;
+            font-size: 0.72rem;
+            padding-left: 0.7rem !important;
+            padding-right: 0.7rem !important;
         }
     }
 
