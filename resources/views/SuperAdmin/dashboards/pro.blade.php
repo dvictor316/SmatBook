@@ -161,6 +161,33 @@
     .mini-metric .label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
     .mini-metric .value { font-size: 0.88rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
     .glass-card-pro h3 { font-size: 0.96rem; line-height: 1.1; letter-spacing: -0.02em; }
+    .pro-dashboard-head {
+        gap: 18px;
+    }
+    .pro-dashboard-actions {
+        gap: 8px !important;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        max-width: 58%;
+    }
+    .pro-dashboard-actions .btn,
+    .pro-dashboard-actions .branch-chip {
+        padding: 0.42rem 0.68rem !important;
+        border-radius: 10px !important;
+        font-size: 0.68rem !important;
+        line-height: 1.15;
+        white-space: nowrap;
+    }
+    .pro-dashboard-actions .btn i,
+    .pro-dashboard-actions .branch-chip i {
+        font-size: 0.7rem;
+        margin-right: 0.28rem !important;
+    }
+    .pro-dashboard-logo {
+        height: 52px !important;
+        width: auto;
+        flex: 0 0 auto;
+    }
     .pro-metric-row .glass-card-pro {
         border-radius: 18px;
         padding: 16px !important;
@@ -290,6 +317,14 @@
             justify-content: center;
             text-align: center;
         }
+
+        .pro-dashboard-actions {
+            max-width: 100%;
+        }
+
+        .pro-dashboard-logo {
+            height: 44px !important;
+        }
     }
 
     .branch-chip {
@@ -352,7 +387,7 @@
         $allBranchesUrl = $dashboardBaseUrl . '?all_branches=1&branch_scope=all';
     @endphp
 
-    <div class="d-flex justify-content-between align-items-center mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap pro-dashboard-head">
         <div class="pro-header">
             <div class="d-flex align-items-center gap-3 mb-1">
                 <h3 class="fw-bold mb-0" style="color: var(--deep-sapphire);">Professional Node Dashboard</h3>
@@ -360,27 +395,27 @@
             </div>
             <p class="text-muted small mb-0">Domain: <code>{{ env('SESSION_DOMAIN', 'Live Node') }}</code> | Instance: <strong>{{ request()->getHost() }}</strong></p>
         </div>
-        <div class="d-flex align-items-center gap-3 pro-dashboard-actions">
+        <div class="d-flex align-items-center pro-dashboard-actions">
             <span class="branch-chip">
                 <i class="fas fa-code-branch"></i>
                 Active Branch: {{ $branchLabel }}
             </span>
             @if($branchScope === 'all')
-                <a href="{{ $dashboardBaseUrl }}" class="btn btn-white shadow-sm border-0 px-4 py-2" style="border-radius: 12px; font-weight: 700; color: var(--deep-sapphire);">
+                <a href="{{ $dashboardBaseUrl }}" class="btn btn-white shadow-sm border-0" style="font-weight: 700; color: var(--deep-sapphire);">
                     <i class="fas fa-filter me-2 text-primary"></i> CURRENT BRANCH
                 </a>
             @else
-                <a href="{{ $allBranchesUrl }}" class="btn btn-white shadow-sm border-0 px-4 py-2" style="border-radius: 12px; font-weight: 700; color: var(--deep-sapphire);">
+                <a href="{{ $allBranchesUrl }}" class="btn btn-white shadow-sm border-0" style="font-weight: 700; color: var(--deep-sapphire);">
                     <i class="fas fa-layer-group me-2 text-primary"></i> ALL BRANCHES
                 </a>
             @endif
-            <a href="{{ route('branches.index') }}" class="btn btn-white shadow-sm border-0 px-4 py-2" style="border-radius: 12px; font-weight: 700; color: var(--deep-sapphire);">
+            <a href="{{ route('branches.index') }}" class="btn btn-white shadow-sm border-0" style="font-weight: 700; color: var(--deep-sapphire);">
                 <i class="fas fa-code-branch me-2 text-primary"></i> MANAGE BRANCHES
             </a>
-            <button onclick="printReport()" class="btn btn-white shadow-sm border-0 px-4 py-2" style="border-radius: 12px; font-weight: 700; color: var(--deep-sapphire);">
+            <button onclick="printReport()" class="btn btn-white shadow-sm border-0" style="font-weight: 700; color: var(--deep-sapphire);">
                 <i class="fas fa-print me-2 text-primary"></i> PRINT ANALYTICS
             </button>
-            <img src="{{ asset('assets/img/logos.png') }}" style="height: 80px;">
+            <img src="{{ asset('assets/img/logos.png') }}" class="pro-dashboard-logo">
         </div>
     </div>
 
