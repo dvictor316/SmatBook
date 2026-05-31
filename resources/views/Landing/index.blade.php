@@ -273,31 +273,33 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     margin-bottom: clamp(6px,0.7vw,10px); white-space: nowrap;
 }
 .hero-h1 {
-    font-family: var(--font-display); font-size: clamp(0.95rem,1.45vw,1.52rem);
+    font-family: var(--font-display); font-size: clamp(0.86rem,1.22vw,1.32rem);
     font-weight: 900; color: #fff; line-height: 1.04; letter-spacing: 0;
-    max-width: 13ch;
-    margin: 0 auto clamp(8px,0.75vw,10px);
+    max-width: 15ch;
+    margin: 0 auto clamp(8px,0.65vw,10px);
 }
 .hero-h1 .gold-text {
     background: linear-gradient(135deg, #ffd98a 0%, #fff7cc 55%, #ffd98a 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    display: inline-block;
+    white-space: nowrap;
 }
 .hero-body {
-    font-size: clamp(10px,0.78vw,12px); color: rgba(255,255,255,0.78);
-    line-height: 1.48; margin-bottom: clamp(10px,1vw,14px); max-width: 28ch;
+    font-size: clamp(9px,0.68vw,10.5px); color: rgba(255,255,255,0.78);
+    line-height: 1.42; margin-bottom: clamp(8px,0.8vw,12px); max-width: 27ch;
 }
 .hero-cta-stack {
-    display: flex; flex-direction: column; gap: clamp(10px,0.9vw,14px);
-    width: min(100%, clamp(260px,25vw,350px));
-    transform: translateY(clamp(-18px,-1.45vw,-8px));
+    display: flex; flex-direction: column; gap: clamp(8px,0.7vw,11px);
+    width: min(100%, clamp(238px,22vw,310px));
+    transform: translateY(clamp(-12px,-0.9vw,-6px));
 }
 .hero-btn-red {
     display: flex; align-items: center; justify-content: center; gap: 9px;
     background: var(--crimson); color: #fff !important;
     width: 100%;
-    min-height: clamp(50px,4vw,60px);
-    padding: clamp(13px,1.15vw,17px) clamp(22px,2vw,30px);
-    font-weight: 900; border-radius: 999px; font-size: clamp(0.78rem,0.86vw,0.96rem);
+    min-height: clamp(44px,3.45vw,52px);
+    padding: clamp(11px,0.95vw,14px) clamp(18px,1.55vw,24px);
+    font-weight: 900; border-radius: 999px; font-size: clamp(0.68rem,0.74vw,0.84rem);
     letter-spacing: 0.9px; text-transform: uppercase; text-decoration: none; border: none;
     transition: all 0.3s; box-shadow: 0 8px 24px rgba(188,0,45,0.45);
     white-space: nowrap; position: relative; overflow: hidden;
@@ -310,14 +312,14 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     display: flex; align-items: center; justify-content: center; gap: 9px;
     background: rgba(255,223,145,0.08); color: #fff8e0 !important;
     width: 100%;
-    min-height: clamp(50px,4vw,60px);
-    padding: clamp(13px,1.15vw,17px) clamp(22px,2vw,30px);
-    font-weight: 900; border-radius: 999px; font-size: clamp(0.78rem,0.86vw,0.96rem);
+    min-height: clamp(44px,3.45vw,52px);
+    padding: clamp(11px,0.95vw,14px) clamp(18px,1.55vw,24px);
+    font-weight: 900; border-radius: 999px; font-size: clamp(0.68rem,0.74vw,0.84rem);
     letter-spacing: 0.7px; text-transform: uppercase; text-decoration: none;
     border: 1.5px solid rgba(255,223,145,0.50); transition: all 0.3s; white-space: nowrap;
 }
 .hero-btn-ghost:hover { background: rgba(255,223,145,0.18); border-color: var(--gold-bright); color: #fff8e0 !important; transform: translateY(-2px); }
-.hero-trust { display: flex; align-items: center; gap: 8px; margin-top: clamp(2px,0.45vw,6px); }
+.hero-trust { display: flex; align-items: center; gap: 8px; margin-top: clamp(0px,0.25vw,4px); }
 .trust-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; animation: blink 1.5s infinite; }
 .trust-text { font-size: clamp(8px,0.6vw,9.5px); color: rgba(255,255,255,0.55); font-weight: 600; }
 
@@ -1205,23 +1207,23 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         padding: clamp(46px, 8%, 58px) !important;
     }
     .hero-h1 {
-        font-size: clamp(0.78rem, 1.18vw, 1.2rem) !important;
+        font-size: clamp(0.68rem, 1vw, 1rem) !important;
         line-height: 1.06 !important;
         letter-spacing: -0.6px !important;
-        max-width: 11ch !important;
+        max-width: 15ch !important;
         margin-inline: auto !important;
     }
     .hero-h1 .gold-text {
         display: inline-block;
         font-size: 0.92em;
     }
-    .hero-body { font-size: clamp(9.5px, 0.72vw, 11px) !important; max-width: 24ch !important; margin-bottom: 10px !important; }
-    .hero-cta-stack { width: min(100%, clamp(220px, 22vw, 290px)) !important; gap: 9px !important; transform: translateY(-10px) !important; }
+    .hero-body { font-size: clamp(8.5px, 0.64vw, 10px) !important; max-width: 25ch !important; margin-bottom: 8px !important; }
+    .hero-cta-stack { width: min(100%, clamp(205px, 20vw, 260px)) !important; gap: 7px !important; transform: translateY(-6px) !important; }
     .hero-btn-red,
     .hero-btn-ghost {
-        min-height: 45px !important;
-        padding: 11px 16px !important;
-        font-size: clamp(0.68rem, 0.74vw, 0.82rem) !important;
+        min-height: 40px !important;
+        padding: 9px 14px !important;
+        font-size: clamp(0.58rem, 0.64vw, 0.72rem) !important;
         letter-spacing: 0.5px !important;
     }
     .hero-trust { margin-top: 8px !important; }
@@ -1240,10 +1242,10 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .hero-phone { width: clamp(220px,50vw,300px); }
     .sb-brand img { height: 52px; }
     .hero-h1 {
-        font-size: clamp(0.78rem,3vw,1.12rem) !important;
+        font-size: clamp(0.66rem,2.55vw,0.96rem) !important;
         line-height: 1.05 !important;
         letter-spacing: -0.45px !important;
-        max-width: 11ch !important;
+        max-width: 15ch !important;
         margin-inline: auto !important;
         margin-bottom: 8px !important;
     }
@@ -1251,15 +1253,15 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         display: inline-block;
         font-size: 0.9em;
     }
-    .hero-body { font-size: clamp(9px,2.6vw,11px) !important; line-height: 1.42 !important; max-width: 22ch !important; margin-bottom: 9px !important; }
+    .hero-body { font-size: clamp(8.2px,2.35vw,10px) !important; line-height: 1.36 !important; max-width: 22ch !important; margin-bottom: 7px !important; }
     .hero-btn-red,
     .hero-btn-ghost {
-        min-height: 44px !important;
-        padding: 11px 16px !important;
-        font-size: clamp(0.66rem,2vw,0.8rem) !important;
+        min-height: 39px !important;
+        padding: 9px 13px !important;
+        font-size: clamp(0.58rem,1.85vw,0.7rem) !important;
         letter-spacing: 0.45px !important;
     }
-    .hero-cta-stack { width: min(100%, 278px) !important; gap: 9px !important; transform: translateY(-8px) !important; }
+    .hero-cta-stack { width: min(100%, 246px) !important; gap: 7px !important; transform: translateY(-5px) !important; }
     .hero-trust { margin-top: 7px !important; }
     .trust-text { font-size: clamp(7px,1.9vw,8.5px) !important; }
 
@@ -1356,10 +1358,10 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .announce-msg { font-size: 0.65rem !important; }
     .hero-circle { width: min(88vw,340px) !important; height: min(88vw,340px) !important; padding: clamp(42px,13%,54px) !important; }
     .hero-phone { width: clamp(230px,62vw,300px); }
-    .hero-h1 { font-size: clamp(0.76rem,3.45vw,1rem) !important; max-width: 11ch !important; line-height: 1.03 !important; }
-    .hero-body { font-size: clamp(8.5px,2.5vw,10.5px) !important; line-height: 1.38 !important; max-width: 20ch !important; }
-    .hero-btn-red, .hero-btn-ghost { min-height: 42px !important; padding: 10px 14px !important; font-size: clamp(0.62rem,2.35vw,0.76rem) !important; letter-spacing: 0.35px !important; }
-    .hero-cta-stack { width: min(100%, 268px) !important; gap: 8px !important; transform: translateY(-6px) !important; }
+    .hero-h1 { font-size: clamp(0.64rem,2.95vw,0.86rem) !important; max-width: 15ch !important; line-height: 1.02 !important; }
+    .hero-body { font-size: clamp(7.8px,2.25vw,9.4px) !important; line-height: 1.32 !important; max-width: 20ch !important; }
+    .hero-btn-red, .hero-btn-ghost { min-height: 37px !important; padding: 8px 12px !important; font-size: clamp(0.54rem,2vw,0.66rem) !important; letter-spacing: 0.3px !important; }
+    .hero-cta-stack { width: min(100%, 236px) !important; gap: 6px !important; transform: translateY(-4px) !important; }
     .hero-trust { gap: 6px !important; margin-top: 6px !important; }
     .trust-text { font-size: clamp(6.8px,1.9vw,8px) !important; }
 
@@ -1377,14 +1379,14 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         height: min(86vw, 300px) !important;
         padding: 38px 22px !important;
     }
-    .hero-h1 { font-size: clamp(0.68rem, 3.25vw, 0.86rem) !important; max-width: 11ch !important; line-height: 1.02 !important; }
-    .hero-body { font-size: 8px !important; max-width: 19ch !important; margin-bottom: 8px !important; }
-    .hero-cta-stack { width: min(100%, 230px) !important; gap: 7px !important; transform: translateY(-5px) !important; }
+    .hero-h1 { font-size: clamp(0.58rem, 2.75vw, 0.74rem) !important; max-width: 15ch !important; line-height: 1.02 !important; }
+    .hero-body { font-size: 7.2px !important; max-width: 19ch !important; margin-bottom: 6px !important; }
+    .hero-cta-stack { width: min(100%, 208px) !important; gap: 5px !important; transform: translateY(-3px) !important; }
     .hero-btn-red,
     .hero-btn-ghost {
-        min-height: 38px !important;
-        padding: 9px 11px !important;
-        font-size: 0.57rem !important;
+        min-height: 34px !important;
+        padding: 7px 10px !important;
+        font-size: 0.5rem !important;
         letter-spacing: 0.25px !important;
         gap: 6px !important;
     }
@@ -1408,9 +1410,9 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .hero-content { padding: 16px 16px 24px; gap: 28px; }
     .hero-circle { width: min(90vw,340px) !important; height: min(90vw,340px) !important; padding: clamp(46px,15%,62px) !important; }
     .hero-phone { width: clamp(220px,72vw,280px); }
-    .hero-h1 { font-size: clamp(0.8rem,3.5vw,1.05rem) !important; }
-    .hero-body { font-size: 11px !important; }
-    .hero-cta-stack { width: min(100%, 260px) !important; transform: translateY(-6px) !important; }
+    .hero-h1 { font-size: clamp(0.66rem,2.9vw,0.9rem) !important; }
+    .hero-body { font-size: 9px !important; }
+    .hero-cta-stack { width: min(100%, 226px) !important; transform: translateY(-4px) !important; }
     .hero-trust { display: none !important; }
     .hero-eyebrow { margin-bottom: 10px !important; }
     .hero-body { margin-bottom: 16px !important; }
