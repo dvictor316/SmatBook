@@ -161,30 +161,27 @@
     .mini-metric .label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
     .mini-metric .value { font-size: 0.88rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
     .glass-card-pro h3 { font-size: 0.96rem; line-height: 1.1; letter-spacing: -0.02em; }
-    .pro-dashboard-head {
-        gap: 18px;
-    }
     .pro-dashboard-actions {
-        gap: 8px !important;
+        gap: 12px !important;
         flex-wrap: wrap;
         justify-content: flex-end;
-        max-width: 58%;
+        max-width: 68%;
     }
     .pro-dashboard-actions .btn,
     .pro-dashboard-actions .branch-chip {
-        padding: 0.42rem 0.68rem !important;
-        border-radius: 10px !important;
-        font-size: 0.68rem !important;
-        line-height: 1.15;
+        padding: 0.58rem 1rem !important;
+        border-radius: 12px !important;
+        font-size: 0.78rem !important;
+        line-height: 1.2;
         white-space: nowrap;
     }
     .pro-dashboard-actions .btn i,
     .pro-dashboard-actions .branch-chip i {
-        font-size: 0.7rem;
-        margin-right: 0.28rem !important;
+        font-size: 0.82rem;
+        margin-right: 0.45rem !important;
     }
     .pro-dashboard-logo {
-        height: 52px !important;
+        height: 68px !important;
         width: auto;
         flex: 0 0 auto;
     }
@@ -323,7 +320,7 @@
         }
 
         .pro-dashboard-logo {
-            height: 44px !important;
+            height: 56px !important;
         }
     }
 
