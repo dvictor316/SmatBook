@@ -165,14 +165,21 @@
         gap: 18px;
     }
     .pro-header {
-        flex: 1 1 auto;
-        min-width: 280px;
+        flex: 0 1 290px;
+        min-width: 220px;
+        margin-bottom: 0;
+    }
+    .pro-dashboard-title {
+        color: var(--deep-sapphire);
+        font-size: 1.05rem;
+        line-height: 1.15;
+        white-space: nowrap;
     }
     .pro-dashboard-actions {
         gap: 8px !important;
         flex-wrap: nowrap;
         justify-content: flex-end;
-        flex: 0 1 auto;
+        flex: 1 1 auto;
         min-width: 0;
     }
     .pro-dashboard-actions .btn,
@@ -187,7 +194,7 @@
         font-size: 0.7rem !important;
         font-weight: 800 !important;
         line-height: 1.2;
-        max-width: 178px;
+        max-width: 230px;
         min-height: 42px;
         overflow: hidden;
         padding: 0.5rem 0.78rem !important;
@@ -354,12 +361,25 @@
     }
 
     @media (min-width: 768px) and (max-width: 1399.98px) {
+        .pro-dashboard-head {
+            gap: 12px;
+        }
+
+        .pro-header {
+            flex-basis: 220px;
+            min-width: 190px;
+        }
+
+        .pro-dashboard-title {
+            font-size: 0.92rem;
+        }
+
         .pro-dashboard-actions .btn,
         .pro-dashboard-actions .branch-chip {
-            font-size: 0.62rem !important;
-            max-width: 144px;
+            font-size: 0.66rem !important;
+            max-width: 190px;
             min-height: 38px;
-            padding: 0.42rem 0.58rem !important;
+            padding: 0.42rem 0.68rem !important;
         }
 
         .pro-dashboard-actions .btn i,
@@ -438,7 +458,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4 pro-dashboard-head">
         <div class="pro-header">
             <div class="d-flex align-items-center gap-3 mb-1">
-                <h3 class="fw-bold mb-0" style="color: var(--deep-sapphire);">Professional Node Dashboard</h3>
+                <h3 class="fw-bold mb-0 pro-dashboard-title">Professional Node Dashboard</h3>
                 <span class="badge-pro">PRO TIER</span>
             </div>
             <p class="text-muted small mb-0">Domain: <code>{{ env('SESSION_DOMAIN', 'Live Node') }}</code> | Instance: <strong>{{ request()->getHost() }}</strong></p>
