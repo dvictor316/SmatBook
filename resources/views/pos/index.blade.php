@@ -3,6 +3,8 @@
 @section('content')
 @php
     $isStarterPos = \App\Support\PlanAccess::resolveTierForUser(auth()->user()) === 'starter';
+    $defaultAvatar = asset('assets/img/profiles/avatar-07.jpg');
+    $profileImagePath = auth()->user()?->avatar_url ?: $defaultAvatar;
 @endphp
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -348,6 +350,14 @@ body.mini-sidebar .pos-full-page-wrapper {
     box-shadow: 0 4px 10px rgba(6, 26, 68, 0.24);
     transition: var(--transition);
     flex-shrink: 0;
+}
+
+.user-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
 }
 
 .user-avatar:hover {
@@ -1512,7 +1522,7 @@ label {
                         <div class="user-name">{{ auth()->user()->name ?? 'Admin' }}</div>
                     </div>
                     <div class="user-avatar">
-                        <i class="fas fa-user text-white" style="font-size: 0.875rem;"></i>
+                        <img src="{{ $profileImagePath }}" alt="{{ auth()->user()->name ?? 'User' }}" onerror="this.onerror=null;this.src='{{ $defaultAvatar }}';">
                     </div>
                 </div>
             </div>        

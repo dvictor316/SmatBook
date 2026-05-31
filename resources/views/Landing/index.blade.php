@@ -286,26 +286,31 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     line-height: 1.55; margin-bottom: clamp(12px,1.3vw,18px); max-width: 24ch;
 }
 .hero-cta-stack {
-    display: flex; flex-direction: column; gap: clamp(7px,0.8vw,10px);
-    width: 100%; max-width: clamp(180px,18vw,220px);
+    display: flex; flex-direction: column; gap: clamp(12px,1.1vw,18px);
+    width: min(100%, clamp(280px,28vw,390px));
 }
 .hero-btn-red {
     display: flex; align-items: center; justify-content: center; gap: 9px;
     background: var(--crimson); color: #fff !important;
-    padding: clamp(9px,0.9vw,11px) clamp(13px,1.4vw,16px);
-    font-weight: 800; border-radius: 40px; font-size: clamp(0.58rem,0.64vw,0.72rem);
-    letter-spacing: 0.7px; text-transform: uppercase; text-decoration: none; border: none;
+    width: 100%;
+    min-height: clamp(56px,4.8vw,70px);
+    padding: clamp(16px,1.4vw,21px) clamp(24px,2.4vw,34px);
+    font-weight: 900; border-radius: 999px; font-size: clamp(0.86rem,0.95vw,1.05rem);
+    letter-spacing: 0.9px; text-transform: uppercase; text-decoration: none; border: none;
     transition: all 0.3s; box-shadow: 0 8px 24px rgba(188,0,45,0.45);
     white-space: nowrap; position: relative; overflow: hidden;
 }
+.hero-cta-stack i { font-size: 1.08em !important; }
 .hero-btn-red::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent); transform:translateX(-100%); transition:transform 0.5s; }
 .hero-btn-red:hover::after { transform: translateX(100%); }
 .hero-btn-red:hover { background: var(--crimson-dk); color: #fff !important; transform: translateY(-2px); }
 .hero-btn-ghost {
     display: flex; align-items: center; justify-content: center; gap: 9px;
     background: rgba(255,223,145,0.08); color: #fff8e0 !important;
-    padding: clamp(9px,0.9vw,11px) clamp(13px,1.4vw,16px);
-    font-weight: 800; border-radius: 40px; font-size: clamp(0.58rem,0.64vw,0.72rem);
+    width: 100%;
+    min-height: clamp(56px,4.8vw,70px);
+    padding: clamp(16px,1.4vw,21px) clamp(24px,2.4vw,34px);
+    font-weight: 900; border-radius: 999px; font-size: clamp(0.86rem,0.95vw,1.05rem);
     letter-spacing: 0.7px; text-transform: uppercase; text-decoration: none;
     border: 1.5px solid rgba(255,223,145,0.50); transition: all 0.3s; white-space: nowrap;
 }
@@ -1209,11 +1214,12 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         font-size: 0.92em;
     }
     .hero-body { font-size: clamp(9.5px, 0.72vw, 11px) !important; max-width: 22ch !important; margin-bottom: 12px !important; }
-    .hero-cta-stack { max-width: clamp(168px, 16vw, 200px) !important; gap: 7px !important; }
+    .hero-cta-stack { width: min(100%, clamp(230px, 24vw, 320px)) !important; gap: 10px !important; }
     .hero-btn-red,
     .hero-btn-ghost {
-        padding: 8px 12px !important;
-        font-size: clamp(0.54rem, 0.56vw, 0.64rem) !important;
+        min-height: 50px !important;
+        padding: 13px 18px !important;
+        font-size: clamp(0.72rem, 0.8vw, 0.9rem) !important;
         letter-spacing: 0.5px !important;
     }
     .hero-trust { margin-top: 8px !important; }
@@ -1246,11 +1252,12 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .hero-body { font-size: clamp(9px,2.6vw,11px) !important; line-height: 1.45 !important; max-width: 21ch !important; margin-bottom: 10px !important; }
     .hero-btn-red,
     .hero-btn-ghost {
-        padding: 8px 12px !important;
-        font-size: clamp(0.56rem,2vw,0.68rem) !important;
+        min-height: 50px !important;
+        padding: 13px 18px !important;
+        font-size: clamp(0.72rem,2.2vw,0.9rem) !important;
         letter-spacing: 0.45px !important;
     }
-    .hero-cta-stack { max-width: min(190px,54vw) !important; gap: 7px !important; }
+    .hero-cta-stack { width: min(100%, 310px) !important; gap: 10px !important; }
     .hero-trust { margin-top: 7px !important; }
     .trust-text { font-size: clamp(7px,1.9vw,8.5px) !important; }
 
@@ -1349,8 +1356,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .hero-phone { width: clamp(230px,62vw,300px); }
     .hero-h1 { font-size: clamp(0.84rem,4vw,1.16rem) !important; max-width: 10ch !important; line-height: 1.03 !important; }
     .hero-body { font-size: clamp(8.5px,2.5vw,10.5px) !important; line-height: 1.42 !important; max-width: 20ch !important; }
-    .hero-btn-red, .hero-btn-ghost { padding: 8px 12px !important; font-size: clamp(0.54rem,2.2vw,0.64rem) !important; letter-spacing: 0.35px !important; }
-    .hero-cta-stack { max-width: min(176px,52vw) !important; gap: 6px !important; }
+    .hero-btn-red, .hero-btn-ghost { min-height: 48px !important; padding: 12px 15px !important; font-size: clamp(0.66rem,2.5vw,0.82rem) !important; letter-spacing: 0.35px !important; }
+    .hero-cta-stack { width: min(100%, 300px) !important; gap: 9px !important; }
     .hero-trust { gap: 6px !important; margin-top: 6px !important; }
     .trust-text { font-size: clamp(6.8px,1.9vw,8px) !important; }
 
@@ -1370,11 +1377,12 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     }
     .hero-h1 { font-size: clamp(0.76rem, 3.8vw, 1rem) !important; max-width: 9.6ch !important; line-height: 1.02 !important; }
     .hero-body { font-size: 8px !important; max-width: 19ch !important; margin-bottom: 8px !important; }
-    .hero-cta-stack { max-width: 160px !important; gap: 5px !important; }
+    .hero-cta-stack { width: min(100%, 250px) !important; gap: 8px !important; }
     .hero-btn-red,
     .hero-btn-ghost {
-        padding: 7px 10px !important;
-        font-size: 0.5rem !important;
+        min-height: 42px !important;
+        padding: 10px 12px !important;
+        font-size: 0.62rem !important;
         letter-spacing: 0.25px !important;
         gap: 6px !important;
     }
@@ -1400,7 +1408,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .hero-phone { width: clamp(220px,72vw,280px); }
     .hero-h1 { font-size: clamp(1rem,4.5vw,1.45rem) !important; }
     .hero-body { font-size: 11px !important; }
-    .hero-cta-stack { max-width: min(196px,56vw) !important; }
+    .hero-cta-stack { width: min(100%, 286px) !important; }
     .hero-trust { display: none !important; }
     .hero-eyebrow { margin-bottom: 10px !important; }
     .hero-body { margin-bottom: 16px !important; }
@@ -1564,9 +1572,9 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                     <h1 class="hero-h1">Run Your Business.<br><span class="gold-text">Know Your Money.</span></h1>
                     <p class="hero-body">Accounting-first workflow for sales, invoices, expenses, payroll and tax — all in one platform.</p>
                     <div class="hero-cta-stack">
-                        <a href="#licensing" class="hero-btn-red"><i class="fas fa-shopping-cart" style="font-size:.75rem;"></i> Start Today</a>
-                        <a href="{{ route('saas-register', ['type'=>'manager']) }}" class="hero-btn-ghost"><i class="fas fa-handshake" style="font-size:.75rem;"></i> Become a Manager</a>
-                        <a href="{{ route('demo.request.form') }}" class="hero-btn-ghost"><i class="fas fa-envelope-open-text" style="font-size:.75rem;"></i> Request Demo</a>
+                        <a href="{{ route('membership-plans') }}" class="hero-btn-red"><i class="fas fa-shopping-cart"></i> Start Today</a>
+                        <a href="{{ route('saas-register', ['type'=>'manager']) }}" class="hero-btn-ghost"><i class="fas fa-handshake"></i> Become a Manager</a>
+                        <a href="{{ route('demo.request.form') }}" class="hero-btn-ghost"><i class="fas fa-envelope-open-text"></i> Request Demo</a>
                     </div>
                     <div class="hero-trust">
                         <div class="trust-dot"></div>
