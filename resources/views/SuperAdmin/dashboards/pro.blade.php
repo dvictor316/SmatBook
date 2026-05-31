@@ -161,28 +161,55 @@
     .mini-metric .label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
     .mini-metric .value { font-size: 0.88rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
     .glass-card-pro h3 { font-size: 0.96rem; line-height: 1.1; letter-spacing: -0.02em; }
+    .pro-dashboard-head {
+        gap: 18px;
+    }
+    .pro-header {
+        flex: 1 1 auto;
+        min-width: 280px;
+    }
     .pro-dashboard-actions {
-        gap: 12px !important;
+        gap: 8px !important;
         flex-wrap: nowrap;
         justify-content: flex-end;
-        max-width: none;
-        flex: 0 0 auto;
+        flex: 0 1 auto;
+        min-width: 0;
     }
     .pro-dashboard-actions .btn,
     .pro-dashboard-actions .branch-chip {
-        padding: 0.68rem 1.28rem !important;
+        align-items: center;
+        background: #fff !important;
+        border: 1px solid rgba(15, 58, 138, 0.12) !important;
         border-radius: 999px !important;
-        font-size: 0.78rem !important;
+        box-shadow: 0 8px 20px rgba(6, 26, 68, 0.07) !important;
+        color: #061a44 !important;
+        display: inline-flex;
+        font-size: 0.7rem !important;
+        font-weight: 800 !important;
         line-height: 1.2;
+        max-width: 178px;
+        min-height: 42px;
+        overflow: hidden;
+        padding: 0.5rem 0.78rem !important;
+        text-overflow: ellipsis;
         white-space: nowrap;
     }
     .pro-dashboard-actions .btn i,
     .pro-dashboard-actions .branch-chip i {
-        font-size: 0.82rem;
-        margin-right: 0.45rem !important;
+        align-items: center;
+        background: rgba(15, 58, 138, 0.08);
+        border-radius: 50%;
+        color: #0f3a8a !important;
+        display: inline-flex;
+        flex: 0 0 28px;
+        font-size: 0.72rem;
+        height: 28px;
+        justify-content: center;
+        margin-right: 0.42rem !important;
+        width: 28px;
     }
     .pro-dashboard-logo {
-        height: 80px !important;
+        height: 56px !important;
         width: auto;
         flex: 0 0 auto;
     }
@@ -311,6 +338,7 @@
 
         .pro-dashboard-actions .btn,
         .pro-dashboard-actions .branch-chip {
+            max-width: none;
             width: 100%;
             justify-content: center;
             text-align: center;
@@ -322,6 +350,28 @@
 
         .pro-dashboard-logo {
             height: 56px !important;
+        }
+    }
+
+    @media (min-width: 768px) and (max-width: 1399.98px) {
+        .pro-dashboard-actions .btn,
+        .pro-dashboard-actions .branch-chip {
+            font-size: 0.62rem !important;
+            max-width: 144px;
+            min-height: 38px;
+            padding: 0.42rem 0.58rem !important;
+        }
+
+        .pro-dashboard-actions .btn i,
+        .pro-dashboard-actions .branch-chip i {
+            flex-basis: 24px;
+            height: 24px;
+            margin-right: 0.32rem !important;
+            width: 24px;
+        }
+
+        .pro-dashboard-logo {
+            height: 46px !important;
         }
     }
 
