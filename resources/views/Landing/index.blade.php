@@ -282,6 +282,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     display: inline-block;
     white-space: nowrap;
     font-size: 0.78em;
+    color: #fff;
+    -webkit-text-fill-color: #fff;
 }
 .hero-h1 .gold-text {
     background: linear-gradient(135deg, #ffd98a 0%, #fff7cc 55%, #ffd98a 100%);
