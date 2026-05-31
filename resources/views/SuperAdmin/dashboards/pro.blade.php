@@ -89,6 +89,28 @@
     .glass-card-pro.metric-cyan .text-muted {
         color: rgba(255,255,255,0.72) !important;
     }
+    .glass-card-pro.metric-indigo,
+    .glass-card-pro.metric-indigo h3,
+    .glass-card-pro.metric-indigo div,
+    .glass-card-pro.metric-indigo span,
+    .glass-card-pro.metric-indigo i,
+    .glass-card-pro.metric-emerald,
+    .glass-card-pro.metric-emerald h3,
+    .glass-card-pro.metric-emerald div,
+    .glass-card-pro.metric-emerald span,
+    .glass-card-pro.metric-emerald i,
+    .glass-card-pro.metric-rose,
+    .glass-card-pro.metric-rose h3,
+    .glass-card-pro.metric-rose div,
+    .glass-card-pro.metric-rose span,
+    .glass-card-pro.metric-rose i,
+    .glass-card-pro.metric-cyan,
+    .glass-card-pro.metric-cyan h3,
+    .glass-card-pro.metric-cyan div,
+    .glass-card-pro.metric-cyan span,
+    .glass-card-pro.metric-cyan i {
+        color: #fff !important;
+    }
 
     .teaser-lock {
         background: linear-gradient(rgba(255,255,255,0.92), rgba(255,255,255,0.92)), 
@@ -139,6 +161,29 @@
     .mini-metric .label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
     .mini-metric .value { font-size: 0.88rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
     .glass-card-pro h3 { font-size: 0.96rem; line-height: 1.1; letter-spacing: -0.02em; }
+    .pro-metric-row .glass-card-pro {
+        border-radius: 18px;
+        padding: 16px !important;
+        min-height: 150px;
+    }
+    .pro-metric-row .stat-icon-circle {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+    }
+    .pro-metric-row .stat-icon-circle i {
+        font-size: 0.95rem;
+    }
+    .pro-metric-row .small {
+        font-size: 0.72rem;
+        line-height: 1.25;
+    }
+    .pro-metric-row h3 {
+        font-size: 0.9rem;
+        line-height: 1.15;
+        margin-top: 4px;
+    }
     .panel-card {
         border: 1px solid #e5edf8;
         border-radius: 18px;
@@ -339,7 +384,7 @@
         </div>
     </div>
 
-    <div class="row g-4 mb-5">
+    <div class="row g-3 mb-4 pro-metric-row">
         <div class="col-md-3">
             <div class="glass-card-pro metric-indigo p-4">
                 <div class="stat-icon-circle" style="background: rgba(255,255,255,0.16); color: #fff;">
