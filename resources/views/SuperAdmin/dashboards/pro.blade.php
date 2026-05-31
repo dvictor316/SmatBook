@@ -15,7 +15,7 @@
         margin-left: var(--sb-sidebar-w, 270px); 
         width: calc(100% - var(--sb-sidebar-w, 270px));
         max-width: calc(100% - var(--sb-sidebar-w, 270px));
-        padding: 40px; 
+        padding: clamp(18px, 2.6vw, 40px);
         background-color: var(--crystal-blue); 
         min-height: 100vh;
         position: relative;
@@ -163,6 +163,8 @@
     .glass-card-pro h3 { font-size: 0.96rem; line-height: 1.1; letter-spacing: -0.02em; }
     .pro-dashboard-actions {
         align-items: center;
+        flex-wrap: wrap;
+        justify-content: flex-end;
     }
     .pro-metric-row .glass-card-pro {
         border-radius: 18px;
@@ -246,6 +248,12 @@
         width: 100% !important;
         height: 54px !important;
     }
+    .pro-chart-frame {
+        height: 350px;
+    }
+    .pro-finance-chart-frame {
+        height: 320px;
+    }
 
     .glass-card-pro:not(.metric-indigo):not(.metric-emerald):not(.metric-rose):not(.metric-cyan),
     .panel-card,
@@ -277,6 +285,26 @@
         color: #64748b !important;
     }
     @media (max-width: 767.98px) {
+        .pos-content-area {
+            padding: 16px;
+        }
+
+        .pos-content-area > .d-flex.justify-content-between {
+            align-items: flex-start !important;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .pro-page-title {
+            font-size: 1.15rem;
+            line-height: 1.2;
+        }
+
+        .badge-pro {
+            font-size: 0.65rem;
+            padding: 5px 12px;
+        }
+
         .spark-row {
             grid-template-columns: 1fr;
         }
@@ -292,6 +320,62 @@
             width: 100%;
             justify-content: center;
             text-align: center;
+        }
+
+        .pro-dashboard-actions img {
+            height: 54px !important;
+            margin: 0 auto;
+        }
+
+        .glass-card-pro,
+        .panel-card,
+        .insight-band {
+            border-radius: 16px;
+            padding: 16px !important;
+        }
+
+        .pro-metric-row .glass-card-pro {
+            min-height: 138px;
+        }
+
+        .pro-chart-frame,
+        .pro-finance-chart-frame {
+            height: 260px;
+        }
+
+        .teaser-lock {
+            min-height: auto;
+            padding: 24px 16px !important;
+        }
+    }
+
+    @media (min-width: 768px) and (max-width: 1199.98px) {
+        .pos-content-area > .d-flex.justify-content-between {
+            align-items: flex-start !important;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .pro-dashboard-actions {
+            justify-content: flex-start;
+            width: 100%;
+        }
+
+        .pro-chart-frame {
+            height: 320px;
+        }
+
+        .pro-finance-chart-frame {
+            height: 300px;
+        }
+    }
+
+    @media (min-width: 1200px) and (max-width: 1450px) {
+        .pro-dashboard-actions .btn,
+        .pro-dashboard-actions .branch-chip {
+            font-size: 0.74rem;
+            padding-left: 0.78rem !important;
+            padding-right: 0.78rem !important;
         }
     }
 
@@ -348,7 +432,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <div class="d-flex align-items-center gap-2 mb-1">
-                <h3 class="fw-bold mb-0" style="color: var(--deep-sapphire);">Professional Node Dashboard</h3>
+                <h3 class="fw-bold mb-0 pro-page-title" style="color: var(--deep-sapphire);">Professional Node Dashboard</h3>
                 <span class="badge-pro">PRO TIER</span>
             </div>
             <p class="text-muted small">Live analytics for <strong>{{ request()->getHost() }}</strong> | Domain: <code>{{ env('SESSION_DOMAIN', 'Live Node') }}</code></p>
@@ -378,7 +462,7 @@
     </div>
 
     <div class="row g-3 mb-4 pro-metric-row">
-        <div class="col-md-3">
+        <div class="col-sm-6 col-xl-3">
             <div class="glass-card-pro metric-indigo p-4">
                 <div class="stat-icon-circle" style="background: rgba(255,255,255,0.16); color: #fff;">
                     <i class="fas fa-wallet fa-lg"></i>
@@ -388,7 +472,7 @@
                 <span class="small"><i class="fas fa-caret-up"></i> Live from sales ledger</span>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-sm-6 col-xl-3">
             <div class="glass-card-pro metric-emerald p-4">
                 <div class="stat-icon-circle" style="background: rgba(255,255,255,0.16); color: #fff;">
                     <i class="fas fa-chart-line fa-lg"></i>
@@ -398,7 +482,7 @@
                 <span class="small">Real-time margin</span>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-sm-6 col-xl-3">
             <div class="glass-card-pro metric-rose p-4">
                 <div class="stat-icon-circle" style="background: rgba(255,255,255,0.16); color: #fff;">
                     <i class="fas fa-receipt fa-lg"></i>
@@ -408,7 +492,7 @@
                 <span class="small"><i class="fas fa-arrow-up"></i> Dynamic from expenses table</span>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-sm-6 col-xl-3">
             <div class="glass-card-pro metric-cyan p-4">
                 <div class="stat-icon-circle" style="background: rgba(255,255,255,0.16); color: #fff;">
                     <i class="fas fa-boxes fa-lg"></i>
@@ -432,7 +516,7 @@
                         </div>
                     </div>
                 </div>
-                <div style="height: 350px;">
+                <div class="pro-chart-frame">
                     @include('SuperAdmin.partials._monthly_sales_chart')
                 </div>
             </div>
@@ -512,7 +596,7 @@
                     <h5 class="fw-bold mb-0" style="color: var(--deep-sapphire);">Revenue vs Expenses vs Profit</h5>
                     <small class="text-muted">{{ date('Y') }}</small>
                 </div>
-                <div style="height: 320px;">
+                <div class="pro-finance-chart-frame">
                     <canvas id="proFinanceChart"></canvas>
                 </div>
             </div>
