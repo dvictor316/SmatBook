@@ -137,7 +137,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($requests as $req)
+                            @forelse ($demoRequests as $req)
                                 <tr>
                                     <td>{{ $loop->iteration }}</td>
                                     <td>{{ $req->full_name }}</td>
@@ -171,7 +171,7 @@
                     </table>
                 </div>
                 <div class="p-3">
-                    {{ $requests->appends(request()->query())->links() }}
+                    {{ $demoRequests->appends(request()->query())->links() }}
                 </div>
             </div>
         </div>
