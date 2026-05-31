@@ -273,9 +273,10 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     margin-bottom: clamp(6px,0.7vw,10px); white-space: nowrap;
 }
 .hero-h1 {
-    font-family: var(--font-display); font-size: clamp(1.05rem,1.72vw,1.82rem);
-    font-weight: 900; color: #fff; line-height: 1.08; letter-spacing: 0;
-    margin-bottom: clamp(7px,0.75vw,10px);
+    font-family: var(--font-display); font-size: clamp(0.95rem,1.45vw,1.52rem);
+    font-weight: 900; color: #fff; line-height: 1.04; letter-spacing: 0;
+    max-width: 13ch;
+    margin: 0 auto clamp(8px,0.75vw,10px);
 }
 .hero-h1 .gold-text {
     background: linear-gradient(135deg, #ffd98a 0%, #fff7cc 55%, #ffd98a 100%);
@@ -1204,10 +1205,10 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         padding: clamp(46px, 8%, 58px) !important;
     }
     .hero-h1 {
-        font-size: clamp(0.92rem, 1.45vw, 1.55rem) !important;
+        font-size: clamp(0.78rem, 1.18vw, 1.2rem) !important;
         line-height: 1.06 !important;
         letter-spacing: -0.6px !important;
-        max-width: 10.6ch !important;
+        max-width: 11ch !important;
         margin-inline: auto !important;
     }
     .hero-h1 .gold-text {
@@ -1239,10 +1240,10 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .hero-phone { width: clamp(220px,50vw,300px); }
     .sb-brand img { height: 52px; }
     .hero-h1 {
-        font-size: clamp(0.9rem,3.6vw,1.35rem) !important;
+        font-size: clamp(0.78rem,3vw,1.12rem) !important;
         line-height: 1.05 !important;
         letter-spacing: -0.45px !important;
-        max-width: 10.4ch !important;
+        max-width: 11ch !important;
         margin-inline: auto !important;
         margin-bottom: 8px !important;
     }
@@ -1355,7 +1356,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .announce-msg { font-size: 0.65rem !important; }
     .hero-circle { width: min(88vw,340px) !important; height: min(88vw,340px) !important; padding: clamp(42px,13%,54px) !important; }
     .hero-phone { width: clamp(230px,62vw,300px); }
-    .hero-h1 { font-size: clamp(0.84rem,4vw,1.16rem) !important; max-width: 10ch !important; line-height: 1.03 !important; }
+    .hero-h1 { font-size: clamp(0.76rem,3.45vw,1rem) !important; max-width: 11ch !important; line-height: 1.03 !important; }
     .hero-body { font-size: clamp(8.5px,2.5vw,10.5px) !important; line-height: 1.38 !important; max-width: 20ch !important; }
     .hero-btn-red, .hero-btn-ghost { min-height: 42px !important; padding: 10px 14px !important; font-size: clamp(0.62rem,2.35vw,0.76rem) !important; letter-spacing: 0.35px !important; }
     .hero-cta-stack { width: min(100%, 268px) !important; gap: 8px !important; transform: translateY(-6px) !important; }
@@ -1376,7 +1377,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         height: min(86vw, 300px) !important;
         padding: 38px 22px !important;
     }
-    .hero-h1 { font-size: clamp(0.76rem, 3.8vw, 1rem) !important; max-width: 9.6ch !important; line-height: 1.02 !important; }
+    .hero-h1 { font-size: clamp(0.68rem, 3.25vw, 0.86rem) !important; max-width: 11ch !important; line-height: 1.02 !important; }
     .hero-body { font-size: 8px !important; max-width: 19ch !important; margin-bottom: 8px !important; }
     .hero-cta-stack { width: min(100%, 230px) !important; gap: 7px !important; transform: translateY(-5px) !important; }
     .hero-btn-red,
@@ -1407,7 +1408,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .hero-content { padding: 16px 16px 24px; gap: 28px; }
     .hero-circle { width: min(90vw,340px) !important; height: min(90vw,340px) !important; padding: clamp(46px,15%,62px) !important; }
     .hero-phone { width: clamp(220px,72vw,280px); }
-    .hero-h1 { font-size: clamp(1rem,4.5vw,1.45rem) !important; }
+    .hero-h1 { font-size: clamp(0.8rem,3.5vw,1.05rem) !important; }
     .hero-body { font-size: 11px !important; }
     .hero-cta-stack { width: min(100%, 260px) !important; transform: translateY(-6px) !important; }
     .hero-trust { display: none !important; }
