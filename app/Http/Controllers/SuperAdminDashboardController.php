@@ -84,6 +84,56 @@ class SuperAdminDashboardController extends Controller
             );
         }
 
+        return $this->applyPlanUserScope($query);
+    }
+
+    private function applyPlanUserScope($query)
+    {
+        if (Schema::hasTable('deployment_managers') && Schema::hasColumn('deployment_managers', 'user_id')) {
+            $query->whereNotExists(function ($subQuery) {
+                $subQuery->select(DB::raw(1))
+                    ->from('deployment_managers')
+                    ->whereColumn('deployment_managers.user_id', 'users.id');
+            });
+        }
+
+        $hasSubscriptions = Schema::hasTable('subscriptions');
+        $hasCompanyPlan = Schema::hasTable('companies')
+            && Schema::hasColumn('users', 'company_id')
+            && Schema::hasColumn('companies', 'plan');
+
+        if (!$hasSubscriptions && !$hasCompanyPlan) {
+            return $query;
+        }
+
+        $query->where(function ($planQuery) use ($hasSubscriptions, $hasCompanyPlan) {
+            if ($hasSubscriptions && Schema::hasColumn('subscriptions', 'user_id')) {
+                $planQuery->whereExists(function ($subQuery) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('subscriptions')
+                        ->whereColumn('subscriptions.user_id', 'users.id');
+                });
+            }
+
+            if ($hasSubscriptions && Schema::hasColumn('users', 'company_id') && Schema::hasColumn('subscriptions', 'company_id')) {
+                $planQuery->orWhereExists(function ($subQuery) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('subscriptions')
+                        ->whereColumn('subscriptions.company_id', 'users.company_id');
+                });
+            }
+
+            if ($hasCompanyPlan) {
+                $planQuery->orWhereExists(function ($subQuery) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('companies')
+                        ->whereColumn('companies.id', 'users.company_id')
+                        ->whereNotNull('companies.plan')
+                        ->where('companies.plan', '!=', '');
+                });
+            }
+        });
+
         return $query;
     }
 
@@ -1215,11 +1265,7 @@ public function pendingManagers()
 
     public function listUsers(Request $request)
     {
-        $query = User::query()->with('company');
-
-        if (Schema::hasColumn('users', 'role')) {
-            $query->whereNotIn('role', ['super_admin', 'superadmin', 'deployment_manager']);
-        }
+        $query = $this->customerUsersQuery()->with('company');
 
         if ($request->filled('search')) {
             $search = '%' . trim((string) $request->search) . '%';
@@ -1241,10 +1287,7 @@ public function pendingManagers()
 
         $users = $query->orderByDesc('created_at')->paginate(20)->withQueryString();
 
-        $base = User::query();
-        if (Schema::hasColumn('users', 'role')) {
-            $base->whereNotIn('role', ['super_admin', 'superadmin', 'deployment_manager']);
-        }
+        $base = $this->customerUsersQuery();
 
         $metrics = [
             'total' => (clone $base)->count(),
