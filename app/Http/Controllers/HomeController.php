@@ -386,20 +386,6 @@ class HomeController extends Controller
         $workspaceHost = parse_url($workspaceUrl, PHP_URL_HOST);
         $currentHost = request()->getHost();
 
-        if (!$this->workspaceHttpsReady($workspaceUrl)) {
-            Log::warning('→ Workspace HTTPS endpoint not ready, keeping user on central workspace', [
-                'company_id' => $company->id,
-                'subscription_id' => $subscription->id,
-                'workspace_url' => $workspaceUrl,
-            ]);
-
-            return $this->redirectToCentralBusinessWorkspace(
-                $company,
-                $subscription,
-                'Your workspace is being finalized. Continue from the central dashboard until the secure subdomain is ready.'
-            );
-        }
-
         if ($workspaceHost && strcasecmp($currentHost, $workspaceHost) === 0) {
             Log::info('→ Already on workspace host, redirecting to tenant dashboard', [
                 'host' => $currentHost,
@@ -409,8 +395,8 @@ class HomeController extends Controller
             return redirect()->route('user.dashboard');
         }
 
-        Log::info('→ Redirecting to workspace', [
-            'url'             => $workspaceUrl,
+        Log::info('→ Redirecting to central tenant dashboard', [
+            'workspace_url'    => $workspaceUrl,
             'subscription_id' => $subscription->id,
         ]);
 
@@ -421,7 +407,7 @@ class HomeController extends Controller
             'workspace_context' => 'business',
         ]);
 
-        return redirect()->away($workspaceUrl);
+        return redirect()->route('user.dashboard');
     }
 
     private function redirectToCentralBusinessWorkspace(Company $company, Subscription $subscription, ?string $message = null)
