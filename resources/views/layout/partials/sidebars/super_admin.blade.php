@@ -984,7 +984,34 @@
 @endif
 
 @if(in_array($roleNormalized, ['deployment_manager']))
-<div class="sidebar" id="sidebar">
+<style>
+    .spb-deployment-sidebar .sidebar-menu ul li.submenu ul {
+        background: #ffffff !important;
+    }
+
+    .spb-deployment-sidebar .sidebar-menu ul li.submenu ul li a,
+    .spb-deployment-sidebar .sidebar-menu ul li.submenu ul li a span,
+    .spb-deployment-sidebar .sidebar-menu ul li.submenu ul li a i {
+        color: #10264f !important;
+        -webkit-text-fill-color: #10264f !important;
+    }
+
+    .spb-deployment-sidebar .sidebar-menu ul li.submenu ul li a:hover,
+    .spb-deployment-sidebar .sidebar-menu ul li.submenu ul li a.active,
+    .spb-deployment-sidebar .sidebar-menu ul li.submenu ul li.active > a {
+        background: #eef4ff !important;
+        color: #0f3a8a !important;
+        -webkit-text-fill-color: #0f3a8a !important;
+    }
+
+    .spb-deployment-sidebar .sidebar-menu ul li a .badge,
+    .spb-deployment-sidebar .sidebar-menu ul li a .badge *,
+    .spb-deployment-sidebar .sidebar-menu ul li a span.badge {
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+</style>
+<div class="sidebar spb-deployment-sidebar" id="sidebar">
     <div class="sidebar-inner slimscroll">
         <div id="sidebar-menu" class="sidebar-menu">
             <ul>
