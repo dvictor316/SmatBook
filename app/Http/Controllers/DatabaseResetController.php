@@ -158,6 +158,9 @@ class DatabaseResetController extends Controller
             Artisan::call('db:seed', ['--class' => 'PostResetSeeder', '--force' => true]);
             $log[] = 'PostResetSeeder completed (permissions, roles, plans).';
 
+            Artisan::call('database:reset-empty-sequences', ['--force' => true]);
+            $log[] = 'Empty-table ID counters reset.';
+
             // ── Clear super admin role_id (avoids FK orphan) ──────────────
             DB::table('users')->where('id', $superAdmin->id)->update(['role_id' => null]);
             $log[] = 'Super admin role_id cleared (role string "super_admin" preserved).';
