@@ -1015,12 +1015,14 @@ private function resolvePlanIdFromCatalog(string $planName, string $billingCycle
 private function deploymentPlanDefinitions(): array
 {
     return [
+        'starter-monthly' => ['name' => 'Starter', 'price' => 1000.0, 'billing_cycle' => 'monthly'],
         'basic-solo-monthly' => ['name' => 'Basic Solo', 'price' => 3000.0, 'billing_cycle' => 'monthly'],
         'basic-monthly' => ['name' => 'Basic', 'price' => 5500.0, 'billing_cycle' => 'monthly'],
         'professional-solo-monthly' => ['name' => 'Professional Solo', 'price' => 7000.0, 'billing_cycle' => 'monthly'],
         'professional-monthly' => ['name' => 'Professional', 'price' => 19500.0, 'billing_cycle' => 'monthly'],
         'enterprise-solo-monthly' => ['name' => 'Enterprise Solo', 'price' => 15000.0, 'billing_cycle' => 'monthly'],
         'enterprise-monthly' => ['name' => 'Enterprise', 'price' => 28500.0, 'billing_cycle' => 'monthly'],
+        'starter-yearly' => ['name' => 'Starter', 'price' => 10000.0, 'billing_cycle' => 'yearly'],
         'basic-solo-yearly' => ['name' => 'Basic Solo', 'price' => 30000.0, 'billing_cycle' => 'yearly'],
         'basic-yearly' => ['name' => 'Basic', 'price' => 55000.0, 'billing_cycle' => 'yearly'],
         'professional-solo-yearly' => ['name' => 'Professional Solo', 'price' => 70000.0, 'billing_cycle' => 'yearly'],
