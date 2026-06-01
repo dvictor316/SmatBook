@@ -585,6 +585,52 @@
             height: 2.5px;
         }
     }
+
+    /* Final contrast lock: keep deployment dropdowns readable over light panels. */
+    #deploymentSidebar.deployment-sidebar .dm-nav .dm-submenu,
+    #deploymentSidebar.deployment-sidebar .dm-nav .dm-menu-item.open > .dm-submenu {
+        background: #ffffff !important;
+        opacity: 1 !important;
+        filter: none !important;
+        mix-blend-mode: normal !important;
+    }
+
+    #deploymentSidebar.deployment-sidebar .dm-nav .dm-submenu a.dm-submenu-link,
+    #deploymentSidebar.deployment-sidebar .dm-nav .dm-submenu a.dm-submenu-link:link,
+    #deploymentSidebar.deployment-sidebar .dm-nav .dm-submenu a.dm-submenu-link:visited,
+    #deploymentSidebar.deployment-sidebar .dm-nav .dm-submenu a.dm-submenu-link i {
+        color: #10264f !important;
+        -webkit-text-fill-color: #10264f !important;
+        opacity: 1 !important;
+        filter: none !important;
+        mix-blend-mode: normal !important;
+        text-shadow: none !important;
+    }
+
+    #deploymentSidebar.deployment-sidebar .dm-nav .dm-submenu a.dm-submenu-link:hover,
+    #deploymentSidebar.deployment-sidebar .dm-nav .dm-submenu a.dm-submenu-link.active,
+    #deploymentSidebar.deployment-sidebar .dm-nav .dm-menu-item.open > .dm-submenu a.dm-submenu-link:hover,
+    #deploymentSidebar.deployment-sidebar .dm-nav .dm-menu-item.open > .dm-submenu a.dm-submenu-link.active {
+        background: #eaf2ff !important;
+        color: #0f3a8a !important;
+        -webkit-text-fill-color: #0f3a8a !important;
+    }
+
+    #deploymentSidebar.deployment-sidebar .dm-nav .dm-submenu a.dm-submenu-link:hover i,
+    #deploymentSidebar.deployment-sidebar .dm-nav .dm-submenu a.dm-submenu-link.active i {
+        color: #0f3a8a !important;
+        -webkit-text-fill-color: #0f3a8a !important;
+    }
+
+    #deploymentSidebar.deployment-sidebar .dm-badge,
+    #deploymentSidebar.deployment-sidebar .dm-badge *,
+    #deploymentSidebar.deployment-sidebar .dm-menu-link .dm-badge {
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+        opacity: 1 !important;
+        filter: none !important;
+        mix-blend-mode: normal !important;
+    }
 </style>
 
 
