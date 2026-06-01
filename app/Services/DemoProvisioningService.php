@@ -45,7 +45,7 @@ class DemoProvisioningService
             ]));
 
             // 2. Create the demo user (owner of the demo company)
-            $user = User::create([
+            $user = User::create($this->onlyExistingColumns('users', [
                 'name'              => $demoRequest->full_name,
                 'email'             => $demoRequest->email,
                 'password'          => Hash::make($plainPassword),
@@ -55,7 +55,7 @@ class DemoProvisioningService
                 'is_verified'       => true,
                 'verified_at'       => now(),
                 'email_verified_at' => now(),
-            ]);
+            ]));
 
             // Link company owner
             $company->update($this->onlyExistingColumns('companies', ['user_id' => $user->id, 'owner_id' => $user->id]));
@@ -159,6 +159,7 @@ class DemoProvisioningService
             $totalAmount  = $unitPrice * $qty;
             $saleDate     = now()->subDays(rand(0, 6));
             $customerId   = $customerIds[array_rand($customerIds)];
+            $customerName = $this->customerDisplayName($customerId);
 
             $saleId = DB::table('sales')->insertGetId($this->onlyExistingColumns('sales', [
                 'total'         => $totalAmount,
@@ -168,7 +169,7 @@ class DemoProvisioningService
                 'company_id'    => $companyId,
                 'user_id'       => $user->id,
                 'customer_id'   => $customerId,
-                'customer_name' => DB::table('customers')->where('id', $customerId)->value('name') ?? 'Demo Customer',
+                'customer_name' => $customerName,
                 'created_at'    => $saleDate,
                 'updated_at'    => $saleDate,
             ]));
@@ -212,7 +213,10 @@ class DemoProvisioningService
     {
         if ($demoRequest->demo_user_id) {
             User::where('id', $demoRequest->demo_user_id)
-                ->update(['status' => 'suspended', 'allow_login' => false]);
+                ->update($this->onlyExistingColumns('users', [
+                    'status' => 'suspended',
+                    'allow_login' => false,
+                ]));
         }
 
         if ($demoRequest->demo_company_id) {
@@ -236,5 +240,25 @@ class DemoProvisioningService
         return collect($payload)
             ->filter(fn ($_value, string $column) => Schema::hasColumn($table, $column))
             ->all();
+    }
+
+    private function customerDisplayName(int $customerId): string
+    {
+        if (!Schema::hasTable('customers')) {
+            return 'Demo Customer';
+        }
+
+        foreach (['customer_name', 'name', 'billing_name', 'shipping_name', 'email', 'phone'] as $column) {
+            if (!Schema::hasColumn('customers', $column)) {
+                continue;
+            }
+
+            $value = DB::table('customers')->where('id', $customerId)->value($column);
+            if (filled($value)) {
+                return (string) $value;
+            }
+        }
+
+        return 'Demo Customer';
     }
 }
