@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class DemoProvisioningService
@@ -25,7 +26,7 @@ class DemoProvisioningService
             $slug = 'demo-' . Str::slug($demoRequest->company_name) . '-' . Str::random(5);
 
             // 1. Create the demo company
-            $company = Company::create([
+            $company = Company::create($this->onlyExistingColumns('companies', [
                 'name'            => $demoRequest->company_name . ' (Demo)',
                 'company_name'    => $demoRequest->company_name . ' (Demo)',
                 'email'           => $demoRequest->email,
@@ -41,7 +42,7 @@ class DemoProvisioningService
                 'subdomain'       => $slug,
                 'plan'            => 'Demo',
                 'industry'        => $demoRequest->business_type ?? 'General',
-            ]);
+            ]));
 
             // 2. Create the demo user (owner of the demo company)
             $user = User::create([
@@ -57,7 +58,7 @@ class DemoProvisioningService
             ]);
 
             // Link company owner
-            $company->update(['user_id' => $user->id, 'owner_id' => $user->id]);
+            $company->update($this->onlyExistingColumns('companies', ['user_id' => $user->id, 'owner_id' => $user->id]));
 
             // 3. Seed demo data (products, customers, transactions)
             $this->seedDemoData($company, $user);
@@ -198,7 +199,7 @@ class DemoProvisioningService
 
         if ($demoRequest->demo_company_id) {
             Company::where('id', $demoRequest->demo_company_id)
-                ->update(['status' => 'expired']);
+                ->update($this->onlyExistingColumns('companies', ['status' => 'expired']));
         }
 
         $demoRequest->update(['status' => 'expired']);
@@ -206,5 +207,16 @@ class DemoProvisioningService
         ActivityLog::record('Demo', 'expired', "Demo account expired for {$demoRequest->email}", [
             'properties' => ['demo_request_id' => $demoRequest->id],
         ]);
+    }
+
+    private function onlyExistingColumns(string $table, array $payload): array
+    {
+        if (!Schema::hasTable($table)) {
+            return $payload;
+        }
+
+        return collect($payload)
+            ->filter(fn ($_value, string $column) => Schema::hasColumn($table, $column))
+            ->all();
     }
 }
