@@ -89,12 +89,13 @@ class DemoProvisioningService
         // Categories
         $categories = [];
         foreach (['Electronics', 'Clothing', 'Food & Beverage', 'Stationery'] as $catName) {
-            $categories[] = DB::table('categories')->insertGetId([
+            $categories[] = DB::table('categories')->insertGetId($this->onlyExistingColumns('categories', [
                 'name'       => $catName,
                 'company_id' => $companyId,
+                'user_id'    => $user->id,
                 'created_at' => $now,
                 'updated_at' => $now,
-            ]);
+            ]));
         }
 
         // Products
@@ -108,17 +109,22 @@ class DemoProvisioningService
 
         $productIds = [];
         foreach ($productSeeds as [$name, $price, $cost, $qty, $catId]) {
-            $productIds[] = DB::table('products')->insertGetId([
+            $productIds[] = DB::table('products')->insertGetId($this->onlyExistingColumns('products', [
+                'user_id'        => $user->id,
                 'name'           => $name,
+                'sku'            => 'DEMO-' . strtoupper(Str::random(8)),
                 'price'          => $price,
                 'purchase_price' => $cost,
                 'stock_quantity' => $qty,
                 'stock'          => $qty,
                 'category_id'    => $catId,
                 'company_id'     => $companyId,
+                'base_unit_name' => 'pcs',
+                'unit_type'      => 'unit',
+                'status'         => 'active',
                 'created_at'     => $now,
                 'updated_at'     => $now,
-            ]);
+            ]));
         }
 
         // Customers
@@ -129,14 +135,15 @@ class DemoProvisioningService
             ['Fatima Bello',  'fatima@demo.com', '08034567890'],
         ];
         foreach ($customerSeeds as [$name, $email, $phone]) {
-            $customerIds[] = DB::table('customers')->insertGetId([
+            $customerIds[] = DB::table('customers')->insertGetId($this->onlyExistingColumns('customers', [
                 'name'       => $name,
                 'email'      => $email,
                 'phone'      => $phone,
                 'company_id' => $companyId,
+                'user_id'    => $user->id,
                 'created_at' => $now,
                 'updated_at' => $now,
-            ]);
+            ]));
         }
 
         // Demo sales (last 7 days)
@@ -149,41 +156,48 @@ class DemoProvisioningService
             $saleDate     = now()->subDays(rand(0, 6));
             $customerId   = $customerIds[array_rand($customerIds)];
 
-            $saleId = DB::table('sales')->insertGetId([
+            $saleId = DB::table('sales')->insertGetId($this->onlyExistingColumns('sales', [
                 'total'         => $totalAmount,
                 'total_amount'  => $totalAmount,
                 'status'        => 'completed',
                 'payment_status'=> 'paid',
                 'company_id'    => $companyId,
+                'user_id'       => $user->id,
                 'customer_id'   => $customerId,
+                'customer_name' => DB::table('customers')->where('id', $customerId)->value('name') ?? 'Demo Customer',
                 'created_at'    => $saleDate,
                 'updated_at'    => $saleDate,
-            ]);
+            ]));
 
-            DB::table('sale_items')->insert([
+            DB::table('sale_items')->insert($this->onlyExistingColumns('sale_items', [
                 'sale_id'     => $saleId,
                 'product_id'  => $productId,
                 'product_name'=> $product->name,
                 'quantity'    => $qty,
                 'qty'         => $qty,
                 'price'       => $unitPrice,
+                'unit_price'  => $unitPrice,
                 'total'       => $totalAmount,
+                'total_price' => $totalAmount,
                 'company_id'  => $companyId,
+                'user_id'     => $user->id,
                 'created_at'  => $saleDate,
                 'updated_at'  => $saleDate,
-            ]);
+            ]));
         }
 
         // Demo expenses (last 7 days)
         foreach (['Office Supplies', 'Internet Bill', 'Transport'] as $i => $expenseName) {
-            DB::table('expenses')->insert([
+            DB::table('expenses')->insert($this->onlyExistingColumns('expenses', [
                 'description' => $expenseName . ' (Demo)',
                 'amount'      => rand(5000, 50000),
                 'category'    => 'Operating',
                 'company_id'  => $companyId,
+                'user_id'     => $user->id,
+                'created_by'  => $user->id,
                 'created_at'  => now()->subDays($i + 1),
                 'updated_at'  => now()->subDays($i + 1),
-            ]);
+            ]));
         }
     }
 
