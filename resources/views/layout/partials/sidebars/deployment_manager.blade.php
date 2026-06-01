@@ -331,7 +331,8 @@
 
     .dm-badge {
         background: var(--dm-danger);
-        color: white;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
         font-size: 10px;
         font-weight: 800;
         padding: 2px 6px;
@@ -343,6 +344,15 @@
     .dm-badge.warning { background: var(--dm-warning); }
     .dm-badge.info { background: var(--dm-primary); }
 
+    .dm-badge,
+    .dm-badge *,
+    .dm-menu-link .dm-badge,
+    .dm-menu-link.active .dm-badge,
+    .dm-menu-link:hover .dm-badge {
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
     /* ============================================
        SUBMENU
        ============================================ */
@@ -353,7 +363,7 @@
         max-height: 0;
         overflow: hidden;
         transition: max-height 0.3s ease;
-        background: var(--dm-bg);
+        background: #ffffff;
     }
 
     .dm-menu-item.has-submenu.open .dm-submenu {
@@ -365,25 +375,30 @@
         align-items: center;
         gap: 12px;
         padding: 10px 20px 10px 52px;
-        color: var(--dm-gray);
+        color: #10264f !important;
+        -webkit-text-fill-color: #10264f !important;
         text-decoration: none;
         font-size: 13px;
-        font-weight: 500;
+        font-weight: 700;
         transition: all 0.2s;
     }
 
     .dm-submenu-link:hover {
-        color: var(--dm-dark);
-        background: white;
+        color: #0f3a8a !important;
+        -webkit-text-fill-color: #0f3a8a !important;
+        background: #eef4ff;
     }
 
     .dm-submenu-link.active {
-        color: var(--dm-primary);
-        background: white;
-        font-weight: 600;
+        color: #0f3a8a !important;
+        -webkit-text-fill-color: #0f3a8a !important;
+        background: #eef4ff;
+        font-weight: 800;
     }
 
     .dm-submenu-link i {
+        color: inherit !important;
+        -webkit-text-fill-color: currentColor !important;
         width: 16px;
         text-align: center;
         font-size: 12px;
