@@ -160,16 +160,28 @@ class DemoProvisioningService
             $saleDate     = now()->subDays(rand(0, 6));
             $customerId   = $customerIds[array_rand($customerIds)];
             $customerName = $this->customerDisplayName($customerId);
+            $reference = 'DEMO-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(6)) . '-' . ($i + 1);
 
             $saleId = DB::table('sales')->insertGetId($this->onlyExistingColumns('sales', [
+                'order_number' => $reference,
+                'invoice_no'    => 'INV-' . $reference,
+                'receipt_no'    => 'RCT-' . $reference,
                 'total'         => $totalAmount,
                 'total_amount'  => $totalAmount,
+                'subtotal'      => $totalAmount,
+                'paid'          => $totalAmount,
+                'amount_paid'   => $totalAmount,
+                'balance'       => 0,
                 'status'        => 'completed',
                 'payment_status'=> 'paid',
+                'payment_method'=> 'cash',
+                'currency'      => 'NGN',
+                'terminal_id'   => 'DEMO',
                 'company_id'    => $companyId,
                 'user_id'       => $user->id,
                 'customer_id'   => $customerId,
                 'customer_name' => $customerName,
+                'order_date'    => $saleDate,
                 'created_at'    => $saleDate,
                 'updated_at'    => $saleDate,
             ]));
