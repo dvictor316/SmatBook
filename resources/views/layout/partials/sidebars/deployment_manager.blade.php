@@ -631,6 +631,28 @@
         filter: none !important;
         mix-blend-mode: normal !important;
     }
+
+    #deploymentSidebar.deployment-sidebar .dm-brand-title,
+    #deploymentSidebar.deployment-sidebar .dm-brand-title span:not(.book) {
+        color: #10264f !important;
+        -webkit-text-fill-color: #10264f !important;
+        opacity: 1 !important;
+        filter: none !important;
+        mix-blend-mode: normal !important;
+    }
+
+    #deploymentSidebar.deployment-sidebar .dm-brand-title .book {
+        color: #dc2626 !important;
+        -webkit-text-fill-color: #dc2626 !important;
+    }
+
+    #deploymentSidebar.deployment-sidebar .dm-brand-subtitle {
+        color: #0f3a8a !important;
+        -webkit-text-fill-color: #0f3a8a !important;
+        opacity: 1 !important;
+        filter: none !important;
+        mix-blend-mode: normal !important;
+    }
 </style>
 
 
