@@ -347,7 +347,7 @@ class HomeController extends Controller
         }
 
         // Paid but subscription not yet Active
-        if ($subscription->status !== 'Active') {
+        if (strtolower((string) $subscription->status) !== 'active') {
             Log::info('→ Inactive subscription, redirecting to setup', [
                 'subscription_id' => $subscription->id,
             ]);
