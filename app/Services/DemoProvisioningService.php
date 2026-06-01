@@ -136,13 +136,17 @@ class DemoProvisioningService
         ];
         foreach ($customerSeeds as [$name, $email, $phone]) {
             $customerIds[] = DB::table('customers')->insertGetId($this->onlyExistingColumns('customers', [
-                'name'       => $name,
-                'email'      => $email,
-                'phone'      => $phone,
-                'company_id' => $companyId,
-                'user_id'    => $user->id,
-                'created_at' => $now,
-                'updated_at' => $now,
+                'name'          => $name,
+                'customer_name' => $name,
+                'billing_name'  => $name,
+                'shipping_name' => $name,
+                'email'         => $email,
+                'phone'         => $phone,
+                'status'        => 'active',
+                'company_id'    => $companyId,
+                'user_id'       => $user->id,
+                'created_at'    => $now,
+                'updated_at'    => $now,
             ]));
         }
 

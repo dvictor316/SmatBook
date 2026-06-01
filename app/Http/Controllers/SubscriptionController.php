@@ -9,6 +9,7 @@ use App\Support\DeploymentCommissionPayoutService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, DB, Http, Log, Mail, Schema};
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 
@@ -206,6 +207,31 @@ class SubscriptionController extends Controller
                 ->with('error', 'Please select a plan to begin setup.');
         }
 
+        $existingCompany = $subscription->company_id
+            ? Company::withoutGlobalScope('tenant')->find($subscription->company_id)
+            : Company::withoutGlobalScope('tenant')
+                ->where(function ($query) use ($user) {
+                    $query->where('user_id', $user->id)
+                        ->orWhere('owner_id', $user->id);
+                })
+                ->first();
+
+        $hasConfiguredWorkspace = filled($subscription->domain_prefix)
+            && $existingCompany
+            && filled($existingCompany->domain_prefix ?? $existingCompany->subdomain ?? $existingCompany->domain ?? null);
+
+        if ($hasConfiguredWorkspace) {
+            if (strtolower((string) $subscription->payment_status) !== 'paid') {
+                return redirect()->route('saas.checkout', ['id' => $subscription->id])
+                    ->with('info', 'Your workspace URL is already configured. Complete checkout to activate it.');
+            }
+
+            if (strtolower((string) $subscription->status) === 'active') {
+                return redirect()->route('home')
+                    ->with('info', 'Your workspace is already configured.');
+            }
+        }
+
         $planModel = Plan::find($subscription->plan_id);
 
         return view('SuperAdmin.domain-request', [
@@ -303,20 +329,34 @@ class SubscriptionController extends Controller
         $normalizedPrefix = $this->normalizeDomainPrefix((string) $request->domain_prefix);
         $request->merge(['domain_prefix' => $normalizedPrefix]);
 
-        $request->validate([
-            'customer_name'   => 'required|string|max:191',
-            'domain_prefix'   => 'required|alpha_dash|unique:subscriptions,domain_prefix|unique:companies,domain_prefix',
-            'subscription_id' => 'required|exists:subscriptions,id',
-            'branch_name'     => 'required|string|max:191',
-            'employees'       => 'nullable|string',
-        ]);
-
         $subscription = Subscription::findOrFail($request->subscription_id);
         $user = auth()->user();
 
         if ($subscription->user_id !== $user->id) {
             abort(403, 'Unauthorized access.');
         }
+
+        $currentCompany = $subscription->company_id
+            ? Company::withoutGlobalScope('tenant')->find($subscription->company_id)
+            : Company::withoutGlobalScope('tenant')
+                ->where(function ($query) use ($user) {
+                    $query->where('user_id', $user->id)
+                        ->orWhere('owner_id', $user->id);
+                })
+                ->first();
+
+        $request->validate([
+            'customer_name'   => 'required|string|max:191',
+            'domain_prefix'   => [
+                'required',
+                'alpha_dash',
+                Rule::unique('subscriptions', 'domain_prefix')->ignore($subscription->id),
+                Rule::unique('companies', 'domain_prefix')->ignore($currentCompany?->id),
+            ],
+            'subscription_id' => 'required|exists:subscriptions,id',
+            'branch_name'     => 'required|string|max:191',
+            'employees'       => 'nullable|string',
+        ]);
 
         DB::beginTransaction();
         try {
