@@ -15,6 +15,13 @@
     // 2. Profile Image & Avatar Fallback Logic
     $defaultAvatar = asset('assets/img/profiles/avatar-07.jpg');
     $profileImagePath = $user?->avatar_url ?: $defaultAvatar;
+    $isDeploymentManagerHeader = $user && in_array(strtolower((string) ($user->role ?? '')), ['deployment_manager', 'manager'], true);
+    $profileUrl = $isDeploymentManagerHeader && Route::has('deployment.profile')
+        ? route('deployment.profile')
+        : url('profile');
+    $settingsUrl = $isDeploymentManagerHeader && Route::has('deployment.settings')
+        ? route('deployment.settings')
+        : url('settings');
 @endphp
 
 <style>
@@ -488,10 +495,10 @@
                 </div>
             </a>
             <div class="dropdown-menu dropdown-menu-end">
-                <a class="dropdown-item" href="{{ url('profile') }}">
+                <a class="dropdown-item" href="{{ $profileUrl }}">
                     <i class="fas fa-user me-2"></i> My Profile
                 </a>
-                <a class="dropdown-item" href="{{ url('settings') }}">
+                <a class="dropdown-item" href="{{ $settingsUrl }}">
                     <i class="fas fa-cog me-2"></i> Settings
                 </a>
                 <div class="dropdown-divider"></div>

@@ -15,9 +15,9 @@ class RequireActiveBranch
 
     public function handle(Request $request, Closure $next)
     {
-        // Super admin has no branch — give full pass-through.
+        // Platform users do not operate inside a tenant branch.
         $user = $request->user();
-        if ($user && in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)) {
+        if ($user && in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin', 'deployment_manager', 'manager'], true)) {
             return $next($request);
         }
 

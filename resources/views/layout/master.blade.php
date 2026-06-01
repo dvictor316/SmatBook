@@ -31,6 +31,13 @@
         /** 2. USER DATA */
         $user = Auth::user();
         $profileImg = $user?->avatar_url ?: asset('assets/img/profiles/avatar-07.jpg');
+        $isDeploymentManagerHeader = $user && in_array(strtolower((string) ($user->role ?? '')), ['deployment_manager', 'manager'], true);
+        $profileUrl = $isDeploymentManagerHeader && Route::has('deployment.profile')
+            ? route('deployment.profile')
+            : url('profile');
+        $settingsUrl = $isDeploymentManagerHeader && Route::has('deployment.settings')
+            ? route('deployment.settings')
+            : url('settings');
 
         /** 3. SUBSCRIPTION LOGIC */
         $host = request()->getHost();
@@ -126,8 +133,8 @@
                         <span>{{ $user->name ?? 'Admin' }}</span>
                     </a>
                     <div class="dropdown-menu">
-                        <a class="dropdown-item" href="{{ url('profile') }}"><i data-feather="user" class="me-1"></i> Profile</a>
-                        <a class="dropdown-item" href="{{ url('settings') }}"><i data-feather="settings" class="me-1"></i> Settings</a>
+                        <a class="dropdown-item" href="{{ $profileUrl }}"><i data-feather="user" class="me-1"></i> Profile</a>
+                        <a class="dropdown-item" href="{{ $settingsUrl }}"><i data-feather="settings" class="me-1"></i> Settings</a>
                         <hr class="m-0">
                         <a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                             <i data-feather="log-out" class="me-1"></i> Logout
