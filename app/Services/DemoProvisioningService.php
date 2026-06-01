@@ -205,15 +205,27 @@ class DemoProvisioningService
 
         // Demo expenses (last 7 days)
         foreach (['Office Supplies', 'Internet Bill', 'Transport'] as $i => $expenseName) {
+            $expenseDate = now()->subDays($i + 1);
+            $expenseAmount = rand(5000, 50000);
+            $expenseReference = 'EXP-DEMO-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(6)) . '-' . ($i + 1);
+
             DB::table('expenses')->insert($this->onlyExistingColumns('expenses', [
-                'description' => $expenseName . ' (Demo)',
-                'amount'      => rand(5000, 50000),
-                'category'    => 'Operating',
-                'company_id'  => $companyId,
-                'user_id'     => $user->id,
-                'created_by'  => $user->id,
-                'created_at'  => now()->subDays($i + 1),
-                'updated_at'  => now()->subDays($i + 1),
+                'expense_id'     => $expenseReference,
+                'reference'      => $expenseReference,
+                'company_name'   => $company->company_name ?? $company->name ?? 'Demo Company',
+                'email'          => $company->email ?? $user->email,
+                'description'    => $expenseName . ' (Demo)',
+                'notes'          => $expenseName . ' demo operating expense',
+                'amount'         => $expenseAmount,
+                'category'       => 'Operating',
+                'payment_mode'   => 'cash',
+                'payment_status' => 'paid',
+                'status'         => 'Paid',
+                'company_id'     => $companyId,
+                'user_id'        => $user->id,
+                'created_by'     => $user->id,
+                'created_at'     => $expenseDate,
+                'updated_at'     => $expenseDate,
             ]));
         }
     }
