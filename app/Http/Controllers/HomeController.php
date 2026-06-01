@@ -383,6 +383,8 @@ class HomeController extends Controller
 
         $mainDomain = trim((string) config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')), ". \t\n\r\0\x0B");
         $workspaceUrl = 'https://' . $company->domain_prefix . '.' . $mainDomain;
+        $workspaceHost = parse_url($workspaceUrl, PHP_URL_HOST);
+        $currentHost = request()->getHost();
 
         if (!$this->workspaceHttpsReady($workspaceUrl)) {
             Log::warning('→ Workspace HTTPS endpoint not ready, keeping user on central workspace', [
@@ -396,6 +398,15 @@ class HomeController extends Controller
                 $subscription,
                 'Your workspace is being finalized. Continue from the central dashboard until the secure subdomain is ready.'
             );
+        }
+
+        if ($workspaceHost && strcasecmp($currentHost, $workspaceHost) === 0) {
+            Log::info('→ Already on workspace host, redirecting to tenant dashboard', [
+                'host' => $currentHost,
+                'subscription_id' => $subscription->id,
+            ]);
+
+            return redirect()->route('user.dashboard');
         }
 
         Log::info('→ Redirecting to workspace', [
