@@ -227,7 +227,14 @@ class SubscriptionController extends Controller
             }
 
             if (strtolower((string) $subscription->status) === 'active') {
-                return redirect()->route('home')
+                session([
+                    'user_plan' => strtolower($subscription->plan ?? $subscription->plan_name ?? $existingCompany->plan ?? 'basic'),
+                    'current_tenant_id' => $existingCompany->id,
+                    'current_tenant_name' => $existingCompany->name ?? $existingCompany->company_name ?? 'Workspace',
+                    'workspace_context' => 'business',
+                ]);
+
+                return redirect()->route('user.dashboard')
                     ->with('info', 'Your workspace is already configured.');
             }
         }
