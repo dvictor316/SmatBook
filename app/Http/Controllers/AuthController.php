@@ -267,8 +267,8 @@ class AuthController extends Controller
             $request->session()->regenerateToken();
         }
 
-        if ($request->boolean('flush') || $request->boolean('expired') || $request->boolean('logout')) {
-            $this->clearClientAuthState($request);
+        if ($request->boolean('flush') || $request->boolean('expired')) {
+            $this->clearClientAuthState($request, false);
         }
 
         if (Auth::check()) {
@@ -406,17 +406,16 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $this->clearClientAuthState($request);
+        $this->clearClientAuthState($request, false);
 
-        $request->session()->flash('success', 'Logout successful. You have been signed out.');
+        $request->session()->flash('success', 'Logout successful.');
 
         return $this->applyNoStoreHeaders(
-            redirect()->route('login', ['logout' => 1, 'flush' => 1]),
-            true
+            redirect()->route('login')
         );
     }
 
-    public function clearClientAuthState(Request $request): void
+    public function clearClientAuthState(Request $request, bool $forgetBrowserCookies = true): void
     {
         app(DeviceSessionManager::class)->forgetCurrentSession($request);
         Auth::logout();
@@ -452,6 +451,10 @@ class AuthController extends Controller
         Session::flush();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        if (!$forgetBrowserCookies) {
+            return;
+        }
 
         // Forget cookies with the exact domain/secure/samesite the session cookie
         // was originally set with — otherwise Safari ignores the Max-Age=0 header
