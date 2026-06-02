@@ -32,6 +32,25 @@ class AutoSuccessFlash
             return $response;
         }
 
+        if ($request->routeIs(
+            'login',
+            'saas-login',
+            'login-account',
+            'saas-login.post',
+            'login-account.post',
+            'saas-register',
+            'saas-register.post',
+            'saas-register-initial',
+            'saas-register-initial.post',
+            'register',
+            'password.request',
+            'password.email',
+            'password.reset',
+            'password.update'
+        )) {
+            return $response;
+        }
+
         $hasMessage = $session->has('success')
             || $session->has('error')
             || $session->has('warning')

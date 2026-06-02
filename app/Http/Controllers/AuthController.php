@@ -282,6 +282,10 @@ class AuthController extends Controller
             $request->session()->regenerateToken();
         }
 
+        if ($request->session()->get('success') === 'Action completed successfully.') {
+            $request->session()->flash('success', 'Logout successful.');
+        }
+
         return $this->applyNoStoreHeaders(response()
             ->view('Pages.Authentication.saas-login', ['company' => $this->getTenantDetails()])
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
