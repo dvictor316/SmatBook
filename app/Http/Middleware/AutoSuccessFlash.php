@@ -25,6 +25,13 @@ class AutoSuccessFlash
         }
 
         $session = $request->session();
+
+        if ($request->routeIs('logout') || trim($request->path(), '/') === 'logout') {
+            $session->flash('success', 'Logout successful.');
+
+            return $response;
+        }
+
         $hasMessage = $session->has('success')
             || $session->has('error')
             || $session->has('warning')
