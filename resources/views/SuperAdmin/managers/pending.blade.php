@@ -61,7 +61,7 @@
                                                 <i class="fas fa-times"></i> Reject
                                             </button>
 
-                                            <a href="{{ route('messages.index', ['type' => 'chat', 'user' => $manager->id]) }}" class="btn btn-sm btn-outline-primary btn-rounded shadow-sm">
+                                            <a href="{{ route('messages.index', ['type' => 'chat', 'user' => $manager->user_id]) }}" class="btn btn-sm btn-outline-primary btn-rounded shadow-sm">
                                                 <i class="fas fa-comments"></i> Chat
                                             </a>
                                         </td>

@@ -65,6 +65,13 @@ class DeploymentManagerController extends Controller
         return Subscription::withoutGlobalScope('tenant')->whereIn('company_id', $this->managedCompanyIds());
     }
 
+    private function resolveDeploymentManager(string|int $id): DeploymentManager
+    {
+        return DeploymentManager::withoutGlobalScopes()
+            ->whereKey($id)
+            ->firstOrFail();
+    }
+
     private function deploymentRoleOptions(): array
     {
         if (Schema::hasTable('roles')) {

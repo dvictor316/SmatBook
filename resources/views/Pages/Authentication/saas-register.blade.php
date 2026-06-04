@@ -764,6 +764,13 @@
                     </ul>
                 </div>
             @endif
+            @if(session('registered_manager_email'))
+                <div class="flash-pill info">
+                    <i class="fas fa-envelope-open-text me-2"></i>
+                    Registered email found: <strong>{{ session('registered_manager_email') }}</strong>.
+                    {{ session('registered_manager_hint', 'Use that email to continue.') }}
+                </div>
+            @endif
 
             <form action="{{ route('saas-register.post') }}" method="POST" enctype="multipart/form-data" class="form-shell">
                 @csrf

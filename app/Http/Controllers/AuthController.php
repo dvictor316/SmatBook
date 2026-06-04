@@ -69,6 +69,9 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $requestedRole = $request->role ?? session('reg_role', 'admin');
+        $retryableManager = $requestedRole === 'deployment_manager'
+            ? $this->findRetryableDeploymentManager((string) $request->input('email', ''))
+            : null;
 
         $rules = [
             'name' => 'required|string|max:255',
@@ -85,7 +88,7 @@ class AuthController extends Controller
 
         if ($requestedRole === 'deployment_manager') {
             // Deployment managers must use a real email so notifications and approval updates reach them.
-            $rules['email'] = 'required|string|email|max:255|unique:users,email';
+            $rules['email'] = 'required|string|email|max:255';
             $rules['phone'] = ['nullable', 'string', 'max:25', 'regex:/^\+?[0-9]{7,20}$/'];
         } else {
             $rules['plan'] = 'required|string';
@@ -101,13 +104,31 @@ class AuthController extends Controller
 
         $normalizedPhone = $this->normalizePhoneForAuth($validated['phone'] ?? null);
         if ($normalizedPhone && Schema::hasColumn('users', 'phone')) {
-            $phoneExists = User::query()->where('phone', $normalizedPhone)->exists();
+            $phoneQuery = User::query()->where('phone', $normalizedPhone);
+            if ($retryableManager) {
+                $phoneQuery->where('id', '!=', $retryableManager->id);
+            }
+            $phoneExists = $phoneQuery->exists();
             if ($phoneExists) {
                 return back()->withErrors(['phone' => 'This phone is already registered.'])->withInput();
             }
         }
 
         $resolvedEmail = $validated['email'] ?? null;
+        if ($requestedRole === 'deployment_manager' && $resolvedEmail) {
+            $emailOwner = User::withTrashed()
+                ->where('email', $resolvedEmail)
+                ->first();
+
+            if ($emailOwner && (!$retryableManager || (int) $emailOwner->id !== (int) $retryableManager->id)) {
+                return back()
+                    ->withErrors(['email' => 'This email is already registered.'])
+                    ->with('registered_manager_email', $resolvedEmail)
+                    ->with('registered_manager_hint', 'We found an existing account for this email. Sign in to continue, or use a different email.')
+                    ->withInput();
+            }
+        }
+
         if (!$resolvedEmail && $normalizedPhone) {
             $seed = preg_replace('/\D+/', '', $normalizedPhone) ?: Str::lower(Str::random(10));
             $candidate = 'phone' . $seed . '@phone.smartprobook.local';
@@ -132,17 +153,21 @@ class AuthController extends Controller
         }
 
         try {
-            $registrationResult = DB::transaction(function () use ($validated, $request, $resolvedEmail, $normalizedPhone) {
+            $registrationResult = DB::transaction(function () use ($validated, $request, $resolvedEmail, $normalizedPhone, $retryableManager) {
                 $role = $request->role ?? session('reg_role', 'admin');
 
-                $user = User::create($this->filterPayloadForTable('users', [
+                $userPayload = $this->filterPayloadForTable('users', [
                     'name' => $validated['name'],
                     'email' => $resolvedEmail,
                     'phone' => $normalizedPhone,
                     'password' => Hash::make($validated['password']),
                     'role' => $role,
                     'is_verified' => ($role === 'deployment_manager') ? 0 : 1,
-                ]));
+                ]);
+
+                $user = $retryableManager ?: new User();
+                $user->fill($userPayload);
+                $user->save();
 
                 if ($request->hasFile('profile_photo') && Schema::hasColumn('users', 'profile_photo')) {
                     $profileExtension = $request->file('profile_photo')->getClientOriginalExtension() ?: 'jpg';
@@ -154,16 +179,50 @@ class AuthController extends Controller
                 }
 
                 if ($role === 'deployment_manager') {
-                    DeploymentManager::create([
-                        'user_id'             => $user->id,
-                        'status'              => 'pending_info',
-                        'commission_rate'     => 35.00,
-                        'auto_payout_enabled' => true,
+                    $manager = DeploymentManager::firstOrNew([
+                        'user_id' => $user->id,
                     ]);
-                    DB::afterCommit(function () use ($user) {
-                        SystemEventMailer::notifyRegistration($user, 'deployment_manager');
-                    });
-                    return ['user' => $user, 'role' => $role, 'subscription' => null];
+
+                    if (!$manager->exists) {
+                        $manager->status = 'pending_info';
+                        $manager->commission_rate = 35.00;
+                        $manager->auto_payout_enabled = true;
+                        $manager->save();
+
+                        DB::afterCommit(function () use ($user) {
+                            SystemEventMailer::notifyRegistration($user, 'deployment_manager');
+                        });
+
+                        return [
+                            'user' => $user,
+                            'role' => $role,
+                            'subscription' => null,
+                            'resumed' => false,
+                        ];
+                    }
+
+                    if (in_array(strtolower((string) $manager->status), ['pending', 'pending_info'], true)) {
+                        $manager->fill([
+                            'status' => 'pending_info',
+                            'commission_rate' => $manager->commission_rate ?? 35.00,
+                            'auto_payout_enabled' => $manager->auto_payout_enabled ?? true,
+                        ]);
+                        $manager->save();
+
+                        return [
+                            'user' => $user,
+                            'role' => $role,
+                            'subscription' => null,
+                            'resumed' => true,
+                        ];
+                    }
+
+                    return [
+                        'user' => $user,
+                        'role' => $role,
+                        'subscription' => null,
+                        'resumed' => false,
+                    ];
                 }
 
                 $requestedPlan = strtolower((string) ($request->plan ?? session('selected_plan', 'pro')));
@@ -217,7 +276,12 @@ class AuthController extends Controller
 
             if ($registrationResult['role'] === 'deployment_manager') {
                 return redirect()->route('manager.verification.form')
-                    ->with('success', 'Registration successful. Complete your verification profile to continue.');
+                    ->with(
+                        'success',
+                        ($registrationResult['resumed'] ?? false)
+                            ? 'We found your previous partner signup and restored it. Continue your verification profile to finish.'
+                            : 'Registration successful. Complete your verification profile to continue.'
+                    );
             }
 
             return redirect()->route('saas.setup', ['id' => $registrationResult['subscription']->id])
@@ -238,6 +302,34 @@ class AuthController extends Controller
 
             return back()->withErrors(['error' => $message])->withInput();
         }
+    }
+
+    private function findRetryableDeploymentManager(string $email): ?User
+    {
+        $email = trim(strtolower($email));
+        if ($email === '') {
+            return null;
+        }
+
+        $user = User::withTrashed()
+            ->whereRaw('LOWER(email) = ?', [$email])
+            ->first();
+
+        if (!$user) {
+            return null;
+        }
+
+        $manager = DeploymentManager::query()
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$manager) {
+            return null;
+        }
+
+        return in_array(strtolower((string) $manager->status), ['pending', 'pending_info'], true)
+            ? $user
+            : null;
     }
 
     /*

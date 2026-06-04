@@ -1527,6 +1527,17 @@ public function inventory(Request $request)
                 ->where('inventory_history.product_id', $id)
                 ->tap(fn ($q) => $this->applyTenantScope($q, 'products'));
 
+            if (
+                Schema::hasTable('sale_items')
+                && Schema::hasTable('sales')
+                && Schema::hasColumn('inventory_history', 'reference')
+            ) {
+                $historyQuery->where(function ($sub) {
+                    $sub->whereNull('inventory_history.reference')
+                        ->orWhereRaw("LOWER(TRIM(inventory_history.reference)) != 'sales'");
+                });
+            }
+
             if ($branchId !== '' || $branchName !== '') {
                 $historyQuery->where(function ($sub) use ($branchId, $branchName) {
                     $matched = false;

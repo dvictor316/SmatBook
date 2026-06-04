@@ -24,8 +24,7 @@ class SuperAdminDashboardController extends Controller
     private function resolveDeploymentManager(string|int $id): DeploymentManager
     {
         return DeploymentManager::withoutGlobalScopes()
-            ->where('id', $id)
-            ->orWhere('user_id', $id)
+            ->whereKey($id)
             ->firstOrFail();
     }
 

@@ -152,6 +152,13 @@ class BranchInventoryService
             $query->where('company_id', $product->company_id);
         }
 
+        if (Schema::hasTable('sale_items') && Schema::hasTable('sales') && Schema::hasColumn('inventory_history', 'reference')) {
+            $query->where(function ($sub) {
+                $sub->whereNull('inventory_history.reference')
+                    ->orWhereRaw("LOWER(TRIM(inventory_history.reference)) != 'sales'");
+            });
+        }
+
         if ($branchId !== '' || $branchName !== '') {
             $query->where(function ($sub) use ($branchId, $branchName) {
                 $matched = false;
