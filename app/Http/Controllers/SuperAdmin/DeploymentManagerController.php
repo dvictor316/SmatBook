@@ -585,35 +585,70 @@ class DeploymentManagerController extends Controller
 
     private function ensureManagerHasWorkspace($user) 
     {
-        $hasCompany = Company::where('user_id', $user->id)->exists();
-        if (!$hasCompany) {
-            $dmInfo = DeploymentManager::where('user_id', $user->id)->first();
-            $prefix = strtolower(preg_replace('/[^A-Za-z0-9]/', '', ($dmInfo->business_name ?? $user->name))) . $user->id;
+        $dmInfo = DeploymentManager::where('user_id', $user->id)->first();
+        $prefix = strtolower(preg_replace('/[^A-Za-z0-9]/', '', ($dmInfo->business_name ?? $user->name))) . $user->id;
+        $workspaceName = $dmInfo->business_name ?? $user->name;
 
-            Subscription::updateOrCreate(
-                ['user_id' => $user->id],
-                [
-                    'plan' => 'Enterprise',
-                    'subscriber_name' => $user->name,
-                    'amount' => 0,
-                    'status' => 'Active',
-                    'payment_status' => 'paid',
-                    'domain_prefix' => $prefix,
-                    'start_date' => now(),
-                    'end_date' => now()->addYear()
-                ]
-            );
+        $subscription = Subscription::withoutGlobalScope('tenant')
+            ->where(function ($query) use ($user, $prefix) {
+                $query->where('user_id', $user->id)
+                    ->orWhere('domain_prefix', $prefix);
+            })
+            ->latest('id')
+            ->first();
 
-            Company::updateOrCreate(
-                ['user_id' => $user->id],
-                [
-                    'owner_id' => $user->id,
-                    'domain_prefix' => $prefix,
-                    'name' => ($dmInfo->business_name ?? $user->name),
-                    'status' => 'active',
-                    'plan' => 'Enterprise'
-                ]
-            );
+        if (!$subscription) {
+            $subscription = new Subscription();
+            $subscription->user_id = $user->id;
+        }
+
+        $subscription->fill([
+            'user_id' => $user->id,
+            'plan' => 'Enterprise',
+            'subscriber_name' => $user->name,
+            'amount' => 0,
+            'status' => 'Active',
+            'payment_status' => 'paid',
+            'domain_prefix' => $subscription->domain_prefix ?: $prefix,
+            'start_date' => $subscription->start_date ?: now(),
+            'end_date' => now()->addYear(),
+        ]);
+        $subscription->save();
+
+        $company = Company::withoutGlobalScope('tenant')
+            ->where(function ($query) use ($user, $prefix) {
+                $query->where('user_id', $user->id)
+                    ->orWhere('owner_id', $user->id)
+                    ->orWhere('domain_prefix', $prefix)
+                    ->orWhere('subdomain', $prefix);
+            })
+            ->latest('id')
+            ->first();
+
+        if (!$company) {
+            $company = new Company();
+        }
+
+        $company->fill([
+            'user_id' => $user->id,
+            'owner_id' => $user->id,
+            'domain_prefix' => $company->domain_prefix ?: $prefix,
+            'subdomain' => $company->subdomain ?: $prefix,
+            'name' => $workspaceName,
+            'company_name' => $company->company_name ?: $workspaceName,
+            'status' => 'active',
+            'plan' => 'Enterprise',
+        ]);
+        $company->save();
+
+        if ((int) $subscription->company_id !== (int) $company->id) {
+            $subscription->company_id = $company->id;
+            $subscription->save();
+        }
+
+        if ((int) $user->company_id !== (int) $company->id) {
+            $user->company_id = $company->id;
+            $user->save();
         }
     }
 
