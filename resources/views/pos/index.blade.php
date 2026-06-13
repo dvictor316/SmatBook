@@ -21,6 +21,7 @@
     $posHomeUrl = $posHomeUrl ?? (\Illuminate\Support\Facades\Route::has('home') ? route('home') : url('/home'));
     $posChartAccountsUrl = $posChartAccountsUrl ?? (\Illuminate\Support\Facades\Route::has('chart-of-accounts') ? route('chart-of-accounts') : url('/settings/chart-of-accounts'));
     $posSaleStoreUrl = $posSaleStoreUrl ?? (\Illuminate\Support\Facades\Route::has('sales.store') ? route('sales.store') : url('/sales'));
+    $posAddProductUrl = $posAddProductUrl ?? (\Illuminate\Support\Facades\Route::has('add-products') ? route('add-products') : url('/add-products'));
 @endphp
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -1879,6 +1880,321 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
         font-size: 0.78rem;
     }
 }
+
+/* QuickBooks POS inspired terminal skin */
+body.pos-terminal-workspace .pos-full-page-wrapper {
+    background:
+        linear-gradient(180deg, #dbe6f2 0%, #eef3f8 42%, #d8e1ec 100%) !important;
+    padding: 6px 8px 12px !important;
+}
+
+.pos-shell {
+    gap: 8px;
+}
+
+.pos-action-rail {
+    flex-basis: clamp(122px, 8vw, 150px);
+    top: 82px;
+}
+
+.pos-rail-panel {
+    padding: 8px 6px;
+    border-radius: 2px;
+    border-color: #aab6c4;
+    background: linear-gradient(180deg, #eef1f5 0%, #d7dce3 100%);
+    box-shadow: inset -1px 0 0 #c4ccd6, 1px 0 0 rgba(255,255,255,0.7);
+}
+
+.pos-rail-btn {
+    min-height: 34px;
+    justify-content: flex-start;
+    padding: 6px 9px;
+    border-radius: 3px;
+    border-color: #5478b9;
+    background: linear-gradient(180deg, #4e83d5 0%, #2857b2 100%);
+    color: #ffffff;
+    font-size: 0.68rem;
+    line-height: 1.12;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 1px 1px rgba(0,0,0,0.16);
+}
+
+.pos-rail-btn:hover,
+.pos-rail-btn:focus {
+    background: linear-gradient(180deg, #6d9bea 0%, #315fbd 100%);
+    color: #ffffff;
+    border-color: #2857b2;
+}
+
+.pos-rail-btn-primary {
+    min-height: 38px;
+    border-color: #579950;
+    background: linear-gradient(180deg, #90cf61 0%, #4ea13d 100%);
+}
+
+.pos-rail-btn-primary:hover,
+.pos-rail-btn-primary:focus {
+    background: linear-gradient(180deg, #a5db78 0%, #58ab45 100%);
+    border-color: #3f8734;
+}
+
+.pos-main-stage {
+    gap: 8px !important;
+}
+
+.header-stage,
+.pos-full-page-wrapper .header-stage,
+.pos-full-page-wrapper .header-stage.plan-starter,
+.pos-full-page-wrapper .header-stage.plan-basic,
+.pos-full-page-wrapper .header-stage.plan-pro,
+.pos-full-page-wrapper .header-stage.plan-enterprise,
+.pos-full-page-wrapper .header-stage.plan-super {
+    padding: 0 !important;
+    border-radius: 2px !important;
+    border: 1px solid #8ea7c2 !important;
+    background: linear-gradient(180deg, #f8fbff 0%, #dce7f4 100%) !important;
+    box-shadow: inset 0 1px 0 #ffffff, 0 1px 2px rgba(0,0,0,0.12) !important;
+}
+
+.header-stage::after {
+    display: none !important;
+}
+
+.header-util-bar {
+    margin: 0 !important;
+    padding: 5px 10px !important;
+    border: 0 !important;
+    border-bottom: 1px solid #c7d3e0 !important;
+    border-radius: 0 !important;
+    background: #f7f9fc !important;
+    box-shadow: none !important;
+}
+
+.header-util-note {
+    font-size: 0.68rem;
+    color: #31435c;
+}
+
+.util-pill {
+    min-height: 22px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    background: #ffffff;
+    color: #24476f;
+    border-color: #c8d5e4;
+}
+
+.pos-header-bar {
+    min-height: 42px !important;
+    height: auto !important;
+    border-radius: 0 !important;
+    border: 0 !important;
+    border-bottom: 1px solid #8ea7c2 !important;
+    padding: 6px 10px !important;
+    background: linear-gradient(180deg, #ffffff 0%, #edf3fa 100%) !important;
+    box-shadow: none !important;
+}
+
+.pos-header-title {
+    min-width: 150px;
+    font-size: 0.86rem !important;
+    color: #1c2430 !important;
+}
+
+.clock-badge {
+    min-height: 28px;
+    border-radius: 2px !important;
+    background: #fdfefe !important;
+    color: #1c2430 !important;
+    border-color: #b8c7d8 !important;
+    box-shadow: inset 0 1px 0 #ffffff !important;
+}
+
+.search-wrapper {
+    border-radius: 2px !important;
+    min-height: 34px;
+    border-color: #b8c7d8 !important;
+    background: #ffffff !important;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.06) !important;
+}
+
+.search-input {
+    height: 34px !important;
+    border-radius: 2px !important;
+    font-size: 0.82rem !important;
+}
+
+.pos-full-page-wrapper .pos-card,
+.controls-card,
+.summary-panel {
+    border-radius: 2px !important;
+    border: 1px solid #aebdcb !important;
+    background: #f8fbff !important;
+    box-shadow: inset 0 1px 0 #ffffff, 0 1px 2px rgba(0,0,0,0.10) !important;
+}
+
+.pos-full-page-wrapper .pos-product-shelf-card {
+    background: linear-gradient(180deg, #f7f9fc 0%, #e9eef4 100%) !important;
+}
+
+.product-toolbar {
+    padding-bottom: 6px;
+    border-bottom: 1px solid #cbd6e2;
+}
+
+.product-card {
+    border-radius: 2px !important;
+    border-color: #c0cad6 !important;
+    background: linear-gradient(180deg, #ffffff 0%, #eef3f8 100%) !important;
+    box-shadow: inset 0 1px 0 #ffffff;
+}
+
+.controls-card {
+    padding: 12px !important;
+}
+
+.scanner-section,
+.image-frame,
+.quick-fill-panel,
+.subtotal-box {
+    border-radius: 2px !important;
+    border-color: #c2cfdd !important;
+    background: #f7f9fc !important;
+    box-shadow: inset 0 1px 0 #ffffff !important;
+}
+
+.unit-btn,
+.btn-add-cart,
+.btn-process {
+    border-radius: 3px !important;
+}
+
+@media (min-width: 1200px) {
+    .pos-main-stage {
+        grid-template-columns: minmax(0, 2.65fr) minmax(240px, 0.78fr);
+        grid-template-areas:
+            "header header"
+            "work shelf";
+    }
+
+    .pos-full-page-wrapper .row.g-4 {
+        grid-template-columns: minmax(0, 2.1fr) minmax(250px, 0.8fr);
+        gap: 8px;
+    }
+
+    .pos-full-page-wrapper .row.g-4 > .col-xl-8 {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .pos-full-page-wrapper .row.g-4 > .col-xl-4 {
+        grid-column: 2;
+        grid-row: 1;
+    }
+}
+
+.pos-full-page-wrapper .row.g-4 > .col-xl-8 > .pos-card {
+    position: relative;
+    padding-top: 42px !important;
+}
+
+.pos-full-page-wrapper .row.g-4 > .col-xl-8 > .pos-card::before {
+    content: "Sales Receipt";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    color: #1c2430;
+    font-size: 0.86rem;
+    font-weight: 800;
+    background: linear-gradient(180deg, #fdfefe 0%, #dce8f5 100%);
+    border-bottom: 1px solid #aebdcb;
+}
+
+.cart-wrapper {
+    min-height: clamp(300px, 42vh, 520px);
+    max-height: clamp(340px, 48vh, 620px);
+    border-radius: 0 !important;
+    border: 1px solid #aebdcb !important;
+    background:
+        repeating-linear-gradient(
+            180deg,
+            #ffffff 0,
+            #ffffff 33px,
+            #eef5fc 33px,
+            #eef5fc 66px
+        ) !important;
+    box-shadow: inset 0 1px 0 #ffffff !important;
+}
+
+.cart-table thead th,
+.pos-full-page-wrapper .cart-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 7px 8px !important;
+    color: #3a4658 !important;
+    font-size: 0.64rem !important;
+    letter-spacing: 0;
+    text-transform: none;
+    background: linear-gradient(180deg, #f6f8fb 0%, #dce6f1 100%) !important;
+    border-bottom: 1px solid #aebdcb !important;
+}
+
+.cart-table tbody tr:nth-child(odd) {
+    background: rgba(255,255,255,0.92) !important;
+}
+
+.cart-table tbody tr:nth-child(even) {
+    background: rgba(234, 242, 250, 0.92) !important;
+}
+
+.cart-table td {
+    padding: 7px 8px !important;
+    border-color: rgba(174, 189, 203, 0.55) !important;
+}
+
+.cart-empty-state {
+    background: transparent !important;
+}
+
+.cart-empty-shell {
+    border-radius: 2px;
+    background: rgba(255,255,255,0.82);
+    border-color: #c7d3df;
+}
+
+.summary-panel {
+    margin-top: 8px;
+    padding: 10px 12px !important;
+    background: linear-gradient(180deg, #f2f5f8 0%, #e2e7ed 100%) !important;
+}
+
+.summary-panel .grand-total {
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827 !important;
+    background: none !important;
+    font-size: 1.5rem !important;
+}
+
+.summary-panel .row.g-3 {
+    align-items: end;
+}
+
+#payment-method {
+    border-radius: 3px;
+    background: #ffffff;
+}
+
+#process-btn {
+    min-height: 38px;
+    border: 1px solid #5478b9 !important;
+    background: linear-gradient(180deg, #6d9bea 0%, #315fbd 100%) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.36), 0 1px 2px rgba(0,0,0,0.18) !important;
+}
 </style>
 
 <div class="pos-full-page-wrapper">
@@ -1905,27 +2221,30 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
         <div class="pos-rail-backdrop" id="pos-rail-backdrop" aria-hidden="true"></div>
         <aside class="pos-action-rail" id="pos-action-rail" aria-label="POS quick actions">
             <div class="pos-rail-panel">
-                <div class="pos-rail-title">Point of Sale</div>
-                <button type="button" class="pos-rail-btn" id="rail-search-btn">
+                <button type="button" class="pos-rail-btn pos-rail-btn-primary" id="rail-want-btn">
+                    <i class="fas fa-bolt"></i>
+                    <span>I Want To...</span>
+                </button>
+                <button type="button" class="pos-rail-btn mt-2" id="rail-search-btn">
                     <i class="fas fa-search"></i>
                     <span>Quick Pick Items</span>
                 </button>
+                <button type="button" class="pos-rail-btn mt-2" id="rail-misc-btn">
+                    <i class="fas fa-tag"></i>
+                    <span>Sell Misc Item</span>
+                </button>
+                <a href="{{ $posAddProductUrl ?? url('/add-products') }}" class="pos-rail-btn mt-2">
+                    <i class="fas fa-plus"></i>
+                    <span>Add New Item</span>
+                </a>
                 <button type="button" class="pos-rail-btn mt-2" id="rail-discount-btn">
                     <i class="fas fa-percent"></i>
                     <span>Give Discount</span>
                 </button>
                 <a href="{{ $posReturnUrl ?? url('/pos/return') }}" class="pos-rail-btn mt-2">
                     <i class="fas fa-undo-alt"></i>
-                    <span>Accept Return</span>
+                    <span>Return/Exchange</span>
                 </a>
-                <button type="button" class="pos-rail-btn mt-2" id="rail-customer-btn">
-                    <i class="fas fa-user"></i>
-                    <span>Cashier/Associate</span>
-                </button>
-                <button type="button" class="pos-rail-btn mt-2" id="rail-scan-btn">
-                    <i class="fas fa-barcode"></i>
-                    <span>Ship Items</span>
-                </button>
                 <button type="button" class="pos-rail-btn mt-2" id="rail-messages-btn">
                     <i class="fas fa-comment-alt"></i>
                     <span>Show Messages</span>
@@ -3490,8 +3809,10 @@ window.POS_ENABLE_FALLBACK = function () {
     const changeAmount = document.getElementById('change-amount');
     const customerSelect = document.getElementById('customer-select');
     const customerSearchInput = document.getElementById('customer-search-input');
+    const railWantBtn = document.getElementById('rail-want-btn');
     const railScanBtn = document.getElementById('rail-scan-btn');
     const railSearchBtn = document.getElementById('rail-search-btn');
+    const railMiscBtn = document.getElementById('rail-misc-btn');
     const railDiscountBtn = document.getElementById('rail-discount-btn');
     const railCustomerBtn = document.getElementById('rail-customer-btn');
     const railCheckoutBtn = document.getElementById('rail-checkout-btn');
@@ -3595,7 +3916,9 @@ window.POS_ENABLE_FALLBACK = function () {
     }
 
     railScanBtn?.addEventListener('click', () => barcodeInput?.focus());
+    railWantBtn?.addEventListener('click', () => quickSearch?.focus());
     railSearchBtn?.addEventListener('click', () => quickSearch?.focus());
+    railMiscBtn?.addEventListener('click', () => productSearchInput?.focus());
     railDiscountBtn?.addEventListener('click', () => discountInput?.focus());
     railCustomerBtn?.addEventListener('click', () => customerSearchInput?.focus());
     railCheckoutBtn?.addEventListener('click', () => processBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
