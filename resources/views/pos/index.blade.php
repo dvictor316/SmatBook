@@ -501,6 +501,11 @@
     grid-area: work;
 }
 
+.pos-mobile-menu-toggle,
+.pos-rail-backdrop {
+    display: none;
+}
+
 @media(max-width: 1199.98px) {
     .pos-shell {
         display: block;
@@ -508,13 +513,39 @@
         overflow: visible;
     }
 
+    .pos-mobile-menu-toggle {
+        position: sticky;
+        top: 78px;
+        z-index: 25;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid rgba(15, 58, 138, 0.18);
+        border-radius: 999px;
+        padding: 9px 14px;
+        margin: 0 0 10px;
+        color: #ffffff;
+        background: linear-gradient(135deg, var(--primary-700), var(--primary-600));
+        box-shadow: 0 12px 26px rgba(6, 26, 68, 0.18);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+    }
+
     .pos-action-rail {
-        position: static;
-        width: 100%;
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-        min-height: 0;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1055;
+        width: min(320px, 84vw);
+        height: 100dvh;
+        padding: 14px;
+        overflow-y: auto;
+        background: linear-gradient(180deg, #eef4ff 0%, #ffffff 100%);
+        box-shadow: 18px 0 42px rgba(6, 26, 68, 0.22);
+        transform: translateX(-110%);
+        transition: transform 0.25s ease;
+        display: block;
     }
 
     .pos-rail-panel {
@@ -529,21 +560,27 @@
     .pos-rail-btn {
         min-height: 68px;
     }
+
+    body.pos-rail-open .pos-action-rail {
+        transform: translateX(0);
+    }
+
+    body.pos-rail-open .pos-rail-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 1050;
+        background: rgba(6, 26, 68, 0.38);
+        backdrop-filter: blur(2px);
+    }
 }
 
 @media(max-width: 767.98px) {
-    .pos-action-rail {
-        grid-template-columns: 1fr;
-    }
-
     .pos-rail-panel {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
+        display: block;
     }
 
     .pos-rail-title {
-        grid-column: 1 / -1;
         margin-bottom: 0;
     }
 
@@ -1793,6 +1830,76 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
         max-width: 100%;
     }
 }
+
+@media (max-width: 767.98px) {
+    .pos-product-shelf-card {
+        padding: 12px !important;
+    }
+
+    .pos-product-shelf-card .product-grid {
+        grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+        grid-auto-rows: minmax(48px, auto);
+        gap: 6px;
+        max-height: 220px;
+        overflow-y: auto;
+        padding: 2px;
+    }
+
+    .pos-product-shelf-card .product-card {
+        min-height: 48px;
+        border-radius: 10px;
+        padding: 3px;
+    }
+
+    .pos-product-shelf-card .product-card-img {
+        height: 38px;
+        border-radius: 8px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .pos-product-shelf-card .product-toolbar {
+        gap: 6px;
+        margin-bottom: 8px;
+    }
+
+    .pos-product-shelf-card .toolbar-title {
+        font-size: 0.76rem;
+    }
+
+    .pos-product-shelf-card .category-pills-wrap {
+        margin-bottom: 8px;
+    }
+
+    .pos-product-shelf-card .category-pill,
+    .pos-product-shelf-card .category-toggle-btn {
+        min-height: 28px;
+        padding: 4px 8px;
+        font-size: 0.68rem;
+    }
+
+    .pos-product-shelf-card .product-grid {
+        grid-template-columns: repeat(10, minmax(0, 1fr)) !important;
+        grid-auto-rows: minmax(36px, auto);
+        gap: 4px;
+        max-height: 180px;
+    }
+
+    .pos-product-shelf-card .product-card {
+        min-height: 36px;
+        border-radius: 8px;
+        padding: 2px;
+    }
+
+    .pos-product-shelf-card .product-card-img {
+        height: 30px;
+        border-radius: 6px;
+    }
+
+    .pos-product-shelf-card .product-card-img i {
+        font-size: 0.78rem;
+    }
+}
 </style>
 
 <div class="pos-full-page-wrapper">
@@ -1816,7 +1923,12 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
     @endphp
 
     <div class="pos-shell">
-        <aside class="pos-action-rail" aria-label="POS quick actions">
+        <button type="button" class="pos-mobile-menu-toggle" id="pos-mobile-menu-toggle" aria-controls="pos-action-rail" aria-expanded="false">
+            <i class="fas fa-bars"></i>
+            <span>POS Menu</span>
+        </button>
+        <div class="pos-rail-backdrop" id="pos-rail-backdrop" aria-hidden="true"></div>
+        <aside class="pos-action-rail" id="pos-action-rail" aria-label="POS quick actions">
             <div class="pos-rail-panel">
                 <div class="pos-rail-title">Quick Actions</div>
                 <button type="button" class="pos-rail-btn" id="rail-scan-btn">
@@ -4849,6 +4961,31 @@ window.POS_ENABLE_FALLBACK = function () {
 };
 
 document.addEventListener('DOMContentLoaded', function () {
+    const posMenuToggle = document.getElementById('pos-mobile-menu-toggle');
+    const posRailBackdrop = document.getElementById('pos-rail-backdrop');
+    const posRail = document.getElementById('pos-action-rail');
+
+    const closePosRail = () => {
+        document.body.classList.remove('pos-rail-open');
+        posMenuToggle?.setAttribute('aria-expanded', 'false');
+    };
+
+    posMenuToggle?.addEventListener('click', function () {
+        const isOpen = document.body.classList.toggle('pos-rail-open');
+        this.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+
+    posRailBackdrop?.addEventListener('click', closePosRail);
+    posRail?.querySelectorAll('button, a').forEach((item) => {
+        item.addEventListener('click', closePosRail);
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closePosRail();
+        }
+    });
+
     window.POS_ENABLE_FALLBACK();
 });
 </script>
