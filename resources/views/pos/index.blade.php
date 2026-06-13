@@ -25,6 +25,32 @@
     $posInventoryUrl = $posInventoryUrl ?? (\Illuminate\Support\Facades\Route::has('product-list') ? route('product-list') : url('/product-list'));
     $posReceiveItemsUrl = $posReceiveItemsUrl ?? (\Illuminate\Support\Facades\Route::has('grn.create') ? route('grn.create') : url('/grn/create'));
     $posReportsUrl = $posReportsUrl ?? (\Illuminate\Support\Facades\Route::has('pos.reports') ? route('pos.reports') : url('/pos/reports'));
+    $posUser = auth()->user();
+    $posRole = strtolower((string) ($posUser->role ?? ''));
+    $posIsAdmin = in_array($posRole, ['super_admin', 'superadmin', 'administrator', 'admin'], true)
+        || ($posUser && method_exists($posUser, 'hasRole') && ($posUser->hasRole('super_admin') || $posUser->hasRole('administrator')));
+    $posCan = function (array|string $permissions) use ($posUser, $posIsAdmin): bool {
+        if ($posIsAdmin) {
+            return true;
+        }
+
+        if (!$posUser || !method_exists($posUser, 'hasPermissionTo')) {
+            return false;
+        }
+
+        foreach ((array) $permissions as $permission) {
+            if ($posUser->hasPermissionTo((string) $permission)) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+    $posCanAddProduct = $posCan('inventory.products.create');
+    $posCanViewInventory = $posCan(['inventory.products.view', 'inventory.stock.view']);
+    $posCanReceiveItems = $posCan(['purchases.purchases.create', 'inventory.stock.edit']);
+    $posCanViewReports = $posCan(['reports.reports.view', 'sales.sales.view_all', 'sales.sales.view_own']);
+    $posCanReturn = $posCan(['sales.sales.return', 'sales.sales.edit', 'sales.sales.view_all', 'sales.sales.view_own']);
 @endphp
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -1933,6 +1959,16 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
     border-color: #2857b2;
 }
 
+.pos-rail-btn.is-disabled,
+.pos-rail-btn[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.52;
+    background: linear-gradient(180deg, #e5e8ed 0%, #cbd2dc 100%);
+    border-color: #a9b4c2;
+    color: #6b7280;
+    pointer-events: none;
+}
+
 .pos-rail-btn-primary {
     min-height: 38px;
     border-color: #579950;
@@ -2252,8 +2288,8 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
         <aside class="pos-action-rail" id="pos-action-rail" aria-label="POS quick actions">
             <div class="pos-rail-panel">
                 <button type="button" class="pos-rail-btn pos-rail-btn-primary" id="rail-want-btn">
-                    <i class="fas fa-bolt"></i>
-                    <span>I Want To...</span>
+                    <i class="fas fa-robot"></i>
+                    <span>AI Assistant</span>
                 </button>
                 <button type="button" class="pos-rail-btn mt-2" id="rail-search-btn">
                     <i class="fas fa-search"></i>
@@ -2263,30 +2299,65 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
                     <i class="fas fa-tag"></i>
                     <span>Sell Misc Item</span>
                 </button>
-                <a href="{{ $posAddProductUrl ?? url('/add-products') }}" class="pos-rail-btn mt-2">
-                    <i class="fas fa-plus"></i>
-                    <span>Add New Item</span>
-                </a>
+                @if($posCanAddProduct)
+                    <a href="{{ $posAddProductUrl ?? url('/add-products') }}" class="pos-rail-btn mt-2">
+                        <i class="fas fa-plus"></i>
+                        <span>Add New Item</span>
+                    </a>
+                @else
+                    <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to add products.">
+                        <i class="fas fa-plus"></i>
+                        <span>Add New Item</span>
+                    </span>
+                @endif
                 <button type="button" class="pos-rail-btn mt-2" id="rail-discount-btn">
                     <i class="fas fa-percent"></i>
                     <span>Give Discount</span>
                 </button>
-                <a href="{{ $posReturnUrl ?? url('/pos/return') }}" class="pos-rail-btn mt-2">
-                    <i class="fas fa-undo-alt"></i>
-                    <span>Return/Exchange</span>
-                </a>
-                <a href="{{ $posReceiveItemsUrl ?? url('/grn/create') }}" class="pos-rail-btn mt-2">
-                    <i class="fas fa-dolly"></i>
-                    <span>Receive Items</span>
-                </a>
-                <a href="{{ $posReportsUrl ?? url('/pos/reports') }}" class="pos-rail-btn mt-2">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Reports</span>
-                </a>
-                <a href="{{ $posInventoryUrl ?? url('/product-list') }}" class="pos-rail-btn mt-2">
-                    <i class="fas fa-boxes"></i>
-                    <span>Item List</span>
-                </a>
+                @if($posCanReturn)
+                    <a href="{{ $posReturnUrl ?? url('/pos/return') }}" class="pos-rail-btn mt-2">
+                        <i class="fas fa-undo-alt"></i>
+                        <span>Return/Exchange</span>
+                    </a>
+                @else
+                    <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to process returns.">
+                        <i class="fas fa-undo-alt"></i>
+                        <span>Return/Exchange</span>
+                    </span>
+                @endif
+                @if($posCanReceiveItems)
+                    <a href="{{ $posReceiveItemsUrl ?? url('/grn/create') }}" class="pos-rail-btn mt-2">
+                        <i class="fas fa-dolly"></i>
+                        <span>Receive Items</span>
+                    </a>
+                @else
+                    <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to receive inventory.">
+                        <i class="fas fa-dolly"></i>
+                        <span>Receive Items</span>
+                    </span>
+                @endif
+                @if($posCanViewReports)
+                    <a href="{{ $posReportsUrl ?? url('/pos/reports') }}" class="pos-rail-btn mt-2">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Reports</span>
+                    </a>
+                @else
+                    <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to view reports.">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Reports</span>
+                    </span>
+                @endif
+                @if($posCanViewInventory)
+                    <a href="{{ $posInventoryUrl ?? url('/product-list') }}" class="pos-rail-btn mt-2">
+                        <i class="fas fa-boxes"></i>
+                        <span>Item List</span>
+                    </a>
+                @else
+                    <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to view inventory.">
+                        <i class="fas fa-boxes"></i>
+                        <span>Item List</span>
+                    </span>
+                @endif
                 <button type="button" class="pos-rail-btn mt-2" id="rail-messages-btn">
                     <i class="fas fa-comment-alt"></i>
                     <span>Show Messages</span>
@@ -3936,6 +4007,13 @@ window.POS_ENABLE_FALLBACK = function () {
         itemList: @json($posInventoryUrl ?? url('/product-list')),
         salesLog: @json($posSalesLogUrl ?? url('/pos/sales')),
     };
+    const posActionPermissions = {
+        addProduct: @json($posCanAddProduct),
+        returns: @json($posCanReturn),
+        receiveItems: @json($posCanReceiveItems),
+        reports: @json($posCanViewReports),
+        itemList: @json($posCanViewInventory),
+    };
 	    const salesOrderPrefill = @json(session('pos_prefill'));
 	    const posSourceContext = salesOrderPrefill && salesOrderPrefill.source
 	        ? {
@@ -3967,20 +4045,26 @@ window.POS_ENABLE_FALLBACK = function () {
 
     railScanBtn?.addEventListener('click', () => barcodeInput?.focus());
     railWantBtn?.addEventListener('click', () => {
+        const linkButton = (allowed, href, label, tone = 'outline-primary') => allowed
+            ? `<a class="btn btn-sm btn-${tone}" href="${href}">${label}</a>`
+            : `<button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Permission required">${label} - No permission</button>`;
         const pickerHtml = `
-            <div class="text-start d-grid gap-2">
-                <button type="button" class="btn btn-sm btn-primary" data-pos-action="quick-pick">Quick Pick Items</button>
-                <button type="button" class="btn btn-sm btn-outline-primary" data-pos-action="sell-misc">Sell Misc Item</button>
-                <a class="btn btn-sm btn-outline-primary" href="${posActionUrls.addProduct}">Add New Item</a>
-                <a class="btn btn-sm btn-outline-primary" href="${posActionUrls.receiveItems}">Receive Items</a>
-                <a class="btn btn-sm btn-outline-primary" href="${posActionUrls.reports}">Reports</a>
-                <a class="btn btn-sm btn-outline-secondary" href="${posActionUrls.itemList}">Item List</a>
+            <div class="text-start">
+                <p class="small text-muted mb-2">Ask for POS help or jump to an allowed action.</p>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-sm btn-primary" data-pos-action="quick-pick">Find product for sale</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-pos-action="sell-misc">Sell miscellaneous item</button>
+                    ${linkButton(posActionPermissions.addProduct, posActionUrls.addProduct, 'Add new item')}
+                    ${linkButton(posActionPermissions.receiveItems, posActionUrls.receiveItems, 'Receive items')}
+                    ${linkButton(posActionPermissions.reports, posActionUrls.reports, 'Open reports')}
+                    ${linkButton(posActionPermissions.itemList, posActionUrls.itemList, 'Open item list', 'outline-secondary')}
+                </div>
             </div>
         `;
 
         if (window.Swal && typeof Swal.fire === 'function') {
             Swal.fire({
-                title: 'I Want To...',
+                title: 'AI Assistant',
                 html: pickerHtml,
                 showConfirmButton: false,
                 showCloseButton: true,
