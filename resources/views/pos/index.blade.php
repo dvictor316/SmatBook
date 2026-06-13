@@ -489,6 +489,18 @@
     overflow: hidden;
 }
 
+.pos-main-stage > .header-stage {
+    grid-area: header;
+}
+
+.pos-main-stage > .pos-product-shelf-card {
+    grid-area: shelf;
+}
+
+.pos-main-stage > .row.g-4 {
+    grid-area: work;
+}
+
 @media(max-width: 1199.98px) {
     .pos-shell {
         display: block;
@@ -678,6 +690,14 @@
     max-height: clamp(260px, calc(100vh - 405px), 430px);
     overflow-y: auto;
     padding: 2px 6px 2px 2px;
+}
+
+.pos-product-shelf-card .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(118px, auto);
+    max-height: none;
+    min-height: 0;
+    align-content: start;
 }
 
 .product-card {
@@ -1649,6 +1669,41 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
     box-sizing: border-box;
 }
 
+@media (min-width: 1200px) {
+    .pos-main-stage {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(300px, 0.78fr);
+        grid-template-areas:
+            "header header"
+            "work shelf";
+        gap: clamp(14px, 1.2vw, 22px);
+        align-items: stretch;
+    }
+
+    .pos-main-stage > .header-stage,
+    .pos-main-stage > .pos-product-shelf-card,
+    .pos-main-stage > .row.g-4 {
+        margin-bottom: 0 !important;
+    }
+
+    .pos-main-stage > .pos-product-shelf-card {
+        height: 100%;
+        min-height: calc(100vh - 300px);
+        align-self: stretch;
+        overflow: hidden;
+    }
+
+    .pos-product-shelf-card .category-pills-wrap {
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .pos-product-shelf-card .product-grid {
+        height: calc(100% - 88px);
+        overflow-y: auto;
+    }
+}
+
 .pos-full-page-wrapper .pos-card {
     border-radius: 22px !important;
     padding: clamp(18px, 1.6vw, 28px) !important;
@@ -1702,7 +1757,7 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
 @media (min-width: 1200px) {
     .pos-full-page-wrapper .row.g-4 {
         display: grid;
-        grid-template-columns: minmax(360px, 0.9fr) minmax(0, 2.4fr);
+        grid-template-columns: minmax(340px, 0.88fr) minmax(0, 1.62fr);
         gap: clamp(18px, 1.8vw, 30px);
         margin-left: 0;
         margin-right: 0;
@@ -1718,8 +1773,12 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
 }
 
 @media (min-width: 1500px) {
+    .pos-main-stage {
+        grid-template-columns: minmax(0, 2.08fr) minmax(340px, 0.82fr);
+    }
+
     .pos-full-page-wrapper .row.g-4 {
-        grid-template-columns: minmax(390px, 0.82fr) minmax(0, 2.65fr);
+        grid-template-columns: minmax(360px, 0.82fr) minmax(0, 1.8fr);
     }
 }
 
@@ -1846,7 +1905,7 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
         </div>        
     </div>
 
-    <div class="card pos-card p-4 mb-4">
+    <div class="card pos-card pos-product-shelf-card p-4 mb-4">
         <div class="product-toolbar">
             <span class="toolbar-title">Product Shelf</span>
             <span class="small text-muted" id="product-count">{{ ($products ?? collect())->count() }} item(s)</span>
