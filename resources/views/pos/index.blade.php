@@ -2,7 +2,7 @@
 
 @php($hideSidebar = true)
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 @php
     $products = $products ?? collect();
     $customers = $customers ?? collect();
@@ -4619,4 +4619,4 @@ document.addEventListener('DOMContentLoaded', function () {
     window.POS_ENABLE_FALLBACK();
 });
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
