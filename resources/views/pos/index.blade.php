@@ -755,8 +755,10 @@
     transition: var(--transition);
     min-height: 104px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 6px;
 }
 
 .product-card:hover {
@@ -791,6 +793,30 @@
     width: 100%;
     height: 100%;
     object-fit: contain;
+}
+
+.product-card-name {
+    width: 100%;
+    color: #061a44;
+    font-size: .72rem;
+    font-weight: 800;
+    line-height: 1.15;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.product-card-measure {
+    width: 100%;
+    color: rgba(6, 26, 68, .62);
+    font-size: .64rem;
+    font-weight: 700;
+    line-height: 1.1;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .hidden-product-select {
@@ -899,6 +925,12 @@
 }
 #pos-product-dropdown-portal li .combo-sku {
     font-size: .72rem; color: rgba(6,26,68,.55); font-weight: 400; margin-top: 1px;
+}
+#pos-product-dropdown-portal li .combo-measure {
+    font-size: .7rem;
+    color: rgba(6,26,68,.62);
+    font-weight: 700;
+    margin-top: 1px;
 }
 #pos-product-dropdown-portal .combo-no-results {
     padding: 12px 16px; color: rgba(6,26,68,.50); font-size: .875rem;
@@ -2441,6 +2473,17 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
                 $specialPrice = (float) ($p->special_price ?? 0);
                 $rollsPerCarton = max((int) ($p->units_per_carton ?? 0), 0);
                 $unitsPerRoll = max((int) ($p->units_per_roll ?? 0), 0);
+                $baseUnitName = strtolower(trim((string) ($p->base_unit_name ?? 'unit'))) ?: 'unit';
+                $unitType = strtolower(trim((string) ($p->unit_type ?? 'unit'))) ?: 'unit';
+                $cartonUnitCount = $rollsPerCarton > 0 ? ($unitsPerRoll > 0 ? $rollsPerCarton * $unitsPerRoll : $rollsPerCarton) : 0;
+                $measurementParts = ['1 ' . $baseUnitName];
+                if ($unitsPerRoll > 0) {
+                    $measurementParts[] = $unitsPerRoll . ' ' . $baseUnitName . ($unitsPerRoll === 1 ? '' : 's') . ' / roll';
+                }
+                if ($cartonUnitCount > 0) {
+                    $measurementParts[] = $cartonUnitCount . ' ' . $baseUnitName . ($cartonUnitCount === 1 ? '' : 's') . ' / carton';
+                }
+                $measurementLabel = implode(' | ', $measurementParts);
                 $categoryName = $p->category->name ?? 'Uncategorized';
                 $minStockLevel = (int) ($p->min_stock_level ?? 15);
                 $availableStock = (float) ($p->available_stock ?? $p->stock ?? 0);
@@ -2470,7 +2513,9 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
                 data-stock="{{ $availableStock }}"
                 data-upc="{{ $rollsPerCarton }}"
                 data-upr="{{ $unitsPerRoll }}"
-                data-base-unit="{{ strtolower($p->base_unit_name ?? 'unit') }}"
+                data-base-unit="{{ $baseUnitName }}"
+                data-unit-type="{{ $unitType }}"
+                data-measurement="{{ $measurementLabel }}"
                 data-min-stock="{{ $minStockLevel }}"
                 data-img="{{ $p->image_url }}"
                 data-out-of-stock="{{ $isOutOfStock ? '1' : '0' }}"
@@ -2488,6 +2533,8 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
                         <i class="fas fa-box-open"></i>
                     </div>
                 </div>
+                <div class="product-card-name">{{ $p->name }}</div>
+                <div class="product-card-measure">{{ $measurementLabel }}</div>
             </div>
             @endforeach
         </div>
@@ -2532,6 +2579,17 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
                         $specialPrice = (float) ($p->special_price ?? 0);
                         $rollsPerCarton = max((int) ($p->units_per_carton ?? 0), 0);
                         $unitsPerRoll = max((int) ($p->units_per_roll ?? 0), 0);
+                        $baseUnitName = strtolower(trim((string) ($p->base_unit_name ?? 'unit'))) ?: 'unit';
+                        $unitType = strtolower(trim((string) ($p->unit_type ?? 'unit'))) ?: 'unit';
+                        $cartonUnitCount = $rollsPerCarton > 0 ? ($unitsPerRoll > 0 ? $rollsPerCarton * $unitsPerRoll : $rollsPerCarton) : 0;
+                        $measurementParts = ['1 ' . $baseUnitName];
+                        if ($unitsPerRoll > 0) {
+                            $measurementParts[] = $unitsPerRoll . ' ' . $baseUnitName . ($unitsPerRoll === 1 ? '' : 's') . ' / roll';
+                        }
+                        if ($cartonUnitCount > 0) {
+                            $measurementParts[] = $cartonUnitCount . ' ' . $baseUnitName . ($cartonUnitCount === 1 ? '' : 's') . ' / carton';
+                        }
+                        $measurementLabel = implode(' | ', $measurementParts);
                         $categoryName = $p->category->name ?? 'Uncategorized';
                         $minStockLevel = (int) ($p->min_stock_level ?? 15);
                         $barcodeList = collect($p->barcodes ?? [])
@@ -2554,7 +2612,9 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
                         data-stock="{{ (float) ($p->available_stock ?? $p->stock) }}" 
                         data-upc="{{ $rollsPerCarton }}"
                         data-upr="{{ $unitsPerRoll }}"
-                        data-base-unit="{{ strtolower($p->base_unit_name ?? 'unit') }}"
+                        data-base-unit="{{ $baseUnitName }}"
+                        data-unit-type="{{ $unitType }}"
+                        data-measurement="{{ $measurementLabel }}"
                         data-category="{{ strtolower($categoryName) }}"
                         data-category-name="{{ $categoryName }}"
                         data-min-stock="{{ $minStockLevel }}"
@@ -3142,6 +3202,9 @@ $(document).ready(function() {
                     id  : String($o.val()),
                     name: String($o.data('name') || $o.text() || '').trim(),
                     sku : String($o.data('sku')  || '').trim(),
+                    category: String($o.data('category-name') || '').trim(),
+                    measurement: String($o.data('measurement') || '').trim(),
+                    stock: String($o.data('stock') || '').trim(),
                 };
             }).get();
         }
@@ -3173,6 +3236,12 @@ $(document).ready(function() {
                     if (item.sku) {
                         $li.append($('<span class="combo-sku">').text('SKU: ' + item.sku));
                     }
+                    if (item.measurement) {
+                        $li.append($('<span class="combo-measure">').text(item.measurement));
+                    }
+                    if (item.category || item.stock) {
+                        $li.append($('<span class="combo-sku">').text(`${item.category || 'Product'}${item.stock ? ' • Stock: ' + item.stock : ''}`));
+                    }
                     if (item.id === selId) $li.addClass('kb-focus');
                     $list.append($li);
                 });
@@ -3183,7 +3252,10 @@ $(document).ready(function() {
             const k = (kw || '').toLowerCase().trim();
             if (!k) return cache;
             return cache.filter(function (item) {
-                return item.name.toLowerCase().includes(k) || item.sku.toLowerCase().includes(k);
+                return item.name.toLowerCase().includes(k)
+                    || item.sku.toLowerCase().includes(k)
+                    || item.category.toLowerCase().includes(k)
+                    || item.measurement.toLowerCase().includes(k);
             });
         }
 
@@ -3242,6 +3314,12 @@ $(document).ready(function() {
                 $clear.show();
                 close();
             }
+        };
+        window._posComboOpen = function (keyword = '') {
+            $input.val(keyword);
+            $clear.toggle(Boolean(keyword) || !!selId);
+            $input.trigger('focus');
+            openWith(keyword);
         };
 
         // Typing → filter in real time
@@ -3466,7 +3544,18 @@ $(document).ready(function() {
             return;
         }
 
+        const previousUnitProduct = $('#product-select').data('last-unit-product') || '';
         setUnitTypeAvailability(opt);
+        if (String(previousUnitProduct) !== String(productId)) {
+            const preferredUnitType = String(opt.data('unit-type') || 'unit').toLowerCase();
+            const preferredInput = $(`#unit-type-${preferredUnitType}`);
+            if (preferredInput.length && !preferredInput.prop('disabled')) {
+                preferredInput.prop('checked', true);
+            } else {
+                $('#unit-type-unit').prop('checked', true);
+            }
+            $('#product-select').data('last-unit-product', String(productId));
+        }
         const pricingState = applySelectedProductPricing(opt);
         const unitMeta = pricingState ? pricingState.unitMeta : resolveUnitMetrics(opt);
         const basePrice = pricingState ? pricingState.basePrice : getSelectedBasePrice(opt);
@@ -3874,6 +3963,7 @@ window.POS_ENABLE_FALLBACK = function () {
     const barcodeInput = document.getElementById('barcode-input');
     const productSelect = document.getElementById('product-select');
     const productSearch = document.getElementById('product-search');
+    const productSearchInput = document.getElementById('product-search-input');
     const unitTypeInputs = document.querySelectorAll('input[name="unit_type"]');
     const priceTierInput = document.getElementById('price-tier');
     const priceListInput = document.getElementById('price-list-select');
@@ -3939,6 +4029,13 @@ window.POS_ENABLE_FALLBACK = function () {
     let currentProductId = '';
 
     const alertFallback = (message) => window.alert(message);
+    const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;',
+    })[char]);
 	    const showAlert = (options) => {
         if (window.Swal && typeof Swal.fire === 'function') {
             return Swal.fire(options);
@@ -4033,7 +4130,6 @@ window.POS_ENABLE_FALLBACK = function () {
         const offcanvasEl = document.getElementById('ai-quick-agent-offcanvas');
         const input = document.getElementById('ai-agent-input');
         const starters = document.getElementById('ai-agent-starters');
-        const sendBtn = document.getElementById('ai-agent-send');
 
         if (starters && starters.dataset.posPrompts !== 'ready') {
             [
@@ -4051,14 +4147,6 @@ window.POS_ENABLE_FALLBACK = function () {
                 button.type = 'button';
                 button.dataset.prompt = prompt;
                 button.textContent = label;
-                button.addEventListener('click', () => {
-                    if (!input) {
-                        return;
-                    }
-                    input.value = prompt;
-                    input.focus();
-                    sendBtn?.click();
-                });
                 starters.prepend(button);
             });
             starters.dataset.posPrompts = 'ready';
@@ -4072,8 +4160,134 @@ window.POS_ENABLE_FALLBACK = function () {
 
         document.getElementById('ai-agent-trigger')?.click();
     });
-    railSearchBtn?.addEventListener('click', () => quickSearch?.focus());
-    railMiscBtn?.addEventListener('click', () => productSearchInput?.focus());
+    function openQuickPickItems(keyword = '') {
+        if (quickSearch) {
+            quickSearch.value = keyword;
+        }
+        document.querySelectorAll('.category-pill').forEach((node) => {
+            node.classList.toggle('active', node.dataset.category === 'all');
+        });
+        filterProductCards();
+        document.querySelector('.controls-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        window.setTimeout(() => {
+            if (typeof window._posComboOpen === 'function') {
+                window._posComboOpen(keyword);
+                return;
+            }
+            productSearchInput?.focus();
+        }, 180);
+    }
+
+    async function openSellMiscItem() {
+        const options = productSelect
+            ? Array.from(productSelect.options).filter((option) => {
+                if (!option.value) {
+                    return false;
+                }
+                const haystack = [
+                    option.dataset.name,
+                    option.dataset.sku,
+                    option.dataset.categoryName,
+                    option.textContent,
+                ].join(' ').toLowerCase();
+                return haystack.includes('misc') || haystack.includes('custom') || haystack.includes('service');
+            })
+            : [];
+
+        if (!options.length) {
+            const prompt = showAlert({
+                icon: 'info',
+                title: 'Create a miscellaneous item first',
+                text: 'Add a product named Miscellaneous Item, Custom Sale, or Service Item so POS can sell it without breaking stock and receipt records.',
+                showCancelButton: true,
+                confirmButtonText: 'Add New Item',
+                cancelButtonText: 'Search products',
+                confirmButtonColor: '#0f3a8a',
+            });
+            if (!prompt || typeof prompt.then !== 'function') {
+                openQuickPickItems('misc');
+                return;
+            }
+            prompt.then((result) => {
+                if (result?.isConfirmed) {
+                    window.location.href = @json($posAddProductUrl ?? url('/add-products'));
+                    return;
+                }
+                openQuickPickItems('misc');
+            });
+            return;
+        }
+
+        if (!window.Swal || typeof Swal.fire !== 'function') {
+            const first = options[0];
+            productSelect.value = first.value;
+            applyVanillaSelection({ dataset: { ...first.dataset, id: first.value }});
+            productSearchInput?.focus();
+            return;
+        }
+
+        const optionHtml = options.map((option) => {
+            const label = `${option.dataset.name || option.textContent || 'Misc item'}${option.dataset.sku ? ' - ' + option.dataset.sku : ''}`;
+            return `<option value="${option.value}">${escapeHtml(label)}</option>`;
+        }).join('');
+
+        const result = await Swal.fire({
+            title: 'Sell Misc Item',
+            html: `
+                <div class="text-start">
+                    <label class="form-label fw-bold">Catalog item</label>
+                    <select id="misc-product-id" class="form-select mb-2">${optionHtml}</select>
+                    <label class="form-label fw-bold">Quantity</label>
+                    <input id="misc-qty" type="number" min="0.01" step="1" value="1" class="form-control mb-2">
+                    <label class="form-label fw-bold">Selling price</label>
+                    <input id="misc-price" type="number" min="0" step="0.01" class="form-control mb-2" placeholder="Leave blank to use product price">
+                    <label class="form-label fw-bold">Discount</label>
+                    <input id="misc-discount" type="number" min="0" step="0.01" value="0" class="form-control">
+                </div>
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Add to cart',
+            confirmButtonColor: '#0f3a8a',
+            preConfirm: () => {
+                const productId = document.getElementById('misc-product-id')?.value || '';
+                const qty = parseFloat(document.getElementById('misc-qty')?.value || '1') || 0;
+                const price = parseFloat(document.getElementById('misc-price')?.value || '0') || 0;
+                const discount = parseFloat(document.getElementById('misc-discount')?.value || '0') || 0;
+                if (!productId || qty <= 0) {
+                    Swal.showValidationMessage('Choose an item and enter a valid quantity.');
+                    return false;
+                }
+                return { productId, qty, price, discount };
+            },
+        });
+
+        if (!result.isConfirmed || !result.value) {
+            return;
+        }
+
+        const option = findOptionById(result.value.productId);
+        if (!option) {
+            return;
+        }
+        productSelect.value = option.value;
+        applyVanillaSelection({ dataset: { ...option.dataset, id: option.value }});
+        if (qtyInput) {
+            qtyInput.value = String(result.value.qty);
+        }
+        if (result.value.price > 0 && priceInput) {
+            priceInput.value = result.value.price.toFixed(2);
+        }
+        if (discountInput) {
+            discountInput.value = String(result.value.discount);
+        }
+        updateItemTotal();
+        addBtn?.click();
+    }
+
+    railSearchBtn?.addEventListener('click', () => openQuickPickItems(''));
+    railMiscBtn?.addEventListener('click', openSellMiscItem);
     railDiscountBtn?.addEventListener('click', () => discountInput?.focus());
     railCustomerBtn?.addEventListener('click', () => customerSearchInput?.focus());
     railCheckoutBtn?.addEventListener('click', () => processBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
@@ -4391,11 +4605,25 @@ window.POS_ENABLE_FALLBACK = function () {
             return;
         }
 
+        const isNewProductSelection = currentProductId !== String(productId);
         currentProductId = String(productId);
         if (productSelect) {
             productSelect.value = productId;
         }
 	        syncProductSearchDropdown(productId);
+
+        if (isNewProductSelection) {
+            const preferredUnitType = String(data.unitType || 'unit').toLowerCase();
+            const preferredInput = document.getElementById(`unit-type-${preferredUnitType}`);
+            if (preferredInput && !preferredInput.disabled) {
+                preferredInput.checked = true;
+            } else {
+                const unitInput = document.getElementById('unit-type-unit');
+                if (unitInput) {
+                    unitInput.checked = true;
+                }
+            }
+        }
 
         const unitMeta = getUnitMetrics(data);
         const basePrice = getBasePrice(data);
@@ -5248,6 +5476,9 @@ window.POS_ENABLE_FALLBACK = function () {
                         id  : String(o.value),
                         name: String(o.dataset.name || o.text || '').trim(),
                         sku : String(o.dataset.sku  || '').trim(),
+                        category: String(o.dataset.categoryName || '').trim(),
+                        measurement: String(o.dataset.measurement || '').trim(),
+                        stock: String(o.dataset.stock || '').trim(),
                     };
                 });
         }
@@ -5283,6 +5514,18 @@ window.POS_ENABLE_FALLBACK = function () {
                     span.textContent = 'SKU: ' + item.sku;
                     li.appendChild(span);
                 }
+                if (item.measurement) {
+                    const measure = document.createElement('span');
+                    measure.className = 'combo-measure';
+                    measure.textContent = item.measurement;
+                    li.appendChild(measure);
+                }
+                if (item.category || item.stock) {
+                    const meta = document.createElement('span');
+                    meta.className = 'combo-sku';
+                    meta.textContent = `${item.category || 'Product'}${item.stock ? ' • Stock: ' + item.stock : ''}`;
+                    li.appendChild(meta);
+                }
                 if (item.id === selId) li.classList.add('kb-focus');
                 list.appendChild(li);
             });
@@ -5292,7 +5535,10 @@ window.POS_ENABLE_FALLBACK = function () {
             const k = (kw || '').toLowerCase().trim();
             if (!k) return cache;
             return cache.filter(function(item) {
-                return item.name.toLowerCase().includes(k) || item.sku.toLowerCase().includes(k);
+                return item.name.toLowerCase().includes(k)
+                    || item.sku.toLowerCase().includes(k)
+                    || item.category.toLowerCase().includes(k)
+                    || item.measurement.toLowerCase().includes(k);
             });
         }
 
@@ -5347,6 +5593,12 @@ window.POS_ENABLE_FALLBACK = function () {
                 if (clear) clear.style.display = '';
                 close();
             }
+        };
+        window._posComboOpen = function(keyword = '') {
+            input.value = keyword;
+            if (clear) clear.style.display = (keyword || selId) ? '' : 'none';
+            input.focus();
+            openWith(keyword);
         };
 
         input.addEventListener('input', function() {

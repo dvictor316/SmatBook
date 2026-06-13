@@ -283,7 +283,6 @@
             const introModalEl = document.getElementById('aiAssistantIntroModal');
             const trigger = document.getElementById('ai-agent-trigger');
             const openAiChatBtn = document.getElementById('open-ai-chat-btn');
-            const starterChips = document.querySelectorAll('.ai-starter-chip');
             if (sendBtn) sendBtn.addEventListener('click', runQuery);
             if (input) {
                 input.addEventListener('keydown', function (e) {
@@ -293,15 +292,13 @@
                     }
                 });
             }
-            if (starterChips.length) {
-                starterChips.forEach(function (chip) {
-                    chip.addEventListener('click', function () {
-                        if (!input) return;
-                        input.value = chip.getAttribute('data-prompt') || '';
-                        input.focus();
-                    });
-                });
-            }
+            document.addEventListener('click', function (event) {
+                const chip = event.target.closest('.ai-starter-chip');
+                if (!chip || !input) return;
+                input.value = chip.getAttribute('data-prompt') || '';
+                input.focus();
+                runQuery();
+            });
             if (offcanvasEl) {
                 offcanvasEl.addEventListener('show.bs.offcanvas', function () {
                     document.querySelector('.ai-agent-launcher')?.classList.add('ai-active');
@@ -331,6 +328,13 @@
                     setTimeout(() => input?.focus(), 250);
                 });
             }
+            window.openSmartProbookAiAssistant = function () {
+                const introModal = introModalEl ? bootstrap.Modal.getOrCreateInstance(introModalEl) : null;
+                introModal?.hide();
+                const offcanvas = offcanvasEl ? bootstrap.Offcanvas.getOrCreateInstance(offcanvasEl) : null;
+                offcanvas?.show();
+                setTimeout(() => input?.focus(), 250);
+            };
         });
     })();
 </script>
