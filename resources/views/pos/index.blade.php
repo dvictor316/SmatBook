@@ -22,6 +22,9 @@
     $posChartAccountsUrl = $posChartAccountsUrl ?? (\Illuminate\Support\Facades\Route::has('chart-of-accounts') ? route('chart-of-accounts') : url('/settings/chart-of-accounts'));
     $posSaleStoreUrl = $posSaleStoreUrl ?? (\Illuminate\Support\Facades\Route::has('sales.store') ? route('sales.store') : url('/sales'));
     $posAddProductUrl = $posAddProductUrl ?? (\Illuminate\Support\Facades\Route::has('add-products') ? route('add-products') : url('/add-products'));
+    $posInventoryUrl = $posInventoryUrl ?? (\Illuminate\Support\Facades\Route::has('product-list') ? route('product-list') : url('/product-list'));
+    $posReceiveItemsUrl = $posReceiveItemsUrl ?? (\Illuminate\Support\Facades\Route::has('grn.create') ? route('grn.create') : url('/grn/create'));
+    $posReportsUrl = $posReportsUrl ?? (\Illuminate\Support\Facades\Route::has('pos.reports') ? route('pos.reports') : url('/pos/reports'));
 @endphp
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -1886,15 +1889,19 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
     background:
         linear-gradient(180deg, #dbe6f2 0%, #eef3f8 42%, #d8e1ec 100%) !important;
     padding: 6px 8px 12px !important;
+    min-height: calc(100vh - 76px) !important;
 }
 
 .pos-shell {
     gap: 8px;
+    min-height: calc(100vh - 92px);
+    align-items: stretch;
 }
 
 .pos-action-rail {
     flex-basis: clamp(122px, 8vw, 150px);
     top: 82px;
+    align-self: stretch;
 }
 
 .pos-rail-panel {
@@ -1903,6 +1910,7 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
     border-color: #aab6c4;
     background: linear-gradient(180deg, #eef1f5 0%, #d7dce3 100%);
     box-shadow: inset -1px 0 0 #c4ccd6, 1px 0 0 rgba(255,255,255,0.7);
+    min-height: 100%;
 }
 
 .pos-rail-btn {
@@ -1939,6 +1947,7 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
 
 .pos-main-stage {
     gap: 8px !important;
+    height: 100%;
 }
 
 .header-stage,
@@ -2071,14 +2080,18 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
 @media (min-width: 1200px) {
     .pos-main-stage {
         grid-template-columns: minmax(0, 2.65fr) minmax(240px, 0.78fr);
+        grid-template-rows: auto minmax(0, 1fr);
         grid-template-areas:
             "header header"
             "work shelf";
+        min-height: calc(100vh - 92px);
     }
 
     .pos-full-page-wrapper .row.g-4 {
         grid-template-columns: minmax(0, 2.1fr) minmax(250px, 0.8fr);
+        grid-template-rows: minmax(0, 1fr);
         gap: 8px;
+        min-height: 0;
     }
 
     .pos-full-page-wrapper .row.g-4 > .col-xl-8 {
@@ -2089,6 +2102,17 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
     .pos-full-page-wrapper .row.g-4 > .col-xl-4 {
         grid-column: 2;
         grid-row: 1;
+        min-height: 0;
+    }
+
+    .pos-full-page-wrapper .row.g-4 > .col-xl-8 {
+        min-height: 0;
+    }
+
+    .pos-full-page-wrapper .row.g-4 > .col-xl-4 > .controls-card,
+    .pos-full-page-wrapper .row.g-4 > .col-xl-8 > .pos-card,
+    .pos-main-stage > .pos-product-shelf-card {
+        height: 100%;
     }
 }
 
@@ -2115,8 +2139,8 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
 }
 
 .cart-wrapper {
-    min-height: clamp(300px, 42vh, 520px);
-    max-height: clamp(340px, 48vh, 620px);
+    min-height: clamp(300px, 46vh, 560px);
+    max-height: none;
     border-radius: 0 !important;
     border: 1px solid #aebdcb !important;
     background:
@@ -2128,6 +2152,12 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
             #eef5fc 66px
         ) !important;
     box-shadow: inset 0 1px 0 #ffffff !important;
+}
+
+@media (min-width: 1200px) {
+    .cart-wrapper {
+        height: clamp(340px, 50vh, 620px);
+    }
 }
 
 .cart-table thead th,
@@ -2244,6 +2274,18 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
                 <a href="{{ $posReturnUrl ?? url('/pos/return') }}" class="pos-rail-btn mt-2">
                     <i class="fas fa-undo-alt"></i>
                     <span>Return/Exchange</span>
+                </a>
+                <a href="{{ $posReceiveItemsUrl ?? url('/grn/create') }}" class="pos-rail-btn mt-2">
+                    <i class="fas fa-dolly"></i>
+                    <span>Receive Items</span>
+                </a>
+                <a href="{{ $posReportsUrl ?? url('/pos/reports') }}" class="pos-rail-btn mt-2">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reports</span>
+                </a>
+                <a href="{{ $posInventoryUrl ?? url('/product-list') }}" class="pos-rail-btn mt-2">
+                    <i class="fas fa-boxes"></i>
+                    <span>Item List</span>
                 </a>
                 <button type="button" class="pos-rail-btn mt-2" id="rail-messages-btn">
                     <i class="fas fa-comment-alt"></i>
@@ -3886,6 +3928,14 @@ window.POS_ENABLE_FALLBACK = function () {
 	        return applied;
 	    }
     const csrfToken = @json(csrf_token());
+    const posActionUrls = {
+        addProduct: @json($posAddProductUrl ?? url('/add-products')),
+        returns: @json($posReturnUrl ?? url('/pos/return')),
+        receiveItems: @json($posReceiveItemsUrl ?? url('/grn/create')),
+        reports: @json($posReportsUrl ?? url('/pos/reports')),
+        itemList: @json($posInventoryUrl ?? url('/product-list')),
+        salesLog: @json($posSalesLogUrl ?? url('/pos/sales')),
+    };
 	    const salesOrderPrefill = @json(session('pos_prefill'));
 	    const posSourceContext = salesOrderPrefill && salesOrderPrefill.source
 	        ? {
@@ -3916,7 +3966,41 @@ window.POS_ENABLE_FALLBACK = function () {
     }
 
     railScanBtn?.addEventListener('click', () => barcodeInput?.focus());
-    railWantBtn?.addEventListener('click', () => quickSearch?.focus());
+    railWantBtn?.addEventListener('click', () => {
+        const pickerHtml = `
+            <div class="text-start d-grid gap-2">
+                <button type="button" class="btn btn-sm btn-primary" data-pos-action="quick-pick">Quick Pick Items</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-pos-action="sell-misc">Sell Misc Item</button>
+                <a class="btn btn-sm btn-outline-primary" href="${posActionUrls.addProduct}">Add New Item</a>
+                <a class="btn btn-sm btn-outline-primary" href="${posActionUrls.receiveItems}">Receive Items</a>
+                <a class="btn btn-sm btn-outline-primary" href="${posActionUrls.reports}">Reports</a>
+                <a class="btn btn-sm btn-outline-secondary" href="${posActionUrls.itemList}">Item List</a>
+            </div>
+        `;
+
+        if (window.Swal && typeof Swal.fire === 'function') {
+            Swal.fire({
+                title: 'I Want To...',
+                html: pickerHtml,
+                showConfirmButton: false,
+                showCloseButton: true,
+                width: 360,
+            });
+            setTimeout(() => {
+                document.querySelector('[data-pos-action="quick-pick"]')?.addEventListener('click', () => {
+                    Swal.close();
+                    quickSearch?.focus();
+                });
+                document.querySelector('[data-pos-action="sell-misc"]')?.addEventListener('click', () => {
+                    Swal.close();
+                    productSearchInput?.focus();
+                });
+            }, 0);
+            return;
+        }
+
+        quickSearch?.focus();
+    });
     railSearchBtn?.addEventListener('click', () => quickSearch?.focus());
     railMiscBtn?.addEventListener('click', () => productSearchInput?.focus());
     railDiscountBtn?.addEventListener('click', () => discountInput?.focus());
