@@ -3997,23 +3997,8 @@ window.POS_ENABLE_FALLBACK = function () {
 	        }
 
 	        return applied;
-	    }
+    }
     const csrfToken = @json(csrf_token());
-    const posActionUrls = {
-        addProduct: @json($posAddProductUrl ?? url('/add-products')),
-        returns: @json($posReturnUrl ?? url('/pos/return')),
-        receiveItems: @json($posReceiveItemsUrl ?? url('/grn/create')),
-        reports: @json($posReportsUrl ?? url('/pos/reports')),
-        itemList: @json($posInventoryUrl ?? url('/product-list')),
-        salesLog: @json($posSalesLogUrl ?? url('/pos/sales')),
-    };
-    const posActionPermissions = {
-        addProduct: @json($posCanAddProduct),
-        returns: @json($posCanReturn),
-        receiveItems: @json($posCanReceiveItems),
-        reports: @json($posCanViewReports),
-        itemList: @json($posCanViewInventory),
-    };
 	    const salesOrderPrefill = @json(session('pos_prefill'));
 	    const posSourceContext = salesOrderPrefill && salesOrderPrefill.source
 	        ? {
@@ -4045,45 +4030,47 @@ window.POS_ENABLE_FALLBACK = function () {
 
     railScanBtn?.addEventListener('click', () => barcodeInput?.focus());
     railWantBtn?.addEventListener('click', () => {
-        const linkButton = (allowed, href, label, tone = 'outline-primary') => allowed
-            ? `<a class="btn btn-sm btn-${tone}" href="${href}">${label}</a>`
-            : `<button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Permission required">${label} - No permission</button>`;
-        const pickerHtml = `
-            <div class="text-start">
-                <p class="small text-muted mb-2">Ask for POS help or jump to an allowed action.</p>
-                <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-sm btn-primary" data-pos-action="quick-pick">Find product for sale</button>
-                    <button type="button" class="btn btn-sm btn-outline-primary" data-pos-action="sell-misc">Sell miscellaneous item</button>
-                    ${linkButton(posActionPermissions.addProduct, posActionUrls.addProduct, 'Add new item')}
-                    ${linkButton(posActionPermissions.receiveItems, posActionUrls.receiveItems, 'Receive items')}
-                    ${linkButton(posActionPermissions.reports, posActionUrls.reports, 'Open reports')}
-                    ${linkButton(posActionPermissions.itemList, posActionUrls.itemList, 'Open item list', 'outline-secondary')}
-                </div>
-            </div>
-        `;
+        const offcanvasEl = document.getElementById('ai-quick-agent-offcanvas');
+        const input = document.getElementById('ai-agent-input');
+        const starters = document.getElementById('ai-agent-starters');
+        const sendBtn = document.getElementById('ai-agent-send');
 
-        if (window.Swal && typeof Swal.fire === 'function') {
-            Swal.fire({
-                title: 'AI Assistant',
-                html: pickerHtml,
-                showConfirmButton: false,
-                showCloseButton: true,
-                width: 360,
+        if (starters && starters.dataset.posPrompts !== 'ready') {
+            [
+                ['Sales Today', 'total sales today'],
+                ['Customers Today', 'customer count today'],
+                ['Payments Today', 'payments today'],
+                ['Products Count', 'product count'],
+            ].forEach(([label, prompt]) => {
+                if (starters.querySelector(`[data-prompt="${prompt}"]`)) {
+                    return;
+                }
+
+                const button = document.createElement('button');
+                button.className = 'btn btn-sm btn-light border ai-starter-chip';
+                button.type = 'button';
+                button.dataset.prompt = prompt;
+                button.textContent = label;
+                button.addEventListener('click', () => {
+                    if (!input) {
+                        return;
+                    }
+                    input.value = prompt;
+                    input.focus();
+                    sendBtn?.click();
+                });
+                starters.prepend(button);
             });
-            setTimeout(() => {
-                document.querySelector('[data-pos-action="quick-pick"]')?.addEventListener('click', () => {
-                    Swal.close();
-                    quickSearch?.focus();
-                });
-                document.querySelector('[data-pos-action="sell-misc"]')?.addEventListener('click', () => {
-                    Swal.close();
-                    productSearchInput?.focus();
-                });
-            }, 0);
+            starters.dataset.posPrompts = 'ready';
+        }
+
+        if (offcanvasEl && window.bootstrap?.Offcanvas) {
+            window.bootstrap.Offcanvas.getOrCreateInstance(offcanvasEl).show();
+            setTimeout(() => input?.focus(), 250);
             return;
         }
 
-        quickSearch?.focus();
+        document.getElementById('ai-agent-trigger')?.click();
     });
     railSearchBtn?.addEventListener('click', () => quickSearch?.focus());
     railMiscBtn?.addEventListener('click', () => productSearchInput?.focus());

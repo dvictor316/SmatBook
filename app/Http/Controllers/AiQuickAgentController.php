@@ -418,10 +418,15 @@ class AiQuickAgentController extends Controller
         }
 
         if ($intent === 'customers_count') {
-            $data = $this->getCustomersCount($request);
+            $data = $this->getCustomersCount($request, $start, $end);
+            $answer = "Customers for {$label}: {$data['count']}.";
+            if (isset($data['total_count']) && $data['total_count'] !== $data['count']) {
+                $answer .= " Total customers: {$data['total_count']}.";
+            }
+
             return response()->json([
                 'ok' => true,
-                'answer' => "Total customers: {$data['count']}.",
+                'answer' => $answer,
                 'meta' => $data,
             ]);
         }
@@ -1130,13 +1135,21 @@ class AiQuickAgentController extends Controller
         ];
     }
 
-    private function getCustomersCount(Request $request): array
+    private function getCustomersCount(Request $request, ?Carbon $start = null, ?Carbon $end = null): array
     {
         $query = Customer::query();
         $this->applyTenantScope($query, 'customers', $request);
+        $totalQuery = clone $query;
+
+        if ($start && $end && Schema::hasColumn('customers', 'created_at')) {
+            $query->whereBetween('created_at', [$start, $end]);
+        }
 
         return [
             'count' => (int) $query->count(),
+            'total_count' => (int) $totalQuery->count(),
+            'from' => $start?->toDateString(),
+            'to' => $end?->toDateString(),
             'metric' => 'customers_count',
         ];
     }
