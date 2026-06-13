@@ -382,6 +382,15 @@
             max-width: calc(100% - var(--sb-sidebar-w, 270px)) !important;
         }
 
+        body.pos-terminal-workspace.sidebar-collapsed .page-wrapper,
+        body.pos-terminal-workspace.mini-sidebar .page-wrapper,
+        body.pos-terminal-workspace.sidebar-icon-only .page-wrapper,
+        body.pos-terminal-workspace.mini-sidebar:not(.sidebar-collapsed):not(.sidebar-icon-only) .page-wrapper {
+            margin-left: 0 !important;
+            width: 100vw !important;
+            max-width: 100vw !important;
+        }
+
         @media (max-width: 991px) {
             .page-wrapper {
                 margin-left: 0 !important;

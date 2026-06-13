@@ -76,7 +76,7 @@
     width: 100%;
     max-width: 100%;
     margin-inline: 0;
-    padding: 14px clamp(14px, 1.6vw, 28px) 28px;
+    padding: 12px clamp(10px, 1vw, 18px) 24px;
     background:
         linear-gradient(90deg, rgba(6, 26, 68, 0.035) 0 1px, transparent 1px),
         linear-gradient(180deg, rgba(6, 26, 68, 0.035) 0 1px, transparent 1px),
@@ -392,20 +392,23 @@
 
 .pos-shell {
     display: grid;
-    grid-template-columns: clamp(92px, 6.7vw, 124px) minmax(0, 1fr);
-    gap: clamp(16px, 1.5vw, 26px);
-    align-items: start;
+    grid-template-columns: clamp(150px, 10vw, 190px) minmax(0, 1fr);
+    gap: clamp(12px, 1.1vw, 20px);
+    align-items: stretch;
     width: 100%;
     max-width: 100%;
+    min-height: calc(100vh - 112px);
 }
 
 .pos-action-rail {
     position: sticky;
-    top: 92px;
+    top: 88px;
     display: flex;
     flex-direction: column;
     gap: 12px;
     z-index: 5;
+    min-height: calc(100vh - 118px);
+    align-self: stretch;
 }
 
 .pos-rail-panel {
@@ -416,6 +419,15 @@
         linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(242, 247, 255, 0.98) 100%);
     box-shadow: 0 18px 38px rgba(6, 26, 68, 0.10);
     backdrop-filter: blur(12px);
+    width: 100%;
+}
+
+.pos-rail-panel:first-child {
+    flex: 1 1 auto;
+}
+
+.pos-rail-panel:last-child {
+    flex: 0 0 auto;
 }
 
 .pos-rail-title {
@@ -464,11 +476,13 @@
 .pos-main-stage {
     min-width: 0;
     width: 100%;
+    align-self: stretch;
 }
 
 @media(max-width: 1199.98px) {
     .pos-shell {
         grid-template-columns: 1fr;
+        min-height: 0;
     }
 
     .pos-action-rail {
@@ -476,14 +490,42 @@
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 12px;
+        min-height: 0;
     }
 
     .pos-rail-panel {
         padding: 10px;
     }
 
+    .pos-rail-panel:first-child,
+    .pos-rail-panel:last-child {
+        flex: none;
+    }
+
     .pos-rail-btn {
         min-height: 68px;
+    }
+}
+
+@media(max-width: 767.98px) {
+    .pos-action-rail {
+        grid-template-columns: 1fr;
+    }
+
+    .pos-rail-panel {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .pos-rail-title {
+        grid-column: 1 / -1;
+        margin-bottom: 0;
+    }
+
+    .pos-rail-btn {
+        min-height: 62px;
+        padding: 8px 6px;
     }
 }
 
@@ -1607,11 +1649,13 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
 }
 
 .pos-full-page-wrapper .row.g-4 > .col-xl-4 {
-    width: 30%;
+    width: min(420px, 31%);
+    flex: 0 0 min(420px, 31%);
 }
 
 .pos-full-page-wrapper .row.g-4 > .col-xl-8 {
-    width: 70%;
+    width: calc(100% - min(420px, 31%));
+    flex: 0 0 calc(100% - min(420px, 31%));
 }
 
 .pos-full-page-wrapper .search-wrapper {
@@ -1644,11 +1688,13 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
     }
 
     .pos-full-page-wrapper .row.g-4 > .col-xl-4 {
-        width: 27%;
+        width: min(440px, 28%);
+        flex-basis: min(440px, 28%);
     }
 
     .pos-full-page-wrapper .row.g-4 > .col-xl-8 {
-        width: 73%;
+        width: calc(100% - min(440px, 28%));
+        flex-basis: calc(100% - min(440px, 28%));
     }
 }
 
@@ -1656,6 +1702,7 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
     .pos-full-page-wrapper .row.g-4 > .col-xl-4,
     .pos-full-page-wrapper .row.g-4 > .col-xl-8 {
         width: 100%;
+        flex-basis: 100%;
     }
 
     .pos-full-page-wrapper .search-wrapper {
