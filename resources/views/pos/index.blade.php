@@ -73,10 +73,10 @@
 
 .pos-full-page-wrapper { 
     margin-left: 0; 
-    width: 100%;
-    max-width: 100%;
+    width: 100vw;
+    max-width: 100vw;
     margin-inline: 0;
-    padding: 12px clamp(10px, 1vw, 18px) 24px;
+    padding: 8px clamp(8px, 0.8vw, 14px) 24px;
     background:
         linear-gradient(90deg, rgba(6, 26, 68, 0.035) 0 1px, transparent 1px),
         linear-gradient(180deg, rgba(6, 26, 68, 0.035) 0 1px, transparent 1px),
@@ -391,18 +391,19 @@
 }
 
 .pos-shell {
-    display: grid;
-    grid-template-columns: clamp(150px, 10vw, 190px) minmax(0, 1fr);
+    display: flex;
     gap: clamp(12px, 1.1vw, 20px);
     align-items: stretch;
     width: 100%;
     max-width: 100%;
     min-height: calc(100vh - 112px);
+    overflow: hidden;
 }
 
 .pos-action-rail {
     position: sticky;
     top: 88px;
+    flex: 0 0 clamp(168px, 11vw, 224px);
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -475,18 +476,23 @@
 
 .pos-main-stage {
     min-width: 0;
+    flex: 1 1 auto;
     width: 100%;
+    max-width: 100%;
     align-self: stretch;
+    overflow: hidden;
 }
 
 @media(max-width: 1199.98px) {
     .pos-shell {
-        grid-template-columns: 1fr;
+        display: block;
         min-height: 0;
+        overflow: visible;
     }
 
     .pos-action-rail {
         position: static;
+        width: 100%;
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 12px;
@@ -1621,16 +1627,20 @@ label {
 body.pos-terminal-workspace .page-wrapper .content,
 body.pos-terminal-workspace .page-wrapper .content.container-fluid {
     padding: 0 !important;
+    width: 100vw !important;
     max-width: 100% !important;
+    margin: 0 !important;
+    overflow-x: hidden !important;
 }
 
 body.pos-terminal-workspace .pos-full-page-wrapper {
     position: relative;
-    left: auto;
-    width: 100%;
-    max-width: 100%;
-    margin: 0;
-    overflow-x: clip;
+    left: 0;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    overflow-x: hidden;
+    box-sizing: border-box;
 }
 
 .pos-full-page-wrapper .pos-card {
@@ -1646,16 +1656,6 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
 .pos-full-page-wrapper .row.g-4 {
     --bs-gutter-x: clamp(18px, 1.8vw, 30px);
     --bs-gutter-y: clamp(18px, 1.8vw, 30px);
-}
-
-.pos-full-page-wrapper .row.g-4 > .col-xl-4 {
-    width: min(420px, 31%);
-    flex: 0 0 min(420px, 31%);
-}
-
-.pos-full-page-wrapper .row.g-4 > .col-xl-8 {
-    width: calc(100% - min(420px, 31%));
-    flex: 0 0 calc(100% - min(420px, 31%));
 }
 
 .pos-full-page-wrapper .search-wrapper {
@@ -1680,21 +1680,40 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
 
 @media (min-width: 1500px) {
     .pos-shell {
-        grid-template-columns: 120px minmax(0, 1fr);
+        gap: 18px;
+    }
+
+    .pos-action-rail {
+        flex-basis: clamp(176px, 10vw, 232px);
     }
 
     .product-grid {
         grid-template-columns: repeat(auto-fill, minmax(126px, 1fr));
     }
 
-    .pos-full-page-wrapper .row.g-4 > .col-xl-4 {
-        width: min(440px, 28%);
-        flex-basis: min(440px, 28%);
+}
+
+@media (min-width: 1200px) {
+    .pos-full-page-wrapper .row.g-4 {
+        display: grid;
+        grid-template-columns: minmax(360px, 0.9fr) minmax(0, 2.4fr);
+        gap: clamp(18px, 1.8vw, 30px);
+        margin-left: 0;
+        margin-right: 0;
     }
 
+    .pos-full-page-wrapper .row.g-4 > .col-xl-4,
     .pos-full-page-wrapper .row.g-4 > .col-xl-8 {
-        width: calc(100% - min(440px, 28%));
-        flex-basis: calc(100% - min(440px, 28%));
+        width: 100%;
+        max-width: 100%;
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
+@media (min-width: 1500px) {
+    .pos-full-page-wrapper .row.g-4 {
+        grid-template-columns: minmax(390px, 0.82fr) minmax(0, 2.65fr);
     }
 }
 

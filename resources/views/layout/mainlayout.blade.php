@@ -359,12 +359,15 @@
             left: 0 !important;
         }
 
+        body.pos-terminal-workspace,
         body.pos-terminal-workspace .pos-main-wrapper {
             width: 100vw !important;
             max-width: 100vw !important;
             margin: 0 !important;
             padding: 0 !important;
             overflow-x: hidden !important;
+            transform: none !important;
+            left: 0 !important;
         }
 
         body.sidebar-collapsed .page-wrapper,
@@ -1716,7 +1719,7 @@
 
     {{-- MAIN WRAPPER --}}
     @if ($isPosWorkspace)
-        <div class="main-wrapper pos-main-wrapper">
+        <div class="main-wrapper pos-main-wrapper" style="width:100vw;max-width:100vw;margin:0;padding:0;overflow-x:hidden;">
     @elseif (!in_array($route, [
             'landing.index',
             'index-five',
