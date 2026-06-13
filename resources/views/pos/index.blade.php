@@ -403,7 +403,7 @@
 .pos-action-rail {
     position: sticky;
     top: 88px;
-    flex: 0 0 clamp(168px, 11vw, 224px);
+    flex: 0 0 clamp(190px, 12vw, 240px);
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -413,13 +413,12 @@
 }
 
 .pos-rail-panel {
-    border: 1px solid rgba(15, 58, 138, 0.16);
-    border-radius: 20px;
-    padding: 12px 9px;
+    border: 1px solid rgba(120, 132, 150, 0.28);
+    border-radius: 8px;
+    padding: 10px;
     background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(242, 247, 255, 0.98) 100%);
-    box-shadow: 0 18px 38px rgba(6, 26, 68, 0.10);
-    backdrop-filter: blur(12px);
+        linear-gradient(180deg, rgba(247, 249, 252, 0.98) 0%, rgba(230, 235, 242, 0.98) 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 12px 28px rgba(45, 55, 72, 0.10);
     width: 100%;
 }
 
@@ -432,13 +431,13 @@
 }
 
 .pos-rail-title {
-    font-size: 0.62rem;
-    font-weight: 800;
+    font-size: 0.68rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.7px;
-    color: var(--primary-700);
-    text-align: center;
-    margin-bottom: 10px;
+    letter-spacing: 0.45px;
+    color: #607086;
+    text-align: left;
+    margin: 2px 4px 8px;
 }
 
 .pos-rail-divider {
@@ -449,35 +448,35 @@
 
 .pos-rail-btn {
     width: 100%;
-    border: 1px solid rgba(37, 99, 235, 0.16);
-    background: #fff;
-    border-radius: 16px;
-    min-height: 68px;
-    padding: 10px 7px;
-    color: var(--text-primary);
+    border: 1px solid rgba(126, 140, 158, 0.38);
+    background: linear-gradient(180deg, #f7f8fa 0%, #d9dee6 100%);
+    border-radius: 3px;
+    min-height: 54px;
+    padding: 8px 10px;
+    color: #39465a;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 6px;
-    font-size: 0.66rem;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.82rem;
     font-weight: 700;
-    letter-spacing: 0.25px;
+    letter-spacing: 0;
     transition: var(--transition);
     text-decoration: none;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.92);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.92), inset 0 -1px 0 rgba(94, 106, 124, 0.12);
 }
 
 .pos-rail-btn i {
-    font-size: 1.1rem;
-    color: var(--primary-600);
+    display: none;
 }
 
 .pos-rail-btn:hover,
 .pos-rail-btn:focus {
-    border-color: rgba(215, 169, 40, 0.55);
-    background: linear-gradient(135deg, #fffdf6 0%, #ffffff 100%);
-    color: var(--primary-700);
-    transform: translateY(-1px);
+    border-color: rgba(49, 105, 170, 0.45);
+    background: linear-gradient(180deg, #ffffff 0%, #e7eef8 100%);
+    color: #0f3a8a;
+    transform: none;
 }
 
 .pos-main-stage {
@@ -1906,41 +1905,31 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
         <div class="pos-rail-backdrop" id="pos-rail-backdrop" aria-hidden="true"></div>
         <aside class="pos-action-rail" id="pos-action-rail" aria-label="POS quick actions">
             <div class="pos-rail-panel">
-                <div class="pos-rail-title">Quick Actions</div>
-                <button type="button" class="pos-rail-btn" id="rail-scan-btn">
-                    <i class="fas fa-barcode"></i>
-                    <span>Scan Item</span>
-                </button>
-                <button type="button" class="pos-rail-btn mt-2" id="rail-search-btn">
+                <div class="pos-rail-title">Point of Sale</div>
+                <button type="button" class="pos-rail-btn" id="rail-search-btn">
                     <i class="fas fa-search"></i>
-                    <span>Find Product</span>
+                    <span>Quick Pick Items</span>
                 </button>
-                <button type="button" class="pos-rail-btn mt-2" id="rail-customer-btn">
-                    <i class="fas fa-user"></i>
-                    <span>Customer</span>
+                <button type="button" class="pos-rail-btn mt-2" id="rail-discount-btn">
+                    <i class="fas fa-percent"></i>
+                    <span>Give Discount</span>
                 </button>
-                <button type="button" class="pos-rail-btn mt-2" id="rail-checkout-btn">
-                    <i class="fas fa-cash-register"></i>
-                    <span>Checkout</span>
-                </button>
-                <div class="pos-rail-divider" aria-hidden="true"></div>
-                <div class="pos-rail-title">Workspace</div>
-                <a href="{{ $posReturnToPosUrl ?? url('/pos') }}" class="pos-rail-btn">
-                    <i class="fas fa-plus-circle"></i>
-                    <span>New Sale</span>
-                </a>
-                <a href="{{ $posSalesLogUrl ?? url('/pos/sales') }}" class="pos-rail-btn mt-2">
-                    <i class="fas fa-receipt"></i>
-                    <span>Sales Log</span>
-                </a>
                 <a href="{{ $posReturnUrl ?? url('/pos/return') }}" class="pos-rail-btn mt-2">
                     <i class="fas fa-undo-alt"></i>
-                    <span>Returns</span>
+                    <span>Accept Return</span>
                 </a>
-                <a href="{{ $posHomeUrl ?? url('/home') }}" class="pos-rail-btn mt-2">
-                    <i class="fas fa-home"></i>
-                    <span>Dashboard</span>
-                </a>
+                <button type="button" class="pos-rail-btn mt-2" id="rail-customer-btn">
+                    <i class="fas fa-user"></i>
+                    <span>Cashier/Associate</span>
+                </button>
+                <button type="button" class="pos-rail-btn mt-2" id="rail-scan-btn">
+                    <i class="fas fa-barcode"></i>
+                    <span>Ship Items</span>
+                </button>
+                <button type="button" class="pos-rail-btn mt-2" id="rail-messages-btn">
+                    <i class="fas fa-comment-alt"></i>
+                    <span>Show Messages</span>
+                </button>
             </div>
         </aside>
 
@@ -3503,8 +3492,10 @@ window.POS_ENABLE_FALLBACK = function () {
     const customerSearchInput = document.getElementById('customer-search-input');
     const railScanBtn = document.getElementById('rail-scan-btn');
     const railSearchBtn = document.getElementById('rail-search-btn');
+    const railDiscountBtn = document.getElementById('rail-discount-btn');
     const railCustomerBtn = document.getElementById('rail-customer-btn');
     const railCheckoutBtn = document.getElementById('rail-checkout-btn');
+    const railMessagesBtn = document.getElementById('rail-messages-btn');
     let processBtn = document.getElementById('process-btn');
     let btnText = document.getElementById('btn-text');
     let btnLoading = document.getElementById('btn-loading');
@@ -3605,8 +3596,17 @@ window.POS_ENABLE_FALLBACK = function () {
 
     railScanBtn?.addEventListener('click', () => barcodeInput?.focus());
     railSearchBtn?.addEventListener('click', () => quickSearch?.focus());
+    railDiscountBtn?.addEventListener('click', () => discountInput?.focus());
     railCustomerBtn?.addEventListener('click', () => customerSearchInput?.focus());
     railCheckoutBtn?.addEventListener('click', () => processBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+    railMessagesBtn?.addEventListener('click', () => {
+        showAlert({
+            icon: 'info',
+            title: 'No new POS messages',
+            text: 'Messages and cashier prompts will appear here when available.',
+            confirmButtonColor: '#0f3a8a'
+        });
+    });
 	    const hasProductSelect2 = Boolean(window.jQuery && window.jQuery.fn && window.jQuery.fn.select2 && productSearch);
 	    if (hasProductSelect2) {
 	        window.jQuery(productSearch).select2({
