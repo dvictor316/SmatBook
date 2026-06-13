@@ -118,7 +118,7 @@ class SaleController extends Controller
             'depositAccounts' => collect(),
             'priceLists' => collect(),
             'priceListData' => [],
-        ], $this->posRouteUrls()));
+        ], $this->posViewMeta()));
     }
 
     private function posRouteUrls(): array
@@ -133,6 +133,16 @@ class SaleController extends Controller
             'posChartAccountsUrl' => Route::has('chart-of-accounts') ? route('chart-of-accounts') : url('/settings/chart-of-accounts'),
             'posSaleStoreUrl' => Route::has('sales.store') ? route('sales.store') : url('/sales'),
         ];
+    }
+
+    private function posViewMeta(): array
+    {
+        $defaultAvatar = asset('assets/img/profiles/avatar-07.jpg');
+
+        return array_merge($this->posRouteUrls(), [
+            'defaultAvatar' => $defaultAvatar,
+            'profileImagePath' => auth()->user()?->avatar_url ?: $defaultAvatar,
+        ]);
     }
 
     private function decrementSellableStock(Product $product, float $quantity): void
@@ -779,7 +789,7 @@ public function customerDetails($id = null)
 
             return view('pos.index', array_merge(
                 compact('products', 'customers', 'sales', 'activeBranch', 'bankAccounts', 'depositAccounts', 'priceLists', 'priceListData'),
-                $this->posRouteUrls()
+                $this->posViewMeta()
             ));
         } catch (\Throwable $e) {
             Log::error('POS page failed', [

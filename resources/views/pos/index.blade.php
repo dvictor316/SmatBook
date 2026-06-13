@@ -5,8 +5,8 @@
 @section('content')
 @php
     $isStarterPos = \App\Support\PlanAccess::resolveTierForUser(auth()->user()) === 'starter';
-    $defaultAvatar = asset('assets/img/profiles/avatar-07.jpg');
-    $profileImagePath = auth()->user()?->avatar_url ?: $defaultAvatar;
+    $defaultAvatar = $defaultAvatar ?? asset('assets/img/profiles/avatar-07.jpg');
+    $profileImagePath = $profileImagePath ?? (auth()->user()?->avatar_url ?: $defaultAvatar);
     $posReturnToPosUrl = $posReturnToPosUrl ?? (\Illuminate\Support\Facades\Route::has('sales.returnToPos')
         ? route('sales.returnToPos')
         : (\Illuminate\Support\Facades\Route::has('returnToPos') ? route('returnToPos') : url('/pos')));
@@ -1657,7 +1657,7 @@ label {
                         <div class="user-name">{{ auth()->user()->name ?? 'Admin' }}</div>
                     </div>
                     <div class="user-avatar">
-                        <img src="{{ $profileImagePath }}" alt="{{ auth()->user()->name ?? 'User' }}" onerror="this.onerror=null;this.src='{{ $defaultAvatar }}';">
+                        <img src="{{ $profileImagePath ?? asset('assets/img/profiles/avatar-07.jpg') }}" alt="{{ auth()->user()->name ?? 'User' }}" onerror="this.onerror=null;this.src='{{ $defaultAvatar ?? asset('assets/img/profiles/avatar-07.jpg') }}';">
                     </div>
                 </div>
             </div>        
