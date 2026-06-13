@@ -406,10 +406,10 @@
     flex: 0 0 clamp(168px, 11vw, 224px);
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
     z-index: 5;
-    min-height: calc(100vh - 118px);
-    align-self: stretch;
+    min-height: 0;
+    align-self: flex-start;
 }
 
 .pos-rail-panel {
@@ -424,7 +424,7 @@
 }
 
 .pos-rail-panel:first-child {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
 }
 
 .pos-rail-panel:last-child {
@@ -441,12 +441,18 @@
     margin-bottom: 10px;
 }
 
+.pos-rail-divider {
+    height: 1px;
+    margin: 12px 4px 10px;
+    background: linear-gradient(90deg, transparent, rgba(15, 58, 138, 0.18), transparent);
+}
+
 .pos-rail-btn {
     width: 100%;
     border: 1px solid rgba(37, 99, 235, 0.16);
     background: #fff;
     border-radius: 16px;
-    min-height: 78px;
+    min-height: 68px;
     padding: 10px 7px;
     color: var(--text-primary);
     display: flex;
@@ -1680,11 +1686,11 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
 
 @media (min-width: 1500px) {
     .pos-shell {
-        gap: 18px;
+        gap: 12px;
     }
 
     .pos-action-rail {
-        flex-basis: clamp(176px, 10vw, 232px);
+        flex-basis: clamp(176px, 10vw, 220px);
     }
 
     .product-grid {
@@ -1770,8 +1776,7 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
                     <i class="fas fa-cash-register"></i>
                     <span>Checkout</span>
                 </button>
-            </div>
-            <div class="pos-rail-panel">
+                <div class="pos-rail-divider" aria-hidden="true"></div>
                 <div class="pos-rail-title">Workspace</div>
                 <a href="{{ $posReturnToPosUrl ?? url('/pos') }}" class="pos-rail-btn">
                     <i class="fas fa-plus-circle"></i>
