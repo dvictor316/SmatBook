@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DemoProvisioningService
 {
@@ -23,7 +24,8 @@ class DemoProvisioningService
     {
         return DB::transaction(function () use ($demoRequest) {
             $plainPassword = Str::random(12);
-            $slug = 'demo-' . Str::slug($demoRequest->company_name) . '-' . Str::random(5);
+            $slug = $this->generateUniqueDemoSlug($demoRequest->company_name);
+            $loginEmail = $this->resolveDemoLoginEmail($demoRequest);
 
             // 1. Create the demo company
             $company = Company::create($this->onlyExistingColumns('companies', [
@@ -47,7 +49,7 @@ class DemoProvisioningService
             // 2. Create the demo user (owner of the demo company)
             $user = User::create($this->onlyExistingColumns('users', [
                 'name'              => $demoRequest->full_name,
-                'email'             => $demoRequest->email,
+                'email'             => $loginEmail,
                 'password'          => Hash::make($plainPassword),
                 'role'              => 'admin',
                 'company_id'        => $company->id,
@@ -73,9 +75,93 @@ class DemoProvisioningService
             return [
                 'company'        => $company,
                 'user'           => $user,
+                'login_email'    => $loginEmail,
                 'plain_password' => $plainPassword,
             ];
         });
+    }
+
+    private function generateUniqueDemoSlug(string $companyName): string
+    {
+        $base = 'demo-' . Str::slug($companyName);
+        $slug = $base . '-' . Str::lower(Str::random(5));
+
+        while ($this->slugExists($slug)) {
+            $slug = $base . '-' . Str::lower(Str::random(5));
+        }
+
+        return $slug;
+    }
+
+    private function slugExists(string $slug): bool
+    {
+        if (! Schema::hasTable('companies')) {
+            return false;
+        }
+
+        $slugColumns = array_values(array_filter(
+            ['domain_prefix', 'domain', 'subdomain'],
+            fn (string $column) => Schema::hasColumn('companies', $column)
+        ));
+
+        if ($slugColumns === []) {
+            return false;
+        }
+
+        $query = Company::query();
+
+        return $query->where(function ($builder) use ($slug, $slugColumns) {
+            foreach ($slugColumns as $index => $column) {
+                if ($index === 0) {
+                    $builder->where($column, $slug);
+                } else {
+                    $builder->orWhere($column, $slug);
+                }
+            }
+        })->exists();
+    }
+
+    private function resolveDemoLoginEmail(DemoRequest $demoRequest): string
+    {
+        $originalEmail = trim(strtolower((string) $demoRequest->email));
+        if ($originalEmail === '') {
+            return 'demo-' . $demoRequest->id . '@smartprobook.local';
+        }
+
+        $existingUser = $this->findUserByEmail($originalEmail);
+        if (! $existingUser) {
+            return $originalEmail;
+        }
+
+        $localPart = Str::before($originalEmail, '@');
+        $domainPart = Str::after($originalEmail, '@');
+        $domainPart = $domainPart !== '' ? $domainPart : 'smartprobook.local';
+
+        $candidate = "{$localPart}+demo-{$demoRequest->id}@{$domainPart}";
+        $attempt = 1;
+
+        while ($this->findUserByEmail($candidate)) {
+            $candidate = "{$localPart}+demo-{$demoRequest->id}-{$attempt}@{$domainPart}";
+            $attempt++;
+        }
+
+        return $candidate;
+    }
+
+    private function findUserByEmail(string $email): ?User
+    {
+        $query = User::query();
+
+        if ($this->modelUsesSoftDeletes(new User())) {
+            $query->withTrashed();
+        }
+
+        return $query->where('email', $email)->first();
+    }
+
+    private function modelUsesSoftDeletes(object $model): bool
+    {
+        return in_array(SoftDeletes::class, class_uses_recursive($model), true);
     }
 
     /**

@@ -18,12 +18,14 @@ class DemoApprovedMail extends Mailable
     public DemoRequest $demoRequest;
     public string $plainPassword;
     public string $loginUrl;
+    public string $loginEmail;
 
-    public function __construct(DemoRequest $demoRequest, string $plainPassword, string $loginUrl)
+    public function __construct(DemoRequest $demoRequest, string $plainPassword, string $loginUrl, string $loginEmail)
     {
         $this->demoRequest   = $demoRequest;
         $this->plainPassword = $plainPassword;
         $this->loginUrl      = $loginUrl;
+        $this->loginEmail    = $loginEmail;
     }
 
     public function build(): self

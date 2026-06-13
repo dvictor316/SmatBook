@@ -12,7 +12,7 @@ Great news! Your SmartProbook demo request has been approved. Your temporary dem
 | | |
 |---|---|
 | **Login URL** | [{{ $loginUrl }}]({{ $loginUrl }}) |
-| **Email** | {{ $demoRequest->email }} |
+| **Email** | {{ $loginEmail }} |
 | **Password** | `{{ $plainPassword }}` |
 | **Access Expires** | {{ $demoRequest->expires_at ? $demoRequest->expires_at->format('D, d M Y H:i') . ' (48 hours)' : 'N/A' }} |
 

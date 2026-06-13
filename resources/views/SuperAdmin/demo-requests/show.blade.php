@@ -83,6 +83,9 @@
                                     @if($demoRequest->demoUser)
                                         <tr><th>Demo Login Email</th><td>{{ $demoRequest->demoUser->email }}</td></tr>
                                     @endif
+                                    @if($demoRequest->email !== ($demoRequest->demoUser->email ?? null))
+                                        <tr><th>Notification Email</th><td>{{ $demoRequest->email }}</td></tr>
+                                    @endif
                                 </tbody>
                             </table>
                         </div>

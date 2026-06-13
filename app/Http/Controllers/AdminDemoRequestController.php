@@ -72,6 +72,7 @@ class AdminDemoRequestController extends Controller
             $company = $result['company'];
             /** @var \App\Models\User $user */
             $user = $result['user'];
+            $loginEmail = $result['login_email'] ?? $user->email;
             $plainPassword = $result['plain_password'];
 
             $demoRequest->update([
@@ -87,7 +88,7 @@ class AdminDemoRequestController extends Controller
             $loginUrl = config('app.url') . '/login';
 
             Mail::to($demoRequest->email)
-                ->queue(new DemoApprovedMail($demoRequest, $plainPassword, $loginUrl));
+                ->queue(new DemoApprovedMail($demoRequest, $plainPassword, $loginUrl, $loginEmail));
 
             ActivityLog::record('Demo', 'approved', "Demo request approved for {$demoRequest->email}", [
                 'user_id'    => Auth::id(),

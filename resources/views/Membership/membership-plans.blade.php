@@ -6,12 +6,8 @@
     @php
         $currentPlanTier = $currentPlanTier ?? null;
         $suggestedUpgradePlan = $suggestedUpgradePlan ?? null;
-        $tierBenefits = [
-            'starter' => \App\Models\Plan::marketingBenefitsForTier('starter', 1),
-            'basic' => \App\Models\Plan::marketingBenefitsForTier('basic', 3),
-            'pro' => \App\Models\Plan::marketingBenefitsForTier('professional', 5),
-            'enterprise' => \App\Models\Plan::marketingBenefitsForTier('enterprise', 8),
-        ];
+        $planCards = \App\Models\Plan::marketingCardCatalog();
+        $tierBenefits = collect($planCards)->mapWithKeys(fn ($card, $key) => [$key => $card['benefits']])->all();
         $planActions = [
             'starter' => $currentPlanTier === 'starter'
                 ? ['secondary' => 'Current Plan', 'primary' => 'Upgrade to Basic']
@@ -421,8 +417,8 @@
         <div class="container">
             <div class="pricing-grid">
                 <div class="plan-card">
-                    <h3 class="plan-name">Starter POS</h3>
-                    <p class="plan-desc">For businesses that only need POS, inventory, customers, and sales operations.</p>
+                    <h3 class="plan-name">{{ $planCards['starter']['label'] }}</h3>
+                    <p class="plan-desc">{{ $planCards['starter']['description'] }}</p>
                     <div class="price-display">
                         <span id="price-starter-solo">₦1,000</span><small id="period-starter-solo">/mo</small>
                     </div>
@@ -441,8 +437,8 @@
                 </div>
                 
                 <div class="plan-card">
-                    <h3 class="plan-name">Basic Core</h3>
-                    <p class="plan-desc">Perfect for small start-up workflows and agile teams.</p>
+                    <h3 class="plan-name">{{ $planCards['basic']['label'] }}</h3>
+                    <p class="plan-desc">{{ $planCards['basic']['description'] }}</p>
                     <div class="price-display">
                         <span id="price-basic-solo">₦3,000</span><small id="period-basic-solo">/mo</small>
                     </div>
@@ -461,8 +457,8 @@
                 
                 <div class="plan-card featured">
                     <div class="popular-tag">MOST POPULAR</div>
-                    <h3 class="plan-name">Pro Engine</h3>
-                    <p class="plan-desc">Advanced features for growing institutional entities.</p>
+                    <h3 class="plan-name">{{ $planCards['pro']['label'] }}</h3>
+                    <p class="plan-desc">{{ $planCards['pro']['description'] }}</p>
                     <div class="price-display">
                         <span id="price-pro-solo">₦7,000</span><small id="period-pro-solo">/mo</small>
                     </div>
@@ -480,8 +476,8 @@
 
                 
                 <div class="plan-card">
-                    <h3 class="plan-name">Institutional</h3>
-                    <p class="plan-desc">The standard for large corporations and high-node networks.</p>
+                    <h3 class="plan-name">{{ $planCards['enterprise']['label'] }}</h3>
+                    <p class="plan-desc">{{ $planCards['enterprise']['description'] }}</p>
                     <div class="price-display">
                         <span id="price-enterprise-solo">₦15,000</span><small id="period-enterprise-solo">/mo</small>
                     </div>

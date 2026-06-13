@@ -1,5 +1,7 @@
 @extends('layout.mainlayout')
 
+@php($hideSidebar = true)
+
 @section('content')
 @php
     $isStarterPos = \App\Support\PlanAccess::resolveTierForUser(auth()->user()) === 'starter';
@@ -57,7 +59,7 @@
 
 /* Page Layout */
 .pos-full-page-wrapper { 
-    margin-left: var(--sb-sidebar-w, 270px); 
+    margin-left: 0; 
     padding: 20px; 
     background:
         radial-gradient(1200px 320px at 10% 0%, rgba(37, 99, 235, 0.12) 0%, rgba(37, 99, 235, 0) 55%),
@@ -66,10 +68,6 @@
     min-height: 100vh; 
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     margin-top: 37px;
-}
-
-body.mini-sidebar .pos-full-page-wrapper { 
-    margin-left: var(--sb-sidebar-collapsed, 80px); 
 }
 
 @media(max-width: 991.98px) { 
@@ -369,6 +367,92 @@ body.mini-sidebar .pos-full-page-wrapper {
 .sticky-panel { 
     position: sticky; 
     top: 84px; 
+}
+
+.pos-shell {
+    display: grid;
+    grid-template-columns: 104px minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.pos-action-rail {
+    position: sticky;
+    top: 94px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.pos-rail-panel {
+    border: 1px solid rgba(37, 99, 235, 0.18);
+    border-radius: 22px;
+    padding: 14px 10px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(247, 250, 255, 0.98) 100%);
+    box-shadow: 0 18px 36px rgba(6, 26, 68, 0.12);
+}
+
+.pos-rail-title {
+    font-size: 0.62rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--primary-700);
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.pos-rail-btn {
+    width: 100%;
+    border: 1px solid rgba(37, 99, 235, 0.16);
+    background: #fff;
+    border-radius: 18px;
+    padding: 12px 8px;
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.25px;
+    transition: var(--transition);
+    text-decoration: none;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.92);
+}
+
+.pos-rail-btn i {
+    font-size: 1rem;
+    color: var(--primary-600);
+}
+
+.pos-rail-btn:hover,
+.pos-rail-btn:focus {
+    border-color: rgba(215, 169, 40, 0.55);
+    background: linear-gradient(135deg, #fffdf6 0%, #ffffff 100%);
+    color: var(--primary-700);
+    transform: translateY(-1px);
+}
+
+.pos-main-stage {
+    min-width: 0;
+}
+
+@media(max-width: 1199.98px) {
+    .pos-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .pos-action-rail {
+        position: static;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    }
+
+    .pos-rail-panel {
+        padding: 10px;
+    }
 }
 
 .pos-card { 
@@ -1481,6 +1565,49 @@ label {
         };
     @endphp
 
+    <div class="pos-shell">
+        <aside class="pos-action-rail" aria-label="POS quick actions">
+            <div class="pos-rail-panel">
+                <div class="pos-rail-title">Quick Actions</div>
+                <button type="button" class="pos-rail-btn" id="rail-scan-btn">
+                    <i class="fas fa-barcode"></i>
+                    <span>Scan Item</span>
+                </button>
+                <button type="button" class="pos-rail-btn mt-2" id="rail-search-btn">
+                    <i class="fas fa-search"></i>
+                    <span>Find Product</span>
+                </button>
+                <button type="button" class="pos-rail-btn mt-2" id="rail-customer-btn">
+                    <i class="fas fa-user"></i>
+                    <span>Customer</span>
+                </button>
+                <button type="button" class="pos-rail-btn mt-2" id="rail-checkout-btn">
+                    <i class="fas fa-cash-register"></i>
+                    <span>Checkout</span>
+                </button>
+            </div>
+            <div class="pos-rail-panel">
+                <div class="pos-rail-title">Workspace</div>
+                <a href="{{ route('returnToPos') }}" class="pos-rail-btn">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>New Sale</span>
+                </a>
+                <a href="{{ route('pos.sales') }}" class="pos-rail-btn mt-2">
+                    <i class="fas fa-receipt"></i>
+                    <span>Sales Log</span>
+                </a>
+                <a href="{{ route('pos.return.show') }}" class="pos-rail-btn mt-2">
+                    <i class="fas fa-undo-alt"></i>
+                    <span>Returns</span>
+                </a>
+                <a href="{{ route('home') }}" class="pos-rail-btn mt-2">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+            </div>
+        </aside>
+
+        <div class="pos-main-stage">
     <div class="header-stage {{ $headerStagePlanClass }}">
         <div class="header-util-bar">
             <div class="util-pills">
@@ -1922,6 +2049,8 @@ label {
                     <span id="btn-loading" style="display:none;"><i class="fas fa-sync fa-spin me-2"></i> PROCESSING...</span>
                 </button>
             </div>
+        </div>
+    </div>
         </div>
     </div>
 </div>
@@ -3035,6 +3164,10 @@ window.POS_ENABLE_FALLBACK = function () {
     const changeAmount = document.getElementById('change-amount');
     const customerSelect = document.getElementById('customer-select');
     const customerSearchInput = document.getElementById('customer-search-input');
+    const railScanBtn = document.getElementById('rail-scan-btn');
+    const railSearchBtn = document.getElementById('rail-search-btn');
+    const railCustomerBtn = document.getElementById('rail-customer-btn');
+    const railCheckoutBtn = document.getElementById('rail-checkout-btn');
     let processBtn = document.getElementById('process-btn');
     let btnText = document.getElementById('btn-text');
     let btnLoading = document.getElementById('btn-loading');
@@ -3132,6 +3265,11 @@ window.POS_ENABLE_FALLBACK = function () {
         btnText = document.getElementById('btn-text');
         btnLoading = document.getElementById('btn-loading');
     }
+
+    railScanBtn?.addEventListener('click', () => barcodeInput?.focus());
+    railSearchBtn?.addEventListener('click', () => quickSearch?.focus());
+    railCustomerBtn?.addEventListener('click', () => customerSearchInput?.focus());
+    railCheckoutBtn?.addEventListener('click', () => processBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
 	    const hasProductSelect2 = Boolean(window.jQuery && window.jQuery.fn && window.jQuery.fn.select2 && productSearch);
 	    if (hasProductSelect2) {
 	        window.jQuery(productSearch).select2({

@@ -1916,15 +1916,15 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                     <h2 class="sb-h1 text-center">Plans & <span class="accent">Licensing</span></h2>
                 </div>
                 <div class="row g-4 justify-content-center">
-                    @php $plans=['Starter'=>['ngn'=>1000,'feat'=>false,'benefits'=>['POS & Sales Workflow','Inventory Monitoring','Customer Management','Sales & Stock Reports','1 User Only']],'Basic'=>['ngn'=>3000,'feat'=>false,'benefits'=>['Centralized Ledgers','5 Core User Access','Daily Cloud Backups','Standard Email Support','Unified Reporting']],'Pro'=>['ngn'=>7000,'feat'=>true,'benefits'=>['Neural Engine Core','25 Premium User Access','Dedicated Priority Node','Real-time Analytics','Predictive Forecasting']],'Enterprise'=>['ngn'=>15000,'feat'=>false,'benefits'=>['Full Neural Automation','Unlimited Access Nodes','Advanced API Gateway','Custom Fiscal Reports','IFRS Compliance Mapping']],'Institution'=>['ngn'=>null,'feat'=>false,'benefits'=>['Private Hybrid Core','SLA Performance Guarantee','On-site Technical Support','Bespoke Integrations','Governance Training']]]; @endphp
-                    @foreach($plans as $name => $p)
+                    @php($plans = \App\Models\Plan::marketingCardCatalog())
+                    @foreach($plans as $tier => $plan)
                     <div class="col-xl col-lg-4 col-md-6">
-                        <div class="plan-card {{ $p['feat'] ? 'plan-featured' : '' }}">
-                            @if($p['feat'])<div style="text-align:center;margin-bottom:12px;"><span style="background:var(--gold);color:var(--navy);font-size:0.62rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:4px 14px;border-radius:20px;">MOST POPULAR</span></div>@endif
-                            <div class="plan-name">{{ $name }}</div>
-                            <div class="plan-price">@if($p['ngn'])<span class="geo-price" data-ngn="{{ $p['ngn'] }}">₦{{ number_format($p['ngn']) }}</span>@else<span>Bespoke</span>@endif</div>
-                            <div class="flex-grow-1">@foreach($p['benefits'] as $b)<div class="plan-feature"><i class="fas fa-check-circle"></i><span>{{ $b }}</span></div>@endforeach</div>
-                            <div class="mt-4"><a href="{{ url('/membership-plans') }}" class="{{ $p['feat'] ? 'btn-red' : 'btn-outline-navy' }} w-100 justify-content-center">ACQUIRE SYSTEM</a></div>
+                        <div class="plan-card {{ $plan['featured'] ? 'plan-featured' : '' }}">
+                            @if($plan['featured'])<div style="text-align:center;margin-bottom:12px;"><span style="background:var(--gold);color:var(--navy);font-size:0.62rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:4px 14px;border-radius:20px;">MOST POPULAR</span></div>@endif
+                            <div class="plan-name">{{ $plan['label'] }}</div>
+                            <div class="plan-price"><span class="geo-price" data-ngn="{{ $plan['from_price'] }}">From ₦{{ number_format($plan['from_price']) }}</span></div>
+                            <div class="flex-grow-1">@foreach($plan['benefits'] as $benefit)<div class="plan-feature"><i class="fas fa-check-circle"></i><span>{{ $benefit }}</span></div>@endforeach</div>
+                            <div class="mt-4"><a href="{{ url('/membership-plans') }}" class="{{ $plan['featured'] ? 'btn-red' : 'btn-outline-navy' }} w-100 justify-content-center">ACQUIRE SYSTEM</a></div>
                         </div>
                     </div>
                     @endforeach

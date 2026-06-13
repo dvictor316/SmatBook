@@ -104,38 +104,85 @@ class Plan extends Model
 
     public static function marketingBenefitsForTier(string $tier, ?int $userLimit = null): array
     {
-        $seatLabel = static::userSeatLabel($userLimit ?? (static::DEFAULT_USER_LIMITS[$tier] ?? null));
+        $normalizedTier = strtolower($tier) === 'pro' ? 'professional' : strtolower($tier);
+        $seatLabel = static::userSeatLabel($userLimit ?? (static::DEFAULT_USER_LIMITS[$normalizedTier] ?? null));
 
-        return match (strtolower($tier)) {
+        return match ($normalizedTier) {
             'enterprise' => [
                 $seatLabel,
-                'Advanced financial statements',
-                'Budgets, assets, and audit trail',
-                'Priority implementation support',
-                'Multi-team operational controls',
+                'Full accounting suite with tax center',
+                'Budgets, fixed assets, and compliance workflows',
+                'Payroll, departments, and cost center controls',
+                'Enterprise reports, close tasks, and audit visibility',
             ],
             'starter' => [
                 $seatLabel,
-                'POS sales and receipts',
-                'Products, customers, and inventory',
-                'Sales and stock reporting',
-                'Single-user workspace access',
+                'POS terminal with receipt workflow',
+                'Product catalog and stock overview',
+                'POS sales history and cashier reports',
+                'Starter workspace for fast retail operations',
             ],
             'professional' => [
                 $seatLabel,
-                'Inventory and purchase workflows',
-                'Multi-user approvals and controls',
-                'Advanced reports and analytics',
-                'Priority business support',
+                'Everything in Basic plus advanced inventory tools',
+                'Price lists, returns, requisitions, and GRN workflows',
+                'Cash flow, forecasting, and scheduled reporting',
+                'Operational controls for growing multi-user teams',
             ],
             default => [
                 $seatLabel,
-                'Core accounting and invoicing',
-                'Sales tracking and daily reporting',
-                'Clean workspace setup',
-                'Standard support',
+                'POS, invoices, quotations, and customer workflows',
+                'Suppliers, purchases, expenses, and payments',
+                'Core accounting tools with business reporting',
+                'Workspace collaboration and standard support',
             ],
         };
+    }
+
+    public static function marketingCardCatalog(): array
+    {
+        return [
+            'starter' => [
+                'label' => 'Starter POS',
+                'description' => 'For businesses that need a focused sales counter, product shelf, and stock visibility.',
+                'featured' => false,
+                'from_price' => 1000,
+                'team_price' => 1000,
+                'solo_users' => 1,
+                'team_users' => 1,
+                'benefits' => static::marketingBenefitsForTier('starter', 1),
+            ],
+            'basic' => [
+                'label' => 'Basic Core',
+                'description' => 'For small teams running day-to-day sales, invoicing, purchases, and reporting together.',
+                'featured' => false,
+                'from_price' => 3000,
+                'team_price' => 5500,
+                'solo_users' => 1,
+                'team_users' => 3,
+                'benefits' => static::marketingBenefitsForTier('basic', 3),
+            ],
+            'pro' => [
+                'label' => 'Pro Engine',
+                'description' => 'For growing operations that need stronger controls, advanced inventory, and richer reporting.',
+                'featured' => true,
+                'from_price' => 7000,
+                'team_price' => 19500,
+                'solo_users' => 2,
+                'team_users' => 5,
+                'benefits' => static::marketingBenefitsForTier('professional', 5),
+            ],
+            'enterprise' => [
+                'label' => 'Institutional',
+                'description' => 'For larger organizations that need enterprise accounting, compliance, and operational governance.',
+                'featured' => false,
+                'from_price' => 15000,
+                'team_price' => 28500,
+                'solo_users' => 3,
+                'team_users' => 8,
+                'benefits' => static::marketingBenefitsForTier('enterprise', 8),
+            ],
+        ];
     }
 
     public static function suggestedUpgradeForTier(?string $tier): ?string
