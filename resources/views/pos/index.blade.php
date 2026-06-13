@@ -73,9 +73,9 @@
 
 .pos-full-page-wrapper { 
     margin-left: 0; 
-    width: 100vw;
-    max-width: 100vw;
-    margin-inline: calc(50% - 50vw);
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
     padding: 14px clamp(14px, 1.6vw, 28px) 28px;
     background:
         linear-gradient(90deg, rgba(6, 26, 68, 0.035) 0 1px, transparent 1px),
@@ -474,11 +474,16 @@
     .pos-action-rail {
         position: static;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
     }
 
     .pos-rail-panel {
         padding: 10px;
+    }
+
+    .pos-rail-btn {
+        min-height: 68px;
     }
 }
 
@@ -1407,7 +1412,7 @@ label {
     }
 
     .product-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         max-height: 260px;
         grid-auto-rows: minmax(84px, auto);
     }
@@ -1579,10 +1584,11 @@ body.pos-terminal-workspace .page-wrapper .content.container-fluid {
 
 body.pos-terminal-workspace .pos-full-page-wrapper {
     position: relative;
-    left: calc(-1 * var(--sb-sidebar-w, 270px));
-    width: calc(100vw + var(--sb-sidebar-w, 270px));
-    max-width: calc(100vw + var(--sb-sidebar-w, 270px));
-    margin-right: calc(-1 * var(--sb-sidebar-w, 270px));
+    left: auto;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    overflow-x: clip;
 }
 
 .pos-full-page-wrapper .pos-card {

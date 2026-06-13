@@ -359,6 +359,14 @@
             left: 0 !important;
         }
 
+        body.pos-terminal-workspace .pos-main-wrapper {
+            width: 100vw !important;
+            max-width: 100vw !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow-x: hidden !important;
+        }
+
         body.sidebar-collapsed .page-wrapper,
         body.mini-sidebar .page-wrapper,
         body.sidebar-icon-only .page-wrapper {
@@ -1698,7 +1706,9 @@
     </div>
 
     {{-- MAIN WRAPPER --}}
-    @if (!in_array($route, [
+    @if ($isPosWorkspace)
+        <div class="main-wrapper pos-main-wrapper">
+    @elseif (!in_array($route, [
             'landing.index',
             'index-five',
             'mail-pay-invoice',
