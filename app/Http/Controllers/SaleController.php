@@ -115,6 +115,8 @@ class SaleController extends Controller
             'activeBranch' => $activeBranch,
             'bankAccounts' => collect(),
             'depositAccounts' => collect(),
+            'priceLists' => collect(),
+            'priceListData' => [],
         ]);
     }
 

@@ -77,7 +77,15 @@ class LandingController extends Controller
             $settings = null;
         }
 
-        return view('Landing.index', compact('totalInvoices', 'settings'));
+        $products = [
+            ['Paracetamol 500mg', 87],
+            ['Vitamin C Tabs', 62],
+            ['Amoxicillin 250mg', 18],
+            ['Ibuprofen 400mg', 74],
+            ['Zinc Sulphate', 9],
+        ];
+
+        return view('Landing.index', compact('totalInvoices', 'settings', 'products'));
     }
 
 

@@ -7,6 +7,14 @@
     $isStarterPos = \App\Support\PlanAccess::resolveTierForUser(auth()->user()) === 'starter';
     $defaultAvatar = asset('assets/img/profiles/avatar-07.jpg');
     $profileImagePath = auth()->user()?->avatar_url ?: $defaultAvatar;
+    $posReturnToPosUrl = \Illuminate\Support\Facades\Route::has('sales.returnToPos')
+        ? route('sales.returnToPos')
+        : (\Illuminate\Support\Facades\Route::has('returnToPos') ? route('returnToPos') : url('/pos'));
+    $posSalesLogUrl = \Illuminate\Support\Facades\Route::has('pos.sales') ? route('pos.sales') : url('/pos/sales');
+    $posReturnUrl = \Illuminate\Support\Facades\Route::has('pos.return.show') ? route('pos.return.show') : url('/pos/return');
+    $posHomeUrl = \Illuminate\Support\Facades\Route::has('home') ? route('home') : url('/home');
+    $posChartAccountsUrl = \Illuminate\Support\Facades\Route::has('chart-of-accounts') ? route('chart-of-accounts') : url('/settings/chart-of-accounts');
+    $posSaleStoreUrl = \Illuminate\Support\Facades\Route::has('sales.store') ? route('sales.store') : url('/sales');
 @endphp
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -1588,19 +1596,19 @@ label {
             </div>
             <div class="pos-rail-panel">
                 <div class="pos-rail-title">Workspace</div>
-                <a href="{{ Route::has('sales.returnToPos') ? route('sales.returnToPos') : route('returnToPos') }}" class="pos-rail-btn">
+                <a href="{{ $posReturnToPosUrl }}" class="pos-rail-btn">
                     <i class="fas fa-plus-circle"></i>
                     <span>New Sale</span>
                 </a>
-                <a href="{{ route('pos.sales') }}" class="pos-rail-btn mt-2">
+                <a href="{{ $posSalesLogUrl }}" class="pos-rail-btn mt-2">
                     <i class="fas fa-receipt"></i>
                     <span>Sales Log</span>
                 </a>
-                <a href="{{ route('pos.return.show') }}" class="pos-rail-btn mt-2">
+                <a href="{{ $posReturnUrl }}" class="pos-rail-btn mt-2">
                     <i class="fas fa-undo-alt"></i>
                     <span>Returns</span>
                 </a>
-                <a href="{{ route('home') }}" class="pos-rail-btn mt-2">
+                <a href="{{ $posHomeUrl }}" class="pos-rail-btn mt-2">
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>
@@ -1976,7 +1984,7 @@ label {
                                 @if($depositAccounts->isEmpty())
                                     <small class="text-danger d-block mt-1">
                                         No active asset accounts found.
-                                        <a href="{{ route('chart-of-accounts') }}" class="fw-bold">Add one in Chart of Accounts</a>
+                                        <a href="{{ $posChartAccountsUrl }}" class="fw-bold">Add one in Chart of Accounts</a>
                                     </small>
                                 @else
                                     <small class="text-muted">This COA account will be debited in the journal entry.</small>
@@ -1999,7 +2007,7 @@ label {
                                 @if($depositAccounts->isEmpty())
                                     <small class="text-muted d-block mt-2">
                                         No asset accounts yet.
-                                        <a href="{{ route('chart-of-accounts') }}" class="fw-bold text-primary">Add in Chart of Accounts</a>
+                                        <a href="{{ $posChartAccountsUrl }}" class="fw-bold text-primary">Add in Chart of Accounts</a>
                                     </small>
                                 @endif
                             </div>
@@ -2020,7 +2028,7 @@ label {
                                 @if($depositAccounts->isEmpty())
                                     <small class="text-muted d-block mt-2">
                                         No asset accounts yet.
-                                        <a href="{{ route('chart-of-accounts') }}" class="fw-bold text-primary">Add in Chart of Accounts</a>
+                                        <a href="{{ $posChartAccountsUrl }}" class="fw-bold text-primary">Add in Chart of Accounts</a>
                                     </small>
 	                            @endif
 	                        </div>
@@ -3016,7 +3024,7 @@ $(document).ready(function() {
         $('#btn-loading').show();
 
         $.ajax({
-            url: "{{ route('sales.store') }}",
+            url: "{{ $posSaleStoreUrl }}",
             method: 'POST',
             data: {
                 _token: "{{ csrf_token() }}",
@@ -3186,7 +3194,7 @@ window.POS_ENABLE_FALLBACK = function () {
         }
         return alertFallback(options?.text || options?.title || 'Action required');
     };
-	    const saleStoreUrl = @json(route('sales.store'));
+	    const saleStoreUrl = @json($posSaleStoreUrl);
 	    const invoicePrintBaseUrl = @json(url('/sales/invoice'));
 
 	    function selectedCustomerWalletBalance() {

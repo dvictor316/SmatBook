@@ -2,6 +2,15 @@
 @extends('layout.landing_nav')
 
 @section('content')
+@php
+    $landingTopProducts = $landingTopProducts ?? [
+        ['Paracetamol 500mg', 87],
+        ['Vitamin C Tabs', 62],
+        ['Amoxicillin 250mg', 18],
+        ['Ibuprofen 400mg', 74],
+        ['Zinc Sulphate', 9],
+    ];
+@endphp
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap');
 
@@ -1984,9 +1993,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                                         <span class="gadget-title">Top products</span>
                                         <span class="gadget-chip">Stock levels</span>
                                     </div>
-                                    @php $products=[['Paracetamol 500mg',87],['Vitamin C Tabs',62],['Amoxicillin 250mg',18],['Ibuprofen 400mg',74],['Zinc Sulphate',9]]; @endphp
                                     <div class="gadget-bars">
-                                        @foreach($products as $p)
+                                        @foreach($landingTopProducts as $p)
                                             <div>
                                                 <div class="gadget-bar-label"><span>{{ $p[0] }}</span><span>{{ $p[1] }} units</span></div>
                                                 <div class="gadget-bar-track"><div class="gadget-bar-fill" style="width:{{ $p[1] }}%;"></div></div>
