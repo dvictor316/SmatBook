@@ -13,6 +13,57 @@
     $products = $products ?? $landingTopProducts;
     $landingMonths = $landingMonths ?? $months ?? ['M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D', 'J', 'F'];
     $months = $months ?? $landingMonths;
+    $landingProjects = $landingProjects ?? $team ?? [
+        [
+            'name' => 'Property234.com',
+            'role' => 'Real Estate Platform',
+            'img' => 'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=1200',
+            'bio' => 'A global real estate listing ecosystem for owners, surveyors, legal advisers, agents, and every key stakeholder in the property market.',
+            'link' => route('landing.projects.lahome'),
+        ],
+        [
+            'name' => 'Master JAMB',
+            'role' => 'CBT Examination Platform',
+            'img' => 'https://images.unsplash.com/photo-1588072432836-e10032774350?q=80&w=1200&auto=format&fit=crop',
+            'bio' => 'An online CBT platform for schools and institutions, built for exam readiness, timed assessments, and performance tracking.',
+            'link' => route('landing.projects.master-jamb'),
+        ],
+        [
+            'name' => 'PayPlus',
+            'role' => 'Payment Gateway',
+            'img' => 'https://images.pexels.com/photos/4968634/pexels-photo-4968634.jpeg?auto=compress&cs=tinysrgb&w=1200',
+            'bio' => 'A global payment gateway designed for secure processing of everyday transactions across web, mobile, and enterprise channels.',
+            'link' => route('landing.projects.payplus'),
+        ],
+    ];
+    $team = $team ?? $landingProjects;
+    $landingFeatureStrips = $landingFeatureStrips ?? $strips ?? [
+        ['icon' => '👥', 'bg' => '#f0f4ff', 'title' => 'Staff & Payroll', 'desc' => 'Manage employee records, attendance, and process accurate payroll in minutes. Automatic PAYE deductions calculated for you.'],
+        ['icon' => '🧾', 'bg' => '#fef9c3', 'title' => 'Receipts & POS', 'desc' => 'Turn any device into a point-of-sale terminal. Print or email branded receipts instantly after every sale.'],
+        ['icon' => '📊', 'bg' => '#dcfce7', 'title' => 'Reports & Analytics', 'desc' => 'From daily sales summaries to quarterly board reports — generate any report with a single click, no accountant needed.'],
+        ['icon' => '🤝', 'bg' => '#ffe4e6', 'title' => 'Customer CRM', 'desc' => 'Build detailed customer profiles, track purchase history, and send targeted promotions to your best buyers.'],
+        ['icon' => '🔐', 'bg' => '#ede9fe', 'title' => 'Access Control', 'desc' => 'Create staff accounts with role-based permissions. Your cashier sees only the POS; your manager sees everything.'],
+        ['icon' => '☁️', 'bg' => '#f0fdf4', 'title' => 'Cloud Backup', 'desc' => 'Your data is encrypted and backed up automatically every hour. Access your books from any device, anywhere.'],
+    ];
+    $strips = $strips ?? $landingFeatureStrips;
+    $landingUtilities = $landingUtilities ?? $utils ?? [
+        ['icon' => 'fa-brain', 'title' => 'Neural Ledger Engine', 'text' => 'Utilizes transformer-based AI to handle multi-currency reconciliations across thousands of subsidiaries. Our engine reduces manual entry errors by 99.8% through autonomous pattern matching.'],
+        ['icon' => 'fa-chart-line', 'title' => 'Predictive Forensics', 'text' => 'Execute high-fidelity Monte Carlo simulations to forecast capital requirements and mitigate liquidity risks. Transform historical data into actionable 24-month financial roadmaps.'],
+        ['icon' => 'fa-fingerprint', 'title' => 'Sovereign Governance', 'text' => 'Institutional security protocols featuring Multi-Party Computation (MPC) and ZK-Proofs. Maintain absolute data sovereignty while ensuring total transparency for the executive board.'],
+        ['icon' => 'fa-file-signature', 'title' => 'Autonomous Auditing', 'text' => 'Generate board-ready audits mapped to IFRS and GAAP standards. Real-time regulatory compliance allows for zero-latency fiscal reporting across global jurisdictions.'],
+    ];
+    $utils = $utils ?? $landingUtilities;
+    $landingTestimonials = $landingTestimonials ?? $tests ?? [
+        ['name' => 'Chinedu Okafor', 'role' => 'CFO, Lagos Holdings', 'img' => 'https://images.pexels.com/photos/5490235/pexels-photo-5490235.jpeg?auto=compress&cs=tinysrgb&w=300'],
+        ['name' => 'Amina Bello', 'role' => 'Finance Director, Abuja Group', 'img' => 'https://images.pexels.com/photos/7789851/pexels-photo-7789851.jpeg?auto=compress&cs=tinysrgb&w=300'],
+        ['name' => 'Michael Carter', 'role' => 'VP Finance, New York Capital', 'img' => 'https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg?auto=compress&cs=tinysrgb&w=300'],
+        ['name' => 'Emily Johnson', 'role' => 'Controller, Austin Ventures', 'img' => 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=300&auto=format&fit=crop'],
+        ['name' => 'Li Wei', 'role' => 'Treasury Lead, Shanghai Trade', 'img' => 'https://images.unsplash.com/photo-1521119989659-a83eee488004?q=80&w=300&auto=format&fit=crop'],
+        ['name' => 'Chen Ming', 'role' => 'Payments Director, Beijing Commerce', 'img' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=300&auto=format&fit=crop'],
+    ];
+    $tests = $tests ?? $landingTestimonials;
+    $landingTestimonialLoop = $landingTestimonialLoop ?? $repeat ?? array_merge($landingTestimonials, $landingTestimonials, $landingTestimonials);
+    $repeat = $repeat ?? $landingTestimonialLoop;
 @endphp
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap');
@@ -2237,8 +2288,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <h2 class="sb-h1 text-center">Our <span class="accent">Other Projects</span></h2>
         </div>
         <div class="row g-4">
-            @php $team=[['name'=>'Property234.com','role'=>'Real Estate Platform','img'=>'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=1200','bio'=>'A global real estate listing ecosystem for owners, surveyors, legal advisers, agents, and every key stakeholder in the property market.','link'=>route('landing.projects.lahome')],['name'=>'Master JAMB','role'=>'CBT Examination Platform','img'=>'https://images.unsplash.com/photo-1588072432836-e10032774350?q=80&w=1200&auto=format&fit=crop','bio'=>'An online CBT platform for schools and institutions, built for exam readiness, timed assessments, and performance tracking.','link'=>route('landing.projects.master-jamb')],['name'=>'PayPlus','role'=>'Payment Gateway','img'=>'https://images.pexels.com/photos/4968634/pexels-photo-4968634.jpeg?auto=compress&cs=tinysrgb&w=1200','bio'=>'A global payment gateway designed for secure processing of everyday transactions across web, mobile, and enterprise channels.','link'=>route('landing.projects.payplus')]]; @endphp
-            @foreach($team as $m)
+            @foreach($landingProjects as $m)
             <div class="col-lg-4 col-md-6">
                 <div class="project-card">
                     <div class="project-img"><img src="{{ $m['img'] }}" alt="{{ $m['name'] }}" onerror="this.onerror=null;this.src='{{ asset('assets/img/demo-two.png') }}';"></div>
@@ -2266,8 +2316,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <p class="sb-lead text-center mx-auto">SmartProbook brings together every tool your business needs to run — from staff management to customer records, POS to cloud backup.</p>
         </div>
         <div class="row g-4">
-            @php $strips=[['icon'=>'👥','bg'=>'#f0f4ff','title'=>'Staff & Payroll','desc'=>'Manage employee records, attendance, and process accurate payroll in minutes. Automatic PAYE deductions calculated for you.'],['icon'=>'🧾','bg'=>'#fef9c3','title'=>'Receipts & POS','desc'=>'Turn any device into a point-of-sale terminal. Print or email branded receipts instantly after every sale.'],['icon'=>'📊','bg'=>'#dcfce7','title'=>'Reports & Analytics','desc'=>'From daily sales summaries to quarterly board reports — generate any report with a single click, no accountant needed.'],['icon'=>'🤝','bg'=>'#ffe4e6','title'=>'Customer CRM','desc'=>'Build detailed customer profiles, track purchase history, and send targeted promotions to your best buyers.'],['icon'=>'🔐','bg'=>'#ede9fe','title'=>'Access Control','desc'=>'Create staff accounts with role-based permissions. Your cashier sees only the POS; your manager sees everything.'],['icon'=>'☁️','bg'=>'#f0fdf4','title'=>'Cloud Backup','desc'=>'Your data is encrypted and backed up automatically every hour. Access your books from any device, anywhere.']]; @endphp
-            @foreach($strips as $s)
+            @foreach($landingFeatureStrips as $s)
             <div class="col-lg-4 col-md-6"><div class="strip-card"><div class="strip-icon" style="background:{{ $s['bg'] }};">{{ $s['icon'] }}</div><h5>{{ $s['title'] }}</h5><p>{{ $s['desc'] }}</p></div></div>
             @endforeach
         </div>
@@ -2281,8 +2330,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <h2 class="sb-h1 text-center">Engine <span class="accent">Capabilities</span></h2>
         </div>
         <div class="sol-grid">
-            @php $utils=[['icon'=>'fa-brain','title'=>'Neural Ledger Engine','text'=>'Utilizes transformer-based AI to handle multi-currency reconciliations across thousands of subsidiaries. Our engine reduces manual entry errors by 99.8% through autonomous pattern matching.'],['icon'=>'fa-chart-line','title'=>'Predictive Forensics','text'=>'Execute high-fidelity Monte Carlo simulations to forecast capital requirements and mitigate liquidity risks. Transform historical data into actionable 24-month financial roadmaps.'],['icon'=>'fa-fingerprint','title'=>'Sovereign Governance','text'=>'Institutional security protocols featuring Multi-Party Computation (MPC) and ZK-Proofs. Maintain absolute data sovereignty while ensuring total transparency for the executive board.'],['icon'=>'fa-file-signature','title'=>'Autonomous Auditing','text'=>'Generate board-ready audits mapped to IFRS and GAAP standards. Real-time regulatory compliance allows for zero-latency fiscal reporting across global jurisdictions.']]; @endphp
-            @foreach($utils as $u)
+            @foreach($landingUtilities as $u)
             <div class="sol-tile"><i class="fas {{ $u['icon'] }} mb-4" style="font-size:2rem;color:var(--navy);"></i><h5 class="fw-bold mb-3" style="font-family:var(--font-display);color:var(--navy);">{{ $u['title'] }}</h5><p class="mb-0" style="font-size:13.5px;color:var(--muted);line-height:1.75;">{{ $u['text'] }}</p></div>
             @endforeach
         </div>
@@ -2318,15 +2366,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </div>
     <div class="testi-track-wrap">
         <div class="testi-track">
-            @php $tests=[
-  ['name'=>'Chinedu Okafor','role'=>'CFO, Lagos Holdings','img'=>'https://images.pexels.com/photos/5490235/pexels-photo-5490235.jpeg?auto=compress&cs=tinysrgb&w=300'],
-  ['name'=>'Amina Bello','role'=>'Finance Director, Abuja Group','img'=>'https://images.pexels.com/photos/7789851/pexels-photo-7789851.jpeg?auto=compress&cs=tinysrgb&w=300'],
-  ['name'=>'Michael Carter','role'=>'VP Finance, New York Capital','img'=>'https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg?auto=compress&cs=tinysrgb&w=300'],
-  ['name'=>'Emily Johnson','role'=>'Controller, Austin Ventures','img'=>'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=300&auto=format&fit=crop'],
-  ['name'=>'Li Wei','role'=>'Treasury Lead, Shanghai Trade','img'=>'https://images.unsplash.com/photo-1521119989659-a83eee488004?q=80&w=300&auto=format&fit=crop'],
-  ['name'=>'Chen Ming','role'=>'Payments Director, Beijing Commerce','img'=>'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=300&auto=format&fit=crop']
-]; $repeat=array_merge($tests,$tests,$tests); @endphp
-            @foreach($repeat as $t)
+            @foreach($landingTestimonialLoop as $t)
             <div class="testi-card">
                 <p style="font-size:0.88rem;color:rgba(255,255,255,0.88);font-style:italic;line-height:1.7;margin-bottom:22px;">"SmartProbook's neural-ledgers have fundamentally changed how we manage our global hubs. Unmatched precision."</p>
                 <div class="d-flex align-items-center gap-3">
