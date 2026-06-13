@@ -4,7 +4,15 @@
 
 @section('content')
 @php
-    $isStarterPos = \App\Support\PlanAccess::resolveTierForUser(auth()->user()) === 'starter';
+    $products = $products ?? collect();
+    $customers = $customers ?? collect();
+    $sales = $sales ?? collect();
+    $activeBranch = $activeBranch ?? ['name' => 'Main Workspace'];
+    $bankAccounts = $bankAccounts ?? collect();
+    $depositAccounts = $depositAccounts ?? collect();
+    $priceLists = $priceLists ?? collect();
+    $priceListData = $priceListData ?? [];
+    $isStarterPos = $isStarterPos ?? (\App\Support\PlanAccess::resolveTierForUser(auth()->user()) === 'starter');
     $defaultAvatar = $defaultAvatar ?? asset('assets/img/profiles/avatar-07.jpg');
     $profileImagePath = $profileImagePath ?? (auth()->user()?->avatar_url ?: $defaultAvatar);
     $posReturnToPosUrl = $posReturnToPosUrl ?? (\Illuminate\Support\Facades\Route::has('sales.returnToPos')
@@ -1619,7 +1627,7 @@ label {
     <div class="header-stage {{ $headerStagePlanClass }}">
         <div class="header-util-bar">
             <div class="util-pills">
-                <span class="util-pill">Shelf: <span id="hdr-shelf-count">{{ $products->count() }}</span></span>
+                <span class="util-pill">Shelf: <span id="hdr-shelf-count">{{ ($products ?? collect())->count() }}</span></span>
                 <span class="util-pill">Selected: <span id="hdr-selected-product">None</span></span>
                 <span class="util-pill">Cart Items: <span id="hdr-cart-count">0</span></span>
                 <span class="util-pill">
@@ -1667,11 +1675,11 @@ label {
     <div class="card pos-card p-4 mb-4">
         <div class="product-toolbar">
             <span class="toolbar-title">Product Shelf</span>
-            <span class="small text-muted" id="product-count">{{ $products->count() }} item(s)</span>
+            <span class="small text-muted" id="product-count">{{ ($products ?? collect())->count() }} item(s)</span>
         </div>
 
         @php
-            $shelfCategories = $products->pluck('category.name')->filter()->unique()->values();
+            $shelfCategories = collect($products ?? [])->pluck('category.name')->filter()->unique()->values();
         @endphp
         <div class="category-pills-wrap">
             <div class="category-pills collapsed" id="category-pills">
@@ -1684,7 +1692,7 @@ label {
         </div>
 
         <div class="product-grid" id="product-grid">
-            @foreach($products as $p)
+            @foreach(($products ?? []) as $p)
             @php
                 $retailPrice = (float) ($p->retail_price ?? $p->price ?? 0);
                 $wholesalePrice = (float) ($p->wholesale_price ?? 0);
@@ -1775,7 +1783,7 @@ label {
 
                 <select id="product-select" class="form-select hidden-product-select">
                     <option value="">-- Choose Product --</option>
-                    @foreach($products as $p)
+                    @foreach(($products ?? []) as $p)
                     @php
                         $retailPrice = (float) ($p->retail_price ?? $p->price ?? 0);
                         $wholesalePrice = (float) ($p->wholesale_price ?? 0);
@@ -1906,7 +1914,7 @@ label {
                     <input type="text" id="customer-search-input" class="form-control mb-2" placeholder="Search customer name...">
                     <select id="customer-select" class="form-select">
 	                        <option value="">Customer</option>
-	                        @foreach($customers as $c)
+	                        @foreach(($customers ?? []) as $c)
 	                        <option value="{{ $c->id }}" data-wallet="{{ (float) ($c->wallet_balance ?? 0) }}">{{ $c->name ?? $c->customer_name ?? ('Customer #' . $c->id) }}</option>
 	                        @endforeach
 	                    </select>
@@ -1972,16 +1980,16 @@ label {
                             <small class="text-muted">Label only — does not affect accounting entries.</small>
                         </div>
                         <div class="col-12"></div>
-                        @unless($isStarterPos)
+                        @unless($isStarterPos ?? false)
                             <div class="col-md-6">
                                 <label class="fw-semibold">Cash / Deposit Account <span class="text-danger">*</span></label>
                                 <select id="deposit-account" class="form-select">
                                     <option value="">-- Select Account --</option>
-                                    @foreach($depositAccounts as $acct)
+                                    @foreach(($depositAccounts ?? []) as $acct)
                                         <option value="{{ $acct->id }}">{{ $acct->name }}@if($acct->code) ({{ $acct->code }})@endif</option>
                                     @endforeach
                                 </select>
-                                @if($depositAccounts->isEmpty())
+                                @if(collect($depositAccounts ?? [])->isEmpty())
                                     <small class="text-danger d-block mt-1">
                                         No active asset accounts found.
                                         <a href="{{ $posChartAccountsUrl ?? url('/settings/chart-of-accounts') }}" class="fw-bold">Add one in Chart of Accounts</a>
@@ -1995,16 +2003,16 @@ label {
                             <label>Cash Amount</label>
                             <input type="number" min="0" step="0.01" id="amount-paid" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--success-500);">
                         </div>
-                        @unless($isStarterPos)
+                        @unless($isStarterPos ?? false)
                             <div class="col-md-6 d-none" id="split-transfer-account-wrap">
                                 <label>Bank Account (COA)</label>
                                 <select id="transfer-account" class="form-select">
                                     <option value="">-- Select Account --</option>
-                                    @foreach($depositAccounts as $acct)
+                                    @foreach(($depositAccounts ?? []) as $acct)
                                         <option value="{{ $acct->id }}">{{ $acct->name }}@if($acct->code) ({{ $acct->code }})@endif</option>
                                     @endforeach
                                 </select>
-                                @if($depositAccounts->isEmpty())
+                                @if(collect($depositAccounts ?? [])->isEmpty())
                                     <small class="text-muted d-block mt-2">
                                         No asset accounts yet.
                                         <a href="{{ $posChartAccountsUrl ?? url('/settings/chart-of-accounts') }}" class="fw-bold text-primary">Add in Chart of Accounts</a>
@@ -2016,16 +2024,16 @@ label {
                             <label>Bank Amount</label>
                             <input type="number" min="0" step="0.01" id="transfer-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
                         </div>
-                        @unless($isStarterPos)
+                        @unless($isStarterPos ?? false)
 	                        <div class="col-md-6 d-none" id="split-card-account-wrap">
                                 <label>POS Account (COA)</label>
                                 <select id="card-account" class="form-select">
                                     <option value="">-- Select Account --</option>
-                                    @foreach($depositAccounts as $acct)
+                                    @foreach(($depositAccounts ?? []) as $acct)
                                         <option value="{{ $acct->id }}">{{ $acct->name }}@if($acct->code) ({{ $acct->code }})@endif</option>
                                     @endforeach
                                 </select>
-                                @if($depositAccounts->isEmpty())
+                                @if(collect($depositAccounts ?? [])->isEmpty())
                                     <small class="text-muted d-block mt-2">
                                         No asset accounts yet.
                                         <a href="{{ $posChartAccountsUrl ?? url('/settings/chart-of-accounts') }}" class="fw-bold text-primary">Add in Chart of Accounts</a>
@@ -2092,7 +2100,7 @@ $(document).ready(function() {
     let lastSelectedProductId = null;
     let isSyncingProductSearch = false;
     const fmt = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' });
-    const isStarterPos = @json($isStarterPos);
+    const isStarterPos = @json($isStarterPos ?? false);
     const posPriceLists = @json($priceListData ?? []);
     const posPriceListById = new Map(posPriceLists.map(list => [String(list.id), list]));
     const showAlert = (options) => {
@@ -3119,7 +3127,7 @@ window.POS_ENABLE_FALLBACK = function () {
     const categoryPills = document.querySelectorAll('.category-pill');
     const categoryToggle = document.getElementById('category-toggle');
     const categoryPillsWrap = document.getElementById('category-pills');
-    const isStarterPos = @json($isStarterPos);
+    const isStarterPos = @json($isStarterPos ?? false);
     const quickSearch = document.getElementById('quick-search');
     const barcodeInput = document.getElementById('barcode-input');
     const productSelect = document.getElementById('product-select');

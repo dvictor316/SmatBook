@@ -140,6 +140,7 @@ class SaleController extends Controller
         $defaultAvatar = asset('assets/img/profiles/avatar-07.jpg');
 
         return array_merge($this->posRouteUrls(), [
+            'isStarterPos' => PlanAccess::resolveTierForUser(auth()->user()) === 'starter',
             'defaultAvatar' => $defaultAvatar,
             'profileImagePath' => auth()->user()?->avatar_url ?: $defaultAvatar,
         ]);
