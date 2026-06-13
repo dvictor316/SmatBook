@@ -3,13 +3,16 @@
 
 @section('content')
 @php
-    $landingTopProducts = $landingTopProducts ?? [
+    $landingTopProducts = $landingTopProducts ?? $products ?? [
         ['Paracetamol 500mg', 87],
         ['Vitamin C Tabs', 62],
         ['Amoxicillin 250mg', 18],
         ['Ibuprofen 400mg', 74],
         ['Zinc Sulphate', 9],
     ];
+    $products = $products ?? $landingTopProducts;
+    $landingMonths = $landingMonths ?? $months ?? ['M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D', 'J', 'F'];
+    $months = $months ?? $landingMonths;
 @endphp
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap');
@@ -2130,8 +2133,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                                         <polyline points="0,80 42,65 84,58 126,62 168,50 210,45 252,48 294,35 336,38 378,28 420,25 462,18 500,12" fill="none" stroke="#002347" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                                         <path d="M0,95 L42,90 L84,85 L126,92 L168,82 L210,78 L252,84 L294,75 L336,79 L378,70 L420,67 L462,62 L500,58 L500,100 L0,100 Z" fill="url(#e2)"/>
                                         <polyline points="0,95 42,90 84,85 126,92 168,82 210,78 252,84 294,75 336,79 378,70 420,67 462,62 500,58" fill="none" stroke="#c5a059" stroke-width="2" stroke-dasharray="6,3" stroke-linecap="round" stroke-linejoin="round"/>
-                                        @php $months=['M','A','M','J','J','A','S','O','N','D','J','F']; @endphp
-                                        @foreach($months as $mi=>$ml)<text x="{{ $mi*42+4 }}" y="98" font-size="8" fill="#8a92a0">{{ $ml }}</text>@endforeach
+                                        @foreach($landingMonths as $mi=>$ml)<text x="{{ $mi*42+4 }}" y="98" font-size="8" fill="#8a92a0">{{ $ml }}</text>@endforeach
                                         <rect x="370" y="5" width="8" height="3" fill="#002347" rx="1"/><text x="381" y="9" font-size="8" fill="#3d4a5c">Revenue</text>
                                         <rect x="370" y="14" width="8" height="2" fill="#c5a059" rx="1"/><text x="381" y="18" font-size="8" fill="#3d4a5c">Expenses</text>
                                     </svg>

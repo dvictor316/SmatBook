@@ -77,7 +77,7 @@ class LandingController extends Controller
             $settings = null;
         }
 
-        $products = [
+        $landingTopProducts = [
             ['Paracetamol 500mg', 87],
             ['Vitamin C Tabs', 62],
             ['Amoxicillin 250mg', 18],
@@ -85,7 +85,18 @@ class LandingController extends Controller
             ['Zinc Sulphate', 9],
         ];
 
-        return view('Landing.index', compact('totalInvoices', 'settings', 'products'));
+        $products = $landingTopProducts;
+        $landingMonths = ['M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D', 'J', 'F'];
+        $months = $landingMonths;
+
+        return view('Landing.index', compact(
+            'totalInvoices',
+            'settings',
+            'products',
+            'landingTopProducts',
+            'months',
+            'landingMonths'
+        ));
     }
 
 
