@@ -23,7 +23,9 @@
 
     // Initialize visibility variables to prevent "undefined" errors
     $hideNavbar = $hideNavbar ?? false;
-    $hideSidebar = $hideSidebar ?? false;
+    $isPosWorkspace = request()->routeIs('sales.showPos')
+        || request()->is('pos');
+    $hideSidebar = ($hideSidebar ?? false) || $isPosWorkspace;
     $bodyClasses = [];
 
     if ($route === 'chat') {
@@ -44,6 +46,10 @@
 
     if ($isDashboardWorkspace) {
         $bodyClasses[] = 'dashboard-workspace';
+    }
+
+    if ($isPosWorkspace) {
+        $bodyClasses[] = 'pos-terminal-workspace';
     }
 @endphp
 
@@ -329,6 +335,24 @@
             min-width: 0;
             transition: margin-left 0.3s ease, width 0.3s ease, max-width 0.3s ease, padding 0.3s ease;
             overflow-x: clip;
+        }
+
+        body.pos-terminal-workspace .sidebar,
+        body.pos-terminal-workspace .two-col-bar,
+        body.pos-terminal-workspace #sidebar,
+        body.pos-terminal-workspace #sidebar-overlay {
+            display: none !important;
+            width: 0 !important;
+            min-width: 0 !important;
+            overflow: hidden !important;
+        }
+
+        body.pos-terminal-workspace .main-wrapper,
+        body.pos-terminal-workspace .page-wrapper {
+            margin-left: 0 !important;
+            padding-left: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
         }
 
         body.sidebar-collapsed .page-wrapper,

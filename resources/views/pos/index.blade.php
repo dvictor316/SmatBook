@@ -1,8 +1,6 @@
 @extends('layout.mainlayout')
 
-@php($hideSidebar = true)
-
-<?php $__env->startSection('content'); ?>
+@section('content')
 @php
     $products = $products ?? collect();
     $customers = $customers ?? collect();
@@ -4619,4 +4617,4 @@ document.addEventListener('DOMContentLoaded', function () {
     window.POS_ENABLE_FALLBACK();
 });
 </script>
-<?php $__env->stopSection(); ?>
+@endsection
