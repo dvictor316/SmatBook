@@ -71,24 +71,32 @@
     -webkit-font-smoothing: antialiased;
 }
 
-/* Page Layout */
 .pos-full-page-wrapper { 
     margin-left: 0; 
-    padding: 20px; 
+    width: 100vw;
+    max-width: 100vw;
+    margin-inline: calc(50% - 50vw);
+    padding: 14px clamp(14px, 1.6vw, 28px) 28px;
     background:
-        radial-gradient(1200px 320px at 10% 0%, rgba(37, 99, 235, 0.12) 0%, rgba(37, 99, 235, 0) 55%),
-        radial-gradient(900px 260px at 92% 6%, rgba(15, 58, 138, 0.12) 0%, rgba(15, 58, 138, 0) 58%),
-        linear-gradient(to bottom, #f7faff 0%, #ffffff 62%, #ffffff 100%);
+        linear-gradient(90deg, rgba(6, 26, 68, 0.035) 0 1px, transparent 1px),
+        linear-gradient(180deg, rgba(6, 26, 68, 0.035) 0 1px, transparent 1px),
+        radial-gradient(1100px 340px at 8% 0%, rgba(37, 99, 235, 0.16) 0%, rgba(37, 99, 235, 0) 58%),
+        radial-gradient(900px 300px at 94% 4%, rgba(215, 169, 40, 0.13) 0%, rgba(215, 169, 40, 0) 58%),
+        linear-gradient(180deg, #f6f9ff 0%, #eef4ff 54%, #f8fbff 100%);
+    background-size: 34px 34px, 34px 34px, auto, auto, auto;
     min-height: 100vh; 
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    margin-top: 37px;
+    margin-top: 0;
 }
 
 @media(max-width: 991.98px) { 
     .pos-full-page-wrapper { 
         margin-left: 0 !important; 
-        padding: 16px; 
-        margin-top: 23px; 
+        margin-inline: 0;
+        width: 100%;
+        max-width: 100%;
+        padding: 12px; 
+        margin-top: 0; 
     } 
 }
 
@@ -97,12 +105,12 @@
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    padding: 10px 14px;
+    padding: 10px 16px;
     border: 1px solid rgba(37, 99, 235, 0.24);
     border-radius: var(--radius-md);
     background:
         linear-gradient(90deg, rgba(238, 244, 255, 0.96) 0%, rgba(255, 255, 255, 0.98) 52%, rgba(248, 251, 255, 0.98) 100%);
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     box-shadow:
         inset 0 1px 0 rgba(255,255,255,0.92),
         0 0 0 1px rgba(37, 99, 235, 0.10);
@@ -110,14 +118,14 @@
 
 .header-stage {
     position: relative;
-    padding: 10px;
-    border-radius: 18px;
+    padding: 12px;
+    border-radius: 20px;
     background:
         radial-gradient(1200px 220px at 10% 0%, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 60%),
         radial-gradient(900px 220px at 100% 0%, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 62%),
         linear-gradient(135deg, rgba(6, 26, 68, 0.96) 0%, rgba(15, 58, 138, 0.98) 72%, rgba(37, 99, 235, 0.92) 100%);
     border: 1px solid rgba(37, 99, 235, 0.30);
-    margin-bottom: 14px;
+    margin-bottom: 18px;
     box-shadow: 0 14px 30px rgba(6, 26, 68, 0.18);
 }
 
@@ -125,7 +133,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    border-radius: 18px;
+    border-radius: 20px;
     pointer-events: none;
     box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.34);
 }
@@ -195,19 +203,18 @@
     font-weight: 700;
 }
 
-/* Premium Header */
 .pos-header-bar {
     background: #ffffff;
-    min-height: 72px; 
-    padding: 10px 28px;
-    border-radius: var(--radius-lg);
+    min-height: 78px; 
+    padding: 12px clamp(18px, 2vw, 34px);
+    border-radius: 18px;
     border: 1px solid rgba(37, 99, 235, 0.20);
     box-shadow: 0 8px 20px rgba(6, 26, 68, 0.12);
     margin-bottom: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 20px;
+    gap: clamp(16px, 2vw, 30px);
     position: relative;
 }
 
@@ -385,26 +392,30 @@
 
 .pos-shell {
     display: grid;
-    grid-template-columns: 104px minmax(0, 1fr);
-    gap: 18px;
+    grid-template-columns: clamp(92px, 6.7vw, 124px) minmax(0, 1fr);
+    gap: clamp(16px, 1.5vw, 26px);
     align-items: start;
+    width: 100%;
+    max-width: 100%;
 }
 
 .pos-action-rail {
     position: sticky;
-    top: 94px;
+    top: 92px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
+    z-index: 5;
 }
 
 .pos-rail-panel {
-    border: 1px solid rgba(37, 99, 235, 0.18);
-    border-radius: 22px;
-    padding: 14px 10px;
+    border: 1px solid rgba(15, 58, 138, 0.16);
+    border-radius: 20px;
+    padding: 12px 9px;
     background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(247, 250, 255, 0.98) 100%);
-    box-shadow: 0 18px 36px rgba(6, 26, 68, 0.12);
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(242, 247, 255, 0.98) 100%);
+    box-shadow: 0 18px 38px rgba(6, 26, 68, 0.10);
+    backdrop-filter: blur(12px);
 }
 
 .pos-rail-title {
@@ -421,8 +432,9 @@
     width: 100%;
     border: 1px solid rgba(37, 99, 235, 0.16);
     background: #fff;
-    border-radius: 18px;
-    padding: 12px 8px;
+    border-radius: 16px;
+    min-height: 78px;
+    padding: 10px 7px;
     color: var(--text-primary);
     display: flex;
     flex-direction: column;
@@ -437,7 +449,7 @@
 }
 
 .pos-rail-btn i {
-    font-size: 1rem;
+    font-size: 1.1rem;
     color: var(--primary-600);
 }
 
@@ -451,6 +463,7 @@
 
 .pos-main-stage {
     min-width: 0;
+    width: 100%;
 }
 
 @media(max-width: 1199.98px) {
@@ -600,30 +613,30 @@
 
 .product-grid {
     display: grid;
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-    grid-auto-rows: minmax(92px, auto);
-    gap: 10px;
-    max-height: clamp(220px, calc(100vh - 430px), 360px);
+    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    grid-auto-rows: minmax(104px, auto);
+    gap: 12px;
+    max-height: clamp(260px, calc(100vh - 405px), 430px);
     overflow-y: auto;
-    padding-right: 4px;
+    padding: 2px 6px 2px 2px;
 }
 
 .product-card {
     border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 6px;
-    background: #fff;
+    border-radius: 16px;
+    padding: 7px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
     cursor: pointer;
     transition: var(--transition);
-    min-height: 92px;
+    min-height: 104px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .product-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    transform: translateY(-3px);
+    box-shadow: 0 16px 30px rgba(6, 26, 68, 0.13);
     border-color: var(--primary-600);
 }
 
@@ -1556,6 +1569,84 @@ label {
 .pos-full-page-wrapper .cart-qty-input:focus {
     border-color: var(--sa-gold) !important;
     box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.16) !important;
+}
+
+body.pos-terminal-workspace .page-wrapper .content,
+body.pos-terminal-workspace .page-wrapper .content.container-fluid {
+    padding: 0 !important;
+    max-width: 100% !important;
+}
+
+.pos-full-page-wrapper .pos-card {
+    border-radius: 22px !important;
+    padding: clamp(18px, 1.6vw, 28px) !important;
+}
+
+.pos-full-page-wrapper .controls-card,
+.pos-full-page-wrapper .summary-panel {
+    border-radius: 20px !important;
+}
+
+.pos-full-page-wrapper .row.g-4 {
+    --bs-gutter-x: clamp(18px, 1.8vw, 30px);
+    --bs-gutter-y: clamp(18px, 1.8vw, 30px);
+}
+
+.pos-full-page-wrapper .row.g-4 > .col-xl-4 {
+    width: 30%;
+}
+
+.pos-full-page-wrapper .row.g-4 > .col-xl-8 {
+    width: 70%;
+}
+
+.pos-full-page-wrapper .search-wrapper {
+    flex: 1 1 min(46vw, 680px);
+    max-width: 720px;
+}
+
+.pos-full-page-wrapper .search-input {
+    height: 52px;
+    border-radius: 16px;
+}
+
+.pos-full-page-wrapper .product-toolbar {
+    margin-bottom: 14px;
+}
+
+.pos-full-page-wrapper .toolbar-title,
+.pos-full-page-wrapper label,
+.pos-full-page-wrapper .scanner-label {
+    letter-spacing: 0.04em;
+}
+
+@media (min-width: 1500px) {
+    .pos-shell {
+        grid-template-columns: 120px minmax(0, 1fr);
+    }
+
+    .product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(126px, 1fr));
+    }
+
+    .pos-full-page-wrapper .row.g-4 > .col-xl-4 {
+        width: 27%;
+    }
+
+    .pos-full-page-wrapper .row.g-4 > .col-xl-8 {
+        width: 73%;
+    }
+}
+
+@media (max-width: 1199.98px) {
+    .pos-full-page-wrapper .row.g-4 > .col-xl-4,
+    .pos-full-page-wrapper .row.g-4 > .col-xl-8 {
+        width: 100%;
+    }
+
+    .pos-full-page-wrapper .search-wrapper {
+        max-width: 100%;
+    }
 }
 </style>
 
