@@ -1588,7 +1588,7 @@ label {
             </div>
             <div class="pos-rail-panel">
                 <div class="pos-rail-title">Workspace</div>
-                <a href="{{ route('returnToPos') }}" class="pos-rail-btn">
+                <a href="{{ Route::has('sales.returnToPos') ? route('sales.returnToPos') : route('returnToPos') }}" class="pos-rail-btn">
                     <i class="fas fa-plus-circle"></i>
                     <span>New Sale</span>
                 </a>
