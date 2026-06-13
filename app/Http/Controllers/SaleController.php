@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use App\Support\BranchInventoryService;
@@ -108,7 +109,7 @@ class SaleController extends Controller
     {
         session()->flash('error', $message);
 
-        return view('pos.index', [
+        return view('pos.index', array_merge([
             'products' => collect(),
             'customers' => collect(),
             'sales' => collect(),
@@ -117,7 +118,21 @@ class SaleController extends Controller
             'depositAccounts' => collect(),
             'priceLists' => collect(),
             'priceListData' => [],
-        ]);
+        ], $this->posRouteUrls()));
+    }
+
+    private function posRouteUrls(): array
+    {
+        return [
+            'posReturnToPosUrl' => Route::has('sales.returnToPos')
+                ? route('sales.returnToPos')
+                : (Route::has('returnToPos') ? route('returnToPos') : url('/pos')),
+            'posSalesLogUrl' => Route::has('pos.sales') ? route('pos.sales') : url('/pos/sales'),
+            'posReturnUrl' => Route::has('pos.return.show') ? route('pos.return.show') : url('/pos/return'),
+            'posHomeUrl' => Route::has('home') ? route('home') : url('/home'),
+            'posChartAccountsUrl' => Route::has('chart-of-accounts') ? route('chart-of-accounts') : url('/settings/chart-of-accounts'),
+            'posSaleStoreUrl' => Route::has('sales.store') ? route('sales.store') : url('/sales'),
+        ];
     }
 
     private function decrementSellableStock(Product $product, float $quantity): void
@@ -762,7 +777,10 @@ public function customerDetails($id = null)
             $priceLists = $this->priceListUsage->activeForCurrentContext($this->tenantCompanyId());
             $priceListData = $this->priceListUsage->toFrontend($priceLists);
 
-            return view('pos.index', compact('products', 'customers', 'sales', 'activeBranch', 'bankAccounts', 'depositAccounts', 'priceLists', 'priceListData'));
+            return view('pos.index', array_merge(
+                compact('products', 'customers', 'sales', 'activeBranch', 'bankAccounts', 'depositAccounts', 'priceLists', 'priceListData'),
+                $this->posRouteUrls()
+            ));
         } catch (\Throwable $e) {
             Log::error('POS page failed', [
                 'error' => $e->getMessage(),
