@@ -350,9 +350,13 @@
         body.pos-terminal-workspace .main-wrapper,
         body.pos-terminal-workspace .page-wrapper {
             margin-left: 0 !important;
+            margin-right: 0 !important;
             padding-left: 0 !important;
+            padding-right: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
+            transform: none !important;
+            left: 0 !important;
         }
 
         body.sidebar-collapsed .page-wrapper,

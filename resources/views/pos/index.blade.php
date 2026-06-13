@@ -1577,6 +1577,14 @@ body.pos-terminal-workspace .page-wrapper .content.container-fluid {
     max-width: 100% !important;
 }
 
+body.pos-terminal-workspace .pos-full-page-wrapper {
+    position: relative;
+    left: calc(-1 * var(--sb-sidebar-w, 270px));
+    width: calc(100vw + var(--sb-sidebar-w, 270px));
+    max-width: calc(100vw + var(--sb-sidebar-w, 270px));
+    margin-right: calc(-1 * var(--sb-sidebar-w, 270px));
+}
+
 .pos-full-page-wrapper .pos-card {
     border-radius: 22px !important;
     padding: clamp(18px, 1.6vw, 28px) !important;
