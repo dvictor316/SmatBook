@@ -501,7 +501,6 @@
     grid-area: work;
 }
 
-.pos-mobile-menu-toggle,
 .pos-rail-backdrop {
     display: none;
 }
@@ -511,25 +510,6 @@
         display: block;
         min-height: 0;
         overflow: visible;
-    }
-
-    .pos-mobile-menu-toggle {
-        position: sticky;
-        top: 78px;
-        z-index: 25;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        border: 1px solid rgba(15, 58, 138, 0.18);
-        border-radius: 999px;
-        padding: 9px 14px;
-        margin: 0 0 10px;
-        color: #ffffff;
-        background: linear-gradient(135deg, var(--primary-700), var(--primary-600));
-        box-shadow: 0 12px 26px rgba(6, 26, 68, 0.18);
-        font-size: 0.78rem;
-        font-weight: 800;
-        letter-spacing: 0.03em;
     }
 
     .pos-action-rail {
@@ -1923,10 +1903,6 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
     @endphp
 
     <div class="pos-shell">
-        <button type="button" class="pos-mobile-menu-toggle" id="pos-mobile-menu-toggle" aria-controls="pos-action-rail" aria-expanded="false">
-            <i class="fas fa-bars"></i>
-            <span>POS Menu</span>
-        </button>
         <div class="pos-rail-backdrop" id="pos-rail-backdrop" aria-hidden="true"></div>
         <aside class="pos-action-rail" id="pos-action-rail" aria-label="POS quick actions">
             <div class="pos-rail-panel">
@@ -4961,18 +4937,49 @@ window.POS_ENABLE_FALLBACK = function () {
 };
 
 document.addEventListener('DOMContentLoaded', function () {
-    const posMenuToggle = document.getElementById('pos-mobile-menu-toggle');
+    const headerMenuButtons = [
+        document.getElementById('mobile_btn'),
+        document.getElementById('toggle_btn')
+    ].filter(Boolean);
     const posRailBackdrop = document.getElementById('pos-rail-backdrop');
     const posRail = document.getElementById('pos-action-rail');
+    const isPosDrawerMode = () => window.matchMedia('(max-width: 1199.98px)').matches;
+
+    headerMenuButtons.forEach((button) => {
+        button.setAttribute('aria-controls', 'pos-action-rail');
+        button.setAttribute('aria-label', 'Open POS menu');
+    });
 
     const closePosRail = () => {
         document.body.classList.remove('pos-rail-open');
-        posMenuToggle?.setAttribute('aria-expanded', 'false');
+        headerMenuButtons.forEach((button) => {
+            button.setAttribute('aria-expanded', 'false');
+            button.classList.remove('is-open');
+            button.setAttribute('aria-label', 'Open POS menu');
+        });
     };
 
-    posMenuToggle?.addEventListener('click', function () {
+    const togglePosRail = (button) => {
         const isOpen = document.body.classList.toggle('pos-rail-open');
-        this.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        headerMenuButtons.forEach((menuButton) => {
+            menuButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            menuButton.classList.toggle('is-open', isOpen);
+            menuButton.setAttribute('aria-label', isOpen ? 'Close POS menu' : 'Open POS menu');
+        });
+        button?.focus?.();
+    };
+
+    headerMenuButtons.forEach((button) => {
+        button.addEventListener('click', function (event) {
+            if (!isPosDrawerMode()) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            togglePosRail(this);
+        }, true);
     });
 
     posRailBackdrop?.addEventListener('click', closePosRail);
