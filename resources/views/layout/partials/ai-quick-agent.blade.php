@@ -132,9 +132,9 @@
     .ai-badge-text {
         background: transparent !important;
         background-image: none !important;
-        color: #d4af37 !important;
+        color: #ffffff !important;
         font-size: 0.95rem;
-        font-weight: 900;
+        font-weight: 700;
         letter-spacing: 0.05em;
         line-height: 1;
         text-shadow: none;
