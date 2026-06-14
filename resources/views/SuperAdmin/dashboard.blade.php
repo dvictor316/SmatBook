@@ -43,8 +43,10 @@
     #main-content-wrapper {
         transition: margin-left 0.3s ease, width 0.3s ease;
         width: 100%;
+        max-width: 100%;
+        margin-left: 0 !important;
         overflow-x: hidden;
-        padding-top: 16px;
+        padding: 12px 12px 24px !important;
         color: var(--dash-ink);
         background:
             radial-gradient(1200px 320px at 4% 0%, rgba(96, 165, 250, 0.12) 0%, rgba(96, 165, 250, 0) 58%),
@@ -54,19 +56,26 @@
         border-radius: 28px 0 0 0;
     }
 
-    /* DESKTOP: Fixed 250px Sidebar Offset */
+    body.spb-super-admin-theme .page-wrapper .content,
+    body.spb-super-admin-theme .page-wrapper .content.container-fluid {
+        max-width: none !important;
+        padding: 10px 10px 24px !important;
+    }
+
+    /* The main layout already offsets the sidebar; avoid adding a second blank gutter. */
     @media (min-width: 992px) {
         #main-content-wrapper {
-            margin-left: 250px;
-            width: calc(100% - 250px);
+            margin-left: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
         }
 
-        /* State when sidebar is toggled closed */
         body.sidebar-collapsed #main-content-wrapper,
         body.sidebar-icon-only #main-content-wrapper,
         body.mini-sidebar #main-content-wrapper {
-            margin-left: 70px;
-            width: calc(100% - 70px);
+            margin-left: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
         }
     }
 
@@ -75,6 +84,7 @@
         #main-content-wrapper {
             margin-left: 0;
             width: 100%;
+            max-width: 100%;
             padding-top: 12px;
             border-radius: 0;
         }

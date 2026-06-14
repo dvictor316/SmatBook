@@ -96,7 +96,7 @@
         width: 52px !important;
         height: 52px !important;
         border-radius: 50% !important;
-        background: #020b24 !important;
+        background: #061a44 !important;
         background-image: none !important;
         border: 1px solid #d4af37 !important;
         box-shadow: 0 10px 22px rgba(1, 8, 24, 0.34) !important;
@@ -133,9 +133,9 @@
         background: transparent !important;
         background-image: none !important;
         color: #ffffff !important;
-        font-size: 0.95rem;
-        font-weight: 700;
-        letter-spacing: 0.05em;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
         line-height: 1;
         text-shadow: none;
         transform: translateX(1px);
