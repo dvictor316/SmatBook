@@ -98,9 +98,9 @@
         position: relative;
         overflow: hidden;
         animation: aiFloat 2.4s ease-in-out infinite;
-        box-shadow: 0 10px 22px rgba(3, 18, 55, 0.32);
-        background: #082356 !important;
-        border: 1px solid #d6a900;
+        box-shadow: 0 10px 22px rgba(1, 8, 24, 0.34);
+        background: #020b24 !important;
+        border: 1px solid #d4af37;
         width: 52px !important;
         height: 52px !important;
         border-radius: 50% !important;
@@ -122,7 +122,7 @@
         box-shadow: 0 10px 20px rgba(30, 27, 75, 0.35);
     }
     .ai-badge-text {
-        color: #ffd43b;
+        color: #d4af37;
         font-size: 0.95rem;
         font-weight: 900;
         letter-spacing: 0.05em;
