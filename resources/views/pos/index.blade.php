@@ -3088,6 +3088,51 @@ body.pos-terminal-workspace .pos-product-combo__caret {
     color: #31598d;
 }
 
+body.pos-terminal-workspace .pos-product-shelf-card .product-card {
+    position: relative;
+    min-height: 72px;
+    padding: 4px;
+    background: linear-gradient(180deg, #ffffff 0%, #eef5ff 100%);
+    border-color: #b7c9e6;
+    overflow: hidden;
+}
+
+body.pos-terminal-workspace .pos-product-shelf-card .product-card-img {
+    flex: 1 1 auto;
+    width: 100%;
+    height: auto;
+    min-height: 48px;
+    border-radius: 3px;
+    background: #ffffff;
+}
+
+body.pos-terminal-workspace .pos-product-shelf-card .product-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+body.pos-terminal-workspace .pos-product-shelf-card .product-card-name {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+    width: auto;
+    padding: 3px 4px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(239,246,255,0.94));
+    color: #061a44;
+    font-size: 0.6rem;
+    line-height: 1;
+    box-shadow: 0 -6px 14px rgba(6, 26, 68, 0.08);
+}
+
+body.pos-terminal-workspace .pos-product-shelf-card .product-card-measure,
+body.pos-terminal-workspace .pos-product-shelf-card .product-card-meta-row,
+body.pos-terminal-workspace .pos-product-shelf-card .product-card::after {
+    display: none !important;
+}
+
 .pos-secondary-actions {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3405,10 +3450,6 @@ body.pos-terminal-workspace .pos-product-combo__caret {
                     </div>
                 </div>
                 <div class="product-card-name">{{ $p->name }}</div>
-                <div class="product-card-meta-row">
-                    <span>{{ rtrim(rtrim(number_format($availableStock, 2), '0'), '.') }} {{ $baseUnitName }}</span>
-                    <strong>₦{{ number_format($retailPrice, 2) }}</strong>
-                </div>
                 <div class="product-card-measure">{{ $measurementLabel }}</div>
             </div>
             @endforeach
