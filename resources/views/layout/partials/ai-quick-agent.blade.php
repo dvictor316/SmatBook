@@ -1,3 +1,34 @@
+@php
+    $aiUser = auth()->user();
+    $aiRole = strtolower((string) ($aiUser->role ?? ''));
+    $aiIsAdmin = in_array($aiRole, ['super_admin', 'superadmin', 'administrator', 'admin'], true)
+        || ($aiUser && method_exists($aiUser, 'hasRole') && ($aiUser->hasRole('super_admin') || $aiUser->hasRole('administrator') || $aiUser->hasRole('admin')));
+    $aiCan = function (array|string $permissions) use ($aiUser, $aiIsAdmin): bool {
+        if ($aiIsAdmin) {
+            return true;
+        }
+
+        if (!$aiUser || !method_exists($aiUser, 'hasPermissionTo')) {
+            return false;
+        }
+
+        foreach ((array) $permissions as $permission) {
+            if ($aiUser->hasPermissionTo((string) $permission)) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+    $aiPermissions = [
+        'sales' => $aiCan(['sales.invoices.view', 'sales.invoices.view_all', 'sales.invoices.view_own', 'sales.sales.view_all', 'sales.sales.view_own', 'sales.invoices.create']),
+        'customers' => $aiCan(['customers.customers.view', 'customers.customers.view_all', 'customers.customers.view_own']),
+        'payments' => $aiCan(['finance.payments.view']),
+        'products' => $aiCan(['inventory.products.view', 'inventory.stock.view']),
+        'reports' => $aiCan(['reports.reports.view']),
+    ];
+@endphp
+
 <div class="settings-icon ai-agent-launcher">
     <span id="ai-agent-trigger" aria-controls="ai-quick-agent-offcanvas" title="AI Assistant">
         <span class="ai-bot-figure" aria-hidden="true">
@@ -41,10 +72,14 @@
         <div id="ai-agent-messages" class="p-3" style="height: calc(100vh - 210px); overflow-y: auto; background:#f8fafc;">
             <div class="small text-muted mb-2">Try: <b>total sales yesterday</b>, <b>explain my trial balance this month</b>, <b>review lead management for my workspace</b>, <b>run anomaly detection for this month</b></div>
             <div class="d-flex flex-wrap gap-2 mb-3" id="ai-agent-starters">
-                <button class="btn btn-sm btn-light border ai-starter-chip" type="button" data-prompt="total sales today">Sales Today</button>
-                <button class="btn btn-sm btn-light border ai-starter-chip" type="button" data-prompt="invoices due today">Invoices Due</button>
-                <button class="btn btn-sm btn-light border ai-starter-chip" type="button" data-prompt="review lead management for my workspace">Lead Review</button>
-                <button class="btn btn-sm btn-light border ai-starter-chip" type="button" data-prompt="run project management ai for my workspace">Project Risks</button>
+                @if($aiPermissions['sales'])
+                    <button class="btn btn-sm btn-light border ai-starter-chip" type="button" data-prompt="total sales today">Sales Today</button>
+                    <button class="btn btn-sm btn-light border ai-starter-chip" type="button" data-prompt="invoices due today">Invoices Due</button>
+                @endif
+                @if($aiPermissions['reports'])
+                    <button class="btn btn-sm btn-light border ai-starter-chip" type="button" data-prompt="review lead management for my workspace">Lead Review</button>
+                    <button class="btn btn-sm btn-light border ai-starter-chip" type="button" data-prompt="run project management ai for my workspace">Project Risks</button>
+                @endif
             </div>
         </div>
         <div class="border-top p-3">
@@ -195,6 +230,8 @@
 </style>
 
 <script>
+    window.SPB_AI_PERMISSIONS = @json($aiPermissions);
+
     (function () {
         function escapeHtml(value) {
             return String(value || '').replace(/[&<>"']/g, function (m) {

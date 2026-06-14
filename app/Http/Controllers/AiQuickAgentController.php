@@ -73,6 +73,17 @@ class AiQuickAgentController extends Controller
                 ]);
             }
 
+            if (!$this->hasIntentPermission($request, $intent['type'])) {
+                $answer = $this->permissionDeniedAnswer($intent['type']);
+                $this->appendConversation($request, $messageInput, $answer);
+
+                return response()->json([
+                    'ok' => true,
+                    'restricted' => true,
+                    'answer' => $answer,
+                ]);
+            }
+
             $response = $this->runIntent($request, $intent['type'], $period);
             $answer = (string) data_get($response->getData(true), 'answer', '');
             if ($answer !== '') {
@@ -340,6 +351,116 @@ class AiQuickAgentController extends Controller
             'project_management_ai' => ['type' => 'project_management_ai', 'required_plan' => 'enterprise'],
             default => null,
         };
+    }
+
+    private function hasIntentPermission(Request $request, string $intent): bool
+    {
+        if (in_array($intent, ['assistant_intro', 'assistant_help'], true)) {
+            return true;
+        }
+
+        if ($this->isAdminUser($request)) {
+            return true;
+        }
+
+        $permissions = $this->permissionsForIntent($intent);
+        if (empty($permissions)) {
+            return true;
+        }
+
+        return $this->userHasAnyPermission($request, $permissions);
+    }
+
+    private function permissionsForIntent(string $intent): array
+    {
+        return match ($intent) {
+            'sales', 'invoices_due' => [
+                'sales.invoices.view',
+                'sales.invoices.view_all',
+                'sales.invoices.view_own',
+                'sales.sales.view_all',
+                'sales.sales.view_own',
+                'sales.invoices.create',
+            ],
+            'purchases' => [
+                'purchases.purchases.view',
+                'purchases.purchases.view_all',
+                'purchases.purchases.view_own',
+            ],
+            'expenses' => [
+                'finance.expenses.view',
+            ],
+            'payments' => [
+                'finance.payments.view',
+            ],
+            'customers_count' => [
+                'customers.customers.view',
+                'customers.customers.view_all',
+                'customers.customers.view_own',
+            ],
+            'vendors_count' => [
+                'vendors.vendors.view',
+                'vendors.vendors.view_all',
+                'vendors.vendors.view_own',
+            ],
+            'products_count' => [
+                'inventory.products.view',
+                'inventory.stock.view',
+            ],
+            'profit_loss', 'tax', 'general_ledger', 'trial_balance', 'balance_sheet' => [
+                'reports.reports.view',
+            ],
+            'online_users' => [
+                'users.users.view',
+                'reports.reports.view',
+            ],
+            'reputation_management', 'lead_management', 'appointment_scheduling',
+            'contract_esignature', 'proposals', 'ai_anomaly_detection',
+            'project_management_ai' => [
+                'reports.reports.view',
+                'projects.projects.view',
+            ],
+            default => [],
+        };
+    }
+
+    private function permissionDeniedAnswer(string $intent): string
+    {
+        $label = ucwords(str_replace('_', ' ', $intent));
+
+        return "You do not have permission to view {$label} information. Please ask an administrator to assign the required role permission before the AI assistant can answer this.";
+    }
+
+    private function userHasAnyPermission(Request $request, array $permissions): bool
+    {
+        $user = $request->user();
+        if (!$user || !method_exists($user, 'hasPermissionTo')) {
+            return false;
+        }
+
+        foreach ($permissions as $permission) {
+            if ($user->hasPermissionTo((string) $permission)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function isAdminUser(Request $request): bool
+    {
+        $user = $request->user();
+        if (!$user) {
+            return false;
+        }
+
+        $role = strtolower((string) ($user->role ?? ''));
+        if (in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true)) {
+            return true;
+        }
+
+        return method_exists($user, 'hasRole')
+            && ($user->hasRole('super_admin') || $user->hasRole('administrator') || $user->hasRole('admin'));
     }
 
     private function runIntent(Request $request, string $intent, array $period): JsonResponse

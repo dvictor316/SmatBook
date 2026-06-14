@@ -5133,12 +5133,15 @@ window.POS_ENABLE_FALLBACK = function () {
         const starters = document.getElementById('ai-agent-starters');
 
         if (starters && starters.dataset.posPrompts !== 'ready') {
-            [
-                ['Sales Today', 'total sales today'],
-                ['Customers Today', 'customer count today'],
-                ['Payments Today', 'payments today'],
-                ['Products Count', 'product count'],
-            ].forEach(([label, prompt]) => {
+            const aiPerms = window.SPB_AI_PERMISSIONS || {};
+            const posAiPrompts = [
+                aiPerms.sales ? ['Sales Today', 'total sales today'] : null,
+                aiPerms.customers ? ['Customers Today', 'customer count today'] : null,
+                aiPerms.payments ? ['Payments Today', 'payments today'] : null,
+                aiPerms.products ? ['Products Count', 'product count'] : null,
+            ].filter(Boolean);
+
+            posAiPrompts.forEach(([label, prompt]) => {
                 if (starters.querySelector(`[data-prompt="${prompt}"]`)) {
                     return;
                 }
