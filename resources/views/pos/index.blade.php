@@ -2409,14 +2409,150 @@ body.pos-terminal-workspace .row.g-4 > .col-xl-4 > .controls-card {
 }
 
 body.pos-terminal-workspace .cart-wrapper {
-    height: clamp(360px, calc(100vh - 358px), 680px);
-    min-height: 330px;
-    margin-bottom: 8px;
+    height: clamp(250px, calc(100vh - 405px), 560px);
+    min-height: 240px;
+    margin-bottom: 6px;
 }
 
 body.pos-terminal-workspace .summary-panel {
     margin-top: 0;
     border-radius: 0 !important;
+    padding: 8px 10px !important;
+}
+
+.pos-receipt-toolbar {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.75fr) minmax(280px, 1fr);
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    margin: -6px -6px 6px;
+    border: 1px solid #aebdcb;
+    background: linear-gradient(180deg, #fdfefe 0%, #e4edf7 100%);
+    box-shadow: inset 0 1px 0 #ffffff;
+}
+
+.pos-customer-compact {
+    display: grid;
+    grid-template-columns: auto minmax(160px, 1fr);
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.pos-customer-compact #customer-search-input {
+    display: none;
+}
+
+.receipt-toolbar-label {
+    color: #334155;
+    font-size: 0.64rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.pos-customer-compact .form-control,
+.pos-customer-compact .form-select {
+    min-height: 28px;
+    height: 28px;
+    border-radius: 2px;
+    padding: 3px 8px;
+    font-size: 0.72rem;
+}
+
+.pos-payment-tabs {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
+    min-width: 0;
+}
+
+.pos-pay-tab {
+    min-width: 70px;
+    min-height: 28px;
+    border: 1px solid #5478b9;
+    border-radius: 3px;
+    color: #ffffff;
+    background: linear-gradient(180deg, #6d9bea 0%, #315fbd 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.36), 0 1px 1px rgba(0,0,0,0.12);
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.pos-pay-tab.active {
+    border-color: #3f8734;
+    background: linear-gradient(180deg, #90cf61 0%, #4ea13d 100%);
+}
+
+.receipt-wallet-hint {
+    grid-column: 1 / -1;
+    margin-top: -2px;
+    color: #64748b;
+    font-size: 0.64rem;
+}
+
+body.pos-terminal-workspace .summary-panel .summary-row {
+    min-height: 22px;
+    margin-bottom: 2px;
+}
+
+body.pos-terminal-workspace .summary-panel .row.g-3 {
+    --bs-gutter-x: 6px;
+    --bs-gutter-y: 5px;
+    padding-top: 6px !important;
+}
+
+body.pos-terminal-workspace .summary-panel label {
+    margin-bottom: 2px;
+    font-size: 0.6rem;
+}
+
+body.pos-terminal-workspace .summary-panel .form-control,
+body.pos-terminal-workspace .summary-panel .form-select {
+    min-height: 30px;
+    padding: 4px 8px;
+    font-size: 0.72rem !important;
+    border-radius: 2px;
+}
+
+body.pos-terminal-workspace .summary-panel small {
+    display: none !important;
+}
+
+body.pos-terminal-workspace .summary-panel .grand-total {
+    font-size: clamp(1.45rem, 2.2vw, 2.35rem) !important;
+}
+
+body.pos-terminal-workspace #process-btn {
+    margin-top: 6px !important;
+}
+
+@media (max-width: 991.98px) {
+    .pos-receipt-toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    .pos-payment-tabs {
+        justify-content: stretch;
+    }
+
+    .pos-pay-tab {
+        flex: 1 1 0;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .pos-customer-compact {
+        grid-template-columns: 1fr;
+    }
+
+    .receipt-toolbar-label {
+        display: none;
+    }
 }
 
 body.pos-terminal-workspace .product-toolbar {
@@ -3026,18 +3162,25 @@ body.pos-terminal-workspace .quick-fill-row {
 
         <div class="col-xl-8">
             <div class="card pos-card p-4">
-                
-                <div class="mb-3">
-                    <label>Customer</label>
-                    <input type="text" id="customer-search-input" class="form-control mb-2" placeholder="Search customer name...">
-                    <select id="customer-select" class="form-select">
-	                        <option value="">Customer</option>
-	                        @foreach(($customers ?? []) as $c)
-	                        <option value="{{ $c->id }}" data-wallet="{{ (float) ($c->wallet_balance ?? 0) }}">{{ $c->name ?? $c->customer_name ?? ('Customer #' . $c->id) }}</option>
-	                        @endforeach
-	                    </select>
-	                    <small id="customer-wallet-hint" class="text-muted d-block mt-2">Select a customer to apply available wallet credit automatically.</small>
-	                </div>
+                <div class="pos-receipt-toolbar">
+                    <div class="pos-customer-compact">
+                        <span class="receipt-toolbar-label">Customer</span>
+                        <input type="text" id="customer-search-input" class="form-control" placeholder="Search customer..." aria-label="Search customer">
+                        <select id="customer-select" class="form-select">
+                            <option value="">Walk-in Customer</option>
+                            @foreach(($customers ?? []) as $c)
+                            <option value="{{ $c->id }}" data-wallet="{{ (float) ($c->wallet_balance ?? 0) }}">{{ $c->name ?? $c->customer_name ?? ('Customer #' . $c->id) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="pos-payment-tabs" aria-label="Payment method">
+                        <button type="button" class="pos-pay-tab active" data-payment-method="Cash">Cash</button>
+                        <button type="button" class="pos-pay-tab" data-payment-method="Split">Split</button>
+                        <button type="button" class="pos-pay-tab" data-payment-method="Split" id="pos-pay-card-shortcut">POS</button>
+                        <button type="button" class="pos-pay-tab" data-payment-method="Split" id="pos-pay-transfer-shortcut">Transfer</button>
+                    </div>
+                    <small id="customer-wallet-hint" class="receipt-wallet-hint">Select a customer to apply wallet credit automatically.</small>
+                </div>
 
                 
                 <div class="cart-wrapper">
@@ -3089,15 +3232,10 @@ body.pos-terminal-workspace .quick-fill-row {
 
                     
                     <div class="row g-3 border-top pt-3">
-                        <div class="col-md-6">
-                            <label>Payment Channel</label>
-                            <select id="payment-method" class="form-select fw-bold">
-                                <option value="Cash">Cash</option>
-                                <option value="Split">Split (Cash + Transfer + POS)</option>
-                            </select>
-                            <small class="text-muted">Label only — does not affect accounting entries.</small>
-                        </div>
-                        <div class="col-12"></div>
+                        <select id="payment-method" class="form-select fw-bold d-none" aria-hidden="true">
+                            <option value="Cash">Cash</option>
+                            <option value="Split">Split (Cash + Transfer + POS)</option>
+                        </select>
                         @unless($isStarterPos ?? false)
                             <div class="col-md-6">
                                 <label class="fw-semibold">Cash / Deposit Account <span class="text-danger">*</span></label>
@@ -4312,6 +4450,7 @@ window.POS_ENABLE_FALLBACK = function () {
     const hdrCartCount = document.getElementById('hdr-cart-count');
     const amountPaid = document.getElementById('amount-paid');
     const paymentMethod = document.getElementById('payment-method');
+    const paymentTabs = document.querySelectorAll('.pos-pay-tab[data-payment-method]');
     const depositAccount = document.getElementById('deposit-account');
     const transferAmount = document.getElementById('transfer-amount');
     const transferAccount = document.getElementById('transfer-account');
@@ -4343,6 +4482,7 @@ window.POS_ENABLE_FALLBACK = function () {
     const fmt = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' });
     const cart = [];
     let currentProductId = '';
+    let activePaymentTab = 'Cash';
 
     const alertFallback = (message) => window.alert(message);
     const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (char) => ({
@@ -4605,7 +4745,7 @@ window.POS_ENABLE_FALLBACK = function () {
     railSearchBtn?.addEventListener('click', () => openQuickPickItems(''));
     railMiscBtn?.addEventListener('click', openSellMiscItem);
     railDiscountBtn?.addEventListener('click', () => discountInput?.focus());
-    railCustomerBtn?.addEventListener('click', () => customerSearchInput?.focus());
+    railCustomerBtn?.addEventListener('click', () => customerSelect?.focus());
     railCheckoutBtn?.addEventListener('click', () => processBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
     railMessagesBtn?.addEventListener('click', () => {
         showAlert({
@@ -5220,6 +5360,9 @@ window.POS_ENABLE_FALLBACK = function () {
 
     function toggleSplitFields() {
         const isSplit = paymentMethod?.value === 'Split';
+        paymentTabs.forEach((button) => {
+            button.classList.toggle('active', (button.id || button.textContent.trim()) === activePaymentTab);
+        });
         splitTransferWrap?.classList.toggle('d-none', !isSplit);
         splitTransferAccountWrap?.classList.toggle('d-none', !isSplit);
         splitCardWrap?.classList.toggle('d-none', !isSplit);
@@ -5257,6 +5400,7 @@ window.POS_ENABLE_FALLBACK = function () {
         }
         filterCustomerOptions('');
 
+        activePaymentTab = 'Cash';
         if (paymentMethod) paymentMethod.value = 'Cash';
         if (depositAccount) depositAccount.value = '';
         if (amountPaid) amountPaid.value = '0.00';
@@ -5660,6 +5804,29 @@ window.POS_ENABLE_FALLBACK = function () {
         syncSplitCounterpart('card');
     });
 	    paymentMethod?.addEventListener('change', toggleSplitFields);
+    paymentTabs.forEach((button) => {
+        button.addEventListener('click', function () {
+            if (!paymentMethod) {
+                return;
+            }
+
+            activePaymentTab = button.id || button.textContent.trim();
+            paymentMethod.value = button.dataset.paymentMethod || 'Cash';
+            paymentMethod.dispatchEvent(new Event('change', { bubbles: true }));
+
+            if (button.id === 'pos-pay-card-shortcut' && cardAmount) {
+                cardAmount.focus();
+                return;
+            }
+
+            if (button.id === 'pos-pay-transfer-shortcut' && transferAmount) {
+                transferAmount.focus();
+                return;
+            }
+
+            amountPaid?.focus();
+        });
+    });
 	    customerSelect?.addEventListener('change', function () {
 	        refreshWalletApplication();
 	        updateChange();

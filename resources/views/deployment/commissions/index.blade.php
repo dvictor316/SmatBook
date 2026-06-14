@@ -160,10 +160,7 @@
                                 <label class="form-label fw-semibold">Bank Name</label>
                                 <input type="text" name="payout_bank_name" class="form-control" value="{{ old('payout_bank_name', optional($manager)->payout_bank_name ?? '') }}" required>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Bank Code</label>
-                                <input type="text" name="payout_bank_code" class="form-control" value="{{ old('payout_bank_code', optional($manager)->payout_bank_code ?? '') }}" placeholder="Required for automated transfers">
-                            </div>
+                            <input type="hidden" name="payout_bank_code" value="{{ old('payout_bank_code', optional($manager)->payout_bank_code ?? '') }}">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Account Name</label>
                                 <input type="text" name="payout_account_name" class="form-control" value="{{ old('payout_account_name', optional($manager)->payout_account_name ?? '') }}" required>
@@ -235,7 +232,7 @@
                             <span class="fw-semibold">₦{{ number_format((float) (optional($manager)->minimum_payout_amount ?? 5000), 2) }}</span>
                         </div>
                         <div class="alert alert-light border mt-3 mb-0 small">
-                            Automatic transfers only run when the payout profile is complete, the provider is configured, auto payout is enabled, and the available commission meets the threshold.
+                            Payout requests can now be submitted with normal bank details only. If a gateway needs extra bank routing data, the payout team can complete that during processing.
                         </div>
                     </div>
                 </div>

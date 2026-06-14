@@ -1467,13 +1467,13 @@ private function formatDeploymentAmount(float $amount): string
 
         $manager->update([
             'payout_bank_name' => $validated['payout_bank_name'],
-            'payout_bank_code' => $validated['payout_bank_code'] ?? null,
+            'payout_bank_code' => $validated['payout_bank_code'] ?? $manager->payout_bank_code,
             'payout_account_name' => $validated['payout_account_name'],
             'payout_account_number' => $validated['payout_account_number'],
             'payout_provider' => $validated['payout_provider'],
             'minimum_payout_amount' => $validated['minimum_payout_amount'] ?? ($manager->minimum_payout_amount ?? 5000),
             'auto_payout_enabled' => (bool) ($request->boolean('auto_payout_enabled')),
-            'payout_status' => !empty($validated['payout_bank_code']) ? 'verified' : 'pending_verification',
+            'payout_status' => 'configured',
             'payout_recipient_code' => ($providerChanged || $bankChanged) ? null : $manager->payout_recipient_code,
         ]);
 

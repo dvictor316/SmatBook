@@ -116,7 +116,7 @@ class DeploymentCommissionPayoutService
             if ($automatic) {
                 return null;
             }
-            return $this->createManualReviewPayout($manager, $summary['available'], $automatic, 'Bank code is required for Paystack transfers.');
+            return $this->createManualReviewPayout($manager, $summary['available'], $automatic, 'Payout submitted. Bank routing will be completed during processing.');
         }
 
         return DB::transaction(function () use ($manager, $summary, $automatic, $approvedBy) {
