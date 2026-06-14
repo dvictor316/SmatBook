@@ -2686,7 +2686,40 @@ body.pos-terminal-workspace .quick-fill-row {
     }
 
     body.pos-terminal-workspace .pos-main-stage {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "header"
+            "controls"
+            "shelf"
+            "receipt";
+        gap: 8px;
         margin: 8px;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+        overflow: visible;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage > .header-stage {
+        grid-area: header;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage > .pos-product-shelf-card {
+        grid-area: shelf;
+        border: 1px solid #a8b8c9 !important;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage > .row.g-4 {
+        display: contents;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage > .row.g-4 > .col-xl-4 {
+        grid-area: controls;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage > .row.g-4 > .col-xl-8 {
+        grid-area: receipt;
     }
 }
 
@@ -2742,13 +2775,13 @@ body.pos-terminal-workspace .quick-fill-row {
     }
 
     body.pos-terminal-workspace .pos-main-stage {
-        grid-template-columns: minmax(0, 1fr) 142px !important;
+        grid-template-columns: minmax(0, 1fr) 128px !important;
         min-height: calc(100vh - 92px);
         margin: 5px 5px 5px 0;
     }
 
     body.pos-terminal-workspace .pos-full-page-wrapper .row.g-4 {
-        grid-template-columns: minmax(0, 1fr) 198px !important;
+        grid-template-columns: minmax(0, 1fr) 250px !important;
     }
 
     body.pos-terminal-workspace .pos-header-bar {
