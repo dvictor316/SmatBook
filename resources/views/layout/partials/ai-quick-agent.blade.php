@@ -93,16 +93,24 @@
         right: 18px !important;
         bottom: 18px !important;
         z-index: 1105 !important;
+        width: 52px !important;
+        height: 52px !important;
+        border-radius: 50% !important;
+        background: #020b24 !important;
+        background-image: none !important;
+        border: 1px solid #d4af37 !important;
+        box-shadow: 0 10px 22px rgba(1, 8, 24, 0.34) !important;
     }
     .ai-agent-launcher #ai-agent-trigger {
         position: relative;
         overflow: hidden;
         animation: aiFloat 2.4s ease-in-out infinite;
-        box-shadow: 0 10px 22px rgba(1, 8, 24, 0.34);
-        background: #020b24 !important;
-        border: 1px solid #d4af37;
-        width: 52px !important;
-        height: 52px !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        background-image: none !important;
+        border: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
         border-radius: 50% !important;
         display: flex !important;
         align-items: center !important;
@@ -122,7 +130,9 @@
         box-shadow: 0 10px 20px rgba(30, 27, 75, 0.35);
     }
     .ai-badge-text {
-        color: #d4af37;
+        background: transparent !important;
+        background-image: none !important;
+        color: #d4af37 !important;
         font-size: 0.95rem;
         font-weight: 900;
         letter-spacing: 0.05em;
@@ -131,7 +141,10 @@
         transform: translateX(1px);
     }
     .ai-agent-launcher.ai-active #ai-agent-trigger {
-        box-shadow: 0 12px 26px rgba(3, 18, 55, 0.38), 0 0 0 4px rgba(214, 169, 0, 0.14);
+        box-shadow: none !important;
+    }
+    .ai-agent-launcher.ai-active {
+        box-shadow: 0 12px 26px rgba(3, 18, 55, 0.38), 0 0 0 4px rgba(214, 169, 0, 0.14) !important;
     }
     @media (max-width: 991.98px) {
         .ai-agent-launcher {
@@ -141,8 +154,8 @@
             z-index: 1110 !important;
         }
         .ai-agent-launcher #ai-agent-trigger {
-            width: 50px !important;
-            height: 50px !important;
+            width: 100% !important;
+            height: 100% !important;
         }
     }
     .ai-msg {
