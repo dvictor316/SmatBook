@@ -47,10 +47,10 @@
                                                 <td>{{ $product->id }}</td>
                                                 <td class="fw-bold text-dark">{{ $product->name }}</td>
                                                 <td class="text-muted">{{ $product->sku }}</td>
-                                                <td>{{ $product->unit_type }}</td>
+                                                <td>{{ method_exists($product, 'stockUnitSymbol') ? $product->stockUnitSymbol() : ($product->unit_type ?? 'pcs') }}</td>
                                                 <td>
                                                     <span class="badge {{ $product->stock <= 10 ? 'bg-danger-light text-danger' : 'bg-success-light text-success' }}">
-                                                        {{ $product->stock }} {{ $product->unit_type }}
+                                                        {{ method_exists($product, 'formatStockQuantity') ? $product->formatStockQuantity($product->stock) : (($product->stock ?? 0) . ' ' . ($product->unit_type ?? 'pcs')) }}
                                                     </span>
                                                 </td>
                                                 <td>{{ number_format($product->price, 2) }}</td>

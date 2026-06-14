@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\Unit;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Setting;
@@ -128,6 +129,108 @@ class ProductController extends Controller
         }
 
         return $query;
+    }
+
+    private function unitOptions(bool $activeOnly = true)
+    {
+        if (!Schema::hasTable('units')) {
+            return collect();
+        }
+
+        $companyId = $this->tenantCompanyId();
+
+        return Unit::query()
+            ->when($activeOnly, fn ($query) => $query->where('status', 'active'))
+            ->where(function ($query) use ($companyId) {
+                $query->whereNull('company_id');
+                if ($companyId > 0) {
+                    $query->orWhere('company_id', $companyId);
+                }
+            })
+            ->orderBy('name')
+            ->get();
+    }
+
+    private function defaultUnitId(): ?int
+    {
+        if (!Schema::hasTable('units')) {
+            return null;
+        }
+
+        $unitId = Unit::query()
+            ->whereNull('company_id')
+            ->where('symbol', 'pcs')
+            ->value('id') ?: Unit::query()->where('status', 'active')->value('id');
+
+        return $unitId ? (int) $unitId : null;
+    }
+
+    private function prepareUnitPayload(array $validated): array
+    {
+        $defaultUnitId = $this->defaultUnitId();
+        $validated['unit_id'] = !empty($validated['unit_id']) ? (int) $validated['unit_id'] : $defaultUnitId;
+        $validated['base_unit_id'] = !empty($validated['base_unit_id']) ? (int) $validated['base_unit_id'] : $validated['unit_id'];
+        $validated['purchase_unit_id'] = !empty($validated['purchase_unit_id']) ? (int) $validated['purchase_unit_id'] : null;
+        $validated['conversion_rate'] = $validated['purchase_unit_id']
+            ? round((float) ($validated['conversion_rate'] ?? 0), 6)
+            : null;
+
+        if (Schema::hasTable('units') && Schema::hasColumn('products', 'base_unit_name')) {
+            $baseUnitId = $validated['base_unit_id'] ?? $validated['unit_id'] ?? null;
+            $baseSymbol = $baseUnitId ? Unit::query()->whereKey($baseUnitId)->value('symbol') : null;
+            if ($baseSymbol) {
+                $validated['base_unit_name'] = $baseSymbol;
+            }
+        }
+
+        if (!Schema::hasColumn('products', 'unit_id')) {
+            unset($validated['unit_id']);
+        }
+        if (!Schema::hasColumn('products', 'base_unit_id')) {
+            unset($validated['base_unit_id']);
+        }
+        if (!Schema::hasColumn('products', 'purchase_unit_id')) {
+            unset($validated['purchase_unit_id']);
+        }
+        if (!Schema::hasColumn('products', 'conversion_rate')) {
+            unset($validated['conversion_rate']);
+        }
+
+        return $validated;
+    }
+
+    private function addUnitValidationRules(array &$rules): void
+    {
+        $rules['unit_id'] = Schema::hasTable('units') ? 'nullable|exists:units,id' : 'nullable';
+        $rules['base_unit_id'] = Schema::hasTable('units') ? 'nullable|exists:units,id' : 'nullable';
+        $rules['purchase_unit_id'] = Schema::hasTable('units') ? 'nullable|exists:units,id' : 'nullable';
+        $rules['conversion_rate'] = 'nullable|numeric|gt:0';
+    }
+
+    private function validateUnitConversion($validator, Request $request): void
+    {
+        $purchaseUnit = trim((string) $request->input('purchase_unit_id', ''));
+        $conversionRate = trim((string) $request->input('conversion_rate', ''));
+
+        if ($purchaseUnit !== '' && $conversionRate === '') {
+            $validator->errors()->add('conversion_rate', 'Enter a conversion rate when purchase unit is selected.');
+        }
+
+        if ($purchaseUnit === '' && $conversionRate !== '') {
+            $validator->errors()->add('purchase_unit_id', 'Choose a purchase unit when conversion rate is entered.');
+        }
+
+        if (!Schema::hasTable('units')) {
+            return;
+        }
+
+        $allowedUnitIds = $this->unitOptions(false)->pluck('id')->map(fn ($id) => (int) $id)->all();
+        foreach (['unit_id', 'base_unit_id', 'purchase_unit_id'] as $field) {
+            $value = $request->input($field);
+            if ($value !== null && $value !== '' && !in_array((int) $value, $allowedUnitIds, true)) {
+                $validator->errors()->add($field, 'Choose a unit that belongs to this workspace.');
+            }
+        }
     }
 
     private function applyBranchScope($query, string $table, ?array $activeBranch = null)
@@ -667,6 +770,10 @@ class ProductController extends Controller
                 $query->with('category');
             }
 
+            if (Schema::hasTable('units')) {
+                $query->with(['unit', 'baseUnit', 'purchaseUnit']);
+            }
+
             if (!empty($activeBranch['id']) && $hasBranchStocksBranchId) {
                 $query->whereHas('branchStocks', function ($branchQuery) use ($activeBranch) {
                     $branchQuery->where('branch_id', $activeBranch['id']);
@@ -748,14 +855,76 @@ class ProductController extends Controller
      */
     public function units()
     {
-        $units = [
-            (object)['name' => 'Unit', 'short_name' => 'unit'],
-            (object)['name' => 'Roll', 'short_name' => 'rl'],
-            (object)['name' => 'Carton', 'short_name' => 'ctn'],
-        ];
-
+        $units = $this->unitOptions(false);
         $products = collect();
         return view('Inventory.Products.units', compact('products', 'units'));
+    }
+
+    public function storeUnit(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:120',
+            'symbol' => 'required|string|max:30',
+            'status' => 'required|in:active,inactive',
+        ]);
+
+        $validated['company_id'] = $this->tenantCompanyId() ?: null;
+        $validated['user_id'] = auth()->id();
+
+        Unit::query()->create($validated);
+
+        return back()->with('success', 'Unit created successfully.');
+    }
+
+    public function updateUnit(Request $request, int $id)
+    {
+        $unit = Unit::query()->findOrFail($id);
+        $validated = $request->validate([
+            'name' => 'required|string|max:120',
+            'symbol' => 'required|string|max:30',
+            'status' => 'required|in:active,inactive',
+        ]);
+
+        $unit->update($validated);
+
+        return back()->with('success', 'Unit updated successfully.');
+    }
+
+    public function toggleUnit(int $id)
+    {
+        $unit = Unit::query()->findOrFail($id);
+        $unit->status = $unit->status === 'active' ? 'inactive' : 'active';
+        $unit->save();
+
+        return back()->with('success', 'Unit status updated.');
+    }
+
+    public function destroyUnit(int $id)
+    {
+        $unit = Unit::query()->findOrFail($id);
+        if (Schema::hasTable('products')) {
+            $query = Product::query();
+            $checked = false;
+
+            foreach (['unit_id', 'base_unit_id', 'purchase_unit_id'] as $column) {
+                if (!Schema::hasColumn('products', $column)) {
+                    continue;
+                }
+
+                $checked
+                    ? $query->orWhere($column, $unit->id)
+                    : $query->where($column, $unit->id);
+                $checked = true;
+            }
+
+            if ($checked && $query->exists()) {
+                return back()->with('error', 'This unit is attached to products. Deactivate it instead.');
+            }
+        }
+
+        $unit->delete();
+
+        return back()->with('success', 'Unit deleted successfully.');
     }
 
     public function serveImage(string $path)
@@ -786,7 +955,8 @@ class ProductController extends Controller
     {
         $categories = $this->availableCategories();
         $availableBranches = $this->getAvailableBranches();
-        return view('Inventory.Products.add-products', compact('categories', 'availableBranches'));
+        $units = $this->unitOptions();
+        return view('Inventory.Products.add-products', compact('categories', 'availableBranches', 'units'));
     }
 
     /**
@@ -819,6 +989,7 @@ class ProductController extends Controller
                 'barcode'          => 'nullable|string|max:191',
                 'expiry_date'      => 'nullable|date',
             ];
+            $this->addUnitValidationRules($rules);
 
             $validator = Validator::make($request->except('image'), $rules, [], [
                 'name' => 'product name',
@@ -830,6 +1001,10 @@ class ProductController extends Controller
                 'units_per_carton' => 'carton content',
                 'units_per_roll' => 'roll content',
                 'base_unit_name' => 'base unit name',
+                'unit_id' => 'unit of measure',
+                'base_unit_id' => 'base unit',
+                'purchase_unit_id' => 'purchase unit',
+                'conversion_rate' => 'conversion rate',
             ]);
             $validator->after(function ($v) use ($request) {
                 $price = trim((string) $request->input('price', ''));
@@ -838,8 +1013,10 @@ class ProductController extends Controller
                     $v->errors()->add('price', 'Enter a selling price or a purchase price before saving this product.');
                     $v->errors()->add('purchase_price', 'Enter a selling price or a purchase price before saving this product.');
                 }
+                $this->validateUnitConversion($v, $request);
             });
             $validated = $validator->validate();
+            $validated = $this->prepareUnitPayload($validated);
 
             $uploadedImage = $request->file('image');
 
@@ -1026,8 +1203,9 @@ class ProductController extends Controller
         $activeBranch = $this->getActiveBranchContext();
         $product->setAttribute('active_branch_stock', $this->branchInventory->getAvailableStock($product, $activeBranch));
         $categories = $this->availableCategories();
+        $units = $this->unitOptions();
         
-        return view('Inventory.Products.edit', compact('product', 'categories', 'activeBranch'));
+        return view('Inventory.Products.edit', compact('product', 'categories', 'activeBranch', 'units'));
     }
 
 public function inventory(Request $request)
@@ -1053,6 +1231,7 @@ public function inventory(Request $request)
     $buyExpr = $purchasePriceColumn ? "products.{$purchasePriceColumn}" : '0';
 
     $productsQuery = Product::query()
+        ->with(Schema::hasTable('units') ? ['unit', 'baseUnit', 'purchaseUnit'] : [])
         ->select('products.*')
         ->selectRaw("COALESCE(product_branch_stocks.quantity, {$stockExpr}, 0) as branch_stock_on_hand")
         ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
@@ -1123,7 +1302,7 @@ public function inventory(Request $request)
         $product = Product::findOrFail($id);
         $activeBranch = $this->getActiveBranchContext();
 
-        $validated = $request->validate([
+        $rules = [
             'name'             => 'required|string|max:191',
             'sku'              => 'nullable|string|max:191|unique:products,sku,' . $id,
             'price'            => 'required|numeric|min:0',
@@ -1146,7 +1325,12 @@ public function inventory(Request $request)
             'expiry_date'      => 'nullable|date',
             'reorder_level'    => 'nullable|integer|min:0',
             'reorder_quantity' => 'nullable|integer|min:0',
-        ]);
+        ];
+        $this->addUnitValidationRules($rules);
+        $validator = Validator::make($request->all(), $rules);
+        $validator->after(fn ($v) => $this->validateUnitConversion($v, $request));
+        $validated = $validator->validate();
+        $validated = $this->prepareUnitPayload($validated);
 
         $validated['units_per_carton'] = (int) ($validated['units_per_carton'] ?? 0);
         $validated['units_per_roll'] = (int) ($validated['units_per_roll'] ?? 0);

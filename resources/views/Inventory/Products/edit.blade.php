@@ -259,8 +259,55 @@
                         <div class="row">
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label class="field-label">Base Unit Name * (e.g., Unit, Tablet, Bottle)</label>
+                                    <label class="field-label">Legacy Unit Label * (e.g., Unit, Tablet, Bottle)</label>
                                     <input type="text" name="base_unit_name" class="form-control" value="{{ old('base_unit_name', $product->base_unit_name) }}" placeholder="e.g. Pcs" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="field-label">Unit of Measure *</label>
+                                    <select name="unit_id" class="form-control" required>
+                                        <option value="">Select unit</option>
+                                        @foreach(($units ?? collect()) as $unit)
+                                            <option value="{{ $unit->id }}" @selected((string) old('unit_id', $product->unit_id) === (string) $unit->id || (!old('unit_id', $product->unit_id) && $unit->symbol === 'pcs'))>
+                                                {{ $unit->name }} ({{ $unit->symbol }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="field-label">Base Unit</label>
+                                    <select name="base_unit_id" class="form-control">
+                                        <option value="">Same as Unit of Measure</option>
+                                        @foreach(($units ?? collect()) as $unit)
+                                            <option value="{{ $unit->id }}" @selected((string) old('base_unit_id', $product->base_unit_id) === (string) $unit->id)>
+                                                {{ $unit->name }} ({{ $unit->symbol }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <small class="field-note">Smallest unit used for stock tracking.</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="field-label">Purchase Unit</label>
+                                    <select name="purchase_unit_id" class="form-control">
+                                        <option value="">No bulk purchase unit</option>
+                                        @foreach(($units ?? collect()) as $unit)
+                                            <option value="{{ $unit->id }}" @selected((string) old('purchase_unit_id', $product->purchase_unit_id) === (string) $unit->id)>
+                                                {{ $unit->name }} ({{ $unit->symbol }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="field-label">Conversion Rate</label>
+                                    <input type="number" step="0.000001" min="0" name="conversion_rate" class="form-control" value="{{ old('conversion_rate', $product->conversion_rate) }}" placeholder="e.g. 12">
+                                    <small class="field-note">Base units inside one purchase unit.</small>
                                 </div>
                             </div>
                             <div class="col-md-3">

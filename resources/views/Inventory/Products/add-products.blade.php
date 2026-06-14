@@ -232,9 +232,51 @@
                                         @error('category_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-2">
-                                        <label class="form-label">Base Unit</label>
+                                        <label class="form-label">Legacy Unit Label</label>
                                         <input type="text" name="base_unit_name" class="form-control @error('base_unit_name') is-invalid @enderror" value="{{ old('base_unit_name', 'pcs') }}" required>
                                         @error('base_unit_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Unit of Measure <span class="text-danger">*</span></label>
+                                        <select name="unit_id" class="form-select @error('unit_id') is-invalid @enderror" required>
+                                            <option value="">Select unit</option>
+                                            @foreach(($units ?? collect()) as $unit)
+                                                <option value="{{ $unit->id }}" @selected((string) old('unit_id') === (string) $unit->id || (!old('unit_id') && $unit->symbol === 'pcs'))>
+                                                    {{ $unit->name }} ({{ $unit->symbol }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Base Unit</label>
+                                        <select name="base_unit_id" class="form-select @error('base_unit_id') is-invalid @enderror">
+                                            <option value="">Same as Unit of Measure</option>
+                                            @foreach(($units ?? collect()) as $unit)
+                                                <option value="{{ $unit->id }}" @selected((string) old('base_unit_id') === (string) $unit->id)>
+                                                    {{ $unit->name }} ({{ $unit->symbol }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('base_unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Purchase Unit</label>
+                                        <select name="purchase_unit_id" class="form-select @error('purchase_unit_id') is-invalid @enderror">
+                                            <option value="">No bulk purchase unit</option>
+                                            @foreach(($units ?? collect()) as $unit)
+                                                <option value="{{ $unit->id }}" @selected((string) old('purchase_unit_id') === (string) $unit->id)>
+                                                    {{ $unit->name }} ({{ $unit->symbol }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('purchase_unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Conversion Rate</label>
+                                        <input type="number" step="0.000001" min="0" name="conversion_rate" class="form-control @error('conversion_rate') is-invalid @enderror" value="{{ old('conversion_rate') }}" placeholder="e.g. 12">
+                                        <small class="text-muted">Base units inside one purchase unit.</small>
+                                        @error('conversion_rate')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label">Retail / Default Price <span class="text-danger">*</span></label>

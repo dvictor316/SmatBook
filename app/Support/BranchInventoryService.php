@@ -212,6 +212,7 @@ class BranchInventoryService
 
         $query = DB::table('purchase_items')
             ->join('purchases', 'purchase_items.purchase_id', '=', 'purchases.id')
+            ->join('products', 'purchase_items.product_id', '=', 'products.id')
             ->where('purchase_items.product_id', $product->id);
 
         if (Schema::hasColumn('purchases', 'purchase_no')) {
@@ -227,7 +228,23 @@ class BranchInventoryService
 
         $this->applyDualTableBranchScope($query, 'purchase_items', 'purchases', $branch);
 
-        return (float) $query->sum("purchase_items.{$qtyColumn}");
+        $quantityExpression = "COALESCE(purchase_items.{$qtyColumn}, 0)";
+        if (
+            Schema::hasColumn('products', 'purchase_unit_id')
+            && Schema::hasColumn('products', 'conversion_rate')
+        ) {
+            $quantityExpression = "
+                COALESCE(purchase_items.{$qtyColumn}, 0) *
+                CASE
+                    WHEN products.purchase_unit_id IS NOT NULL
+                        AND COALESCE(products.conversion_rate, 0) > 0
+                    THEN products.conversion_rate
+                    ELSE 1
+                END
+            ";
+        }
+
+        return (float) $query->sum(DB::raw($quantityExpression));
     }
 
     private function saleNet(Product $product, array $branch): float

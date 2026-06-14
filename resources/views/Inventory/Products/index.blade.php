@@ -423,7 +423,7 @@
                                             </div>
                                         </td>
                                         <td>{{ $product->category_name ?? 'N/A' }}</td>
-                                        <td><span class="badge bg-soft-info text-info">{{ $product->base_unit_name }}</span></td>
+                                        <td><span class="badge bg-soft-info text-info">{{ method_exists($product, 'stockUnitSymbol') ? $product->stockUnitSymbol() : ($product->base_unit_name ?? 'pcs') }}</span></td>
                                         <td>
                                                 @if((int) ($product->units_per_roll ?? 0) > 0)
                                                     <small class="d-block text-nowrap">Rolls / Carton: <strong>{{ $product->units_per_carton }}</strong></small>
@@ -441,7 +441,9 @@
                                                 $stockBreakdown = method_exists($product, 'stockBreakdown')
                                                     ? $product->stockBreakdown($displayStock)
                                                     : ['cartons' => 0, 'rolls' => 0, 'units' => (int) floor($displayStock)];
-                                                $baseUnitLabel = trim((string) ($product->base_unit_name ?? 'pcs')) ?: 'pcs';
+                                                $baseUnitLabel = method_exists($product, 'stockUnitSymbol')
+                                                    ? $product->stockUnitSymbol()
+                                                    : (trim((string) ($product->base_unit_name ?? 'pcs')) ?: 'pcs');
                                                 $stockMix = [];
                                                 if (($stockBreakdown['cartons'] ?? 0) > 0) {
                                                     $stockMix[] = rtrim(rtrim(number_format((float) $stockBreakdown['cartons'], 2), '0'), '.') . ' ctn';
@@ -455,7 +457,7 @@
                                             ?>
                                             <?php $hasActiveBranch = !empty($activeBranch['name'] ?? null); ?>
                                             <span class="badge {{ $displayStock <= 5 ? 'bg-danger' : 'bg-success' }}">
-                                                {{ rtrim(rtrim(number_format((float) $displayStock, 2), '0'), '.') }}
+                                                {{ method_exists($product, 'formatStockQuantity') ? $product->formatStockQuantity($displayStock) : rtrim(rtrim(number_format((float) $displayStock, 2), '0'), '.') }}
                                             </span>
                                             <div class="small fw-semibold {{ $stockStatusClass }} mt-1">{{ $stockStatusLabel }}</div>
                                             <div class="small text-muted mt-1">{{ implode(' + ', $stockMix) }}</div>

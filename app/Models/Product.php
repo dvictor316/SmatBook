@@ -56,6 +56,10 @@ class Product extends Model
         'units_per_roll', 
         'base_unit_name', 
         'unit_type',      // Added for dynamic packaging logic
+        'unit_id',
+        'base_unit_id',
+        'purchase_unit_id',
+        'conversion_rate',
         'category_id', 
         'status', 
         'image', 
@@ -117,6 +121,51 @@ class Product extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class);
+    }
+
+    public function baseUnit()
+    {
+        return $this->belongsTo(Unit::class, 'base_unit_id');
+    }
+
+    public function purchaseUnit()
+    {
+        return $this->belongsTo(Unit::class, 'purchase_unit_id');
+    }
+
+    public function stockUnitSymbol(): string
+    {
+        return (string) (
+            $this->baseUnit?->symbol
+            ?? $this->unit?->symbol
+            ?? $this->base_unit_name
+            ?? 'pcs'
+        );
+    }
+
+    public function formatStockQuantity(float|int|null $quantity = null): string
+    {
+        $value = (float) ($quantity ?? $this->stock ?? $this->stock_quantity ?? 0);
+        $formatted = rtrim(rtrim(number_format($value, 2), '0'), '.');
+
+        return $formatted . ' ' . $this->stockUnitSymbol();
+    }
+
+    public function purchaseQuantityToBase(float|int $quantity): float
+    {
+        $qty = (float) $quantity;
+        $rate = (float) ($this->conversion_rate ?? 0);
+
+        if (!empty($this->purchase_unit_id) && $rate > 0) {
+            return round($qty * $rate, 6);
+        }
+
+        return $qty;
     }
 
     /**

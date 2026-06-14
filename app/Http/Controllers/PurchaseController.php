@@ -568,14 +568,15 @@ private function applyBranchScope($query, string $table = 'purchases')
                 }
 
                 PurchaseItem::create($itemPayload);
+                $stockQuantity = $product->purchaseQuantityToBase($quantity);
                 Product::setInventoryContext('Purchase');
-                $product->increment('stock', $quantity);
+                $product->increment('stock', $stockQuantity);
                 if (Schema::hasColumn('products', 'stock_quantity')) {
-                    $product->increment('stock_quantity', $quantity);
+                    $product->increment('stock_quantity', $stockQuantity);
                 }
                 $this->branchInventory->adjustBranchStock(
                     $product,
-                    $quantity,
+                    $stockQuantity,
                     $activeBranch,
                     (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
                 );
@@ -796,28 +797,29 @@ public function show($id)
                 }
 
                 $previousQty = (float) ($previousItem->qty ?? $previousItem->quantity ?? 0);
+                $previousStockQty = $previousProduct->purchaseQuantityToBase($previousQty);
                 if ($previousQty <= 0) {
                     continue;
                 }
 
                 $availableBranchStock = $this->branchInventory->getAvailableStock($previousProduct, $activeBranch);
-                if ($availableBranchStock < $previousQty) {
+                if ($availableBranchStock < $previousStockQty) {
                     throw new \RuntimeException("Cannot reduce {$previousProduct->name} below zero while updating this purchase.");
                 }
 
                 $currentProductStock = (float) ($previousProduct->stock ?? $previousProduct->stock_quantity ?? 0);
-                if ($currentProductStock < $previousQty) {
+                if ($currentProductStock < $previousStockQty) {
                     throw new \RuntimeException("Cannot update this purchase because {$previousProduct->name} stock has already been used elsewhere.");
                 }
 
                 Product::setInventoryContext('Purchase Correction');
-                $previousProduct->decrement('stock', $previousQty);
+                $previousProduct->decrement('stock', $previousStockQty);
                 if (Schema::hasColumn('products', 'stock_quantity')) {
-                    $previousProduct->decrement('stock_quantity', $previousQty);
+                    $previousProduct->decrement('stock_quantity', $previousStockQty);
                 }
                 $this->branchInventory->adjustBranchStock(
                     $previousProduct,
-                    -$previousQty,
+                    -$previousStockQty,
                     $activeBranch,
                     (int) ($previousProduct->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
                 );
@@ -863,14 +865,15 @@ public function show($id)
                 }
 
                 PurchaseItem::create($itemPayload);
+                $stockQuantity = $product->purchaseQuantityToBase($quantity);
                 Product::setInventoryContext('Purchase');
-                $product->increment('stock', $quantity);
+                $product->increment('stock', $stockQuantity);
                 if (Schema::hasColumn('products', 'stock_quantity')) {
-                    $product->increment('stock_quantity', $quantity);
+                    $product->increment('stock_quantity', $stockQuantity);
                 }
                 $this->branchInventory->adjustBranchStock(
                     $product,
-                    $quantity,
+                    $stockQuantity,
                     $activeBranch,
                     (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
                 );
@@ -1461,7 +1464,7 @@ public function show($id)
 	                        // Decrement stock — goods sent back to supplier from the active branch.
 	                        $product = Product::query()->lockForUpdate()->find($productId);
 	                        if ($product) {
-	                            $quantity = (float) $data['qty'];
+	                            $quantity = $product->purchaseQuantityToBase((float) $data['qty']);
 	                            Product::setInventoryContext('Purchase Return');
 	                            $product->decrement('stock', $quantity);
 	                            $this->branchInventory->adjustBranchStock(

@@ -179,6 +179,7 @@ class GoodsReceivedNoteController extends Controller
 
                 $orderedQuantity = (float) ($item['ordered_quantity'] ?? 0);
                 $receivedQuantity = (float) $item['received_quantity'];
+                $stockQuantity = $product->purchaseQuantityToBase($receivedQuantity);
                 $purchaseItem = null;
 
                 if ($purchaseOrder) {
@@ -226,15 +227,15 @@ class GoodsReceivedNoteController extends Controller
                 ]);
 
                 if (Schema::hasColumn('products', 'stock')) {
-                    $product->increment('stock', $receivedQuantity);
+                    $product->increment('stock', $stockQuantity);
                 }
                 if (Schema::hasColumn('products', 'stock_quantity')) {
-                    $product->increment('stock_quantity', $receivedQuantity);
+                    $product->increment('stock_quantity', $stockQuantity);
                 }
 
                 $this->branchInventory->adjustBranchStock(
                     $product,
-                    $receivedQuantity,
+                    $stockQuantity,
                     [
                         'id' => $branchId,
                         'name' => session('active_branch_name'),

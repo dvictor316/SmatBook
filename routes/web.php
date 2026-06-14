@@ -715,6 +715,8 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/inventory-transfer-audit', 'transferAudit')->name('inventory.transfer-audit');
         Route::get('/units', 'units')->name('units');
         Route::post('/units/store', 'storeUnit')->name('units.store');
+        Route::put('/units/{id}', 'updateUnit')->name('units.update');
+        Route::patch('/units/{id}/toggle', 'toggleUnit')->name('units.toggle');
         Route::delete('/units/{id}', 'destroyUnit')->name('units.destroy');
         Route::get('/api/products', 'apiIndex')->name('api.products');
         Route::get('/api/products/search', 'search')->name('api.products.search');
