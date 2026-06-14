@@ -275,7 +275,9 @@ class SaleController extends Controller
 
     private function scopedProducts()
     {
-        $query = Product::query()->orderBy('name', 'asc');
+        $query = Product::query()
+            ->with(Schema::hasTable('units') ? ['unit', 'baseUnit', 'purchaseUnit'] : [])
+            ->orderBy('name', 'asc');
         $this->applyTenantScope($query, 'products');
         $this->applyBranchScope($query, 'products');
 

@@ -2293,6 +2293,296 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
     background: linear-gradient(180deg, #6d9bea 0%, #315fbd 100%) !important;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.36), 0 1px 2px rgba(0,0,0,0.18) !important;
 }
+
+/* One-card QuickBooks-style operating console */
+body.pos-terminal-workspace .pos-full-page-wrapper {
+    padding: 0 !important;
+    background: linear-gradient(180deg, #cfd9e5 0%, #edf3f9 46%, #d9e2ec 100%) !important;
+}
+
+body.pos-terminal-workspace .pos-shell {
+    gap: 0;
+    min-height: calc(100vh - 82px);
+    border-top: 1px solid #879ab0;
+    background: linear-gradient(180deg, #f4f7fb 0%, #dce5ee 100%);
+}
+
+body.pos-terminal-workspace .pos-action-rail {
+    top: 0;
+    position: relative;
+    flex: 0 0 138px;
+    align-self: stretch;
+    z-index: 4;
+}
+
+body.pos-terminal-workspace .pos-rail-panel {
+    min-height: 100%;
+    height: 100%;
+    border-radius: 0;
+    border-width: 0 1px 0 0;
+    border-color: #9cadbf;
+    background: linear-gradient(180deg, #eef2f7 0%, #d5dce5 100%);
+    box-shadow: inset -1px 0 0 rgba(255,255,255,0.55);
+}
+
+body.pos-terminal-workspace .pos-main-stage {
+    margin: 8px 8px 8px 0;
+    padding: 0;
+    border: 1px solid #7d96b1;
+    border-radius: 2px;
+    background: #f8fbff;
+    box-shadow: inset 0 1px 0 #ffffff, 0 2px 5px rgba(35, 48, 67, 0.16);
+    overflow: hidden;
+}
+
+body.pos-terminal-workspace .header-stage,
+body.pos-terminal-workspace .pos-full-page-wrapper .header-stage {
+    border-width: 0 0 1px 0 !important;
+    border-color: #9cadbf !important;
+    box-shadow: none !important;
+}
+
+body.pos-terminal-workspace .header-util-bar {
+    display: none !important;
+}
+
+body.pos-terminal-workspace .pos-header-bar {
+    min-height: 38px !important;
+    padding: 4px 8px !important;
+    border-bottom: 1px solid #9cadbf !important;
+}
+
+body.pos-terminal-workspace .pos-header-title {
+    font-size: 0.82rem !important;
+    min-width: 118px;
+}
+
+body.pos-terminal-workspace .clock-badge {
+    min-height: 26px;
+    padding: 3px 8px;
+    font-size: 0.72rem;
+}
+
+body.pos-terminal-workspace .search-wrapper {
+    min-height: 30px;
+}
+
+body.pos-terminal-workspace .search-input {
+    height: 30px !important;
+}
+
+body.pos-terminal-workspace .search-kbd,
+body.pos-terminal-workspace .user-info {
+    display: none !important;
+}
+
+body.pos-terminal-workspace .user-avatar {
+    width: 32px;
+    height: 32px;
+}
+
+body.pos-terminal-workspace .pos-product-shelf-card,
+body.pos-terminal-workspace .row.g-4 > .col-xl-8 > .pos-card,
+body.pos-terminal-workspace .controls-card {
+    border-radius: 0 !important;
+    border-color: #a8b8c9 !important;
+    box-shadow: none !important;
+}
+
+body.pos-terminal-workspace .pos-product-shelf-card {
+    padding: 8px !important;
+    border-width: 0 0 0 1px !important;
+}
+
+body.pos-terminal-workspace .row.g-4 {
+    --bs-gutter-x: 0;
+    --bs-gutter-y: 0;
+}
+
+body.pos-terminal-workspace .row.g-4 > .col-xl-8 > .pos-card {
+    border-width: 0 1px 0 0 !important;
+}
+
+body.pos-terminal-workspace .row.g-4 > .col-xl-4 > .controls-card {
+    border-width: 0 !important;
+    background: linear-gradient(180deg, #f8fbff 0%, #eef3f8 100%) !important;
+}
+
+body.pos-terminal-workspace .cart-wrapper {
+    height: clamp(360px, calc(100vh - 358px), 680px);
+    min-height: 330px;
+    margin-bottom: 8px;
+}
+
+body.pos-terminal-workspace .summary-panel {
+    margin-top: 0;
+    border-radius: 0 !important;
+}
+
+body.pos-terminal-workspace .product-toolbar {
+    padding: 0 0 5px;
+    margin-bottom: 6px;
+}
+
+body.pos-terminal-workspace .category-pills-wrap {
+    margin-bottom: 7px;
+}
+
+body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    height: calc(100% - 74px);
+    max-height: none;
+}
+
+body.pos-terminal-workspace .product-card {
+    min-height: 92px;
+    align-items: stretch;
+    padding: 6px;
+    gap: 4px;
+}
+
+body.pos-terminal-workspace .product-card-img {
+    height: 42px;
+}
+
+.product-card-meta-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+    color: #35506f;
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.product-card-meta-row strong {
+    color: #0f3a8a;
+    white-space: nowrap;
+}
+
+body.pos-terminal-workspace .product-card::after {
+    content: "dbl-click add";
+    color: rgba(6, 26, 68, 0.42);
+    font-size: 0.56rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+body.pos-terminal-workspace .controls-card label,
+body.pos-terminal-workspace .scanner-label {
+    font-size: 0.62rem;
+}
+
+body.pos-terminal-workspace .scanner-section,
+body.pos-terminal-workspace .image-frame,
+body.pos-terminal-workspace .quick-fill-panel,
+body.pos-terminal-workspace .subtotal-box {
+    margin-bottom: 6px !important;
+    padding: 8px !important;
+}
+
+body.pos-terminal-workspace .image-frame {
+    height: 72px;
+}
+
+body.pos-terminal-workspace .unit-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    margin-bottom: 8px;
+}
+
+body.pos-terminal-workspace .unit-btn {
+    min-height: 50px;
+    border-radius: 3px !important;
+    padding: 6px 4px;
+    font-size: 0.62rem;
+}
+
+body.pos-terminal-workspace .unit-btn small {
+    font-size: 0.52rem;
+}
+
+body.pos-terminal-workspace .quick-fill-panel {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 8px;
+}
+
+body.pos-terminal-workspace .quick-fill-title {
+    grid-column: 1 / -1;
+    margin-bottom: 0;
+}
+
+body.pos-terminal-workspace .quick-fill-row {
+    margin-bottom: 0;
+    gap: 6px;
+}
+
+@media (min-width: 1200px) {
+    body.pos-terminal-workspace .pos-main-stage {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(300px, 21vw);
+        grid-template-rows: auto minmax(0, 1fr);
+        grid-template-areas:
+            "header header"
+            "work shelf";
+        min-height: calc(100vh - 98px);
+    }
+
+    body.pos-terminal-workspace .pos-full-page-wrapper .row.g-4 {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(255px, 20vw);
+        min-height: 0;
+    }
+}
+
+@media (max-width: 1199.98px) {
+    body.pos-terminal-workspace .pos-shell {
+        display: block;
+    }
+
+    body.pos-terminal-workspace .pos-action-rail {
+        position: fixed;
+        top: 0;
+        width: min(320px, 84vw);
+    }
+
+    body.pos-terminal-workspace .pos-main-stage {
+        margin: 8px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    body.pos-terminal-workspace .pos-main-stage {
+        border-left: 0;
+        border-right: 0;
+        margin: 0;
+    }
+
+    body.pos-terminal-workspace .pos-header-bar {
+        flex-wrap: wrap;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
+        grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+        max-height: 190px;
+    }
+
+    body.pos-terminal-workspace .product-card-name,
+    body.pos-terminal-workspace .product-card-measure,
+    body.pos-terminal-workspace .product-card-meta-row,
+    body.pos-terminal-workspace .product-card::after {
+        display: none;
+    }
+}
+
+@media (max-width: 575.98px) {
+    body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
+        grid-template-columns: repeat(10, minmax(0, 1fr)) !important;
+    }
+}
 </style>
 
 <div class="pos-full-page-wrapper">
@@ -2323,6 +2613,10 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
                     <i class="fas fa-robot"></i>
                     <span>AI Assistant</span>
                 </button>
+                <button type="button" class="pos-rail-btn mt-2" id="rail-scan-btn">
+                    <i class="fas fa-barcode"></i>
+                    <span>Scan Item</span>
+                </button>
                 <button type="button" class="pos-rail-btn mt-2" id="rail-search-btn">
                     <i class="fas fa-search"></i>
                     <span>Quick Pick Items</span>
@@ -2345,6 +2639,10 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
                 <button type="button" class="pos-rail-btn mt-2" id="rail-discount-btn">
                     <i class="fas fa-percent"></i>
                     <span>Give Discount</span>
+                </button>
+                <button type="button" class="pos-rail-btn mt-2" id="rail-customer-btn">
+                    <i class="fas fa-user"></i>
+                    <span>Customer</span>
                 </button>
                 @if($posCanReturn)
                     <a href="{{ $posReturnUrl ?? url('/pos/return') }}" class="pos-rail-btn mt-2">
@@ -2390,6 +2688,10 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
                         <span>Item List</span>
                     </span>
                 @endif
+                <button type="button" class="pos-rail-btn mt-2" id="rail-checkout-btn">
+                    <i class="fas fa-cash-register"></i>
+                    <span>Checkout</span>
+                </button>
                 <button type="button" class="pos-rail-btn mt-2" id="rail-messages-btn">
                     <i class="fas fa-comment-alt"></i>
                     <span>Show Messages</span>
@@ -2473,7 +2775,7 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
                 $specialPrice = (float) ($p->special_price ?? 0);
                 $rollsPerCarton = max((int) ($p->units_per_carton ?? 0), 0);
                 $unitsPerRoll = max((int) ($p->units_per_roll ?? 0), 0);
-                $baseUnitName = strtolower(trim((string) ($p->base_unit_name ?? 'unit'))) ?: 'unit';
+                $baseUnitName = strtolower(trim((string) (method_exists($p, 'stockUnitSymbol') ? $p->stockUnitSymbol() : ($p->base_unit_name ?? 'unit')))) ?: 'unit';
                 $unitType = strtolower(trim((string) ($p->unit_type ?? 'unit'))) ?: 'unit';
                 $cartonUnitCount = $rollsPerCarton > 0 ? ($unitsPerRoll > 0 ? $rollsPerCarton * $unitsPerRoll : $rollsPerCarton) : 0;
                 $measurementParts = ['1 ' . $baseUnitName];
@@ -2482,6 +2784,9 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
                 }
                 if ($cartonUnitCount > 0) {
                     $measurementParts[] = $cartonUnitCount . ' ' . $baseUnitName . ($cartonUnitCount === 1 ? '' : 's') . ' / carton';
+                }
+                if (!empty($p->purchaseUnit?->symbol) && (float) ($p->conversion_rate ?? 0) > 0) {
+                    $measurementParts[] = 'Buy ' . $p->purchaseUnit->symbol . ' = ' . rtrim(rtrim(number_format((float) $p->conversion_rate, 2), '0'), '.') . ' ' . $baseUnitName;
                 }
                 $measurementLabel = implode(' | ', $measurementParts);
                 $categoryName = $p->category->name ?? 'Uncategorized';
@@ -2515,6 +2820,8 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
                 data-upr="{{ $unitsPerRoll }}"
                 data-base-unit="{{ $baseUnitName }}"
                 data-unit-type="{{ $unitType }}"
+                data-purchase-unit="{{ $p->purchaseUnit->symbol ?? '' }}"
+                data-conversion-rate="{{ (float) ($p->conversion_rate ?? 0) }}"
                 data-measurement="{{ $measurementLabel }}"
                 data-min-stock="{{ $minStockLevel }}"
                 data-img="{{ $p->image_url }}"
@@ -2534,6 +2841,10 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
                     </div>
                 </div>
                 <div class="product-card-name">{{ $p->name }}</div>
+                <div class="product-card-meta-row">
+                    <span>{{ rtrim(rtrim(number_format($availableStock, 2), '0'), '.') }} {{ $baseUnitName }}</span>
+                    <strong>₦{{ number_format($retailPrice, 2) }}</strong>
+                </div>
                 <div class="product-card-measure">{{ $measurementLabel }}</div>
             </div>
             @endforeach
@@ -2579,7 +2890,7 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
                         $specialPrice = (float) ($p->special_price ?? 0);
                         $rollsPerCarton = max((int) ($p->units_per_carton ?? 0), 0);
                         $unitsPerRoll = max((int) ($p->units_per_roll ?? 0), 0);
-                        $baseUnitName = strtolower(trim((string) ($p->base_unit_name ?? 'unit'))) ?: 'unit';
+                        $baseUnitName = strtolower(trim((string) (method_exists($p, 'stockUnitSymbol') ? $p->stockUnitSymbol() : ($p->base_unit_name ?? 'unit')))) ?: 'unit';
                         $unitType = strtolower(trim((string) ($p->unit_type ?? 'unit'))) ?: 'unit';
                         $cartonUnitCount = $rollsPerCarton > 0 ? ($unitsPerRoll > 0 ? $rollsPerCarton * $unitsPerRoll : $rollsPerCarton) : 0;
                         $measurementParts = ['1 ' . $baseUnitName];
@@ -2588,6 +2899,9 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
                         }
                         if ($cartonUnitCount > 0) {
                             $measurementParts[] = $cartonUnitCount . ' ' . $baseUnitName . ($cartonUnitCount === 1 ? '' : 's') . ' / carton';
+                        }
+                        if (!empty($p->purchaseUnit?->symbol) && (float) ($p->conversion_rate ?? 0) > 0) {
+                            $measurementParts[] = 'Buy ' . $p->purchaseUnit->symbol . ' = ' . rtrim(rtrim(number_format((float) $p->conversion_rate, 2), '0'), '.') . ' ' . $baseUnitName;
                         }
                         $measurementLabel = implode(' | ', $measurementParts);
                         $categoryName = $p->category->name ?? 'Uncategorized';
@@ -2614,6 +2928,8 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
                         data-upr="{{ $unitsPerRoll }}"
                         data-base-unit="{{ $baseUnitName }}"
                         data-unit-type="{{ $unitType }}"
+                        data-purchase-unit="{{ $p->purchaseUnit->symbol ?? '' }}"
+                        data-conversion-rate="{{ (float) ($p->conversion_rate ?? 0) }}"
                         data-measurement="{{ $measurementLabel }}"
                         data-category="{{ strtolower($categoryName) }}"
                         data-category-name="{{ $categoryName }}"
@@ -4709,6 +5025,11 @@ window.POS_ENABLE_FALLBACK = function () {
     productCards.forEach((card) => {
         card.addEventListener('click', function () {
             applyVanillaSelection(card);
+        });
+        card.addEventListener('dblclick', function (event) {
+            event.preventDefault();
+            applyVanillaSelection(card);
+            window.setTimeout(() => addBtn?.click(), 0);
         });
     });
 
