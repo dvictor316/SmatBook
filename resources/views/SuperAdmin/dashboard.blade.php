@@ -43,10 +43,8 @@
     #main-content-wrapper {
         transition: margin-left 0.3s ease, width 0.3s ease;
         width: 100%;
-        max-width: 100%;
-        margin-left: 0 !important;
         overflow-x: hidden;
-        padding: 12px 12px 24px !important;
+        padding-top: 16px;
         color: var(--dash-ink);
         background:
             radial-gradient(1200px 320px at 4% 0%, rgba(96, 165, 250, 0.12) 0%, rgba(96, 165, 250, 0) 58%),
@@ -56,26 +54,19 @@
         border-radius: 28px 0 0 0;
     }
 
-    body.spb-super-admin-theme .page-wrapper .content,
-    body.spb-super-admin-theme .page-wrapper .content.container-fluid {
-        max-width: none !important;
-        padding: 10px 10px 24px !important;
-    }
-
-    /* The main layout already offsets the sidebar; avoid adding a second blank gutter. */
+    /* DESKTOP: Fixed 250px Sidebar Offset */
     @media (min-width: 992px) {
         #main-content-wrapper {
-            margin-left: 0 !important;
-            width: 100% !important;
-            max-width: 100% !important;
+            margin-left: 250px;
+            width: calc(100% - 250px);
         }
 
+        /* State when sidebar is toggled closed */
         body.sidebar-collapsed #main-content-wrapper,
         body.sidebar-icon-only #main-content-wrapper,
         body.mini-sidebar #main-content-wrapper {
-            margin-left: 0 !important;
-            width: 100% !important;
-            max-width: 100% !important;
+            margin-left: 70px;
+            width: calc(100% - 70px);
         }
     }
 
@@ -84,7 +75,6 @@
         #main-content-wrapper {
             margin-left: 0;
             width: 100%;
-            max-width: 100%;
             padding-top: 12px;
             border-radius: 0;
         }
@@ -179,9 +169,17 @@
     .dashboard-tight .row {
         --bs-gutter-y: 0.7rem;
         --bs-gutter-x: 0.7rem;
+        align-items: flex-start;
     }
     .dashboard-tight .grid-margin { margin-bottom: 0.7rem !important; }
-    .dashboard-tight .stretch-card > .card { height: 100%; }
+    .dashboard-tight .stretch-card {
+        align-items: flex-start;
+    }
+    .dashboard-tight .stretch-card > .card {
+        width: 100%;
+        height: auto !important;
+        min-height: 0 !important;
+    }
     .dashboard-tight .card-subtitle { margin-bottom: 0.65rem !important; }
     .dashboard-tight .card {
         border-radius: 18px !important;
