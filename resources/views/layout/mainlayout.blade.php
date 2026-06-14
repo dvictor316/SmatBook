@@ -1930,7 +1930,7 @@
 
     {{-- THEME SETTINGS --}}
     @if (
-        !$hideSidebar
+        (!$hideSidebar || $isPosWorkspace)
         && !in_array($route, [
             'landing.index',
             'index-two',

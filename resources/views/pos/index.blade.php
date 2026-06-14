@@ -5156,6 +5156,11 @@ window.POS_ENABLE_FALLBACK = function () {
             starters.dataset.posPrompts = 'ready';
         }
 
+        if (typeof window.openSmartProbookAiAssistant === 'function') {
+            window.openSmartProbookAiAssistant();
+            return;
+        }
+
         if (offcanvasEl && window.bootstrap?.Offcanvas) {
             window.bootstrap.Offcanvas.getOrCreateInstance(offcanvasEl).show();
             setTimeout(() => input?.focus(), 250);
