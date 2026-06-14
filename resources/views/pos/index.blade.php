@@ -3028,6 +3028,125 @@ body.pos-terminal-workspace .quick-fill-row {
         margin-top: 4px !important;
     }
 }
+
+body.pos-terminal-workspace .controls-card .scanner-section {
+    background: linear-gradient(135deg, #f7fbff 0%, #eef5ff 100%);
+    border: 2px solid #b9cdf3;
+    border-radius: 4px;
+    box-shadow: inset 4px 0 0 #1459d9, 0 10px 22px rgba(15, 58, 138, 0.08);
+}
+
+body.pos-terminal-workspace .controls-card .scanner-label,
+body.pos-terminal-workspace .controls-card > label {
+    color: #09265c;
+    letter-spacing: 0.08em;
+}
+
+body.pos-terminal-workspace .controls-card .scanner-input {
+    border: 1px solid #b8ccf3;
+    border-radius: 999px;
+    background: #ffffff;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+body.pos-terminal-workspace .controls-card .image-frame {
+    width: 100%;
+    min-height: 78px;
+    border: 2px dashed #b7c7df;
+    background:
+        linear-gradient(135deg, rgba(255,255,255,0.96), rgba(239,246,255,0.9)),
+        repeating-linear-gradient(45deg, rgba(20,89,217,0.05) 0 8px, transparent 8px 16px);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+body.pos-terminal-workspace .controls-card #no-img {
+    color: #8190a7 !important;
+}
+
+body.pos-terminal-workspace .pos-product-combo__input-wrap {
+    width: 100%;
+}
+
+body.pos-terminal-workspace .pos-product-combo__input {
+    width: 100%;
+    min-height: 38px;
+    padding-left: 36px !important;
+    padding-right: 42px !important;
+    border-radius: 999px;
+    border: 1px solid #b9cdf3;
+    background: #ffffff;
+}
+
+body.pos-terminal-workspace .pos-product-combo__icon {
+    left: 13px;
+    color: #1459d9;
+}
+
+body.pos-terminal-workspace .pos-product-combo__caret {
+    right: 14px;
+    color: #31598d;
+}
+
+.pos-secondary-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.pos-secondary-action {
+    min-height: 30px;
+    border-radius: 4px;
+    border: 1px solid #b8ccf3;
+    background: linear-gradient(180deg, #ffffff 0%, #edf4ff 100%);
+    color: #0b2b65;
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    box-shadow: 0 6px 12px rgba(15, 58, 138, 0.08);
+}
+
+.pos-secondary-action:hover {
+    border-color: #1459d9;
+    color: #063078;
+}
+
+@media (min-width: 1200px) {
+    body.pos-terminal-workspace .controls-card .scanner-section,
+    body.pos-terminal-workspace .controls-card .image-frame {
+        padding: 8px !important;
+        margin-bottom: 7px !important;
+    }
+
+    body.pos-terminal-workspace .controls-card .image-frame {
+        height: 78px;
+    }
+
+    body.pos-terminal-workspace .controls-card .scanner-input,
+    body.pos-terminal-workspace .controls-card .pos-product-combo__input {
+        min-height: 34px;
+        font-size: 0.72rem;
+    }
+
+    body.pos-terminal-workspace .pos-secondary-actions {
+        gap: 4px;
+        margin-top: 4px;
+    }
+
+    body.pos-terminal-workspace .pos-secondary-action {
+        min-height: 26px;
+        padding: 3px 5px;
+        font-size: 0.56rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .pos-secondary-actions {
+        grid-template-columns: 1fr;
+    }
+}
 </style>
 
 <div class="pos-full-page-wrapper">
@@ -3629,6 +3748,17 @@ body.pos-terminal-workspace .quick-fill-row {
                     <span id="btn-text"><i class="fas fa-check-circle me-2"></i> PROCESS SALE</span>
                     <span id="btn-loading" style="display:none;"><i class="fas fa-sync fa-spin me-2"></i> PROCESSING...</span>
                 </button>
+                <div class="pos-secondary-actions">
+                    <button type="button" id="save-invoice-btn" class="btn pos-secondary-action">
+                        <i class="fas fa-save me-1"></i> Save Invoice
+                    </button>
+                    <a href="{{ $posSalesLogUrl ?? url('/pos/sales') }}" class="btn pos-secondary-action">
+                        <i class="fas fa-list me-1"></i> Sales Log
+                    </a>
+                    <button type="button" id="new-sale-btn" class="btn pos-secondary-action">
+                        <i class="fas fa-plus me-1"></i> New Sale
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -4785,6 +4915,8 @@ window.POS_ENABLE_FALLBACK = function () {
     const railCheckoutBtn = document.getElementById('rail-checkout-btn');
     const railMessagesBtn = document.getElementById('rail-messages-btn');
     let processBtn = document.getElementById('process-btn');
+    const saveInvoiceBtn = document.getElementById('save-invoice-btn');
+    const newSaleBtn = document.getElementById('new-sale-btn');
     let btnText = document.getElementById('btn-text');
     let btnLoading = document.getElementById('btn-loading');
     const itemTotal = document.getElementById('item-total');
@@ -4792,6 +4924,7 @@ window.POS_ENABLE_FALLBACK = function () {
     const cart = [];
     let currentProductId = '';
     let activePaymentTab = 'Cash';
+    let saveOnlyMode = false;
 
     const alertFallback = (message) => window.alert(message);
     const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (char) => ({
@@ -6181,6 +6314,7 @@ window.POS_ENABLE_FALLBACK = function () {
         }
 
         processBtn.disabled = true;
+        if (saveInvoiceBtn) saveInvoiceBtn.disabled = true;
         processBtn.classList.add('processing');
         if (btnText) btnText.style.display = 'none';
         if (btnLoading) btnLoading.style.display = '';
@@ -6223,20 +6357,44 @@ window.POS_ENABLE_FALLBACK = function () {
                 throw new Error(result.message || 'Failed to process sale.');
             }
 
-            if (result.sale_id) {
+            if (result.sale_id && !saveOnlyMode) {
                 const invoiceUrl = `${invoicePrintBaseUrl}/${result.sale_id}/print?autoprint=1`;
                 window.open(invoiceUrl, '_blank');
+            }
+
+            if (saveOnlyMode) {
+                showAlert({
+                    icon: 'success',
+                    title: 'Invoice saved',
+                    text: 'Sale has been saved without opening the print receipt.',
+                    timer: 2200,
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                });
             }
 
             resetVanillaPosWorkspace();
         } catch (error) {
             alertFallback(error.message || 'Failed to process sale.');
         } finally {
+            saveOnlyMode = false;
             processBtn.disabled = false;
+            if (saveInvoiceBtn) saveInvoiceBtn.disabled = false;
             processBtn.classList.remove('processing');
             if (btnText) btnText.style.display = '';
             if (btnLoading) btnLoading.style.display = 'none';
         }
+    });
+
+    saveInvoiceBtn?.addEventListener('click', function () {
+        saveOnlyMode = true;
+        processBtn?.click();
+    });
+
+    newSaleBtn?.addEventListener('click', function () {
+        resetVanillaPosWorkspace();
+        barcodeInput?.focus();
     });
 
     filterProductCards();
