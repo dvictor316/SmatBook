@@ -304,6 +304,16 @@
     .dashboard-row-balanced .dashboard-stack > .card:last-child {
         flex: 0 0 auto;
     }
+    .dashboard-equal-row {
+        align-items: stretch;
+    }
+    .dashboard-equal-row > [class*="col-"] {
+        display: flex;
+    }
+    .dashboard-equal-row > [class*="col-"] > .card {
+        width: 100%;
+        min-height: 100%;
+    }
     .dashboard-stack {
         display: flex;
         flex-direction: column;
@@ -1744,7 +1754,7 @@
                             </div>
                         </div>
 
-                        <div class="row g-3 mt-4">
+                        <div class="row g-3 mt-4 dashboard-equal-row">
                             <div class="col-12 col-xl-6">
                                 <div class="card card-rounded shadow-sm h-100">
                                     <div class="card-body">
