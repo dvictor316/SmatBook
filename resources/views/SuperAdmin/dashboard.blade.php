@@ -136,7 +136,7 @@
 
     /* Map Container Styles */
     #regionMap {
-        height: 400px;
+        height: 260px;
         width: 100%;
         border-radius: 8px;
     }
@@ -150,10 +150,10 @@
     /* Chart height consistency */
     .chart-container {
         position: relative;
-        height: 350px;
+        height: 230px;
     }
     .chart-container.chart-container-sm {
-        height: 220px;
+        height: 150px;
     }
 
     /* Pulse animation for live indicators */
@@ -167,11 +167,15 @@
 
     /* Dashboard density improvements */
     .dashboard-tight .row {
-        --bs-gutter-y: 0.7rem;
-        --bs-gutter-x: 0.7rem;
+        --bs-gutter-y: 0.45rem;
+        --bs-gutter-x: 0.55rem;
         align-items: flex-start;
     }
-    .dashboard-tight .grid-margin { margin-bottom: 0.7rem !important; }
+    .dashboard-tight .grid-margin { margin-bottom: 0.45rem !important; }
+    .dashboard-tight .mt-4 { margin-top: 0.55rem !important; }
+    .dashboard-tight .mt-3 { margin-top: 0.45rem !important; }
+    .dashboard-tight .mb-4 { margin-bottom: 0.55rem !important; }
+    .dashboard-tight .mb-3 { margin-bottom: 0.45rem !important; }
     .dashboard-tight .stretch-card {
         align-items: flex-start;
     }
@@ -182,13 +186,13 @@
     }
     .dashboard-tight .card-subtitle { margin-bottom: 0.65rem !important; }
     .dashboard-tight .card {
-        border-radius: 18px !important;
+        border-radius: 15px !important;
         border: 1px solid var(--dash-line);
         background: linear-gradient(180deg, var(--dash-surface) 0%, #fcfdff 100%);
-        box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.045);
     }
     .dashboard-tight .card-body {
-        padding: 0.95rem 1rem;
+        padding: 0.68rem 0.78rem !important;
     }
     .dashboard-tight .card-header,
     .dashboard-tight .card-title {
@@ -219,9 +223,9 @@
     }
     .kpi-compact {
         border: 1px solid #dce8f4;
-        border-radius: 14px;
+        border-radius: 12px;
         background: #ffffff;
-        padding: 12px 13px;
+        padding: 8px 10px;
         box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
     }
     .kpi-compact .label {
@@ -241,15 +245,15 @@
     }
     .kpi-grid-dense {
         border: 1px solid #e5edf8;
-        border-radius: 16px;
+        border-radius: 14px;
         background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(246,250,255,0.96) 100%);
-        padding: 12px;
+        padding: 9px;
     }
     .kpi-dense-item {
         border: 1px solid #e8eff8;
         border-radius: 12px;
         background: #fff;
-        padding: 10px 12px;
+        padding: 8px 10px;
         height: 100%;
     }
     .kpi-dense-item .label {
@@ -271,13 +275,13 @@
         border: 1px solid #e5edf8;
         border-radius: 18px;
         background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(240,247,255,0.96) 100%);
-        padding: 14px;
+        padding: 10px;
     }
     .metric-wall-item {
         border: 1px solid #e8eff8;
         border-radius: 14px;
         background: #fff;
-        padding: 12px 14px;
+        padding: 8px 10px;
         height: 100%;
     }
     .metric-wall-item .label {
@@ -327,8 +331,8 @@
     }
     .chartjs-wrapper {
         position: relative;
-        height: 250px;
-        min-height: 250px;
+        height: 170px;
+        min-height: 170px;
     }
     .chartjs-wrapper canvas,
     .chart-container canvas {
@@ -363,10 +367,19 @@
     }
     .dashboard-split-card .table-responsive,
     .dashboard-split-card .list-wrapper {
-        max-height: 260px !important;
+        max-height: 185px !important;
         overflow-x: auto;
         overflow-y: auto;
         min-height: 0;
+    }
+    .dashboard-tight .table-responsive[style*="max-height"] {
+        max-height: 220px !important;
+    }
+    .dashboard-tight .list-wrapper[style*="max-height"] {
+        max-height: 170px !important;
+    }
+    .dashboard-tight [style*="height: 220px"] {
+        height: 165px !important;
     }
     .table-wrap-lock {
         overflow-x: hidden !important;
@@ -395,9 +408,9 @@
     }
     .summary-fill {
         border: 1px solid #dce7f3;
-        border-radius: 14px;
+        border-radius: 12px;
         background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
-        padding: 12px 13px;
+        padding: 8px 10px;
         box-shadow: inset 0 1px 0 rgba(255,255,255,0.75);
     }
     .summary-fill .label {
@@ -799,20 +812,20 @@
     }
     .pulse-chart-wrap {
         position: relative;
-        min-height: 220px;
+        min-height: 168px;
         display: grid;
         place-items: center;
     }
     .pulse-chart-wrap canvas {
-        max-width: 220px;
-        max-height: 220px;
+        max-width: 170px;
+        max-height: 170px;
     }
     .pulse-center-badge {
         position: absolute;
         inset: 50% auto auto 50%;
         transform: translate(-50%, -50%);
         width: 104px;
-        height: 104px;
+        height: 92px;
         border-radius: 50%;
         background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
         border: 1px solid #e5edf8;
@@ -881,14 +894,14 @@
 
     @media (max-width: 1199.98px) {
         .chart-container {
-            height: 300px;
+            height: 230px;
         }
         .chartjs-wrapper {
-            height: 280px;
-            min-height: 280px;
+            height: 180px;
+            min-height: 180px;
         }
         #regionMap {
-            height: 340px;
+            height: 260px;
         }
     }
 
