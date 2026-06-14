@@ -2690,8 +2690,8 @@ body.pos-terminal-workspace .quick-fill-row {
         grid-template-columns: 1fr;
         grid-template-areas:
             "header"
-            "controls"
             "shelf"
+            "controls"
             "receipt";
         gap: 8px;
         margin: 8px;
@@ -2775,13 +2775,13 @@ body.pos-terminal-workspace .quick-fill-row {
     }
 
     body.pos-terminal-workspace .pos-main-stage {
-        grid-template-columns: minmax(0, 1fr) 128px !important;
+        grid-template-columns: minmax(0, 1fr) 156px !important;
         min-height: calc(100vh - 92px);
         margin: 5px 5px 5px 0;
     }
 
     body.pos-terminal-workspace .pos-full-page-wrapper .row.g-4 {
-        grid-template-columns: minmax(0, 1fr) 250px !important;
+        grid-template-columns: minmax(0, 1fr) 225px !important;
     }
 
     body.pos-terminal-workspace .pos-header-bar {
