@@ -51,6 +51,9 @@
     $posCanReceiveItems = $posCan(['purchases.purchases.create', 'inventory.stock.edit']);
     $posCanViewReports = $posCan(['reports.reports.view', 'sales.sales.view_all', 'sales.sales.view_own']);
     $posCanReturn = $posCan(['sales.sales.return', 'sales.sales.edit', 'sales.sales.view_all', 'sales.sales.view_own']);
+    $posCanSell = $posCan(['sales.sales.create', 'sales.invoices.create', 'pos.sales.create']);
+    $posCanDiscount = $posCan(['sales.sales.discount', 'sales.sales.edit', 'sales.invoices.edit']);
+    $posCanManageCustomers = $posCan(['customers.customers.view', 'customers.customers.create', 'sales.sales.create']);
 @endphp
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -3222,18 +3225,33 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-card::after {
                     <i class="fas fa-robot"></i>
                     <span>AI Assistant</span>
                 </button>
-                <button type="button" class="pos-rail-btn mt-2" id="rail-scan-btn">
-                    <i class="fas fa-barcode"></i>
-                    <span>Scan Item</span>
-                </button>
-                <button type="button" class="pos-rail-btn mt-2" id="rail-search-btn">
-                    <i class="fas fa-search"></i>
-                    <span>Quick Pick Items</span>
-                </button>
-                <button type="button" class="pos-rail-btn mt-2" id="rail-misc-btn">
-                    <i class="fas fa-tag"></i>
-                    <span>Sell Misc Item</span>
-                </button>
+                @if($posCanSell)
+                    <button type="button" class="pos-rail-btn mt-2" id="rail-scan-btn">
+                        <i class="fas fa-barcode"></i>
+                        <span>Scan Item</span>
+                    </button>
+                    <button type="button" class="pos-rail-btn mt-2" id="rail-search-btn">
+                        <i class="fas fa-search"></i>
+                        <span>Quick Pick Items</span>
+                    </button>
+                    <button type="button" class="pos-rail-btn mt-2" id="rail-misc-btn">
+                        <i class="fas fa-tag"></i>
+                        <span>Sell Misc Item</span>
+                    </button>
+                @else
+                    <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to sell items.">
+                        <i class="fas fa-barcode"></i>
+                        <span>Scan Item</span>
+                    </span>
+                    <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to sell items.">
+                        <i class="fas fa-search"></i>
+                        <span>Quick Pick Items</span>
+                    </span>
+                    <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to sell items.">
+                        <i class="fas fa-tag"></i>
+                        <span>Sell Misc Item</span>
+                    </span>
+                @endif
                 @if($posCanAddProduct)
                     <a href="{{ $posAddProductUrl ?? url('/add-products') }}" class="pos-rail-btn mt-2">
                         <i class="fas fa-plus"></i>
@@ -3245,14 +3263,28 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-card::after {
                         <span>Add New Item</span>
                     </span>
                 @endif
-                <button type="button" class="pos-rail-btn mt-2" id="rail-discount-btn">
-                    <i class="fas fa-percent"></i>
-                    <span>Give Discount</span>
-                </button>
-                <button type="button" class="pos-rail-btn mt-2" id="rail-customer-btn">
-                    <i class="fas fa-user"></i>
-                    <span>Customer</span>
-                </button>
+                @if($posCanDiscount)
+                    <button type="button" class="pos-rail-btn mt-2" id="rail-discount-btn">
+                        <i class="fas fa-percent"></i>
+                        <span>Give Discount</span>
+                    </button>
+                @else
+                    <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to give discounts.">
+                        <i class="fas fa-percent"></i>
+                        <span>Give Discount</span>
+                    </span>
+                @endif
+                @if($posCanManageCustomers)
+                    <button type="button" class="pos-rail-btn mt-2" id="rail-customer-btn">
+                        <i class="fas fa-user"></i>
+                        <span>Customer</span>
+                    </button>
+                @else
+                    <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to manage customers.">
+                        <i class="fas fa-user"></i>
+                        <span>Customer</span>
+                    </span>
+                @endif
                 @if($posCanReturn)
                     <a href="{{ $posReturnUrl ?? url('/pos/return') }}" class="pos-rail-btn mt-2">
                         <i class="fas fa-undo-alt"></i>
@@ -3297,14 +3329,25 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-card::after {
                         <span>Item List</span>
                     </span>
                 @endif
-                <button type="button" class="pos-rail-btn mt-2" id="rail-checkout-btn">
-                    <i class="fas fa-cash-register"></i>
-                    <span>Checkout</span>
-                </button>
-                <button type="button" class="pos-rail-btn mt-2" id="rail-messages-btn">
-                    <i class="fas fa-comment-alt"></i>
-                    <span>Show Messages</span>
-                </button>
+                @if($posCanSell)
+                    <button type="button" class="pos-rail-btn mt-2" id="rail-checkout-btn">
+                        <i class="fas fa-cash-register"></i>
+                        <span>Checkout</span>
+                    </button>
+                    <button type="button" class="pos-rail-btn mt-2" id="rail-messages-btn">
+                        <i class="fas fa-comment-alt"></i>
+                        <span>Show Messages</span>
+                    </button>
+                @else
+                    <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to checkout sales.">
+                        <i class="fas fa-cash-register"></i>
+                        <span>Checkout</span>
+                    </span>
+                    <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to view POS sales messages.">
+                        <i class="fas fa-comment-alt"></i>
+                        <span>Show Messages</span>
+                    </span>
+                @endif
             </div>
         </aside>
 
@@ -4986,6 +5029,26 @@ window.POS_ENABLE_FALLBACK = function () {
     };
 	    const saleStoreUrl = @json($posSaleStoreUrl ?? url('/sales'));
 	    const invoicePrintBaseUrl = @json(url('/sales/invoice'));
+    const posPermissions = {
+        sell: @json((bool) $posCanSell),
+        discount: @json((bool) $posCanDiscount),
+        customers: @json((bool) $posCanManageCustomers),
+    };
+
+    function requirePosPermission(flag, message) {
+        if (posPermissions[flag]) {
+            return true;
+        }
+
+        showAlert({
+            icon: 'warning',
+            title: 'Permission required',
+            text: message || 'You do not have permission to perform this POS action.',
+            confirmButtonColor: '#0f3a8a',
+        });
+
+        return false;
+    }
 
 	    function selectedCustomerWalletBalance() {
 	        const option = customerSelect?.options[customerSelect.selectedIndex];
@@ -5099,6 +5162,10 @@ window.POS_ENABLE_FALLBACK = function () {
         document.getElementById('ai-agent-trigger')?.click();
     });
     function openQuickPickItems(keyword = '') {
+        if (!requirePosPermission('sell', 'You do not have permission to pick or sell POS items.')) {
+            return;
+        }
+
         if (quickSearch) {
             quickSearch.value = keyword;
         }
@@ -5118,6 +5185,10 @@ window.POS_ENABLE_FALLBACK = function () {
     }
 
     async function openSellMiscItem() {
+        if (!requirePosPermission('sell', 'You do not have permission to sell miscellaneous items.')) {
+            return;
+        }
+
         const options = productSelect
             ? Array.from(productSelect.options).filter((option) => {
                 if (!option.value) {
@@ -5225,6 +5296,10 @@ window.POS_ENABLE_FALLBACK = function () {
     }
 
     async function openDiscountPanel() {
+        if (!requirePosPermission('discount', 'You do not have permission to give discounts.')) {
+            return;
+        }
+
         if (!discountInput || !discountTypeInput) {
             return;
         }
@@ -5286,6 +5361,10 @@ window.POS_ENABLE_FALLBACK = function () {
     }
 
     async function openCustomerPicker() {
+        if (!requirePosPermission('customers', 'You do not have permission to select or manage customers.')) {
+            return;
+        }
+
         if (!customerSelect) {
             return;
         }
@@ -5330,6 +5409,10 @@ window.POS_ENABLE_FALLBACK = function () {
     }
 
     function openCheckoutPanel() {
+        if (!requirePosPermission('sell', 'You do not have permission to checkout POS sales.')) {
+            return;
+        }
+
         if (!cart.length) {
             alertFallback('Add an item to cart before checkout.');
             return;
@@ -5347,6 +5430,10 @@ window.POS_ENABLE_FALLBACK = function () {
     }
 
     function showPosMessages() {
+        if (!requirePosPermission('sell', 'You do not have permission to view POS sale messages.')) {
+            return;
+        }
+
         const visibleProducts = Array.from(productCards || []).filter((card) => card.style.display !== 'none');
         const lowStockItems = visibleProducts.filter((card) => {
             const stock = parseFloat(card.dataset.stock || '0') || 0;
@@ -5382,6 +5469,10 @@ window.POS_ENABLE_FALLBACK = function () {
     railCheckoutBtn?.addEventListener('click', openCheckoutPanel);
     railMessagesBtn?.addEventListener('click', showPosMessages);
     railScanBtn?.addEventListener('click', () => {
+        if (!requirePosPermission('sell', 'You do not have permission to scan POS items.')) {
+            return;
+        }
+
         barcodeInput?.focus();
         showAlert({
             icon: 'info',
@@ -6277,6 +6368,10 @@ window.POS_ENABLE_FALLBACK = function () {
     if (addBtn) {
         addBtn.addEventListener('click', function (e) {
             e.preventDefault();
+            if (!requirePosPermission('sell', 'You do not have permission to add POS sale items.')) {
+                return;
+            }
+
             const option = productSelect?.options[productSelect.selectedIndex];
             if (!option || !option.value) {
                 alertFallback('Select a product');
@@ -6472,6 +6567,9 @@ window.POS_ENABLE_FALLBACK = function () {
 
     processBtn?.addEventListener('click', async function (e) {
         e.preventDefault();
+        if (!requirePosPermission('sell', 'You do not have permission to process POS sales.')) {
+            return;
+        }
 
         if (!cart.length) {
             alertFallback('Cart is empty.');

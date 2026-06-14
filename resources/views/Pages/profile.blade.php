@@ -1,4 +1,5 @@
 <?php $page = 'profile'; ?>
+@php($hideSidebar = true)
 @extends('layout.mainlayout')
 @section('content')
 
