@@ -31,11 +31,7 @@
 
 <div class="settings-icon ai-agent-launcher">
     <span id="ai-agent-trigger" aria-controls="ai-quick-agent-offcanvas" title="AI Assistant">
-        <span class="ai-bot-figure" aria-hidden="true">
-            <span class="ai-bot-head"><i class="fas fa-robot"></i></span>
-            <span class="ai-bot-body"></span>
-            <span class="ai-bot-legs"></span>
-        </span>
+        <span class="ai-badge-text" aria-hidden="true">AI</span>
     </span>
 </div>
 
@@ -98,13 +94,22 @@
         bottom: 18px !important;
         z-index: 1105 !important;
     }
-    .ai-agent-launcher span {
+    .ai-agent-launcher #ai-agent-trigger {
         position: relative;
-        overflow: visible;
+        overflow: hidden;
         animation: aiFloat 2.4s ease-in-out infinite;
-        box-shadow: 0 14px 28px rgba(30, 27, 75, 0.35);
-        background: linear-gradient(145deg, #1e1b4b, #312e81) !important;
-        border: 1px solid #4338ca;
+        box-shadow: 0 16px 34px rgba(3, 18, 55, 0.42), inset 0 1px 0 rgba(255,255,255,0.18);
+        background:
+            radial-gradient(circle at 32% 24%, rgba(255,255,255,0.18), transparent 26%),
+            linear-gradient(145deg, #061a44 0%, #0b2f73 52%, #031237 100%) !important;
+        border: 2px solid rgba(250, 204, 21, 0.72);
+        width: 62px !important;
+        height: 62px !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer;
     }
     .ai-human-avatar {
         width: 52px;
@@ -118,57 +123,17 @@
         font-size: 20px;
         box-shadow: 0 10px 20px rgba(30, 27, 75, 0.35);
     }
-    .ai-agent-launcher #ai-agent-trigger {
-        width: 62px !important;
-        height: 62px !important;
-        border-radius: 50% !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-    }
-    .ai-bot-figure {
-        position: relative;
-        width: 34px;
-        height: 44px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 2px;
-    }
-    .ai-bot-head {
-        width: 24px;
-        height: 24px;
-        border-radius: 6px;
-        background: #4338ca;
-        color: #fde68a;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
+    .ai-badge-text {
+        color: #ffd84d;
+        font-size: 1.05rem;
+        font-weight: 1000;
+        letter-spacing: 0.08em;
         line-height: 1;
-        border: 1px solid #6366f1;
+        text-shadow: 0 2px 7px rgba(250, 204, 21, 0.38);
+        transform: translateX(1px);
     }
-    .ai-bot-body {
-        width: 18px;
-        height: 14px;
-        border-radius: 4px;
-        background: #312e81;
-        display: block;
-        border: 1px solid #4f46e5;
-    }
-    .ai-bot-legs {
-        width: 16px;
-        height: 11px;
-        display: block;
-        position: absolute;
-        bottom: 0;
-        background:
-            linear-gradient(#facc15, #facc15) left 2px top 0 / 4px 10px no-repeat,
-            linear-gradient(#facc15, #facc15) right 2px top 0 / 4px 10px no-repeat;
-    }
-    .ai-agent-launcher.ai-active .ai-bot-figure {
-        animation: aiWalk 0.8s ease-in-out infinite;
+    .ai-agent-launcher.ai-active #ai-agent-trigger {
+        box-shadow: 0 18px 38px rgba(3, 18, 55, 0.5), 0 0 0 6px rgba(250, 204, 21, 0.16);
     }
     @media (max-width: 991.98px) {
         .ai-agent-launcher {
@@ -222,10 +187,6 @@
     @keyframes aiFloat {
         0%, 100% { transform: translateY(0); }
         50% { transform: translateY(-4px); }
-    }
-    @keyframes aiWalk {
-        0%, 100% { transform: translateY(0) rotate(0deg); }
-        50% { transform: translateY(-1px) rotate(2deg); }
     }
 </style>
 
