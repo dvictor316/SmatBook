@@ -2719,6 +2719,282 @@ body.pos-terminal-workspace .quick-fill-row {
         grid-template-columns: repeat(10, minmax(0, 1fr)) !important;
     }
 }
+
+/* Ultra-compact desktop POS: wider receipt, tiny product shelf */
+@media (min-width: 1200px) {
+    body.pos-terminal-workspace .pos-action-rail {
+        flex-basis: 118px;
+    }
+
+    body.pos-terminal-workspace .pos-rail-panel {
+        padding: 5px;
+    }
+
+    body.pos-terminal-workspace .pos-rail-btn {
+        min-height: 28px;
+        padding: 4px 7px;
+        font-size: 0.58rem;
+        margin-top: 4px !important;
+    }
+
+    body.pos-terminal-workspace .pos-rail-btn-primary {
+        min-height: 30px;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage {
+        grid-template-columns: minmax(0, 1fr) 142px !important;
+        min-height: calc(100vh - 92px);
+        margin: 5px 5px 5px 0;
+    }
+
+    body.pos-terminal-workspace .pos-full-page-wrapper .row.g-4 {
+        grid-template-columns: minmax(0, 1fr) 198px !important;
+    }
+
+    body.pos-terminal-workspace .pos-header-bar {
+        min-height: 32px !important;
+        padding: 3px 7px !important;
+    }
+
+    body.pos-terminal-workspace .pos-header-title {
+        font-size: 0.72rem !important;
+        min-width: 96px;
+    }
+
+    body.pos-terminal-workspace .clock-badge {
+        min-height: 22px;
+        padding: 2px 6px;
+        font-size: 0.64rem;
+    }
+
+    body.pos-terminal-workspace .search-input {
+        height: 26px !important;
+        font-size: 0.7rem !important;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card {
+        padding: 5px !important;
+    }
+
+    body.pos-terminal-workspace .product-toolbar {
+        margin-bottom: 4px;
+        padding-bottom: 3px;
+    }
+
+    body.pos-terminal-workspace .toolbar-title,
+    body.pos-terminal-workspace #product-count {
+        font-size: 0.6rem;
+    }
+
+    body.pos-terminal-workspace .category-pills-wrap {
+        display: none;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
+        grid-template-columns: 1fr !important;
+        grid-auto-rows: minmax(50px, auto);
+        gap: 4px;
+        height: calc(100% - 24px);
+        padding: 1px;
+    }
+
+    body.pos-terminal-workspace .product-card {
+        min-height: 50px;
+        padding: 4px;
+        gap: 2px;
+    }
+
+    body.pos-terminal-workspace .product-card-img {
+        height: 20px;
+        border-radius: 2px;
+    }
+
+    body.pos-terminal-workspace .product-card-name {
+        font-size: 0.58rem;
+        line-height: 1.05;
+    }
+
+    body.pos-terminal-workspace .product-card-meta-row {
+        font-size: 0.52rem;
+        gap: 3px;
+    }
+
+    body.pos-terminal-workspace .product-card-measure,
+    body.pos-terminal-workspace .product-card::after {
+        display: none;
+    }
+
+    body.pos-terminal-workspace .row.g-4 > .col-xl-8 > .pos-card {
+        padding: 36px 6px 6px !important;
+    }
+
+    body.pos-terminal-workspace .row.g-4 > .col-xl-8 > .pos-card::before {
+        height: 28px;
+        font-size: 0.72rem;
+        padding: 0 8px;
+    }
+
+    body.pos-terminal-workspace .pos-receipt-toolbar {
+        grid-template-columns: minmax(180px, 0.55fr) minmax(250px, 1fr);
+        padding: 4px 6px;
+        margin: -4px -2px 4px;
+        gap: 4px;
+    }
+
+    body.pos-terminal-workspace .pos-customer-compact {
+        grid-template-columns: auto minmax(130px, 1fr);
+        gap: 4px;
+    }
+
+    body.pos-terminal-workspace .pos-customer-compact .form-select {
+        height: 24px;
+        min-height: 24px;
+        padding: 2px 6px;
+        font-size: 0.64rem;
+    }
+
+    body.pos-terminal-workspace .receipt-toolbar-label,
+    body.pos-terminal-workspace .receipt-wallet-hint {
+        font-size: 0.56rem;
+    }
+
+    body.pos-terminal-workspace .pos-payment-tabs {
+        gap: 3px;
+    }
+
+    body.pos-terminal-workspace .pos-pay-tab {
+        min-width: 54px;
+        min-height: 24px;
+        font-size: 0.56rem;
+        padding: 2px 5px;
+    }
+
+    body.pos-terminal-workspace .cart-wrapper {
+        height: clamp(210px, calc(100vh - 355px), 430px);
+        min-height: 205px;
+        margin-bottom: 4px;
+    }
+
+    body.pos-terminal-workspace .cart-table thead th,
+    body.pos-terminal-workspace .pos-full-page-wrapper .cart-table thead th {
+        padding: 5px 6px !important;
+        font-size: 0.58rem !important;
+    }
+
+    body.pos-terminal-workspace .cart-table td {
+        padding: 5px 6px !important;
+        font-size: 0.68rem;
+    }
+
+    body.pos-terminal-workspace .cart-qty-input {
+        width: 52px;
+        min-height: 24px;
+        padding: 2px 4px;
+        font-size: 0.68rem;
+    }
+
+    body.pos-terminal-workspace .summary-panel {
+        padding: 5px 7px !important;
+    }
+
+    body.pos-terminal-workspace .summary-panel .summary-row {
+        min-height: 18px;
+        margin-bottom: 0;
+        font-size: 0.68rem;
+    }
+
+    body.pos-terminal-workspace .summary-panel .grand-total {
+        font-size: clamp(1.25rem, 1.8vw, 1.85rem) !important;
+    }
+
+    body.pos-terminal-workspace .summary-panel .row.g-3 {
+        --bs-gutter-x: 4px;
+        --bs-gutter-y: 3px;
+        padding-top: 4px !important;
+    }
+
+    body.pos-terminal-workspace .summary-panel .form-control,
+    body.pos-terminal-workspace .summary-panel .form-select {
+        min-height: 25px;
+        padding: 2px 6px;
+        font-size: 0.64rem !important;
+    }
+
+    body.pos-terminal-workspace #process-btn {
+        min-height: 30px;
+        margin-top: 4px !important;
+        font-size: 0.68rem;
+    }
+
+    body.pos-terminal-workspace .controls-card {
+        padding: 6px !important;
+    }
+
+    body.pos-terminal-workspace .scanner-section,
+    body.pos-terminal-workspace .image-frame,
+    body.pos-terminal-workspace .quick-fill-panel,
+    body.pos-terminal-workspace .subtotal-box {
+        padding: 5px !important;
+        margin-bottom: 4px !important;
+    }
+
+    body.pos-terminal-workspace .scanner-input,
+    body.pos-terminal-workspace .pos-product-combo__input,
+    body.pos-terminal-workspace .form-control,
+    body.pos-terminal-workspace .form-select {
+        min-height: 25px;
+        font-size: 0.64rem;
+        padding: 3px 6px;
+    }
+
+    body.pos-terminal-workspace .image-frame {
+        height: 42px;
+    }
+
+    body.pos-terminal-workspace .unit-grid {
+        gap: 3px;
+        margin-bottom: 4px;
+    }
+
+    body.pos-terminal-workspace .unit-btn {
+        min-height: 34px;
+        padding: 3px 2px;
+        font-size: 0.52rem;
+    }
+
+    body.pos-terminal-workspace .unit-btn small {
+        display: none;
+    }
+
+    body.pos-terminal-workspace .unit-helper,
+    body.pos-terminal-workspace .quick-fill-title,
+    body.pos-terminal-workspace .quick-fill-row {
+        font-size: 0.56rem;
+    }
+
+    body.pos-terminal-workspace .subtotal-box {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        text-align: left;
+    }
+
+    body.pos-terminal-workspace .subtotal-label {
+        margin-bottom: 0;
+        font-size: 0.52rem;
+    }
+
+    body.pos-terminal-workspace .subtotal-amount {
+        font-size: 0.9rem;
+    }
+
+    body.pos-terminal-workspace .btn-add-cart {
+        min-height: 28px;
+        padding: 4px 6px !important;
+        font-size: 0.64rem;
+        margin-top: 4px !important;
+    }
+}
 </style>
 
 <div class="pos-full-page-wrapper">
