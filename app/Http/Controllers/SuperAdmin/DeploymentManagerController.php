@@ -1500,7 +1500,7 @@ private function formatDeploymentAmount(float $amount): string
         }
 
         if ($payout->status === 'manual_review') {
-            return back()->with('info', 'Payout record created for manual review. Complete bank details or gateway setup to continue.');
+            return back()->with('info', 'Payout request submitted. The payout team will complete any required bank routing during processing.');
         }
 
         return back()->with('success', 'Payout request submitted successfully.');

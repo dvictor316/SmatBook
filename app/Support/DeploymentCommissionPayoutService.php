@@ -112,7 +112,7 @@ class DeploymentCommissionPayoutService
             return $this->createManualReviewPayout($manager, $summary['available'], $automatic, 'Payout account is incomplete.');
         }
 
-        if (empty($manager->payout_bank_code) && strtolower((string) ($manager->payout_provider ?? '')) === 'paystack') {
+        if (empty($manager->payout_bank_code)) {
             if ($automatic) {
                 return null;
             }
