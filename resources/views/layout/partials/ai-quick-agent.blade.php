@@ -98,13 +98,11 @@
         position: relative;
         overflow: hidden;
         animation: aiFloat 2.4s ease-in-out infinite;
-        box-shadow: 0 16px 34px rgba(3, 18, 55, 0.42), inset 0 1px 0 rgba(255,255,255,0.18);
-        background:
-            radial-gradient(circle at 32% 24%, rgba(255,255,255,0.18), transparent 26%),
-            linear-gradient(145deg, #061a44 0%, #0b2f73 52%, #031237 100%) !important;
-        border: 2px solid rgba(250, 204, 21, 0.72);
-        width: 62px !important;
-        height: 62px !important;
+        box-shadow: 0 10px 22px rgba(3, 18, 55, 0.32);
+        background: #062a66 !important;
+        border: 1px solid #d6a900;
+        width: 52px !important;
+        height: 52px !important;
         border-radius: 50% !important;
         display: flex !important;
         align-items: center !important;
@@ -124,16 +122,16 @@
         box-shadow: 0 10px 20px rgba(30, 27, 75, 0.35);
     }
     .ai-badge-text {
-        color: #ffd84d;
-        font-size: 1.05rem;
-        font-weight: 1000;
-        letter-spacing: 0.08em;
+        color: #ffd43b;
+        font-size: 0.95rem;
+        font-weight: 900;
+        letter-spacing: 0.05em;
         line-height: 1;
-        text-shadow: 0 2px 7px rgba(250, 204, 21, 0.38);
+        text-shadow: none;
         transform: translateX(1px);
     }
     .ai-agent-launcher.ai-active #ai-agent-trigger {
-        box-shadow: 0 18px 38px rgba(3, 18, 55, 0.5), 0 0 0 6px rgba(250, 204, 21, 0.16);
+        box-shadow: 0 12px 26px rgba(3, 18, 55, 0.38), 0 0 0 4px rgba(214, 169, 0, 0.14);
     }
     @media (max-width: 991.98px) {
         .ai-agent-launcher {
@@ -143,8 +141,8 @@
             z-index: 1110 !important;
         }
         .ai-agent-launcher #ai-agent-trigger {
-            width: 58px !important;
-            height: 58px !important;
+            width: 50px !important;
+            height: 50px !important;
         }
     }
     .ai-msg {
