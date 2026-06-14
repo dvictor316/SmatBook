@@ -5064,7 +5064,6 @@ window.POS_ENABLE_FALLBACK = function () {
         btnLoading = document.getElementById('btn-loading');
     }
 
-    railScanBtn?.addEventListener('click', () => barcodeInput?.focus());
     railWantBtn?.addEventListener('click', () => {
         const offcanvasEl = document.getElementById('ai-quick-agent-offcanvas');
         const input = document.getElementById('ai-agent-input');
@@ -5225,17 +5224,173 @@ window.POS_ENABLE_FALLBACK = function () {
         addBtn?.click();
     }
 
-    railSearchBtn?.addEventListener('click', () => openQuickPickItems(''));
-    railMiscBtn?.addEventListener('click', openSellMiscItem);
-    railDiscountBtn?.addEventListener('click', () => discountInput?.focus());
-    railCustomerBtn?.addEventListener('click', () => customerSelect?.focus());
-    railCheckoutBtn?.addEventListener('click', () => processBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
-    railMessagesBtn?.addEventListener('click', () => {
+    async function openDiscountPanel() {
+        if (!discountInput || !discountTypeInput) {
+            return;
+        }
+
+        if (!window.Swal || typeof Swal.fire !== 'function') {
+            discountInput.focus();
+            return;
+        }
+
+        const result = await Swal.fire({
+            title: 'Give Discount',
+            html: `
+                <div class="text-start">
+                    <label class="form-label fw-bold">Discount type</label>
+                    <select id="pos-discount-type-prompt" class="form-select mb-2">
+                        <option value="percent">Percent (%)</option>
+                        <option value="fixed">Fixed amount (₦)</option>
+                    </select>
+                    <label class="form-label fw-bold">Discount value</label>
+                    <input id="pos-discount-value-prompt" type="number" min="0" step="0.01" value="${escapeHtml(discountInput.value || '0')}" class="form-control">
+                    <small class="text-muted d-block mt-2">Applies to the selected product entry. If no product is selected, it updates the last cart item.</small>
+                </div>
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Apply Discount',
+            confirmButtonColor: '#0f3a8a',
+            preConfirm: () => {
+                const type = document.getElementById('pos-discount-type-prompt')?.value || 'percent';
+                const value = parseFloat(document.getElementById('pos-discount-value-prompt')?.value || '0') || 0;
+                if (value < 0 || (type === 'percent' && value > 100)) {
+                    Swal.showValidationMessage('Enter a valid discount value.');
+                    return false;
+                }
+                return { type, value };
+            },
+        });
+
+        if (!result.isConfirmed || !result.value) {
+            return;
+        }
+
+        const { type, value } = result.value;
+        if (currentProductId || productSelect?.value) {
+            discountTypeInput.value = type;
+            discountInput.value = String(value);
+            updateItemTotal();
+            discountInput.focus();
+            return;
+        }
+
+        const lastItem = cart[cart.length - 1];
+        if (lastItem) {
+            lastItem.discountType = type;
+            lastItem.discountValue = value;
+            calculateCartItem(lastItem);
+            renderCart();
+        }
+    }
+
+    async function openCustomerPicker() {
+        if (!customerSelect) {
+            return;
+        }
+
+        const options = Array.from(customerSelect.options || []);
+        if (!window.Swal || typeof Swal.fire !== 'function') {
+            customerSelect.focus();
+            return;
+        }
+
+        const optionHtml = options.map((option) => {
+            const wallet = parseFloat(option.dataset.wallet || '0') || 0;
+            const walletLabel = wallet > 0 ? ` - Wallet ${fmt.format(wallet)}` : '';
+            return `<option value="${escapeHtml(option.value)}" ${option.selected ? 'selected' : ''}>${escapeHtml(option.textContent || 'Walk-in Customer')}${escapeHtml(walletLabel)}</option>`;
+        }).join('');
+
+        const result = await Swal.fire({
+            title: 'Select Customer',
+            html: `
+                <div class="text-start">
+                    <label class="form-label fw-bold">Customer</label>
+                    <select id="pos-customer-prompt" class="form-select">${optionHtml}</select>
+                    <small class="text-muted d-block mt-2">Wallet credit applies automatically when available.</small>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Use Customer',
+            confirmButtonColor: '#0f3a8a',
+            focusConfirm: false,
+            preConfirm: () => document.getElementById('pos-customer-prompt')?.value || '',
+        });
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        customerSelect.value = result.value || '';
+        customerSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        if (customerSearchInput) {
+            customerSearchInput.value = customerSelect.options[customerSelect.selectedIndex]?.textContent || '';
+        }
+    }
+
+    function openCheckoutPanel() {
+        if (!cart.length) {
+            alertFallback('Add an item to cart before checkout.');
+            return;
+        }
+
+        document.querySelector('.summary-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        updateChange();
+        window.setTimeout(() => {
+            if (!isStarterPos && depositAccount && !depositAccount.value) {
+                depositAccount.focus();
+                return;
+            }
+            amountPaid?.focus();
+        }, 180);
+    }
+
+    function showPosMessages() {
+        const visibleProducts = Array.from(productCards || []).filter((card) => card.style.display !== 'none');
+        const lowStockItems = visibleProducts.filter((card) => {
+            const stock = parseFloat(card.dataset.stock || '0') || 0;
+            const minStock = parseFloat(card.dataset.minStock || '0') || 0;
+            return minStock > 0 && stock <= minStock;
+        }).slice(0, 4);
+        const customerName = customerSelect?.options[customerSelect.selectedIndex]?.textContent || 'Walk-in Customer';
+        const walletBalance = selectedCustomerWalletBalance();
+        const total = cartGrandTotalValue();
+        const lowStockText = lowStockItems.length
+            ? `<li><strong>Low stock:</strong> ${lowStockItems.map((card) => escapeHtml(card.dataset.name || 'Product')).join(', ')}</li>`
+            : '<li><strong>Stock:</strong> No visible low-stock alert.</li>';
+
         showAlert({
             icon: 'info',
-            title: 'No new POS messages',
-            text: 'Messages and cashier prompts will appear here when available.',
+            title: 'POS Messages',
+            html: `
+                <ul class="text-start mb-0 ps-3">
+                    <li><strong>Cart:</strong> ${cart.length} item(s), ${fmt.format(total)}</li>
+                    <li><strong>Customer:</strong> ${escapeHtml(customerName)}${walletBalance > 0 ? `, wallet ${fmt.format(walletBalance)}` : ''}</li>
+                    ${lowStockText}
+                    <li><strong>Tip:</strong> Double-click a shelf item to add it quickly.</li>
+                </ul>
+            `,
             confirmButtonColor: '#0f3a8a'
+        });
+    }
+
+    railSearchBtn?.addEventListener('click', () => openQuickPickItems(''));
+    railMiscBtn?.addEventListener('click', openSellMiscItem);
+    railDiscountBtn?.addEventListener('click', openDiscountPanel);
+    railCustomerBtn?.addEventListener('click', openCustomerPicker);
+    railCheckoutBtn?.addEventListener('click', openCheckoutPanel);
+    railMessagesBtn?.addEventListener('click', showPosMessages);
+    railScanBtn?.addEventListener('click', () => {
+        barcodeInput?.focus();
+        showAlert({
+            icon: 'info',
+            title: 'Scanner ready',
+            text: 'Scan or type the barcode, then press Enter.',
+            timer: 1800,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
         });
     });
 	    const hasProductSelect2 = Boolean(window.jQuery && window.jQuery.fn && window.jQuery.fn.select2 && productSearch);
