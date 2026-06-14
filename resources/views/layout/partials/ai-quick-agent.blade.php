@@ -99,7 +99,7 @@
         overflow: hidden;
         animation: aiFloat 2.4s ease-in-out infinite;
         box-shadow: 0 10px 22px rgba(3, 18, 55, 0.32);
-        background: #062a66 !important;
+        background: #082356 !important;
         border: 1px solid #d6a900;
         width: 52px !important;
         height: 52px !important;
