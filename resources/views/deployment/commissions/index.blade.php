@@ -50,6 +50,60 @@
         }
     }
 
+    .commissions-page-header {
+        gap: 1rem;
+    }
+
+    .commission-report-btn {
+        min-height: 38px;
+        border-radius: 10px;
+        white-space: nowrap;
+    }
+
+    .payout-actions {
+        align-items: center;
+    }
+
+    @media (max-width: 575.98px) {
+        #commissions-wrapper {
+            padding: 88px 1rem 1.25rem;
+        }
+
+        .commissions-page-header {
+            align-items: flex-start !important;
+            flex-direction: column;
+            margin-bottom: 1rem !important;
+        }
+
+        .commissions-page-header .no-print,
+        .commission-report-btn,
+        .payout-actions,
+        .payout-actions .btn {
+            width: 100%;
+        }
+
+        .commission-report-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px !important;
+            padding: 0.65rem 0.9rem;
+        }
+
+        .payout-actions {
+            display: grid !important;
+            grid-template-columns: 1fr;
+        }
+
+        #commissions-wrapper .card-body {
+            padding: 1rem;
+        }
+
+        #commissions-wrapper .h4 {
+            font-size: 1.25rem;
+        }
+    }
+
     /* Table Styling */
     .commission-table thead {
         background-color: #f8f9fa;
@@ -72,13 +126,13 @@
 <div id="commissions-wrapper">
     <div class="container-fluid px-0">
 
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="commissions-page-header d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h4 class="fw-bold text-dark mb-1">Commissions Management</h4>
                 <p class="text-muted small mb-0">Track earned commissions, payout readiness, and transfer history from one place.</p>
             </div>
             <div class="no-print">
-                <button onclick="window.print()" class="btn btn-outline-dark btn-sm shadow-sm bg-white">
+                <button onclick="window.print()" class="btn btn-outline-dark btn-sm shadow-sm bg-white commission-report-btn">
                     <i class="fas fa-print me-2"></i>Export Report
                 </button>
             </div>
@@ -191,7 +245,7 @@
                                     Status:
                                     <span class="fw-bold text-primary text-uppercase">{{ str_replace('_', ' ', optional($manager)->payout_status ?? 'not_configured') }}</span>
                                 </div>
-                                <div class="d-flex gap-2">
+                                <div class="payout-actions d-flex gap-2">
                                     <button type="submit" class="btn btn-outline-primary">Save Payout Profile</button>
                                     <button type="submit" form="request-payout-form" class="btn btn-primary" {{ ($pendingCommissions ?? 0) <= 0 ? 'disabled' : '' }}>
                                         Request Payout

@@ -41,9 +41,22 @@ class DeploymentCommissionPayoutService
                 }
 
                 $payout = $payouts->firstWhere('id', $payoutId);
-                return !$payout || in_array((string) $payout->status, ['failed', 'manual_review', 'cancelled'], true);
+                return !$payout || in_array((string) $payout->status, ['failed', 'cancelled'], true);
             })
             ->sum(fn ($row) => (float) ($row->commission_amount ?? $row->amount ?? 0));
+
+        $orphanedActivePayouts = (float) $payouts
+            ->filter(function ($payout) use ($commissions) {
+                $status = strtolower((string) ($payout->status ?? ''));
+                if (!in_array($status, ['pending', 'processing', 'manual_review'], true)) {
+                    return false;
+                }
+
+                return !$commissions->firstWhere('payout_id', $payout->id);
+            })
+            ->sum(fn ($payout) => (float) ($payout->amount ?? 0));
+
+        $available = max(0, $available - $orphanedActivePayouts);
 
         $processing = (float) $commissions
             ->filter(function ($row) use ($payouts) {
@@ -109,14 +122,14 @@ class DeploymentCommissionPayoutService
             if ($automatic) {
                 return null;
             }
-            return $this->createManualReviewPayout($manager, $summary['available'], $automatic, 'Payout account is incomplete.');
+            return $this->createManualReviewPayout($manager, $summary['available'], $automatic, 'Payout account is incomplete.', $approvedBy);
         }
 
         if (empty($manager->payout_bank_code)) {
             if ($automatic) {
                 return null;
             }
-            return $this->createManualReviewPayout($manager, $summary['available'], $automatic, 'Payout submitted. Bank routing will be completed during processing.');
+            return $this->createManualReviewPayout($manager, $summary['available'], $automatic, 'Payout submitted. Bank routing will be completed during processing.', $approvedBy);
         }
 
         return DB::transaction(function () use ($manager, $summary, $automatic, $approvedBy) {
@@ -168,22 +181,51 @@ class DeploymentCommissionPayoutService
         });
     }
 
-    private function createManualReviewPayout(DeploymentManager $manager, float $amount, bool $automatic, string $reason): DeploymentManagerPayout
+    private function createManualReviewPayout(DeploymentManager $manager, float $amount, bool $automatic, string $reason, ?int $approvedBy = null): DeploymentManagerPayout
     {
-        return DeploymentManagerPayout::query()->create([
-            'manager_id' => $manager->user_id,
-            'payout_reference' => 'DMP-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(6)),
-            'gateway' => $this->resolveGateway($manager),
-            'status' => 'manual_review',
-            'amount' => round($amount, 2),
-            'currency' => 'NGN',
-            'bank_name' => $manager->payout_bank_name,
-            'bank_code' => $manager->payout_bank_code,
-            'account_name' => $manager->payout_account_name,
-            'account_number' => $manager->payout_account_number,
-            'failure_reason' => $reason,
-            'is_automatic' => $automatic,
-        ]);
+        return DB::transaction(function () use ($manager, $amount, $automatic, $reason, $approvedBy) {
+            $commissionRows = DB::table('deployment_commissions')
+                ->where('manager_id', $manager->user_id)
+                ->where('status', 'pending')
+                ->whereNull('payout_id')
+                ->get();
+
+            $commissionAmount = round((float) $commissionRows->sum(fn ($row) => (float) ($row->commission_amount ?? $row->amount ?? 0)), 2);
+            $payoutAmount = $commissionAmount > 0 ? $commissionAmount : round($amount, 2);
+
+            $payout = DeploymentManagerPayout::query()->create([
+                'manager_id' => $manager->user_id,
+                'payout_reference' => 'DMP-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(6)),
+                'gateway' => $this->resolveGateway($manager),
+                'status' => 'manual_review',
+                'amount' => $payoutAmount,
+                'currency' => 'NGN',
+                'bank_name' => $manager->payout_bank_name,
+                'bank_code' => $manager->payout_bank_code,
+                'account_name' => $manager->payout_account_name,
+                'account_number' => $manager->payout_account_number,
+                'failure_reason' => $reason,
+                'approved_by' => $approvedBy,
+                'approved_at' => $approvedBy ? now() : null,
+                'is_automatic' => $automatic,
+                'meta' => [
+                    'commission_ids' => $commissionRows->pluck('id')->values()->all(),
+                    'manual_review_reason' => $reason,
+                ],
+            ]);
+
+            if ($commissionRows->isNotEmpty()) {
+                DB::table('deployment_commissions')
+                    ->whereIn('id', $commissionRows->pluck('id')->all())
+                    ->update([
+                        'payout_id' => $payout->id,
+                        'payout_reference' => $payout->payout_reference,
+                        'updated_at' => now(),
+                    ]);
+            }
+
+            return $payout;
+        });
     }
 
     private function dispatchTransfer(DeploymentManagerPayout $payout, DeploymentManager $manager): DeploymentManagerPayout

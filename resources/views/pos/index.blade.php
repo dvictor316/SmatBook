@@ -3195,6 +3195,150 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-card::after {
         grid-template-columns: 1fr;
     }
 }
+
+/* Professional POS shelf sizing: keep iPad close to desktop and never let product art balloon. */
+body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
+    align-items: start !important;
+}
+
+body.pos-terminal-workspace .pos-product-shelf-card .product-card {
+    flex: 0 0 auto;
+    justify-content: flex-start;
+    min-height: 64px !important;
+    max-height: 82px;
+}
+
+body.pos-terminal-workspace .pos-product-shelf-card .product-card-img {
+    flex: 0 0 auto !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+}
+
+body.pos-terminal-workspace .pos-product-shelf-card .product-card-img img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+}
+
+@media (min-width: 900px) and (max-width: 1199.98px) {
+    body.pos-terminal-workspace .pos-shell {
+        display: flex;
+    }
+
+    body.pos-terminal-workspace .pos-action-rail {
+        position: relative;
+        flex: 0 0 118px;
+        width: 118px;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 156px;
+        grid-template-rows: auto minmax(0, 1fr);
+        grid-template-areas:
+            "header header"
+            "work shelf";
+        align-items: stretch;
+        gap: 0;
+        min-height: calc(100vh - 92px);
+        margin: 5px 5px 5px 0;
+        overflow: hidden;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage > .pos-product-shelf-card {
+        grid-area: shelf;
+        width: 156px;
+        max-width: 156px;
+        min-height: 0;
+        height: 100%;
+        padding: 5px !important;
+        border-width: 0 0 0 1px !important;
+        overflow: hidden;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage > .row.g-4 {
+        grid-area: work;
+        display: grid !important;
+        grid-template-columns: minmax(210px, 255px) minmax(0, 1fr);
+        min-height: 0;
+        margin: 0;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage > .row.g-4 > .col-xl-4,
+    body.pos-terminal-workspace .pos-main-stage > .row.g-4 > .col-xl-8 {
+        grid-area: auto;
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card .category-pills-wrap {
+        display: none;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
+        grid-template-columns: 1fr !important;
+        grid-auto-rows: minmax(54px, auto) !important;
+        gap: 4px !important;
+        height: calc(100% - 24px) !important;
+        max-height: none !important;
+        padding: 1px !important;
+        overflow-y: auto;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card .product-card {
+        min-height: 54px !important;
+        max-height: 64px;
+        padding: 4px !important;
+        gap: 2px;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card .product-card-img {
+        height: 24px !important;
+        min-height: 24px !important;
+        max-height: 24px !important;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card .product-card-name {
+        position: static;
+        width: 100%;
+        padding: 0;
+        background: transparent;
+        box-shadow: none;
+        font-size: 0.58rem;
+        line-height: 1.05;
+    }
+}
+
+@media (max-width: 899.98px) {
+    body.pos-terminal-workspace .pos-product-shelf-card {
+        max-height: 220px;
+        overflow: hidden;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)) !important;
+        grid-auto-rows: minmax(56px, auto) !important;
+        max-height: 170px !important;
+        gap: 5px !important;
+        overflow-y: auto;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card .product-card {
+        min-height: 56px !important;
+        max-height: 64px;
+        padding: 3px !important;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card .product-card-img {
+        height: 32px !important;
+        min-height: 32px !important;
+        max-height: 32px !important;
+    }
+}
 </style>
 
 <div class="pos-full-page-wrapper">
