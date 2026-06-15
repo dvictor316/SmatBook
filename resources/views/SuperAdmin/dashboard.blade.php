@@ -455,17 +455,17 @@
     }
     .tone-card {
         border: 1px solid transparent;
-        border-radius: 16px;
-        box-shadow: 0 18px 36px rgba(15, 23, 42, 0.14);
+        border-radius: 12px;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
         position: relative;
         overflow: hidden;
     }
     .tone-card::after {
         content: "";
         position: absolute;
-        inset: auto -28px -38px auto;
-        width: 140px;
-        height: 140px;
+        inset: auto -20px -34px auto;
+        width: 88px;
+        height: 88px;
         border-radius: 50%;
         background: rgba(255,255,255,0.12);
         pointer-events: none;
@@ -488,11 +488,11 @@
         color: inherit;
     }
     .tone-card .tone-value {
-        font-size: clamp(1.45rem, 2vw, 2rem);
+        font-size: clamp(0.98rem, 1.2vw, 1.25rem);
         letter-spacing: -0.04em;
     }
     .tone-card .card-body {
-        padding: 1rem 1.05rem !important;
+        padding: 0.58rem 0.68rem !important;
     }
     .tone-card .mdi {
         opacity: 0.9;
@@ -735,6 +735,47 @@
         background:
             radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 30%),
             linear-gradient(135deg, #7c2d12 0%, #f59e0b 52%, #fde68a 100%);
+    }
+    .dashboard-tight .card.tone-card,
+    .dashboard-tight .stretch-card > .card.tone-card,
+    .dashboard-tight .card.compact-side-snapshot,
+    .dashboard-tight .card.compact-money-panel,
+    .dashboard-tight .kpi-compact,
+    .dashboard-tight .summary-fill,
+    .dashboard-tight .kpi-grid-dense,
+    .dashboard-tight .metric-wall {
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+    }
+    .dashboard-tight .card.tone-card {
+        min-height: 72px !important;
+    }
+    .dashboard-tight .card.compact-side-snapshot {
+        min-height: 0 !important;
+    }
+    .dashboard-tight .card.compact-side-snapshot > .card-body {
+        padding: 0.68rem 0.78rem !important;
+        overflow: visible !important;
+    }
+    .dashboard-tight .card.compact-side-snapshot .summary-fill {
+        padding: 0.48rem 0.58rem;
+        border-radius: 10px;
+    }
+    .dashboard-tight .card.compact-side-snapshot .summary-fill .label {
+        font-size: 0.58rem;
+        margin-bottom: 0.22rem;
+    }
+    .dashboard-tight .card.compact-side-snapshot .summary-fill .value {
+        font-size: 0.82rem;
+    }
+    .dashboard-tight .card.tone-card .d-flex.align-items-center {
+        gap: 0.55rem;
+    }
+    .dashboard-tight .card.tone-card .mdi {
+        font-size: 1.25rem !important;
+        margin-right: 0 !important;
+        opacity: 0.82;
     }
     .dashboard-tight .compact-money-panel {
         height: auto !important;
@@ -2199,9 +2240,12 @@
                                     </div>
                                 </div>
 
-                                <div class="card card-rounded shadow-sm">
+                            </div>
+
+                            <div class="col-12 col-xl-5 grid-margin dashboard-stack">
+                                <div class="card card-rounded shadow-sm compact-side-snapshot">
                                     <div class="card-body">
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
                                             <div>
                                                 <h5 class="mb-0 fw-bold text-dark">Subscription Side Snapshot</h5>
                                                 <small class="text-muted">Compact companion metrics beside health mix</small>
@@ -2217,7 +2261,7 @@
                                                 ['label' => 'Registered Revenue', 'value' => '₦' . number_format($metrics['registered_user_revenue'] ?? 0, 0), 'tone' => 'tone-emerald'],
                                                 ['label' => 'Avg Plan Sale', 'value' => '₦' . number_format($metrics['avg_plan_sale'] ?? 0, 0), 'tone' => 'tone-cobalt'],
                                             ] as $sideMini)
-                                                <div class="col-sm-6 col-xl-4">
+                                                <div class="col-6">
                                                     <div class="summary-fill {{ $sideMini['tone'] }} h-100">
                                                         <div class="label">{{ $sideMini['label'] }}</div>
                                                         <div class="value">{{ $sideMini['value'] }}</div>
@@ -2227,9 +2271,6 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="col-12 col-xl-5 grid-margin dashboard-stack">
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
