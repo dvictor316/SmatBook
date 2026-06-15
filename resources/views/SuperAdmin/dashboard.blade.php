@@ -798,6 +798,35 @@
     .dashboard-analytics-pair .summary-fill .value {
         font-size: 0.84rem;
     }
+    .dashboard-analytics-pair-wide .card {
+        min-height: 260px !important;
+    }
+    .dashboard-analytics-pair-wide .chart-container-sm,
+    .dashboard-analytics-pair-wide .subscription-mix-chart {
+        height: 150px;
+        min-height: 150px;
+        max-height: 150px;
+    }
+    .dashboard-fill-row {
+        align-items: stretch;
+    }
+    .dashboard-fill-row > [class*="col-"] {
+        display: flex;
+    }
+    .dashboard-fill-row > [class*="col-"] > .dashboard-stack,
+    .dashboard-fill-row > [class*="col-"] > .card {
+        width: 100%;
+    }
+    .dashboard-fill-row .dashboard-stack {
+        display: flex;
+        flex-direction: column;
+    }
+    .dashboard-fill-row .regional-distribution-card {
+        flex: 1 1 auto;
+    }
+    .dashboard-fill-row .regional-distribution-card #regionMap {
+        height: 340px;
+    }
     .dashboard-tight .card.tone-card .d-flex.align-items-center {
         gap: 0.55rem;
     }
@@ -2531,8 +2560,13 @@
                                     </div>
                                 </div>
 
-                                <div class="row g-2 dashboard-analytics-pair">
-                                    <div class="col-12 col-lg-6">
+
+
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mt-2 dashboard-analytics-pair dashboard-analytics-pair-wide">
+                            <div class="col-12 col-xl-6">
                                         <div class="card card-rounded shadow-sm">
                                             <div class="card-body">
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -2569,7 +2603,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-12 col-lg-6">
+                            <div class="col-12 col-xl-6">
                                         <div class="card card-rounded shadow-sm">
                                             <div class="card-body">
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -2606,12 +2640,9 @@
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-
-                            </div>
                         </div>
 
-                        <div class="row dashboard-row-balanced">
+                        <div class="row dashboard-row-balanced dashboard-fill-row">
 
                             <div class="col-12 col-xl-5 grid-margin dashboard-stack">
 
@@ -2895,7 +2926,7 @@
                             </div>
 
                             <div class="col-12 col-xl-7 grid-margin dashboard-stack">
-                                <div class="card card-rounded shadow-sm">
+                                <div class="card card-rounded shadow-sm regional-distribution-card">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-center mb-3">
                                             <div>
