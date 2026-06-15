@@ -633,11 +633,11 @@
     }
     .executive-kpi {
         border: none !important;
-        border-radius: 22px !important;
-        min-height: 122px;
+        border-radius: 16px !important;
+        min-height: 82px;
         overflow: hidden;
         position: relative;
-        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12) !important;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1) !important;
     }
     .executive-kpi::before {
         content: "";
@@ -649,12 +649,12 @@
     .executive-kpi .card-body {
         position: relative;
         z-index: 1;
-        padding: 0.82rem 0.88rem;
+        padding: 0.58rem 0.68rem !important;
     }
     .executive-kpi .kpi-icon-shell {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -665,8 +665,8 @@
     }
     .executive-kpi .kpi-icon-shell svg,
     .executive-kpi .kpi-icon-shell i {
-        width: 18px;
-        height: 18px;
+        width: 14px;
+        height: 14px;
         stroke: currentColor;
         fill: none;
         stroke-width: 2;
@@ -679,13 +679,13 @@
         justify-content: center;
         width: auto;
         height: auto;
-        font-size: 0.95rem;
+        font-size: 0.78rem;
         stroke: none;
         fill: currentColor;
     }
     .executive-kpi .kpi-kicker {
         font-family: var(--kpi-ui-font);
-        font-size: 0.54rem;
+        font-size: 0.48rem;
         font-weight: 800;
         letter-spacing: 0.08em;
         text-transform: uppercase;
@@ -693,7 +693,7 @@
     }
     .executive-kpi .kpi-value {
         font-family: var(--kpi-display-font);
-        font-size: clamp(1.12rem, 1.35vw, 1.65rem);
+        font-size: clamp(0.88rem, 1.05vw, 1.18rem);
         line-height: 1;
         letter-spacing: -0.05em;
         color: #fff !important;
@@ -701,14 +701,14 @@
     .executive-kpi .kpi-note {
         font-family: var(--kpi-ui-font);
         color: rgba(255,255,255,0.78) !important;
-        font-size: 0.64rem;
-        line-height: 1.35;
+        font-size: 0.52rem;
+        line-height: 1.25;
     }
     .executive-kpi .kpi-badge {
         font-family: var(--kpi-ui-font);
         border-radius: 999px;
-        padding: 0.22rem 0.48rem;
-        font-size: 0.52rem;
+        padding: 0.14rem 0.34rem;
+        font-size: 0.46rem;
         font-weight: 800;
         letter-spacing: 0.06em;
         text-transform: uppercase;
@@ -735,6 +735,38 @@
         background:
             radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 30%),
             linear-gradient(135deg, #7c2d12 0%, #f59e0b 52%, #fde68a 100%);
+    }
+    .dashboard-tight .compact-money-panel {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+    .dashboard-tight .compact-money-panel > .card-body {
+        padding: 0.72rem 0.82rem !important;
+        overflow: visible !important;
+    }
+    .compact-money-panel .money-panel-header {
+        margin-bottom: 0.55rem !important;
+    }
+    .compact-money-panel .money-mini-card {
+        padding: 0.55rem 0.65rem !important;
+        border: 1px solid #e2ebf6;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.65);
+    }
+    .compact-money-panel .money-mini-card .money-label {
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+    .compact-money-panel .money-mini-card .money-value {
+        font-size: 0.92rem !important;
+        line-height: 1.05;
+        letter-spacing: -0.04em;
+    }
+    .compact-money-panel .money-mini-card .money-note {
+        font-size: 0.62rem !important;
+        line-height: 1.2;
     }
     .summary-fill.tone-indigo .label,
     .summary-fill.tone-cobalt .label,
@@ -1023,13 +1055,13 @@
             font-size: 0.88rem;
         }
         .executive-kpi {
-            min-height: 126px;
+            min-height: 78px;
         }
         .executive-kpi .kpi-value {
-            font-size: 1.32rem;
+            font-size: 0.98rem;
         }
         .executive-kpi .kpi-note {
-            font-size: 0.68rem;
+            font-size: 0.54rem;
         }
         .tone-card .tone-value {
             font-size: 1.3rem;
@@ -1205,9 +1237,9 @@
                         @endif
                         <div class="row mb-3">
                             <div class="col-12">
-                                <div class="card border-0 shadow-sm">
+                                <div class="card border-0 shadow-sm compact-money-panel">
                                     <div class="card-body p-4">
-                                        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                                        <div class="d-flex justify-content-between align-items-center money-panel-header flex-wrap gap-2">
                                             <div>
                                                 <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-vault me-2 text-warning"></i>Platform Treasury</h5>
                                                 <small class="text-muted">Gross revenue, investor payouts, and net balance</small>
@@ -1216,28 +1248,28 @@
                                                 <i class="fas fa-plus me-1"></i> Record Payout
                                             </button>
                                         </div>
-                                        <div class="row g-3">
+                                        <div class="row g-2">
                                             <div class="col-md-4">
-                                                <div class="p-3 rounded-3 bg-light text-center">
-                                                    <div class="text-muted small mb-1">Gross Revenue</div>
-                                                    <div class="fw-bold fs-5 text-success">₦{{ number_format($metrics['owner_subscription_revenue'] ?? 0, 2) }}</div>
-                                                    <div class="text-muted" style="font-size:0.75rem;">Total subscription income</div>
+                                                <div class="money-mini-card rounded-3 bg-light text-center">
+                                                    <div class="text-muted money-label mb-1">Gross Revenue</div>
+                                                    <div class="fw-bold money-value text-success">₦{{ number_format($metrics['owner_subscription_revenue'] ?? 0, 2) }}</div>
+                                                    <div class="text-muted money-note">Total subscription income</div>
                                                 </div>
                                             </div>
                                             <div class="col-md-4">
-                                                <div class="p-3 rounded-3 bg-light text-center">
-                                                    <div class="text-muted small mb-1">Total Paid Out</div>
-                                                    <div class="fw-bold fs-5 text-danger">₦{{ number_format($metrics['total_payouts'] ?? 0, 2) }}</div>
-                                                    <div class="text-muted" style="font-size:0.75rem;">Dividends, commissions &amp; more</div>
+                                                <div class="money-mini-card rounded-3 bg-light text-center">
+                                                    <div class="text-muted money-label mb-1">Total Paid Out</div>
+                                                    <div class="fw-bold money-value text-danger">₦{{ number_format($metrics['total_payouts'] ?? 0, 2) }}</div>
+                                                    <div class="text-muted money-note">Dividends, commissions &amp; more</div>
                                                 </div>
                                             </div>
                                             <div class="col-md-4">
-                                                <div class="p-3 rounded-3 {{ ($metrics['net_platform_balance'] ?? 0) >= 0 ? 'bg-success' : 'bg-danger' }} text-center">
-                                                    <div class="small mb-1" style="color:#fff;">Net Platform Balance</div>
-                                                    <div class="fw-bold fs-5" style="color:#fff;">
+                                                <div class="money-mini-card rounded-3 {{ ($metrics['net_platform_balance'] ?? 0) >= 0 ? 'bg-success' : 'bg-danger' }} text-center">
+                                                    <div class="money-label mb-1" style="color:#fff;">Net Platform Balance</div>
+                                                    <div class="fw-bold money-value" style="color:#fff;">
                                                         ₦{{ number_format($metrics['net_platform_balance'] ?? 0, 2) }}
                                                     </div>
-                                                    <div style="font-size:0.75rem;color:#fff;">Gross minus all payouts</div>
+                                                    <div class="money-note" style="color:#fff;">Gross minus all payouts</div>
                                                 </div>
                                             </div>
                                         </div>
