@@ -1428,6 +1428,7 @@ private function formatDeploymentAmount(float $amount): string
         $pendingCommissions = $pendingCommission;
         $processingPayouts = (float) ($summary['processing'] ?? 0);
         $failedPayouts = (float) ($summary['failed'] ?? 0);
+        $retryablePayout = $summary['retryable_payout'] ?? null;
         $totalCommissions = $totalCommission;
         $paystackBanks = $this->deploymentCommissionPayouts->paystackBanks();
         $recentPayouts = Schema::hasTable('deployment_manager_payouts')
@@ -1445,6 +1446,7 @@ private function formatDeploymentAmount(float $amount): string
             'paidCommissions',
             'processingPayouts',
             'failedPayouts',
+            'retryablePayout',
             'paystackBanks',
             'recentPayouts'
         ));
@@ -1491,6 +1493,16 @@ private function formatDeploymentAmount(float $amount): string
         ]);
 
         try {
+            $resumedPayout = $this->deploymentCommissionPayouts->retryManualReviewPayoutForManager($manager->user_id, Auth::id());
+            if ($resumedPayout) {
+                return back()->with(
+                    $resumedPayout->status === 'failed' ? 'error' : 'success',
+                    $resumedPayout->status === 'failed'
+                        ? ($resumedPayout->failure_reason ?: 'Payout could not be sent. Confirm the bank details and try again.')
+                        : 'Payout profile updated and the existing payout request has resumed.'
+                );
+            }
+
             if ($manager->auto_payout_enabled) {
                 $this->deploymentCommissionPayouts->attemptAutoPayout($manager->user_id);
             }
@@ -1506,17 +1518,27 @@ private function formatDeploymentAmount(float $amount): string
 
     public function requestPayout()
     {
-        $payout = $this->deploymentCommissionPayouts->createPayoutForManager(Auth::id(), false, Auth::id());
+        $payout = $this->deploymentCommissionPayouts->retryManualReviewPayoutForManager(Auth::id(), Auth::id())
+            ?: $this->deploymentCommissionPayouts->createPayoutForManager(Auth::id(), false, Auth::id());
 
         if (!$payout) {
-            return back()->with('error', 'No eligible commission is available for payout yet.');
+            $summary = $this->deploymentCommissionPayouts->summaryForManager(Auth::id());
+            if (!empty($summary['retryable_payout'])) {
+                return back()->with('error', 'Save a valid bank and account number to resume this payout request.');
+            }
+
+            return back()->with('error', 'No eligible commission is currently available for payout.');
         }
 
         if ($payout->status === 'manual_review') {
-            return back()->with('info', 'Payout request submitted. The payout team will complete any required bank routing during processing.');
+            return back()->with('info', 'Save a supported bank and valid account number to resume this payout.');
         }
 
-        return back()->with('success', 'Payout request submitted successfully.');
+        if ($payout->status === 'failed') {
+            return back()->with('error', $payout->failure_reason ?: 'Paystack could not process this payout. Confirm the bank details and try again.');
+        }
+
+        return back()->with('success', 'Payout request sent to Paystack successfully.');
     }
 
     public function commissionDetails($id) {

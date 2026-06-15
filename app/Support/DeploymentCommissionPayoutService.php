@@ -156,6 +156,7 @@ class DeploymentCommissionPayoutService
             'paid' => $paid,
             'failed' => $failed,
             'last_payout' => $payouts->first(),
+            'retryable_payout' => $payouts->first(fn ($payout) => strtolower((string) $payout->status) === 'manual_review'),
         ];
     }
 
@@ -171,6 +172,76 @@ class DeploymentCommissionPayoutService
         }
 
         return $this->createPayoutForManager($managerId, true, null);
+    }
+
+    public function retryManualReviewPayoutForManager(int $managerId, ?int $approvedBy = null): ?DeploymentManagerPayout
+    {
+        if (!Schema::hasTable('deployment_commissions') || !Schema::hasTable('deployment_manager_payouts')) {
+            return null;
+        }
+
+        $manager = DeploymentManager::query()->where('user_id', $managerId)->first();
+        if (!$manager || empty($manager->payout_bank_code) || empty($manager->payout_account_number)) {
+            return null;
+        }
+
+        $payout = DeploymentManagerPayout::query()
+            ->where('manager_id', $managerId)
+            ->where('status', 'manual_review')
+            ->latest('id')
+            ->first();
+
+        if (!$payout) {
+            return null;
+        }
+
+        $preparedPayout = DB::transaction(function () use ($payout, $manager, $approvedBy) {
+            $lockedPayout = DeploymentManagerPayout::query()->whereKey($payout->id)->lockForUpdate()->firstOrFail();
+            $commissionRows = DB::table('deployment_commissions')
+                ->where('manager_id', $manager->user_id)
+                ->where('status', 'pending')
+                ->where(function ($query) use ($lockedPayout) {
+                    $query->where('payout_id', $lockedPayout->id)
+                        ->orWhereNull('payout_id');
+                })
+                ->get();
+
+            if ($commissionRows->isEmpty()) {
+                return null;
+            }
+
+            $amount = round((float) $commissionRows->sum(fn ($row) => (float) ($row->commission_amount ?? $row->amount ?? 0)), 2);
+            if ($amount <= 0) {
+                return null;
+            }
+
+            DB::table('deployment_commissions')
+                ->whereIn('id', $commissionRows->pluck('id')->all())
+                ->update([
+                    'payout_id' => $lockedPayout->id,
+                    'payout_reference' => $lockedPayout->payout_reference,
+                    'updated_at' => now(),
+                ]);
+
+            $lockedPayout->update([
+                'gateway' => $this->resolveGateway($manager),
+                'status' => 'pending',
+                'amount' => $amount,
+                'bank_name' => $manager->payout_bank_name,
+                'bank_code' => $manager->payout_bank_code,
+                'account_name' => $manager->payout_account_name,
+                'account_number' => $manager->payout_account_number,
+                'recipient_reference' => $manager->payout_recipient_code,
+                'failure_reason' => null,
+                'approved_by' => $approvedBy,
+                'approved_at' => $approvedBy ? now() : $lockedPayout->approved_at,
+                'processed_at' => null,
+            ]);
+
+            return $lockedPayout->fresh();
+        });
+
+        return $preparedPayout ? $this->dispatchTransfer($preparedPayout, $manager->fresh()) : null;
     }
 
     public function createPayoutForManager(int $managerId, bool $automatic = false, ?int $approvedBy = null): ?DeploymentManagerPayout

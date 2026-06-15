@@ -259,9 +259,13 @@
                                     <span class="fw-bold text-primary text-uppercase">{{ str_replace('_', ' ', optional($manager)->payout_status ?? 'not_configured') }}</span>
                                 </div>
                                 <div class="payout-actions d-flex gap-2">
+                                    @php
+                                        $hasRetryablePayout = !empty($retryablePayout);
+                                        $canRequestPayout = ($pendingCommissions ?? 0) > 0 || $hasRetryablePayout;
+                                    @endphp
                                     <button type="submit" class="btn btn-outline-primary">Save Payout Profile</button>
-                                    <button type="submit" form="request-payout-form" class="btn btn-primary" {{ ($pendingCommissions ?? 0) <= 0 ? 'disabled' : '' }}>
-                                        Request Payout
+                                    <button type="submit" form="request-payout-form" class="btn btn-primary" {{ !$canRequestPayout ? 'disabled' : '' }}>
+                                        {{ $hasRetryablePayout ? 'Resume Payout' : 'Request Payout' }}
                                     </button>
                                 </div>
                             </div>
@@ -298,9 +302,19 @@
                             <span class="text-muted">Threshold</span>
                             <span class="fw-semibold">₦{{ number_format((float) (optional($manager)->minimum_payout_amount ?? 5000), 2) }}</span>
                         </div>
-                        <div class="alert alert-light border mt-3 mb-0 small">
-                            Payout requests can now be submitted with normal bank details only. If a gateway needs extra bank routing data, the payout team can complete that during processing.
-                        </div>
+                        @if(!empty($retryablePayout))
+                            <div class="alert alert-warning border mt-3 mb-0 small">
+                                Your previous payout is ready to resume. Select your bank, confirm the account number, save the profile, then use <strong>Resume Payout</strong>.
+                            </div>
+                        @elseif(($pendingCommissions ?? 0) > 0)
+                            <div class="alert alert-success border mt-3 mb-0 small">
+                                Your commission is available. Confirm your bank details and select <strong>Request Payout</strong>.
+                            </div>
+                        @else
+                            <div class="alert alert-light border mt-3 mb-0 small">
+                                No commission is currently available for withdrawal.
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
