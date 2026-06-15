@@ -6,6 +6,7 @@ use App\Models\DeploymentManager;
 use App\Models\DeploymentManagerPayout;
 use App\Models\Setting;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -14,6 +15,77 @@ use Illuminate\Support\Str;
 
 class DeploymentCommissionPayoutService
 {
+    public function paystackBanks(): Collection
+    {
+        return Cache::remember('paystack_banks_ngn', now()->addHours(24), function () {
+            $secret = $this->paystackSecret();
+            if ($secret === '') {
+                return $this->fallbackPaystackBanks();
+            }
+
+            try {
+                $response = Http::withToken($secret)
+                    ->acceptJson()
+                    ->get('https://api.paystack.co/bank', [
+                        'country' => 'nigeria',
+                        'currency' => 'NGN',
+                    ]);
+
+                Log::info('Paystack banks response.', [
+                    'status' => $response->status(),
+                    'body' => $response->json(),
+                ]);
+
+                if (!$response->successful() || !($response->json('status') ?? false)) {
+                    return $this->fallbackPaystackBanks();
+                }
+
+                return collect($response->json('data', []))
+                    ->map(fn ($bank) => [
+                        'name' => (string) ($bank['name'] ?? ''),
+                        'code' => (string) ($bank['code'] ?? ''),
+                    ])
+                    ->filter(fn ($bank) => $bank['name'] !== '' && $bank['code'] !== '')
+                    ->sortBy('name')
+                    ->values();
+            } catch (\Throwable $e) {
+                Log::warning('Unable to load Paystack bank list.', ['error' => $e->getMessage()]);
+
+                return $this->fallbackPaystackBanks();
+            }
+        });
+    }
+
+    public function resolvePaystackBank(?string $bankCode, ?string $bankName): ?array
+    {
+        $banks = $this->paystackBanks();
+        $bankCode = trim((string) $bankCode);
+        $bankName = trim((string) $bankName);
+
+        if ($bankCode !== '') {
+            $bank = $banks->firstWhere('code', $bankCode);
+
+            return $bank ?: [
+                'code' => $bankCode,
+                'name' => $bankName !== '' ? $bankName : 'Selected Bank',
+            ];
+        }
+
+        if ($bankName === '') {
+            return null;
+        }
+
+        $needle = $this->normalizeBankName($bankName);
+
+        return $banks->first(function ($bank) use ($needle) {
+            $candidate = $this->normalizeBankName($bank['name']);
+
+            return $candidate === $needle
+                || str_contains($candidate, $needle)
+                || str_contains($needle, $candidate);
+        });
+    }
+
     public function summaryForManager(int $managerId): array
     {
         $commissions = collect();
@@ -123,6 +195,19 @@ class DeploymentCommissionPayoutService
                 return null;
             }
             return $this->createManualReviewPayout($manager, $summary['available'], $automatic, 'Payout account is incomplete.', $approvedBy);
+        }
+
+        if (empty($manager->payout_bank_code)) {
+            $bank = $this->resolvePaystackBank($manager->payout_bank_code, $manager->payout_bank_name);
+            if ($bank && !empty($bank['code'])) {
+                $manager->update([
+                    'payout_bank_name' => $bank['name'],
+                    'payout_bank_code' => $bank['code'],
+                    'payout_recipient_code' => null,
+                    'payout_status' => 'configured',
+                ]);
+                $manager->refresh();
+            }
         }
 
         if (empty($manager->payout_bank_code)) {
@@ -322,15 +407,44 @@ class DeploymentCommissionPayoutService
 
         $recipientCode = $manager->payout_recipient_code;
         if (!$recipientCode) {
+            $resolveResponse = Http::withToken($secret)
+                ->acceptJson()
+                ->get('https://api.paystack.co/bank/resolve', [
+                    'account_number' => $manager->payout_account_number,
+                    'bank_code' => $manager->payout_bank_code,
+                ]);
+
+            Log::info('Paystack payout account resolve response.', [
+                'manager_id' => $manager->user_id,
+                'status' => $resolveResponse->status(),
+                'body' => $resolveResponse->json(),
+            ]);
+
+            if (!$resolveResponse->successful() || !($resolveResponse->json('status') ?? false)) {
+                return [
+                    'ok' => false,
+                    'message' => (string) ($resolveResponse->json('message') ?? 'Unable to verify payout bank account.'),
+                    'raw' => $resolveResponse->json(),
+                ];
+            }
+
+            $verifiedAccountName = (string) ($resolveResponse->json('data.account_name') ?? $manager->payout_account_name);
+
             $recipientResponse = Http::withToken($secret)
                 ->acceptJson()
                 ->post('https://api.paystack.co/transferrecipient', [
                     'type' => 'nuban',
-                    'name' => $manager->payout_account_name,
+                    'name' => $verifiedAccountName,
                     'account_number' => $manager->payout_account_number,
                     'bank_code' => $manager->payout_bank_code,
                     'currency' => 'NGN',
                 ]);
+
+            Log::info('Paystack payout recipient response.', [
+                'manager_id' => $manager->user_id,
+                'status' => $recipientResponse->status(),
+                'body' => $recipientResponse->json(),
+            ]);
 
             if (!$recipientResponse->successful() || !($recipientResponse->json('status') ?? false)) {
                 return [
@@ -342,6 +456,7 @@ class DeploymentCommissionPayoutService
 
             $recipientCode = (string) ($recipientResponse->json('data.recipient_code') ?? '');
             $manager->update([
+                'payout_account_name' => $verifiedAccountName,
                 'payout_recipient_code' => $recipientCode,
                 'payout_status' => 'verified',
             ]);
@@ -359,6 +474,13 @@ class DeploymentCommissionPayoutService
             ]);
 
         $data = $transferResponse->json();
+        Log::info('Paystack payout transfer response.', [
+            'manager_id' => $manager->user_id,
+            'payout_id' => $payout->id,
+            'status' => $transferResponse->status(),
+            'body' => $data,
+        ]);
+
         if (!$transferResponse->successful() || !($data['status'] ?? false)) {
             return [
                 'ok' => false,
@@ -420,7 +542,8 @@ class DeploymentCommissionPayoutService
 
     private function paystackSecret(): string
     {
-        return trim((string) config('services.paystack.secretKey'))
+        return trim((string) config('services.paystack.secret'))
+            ?: trim((string) config('services.paystack.secretKey'))
             ?: trim((string) config('services.paystack.secret_key'))
             ?: trim((string) Setting::getSensitive('paystack_secret', Setting::get('paystack_secret', '')));
     }
@@ -429,5 +552,44 @@ class DeploymentCommissionPayoutService
     {
         return trim((string) config('services.flutterwave.secret_key'))
             ?: trim((string) Setting::getSensitive('flutterwave_secret', Setting::get('flutterwave_secret', '')));
+    }
+
+    private function normalizeBankName(string $name): string
+    {
+        return str($name)
+            ->lower()
+            ->replace(['plc', 'limited', 'ltd', '.', ',', '-', '_'], ' ')
+            ->replaceMatches('/\s+/', ' ')
+            ->trim()
+            ->toString();
+    }
+
+    private function fallbackPaystackBanks(): Collection
+    {
+        return collect([
+            ['name' => 'Access Bank', 'code' => '044'],
+            ['name' => 'Citibank Nigeria', 'code' => '023'],
+            ['name' => 'Ecobank Nigeria', 'code' => '050'],
+            ['name' => 'Fidelity Bank', 'code' => '070'],
+            ['name' => 'First Bank of Nigeria', 'code' => '011'],
+            ['name' => 'First City Monument Bank', 'code' => '214'],
+            ['name' => 'Globus Bank', 'code' => '00103'],
+            ['name' => 'Guaranty Trust Bank', 'code' => '058'],
+            ['name' => 'Heritage Bank', 'code' => '030'],
+            ['name' => 'Keystone Bank', 'code' => '082'],
+            ['name' => 'Kuda Bank', 'code' => '50211'],
+            ['name' => 'Polaris Bank', 'code' => '076'],
+            ['name' => 'Providus Bank', 'code' => '101'],
+            ['name' => 'Stanbic IBTC Bank', 'code' => '221'],
+            ['name' => 'Standard Chartered Bank', 'code' => '068'],
+            ['name' => 'Sterling Bank', 'code' => '232'],
+            ['name' => 'Suntrust Bank', 'code' => '100'],
+            ['name' => 'Titan Trust Bank', 'code' => '102'],
+            ['name' => 'Union Bank of Nigeria', 'code' => '032'],
+            ['name' => 'United Bank For Africa', 'code' => '033'],
+            ['name' => 'Unity Bank', 'code' => '215'],
+            ['name' => 'Wema Bank', 'code' => '035'],
+            ['name' => 'Zenith Bank', 'code' => '057'],
+        ]);
     }
 }

@@ -45,6 +45,7 @@ class User extends Authenticatable
         'location',
         'company_id',
         'status',
+        'wallet_balance',
         'email_verified_at',
         
         // Social / OAuth
@@ -85,6 +86,7 @@ class User extends Authenticatable
         'is_verified'          => 'boolean',
         'role_id'              => 'integer',
         'company_id'           => 'integer',
+        'wallet_balance'       => 'decimal:2',
         'permissions_override' => 'array',
         'is_protected_super_admin' => 'boolean',
         'internal_test_access_enabled' => 'boolean',
@@ -208,6 +210,11 @@ class User extends Authenticatable
     public function deploymentProfile(): HasOne
     {
         return $this->hasOne(DeploymentManager::class, 'user_id');
+    }
+
+    public function withdrawals(): HasMany
+    {
+        return $this->hasMany(Withdrawal::class);
     }
 
     /* =========================================================================

@@ -53,6 +53,7 @@ return [
 'paystack' => [
     'publicKey' => env('PAYSTACK_TEST_PUBLIC_KEY', env('PAYSTACK_PUBLIC_KEY')),
     'secretKey' => env('PAYSTACK_TEST_SECRET_KEY', env('PAYSTACK_SECRET_KEY')),
+    'secret' => env('PAYSTACK_TEST_SECRET_KEY', env('PAYSTACK_SECRET_KEY')),
     'public_key' => env('PAYSTACK_TEST_PUBLIC_KEY', env('PAYSTACK_PUBLIC_KEY')),
     'secret_key' => env('PAYSTACK_TEST_SECRET_KEY', env('PAYSTACK_SECRET_KEY')),
     'paymentUrl' => env('PAYSTACK_PAYMENT_URL'),

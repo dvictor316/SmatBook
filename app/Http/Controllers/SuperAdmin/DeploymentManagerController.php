@@ -1429,6 +1429,7 @@ private function formatDeploymentAmount(float $amount): string
         $processingPayouts = (float) ($summary['processing'] ?? 0);
         $failedPayouts = (float) ($summary['failed'] ?? 0);
         $totalCommissions = $totalCommission;
+        $paystackBanks = $this->deploymentCommissionPayouts->paystackBanks();
         $recentPayouts = Schema::hasTable('deployment_manager_payouts')
             ? DeploymentManagerPayout::query()->where('manager_id', Auth::id())->latest()->limit(8)->get()
             : collect();
@@ -1444,6 +1445,7 @@ private function formatDeploymentAmount(float $amount): string
             'paidCommissions',
             'processingPayouts',
             'failedPayouts',
+            'paystackBanks',
             'recentPayouts'
         ));
     }
@@ -1461,13 +1463,24 @@ private function formatDeploymentAmount(float $amount): string
         ]);
 
         $manager = DeploymentManager::query()->where('user_id', Auth::id())->firstOrFail();
+        $bank = $this->deploymentCommissionPayouts->resolvePaystackBank(
+            $validated['payout_bank_code'] ?? null,
+            $validated['payout_bank_name'] ?? null
+        );
+
+        if (!$bank || empty($bank['code'])) {
+            throw ValidationException::withMessages([
+                'payout_bank_code' => 'Select a supported Paystack bank before requesting payouts.',
+            ]);
+        }
+
         $providerChanged = strtolower((string) ($manager->payout_provider ?? '')) !== strtolower((string) $validated['payout_provider']);
         $bankChanged = (string) ($manager->payout_account_number ?? '') !== (string) $validated['payout_account_number']
-            || (string) ($manager->payout_bank_code ?? '') !== (string) ($validated['payout_bank_code'] ?? '');
+            || (string) ($manager->payout_bank_code ?? '') !== (string) ($bank['code'] ?? '');
 
         $manager->update([
-            'payout_bank_name' => $validated['payout_bank_name'],
-            'payout_bank_code' => $validated['payout_bank_code'] ?? $manager->payout_bank_code,
+            'payout_bank_name' => $bank['name'],
+            'payout_bank_code' => $bank['code'],
             'payout_account_name' => $validated['payout_account_name'],
             'payout_account_number' => $validated['payout_account_number'],
             'payout_provider' => $validated['payout_provider'],

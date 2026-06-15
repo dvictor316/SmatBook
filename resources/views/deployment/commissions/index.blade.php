@@ -212,9 +212,22 @@
                             @csrf
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Bank Name</label>
-                                <input type="text" name="payout_bank_name" class="form-control" value="{{ old('payout_bank_name', optional($manager)->payout_bank_name ?? '') }}" required>
+                                @php
+                                    $selectedBankCode = old('payout_bank_code', optional($manager)->payout_bank_code ?? '');
+                                    $selectedBankName = old('payout_bank_name', optional($manager)->payout_bank_name ?? '');
+                                @endphp
+                                <select name="payout_bank_code" id="payout_bank_code" class="form-select @error('payout_bank_code') is-invalid @enderror" required>
+                                    <option value="">Select bank</option>
+                                    @foreach(($paystackBanks ?? collect()) as $bank)
+                                        <option value="{{ $bank['code'] }}" data-bank-name="{{ $bank['name'] }}" {{ (string) $selectedBankCode === (string) $bank['code'] ? 'selected' : '' }}>
+                                            {{ $bank['name'] }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <input type="hidden" name="payout_bank_name" id="payout_bank_name" value="{{ $selectedBankName }}">
+                                @error('payout_bank_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                <small class="text-muted">Choose the exact bank Paystack will transfer to.</small>
                             </div>
-                            <input type="hidden" name="payout_bank_code" value="{{ old('payout_bank_code', optional($manager)->payout_bank_code ?? '') }}">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Account Name</label>
                                 <input type="text" name="payout_account_name" class="form-control" value="{{ old('payout_account_name', optional($manager)->payout_account_name ?? '') }}" required>
@@ -416,6 +429,20 @@
                 setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
             });
         }
+
+        const bankSelect = document.getElementById('payout_bank_code');
+        const bankNameInput = document.getElementById('payout_bank_name');
+        const syncBankName = () => {
+            if (!bankSelect || !bankNameInput) {
+                return;
+            }
+
+            const selectedOption = bankSelect.options[bankSelect.selectedIndex];
+            bankNameInput.value = selectedOption?.dataset?.bankName || selectedOption?.textContent?.trim() || '';
+        };
+
+        bankSelect?.addEventListener('change', syncBankName);
+        syncBankName();
     });
 
     // Financial reporting print handler
