@@ -3339,6 +3339,93 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-card-img img {
         max-height: 32px !important;
     }
 }
+
+/* POS action rail: iPad/tablet keeps visible buttons; hamburger drawer is phone-only. */
+@media (min-width: 768px) and (max-width: 1199.98px) {
+    body.pos-terminal-workspace #mobile_btn,
+    body.pos-terminal-workspace #toggle_btn {
+        display: none !important;
+    }
+
+    body.pos-terminal-workspace .pos-shell {
+        display: flex !important;
+        gap: 0;
+        min-height: calc(100vh - 82px);
+        overflow: hidden;
+    }
+
+    body.pos-terminal-workspace .pos-action-rail {
+        position: relative !important;
+        inset: auto !important;
+        transform: none !important;
+        flex: 0 0 118px !important;
+        width: 118px !important;
+        height: auto !important;
+        min-height: 100%;
+        padding: 0 !important;
+        overflow-y: auto;
+        background: transparent !important;
+        box-shadow: none !important;
+        display: flex !important;
+        align-self: stretch;
+    }
+
+    body.pos-terminal-workspace .pos-rail-panel {
+        min-height: 100%;
+        padding: 5px !important;
+    }
+
+    body.pos-terminal-workspace .pos-rail-btn {
+        min-height: 32px;
+        padding: 5px 7px;
+        font-size: 0.58rem;
+        margin-top: 4px !important;
+    }
+
+    body.pos-terminal-workspace .pos-rail-backdrop,
+    body.pos-terminal-workspace.pos-rail-open .pos-rail-backdrop {
+        display: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    body.pos-terminal-workspace .pos-shell {
+        display: block !important;
+        min-height: 0;
+        overflow: visible;
+    }
+
+    body.pos-terminal-workspace .pos-action-rail {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: min(320px, 84vw) !important;
+        height: 100dvh !important;
+        padding: 12px !important;
+        background: linear-gradient(180deg, #eef4ff 0%, #ffffff 100%) !important;
+        box-shadow: 18px 0 42px rgba(6, 26, 68, 0.22) !important;
+        transform: translateX(-110%) !important;
+        transition: transform 0.25s ease;
+        display: block !important;
+        z-index: 1055;
+    }
+
+    body.pos-terminal-workspace.pos-rail-open .pos-action-rail {
+        transform: translateX(0) !important;
+    }
+
+    body.pos-terminal-workspace.pos-rail-open .pos-rail-backdrop {
+        display: block !important;
+        position: fixed;
+        inset: 0;
+        z-index: 1050;
+        background: rgba(6, 26, 68, 0.18);
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+}
 </style>
 
 <div class="pos-full-page-wrapper">
@@ -7074,7 +7161,7 @@ document.addEventListener('DOMContentLoaded', function () {
     ].filter(Boolean);
     const posRailBackdrop = document.getElementById('pos-rail-backdrop');
     const posRail = document.getElementById('pos-action-rail');
-    const isPosDrawerMode = () => window.matchMedia('(max-width: 1199.98px)').matches;
+    const isPosDrawerMode = () => window.matchMedia('(max-width: 767.98px)').matches;
 
     headerMenuButtons.forEach((button) => {
         button.setAttribute('aria-controls', 'pos-action-rail');
@@ -7120,6 +7207,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
+            closePosRail();
+        }
+    });
+
+    window.addEventListener('resize', function () {
+        if (!isPosDrawerMode()) {
             closePosRail();
         }
     });
