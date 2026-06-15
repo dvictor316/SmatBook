@@ -181,7 +181,7 @@
     }
     .dashboard-tight .stretch-card > .card {
         width: 100%;
-        height: var(--dash-card-height, 300px) !important;
+        height: auto !important;
         min-height: 0 !important;
     }
     .dashboard-tight .card-subtitle { margin-bottom: 0.65rem !important; }
@@ -192,10 +192,10 @@
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.045);
     }
     .dashboard-tight .card:not(.executive-kpi) {
-        height: var(--dash-card-height, 300px) !important;
-        max-height: var(--dash-card-height, 300px) !important;
+        height: auto !important;
+        max-height: none !important;
         display: flex;
-        overflow: hidden;
+        overflow: visible;
     }
     .dashboard-tight .card-body {
         padding: 0.68rem 0.78rem !important;
@@ -203,7 +203,7 @@
     .dashboard-tight .card:not(.executive-kpi) > .card-body {
         flex: 1 1 auto;
         min-height: 0;
-        overflow-y: auto;
+        overflow-y: visible;
         overflow-x: hidden;
     }
     .dashboard-tight .card:not(.executive-kpi) > .card-body::-webkit-scrollbar,
@@ -350,8 +350,8 @@
     }
     .dashboard-stack > .card {
         margin-bottom: 0 !important;
-        height: var(--dash-card-height, 300px) !important;
-        max-height: var(--dash-card-height, 300px) !important;
+        height: auto !important;
+        max-height: none !important;
         flex: 0 0 auto;
     }
     .chartjs-wrapper {
@@ -634,7 +634,9 @@
     .executive-kpi {
         border: none !important;
         border-radius: 16px !important;
-        min-height: 82px;
+        min-height: 96px;
+        height: 96px !important;
+        max-height: 96px !important;
         overflow: hidden;
         position: relative;
         box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1) !important;
@@ -649,7 +651,7 @@
     .executive-kpi .card-body {
         position: relative;
         z-index: 1;
-        padding: 0.58rem 0.68rem !important;
+        padding: 0.5rem 0.62rem !important;
     }
     .executive-kpi .kpi-icon-shell {
         width: 30px;
@@ -703,6 +705,10 @@
         color: rgba(255,255,255,0.78) !important;
         font-size: 0.52rem;
         line-height: 1.25;
+        max-width: 95%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .executive-kpi .kpi-badge {
         font-family: var(--kpi-ui-font);
@@ -1096,7 +1102,9 @@
             font-size: 0.88rem;
         }
         .executive-kpi {
-            min-height: 78px;
+            min-height: 86px;
+            height: 86px !important;
+            max-height: 86px !important;
         }
         .executive-kpi .kpi-value {
             font-size: 0.98rem;
