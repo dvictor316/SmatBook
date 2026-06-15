@@ -775,6 +775,29 @@
     .dashboard-tight .card.compact-side-snapshot .summary-fill .value {
         font-size: 0.82rem;
     }
+    .dashboard-analytics-pair .card {
+        height: 100% !important;
+        max-height: none !important;
+    }
+    .dashboard-analytics-pair .chart-container-sm {
+        height: 118px;
+        min-height: 118px;
+    }
+    .dashboard-analytics-pair .subscription-mix-chart {
+        height: 118px;
+        max-height: 118px;
+    }
+    .dashboard-analytics-pair .summary-fill {
+        padding: 0.5rem 0.6rem;
+        border-radius: 10px;
+    }
+    .dashboard-analytics-pair .summary-fill .label {
+        font-size: 0.58rem;
+        margin-bottom: 0.2rem;
+    }
+    .dashboard-analytics-pair .summary-fill .value {
+        font-size: 0.84rem;
+    }
     .dashboard-tight .card.tone-card .d-flex.align-items-center {
         gap: 0.55rem;
     }
@@ -1987,6 +2010,84 @@
                             </div>
                         </div>
 
+                        <div class="row g-2 mt-2 dashboard-analytics-pair">
+                            <div class="col-12 col-xl-6">
+                                <div class="card card-rounded shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <div>
+                                                <h5 class="mb-0 fw-bold text-dark">Subscriber Momentum</h5>
+                                                <small class="text-muted">Active tenants vs registered users trend</small>
+                                            </div>
+                                            <span class="live-badge-soft">Live</span>
+                                        </div>
+                                        <div class="chart-container chart-container-sm mt-2">
+                                            <canvas id="subscriberMomentumChart"></canvas>
+                                        </div>
+                                        <div class="row g-2 mt-2">
+                                            @foreach([
+                                                ['label' => 'Active Tenants', 'value' => number_format($metrics['total_tenants'] ?? 0)],
+                                                ['label' => 'Total Users', 'value' => number_format($metrics['total_users'] ?? 0)],
+                                                ['label' => 'Verified Users', 'value' => number_format($metrics['verified_users'] ?? 0)],
+                                                ['label' => 'Active Subs', 'value' => number_format($metrics['active_subs'] ?? 0)],
+                                            ] as $momentumStat)
+                                                <div class="col-6 col-lg-3">
+                                                    <div class="summary-fill h-100">
+                                                        <div class="label">{{ $momentumStat['label'] }}</div>
+                                                        <div class="value">{{ $momentumStat['value'] }}</div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-xl-6">
+                                <div class="card card-rounded shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <div>
+                                                <h5 class="mb-0 fw-bold text-dark">Subscription Health Mix</h5>
+                                                <small class="text-muted">Readiness, paid conversions, and renewal pressure</small>
+                                            </div>
+                                            <span class="live-badge-soft">Live</span>
+                                        </div>
+                                        @php
+                                            $pendingSetups = (int) ($metrics['pending_setups'] ?? 0);
+                                            $paidSubs = (int) ($metrics['paid_subs'] ?? 0);
+                                            $expiredSubs = (int) ($metrics['expired_subs'] ?? 0);
+                                            $recentSignups = (int) ($metrics['recent_signups'] ?? 0);
+                                        @endphp
+                                        <div class="row g-2 align-items-center">
+                                            <div class="col-12 col-md-5">
+                                                <div class="subscription-mix-chart">
+                                                    <canvas id="subscriptionMixChart"></canvas>
+                                                </div>
+                                            </div>
+                                            <div class="col-12 col-md-7">
+                                                <div class="row g-2">
+                                                    @foreach([
+                                                        ['label' => 'Paid', 'value' => number_format($paidSubs), 'tone' => 'tone-emerald'],
+                                                        ['label' => 'Pending Setup', 'value' => number_format($pendingSetups), 'tone' => 'tone-violet'],
+                                                        ['label' => 'Expiring Soon', 'value' => number_format($metrics['expiring_soon_subs'] ?? 0), 'tone' => 'tone-amber'],
+                                                        ['label' => 'Expired', 'value' => number_format($expiredSubs), 'tone' => 'tone-rose'],
+                                                    ] as $mixStat)
+                                                        <div class="col-6">
+                                                            <div class="summary-fill {{ $mixStat['tone'] }} h-100">
+                                                                <div class="label">{{ $mixStat['label'] }}</div>
+                                                                <div class="value">{{ $mixStat['value'] }}</div>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="row mt-4 dashboard-row-balanced">
 
                             <div class="col-12 col-xl-7 dashboard-stack">
@@ -2204,50 +2305,6 @@
                                     </div>
                                 </div>
 
-                                <div class="card card-rounded shadow-sm">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <div>
-                                                <h5 class="mb-0 fw-bold text-dark">Subscriber Momentum</h5>
-                                                <small class="text-muted">Active tenants vs registered users trend</small>
-                                            </div>
-                                            <span class="live-badge-soft">Live</span>
-                                        </div>
-                                        <div class="chart-container chart-container-sm mt-3">
-                                            <canvas id="subscriberMomentumChart"></canvas>
-                                        </div>
-                                        <div class="row g-2 mt-2">
-                                            <div class="col-sm-6">
-                                                <div class="summary-fill">
-                                                    <div class="label">Active Tenants</div>
-                                                    <div class="value">{{ number_format($metrics['total_tenants'] ?? 0) }}</div>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-6">
-                                                <div class="summary-fill">
-                                                    <div class="label">Total Users</div>
-                                                    <div class="value">{{ number_format($metrics['total_users'] ?? 0) }}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="row g-2 mt-3">
-                                            @foreach([
-                                                ['label' => 'Verified Users', 'value' => number_format($metrics['verified_users'] ?? 0)],
-                                                ['label' => 'Active Subs', 'value' => number_format($metrics['active_subs'] ?? 0)],
-                                                ['label' => 'Direct Paid Buyers', 'value' => number_format($metrics['direct_paid_subs'] ?? 0)],
-                                                ['label' => 'Deployment Paid Buyers', 'value' => number_format($metrics['deployment_paid_subs'] ?? 0)],
-                                            ] as $momentumStat)
-                                                <div class="col-sm-6 col-xl-3">
-                                                    <div class="summary-fill h-100">
-                                                        <div class="label">{{ $momentumStat['label'] }}</div>
-                                                        <div class="value">{{ $momentumStat['value'] }}</div>
-                                                    </div>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                </div>
-
                             </div>
 
                             <div class="col-12 col-xl-5 grid-margin dashboard-stack">
@@ -2279,54 +2336,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="card card-rounded shadow-sm">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <div>
-                                                <h5 class="mb-0 fw-bold text-dark">Subscription Health Mix</h5>
-                                                <small class="text-muted">Real-time onboarding and renewal balance</small>
-                                            </div>
-                                            <span class="badge bg-primary-subtle text-primary">Live</span>
-                                        </div>
-                                        @php
-                                            $pendingSetups = (int) ($metrics['pending_setups'] ?? 0);
-                                            $paidSubs = (int) ($metrics['paid_subs'] ?? 0);
-                                            $expiredSubs = (int) ($metrics['expired_subs'] ?? 0);
-                                            $recentSignups = (int) ($metrics['recent_signups'] ?? 0);
-                                        @endphp
-                                        <div class="row g-3 align-items-center">
-                                            <div class="col-12">
-                                                <div style="height: 220px;">
-                                                    <canvas id="subscriptionMixChart"></canvas>
-                                                </div>
-                                            </div>
-                                            <div class="col-12">
-                                                <div class="d-flex flex-wrap gap-3 small text-muted">
-                                                    <div><span class="badge-dot bg-primary me-2"></span>Paid: {{ number_format($paidSubs) }}</div>
-                                                    <div><span class="badge-dot bg-warning me-2"></span>Pending: {{ number_format($pendingSetups) }}</div>
-                                                    <div><span class="badge-dot bg-danger me-2"></span>Expired: {{ number_format($expiredSubs) }}</div>
-                                                    <div><span class="badge-dot bg-info me-2"></span>New (30d): {{ number_format($recentSignups) }}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="row g-2 mt-3">
-                                            @foreach([
-                                                ['label' => 'Direct Revenue', 'value' => '₦' . number_format($metrics['direct_subscription_revenue'] ?? 0, 0)],
-                                                ['label' => 'Deployment Revenue', 'value' => '₦' . number_format($metrics['deployment_subscription_revenue'] ?? 0, 0)],
-                                                ['label' => 'Direct Buyers', 'value' => number_format($metrics['direct_paid_subs'] ?? 0)],
-                                                ['label' => 'Deployment Buyers', 'value' => number_format($metrics['deployment_paid_subs'] ?? 0)],
-                                            ] as $mixMini)
-                                                <div class="col-sm-6">
-                                                    <div class="summary-fill h-100">
-                                                        <div class="label">{{ $mixMini['label'] }}</div>
-                                                        <div class="value">{{ $mixMini['value'] }}</div>
-                                                    </div>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                </div>
-
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -2522,69 +2531,77 @@
                                     </div>
                                 </div>
 
-                                <div class="card card-rounded shadow-sm">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <div>
-                                                <h5 class="mb-0 fw-bold text-dark">Growth Comparison</h5>
-                                                <small class="text-muted">Companies, users, and paid plans moving together</small>
-                                            </div>
-                                            <span class="live-badge-soft">Live</span>
-                                        </div>
-                                        <div class="chart-container chart-container-sm mt-3">
-                                            <canvas id="growthComparisonChart"></canvas>
-                                        </div>
-                                        <div class="row g-2 mt-2">
-                                            <div class="col-sm-4">
-                                                <div class="summary-fill">
-                                                    <div class="label">Companies</div>
-                                                    <div class="value">{{ number_format(array_sum($dashboardChartSeries['companies'] ?? [])) }}</div>
+                                <div class="row g-2 dashboard-analytics-pair">
+                                    <div class="col-12 col-lg-6">
+                                        <div class="card card-rounded shadow-sm">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <div>
+                                                        <h5 class="mb-0 fw-bold text-dark">Growth Comparison</h5>
+                                                        <small class="text-muted">Companies, users, and paid plans moving together</small>
+                                                    </div>
+                                                    <span class="live-badge-soft">Live</span>
                                                 </div>
-                                            </div>
-                                            <div class="col-sm-4">
-                                                <div class="summary-fill">
-                                                    <div class="label">Users</div>
-                                                    <div class="value">{{ number_format(array_sum($dashboardChartSeries['users'] ?? [])) }}</div>
+                                                <div class="chart-container chart-container-sm mt-2">
+                                                    <canvas id="growthComparisonChart"></canvas>
                                                 </div>
-                                            </div>
-                                            <div class="col-sm-4">
-                                                <div class="summary-fill">
-                                                    <div class="label">Paid Plans</div>
-                                                    <div class="value">{{ number_format(array_sum($dashboardChartSeries['orders'] ?? [])) }}</div>
+                                                <div class="row g-2 mt-2">
+                                                    <div class="col-4">
+                                                        <div class="summary-fill">
+                                                            <div class="label">Companies</div>
+                                                            <div class="value">{{ number_format(array_sum($dashboardChartSeries['companies'] ?? [])) }}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <div class="summary-fill">
+                                                            <div class="label">Users</div>
+                                                            <div class="value">{{ number_format(array_sum($dashboardChartSeries['users'] ?? [])) }}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <div class="summary-fill">
+                                                            <div class="label">Paid Plans</div>
+                                                            <div class="value">{{ number_format(array_sum($dashboardChartSeries['orders'] ?? [])) }}</div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div class="card card-rounded shadow-sm">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <div>
-                                                <h5 class="mb-0 fw-bold text-dark">Subscription Health Mix</h5>
-                                                <small class="text-muted">Readiness, paid conversions, and renewal pressure</small>
-                                            </div>
-                                            <span class="live-badge-soft">Live</span>
-                                        </div>
-                                        <div class="row g-3 align-items-center mt-1">
-                                            <div class="col-md-6">
-                                                <div class="chart-container chart-container-sm">
-                                                    <canvas id="subscriptionHealthMixChart"></canvas>
+                                    <div class="col-12 col-lg-6">
+                                        <div class="card card-rounded shadow-sm">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <div>
+                                                        <h5 class="mb-0 fw-bold text-dark">Subscription Health Mix</h5>
+                                                        <small class="text-muted">Readiness, paid conversions, and renewal pressure</small>
+                                                    </div>
+                                                    <span class="live-badge-soft">Live</span>
                                                 </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="d-grid gap-2">
-                                                    @foreach([
-                                                        ['label' => 'Paid', 'value' => number_format($metrics['paid_subs'] ?? 0), 'tone' => 'tone-emerald'],
-                                                        ['label' => 'Pending Setup', 'value' => number_format($metrics['pending_setups'] ?? 0), 'tone' => 'tone-violet'],
-                                                        ['label' => 'Expiring Soon', 'value' => number_format($metrics['expiring_soon_subs'] ?? 0), 'tone' => 'tone-amber'],
-                                                        ['label' => 'Expired', 'value' => number_format($metrics['expired_subs'] ?? 0), 'tone' => 'tone-rose'],
-                                                    ] as $subMix)
-                                                        <div class="summary-fill {{ $subMix['tone'] }}">
-                                                            <div class="label">{{ $subMix['label'] }}</div>
-                                                            <div class="value">{{ $subMix['value'] }}</div>
+                                                <div class="row g-2 align-items-center mt-1">
+                                                    <div class="col-12 col-md-5">
+                                                        <div class="chart-container chart-container-sm">
+                                                            <canvas id="subscriptionHealthMixChart"></canvas>
                                                         </div>
-                                                    @endforeach
+                                                    </div>
+                                                    <div class="col-12 col-md-7">
+                                                        <div class="row g-2">
+                                                            @foreach([
+                                                                ['label' => 'Paid', 'value' => number_format($metrics['paid_subs'] ?? 0), 'tone' => 'tone-emerald'],
+                                                                ['label' => 'Pending Setup', 'value' => number_format($metrics['pending_setups'] ?? 0), 'tone' => 'tone-violet'],
+                                                                ['label' => 'Expiring Soon', 'value' => number_format($metrics['expiring_soon_subs'] ?? 0), 'tone' => 'tone-amber'],
+                                                                ['label' => 'Expired', 'value' => number_format($metrics['expired_subs'] ?? 0), 'tone' => 'tone-rose'],
+                                                            ] as $subMix)
+                                                                <div class="col-6">
+                                                                    <div class="summary-fill {{ $subMix['tone'] }} h-100">
+                                                                        <div class="label">{{ $subMix['label'] }}</div>
+                                                                        <div class="value">{{ $subMix['value'] }}</div>
+                                                                    </div>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
