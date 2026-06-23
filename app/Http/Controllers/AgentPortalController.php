@@ -379,7 +379,7 @@ class AgentPortalController extends Controller
 
     private function leadCategories(): array
     {
-        return ['Restaurant', 'Hotel', 'Pharmacy', 'Supermarket', 'Hospital', 'Salon', 'Electronics', 'Fashion', 'Education', 'Automotive', 'Real Estate'];
+        return ['Stores', 'Supermarkets', 'Pharmacies', 'Hospitals', 'Restaurants', 'Banks', 'Fuel Stations', 'Schools', 'Hotels', 'Salon', 'Electronics', 'Fashion', 'Education', 'Automotive', 'Real Estate'];
     }
 
     private function leadStatuses(): array

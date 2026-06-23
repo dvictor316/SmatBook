@@ -22,9 +22,10 @@
         </div>
 
         <div class="agent-grid mb-4">
-            <section class="agent-card span-4 agent-metric"><span class="icon"><i class="fa-solid fa-users"></i></span><div class="label">Team Leads</div><div class="value">{{ number_format($stats['total_businesses']) }}</div></section>
-            <section class="agent-card span-4 agent-metric"><span class="icon" style="color:var(--agent-green);background:#eafff6;"><i class="fa-solid fa-check"></i></span><div class="label">Converted</div><div class="value">{{ number_format($stats['active_customers']) }}</div></section>
-            <section class="agent-card span-4 agent-metric"><span class="icon" style="color:#f05d23;background:#fff3ec;"><i class="fa-solid fa-fire"></i></span><div class="label">Hot Pipeline</div><div class="value">{{ $leads->getCollection()->whereIn('status', ['interested','meeting_scheduled','negotiating','awaiting_payment'])->count() }}</div></section>
+            <section class="agent-card span-3 agent-metric agent-tone-blue"><span class="icon"><i class="fa-solid fa-users"></i></span><div class="label">Team Leads</div><div class="value">{{ number_format($stats['total_businesses']) }}</div></section>
+            <section class="agent-card span-3 agent-metric agent-tone-green"><span class="icon" style="color:var(--agent-green);background:#eafff6;"><i class="fa-solid fa-check"></i></span><div class="label">Converted</div><div class="value">{{ number_format($stats['active_customers']) }}</div></section>
+            <section class="agent-card span-3 agent-metric agent-tone-amber"><span class="icon" style="color:#f05d23;background:#fff3ec;"><i class="fa-solid fa-fire"></i></span><div class="label">Hot Pipeline</div><div class="value">{{ $leads->getCollection()->whereIn('status', ['interested','meeting_scheduled','negotiating','awaiting_payment'])->count() }}</div></section>
+            <section class="agent-card span-3 agent-metric agent-tone-purple"><span class="icon" style="color:var(--agent-purple);background:#f3f0ff;"><i class="fa-solid fa-chart-simple"></i></span><div class="label">Conversion Rate</div><div class="value">{{ $stats['total_businesses'] ? round(($stats['active_customers'] / max(1, $stats['total_businesses'])) * 100) : 0 }}%</div></section>
         </div>
 
         <form method="GET" class="agent-card mb-4">
@@ -52,7 +53,7 @@
 
         <div class="agent-grid">
             @forelse($leads as $lead)
-                <section class="agent-card span-6">
+                <section class="agent-card span-4 agent-tone-blue">
                     <div class="agent-lead-card">
                         <span class="agent-initial">{{ strtoupper(mb_substr($lead->business_name, 0, 1)) }}</span>
                         <div>

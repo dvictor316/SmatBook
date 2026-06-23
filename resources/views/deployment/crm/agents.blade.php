@@ -36,7 +36,7 @@
         <div class="agent-grid">
             @forelse($agentRows as $row)
                 @php $agent = $row['agent']; @endphp
-                <section class="agent-card span-6">
+                <section class="agent-card span-4 agent-tone-blue">
                     <div class="d-flex justify-content-between gap-3">
                         <div class="d-flex gap-3">
                             <span class="agent-initial">{{ strtoupper(mb_substr($agent->name ?? 'A', 0, 1)) }}</span>
@@ -50,10 +50,10 @@
                     </div>
 
                     <div class="row g-2 mt-3">
-                        <div class="col-6"><div class="agent-card p-3" style="box-shadow:none;background:#f8fbff;"><small>Performance</small><div class="agent-progress mt-2"><span style="width:{{ $row['performance'] }}%;"></span></div><strong>{{ $row['performance'] }}%</strong></div></div>
-                        <div class="col-6"><div class="agent-card p-3" style="box-shadow:none;background:#f8fbff;"><small>Clients</small><br><strong>{{ $row['clients'] }}</strong></div></div>
-                        <div class="col-6"><div class="agent-card p-3" style="box-shadow:none;background:#f8fbff;"><small>Violations</small><br><strong>{{ $row['violations'] }}</strong></div></div>
-                        <div class="col-6"><div class="agent-card p-3" style="box-shadow:none;background:#f8fbff;"><small>Zone</small><br><strong>{{ $row['zone'] }}</strong></div></div>
+                        <div class="col-6"><div class="agent-card p-2 agent-tone-amber" style="box-shadow:none;"><small>Performance</small><div class="agent-progress mt-2"><span style="width:{{ $row['performance'] }}%;"></span></div><strong>{{ $row['performance'] }}%</strong></div></div>
+                        <div class="col-6"><div class="agent-card p-2 agent-tone-green" style="box-shadow:none;"><small>Clients</small><br><strong>{{ $row['clients'] }}</strong></div></div>
+                        <div class="col-6"><div class="agent-card p-2 agent-tone-red" style="box-shadow:none;"><small>Violations</small><br><strong>{{ $row['violations'] }}</strong></div></div>
+                        <div class="col-6"><div class="agent-card p-2 agent-tone-purple" style="box-shadow:none;"><small>Zone</small><br><strong>{{ $row['zone'] }}</strong></div></div>
                     </div>
 
                     <div class="agent-actions">

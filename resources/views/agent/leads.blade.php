@@ -24,17 +24,17 @@
         </div>
 
         <div class="agent-grid mb-4">
-            <section class="agent-card span-4 agent-metric">
+            <section class="agent-card span-4 agent-metric agent-tone-blue">
                 <span class="icon"><i class="fa-solid fa-users"></i></span>
                 <div class="label">Total Leads</div>
                 <div class="value">{{ number_format($stats['total_leads']) }}</div>
             </section>
-            <section class="agent-card span-4 agent-metric">
+            <section class="agent-card span-4 agent-metric agent-tone-green">
                 <span class="icon" style="color:var(--agent-green);background:#eafff6;"><i class="fa-solid fa-chart-line"></i></span>
                 <div class="label">Conversion Rate</div>
                 <div class="value" style="color:var(--agent-green);">{{ $stats['lead_conversion'] }}%</div>
             </section>
-            <section class="agent-card span-4 agent-metric">
+            <section class="agent-card span-4 agent-metric agent-tone-amber">
                 <span class="icon" style="color:#f05d23;background:#fff3ec;"><i class="fa-solid fa-fire"></i></span>
                 <div class="label">Hot Leads</div>
                 <div class="value" style="color:#f05d23;">{{ number_format($stats['hot_leads']) }}</div>
@@ -73,7 +73,7 @@
 
         <div class="agent-grid">
             @forelse($leads as $lead)
-                <section class="agent-card span-6 agent-lead-card">
+                <section class="agent-card span-4 agent-lead-card agent-tone-blue">
                     <div class="agent-initial">{{ strtoupper(mb_substr($lead->business_name, 0, 1)) }}</div>
                     <div>
                         <h4>{{ $lead->business_name }}</h4>

@@ -45,6 +45,7 @@ class MapController extends Controller
         $category = $this->normalizeCategory((string) $request->query('category', 'business'));
         $radius = $this->normalizeRadius((int) $request->query('radius', 2000));
         $businessType = trim((string) $request->query('business_type', $this->categoryOptions()[$category] ?? 'business'));
+        $searchTerm = $this->searchTermForCategory($category, $businessType);
         $country = trim((string) $request->query('country', 'Nigeria'));
         $state = trim((string) $request->query('state', 'FCT'));
         $localCouncil = trim((string) $request->query('local_council', ''));
@@ -64,14 +65,14 @@ class MapController extends Controller
             }
 
             if ($center) {
-                [$nearbyResults, $lookupError] = $this->fetchNearbyPlaces($center['lat'], $center['lng'], $category, $radius, $businessType);
+                [$nearbyResults, $lookupError] = $this->fetchNearbyPlaces($center['lat'], $center['lng'], $category, $radius, $searchTerm);
 
                 if (empty($nearbyResults) && $radius < 10000) {
-                    [$nearbyResults, $lookupError] = $this->fetchNearbyPlaces($center['lat'], $center['lng'], $category, 10000, $businessType);
+                    [$nearbyResults, $lookupError] = $this->fetchNearbyPlaces($center['lat'], $center['lng'], $category, 10000, $searchTerm);
                 }
 
                 if (empty($nearbyResults)) {
-                    [$nearbyResults, $textError] = $this->searchPlacesByText($businessType, $country, $state, $localCouncil, $center['lat'], $center['lng']);
+                    [$nearbyResults, $textError] = $this->searchPlacesByText($searchTerm, $country, $state, $localCouncil, $center['lat'], $center['lng']);
                     $lookupError = $nearbyResults ? null : ($textError ?: 'No matching places found. Try a broader business type or nearby council.');
                 }
             } else {
@@ -358,25 +359,45 @@ class MapController extends Controller
 
     private function searchPlacesByText(string $businessType, string $country, string $state, string $localCouncil, float $lat, float $lng): array
     {
-        $query = trim(implode(' ', array_filter([$businessType ?: 'business', $localCouncil, $state, $country])));
+        $queries = collect([
+            trim(implode(' ', array_filter([$businessType ?: 'business', $localCouncil, $state, $country]))),
+            trim(implode(' ', array_filter([$businessType ?: 'business', $state, $country]))),
+            trim(implode(' ', array_filter(['shop', $localCouncil, $state, $country]))),
+            trim(implode(' ', array_filter(['business', $state, $country]))),
+        ])->filter()->unique()->values();
 
         try {
-            $response = Http::withHeaders([
-                'User-Agent' => 'SmartProbook Geo Finder/1.0',
-            ])->timeout(12)->get('https://nominatim.openstreetmap.org/search', [
-                'q' => $query,
-                'format' => 'jsonv2',
-                'limit' => 32,
-                'addressdetails' => 1,
-                'extratags' => 1,
-            ]);
+            $places = collect();
 
-            if (!$response->successful()) {
-                return [[], 'Map search is temporarily unavailable. Try again in a moment.'];
+            foreach ($queries as $query) {
+                $response = Http::withHeaders([
+                    'User-Agent' => 'SmartProbook Geo Finder/1.0',
+                ])->timeout(12)->get('https://nominatim.openstreetmap.org/search', [
+                    'q' => $query,
+                    'format' => 'jsonv2',
+                    'limit' => 32,
+                    'addressdetails' => 1,
+                    'extratags' => 1,
+                ]);
+
+                if (!$response->successful()) {
+                    continue;
+                }
+
+                $places = $places->merge($response->json() ?? []);
+
+                if ($places->count() >= 8) {
+                    break;
+                }
             }
 
-            $results = collect($response->json() ?? [])
+            if ($places->isEmpty()) {
+                return [[], 'Map search is temporarily unavailable or returned no indexed places. Try using device location and a broader store type.'];
+            }
+
+            $results = $places
                 ->filter(fn ($place) => isset($place['lat'], $place['lon']))
+                ->unique(fn ($place) => (string) ($place['place_id'] ?? (($place['lat'] ?? '') . ',' . ($place['lon'] ?? ''))))
                 ->map(function (array $place) use ($lat, $lng, $businessType) {
                     $extra = $place['extratags'] ?? [];
                     $address = $place['address'] ?? [];
@@ -436,6 +457,28 @@ class MapController extends Controller
     private function normalizeCategory(string $category): string
     {
         return array_key_exists($category, $this->categoryOptions()) ? $category : 'business';
+    }
+
+    private function searchTermForCategory(string $category, string $businessType): string
+    {
+        $typed = strtolower(trim($businessType));
+
+        if ($typed !== '' && !in_array($typed, array_map('strtolower', $this->categoryOptions()), true)) {
+            return $businessType;
+        }
+
+        return match ($category) {
+            'store' => 'shop',
+            'supermarket' => 'supermarket',
+            'pharmacy' => 'pharmacy',
+            'hospital' => 'hospital clinic',
+            'restaurant' => 'restaurant',
+            'bank' => 'bank',
+            'fuel' => 'fuel station',
+            'school' => 'school',
+            'hotel' => 'hotel',
+            default => 'business',
+        };
     }
 
     private function normalizeRadius(int $radius): int

@@ -23,29 +23,29 @@
 
         <section id="stateAnalytics" class="report-panel">
             <div class="agent-grid">
-                <section class="agent-card span-3 agent-metric">
+                <section class="agent-card span-3 agent-metric agent-tone-green">
                     <span class="icon" style="color:var(--agent-green);background:#eafff6;"><i class="fa-solid fa-coins"></i></span>
                     <div class="label">Total State Revenue</div>
                     <div class="value">₦{{ number_format($stats['state_revenue']) }}</div>
                     <small style="color:var(--agent-green);">+{{ $stats['revenue_percent'] }}% of annual target</small>
                 </section>
-                <section class="agent-card span-3 agent-metric">
+                <section class="agent-card span-3 agent-metric agent-tone-blue">
                     <span class="icon"><i class="fa-solid fa-map"></i></span>
                     <div class="label">Active Zones</div>
                     <div class="value">{{ $zones->count() }}</div>
                 </section>
-                <section class="agent-card span-3 agent-metric">
+                <section class="agent-card span-3 agent-metric agent-tone-purple">
                     <span class="icon" style="color:var(--agent-purple);background:#f2f0ff;"><i class="fa-solid fa-user-tie"></i></span>
                     <div class="label">Total Agents</div>
                     <div class="value">{{ number_format($stats['total_agents']) }}</div>
                 </section>
-                <section class="agent-card span-3 agent-metric">
+                <section class="agent-card span-3 agent-metric agent-tone-amber">
                     <span class="icon" style="color:var(--agent-amber);background:#fff8e8;"><i class="fa-solid fa-store"></i></span>
                     <div class="label">New Businesses</div>
                     <div class="value">{{ number_format($stats['new_businesses']) }}</div>
                 </section>
 
-                <section class="agent-card span-12">
+                <section class="agent-card span-8">
                     <h4>Zone Performance Breakdown</h4>
                     <div class="table-responsive mt-3">
                         <table class="table align-middle">
@@ -65,17 +65,24 @@
                         </table>
                     </div>
                 </section>
+                <section class="agent-card span-4 agent-tone-purple">
+                    <h4>State Mix</h4>
+                    <p class="agent-muted">Revenue, lead volume, and active zones at a glance.</p>
+                    <div class="agent-donut mx-auto mt-3" style="--value:{{ min(100, (int) $stats['revenue_percent']) }};--color:var(--agent-purple);"><strong>{{ $stats['revenue_percent'] }}%</strong></div>
+                    <div class="agent-stat-row"><span>Agents</span><strong>{{ number_format($stats['total_agents']) }}</strong></div>
+                    <div class="agent-stat-row"><span>Businesses</span><strong>{{ number_format($stats['total_businesses']) }}</strong></div>
+                </section>
             </div>
         </section>
 
         <section id="trialCenter" class="report-panel d-none">
             <div class="agent-grid">
-                <section class="agent-card span-3 text-center" style="background:#eef5ff;"><h3 style="font-size:48px;color:var(--agent-blue);">{{ $stats['free_trials'] }}</h3><strong>Trials Initiated</strong></section>
-                <section class="agent-card span-3 text-center" style="background:#f4f1ff;"><h3 style="font-size:48px;color:var(--agent-purple);">{{ max(0, $stats['free_trials'] - $stats['active_customers']) }}</h3><strong>Active Trials</strong></section>
-                <section class="agent-card span-3 text-center" style="background:#fff8e8;"><h3 style="font-size:48px;color:var(--agent-amber);">{{ $hotLeads->count() }}</h3><strong>Highly Engaged</strong></section>
-                <section class="agent-card span-3 text-center" style="background:#eafff6;"><h3 style="font-size:48px;color:var(--agent-green);">{{ $stats['active_customers'] }}</h3><strong>Converted This Month</strong></section>
+                <section class="agent-card span-3 text-center agent-tone-blue"><h3 style="font-size:26px;color:var(--agent-blue);">{{ $stats['free_trials'] }}</h3><strong>Trials Initiated</strong></section>
+                <section class="agent-card span-3 text-center agent-tone-purple"><h3 style="font-size:26px;color:var(--agent-purple);">{{ max(0, $stats['free_trials'] - $stats['active_customers']) }}</h3><strong>Active Trials</strong></section>
+                <section class="agent-card span-3 text-center agent-tone-amber"><h3 style="font-size:26px;color:var(--agent-amber);">{{ $hotLeads->count() }}</h3><strong>Highly Engaged</strong></section>
+                <section class="agent-card span-3 text-center agent-tone-green"><h3 style="font-size:26px;color:var(--agent-green);">{{ $stats['active_customers'] }}</h3><strong>Converted This Month</strong></section>
 
-                <section class="agent-card span-6">
+                <section class="agent-card span-4">
                     <h4>Hot Leads (Likely to Convert)</h4>
                     <p class="agent-muted">Businesses with high engagement scores</p>
                     <div class="table-responsive">
@@ -92,7 +99,7 @@
                     </div>
                 </section>
 
-                <section class="agent-card span-6">
+                <section class="agent-card span-4 agent-tone-green">
                     <h4>Agent Trial Performance</h4>
                     @foreach($agentRows->take(8) as $row)
                         @php $rate = $row['leads'] > 0 ? round(($row['converted'] / $row['leads']) * 100) : 0; @endphp
@@ -101,6 +108,17 @@
                             <strong style="color:var(--agent-green);">{{ $rate }}%</strong>
                         </div>
                     @endforeach
+                </section>
+                <section class="agent-card span-4 agent-tone-amber">
+                    <h4>Trial Funnel</h4>
+                    <p class="agent-muted">Quick view of trial creation to conversion.</p>
+                    <div class="agent-bar-chart mt-3">
+                        @foreach([35, 48, 42, 58, 72, max(8, min(100, $stats['active_customers'] * 8))] as $height)
+                            <span style="height:{{ $height }}%;"></span>
+                        @endforeach
+                    </div>
+                    <div class="agent-stat-row"><span>Hot Leads</span><strong>{{ $hotLeads->count() }}</strong></div>
+                    <div class="agent-stat-row"><span>Conversions</span><strong>{{ $stats['active_customers'] }}</strong></div>
                 </section>
             </div>
         </section>

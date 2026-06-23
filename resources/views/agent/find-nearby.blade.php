@@ -129,22 +129,41 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('agentFindBusinesses').addEventListener('click', searchNearby);
 
     async function searchNearby() {
-        const query = keyword.value.trim() || 'business';
+        const query = normalizeSearchTerm(keyword.value.trim() || 'business');
         state.textContent = 'Searching nearby businesses...';
         results.innerHTML = '';
         count.textContent = '0 results';
 
         try {
-            let url;
+            let data = [];
             if (coords) {
-                url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=12&q=${encodeURIComponent(query)}&viewbox=${coords.lon - 0.08},${coords.lat + 0.08},${coords.lon + 0.08},${coords.lat - 0.08}&bounded=1`;
+                const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=24&extratags=1&addressdetails=1&q=${encodeURIComponent(query)}&viewbox=${coords.lon - 0.12},${coords.lat + 0.12},${coords.lon + 0.12},${coords.lat - 0.12}&bounded=1`;
+                const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                data = await response.json();
             } else {
-                url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=24&extratags=1&addressdetails=1&q=${encodeURIComponent([query, council.value, region.value, country.value].filter(Boolean).join(' '))}`;
+                const queries = [
+                    [query, council.value, region.value, country.value].filter(Boolean).join(' '),
+                    [query, region.value, country.value].filter(Boolean).join(' '),
+                    ['shop', council.value, region.value, country.value].filter(Boolean).join(' '),
+                    ['business', region.value, country.value].filter(Boolean).join(' ')
+                ];
+
+                for (const text of [...new Set(queries.filter(Boolean))]) {
+                    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=24&extratags=1&addressdetails=1&q=${encodeURIComponent(text)}`;
+                    const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                    const rows = await response.json();
+                    data = data.concat(rows || []);
+                    if (data.length >= 8) break;
+                }
             }
 
-            const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
-            const data = await response.json();
-            renderResults(data, query);
+            const seen = new Set();
+            renderResults(data.filter((item) => {
+                const key = item.place_id || `${item.lat},${item.lon}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            }), query);
         } catch (error) {
             state.textContent = 'Search failed. Please try again.';
         }
@@ -206,6 +225,28 @@ document.addEventListener('DOMContentLoaded', function () {
     function fillCouncils() {
         const councils = ((regions[country.value] || {})[region.value] || []);
         council.innerHTML = [''].concat(councils).map((item) => `<option value="${escapeAttr(item)}">${item ? escapeHtml(item) : 'All local councils'}</option>`).join('');
+    }
+    function normalizeSearchTerm(value) {
+        const map = {
+            'Businesses': 'business',
+            'Stores': 'shop',
+            'Supermarkets': 'supermarket',
+            'Pharmacies': 'pharmacy',
+            'Hospitals': 'hospital clinic',
+            'Restaurants': 'restaurant',
+            'Banks': 'bank',
+            'Fuel Stations': 'fuel station',
+            'Schools': 'school',
+            'Hotels': 'hotel',
+            'Salon': 'salon',
+            'Electronics': 'electronics shop',
+            'Fashion': 'fashion shop',
+            'Education': 'school',
+            'Automotive': 'car service',
+            'Real Estate': 'real estate'
+        };
+
+        return map[value] || value || 'business';
     }
 });
 </script>
