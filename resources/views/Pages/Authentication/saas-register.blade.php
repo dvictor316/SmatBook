@@ -6,8 +6,9 @@
 
 @section('content')
 @php
-    // Detect if this is a manager signup via URL query or session
-    $isManager = request()->query('type') === 'manager' || in_array(session('reg_role'), ['state_manager', 'deployment_manager'], true);
+    // Partner signup is agent-only. State managers are created by super admin.
+    $isManager = in_array(request()->query('type'), ['partner', 'manager'], true) || session('reg_role') === 'agent';
+    $regions = $regionOptions ?? [];
 
     // Logic Alignment: Managers get 'Partner' plan, others get the passed $selectedPlan or Pro.
     $lookupPlan = $isManager ? 'Partner' : ($selectedPlan ?? session('selected_plan', 'pro'));
@@ -685,21 +686,21 @@
                 <x-auth-brand-lockup :logo="asset('assets/img/logos.png')" theme="dark" size="lg" :tagline="'Secure Business Stack'" />
                 <span class="step-badge">Step 01: Enrollment</span>
                 <h2 class="aside-title">
-                    {{ $isManager ? 'Deployment' : 'Administrator' }}<br>Registration
+                    {{ $isManager ? 'Partner Agent' : 'Administrator' }}<br>Registration
                 </h2>
                 <p class="aside-copy">
-                    {{ $isManager ? 'Initialize your management node to deploy and monitor institutional clients.' : 'Begin your deployment by securing your institutional admin identity.' }}
+                    {{ $isManager ? 'Create a partner agent profile for your country, state/county, and local council.' : 'Begin your deployment by securing your institutional admin identity.' }}
                 </p>
             </div>
 
             <div class="aside-meta">
                 <div class="info-row">
                     <span class="info-label">Account Type</span>
-                    <span class="info-value text-uppercase">{{ $isManager ? 'State Manager' : 'Standard Admin' }}</span>
+                    <span class="info-value text-uppercase">{{ $isManager ? 'Partner Agent' : 'Standard Admin' }}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Access Level</span>
-                    <span class="info-value text-capitalize">{{ $isManager ? 'Master / Partner' : $lookupPlan }}</span>
+                    <span class="info-value text-capitalize">{{ $isManager ? 'Agent / Partner' : $lookupPlan }}</span>
                 </div>
 
                 <div class="amount-display text-center">
@@ -718,7 +719,7 @@
                         <i class="fas fa-shield-check"></i>
                         <div>
                             <strong>Identity-first onboarding</strong>
-                            <span>Every registration is tied to a verified admin or state manager profile.</span>
+                            <span>Every partner registration is assigned to the state manager for its state/county after approval.</span>
                         </div>
                     </div>
                     <div class="aside-point">
@@ -738,7 +739,7 @@
             </div>
             <span class="panel-kicker">Protected onboarding</span>
             <h1 class="form-title">Create Account</h1>
-            <p class="form-subtitle">Enter your details to initialize this {{ $isManager ? 'management' : 'terminal' }} node.</p>
+            <p class="form-subtitle">Enter your details to initialize this {{ $isManager ? 'partner agent' : 'terminal' }} node.</p>
 
             @if(session('error'))
                 <div class="flash-pill error">
@@ -774,21 +775,21 @@
 
             <form action="{{ route('saas-register.post') }}" method="POST" enctype="multipart/form-data" class="form-shell">
                 @csrf
-                <input type="hidden" name="role" value="{{ $isManager ? 'state_manager' : 'admin' }}">
+                <input type="hidden" name="role" value="{{ $isManager ? 'agent' : 'admin' }}">
                 <input type="hidden" name="plan" value="{{ strtolower($lookupPlan) }}">
                 <input type="hidden" name="billing_cycle" value="{{ strtolower($finalCycle) }}">
                 <input type="hidden" name="amount" value="{{ $displayPrice }}">
 
                 <div class="info-banner">
                     <i class="fas fa-sparkles"></i>
-                    <span>{{ $isManager ? 'Partner registrations activate a deployment workspace with oversight tools.' : 'Your registration prepares a secure admin workspace aligned to the selected billing plan.' }}</span>
+                    <span>{{ $isManager ? 'Partner registrations create agent profiles tied to a country, state/county, and local council. State managers are created only by super admin.' : 'Your registration prepares a secure admin workspace aligned to the selected billing plan.' }}</span>
                 </div>
 
                 <div class="field-grid mb-3">
                     <div>
-                        <label class="label-caps">{{ $isManager ? 'Partner Name' : 'Full Name / Entity' }}</label>
+                        <label class="label-caps">{{ $isManager ? 'Agent / Partner Name' : 'Full Name / Entity' }}</label>
                         <input type="text" name="name" class="form-control input-smat w-100 @error('name') is-invalid @enderror"
-                               placeholder="{{ $isManager ? 'Management Entity' : 'Institutional Name' }}" value="{{ old('name') }}" required autofocus>
+                               placeholder="{{ $isManager ? 'Agent Full Name' : 'Institutional Name' }}" value="{{ old('name') }}" required autofocus>
                         @error('name')
                             <span class="field-error">{{ $message }}</span>
                         @enderror
@@ -821,6 +822,43 @@
                     </div>
                 </div>
 
+                @if($isManager)
+                    <div class="field-grid mb-3">
+                        <div>
+                            <label class="label-caps">Country</label>
+                            <select name="country" id="partnerCountry" class="form-control input-smat w-100 @error('country') is-invalid @enderror" required></select>
+                            @error('country')
+                                <span class="field-error">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <div>
+                            <label class="label-caps">State / County / Region</label>
+                            <input type="text" name="state_region" id="partnerState" list="partnerStateOptions" class="form-control input-smat w-100 @error('state_region') is-invalid @enderror" required placeholder="Type or select state/county">
+                            <datalist id="partnerStateOptions"></datalist>
+                            @error('state_region')
+                                <span class="field-error">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="field-grid mb-3">
+                        <div>
+                            <label class="label-caps">Local Government / Local Council</label>
+                            <input type="text" name="local_council" id="partnerCouncil" list="partnerCouncilOptions" class="form-control input-smat w-100 @error('local_council') is-invalid @enderror" placeholder="Type or select local council">
+                            <datalist id="partnerCouncilOptions"></datalist>
+                            @error('local_council')
+                                <span class="field-error">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <div>
+                            <label class="label-caps">Assignment</label>
+                            <div class="info-banner mb-0">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>After approval, your profile appears under the one state manager assigned to this state/county.</span>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="row g-2 mb-4">
                     <div class="col-md-6">
                         <label class="label-caps">Master Passcode</label>
@@ -846,7 +884,7 @@
                 </div>
 
                 <button type="submit" class="btn-smat-red">
-                    {{ $isManager ? 'Activate Manager Node' : 'Initialize Deployment' }} <i class="fas fa-shield-check ms-1"></i>
+                    {{ $isManager ? 'Submit Partner Agent Profile' : 'Initialize Deployment' }} <i class="fas fa-shield-check ms-1"></i>
                 </button>
 
                 @if(!$isManager)
@@ -875,7 +913,7 @@
                     Choose your onboarding path
                     <div class="bottom-actions">
                         <a href="{{ route('membership-plans') }}" class="bottom-action-link">Buy a Plan</a>
-                        <a href="{{ route('saas-register', ['type' => 'manager']) }}" class="bottom-action-link">Become a Partner</a>
+                        <a href="{{ route('saas-register', ['type' => 'partner']) }}" class="bottom-action-link">Become a Partner</a>
                     </div>
                     <br>
                     Already verified? <a href="{{ route('saas-login', ['plan' => strtolower((string) $lookupPlan), 'cycle' => strtolower((string) $finalCycle)]) }}">Login to Dashboard</a>
@@ -893,6 +931,52 @@
         el.classList.toggle('fa-eye', isPass);
         el.classList.toggle('fa-eye-slash', !isPass);
     }
+
+    (function setupPartnerLocations() {
+        const regions = @json($regions);
+        const country = document.getElementById('partnerCountry');
+        const state = document.getElementById('partnerState');
+        const council = document.getElementById('partnerCouncil');
+        const stateOptions = document.getElementById('partnerStateOptions');
+        const councilOptions = document.getElementById('partnerCouncilOptions');
+        if (!country || !state || !council) return;
+
+        const oldCountry = @json(old('country', 'Nigeria'));
+        const oldState = @json(old('state_region', 'FCT'));
+        const oldCouncil = @json(old('local_council', ''));
+
+        country.innerHTML = Object.keys(regions).map((item) => `<option value="${escapeAttr(item)}">${escapeHtml(item)}</option>`).join('');
+        country.value = regions[oldCountry] ? oldCountry : Object.keys(regions)[0];
+
+        function fillStates() {
+            const stateMap = regions[country.value] || {};
+            stateOptions.innerHTML = Object.keys(stateMap).map((item) => `<option value="${escapeAttr(item)}"></option>`).join('');
+            if (!state.value || state.value === oldState) state.value = oldState || '';
+            fillCouncils();
+        }
+
+        function fillCouncils() {
+            const councils = ((regions[country.value] || {})[state.value] || []);
+            councilOptions.innerHTML = councils.map((item) => `<option value="${escapeAttr(item)}"></option>`).join('');
+            if (!council.value || council.value === oldCouncil) council.value = oldCouncil || '';
+        }
+
+        country.addEventListener('change', () => {
+            state.value = '';
+            council.value = '';
+            fillStates();
+        });
+        state.addEventListener('change', fillCouncils);
+        state.addEventListener('input', fillCouncils);
+        fillStates();
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
+        }
+        function escapeAttr(value) {
+            return escapeHtml(value).replace(/`/g, '&#096;');
+        }
+    })();
 
     // Keep session warm while user is filling long registration form.
     (function keepSessionAlive() {

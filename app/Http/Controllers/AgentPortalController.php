@@ -89,6 +89,7 @@ class AgentPortalController extends Controller
             'usedToday' => Schema::hasTable('agent_activities')
                 ? AgentActivity::where('agent_id', Auth::id())->where('type', 'nearby_search')->whereDate('created_at', today())->count()
                 : 0,
+            'regionOptions' => $this->regionOptions(),
         ]);
     }
 
@@ -389,5 +390,10 @@ class AgentPortalController extends Controller
     private function leadSources(): array
     {
         return ['social_media', 'referral', 'cold_call', 'walk_in', 'website', 'find_nearby', 'other'];
+    }
+
+    private function regionOptions(): array
+    {
+        return config('partner_locations.regions', []);
     }
 }

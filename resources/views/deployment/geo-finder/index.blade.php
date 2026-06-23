@@ -1,292 +1,242 @@
 @extends('layout.mainlayout')
 
-@section('title', 'Geo Finder')
+@section('title', 'Find Nearby Businesses')
+
+@section('style')
+    @include('agent.partials.styles')
+@endsection
 
 @section('content')
 @php
     $mapCenter = $center ?: ['lat' => 9.0820, 'lng' => 8.6753, 'label' => 'Nigeria'];
-    $selectedCompanyId = $selectedCompany?->id;
 @endphp
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQ8fQh34J6LrB2r6E1px8K1i3q9z6iQ=" crossorigin="">
 
 <style>
-    .geo-shell {
-        margin-left: var(--sb-sidebar-w, 270px);
-        min-height: 100vh;
-        background: #f6f8fb;
-        padding: 24px;
-    }
-    body.sidebar-collapsed .geo-shell,
-    body.mini-sidebar .geo-shell {
-        margin-left: var(--sb-sidebar-collapsed, 80px);
-    }
-    .geo-panel {
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
-    }
-    .geo-header {
-        display: flex;
-        justify-content: space-between;
-        gap: 16px;
-        align-items: flex-end;
-        margin-bottom: 18px;
-    }
-    .geo-title {
-        font-size: 22px;
-        font-weight: 800;
-        color: #111827;
-        margin: 0;
-    }
-    .geo-subtitle {
-        color: #64748b;
-        font-size: 13px;
-        margin-top: 4px;
-    }
-    .geo-filter-grid {
-        display: grid;
-        grid-template-columns: 2fr 1fr 1fr auto auto;
-        gap: 12px;
-        align-items: end;
-    }
-    .geo-map {
-        width: 100%;
-        height: 520px;
-        border-radius: 8px;
-        overflow: hidden;
-        border: 1px solid #e5e7eb;
-    }
-    .geo-stat {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 14px;
-        border-radius: 8px;
-        background: #f8fafc;
-        border: 1px solid #edf2f7;
-    }
-    .geo-stat i {
-        width: 34px;
-        height: 34px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 8px;
-        background: #e0f2fe;
-        color: #0369a1;
-    }
-    .geo-stat strong {
-        display: block;
-        color: #0f172a;
-        line-height: 1.1;
-    }
-    .geo-stat span {
-        color: #64748b;
-        font-size: 12px;
-    }
-    .geo-result-name {
-        font-weight: 700;
-        color: #0f172a;
-    }
-    .geo-result-meta {
-        color: #64748b;
-        font-size: 12px;
-    }
-    @media (max-width: 991.98px) {
-        .geo-shell { margin-left: 0; padding: 16px; }
-        .geo-header { align-items: flex-start; flex-direction: column; }
-        .geo-filter-grid { grid-template-columns: 1fr; }
-        .geo-map { height: 420px; }
-    }
+    .geo-card-grid { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:14px; }
+    .geo-mini-card { min-height: 205px; display:flex; flex-direction:column; justify-content:space-between; }
+    .geo-map-panel { height: 430px; border-radius: 22px; overflow:hidden; border:1px solid var(--agent-line); }
+    .geo-search-help { background:#eef5ff; border:1px solid #d9e8ff; color:#164178; border-radius:16px; padding:12px 14px; }
+    @media (max-width: 1199px) { .geo-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 640px) { .geo-card-grid { grid-template-columns: 1fr; } .geo-map-panel { height: 330px; } }
 </style>
 
-<div class="geo-shell">
-    <div class="geo-header">
-        <div>
-            <h1 class="geo-title">Geo Finder</h1>
-            <div class="geo-subtitle">Locate selected client companies, then find nearby businesses, stores, and service points.</div>
+<div class="page-wrapper">
+    <div class="content agent-page">
+        <div class="agent-topline">
+            <div class="agent-title">
+                <h1>Find Nearby Businesses</h1>
+                <p>Type the store or business type you want, choose location, then search nearby prospects.</p>
+            </div>
+            <a href="{{ route('deployment.crm.leads') }}" class="agent-button soft"><i class="fa-solid fa-users"></i> Team Leads</a>
         </div>
-        <a href="{{ route('deployment.dashboard') }}" class="btn btn-light border">
-            <i class="fas fa-arrow-left me-2"></i> Dashboard
-        </a>
-    </div>
 
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show">{{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-    @endif
-    @if(session('error') || $lookupError)
-        <div class="alert alert-danger alert-dismissible fade show">{{ session('error') ?? $lookupError }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-    @endif
-
-    <div class="geo-panel p-3 mb-3">
-        <form method="GET" action="{{ route('deployment.geo.index') }}" class="geo-filter-grid">
-            <div>
-                <label class="form-label fw-semibold">Company</label>
-                <select name="company_id" class="form-select" required>
-                    @forelse($companies as $company)
-                        <option value="{{ $company->id }}" @selected((int) $selectedCompanyId === (int) $company->id)>
-                            {{ $company->name ?? $company->company_name ?? 'Company #' . $company->id }}
-                        </option>
-                    @empty
-                        <option value="">No managed companies found</option>
-                    @endforelse
-                </select>
-            </div>
-            <div>
-                <label class="form-label fw-semibold">Search Type</label>
-                <select name="category" class="form-select">
-                    @foreach($categoryOptions as $key => $label)
-                        <option value="{{ $key }}" @selected($category === $key)>{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label class="form-label fw-semibold">Radius</label>
-                <select name="radius" class="form-select">
-                    @foreach([500, 1000, 2000, 5000, 10000] as $option)
-                        <option value="{{ $option }}" @selected((int) $radius === $option)>{{ number_format($option / 1000, 1) }} km</option>
-                    @endforeach
-                </select>
-            </div>
-            <button type="submit" name="search" value="1" class="btn btn-primary">
-                <i class="fas fa-search-location me-2"></i> Find Nearby
-            </button>
-            <button type="submit" class="btn btn-light border">
-                <i class="fas fa-map-marker-alt me-2"></i> Locate
-            </button>
-        </form>
-
-        @if($selectedCompany)
-            <form method="POST" action="{{ route('deployment.geo.geocode-company') }}" class="mt-2">
-                @csrf
-                <input type="hidden" name="company_id" value="{{ $selectedCompany->id }}">
-                <button type="submit" class="btn btn-sm btn-outline-secondary">
-                    <i class="fas fa-crosshairs me-1"></i> Geocode selected company address
-                </button>
-                <span class="text-muted small ms-2">
-                    {{ $selectedCompany->location_label ?: ($selectedCompany->address ?: 'No saved location yet') }}
-                </span>
-            </form>
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show">{{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
         @endif
-    </div>
+        @if(session('error') || $lookupError)
+            <div class="alert alert-warning alert-dismissible fade show">{{ session('error') ?? $lookupError }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+        @endif
 
-    <div class="row g-3 mb-3">
-        <div class="col-md-4">
-            <div class="geo-stat">
-                <i class="fas fa-building"></i>
-                <div><strong>{{ number_format($companies->count()) }}</strong><span>Selectable companies</span></div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="geo-stat">
-                <i class="fas fa-location-arrow"></i>
-                <div><strong>{{ $center ? 'Ready' : 'Needs geocode' }}</strong><span>Selected company location</span></div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="geo-stat">
-                <i class="fas fa-store-alt"></i>
-                <div><strong>{{ number_format(count($nearbyResults)) }}</strong><span>Nearby matches</span></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row g-3">
-        <div class="col-xl-7">
-            <div class="geo-panel p-3">
-                <div id="geoMap" class="geo-map"></div>
-            </div>
-        </div>
-        <div class="col-xl-5">
-            <div class="geo-panel">
-                <div class="p-3 border-bottom d-flex align-items-center justify-content-between">
-                    <div>
-                        <strong>Nearby Results</strong>
-                        <div class="text-muted small">{{ $categoryOptions[$category] ?? 'Businesses' }} within {{ number_format($radius / 1000, 1) }} km</div>
+        <section class="agent-card mb-4">
+            <form method="GET" action="{{ route('deployment.geo.index') }}" id="geoSearchForm">
+                <input type="hidden" name="search" value="1">
+                <input type="hidden" name="lat" id="geoLat" value="{{ request('lat') }}">
+                <input type="hidden" name="lng" id="geoLng" value="{{ request('lng') }}">
+                <div class="row g-3">
+                    <div class="col-xl-3 col-lg-6">
+                        <div class="agent-field">
+                            <label>Business / Store Type</label>
+                            <input name="business_type" value="{{ $businessType }}" placeholder="e.g. supermarket, pharmacy, hotel, restaurant">
+                        </div>
                     </div>
-                    @if($selectedCompany)
-                        <span class="badge bg-light text-dark border">{{ $selectedCompany->name }}</span>
-                    @endif
+                    <div class="col-xl-2 col-lg-6">
+                        <div class="agent-field">
+                            <label>Category Helper</label>
+                            <select name="category" id="geoCategory">
+                                @foreach($categoryOptions as $key => $label)
+                                    <option value="{{ $key }}" @selected($category === $key)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-xl-2 col-lg-4">
+                        <div class="agent-field">
+                            <label>Country</label>
+                            <select name="country" id="geoCountry">
+                                @foreach($countryOptions as $key => $label)
+                                    <option value="{{ $key }}" @selected($country === $key)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-xl-2 col-lg-4">
+                        <div class="agent-field">
+                            <label>State / Region</label>
+                            <input name="state" id="geoState" list="geoStateOptions" value="{{ $state }}" placeholder="Type or select state/county">
+                            <datalist id="geoStateOptions"></datalist>
+                        </div>
+                    </div>
+                    <div class="col-xl-2 col-lg-4">
+                        <div class="agent-field">
+                            <label>Local Council / County</label>
+                            <input name="local_council" id="geoCouncil" list="geoCouncilOptions" value="{{ $localCouncil }}" placeholder="Type or select council/county">
+                            <datalist id="geoCouncilOptions"></datalist>
+                        </div>
+                    </div>
+                    <div class="col-xl-1 col-lg-4">
+                        <div class="agent-field">
+                            <label>Radius</label>
+                            <select name="radius">
+                                @foreach([1000, 2000, 5000, 10000] as $option)
+                                    <option value="{{ $option }}" @selected((int) $radius === $option)>{{ $option / 1000 }}km</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
                 </div>
-                <div class="table-responsive" style="max-height: 520px;">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Place</th>
-                                <th>Type</th>
-                                <th class="text-end">Distance</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($nearbyResults as $place)
-                                <tr>
-                                    <td>
-                                        <div class="geo-result-name">{{ $place['name'] }}</div>
-                                        <div class="geo-result-meta">{{ $place['address'] }}</div>
-                                        @if(!empty($place['phone']) || !empty($place['website']))
-                                            <div class="geo-result-meta">
-                                                {{ $place['phone'] ?? '' }}
-                                                @if(!empty($place['website']))
-                                                    <a href="{{ $place['website'] }}" target="_blank" rel="noopener" class="ms-1">Website</a>
-                                                @endif
-                                            </div>
-                                        @endif
-                                    </td>
-                                    <td><span class="badge bg-light text-primary border">{{ ucwords(str_replace('_', ' ', $place['type'])) }}</span></td>
-                                    <td class="text-end fw-semibold">{{ number_format($place['distance'], 2) }} km</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="3" class="text-center text-muted py-5">
-                                        Select a company and run a nearby search.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <button type="button" class="agent-button soft" id="geoUseLocation"><i class="fa-solid fa-location-arrow"></i> Use My Location</button>
+                    <button type="submit" class="agent-button"><i class="fa-solid fa-magnifying-glass-location"></i> Search Nearby</button>
+                    <span class="geo-search-help"><i class="fa-solid fa-circle-info"></i> If exact results are sparse, search automatically broadens to the wider area and map index.</span>
                 </div>
-            </div>
+            </form>
+        </section>
+
+        <div class="agent-grid mb-4">
+            <section class="agent-card span-4 agent-metric">
+                <span class="icon"><i class="fa-solid fa-location-crosshairs"></i></span>
+                <div class="label">Search Center</div>
+                <div class="value" style="font-size:28px;">{{ \Illuminate\Support\Str::limit($mapCenter['label'] ?? 'Nigeria', 34) }}</div>
+            </section>
+            <section class="agent-card span-4 agent-metric">
+                <span class="icon" style="color:var(--agent-green);background:#eafff6;"><i class="fa-solid fa-store"></i></span>
+                <div class="label">Businesses Found</div>
+                <div class="value">{{ number_format(count($nearbyResults)) }}</div>
+            </section>
+            <section class="agent-card span-4 agent-metric">
+                <span class="icon" style="color:var(--agent-amber);background:#fff8e8;"><i class="fa-solid fa-map"></i></span>
+                <div class="label">Coverage</div>
+                <div class="value">{{ number_format($radius / 1000, 1) }}km</div>
+            </section>
+        </div>
+
+        <div class="agent-grid">
+            <section class="agent-card span-5">
+                <h4>Map View</h4>
+                <p class="agent-muted">Pins show the current search center and nearby matches.</p>
+                <div id="geoMap" class="geo-map-panel"></div>
+            </section>
+            <section class="agent-card span-7">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div>
+                        <h4>Search Results</h4>
+                        <p class="agent-muted mb-0">{{ $businessType }} around {{ $localCouncil ?: $state }}, {{ $country }}</p>
+                    </div>
+                    <span class="agent-pill">{{ count($nearbyResults) }} matches</span>
+                </div>
+                <div class="geo-card-grid">
+                    @forelse($nearbyResults as $place)
+                        <article class="agent-card geo-mini-card" style="box-shadow:none;background:#fbfdff;">
+                            <div>
+                                <span class="agent-initial mb-2">{{ strtoupper(mb_substr($place['name'], 0, 1)) }}</span>
+                                <h4 style="font-size:17px;">{{ $place['name'] }}</h4>
+                                <small>{{ \Illuminate\Support\Str::limit($place['address'], 105) }}</small>
+                            </div>
+                            <div class="mt-3">
+                                <span class="agent-pill">{{ ucwords(str_replace('_', ' ', $place['type'])) }}</span>
+                                <div class="agent-muted mt-2">
+                                    <div><i class="fa-solid fa-route"></i> {{ number_format($place['distance'], 2) }} km away</div>
+                                    <div><i class="fa-solid fa-phone"></i> {{ $place['phone'] ?: 'Public number not listed' }}</div>
+                                    @if(!empty($place['website']))
+                                        <a href="{{ $place['website'] }}" target="_blank" rel="noopener"><i class="fa-solid fa-globe"></i> Website</a>
+                                    @endif
+                                </div>
+                            </div>
+                        </article>
+                    @empty
+                        <div class="text-center agent-muted py-5" style="grid-column:1 / -1;">
+                            <h4>No matches yet</h4>
+                            <p>Type a business type and search. Try examples like pharmacy, supermarket, hotel, restaurant, electronics, salon, school.</p>
+                        </div>
+                    @endforelse
+                </div>
+            </section>
         </div>
     </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const center = @json($mapCenter);
-        const places = @json($nearbyResults);
-        const selectedCompany = @json($selectedCompany ? [
-            'name' => $selectedCompany->name,
-            'address' => $selectedCompany->address,
-        ] : null);
+document.addEventListener('DOMContentLoaded', function () {
+    const regions = @json($regionOptions);
+    const selectedCountry = @json($country);
+    const selectedState = @json($state);
+    const selectedCouncil = @json($localCouncil);
+    const country = document.getElementById('geoCountry');
+    const state = document.getElementById('geoState');
+    const council = document.getElementById('geoCouncil');
+    const stateOptions = document.getElementById('geoStateOptions');
+    const councilOptions = document.getElementById('geoCouncilOptions');
 
-        const map = L.map('geoMap').setView([center.lat, center.lng], places.length ? 14 : 7);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+    function fillStates() {
+        const stateMap = regions[country.value] || {};
+        stateOptions.innerHTML = Object.keys(stateMap).map((item) => `<option value="${escapeAttr(item)}"></option>`).join('');
+        if (!state.value) state.value = selectedState || '';
+        fillCouncils();
+    }
 
-        const companyMarker = L.marker([center.lat, center.lng]).addTo(map);
-        companyMarker.bindPopup(`<strong>${selectedCompany?.name || center.label}</strong><br>${center.label || selectedCompany?.address || ''}`).openPopup();
+    function fillCouncils() {
+        const councils = (regions[country.value] || {})[state.value] || [];
+        councilOptions.innerHTML = councils.map((item) => `<option value="${escapeAttr(item)}"></option>`).join('');
+        if (!council.value) council.value = selectedCouncil || '';
+    }
 
-        const bounds = L.latLngBounds([[center.lat, center.lng]]);
-        places.forEach(function (place) {
-            const marker = L.circleMarker([place.lat, place.lng], {
-                radius: 7,
-                color: '#0369a1',
-                weight: 2,
-                fillColor: '#38bdf8',
-                fillOpacity: .85
-            }).addTo(map);
-            marker.bindPopup(`<strong>${place.name}</strong><br>${place.type}<br>${place.distance} km`);
-            bounds.extend([place.lat, place.lng]);
-        });
-
-        if (places.length) {
-            map.fitBounds(bounds, { padding: [28, 28], maxZoom: 15 });
-        }
+    country.addEventListener('change', () => {
+        state.value = '';
+        council.value = '';
+        fillStates();
     });
+    state.addEventListener('change', fillCouncils);
+    state.addEventListener('input', fillCouncils);
+    fillStates();
+    if ([...country.options].some((option) => option.value === selectedCountry)) {
+        country.value = selectedCountry;
+        fillStates();
+    }
+
+    document.getElementById('geoUseLocation').addEventListener('click', function () {
+        if (!navigator.geolocation) {
+            alert('Location is not supported on this browser.');
+            return;
+        }
+        navigator.geolocation.getCurrentPosition((position) => {
+            document.getElementById('geoLat').value = position.coords.latitude;
+            document.getElementById('geoLng').value = position.coords.longitude;
+            document.getElementById('geoSearchForm').submit();
+        }, () => alert('Location permission was not granted.'), { enableHighAccuracy: true, timeout: 10000 });
+    });
+
+    const center = @json($mapCenter);
+    const places = @json($nearbyResults);
+    const map = L.map('geoMap').setView([center.lat, center.lng], places.length ? 13 : 8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+    const bounds = L.latLngBounds([[center.lat, center.lng]]);
+    L.marker([center.lat, center.lng]).addTo(map).bindPopup(`<strong>${escapeHtml(center.label || 'Search center')}</strong>`).openPopup();
+    places.forEach((place) => {
+        const marker = L.circleMarker([place.lat, place.lng], { radius: 7, color: '#062f68', weight: 2, fillColor: '#18bf86', fillOpacity: .85 }).addTo(map);
+        marker.bindPopup(`<strong>${escapeHtml(place.name)}</strong><br>${escapeHtml(place.address || '')}<br>${place.distance} km`);
+        bounds.extend([place.lat, place.lng]);
+    });
+    if (places.length) map.fitBounds(bounds, { padding: [26, 26], maxZoom: 15 });
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
+    }
+    function escapeAttr(value) {
+        return escapeHtml(value).replace(/`/g, '&#096;');
+    }
+});
 </script>
 @endsection

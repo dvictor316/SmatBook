@@ -104,7 +104,9 @@ class UserController extends Controller
             \App\Models\Setting::where('key', $settingKey)->value('value') ?? '[]', true
         ) ?: [])->filter(fn($b) => !empty($b['id']) && !empty($b['name']))->values();
 
-        return view('UserManagement.create', compact('roles', 'suffix', 'branches'));
+        $regionOptions = $this->regionOptions();
+
+        return view('UserManagement.create', compact('roles', 'suffix', 'branches', 'regionOptions'));
     }
 
     /**
@@ -121,6 +123,12 @@ class UserController extends Controller
             'confirm_password' => 'required',
             'username_base'  => 'nullable|string|max:100|alpha_dash',
             'profile_photo'  => 'nullable|file|mimetypes:image/*|max:2048',
+            'phone'          => 'nullable|string|max:40',
+            'country'        => 'nullable|string|max:100',
+            'state_region'   => 'nullable|string|max:100',
+            'local_council'  => 'nullable|string|max:120',
+            'state_revenue_target' => 'nullable|numeric|min:0',
+            'state_customer_target' => 'nullable|integer|min:0',
         ]);
 
         $actor = Auth::user();
@@ -142,18 +150,46 @@ class UserController extends Controller
             }
         }
 
+        $selectedRole = $this->resolveSelectedRole($request->role);
+        $legacyRole = $selectedRole['legacy'];
+
+        if ($legacyRole === 'state_manager') {
+            if (!$this->isCentralAdmin($actor)) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'Only super admin can create state managers.');
+            }
+
+            $request->validate([
+                'country' => 'required|string|max:100',
+                'state_region' => 'required|string|max:100',
+                'state_revenue_target' => 'nullable|numeric|min:0',
+                'state_customer_target' => 'nullable|integer|min:0',
+            ]);
+
+            if ($this->stateManagerLocationTaken($request->country, $request->state_region)) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'A state manager already exists for this country and state/county. Please edit or suspend the existing manager before creating another.');
+            }
+        }
+
         $user = new User();
         $user->name = trim($request->first_name . ' ' . $request->last_name);
         $user->email = $request->email;
-        $selectedRole = $this->resolveSelectedRole($request->role);
 
-        $user->role = $selectedRole['legacy'];
+        $user->role = $legacyRole;
         $user->role_id = $selectedRole['id'];
         $user->password = Hash::make($request->password);
         $user->status = $request->boolean('is_active', true) ? 'active' : 'inactive';
         $user->is_verified = 1;
         $user->allow_login = $request->boolean('allow_login', true) ? 1 : 0;
         $user->company_id = $this->isCentralAdmin($actor) ? null : $companyId;
+        $this->applyUserLocationFields($user, $request);
+
+        if ($legacyRole === 'agent') {
+            $user->state_manager_id = $this->findStateManagerForLocation($request->country, $request->state_region)?->user_id;
+        }
 
         // Tenant-based username: base-companyId (e.g. "bestserve-13213")
         if ($request->filled('username_base')) {
@@ -223,7 +259,9 @@ class UserController extends Controller
     {
         $user = $this->findScopedUser($id);
         $roles = $this->getRoles();
-        return view('UserManagement.edit', compact('user', 'roles'));
+        $regionOptions = $this->regionOptions();
+        $managerProfile = DeploymentManager::withoutGlobalScopes()->where('user_id', $user->id)->first();
+        return view('UserManagement.edit', compact('user', 'roles', 'regionOptions', 'managerProfile'));
     }
 
     /**
@@ -246,15 +284,44 @@ class UserController extends Controller
             'name'  => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
             'role'  => 'required',
-            'profile_photo' => 'nullable|file|mimetypes:image/*|max:2048'
+            'profile_photo' => 'nullable|file|mimetypes:image/*|max:2048',
+            'country'        => 'nullable|string|max:100',
+            'state_region'   => 'nullable|string|max:100',
+            'local_council'  => 'nullable|string|max:120',
+            'state_revenue_target' => 'nullable|numeric|min:0',
+            'state_customer_target' => 'nullable|integer|min:0',
         ]);
         
         $user->name = $request->name;
         $user->email = $request->email;
         $selectedRole = $this->resolveSelectedRole($request->role);
 
+        if ($selectedRole['legacy'] === 'state_manager') {
+            if (!$this->isCentralAdmin(Auth::user())) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'Only super admin can create or edit state managers.');
+            }
+
+            $request->validate([
+                'country' => 'required|string|max:100',
+                'state_region' => 'required|string|max:100',
+            ]);
+
+            if ($this->stateManagerLocationTaken($request->country, $request->state_region, $user->id)) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'Another state manager already owns this country and state/county.');
+            }
+        }
+
         $user->role = $selectedRole['legacy'];
         $user->role_id = $selectedRole['id'];
+        $this->applyUserLocationFields($user, $request);
+
+        if ($selectedRole['legacy'] === 'agent') {
+            $user->state_manager_id = $this->findStateManagerForLocation($request->country, $request->state_region)?->user_id;
+        }
 
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
@@ -670,6 +737,11 @@ class UserController extends Controller
                 'phone' => Schema::hasColumn('users', 'phone') ? ($user->phone ?? null) : null,
                 'status' => 'active',
                 'deployment_limit' => 100,
+                'country' => Schema::hasColumn('deployment_managers', 'country') ? ($user->country ?? null) : null,
+                'state_region' => Schema::hasColumn('deployment_managers', 'state_region') ? ($user->state_region ?? null) : null,
+                'local_council' => Schema::hasColumn('deployment_managers', 'local_council') ? ($user->local_council ?? null) : null,
+                'state_revenue_target' => Schema::hasColumn('deployment_managers', 'state_revenue_target') ? request('state_revenue_target') : null,
+                'state_customer_target' => Schema::hasColumn('deployment_managers', 'state_customer_target') ? request('state_customer_target') : null,
                 'commission_rate' => Schema::hasColumn('deployment_managers', 'commission_rate') ? 35.00 : null,
                 'auto_payout_enabled' => Schema::hasColumn('deployment_managers', 'auto_payout_enabled') ? 1 : null,
             ], fn ($value) => $value !== null);
@@ -686,5 +758,64 @@ class UserController extends Controller
             ->where('user_id', $user->id)
             ->where('status', 'active')
             ->update(['status' => 'suspended']);
+    }
+
+    private function applyUserLocationFields(User $user, Request $request): void
+    {
+        foreach (['phone', 'country', 'state_region', 'local_council'] as $column) {
+            if (Schema::hasColumn('users', $column)) {
+                $user->{$column} = $request->filled($column) ? trim((string) $request->input($column)) : null;
+            }
+        }
+    }
+
+    private function stateManagerLocationTaken(?string $country, ?string $stateRegion, ?int $exceptUserId = null): bool
+    {
+        if (!Schema::hasTable('deployment_managers')
+            || !Schema::hasColumn('deployment_managers', 'country')
+            || !Schema::hasColumn('deployment_managers', 'state_region')) {
+            return false;
+        }
+
+        $country = strtolower(trim((string) $country));
+        $stateRegion = strtolower(trim((string) $stateRegion));
+
+        if ($country === '' || $stateRegion === '') {
+            return false;
+        }
+
+        return DeploymentManager::withoutGlobalScopes()
+            ->when($exceptUserId, fn ($query) => $query->where('user_id', '!=', $exceptUserId))
+            ->whereRaw('LOWER(country) = ?', [$country])
+            ->whereRaw('LOWER(state_region) = ?', [$stateRegion])
+            ->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['active', 'pending', 'pending_info'])
+            ->exists();
+    }
+
+    private function findStateManagerForLocation(?string $country, ?string $stateRegion): ?DeploymentManager
+    {
+        if (!Schema::hasTable('deployment_managers')
+            || !Schema::hasColumn('deployment_managers', 'country')
+            || !Schema::hasColumn('deployment_managers', 'state_region')) {
+            return null;
+        }
+
+        $country = strtolower(trim((string) $country));
+        $stateRegion = strtolower(trim((string) $stateRegion));
+
+        if ($country === '' || $stateRegion === '') {
+            return null;
+        }
+
+        return DeploymentManager::withoutGlobalScopes()
+            ->whereRaw('LOWER(country) = ?', [$country])
+            ->whereRaw('LOWER(state_region) = ?', [$stateRegion])
+            ->whereRaw("LOWER(COALESCE(status, '')) = ?", ['active'])
+            ->first();
+    }
+
+    private function regionOptions(): array
+    {
+        return config('partner_locations.regions', []);
     }
 }

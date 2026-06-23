@@ -479,6 +479,43 @@
                                     <i class="fa fa-info-circle"></i> Selecting a role will pre-fill permissions below.
                                 </div>
                             </div>
+                            <div class="col-12" id="stateAssignmentBlock" style="display:none;">
+                                <div class="p-3 rounded-3" style="background:#f8fbff;border:1px solid #dbeafe;">
+                                    <div class="d-flex align-items-start gap-2 mb-3">
+                                        <i class="fa fa-map-marker-alt text-primary mt-1"></i>
+                                        <div>
+                                            <div style="font-weight:800;color:#0b2f63;font-size:.86rem;">State Assignment & Targets</div>
+                                            <div style="font-size:.74rem;color:#64748b;">State managers are created only by super admin and are limited to one manager per country/state.</div>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <label class="form-label fw-semibold" style="font-size:.78rem;">Country</label>
+                                            <select name="country" id="countrySelect" class="form-select form-select-sm">
+                                                <option value="">Select country</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label fw-semibold" style="font-size:.78rem;">State / County / Region</label>
+                                            <input type="text" name="state_region" id="stateRegionSelect" list="stateRegionOptions" class="form-control form-control-sm" value="{{ old('state_region') }}" placeholder="Type or select state/county">
+                                            <datalist id="stateRegionOptions"></datalist>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label fw-semibold" style="font-size:.78rem;">Local Government / Council</label>
+                                            <input type="text" name="local_council" id="localCouncilSelect" list="localCouncilOptions" class="form-control form-control-sm" value="{{ old('local_council') }}" placeholder="Type or select local council">
+                                            <datalist id="localCouncilOptions"></datalist>
+                                        </div>
+                                        <div class="col-6 state-manager-target">
+                                            <label class="form-label fw-semibold" style="font-size:.78rem;">Revenue Target</label>
+                                            <input type="number" min="0" step="0.01" name="state_revenue_target" class="form-control form-control-sm" value="{{ old('state_revenue_target') }}" placeholder="1044000000">
+                                        </div>
+                                        <div class="col-6 state-manager-target">
+                                            <label class="form-label fw-semibold" style="font-size:.78rem;">Customer Target</label>
+                                            <input type="number" min="0" step="1" name="state_customer_target" class="form-control form-control-sm" value="{{ old('state_customer_target') }}" placeholder="6264">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="col-12">
                                 <label class="form-label fw-semibold" style="font-size:.82rem;">Username</label>
                                 <div class="username-input-group">
@@ -637,6 +674,10 @@
 
     var rolePermUrl = '{{ route('roles.permissions.json') }}';
     var suffix = '{{ $suffix ? '-' . $suffix : '' }}';
+    var regions = @json($regionOptions ?? []);
+    var oldCountry = @json(old('country'));
+    var oldState = @json(old('state_region'));
+    var oldCouncil = @json(old('local_council'));
 
     /* ── Count helpers ──────────────────────────────────── */
     function updateCardCount(section) {
@@ -731,8 +772,86 @@
     });
 
     /* ── Role select → AJAX pre-fill ───────────────────── */
-    document.getElementById('roleSelect').addEventListener('change', function () {
+    var roleSelect = document.getElementById('roleSelect');
+    var stateAssignmentBlock = document.getElementById('stateAssignmentBlock');
+    var countrySelect = document.getElementById('countrySelect');
+    var stateRegionSelect = document.getElementById('stateRegionSelect');
+    var localCouncilSelect = document.getElementById('localCouncilSelect');
+    var stateRegionOptions = document.getElementById('stateRegionOptions');
+    var localCouncilOptions = document.getElementById('localCouncilOptions');
+
+    function normalizeRole(role) {
+        return (role || '').toLowerCase().replace(/[\s-]+/g, '_');
+    }
+
+    function fillSelect(select, values, placeholder, selected) {
+        if (!select) return;
+        if (select.tagName === 'DATALIST') {
+            select.innerHTML = values.map(function (value) {
+                return '<option value="' + value + '"></option>';
+            }).join('');
+            return;
+        }
+        select.innerHTML = '<option value="">' + placeholder + '</option>';
+        values.forEach(function (value) {
+            var opt = document.createElement('option');
+            opt.value = value;
+            opt.textContent = value;
+            if (selected && selected === value) opt.selected = true;
+            select.appendChild(opt);
+        });
+    }
+
+    function syncLocationSelects() {
+        var country = countrySelect ? countrySelect.value : '';
+        var states = country && regions[country] ? Object.keys(regions[country]) : [];
+        fillSelect(stateRegionOptions, states, 'Select state/county', oldState);
+        if (oldState && stateRegionSelect && !stateRegionSelect.value) stateRegionSelect.value = oldState;
+
+        var state = stateRegionSelect ? stateRegionSelect.value : '';
+        var councils = country && state && regions[country] && regions[country][state] ? regions[country][state] : [];
+        fillSelect(localCouncilOptions, councils, 'Select local council', oldCouncil);
+        if (oldCouncil && localCouncilSelect && !localCouncilSelect.value) localCouncilSelect.value = oldCouncil;
+    }
+
+    function syncRoleLocationBlock() {
+        var role = normalizeRole(roleSelect ? roleSelect.value : '');
+        var show = role === 'state_manager' || role === 'deployment_manager' || role === 'manager' || role === 'agent';
+        var isManager = role === 'state_manager' || role === 'deployment_manager' || role === 'manager';
+        if (stateAssignmentBlock) stateAssignmentBlock.style.display = show ? '' : 'none';
+        document.querySelectorAll('.state-manager-target').forEach(function (el) {
+            el.style.display = isManager ? '' : 'none';
+        });
+        [countrySelect, stateRegionSelect].forEach(function (select) {
+            if (select) select.required = isManager;
+        });
+    }
+
+    fillSelect(countrySelect, Object.keys(regions), 'Select country', oldCountry);
+    syncLocationSelects();
+    if (countrySelect) countrySelect.addEventListener('change', function () {
+        oldState = '';
+        oldCouncil = '';
+        syncLocationSelects();
+    });
+    if (stateRegionSelect) stateRegionSelect.addEventListener('change', function () {
+        oldCouncil = '';
+        var country = countrySelect ? countrySelect.value : '';
+        var state = stateRegionSelect ? stateRegionSelect.value : '';
+        var councils = country && state && regions[country] && regions[country][state] ? regions[country][state] : [];
+        fillSelect(localCouncilOptions, councils, 'Select local council', oldCouncil);
+    });
+    if (stateRegionSelect) stateRegionSelect.addEventListener('input', function () {
+        var country = countrySelect ? countrySelect.value : '';
+        var state = stateRegionSelect ? stateRegionSelect.value : '';
+        var councils = country && state && regions[country] && regions[country][state] ? regions[country][state] : [];
+        fillSelect(localCouncilOptions, councils, 'Select local council', oldCouncil);
+    });
+    syncRoleLocationBlock();
+
+    roleSelect.addEventListener('change', function () {
         var roleName = this.value;
+        syncRoleLocationBlock();
         if (!roleName) return;
         fetch(rolePermUrl + '?role=' + encodeURIComponent(roleName))
             .then(function (r) { return r.json(); })

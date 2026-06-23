@@ -44,12 +44,18 @@ class MapController extends Controller
         $selectedCompany = $this->resolveSelectedCompany($request, $companies);
         $category = $this->normalizeCategory((string) $request->query('category', 'business'));
         $radius = $this->normalizeRadius((int) $request->query('radius', 2000));
-        $center = $selectedCompany ? $this->companyCoordinates($selectedCompany) : null;
+        $businessType = trim((string) $request->query('business_type', $this->categoryOptions()[$category] ?? 'business'));
+        $country = trim((string) $request->query('country', 'Nigeria'));
+        $state = trim((string) $request->query('state', 'FCT'));
+        $localCouncil = trim((string) $request->query('local_council', ''));
+        $center = $this->requestCoordinates($request)
+            ?? $this->geocodeFreeformLocation($country, $state, $localCouncil)
+            ?? ($selectedCompany ? $this->companyCoordinates($selectedCompany) : null);
         $nearbyResults = [];
         $lookupError = null;
 
-        if ($request->boolean('search') && $selectedCompany) {
-            if (!$center) {
+        if ($request->boolean('search')) {
+            if (!$center && $selectedCompany) {
                 $geocoded = $this->geocodeCompanyAddress($selectedCompany);
                 if ($geocoded) {
                     $selectedCompany = $selectedCompany->fresh() ?? $selectedCompany;
@@ -58,9 +64,18 @@ class MapController extends Controller
             }
 
             if ($center) {
-                [$nearbyResults, $lookupError] = $this->fetchNearbyPlaces($center['lat'], $center['lng'], $category, $radius);
+                [$nearbyResults, $lookupError] = $this->fetchNearbyPlaces($center['lat'], $center['lng'], $category, $radius, $businessType);
+
+                if (empty($nearbyResults) && $radius < 10000) {
+                    [$nearbyResults, $lookupError] = $this->fetchNearbyPlaces($center['lat'], $center['lng'], $category, 10000, $businessType);
+                }
+
+                if (empty($nearbyResults)) {
+                    [$nearbyResults, $textError] = $this->searchPlacesByText($businessType, $country, $state, $localCouncil, $center['lat'], $center['lng']);
+                    $lookupError = $nearbyResults ? null : ($textError ?: 'No matching places found. Try a broader business type or nearby council.');
+                }
             } else {
-                $lookupError = 'Add a company address or geocode this company before searching nearby places.';
+                $lookupError = 'Choose a country/state/local council or allow device location before searching nearby places.';
             }
         }
 
@@ -73,6 +88,12 @@ class MapController extends Controller
             'nearbyResults' => $nearbyResults,
             'lookupError' => $lookupError,
             'categoryOptions' => $this->categoryOptions(),
+            'businessType' => $businessType,
+            'country' => $country,
+            'state' => $state,
+            'localCouncil' => $localCouncil,
+            'countryOptions' => $this->countryOptions(),
+            'regionOptions' => $this->regionOptions(),
         ]);
     }
 
@@ -211,7 +232,58 @@ class MapController extends Controller
         }
     }
 
-    private function fetchNearbyPlaces(float $lat, float $lng, string $category, int $radius): array
+    private function requestCoordinates(Request $request): ?array
+    {
+        $lat = $request->query('lat');
+        $lng = $request->query('lng');
+
+        if (!is_numeric($lat) || !is_numeric($lng)) {
+            return null;
+        }
+
+        return [
+            'lat' => (float) $lat,
+            'lng' => (float) $lng,
+            'label' => 'Current device location',
+        ];
+    }
+
+    private function geocodeFreeformLocation(string $country, string $state, string $localCouncil = ''): ?array
+    {
+        $query = trim(implode(', ', array_filter([$localCouncil, $state, $country])));
+
+        if ($query === '') {
+            return null;
+        }
+
+        try {
+            $response = Http::withHeaders([
+                'User-Agent' => 'SmartProbook Geo Finder/1.0',
+            ])->timeout(12)->get('https://nominatim.openstreetmap.org/search', [
+                'q' => $query,
+                'format' => 'jsonv2',
+                'limit' => 1,
+                'addressdetails' => 1,
+            ]);
+
+            $match = $response->successful() ? ($response->json()[0] ?? null) : null;
+
+            if (!$match || !isset($match['lat'], $match['lon'])) {
+                return null;
+            }
+
+            return [
+                'lat' => (float) $match['lat'],
+                'lng' => (float) $match['lon'],
+                'label' => $match['display_name'] ?? $query,
+            ];
+        } catch (\Throwable $e) {
+            report($e);
+            return null;
+        }
+    }
+
+    private function fetchNearbyPlaces(float $lat, float $lng, string $category, int $radius, string $businessType = ''): array
     {
         $filters = $this->overpassFilters($category);
         $queryParts = [];
@@ -245,6 +317,20 @@ class MapController extends Controller
                     $tags = $element['tags'] ?? [];
                     $name = $tags['name'] ?? $tags['brand'] ?? 'Unnamed place';
 
+                    if ($businessType !== '' && $name !== 'Unnamed place') {
+                        $haystack = strtolower($name . ' ' . implode(' ', array_filter([
+                            $tags['shop'] ?? null,
+                            $tags['amenity'] ?? null,
+                            $tags['office'] ?? null,
+                            $tags['tourism'] ?? null,
+                            $tags['description'] ?? null,
+                        ])));
+                        $needle = strtolower($businessType);
+                        if (!str_contains($haystack, $needle) && !str_contains($needle, strtolower((string) ($tags['shop'] ?? $tags['amenity'] ?? $tags['office'] ?? '')))) {
+                            // Keep broad category results useful, but prioritize exact text matches elsewhere.
+                        }
+                    }
+
                     return [
                         'id' => ($element['type'] ?? 'node') . '-' . ($element['id'] ?? Str::uuid()),
                         'name' => $name,
@@ -270,6 +356,55 @@ class MapController extends Controller
         }
     }
 
+    private function searchPlacesByText(string $businessType, string $country, string $state, string $localCouncil, float $lat, float $lng): array
+    {
+        $query = trim(implode(' ', array_filter([$businessType ?: 'business', $localCouncil, $state, $country])));
+
+        try {
+            $response = Http::withHeaders([
+                'User-Agent' => 'SmartProbook Geo Finder/1.0',
+            ])->timeout(12)->get('https://nominatim.openstreetmap.org/search', [
+                'q' => $query,
+                'format' => 'jsonv2',
+                'limit' => 32,
+                'addressdetails' => 1,
+                'extratags' => 1,
+            ]);
+
+            if (!$response->successful()) {
+                return [[], 'Map search is temporarily unavailable. Try again in a moment.'];
+            }
+
+            $results = collect($response->json() ?? [])
+                ->filter(fn ($place) => isset($place['lat'], $place['lon']))
+                ->map(function (array $place) use ($lat, $lng, $businessType) {
+                    $extra = $place['extratags'] ?? [];
+                    $address = $place['address'] ?? [];
+                    $name = $place['name'] ?? $place['display_name'] ?? 'Nearby Business';
+
+                    return [
+                        'id' => 'nominatim-' . ($place['place_id'] ?? Str::uuid()),
+                        'name' => Str::limit((string) $name, 80, ''),
+                        'type' => $place['type'] ?? $businessType ?: 'business',
+                        'lat' => (float) $place['lat'],
+                        'lng' => (float) $place['lon'],
+                        'address' => $place['display_name'] ?? implode(', ', array_filter($address)),
+                        'phone' => $extra['phone'] ?? $extra['contact:phone'] ?? null,
+                        'website' => $extra['website'] ?? $extra['contact:website'] ?? null,
+                        'distance' => $this->distanceKm($lat, $lng, (float) $place['lat'], (float) $place['lon']),
+                    ];
+                })
+                ->sortBy('distance')
+                ->values()
+                ->all();
+
+            return [$results, null];
+        } catch (\Throwable $e) {
+            report($e);
+            return [[], 'Map search could not connect right now. Try again in a moment.'];
+        }
+    }
+
     private function categoryOptions(): array
     {
         return [
@@ -284,6 +419,18 @@ class MapController extends Controller
             'school' => 'Schools',
             'hotel' => 'Hotels',
         ];
+    }
+
+    private function countryOptions(): array
+    {
+        $countries = config('partner_locations.countries', []);
+
+        return array_combine($countries, $countries) ?: [];
+    }
+
+    private function regionOptions(): array
+    {
+        return config('partner_locations.regions', []);
     }
 
     private function normalizeCategory(string $category): string

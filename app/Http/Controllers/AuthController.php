@@ -31,14 +31,14 @@ class AuthController extends Controller
             return $this->handlePostLoginRedirect();
         }
 
-        $isManager = $request->query('type') === 'manager';
+        $isPartner = in_array($request->query('type'), ['partner', 'manager'], true);
         $planParam = strtolower($request->query('plan', 'pro'));
         $cycleParam = strtolower($request->query('cycle', 'monthly'));
         $catalog = $this->registrationPlanCatalog();
         $selectedCatalog = $catalog[$planParam] ?? $catalog['pro'];
         $planData = Plan::findByCatalogName($selectedCatalog['label'], $cycleParam);
 
-        if ($isManager) {
+        if ($isPartner) {
             $finalPrice = 0.00;
             $finalName = 'Partner';
             $finalCycle = 'N/A';
@@ -53,7 +53,7 @@ class AuthController extends Controller
             'selected_plan' => $finalName,
             'selected_cycle' => $finalCycle,
             'selected_amount' => $finalPrice,
-            'reg_role' => $isManager ? 'state_manager' : 'admin'
+            'reg_role' => $isPartner ? 'agent' : 'admin'
         ]);
 
         return view('Pages.Authentication.saas-register', [
@@ -62,16 +62,22 @@ class AuthController extends Controller
             'billing_cycle' => $finalCycle,
             'plan_id' => $planData->id ?? null,
             'amount' => $finalPrice,
-            'isManager' => $isManager
+            'isManager' => $isPartner,
+            'regionOptions' => $this->regionOptions(),
         ]);
     }
 
     public function register(Request $request)
     {
         $requestedRole = $request->role ?? session('reg_role', 'admin');
+        if ($this->isManagerRoleName($requestedRole) && !Auth::check()) {
+            $requestedRole = 'agent';
+            $request->merge(['role' => 'agent']);
+        }
         $retryableManager = $this->isManagerRoleName($requestedRole)
             ? $this->findRetryableDeploymentManager((string) $request->input('email', ''))
             : null;
+        $isPartnerAgent = strtolower((string) $requestedRole) === 'agent';
 
         $rules = [
             'name' => 'required|string|max:255',
@@ -86,8 +92,13 @@ class AuthController extends Controller
             'profile_photo' => 'nullable|file|mimetypes:image/*|max:2048',
         ];
 
-        if ($this->isManagerRoleName($requestedRole)) {
-            // State managers must use a real email so notifications and approval updates reach them.
+        if ($isPartnerAgent) {
+            $rules['email'] = 'required|string|email|max:255';
+            $rules['phone'] = ['nullable', 'string', 'max:25', 'regex:/^\+?[0-9]{7,20}$/'];
+            $rules['country'] = 'required|string|max:120';
+            $rules['state_region'] = 'required|string|max:120';
+            $rules['local_council'] = 'nullable|string|max:120';
+        } elseif ($this->isManagerRoleName($requestedRole)) {
             $rules['email'] = 'required|string|email|max:255';
             $rules['phone'] = ['nullable', 'string', 'max:25', 'regex:/^\+?[0-9]{7,20}$/'];
         } else {
@@ -155,6 +166,15 @@ class AuthController extends Controller
         try {
             $registrationResult = DB::transaction(function () use ($validated, $request, $resolvedEmail, $normalizedPhone, $retryableManager) {
                 $role = $request->role ?? session('reg_role', 'admin');
+                if ($this->isManagerRoleName($role) && !Auth::check()) {
+                    $role = 'agent';
+                }
+                $stateManagerId = strtolower((string) $role) === 'agent'
+                    ? $this->findStateManagerForLocation(
+                        (string) ($validated['country'] ?? ''),
+                        (string) ($validated['state_region'] ?? '')
+                    )
+                    : null;
 
                 $userPayload = $this->filterPayloadForTable('users', [
                     'name' => $validated['name'],
@@ -162,7 +182,12 @@ class AuthController extends Controller
                     'phone' => $normalizedPhone,
                     'password' => Hash::make($validated['password']),
                     'role' => $role,
-                    'is_verified' => $this->isManagerRoleName($role) ? 0 : 1,
+                    'is_verified' => ($this->isManagerRoleName($role) || strtolower((string) $role) === 'agent') ? 0 : 1,
+                    'status' => strtolower((string) $role) === 'agent' ? 'pending' : 'active',
+                    'country' => $validated['country'] ?? null,
+                    'state_region' => $validated['state_region'] ?? null,
+                    'local_council' => $validated['local_council'] ?? null,
+                    'state_manager_id' => $stateManagerId,
                 ]);
 
                 $user = $retryableManager ?: new User();
@@ -216,6 +241,19 @@ class AuthController extends Controller
                             'resumed' => true,
                         ];
                     }
+
+                    return [
+                        'user' => $user,
+                        'role' => $role,
+                        'subscription' => null,
+                        'resumed' => false,
+                    ];
+                }
+
+                if (strtolower((string) $role) === 'agent') {
+                    DB::afterCommit(function () use ($user) {
+                        SystemEventMailer::notifyRegistration($user, 'agent');
+                    });
 
                     return [
                         'user' => $user,
@@ -282,6 +320,11 @@ class AuthController extends Controller
                             ? 'We found your previous partner signup and restored it. Continue your verification profile to finish.'
                             : 'Registration successful. Complete your verification profile to continue.'
                     );
+            }
+
+            if (strtolower((string) $registrationResult['role']) === 'agent') {
+                return redirect()->route('manager.pending.notice')
+                    ->with('success', 'Partner registration submitted. Once approved, your profile will appear under your state manager.');
             }
 
             return redirect()->route('saas.setup', ['id' => $registrationResult['subscription']->id])
@@ -1260,6 +1303,21 @@ class AuthController extends Controller
         return in_array(strtolower((string) $role), ['state_manager', 'deployment_manager', 'manager'], true);
     }
 
+    private function findStateManagerForLocation(string $country, string $stateRegion): ?int
+    {
+        if (!Schema::hasTable('deployment_managers') || !Schema::hasColumn('deployment_managers', 'country') || !Schema::hasColumn('deployment_managers', 'state_region')) {
+            return null;
+        }
+
+        $manager = DeploymentManager::query()
+            ->whereRaw('LOWER(COALESCE(country, "")) = ?', [strtolower(trim($country))])
+            ->whereRaw('LOWER(COALESCE(state_region, "")) = ?', [strtolower(trim($stateRegion))])
+            ->whereRaw('LOWER(COALESCE(status, "")) = ?', ['active'])
+            ->first();
+
+        return $manager?->user_id ? (int) $manager->user_id : null;
+    }
+
     private function handleDeploymentManagerRedirect($user)
     {
         $manager = DeploymentManager::where('user_id', $user->id)->first();
@@ -1290,6 +1348,11 @@ class AuthController extends Controller
             'selected_amount',
             'reg_role'
         ]);
+    }
+
+    private function regionOptions(): array
+    {
+        return config('partner_locations.regions', []);
     }
 
     private function registrationPlanCatalog(): array

@@ -27,16 +27,24 @@
                 <strong>{{ $usedToday }} / {{ $dailyLimit }} used</strong>
             </div>
             <div class="row g-3 align-items-center">
-                <div class="col-lg-3">
+                <div class="col-lg-2">
                     <button type="button" class="agent-button soft w-100" id="agentUseLocation"><i class="fa-solid fa-location-arrow"></i> Use My Location</button>
                 </div>
                 <div class="col-lg-2">
-                    <input class="form-control" id="agentArea" value="FCT" style="border-radius:14px;" aria-label="Search area">
-                </div>
-                <div class="col-lg-5">
-                    <input class="form-control" id="agentNearbyKeyword" placeholder="Search by keyword e.g. Supermarket" style="border-radius:14px;" aria-label="Business keyword">
+                    <select class="form-control" id="agentCountry" style="border-radius:14px;" aria-label="Country"></select>
                 </div>
                 <div class="col-lg-2">
+                    <input class="form-control" id="agentRegion" list="agentRegionOptions" style="border-radius:14px;" aria-label="State or region" placeholder="State/county">
+                    <datalist id="agentRegionOptions"></datalist>
+                </div>
+                <div class="col-lg-2">
+                    <input class="form-control" id="agentCouncil" list="agentCouncilOptions" style="border-radius:14px;" aria-label="Local council or county" placeholder="Council/county">
+                    <datalist id="agentCouncilOptions"></datalist>
+                </div>
+                <div class="col-lg-3">
+                    <input class="form-control" id="agentNearbyKeyword" placeholder="Type store/business e.g. Supermarket" style="border-radius:14px;" aria-label="Business keyword">
+                </div>
+                <div class="col-lg-1">
                     <button type="button" class="agent-button w-100" id="agentFindBusinesses"><i class="fa-solid fa-magnifying-glass"></i> Find</button>
                 </div>
             </div>
@@ -80,8 +88,23 @@ document.addEventListener('DOMContentLoaded', function () {
     const state = document.getElementById('agentNearbyState');
     const count = document.getElementById('agentResultCount');
     const keyword = document.getElementById('agentNearbyKeyword');
-    const area = document.getElementById('agentArea');
+    const regions = @json($regionOptions);
+    const country = document.getElementById('agentCountry');
+    const region = document.getElementById('agentRegion');
+    const council = document.getElementById('agentCouncil');
+    const regionOptions = document.getElementById('agentRegionOptions');
+    const councilOptions = document.getElementById('agentCouncilOptions');
     let coords = null;
+
+    country.innerHTML = Object.keys(regions).map((item) => `<option value="${escapeAttr(item)}">${escapeHtml(item)}</option>`).join('');
+    country.value = 'Nigeria';
+    fillRegions();
+    region.value = 'FCT';
+    fillCouncils();
+
+    country.addEventListener('change', fillRegions);
+    region.addEventListener('change', fillCouncils);
+    region.addEventListener('input', fillCouncils);
 
     document.querySelectorAll('.agent-category-chip').forEach((button) => {
         button.addEventListener('click', () => {
@@ -117,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (coords) {
                 url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=12&q=${encodeURIComponent(query)}&viewbox=${coords.lon - 0.08},${coords.lat + 0.08},${coords.lon + 0.08},${coords.lat - 0.08}&bounded=1`;
             } else {
-                url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=12&q=${encodeURIComponent(query + ' ' + area.value)}`;
+                url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=24&extratags=1&addressdetails=1&q=${encodeURIComponent([query, council.value, region.value, country.value].filter(Boolean).join(' '))}`;
             }
 
             const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
@@ -138,12 +161,17 @@ document.addEventListener('DOMContentLoaded', function () {
         results.innerHTML = items.map((item) => {
             const name = (item.name || item.display_name || 'Nearby Business').split(',')[0];
             const address = item.display_name || '';
-            return `<section class="agent-card span-4">
+            const extra = item.extratags || {};
+            const phone = extra.phone || extra['contact:phone'] || 'Public number not listed';
+            const website = extra.website || extra['contact:website'] || '';
+            return `<section class="agent-card span-3">
                 <div class="agent-lead-card">
                     <span class="agent-initial">${escapeHtml(name.charAt(0).toUpperCase())}</span>
                     <div>
                         <h4>${escapeHtml(name)}</h4>
                         <small>${escapeHtml(address)}</small>
+                        <div class="agent-muted mt-2"><i class="fa-solid fa-phone"></i> ${escapeHtml(phone)}</div>
+                        ${website ? `<a href="${escapeAttr(website)}" target="_blank" rel="noopener"><i class="fa-solid fa-globe"></i> Website</a>` : ''}
                         <div class="agent-actions">
                             <button type="button" class="save-nearby" data-name="${escapeAttr(name)}" data-category="${escapeAttr(category)}" data-address="${escapeAttr(address)}"><i class="fa-solid fa-plus"></i> Save Lead</button>
                         </div>
@@ -167,6 +195,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     function escapeAttr(value) {
         return escapeHtml(value).replace(/`/g, '&#096;');
+    }
+    function fillRegions() {
+        const regionMap = regions[country.value] || {};
+        regionOptions.innerHTML = Object.keys(regionMap).map((item) => `<option value="${escapeAttr(item)}"></option>`).join('');
+        fillCouncils();
+    }
+    function fillCouncils() {
+        const councils = ((regions[country.value] || {})[region.value] || []);
+        councilOptions.innerHTML = councils.map((item) => `<option value="${escapeAttr(item)}"></option>`).join('');
     }
 });
 </script>
