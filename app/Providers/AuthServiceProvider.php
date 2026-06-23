@@ -29,7 +29,7 @@ class AuthServiceProvider extends ServiceProvider
         });
 
         Gate::define('view_company_metrics', function ($user) {
-            return in_array($user->role, ['super_admin', 'administrator', 'deployment_manager']);
+            return in_array($user->role, ['super_admin', 'administrator', 'state_manager', 'deployment_manager']);
         });
 
         // ROLE-BASED GATES
@@ -54,7 +54,7 @@ class AuthServiceProvider extends ServiceProvider
         });
 
         Gate::define('is_deployment_manager', function ($user) {
-            return $user->role === 'deployment_manager';
+            return in_array($user->role, ['state_manager', 'deployment_manager', 'manager'], true);
         });
 
         // COMBINED PERMISSIONS

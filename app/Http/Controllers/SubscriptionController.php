@@ -399,7 +399,7 @@ class SubscriptionController extends Controller
                 ]);
             }
 
-            if (in_array($user->role, ['deployment_manager', 'manager'])) {
+            if (in_array($user->role, ['state_manager', 'deployment_manager', 'manager'])) {
                 DeploymentManager::firstOrCreate(
                     ['user_id' => $user->id],
                     ['deployment_limit' => 100, 'commission_rate' => 35, 'status' => 'active']
@@ -407,7 +407,7 @@ class SubscriptionController extends Controller
                 $user->update(['status' => 'active', 'is_verified' => 1]);
                 DB::commit();
                 return redirect()->route('deployment.dashboard')
-                    ->with('success', 'Deployment hub initialized!');
+                    ->with('success', 'State manager hub initialized!');
             }
 
             DB::commit();

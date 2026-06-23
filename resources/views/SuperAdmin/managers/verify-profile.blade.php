@@ -9,7 +9,7 @@
             <div class="card shadow-lg border-0">
                 <div class="card-header bg-primary text-white p-4">
                     <h4 class="mb-1"><i class="fas fa-user-check me-2"></i> Complete Partner Profile</h4>
-                    <p class="mb-0 opacity-75">Please provide your business details to activate your Deployment Manager dashboard.</p>
+                    <p class="mb-0 opacity-75">Please provide your business details to activate your State Manager dashboard.</p>
                 </div>
                 <div class="card-body p-4">
                     <form action="{{ route('manager.submit.verification') }}" method="POST">

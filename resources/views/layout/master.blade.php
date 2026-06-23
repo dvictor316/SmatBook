@@ -31,7 +31,7 @@
         /** 2. USER DATA */
         $user = Auth::user();
         $profileImg = $user?->avatar_url ?: asset('assets/img/profiles/avatar-07.jpg');
-        $isDeploymentManagerHeader = $user && in_array(strtolower((string) ($user->role ?? '')), ['deployment_manager', 'manager'], true);
+        $isDeploymentManagerHeader = $user && in_array(strtolower((string) ($user->role ?? '')), ['state_manager', 'deployment_manager', 'manager'], true);
         $profileUrl = $isDeploymentManagerHeader && Route::has('deployment.profile')
             ? route('deployment.profile')
             : url('profile');

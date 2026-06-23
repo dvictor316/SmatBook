@@ -689,7 +689,7 @@
             </div>
             <div class="dm-profile-details">
                 <p class="dm-profile-name">{{ $manager->name ?? 'Manager' }}</p>
-                <p class="dm-profile-role">Deployment Manager</p>
+                <p class="dm-profile-role">State Manager</p>
             </div>
         </div>
     </div>
@@ -712,13 +712,54 @@
 
             
             <li class="dm-menu-item">
-                <a href="{{ route('deployment.dashboard') }}" class="dm-menu-link {{ request()->routeIs('deployment.dashboard') ? 'active' : '' }}">
-                    <span class="dm-menu-icon"><i class="fas fa-th-large"></i></span>
-                    <span class="dm-menu-text">Dashboard</span>
+                <a href="{{ route('deployment.crm.overview') }}" class="dm-menu-link {{ request()->routeIs('deployment.crm.overview') ? 'active' : '' }}">
+                    <span class="dm-menu-icon"><i class="fas fa-chart-pie"></i></span>
+                    <span class="dm-menu-text">Overview</span>
                 </a>
             </li>
 
-            
+            <li class="dm-menu-item">
+                <a href="{{ route('deployment.crm.agents') }}" class="dm-menu-link {{ request()->routeIs('deployment.crm.agents') ? 'active' : '' }}">
+                    <span class="dm-menu-icon"><i class="fas fa-users"></i></span>
+                    <span class="dm-menu-text">Manage Agents</span>
+                </a>
+            </li>
+
+            <li class="dm-menu-item">
+                <a href="{{ route('deployment.crm.leads') }}" class="dm-menu-link {{ request()->routeIs('deployment.crm.leads') ? 'active' : '' }}">
+                    <span class="dm-menu-icon"><i class="fas fa-filter"></i></span>
+                    <span class="dm-menu-text">Leads</span>
+                </a>
+            </li>
+
+            <li class="dm-menu-item">
+                <a href="{{ route('deployment.support.tickets') }}" class="dm-menu-link {{ request()->routeIs('deployment.support.tickets', 'deployment.support.view-ticket') ? 'active' : '' }}">
+                    <span class="dm-menu-icon"><i class="fas fa-ticket-alt"></i></span>
+                    <span class="dm-menu-text">Tickets</span>
+                </a>
+            </li>
+
+            <li class="dm-menu-item">
+                <a href="{{ route('deployment.crm.agents', ['focus' => 'violations']) }}" class="dm-menu-link {{ request('focus') === 'violations' ? 'active' : '' }}">
+                    <span class="dm-menu-icon"><i class="fas fa-exclamation-triangle"></i></span>
+                    <span class="dm-menu-text">Violations</span>
+                </a>
+            </li>
+
+            <li class="dm-menu-item">
+                <a href="{{ route('deployment.commissions.index') }}" class="dm-menu-link {{ request()->routeIs('deployment.commissions.*') ? 'active' : '' }}">
+                    <span class="dm-menu-icon"><i class="fas fa-wallet"></i></span>
+                    <span class="dm-menu-text">Earnings & Wallet</span>
+                </a>
+            </li>
+
+            <li class="dm-menu-item">
+                <a href="{{ route('deployment.crm.reports') }}" class="dm-menu-link {{ request()->routeIs('deployment.crm.reports') ? 'active' : '' }}">
+                    <span class="dm-menu-icon"><i class="fas fa-file-alt"></i></span>
+                    <span class="dm-menu-text">Advanced Reports</span>
+                </a>
+            </li>
+
             <li class="dm-menu-item">
                 <a href="{{ route('deployment.users.create') }}" class="dm-menu-link {{ request()->routeIs('deployment.customers.create') || request()->routeIs('deployment.users.create') ? 'active' : '' }}">
                     <span class="dm-menu-icon"><i class="fas fa-user-plus"></i></span>
@@ -791,6 +832,31 @@
                     <span class="dm-menu-text">All Users</span>
                     <span class="dm-badge info">{{ $totalUsers }}</span>
                 </a>
+            </li>
+
+            <li class="dm-menu-item has-submenu {{ request()->routeIs('deployment.geo.*') ? 'open' : '' }}">
+                <a href="#" class="dm-menu-link {{ request()->routeIs('deployment.geo.*') ? 'active' : '' }}" onclick="toggleSubmenu(event, this)">
+                    <span class="dm-menu-icon"><i class="fas fa-map-marked-alt"></i></span>
+                    <span class="dm-menu-text">Geo Intelligence</span>
+                    <span class="dm-menu-arrow"><i class="fas fa-chevron-right"></i></span>
+                </a>
+                <ul class="dm-submenu">
+                    <li>
+                        <a href="{{ route('deployment.geo.index', ['category' => 'business']) }}" class="dm-submenu-link {{ request()->routeIs('deployment.geo.*') && request()->has('category') && request('category') === 'business' ? 'active' : '' }}">
+                            <i class="fas fa-search-location"></i> Nearby Businesses
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('deployment.geo.index', ['category' => 'store']) }}" class="dm-submenu-link {{ request()->routeIs('deployment.geo.*') && request('category') === 'store' ? 'active' : '' }}">
+                            <i class="fas fa-store"></i> Store Finder
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('deployment.geo.index') }}" class="dm-submenu-link {{ request()->routeIs('deployment.geo.*') && !request()->has('category') ? 'active' : '' }}">
+                            <i class="fas fa-map-marker-alt"></i> Client Locations
+                        </a>
+                    </li>
+                </ul>
             </li>
 
             <li class="dm-menu-item has-submenu {{ request()->routeIs('deployment.invoices.*', 'deployment.payments.*') ? 'open' : '' }}">

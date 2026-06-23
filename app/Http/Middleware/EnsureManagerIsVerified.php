@@ -18,7 +18,7 @@ class EnsureManagerIsVerified
         $user = Auth::user();
 
         // 1. Target check for Managers
-        if ($user && ($user->role === 'deployment_manager' || $user->role === 'manager')) {
+        if ($user && in_array($user->role, ['state_manager', 'deployment_manager', 'manager'], true)) {
             
             // 2. Check verification status
             if (!$user->is_verified) {

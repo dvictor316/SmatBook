@@ -10,7 +10,7 @@
                 <div class="card-body text-center">
                     <img src="{{ $user->avatar_url }}" class="rounded-circle mb-3" alt="Profile" style="width:120px;height:120px;object-fit:cover;">
                     <h4 class="mb-1">{{ $user->name }}</h4>
-                    <div class="text-muted small mb-3">{{ $manager->business_name ?? 'Deployment Manager' }}</div>
+                    <div class="text-muted small mb-3">{{ $manager->business_name ?? 'State Manager' }}</div>
                     <form action="{{ route('deployment.profile.avatar') }}" method="POST" enctype="multipart/form-data" class="mb-3">
                         @csrf
                         <label class="form-label small text-muted">Update Avatar</label>

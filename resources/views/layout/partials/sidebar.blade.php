@@ -21,6 +21,7 @@
 
     // PRIORITY 3: Determine plan for regular tenants
     $plan = 'basic'; // default
+    $isAgentPortalUser = !$isDeploymentManager && !$isSuperAdmin && strtolower((string) ($user->role ?? '')) === 'agent';
 
     // Super admins always get enterprise sidebar — no subscription lookup needed
     if ($isSuperAdmin) {
@@ -80,6 +81,8 @@
 
     @if($isDeploymentManager)
         @include('layout.partials.sidebars.deployment_manager')
+    @elseif($isAgentPortalUser)
+        @include('layout.partials.sidebars.agent')
     @elseif($isSuperAdmin && $workspaceContext === 'business')
         @if($plan === 'enterprise')
             @include('layout.partials.sidebars.enterprise')

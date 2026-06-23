@@ -592,7 +592,7 @@
                         <li><a href="{{ route('super_admin.packages.index', $routeParams) }}" class="{{ Request::is('superadmin/packages*') ? 'active' : '' }}">Packages</a></li>
                         <li><a href="{{ route('super_admin.domains.index', $routeParams) }}" class="{{ Request::is('superadmin/domains*') ? 'active' : '' }}">Domains</a></li>
                         <li class="{{ Request::is('superadmin/managers*') ? 'active' : '' }}">
-                            <a href="{{ route('super_admin.managers.list', $routeParams) }}">Deployment Managers</a>
+                            <a href="{{ route('super_admin.managers.list', $routeParams) }}">State Managers</a>
                         </li>
                         <li class="{{ Request::is('superadmin/users*') ? 'active' : '' }}">
                             <a href="{{ route('super_admin.users.index', $routeParams) }}">Registered Users</a>
@@ -983,7 +983,7 @@
 </div>
 @endif
 
-@if(in_array($roleNormalized, ['deployment_manager']))
+@if(in_array($roleNormalized, ['state_manager', 'deployment_manager']))
 <style>
     .spb-deployment-sidebar .sidebar-menu ul li.submenu ul {
         background: #ffffff !important;
@@ -1103,7 +1103,7 @@
     $plan = $user?->company?->plan ?? 'Basic';
 @endphp
 
-@if($plan === 'Enterprise' && !in_array($roleNormalized, ['super_admin', 'superadmin', 'administrator', 'admin', 'deployment_manager']))
+@if($plan === 'Enterprise' && !in_array($roleNormalized, ['super_admin', 'superadmin', 'administrator', 'admin', 'state_manager', 'deployment_manager']))
 <div class="sidebar" id="sidebar">
     <div class="sidebar-inner slimscroll">
         <div id="sidebar-menu" class="sidebar-menu">
@@ -1245,7 +1245,7 @@
 </div>
 @endif
 
-@if($plan === 'Professional' && !in_array($roleNormalized, ['super_admin', 'superadmin', 'administrator', 'admin', 'deployment_manager']))
+@if($plan === 'Professional' && !in_array($roleNormalized, ['super_admin', 'superadmin', 'administrator', 'admin', 'state_manager', 'deployment_manager']))
 <div class="sidebar" id="sidebar">
     <div class="sidebar-inner slimscroll">
         <div id="sidebar-menu" class="sidebar-menu">
@@ -1439,7 +1439,7 @@ function showUpgradeModal(planName) {
 </script>
 @endif
 
-@if($plan === 'Basic' && !in_array($roleNormalized, ['super_admin', 'superadmin', 'administrator', 'admin', 'deployment_manager']))
+@if($plan === 'Basic' && !in_array($roleNormalized, ['super_admin', 'superadmin', 'administrator', 'admin', 'state_manager', 'deployment_manager']))
 <div class="sidebar" id="sidebar">
     <div class="sidebar-inner slimscroll">
         <div id="sidebar-menu" class="sidebar-menu">

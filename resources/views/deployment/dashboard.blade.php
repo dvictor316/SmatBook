@@ -128,7 +128,7 @@
                     <li class="breadcrumb-item active">Deployment Console</li>
                 </ol>
             </nav>
-            <h3 class="fw-bold text-dark mb-0">Manager Overview</h3>
+            <h3 class="fw-bold text-dark mb-0">State Manager Overview</h3>
             <span class="text-muted small">Real-time deployment & payment tracking</span>
         </div>
         <div class="d-flex gap-2">

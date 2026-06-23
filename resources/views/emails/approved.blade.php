@@ -11,7 +11,7 @@
 
 Hello {{ $user->name }},
 
-We are pleased to inform you that your application as a **Deployment Manager** has been approved. Your account is now fully verified, and your administrative workspace has been provisioned.
+We are pleased to inform you that your application as a **State Manager** has been approved. Your account is now fully verified, and your administrative workspace has been provisioned.
 
 @component('mail::button', ['url' => url('/login')])
 Access My Dashboard

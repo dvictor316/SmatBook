@@ -123,7 +123,7 @@
                         <div class="text-center mb-4">
                             <h3 class="font-weight-bold">Approval Pending</h3>
                             <p class="text-muted">
-                                Hello <strong>{{ auth()->user()->name }}</strong>, your Deployment Manager access for 
+                                Hello <strong>{{ auth()->user()->name }}</strong>, your State Manager access for 
                                 <strong>{{ env('SESSION_DOMAIN', 'SmartProbook') }}</strong> has been received and is waiting for super admin approval.
                             </p>
                         </div>

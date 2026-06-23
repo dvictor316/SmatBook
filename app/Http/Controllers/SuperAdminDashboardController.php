@@ -79,7 +79,7 @@ class SuperAdminDashboardController extends Controller
         if (Schema::hasColumn('users', 'role')) {
             $query->whereNotIn(
                 DB::raw("LOWER(COALESCE(role, ''))"),
-                ['super_admin', 'superadmin', 'deployment_manager']
+                ['super_admin', 'superadmin', 'state_manager', 'deployment_manager']
             );
         }
 
@@ -866,7 +866,7 @@ class SuperAdminDashboardController extends Controller
                 $user->update([
                     'is_verified' => 1,
                     'verified_at' => now(),
-                    'role' => 'deployment_manager'
+                    'role' => 'state_manager'
                 ]);
 
                 $this->ensureManagerHasWorkspace($user);
@@ -875,7 +875,7 @@ class SuperAdminDashboardController extends Controller
                     SystemEventMailer::notifyManagerApproved($user, Auth::user());
                 });
 
-                Log::info("Deployment Manager Approved, Workspace Created, & Notification Triggered: {$user->email}");
+                Log::info("State Manager Approved, Workspace Created, & Notification Triggered: {$user->email}");
             }
 
             DB::commit();
@@ -906,17 +906,17 @@ class SuperAdminDashboardController extends Controller
             if ($manager->user?->email) {
                 SystemEventMailer::sendMessage(
                     [$manager->user->email, config('mail.admin_inbox')],
-                    'Deployment Manager Rejected',
-                    'Manager Rejection',
-                    'A deployment manager account has been rejected.',
+                    'State Manager Rejected',
+                    'State Manager Rejection',
+                    'A state manager account has been rejected.',
                     [
-                        'Manager' => $manager->user?->name ?? $manager->user?->email ?? 'N/A',
+                        'State Manager' => $manager->user?->name ?? $manager->user?->email ?? 'N/A',
                         'Email' => $manager->user?->email ?? 'N/A',
                         'Time' => now()->toDateTimeString(),
                     ]
                 );
             }
-            return redirect()->back()->with('success', "Manager rejected.");
+            return redirect()->back()->with('success', "State manager rejected.");
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Failed: ' . $e->getMessage());
@@ -936,17 +936,17 @@ class SuperAdminDashboardController extends Controller
             if ($manager->user?->email) {
                 SystemEventMailer::sendMessage(
                     [$manager->user->email, config('mail.admin_inbox')],
-                    'Deployment Manager Suspended',
-                    'Manager Suspension',
-                    'A deployment manager account has been suspended.',
+                    'State Manager Suspended',
+                    'State Manager Suspension',
+                    'A state manager account has been suspended.',
                     [
-                        'Manager' => $manager->user?->name ?? $manager->user?->email ?? 'N/A',
+                        'State Manager' => $manager->user?->name ?? $manager->user?->email ?? 'N/A',
                         'Email' => $manager->user?->email ?? 'N/A',
                         'Time' => now()->toDateTimeString(),
                     ]
                 );
             }
-            return redirect()->back()->with('success', "Manager suspended successfully.");
+            return redirect()->back()->with('success', "State manager suspended successfully.");
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Failed to suspend.');
@@ -1004,7 +1004,7 @@ class SuperAdminDashboardController extends Controller
 
         $recipient = $manager->user?->email;
         if (!filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
-            $message = 'This deployment manager does not have a valid email address.';
+            $message = 'This state manager does not have a valid email address.';
 
             if ($request->expectsJson()) {
                 return response()->json(['ok' => false, 'message' => $message], 422);
@@ -1015,13 +1015,13 @@ class SuperAdminDashboardController extends Controller
 
         $displayName = $manager->business_name
             ?? $manager->user?->name
-            ?? 'Deployment Manager';
+            ?? 'State Manager';
 
         $sent = SystemEventMailer::sendMessage(
             $recipient,
             'SmartProbook Partner Update',
-            'Deployment Manager Notification',
-            'A new update has been sent to your deployment manager account.',
+            'State Manager Notification',
+            'A new update has been sent to your state manager account.',
             [
                 'Manager' => $displayName,
                 'Email' => $recipient,
@@ -1439,14 +1439,14 @@ public function pendingManagers()
                     'ID' => $s->id,
                     'Company' => $s->company->name ?? $s->company->company_name ?? 'N/A',
                     'Amount' => $s->amount,
-                    'Source' => (!empty($s->deployed_by) || !empty($s->company?->deployed_by)) ? 'Deployment Manager' : 'Direct',
+                    'Source' => (!empty($s->deployed_by) || !empty($s->company?->deployed_by)) ? 'State Manager' : 'Direct',
                     'Date' => $s->created_at,
                 ]),
                 'managers' => DB::table('deployment_managers')->join('users', 'deployment_managers.user_id', '=', 'users.id')->select('users.name', 'users.email', 'deployment_managers.status')->get(),
                 'tenants' => Company::with(['subscription'])->get()->map(fn($c) => [
                     'Company' => $c->name ?? $c->company_name ?? 'N/A',
                     'Plan' => $c->subscription->plan_name ?? $c->plan ?? 'N/A',
-                    'Source' => !empty($c->deployed_by) ? 'Deployment Manager' : 'Direct',
+                    'Source' => !empty($c->deployed_by) ? 'State Manager' : 'Direct',
                     'Status' => $c->status,
                     'Joined' => $c->created_at,
                 ]),

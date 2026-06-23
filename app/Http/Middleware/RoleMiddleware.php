@@ -30,6 +30,19 @@ class RoleMiddleware
         $userRole = strtolower((string) ($user->role ?? ''));
         $roleMatch = in_array($userRole, $allowedRoles, true);
 
+        $roleAliases = [
+            'state_manager' => ['state_manager', 'deployment_manager', 'manager'],
+            'deployment_manager' => ['state_manager', 'deployment_manager', 'manager'],
+            'manager' => ['state_manager', 'deployment_manager', 'manager'],
+        ];
+
+        foreach ($roleAliases[$userRole] ?? [] as $alias) {
+            if (in_array($alias, $allowedRoles, true)) {
+                $roleMatch = true;
+                break;
+            }
+        }
+
         if (!$roleMatch && method_exists($user, 'role') && $user->relationLoaded('role') ? $user->role : $user->role()->first()) {
             $roleMatch = in_array(strtolower((string) optional($user->role)->name), $allowedRoles, true);
         }
@@ -37,7 +50,7 @@ class RoleMiddleware
         // Check if user has any of the allowed roles
         if (!$roleMatch) {
             // Check if this is a deployment manager trying to access their area
-            if (in_array('deployment_manager', $roles) || in_array('manager', $roles)) {
+            if (in_array('state_manager', $roles) || in_array('deployment_manager', $roles) || in_array('manager', $roles)) {
                 return redirect()->route('home')
                     ->with('error', 'Access denied. You do not have the required permissions.');
             }

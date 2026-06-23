@@ -53,7 +53,7 @@ class AuthController extends Controller
             'selected_plan' => $finalName,
             'selected_cycle' => $finalCycle,
             'selected_amount' => $finalPrice,
-            'reg_role' => $isManager ? 'deployment_manager' : 'admin'
+            'reg_role' => $isManager ? 'state_manager' : 'admin'
         ]);
 
         return view('Pages.Authentication.saas-register', [
@@ -69,7 +69,7 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $requestedRole = $request->role ?? session('reg_role', 'admin');
-        $retryableManager = $requestedRole === 'deployment_manager'
+        $retryableManager = $this->isManagerRoleName($requestedRole)
             ? $this->findRetryableDeploymentManager((string) $request->input('email', ''))
             : null;
 
@@ -86,8 +86,8 @@ class AuthController extends Controller
             'profile_photo' => 'nullable|file|mimetypes:image/*|max:2048',
         ];
 
-        if ($requestedRole === 'deployment_manager') {
-            // Deployment managers must use a real email so notifications and approval updates reach them.
+        if ($this->isManagerRoleName($requestedRole)) {
+            // State managers must use a real email so notifications and approval updates reach them.
             $rules['email'] = 'required|string|email|max:255';
             $rules['phone'] = ['nullable', 'string', 'max:25', 'regex:/^\+?[0-9]{7,20}$/'];
         } else {
@@ -115,7 +115,7 @@ class AuthController extends Controller
         }
 
         $resolvedEmail = $validated['email'] ?? null;
-        if ($requestedRole === 'deployment_manager' && $resolvedEmail) {
+        if ($this->isManagerRoleName($requestedRole) && $resolvedEmail) {
             $emailOwner = User::withTrashed()
                 ->where('email', $resolvedEmail)
                 ->first();
@@ -162,7 +162,7 @@ class AuthController extends Controller
                     'phone' => $normalizedPhone,
                     'password' => Hash::make($validated['password']),
                     'role' => $role,
-                    'is_verified' => ($role === 'deployment_manager') ? 0 : 1,
+                    'is_verified' => $this->isManagerRoleName($role) ? 0 : 1,
                 ]);
 
                 $user = $retryableManager ?: new User();
@@ -178,7 +178,7 @@ class AuthController extends Controller
                     $user->save();
                 }
 
-                if ($role === 'deployment_manager') {
+                if ($this->isManagerRoleName($role)) {
                     $manager = DeploymentManager::firstOrNew([
                         'user_id' => $user->id,
                     ]);
@@ -190,7 +190,7 @@ class AuthController extends Controller
                         $manager->save();
 
                         DB::afterCommit(function () use ($user) {
-                            SystemEventMailer::notifyRegistration($user, 'deployment_manager');
+                            SystemEventMailer::notifyRegistration($user, 'state_manager');
                         });
 
                         return [
@@ -274,7 +274,7 @@ class AuthController extends Controller
             $request->session()->regenerate();
             $this->clearRegistrationSession();
 
-            if ($registrationResult['role'] === 'deployment_manager') {
+            if ($this->isManagerRoleName($registrationResult['role'])) {
                 return redirect()->route('manager.verification.form')
                     ->with(
                         'success',
@@ -678,7 +678,7 @@ class AuthController extends Controller
             return redirect()->route('super_admin.dashboard');
         }
 
-        // Deployment Manager
+        // State Manager
         if ($this->isDeploymentManager($user)) {
             return $this->handleDeploymentManagerRedirect($user);
         }
@@ -1252,7 +1252,12 @@ class AuthController extends Controller
 
     private function isDeploymentManager($user): bool
     {
-        return in_array(strtolower($user->role), ['deployment_manager', 'manager']);
+        return in_array(strtolower($user->role), ['state_manager', 'deployment_manager', 'manager']);
+    }
+
+    private function isManagerRoleName(?string $role): bool
+    {
+        return in_array(strtolower((string) $role), ['state_manager', 'deployment_manager', 'manager'], true);
     }
 
     private function handleDeploymentManagerRedirect($user)

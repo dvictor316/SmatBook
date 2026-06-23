@@ -370,7 +370,7 @@
                         <thead>
                             <tr>
                                 <th class="ps-4 py-3">Reference</th>
-                                <th>Manager/Agent</th>
+                                <th>State Manager/Agent</th>
                                 <th>Amount</th>
                                 <th>Percentage</th>
                                 <th>Status</th>

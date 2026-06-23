@@ -15,7 +15,7 @@
     // 2. Profile Image & Avatar Fallback Logic
     $defaultAvatar = asset('assets/img/profiles/avatar-07.jpg');
     $profileImagePath = $user?->avatar_url ?: $defaultAvatar;
-    $isDeploymentManagerHeader = $user && in_array(strtolower((string) ($user->role ?? '')), ['deployment_manager', 'manager'], true);
+    $isDeploymentManagerHeader = $user && in_array(strtolower((string) ($user->role ?? '')), ['state_manager', 'deployment_manager', 'manager'], true);
     $profileUrl = $isDeploymentManagerHeader && Route::has('deployment.profile')
         ? route('deployment.profile')
         : url('profile');

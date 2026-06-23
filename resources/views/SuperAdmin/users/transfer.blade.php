@@ -16,7 +16,7 @@
         <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
             <div>
                 <h4 class="mb-1">Direct Transfer Users</h4>
-                <p class="text-muted mb-0">Approve, reject, or suspend users who paid via direct bank transfer (without deployment manager).</p>
+                <p class="text-muted mb-0">Approve, reject, or suspend users who paid via direct bank transfer (without state manager).</p>
             </div>
         </div>
 

@@ -51,7 +51,7 @@ class RoleController extends Controller
 
     /**
      * Pre-seeding the standard hierarchy for your clients.
-     * Note: Added 'Deployment Manager' to the default hierarchy to align with your new feature.
+     * Note: State Manager keeps the platform onboarding workflow aligned with the manager module.
      */
     public function seedDefaultRoles()
     {
@@ -59,7 +59,8 @@ class RoleController extends Controller
 
         $defaultRoles = [
             ['name' => 'Administrator', 'desc' => 'Full system access (Client Owner)', 'group' => 'Executive'],
-            ['name' => 'Deployment Manager', 'desc' => 'Can deploy plans and monitor clients', 'group' => 'Partnership'],
+            ['name' => 'State Manager', 'desc' => 'Can deploy leads, manage agents, and monitor clients', 'group' => 'Partnership'],
+            ['name' => 'Agent', 'desc' => 'Field agent for sales, onboarding, and client follow-up', 'group' => 'Partnership'],
             ['name' => 'Finance Manager', 'desc' => 'Manages accounts, taxes, and reports', 'group' => 'Finance'],
             ['name' => 'Store Manager', 'desc' => 'Manages inventory and stock levels', 'group' => 'Operations'],
             ['name' => 'Sales Manager', 'desc' => 'Manages sales teams and targets', 'group' => 'Sales'],
@@ -129,7 +130,7 @@ class RoleController extends Controller
         $role = Role::findOrFail($id);
         
         // Safety check: Protect core administrative roles
-        $protectedRoles = ['Administrator', 'Deployment Manager'];
+        $protectedRoles = ['Administrator', 'State Manager', 'Agent'];
         if(in_array($role->name, $protectedRoles) || (bool) ($role->is_system_role ?? false)) {
             return redirect()->back()->with('error', 'Cannot delete core system roles');
         }
@@ -365,12 +366,21 @@ class RoleController extends Controller
     {
         return match (strtolower($roleName)) {
             'administrator' => Permission::query()->pluck('name')->all(),
-            'deployment manager' => [
+            'state manager', 'deployment manager' => [
                 'dashboard.overview.view',
                 'deployment.managers.view',
                 'sales.quotations.view',
                 'reports.reports.view',
                 'settings.settings.view',
+            ],
+            'agent' => [
+                'dashboard.overview.view',
+                'customers.customers.view',
+                'customers.customers.create',
+                'sales.quotations.view',
+                'sales.quotations.create',
+                'follow_ups.follow_ups.view',
+                'follow_ups.follow_ups.create',
             ],
             'finance manager' => [
                 'dashboard.overview.view',

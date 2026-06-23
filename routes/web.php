@@ -15,7 +15,7 @@ use App\Http\Controllers\{
     NotificationController, ActivityLogController, BackupController, AuditController,
     TaxCenterController, TaxFilingController, PeriodCloseController, ProjectManagementController
     , AiQuickAgentController, RecurringTransactionController, FinanceApprovalController, FixedAssetController, BudgetController,
-    AdvancePaymentController
+    AdvancePaymentController, AgentPortalController, StateManagerCrmController
 };
 use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\SuperAdmin\DeploymentManagerController;
@@ -277,6 +277,15 @@ Route::middleware(['auth', 'manager.verified'])
     // ----------------------------------------------------------
     Route::get('/dashboard',  [DeploymentManagerController::class, 'index'])     ->name('dashboard');
     Route::get('/analytics',  [DeploymentManagerController::class, 'analytics']) ->name('stats');
+    Route::get('/crm', [StateManagerCrmController::class, 'overview'])->name('crm.overview');
+    Route::get('/agents', [StateManagerCrmController::class, 'agents'])->name('crm.agents');
+    Route::get('/leads', [StateManagerCrmController::class, 'leads'])->name('crm.leads');
+    Route::post('/agents/invite', [StateManagerCrmController::class, 'inviteAgent'])->name('crm.agents.invite');
+    Route::post('/agents/{agent}/assign-zone', [StateManagerCrmController::class, 'assignZone'])->name('crm.agents.assign-zone');
+    Route::post('/agents/{agent}/violations', [StateManagerCrmController::class, 'addViolation'])->name('crm.agents.violations.store');
+    Route::post('/agents/{agent}/suspend', [StateManagerCrmController::class, 'suspendAgent'])->name('crm.agents.suspend');
+    Route::post('/agents/{agent}/activate', [StateManagerCrmController::class, 'activateAgent'])->name('crm.agents.activate');
+    Route::get('/advanced-reports', [StateManagerCrmController::class, 'reports'])->name('crm.reports');
 
     // ----------------------------------------------------------
     // CUSTOMER REGISTRATION
@@ -381,6 +390,14 @@ Route::middleware(['auth', 'manager.verified'])
     });
 
     // ----------------------------------------------------------
+    // GEO FINDER / NEARBY BUSINESS LOCATOR
+    // ----------------------------------------------------------
+    Route::prefix('geo')->name('geo.')->group(function () {
+        Route::get('/finder', [MapController::class, 'geoFinder'])->name('index');
+        Route::post('/geocode-company', [MapController::class, 'geocodeCompany'])->name('geocode-company');
+    });
+
+    // ----------------------------------------------------------
     // SUPPORT
     // ----------------------------------------------------------
     Route::prefix('support')->name('support.')->group(function () {
@@ -417,6 +434,25 @@ Route::middleware(['auth', 'manager.verified'])
     Route::get('/export', [DeploymentManagerController::class, 'exportData']) ->name('export');
     Route::post('/export/generate', [DeploymentManagerController::class, 'generateExport']) ->name('export.generate');
 });
+
+// ============================================================
+// AGENT PORTAL ROUTES
+// ============================================================
+Route::middleware(['auth', 'role:agent,state_manager,super_admin'])
+    ->prefix('agent')
+    ->name('agent.')
+    ->group(function () {
+        Route::get('/dashboard', [AgentPortalController::class, 'dashboard'])->name('dashboard');
+        Route::get('/leads', [AgentPortalController::class, 'leads'])->name('leads');
+        Route::get('/find-nearby', [AgentPortalController::class, 'findNearby'])->name('find-nearby');
+        Route::post('/leads', [AgentPortalController::class, 'storeLead'])->name('leads.store');
+        Route::patch('/leads/{lead}', [AgentPortalController::class, 'updateLead'])->name('leads.update');
+        Route::delete('/leads/{lead}', [AgentPortalController::class, 'destroyLead'])->name('leads.destroy');
+        Route::get('/performance', [AgentPortalController::class, 'performance'])->name('performance');
+        Route::get('/earnings', [AgentPortalController::class, 'earnings'])->name('earnings');
+        Route::get('/knowledge-base', [AgentPortalController::class, 'knowledgeBase'])->name('knowledge-base');
+        Route::get('/content-hub', [AgentPortalController::class, 'contentHub'])->name('content-hub');
+    });
 /*
 |--------------------------------------------------------------------------
 | SUPER ADMIN ROUTES

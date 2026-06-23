@@ -7,7 +7,7 @@
 @section('content')
 @php
     // Detect if this is a manager signup via URL query or session
-    $isManager = request()->query('type') === 'manager' || session('reg_role') === 'deployment_manager';
+    $isManager = request()->query('type') === 'manager' || in_array(session('reg_role'), ['state_manager', 'deployment_manager'], true);
 
     // Logic Alignment: Managers get 'Partner' plan, others get the passed $selectedPlan or Pro.
     $lookupPlan = $isManager ? 'Partner' : ($selectedPlan ?? session('selected_plan', 'pro'));
@@ -695,7 +695,7 @@
             <div class="aside-meta">
                 <div class="info-row">
                     <span class="info-label">Account Type</span>
-                    <span class="info-value text-uppercase">{{ $isManager ? 'Deployment Manager' : 'Standard Admin' }}</span>
+                    <span class="info-value text-uppercase">{{ $isManager ? 'State Manager' : 'Standard Admin' }}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Access Level</span>
@@ -718,7 +718,7 @@
                         <i class="fas fa-shield-check"></i>
                         <div>
                             <strong>Identity-first onboarding</strong>
-                            <span>Every registration is tied to a verified admin or deployment manager profile.</span>
+                            <span>Every registration is tied to a verified admin or state manager profile.</span>
                         </div>
                     </div>
                     <div class="aside-point">
@@ -774,7 +774,7 @@
 
             <form action="{{ route('saas-register.post') }}" method="POST" enctype="multipart/form-data" class="form-shell">
                 @csrf
-                <input type="hidden" name="role" value="{{ $isManager ? 'deployment_manager' : 'admin' }}">
+                <input type="hidden" name="role" value="{{ $isManager ? 'state_manager' : 'admin' }}">
                 <input type="hidden" name="plan" value="{{ strtolower($lookupPlan) }}">
                 <input type="hidden" name="billing_cycle" value="{{ strtolower($finalCycle) }}">
                 <input type="hidden" name="amount" value="{{ $displayPrice }}">

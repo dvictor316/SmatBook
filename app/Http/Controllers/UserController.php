@@ -184,6 +184,7 @@ class UserController extends Controller
         }
 
         $user->save();
+        $this->syncStateManagerProfile($user);
 
         ActivityLog::record('users', 'create_user', 'Created user ' . $user->name, [
             'user_id' => Auth::id(),
@@ -267,6 +268,7 @@ class UserController extends Controller
         }
 
         $user->save();
+        $this->syncStateManagerProfile($user);
 
         ActivityLog::record('users', 'update_user', 'Updated user ' . $user->name, [
             'user_id' => Auth::id(),
@@ -562,7 +564,7 @@ class UserController extends Controller
         }
         
         if(empty($roles)) {
-            $roles = ['super_admin', 'administrator', 'deployment_manager', 'store_manager', 'accountant', 'cashier'];
+            $roles = ['super_admin', 'administrator', 'state_manager', 'agent', 'store_manager', 'accountant', 'cashier'];
         }
 
         return $roles;
@@ -627,7 +629,8 @@ class UserController extends Controller
         return match ($normalized) {
             'super admin', 'super_admin', 'superadmin' => 'super_admin',
             'administrator', 'admin' => 'administrator',
-            'deployment manager', 'deployment_manager', 'manager' => 'deployment_manager',
+            'state manager', 'state_manager', 'deployment manager', 'deployment_manager', 'manager' => 'state_manager',
+            'agent', 'sales agent', 'sales_agent' => 'agent',
             'store manager', 'store_manager' => 'store_manager',
             'sales manager', 'sales_manager' => 'sales_manager',
             'finance manager', 'finance_manager' => 'finance_manager',
@@ -653,5 +656,35 @@ class UserController extends Controller
 
         return in_array(strtolower((string) $user->role), ['super_admin', 'superadmin'], true)
             || strtolower((string) $user->email) === 'donvictorlive@gmail.com';
+    }
+
+    private function syncStateManagerProfile(User $user): void
+    {
+        if (!Schema::hasTable('deployment_managers')) {
+            return;
+        }
+
+        if ($this->legacyRoleKey($user->role) === 'state_manager') {
+            $payload = array_filter([
+                'business_name' => $user->name,
+                'phone' => Schema::hasColumn('users', 'phone') ? ($user->phone ?? null) : null,
+                'status' => 'active',
+                'deployment_limit' => 100,
+                'commission_rate' => Schema::hasColumn('deployment_managers', 'commission_rate') ? 35.00 : null,
+                'auto_payout_enabled' => Schema::hasColumn('deployment_managers', 'auto_payout_enabled') ? 1 : null,
+            ], fn ($value) => $value !== null);
+
+            DeploymentManager::withoutGlobalScopes()->updateOrCreate(
+                ['user_id' => $user->id],
+                $payload
+            );
+
+            return;
+        }
+
+        DeploymentManager::withoutGlobalScopes()
+            ->where('user_id', $user->id)
+            ->where('status', 'active')
+            ->update(['status' => 'suspended']);
     }
 }

@@ -25,6 +25,10 @@ class Company extends Model
         'email',
         'phone',
         'address',
+        'latitude',
+        'longitude',
+        'location_label',
+        'geocoded_at',
         'status',             // e.g., active, pending_payment, suspended
         'country',
         'currency_code',
@@ -45,6 +49,9 @@ class Company extends Model
     protected $casts = [
         'subscription_start' => 'datetime',
         'subscription_end'   => 'datetime',
+        'latitude'           => 'decimal:7',
+        'longitude'          => 'decimal:7',
+        'geocoded_at'        => 'datetime',
         'created_at'         => 'datetime',
         'updated_at'         => 'datetime',
         'deleted_at'         => 'datetime',

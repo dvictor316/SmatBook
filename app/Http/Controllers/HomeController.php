@@ -177,7 +177,7 @@ class HomeController extends Controller
     |
     | 5 destination types:
     |  1. Super Admin          → /superadmin/dashboard
-    |  2. Deployment Manager   → /deployment/dashboard
+    |  2. State Manager        → /deployment/dashboard
     |  3. New customer         → /saas/checkout/{id}   (unpaid subscription)
     |  4. Setup-pending tenant → /saas/setup/{id}      (no domain yet)
     |  5. Active tenant        → https://subdomain.smartprobook.com
@@ -207,10 +207,14 @@ class HomeController extends Controller
             }
 
             $isDeploymentManager = DeploymentManager::where('user_id', $user->id)->exists()
-                || in_array(strtolower((string) ($user->role ?? '')), ['deployment_manager', 'manager'], true);
+                || in_array(strtolower((string) ($user->role ?? '')), ['state_manager', 'deployment_manager', 'manager'], true);
 
             if ($isDeploymentManager) {
                 return $this->handleDeploymentManagerRedirect($user);
+            }
+
+            if ($this->isAgent($user)) {
+                return redirect()->route('agent.dashboard');
             }
 
             return redirect()->route('user.dashboard');
@@ -238,7 +242,13 @@ class HomeController extends Controller
             return redirect()->route('super_admin.dashboard');
         }
 
-        // ── PRIORITY 3: Regular Tenant ──
+        // ── PRIORITY 3: Agent Portal ──
+        if ($this->isAgent($user)) {
+            Log::info('User is AGENT', ['user_id' => $user->id]);
+            return redirect()->route('agent.dashboard');
+        }
+
+        // ── PRIORITY 4: Regular Tenant ──
         Log::info('User is REGULAR TENANT', ['user_id' => $user->id]);
         return $this->handleRegularUserRedirect($user);
     }
@@ -631,6 +641,11 @@ class HomeController extends Controller
         return $user && method_exists($user, 'isSuperAdmin')
             ? $user->isSuperAdmin()
             : in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true);
+    }
+
+    private function isAgent($user): bool
+    {
+        return strtolower((string) ($user->role ?? '')) === 'agent';
     }
 
     private function isTempOpenAccess(): bool

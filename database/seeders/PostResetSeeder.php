@@ -127,7 +127,8 @@ class PostResetSeeder extends Seeder
     {
         return [
             ['name' => 'Administrator',       'desc' => 'Full system access (Client Owner)', 'group' => 'Executive'],
-            ['name' => 'Deployment Manager',  'desc' => 'Can deploy plans and monitor clients', 'group' => 'Partnership'],
+            ['name' => 'State Manager',       'desc' => 'Can deploy leads, manage agents, and monitor clients', 'group' => 'Partnership'],
+            ['name' => 'Agent',               'desc' => 'Field agent for sales, onboarding, and client follow-up', 'group' => 'Partnership'],
             ['name' => 'Finance Manager',     'desc' => 'Manages accounts, taxes, and reports', 'group' => 'Finance'],
             ['name' => 'Store Manager',       'desc' => 'Manages inventory and stock levels', 'group' => 'Operations'],
             ['name' => 'Sales Manager',       'desc' => 'Manages sales teams and targets', 'group' => 'Sales'],
@@ -197,8 +198,14 @@ class PostResetSeeder extends Seeder
                 'inventory.products.view',
             ])),
 
-            'Deployment Manager' => array_filter($allPerms, fn ($p) => str_starts_with($p, 'deployment.')
+            'State Manager' => array_filter($allPerms, fn ($p) => str_starts_with($p, 'deployment.')
                 || str_starts_with($p, 'dashboard.')
+            ),
+
+            'Agent' => array_filter($allPerms, fn ($p) => str_starts_with($p, 'dashboard.')
+                || str_starts_with($p, 'customers.')
+                || str_starts_with($p, 'sales.')
+                || str_starts_with($p, 'follow_ups.')
             ),
 
             default => [],

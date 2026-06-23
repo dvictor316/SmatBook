@@ -4,10 +4,10 @@
 @php
     $currentManagerRoute = request()->route()?->getName();
     $pageTitle = match ($currentManagerRoute) {
-        'super_admin.managers.pending' => 'Pending Deployment Managers',
-        'super_admin.managers.suspended' => 'Suspended Deployment Managers',
-        'super_admin.managers.approved' => 'Approved Deployment Managers',
-        default => 'Deployment Managers List',
+        'super_admin.managers.pending' => 'Pending State Managers',
+        'super_admin.managers.suspended' => 'Suspended State Managers',
+        'super_admin.managers.approved' => 'Approved State Managers',
+        default => 'State Managers List',
     };
 
     $pageSubtitle = match ($currentManagerRoute) {

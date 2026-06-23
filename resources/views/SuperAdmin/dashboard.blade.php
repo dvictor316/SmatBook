@@ -1217,7 +1217,7 @@
                         </div>
                     </div>
 
-                    @if(auth()->user()->role === 'deployment_manager')
+                    @if(in_array(auth()->user()->role, ['state_manager', 'deployment_manager', 'manager'], true))
                         @php
                             $isSynced = auth()->user()->is_verified == 1 && 
                                         auth()->user()->deploymentProfile?->status === 'active';
@@ -2185,7 +2185,7 @@
 
                                         <div class="mb-3">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <span class="text-muted small">Deployment Manager Verification</span>
+                                                <span class="text-muted small">State Manager Verification</span>
                                                 <span class="fw-bold text-dark small">{{ $managerHealthPct }}%</span>
                                             </div>
                                             <div class="progress progress-md" style="height: 8px;">
@@ -2266,7 +2266,7 @@
                                                         <span class="label">Approved</span>
                                                     </div>
                                                     <div class="value">{{ number_format($activeManagers) }}</div>
-                                                    <div class="note">Currently active deployment managers.</div>
+                                                    <div class="note">Currently active state managers.</div>
                                                 </div>
                                                 <div class="pulse-legend-item">
                                                     <div class="topline">
@@ -2422,12 +2422,12 @@
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <h4 class="card-title card-title-dash">Deployment Manager Authorization</h4>
+                                            <h4 class="card-title card-title-dash">State Manager Authorization</h4>
                                             @if($metrics['pending_managers'] > 0)
                                                 <span class="badge rounded-pill bg-danger">{{ $metrics['pending_managers'] }} Pending</span>
                                             @endif
                                         </div>
-                                        <p class="card-subtitle card-subtitle-dash text-muted mb-3">Approve or decline deployment manager access</p>
+                                        <p class="card-subtitle card-subtitle-dash text-muted mb-3">Approve or decline state manager access</p>
                                         <div class="row g-2 mb-3">
                                             @foreach([
                                                 ['label' => 'Approved Managers', 'value' => number_format($metrics['active_managers'] ?? 0)],

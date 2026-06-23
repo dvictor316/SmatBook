@@ -1,6 +1,6 @@
 @extends('layout.mainlayout')
 
-@section('page-title', auth()->user()->hasRole('super_admin') ? 'Deployment Managers' : 'Client Users')
+@section('page-title', auth()->user()->hasRole('super_admin') ? 'State Managers' : 'Client Users')
 
 @php
     /**
@@ -47,13 +47,13 @@
     <div class="breadcrumb-container d-print-none">
         <a href="{{ $isAdmin ? route('super_admin.dashboard', ['subdomain' => $sub]) : route('deployment.dashboard') }}">Home</a>
         <i class="fas fa-chevron-right" style="font-size: 10px;"></i>
-        <span>{{ $isAdmin ? 'Deployment Managers' : 'Users' }}</span>
+        <span>{{ $isAdmin ? 'State Managers' : 'Users' }}</span>
     </div>
 
     <div class="d-flex align-items-center justify-content-between mb-4 d-print-none">
         <div>
             <h4 class="fw-bold mb-1" style="color:#0f172a; letter-spacing: -0.5px;">
-                {{ $isAdmin ? 'Deployment Managers' : 'Users' }}
+                {{ $isAdmin ? 'State Managers' : 'Users' }}
             </h4>
             <div class="badge bg-white border text-muted fw-medium px-3 py-2 shadow-sm">
                 <i class="fas fa-users me-2 text-primary"></i> 
@@ -67,7 +67,7 @@
 
         @if($isAdmin)
             <a href="{{ route('super_admin.users.create', ['subdomain' => $sub]) }}" class="btn shadow-sm text-white" style="background:#1e40af; border-radius:8px; padding: 10px 20px; font-weight:600;">
-                <i class="fas fa-plus-circle me-2"></i>Add Manager
+                <i class="fas fa-plus-circle me-2"></i>Add State Manager
             </a>
         @else
             <a href="{{ route('deployment.users.create') }}" class="btn shadow-sm text-white" style="background:#1e40af; border-radius:8px; padding: 10px 20px; font-weight:600;">
@@ -83,7 +83,7 @@
                     <tr style="font-size:11px; text-transform:uppercase; letter-spacing:0.8px; color:#64748b; border-bottom: 2px solid #f1f5f9;">
                         @if($isAdmin)
                             <th class="ps-4 py-3">Business Details</th>
-                            <th>Manager Name</th>
+                            <th>State Manager Name</th>
                             <th>Phone Number</th>
                             <th>ID Verification</th>
                         @else

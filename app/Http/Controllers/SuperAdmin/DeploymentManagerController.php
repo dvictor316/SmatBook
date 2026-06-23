@@ -417,7 +417,7 @@ class DeploymentManagerController extends Controller
                 $user = User::findOrFail($manager->user_id);
                 $user->update([
                     'is_verified' => 1,
-                    'role' => 'deployment_manager',
+                    'role' => 'state_manager',
                     'email_verified_at' => $user->email_verified_at ?? now(),
                 ]);
 
@@ -428,7 +428,7 @@ class DeploymentManagerController extends Controller
                 });
             });
 
-            return back()->with('success', 'Partner approved successfully with 35% commission rate.');
+            return back()->with('success', 'State Manager approved successfully with 35% commission rate.');
 
         } catch (\Exception $e) {
             Log::error("Approval Sync Failed: " . $e->getMessage());
@@ -822,7 +822,7 @@ public function store(Request $request)
 
             DB::afterCommit(function () use ($customer, $validated, $manager) {
                 SystemEventMailer::notifyRegistration($customer, 'user', [
-                    'registered_by' => $manager->email ?? $manager->name ?? 'Deployment Manager',
+                    'registered_by' => $manager->email ?? $manager->name ?? 'State Manager',
                     'plan' => $validated['plan_name'] ?? null,
                     'billing_cycle' => $validated['billing_cycle'] ?? null,
                 ]);

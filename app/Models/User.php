@@ -308,7 +308,8 @@ class User extends Authenticatable
         return match ($normalized) {
             'super admin', 'super_admin', 'superadmin' => 'super_admin',
             'administrator', 'admin' => 'administrator',
-            'deployment manager', 'deployment_manager', 'manager' => 'deployment_manager',
+            'state manager', 'state_manager', 'deployment manager', 'deployment_manager', 'manager' => 'state_manager',
+            'agent', 'sales agent', 'sales_agent' => 'agent',
             'store manager', 'store_manager' => 'store_manager',
             'sales manager', 'sales_manager' => 'sales_manager',
             'finance manager', 'finance_manager' => 'finance_manager',

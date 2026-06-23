@@ -1,6 +1,6 @@
 @extends('layout.mainlayout')
 
-@section('title', 'Manager Settings')
+@section('title', 'State Manager Settings')
 
 @section('content')
 
@@ -74,7 +74,7 @@
                     <li class="breadcrumb-item active">Configuration</li>
                 </ol>
             </nav>
-            <h3 class="fw-bold text-dark mb-0">Manager Settings</h3>
+            <h3 class="fw-bold text-dark mb-0">State Manager Settings</h3>
         </div>
         <button onclick="window.print()" class="btn btn-light border bg-white shadow-sm no-print">
             <i class="fas fa-print me-2 text-secondary"></i> Print Config
@@ -175,7 +175,7 @@
                     </div>
                     <div>
                         <h5 class="fw-bold mb-0">Password Update</h5>
-                        <p class="text-muted small mb-0">Change the deployment manager login password.</p>
+                        <p class="text-muted small mb-0">Change the state manager login password.</p>
                     </div>
                 </div>
                 <form action="{{ route('deployment.settings.password') }}" method="POST" class="row g-3">

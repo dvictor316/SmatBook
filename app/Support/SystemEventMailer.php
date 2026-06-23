@@ -16,7 +16,7 @@ class SystemEventMailer
 
     public static function notifyRegistration(User $registrant, string $type = 'user', array $context = []): void
     {
-        $label = $type === 'deployment_manager' ? 'Deployment Manager Registration' : 'User Registration';
+        $label = in_array($type, ['state_manager', 'deployment_manager'], true) ? 'State Manager Registration' : 'User Registration';
         $subject = $label . ': ' . ($registrant->name ?? $registrant->email);
 
         $details = [
@@ -32,7 +32,7 @@ class SystemEventMailer
             }
         }
 
-        $recipients = $type === 'deployment_manager'
+        $recipients = in_array($type, ['state_manager', 'deployment_manager'], true)
             ? self::uniqueEmails([$registrant->email, self::adminInbox()])
             : self::uniqueEmails([$registrant->email, self::adminInbox()]);
         self::send($recipients, $subject, $label, 'A new account has been created on the platform.', $details);
@@ -40,7 +40,7 @@ class SystemEventMailer
 
     public static function notifyManagerApproved(User $manager, ?User $approver = null): void
     {
-        $subject = 'Deployment Manager Approved: ' . ($manager->name ?? $manager->email);
+        $subject = 'State Manager Approved: ' . ($manager->name ?? $manager->email);
         $details = [
             'Manager Name' => $manager->name ?? 'N/A',
             'Manager Email' => $manager->email ?? 'N/A',
@@ -50,7 +50,7 @@ class SystemEventMailer
 
         // Approval belongs to the manager + admin inbox.
         $recipients = self::uniqueEmails([$manager->email, self::adminInbox()]);
-        self::send($recipients, $subject, 'Manager Approval', 'A deployment manager account has been approved.', $details);
+        self::send($recipients, $subject, 'State Manager Approval', 'A state manager account has been approved.', $details);
     }
 
     public static function sendMessage(array|string $recipients, string $subject, string $title, string $intro, array $details = [], ?int $companyId = null): bool
