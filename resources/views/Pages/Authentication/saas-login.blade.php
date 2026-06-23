@@ -763,7 +763,7 @@
                     Choose your onboarding path
                     <div class="bottom-actions">
                         <a href="{{ route('membership-plans') }}" class="bottom-action-link">Buy a Plan</a>
-                        <a href="{{ route('saas-register', ['type' => 'manager']) }}" class="bottom-action-link">Become a Partner</a>
+                        <a href="{{ route('saas-register', ['type' => 'partner']) }}" class="bottom-action-link">Become a Partner</a>
                     </div>
                 </div>
             </form>

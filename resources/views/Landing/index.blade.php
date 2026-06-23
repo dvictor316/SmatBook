@@ -1674,7 +1674,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                     <p class="hero-body">Accounting-first workflow for sales, invoices, expenses, payroll and tax — all in one platform.</p>
                     <div class="hero-cta-stack">
                         <a href="{{ route('membership-plans') }}" class="hero-btn-red"><i class="fas fa-shopping-cart"></i> Start Today</a>
-                        <a href="{{ route('saas-register', ['type'=>'manager']) }}" class="hero-btn-ghost hero-btn-manager"><i class="fas fa-handshake"></i> Become a Manager</a>
+                        <a href="{{ route('saas-register', ['type'=>'partner']) }}" class="hero-btn-ghost hero-btn-manager"><i class="fas fa-handshake"></i> Become a Partner</a>
                         <a href="{{ route('demo.request.form') }}" class="hero-btn-ghost"><i class="fas fa-envelope-open-text"></i> Request Demo</a>
                     </div>
                     <div class="hero-trust">

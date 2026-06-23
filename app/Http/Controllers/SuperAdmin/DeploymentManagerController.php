@@ -401,6 +401,12 @@ class DeploymentManagerController extends Controller
             DB::transaction(function () use ($id) {
                 $manager = DeploymentManager::findOrFail($id);
 
+                if ($this->managerHasStateConflict($manager)) {
+                    throw ValidationException::withMessages([
+                        'state_region' => 'Another active state manager already owns this country and state/county.',
+                    ]);
+                }
+
                 $updatePayload = [
                     'status' => 'active',
                 ];
@@ -1380,6 +1386,17 @@ private function formatDeploymentAmount(float $amount): string
     public function activateUser($id) {
         $record = DeploymentManager::find($id) ?: User::findOrFail($id);
         $record->update(['status' => 'active']);
+
+        if ($record instanceof User
+            && strtolower((string) ($record->role ?? '')) === 'agent'
+            && Schema::hasColumn('users', 'state_manager_id')
+            && empty($record->state_manager_id)) {
+            $manager = $this->findStateManagerForLocation($record->country ?? null, $record->state_region ?? null);
+            if ($manager?->user_id) {
+                $record->update(['state_manager_id' => $manager->user_id]);
+            }
+        }
+
         return back()->with('success', 'User has been activated.');
     }
 
@@ -2022,6 +2039,49 @@ private function formatDeploymentAmount(float $amount): string
         ]);
 
         return back()->with('success', 'Password updated');
+    }
+
+    private function managerHasStateConflict(DeploymentManager $manager): bool
+    {
+        if (!Schema::hasColumn('deployment_managers', 'country')
+            || !Schema::hasColumn('deployment_managers', 'state_region')) {
+            return false;
+        }
+
+        $country = strtolower(trim((string) ($manager->country ?? '')));
+        $state = strtolower(trim((string) ($manager->state_region ?? '')));
+
+        if ($country === '' || $state === '') {
+            return false;
+        }
+
+        return DeploymentManager::withoutGlobalScopes()
+            ->whereKeyNot($manager->id)
+            ->whereRaw('LOWER(country) = ?', [$country])
+            ->whereRaw('LOWER(state_region) = ?', [$state])
+            ->whereRaw("LOWER(COALESCE(status, '')) = ?", ['active'])
+            ->exists();
+    }
+
+    private function findStateManagerForLocation(?string $country, ?string $stateRegion): ?DeploymentManager
+    {
+        if (!Schema::hasColumn('deployment_managers', 'country')
+            || !Schema::hasColumn('deployment_managers', 'state_region')) {
+            return null;
+        }
+
+        $country = strtolower(trim((string) $country));
+        $stateRegion = strtolower(trim((string) $stateRegion));
+
+        if ($country === '' || $stateRegion === '') {
+            return null;
+        }
+
+        return DeploymentManager::withoutGlobalScopes()
+            ->whereRaw('LOWER(country) = ?', [$country])
+            ->whereRaw('LOWER(state_region) = ?', [$stateRegion])
+            ->whereRaw("LOWER(COALESCE(status, '')) = ?", ['active'])
+            ->first();
     }
 
     // =============================================================

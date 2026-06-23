@@ -34,15 +34,17 @@
                     <select class="form-control" id="agentCountry" style="border-radius:14px;" aria-label="Country"></select>
                 </div>
                 <div class="col-lg-2">
-                    <input class="form-control" id="agentRegion" list="agentRegionOptions" style="border-radius:14px;" aria-label="State or region" placeholder="State/county">
-                    <datalist id="agentRegionOptions"></datalist>
+                    <select class="form-control" id="agentRegion" style="border-radius:14px;" aria-label="State or region"></select>
                 </div>
                 <div class="col-lg-2">
-                    <input class="form-control" id="agentCouncil" list="agentCouncilOptions" style="border-radius:14px;" aria-label="Local council or county" placeholder="Council/county">
-                    <datalist id="agentCouncilOptions"></datalist>
+                    <select class="form-control" id="agentCouncil" style="border-radius:14px;" aria-label="Local council or county"></select>
                 </div>
                 <div class="col-lg-3">
-                    <input class="form-control" id="agentNearbyKeyword" placeholder="Type store/business e.g. Supermarket" style="border-radius:14px;" aria-label="Business keyword">
+                    <select class="form-control" id="agentNearbyKeyword" style="border-radius:14px;" aria-label="Business keyword">
+                        @foreach($categories as $category)
+                            <option value="{{ $category }}">{{ $category }}</option>
+                        @endforeach
+                    </select>
                 </div>
                 <div class="col-lg-1">
                     <button type="button" class="agent-button w-100" id="agentFindBusinesses"><i class="fa-solid fa-magnifying-glass"></i> Find</button>
@@ -92,8 +94,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const country = document.getElementById('agentCountry');
     const region = document.getElementById('agentRegion');
     const council = document.getElementById('agentCouncil');
-    const regionOptions = document.getElementById('agentRegionOptions');
-    const councilOptions = document.getElementById('agentCouncilOptions');
     let coords = null;
 
     country.innerHTML = Object.keys(regions).map((item) => `<option value="${escapeAttr(item)}">${escapeHtml(item)}</option>`).join('');
@@ -104,7 +104,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     country.addEventListener('change', fillRegions);
     region.addEventListener('change', fillCouncils);
-    region.addEventListener('input', fillCouncils);
 
     document.querySelectorAll('.agent-category-chip').forEach((button) => {
         button.addEventListener('click', () => {
@@ -115,15 +114,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById('agentUseLocation').addEventListener('click', () => {
         if (!navigator.geolocation) {
-            state.textContent = 'Location is not supported on this browser.';
+            state.textContent = 'Please turn on location services in your browser/device settings.';
             return;
         }
-        state.textContent = 'Requesting your location...';
+        state.textContent = 'Please allow location access when your browser asks.';
         navigator.geolocation.getCurrentPosition((position) => {
             coords = { lat: position.coords.latitude, lon: position.coords.longitude };
             state.textContent = 'Location ready. Choose a category or search keyword.';
         }, () => {
-            state.textContent = 'Location permission was not granted. You can still search by area.';
+            state.textContent = 'Please turn on/allow location, then tap Use My Location again.';
         }, { enableHighAccuracy: true, timeout: 10000 });
     });
 
@@ -198,12 +197,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     function fillRegions() {
         const regionMap = regions[country.value] || {};
-        regionOptions.innerHTML = Object.keys(regionMap).map((item) => `<option value="${escapeAttr(item)}"></option>`).join('');
+        const regionNames = Object.keys(regionMap);
+        region.innerHTML = regionNames.length
+            ? regionNames.map((item) => `<option value="${escapeAttr(item)}">${escapeHtml(item)}</option>`).join('')
+            : '<option value="">All states / use location</option>';
         fillCouncils();
     }
     function fillCouncils() {
         const councils = ((regions[country.value] || {})[region.value] || []);
-        councilOptions.innerHTML = councils.map((item) => `<option value="${escapeAttr(item)}"></option>`).join('');
+        council.innerHTML = [''].concat(councils).map((item) => `<option value="${escapeAttr(item)}">${item ? escapeHtml(item) : 'All local councils'}</option>`).join('');
     }
 });
 </script>

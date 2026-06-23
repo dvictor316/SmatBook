@@ -214,6 +214,10 @@ class HomeController extends Controller
             }
 
             if ($this->isAgent($user)) {
+                if (!$this->agentIsApproved($user)) {
+                    return redirect()->route('manager.pending.notice');
+                }
+
                 return redirect()->route('agent.dashboard');
             }
 
@@ -245,6 +249,11 @@ class HomeController extends Controller
         // ── PRIORITY 3: Agent Portal ──
         if ($this->isAgent($user)) {
             Log::info('User is AGENT', ['user_id' => $user->id]);
+            if (!$this->agentIsApproved($user)) {
+                Log::info('→ Agent pending approval', ['user_id' => $user->id]);
+                return redirect()->route('manager.pending.notice');
+            }
+
             return redirect()->route('agent.dashboard');
         }
 
@@ -304,6 +313,13 @@ class HomeController extends Controller
 
         // Fallback — send back to verification to complete profile
         return redirect()->route('manager.verification.form');
+    }
+
+    private function agentIsApproved(User $user): bool
+    {
+        $status = strtolower((string) ($user->status ?? ''));
+
+        return $status === 'active' && (int) ($user->is_verified ?? 0) === 1;
     }
 
     /*

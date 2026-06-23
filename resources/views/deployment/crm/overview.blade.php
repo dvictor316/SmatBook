@@ -105,6 +105,47 @@
                     <p class="agent-muted mb-0">No underperforming agents right now.</p>
                 @endforelse
             </section>
+
+            <section class="agent-card span-12">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div>
+                        <h4>Agent Performance Snapshot</h4>
+                        <p class="agent-muted mb-0">Live CRM details for agents, clients, KYC status, zone, sales, and performance.</p>
+                    </div>
+                    <a href="{{ route('deployment.crm.agents') }}" class="agent-button soft">Manage Agents</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Agent</th>
+                                <th>Zone</th>
+                                <th>Clients</th>
+                                <th>KYC / Status</th>
+                                <th>Sales</th>
+                                <th>Performance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($agentRows->take(8) as $row)
+                                <tr>
+                                    <td>
+                                        <strong>{{ $row['agent']->name }}</strong><br>
+                                        <small class="agent-muted">{{ $row['agent']->phone ?? $row['agent']->email }}</small>
+                                    </td>
+                                    <td>{{ $row['zone'] }}</td>
+                                    <td>{{ $row['clients'] }}</td>
+                                    <td><span class="agent-pill" style="background:#eafff6;color:var(--agent-green);">KYC Approved</span> <span class="agent-pill">{{ strtoupper($row['status']) }}</span></td>
+                                    <td><strong>₦{{ number_format($row['sales']) }}</strong></td>
+                                    <td style="min-width:140px;"><div class="agent-progress"><span style="width:{{ $row['performance'] }}%;"></span></div><small>{{ $row['performance'] }}%</small></td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="6" class="text-center agent-muted py-4">No agents available yet.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         </div>
     </div>
 </div>

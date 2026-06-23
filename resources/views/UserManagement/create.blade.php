@@ -497,13 +497,11 @@
                                         </div>
                                         <div class="col-12">
                                             <label class="form-label fw-semibold" style="font-size:.78rem;">State / County / Region</label>
-                                            <input type="text" name="state_region" id="stateRegionSelect" list="stateRegionOptions" class="form-control form-control-sm" value="{{ old('state_region') }}" placeholder="Type or select state/county">
-                                            <datalist id="stateRegionOptions"></datalist>
+                                            <select name="state_region" id="stateRegionSelect" class="form-select form-select-sm"></select>
                                         </div>
                                         <div class="col-12">
                                             <label class="form-label fw-semibold" style="font-size:.78rem;">Local Government / Council</label>
-                                            <input type="text" name="local_council" id="localCouncilSelect" list="localCouncilOptions" class="form-control form-control-sm" value="{{ old('local_council') }}" placeholder="Type or select local council">
-                                            <datalist id="localCouncilOptions"></datalist>
+                                            <select name="local_council" id="localCouncilSelect" class="form-select form-select-sm"></select>
                                         </div>
                                         <div class="col-6 state-manager-target">
                                             <label class="form-label fw-semibold" style="font-size:.78rem;">Revenue Target</label>
@@ -777,8 +775,6 @@
     var countrySelect = document.getElementById('countrySelect');
     var stateRegionSelect = document.getElementById('stateRegionSelect');
     var localCouncilSelect = document.getElementById('localCouncilSelect');
-    var stateRegionOptions = document.getElementById('stateRegionOptions');
-    var localCouncilOptions = document.getElementById('localCouncilOptions');
 
     function normalizeRole(role) {
         return (role || '').toLowerCase().replace(/[\s-]+/g, '_');
@@ -786,12 +782,6 @@
 
     function fillSelect(select, values, placeholder, selected) {
         if (!select) return;
-        if (select.tagName === 'DATALIST') {
-            select.innerHTML = values.map(function (value) {
-                return '<option value="' + value + '"></option>';
-            }).join('');
-            return;
-        }
         select.innerHTML = '<option value="">' + placeholder + '</option>';
         values.forEach(function (value) {
             var opt = document.createElement('option');
@@ -805,13 +795,11 @@
     function syncLocationSelects() {
         var country = countrySelect ? countrySelect.value : '';
         var states = country && regions[country] ? Object.keys(regions[country]) : [];
-        fillSelect(stateRegionOptions, states, 'Select state/county', oldState);
-        if (oldState && stateRegionSelect && !stateRegionSelect.value) stateRegionSelect.value = oldState;
+        fillSelect(stateRegionSelect, states, states.length ? 'Select state/county' : 'No state/county uploaded', oldState);
 
         var state = stateRegionSelect ? stateRegionSelect.value : '';
         var councils = country && state && regions[country] && regions[country][state] ? regions[country][state] : [];
-        fillSelect(localCouncilOptions, councils, 'Select local council', oldCouncil);
-        if (oldCouncil && localCouncilSelect && !localCouncilSelect.value) localCouncilSelect.value = oldCouncil;
+        fillSelect(localCouncilSelect, councils, 'All local councils', oldCouncil);
     }
 
     function syncRoleLocationBlock() {
@@ -839,13 +827,7 @@
         var country = countrySelect ? countrySelect.value : '';
         var state = stateRegionSelect ? stateRegionSelect.value : '';
         var councils = country && state && regions[country] && regions[country][state] ? regions[country][state] : [];
-        fillSelect(localCouncilOptions, councils, 'Select local council', oldCouncil);
-    });
-    if (stateRegionSelect) stateRegionSelect.addEventListener('input', function () {
-        var country = countrySelect ? countrySelect.value : '';
-        var state = stateRegionSelect ? stateRegionSelect.value : '';
-        var councils = country && state && regions[country] && regions[country][state] ? regions[country][state] : [];
-        fillSelect(localCouncilOptions, councils, 'Select local council', oldCouncil);
+        fillSelect(localCouncilSelect, councils, 'All local councils', oldCouncil);
     });
     syncRoleLocationBlock();
 

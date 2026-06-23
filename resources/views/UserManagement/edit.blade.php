@@ -65,13 +65,11 @@
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label">State / County / Region</label>
-                                            <input type="text" name="state_region" id="stateRegionSelect" list="stateRegionOptions" class="form-control" value="{{ $selectedState }}" placeholder="Type or select state/county">
-                                            <datalist id="stateRegionOptions"></datalist>
+                                            <select name="state_region" id="stateRegionSelect" class="form-select"></select>
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label">Local Government / Council</label>
-                                            <input type="text" name="local_council" id="localCouncilSelect" list="localCouncilOptions" class="form-control" value="{{ $selectedCouncil }}" placeholder="Type or select local council">
-                                            <datalist id="localCouncilOptions"></datalist>
+                                            <select name="local_council" id="localCouncilSelect" class="form-select"></select>
                                         </div>
                                         <div class="col-md-6 state-manager-target">
                                             <label class="form-label">Revenue Target</label>
@@ -126,8 +124,6 @@
     var countrySelect = document.getElementById('countrySelect');
     var stateSelect = document.getElementById('stateRegionSelect');
     var councilSelect = document.getElementById('localCouncilSelect');
-    var stateOptions = document.getElementById('stateRegionOptions');
-    var councilOptions = document.getElementById('localCouncilOptions');
 
     function normalizeRole(role) {
         return (role || '').toLowerCase().replace(/[\s-]+/g, '_');
@@ -135,12 +131,6 @@
 
     function fillSelect(select, values, placeholder, selected) {
         if (!select) return;
-        if (select.tagName === 'DATALIST') {
-            select.innerHTML = values.map(function (value) {
-                return '<option value="' + value + '"></option>';
-            }).join('');
-            return;
-        }
         select.innerHTML = '<option value="">' + placeholder + '</option>';
         values.forEach(function (value) {
             var option = document.createElement('option');
@@ -153,16 +143,15 @@
 
     function syncStates() {
         var country = countrySelect ? countrySelect.value : '';
-        fillSelect(stateOptions, country && regions[country] ? Object.keys(regions[country]) : [], 'Select state/county', oldState);
-        if (oldState && stateSelect && !stateSelect.value) stateSelect.value = oldState;
+        var states = country && regions[country] ? Object.keys(regions[country]) : [];
+        fillSelect(stateSelect, states, states.length ? 'Select state/county' : 'No state/county uploaded', oldState);
         syncCouncils();
     }
 
     function syncCouncils() {
         var country = countrySelect ? countrySelect.value : '';
         var state = stateSelect ? stateSelect.value : '';
-        fillSelect(councilOptions, country && state && regions[country] && regions[country][state] ? regions[country][state] : [], 'Select local council', oldCouncil);
-        if (oldCouncil && councilSelect && !councilSelect.value) councilSelect.value = oldCouncil;
+        fillSelect(councilSelect, country && state && regions[country] && regions[country][state] ? regions[country][state] : [], 'All local councils', oldCouncil);
     }
 
     function syncBlock() {
@@ -188,10 +177,6 @@
         syncStates();
     });
     if (stateSelect) stateSelect.addEventListener('change', function () {
-        oldCouncil = '';
-        syncCouncils();
-    });
-    if (stateSelect) stateSelect.addEventListener('input', function () {
         oldCouncil = '';
         syncCouncils();
     });

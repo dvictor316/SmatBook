@@ -833,8 +833,7 @@
                         </div>
                         <div>
                             <label class="label-caps">State / County / Region</label>
-                            <input type="text" name="state_region" id="partnerState" list="partnerStateOptions" class="form-control input-smat w-100 @error('state_region') is-invalid @enderror" required placeholder="Type or select state/county">
-                            <datalist id="partnerStateOptions"></datalist>
+                            <select name="state_region" id="partnerState" class="form-control input-smat w-100 @error('state_region') is-invalid @enderror" required></select>
                             @error('state_region')
                                 <span class="field-error">{{ $message }}</span>
                             @enderror
@@ -843,8 +842,7 @@
                     <div class="field-grid mb-3">
                         <div>
                             <label class="label-caps">Local Government / Local Council</label>
-                            <input type="text" name="local_council" id="partnerCouncil" list="partnerCouncilOptions" class="form-control input-smat w-100 @error('local_council') is-invalid @enderror" placeholder="Type or select local council">
-                            <datalist id="partnerCouncilOptions"></datalist>
+                            <select name="local_council" id="partnerCouncil" class="form-control input-smat w-100 @error('local_council') is-invalid @enderror"></select>
                             @error('local_council')
                                 <span class="field-error">{{ $message }}</span>
                             @enderror
@@ -937,8 +935,6 @@
         const country = document.getElementById('partnerCountry');
         const state = document.getElementById('partnerState');
         const council = document.getElementById('partnerCouncil');
-        const stateOptions = document.getElementById('partnerStateOptions');
-        const councilOptions = document.getElementById('partnerCouncilOptions');
         if (!country || !state || !council) return;
 
         const oldCountry = @json(old('country', 'Nigeria'));
@@ -950,24 +946,24 @@
 
         function fillStates() {
             const stateMap = regions[country.value] || {};
-            stateOptions.innerHTML = Object.keys(stateMap).map((item) => `<option value="${escapeAttr(item)}"></option>`).join('');
-            if (!state.value || state.value === oldState) state.value = oldState || '';
+            const stateNames = Object.keys(stateMap);
+            state.innerHTML = stateNames.length
+                ? stateNames.map((item) => `<option value="${escapeAttr(item)}">${escapeHtml(item)}</option>`).join('')
+                : '<option value="">No state/county uploaded for this country</option>';
+            if ([...state.options].some((option) => option.value === oldState)) state.value = oldState;
             fillCouncils();
         }
 
         function fillCouncils() {
             const councils = ((regions[country.value] || {})[state.value] || []);
-            councilOptions.innerHTML = councils.map((item) => `<option value="${escapeAttr(item)}"></option>`).join('');
-            if (!council.value || council.value === oldCouncil) council.value = oldCouncil || '';
+            council.innerHTML = [''].concat(councils).map((item) => `<option value="${escapeAttr(item)}">${item ? escapeHtml(item) : 'All local councils'}</option>`).join('');
+            if ([...council.options].some((option) => option.value === oldCouncil)) council.value = oldCouncil;
         }
 
         country.addEventListener('change', () => {
-            state.value = '';
-            council.value = '';
             fillStates();
         });
         state.addEventListener('change', fillCouncils);
-        state.addEventListener('input', fillCouncils);
         fillStates();
 
         function escapeHtml(value) {

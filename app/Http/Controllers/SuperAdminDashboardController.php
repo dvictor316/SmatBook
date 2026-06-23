@@ -855,6 +855,11 @@ class SuperAdminDashboardController extends Controller
             DB::beginTransaction();
 
             $manager = $this->resolveDeploymentManager($id);
+
+            if ($this->managerHasStateConflict($manager)) {
+                DB::rollBack();
+                return redirect()->back()->with('error', 'Another active state manager already owns this country and state/county.');
+            }
             
             $manager->update([
                 'status' => 'active',
@@ -1379,7 +1384,59 @@ public function pendingManagers()
             $user->update(['is_verified' => 1]);
         }
 
+        if (strtolower((string) ($user->role ?? '')) === 'agent'
+            && Schema::hasColumn('users', 'state_manager_id')
+            && empty($user->state_manager_id)) {
+            $manager = $this->findStateManagerForLocation($user->country ?? null, $user->state_region ?? null);
+            if ($manager?->user_id) {
+                $user->update(['state_manager_id' => $manager->user_id]);
+            }
+        }
+
         return back()->with('success', 'User activated successfully.');
+    }
+
+    private function managerHasStateConflict(DeploymentManager $manager): bool
+    {
+        if (!Schema::hasColumn('deployment_managers', 'country')
+            || !Schema::hasColumn('deployment_managers', 'state_region')) {
+            return false;
+        }
+
+        $country = strtolower(trim((string) ($manager->country ?? '')));
+        $state = strtolower(trim((string) ($manager->state_region ?? '')));
+
+        if ($country === '' || $state === '') {
+            return false;
+        }
+
+        return DeploymentManager::withoutGlobalScopes()
+            ->whereKeyNot($manager->id)
+            ->whereRaw('LOWER(country) = ?', [$country])
+            ->whereRaw('LOWER(state_region) = ?', [$state])
+            ->whereRaw("LOWER(COALESCE(status, '')) = ?", ['active'])
+            ->exists();
+    }
+
+    private function findStateManagerForLocation(?string $country, ?string $stateRegion): ?DeploymentManager
+    {
+        if (!Schema::hasColumn('deployment_managers', 'country')
+            || !Schema::hasColumn('deployment_managers', 'state_region')) {
+            return null;
+        }
+
+        $country = strtolower(trim((string) $country));
+        $stateRegion = strtolower(trim((string) $stateRegion));
+
+        if ($country === '' || $stateRegion === '') {
+            return null;
+        }
+
+        return DeploymentManager::withoutGlobalScopes()
+            ->whereRaw('LOWER(country) = ?', [$country])
+            ->whereRaw('LOWER(state_region) = ?', [$stateRegion])
+            ->whereRaw("LOWER(COALESCE(status, '')) = ?", ['active'])
+            ->first();
     }
 
     public function deleteUser($id)

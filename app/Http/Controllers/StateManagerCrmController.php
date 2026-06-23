@@ -22,9 +22,10 @@ class StateManagerCrmController extends Controller
         $agents = $this->agentsQuery()->get();
         $agentIds = $agents->pluck('id')->all();
         $stats = $this->managerStats($agentIds);
-        $underperformingAgents = $this->agentPerformanceRows($agents)->filter(fn ($row) => $row['sales'] <= 0 || $row['last_seen_days'] >= 30)->take(5);
+        $agentRows = $this->agentPerformanceRows($agents);
+        $underperformingAgents = $agentRows->filter(fn ($row) => $row['sales'] <= 0 || $row['last_seen_days'] >= 30)->take(5);
 
-        return view('deployment.crm.overview', compact('manager', 'agents', 'stats', 'underperformingAgents'));
+        return view('deployment.crm.overview', compact('manager', 'agents', 'stats', 'agentRows', 'underperformingAgents'));
     }
 
     public function agents(Request $request): View
@@ -196,7 +197,20 @@ class StateManagerCrmController extends Controller
 
     private function agentsQuery()
     {
-        return User::query()->whereRaw("LOWER(COALESCE(role, '')) = 'agent'");
+        $query = User::query()->whereRaw("LOWER(COALESCE(role, '')) = 'agent'");
+
+        if (Schema::hasTable('agent_zone_assignments')) {
+            $assignedIds = DB::table('agent_zone_assignments')
+                ->where('state_manager_id', Auth::id())
+                ->pluck('agent_id')
+                ->all();
+
+            if (!empty($assignedIds)) {
+                $query->whereIn('id', $assignedIds);
+            }
+        }
+
+        return $query;
     }
 
     private function managerStats(array $agentIds): array
