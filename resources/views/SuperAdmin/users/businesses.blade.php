@@ -124,8 +124,8 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th class="ps-4">Business</th>
-                        <th>Owner</th>
+                        <th class="ps-4">Owner</th>
+                        <th>Business</th>
                         <th>Domain</th>
                         <th>Total Paid</th>
                         <th>Last Payment</th>
@@ -142,16 +142,16 @@
                         @endphp
                         <tr>
                             <td class="ps-4">
-                                <div class="fw-bold text-dark">{{ $business->name ?? $business->company_name ?? 'Business' }}</div>
+                                <div class="fw-bold text-dark">{{ $business->name ?? 'User' }}</div>
+                                <div class="text-muted small">{{ $business->email ?? '—' }}</div>
+                            </td>
+                            <td>
+                                <div class="text-dark">{{ $business->company_name ?: 'No business name yet' }}</div>
                                 <div class="text-muted small">#{{ $business->id }}</div>
                             </td>
                             <td>
-                                <div class="text-dark">{{ $business->owner_name ?? '—' }}</div>
-                                <div class="text-muted small">{{ $business->owner_email ?? '—' }}</div>
-                            </td>
-                            <td>
-                                <div class="text-dark">{{ $business->domain_prefix ?? '—' }}</div>
-                                <div class="text-muted small">{{ $business->plan ?? 'No plan label' }}</div>
+                                <div class="text-dark">{{ $business->company_domain_prefix ?: '—' }}</div>
+                                <div class="text-muted small">{{ $business->company_plan ?: 'No plan label' }}</div>
                             </td>
                             <td class="fw-bold text-success">₦{{ number_format((float) ($business->total_paid ?? 0), 2) }}</td>
                             <td class="text-muted small">

@@ -88,8 +88,29 @@ class SuperAdminDashboardController extends Controller
         return $this->applyPlanUserScope($query);
     }
 
+    private function bucketOverrideUserIds(string $bucket): array
+    {
+        if (!Schema::hasTable('super_admin_user_bucket_overrides')) {
+            return [];
+        }
+
+        return DB::table('super_admin_user_bucket_overrides')
+            ->where('bucket', $bucket)
+            ->pluck('user_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
     private function stateManagerUserIds(): array
     {
+        $overrideIds = $this->bucketOverrideUserIds('state_manager');
+        if ($overrideIds !== []) {
+            return $overrideIds;
+        }
+
         $configuredIds = $this->namedUserIds([
             'thomas ogbodo',
             'dauda uche',
@@ -115,6 +136,11 @@ class SuperAdminDashboardController extends Controller
 
     private function registeredBusinessUserIds(): array
     {
+        $overrideIds = $this->bucketOverrideUserIds('registered_business');
+        if ($overrideIds !== []) {
+            return $overrideIds;
+        }
+
         $explicitBusinessIds = $this->namedUserIds([
             'duke ogbodo',
             'ogbodo duke',
@@ -202,11 +228,9 @@ class SuperAdminDashboardController extends Controller
         $query = User::query();
         $stateManagerIds = $this->stateManagerUserIds();
         $registeredBusinessIds = $this->registeredBusinessUserIds();
-        $internalRoles = ['admin', 'administrator', 'accountant', 'cashier', 'store_manager', 'staff', 'user'];
 
         if (Schema::hasColumn('users', 'role')) {
             $query->whereNotIn(DB::raw("LOWER(COALESCE(role, ''))"), ['super_admin', 'superadmin']);
-            $query->whereNotIn(DB::raw("LOWER(COALESCE(role, ''))"), $internalRoles);
         }
 
         if ($stateManagerIds !== []) {
@@ -245,53 +269,54 @@ class SuperAdminDashboardController extends Controller
 
     private function registeredBusinessesQuery()
     {
-        if (!Schema::hasTable('subscriptions')) {
-            return Company::query()->whereRaw('1 = 0');
-        }
-
-        $paidStatuses = ['paid', 'completed', 'success', 'successful', 'verified'];
         $registeredBusinessIds = $this->registeredBusinessUserIds();
-        $subscriptionSummary = DB::table('subscriptions')
+        $paidStatuses = ['paid', 'completed', 'success', 'successful', 'verified'];
+        $subscriptionSummary = Schema::hasTable('subscriptions')
+            ? DB::table('subscriptions')
             ->select(
+                'user_id',
                 'company_id',
                 DB::raw('SUM(COALESCE(amount, 0)) as total_paid'),
                 DB::raw('MAX(COALESCE(paid_at, payment_date, created_at)) as last_paid_at')
             )
             ->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), $paidStatuses)
-            ->groupBy('company_id');
+            ->groupBy('user_id', 'company_id')
+            : null;
 
-        $latestPaidSubscribers = DB::table('subscriptions')
+        $query = User::query()
+            ->leftJoin('companies', 'users.company_id', '=', 'companies.id')
             ->select(
-                'company_id',
-                DB::raw('MAX(user_id) as subscriber_user_id')
-            )
-            ->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), $paidStatuses)
-            ->groupBy('company_id');
+                'users.*',
+                DB::raw("COALESCE(companies.name, companies.company_name, '') as company_name"),
+                DB::raw("COALESCE(companies.domain_prefix, '') as company_domain_prefix"),
+                DB::raw("COALESCE(companies.plan, '') as company_plan"),
+                DB::raw('0 as total_paid'),
+                DB::raw('NULL as last_paid_at')
+            );
 
-        return Company::query()
-            ->leftJoinSub($subscriptionSummary, 'paid_subscriptions', function ($join) {
-                $join->on('companies.id', '=', 'paid_subscriptions.company_id');
-            })
-            ->leftJoinSub($latestPaidSubscribers, 'latest_paid_subscribers', function ($join) {
-                $join->on('companies.id', '=', 'latest_paid_subscribers.company_id');
-            })
-            ->leftJoin('users as owners', 'companies.user_id', '=', 'owners.id')
-            ->leftJoin('users as subscribers', 'latest_paid_subscribers.subscriber_user_id', '=', 'subscribers.id')
-            ->select(
-                'companies.*',
-                DB::raw('COALESCE(owners.name, subscribers.name) as owner_name'),
-                DB::raw('COALESCE(owners.email, subscribers.email) as owner_email'),
+        if ($subscriptionSummary) {
+            $query->leftJoinSub($subscriptionSummary, 'paid_subscriptions', function ($join) {
+                $join->on('users.id', '=', 'paid_subscriptions.user_id');
+            });
+
+            $query->addSelect(
                 DB::raw('COALESCE(paid_subscriptions.total_paid, 0) as total_paid'),
                 DB::raw('paid_subscriptions.last_paid_at as last_paid_at')
-            )
-            ->where(function ($query) use ($registeredBusinessIds) {
-                $query->whereNotNull('paid_subscriptions.company_id');
+            );
+        }
 
-                if ($registeredBusinessIds !== []) {
-                    $query->orWhereIn('owners.id', $registeredBusinessIds)
-                        ->orWhereIn('subscribers.id', $registeredBusinessIds);
-                }
-            });
+        $query->where(function ($innerQuery) use ($registeredBusinessIds, $subscriptionSummary) {
+            if ($subscriptionSummary) {
+                $innerQuery->whereNotNull('paid_subscriptions.user_id');
+            }
+
+            if ($registeredBusinessIds !== []) {
+                $method = $subscriptionSummary ? 'orWhereIn' : 'whereIn';
+                $innerQuery->{$method}('users.id', $registeredBusinessIds);
+            }
+        });
+
+        return $query->distinct('users.id');
     }
 
     private function applyPlanUserScope($query)
@@ -1608,19 +1633,19 @@ public function pendingManagers()
             if ($request->filled('search')) {
                 $search = '%' . trim((string) $request->search) . '%';
                 $query->where(function ($q) use ($search) {
-                    $q->where('companies.name', 'like', $search)
+                    $q->where('users.name', 'like', $search)
+                        ->orWhere('users.email', 'like', $search)
+                        ->orWhere('companies.name', 'like', $search)
                         ->orWhere('companies.company_name', 'like', $search)
-                        ->orWhere('owners.name', 'like', $search)
-                        ->orWhere('owners.email', 'like', $search)
                         ->orWhere('companies.domain_prefix', 'like', $search);
                 });
             }
 
             if ($request->filled('status')) {
-                $query->where('companies.status', $request->status);
+                $query->where('users.status', $request->status);
             }
 
-            $businesses = $query->orderByDesc(DB::raw('COALESCE(paid_subscriptions.last_paid_at, companies.created_at)'))
+            $businesses = $query->orderByDesc(DB::raw('COALESCE(paid_subscriptions.last_paid_at, users.created_at)'))
                 ->paginate(20)
                 ->withQueryString();
 
@@ -1628,10 +1653,10 @@ public function pendingManagers()
             $metrics = [
                 'total' => (clone $baseBusinesses)->count(),
                 'active' => (clone $baseBusinesses)->where(function ($q) {
-                    $q->whereNull('companies.status')
-                        ->orWhereRaw("LOWER(COALESCE(companies.status, '')) IN ('active', 'trial', 'enabled')");
+                    $q->whereNull('users.status')
+                        ->orWhereRaw("LOWER(COALESCE(users.status, '')) IN ('active', 'trial', 'enabled')");
                 })->count(),
-                'inactive' => (clone $baseBusinesses)->whereRaw("LOWER(COALESCE(companies.status, '')) IN ('inactive', 'suspended', 'disabled', 'expired')")->count(),
+                'inactive' => (clone $baseBusinesses)->whereRaw("LOWER(COALESCE(users.status, '')) IN ('inactive', 'suspended', 'disabled', 'expired')")->count(),
                 'with_domains' => Schema::hasColumn('companies', 'domain_prefix')
                     ? (clone $baseBusinesses)->whereNotNull('companies.domain_prefix')->where('companies.domain_prefix', '!=', '')->count()
                     : 0,
