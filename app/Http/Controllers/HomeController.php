@@ -1221,6 +1221,9 @@ class HomeController extends Controller
     public function profile()
     {
         $user = Auth::user();
+        $defaultProfileImage = asset('assets/img/profiles/avatar-02.jpg');
+        $profilePhoto = $user?->profile_photo_url ?? $defaultProfileImage;
+        $coverPhoto = $user?->cover_photo_url ?? $defaultProfileImage;
 
         $profileFields = ['name', 'email', 'role', 'profile_photo', 'cover_photo'];
         $filledFields  = 0;
@@ -1233,7 +1236,7 @@ class HomeController extends Controller
 
         $completeness = ($filledFields / count($profileFields)) * 100;
 
-        return view('Pages.profile', compact('user', 'completeness'));
+        return view('Pages.profile', compact('user', 'completeness', 'profilePhoto', 'coverPhoto'));
     }
 
     /*
