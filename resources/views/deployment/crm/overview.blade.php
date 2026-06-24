@@ -14,6 +14,11 @@
         .manager-funnel-track span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#18bf86,#9ff0d4); }
         .manager-sparkline { display:flex; align-items:end; gap:5px; height:44px; }
         .manager-sparkline i { display:block; width:9px; border-radius:999px; background:linear-gradient(180deg,#5b42f3,#246bfe); }
+        .manager-health-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+        .manager-health-tile { border:1px solid #e7edf5; border-radius:14px; padding:10px; background:linear-gradient(135deg,#f8fbff,#fff); min-height:78px; }
+        .manager-health-tile span { display:block; color:var(--agent-muted); font-size:10px; text-transform:uppercase; font-weight:900; letter-spacing:.06em; }
+        .manager-health-tile strong { display:block; color:var(--agent-ink); font-size:20px; line-height:1.2; margin-top:5px; }
+        .manager-health-tile small { color:var(--agent-green); font-weight:800; }
         .agent-metric .value { font-size: clamp(20px, 2vw, 26px); }
         @media(max-width:767px){ .manager-funnel-row { grid-template-columns:88px 1fr auto; } }
     </style>
@@ -197,7 +202,32 @@
                         </span>
                     </div>
                 @empty
-                    <p class="agent-muted mb-0">No underperforming agents right now.</p>
+                    @php
+                        $topAgent = $agentRows->sortByDesc('performance')->first();
+                        $avgPerformance = $agentRows->count() ? round($agentRows->avg('performance')) : 0;
+                    @endphp
+                    <div class="manager-health-grid">
+                        <div class="manager-health-tile">
+                            <span>Healthy Agents</span>
+                            <strong>{{ number_format($stats['active_agents']) }}</strong>
+                            <small>{{ $stats['total_agents'] ? round(($stats['active_agents'] / max(1, $stats['total_agents'])) * 100) : 0 }}% active</small>
+                        </div>
+                        <div class="manager-health-tile">
+                            <span>Avg Score</span>
+                            <strong>{{ $avgPerformance }}%</strong>
+                            <small>Team performance</small>
+                        </div>
+                        <div class="manager-health-tile">
+                            <span>Top Agent</span>
+                            <strong style="font-size:15px;">{{ $topAgent ? \Illuminate\Support\Str::limit($topAgent['agent']->name, 18) : 'No agent' }}</strong>
+                            <small>{{ $topAgent['performance'] ?? 0 }}% score</small>
+                        </div>
+                        <div class="manager-health-tile">
+                            <span>Open Issues</span>
+                            <strong>0</strong>
+                            <small>Clean team</small>
+                        </div>
+                    </div>
                 @endforelse
             </section>
 
