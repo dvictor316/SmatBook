@@ -27,6 +27,7 @@ return new class extends Migration
         $this->seedOverride(['thomas ogbodo'], 'state_manager', 'Live override: keep Thomas under state managers.');
         $this->seedOverride(['dauda uche'], 'state_manager', 'Live override: keep Dauda under state managers.');
         $this->seedOverride(['duke ogbodo', 'ogbodo duke'], 'registered_business', 'Live override: keep Duke under registered businesses.');
+        $this->seedOverride(['mrs. eze florence', 'eze florence', 'ndeze2@gmail.com'], 'registered_business', 'Live override: keep Mrs. Eze Florence under registered businesses.');
     }
 
     public function down(): void
