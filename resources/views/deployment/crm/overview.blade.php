@@ -231,6 +231,34 @@
                 @endforelse
             </section>
 
+            <section class="agent-card span-4 agent-tone-green">
+                <div class="d-flex justify-content-between gap-3">
+                    <div>
+                        <h4>Customer Pulse</h4>
+                        <small class="agent-muted">Active against inactive businesses</small>
+                    </div>
+                    <div class="agent-donut" style="--value:{{ $stats['retention'] }};--color:var(--agent-green);width:82px;height:82px;">
+                        <strong style="font-size:13px;">{{ $stats['retention'] }}%</strong>
+                    </div>
+                </div>
+                <div class="agent-stat-row"><span>Active Customers</span><strong>{{ number_format($stats['active_customers']) }}</strong></div>
+                <div class="agent-stat-row"><span>Inactive Customers</span><strong>{{ number_format($stats['inactive_customers']) }}</strong></div>
+            </section>
+
+            <section class="agent-card span-4 agent-tone-amber">
+                <div class="d-flex justify-content-between gap-3">
+                    <div>
+                        <h4>Trial Pipeline</h4>
+                        <small class="agent-muted">Trial and conversion health</small>
+                    </div>
+                    <span class="agent-pill">{{ number_format($stats['free_trials']) }} trials</span>
+                </div>
+                <div class="manager-funnel mt-3">
+                    <div class="manager-funnel-row"><span>Trials</span><div class="manager-funnel-track"><span style="width:{{ max(4, min(100, $trialRate ?? 0)) }}%;background:linear-gradient(90deg,#f7a51e,#ffd98a);"></span></div><strong>{{ number_format($stats['free_trials']) }}</strong></div>
+                    <div class="manager-funnel-row"><span>Converted</span><div class="manager-funnel-track"><span style="width:{{ max(4, min(100, $activeRate ?? 0)) }}%;"></span></div><strong>{{ number_format($stats['active_customers']) }}</strong></div>
+                </div>
+            </section>
+
             <section class="agent-card span-12">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                     <div>
