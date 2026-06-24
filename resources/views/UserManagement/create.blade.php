@@ -20,8 +20,10 @@
 
 /* Form cards */
 .create-left-sticky { position:sticky; top:82px; max-height:calc(100vh - 100px); overflow-y:auto; }
-.create-card-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; align-items:start; }
+.create-card-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; align-items:stretch; }
 .create-card-grid .create-info-card { margin-bottom:0; min-height:100%; }
+.create-card-stack { display:flex; flex-direction:column; gap:16px; min-height:100%; }
+.create-card-stack .create-info-card { margin-bottom:0; }
 .create-info-card { background:#fff; border:1px solid #e8edf5; border-radius:14px; padding:20px; margin-bottom:16px; }
 .create-info-card--coverage { border-color:#bfdbfe; background:linear-gradient(135deg,#f8fbff 0%,#eef6ff 100%); box-shadow:0 12px 30px rgba(37,99,235,.08); }
 .create-section-label { font-size:.72rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#7a869a; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
@@ -443,6 +445,10 @@
             <div class="{{ $isPartnerRole ? 'col-12' : 'col-lg-4' }}">
                 <div class="{{ $isPartnerRole ? 'create-card-grid' : 'create-left-sticky' }}">
 
+                    @if($isPartnerRole)
+                    <div class="create-card-stack">
+                    @endif
+
                     <div class="create-info-card create-info-card--coverage" id="stateAssignmentBlock" style="{{ $isPartnerRole ? '' : 'display:none;' }}">
                         <div class="create-section-label"><i class="fa fa-map-marker-alt text-primary me-1"></i> Coverage Area</div>
                         <div class="mb-3">
@@ -520,6 +526,11 @@
                         </div>
                     </div>
 
+                    @if($isPartnerRole)
+                    </div>
+                    <div class="create-card-stack">
+                    @endif
+
                     <div class="create-info-card">
                         <div class="create-section-label"><i class="fa fa-lock text-muted me-1"></i> Account Settings</div>
                         <div class="row g-3">
@@ -589,6 +600,10 @@
                             </div>
                             @endforeach
                         </div>
+                    </div>
+                    @endif
+
+                    @if($isPartnerRole)
                     </div>
                     @endif
 
