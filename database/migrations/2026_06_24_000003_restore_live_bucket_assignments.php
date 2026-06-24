@@ -72,16 +72,7 @@ return new class extends Migration
             ])
         )));
 
-        if ($registeredBusinessIds !== []) {
-            DB::table('users')
-                ->whereIn('id', $registeredBusinessIds)
-                ->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), ['state_manager', 'deployment_manager', 'manager'])
-                ->update(array_filter([
-                    'role' => 'agent',
-                    'role_id' => $this->roleId('Agent'),
-                    'updated_at' => Schema::hasColumn('users', 'updated_at') ? now() : null,
-                ], fn ($value) => $value !== null));
-        }
+        // Registered businesses are bucketed for reporting only; do not convert them to agents.
     }
 
     public function down(): void

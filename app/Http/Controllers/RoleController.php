@@ -369,9 +369,6 @@ class RoleController extends Controller
             'state manager', 'deployment manager' => [
                 'dashboard.overview.view',
                 'deployment.managers.view',
-                'sales.quotations.view',
-                'reports.reports.view',
-                'settings.settings.view',
             ],
             'agent' => [
                 'dashboard.overview.view',

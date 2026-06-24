@@ -18,37 +18,6 @@ return new class extends Migration
             'dauda uche',
         ]);
 
-        $registeredBusinessIds = $this->matchingUserIds([
-            'duke ogbodo',
-            'ogbodo duke',
-            'chigozie duke ogbodo',
-            'jaderahglobal2b@gmail.com',
-            'mrs. eze florence',
-            'eze florence',
-            'ndeze2@gmail.com',
-            'florence eze',
-        ]);
-
-        if (Schema::hasTable('super_admin_user_bucket_overrides')) {
-            DB::table('super_admin_user_bucket_overrides')
-                ->whereIn('bucket', ['state_manager', 'registered_business'])
-                ->delete();
-
-            foreach ($stateManagerIds as $userId) {
-                DB::table('super_admin_user_bucket_overrides')->updateOrInsert(
-                    ['user_id' => $userId, 'bucket' => 'state_manager'],
-                    ['note' => 'Exact live bucket sync: state manager.', 'updated_at' => now(), 'created_at' => now()]
-                );
-            }
-
-            foreach ($registeredBusinessIds as $userId) {
-                DB::table('super_admin_user_bucket_overrides')->updateOrInsert(
-                    ['user_id' => $userId, 'bucket' => 'registered_business'],
-                    ['note' => 'Exact live bucket sync: registered business.', 'updated_at' => now(), 'created_at' => now()]
-                );
-            }
-        }
-
         if ($stateManagerIds !== []) {
             DB::table('users')
                 ->whereIn('id', $stateManagerIds)
@@ -56,11 +25,11 @@ return new class extends Migration
                     'role' => 'state_manager',
                     'role_id' => $this->roleId('State Manager'),
                     'status' => Schema::hasColumn('users', 'status') ? 'active' : null,
+                    'is_verified' => Schema::hasColumn('users', 'is_verified') ? 1 : null,
+                    'email_verified_at' => Schema::hasColumn('users', 'email_verified_at') ? now() : null,
                     'updated_at' => Schema::hasColumn('users', 'updated_at') ? now() : null,
                 ], fn ($value) => $value !== null));
         }
-
-        // This migration only syncs explicit reporting buckets. It must not infer agents from every other user.
 
         if (Schema::hasTable('deployment_managers')) {
             foreach ($stateManagerIds as $userId) {
@@ -74,14 +43,37 @@ return new class extends Migration
                     array_filter([
                         'business_name' => $user->name ?? 'State Manager',
                         'status' => 'active',
+                        'deployment_limit' => 100,
+                        'country' => Schema::hasColumn('deployment_managers', 'country') ? ($user->country ?? null) : null,
+                        'state_region' => Schema::hasColumn('deployment_managers', 'state_region') ? ($user->state_region ?? null) : null,
+                        'local_council' => Schema::hasColumn('deployment_managers', 'local_council') ? ($user->local_council ?? null) : null,
                         'updated_at' => Schema::hasColumn('deployment_managers', 'updated_at') ? now() : null,
                         'created_at' => Schema::hasColumn('deployment_managers', 'created_at') ? now() : null,
                     ], fn ($value) => $value !== null)
                 );
             }
 
-            // Do not suspend managers automatically.
+            if (Schema::hasColumn('deployment_managers', 'status')) {
+                DB::table('deployment_managers')
+                    ->whereRaw("LOWER(COALESCE(status, '')) = ?", ['suspended'])
+                    ->update(array_filter([
+                        'status' => 'active',
+                        'updated_at' => Schema::hasColumn('deployment_managers', 'updated_at') ? now() : null,
+                    ], fn ($value) => $value !== null));
+            }
         }
+
+        if (Schema::hasColumn('users', 'status')) {
+            DB::table('users')
+                ->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), ['state_manager', 'deployment_manager', 'manager'])
+                ->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['suspended', 'inactive'])
+                ->update(array_filter([
+                    'status' => 'active',
+                    'updated_at' => Schema::hasColumn('users', 'updated_at') ? now() : null,
+                ], fn ($value) => $value !== null));
+        }
+
+        $this->trimStateManagerPermissions();
     }
 
     public function down(): void
@@ -119,5 +111,34 @@ return new class extends Migration
             ->value('id');
 
         return $id ? (int) $id : null;
+    }
+
+    private function trimStateManagerPermissions(): void
+    {
+        if (!Schema::hasTable('roles') || !Schema::hasTable('permissions') || !Schema::hasTable('role_has_permissions')) {
+            return;
+        }
+
+        $roleId = $this->roleId('State Manager');
+        if (!$roleId) {
+            return;
+        }
+
+        $allowedPermissionIds = DB::table('permissions')
+            ->where(function ($query) {
+                $query->where('name', 'dashboard.overview.view')
+                    ->orWhere('name', 'like', 'deployment.%');
+            })
+            ->pluck('id')
+            ->all();
+
+        if ($allowedPermissionIds === []) {
+            return;
+        }
+
+        DB::table('role_has_permissions')
+            ->where('role_id', $roleId)
+            ->whereNotIn('permission_id', $allowedPermissionIds)
+            ->delete();
     }
 };

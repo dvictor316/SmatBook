@@ -164,6 +164,7 @@ class UserController extends Controller
             $request->validate([
                 'country' => 'required|string|max:100',
                 'state_region' => 'required|string|max:100',
+                'local_council' => 'required|string|max:120',
                 'state_revenue_target' => 'nullable|numeric|min:0',
                 'state_customer_target' => 'nullable|integer|min:0',
             ]);
@@ -173,6 +174,14 @@ class UserController extends Controller
                     ->withInput()
                     ->with('error', 'A state manager already exists for this country and state/county. Please edit or suspend the existing manager before creating another.');
             }
+        }
+
+        if ($legacyRole === 'agent') {
+            $request->validate([
+                'country' => 'required|string|max:100',
+                'state_region' => 'required|string|max:100',
+                'local_council' => 'required|string|max:120',
+            ]);
         }
 
         $user = new User();
@@ -216,7 +225,7 @@ class UserController extends Controller
         $checkPerms = $request->input('permissions', []);
         $radioPerms = array_filter(array_values($request->input('perm_radio', [])));
         $allPerms   = array_values(array_unique(array_filter(array_merge($checkPerms, $radioPerms))));
-        if (!empty($allPerms)) {
+        if (!in_array($legacyRole, ['state_manager', 'agent'], true) && !empty($allPerms)) {
             $user->permissions_override = $allPerms;
         }
 
@@ -307,6 +316,7 @@ class UserController extends Controller
             $request->validate([
                 'country' => 'required|string|max:100',
                 'state_region' => 'required|string|max:100',
+                'local_council' => 'required|string|max:120',
             ]);
 
             if ($this->stateManagerLocationTaken($request->country, $request->state_region, $user->id)) {
@@ -314,6 +324,14 @@ class UserController extends Controller
                     ->withInput()
                     ->with('error', 'Another state manager already owns this country and state/county.');
             }
+        }
+
+        if ($selectedRole['legacy'] === 'agent') {
+            $request->validate([
+                'country' => 'required|string|max:100',
+                'state_region' => 'required|string|max:100',
+                'local_council' => 'required|string|max:120',
+            ]);
         }
 
         $user->role = $selectedRole['legacy'];
@@ -333,6 +351,10 @@ class UserController extends Controller
                 Storage::disk('public')->delete($user->profile_photo);
             }
             $user->profile_photo = $request->file('profile_photo')->store('profiles', 'public');
+        }
+
+        if (in_array($selectedRole['legacy'], ['state_manager', 'agent'], true)) {
+            $user->permissions_override = null;
         }
 
         $user->save();

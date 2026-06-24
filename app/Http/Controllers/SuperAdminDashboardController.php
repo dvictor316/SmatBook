@@ -113,23 +113,29 @@ class SuperAdminDashboardController extends Controller
             'dauda uche',
         ]);
 
-        $exactIds = collect($overrideIds)->merge($configuredIds)->filter()->map(fn ($id) => (int) $id)->unique()->values()->all();
-        if ($exactIds !== []) {
-            return $exactIds;
+        $ids = collect($overrideIds)->merge($configuredIds)->filter()->map(fn ($id) => (int) $id);
+
+        if (Schema::hasColumn('users', 'role')) {
+            $ids = $ids->merge(
+                User::query()
+                    ->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), $this->stateManagerRoles)
+                    ->pluck('id')
+            );
         }
 
         if (!Schema::hasTable('deployment_managers') || !Schema::hasColumn('deployment_managers', 'user_id')) {
-            return [];
+            return $ids->unique()->values()->all();
         }
 
-        return DeploymentManager::withoutGlobalScopes()
+        return $ids->merge(DeploymentManager::withoutGlobalScopes()
             ->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['active', 'pending', 'pending_info'])
             ->pluck('user_id')
-            ->filter()
-            ->map(fn ($id) => (int) $id)
-            ->unique()
-            ->values()
-            ->all();
+        )
+        ->filter()
+        ->map(fn ($id) => (int) $id)
+        ->unique()
+        ->values()
+        ->all();
     }
 
     private function registeredBusinessUserIds(): array
@@ -716,7 +722,7 @@ class SuperAdminDashboardController extends Controller
                 'registered_businesses_total' => $registeredBusinessesTotal,
                 'other_users_total' => (clone $this->otherUsersQuery())->count(),
                 'active_subs'      => $activeSubs > 0 ? $activeSubs : $activeCompanies,
-                'paid_subs'        => $paidBuyersCount,
+                'paid_subs'        => $deploymentPaidSubs,
                 'direct_paid_subs' => $directPaidSubs,
                 'deployment_paid_subs' => $deploymentPaidSubs,
                 'total_subs'       => Schema::hasTable('subscriptions')
@@ -738,7 +744,7 @@ class SuperAdminDashboardController extends Controller
                                           : count($stateManagerIds))
                                       : 0,
                 'suspended_managers'  => Schema::hasColumn('users', 'status')
-                                      ? (clone $managerStatusBaseQuery)->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['suspended', 'inactive'])->count()
+                                      ? (clone $managerStatusBaseQuery)->whereRaw("LOWER(COALESCE(status, '')) = ?", ['suspended'])->count()
                                       : 0,
                 'total_stock_val'  => $stockValue,
                 'low_stock_items'  => $lowStockItems,

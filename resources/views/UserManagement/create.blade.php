@@ -112,6 +112,8 @@
     $isSuperAdminRoute = request()->routeIs('super_admin.*');
     $storeRouteName = $isSuperAdminRoute && app('router')->has('super_admin.users.store') ? 'super_admin.users.store' : 'users.store';
     $selectedRoleValue = old('role', request('role'));
+    $partnerRoleValues = ['state_manager', 'deployment_manager', 'manager', 'agent'];
+    $isPartnerRole = in_array($selectedRoleValue, $partnerRoleValues, true);
     $createLabel = in_array($selectedRoleValue, ['state_manager', 'deployment_manager', 'manager'], true) ? 'Create State Manager' : 'Create New User';
     $createSubtitle = in_array($selectedRoleValue, ['state_manager', 'deployment_manager', 'manager'], true)
         ? 'Fill in state manager details and assign the manager to a unique state.'
@@ -487,7 +489,7 @@
                                     @endforeach
                                 </select>
                                 <div style="font-size:.76rem;color:#94a3b8;margin-top:4px;">
-                                    <i class="fa fa-info-circle"></i> Selecting a role will pre-fill permissions below.
+                                    <i class="fa fa-info-circle"></i> State managers manage agents and deploy businesses; agents use the field-agent defaults.
                                 </div>
                             </div>
                             <div class="col-12" id="stateAssignmentBlock" style="display:none;">
@@ -495,8 +497,8 @@
                                     <div class="d-flex align-items-start gap-2 mb-3">
                                         <i class="fa fa-map-marker-alt text-primary mt-1"></i>
                                         <div>
-                                            <div style="font-weight:800;color:#0b2f63;font-size:.86rem;">State Assignment & Targets</div>
-                                            <div style="font-size:.74rem;color:#64748b;">State managers are created only by super admin and are limited to one manager per country/state.</div>
+                                            <div id="assignmentBlockTitle" style="font-weight:800;color:#0b2f63;font-size:.86rem;">State Assignment & Targets</div>
+                                            <div id="assignmentBlockHelp" style="font-size:.74rem;color:#64748b;">State managers are created only by super admin and are limited to one manager per country/state.</div>
                                         </div>
                                     </div>
                                     <div class="row g-2">
@@ -582,7 +584,7 @@
                 </div>
             </div>
 
-            <div class="col-lg-8">
+            <div class="col-lg-8" id="permissionWorkbench" style="{{ $isPartnerRole ? 'display:none;' : '' }}">
 
                 <div class="perm-toolbar">
                     <div class="perm-toolbar-left">
@@ -659,6 +661,17 @@
                     </div>
                 @endforeach
 
+            </div>
+            <div class="col-lg-8" id="partnerPermissionSummary" style="{{ $isPartnerRole ? '' : 'display:none;' }}">
+                <div class="create-info-card h-100 d-flex align-items-center">
+                    <div>
+                        <div class="create-section-label"><i class="fa fa-shield-alt text-muted me-1"></i> Partner Role Access</div>
+                        <h5 class="fw-bold mb-2" style="color:#1a2236;">Lean permissions are applied automatically</h5>
+                        <p class="mb-0 text-muted" style="font-size:.9rem;line-height:1.6;">
+                            State managers can manage agents and deploy businesses. Agents only receive the field-agent access needed for follow-up and onboarding work.
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -785,6 +798,10 @@
     /* ── Role select → AJAX pre-fill ───────────────────── */
     var roleSelect = document.getElementById('roleSelect');
     var stateAssignmentBlock = document.getElementById('stateAssignmentBlock');
+    var assignmentBlockTitle = document.getElementById('assignmentBlockTitle');
+    var assignmentBlockHelp = document.getElementById('assignmentBlockHelp');
+    var permissionWorkbench = document.getElementById('permissionWorkbench');
+    var partnerPermissionSummary = document.getElementById('partnerPermissionSummary');
     var countrySelect = document.getElementById('countrySelect');
     var stateRegionSelect = document.getElementById('stateRegionSelect');
     var localCouncilSelect = document.getElementById('localCouncilSelect');
@@ -853,13 +870,24 @@
         var role = normalizeRole(roleSelect ? roleSelect.value : '');
         var show = role === 'state_manager' || role === 'deployment_manager' || role === 'manager' || role === 'agent';
         var isManager = role === 'state_manager' || role === 'deployment_manager' || role === 'manager';
+        var isPartner = show;
         if (stateAssignmentBlock) stateAssignmentBlock.style.display = show ? '' : 'none';
         document.querySelectorAll('.state-manager-target').forEach(function (el) {
             el.style.display = isManager ? '' : 'none';
         });
-        [countrySelect, stateRegionSelect].forEach(function (select) {
-            if (select) select.required = isManager;
+        if (assignmentBlockTitle) {
+            assignmentBlockTitle.textContent = isManager ? 'State Manager Assignment & Targets' : 'Agent Location Assignment';
+        }
+        if (assignmentBlockHelp) {
+            assignmentBlockHelp.textContent = isManager
+                ? 'State managers are limited to one active manager per country, state/county, and local government.'
+                : 'Agents must be assigned to a country, state/county, and local government for state-manager coverage.';
+        }
+        [countrySelect, stateRegionSelect, localCouncilSelect].forEach(function (select) {
+            if (select) select.required = show;
         });
+        if (permissionWorkbench) permissionWorkbench.style.display = isPartner ? 'none' : '';
+        if (partnerPermissionSummary) partnerPermissionSummary.style.display = isPartner ? '' : 'none';
     }
 
     fillSelect(countrySelect, Object.keys(countryOptions), 'Select country', oldCountry);

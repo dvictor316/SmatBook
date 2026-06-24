@@ -75,17 +75,7 @@ return new class extends Migration
             }
         }
 
-        $agentUpdate = array_filter([
-            'role' => 'agent',
-            'role_id' => $agentRoleId,
-            'updated_at' => Schema::hasColumn('users', 'updated_at') ? now() : null,
-        ], fn ($value) => $value !== null);
-
-        DB::table('users')
-            ->whereNotIn('id', $thomasIds)
-            ->whereNotIn(DB::raw('LOWER(COALESCE(role, ""))'), ['super_admin', 'superadmin', 'administrator', 'admin'])
-            ->whereIn(DB::raw('LOWER(COALESCE(role, ""))'), ['deployment_manager', 'manager', 'state_manager'])
-            ->update($agentUpdate);
+        // Do not auto-demote existing managers. Agents are created explicitly.
     }
 
     public function down(): void
@@ -94,17 +84,7 @@ return new class extends Migration
             return;
         }
 
-        DB::table('users')
-            ->where(function ($query) {
-                $query->whereRaw('LOWER(TRIM(name)) = ?', ['thomas ogbodo'])
-                    ->orWhereRaw('LOWER(TRIM(name)) LIKE ?', ['%thomas%ogbodo%']);
-            })
-            ->where('role', 'state_manager')
-            ->update(array_filter([
-                'role' => 'agent',
-                'role_id' => $this->roleId('Agent'),
-                'updated_at' => Schema::hasColumn('users', 'updated_at') ? now() : null,
-            ], fn ($value) => $value !== null));
+        // Preserve Thomas Ogbodo as a state manager.
     }
 
     private function ensureRole(string $name, string $description, string $group): ?int

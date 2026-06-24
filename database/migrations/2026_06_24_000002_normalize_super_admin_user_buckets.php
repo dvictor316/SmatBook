@@ -61,23 +61,7 @@ return new class extends Migration
             }
         }
 
-        $agentUpdateIds = DB::table('users')
-            ->whereNotIn(DB::raw("LOWER(COALESCE(role, ''))"), ['super_admin', 'superadmin', 'administrator', 'admin'])
-            ->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), ['deployment_manager', 'manager', 'state_manager'])
-            ->when($stateManagerIds !== [], fn ($query) => $query->whereNotIn('id', $stateManagerIds))
-            ->when($dukeIds !== [], fn ($query) => $query->whereNotIn('id', $dukeIds))
-            ->pluck('id')
-            ->all();
-
-        if ($agentUpdateIds !== []) {
-            DB::table('users')
-                ->whereIn('id', $agentUpdateIds)
-                ->update(array_filter([
-                    'role' => 'agent',
-                    'role_id' => $this->roleId('Agent'),
-                    'updated_at' => Schema::hasColumn('users', 'updated_at') ? now() : null,
-                ], fn ($value) => $value !== null));
-        }
+        // Do not infer agents from existing manager roles. Agents are assigned explicitly.
     }
 
     public function down(): void
