@@ -635,11 +635,14 @@ class SuperAdminDashboardController extends Controller
 
             $deploymentSubscriptionRevenue = 0.0;
             $deploymentPaidSubs = 0;
+            $deployedPaidSubscriptionsQuery = null;
             $stateManagerIds = $this->stateManagerUserIds();
             $managerStatusBaseQuery = User::query()->whereKey($stateManagerIds);
             if ($paidSubscriptionsQuery) {
                 $deploymentSubscriptionsQuery = (clone $paidSubscriptionsQuery)
+                    ->select('subscriptions.*')
                     ->leftJoin('companies as source_companies', 'subscriptions.company_id', '=', 'source_companies.id')
+                    ->where('subscriptions.amount', '>', 0)
                     ->where(function ($query) {
                         $hasSource = false;
 
@@ -665,6 +668,7 @@ class SuperAdminDashboardController extends Controller
 
                 $deploymentSubscriptionRevenue = (float) ($deploymentSubscriptionsQuery->sum('subscriptions.amount') ?? 0);
                 $deploymentPaidSubs = (int) ($deploymentSubscriptionsQuery->distinct()->count('subscriptions.company_id') ?? 0);
+                $deployedPaidSubscriptionsQuery = clone $deploymentSubscriptionsQuery;
             }
 
             $directSubscriptionRevenue = max(0, $subscriptionRevenue - $deploymentSubscriptionRevenue);
@@ -701,12 +705,12 @@ class SuperAdminDashboardController extends Controller
                 }
             }
 
-            $planSalesBaseQuery = Schema::hasTable('subscriptions') ? clone $paidSubscriptionsQuery : null;
-            $planSalesToday = $planSalesBaseQuery ? (clone $planSalesBaseQuery)->whereDate('created_at', today())->count() : 0;
-            $planSalesMonth = $planSalesBaseQuery ? (clone $planSalesBaseQuery)->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count() : 0;
-            $planSalesValueMonth = $planSalesBaseQuery ? (float) ((clone $planSalesBaseQuery)->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->sum('amount') ?? 0) : 0;
-            // All-time average per transaction (not monthly)
-            $avgPlanSale = $paidSubscriptionsCount > 0 ? ($subscriptionRevenue / $paidSubscriptionsCount) : 0;
+            $planSalesBaseQuery = $deployedPaidSubscriptionsQuery ? clone $deployedPaidSubscriptionsQuery : null;
+            $planSalesToday = $planSalesBaseQuery ? (clone $planSalesBaseQuery)->whereDate('subscriptions.created_at', today())->distinct()->count('subscriptions.company_id') : 0;
+            $planSalesMonth = $planSalesBaseQuery ? (clone $planSalesBaseQuery)->whereMonth('subscriptions.created_at', now()->month)->whereYear('subscriptions.created_at', now()->year)->distinct()->count('subscriptions.company_id') : 0;
+            $planSalesValueMonth = $planSalesBaseQuery ? (float) ((clone $planSalesBaseQuery)->whereMonth('subscriptions.created_at', now()->month)->whereYear('subscriptions.created_at', now()->year)->sum('subscriptions.amount') ?? 0) : 0;
+            // Deployed business average, not all direct subscription rows.
+            $avgPlanSale = $deploymentPaidSubs > 0 ? ($deploymentSubscriptionRevenue / $deploymentPaidSubs) : 0;
 
             // METRICS
             $metrics = [
@@ -964,9 +968,23 @@ class SuperAdminDashboardController extends Controller
                 ]
             ];
 
+            $deployedMonthlyTrends = collect();
+            if ($deployedPaidSubscriptionsQuery) {
+                $deployedMonthlyTrends = (clone $deployedPaidSubscriptionsQuery)
+                    ->select(
+                        DB::raw('MONTH(subscriptions.created_at) as month_num'),
+                        DB::raw('SUM(subscriptions.amount) as total'),
+                        DB::raw('COUNT(DISTINCT subscriptions.company_id) as subscriptions_count')
+                    )
+                    ->whereYear('subscriptions.created_at', date('Y'))
+                    ->groupBy('month_num')
+                    ->orderBy('month_num', 'asc')
+                    ->get();
+            }
+
             $monthlyRevenueMap = [];
             $monthlyOrdersMap = [];
-            foreach ($revenueTrends as $row) {
+            foreach ($deployedMonthlyTrends as $row) {
                 $monthlyRevenueMap[(int) $row->month_num] = (float) $row->total;
                 $monthlyOrdersMap[(int) $row->month_num] = (int) ($row->subscriptions_count ?? 0);
             }
@@ -1077,29 +1095,12 @@ class SuperAdminDashboardController extends Controller
 
             // PLATFORM ACTIVITY
             $platformActivity = collect();
-            if ($paidSubscriptionsQuery) {
-                $platformActivity = (clone $paidSubscriptionsQuery)
+            if ($deployedPaidSubscriptionsQuery) {
+                $platformActivity = (clone $deployedPaidSubscriptionsQuery)
                     ->with(['company', 'company.user'])
-                    ->latest()
+                    ->orderBy('subscriptions.created_at', 'desc')
                     ->limit(10)
                     ->get();
-            }
-            if ($platformActivity->isEmpty() && Schema::hasTable('sales')) {
-                $salesActivityQuery = $salesBranchScope(Sale::query());
-                $this->applyFinalizedSalesFilter($salesActivityQuery, 'sales');
-                $platformActivity = $salesActivityQuery
-                    ->latest()
-                    ->limit(10)
-                    ->get()
-                    ->map(function ($sale) {
-                        return (object) [
-                            'id' => $sale->id,
-                            'subscriber_name' => $sale->customer_name ?: ('Order ' . ($sale->order_number ?? $sale->id)),
-                            'amount' => $sale->total ?? 0,
-                            'created_at' => $sale->created_at,
-                            'company' => null,
-                        ];
-                    });
             }
 
             $expiringSubscriptions = collect();

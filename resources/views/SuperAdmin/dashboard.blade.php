@@ -1297,9 +1297,9 @@
                                             <div class="kpi-badge">Buyers</div>
                                         </div>
                                         <div class="mt-3">
-                                            <h6 class="kpi-kicker mb-2">Paid Plan Buyers</h6>
+                                            <h6 class="kpi-kicker mb-2">Deployed Paid Businesses</h6>
                                             <h3 class="fw-bold mb-0 kpi-value">{{ number_format($metrics['paid_subs'] ?? 0) }}</h3>
-                                            <p class="kpi-note mb-0 mt-2">Direct and deployment-created buyers combined</p>
+                                            <p class="kpi-note mb-0 mt-2">Businesses deployed by managers or agents</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1671,9 +1671,9 @@
                         <div class="row mt-2">
                             @foreach([
                                 ['label' => 'Registered Business Revenue', 'value' => '₦' . number_format($metrics['registered_user_revenue'] ?? 0, 0), 'tone' => 'tone-indigo'],
-                                ['label' => 'Plan Sales Today', 'value' => number_format($metrics['plan_sales_today'] ?? 0), 'tone' => 'tone-sky'],
-                                ['label' => 'Plan Sales This Month', 'value' => number_format($metrics['plan_sales_month'] ?? 0), 'tone' => 'tone-emerald'],
-                                ['label' => 'Monthly Plan Value', 'value' => '₦' . number_format($metrics['plan_sales_value_month'] ?? 0, 0), 'tone' => 'tone-violet'],
+                                ['label' => 'Deployed Paid Today', 'value' => number_format($metrics['plan_sales_today'] ?? 0), 'tone' => 'tone-sky'],
+                                ['label' => 'Deployed Paid This Month', 'value' => number_format($metrics['plan_sales_month'] ?? 0), 'tone' => 'tone-emerald'],
+                                ['label' => 'Deployed Monthly Value', 'value' => '₦' . number_format($metrics['plan_sales_value_month'] ?? 0, 0), 'tone' => 'tone-violet'],
                                 ['label' => 'Average Plan Sale', 'value' => '₦' . number_format($metrics['avg_plan_sale'] ?? 0, 0), 'tone' => 'tone-amber'],
                                 ['label' => 'Paid Subscriptions', 'value' => number_format($metrics['paid_subs'] ?? 0), 'tone' => 'tone-rose'],
                             ] as $kpi)
@@ -1750,11 +1750,11 @@
                                     <div class="row g-2">
                                         @foreach([
                                             ['label' => 'Registered Revenue', 'value' => '₦' . number_format($metrics['registered_user_revenue'] ?? 0, 0)],
-                                            ['label' => 'Paid Subs', 'value' => number_format($metrics['paid_subs'] ?? 0)],
-                                            ['label' => 'Plan Sales Today', 'value' => number_format($metrics['plan_sales_today'] ?? 0)],
-                                            ['label' => 'Plan Sales Month', 'value' => number_format($metrics['plan_sales_month'] ?? 0)],
-                                            ['label' => 'Monthly Plan Value', 'value' => '₦' . number_format($metrics['plan_sales_value_month'] ?? 0, 0)],
-                                            ['label' => 'Average Plan Sale', 'value' => '₦' . number_format($metrics['avg_plan_sale'] ?? 0, 0)],
+                                            ['label' => 'Deployed Paid', 'value' => number_format($metrics['paid_subs'] ?? 0)],
+                                            ['label' => 'Deployed Today', 'value' => number_format($metrics['plan_sales_today'] ?? 0)],
+                                            ['label' => 'Deployed Month', 'value' => number_format($metrics['plan_sales_month'] ?? 0)],
+                                            ['label' => 'Deployed Monthly Value', 'value' => '₦' . number_format($metrics['plan_sales_value_month'] ?? 0, 0)],
+                                            ['label' => 'Average Deployed Sale', 'value' => '₦' . number_format($metrics['avg_plan_sale'] ?? 0, 0)],
                                             ['label' => 'Expiring Soon', 'value' => number_format($metrics['expiring_soon_subs'] ?? 0)],
                                             ['label' => 'Expired', 'value' => number_format($metrics['expired_subs'] ?? 0)],
                                             ['label' => 'Verified Users', 'value' => number_format($metrics['verified_users'] ?? 0)],
@@ -1804,7 +1804,7 @@
                                         @foreach([
                                             ['label' => 'Verification Ratio', 'value' => number_format(($verifiedUsers / $totalUsers) * 100, 1) . '%'],
                                             ['label' => 'Subscription Coverage', 'value' => number_format(($activeSubs / $totalSubs) * 100, 1) . '%'],
-                                            ['label' => 'Paid Subscriptions', 'value' => number_format($paidSubs)],
+                                            ['label' => 'Deployed Paid Businesses', 'value' => number_format($paidSubs)],
                                             ['label' => 'Tenant Footprint', 'value' => number_format(($companies / $tenants) * 100, 1) . '%'],
                                             ['label' => 'Manager Approval Load', 'value' => number_format(($pendingManagers / $managerBase) * 100, 1) . '%'],
                                             ['label' => 'Basic Plan Nodes', 'value' => number_format($basicPlans)],
@@ -1829,14 +1829,14 @@
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-center mb-3">
                                             <div>
-                                                <h5 class="mb-0 fw-bold text-dark">Plan Sales Snapshot</h5>
-                                                <small class="text-muted">Live subscription sales and approval pulse</small>
+                                                <h5 class="mb-0 fw-bold text-dark">Deployed Business Snapshot</h5>
+                                                <small class="text-muted">Paid deployed businesses and approval pulse</small>
                                             </div>
                                             <span class="live-badge-soft animate-pulse">Live</span>
                                         </div>
                                         <div class="dashboard-side-fill">
                                             <div class="summary-fill">
-                                                <div class="label">Plan Sales Today</div>
+                                                <div class="label">Deployed Today</div>
                                                 <div class="value">{{ number_format($metrics['plan_sales_today'] ?? 0) }}</div>
                                             </div>
                                             <div class="summary-fill">
@@ -1854,7 +1854,7 @@
                                         </div>
                                         <div class="mt-3">
                                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <h6 class="mb-0 fw-semibold">Recent Paid Plan Sales</h6>
+                                                <h6 class="mb-0 fw-semibold">Recent Deployed Paid Businesses</h6>
                                                 <span class="small text-muted">{{ number_format($platformActivity->count() ?? 0) }} items</span>
                                             </div>
                                             <div class="list-wrapper" style="max-height: 220px; overflow-y: auto;">
@@ -1873,7 +1873,7 @@
                                                             </div>
                                                         </li>
                                                     @empty
-                                                        <li class="small text-muted">No paid plan sales captured yet.</li>
+                                                        <li class="small text-muted">No deployed paid businesses captured yet.</li>
                                                     @endforelse
                                                 </ul>
                                             </div>
@@ -2483,7 +2483,7 @@
                                                     </div>
                                                     <div class="col-4">
                                                         <div class="summary-fill">
-                                                            <div class="label">Paid Plans</div>
+                                                            <div class="label">Deployed Paid</div>
                                                             <div class="value">{{ number_format(array_sum($dashboardChartSeries['orders'] ?? [])) }}</div>
                                                         </div>
                                                     </div>
@@ -3401,7 +3401,7 @@
                 data: {
                     labels: chartSeries.labels,
                     datasets: [{
-                        label: 'Paid Subscriptions',
+                        label: 'Deployed Paid Businesses',
                         data: chartSeries.orders,
                         backgroundColor: '#1F3BB3',
                         borderRadius: 6,
@@ -3449,7 +3449,7 @@
                             categoryPercentage: 0.58
                         },
                         {
-                            label: 'Paid Plans',
+                            label: 'Deployed Paid',
                             data: chartSeries.orders,
                             type: 'line',
                             borderColor: '#10b981',
