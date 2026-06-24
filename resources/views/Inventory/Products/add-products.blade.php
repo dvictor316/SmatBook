@@ -45,9 +45,11 @@
 
     .product-form-sheet {
         border: 1px solid #e5e7eb;
-        border-radius: 14px;
+        border-radius: 22px;
         background: #fff;
-        padding: 1.1rem 1.2rem 0.6rem;
+        padding: 1.25rem;
+        min-height: 100%;
+        box-shadow: 0 18px 42px rgba(15, 23, 42, 0.07);
     }
 
     .product-form-sheet h6 {
@@ -120,10 +122,92 @@
     }
 
     .page-add-product-card .card-header {
-        background: linear-gradient(135deg, #f4f7ff 0%, #f8fbff 100%);
+        background:
+            radial-gradient(600px 180px at 8% 0%, rgba(20, 184, 166, 0.14), transparent 62%),
+            radial-gradient(520px 180px at 92% 0%, rgba(245, 158, 11, 0.16), transparent 58%),
+            linear-gradient(135deg, #f7fbff 0%, #fffdf6 100%);
         border-bottom: 1px solid #dbe7ff;
         border-radius: 16px 16px 0 0 !important;
         padding: 1.1rem 1.4rem;
+    }
+
+    .product-form-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .product-form-card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .product-form-card-eyebrow {
+        color: #0f766e;
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 0.2rem;
+    }
+
+    .product-form-card-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #0f172a;
+        background: #fef3c7;
+        flex: 0 0 auto;
+    }
+
+    .unit-suggestion-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-top: 0.55rem;
+    }
+
+    .unit-suggestion-chip {
+        border: 1px solid #dbe3f0;
+        background: #f8fafc;
+        color: #334155;
+        border-radius: 999px;
+        padding: 0.28rem 0.65rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .unit-suggestion-chip:hover {
+        border-color: #0f766e;
+        background: #ecfdf5;
+        color: #0f766e;
+    }
+
+    .measurement-divider {
+        border-top: 1px solid #e5e7eb;
+        margin: 1.15rem 0;
+    }
+
+    .unit-action-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-weight: 800;
+        font-size: 0.8rem;
+    }
+
+    @media (max-width: 1199.98px) {
+        .product-form-grid {
+            grid-template-columns: 1fr;
+        }
     }
 
     @media print {
@@ -207,11 +291,19 @@
                             </div>
                         </div>
 
-                        {{-- Section 1: Product Details --}}
                         <div class="col-12">
+                            <div class="product-form-grid">
+                        {{-- Section 1: Product Details --}}
+                        <div>
                             <div class="product-form-sheet">
-                                <h6>Product Details</h6>
-                                <p class="product-form-muted">Enter the basic information first. This is all most products need.</p>
+                                <div class="product-form-card-head">
+                                    <div>
+                                        <div class="product-form-card-eyebrow">Product setup</div>
+                                        <h6>Identity, Pricing & Category</h6>
+                                        <p class="product-form-muted mb-0">Enter the product details customers and your team will recognize.</p>
+                                    </div>
+                                    <span class="product-form-card-icon"><i class="feather-package"></i></span>
+                                </div>
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label class="form-label">Product Name <span class="text-danger">*</span></label>
@@ -233,7 +325,19 @@
                                     </div>
                                     <div class="col-md-2">
                                         <label class="form-label">Legacy Unit Label</label>
-                                        <input type="text" name="base_unit_name" class="form-control @error('base_unit_name') is-invalid @enderror" value="{{ old('base_unit_name', 'pcs') }}" required>
+                                        <input type="text" name="base_unit_name" class="form-control @error('base_unit_name') is-invalid @enderror" value="{{ old('base_unit_name', 'pcs') }}" list="baseUnitSuggestions" required>
+                                        <datalist id="baseUnitSuggestions">
+                                            <option value="pcs">
+                                            <option value="kg">
+                                            <option value="g">
+                                            <option value="litre">
+                                            <option value="ml">
+                                            <option value="meter">
+                                            <option value="pack">
+                                            <option value="bottle">
+                                            <option value="carton">
+                                            <option value="roll">
+                                        </datalist>
                                         @error('base_unit_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-3">
@@ -249,7 +353,12 @@
                                         @error('unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-3">
-                                        <label class="form-label">Base Unit</label>
+                                        <div class="d-flex justify-content-between align-items-center gap-2">
+                                            <label class="form-label mb-0">Base Unit</label>
+                                            <button type="button" class="btn btn-link p-0 unit-action-link" data-bs-toggle="modal" data-bs-target="#addUnitModal">
+                                                <i class="fas fa-plus-circle"></i> Add base measurement
+                                            </button>
+                                        </div>
                                         <select name="base_unit_id" class="form-select @error('base_unit_id') is-invalid @enderror">
                                             <option value="">Same as Unit of Measure</option>
                                             @foreach(($units ?? collect()) as $unit)
@@ -258,6 +367,12 @@
                                                 </option>
                                             @endforeach
                                         </select>
+                                        <div class="unit-suggestion-row" aria-label="Base unit suggestions">
+                                            <button type="button" class="unit-suggestion-chip" data-unit-suggestion="pcs">pcs</button>
+                                            <button type="button" class="unit-suggestion-chip" data-unit-suggestion="kg">kg</button>
+                                            <button type="button" class="unit-suggestion-chip" data-unit-suggestion="litre">litre</button>
+                                            <button type="button" class="unit-suggestion-chip" data-unit-suggestion="pack">pack</button>
+                                        </div>
                                         @error('base_unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-3">
@@ -315,9 +430,17 @@
                         </div>
 
                         {{-- Section 2: Packaging Setup --}}
-                        <div class="col-12">
+                        <div>
                             <div class="product-form-sheet">
-                                <h6>Packaging Setup</h6>
+                                <div class="product-form-card-head">
+                                    <div>
+                                        <div class="product-form-card-eyebrow">Measurement</div>
+                                        <h6>Packaging & Opening Stock</h6>
+                                        <p class="product-form-muted mb-0">Set how the product is counted, then enter what is currently on hand.</p>
+                                    </div>
+                                    <span class="product-form-card-icon" style="background:#dcfce7;"><i class="fas fa-balance-scale"></i></span>
+                                </div>
+                                <h6 class="mb-1">Packaging Setup</h6>
                                 <p class="product-form-muted">Enter any two values below and the third one fills automatically.</p>
                                 <div class="row g-3">
                                     <div class="col-md-4">
@@ -339,12 +462,9 @@
                                     <input type="hidden" name="units_per_carton" id="quick_units_per_carton_input" value="{{ old('units_per_carton', 0) }}">
                                     <input type="hidden" name="unit_type" id="quick_unit_type_input" value="{{ old('unit_type', 'unit') }}">
                                 </div>
-                            </div>
-                        </div>
 
                         {{-- Section 3: Opening Stock --}}
-                        <div class="col-12">
-                            <div class="product-form-sheet">
+                                <div class="measurement-divider"></div>
                                 <h6>Opening Stock</h6>
                                 <p class="product-form-muted">Type the quantity you currently have. Total stock appears automatically. If you do not have stock yet, leave all three fields at 0 and save the product first.</p>
                                 <div class="row g-3">
@@ -385,6 +505,8 @@
                                         <input type="hidden" name="stock" id="quick_final_stock_input" value="{{ old('stock', '') }}">
                                     </div>
                                 </div>
+                            </div>
+                        </div>
                             </div>
                         </div>
 
@@ -469,6 +591,66 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Close</button>
                     <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Quick Add Base Measurement Modal --}}
+<div class="modal fade" id="addUnitModal" tabindex="-1" aria-hidden="true" style="z-index:1060;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="POST" action="{{ route('units.store') }}">
+                @csrf
+                <input type="hidden" name="status" value="active">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title mb-0">Add Base Measurement</h5>
+                        <small class="text-muted">Create a unit like Pieces, Kilogram, Litre, Pack, or Bottle.</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            <label class="form-label">Measurement Name <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" placeholder="e.g. Pieces" list="unitNameSuggestions" required>
+                            <datalist id="unitNameSuggestions">
+                                <option value="Pieces">
+                                <option value="Kilogram">
+                                <option value="Gram">
+                                <option value="Litre">
+                                <option value="Millilitre">
+                                <option value="Meter">
+                                <option value="Pack">
+                                <option value="Bottle">
+                                <option value="Carton">
+                                <option value="Roll">
+                            </datalist>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Symbol <span class="text-danger">*</span></label>
+                            <input type="text" name="symbol" class="form-control" placeholder="e.g. pcs" list="unitSymbolSuggestions" required>
+                            <datalist id="unitSymbolSuggestions">
+                                <option value="pcs">
+                                <option value="kg">
+                                <option value="g">
+                                <option value="litre">
+                                <option value="ml">
+                                <option value="m">
+                                <option value="pack">
+                                <option value="bottle">
+                                <option value="ctn">
+                                <option value="roll">
+                            </datalist>
+                        </div>
+                    </div>
+                    <p class="text-muted small mb-0 mt-3">After saving, come back to this product form and select the new measurement from the unit list.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Add Measurement</button>
                 </div>
             </form>
         </div>
@@ -681,6 +863,31 @@ $(document).ready(function () {
 
     $('input[name="base_unit_name"]').on('input', function () {
         refreshQuickPackagingLabels();
+    });
+
+    function selectUnitBySuggestion(selector, symbol) {
+        var select = document.querySelector(selector);
+        if (!select) return;
+        var normalized = String(symbol || '').trim().toLowerCase();
+        if (!normalized) return;
+        var option = Array.from(select.options).find(function (opt) {
+            var text = String(opt.textContent || '').trim().toLowerCase();
+            return text === normalized || text.indexOf('(' + normalized + ')') !== -1;
+        });
+        if (option) {
+            select.value = option.value;
+            $(select).trigger('change');
+        }
+    }
+
+    $('.unit-suggestion-chip').on('click', function () {
+        var symbol = $(this).data('unit-suggestion') || '';
+        $('input[name="base_unit_name"]').val(symbol);
+        selectUnitBySuggestion('select[name="unit_id"]', symbol);
+        selectUnitBySuggestion('select[name="base_unit_id"]', symbol);
+        refreshQuickPackagingLabels();
+        calculateQuickCartonContent();
+        calculateQuickStock();
     });
 
     $('#add_product_form').on('submit', function () {
