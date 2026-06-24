@@ -280,11 +280,16 @@ Route::middleware(['auth', 'manager.verified'])
     // ----------------------------------------------------------
     // DASHBOARD & ANALYTICS
     // ----------------------------------------------------------
-    Route::get('/dashboard',  [DeploymentManagerController::class, 'index'])     ->name('dashboard');
+    Route::get('/dashboard',  [StateManagerCrmController::class, 'overview'])    ->name('dashboard');
     Route::get('/analytics',  [DeploymentManagerController::class, 'analytics']) ->name('stats');
     Route::get('/crm', [StateManagerCrmController::class, 'overview'])->name('crm.overview');
     Route::get('/agents', [StateManagerCrmController::class, 'agents'])->name('crm.agents');
     Route::get('/leads', [StateManagerCrmController::class, 'leads'])->name('crm.leads');
+    Route::get('/tickets', [StateManagerCrmController::class, 'tickets'])->name('crm.tickets');
+    Route::get('/violations', [StateManagerCrmController::class, 'violations'])->name('crm.violations');
+    Route::get('/wallet', [StateManagerCrmController::class, 'wallet'])->name('crm.wallet');
+    Route::get('/performance', [StateManagerCrmController::class, 'performance'])->name('crm.performance');
+    Route::get('/content-hub', [StateManagerCrmController::class, 'contentHub'])->name('crm.content-hub');
     Route::post('/agents/invite', [StateManagerCrmController::class, 'inviteAgent'])->name('crm.agents.invite');
     Route::post('/agents/{agent}/assign-zone', [StateManagerCrmController::class, 'assignZone'])->name('crm.agents.assign-zone');
     Route::post('/agents/{agent}/violations', [StateManagerCrmController::class, 'addViolation'])->name('crm.agents.violations.store');

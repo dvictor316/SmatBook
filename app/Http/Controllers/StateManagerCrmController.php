@@ -91,6 +91,108 @@ class StateManagerCrmController extends Controller
         return view('deployment.crm.leads', compact('agents', 'leads', 'stats'));
     }
 
+    public function tickets(): View
+    {
+        $agents = $this->agentsQuery()->orderBy('name')->get();
+        $stats = $this->managerStats($agents->pluck('id')->all());
+        $tickets = Schema::hasTable('activity_logs')
+            ? DB::table('activity_logs')
+                ->where('user_id', Auth::id())
+                ->where('module', 'deployment_support')
+                ->latest()
+                ->limit(20)
+                ->get()
+            : collect();
+
+        $ticketStats = [
+            'open' => $tickets->where('action', 'ticket_created')->count(),
+            'urgent' => $tickets->filter(fn ($ticket) => str_contains(strtolower((string) ($ticket->properties ?? '')), 'urgent'))->count(),
+            'resolved' => $tickets->where('action', 'ticket_resolved')->count(),
+        ];
+
+        return view('deployment.crm.tickets', compact('tickets', 'ticketStats', 'stats'));
+    }
+
+    public function violations(): View
+    {
+        $agents = $this->agentsQuery()->get();
+        $agentIds = $agents->pluck('id')->all();
+        $stats = $this->managerStats($agentIds);
+        $agentRows = $this->agentPerformanceRows($agents);
+
+        $violations = Schema::hasTable('agent_violations')
+            ? DB::table('agent_violations')
+                ->leftJoin('users', 'agent_violations.agent_id', '=', 'users.id')
+                ->where('agent_violations.state_manager_id', Auth::id())
+                ->select('agent_violations.*', 'users.name as agent_name', 'users.email as agent_email', 'users.phone as agent_phone')
+                ->latest('agent_violations.created_at')
+                ->limit(30)
+                ->get()
+            : collect();
+
+        return view('deployment.crm.violations', compact('violations', 'agentRows', 'stats'));
+    }
+
+    public function wallet(): View
+    {
+        $agents = $this->agentsQuery()->get();
+        $agentIds = $agents->pluck('id')->all();
+        $stats = $this->managerStats($agentIds);
+        $managerRecord = Schema::hasTable('deployment_managers')
+            ? DB::table('deployment_managers')->where('user_id', Auth::id())->first()
+            : null;
+
+        $commissions = Schema::hasTable('deployment_commissions')
+            ? DB::table('deployment_commissions')
+                ->leftJoin('companies', 'deployment_commissions.company_id', '=', 'companies.id')
+                ->leftJoin('subscriptions', 'deployment_commissions.subscription_id', '=', 'subscriptions.id')
+                ->where('deployment_commissions.manager_id', Auth::id())
+                ->select('deployment_commissions.*', 'companies.name as company_name', 'subscriptions.plan')
+                ->latest('deployment_commissions.created_at')
+                ->limit(12)
+                ->get()
+            : collect();
+
+        $amountColumn = Schema::hasTable('deployment_commissions') && Schema::hasColumn('deployment_commissions', 'commission_amount')
+            ? 'commission_amount'
+            : 'amount';
+        $paid = $commissions->where('status', 'paid')->sum($amountColumn);
+        $pending = $commissions->whereNotIn('status', ['paid', 'failed', 'cancelled'])->sum($amountColumn);
+        $total = $commissions->sum($amountColumn);
+
+        $payouts = Schema::hasTable('deployment_manager_payouts')
+            ? DB::table('deployment_manager_payouts')->where('manager_id', Auth::id())->latest()->limit(8)->get()
+            : collect();
+
+        return view('deployment.crm.wallet', compact('stats', 'managerRecord', 'commissions', 'payouts', 'paid', 'pending', 'total'));
+    }
+
+    public function performance(): View
+    {
+        $agents = $this->agentsQuery()->get();
+        $agentIds = $agents->pluck('id')->all();
+        $stats = $this->managerStats($agentIds);
+        $agentRows = $this->agentPerformanceRows($agents);
+        $zones = $this->zonePerformance($agentRows);
+        $underperformingAgents = $agentRows->filter(fn ($row) => $row['sales'] <= 0 || $row['last_seen_days'] >= 30)->take(10);
+
+        return view('deployment.crm.performance', compact('stats', 'agentRows', 'zones', 'underperformingAgents'));
+    }
+
+    public function contentHub(): View
+    {
+        $agents = $this->agentsQuery()->get();
+        $stats = $this->managerStats($agents->pluck('id')->all());
+        $resources = collect([
+            ['title' => 'Agent onboarding checklist', 'type' => 'Playbook', 'tag' => 'Training', 'body' => 'Daily routine, lead capture, KYC review, and customer follow-up standards.'],
+            ['title' => 'Free trial conversion script', 'type' => 'Script', 'tag' => 'Sales', 'body' => 'Use this guide to move active free trials into paid subscriptions before expiry.'],
+            ['title' => 'Violation handling SOP', 'type' => 'Policy', 'tag' => 'Compliance', 'body' => 'How to document poor performance, no-contact periods, and customer complaints.'],
+            ['title' => 'Business deployment checklist', 'type' => 'Checklist', 'tag' => 'Deployment', 'body' => 'Confirm business details, plan, payment, domain, and support handover.'],
+        ]);
+
+        return view('deployment.crm.content-hub', compact('stats', 'resources'));
+    }
+
     public function inviteAgent(Request $request): RedirectResponse
     {
         $data = $request->validate([

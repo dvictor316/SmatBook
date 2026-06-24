@@ -676,7 +676,7 @@
             </div>
             <div class="dm-brand-text">
                 <h1 class="dm-brand-title">SmartPro<span class="book">book</span></h1>
-                <p class="dm-brand-subtitle">Deployment Hub</p>
+                <p class="dm-brand-subtitle">Manager Portal</p>
             </div>
         </a>
     </div>
@@ -733,23 +733,30 @@
             </li>
 
             <li class="dm-menu-item">
-                <a href="{{ route('deployment.support.tickets') }}" class="dm-menu-link {{ request()->routeIs('deployment.support.tickets', 'deployment.support.view-ticket') ? 'active' : '' }}">
+                <a href="{{ route('deployment.crm.tickets') }}" class="dm-menu-link {{ request()->routeIs('deployment.crm.tickets', 'deployment.support.*') ? 'active' : '' }}">
                     <span class="dm-menu-icon"><i class="fas fa-ticket-alt"></i></span>
                     <span class="dm-menu-text">Tickets</span>
                 </a>
             </li>
 
             <li class="dm-menu-item">
-                <a href="{{ route('deployment.crm.agents', ['focus' => 'violations']) }}" class="dm-menu-link {{ request('focus') === 'violations' ? 'active' : '' }}">
+                <a href="{{ route('deployment.crm.violations') }}" class="dm-menu-link {{ request()->routeIs('deployment.crm.violations') ? 'active' : '' }}">
                     <span class="dm-menu-icon"><i class="fas fa-exclamation-triangle"></i></span>
                     <span class="dm-menu-text">Violations</span>
                 </a>
             </li>
 
             <li class="dm-menu-item">
-                <a href="{{ route('deployment.commissions.index') }}" class="dm-menu-link {{ request()->routeIs('deployment.commissions.*') ? 'active' : '' }}">
+                <a href="{{ route('deployment.crm.wallet') }}" class="dm-menu-link {{ request()->routeIs('deployment.crm.wallet', 'deployment.commissions.*') ? 'active' : '' }}">
                     <span class="dm-menu-icon"><i class="fas fa-wallet"></i></span>
                     <span class="dm-menu-text">Earnings & Wallet</span>
+                </a>
+            </li>
+
+            <li class="dm-menu-item">
+                <a href="{{ route('deployment.crm.performance') }}" class="dm-menu-link {{ request()->routeIs('deployment.crm.performance') ? 'active' : '' }}">
+                    <span class="dm-menu-icon"><i class="fas fa-chart-line"></i></span>
+                    <span class="dm-menu-text">Performance</span>
                 </a>
             </li>
 
@@ -757,6 +764,13 @@
                 <a href="{{ route('deployment.crm.reports') }}" class="dm-menu-link {{ request()->routeIs('deployment.crm.reports') ? 'active' : '' }}">
                     <span class="dm-menu-icon"><i class="fas fa-file-alt"></i></span>
                     <span class="dm-menu-text">Advanced Reports</span>
+                </a>
+            </li>
+
+            <li class="dm-menu-item">
+                <a href="{{ route('deployment.crm.content-hub') }}" class="dm-menu-link {{ request()->routeIs('deployment.crm.content-hub') ? 'active' : '' }}">
+                    <span class="dm-menu-icon"><i class="fas fa-photo-video"></i></span>
+                    <span class="dm-menu-text">Content Hub</span>
                 </a>
             </li>
 
