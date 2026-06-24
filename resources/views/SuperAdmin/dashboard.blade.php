@@ -1396,7 +1396,7 @@
                                                 ['label' => 'Agents', 'value' => number_format($metrics['agents_total'] ?? 0), 'tone' => 'tone-violet'],
                                                 ['label' => 'Registered Businesses', 'value' => number_format($metrics['registered_businesses_total'] ?? 0), 'tone' => 'tone-emerald'],
                                                 ['label' => 'Internal Users', 'value' => number_format($metrics['other_users_total'] ?? 0), 'tone' => 'tone-amber'],
-                                                ['label' => 'Platform User Revenue', 'value' => '₦' . number_format($metrics['registered_user_revenue'] ?? 0, 2), 'tone' => 'tone-rose'],
+                                                ['label' => 'Registered Business Revenue', 'value' => '₦' . number_format($metrics['registered_user_revenue'] ?? 0, 2), 'tone' => 'tone-rose'],
                                                 ['label' => 'Net Platform Balance', 'value' => '₦' . number_format($metrics['net_platform_balance'] ?? 0, 2), 'tone' => 'tone-cobalt'],
                                             ] as $sourceKpi)
                                                 <div class="col-sm-6 col-xl">
@@ -1670,7 +1670,7 @@
 
                         <div class="row mt-2">
                             @foreach([
-                                ['label' => 'Registered User Revenue', 'value' => '₦' . number_format($metrics['registered_user_revenue'] ?? 0, 0), 'tone' => 'tone-indigo'],
+                                ['label' => 'Registered Business Revenue', 'value' => '₦' . number_format($metrics['registered_user_revenue'] ?? 0, 0), 'tone' => 'tone-indigo'],
                                 ['label' => 'Plan Sales Today', 'value' => number_format($metrics['plan_sales_today'] ?? 0), 'tone' => 'tone-sky'],
                                 ['label' => 'Plan Sales This Month', 'value' => number_format($metrics['plan_sales_month'] ?? 0), 'tone' => 'tone-emerald'],
                                 ['label' => 'Monthly Plan Value', 'value' => '₦' . number_format($metrics['plan_sales_value_month'] ?? 0, 0), 'tone' => 'tone-violet'],

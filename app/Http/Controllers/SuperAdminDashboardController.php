@@ -602,6 +602,15 @@ class SuperAdminDashboardController extends Controller
             $recentSignups = (clone $customerUsersBaseQuery)
                 ->where('created_at', '>=', now()->subDays(30))
                 ->count();
+            $registeredBusinessesRows = (clone $this->registeredBusinessesQuery())->get(['users.id', 'total_paid', 'last_paid_at']);
+            $registeredBusinessesTotal = $registeredBusinessesRows
+                ->pluck('id')
+                ->filter()
+                ->unique()
+                ->count();
+            $registeredBusinessRevenue = (float) $registeredBusinessesRows->sum(
+                fn ($row) => (float) ($row->total_paid ?? 0)
+            );
 
             $deploymentCustomerUsers = 0;
             if (
@@ -698,13 +707,13 @@ class SuperAdminDashboardController extends Controller
                 'total_companies'  => $totalCompanies, 
                 'total_tenants'    => $activeCompanies > 0 ? $activeCompanies : $totalCompanies,
                 'total_users'      => $totalCustomerUsers,
-                'registered_user_revenue' => $subscriptionRevenue,
+                'registered_user_revenue' => $registeredBusinessRevenue,
                 'verified_users'   => Schema::hasColumn('users', 'is_verified')
                                       ? (clone $customerUsersBaseQuery)->where('is_verified', 1)->count()
                                       : 0,
                 'state_managers_total' => (clone $this->stateManagersQuery())->count(),
                 'agents_total' => (clone $this->agentsQuery())->count(),
-                'registered_businesses_total' => $paidBuyersCount,
+                'registered_businesses_total' => $registeredBusinessesTotal,
                 'other_users_total' => (clone $this->otherUsersQuery())->count(),
                 'active_subs'      => $activeSubs > 0 ? $activeSubs : $activeCompanies,
                 'paid_subs'        => $paidBuyersCount,
@@ -855,65 +864,83 @@ class SuperAdminDashboardController extends Controller
 
             // DEPLOYMENTS
             $deployments = collect();
-            if (Schema::hasTable('deployment_managers')) {
+            if (Schema::hasTable('deployment_managers') && $stateManagerIds !== []) {
                 $deployments = DB::table('deployment_managers')
                     ->join('users', 'deployment_managers.user_id', '=', 'users.id')
                     ->select('deployment_managers.*', 'users.email', 'users.name as manager_name', 'users.is_verified')
+                    ->whereIn('deployment_managers.user_id', $stateManagerIds)
                     ->latest('deployment_managers.created_at')
                     ->get();
             }
 
             // TOP DEPLOYMENT MANAGERS (for compact authorization progress bars)
             $managerPerformance = ['rows' => [], 'max' => 1];
-            if (Schema::hasTable('deployment_managers')) {
-                $managerRows = collect();
-                if (Schema::hasTable('deployment_commissions')) {
-                    $managerRows = DB::table('deployment_managers')
-                        ->leftJoin('deployment_commissions', 'deployment_managers.user_id', '=', 'deployment_commissions.manager_id')
-                        ->select(
-                            'deployment_managers.id',
-                            'deployment_managers.business_name',
-                            'deployment_managers.status',
-                            DB::raw("COALESCE(SUM(CASE WHEN deployment_commissions.status IN ('pending','paid') THEN deployment_commissions.amount ELSE 0 END), 0) as perf_score")
-                        )
-                        ->groupBy('deployment_managers.id', 'deployment_managers.business_name', 'deployment_managers.status')
-                        ->orderByDesc('perf_score')
-                        ->limit(3)
-                        ->get();
-                }
+            if ($stateManagerIds !== []) {
+                $stateManagerUsers = (clone $this->stateManagersQuery())
+                    ->select('users.id', 'users.name', 'users.status')
+                    ->get();
 
-                // Fallback when commission rows are missing: rank by manager status weight.
-                if ($managerRows->isEmpty()) {
-                    $statusScore = ['active' => 3, 'pending' => 2, 'suspended' => 1];
-                    $managerRows = DB::table('deployment_managers')
-                        ->select('id', 'business_name', 'status')
-                        ->latest('created_at')
-                        ->limit(3)
-                        ->get()
-                        ->map(function ($m) use ($statusScore) {
-                            return (object) [
-                                'id' => $m->id,
-                                'business_name' => $m->business_name,
-                                'status' => $m->status,
-                                'perf_score' => (float) ($statusScore[strtolower((string) ($m->status ?? ''))] ?? 1.0),
-                            ];
-                        })
-                        ->sortByDesc('perf_score')
-                        ->take(3)
-                        ->values();
-                }
+                $rows = $stateManagerUsers->map(function ($manager) use ($paidSubscriptionsQuery) {
+                    $planSales = 0;
+                    $revenue = 0.0;
 
-                $rows = $managerRows->map(function ($row) {
-                    $name = trim((string) ($row->business_name ?? ''));
-                    if ($name === '') {
-                        $name = 'Manager #' . ($row->id ?? 'N/A');
+                    if ($paidSubscriptionsQuery) {
+                        $managerSalesQuery = (clone $paidSubscriptionsQuery)
+                            ->leftJoin('companies as manager_companies', 'subscriptions.company_id', '=', 'manager_companies.id')
+                            ->where(function ($query) use ($manager) {
+                                $hasSource = false;
+
+                                if (Schema::hasColumn('subscriptions', 'deployed_by')) {
+                                    $query->where('subscriptions.deployed_by', $manager->id);
+                                    $hasSource = true;
+                                }
+
+                                if (Schema::hasColumn('companies', 'deployed_by')) {
+                                    $method = $hasSource ? 'orWhere' : 'where';
+                                    $query->{$method}('manager_companies.deployed_by', $manager->id);
+                                    $hasSource = true;
+                                }
+
+                                if (!$hasSource) {
+                                    $query->whereRaw('1 = 0');
+                                }
+                            });
+
+                        $planSales = (int) (clone $managerSalesQuery)->count();
+                        $revenue = (float) ((clone $managerSalesQuery)->sum('subscriptions.amount') ?? 0);
                     }
+
+                    $deployments = (
+                        Schema::hasTable('companies')
+                        && Schema::hasColumn('companies', 'deployed_by')
+                    )
+                        ? (int) Company::query()->where('deployed_by', $manager->id)->count()
+                        : 0;
+
+                    $status = strtolower((string) ($manager->status ?? 'pending'));
+                    $statusWeight = match ($status) {
+                        'active' => 300,
+                        'pending', 'pending_info' => 150,
+                        'suspended', 'inactive' => 50,
+                        default => 100,
+                    };
+
+                    $score = $revenue > 0
+                        ? $revenue
+                        : (($planSales * 1000) + ($deployments * 250) + $statusWeight);
+
                     return [
-                        'name' => $name,
-                        'score' => (float) ($row->perf_score ?? 0),
-                        'status' => (string) ($row->status ?? 'pending'),
+                        'name' => trim((string) ($manager->name ?: ('Manager #' . $manager->id))),
+                        'score' => (float) $score,
+                        'status' => (string) ($manager->status ?? 'pending'),
+                        'revenue' => (float) $revenue,
+                        'plan_sales' => (int) $planSales,
+                        'deployments' => (int) $deployments,
                     ];
-                })->values();
+                })
+                    ->sortByDesc('score')
+                    ->take(3)
+                    ->values();
 
                 $managerPerformance = [
                     'rows' => $rows->toArray(),
