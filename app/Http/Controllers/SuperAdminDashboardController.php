@@ -90,6 +90,15 @@ class SuperAdminDashboardController extends Controller
 
     private function stateManagerUserIds(): array
     {
+        $configuredIds = $this->namedUserIds([
+            'thomas ogbodo',
+            'dauda uche',
+        ]);
+
+        if ($configuredIds !== []) {
+            return $configuredIds;
+        }
+
         if (!Schema::hasTable('deployment_managers') || !Schema::hasColumn('deployment_managers', 'user_id')) {
             return [];
         }
@@ -106,8 +115,13 @@ class SuperAdminDashboardController extends Controller
 
     private function registeredBusinessUserIds(): array
     {
+        $explicitBusinessIds = $this->namedUserIds([
+            'duke ogbodo',
+            'ogbodo duke',
+        ]);
+
         if (!Schema::hasTable('subscriptions')) {
-            return [];
+            return $explicitBusinessIds;
         }
 
         $paidStatuses = ['paid', 'completed', 'success', 'successful', 'verified'];
@@ -135,6 +149,32 @@ class SuperAdminDashboardController extends Controller
         }
 
         return $userIds
+            ->merge($explicitBusinessIds)
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function namedUserIds(array $names): array
+    {
+        if ($names === []) {
+            return [];
+        }
+
+        return DB::table('users')
+            ->where(function ($query) use ($names) {
+                foreach ($names as $name) {
+                    $normalized = strtolower(trim($name));
+                    $pattern = '%' . str_replace(' ', '%', $normalized) . '%';
+
+                    $query->orWhereRaw('LOWER(TRIM(name)) = ?', [$normalized])
+                        ->orWhereRaw('LOWER(TRIM(name)) LIKE ?', [$pattern])
+                        ->orWhereRaw('LOWER(TRIM(email)) LIKE ?', [$pattern]);
+                }
+            })
+            ->pluck('id')
             ->filter()
             ->map(fn ($id) => (int) $id)
             ->unique()
@@ -210,6 +250,7 @@ class SuperAdminDashboardController extends Controller
         }
 
         $paidStatuses = ['paid', 'completed', 'success', 'successful', 'verified'];
+        $registeredBusinessIds = $this->registeredBusinessUserIds();
         $subscriptionSummary = DB::table('subscriptions')
             ->select(
                 'company_id',
@@ -243,7 +284,14 @@ class SuperAdminDashboardController extends Controller
                 DB::raw('COALESCE(paid_subscriptions.total_paid, 0) as total_paid'),
                 DB::raw('paid_subscriptions.last_paid_at as last_paid_at')
             )
-            ->whereNotNull('paid_subscriptions.company_id');
+            ->where(function ($query) use ($registeredBusinessIds) {
+                $query->whereNotNull('paid_subscriptions.company_id');
+
+                if ($registeredBusinessIds !== []) {
+                    $query->orWhereIn('owners.id', $registeredBusinessIds)
+                        ->orWhereIn('subscribers.id', $registeredBusinessIds);
+                }
+            });
     }
 
     private function applyPlanUserScope($query)
@@ -527,6 +575,8 @@ class SuperAdminDashboardController extends Controller
 
             $deploymentSubscriptionRevenue = 0.0;
             $deploymentPaidSubs = 0;
+            $stateManagerIds = $this->stateManagerUserIds();
+            $managerStatusBaseQuery = User::query()->whereKey($stateManagerIds);
             if ($paidSubscriptionsQuery) {
                 $deploymentSubscriptionsQuery = (clone $paidSubscriptionsQuery)
                     ->leftJoin('companies as source_companies', 'subscriptions.company_id', '=', 'source_companies.id')
@@ -625,14 +675,16 @@ class SuperAdminDashboardController extends Controller
                 'pending_setups'   => Schema::hasTable('subscriptions')
                                       ? $this->platformSubscriptionsQuery()->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), $pendingSubscriptionStatuses)->count()
                                       : 0,
-                'pending_managers' => Schema::hasTable('deployment_managers') 
-                                      ? DB::table('deployment_managers')->whereIn('status', ['pending', 'pending_info'])->count() 
+                'pending_managers' => Schema::hasColumn('users', 'status')
+                                      ? (clone $managerStatusBaseQuery)->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['pending', 'pending_info'])->count()
                                       : 0,
-                'active_managers'  => Schema::hasTable('deployment_managers') 
-                                      ? DB::table('deployment_managers')->where('status', 'active')->count() 
+                'active_managers'  => $stateManagerIds !== []
+                                      ? (Schema::hasColumn('users', 'status')
+                                          ? (clone $managerStatusBaseQuery)->whereIn(DB::raw("LOWER(COALESCE(status, 'active'))"), ['active'])->count()
+                                          : count($stateManagerIds))
                                       : 0,
-                'suspended_managers'  => Schema::hasTable('deployment_managers') 
-                                      ? DB::table('deployment_managers')->where('status', 'suspended')->count() 
+                'suspended_managers'  => Schema::hasColumn('users', 'status')
+                                      ? (clone $managerStatusBaseQuery)->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['suspended', 'inactive'])->count()
                                       : 0,
                 'total_stock_val'  => $stockValue,
                 'low_stock_items'  => $lowStockItems,

@@ -17,11 +17,6 @@ return new class extends Migration
             'dauda uche',
         ]);
 
-        $dukeIds = $this->matchingUserIds([
-            'ogbodo duke',
-            'duke ogbodo',
-        ]);
-
         if ($stateManagerIds !== []) {
             DB::table('users')
                 ->whereIn('id', $stateManagerIds)
@@ -54,24 +49,22 @@ return new class extends Migration
                         'local_council' => Schema::hasColumn('deployment_managers', 'local_council') ? ($user->local_council ?? null) : null,
                         'commission_rate' => Schema::hasColumn('deployment_managers', 'commission_rate') ? 35.00 : null,
                         'auto_payout_enabled' => Schema::hasColumn('deployment_managers', 'auto_payout_enabled') ? 1 : null,
-                        'created_at' => Schema::hasColumn('deployment_managers', 'created_at') ? now() : null,
                         'updated_at' => Schema::hasColumn('deployment_managers', 'updated_at') ? now() : null,
+                        'created_at' => Schema::hasColumn('deployment_managers', 'created_at') ? now() : null,
                     ], fn ($value) => $value !== null)
                 );
             }
         }
 
-        $agentUpdateIds = DB::table('users')
-            ->whereNotIn(DB::raw("LOWER(COALESCE(role, ''))"), ['super_admin', 'superadmin', 'administrator', 'admin'])
-            ->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), ['deployment_manager', 'manager', 'state_manager'])
-            ->when($stateManagerIds !== [], fn ($query) => $query->whereNotIn('id', $stateManagerIds))
-            ->when($dukeIds !== [], fn ($query) => $query->whereNotIn('id', $dukeIds))
-            ->pluck('id')
-            ->all();
+        $dukeIds = $this->matchingUserIds([
+            'duke ogbodo',
+            'ogbodo duke',
+        ]);
 
-        if ($agentUpdateIds !== []) {
+        if ($dukeIds !== []) {
             DB::table('users')
-                ->whereIn('id', $agentUpdateIds)
+                ->whereIn('id', $dukeIds)
+                ->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), ['state_manager', 'deployment_manager', 'manager'])
                 ->update(array_filter([
                     'role' => 'agent',
                     'role_id' => $this->roleId('Agent'),
@@ -86,20 +79,22 @@ return new class extends Migration
 
     private function matchingUserIds(array $names): array
     {
-        $query = DB::table('users');
+        return DB::table('users')
+            ->where(function ($query) use ($names) {
+                foreach ($names as $name) {
+                    $normalized = strtolower(trim($name));
+                    $pattern = '%' . str_replace(' ', '%', $normalized) . '%';
 
-        $query->where(function ($subQuery) use ($names) {
-            foreach ($names as $name) {
-                $normalized = strtolower(trim($name));
-                $pattern = '%' . str_replace(' ', '%', $normalized) . '%';
-
-                $subQuery->orWhereRaw('LOWER(TRIM(name)) = ?', [$normalized])
-                    ->orWhereRaw('LOWER(TRIM(name)) LIKE ?', [$pattern])
-                    ->orWhereRaw('LOWER(TRIM(email)) LIKE ?', [$pattern]);
-            }
-        });
-
-        return $query->pluck('id')->map(fn ($id) => (int) $id)->all();
+                    $query->orWhereRaw('LOWER(TRIM(name)) = ?', [$normalized])
+                        ->orWhereRaw('LOWER(TRIM(name)) LIKE ?', [$pattern])
+                        ->orWhereRaw('LOWER(TRIM(email)) LIKE ?', [$pattern]);
+                }
+            })
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
     }
 
     private function roleId(string $name): ?int
