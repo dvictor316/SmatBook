@@ -199,9 +199,99 @@ $countries = [
     'Zimbabwe',
 ];
 
+$fallbackSubdivisionType = static function (string $country): array {
+    return match ($country) {
+        'United States', 'Nigeria', 'Australia', 'Brazil', 'India', 'Mexico' => [
+            'all_region' => 'States',
+            'other_region' => 'Other States',
+            'all_local' => 'All Local Governments / Councils',
+            'central_local' => 'Central Local Government / Council',
+            'metro_local' => 'Metropolitan Local Government / Council',
+            'district_local' => 'District Local Government / Council',
+            'capital_region' => 'Federal Capital Territory / District',
+        ],
+        'Canada' => [
+            'all_region' => 'Provinces / Territories',
+            'other_region' => 'Other Provinces / Territories',
+            'all_local' => 'All Municipalities / Districts',
+            'central_local' => 'Central Municipality / District',
+            'metro_local' => 'Metropolitan Municipality / District',
+            'district_local' => 'Regional Municipality / District',
+            'capital_region' => 'Capital Territory',
+        ],
+        'United Kingdom' => [
+            'all_region' => 'Countries / Regions',
+            'other_region' => 'Other Countries / Regions',
+            'all_local' => 'All Counties / Boroughs / Councils',
+            'central_local' => 'Central Borough / Council',
+            'metro_local' => 'Metropolitan Borough / Council',
+            'district_local' => 'County / District Council',
+            'capital_region' => 'Capital Region',
+        ],
+        'United Arab Emirates' => [
+            'all_region' => 'Emirates',
+            'other_region' => 'Other Emirates',
+            'all_local' => 'All Municipalities / Community Councils',
+            'central_local' => 'Central Municipality / Community Council',
+            'metro_local' => 'Metropolitan Municipality / Community Council',
+            'district_local' => 'District Municipality / Community Council',
+            'capital_region' => 'Federal Capital Area',
+        ],
+        'Saudi Arabia', 'Jordan', 'Iraq', 'Oman', 'Yemen', 'Egypt' => [
+            'all_region' => 'Governorates',
+            'other_region' => 'Other Governorates',
+            'all_local' => 'All Districts / Municipal Councils',
+            'central_local' => 'Central District / Municipal Council',
+            'metro_local' => 'Metropolitan District / Municipal Council',
+            'district_local' => 'Regional District / Municipal Council',
+            'capital_region' => 'Capital Governorate',
+        ],
+        'France' => [
+            'all_region' => 'Regions / Departments',
+            'other_region' => 'Other Regions / Departments',
+            'all_local' => 'All Communes / Local Councils',
+            'central_local' => 'Central Commune / Local Council',
+            'metro_local' => 'Metropolitan Commune / Local Council',
+            'district_local' => 'District Commune / Local Council',
+            'capital_region' => 'Capital Region',
+        ],
+        'Germany', 'Austria' => [
+            'all_region' => 'States / Regions',
+            'other_region' => 'Other States / Regions',
+            'all_local' => 'All Districts / Local Councils',
+            'central_local' => 'Central District / Local Council',
+            'metro_local' => 'Metropolitan District / Local Council',
+            'district_local' => 'Regional District / Local Council',
+            'capital_region' => 'Capital State / Region',
+        ],
+        default => [
+            'all_region' => 'Regions / States / Counties',
+            'other_region' => 'Other Regions / States / Counties',
+            'all_local' => 'All Local Governments / Councils',
+            'central_local' => 'Central Local Government / Council',
+            'metro_local' => 'Metropolitan Local Government / Council',
+            'district_local' => 'District Local Government / Council',
+            'capital_region' => 'Capital Region',
+        ],
+    };
+};
+
+$defaultRegionTree = static function (string $country) use ($fallbackSubdivisionType): array {
+    $labels = $fallbackSubdivisionType($country);
+
+    return [
+        "National / All {$labels['all_region']}" => [$labels['all_local']],
+        $labels['capital_region'] => [$labels['central_local'], $labels['metro_local']],
+        $labels['other_region'] => [$labels['district_local']],
+    ];
+};
+
 return [
     'countries' => $countries,
-    'regions' => array_replace(array_fill_keys($countries, ['National / All Regions' => ['All local councils']]), [
+    'regions' => array_replace(array_combine(
+        $countries,
+        array_map($defaultRegionTree, $countries)
+    ), [
         'Nigeria' => [
             'Abia' => ['Aba North', 'Aba South', 'Arochukwu', 'Bende', 'Ikwuano', 'Isiala Ngwa North', 'Isiala Ngwa South', 'Isuikwuato', 'Obi Ngwa', 'Ohafia', 'Osisioma', 'Ugwunagbo', 'Ukwa East', 'Ukwa West', 'Umuahia North', 'Umuahia South', 'Umu Nneochi'],
             'Adamawa' => ['Demsa', 'Fufore', 'Ganye', 'Gayuk', 'Gombi', 'Grie', 'Hong', 'Jada', 'Lamurde', 'Madagali', 'Maiha', 'Mayo-Belwa', 'Michika', 'Mubi North', 'Mubi South', 'Numan', 'Shelleng', 'Song', 'Toungo', 'Yola North', 'Yola South'],
