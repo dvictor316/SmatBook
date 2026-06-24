@@ -21,8 +21,11 @@
 /* Left sticky panel */
 .create-left-sticky { position:sticky; top:82px; max-height:calc(100vh - 100px); overflow-y:auto; }
 .create-info-card { background:#fff; border:1px solid #e8edf5; border-radius:14px; padding:20px; margin-bottom:16px; }
+.create-info-card--coverage { border-color:#bfdbfe; background:linear-gradient(135deg,#f8fbff 0%,#eef6ff 100%); box-shadow:0 12px 30px rgba(37,99,235,.08); }
 .create-section-label { font-size:.72rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#7a869a; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
 .create-section-label::after { content:''; flex:1; height:1px; background:#e8edf5; }
+.coverage-chip-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.coverage-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#fff; border:1px solid #dbeafe; color:#1e3a8a; font-size:.75rem; font-weight:800; }
 
 /* Toggle */
 .toggle-wrap-create { display:flex; align-items:center; gap:10px; }
@@ -112,16 +115,18 @@
     $isSuperAdminRoute = request()->routeIs('super_admin.*');
     $storeRouteName = $isSuperAdminRoute && app('router')->has('super_admin.users.store') ? 'super_admin.users.store' : 'users.store';
     $selectedRoleValue = old('role', request('role'));
+    $selectedRoleKey = strtolower(str_replace([' ', '-'], '_', (string) $selectedRoleValue));
     $partnerRoleValues = ['state_manager', 'deployment_manager', 'manager', 'agent'];
-    $isPartnerRole = in_array($selectedRoleValue, $partnerRoleValues, true);
-    $createLabel = in_array($selectedRoleValue, ['state_manager', 'deployment_manager', 'manager'], true) ? 'Create State Manager' : 'Create New User';
-    $createSubtitle = in_array($selectedRoleValue, ['state_manager', 'deployment_manager', 'manager'], true)
+    $isPartnerRole = in_array($selectedRoleKey, $partnerRoleValues, true);
+    $isStateManagerRole = in_array($selectedRoleKey, ['state_manager', 'deployment_manager', 'manager'], true);
+    $createLabel = $isStateManagerRole ? 'Create State Manager' : 'Create New User';
+    $createSubtitle = $isStateManagerRole
         ? 'Fill in state manager details and assign the manager to a unique state.'
         : 'Fill in user details and configure module access permissions.';
     $backRoute = $isSuperAdminRoute
         ? route(
             'super_admin.users.index',
-            ['category' => in_array($selectedRoleValue, ['state_manager', 'deployment_manager', 'manager'], true) ? 'state_managers' : 'other_users']
+            ['category' => $isStateManagerRole ? 'state_managers' : 'other_users']
         )
         : route('users.index');
 
@@ -435,6 +440,43 @@
             <div class="col-lg-4">
                 <div class="create-left-sticky">
 
+                    <div class="create-info-card create-info-card--coverage" id="stateAssignmentBlock" style="{{ $isPartnerRole ? '' : 'display:none;' }}">
+                        <div class="create-section-label"><i class="fa fa-map-marker-alt text-primary me-1"></i> Coverage Area</div>
+                        <div class="mb-3">
+                            <div id="assignmentBlockTitle" style="font-weight:800;color:#0b2f63;font-size:.92rem;">State Manager Assignment</div>
+                            <div id="assignmentBlockHelp" style="font-size:.78rem;color:#64748b;">Choose the country, state/county, and local government this manager will cover.</div>
+                            <div class="coverage-chip-row">
+                                <span class="coverage-chip"><i class="fa fa-user-friends"></i> Track agents</span>
+                                <span class="coverage-chip"><i class="fa fa-user-plus"></i> Add customers</span>
+                                <span class="coverage-chip"><i class="fa fa-building"></i> Deploy businesses</span>
+                            </div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold" style="font-size:.78rem;">Country <span class="text-danger">*</span></label>
+                                <select name="country" id="countrySelect" class="form-select form-select-sm">
+                                    <option value="">Select country</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold" style="font-size:.78rem;">State / County / Region <span class="text-danger">*</span></label>
+                                <select name="state_region" id="stateRegionSelect" class="form-select form-select-sm"></select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold" style="font-size:.78rem;">Local Government / Council <span class="text-danger">*</span></label>
+                                <select name="local_council" id="localCouncilSelect" class="form-select form-select-sm"></select>
+                            </div>
+                            <div class="col-6 state-manager-target">
+                                <label class="form-label fw-semibold" style="font-size:.78rem;">Revenue Target</label>
+                                <input type="number" min="0" step="0.01" name="state_revenue_target" class="form-control form-control-sm" value="{{ old('state_revenue_target') }}" placeholder="1044000000">
+                            </div>
+                            <div class="col-6 state-manager-target">
+                                <label class="form-label fw-semibold" style="font-size:.78rem;">Customer Target</label>
+                                <input type="number" min="0" step="1" name="state_customer_target" class="form-control form-control-sm" value="{{ old('state_customer_target') }}" placeholder="6264">
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="create-info-card">
                         <div class="create-section-label"><i class="fa fa-id-card text-muted me-1"></i> Personal Information</div>
                         <div class="row g-3">
@@ -483,48 +525,14 @@
                                 <select name="role" id="roleSelect" class="form-select form-select-sm" required>
                                     <option value="" disabled {{ $selectedRoleValue ? '' : 'selected' }}>Select a role</option>
                                     @foreach(($roles ?? []) as $role)
-                                        <option value="{{ $role }}" {{ $selectedRoleValue == $role ? 'selected' : '' }}>
+                                        @php $roleKey = strtolower(str_replace([' ', '-'], '_', (string) $role)); @endphp
+                                        <option value="{{ $role }}" {{ $selectedRoleKey === $roleKey ? 'selected' : '' }}>
                                             {{ ucwords(str_replace('_', ' ', $role)) }}
                                         </option>
                                     @endforeach
                                 </select>
                                 <div style="font-size:.76rem;color:#94a3b8;margin-top:4px;">
                                     <i class="fa fa-info-circle"></i> State managers manage agents and deploy businesses; agents use the field-agent defaults.
-                                </div>
-                            </div>
-                            <div class="col-12" id="stateAssignmentBlock" style="display:none;">
-                                <div class="p-3 rounded-3" style="background:#f8fbff;border:1px solid #dbeafe;">
-                                    <div class="d-flex align-items-start gap-2 mb-3">
-                                        <i class="fa fa-map-marker-alt text-primary mt-1"></i>
-                                        <div>
-                                            <div id="assignmentBlockTitle" style="font-weight:800;color:#0b2f63;font-size:.86rem;">State Assignment & Targets</div>
-                                            <div id="assignmentBlockHelp" style="font-size:.74rem;color:#64748b;">State managers are created only by super admin and are limited to one manager per country/state.</div>
-                                        </div>
-                                    </div>
-                                    <div class="row g-2">
-                                        <div class="col-12">
-                                            <label class="form-label fw-semibold" style="font-size:.78rem;">Country</label>
-                                            <select name="country" id="countrySelect" class="form-select form-select-sm">
-                                                <option value="">Select country</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-12">
-                                            <label class="form-label fw-semibold" style="font-size:.78rem;">State / County / Region</label>
-                                            <select name="state_region" id="stateRegionSelect" class="form-select form-select-sm"></select>
-                                        </div>
-                                        <div class="col-12">
-                                            <label class="form-label fw-semibold" style="font-size:.78rem;">Local Government / Council</label>
-                                            <select name="local_council" id="localCouncilSelect" class="form-select form-select-sm"></select>
-                                        </div>
-                                        <div class="col-6 state-manager-target">
-                                            <label class="form-label fw-semibold" style="font-size:.78rem;">Revenue Target</label>
-                                            <input type="number" min="0" step="0.01" name="state_revenue_target" class="form-control form-control-sm" value="{{ old('state_revenue_target') }}" placeholder="1044000000">
-                                        </div>
-                                        <div class="col-6 state-manager-target">
-                                            <label class="form-label fw-semibold" style="font-size:.78rem;">Customer Target</label>
-                                            <input type="number" min="0" step="1" name="state_customer_target" class="form-control form-control-sm" value="{{ old('state_customer_target') }}" placeholder="6264">
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                             <div class="col-12">
@@ -584,7 +592,8 @@
                 </div>
             </div>
 
-            <div class="col-lg-8" id="permissionWorkbench" style="{{ $isPartnerRole ? 'display:none;' : '' }}">
+            @unless($isPartnerRole)
+            <div class="col-lg-8" id="permissionWorkbench">
 
                 <div class="perm-toolbar">
                     <div class="perm-toolbar-left">
@@ -662,13 +671,14 @@
                 @endforeach
 
             </div>
+            @endunless
             <div class="col-lg-8" id="partnerPermissionSummary" style="{{ $isPartnerRole ? '' : 'display:none;' }}">
                 <div class="create-info-card h-100 d-flex align-items-center">
                     <div>
                         <div class="create-section-label"><i class="fa fa-shield-alt text-muted me-1"></i> Partner Role Access</div>
-                        <h5 class="fw-bold mb-2" style="color:#1a2236;">Lean permissions are applied automatically</h5>
+                        <h5 class="fw-bold mb-2" style="color:#1a2236;">No manual permission setup needed</h5>
                         <p class="mb-0 text-muted" style="font-size:.9rem;line-height:1.6;">
-                            State managers can manage agents and deploy businesses. Agents only receive the field-agent access needed for follow-up and onboarding work.
+                            State managers only receive access to track agents, add customers, and deploy businesses in their assigned coverage area. The large module permission list is intentionally hidden for this role.
                         </p>
                     </div>
                 </div>
@@ -697,7 +707,7 @@
     var rolePermUrl = '{{ route('roles.permissions.json') }}';
     var suffix = '{{ $suffix ? '-' . $suffix : '' }}';
     var countryOptions = @json($countryOptions ?? []);
-    var oldCountry = @json(old('country'));
+    var oldCountry = @json(old('country', $isPartnerRole ? 'Nigeria' : ''));
     var oldState = @json(old('state_region'));
     var oldCouncil = @json(old('local_council'));
     var statesUrl = '{{ route('locations.states') }}';
@@ -762,38 +772,47 @@
     });
 
     /* ── Grant All / Revoke All ─────────────────────────── */
-    document.getElementById('btnGrantAll').addEventListener('click', function () {
-        document.querySelectorAll('.perm-input[type=checkbox]').forEach(function (c) { c.checked = true; });
-        // Check first radio in each group
-        var groups = {};
-        document.querySelectorAll('.perm-radio').forEach(function (r) {
-            if (!groups[r.name]) { r.checked = true; groups[r.name] = true; }
-            else if (!r.checked) { r.checked = false; }
+    var btnGrantAll = document.getElementById('btnGrantAll');
+    if (btnGrantAll) {
+        btnGrantAll.addEventListener('click', function () {
+            document.querySelectorAll('.perm-input[type=checkbox]').forEach(function (c) { c.checked = true; });
+            // Check first radio in each group
+            var groups = {};
+            document.querySelectorAll('.perm-radio').forEach(function (r) {
+                if (!groups[r.name]) { r.checked = true; groups[r.name] = true; }
+                else if (!r.checked) { r.checked = false; }
+            });
+            refreshAll();
         });
-        refreshAll();
-    });
+    }
 
-    document.getElementById('btnRevokeAll').addEventListener('click', function () {
-        document.querySelectorAll('.perm-input').forEach(function (i) { i.checked = false; });
-        refreshAll();
-    });
+    var btnRevokeAll = document.getElementById('btnRevokeAll');
+    if (btnRevokeAll) {
+        btnRevokeAll.addEventListener('click', function () {
+            document.querySelectorAll('.perm-input').forEach(function (i) { i.checked = false; });
+            refreshAll();
+        });
+    }
 
     /* ── Module search ──────────────────────────────────── */
-    document.getElementById('permSearch').addEventListener('input', function () {
-        var q = this.value.toLowerCase().trim();
-        document.querySelectorAll('.perm-card').forEach(function (card) {
-            var name = (card.dataset.moduleName || '').toLowerCase();
-            card.classList.toggle('perm-card--hidden', q !== '' && !name.includes(q));
+    var permSearch = document.getElementById('permSearch');
+    if (permSearch) {
+        permSearch.addEventListener('input', function () {
+            var q = this.value.toLowerCase().trim();
+            document.querySelectorAll('.perm-card').forEach(function (card) {
+                var name = (card.dataset.moduleName || '').toLowerCase();
+                card.classList.toggle('perm-card--hidden', q !== '' && !name.includes(q));
+            });
+            // Also toggle category rows if all cards hidden
+            document.querySelectorAll('.perm-category-row').forEach(function (row) {
+                var grid = row.nextElementSibling;
+                if (!grid) return;
+                var visible = grid.querySelectorAll('.perm-card:not(.perm-card--hidden)').length;
+                row.style.display = visible ? '' : 'none';
+                grid.style.display = visible ? '' : 'none';
+            });
         });
-        // Also toggle category rows if all cards hidden
-        document.querySelectorAll('.perm-category-row').forEach(function (row) {
-            var grid = row.nextElementSibling;
-            if (!grid) return;
-            var visible = grid.querySelectorAll('.perm-card:not(.perm-card--hidden)').length;
-            row.style.display = visible ? '' : 'none';
-            grid.style.display = visible ? '' : 'none';
-        });
-    });
+    }
 
     /* ── Role select → AJAX pre-fill ───────────────────── */
     var roleSelect = document.getElementById('roleSelect');
@@ -917,7 +936,7 @@
     });
     syncRoleLocationBlock();
 
-    roleSelect.addEventListener('change', function () {
+    if (roleSelect) roleSelect.addEventListener('change', function () {
         var roleName = this.value;
         syncRoleLocationBlock();
         if (!roleName) return;

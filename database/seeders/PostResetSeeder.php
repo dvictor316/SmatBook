@@ -199,7 +199,12 @@ class PostResetSeeder extends Seeder
             ])),
 
             'State Manager' => array_filter($allPerms, fn ($p) => str_starts_with($p, 'deployment.')
-                || str_starts_with($p, 'dashboard.')
+                || $p === 'dashboard.overview.view'
+                || in_array($p, [
+                    'customers.customers.view',
+                    'customers.customers.view_own',
+                    'customers.customers.create',
+                ], true)
             ),
 
             'Agent' => array_filter($allPerms, fn ($p) => str_starts_with($p, 'dashboard.')
