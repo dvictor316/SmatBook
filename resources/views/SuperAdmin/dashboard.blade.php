@@ -1386,7 +1386,7 @@
                                         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                                             <div>
                                                 <h5 class="mb-0 fw-bold text-dark">Platform User Snapshot</h5>
-                                                <small class="text-muted">Separated counts for state managers, agents, buying businesses, and every other platform user</small>
+                                                <small class="text-muted">Separated counts for state managers, agents, registered businesses, and internal users</small>
                                             </div>
                                             <span class="live-badge-soft">Cross-checked</span>
                                         </div>
@@ -1395,7 +1395,7 @@
                                                 ['label' => 'State Managers', 'value' => number_format($metrics['state_managers_total'] ?? 0), 'tone' => 'tone-cobalt'],
                                                 ['label' => 'Agents', 'value' => number_format($metrics['agents_total'] ?? 0), 'tone' => 'tone-violet'],
                                                 ['label' => 'Registered Businesses', 'value' => number_format($metrics['registered_businesses_total'] ?? 0), 'tone' => 'tone-emerald'],
-                                                ['label' => 'Other Users', 'value' => number_format($metrics['other_users_total'] ?? 0), 'tone' => 'tone-amber'],
+                                                ['label' => 'Internal Users', 'value' => number_format($metrics['other_users_total'] ?? 0), 'tone' => 'tone-amber'],
                                                 ['label' => 'Platform User Revenue', 'value' => '₦' . number_format($metrics['registered_user_revenue'] ?? 0, 2), 'tone' => 'tone-rose'],
                                                 ['label' => 'Net Platform Balance', 'value' => '₦' . number_format($metrics['net_platform_balance'] ?? 0, 2), 'tone' => 'tone-cobalt'],
                                             ] as $sourceKpi)

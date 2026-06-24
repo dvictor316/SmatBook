@@ -61,7 +61,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="fw-bold text-dark mb-0">Registered Businesses</h3>
-            <p class="text-muted small">Businesses that have paid for the app and are currently part of the platform.</p>
+            <p class="text-muted small">Businesses that have bought the app and therefore belong in the registered businesses bucket.</p>
         </div>
         <div class="d-flex gap-2">
             <button onclick="window.print();" class="btn btn-white border px-3 btn-sm fw-bold">

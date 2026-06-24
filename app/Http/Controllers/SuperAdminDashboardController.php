@@ -1589,19 +1589,19 @@ public function pendingManagers()
             return view('SuperAdmin.users.businesses', compact('businesses', 'metrics'));
         }
 
-        $pageTitle = 'Other Users';
-        $pageSubtitle = 'All non-state-manager and non-agent users across the platform.';
+        $pageTitle = 'Internal Users';
+        $pageSubtitle = 'Platform and staff users who do not belong under state managers, agents, or registered businesses.';
         $createRoute = null;
         $query = $this->otherUsersQuery()->with('company');
 
         if ($category === 'state_managers') {
             $pageTitle = 'State Managers';
-            $pageSubtitle = 'Super admin creates and manages state managers here.';
+            $pageSubtitle = 'Only approved state managers appear here, and new state managers are created here by super admin.';
             $createRoute = route('super_admin.users.create', ['role' => 'state_manager']);
             $query = $this->stateManagersQuery()->with('company');
         } elseif ($category === 'agents') {
             $pageTitle = 'Agents';
-            $pageSubtitle = 'Agents are registered separately and monitored here by super admin.';
+            $pageSubtitle = 'All non-state-manager field users are classified here automatically unless they become registered business owners.';
             $query = $this->agentsQuery()->with('company');
         }
 

@@ -597,7 +597,7 @@
                             <a href="{{ route('super_admin.users.index', array_merge($routeParams, ['category' => 'registered_businesses'])) }}">Registered Businesses</a>
                         </li>
                         <li class="{{ Request::is('superadmin/users*') && (request('category') === 'other_users' || !request()->has('category')) ? 'active' : '' }}">
-                            <a href="{{ route('super_admin.users.index', array_merge($routeParams, ['category' => 'other_users'])) }}">Other Users</a>
+                            <a href="{{ route('super_admin.users.index', array_merge($routeParams, ['category' => 'other_users'])) }}">Internal Users</a>
                         </li>
                         <li><a href="{{ route('super_admin.subscription', $routeParams) }}" class="{{ Request::is('superadmin/subscription*') ? 'active' : '' }}">Subscriptions</a></li>
                         <li><a href="{{ route('super_admin.packages.index', $routeParams) }}" class="{{ Request::is('superadmin/packages*') ? 'active' : '' }}">Packages</a></li>

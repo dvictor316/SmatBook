@@ -99,7 +99,7 @@
 
 <div class="master-hub-wrapper">
     @php
-        $title = $pageTitle ?? 'Other Users';
+        $title = $pageTitle ?? 'Internal Users';
         $subtitle = $pageSubtitle ?? 'Manage users across the platform.';
         $currentCategory = $category ?? 'other_users';
     @endphp
@@ -124,11 +124,11 @@
     <div class="row g-3 mb-4">
         @php
             $stats = [
-                ['l' => $currentCategory === 'state_managers' ? 'Total State Managers' : ($currentCategory === 'agents' ? 'Total Agents' : 'Total Users'), 'v' => $metrics['total'] ?? 0, 'i' => 'fa-users', 'c' => 'm-primary', 'icon_c' => '#eef2ff', 'txt' => '#6366f1'],
+                ['l' => $currentCategory === 'state_managers' ? 'Total State Managers' : ($currentCategory === 'agents' ? 'Total Agents' : 'Total Internal Users'), 'v' => $metrics['total'] ?? 0, 'i' => 'fa-users', 'c' => 'm-primary', 'icon_c' => '#eef2ff', 'txt' => '#6366f1'],
                 ['l' => 'Active', 'v' => $metrics['active'] ?? 0, 'i' => 'fa-check-circle', 'c' => 'm-success', 'icon_c' => '#f0fdf4', 'txt' => '#10b981'],
                 ['l' => 'Suspended', 'v' => $metrics['suspended'] ?? 0, 'i' => 'fa-ban', 'c' => 'm-danger', 'icon_c' => '#fef2f2', 'txt' => '#ef4444'],
                 ['l' => 'Admins', 'v' => $metrics['admins'] ?? 0, 'i' => 'fa-user-shield', 'c' => 'm-warning', 'icon_c' => '#fffbeb', 'txt' => '#f59e0b'],
-                ['l' => $currentCategory === 'state_managers' ? 'Other Manager Roles' : 'Standard Users', 'v' => $metrics['users'] ?? 0, 'i' => 'fa-user', 'c' => 'm-slate', 'icon_c' => '#f8fafc', 'txt' => '#64748b'],
+                ['l' => $currentCategory === 'state_managers' ? 'Other Manager Roles' : 'Standard Staff', 'v' => $metrics['users'] ?? 0, 'i' => 'fa-user', 'c' => 'm-slate', 'icon_c' => '#f8fafc', 'txt' => '#64748b'],
             ];
         @endphp
         @foreach($stats as $s)
