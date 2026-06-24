@@ -26,6 +26,33 @@
 .create-section-label::after { content:''; flex:1; height:1px; background:#e8edf5; }
 .coverage-chip-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
 .coverage-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#fff; border:1px solid #dbeafe; color:#1e3a8a; font-size:.75rem; font-weight:800; }
+.manager-design-card { min-height:100%; background:radial-gradient(circle at 12% 0%,rgba(212,160,23,.22),transparent 34%),radial-gradient(circle at 100% 12%,rgba(37,99,235,.18),transparent 28%),linear-gradient(135deg,#111827 0%,#24314f 56%,#0f766e 130%); border:0; color:#fff; border-radius:18px; padding:28px; overflow:hidden; position:relative; box-shadow:0 18px 48px rgba(15,23,42,.24); }
+.manager-design-card::after { content:''; position:absolute; width:220px; height:220px; right:-80px; bottom:-90px; border-radius:50%; border:34px solid rgba(255,255,255,.06); }
+.manager-design-content { position:relative; z-index:1; }
+.manager-design-kicker { display:inline-flex; align-items:center; gap:8px; padding:7px 12px; border-radius:999px; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.18); font-size:.72rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#fef3c7; }
+.manager-design-title { margin:18px 0 8px; color:#fff; font-size:1.65rem; font-weight:850; line-height:1.15; max-width:650px; }
+.manager-design-copy { color:rgba(255,255,255,.72); font-size:.92rem; line-height:1.65; max-width:720px; margin-bottom:22px; }
+.manager-metric-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:22px; }
+.manager-metric { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.16); border-radius:16px; padding:16px; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); }
+.manager-metric i { color:#facc15; font-size:1.05rem; margin-bottom:10px; }
+.manager-metric strong { display:block; color:#fff; font-size:.94rem; margin-bottom:3px; }
+.manager-metric span { color:rgba(255,255,255,.62); font-size:.76rem; line-height:1.4; }
+.manager-flow { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:18px 0 22px; }
+.manager-flow-step { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); border-radius:14px; padding:13px; }
+.manager-flow-step b { display:flex; align-items:center; gap:8px; color:#fff; font-size:.82rem; margin-bottom:6px; }
+.manager-flow-step b span { width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:#d4a017; color:#111827; font-size:.72rem; }
+.manager-flow-step p { color:rgba(255,255,255,.65); font-size:.74rem; line-height:1.5; margin:0; }
+.coverage-preview { background:#fff; color:#111827; border-radius:18px; padding:18px; box-shadow:0 18px 42px rgba(0,0,0,.18); }
+.coverage-preview-label { font-size:.72rem; font-weight:850; letter-spacing:.08em; text-transform:uppercase; color:#64748b; margin-bottom:8px; }
+.coverage-preview-title { font-size:1.05rem; font-weight:850; color:#111827; margin-bottom:4px; }
+.coverage-preview-sub { color:#64748b; font-size:.82rem; margin-bottom:14px; }
+.coverage-preview-list { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.coverage-preview-item { border:1px solid #e5e7eb; border-radius:12px; padding:10px; background:#f8fafc; }
+.coverage-preview-item span { display:block; font-size:.68rem; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
+.coverage-preview-item strong { display:block; color:#0f172a; font-size:.83rem; word-break:break-word; }
+.manager-note-strip { display:flex; gap:10px; align-items:flex-start; margin-top:16px; padding:13px 14px; border-radius:14px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.14); color:rgba(255,255,255,.72); font-size:.8rem; line-height:1.55; }
+.manager-note-strip i { color:#facc15; margin-top:3px; }
+@media(max-width:1199px) { .manager-metric-grid,.manager-flow,.coverage-preview-list { grid-template-columns:1fr; } }
 
 /* Toggle */
 .toggle-wrap-create { display:flex; align-items:center; gap:10px; }
@@ -673,13 +700,71 @@
             </div>
             @endunless
             <div class="col-lg-8" id="partnerPermissionSummary" style="{{ $isPartnerRole ? '' : 'display:none;' }}">
-                <div class="create-info-card h-100 d-flex align-items-center">
-                    <div>
-                        <div class="create-section-label"><i class="fa fa-shield-alt text-muted me-1"></i> Partner Role Access</div>
-                        <h5 class="fw-bold mb-2" style="color:#1a2236;">No manual permission setup needed</h5>
-                        <p class="mb-0 text-muted" style="font-size:.9rem;line-height:1.6;">
-                            State managers only receive access to track agents, add customers, and deploy businesses in their assigned coverage area. The large module permission list is intentionally hidden for this role.
+                <div class="manager-design-card">
+                    <div class="manager-design-content">
+                        <div class="manager-design-kicker"><i class="fa fa-shield-alt"></i> State Manager Workspace</div>
+                        <h3 class="manager-design-title">Create a focused manager account for one coverage area.</h3>
+                        <p class="manager-design-copy">
+                            This manager will not receive the full internal permission list. Their workspace is designed for field growth: track assigned agents, add customers, and deploy businesses within the selected state.
                         </p>
+
+                        <div class="manager-metric-grid">
+                            <div class="manager-metric">
+                                <i class="fa fa-user-friends"></i>
+                                <strong>Agent tracking</strong>
+                                <span>Agents registered in the same state appear automatically.</span>
+                            </div>
+                            <div class="manager-metric">
+                                <i class="fa fa-user-plus"></i>
+                                <strong>Customer growth</strong>
+                                <span>Managers can add and monitor customers from the field.</span>
+                            </div>
+                            <div class="manager-metric">
+                                <i class="fa fa-building"></i>
+                                <strong>Business deployment</strong>
+                                <span>Businesses deployed by agents remain tied to the manager.</span>
+                            </div>
+                        </div>
+
+                        <div class="manager-flow">
+                            <div class="manager-flow-step">
+                                <b><span>1</span> Assign coverage</b>
+                                <p>Select country, state/region, and local government on the left.</p>
+                            </div>
+                            <div class="manager-flow-step">
+                                <b><span>2</span> Agents register</b>
+                                <p>Matching agents are linked to this manager automatically.</p>
+                            </div>
+                            <div class="manager-flow-step">
+                                <b><span>3</span> Track results</b>
+                                <p>The manager sees agents, leads, customers, and deployments.</p>
+                            </div>
+                        </div>
+
+                        <div class="coverage-preview">
+                            <div class="coverage-preview-label">Live Coverage Preview</div>
+                            <div class="coverage-preview-title" id="coveragePreviewTitle">Choose a coverage area</div>
+                            <div class="coverage-preview-sub">This preview updates from the location fields on the left.</div>
+                            <div class="coverage-preview-list">
+                                <div class="coverage-preview-item">
+                                    <span>Country</span>
+                                    <strong id="coveragePreviewCountry">Not selected</strong>
+                                </div>
+                                <div class="coverage-preview-item">
+                                    <span>State</span>
+                                    <strong id="coveragePreviewState">Not selected</strong>
+                                </div>
+                                <div class="coverage-preview-item">
+                                    <span>LGA/Council</span>
+                                    <strong id="coveragePreviewCouncil">All councils</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="manager-note-strip">
+                            <i class="fa fa-info-circle"></i>
+                            <span>Permissions are applied automatically and kept lean so the manager can focus on agents, customers, and deployed businesses only.</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -824,6 +909,10 @@
     var countrySelect = document.getElementById('countrySelect');
     var stateRegionSelect = document.getElementById('stateRegionSelect');
     var localCouncilSelect = document.getElementById('localCouncilSelect');
+    var coveragePreviewTitle = document.getElementById('coveragePreviewTitle');
+    var coveragePreviewCountry = document.getElementById('coveragePreviewCountry');
+    var coveragePreviewState = document.getElementById('coveragePreviewState');
+    var coveragePreviewCouncil = document.getElementById('coveragePreviewCouncil');
 
     function normalizeRole(role) {
         return (role || '').toLowerCase().replace(/[\s-]+/g, '_');
@@ -850,25 +939,44 @@
         });
     }
 
+    function syncCoveragePreview() {
+        var country = countrySelect && countrySelect.value ? countrySelect.value : 'Not selected';
+        var state = stateRegionSelect && stateRegionSelect.value ? stateRegionSelect.value : 'Not selected';
+        var council = localCouncilSelect && localCouncilSelect.value ? localCouncilSelect.value : 'All councils';
+
+        if (coveragePreviewCountry) coveragePreviewCountry.textContent = country;
+        if (coveragePreviewState) coveragePreviewState.textContent = state;
+        if (coveragePreviewCouncil) coveragePreviewCouncil.textContent = council;
+        if (coveragePreviewTitle) {
+            coveragePreviewTitle.textContent = state !== 'Not selected'
+                ? state + ' Manager Coverage'
+                : 'Choose a coverage area';
+        }
+    }
+
     function syncLocationSelects() {
         var country = countrySelect ? countrySelect.value : '';
         if (!country) {
             fillSelect(stateRegionSelect, [], 'Select country first');
             fillSelect(localCouncilSelect, [], 'All local councils');
+            syncCoveragePreview();
             return Promise.resolve();
         }
 
         fillSelect(stateRegionSelect, [], 'Loading states...');
         fillSelect(localCouncilSelect, [], 'All local councils');
+        syncCoveragePreview();
 
         return loadJson(statesUrl + '?country=' + encodeURIComponent(country))
             .then(function (data) {
                 var states = data.states || [];
                 fillSelect(stateRegionSelect, states, states.length ? 'Select state/county' : 'No state/county uploaded', oldState);
+                syncCoveragePreview();
 
                 var selectedState = stateRegionSelect ? stateRegionSelect.value : '';
                 if (!selectedState) {
                     fillSelect(localCouncilSelect, [], 'All local councils');
+                    syncCoveragePreview();
                     return;
                 }
 
@@ -877,11 +985,13 @@
                 return loadJson(councilsUrl + '?country=' + encodeURIComponent(country) + '&state=' + encodeURIComponent(selectedState))
                     .then(function (councilData) {
                         fillSelect(localCouncilSelect, councilData.councils || [], 'All local councils', oldCouncil);
+                        syncCoveragePreview();
                     });
             })
             .catch(function () {
                 fillSelect(stateRegionSelect, [], 'Unable to load states');
                 fillSelect(localCouncilSelect, [], 'Unable to load local councils');
+                syncCoveragePreview();
             });
     }
 
@@ -922,19 +1032,25 @@
         var state = stateRegionSelect ? stateRegionSelect.value : '';
         if (!country || !state) {
             fillSelect(localCouncilSelect, [], 'All local councils');
+            syncCoveragePreview();
             return;
         }
 
         fillSelect(localCouncilSelect, [], 'Loading local councils...');
+        syncCoveragePreview();
         loadJson(councilsUrl + '?country=' + encodeURIComponent(country) + '&state=' + encodeURIComponent(state))
             .then(function (data) {
                 fillSelect(localCouncilSelect, data.councils || [], 'All local councils', oldCouncil);
+                syncCoveragePreview();
             })
             .catch(function () {
                 fillSelect(localCouncilSelect, [], 'Unable to load local councils');
+                syncCoveragePreview();
             });
     });
+    if (localCouncilSelect) localCouncilSelect.addEventListener('change', syncCoveragePreview);
     syncRoleLocationBlock();
+    syncCoveragePreview();
 
     if (roleSelect) roleSelect.addEventListener('change', function () {
         var roleName = this.value;
