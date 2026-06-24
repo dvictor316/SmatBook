@@ -138,6 +138,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/subscription/expired', [HomeController::class, 'subscriptionExpired'])->name('subscription.expired');
 });
 
+Route::get('/locations/states', [AuthController::class, 'registrationStates'])->name('locations.states');
+Route::get('/locations/councils', [AuthController::class, 'registrationCouncils'])->name('locations.councils');
+
 /*
 |--------------------------------------------------------------------------
 | AUTHENTICATION ROUTES
@@ -153,6 +156,8 @@ Route::middleware('guest')->group(function () {
     
     Route::get('/saas-register', [AuthController::class, 'showRegister'])->name('saas-register');
     Route::post('/saas-register', [AuthController::class, 'register'])->name('saas-register.post');
+    Route::get('/saas-register/location/states', [AuthController::class, 'registrationStates'])->name('saas-register.location.states');
+    Route::get('/saas-register/location/councils', [AuthController::class, 'registrationCouncils'])->name('saas-register.location.councils');
     Route::get('/register-account', [AuthController::class, 'showRegister'])->name('saas-register-initial');
     Route::post('/register-account', [AuthController::class, 'register'])->name('saas-register-initial.post');
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');

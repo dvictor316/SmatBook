@@ -7,6 +7,7 @@ use App\Support\ActiveBranchResolver;
 use App\Support\AppMailer;
 use App\Support\DeviceSessionManager;
 use App\Support\InternalTestAccess;
+use App\Support\PartnerLocationRepository;
 use App\Support\SystemEventMailer;
 use Illuminate\Cookie\CookieJar;
 use Illuminate\Http\Request;
@@ -63,7 +64,7 @@ class AuthController extends Controller
             'plan_id' => $planData->id ?? null,
             'amount' => $finalPrice,
             'isManager' => $isPartner,
-            'regionOptions' => $this->regionOptions(),
+            'countryOptions' => PartnerLocationRepository::countryOptions(),
         ]);
     }
 
@@ -104,6 +105,24 @@ class AuthController extends Controller
         } else {
             $rules['plan'] = 'required|string';
             $rules['billing_cycle'] = 'required|string';
+        }
+
+        if ($isPartnerAgent) {
+            if (!PartnerLocationRepository::hasCountry($validated['country'] ?? null)) {
+                return back()->withErrors(['country' => 'Select a valid country from the list.'])->withInput();
+            }
+
+            if (!PartnerLocationRepository::hasState($validated['country'] ?? null, $validated['state_region'] ?? null)) {
+                return back()->withErrors(['state_region' => 'Select a valid state, region, or county from the list.'])->withInput();
+            }
+
+            if (!PartnerLocationRepository::hasCouncil(
+                $validated['country'] ?? null,
+                $validated['state_region'] ?? null,
+                $validated['local_council'] ?? null
+            )) {
+                return back()->withErrors(['local_council' => 'Select a valid local government or council from the list.'])->withInput();
+            }
         }
 
         $validated = $request->validate($rules, [
@@ -1350,9 +1369,31 @@ class AuthController extends Controller
         ]);
     }
 
+    public function registrationStates(Request $request)
+    {
+        $country = (string) $request->query('country', '');
+
+        return response()->json([
+            'country' => $country,
+            'states' => PartnerLocationRepository::statesForCountry($country),
+        ]);
+    }
+
+    public function registrationCouncils(Request $request)
+    {
+        $country = (string) $request->query('country', '');
+        $state = (string) $request->query('state', '');
+
+        return response()->json([
+            'country' => $country,
+            'state' => $state,
+            'councils' => PartnerLocationRepository::councilsForCountryState($country, $state),
+        ]);
+    }
+
     private function regionOptions(): array
     {
-        return config('partner_locations.regions', []);
+        return PartnerLocationRepository::regions();
     }
 
     private function registrationPlanCatalog(): array

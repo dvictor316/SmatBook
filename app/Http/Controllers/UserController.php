@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\DeploymentManager;
 use App\Models\ActivityLog;
 use App\Models\Role;
+use App\Support\PartnerLocationRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -104,9 +105,9 @@ class UserController extends Controller
             \App\Models\Setting::where('key', $settingKey)->value('value') ?? '[]', true
         ) ?: [])->filter(fn($b) => !empty($b['id']) && !empty($b['name']))->values();
 
-        $regionOptions = $this->regionOptions();
+        $countryOptions = PartnerLocationRepository::countryOptions();
 
-        return view('UserManagement.create', compact('roles', 'suffix', 'branches', 'regionOptions'));
+        return view('UserManagement.create', compact('roles', 'suffix', 'branches', 'countryOptions'));
     }
 
     /**
@@ -259,9 +260,9 @@ class UserController extends Controller
     {
         $user = $this->findScopedUser($id);
         $roles = $this->getRoles();
-        $regionOptions = $this->regionOptions();
+        $countryOptions = PartnerLocationRepository::countryOptions();
         $managerProfile = DeploymentManager::withoutGlobalScopes()->where('user_id', $user->id)->first();
-        return view('UserManagement.edit', compact('user', 'roles', 'regionOptions', 'managerProfile'));
+        return view('UserManagement.edit', compact('user', 'roles', 'countryOptions', 'managerProfile'));
     }
 
     /**
@@ -814,8 +815,4 @@ class UserController extends Controller
             ->first();
     }
 
-    private function regionOptions(): array
-    {
-        return config('partner_locations.regions', []);
-    }
 }

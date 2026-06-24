@@ -672,10 +672,12 @@
 
     var rolePermUrl = '{{ route('roles.permissions.json') }}';
     var suffix = '{{ $suffix ? '-' . $suffix : '' }}';
-    var regions = @json($regionOptions ?? []);
+    var countryOptions = @json($countryOptions ?? []);
     var oldCountry = @json(old('country'));
     var oldState = @json(old('state_region'));
     var oldCouncil = @json(old('local_council'));
+    var statesUrl = '{{ route('locations.states') }}';
+    var councilsUrl = '{{ route('locations.councils') }}';
 
     /* ── Count helpers ──────────────────────────────────── */
     function updateCardCount(section) {
@@ -792,14 +794,48 @@
         });
     }
 
+    function loadJson(url) {
+        return fetch(url, { headers: { 'Accept': 'application/json' } }).then(function (response) {
+            if (!response.ok) {
+                throw new Error('Request failed');
+            }
+            return response.json();
+        });
+    }
+
     function syncLocationSelects() {
         var country = countrySelect ? countrySelect.value : '';
-        var states = country && regions[country] ? Object.keys(regions[country]) : [];
-        fillSelect(stateRegionSelect, states, states.length ? 'Select state/county' : 'No state/county uploaded', oldState);
+        if (!country) {
+            fillSelect(stateRegionSelect, [], 'Select country first');
+            fillSelect(localCouncilSelect, [], 'All local councils');
+            return Promise.resolve();
+        }
 
-        var state = stateRegionSelect ? stateRegionSelect.value : '';
-        var councils = country && state && regions[country] && regions[country][state] ? regions[country][state] : [];
-        fillSelect(localCouncilSelect, councils, 'All local councils', oldCouncil);
+        fillSelect(stateRegionSelect, [], 'Loading states...');
+        fillSelect(localCouncilSelect, [], 'All local councils');
+
+        return loadJson(statesUrl + '?country=' + encodeURIComponent(country))
+            .then(function (data) {
+                var states = data.states || [];
+                fillSelect(stateRegionSelect, states, states.length ? 'Select state/county' : 'No state/county uploaded', oldState);
+
+                var selectedState = stateRegionSelect ? stateRegionSelect.value : '';
+                if (!selectedState) {
+                    fillSelect(localCouncilSelect, [], 'All local councils');
+                    return;
+                }
+
+                fillSelect(localCouncilSelect, [], 'Loading local councils...');
+
+                return loadJson(councilsUrl + '?country=' + encodeURIComponent(country) + '&state=' + encodeURIComponent(selectedState))
+                    .then(function (councilData) {
+                        fillSelect(localCouncilSelect, councilData.councils || [], 'All local councils', oldCouncil);
+                    });
+            })
+            .catch(function () {
+                fillSelect(stateRegionSelect, [], 'Unable to load states');
+                fillSelect(localCouncilSelect, [], 'Unable to load local councils');
+            });
     }
 
     function syncRoleLocationBlock() {
@@ -815,7 +851,7 @@
         });
     }
 
-    fillSelect(countrySelect, Object.keys(regions), 'Select country', oldCountry);
+    fillSelect(countrySelect, Object.keys(countryOptions), 'Select country', oldCountry);
     syncLocationSelects();
     if (countrySelect) countrySelect.addEventListener('change', function () {
         oldState = '';
@@ -826,8 +862,19 @@
         oldCouncil = '';
         var country = countrySelect ? countrySelect.value : '';
         var state = stateRegionSelect ? stateRegionSelect.value : '';
-        var councils = country && state && regions[country] && regions[country][state] ? regions[country][state] : [];
-        fillSelect(localCouncilSelect, councils, 'All local councils', oldCouncil);
+        if (!country || !state) {
+            fillSelect(localCouncilSelect, [], 'All local councils');
+            return;
+        }
+
+        fillSelect(localCouncilSelect, [], 'Loading local councils...');
+        loadJson(councilsUrl + '?country=' + encodeURIComponent(country) + '&state=' + encodeURIComponent(state))
+            .then(function (data) {
+                fillSelect(localCouncilSelect, data.councils || [], 'All local councils', oldCouncil);
+            })
+            .catch(function () {
+                fillSelect(localCouncilSelect, [], 'Unable to load local councils');
+            });
     });
     syncRoleLocationBlock();
 

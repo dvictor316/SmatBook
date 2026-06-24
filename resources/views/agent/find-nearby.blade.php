@@ -90,19 +90,24 @@ document.addEventListener('DOMContentLoaded', function () {
     const state = document.getElementById('agentNearbyState');
     const count = document.getElementById('agentResultCount');
     const keyword = document.getElementById('agentNearbyKeyword');
-    const regions = @json($regionOptions);
+    const countryOptions = @json($countryOptions ?? []);
+    const statesUrl = @json(route('locations.states'));
+    const councilsUrl = @json(route('locations.councils'));
     const country = document.getElementById('agentCountry');
     const region = document.getElementById('agentRegion');
     const council = document.getElementById('agentCouncil');
     let coords = null;
 
-    country.innerHTML = Object.keys(regions).map((item) => `<option value="${escapeAttr(item)}">${escapeHtml(item)}</option>`).join('');
+    country.innerHTML = Object.keys(countryOptions).map((item) => `<option value="${escapeAttr(item)}">${escapeHtml(item)}</option>`).join('');
     country.value = 'Nigeria';
-    fillRegions();
-    region.value = 'FCT';
-    fillCouncils();
+    fillRegions().then(() => {
+        region.value = 'FCT';
+        fillCouncils();
+    });
 
-    country.addEventListener('change', fillRegions);
+    country.addEventListener('change', function () {
+        fillRegions();
+    });
     region.addEventListener('change', fillCouncils);
 
     document.querySelectorAll('.agent-category-chip').forEach((button) => {
@@ -214,17 +219,43 @@ document.addEventListener('DOMContentLoaded', function () {
     function escapeAttr(value) {
         return escapeHtml(value).replace(/`/g, '&#096;');
     }
+    function fetchJson(url) {
+        return fetch(url, { headers: { 'Accept': 'application/json' } }).then((response) => {
+            if (!response.ok) throw new Error('Request failed');
+            return response.json();
+        });
+    }
     function fillRegions() {
-        const regionMap = regions[country.value] || {};
-        const regionNames = Object.keys(regionMap);
-        region.innerHTML = regionNames.length
-            ? regionNames.map((item) => `<option value="${escapeAttr(item)}">${escapeHtml(item)}</option>`).join('')
-            : '<option value="">All states / use location</option>';
-        fillCouncils();
+        region.innerHTML = '<option value="">Loading states...</option>';
+        council.innerHTML = '<option value="">All local councils</option>';
+        return fetchJson(`${statesUrl}?country=${encodeURIComponent(country.value)}`)
+            .then((data) => {
+                const regionNames = data.states || [];
+                region.innerHTML = regionNames.length
+                    ? regionNames.map((item) => `<option value="${escapeAttr(item)}">${escapeHtml(item)}</option>`).join('')
+                    : '<option value="">All states / use location</option>';
+                return fillCouncils();
+            })
+            .catch(() => {
+                region.innerHTML = '<option value="">Unable to load states</option>';
+                council.innerHTML = '<option value="">Unable to load local councils</option>';
+            });
     }
     function fillCouncils() {
-        const councils = ((regions[country.value] || {})[region.value] || []);
-        council.innerHTML = [''].concat(councils).map((item) => `<option value="${escapeAttr(item)}">${item ? escapeHtml(item) : 'All local councils'}</option>`).join('');
+        if (!country.value || !region.value) {
+            council.innerHTML = '<option value="">All local councils</option>';
+            return Promise.resolve();
+        }
+
+        council.innerHTML = '<option value="">Loading local councils...</option>';
+        return fetchJson(`${councilsUrl}?country=${encodeURIComponent(country.value)}&state=${encodeURIComponent(region.value)}`)
+            .then((data) => {
+                const councils = data.councils || [];
+                council.innerHTML = [''].concat(councils).map((item) => `<option value="${escapeAttr(item)}">${item ? escapeHtml(item) : 'All local councils'}</option>`).join('');
+            })
+            .catch(() => {
+                council.innerHTML = '<option value="">Unable to load local councils</option>';
+            });
     }
     function normalizeSearchTerm(value) {
         const map = {

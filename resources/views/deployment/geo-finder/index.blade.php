@@ -163,7 +163,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const regions = @json($regionOptions);
+    const statesUrl = @json(route('locations.states'));
+    const councilsUrl = @json(route('locations.councils'));
     const selectedCountry = @json($country);
     const selectedState = @json($state);
     const selectedCouncil = @json($localCouncil);
@@ -180,20 +181,48 @@ document.addEventListener('DOMContentLoaded', function () {
         category.value = businessType.selectedOptions[0]?.dataset.category || category.value || 'business';
     }
 
+    function fetchJson(url) {
+        return fetch(url, { headers: { 'Accept': 'application/json' } }).then((response) => {
+            if (!response.ok) throw new Error('Request failed');
+            return response.json();
+        });
+    }
+
     function fillStates() {
-        const stateMap = regions[country.value] || {};
-        const stateNames = Object.keys(stateMap);
-        state.innerHTML = stateNames.length
-            ? stateNames.map((item) => `<option value="${escapeAttr(item)}">${escapeHtml(item)}</option>`).join('')
-            : '<option value="">All states / use location</option>';
-        if ([...state.options].some((option) => option.value === selectedState)) state.value = selectedState;
-        fillCouncils();
+        state.innerHTML = '<option value="">Loading states...</option>';
+        council.innerHTML = '<option value="">All local councils</option>';
+
+        return fetchJson(`${statesUrl}?country=${encodeURIComponent(country.value)}`)
+            .then((data) => {
+                const stateNames = data.states || [];
+                state.innerHTML = stateNames.length
+                    ? stateNames.map((item) => `<option value="${escapeAttr(item)}">${escapeHtml(item)}</option>`).join('')
+                    : '<option value="">All states / use location</option>';
+                if ([...state.options].some((option) => option.value === selectedState)) state.value = selectedState;
+                return fillCouncils();
+            })
+            .catch(() => {
+                state.innerHTML = '<option value="">Unable to load states</option>';
+                council.innerHTML = '<option value="">Unable to load local councils</option>';
+            });
     }
 
     function fillCouncils() {
-        const councils = (regions[country.value] || {})[state.value] || [];
-        council.innerHTML = [''].concat(councils).map((item) => `<option value="${escapeAttr(item)}">${item ? escapeHtml(item) : 'All local councils'}</option>`).join('');
-        if ([...council.options].some((option) => option.value === selectedCouncil)) council.value = selectedCouncil;
+        if (!country.value || !state.value) {
+            council.innerHTML = '<option value="">All local councils</option>';
+            return Promise.resolve();
+        }
+
+        council.innerHTML = '<option value="">Loading local councils...</option>';
+        return fetchJson(`${councilsUrl}?country=${encodeURIComponent(country.value)}&state=${encodeURIComponent(state.value)}`)
+            .then((data) => {
+                const councils = data.councils || [];
+                council.innerHTML = [''].concat(councils).map((item) => `<option value="${escapeAttr(item)}">${item ? escapeHtml(item) : 'All local councils'}</option>`).join('');
+                if ([...council.options].some((option) => option.value === selectedCouncil)) council.value = selectedCouncil;
+            })
+            .catch(() => {
+                council.innerHTML = '<option value="">Unable to load local councils</option>';
+            });
     }
 
     country.addEventListener('change', () => {

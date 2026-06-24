@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
+use App\Support\PartnerLocationRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -93,8 +94,7 @@ class MapController extends Controller
             'country' => $country,
             'state' => $state,
             'localCouncil' => $localCouncil,
-            'countryOptions' => $this->countryOptions(),
-            'regionOptions' => $this->regionOptions(),
+            'countryOptions' => PartnerLocationRepository::countryOptions(),
         ]);
     }
 
@@ -440,18 +440,6 @@ class MapController extends Controller
             'school' => 'Schools',
             'hotel' => 'Hotels',
         ];
-    }
-
-    private function countryOptions(): array
-    {
-        $countries = config('partner_locations.countries', []);
-
-        return array_combine($countries, $countries) ?: [];
-    }
-
-    private function regionOptions(): array
-    {
-        return config('partner_locations.regions', []);
     }
 
     private function normalizeCategory(string $category): string

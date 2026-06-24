@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AgentActivity;
 use App\Models\AgentLead;
 use App\Models\Company;
+use App\Support\PartnerLocationRepository;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -89,7 +90,7 @@ class AgentPortalController extends Controller
             'usedToday' => Schema::hasTable('agent_activities')
                 ? AgentActivity::where('agent_id', Auth::id())->where('type', 'nearby_search')->whereDate('created_at', today())->count()
                 : 0,
-            'regionOptions' => $this->regionOptions(),
+            'countryOptions' => PartnerLocationRepository::countryOptions(),
         ]);
     }
 
@@ -392,8 +393,4 @@ class AgentPortalController extends Controller
         return ['social_media', 'referral', 'cold_call', 'walk_in', 'website', 'find_nearby', 'other'];
     }
 
-    private function regionOptions(): array
-    {
-        return config('partner_locations.regions', []);
-    }
 }

@@ -8,7 +8,7 @@
 @php
     // Partner signup is agent-only. State managers are created by super admin.
     $isManager = in_array(request()->query('type'), ['partner', 'manager'], true) || session('reg_role') === 'agent';
-    $regions = $regionOptions ?? [];
+    $countryOptions = $countryOptions ?? [];
 
     // Logic Alignment: Managers get 'Partner' plan, others get the passed $selectedPlan or Pro.
     $lookupPlan = $isManager ? 'Partner' : ($selectedPlan ?? session('selected_plan', 'pro'));
@@ -826,14 +826,21 @@
                     <div class="field-grid mb-3">
                         <div>
                             <label class="label-caps">Country</label>
-                            <select name="country" id="partnerCountry" class="form-control input-smat w-100 @error('country') is-invalid @enderror" required></select>
+                            <select name="country" id="partnerCountry" class="form-control input-smat w-100 @error('country') is-invalid @enderror" required>
+                                <option value="">Select country</option>
+                                @foreach($countryOptions as $value => $label)
+                                    <option value="{{ $value }}" @selected(old('country', 'Nigeria') === $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
                             @error('country')
                                 <span class="field-error">{{ $message }}</span>
                             @enderror
                         </div>
                         <div>
                             <label class="label-caps">State / County / Region</label>
-                            <select name="state_region" id="partnerState" class="form-control input-smat w-100 @error('state_region') is-invalid @enderror" required></select>
+                            <select name="state_region" id="partnerState" class="form-control input-smat w-100 @error('state_region') is-invalid @enderror" required>
+                                <option value="">Select state / county / region</option>
+                            </select>
                             @error('state_region')
                                 <span class="field-error">{{ $message }}</span>
                             @enderror
@@ -841,8 +848,10 @@
                     </div>
                     <div class="field-grid mb-3">
                         <div>
-                            <label class="label-caps">Local Government / Local Council</label>
-                            <select name="local_council" id="partnerCouncil" class="form-control input-smat w-100 @error('local_council') is-invalid @enderror"></select>
+                            <label class="label-caps">Local Government / Council / City</label>
+                            <select name="local_council" id="partnerCouncil" class="form-control input-smat w-100 @error('local_council') is-invalid @enderror">
+                                <option value="">All local entries</option>
+                            </select>
                             @error('local_council')
                                 <span class="field-error">{{ $message }}</span>
                             @enderror
@@ -931,7 +940,6 @@
     }
 
     (function setupPartnerLocations() {
-        const regions = @json($regions);
         const country = document.getElementById('partnerCountry');
         const state = document.getElementById('partnerState');
         const council = document.getElementById('partnerCouncil');
@@ -940,31 +948,97 @@
         const oldCountry = @json(old('country', 'Nigeria'));
         const oldState = @json(old('state_region', 'FCT'));
         const oldCouncil = @json(old('local_council', ''));
+        const statesUrl = @json(route('saas-register.location.states'));
+        const councilsUrl = @json(route('saas-register.location.councils'));
 
-        country.innerHTML = Object.keys(regions).map((item) => `<option value="${escapeAttr(item)}">${escapeHtml(item)}</option>`).join('');
-        country.value = regions[oldCountry] ? oldCountry : Object.keys(regions)[0];
+        async function fetchJson(url) {
+            const response = await fetch(url, {
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            });
 
-        function fillStates() {
-            const stateMap = regions[country.value] || {};
-            const stateNames = Object.keys(stateMap);
-            state.innerHTML = stateNames.length
-                ? stateNames.map((item) => `<option value="${escapeAttr(item)}">${escapeHtml(item)}</option>`).join('')
-                : '<option value="">No state/county uploaded for this country</option>';
-            if ([...state.options].some((option) => option.value === oldState)) state.value = oldState;
-            fillCouncils();
+            if (!response.ok) {
+                throw new Error(`Request failed with status ${response.status}`);
+            }
+
+            return response.json();
         }
 
-        function fillCouncils() {
-            const councils = ((regions[country.value] || {})[state.value] || []);
-            council.innerHTML = [''].concat(councils).map((item) => `<option value="${escapeAttr(item)}">${item ? escapeHtml(item) : 'All local councils'}</option>`).join('');
-            if ([...council.options].some((option) => option.value === oldCouncil)) council.value = oldCouncil;
+        function setOptions(select, values, placeholder, selectedValue) {
+            const items = Array.isArray(values) ? values : [];
+            const options = [`<option value="">${escapeHtml(placeholder)}</option>`];
+
+            items.forEach((item) => {
+                const selected = selectedValue === item ? ' selected' : '';
+                options.push(`<option value="${escapeAttr(item)}"${selected}>${escapeHtml(item)}</option>`);
+            });
+
+            select.innerHTML = options.join('');
+        }
+
+        async function loadStates(selectedValue = '') {
+            const selectedCountry = country.value;
+            setOptions(state, [], 'Loading states / regions...', '');
+            setOptions(council, [], 'All local entries', '');
+
+            if (!selectedCountry) {
+                setOptions(state, [], 'Select country first', '');
+                return;
+            }
+
+            try {
+                const payload = await fetchJson(`${statesUrl}?country=${encodeURIComponent(selectedCountry)}`);
+                const states = payload.states || [];
+                setOptions(
+                    state,
+                    states,
+                    states.length ? 'Select state / county / region' : 'No state / county / region found',
+                    states.includes(selectedValue) ? selectedValue : ''
+                );
+
+                await loadCouncils(oldCouncil);
+            } catch (error) {
+                setOptions(state, [], 'Unable to load states / regions', '');
+                setOptions(council, [], 'All local councils', '');
+            }
+        }
+
+        async function loadCouncils(selectedValue = '') {
+            const selectedCountry = country.value;
+            const selectedState = state.value;
+            setOptions(council, [], 'Loading local councils...', '');
+
+            if (!selectedCountry || !selectedState) {
+                setOptions(council, [], 'All local entries', '');
+                return;
+            }
+
+            try {
+                const payload = await fetchJson(`${councilsUrl}?country=${encodeURIComponent(selectedCountry)}&state=${encodeURIComponent(selectedState)}`);
+                const councils = payload.councils || [];
+                setOptions(
+                    council,
+                    councils,
+                    councils.length ? 'All local entries' : 'No local entries found',
+                    councils.includes(selectedValue) ? selectedValue : ''
+                );
+            } catch (error) {
+                setOptions(council, [], 'Unable to load local entries', '');
+            }
+        }
+
+        if ([...country.options].some((option) => option.value === oldCountry)) {
+            country.value = oldCountry;
         }
 
         country.addEventListener('change', () => {
-            fillStates();
+            loadStates('');
         });
-        state.addEventListener('change', fillCouncils);
-        fillStates();
+        state.addEventListener('change', () => {
+            loadCouncils('');
+        });
+
+        loadStates(oldState);
 
         function escapeHtml(value) {
             return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
