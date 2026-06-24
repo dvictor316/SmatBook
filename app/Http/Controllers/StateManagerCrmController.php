@@ -101,6 +101,7 @@ class StateManagerCrmController extends Controller
         ]);
 
         $password = Str::password(12);
+        $manager = Auth::user();
         $attributes = [
             'name' => $data['name'],
             'email' => $data['email'],
@@ -119,6 +120,18 @@ class StateManagerCrmController extends Controller
         }
         if (Schema::hasColumn('users', 'email_verified_at')) {
             $attributes['email_verified_at'] = now();
+        }
+        if (Schema::hasColumn('users', 'state_manager_id')) {
+            $attributes['state_manager_id'] = Auth::id();
+        }
+        if (Schema::hasColumn('users', 'country')) {
+            $attributes['country'] = $manager->country ?? null;
+        }
+        if (Schema::hasColumn('users', 'state_region')) {
+            $attributes['state_region'] = $manager->state_region ?? null;
+        }
+        if (Schema::hasColumn('users', 'local_council')) {
+            $attributes['local_council'] = $manager->local_council ?? null;
         }
 
         $agent = User::updateOrCreate(['email' => $data['email']], $attributes);
@@ -198,15 +211,41 @@ class StateManagerCrmController extends Controller
     private function agentsQuery()
     {
         $query = User::query()->whereRaw("LOWER(COALESCE(role, '')) = 'agent'");
+        $agentIds = [];
 
         if (Schema::hasTable('agent_zone_assignments')) {
-            $assignedIds = DB::table('agent_zone_assignments')
+            $agentIds = DB::table('agent_zone_assignments')
                 ->where('state_manager_id', Auth::id())
                 ->pluck('agent_id')
                 ->all();
+        }
 
-            if (!empty($assignedIds)) {
-                $query->whereIn('id', $assignedIds);
+        if (Schema::hasColumn('users', 'state_manager_id')) {
+            $autoAssignedIds = User::query()
+                ->whereRaw("LOWER(COALESCE(role, '')) = 'agent'")
+                ->where('state_manager_id', Auth::id())
+                ->pluck('id')
+                ->all();
+
+            $agentIds = array_values(array_unique(array_merge($agentIds, $autoAssignedIds)));
+        }
+
+        if (!empty($agentIds)) {
+            $query->whereIn('id', $agentIds);
+        } else {
+            $manager = Auth::user();
+            if (Schema::hasColumn('users', 'country') && Schema::hasColumn('users', 'state_region')) {
+                $country = strtolower(trim((string) ($manager->country ?? '')));
+                $state = strtolower(trim((string) ($manager->state_region ?? '')));
+
+                if ($country !== '' && $state !== '') {
+                    $query->whereRaw('LOWER(COALESCE(country, "")) = ?', [$country])
+                        ->whereRaw('LOWER(COALESCE(state_region, "")) = ?', [$state]);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+            } else {
+                $query->whereRaw('1 = 0');
             }
         }
 

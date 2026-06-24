@@ -121,6 +121,9 @@ class AgentPortalController extends Controller
         $data['lead_type'] = $data['lead_type'] ?? 'personal';
         $data['priority'] = $data['priority'] ?? 'normal';
         $data['last_activity_at'] = now();
+        if (Schema::hasColumn('agent_leads', 'state_manager_id')) {
+            $data['state_manager_id'] = Auth::user()?->state_manager_id;
+        }
 
         $lead = AgentLead::create($data);
 
