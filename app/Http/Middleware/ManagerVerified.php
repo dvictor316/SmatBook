@@ -35,7 +35,10 @@ class ManagerVerified
         }
 
         $allowedRoles = ['state_manager', 'deployment_manager'];
-        if (!in_array($role, $allowedRoles)) {
+        $manager = DeploymentManager::where('user_id', $user->id)->first();
+        $hasManagerRecord = (bool) $manager;
+
+        if (!in_array($role, $allowedRoles, true) && !$hasManagerRecord) {
             return redirect()->route('home')
                 ->with('error', 'Unauthorized access.');
         }
@@ -57,7 +60,6 @@ class ManagerVerified
          * We look at the deployment_managers table. If status is 'active',
          * we ignore the email_verified/is_verified user flags to allow access.
          */
-        $manager = DeploymentManager::where('user_id', $user->id)->first();
         $status = $manager ? strtolower($manager->status) : 'unregistered';
 
         if ($status === 'active') {

@@ -663,7 +663,17 @@ class HomeController extends Controller
 
     private function isStateManager($user): bool
     {
-        return in_array(strtolower(trim((string) ($user->role ?? ''))), ['state_manager', 'deployment_manager'], true);
+        $role = strtolower(trim((string) ($user->role ?? '')));
+
+        if (in_array($role, ['state_manager', 'deployment_manager'], true)) {
+            return true;
+        }
+
+        if ($this->isAgent($user) || $this->isSuperAdmin($user)) {
+            return false;
+        }
+
+        return DeploymentManager::where('user_id', $user->id)->exists();
     }
 
     private function isTempOpenAccess(): bool
