@@ -1345,9 +1345,9 @@
                                                 <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-vault me-2 text-warning"></i>Platform Treasury</h5>
                                                 <small class="text-muted">Gross revenue, investor payouts, and net balance</small>
                                             </div>
-                                            <button class="btn btn-sm btn-warning fw-semibold" data-bs-toggle="modal" data-bs-target="#recordPayoutModal">
-                                                <i class="fas fa-plus me-1"></i> Record Payout
-                                            </button>
+                                            <a href="{{ route('super_admin.platform_payouts.index') }}" class="btn btn-sm btn-warning fw-semibold">
+                                                <i class="fas fa-arrow-up-right-from-square me-1"></i> Open Payout Center
+                                            </a>
                                         </div>
                                         <div class="row g-2">
                                             <div class="col-md-4">
@@ -1410,146 +1410,12 @@
                                                 </div>
                                             </div>
                                         @else
-                                            <p class="text-muted small mt-3 mb-0">No payouts recorded yet. Use "Record Payout" to log investor dividends or commissions.</p>
+                                            <p class="text-muted small mt-3 mb-0">No payouts recorded yet. Open the payout center to record and manage transactions.</p>
                                         @endif
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        {{-- Record Payout Modal --}}
-                        <div class="modal fade" id="recordPayoutModal" tabindex="-1" aria-labelledby="recordPayoutModalLabel" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
-                                    <form method="POST" action="{{ route('super_admin.platform_payouts.store') }}">
-                                        @csrf
-                                        <div class="modal-header">
-                                            <h5 class="modal-title fw-bold" id="recordPayoutModalLabel"><i class="fas fa-money-bill-wave me-2 text-warning"></i>Record Payout</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            @if($errors->any())
-                                                <div class="alert alert-danger py-2 mb-3">
-                                                    <ul class="mb-0 ps-3 small">
-                                                        @foreach($errors->all() as $error)
-                                                            <li>{{ $error }}</li>
-                                                        @endforeach
-                                                    </ul>
-                                                </div>
-                                            @endif
-                                            <div class="mb-3">
-                                                <label class="form-label fw-semibold">Recipient Category <span class="text-danger">*</span></label>
-                                                <select name="recipient_type" class="form-select payout-recipient-type @error('recipient_type') is-invalid @enderror" required>
-                                                    <option value="state_manager" {{ old('recipient_type', 'state_manager') === 'state_manager' ? 'selected' : '' }}>State Manager</option>
-                                                    <option value="agent" {{ old('recipient_type') === 'agent' ? 'selected' : '' }}>Agent</option>
-                                                    <option value="app_user" {{ old('recipient_type') === 'app_user' ? 'selected' : '' }}>App User With Plan</option>
-                                                    <option value="external" {{ old('recipient_type') === 'external' ? 'selected' : '' }}>External / Investor</option>
-                                                </select>
-                                            </div>
-                                            <div class="mb-3 payout-user-wrap">
-                                                <label class="form-label fw-semibold">Recipient <span class="text-danger">*</span></label>
-                                                <select name="recipient_user_id" class="form-select payout-recipient-user @error('recipient_user_id') is-invalid @enderror">
-                                                    <option value="">Select recipient...</option>
-                                                    @foreach(($payoutRecipientGroups ?? []) as $groupKey => $group)
-                                                        <optgroup label="{{ $group['label'] ?? ucfirst(str_replace('_', ' ', $groupKey)) }}">
-                                                            @foreach(($group['users'] ?? collect()) as $recipientUser)
-                                                                <option value="{{ $recipientUser->id }}" data-recipient-type="{{ $groupKey }}" {{ (string) old('recipient_user_id') === (string) $recipientUser->id ? 'selected' : '' }}>
-                                                                    {{ $recipientUser->name ?: $recipientUser->email }}{{ $recipientUser->email ? ' - ' . $recipientUser->email : '' }}
-                                                                </option>
-                                                            @endforeach
-                                                        </optgroup>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="mb-3 payout-external-wrap d-none">
-                                                <label class="form-label fw-semibold">External Recipient Name <span class="text-danger">*</span></label>
-                                                <input type="text" name="recipient_name" class="form-control @error('recipient_name') is-invalid @enderror" placeholder="e.g. John Investor" maxlength="255" value="{{ old('recipient_name') }}">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label fw-semibold">Amount (₦) <span class="text-danger">*</span></label>
-                                                <input type="number" name="amount" class="form-control @error('amount') is-invalid @enderror" placeholder="0.00" step="0.01" min="0.01" required value="{{ old('amount') }}">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label fw-semibold">Payout Type <span class="text-danger">*</span></label>
-                                                <select name="payout_type" class="form-select @error('payout_type') is-invalid @enderror" required>
-                                                    <option value="dividend" {{ old('payout_type') == 'dividend' ? 'selected' : '' }}>Dividend</option>
-                                                    <option value="commission" {{ old('payout_type') == 'commission' ? 'selected' : '' }}>Commission</option>
-                                                    <option value="salary" {{ old('payout_type') == 'salary' ? 'selected' : '' }}>Salary</option>
-                                                    <option value="refund" {{ old('payout_type') == 'refund' ? 'selected' : '' }}>Refund</option>
-                                                    <option value="other" {{ old('payout_type') == 'other' ? 'selected' : '' }}>Other</option>
-                                                </select>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label fw-semibold">Description</label>
-                                                <input type="text" name="description" class="form-control" placeholder="Brief description (optional)" maxlength="500" value="{{ old('description') }}">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label fw-semibold">Payment Date</label>
-                                                <input type="date" name="paid_at" class="form-control" value="{{ old('paid_at', date('Y-m-d')) }}">
-                                            </div>
-                                            <div class="mb-1">
-                                                <label class="form-label fw-semibold">Notes</label>
-                                                <textarea name="notes" class="form-control" rows="2" placeholder="Additional notes (optional)" maxlength="1000">{{ old('notes') }}</textarea>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                            <button type="submit" class="btn btn-warning fw-semibold">
-                                                <i class="fas fa-save me-1"></i> Record Payout
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                        @if($errors->any())
-                        <script>
-                            document.addEventListener('DOMContentLoaded', function () {
-                                var modal = new bootstrap.Modal(document.getElementById('recordPayoutModal'));
-                                modal.show();
-                            });
-                        </script>
-                        @endif
-                        <script>
-                            document.addEventListener('DOMContentLoaded', function () {
-                                var modal = document.getElementById('recordPayoutModal');
-                                if (!modal) return;
-
-                                var typeSelect = modal.querySelector('.payout-recipient-type');
-                                var userWrap = modal.querySelector('.payout-user-wrap');
-                                var externalWrap = modal.querySelector('.payout-external-wrap');
-                                var userSelect = modal.querySelector('.payout-recipient-user');
-                                var externalInput = modal.querySelector('input[name="recipient_name"]');
-
-                                function syncRecipients() {
-                                    var type = typeSelect ? typeSelect.value : 'external';
-                                    var isExternal = type === 'external';
-
-                                    if (userWrap) userWrap.classList.toggle('d-none', isExternal);
-                                    if (externalWrap) externalWrap.classList.toggle('d-none', !isExternal);
-                                    if (userSelect) userSelect.required = !isExternal;
-                                    if (externalInput) externalInput.required = isExternal;
-
-                                    if (!userSelect) return;
-
-                                    Array.from(userSelect.options).forEach(function (option) {
-                                        var optionType = option.getAttribute('data-recipient-type');
-                                        if (!optionType) return;
-                                        option.hidden = optionType !== type;
-                                    });
-
-                                    var selected = userSelect.options[userSelect.selectedIndex];
-                                    if (selected && selected.hidden) {
-                                        userSelect.value = '';
-                                    }
-                                }
-
-                                if (typeSelect) {
-                                    typeSelect.addEventListener('change', syncRecipients);
-                                    syncRecipients();
-                                }
-                            });
-                        </script>
 
                         <div class="row mt-2">
                             <div class="col-12 grid-margin stretch-card">
@@ -1557,19 +1423,19 @@
                                     <div class="card-body p-3">
                                         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                                             <div>
-                                                <h5 class="mb-0 fw-bold text-dark">Customer Source Snapshot</h5>
-                                                <small class="text-muted">Inclusive super admin counts for direct registrations and deployment-manager-created accounts</small>
+                                                <h5 class="mb-0 fw-bold text-dark">Platform User Snapshot</h5>
+                                                <small class="text-muted">Separated counts for state managers, agents, buying businesses, and every other platform user</small>
                                             </div>
                                             <span class="live-badge-soft">Cross-checked</span>
                                         </div>
                                         <div class="row g-2">
                                             @foreach([
-                                                ['label' => 'Registered User Revenue', 'value' => '₦' . number_format($metrics['registered_user_revenue'] ?? 0, 2), 'tone' => 'tone-cobalt'],
-                                                ['label' => 'Customer Users', 'value' => number_format($metrics['total_users'] ?? 0), 'tone' => 'tone-cobalt'],
-                                                ['label' => 'Direct Signup Users', 'value' => number_format($metrics['direct_customer_users'] ?? 0), 'tone' => 'tone-emerald'],
-                                                ['label' => 'Deployment Signup Users', 'value' => number_format($metrics['deployment_customer_users'] ?? 0), 'tone' => 'tone-violet'],
-                                                ['label' => 'Direct Plan Revenue', 'value' => '₦' . number_format($metrics['direct_subscription_revenue'] ?? 0, 2), 'tone' => 'tone-amber'],
-                                                ['label' => 'Deployment Plan Revenue', 'value' => '₦' . number_format($metrics['deployment_subscription_revenue'] ?? 0, 2), 'tone' => 'tone-rose'],
+                                                ['label' => 'State Managers', 'value' => number_format($metrics['state_managers_total'] ?? 0), 'tone' => 'tone-cobalt'],
+                                                ['label' => 'Agents', 'value' => number_format($metrics['agents_total'] ?? 0), 'tone' => 'tone-violet'],
+                                                ['label' => 'Registered Businesses', 'value' => number_format($metrics['registered_businesses_total'] ?? 0), 'tone' => 'tone-emerald'],
+                                                ['label' => 'Other Users', 'value' => number_format($metrics['other_users_total'] ?? 0), 'tone' => 'tone-amber'],
+                                                ['label' => 'Platform User Revenue', 'value' => '₦' . number_format($metrics['registered_user_revenue'] ?? 0, 2), 'tone' => 'tone-rose'],
+                                                ['label' => 'Net Platform Balance', 'value' => '₦' . number_format($metrics['net_platform_balance'] ?? 0, 2), 'tone' => 'tone-cobalt'],
                                             ] as $sourceKpi)
                                                 <div class="col-sm-6 col-xl">
                                                     <div class="kpi-compact w-100 {{ $sourceKpi['tone'] }}">

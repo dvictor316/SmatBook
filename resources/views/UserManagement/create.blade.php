@@ -111,6 +111,17 @@
 @php
     $isSuperAdminRoute = request()->routeIs('super_admin.*');
     $storeRouteName = $isSuperAdminRoute && app('router')->has('super_admin.users.store') ? 'super_admin.users.store' : 'users.store';
+    $selectedRoleValue = old('role', request('role'));
+    $createLabel = in_array($selectedRoleValue, ['state_manager', 'deployment_manager', 'manager'], true) ? 'Create State Manager' : 'Create New User';
+    $createSubtitle = in_array($selectedRoleValue, ['state_manager', 'deployment_manager', 'manager'], true)
+        ? 'Fill in state manager details and assign the manager to a unique state.'
+        : 'Fill in user details and configure module access permissions.';
+    $backRoute = $isSuperAdminRoute
+        ? route(
+            'super_admin.users.index',
+            ['category' => in_array($selectedRoleValue, ['state_manager', 'deployment_manager', 'manager'], true) ? 'state_managers' : 'other_users']
+        )
+        : route('users.index');
 
     $modules = [
         /* ── CORE ─────────────────────────────────────── */
@@ -396,12 +407,12 @@
         <div class="perm-hero-left">
             <div class="perm-hero-icon"><i class="fa fa-user-plus"></i></div>
             <div>
-                <div class="perm-hero-title">Create New User</div>
-                <div class="perm-hero-sub">Fill in user details and configure module access permissions.</div>
+                <div class="perm-hero-title">{{ $createLabel }}</div>
+                <div class="perm-hero-sub">{{ $createSubtitle }}</div>
             </div>
         </div>
         <div>
-            <a href="{{ route('users.index') }}" class="btn-perm-back">
+            <a href="{{ $backRoute }}" class="btn-perm-back">
                 <i class="fa fa-arrow-left"></i> Back to Users
             </a>
         </div>
@@ -468,9 +479,9 @@
                             <div class="col-12">
                                 <label class="form-label fw-semibold" style="font-size:.82rem;">Role <span class="text-danger">*</span></label>
                                 <select name="role" id="roleSelect" class="form-select form-select-sm" required>
-                                    <option value="" disabled selected>Select a role</option>
+                                    <option value="" disabled {{ $selectedRoleValue ? '' : 'selected' }}>Select a role</option>
                                     @foreach(($roles ?? []) as $role)
-                                        <option value="{{ $role }}" {{ old('role') == $role ? 'selected' : '' }}>
+                                        <option value="{{ $role }}" {{ $selectedRoleValue == $role ? 'selected' : '' }}>
                                             {{ ucwords(str_replace('_', ' ', $role)) }}
                                         </option>
                                     @endforeach

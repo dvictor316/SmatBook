@@ -20,6 +20,8 @@ use App\Support\InventoryQuantity;
 class SuperAdminDashboardController extends Controller
 {
     private array $paidSaleStatuses = ['paid', 'completed', 'success', 'successful', 'verified'];
+    private array $stateManagerRoles = ['state_manager', 'deployment_manager', 'manager'];
+    private array $agentRoles = ['agent', 'sales_agent', 'sales agent'];
 
     private function resolveDeploymentManager(string|int $id): DeploymentManager
     {
@@ -84,6 +86,77 @@ class SuperAdminDashboardController extends Controller
         }
 
         return $this->applyPlanUserScope($query);
+    }
+
+    private function stateManagersQuery()
+    {
+        $query = User::query();
+
+        if (Schema::hasColumn('users', 'role')) {
+            $query->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), $this->stateManagerRoles);
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+
+        return $query;
+    }
+
+    private function agentsQuery()
+    {
+        $query = User::query();
+
+        if (Schema::hasColumn('users', 'role')) {
+            $query->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), $this->agentRoles);
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+
+        return $query;
+    }
+
+    private function otherUsersQuery()
+    {
+        $query = User::query();
+
+        if (Schema::hasColumn('users', 'role')) {
+            $query->whereNotIn(
+                DB::raw("LOWER(COALESCE(role, ''))"),
+                array_merge(['super_admin', 'superadmin'], $this->stateManagerRoles, $this->agentRoles)
+            );
+        }
+
+        return $query;
+    }
+
+    private function registeredBusinessesQuery()
+    {
+        if (!Schema::hasTable('subscriptions')) {
+            return Company::query()->whereRaw('1 = 0');
+        }
+
+        $paidStatuses = ['paid', 'completed', 'success', 'successful', 'verified'];
+        $subscriptionSummary = DB::table('subscriptions')
+            ->select(
+                'company_id',
+                DB::raw('SUM(COALESCE(amount, 0)) as total_paid'),
+                DB::raw('MAX(COALESCE(paid_at, payment_date, created_at)) as last_paid_at')
+            )
+            ->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), $paidStatuses)
+            ->groupBy('company_id');
+
+        return Company::query()
+            ->leftJoinSub($subscriptionSummary, 'paid_subscriptions', function ($join) {
+                $join->on('companies.id', '=', 'paid_subscriptions.company_id');
+            })
+            ->leftJoin('users as owners', 'companies.user_id', '=', 'owners.id')
+            ->select(
+                'companies.*',
+                'owners.name as owner_name',
+                'owners.email as owner_email',
+                DB::raw('COALESCE(paid_subscriptions.total_paid, 0) as total_paid'),
+                DB::raw('paid_subscriptions.last_paid_at as last_paid_at')
+            )
+            ->whereNotNull('paid_subscriptions.company_id');
     }
 
     private function applyPlanUserScope($query)
@@ -153,18 +226,16 @@ class SuperAdminDashboardController extends Controller
         return [
             'state_manager' => [
                 'label' => 'State Managers',
-                'users' => User::query()
+                'users' => $this->stateManagersQuery()
                     ->select($baseColumns)
-                    ->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), ['state_manager', 'deployment_manager', 'manager'])
                     ->orderBy('name')
                     ->limit(250)
                     ->get(),
             ],
             'agent' => [
                 'label' => 'Agents',
-                'users' => User::query()
+                'users' => $this->agentsQuery()
                     ->select($baseColumns)
-                    ->whereRaw("LOWER(COALESCE(role, '')) = ?", ['agent'])
                     ->orderBy('name')
                     ->limit(250)
                     ->get(),
@@ -200,8 +271,8 @@ class SuperAdminDashboardController extends Controller
         $query = User::query()->whereKey($recipientUserId);
 
         match ($recipientType) {
-            'state_manager' => $query->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), ['state_manager', 'deployment_manager', 'manager']),
-            'agent' => $query->whereRaw("LOWER(COALESCE(role, '')) = ?", ['agent']),
+            'state_manager' => $query->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), $this->stateManagerRoles),
+            'agent' => $query->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), $this->agentRoles),
             'app_user' => $this->applyPlanUserScope(
                 $query->whereNotIn(DB::raw("LOWER(COALESCE(role, ''))"), ['super_admin', 'superadmin', 'state_manager', 'deployment_manager', 'manager', 'agent'])
             ),
@@ -449,6 +520,10 @@ class SuperAdminDashboardController extends Controller
                 'verified_users'   => Schema::hasColumn('users', 'is_verified')
                                       ? (clone $customerUsersBaseQuery)->where('is_verified', 1)->count()
                                       : 0,
+                'state_managers_total' => (clone $this->stateManagersQuery())->count(),
+                'agents_total' => (clone $this->agentsQuery())->count(),
+                'registered_businesses_total' => $paidBuyersCount,
+                'other_users_total' => (clone $this->otherUsersQuery())->count(),
                 'active_subs'      => $activeSubs > 0 ? $activeSubs : $activeCompanies,
                 'paid_subs'        => $paidBuyersCount,
                 'direct_paid_subs' => $directPaidSubs,
@@ -1392,7 +1467,62 @@ public function pendingManagers()
 
     public function listUsers(Request $request)
     {
-        $query = $this->customerUsersQuery()->with('company');
+        $category = trim((string) $request->query('category', 'other_users'));
+
+        if ($category === 'registered_businesses') {
+            $query = $this->registeredBusinessesQuery();
+
+            if ($request->filled('search')) {
+                $search = '%' . trim((string) $request->search) . '%';
+                $query->where(function ($q) use ($search) {
+                    $q->where('companies.name', 'like', $search)
+                        ->orWhere('companies.company_name', 'like', $search)
+                        ->orWhere('owners.name', 'like', $search)
+                        ->orWhere('owners.email', 'like', $search)
+                        ->orWhere('companies.domain_prefix', 'like', $search);
+                });
+            }
+
+            if ($request->filled('status')) {
+                $query->where('companies.status', $request->status);
+            }
+
+            $businesses = $query->orderByDesc(DB::raw('COALESCE(paid_subscriptions.last_paid_at, companies.created_at)'))
+                ->paginate(20)
+                ->withQueryString();
+
+            $baseBusinesses = $this->registeredBusinessesQuery();
+            $metrics = [
+                'total' => (clone $baseBusinesses)->count(),
+                'active' => (clone $baseBusinesses)->where(function ($q) {
+                    $q->whereNull('companies.status')
+                        ->orWhereRaw("LOWER(COALESCE(companies.status, '')) IN ('active', 'trial', 'enabled')");
+                })->count(),
+                'inactive' => (clone $baseBusinesses)->whereRaw("LOWER(COALESCE(companies.status, '')) IN ('inactive', 'suspended', 'disabled', 'expired')")->count(),
+                'with_domains' => Schema::hasColumn('companies', 'domain_prefix')
+                    ? (clone $baseBusinesses)->whereNotNull('companies.domain_prefix')->where('companies.domain_prefix', '!=', '')->count()
+                    : 0,
+                'revenue' => (float) ((clone $baseBusinesses)->sum(DB::raw('COALESCE(paid_subscriptions.total_paid, 0)')) ?? 0),
+            ];
+
+            return view('SuperAdmin.users.businesses', compact('businesses', 'metrics'));
+        }
+
+        $pageTitle = 'Other Users';
+        $pageSubtitle = 'All non-state-manager and non-agent users across the platform.';
+        $createRoute = null;
+        $query = $this->otherUsersQuery()->with('company');
+
+        if ($category === 'state_managers') {
+            $pageTitle = 'State Managers';
+            $pageSubtitle = 'Super admin creates and manages state managers here.';
+            $createRoute = route('super_admin.users.create', ['role' => 'state_manager']);
+            $query = $this->stateManagersQuery()->with('company');
+        } elseif ($category === 'agents') {
+            $pageTitle = 'Agents';
+            $pageSubtitle = 'Agents are registered separately and monitored here by super admin.';
+            $query = $this->agentsQuery()->with('company');
+        }
 
         if ($request->filled('search')) {
             $search = '%' . trim((string) $request->search) . '%';
@@ -1414,7 +1544,11 @@ public function pendingManagers()
 
         $users = $query->orderByDesc('created_at')->paginate(20)->withQueryString();
 
-        $base = $this->customerUsersQuery();
+        $base = match ($category) {
+            'state_managers' => $this->stateManagersQuery(),
+            'agents' => $this->agentsQuery(),
+            default => $this->otherUsersQuery(),
+        };
 
         $metrics = [
             'total' => (clone $base)->count(),
@@ -1425,14 +1559,25 @@ public function pendingManagers()
                 ? (clone $base)->where('status', 'suspended')->count()
                 : 0,
             'admins' => Schema::hasColumn('users', 'role')
-                ? (clone $base)->whereIn('role', ['admin', 'administrator'])->count()
+                ? (clone $base)->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), ['admin', 'administrator'])->count()
                 : 0,
             'users' => Schema::hasColumn('users', 'role')
-                ? (clone $base)->whereIn('role', ['user', 'staff', 'manager'])->count()
+                ? (clone $base)->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), ['user', 'staff', 'manager'])->count()
                 : (clone $base)->count(),
         ];
 
-        return view('SuperAdmin.users.index', compact('users', 'metrics'));
+        return view('SuperAdmin.users.index', compact('users', 'metrics', 'category', 'pageTitle', 'pageSubtitle', 'createRoute'));
+    }
+
+    public function destroyPayout(PlatformPayout $platformPayout)
+    {
+        $amount = (float) $platformPayout->amount;
+        $recipient = $platformPayout->recipient_name;
+        $platformPayout->delete();
+
+        return redirect()
+            ->route('super_admin.platform_payouts.index')
+            ->with('payout_success', 'Payout of ₦' . number_format($amount, 2) . ' to ' . $recipient . ' was reversed successfully.');
     }
 
     public function suspendUser($id)

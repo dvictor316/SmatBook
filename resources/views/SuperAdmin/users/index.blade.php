@@ -98,13 +98,23 @@
 </style>
 
 <div class="master-hub-wrapper">
+    @php
+        $title = $pageTitle ?? 'Other Users';
+        $subtitle = $pageSubtitle ?? 'Manage users across the platform.';
+        $currentCategory = $category ?? 'other_users';
+    @endphp
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h3 class="fw-bold text-dark mb-0">Registered Users</h3>
-            <p class="text-muted small">Manage users across the platform | Domain: {{ env('SESSION_DOMAIN', 'System Default') }}</p>
+            <h3 class="fw-bold text-dark mb-0">{{ $title }}</h3>
+            <p class="text-muted small">{{ $subtitle }} | Domain: {{ env('SESSION_DOMAIN', 'System Default') }}</p>
         </div>
         <div class="d-flex gap-2">
+            @if(!empty($createRoute))
+                <a href="{{ $createRoute }}" class="btn btn-primary px-3 btn-sm fw-bold">
+                    <i class="fas fa-plus me-2"></i>Create State Manager
+                </a>
+            @endif
             <button onclick="window.print();" class="btn btn-white border px-3 btn-sm fw-bold">
                 <i class="fas fa-print me-2 text-primary"></i>Export Registry
             </button>
@@ -114,11 +124,11 @@
     <div class="row g-3 mb-4">
         @php
             $stats = [
-                ['l' => 'Total Users', 'v' => $metrics['total'] ?? 0, 'i' => 'fa-users', 'c' => 'm-primary', 'icon_c' => '#eef2ff', 'txt' => '#6366f1'],
+                ['l' => $currentCategory === 'state_managers' ? 'Total State Managers' : ($currentCategory === 'agents' ? 'Total Agents' : 'Total Users'), 'v' => $metrics['total'] ?? 0, 'i' => 'fa-users', 'c' => 'm-primary', 'icon_c' => '#eef2ff', 'txt' => '#6366f1'],
                 ['l' => 'Active', 'v' => $metrics['active'] ?? 0, 'i' => 'fa-check-circle', 'c' => 'm-success', 'icon_c' => '#f0fdf4', 'txt' => '#10b981'],
                 ['l' => 'Suspended', 'v' => $metrics['suspended'] ?? 0, 'i' => 'fa-ban', 'c' => 'm-danger', 'icon_c' => '#fef2f2', 'txt' => '#ef4444'],
                 ['l' => 'Admins', 'v' => $metrics['admins'] ?? 0, 'i' => 'fa-user-shield', 'c' => 'm-warning', 'icon_c' => '#fffbeb', 'txt' => '#f59e0b'],
-                ['l' => 'Standard Users', 'v' => $metrics['users'] ?? 0, 'i' => 'fa-user', 'c' => 'm-slate', 'icon_c' => '#f8fafc', 'txt' => '#64748b'],
+                ['l' => $currentCategory === 'state_managers' ? 'Other Manager Roles' : 'Standard Users', 'v' => $metrics['users'] ?? 0, 'i' => 'fa-user', 'c' => 'm-slate', 'icon_c' => '#f8fafc', 'txt' => '#64748b'],
             ];
         @endphp
         @foreach($stats as $s)
@@ -141,6 +151,7 @@
     <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
         <div class="card-body p-3">
             <form action="{{ url()->current() }}" method="GET" class="row g-2 align-items-center">
+                <input type="hidden" name="category" value="{{ $currentCategory }}">
                 <div class="col-lg-5 col-md-4">
                     <div class="input-group">
                         <span class="input-group-text bg-light border-0"><i class="fa fa-search text-muted"></i></span>
@@ -157,10 +168,18 @@
                 <div class="col-lg-2 col-md-4">
                     <select name="role" class="form-select bg-light border-0 small">
                         <option value="">All Roles</option>
-                        <option value="admin" {{ request('role') == 'admin' ? 'selected' : '' }}>Admin</option>
-                        <option value="manager" {{ request('role') == 'manager' ? 'selected' : '' }}>Manager</option>
-                        <option value="staff" {{ request('role') == 'staff' ? 'selected' : '' }}>Staff</option>
-                        <option value="user" {{ request('role') == 'user' ? 'selected' : '' }}>User</option>
+                        @if($currentCategory === 'state_managers')
+                            <option value="state_manager" {{ request('role') == 'state_manager' ? 'selected' : '' }}>State Manager</option>
+                            <option value="deployment_manager" {{ request('role') == 'deployment_manager' ? 'selected' : '' }}>Deployment Manager</option>
+                            <option value="manager" {{ request('role') == 'manager' ? 'selected' : '' }}>Manager</option>
+                        @elseif($currentCategory === 'agents')
+                            <option value="agent" {{ request('role') == 'agent' ? 'selected' : '' }}>Agent</option>
+                        @else
+                            <option value="admin" {{ request('role') == 'admin' ? 'selected' : '' }}>Admin</option>
+                            <option value="manager" {{ request('role') == 'manager' ? 'selected' : '' }}>Manager</option>
+                            <option value="staff" {{ request('role') == 'staff' ? 'selected' : '' }}>Staff</option>
+                            <option value="user" {{ request('role') == 'user' ? 'selected' : '' }}>User</option>
+                        @endif
                     </select>
                 </div>
                 <div class="col-lg-2 col-md-4 d-flex gap-2">
@@ -177,7 +196,7 @@
         <table class="table table-hover align-middle mb-0">
             <thead>
                 <tr>
-                    <th class="ps-4 sticky-left">User</th>
+                    <th class="ps-4 sticky-left">{{ $currentCategory === 'registered_businesses' ? 'Business' : 'User' }}</th>
                     <th>Company</th>
                     <th>Email</th>
                     <th>Role</th>
@@ -208,8 +227,20 @@
                         </div>
                     </td>
                     <td class="small">
-                        <div class="text-dark">{{ $user->company?->name ?? $user->company?->company_name ?? '—' }}</div>
-                        <div class="text-muted extra-small">{{ $user->company?->domain_prefix ?? '—' }}</div>
+                        <div class="text-dark">
+                            @if($currentCategory === 'state_managers')
+                                {{ trim(collect([$user->state_region ?? null, $user->country ?? null])->filter()->join(', ')) ?: '—' }}
+                            @else
+                                {{ $user->company?->name ?? $user->company?->company_name ?? '—' }}
+                            @endif
+                        </div>
+                        <div class="text-muted extra-small">
+                            @if($currentCategory === 'state_managers')
+                                {{ $user->local_council ?? 'No local council set' }}
+                            @else
+                                {{ $user->company?->domain_prefix ?? '—' }}
+                            @endif
+                        </div>
                     </td>
                     <td class="small">
                         <div class="text-dark">{{ $user->email ?? '—' }}</div>

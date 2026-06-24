@@ -106,6 +106,7 @@
                                 <th>Payment Date</th>
                                 <th>Recorded By</th>
                                 <th>Recorded At</th>
+                                <th class="text-end pe-4">Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -126,10 +127,19 @@
                                         @endif
                                     </td>
                                     <td class="text-muted small">{{ $payout->created_at->format('d M Y H:i') }}</td>
+                                    <td class="text-end pe-4">
+                                        <form method="POST" action="{{ route('super_admin.platform_payouts.destroy', $payout) }}" onsubmit="return confirm('Reverse this payout record? This will add the amount back to the platform balance.');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-outline-danger btn-sm fw-semibold">
+                                                <i class="fas fa-rotate-left me-1"></i>Reverse
+                                            </button>
+                                        </form>
+                                    </td>
                                 </tr>
                                 @if($payout->notes)
                                     <tr class="bg-light">
-                                        <td colspan="9" class="small text-muted ps-5 py-1">
+                                        <td colspan="10" class="small text-muted ps-5 py-1">
                                             <i class="fas fa-sticky-note me-1"></i>{{ $payout->notes }}
                                         </td>
                                     </tr>

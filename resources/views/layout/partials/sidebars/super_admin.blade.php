@@ -587,16 +587,21 @@
                     <a href="#"><i class="fas fa-screwdriver-wrench"></i><span>Platform Admin</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('super_admin.dashboard', $routeParams) }}" class="{{ Request::is('superadmin/dashboard') ? 'active' : '' }}">Dashboard</a></li>
-                        <li><a href="{{ route('super_admin.companies.index', $routeParams) }}" class="{{ Request::is('superadmin/companies*') ? 'active' : '' }}">Companies</a></li>
+                        <li class="{{ Request::is('superadmin/users*') && request('category') === 'state_managers' ? 'active' : '' }}">
+                            <a href="{{ route('super_admin.users.index', array_merge($routeParams, ['category' => 'state_managers'])) }}">State Managers</a>
+                        </li>
+                        <li class="{{ Request::is('superadmin/users*') && request('category') === 'agents' ? 'active' : '' }}">
+                            <a href="{{ route('super_admin.users.index', array_merge($routeParams, ['category' => 'agents'])) }}">Agents</a>
+                        </li>
+                        <li class="{{ Request::is('superadmin/users*') && request('category') === 'registered_businesses' ? 'active' : '' }}">
+                            <a href="{{ route('super_admin.users.index', array_merge($routeParams, ['category' => 'registered_businesses'])) }}">Registered Businesses</a>
+                        </li>
+                        <li class="{{ Request::is('superadmin/users*') && (request('category') === 'other_users' || !request()->has('category')) ? 'active' : '' }}">
+                            <a href="{{ route('super_admin.users.index', array_merge($routeParams, ['category' => 'other_users'])) }}">Other Users</a>
+                        </li>
                         <li><a href="{{ route('super_admin.subscription', $routeParams) }}" class="{{ Request::is('superadmin/subscription*') ? 'active' : '' }}">Subscriptions</a></li>
                         <li><a href="{{ route('super_admin.packages.index', $routeParams) }}" class="{{ Request::is('superadmin/packages*') ? 'active' : '' }}">Packages</a></li>
                         <li><a href="{{ route('super_admin.domains.index', $routeParams) }}" class="{{ Request::is('superadmin/domains*') ? 'active' : '' }}">Domains</a></li>
-                        <li class="{{ Request::is('superadmin/managers*') ? 'active' : '' }}">
-                            <a href="{{ route('super_admin.managers.list', $routeParams) }}">State Managers</a>
-                        </li>
-                        <li class="{{ Request::is('superadmin/users*') ? 'active' : '' }}">
-                            <a href="{{ route('super_admin.users.index', $routeParams) }}">Registered Users</a>
-                        </li>
                         <li class="{{ Request::is('superadmin/demo-requests*') ? 'active' : '' }}">
                             <a href="{{ route('super_admin.demo_requests.index') }}">
                                 Demo Requests

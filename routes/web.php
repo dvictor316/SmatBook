@@ -470,6 +470,7 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     Route::get('/dashboard/export', [SuperAdminDashboardController::class, 'exportStats'])->name('dashboard.export');
     Route::post('/platform-payouts', [SuperAdminDashboardController::class, 'storePayout'])->name('platform_payouts.store');
     Route::get('/platform-payouts', [SuperAdminDashboardController::class, 'payoutHistory'])->name('platform_payouts.index');
+    Route::delete('/platform-payouts/{platformPayout}', [SuperAdminDashboardController::class, 'destroyPayout'])->name('platform_payouts.destroy');
     
     // User Management
     Route::controller(UserController::class)->group(function () {
