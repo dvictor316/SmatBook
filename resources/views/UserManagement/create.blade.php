@@ -18,41 +18,17 @@
 .btn-perm-back { background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.25); color:#fff; padding:8px 18px; border-radius:8px; font-size:.85rem; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:background .2s; }
 .btn-perm-back:hover { background:rgba(255,255,255,.2); color:#fff; }
 
-/* Left sticky panel */
+/* Form cards */
 .create-left-sticky { position:sticky; top:82px; max-height:calc(100vh - 100px); overflow-y:auto; }
+.create-card-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; align-items:start; }
+.create-card-grid .create-info-card { margin-bottom:0; min-height:100%; }
 .create-info-card { background:#fff; border:1px solid #e8edf5; border-radius:14px; padding:20px; margin-bottom:16px; }
 .create-info-card--coverage { border-color:#bfdbfe; background:linear-gradient(135deg,#f8fbff 0%,#eef6ff 100%); box-shadow:0 12px 30px rgba(37,99,235,.08); }
 .create-section-label { font-size:.72rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#7a869a; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
 .create-section-label::after { content:''; flex:1; height:1px; background:#e8edf5; }
 .coverage-chip-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
 .coverage-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#fff; border:1px solid #dbeafe; color:#1e3a8a; font-size:.75rem; font-weight:800; }
-.manager-design-card { min-height:100%; background:radial-gradient(circle at 12% 0%,rgba(212,160,23,.22),transparent 34%),radial-gradient(circle at 100% 12%,rgba(37,99,235,.18),transparent 28%),linear-gradient(135deg,#111827 0%,#24314f 56%,#0f766e 130%); border:0; color:#fff; border-radius:18px; padding:28px; overflow:hidden; position:relative; box-shadow:0 18px 48px rgba(15,23,42,.24); }
-.manager-design-card::after { content:''; position:absolute; width:220px; height:220px; right:-80px; bottom:-90px; border-radius:50%; border:34px solid rgba(255,255,255,.06); }
-.manager-design-content { position:relative; z-index:1; }
-.manager-design-kicker { display:inline-flex; align-items:center; gap:8px; padding:7px 12px; border-radius:999px; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.18); font-size:.72rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#fef3c7; }
-.manager-design-title { margin:18px 0 8px; color:#fff; font-size:1.65rem; font-weight:850; line-height:1.15; max-width:650px; }
-.manager-design-copy { color:rgba(255,255,255,.72); font-size:.92rem; line-height:1.65; max-width:720px; margin-bottom:22px; }
-.manager-metric-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:22px; }
-.manager-metric { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.16); border-radius:16px; padding:16px; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); }
-.manager-metric i { color:#facc15; font-size:1.05rem; margin-bottom:10px; }
-.manager-metric strong { display:block; color:#fff; font-size:.94rem; margin-bottom:3px; }
-.manager-metric span { color:rgba(255,255,255,.62); font-size:.76rem; line-height:1.4; }
-.manager-flow { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:18px 0 22px; }
-.manager-flow-step { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); border-radius:14px; padding:13px; }
-.manager-flow-step b { display:flex; align-items:center; gap:8px; color:#fff; font-size:.82rem; margin-bottom:6px; }
-.manager-flow-step b span { width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:#d4a017; color:#111827; font-size:.72rem; }
-.manager-flow-step p { color:rgba(255,255,255,.65); font-size:.74rem; line-height:1.5; margin:0; }
-.coverage-preview { background:#fff; color:#111827; border-radius:18px; padding:18px; box-shadow:0 18px 42px rgba(0,0,0,.18); }
-.coverage-preview-label { font-size:.72rem; font-weight:850; letter-spacing:.08em; text-transform:uppercase; color:#64748b; margin-bottom:8px; }
-.coverage-preview-title { font-size:1.05rem; font-weight:850; color:#111827; margin-bottom:4px; }
-.coverage-preview-sub { color:#64748b; font-size:.82rem; margin-bottom:14px; }
-.coverage-preview-list { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
-.coverage-preview-item { border:1px solid #e5e7eb; border-radius:12px; padding:10px; background:#f8fafc; }
-.coverage-preview-item span { display:block; font-size:.68rem; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
-.coverage-preview-item strong { display:block; color:#0f172a; font-size:.83rem; word-break:break-word; }
-.manager-note-strip { display:flex; gap:10px; align-items:flex-start; margin-top:16px; padding:13px 14px; border-radius:14px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.14); color:rgba(255,255,255,.72); font-size:.8rem; line-height:1.55; }
-.manager-note-strip i { color:#facc15; margin-top:3px; }
-@media(max-width:1199px) { .manager-metric-grid,.manager-flow,.coverage-preview-list { grid-template-columns:1fr; } }
+@media(max-width:1199px) { .create-card-grid { grid-template-columns:1fr; } }
 
 /* Toggle */
 .toggle-wrap-create { display:flex; align-items:center; gap:10px; }
@@ -114,11 +90,11 @@
 .perm-sep { border:none; border-top:1px dashed #e8edf5; margin:6px 0; }
 .perm-sub-title { font-size:.65rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:#94a3b8; margin:6px 0 3px 3px; }
 
-/* Action bar */
-.perm-action-bar { position:sticky; bottom:0; background:#fff; border-top:2px solid #e4e8f0; padding:14px 24px; display:flex; justify-content:center; gap:12px; z-index:50; box-shadow:0 -4px 16px rgba(0,0,0,.07); }
-.btn-perm-save { background:#1a2236; border:none; color:#fff; padding:11px 36px; border-radius:9px; font-size:.92rem; font-weight:700; display:inline-flex; align-items:center; gap:8px; transition:background .2s; cursor:pointer; }
+/* Action buttons */
+.perm-action-bar { background:transparent; border:0; padding:4px 0 0; display:flex; justify-content:flex-end; gap:10px; box-shadow:none; }
+.btn-perm-save { background:#1a2236; border:none; color:#fff; padding:8px 18px; border-radius:9px; font-size:.84rem; font-weight:700; display:inline-flex; align-items:center; gap:8px; transition:background .2s; cursor:pointer; }
 .btn-perm-save:hover { background:#0f1520; }
-.btn-perm-cancel { background:#fff; border:1px solid #d1d5db; color:#6b7280; padding:11px 26px; border-radius:9px; font-size:.92rem; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; transition:all .2s; }
+.btn-perm-cancel { background:#fff; border:1px solid #d1d5db; color:#6b7280; padding:8px 16px; border-radius:9px; font-size:.84rem; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; transition:all .2s; }
 .btn-perm-cancel:hover { background:#f9fafb; border-color:#9ca3af; color:#374151; }
 
 /* Icon palettes */
@@ -464,8 +440,8 @@
 
         <div class="row g-4">
 
-            <div class="col-lg-4">
-                <div class="create-left-sticky">
+            <div class="{{ $isPartnerRole ? 'col-12' : 'col-lg-4' }}">
+                <div class="{{ $isPartnerRole ? 'create-card-grid' : 'create-left-sticky' }}">
 
                     <div class="create-info-card create-info-card--coverage" id="stateAssignmentBlock" style="{{ $isPartnerRole ? '' : 'display:none;' }}">
                         <div class="create-section-label"><i class="fa fa-map-marker-alt text-primary me-1"></i> Coverage Area</div>
@@ -479,17 +455,17 @@
                             </div>
                         </div>
                         <div class="row g-2">
-                            <div class="col-12">
+                            <div class="{{ $isPartnerRole ? 'col-md-4' : 'col-12' }}">
                                 <label class="form-label fw-semibold" style="font-size:.78rem;">Country <span class="text-danger">*</span></label>
                                 <select name="country" id="countrySelect" class="form-select form-select-sm">
                                     <option value="">Select country</option>
                                 </select>
                             </div>
-                            <div class="col-12">
+                            <div class="{{ $isPartnerRole ? 'col-md-4' : 'col-12' }}">
                                 <label class="form-label fw-semibold" style="font-size:.78rem;">State / County / Region <span class="text-danger">*</span></label>
                                 <select name="state_region" id="stateRegionSelect" class="form-select form-select-sm"></select>
                             </div>
-                            <div class="col-12">
+                            <div class="{{ $isPartnerRole ? 'col-md-4' : 'col-12' }}">
                                 <label class="form-label fw-semibold" style="font-size:.78rem;">Local Government / Council <span class="text-danger">*</span></label>
                                 <select name="local_council" id="localCouncilSelect" class="form-select form-select-sm"></select>
                             </div>
@@ -526,11 +502,11 @@
                                 <label class="form-label fw-semibold" style="font-size:.82rem;">Last Name</label>
                                 <input type="text" name="last_name" class="form-control form-control-sm" placeholder="Doe" value="{{ old('last_name') }}">
                             </div>
-                            <div class="col-12">
+                            <div class="{{ $isPartnerRole ? 'col-md-6' : 'col-12' }}">
                                 <label class="form-label fw-semibold" style="font-size:.82rem;">Email <span class="text-danger">*</span></label>
                                 <input type="email" name="email" class="form-control form-control-sm" placeholder="jane@example.com" required value="{{ old('email') }}">
                             </div>
-                            <div class="col-12">
+                            <div class="{{ $isPartnerRole ? 'col-md-6' : 'col-12' }}">
                                 <label class="form-label fw-semibold" style="font-size:.82rem;">Phone</label>
                                 <input type="text" name="phone" class="form-control form-control-sm" placeholder="+234 800 000 0000" value="{{ old('phone') }}">
                             </div>
@@ -547,7 +523,7 @@
                     <div class="create-info-card">
                         <div class="create-section-label"><i class="fa fa-lock text-muted me-1"></i> Account Settings</div>
                         <div class="row g-3">
-                            <div class="col-12">
+                            <div class="{{ $isPartnerRole ? 'col-md-6' : 'col-12' }}">
                                 <label class="form-label fw-semibold" style="font-size:.82rem;">Role <span class="text-danger">*</span></label>
                                 <select name="role" id="roleSelect" class="form-select form-select-sm" required>
                                     <option value="" disabled {{ $selectedRoleValue ? '' : 'selected' }}>Select a role</option>
@@ -562,7 +538,7 @@
                                     <i class="fa fa-info-circle"></i> State managers manage agents and deploy businesses; agents use the field-agent defaults.
                                 </div>
                             </div>
-                            <div class="col-12">
+                            <div class="{{ $isPartnerRole ? 'col-md-6' : 'col-12' }}">
                                 <label class="form-label fw-semibold" style="font-size:.82rem;">Username</label>
                                 <div class="username-input-group">
                                     <input type="text" name="username_base" id="usernameBase"
@@ -576,11 +552,11 @@
                                 </div>
                                 <div class="username-preview" id="usernamePreview">Leave blank to auto-generate</div>
                             </div>
-                            <div class="col-12">
+                            <div class="{{ $isPartnerRole ? 'col-md-6' : 'col-12' }}">
                                 <label class="form-label fw-semibold" style="font-size:.82rem;">Password <span class="text-danger">*</span></label>
                                 <input type="password" name="password" class="form-control form-control-sm" placeholder="Password" required autocomplete="new-password">
                             </div>
-                            <div class="col-12">
+                            <div class="{{ $isPartnerRole ? 'col-md-6' : 'col-12' }}">
                                 <label class="form-label fw-semibold" style="font-size:.82rem;">Confirm Password <span class="text-danger">*</span></label>
                                 <input type="password" name="confirm_password" class="form-control form-control-sm" placeholder="Confirm Password" required autocomplete="new-password">
                             </div>
@@ -699,79 +675,10 @@
 
             </div>
             @endunless
-            <div class="col-lg-8" id="partnerPermissionSummary" style="{{ $isPartnerRole ? '' : 'display:none;' }}">
-                <div class="manager-design-card">
-                    <div class="manager-design-content">
-                        <div class="manager-design-kicker"><i class="fa fa-shield-alt"></i> State Manager Workspace</div>
-                        <h3 class="manager-design-title">Create a focused manager account for one coverage area.</h3>
-                        <p class="manager-design-copy">
-                            This manager will not receive the full internal permission list. Their workspace is designed for field growth: track assigned agents, add customers, and deploy businesses within the selected state.
-                        </p>
-
-                        <div class="manager-metric-grid">
-                            <div class="manager-metric">
-                                <i class="fa fa-user-friends"></i>
-                                <strong>Agent tracking</strong>
-                                <span>Agents registered in the same state appear automatically.</span>
-                            </div>
-                            <div class="manager-metric">
-                                <i class="fa fa-user-plus"></i>
-                                <strong>Customer growth</strong>
-                                <span>Managers can add and monitor customers from the field.</span>
-                            </div>
-                            <div class="manager-metric">
-                                <i class="fa fa-building"></i>
-                                <strong>Business deployment</strong>
-                                <span>Businesses deployed by agents remain tied to the manager.</span>
-                            </div>
-                        </div>
-
-                        <div class="manager-flow">
-                            <div class="manager-flow-step">
-                                <b><span>1</span> Assign coverage</b>
-                                <p>Select country, state/region, and local government on the left.</p>
-                            </div>
-                            <div class="manager-flow-step">
-                                <b><span>2</span> Agents register</b>
-                                <p>Matching agents are linked to this manager automatically.</p>
-                            </div>
-                            <div class="manager-flow-step">
-                                <b><span>3</span> Track results</b>
-                                <p>The manager sees agents, leads, customers, and deployments.</p>
-                            </div>
-                        </div>
-
-                        <div class="coverage-preview">
-                            <div class="coverage-preview-label">Live Coverage Preview</div>
-                            <div class="coverage-preview-title" id="coveragePreviewTitle">Choose a coverage area</div>
-                            <div class="coverage-preview-sub">This preview updates from the location fields on the left.</div>
-                            <div class="coverage-preview-list">
-                                <div class="coverage-preview-item">
-                                    <span>Country</span>
-                                    <strong id="coveragePreviewCountry">Not selected</strong>
-                                </div>
-                                <div class="coverage-preview-item">
-                                    <span>State</span>
-                                    <strong id="coveragePreviewState">Not selected</strong>
-                                </div>
-                                <div class="coverage-preview-item">
-                                    <span>LGA/Council</span>
-                                    <strong id="coveragePreviewCouncil">All councils</strong>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="manager-note-strip">
-                            <i class="fa fa-info-circle"></i>
-                            <span>Permissions are applied automatically and kept lean so the manager can focus on agents, customers, and deployed businesses only.</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <div class="perm-action-bar">
-            <a href="{{ route('users.index') }}" class="btn-perm-cancel">
+            <a href="{{ $backRoute }}" class="btn-perm-cancel">
                 <i class="fa fa-times me-1"></i> Cancel
             </a>
             <button type="submit" class="btn-perm-save">
