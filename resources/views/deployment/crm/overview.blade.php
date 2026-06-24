@@ -19,6 +19,10 @@
         .manager-health-tile span { display:block; color:var(--agent-muted); font-size:10px; text-transform:uppercase; font-weight:900; letter-spacing:.06em; }
         .manager-health-tile strong { display:block; color:var(--agent-ink); font-size:20px; line-height:1.2; margin-top:5px; }
         .manager-health-tile small { color:var(--agent-green); font-weight:800; }
+        .manager-top-card { min-height: 212px; }
+        .manager-top-card h3 { font-size: 20px !important; }
+        .manager-top-card .agent-progress { height: 7px; }
+        .manager-target-row { display:flex; justify-content:space-between; gap:10px; font-size:13px; font-weight:800; }
         .agent-metric .value { font-size: clamp(20px, 2vw, 26px); }
         @media(max-width:767px){ .manager-funnel-row { grid-template-columns:88px 1fr auto; } }
     </style>
@@ -36,7 +40,7 @@
         </div>
 
         <div class="agent-grid">
-            <section class="agent-card span-8" style="background:linear-gradient(135deg,#062f68,#0a438d);color:#fff;">
+            <section class="agent-card span-4 manager-top-card" style="background:linear-gradient(135deg,#062f68,#0a438d);color:#fff;">
                 <div class="d-flex justify-content-between flex-wrap gap-3">
                     <div>
                         <small style="color:#bcd4f6;text-transform:uppercase;font-weight:900;">Annual Goals · {{ now()->year }}</small>
@@ -45,15 +49,17 @@
                     <div class="agent-pill" style="background:rgba(255,255,255,.15);color:#fff;">{{ $stats['days_left'] }} days left</div>
                 </div>
                 <div class="mt-3">
-                    <div class="d-flex justify-content-between"><span>Revenue Target ₦{{ number_format($stats['state_revenue']) }} / ₦{{ number_format($stats['revenue_target']) }}</span><strong>{{ $stats['revenue_percent'] }}% Achieved</strong></div>
+                    <div class="manager-target-row"><span>Revenue</span><strong>{{ $stats['revenue_percent'] }}%</strong></div>
+                    <small style="color:#d8e7ff;">₦{{ number_format($stats['state_revenue']) }} / ₦{{ number_format($stats['revenue_target']) }}</small>
                     <div class="agent-progress mt-2" style="background:rgba(255,255,255,.18);"><span style="width:{{ $stats['revenue_percent'] }}%;background:#18bf86;"></span></div>
                 </div>
                 <div class="mt-3">
-                    <div class="d-flex justify-content-between"><span>Customer Acquisition</span><strong>{{ number_format($stats['total_businesses']) }} / {{ number_format($stats['customer_target']) }}</strong></div>
+                    <div class="manager-target-row"><span>Customers</span><strong>{{ $stats['customer_percent'] }}%</strong></div>
+                    <small style="color:#d8e7ff;">{{ number_format($stats['total_businesses']) }} / {{ number_format($stats['customer_target']) }}</small>
                     <div class="agent-progress mt-2" style="background:rgba(255,255,255,.18);"><span style="width:{{ $stats['customer_percent'] }}%;background:#f7a51e;"></span></div>
                 </div>
             </section>
-            <section class="agent-card span-4 agent-tone-blue">
+            <section class="agent-card span-4 manager-top-card agent-tone-blue">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
                         <h4>State Health</h4>
@@ -70,6 +76,20 @@
                 <div class="d-flex gap-2 flex-wrap mt-3">
                     <span class="agent-pill">Retention {{ $stats['retention'] }}%</span>
                     <span class="agent-pill">Churn {{ $stats['churn'] }}%</span>
+                </div>
+            </section>
+            <section class="agent-card span-4 manager-top-card agent-tone-green">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h4>Target Pace</h4>
+                        <small class="agent-muted">Month-to-date execution</small>
+                    </div>
+                    <span class="agent-pill">{{ number_format($stats['new_businesses']) }} new</span>
+                </div>
+                <div class="manager-funnel mt-3">
+                    <div class="manager-funnel-row"><span>Agents</span><div class="manager-funnel-track"><span style="width:{{ max(4, min(100, $stats['agent_activation_rate'])) }}%;"></span></div><strong>{{ number_format($stats['active_agents']) }}</strong></div>
+                    <div class="manager-funnel-row"><span>Leads</span><div class="manager-funnel-track"><span style="width:{{ max(4, min(100, $stats['customer_percent'])) }}%;background:linear-gradient(90deg,#246bfe,#86b7ff);"></span></div><strong>{{ number_format($stats['total_businesses']) }}</strong></div>
+                    <div class="manager-funnel-row"><span>Trials</span><div class="manager-funnel-track"><span style="width:{{ max(4, min(100, $stats['free_trials'])) }}%;background:linear-gradient(90deg,#f7a51e,#ffd98a);"></span></div><strong>{{ number_format($stats['free_trials']) }}</strong></div>
                 </div>
             </section>
 
