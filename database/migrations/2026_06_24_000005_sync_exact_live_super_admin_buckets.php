@@ -14,15 +14,19 @@ return new class extends Migration
 
         $stateManagerIds = $this->matchingUserIds([
             'thomas ogbodo',
+            'ogbodo thomas',
             'dauda uche',
         ]);
 
         $registeredBusinessIds = $this->matchingUserIds([
             'duke ogbodo',
             'ogbodo duke',
+            'chigozie duke ogbodo',
+            'jaderahglobal2b@gmail.com',
             'mrs. eze florence',
             'eze florence',
             'ndeze2@gmail.com',
+            'florence eze',
         ]);
 
         if (Schema::hasTable('super_admin_user_bucket_overrides')) {

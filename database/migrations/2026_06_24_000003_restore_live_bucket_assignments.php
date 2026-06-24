@@ -14,6 +14,7 @@ return new class extends Migration
 
         $stateManagerIds = $this->matchingUserIds([
             'thomas ogbodo',
+            'ogbodo thomas',
             'dauda uche',
         ]);
 
@@ -66,6 +67,7 @@ return new class extends Migration
             $this->matchingUserIds([
                 'mrs. eze florence',
                 'eze florence',
+                'florence eze',
                 'ndeze2@gmail.com',
             ])
         )));

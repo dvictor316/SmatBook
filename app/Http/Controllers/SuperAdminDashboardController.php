@@ -107,17 +107,15 @@ class SuperAdminDashboardController extends Controller
     private function stateManagerUserIds(): array
     {
         $overrideIds = $this->bucketOverrideUserIds('state_manager');
-        if ($overrideIds !== []) {
-            return $overrideIds;
-        }
-
         $configuredIds = $this->namedUserIds([
             'thomas ogbodo',
+            'ogbodo thomas',
             'dauda uche',
         ]);
 
-        if ($configuredIds !== []) {
-            return $configuredIds;
+        $exactIds = collect($overrideIds)->merge($configuredIds)->filter()->map(fn ($id) => (int) $id)->unique()->values()->all();
+        if ($exactIds !== []) {
+            return $exactIds;
         }
 
         if (!Schema::hasTable('deployment_managers') || !Schema::hasColumn('deployment_managers', 'user_id')) {
@@ -137,14 +135,21 @@ class SuperAdminDashboardController extends Controller
     private function registeredBusinessUserIds(): array
     {
         $overrideIds = $this->bucketOverrideUserIds('registered_business');
-        if ($overrideIds !== []) {
-            return $overrideIds;
-        }
-
         $explicitBusinessIds = $this->namedUserIds([
             'duke ogbodo',
             'ogbodo duke',
+            'chigozie duke ogbodo',
+            'mrs. eze florence',
+            'eze florence',
+            'florence eze',
+            'ndeze2@gmail.com',
+            'jaderahglobal2b@gmail.com',
         ]);
+
+        $exactIds = collect($overrideIds)->merge($explicitBusinessIds)->filter()->map(fn ($id) => (int) $id)->unique()->values()->all();
+        if ($exactIds !== []) {
+            return $exactIds;
+        }
 
         if (!Schema::hasTable('subscriptions')) {
             return $explicitBusinessIds;
@@ -271,17 +276,7 @@ class SuperAdminDashboardController extends Controller
     {
         $registeredBusinessIds = $this->registeredBusinessUserIds();
         $paidStatuses = ['paid', 'completed', 'success', 'successful', 'verified'];
-        $subscriptionSummary = Schema::hasTable('subscriptions')
-            ? DB::table('subscriptions')
-            ->select(
-                'user_id',
-                'company_id',
-                DB::raw('SUM(COALESCE(amount, 0)) as total_paid'),
-                DB::raw('MAX(COALESCE(paid_at, payment_date, created_at)) as last_paid_at')
-            )
-            ->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), $paidStatuses)
-            ->groupBy('user_id', 'company_id')
-            : null;
+        $exactMode = $this->bucketOverrideUserIds('registered_business') !== [];
 
         $query = User::query()
             ->leftJoin('companies', 'users.company_id', '=', 'companies.id')
@@ -294,27 +289,52 @@ class SuperAdminDashboardController extends Controller
                 DB::raw('NULL as last_paid_at')
             );
 
-        if ($subscriptionSummary) {
-            $query->leftJoinSub($subscriptionSummary, 'paid_subscriptions', function ($join) {
-                $join->on('users.id', '=', 'paid_subscriptions.user_id');
-            });
-
+        if (Schema::hasTable('subscriptions')) {
             $query->addSelect(
-                DB::raw('COALESCE(paid_subscriptions.total_paid, 0) as total_paid'),
-                DB::raw('paid_subscriptions.last_paid_at as last_paid_at')
+                DB::raw("(SELECT COALESCE(SUM(subscriptions.amount), 0)
+                    FROM subscriptions
+                    WHERE LOWER(COALESCE(subscriptions.payment_status, '')) IN ('paid','completed','success','successful','verified')
+                      AND (
+                        subscriptions.user_id = users.id
+                        OR (users.company_id IS NOT NULL AND subscriptions.company_id = users.company_id)
+                      )
+                ) as total_paid"),
+                DB::raw("(SELECT MAX(COALESCE(subscriptions.paid_at, subscriptions.payment_date, subscriptions.created_at))
+                    FROM subscriptions
+                    WHERE LOWER(COALESCE(subscriptions.payment_status, '')) IN ('paid','completed','success','successful','verified')
+                      AND (
+                        subscriptions.user_id = users.id
+                        OR (users.company_id IS NOT NULL AND subscriptions.company_id = users.company_id)
+                      )
+                ) as last_paid_at")
             );
         }
 
-        $query->where(function ($innerQuery) use ($registeredBusinessIds, $subscriptionSummary) {
-            if ($subscriptionSummary) {
-                $innerQuery->whereNotNull('paid_subscriptions.user_id');
-            }
+        if ($exactMode) {
+            $query->whereIn('users.id', $registeredBusinessIds);
+        } else {
+            $query->where(function ($innerQuery) use ($registeredBusinessIds) {
+                if (Schema::hasTable('subscriptions')) {
+                    $innerQuery->whereExists(function ($subQuery) {
+                        $subQuery->select(DB::raw(1))
+                            ->from('subscriptions')
+                            ->whereRaw("LOWER(COALESCE(subscriptions.payment_status, '')) IN ('paid','completed','success','successful','verified')")
+                            ->where(function ($matchQuery) {
+                                $matchQuery->whereColumn('subscriptions.user_id', 'users.id')
+                                    ->orWhere(function ($companyQuery) {
+                                        $companyQuery->whereNotNull('users.company_id')
+                                            ->whereColumn('subscriptions.company_id', 'users.company_id');
+                                    });
+                            });
+                    });
+                }
 
-            if ($registeredBusinessIds !== []) {
-                $method = $subscriptionSummary ? 'orWhereIn' : 'whereIn';
-                $innerQuery->{$method}('users.id', $registeredBusinessIds);
-            }
-        });
+                if ($registeredBusinessIds !== []) {
+                    $method = Schema::hasTable('subscriptions') ? 'orWhereIn' : 'whereIn';
+                    $innerQuery->{$method}('users.id', $registeredBusinessIds);
+                }
+            });
+        }
 
         return $query->distinct('users.id');
     }
@@ -1645,7 +1665,7 @@ public function pendingManagers()
                 $query->where('users.status', $request->status);
             }
 
-            $businesses = $query->orderByDesc(DB::raw('COALESCE(paid_subscriptions.last_paid_at, users.created_at)'))
+            $businesses = $query->orderByDesc(DB::raw('COALESCE(last_paid_at, users.created_at)'))
                 ->paginate(20)
                 ->withQueryString();
 
@@ -1660,7 +1680,7 @@ public function pendingManagers()
                 'with_domains' => Schema::hasColumn('companies', 'domain_prefix')
                     ? (clone $baseBusinesses)->whereNotNull('companies.domain_prefix')->where('companies.domain_prefix', '!=', '')->count()
                     : 0,
-                'revenue' => (float) ((clone $baseBusinesses)->sum(DB::raw('COALESCE(paid_subscriptions.total_paid, 0)')) ?? 0),
+                'revenue' => (float) collect((clone $baseBusinesses)->get(['total_paid']))->sum(fn ($row) => (float) ($row->total_paid ?? 0)),
             ];
 
             return view('SuperAdmin.users.businesses', compact('businesses', 'metrics'));

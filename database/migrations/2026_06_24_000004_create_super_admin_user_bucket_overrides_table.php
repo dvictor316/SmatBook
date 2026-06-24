@@ -24,10 +24,10 @@ return new class extends Migration
             return;
         }
 
-        $this->seedOverride(['thomas ogbodo'], 'state_manager', 'Live override: keep Thomas under state managers.');
+        $this->seedOverride(['thomas ogbodo', 'ogbodo thomas'], 'state_manager', 'Live override: keep Thomas under state managers.');
         $this->seedOverride(['dauda uche'], 'state_manager', 'Live override: keep Dauda under state managers.');
-        $this->seedOverride(['duke ogbodo', 'ogbodo duke'], 'registered_business', 'Live override: keep Duke under registered businesses.');
-        $this->seedOverride(['mrs. eze florence', 'eze florence', 'ndeze2@gmail.com'], 'registered_business', 'Live override: keep Mrs. Eze Florence under registered businesses.');
+        $this->seedOverride(['duke ogbodo', 'ogbodo duke', 'chigozie duke ogbodo', 'jaderahglobal2b@gmail.com'], 'registered_business', 'Live override: keep Duke under registered businesses.');
+        $this->seedOverride(['mrs. eze florence', 'eze florence', 'florence eze', 'ndeze2@gmail.com'], 'registered_business', 'Live override: keep Mrs. Eze Florence under registered businesses.');
     }
 
     public function down(): void
