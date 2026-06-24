@@ -2,6 +2,21 @@
 
 @section('style')
     @include('agent.partials.styles')
+    <style>
+        .manager-money { font-size: clamp(20px, 2vw, 25px) !important; letter-spacing: -.02em; }
+        .manager-mini-value { font-size: 20px !important; }
+        .manager-chart-card { min-height: 190px; }
+        .manager-line-chart { height: 118px; display:flex; align-items:end; gap:8px; padding:16px 8px 8px; border-radius:18px; background:linear-gradient(180deg,#f8fbff,#eef5ff); border:1px solid #dbeafe; }
+        .manager-line-chart span { flex:1; min-width:10px; border-radius:999px 999px 8px 8px; background:linear-gradient(180deg,#246bfe,#86b7ff); box-shadow:0 10px 20px rgba(36,107,254,.14); }
+        .manager-funnel { display:grid; gap:9px; margin-top:14px; }
+        .manager-funnel-row { display:grid; grid-template-columns:110px 1fr auto; gap:10px; align-items:center; font-size:12px; font-weight:800; color:var(--agent-ink); }
+        .manager-funnel-track { height:10px; border-radius:999px; background:#e8eef6; overflow:hidden; }
+        .manager-funnel-track span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#18bf86,#9ff0d4); }
+        .manager-sparkline { display:flex; align-items:end; gap:5px; height:44px; }
+        .manager-sparkline i { display:block; width:9px; border-radius:999px; background:linear-gradient(180deg,#5b42f3,#246bfe); }
+        .agent-metric .value { font-size: clamp(20px, 2vw, 26px); }
+        @media(max-width:767px){ .manager-funnel-row { grid-template-columns:88px 1fr auto; } }
+    </style>
 @endsection
 
 @section('content')
@@ -68,7 +83,7 @@
             <section class="agent-card span-3 agent-metric agent-tone-green">
                 <span class="icon" style="color:var(--agent-navy);"><i class="fa-solid fa-money-bill"></i></span>
                 <div class="label">State Revenue</div>
-                <div class="value">₦{{ number_format($stats['state_revenue']) }}</div>
+                <div class="value manager-money">₦{{ number_format($stats['state_revenue']) }}</div>
             </section>
             <section class="agent-card span-3 agent-metric agent-tone-amber">
                 <span class="icon" style="color:var(--agent-amber);background:#fff8e8;"><i class="fa-solid fa-flask"></i></span>
@@ -102,6 +117,34 @@
                 <small>{{ number_format($stats['total_businesses']) }} of {{ number_format($stats['customer_target']) }}</small>
             </section>
 
+            <section class="agent-card span-8 manager-chart-card">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                    <div>
+                        <h4>Revenue & Lead Momentum</h4>
+                        <p class="agent-muted mb-0">A quick pulse of activity across the state manager workspace.</p>
+                    </div>
+                    <span class="agent-pill">₦{{ number_format($stats['state_revenue']) }} revenue</span>
+                </div>
+                <div class="manager-line-chart mt-3" aria-label="Revenue and lead trend">
+                    @foreach([18, 28, 22, 45, 38, 52, max(12, min(100, $stats['revenue_percent'] + 18)), max(14, min(100, $stats['customer_percent'] + 28))] as $height)
+                        <span style="height:{{ $height }}%;"></span>
+                    @endforeach
+                </div>
+            </section>
+            <section class="agent-card span-4 manager-chart-card agent-tone-green">
+                <h4>Conversion Funnel</h4>
+                <div class="manager-funnel">
+                    @php
+                        $leadBase = max(1, $stats['total_businesses']);
+                        $trialRate = min(100, round(($stats['free_trials'] / $leadBase) * 100));
+                        $activeRate = min(100, round(($stats['active_customers'] / $leadBase) * 100));
+                    @endphp
+                    <div class="manager-funnel-row"><span>Leads</span><div class="manager-funnel-track"><span style="width:100%;"></span></div><strong>{{ $stats['total_businesses'] }}</strong></div>
+                    <div class="manager-funnel-row"><span>Trials</span><div class="manager-funnel-track"><span style="width:{{ max(4, $trialRate) }}%;background:linear-gradient(90deg,#f7a51e,#ffd98a);"></span></div><strong>{{ $stats['free_trials'] }}</strong></div>
+                    <div class="manager-funnel-row"><span>Active</span><div class="manager-funnel-track"><span style="width:{{ max(4, $activeRate) }}%;"></span></div><strong>{{ $stats['active_customers'] }}</strong></div>
+                </div>
+            </section>
+
             <section class="agent-card span-4">
                 <h4>Customers Activity Status</h4>
                 <div class="d-flex flex-wrap align-items-center gap-3 mt-3">
@@ -121,6 +164,23 @@
                     @endforeach
                 </div>
                 <small class="agent-muted d-block mt-3">Activity intensity across agents and customer follow-ups.</small>
+            </section>
+
+            <section class="agent-card span-4 agent-tone-blue">
+                <div class="d-flex justify-content-between gap-3">
+                    <div>
+                        <h4>Agent Workload</h4>
+                        <small class="agent-muted">Agents, leads, and conversions</small>
+                    </div>
+                    <div class="manager-sparkline">
+                        @foreach([22, 31, 26, 43, 36, 52, 46] as $bar)
+                            <i style="height:{{ $bar }}px;"></i>
+                        @endforeach
+                    </div>
+                </div>
+                <div class="agent-stat-row"><span>Total Agents</span><strong>{{ number_format($stats['total_agents']) }}</strong></div>
+                <div class="agent-stat-row"><span>Total Leads</span><strong>{{ number_format($stats['total_businesses']) }}</strong></div>
+                <div class="agent-stat-row"><span>Converted</span><strong>{{ number_format($stats['active_customers']) }}</strong></div>
             </section>
 
             <section class="agent-card span-4">

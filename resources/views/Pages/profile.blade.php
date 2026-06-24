@@ -5,9 +5,8 @@
 
     @php
         $user = auth()->user();
-        $defaultProfileImage = asset('assets/img/profiles/avatar-02.jpg');
-        $profilePhoto = $profilePhoto ?? ($user?->profile_photo_url ?? $defaultProfileImage);
-        $coverPhoto = $coverPhoto ?? ($user?->cover_photo_url ?? $defaultProfileImage);
+        $profilePhoto = $profilePhoto ?? ($user?->profile_photo_url ?? asset('assets/img/profiles/avatar-02.jpg'));
+        $coverPhoto = $coverPhoto ?? ($user?->cover_photo_url ?? asset('assets/img/profiles/avatar-02.jpg'));
 
         // 2. Calculate Profile Completeness based on actual Database Schema
         $profileFields = ['name', 'email', 'profile_photo', 'cover_photo', 'role']; 
@@ -33,7 +32,7 @@
                         @csrf
                         <div class="profile-cover">
                             <div class="profile-cover-wrap">
-                                <img class="profile-cover-img" id="cover-preview" src="{{ $coverPhoto ?? $defaultProfileImage }}" alt="Cover Image" onerror="this.src='{{ $defaultProfileImage }}'">
+                                <img class="profile-cover-img" id="cover-preview" src="{{ $coverPhoto ?? asset('assets/img/profiles/avatar-02.jpg') }}" alt="Cover Image" onerror="this.src='{{ asset('assets/img/profiles/avatar-02.jpg') }}'">
 
                                 <div class="cover-content">
                                     <div class="custom-file-btn">
@@ -50,7 +49,7 @@
 
                         <div class="text-center mb-5">
                             <label class="avatar avatar-xxl profile-cover-avatar" for="avatar_upload">
-                                <img class="avatar-img" id="avatar-preview" src="{{ $profilePhoto ?? $defaultProfileImage }}" alt="Profile Picture" onerror="this.src='{{ $defaultProfileImage }}'">
+                                <img class="avatar-img" id="avatar-preview" src="{{ $profilePhoto ?? asset('assets/img/profiles/avatar-02.jpg') }}" alt="Profile Picture" onerror="this.src='{{ asset('assets/img/profiles/avatar-02.jpg') }}'">
 
                                 <input type="file" name="profile_photo" id="avatar_upload" accept="image/*" hidden onchange="this.form.submit()">
                                 <span class="avatar-edit">

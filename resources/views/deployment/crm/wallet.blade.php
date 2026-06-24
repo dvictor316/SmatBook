@@ -2,6 +2,15 @@
 
 @section('style')
     @include('agent.partials.styles')
+    <style>
+        .wallet-hero-amount { color:#fff; font-size:clamp(24px,3vw,30px); font-weight:900; letter-spacing:-.03em; margin:6px 0; }
+        .wallet-money { font-size:clamp(19px,2vw,24px) !important; }
+        .wallet-bars { height:115px; display:flex; align-items:end; gap:9px; padding:14px 10px 8px; border-radius:18px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.14); }
+        .wallet-bars span { flex:1; border-radius:999px 999px 8px 8px; background:linear-gradient(180deg,#d6fff0,#18bf86); opacity:.95; }
+        .wallet-ring { --value:0; width:112px; height:112px; border-radius:50%; display:grid; place-items:center; background:conic-gradient(#18bf86 calc(var(--value) * 1%), rgba(255,255,255,.2) 0); position:relative; }
+        .wallet-ring:after { content:""; position:absolute; inset:22px; border-radius:50%; background:#073b7a; }
+        .wallet-ring strong { position:relative; z-index:1; color:#fff; }
+    </style>
 @endsection
 
 @section('content')
@@ -19,17 +28,25 @@
             <div class="d-flex justify-content-between flex-wrap gap-3">
                 <div>
                     <small style="color:#bdd7ff;text-transform:uppercase;font-weight:900;">Wallet Balance</small>
-                    <h2 style="color:#fff;font-size:34px;">₦{{ number_format($pending) }}</h2>
+                    <div class="wallet-hero-amount">₦{{ number_format($pending) }}</div>
                     <p class="mb-0" style="color:#d8e7ff;">Available or pending commission awaiting payout cycle.</p>
                 </div>
-                <span class="agent-pill" style="background:rgba(255,255,255,.16);color:#fff;">{{ number_format((float) ($managerRecord->commission_rate ?? 35), 0) }}% rate</span>
+                <div class="text-center">
+                    <div class="wallet-ring" style="--value:{{ min(100, (int) ($managerRecord->commission_rate ?? 35)) }};"><strong>{{ number_format((float) ($managerRecord->commission_rate ?? 35), 0) }}%</strong></div>
+                    <small style="color:#d8e7ff;">Commission Rate</small>
+                </div>
+            </div>
+            <div class="wallet-bars mt-3">
+                @foreach([20, 34, 29, 45, 38, 56, max(10, min(100, $total > 0 ? ($pending / max(1, $total)) * 100 : 10))] as $height)
+                    <span style="height:{{ $height }}%;"></span>
+                @endforeach
             </div>
         </section>
 
         <div class="agent-grid mb-4">
-            <section class="agent-card span-4 agent-metric agent-tone-green"><span class="icon" style="color:var(--agent-green);background:#eafff6;"><i class="fa-solid fa-coins"></i></span><div class="label">Total Commission</div><div class="value">₦{{ number_format($total) }}</div></section>
-            <section class="agent-card span-4 agent-metric agent-tone-blue"><span class="icon"><i class="fa-solid fa-check-circle"></i></span><div class="label">Paid Out</div><div class="value">₦{{ number_format($paid) }}</div></section>
-            <section class="agent-card span-4 agent-metric agent-tone-amber"><span class="icon" style="color:var(--agent-amber);background:#fff7e7;"><i class="fa-solid fa-clock"></i></span><div class="label">Pending</div><div class="value">₦{{ number_format($pending) }}</div></section>
+            <section class="agent-card span-4 agent-metric agent-tone-green"><span class="icon" style="color:var(--agent-green);background:#eafff6;"><i class="fa-solid fa-coins"></i></span><div class="label">Total Commission</div><div class="value wallet-money">₦{{ number_format($total) }}</div></section>
+            <section class="agent-card span-4 agent-metric agent-tone-blue"><span class="icon"><i class="fa-solid fa-check-circle"></i></span><div class="label">Paid Out</div><div class="value wallet-money">₦{{ number_format($paid) }}</div></section>
+            <section class="agent-card span-4 agent-metric agent-tone-amber"><span class="icon" style="color:var(--agent-amber);background:#fff7e7;"><i class="fa-solid fa-clock"></i></span><div class="label">Pending</div><div class="value wallet-money">₦{{ number_format($pending) }}</div></section>
         </div>
 
         <div class="agent-grid">
