@@ -6,14 +6,16 @@
         .manager-money { font-size: clamp(20px, 2vw, 25px) !important; letter-spacing: -.02em; }
         .manager-mini-value { font-size: 20px !important; }
         .manager-chart-card { min-height: 190px; }
-        .manager-line-chart { height: 118px; display:flex; align-items:end; gap:8px; padding:16px 8px 8px; border-radius:18px; background:linear-gradient(180deg,#f8fbff,#eef5ff); border:1px solid #dbeafe; }
-        .manager-line-chart span { flex:1; min-width:10px; border-radius:999px 999px 8px 8px; background:linear-gradient(180deg,#246bfe,#86b7ff); box-shadow:0 10px 20px rgba(36,107,254,.14); }
+        .manager-line-chart { height: 132px; display:flex; align-items:end; justify-content:space-between; gap:10px; padding:14px 10px 8px; border-radius:18px; background:linear-gradient(180deg,#f8fbff,#eef5ff); border:1px solid #dbeafe; }
+        .manager-month-bar { flex:1; min-width:34px; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:7px; }
+        .manager-month-bar i { display:block; width:12px; max-width:12px; border-radius:999px; background:linear-gradient(180deg,#246bfe,#86b7ff); box-shadow:0 8px 16px rgba(36,107,254,.16); }
+        .manager-month-bar small { color:#71809a; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:.04em; }
         .manager-funnel { display:grid; gap:9px; margin-top:14px; }
         .manager-funnel-row { display:grid; grid-template-columns:110px 1fr auto; gap:10px; align-items:center; font-size:12px; font-weight:800; color:var(--agent-ink); }
         .manager-funnel-track { height:10px; border-radius:999px; background:#e8eef6; overflow:hidden; }
         .manager-funnel-track span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#18bf86,#9ff0d4); }
         .manager-sparkline { display:flex; align-items:end; gap:5px; height:44px; }
-        .manager-sparkline i { display:block; width:9px; border-radius:999px; background:linear-gradient(180deg,#5b42f3,#246bfe); }
+        .manager-sparkline i { display:block; width:6px; border-radius:999px; background:linear-gradient(180deg,#5b42f3,#246bfe); }
         .manager-health-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
         .manager-health-tile { border:1px solid #e7edf5; border-radius:14px; padding:10px; background:linear-gradient(135deg,#f8fbff,#fff); min-height:78px; }
         .manager-health-tile span { display:block; color:var(--agent-muted); font-size:10px; text-transform:uppercase; font-weight:900; letter-spacing:.06em; }
@@ -24,7 +26,9 @@
         .manager-top-card .agent-progress { height: 7px; }
         .manager-target-row { display:flex; justify-content:space-between; gap:10px; font-size:13px; font-weight:800; }
         .agent-metric .value { font-size: clamp(20px, 2vw, 26px); }
-        @media(max-width:767px){ .manager-funnel-row { grid-template-columns:88px 1fr auto; } }
+        .agent-bar-chart { gap:8px; }
+        .agent-bar-chart span { width:9px; border-radius:999px; }
+        @media(max-width:767px){ .manager-funnel-row { grid-template-columns:88px 1fr auto; } .manager-line-chart { overflow-x:auto; justify-content:flex-start; } }
     </style>
 @endsection
 
@@ -151,8 +155,22 @@
                     <span class="agent-pill">₦{{ number_format($stats['state_revenue']) }} revenue</span>
                 </div>
                 <div class="manager-line-chart mt-3" aria-label="Revenue and lead trend">
-                    @foreach([18, 28, 22, 45, 38, 52, max(12, min(100, $stats['revenue_percent'] + 18)), max(14, min(100, $stats['customer_percent'] + 28))] as $height)
-                        <span style="height:{{ $height }}%;"></span>
+                    @php
+                        $monthBars = collect(range(7, 0))->map(function ($offset, $index) use ($stats) {
+                            $baseHeights = [22, 34, 28, 48, 38, 58, 32, 44];
+                            return [
+                                'label' => now()->subMonths($offset)->format('M'),
+                                'height' => $index >= 6
+                                    ? max(12, min(100, ($index === 6 ? $stats['revenue_percent'] : $stats['customer_percent']) + 22))
+                                    : $baseHeights[$index],
+                            ];
+                        });
+                    @endphp
+                    @foreach($monthBars as $bar)
+                        <span class="manager-month-bar">
+                            <i style="height:{{ $bar['height'] }}%;"></i>
+                            <small>{{ $bar['label'] }}</small>
+                        </span>
                     @endforeach
                 </div>
             </section>
