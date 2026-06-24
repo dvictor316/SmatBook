@@ -171,7 +171,6 @@
                         @if($currentCategory === 'state_managers')
                             <option value="state_manager" {{ request('role') == 'state_manager' ? 'selected' : '' }}>State Manager</option>
                             <option value="deployment_manager" {{ request('role') == 'deployment_manager' ? 'selected' : '' }}>Deployment Manager</option>
-                            <option value="manager" {{ request('role') == 'manager' ? 'selected' : '' }}>Manager</option>
                         @elseif($currentCategory === 'agents')
                             <option value="agent" {{ request('role') == 'agent' ? 'selected' : '' }}>Agent</option>
                         @else

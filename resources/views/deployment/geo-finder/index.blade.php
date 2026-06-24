@@ -14,10 +14,24 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQ8fQh34J6LrB2r6E1px8K1i3q9z6iQ=" crossorigin="">
 
 <style>
-    .geo-card-grid { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:14px; }
-    .geo-mini-card { min-height: 205px; display:flex; flex-direction:column; justify-content:space-between; }
-    .geo-map-panel { height: 430px; border-radius: 22px; overflow:hidden; border:1px solid var(--agent-line); }
-    .geo-search-help { background:#eef5ff; border:1px solid #d9e8ff; color:#164178; border-radius:16px; padding:10px 12px; font-size:13px; }
+    .geo-command { background:linear-gradient(135deg,#073b7a 0%,#0f65c9 62%,#eaf4ff 62%,#ffffff 100%); border:0; color:#fff; overflow:hidden; }
+    .geo-command .agent-field label { color:#dcecff; }
+    .geo-command .agent-field select,
+    .geo-command .agent-field input { background:#fff; border-color:#bfdbfe; color:#062f68; }
+    .geo-command .agent-button.soft { background:#ffffff; color:#064995; border-color:#bfdbfe; }
+    .geo-command-title { display:flex; align-items:center; gap:14px; margin-bottom:18px; }
+    .geo-command-icon { width:54px; height:54px; border-radius:18px; background:#fff; color:#0f65c9; display:flex; align-items:center; justify-content:center; font-size:24px; box-shadow:0 14px 34px rgba(3,38,82,.18); }
+    .geo-command-title h3 { color:#fff; margin:0; font-weight:900; }
+    .geo-command-title p { color:#dcecff; margin:2px 0 0; }
+    .geo-card-grid { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:16px; }
+    .geo-mini-card { min-height: 245px; display:flex; flex-direction:column; justify-content:space-between; border:1px solid #dbeafe; border-radius:20px; background:linear-gradient(180deg,#fff 0%,#f8fbff 100%); box-shadow:0 14px 34px rgba(15,101,201,.08); }
+    .geo-map-panel { height: 520px; border-radius: 24px; overflow:hidden; border:1px solid #bfdbfe; box-shadow:0 24px 55px rgba(6,47,104,.14); }
+    .geo-search-help { background:rgba(255,255,255,.92); border:1px solid #bfdbfe; color:#164178; border-radius:999px; padding:10px 12px; font-size:13px; }
+    .geo-place-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+    .geo-place-action { border:1px solid #bfdbfe; background:#fff; color:#064995; border-radius:999px; padding:7px 10px; font-size:12px; font-weight:800; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
+    .geo-place-action:hover { background:#0f65c9; color:#fff; border-color:#0f65c9; }
+    .geo-place-action.primary { background:#0f65c9; color:#fff; border-color:#0f65c9; }
+    .geo-place-action.primary:hover { background:#073b7a; }
     @media (max-width: 1199px) { .geo-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (max-width: 640px) { .geo-card-grid { grid-template-columns: 1fr; } .geo-map-panel { height: 330px; } }
 </style>
@@ -39,7 +53,14 @@
             <div class="alert alert-warning alert-dismissible fade show">{{ session('error') ?? $lookupError }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
         @endif
 
-        <section class="agent-card mb-4">
+        <section class="agent-card geo-command mb-4">
+            <div class="geo-command-title">
+                <span class="geo-command-icon"><i class="fa-solid fa-map-location-dot"></i></span>
+                <div>
+                    <h3>Business Location Finder</h3>
+                    <p>Search mapped businesses around the selected state, local council, or your live location.</p>
+                </div>
+            </div>
             <form method="GET" action="{{ route('deployment.geo.index') }}" id="geoSearchForm">
                 <input type="hidden" name="search" value="1">
                 <input type="hidden" name="lat" id="geoLat" value="{{ request('lat') }}">
@@ -116,12 +137,12 @@
         </div>
 
         <div class="agent-grid">
-            <section class="agent-card span-5">
+            <section class="agent-card span-12">
                 <h4>Map View</h4>
                 <p class="agent-muted">Pins show the current search center and nearby matches.</p>
                 <div id="geoMap" class="geo-map-panel"></div>
             </section>
-            <section class="agent-card span-7">
+            <section class="agent-card span-12">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                     <div>
                         <h4>Search Results</h4>
@@ -131,19 +152,27 @@
                 </div>
                 <div class="geo-card-grid">
                     @forelse($nearbyResults as $place)
-                        <article class="agent-card geo-mini-card" style="box-shadow:none;background:#fbfdff;">
+                        <article class="agent-card geo-mini-card">
                             <div>
                                 <span class="agent-initial mb-2">{{ strtoupper(mb_substr($place['name'], 0, 1)) }}</span>
                                 <h4 style="font-size:17px;">{{ $place['name'] }}</h4>
-                                <small>{{ \Illuminate\Support\Str::limit($place['address'], 105) }}</small>
+                                <small><i class="fa-solid fa-location-dot text-primary"></i> {{ \Illuminate\Support\Str::limit($place['address'], 105) }}</small>
                             </div>
                             <div class="mt-3">
                                 <span class="agent-pill">{{ ucwords(str_replace('_', ' ', $place['type'])) }}</span>
                                 <div class="agent-muted mt-2">
                                     <div><i class="fa-solid fa-route"></i> {{ number_format($place['distance'], 2) }} km away</div>
                                     <div><i class="fa-solid fa-phone"></i> {{ $place['phone'] ?: 'Public number not listed' }}</div>
+                                </div>
+                                <div class="geo-place-actions">
+                                    <button type="button" class="geo-place-action primary geo-view-place" data-lat="{{ $place['lat'] }}" data-lng="{{ $place['lng'] }}" data-name="{{ $place['name'] }}">
+                                        <i class="fa-solid fa-eye"></i> View
+                                    </button>
+                                    <a class="geo-place-action" href="https://www.google.com/maps/dir/?api=1&destination={{ $place['lat'] }},{{ $place['lng'] }}" target="_blank" rel="noopener">
+                                        <i class="fa-solid fa-diamond-turn-right"></i> Direction
+                                    </a>
                                     @if(!empty($place['website']))
-                                        <a href="{{ $place['website'] }}" target="_blank" rel="noopener"><i class="fa-solid fa-globe"></i> Website</a>
+                                        <a class="geo-place-action" href="{{ $place['website'] }}" target="_blank" rel="noopener"><i class="fa-solid fa-globe"></i> Website</a>
                                     @endif
                                 </div>
                             </div>
@@ -263,6 +292,20 @@ document.addEventListener('DOMContentLoaded', function () {
         bounds.extend([place.lat, place.lng]);
     });
     if (places.length) map.fitBounds(bounds, { padding: [26, 26], maxZoom: 15 });
+
+    document.querySelectorAll('.geo-view-place').forEach((button) => {
+        button.addEventListener('click', () => {
+            const lat = Number(button.dataset.lat);
+            const lng = Number(button.dataset.lng);
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+            map.setView([lat, lng], 17, { animate: true });
+            L.popup()
+                .setLatLng([lat, lng])
+                .setContent(`<strong>${escapeHtml(button.dataset.name || 'Business')}</strong>`)
+                .openOn(map);
+            document.getElementById('geoMap')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+    });
 
     function escapeHtml(value) {
         return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));

@@ -20,7 +20,7 @@ use App\Support\InventoryQuantity;
 class SuperAdminDashboardController extends Controller
 {
     private array $paidSaleStatuses = ['paid', 'completed', 'success', 'successful', 'verified'];
-    private array $stateManagerRoles = ['state_manager', 'deployment_manager', 'manager'];
+    private array $stateManagerRoles = ['state_manager', 'deployment_manager'];
     private array $agentRoles = ['agent', 'sales_agent', 'sales agent'];
 
     private function resolveDeploymentManager(string|int $id): DeploymentManager
@@ -127,10 +127,13 @@ class SuperAdminDashboardController extends Controller
             return $ids->unique()->values()->all();
         }
 
-        return $ids->merge(DeploymentManager::withoutGlobalScopes()
-            ->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['active', 'pending', 'pending_info'])
-            ->pluck('user_id')
-        )
+        $deploymentManagerIds = DB::table('deployment_managers')
+            ->join('users', 'deployment_managers.user_id', '=', 'users.id')
+            ->whereIn(DB::raw("LOWER(COALESCE(deployment_managers.status, ''))"), ['active', 'pending', 'pending_info'])
+            ->whereIn(DB::raw("LOWER(COALESCE(users.role, ''))"), $this->stateManagerRoles)
+            ->pluck('deployment_managers.user_id');
+
+        return $ids->merge($deploymentManagerIds)
         ->filter()
         ->map(fn ($id) => (int) $id)
         ->unique()
