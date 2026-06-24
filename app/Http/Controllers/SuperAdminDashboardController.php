@@ -88,15 +88,71 @@ class SuperAdminDashboardController extends Controller
         return $this->applyPlanUserScope($query);
     }
 
+    private function stateManagerUserIds(): array
+    {
+        if (!Schema::hasTable('deployment_managers') || !Schema::hasColumn('deployment_managers', 'user_id')) {
+            return [];
+        }
+
+        return DeploymentManager::withoutGlobalScopes()
+            ->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['active', 'pending', 'pending_info'])
+            ->pluck('user_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function registeredBusinessUserIds(): array
+    {
+        if (!Schema::hasTable('subscriptions')) {
+            return [];
+        }
+
+        $paidStatuses = ['paid', 'completed', 'success', 'successful', 'verified'];
+        $userIds = collect();
+
+        if (Schema::hasColumn('subscriptions', 'user_id')) {
+            $userIds = $userIds->merge(
+                DB::table('subscriptions')
+                    ->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), $paidStatuses)
+                    ->whereNotNull('user_id')
+                    ->pluck('user_id')
+                    ->all()
+            );
+        }
+
+        if (Schema::hasTable('companies') && Schema::hasColumn('companies', 'user_id') && Schema::hasColumn('subscriptions', 'company_id')) {
+            $userIds = $userIds->merge(
+                DB::table('subscriptions')
+                    ->join('companies', 'subscriptions.company_id', '=', 'companies.id')
+                    ->whereIn(DB::raw("LOWER(COALESCE(subscriptions.payment_status, ''))"), $paidStatuses)
+                    ->whereNotNull('companies.user_id')
+                    ->pluck('companies.user_id')
+                    ->all()
+            );
+        }
+
+        return $userIds
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
     private function stateManagersQuery()
     {
         $query = User::query();
+        $stateManagerIds = $this->stateManagerUserIds();
 
-        if (Schema::hasColumn('users', 'role')) {
-            $query->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), $this->stateManagerRoles);
-        } else {
+        if ($stateManagerIds === []) {
             $query->whereRaw('1 = 0');
+            return $query;
         }
+
+        $query->whereIn('users.id', $stateManagerIds);
 
         return $query;
     }
@@ -104,11 +160,21 @@ class SuperAdminDashboardController extends Controller
     private function agentsQuery()
     {
         $query = User::query();
+        $stateManagerIds = $this->stateManagerUserIds();
+        $registeredBusinessIds = $this->registeredBusinessUserIds();
+        $internalRoles = ['admin', 'administrator', 'accountant', 'cashier', 'store_manager', 'staff', 'user'];
 
         if (Schema::hasColumn('users', 'role')) {
-            $query->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), $this->agentRoles);
-        } else {
-            $query->whereRaw('1 = 0');
+            $query->whereNotIn(DB::raw("LOWER(COALESCE(role, ''))"), ['super_admin', 'superadmin']);
+            $query->whereNotIn(DB::raw("LOWER(COALESCE(role, ''))"), $internalRoles);
+        }
+
+        if ($stateManagerIds !== []) {
+            $query->whereNotIn('users.id', $stateManagerIds);
+        }
+
+        if ($registeredBusinessIds !== []) {
+            $query->whereNotIn('users.id', $registeredBusinessIds);
         }
 
         return $query;
@@ -117,12 +183,21 @@ class SuperAdminDashboardController extends Controller
     private function otherUsersQuery()
     {
         $query = User::query();
+        $stateManagerIds = $this->stateManagerUserIds();
+        $registeredBusinessIds = $this->registeredBusinessUserIds();
 
         if (Schema::hasColumn('users', 'role')) {
-            $query->whereNotIn(
-                DB::raw("LOWER(COALESCE(role, ''))"),
-                array_merge(['super_admin', 'superadmin'], $this->stateManagerRoles, $this->agentRoles)
-            );
+            $query->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), ['admin', 'administrator', 'accountant', 'cashier', 'store_manager', 'staff', 'user']);
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+
+        if ($stateManagerIds !== []) {
+            $query->whereNotIn('users.id', $stateManagerIds);
+        }
+
+        if ($registeredBusinessIds !== []) {
+            $query->whereNotIn('users.id', $registeredBusinessIds);
         }
 
         return $query;
@@ -144,15 +219,27 @@ class SuperAdminDashboardController extends Controller
             ->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), $paidStatuses)
             ->groupBy('company_id');
 
+        $latestPaidSubscribers = DB::table('subscriptions')
+            ->select(
+                'company_id',
+                DB::raw('MAX(user_id) as subscriber_user_id')
+            )
+            ->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), $paidStatuses)
+            ->groupBy('company_id');
+
         return Company::query()
             ->leftJoinSub($subscriptionSummary, 'paid_subscriptions', function ($join) {
                 $join->on('companies.id', '=', 'paid_subscriptions.company_id');
             })
+            ->leftJoinSub($latestPaidSubscribers, 'latest_paid_subscribers', function ($join) {
+                $join->on('companies.id', '=', 'latest_paid_subscribers.company_id');
+            })
             ->leftJoin('users as owners', 'companies.user_id', '=', 'owners.id')
+            ->leftJoin('users as subscribers', 'latest_paid_subscribers.subscriber_user_id', '=', 'subscribers.id')
             ->select(
                 'companies.*',
-                'owners.name as owner_name',
-                'owners.email as owner_email',
+                DB::raw('COALESCE(owners.name, subscribers.name) as owner_name'),
+                DB::raw('COALESCE(owners.email, subscribers.email) as owner_email'),
                 DB::raw('COALESCE(paid_subscriptions.total_paid, 0) as total_paid'),
                 DB::raw('paid_subscriptions.last_paid_at as last_paid_at')
             )
@@ -894,10 +981,6 @@ class SuperAdminDashboardController extends Controller
                     ->get();
             }
 
-            $recentPayouts = Schema::hasTable('platform_payouts')
-                ? PlatformPayout::with(['recipient', 'recorder'])->latest()->limit(5)->get()
-                : collect();
-
             $payoutRecipientGroups = $this->payoutRecipientGroups();
 
             // VIEW ATTRIBUTES
@@ -915,7 +998,6 @@ class SuperAdminDashboardController extends Controller
                 'chartSeries', 'activityHeatmap', 'systemHealth', 'managerPerformance',
                 'activeBranch',
                 'expiringSubscriptions',
-                'recentPayouts',
                 'payoutRecipientGroups'
             ));
 
@@ -965,7 +1047,6 @@ class SuperAdminDashboardController extends Controller
                 'isDeploymentView' => false,
                 'domain' => env('SESSION_DOMAIN', 'Error State'),
                 'expiringSubscriptions' => collect(),
-                'recentPayouts' => collect(),
                 'payoutRecipientGroups' => [],
             ])->with('error', 'System Error: ' . $e->getMessage());
         }

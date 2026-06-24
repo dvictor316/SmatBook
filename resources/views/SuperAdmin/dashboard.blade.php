@@ -1374,44 +1374,6 @@
                                                 </div>
                                             </div>
                                         </div>
-
-                                        {{-- Recent Payouts --}}
-                                        @if($recentPayouts->isNotEmpty())
-                                            <div class="mt-4">
-                                                <h6 class="text-muted mb-2 small fw-semibold text-uppercase">Recent Payouts</h6>
-                                                <div class="table-responsive">
-                                                    <table class="table table-sm align-middle mb-0">
-                                                        <thead class="table-light">
-                                                            <tr>
-                                                                <th>Recipient</th>
-                                                                <th>Category</th>
-                                                                <th>Type</th>
-                                                                <th>Amount</th>
-                                                                <th>Description</th>
-                                                                <th>Date</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            @foreach($recentPayouts as $payout)
-                                                                <tr>
-                                                                    <td class="fw-semibold">{{ $payout->recipient_name }}</td>
-                                                                    <td><span class="badge bg-light text-dark border">{{ $payout->recipient_type_label ?? 'External' }}</span></td>
-                                                                    <td><span class="badge bg-secondary text-capitalize">{{ $payout->payout_type }}</span></td>
-                                                                    <td class="text-danger fw-semibold">₦{{ number_format($payout->amount, 2) }}</td>
-                                                                    <td class="text-muted small">{{ $payout->description ?: '—' }}</td>
-                                                                    <td class="text-muted small">{{ $payout->paid_at ? $payout->paid_at->format('d M Y') : $payout->created_at->format('d M Y') }}</td>
-                                                                </tr>
-                                                            @endforeach
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                                <div class="mt-2 text-end">
-                                                    <a href="{{ route('super_admin.platform_payouts.index') }}" class="text-decoration-none small text-primary">View all payouts &rarr;</a>
-                                                </div>
-                                            </div>
-                                        @else
-                                            <p class="text-muted small mt-3 mb-0">No payouts recorded yet. Open the payout center to record and manage transactions.</p>
-                                        @endif
                                     </div>
                                 </div>
                             </div>
