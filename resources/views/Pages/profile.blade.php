@@ -1,6 +1,6 @@
 @php
     $page = 'profile';
-    $hideSidebar = true;
+    $hideSidebar = false;
 @endphp
 
 @extends('layout.mainlayout')
@@ -41,7 +41,7 @@
                                 <div class="cover-content">
                                     <div class="custom-file-btn">
 
-                                        <input type="file" name="cover_photo" class="custom-file-btn-input" id="cover_upload" accept="image/*" onchange="this.form.submit()">
+                                        <input type="file" name="cover_photo" class="custom-file-btn-input" id="cover_upload" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/bmp" onchange="this.form.submit()">
                                         <label class="custom-file-btn-label btn btn-sm btn-white" for="cover_upload">
                                             <i class="fas fa-camera"></i>
                                             <span class="d-none d-sm-inline-block ms-1">Update Cover</span>
@@ -55,7 +55,7 @@
                             <label class="avatar avatar-xxl profile-cover-avatar" for="avatar_upload">
                                 <img class="avatar-img" id="avatar-preview" src="{{ $profilePhoto ?? asset('assets/img/profiles/avatar-02.jpg') }}" alt="Profile Picture" onerror="this.src='{{ asset('assets/img/profiles/avatar-02.jpg') }}'">
 
-                                <input type="file" name="profile_photo" id="avatar_upload" accept="image/*" hidden onchange="this.form.submit()">
+                                <input type="file" name="profile_photo" id="avatar_upload" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/bmp" hidden onchange="this.form.submit()">
                                 <span class="avatar-edit">
                                     <i class="fe fe-edit avatar-uploader-icon shadow-soft"></i>
                                 </span>

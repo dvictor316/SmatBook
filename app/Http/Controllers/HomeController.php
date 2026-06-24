@@ -1248,8 +1248,13 @@ class HomeController extends Controller
     public function updateProfileImages(Request $request)
     {
         $request->validate([
-            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'cover_photo'   => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'profile_photo' => 'nullable|file|mimetypes:image/jpeg,image/png,image/webp,image/gif,image/avif,image/bmp|max:10240',
+            'cover_photo'   => 'nullable|file|mimetypes:image/jpeg,image/png,image/webp,image/gif,image/avif,image/bmp|max:15360',
+        ], [
+            'profile_photo.uploaded' => 'The profile photo is too large for the server upload limit. Please use an image below 10MB.',
+            'cover_photo.uploaded' => 'The cover photo is too large for the server upload limit. Please use an image below 15MB.',
+            'profile_photo.mimetypes' => 'The profile photo must be a valid image file.',
+            'cover_photo.mimetypes' => 'The cover photo must be a valid image file.',
         ]);
 
         $user = Auth::user();
@@ -1270,7 +1275,7 @@ class HomeController extends Controller
     public function uploadAvatar(Request $request)
     {
         $request->validate([
-            'profile_photo' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'profile_photo' => 'required|file|mimetypes:image/jpeg,image/png,image/webp,image/gif,image/avif,image/bmp|max:10240',
         ]);
 
         $user = Auth::user();
