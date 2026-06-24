@@ -310,7 +310,7 @@
                                         <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" placeholder="e.g. Big Bull Rice 50kg" value="{{ old('name') }}" required>
                                         @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
                                         <label class="form-label">Category</label>
                                         <div class="input-group">
                                             <select name="category_id" id="product_category_select" class="form-select quick-category-select @error('category_id') is-invalid @enderror">
@@ -323,7 +323,7 @@
                                         </div>
                                         @error('category_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="col-md-2">
+                                    <div class="col-md-6">
                                         <label class="form-label">Legacy Unit Label</label>
                                         <input type="text" name="base_unit_name" class="form-control @error('base_unit_name') is-invalid @enderror" value="{{ old('base_unit_name', 'pcs') }}" list="baseUnitSuggestions" required>
                                         <datalist id="baseUnitSuggestions">
@@ -340,7 +340,7 @@
                                         </datalist>
                                         @error('base_unit_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-6">
                                         <label class="form-label">Unit of Measure <span class="text-danger">*</span></label>
                                         <select name="unit_id" class="form-select @error('unit_id') is-invalid @enderror" required>
                                             <option value="">Select unit</option>
@@ -352,7 +352,7 @@
                                         </select>
                                         @error('unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-6">
                                         <div class="d-flex justify-content-between align-items-center gap-2">
                                             <label class="form-label mb-0">Base Unit</label>
                                             <button type="button" class="btn btn-link p-0 unit-action-link" data-bs-toggle="modal" data-bs-target="#addUnitModal">
@@ -375,7 +375,7 @@
                                         </div>
                                         @error('base_unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-6">
                                         <label class="form-label">Purchase Unit</label>
                                         <select name="purchase_unit_id" class="form-select @error('purchase_unit_id') is-invalid @enderror">
                                             <option value="">No bulk purchase unit</option>
@@ -387,23 +387,23 @@
                                         </select>
                                         @error('purchase_unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-6">
                                         <label class="form-label">Conversion Rate</label>
                                         <input type="number" step="0.000001" min="0" name="conversion_rate" class="form-control @error('conversion_rate') is-invalid @enderror" value="{{ old('conversion_rate') }}" placeholder="e.g. 12">
                                         <small class="text-muted">Base units inside one purchase unit.</small>
                                         @error('conversion_rate')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
                                         <label class="form-label">Retail / Default Price <span class="text-danger">*</span></label>
                                         <input type="number" step="0.01" name="price" class="form-control @error('price') is-invalid @enderror" placeholder="0.00" value="{{ old('price') }}" required>
                                         @error('price')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
                                         <label class="form-label">Purchase Price <span class="text-danger">*</span></label>
                                         <input type="number" step="0.01" name="purchase_price" class="form-control @error('purchase_price') is-invalid @enderror" placeholder="0.00" value="{{ old('purchase_price') }}" required>
                                         @error('purchase_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
                                         <label class="form-label">Stock Branch</label>
                                         <select name="branch_id" class="form-select @error('branch_id') is-invalid @enderror">
                                             <option value="">Use Active Branch</option>
@@ -413,13 +413,13 @@
                                         </select>
                                         @error('branch_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
                                         <label class="form-label">Product Image</label>
                                         <input type="file" name="image" id="product_image_input" class="form-control @error('image') is-invalid @enderror">
                                         <small class="text-muted">Optional.</small>
                                         @error('image')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
                                         <label class="form-label">Expiry Date <span class="text-muted small">(optional)</span></label>
                                         <input type="date" name="expiry_date" class="form-control @error('expiry_date') is-invalid @enderror" value="{{ old('expiry_date') }}">
                                         <small class="text-muted">Use this for perishable or date-sensitive products.</small>
