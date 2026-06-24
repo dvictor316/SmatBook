@@ -124,9 +124,9 @@
     $storeRouteName = $isSuperAdminRoute && app('router')->has('super_admin.users.store') ? 'super_admin.users.store' : 'users.store';
     $selectedRoleValue = old('role', request('role'));
     $selectedRoleKey = strtolower(str_replace([' ', '-'], '_', (string) $selectedRoleValue));
-    $partnerRoleValues = ['state_manager', 'deployment_manager', 'manager', 'agent'];
+    $partnerRoleValues = ['state_manager', 'deployment_manager', 'agent'];
     $isPartnerRole = in_array($selectedRoleKey, $partnerRoleValues, true);
-    $isStateManagerRole = in_array($selectedRoleKey, ['state_manager', 'deployment_manager', 'manager'], true);
+    $isStateManagerRole = in_array($selectedRoleKey, ['state_manager', 'deployment_manager'], true);
     $createLabel = $isStateManagerRole ? 'Create State Manager' : 'Create New User';
     $createSubtitle = $isStateManagerRole
         ? 'Fill in state manager details and assign the manager to a unique state.'
@@ -922,8 +922,8 @@
 
     function syncRoleLocationBlock() {
         var role = normalizeRole(roleSelect ? roleSelect.value : '');
-        var show = role === 'state_manager' || role === 'deployment_manager' || role === 'manager' || role === 'agent';
-        var isManager = role === 'state_manager' || role === 'deployment_manager' || role === 'manager';
+        var show = role === 'state_manager' || role === 'deployment_manager' || role === 'agent';
+        var isManager = role === 'state_manager' || role === 'deployment_manager';
         var isPartner = show;
         if (stateAssignmentBlock) stateAssignmentBlock.style.display = show ? '' : 'none';
         document.querySelectorAll('.state-manager-target').forEach(function (el) {

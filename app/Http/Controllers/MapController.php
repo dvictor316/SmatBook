@@ -129,7 +129,7 @@ class MapController extends Controller
             return $query->get();
         }
 
-        if (in_array($role, ['state_manager', 'deployment_manager', 'manager'], true)) {
+        if (in_array($role, ['state_manager', 'deployment_manager'], true)) {
             $mappedIds = Schema::hasTable('deployment_companies')
                 ? DB::table('deployment_companies')->where('manager_id', $user->id)->pluck('company_id')->all()
                 : [];

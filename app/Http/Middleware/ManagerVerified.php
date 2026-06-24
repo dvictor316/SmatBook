@@ -34,7 +34,7 @@ class ManagerVerified
             return $next($request);
         }
 
-        $allowedRoles = ['state_manager', 'deployment_manager', 'manager'];
+        $allowedRoles = ['state_manager', 'deployment_manager'];
         if (!in_array($role, $allowedRoles)) {
             return redirect()->route('home')
                 ->with('error', 'Unauthorized access.');

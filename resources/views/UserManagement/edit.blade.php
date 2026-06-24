@@ -195,8 +195,8 @@
 
     function syncBlock() {
         var role = normalizeRole(roleSelect ? roleSelect.value : '');
-        var show = ['state_manager', 'deployment_manager', 'manager', 'agent'].includes(role);
-        var isManager = ['state_manager', 'deployment_manager', 'manager'].includes(role);
+        var show = ['state_manager', 'deployment_manager', 'agent'].includes(role);
+        var isManager = ['state_manager', 'deployment_manager'].includes(role);
         if (block) block.style.display = show ? '' : 'none';
         document.querySelectorAll('.state-manager-target').forEach(function (el) {
             el.style.display = isManager ? '' : 'none';

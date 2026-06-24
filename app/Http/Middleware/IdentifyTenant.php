@@ -49,7 +49,7 @@ class IdentifyTenant
         // on the wrong host — which would poison sessions and show the wrong subdomain in URLs.
         if (Auth::check()) {
             $user = Auth::user();
-            if (in_array(strtolower($user->role), ['state_manager', 'deployment_manager', 'manager'])) {
+            if (in_array(strtolower($user->role), ['state_manager', 'deployment_manager'])) {
                 $manager = DeploymentManager::where('user_id', $user->id)->first();
                 if ($manager && strtolower($manager->status) === 'active') {
                     // Clear any stale tenant context so dashboard URLs use the main domain

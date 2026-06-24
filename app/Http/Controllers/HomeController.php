@@ -206,10 +206,7 @@ class HomeController extends Controller
                 return redirect()->route('super_admin.dashboard');
             }
 
-            $isDeploymentManager = DeploymentManager::where('user_id', $user->id)->exists()
-                || in_array(strtolower((string) ($user->role ?? '')), ['state_manager', 'deployment_manager', 'manager'], true);
-
-            if ($isDeploymentManager) {
+            if ($this->isStateManager($user)) {
                 return $this->handleDeploymentManagerRedirect($user);
             }
 
@@ -227,7 +224,7 @@ class HomeController extends Controller
         // ── PRIORITY 1: Check deployment_managers table FIRST ──
         // Must happen before role check — deployment managers may have
         // role='administrator' which would otherwise match super admin.
-        $isDeploymentManager = DeploymentManager::where('user_id', $user->id)->exists();
+        $isDeploymentManager = $this->isStateManager($user);
 
         if ($isDeploymentManager) {
             Log::info('User is DEPLOYMENT MANAGER (found in deployment_managers table)', [
@@ -661,7 +658,12 @@ class HomeController extends Controller
 
     private function isAgent($user): bool
     {
-        return strtolower((string) ($user->role ?? '')) === 'agent';
+        return in_array(strtolower(trim((string) ($user->role ?? ''))), ['agent', 'sales_agent', 'sales agent'], true);
+    }
+
+    private function isStateManager($user): bool
+    {
+        return in_array(strtolower(trim((string) ($user->role ?? ''))), ['state_manager', 'deployment_manager'], true);
     }
 
     private function isTempOpenAccess(): bool

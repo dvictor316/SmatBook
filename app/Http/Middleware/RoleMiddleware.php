@@ -31,9 +31,11 @@ class RoleMiddleware
         $roleMatch = in_array($userRole, $allowedRoles, true);
 
         $roleAliases = [
-            'state_manager' => ['state_manager', 'deployment_manager', 'manager'],
-            'deployment_manager' => ['state_manager', 'deployment_manager', 'manager'],
-            'manager' => ['state_manager', 'deployment_manager', 'manager'],
+            'state_manager' => ['state_manager', 'deployment_manager'],
+            'deployment_manager' => ['state_manager', 'deployment_manager'],
+            'agent' => ['agent', 'sales_agent', 'sales agent'],
+            'sales_agent' => ['agent', 'sales_agent', 'sales agent'],
+            'sales agent' => ['agent', 'sales_agent', 'sales agent'],
         ];
 
         foreach ($roleAliases[$userRole] ?? [] as $alias) {

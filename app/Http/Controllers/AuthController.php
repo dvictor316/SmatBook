@@ -1314,12 +1314,12 @@ class AuthController extends Controller
 
     private function isDeploymentManager($user): bool
     {
-        return in_array(strtolower($user->role), ['state_manager', 'deployment_manager', 'manager']);
+        return in_array(strtolower($user->role), ['state_manager', 'deployment_manager'], true);
     }
 
     private function isManagerRoleName(?string $role): bool
     {
-        return in_array(strtolower((string) $role), ['state_manager', 'deployment_manager', 'manager'], true);
+        return in_array(strtolower((string) $role), ['state_manager', 'deployment_manager'], true);
     }
 
     private function findStateManagerForLocation(string $country, string $stateRegion): ?int
