@@ -199,9 +199,28 @@
     .unit-action-link {
         display: inline-flex;
         align-items: center;
-        gap: 0.35rem;
+        justify-content: center;
+        gap: 0.2rem;
+        border: 1px solid #bfdbfe;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        padding: 0.12rem 0.45rem !important;
         font-weight: 800;
-        font-size: 0.8rem;
+        font-size: 0.68rem;
+        line-height: 1.15;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .unit-action-link i {
+        font-size: 0.7rem;
+    }
+
+    .unit-action-link:hover {
+        border-color: #60a5fa;
+        background: #dbeafe;
+        color: #1e40af;
     }
 
     @media (max-width: 1199.98px) {
@@ -345,7 +364,7 @@
                                         <select name="unit_id" class="form-select @error('unit_id') is-invalid @enderror" required>
                                             <option value="">Select unit</option>
                                             @foreach(($units ?? collect()) as $unit)
-                                                <option value="{{ $unit->id }}" @selected((string) old('unit_id') === (string) $unit->id || (!old('unit_id') && $unit->symbol === 'pcs'))>
+                                                <option value="{{ $unit->id }}" data-symbol="{{ $unit->symbol }}" @selected((string) old('unit_id') === (string) $unit->id || (!old('unit_id') && $unit->symbol === 'pcs'))>
                                                     {{ $unit->name }} ({{ $unit->symbol }})
                                                 </option>
                                             @endforeach
@@ -355,14 +374,14 @@
                                     <div class="col-md-6">
                                         <div class="d-flex justify-content-between align-items-center gap-2">
                                             <label class="form-label mb-0">Base Unit</label>
-                                            <button type="button" class="btn btn-link p-0 unit-action-link" data-bs-toggle="modal" data-bs-target="#addUnitModal">
-                                                <i class="fas fa-plus-circle"></i> Add base measurement
+                                            <button type="button" class="btn btn-link unit-action-link" data-bs-toggle="modal" data-bs-target="#addUnitModal" title="Add base measurement">
+                                                <i class="fas fa-plus-circle"></i> Add unit
                                             </button>
                                         </div>
                                         <select name="base_unit_id" class="form-select @error('base_unit_id') is-invalid @enderror">
                                             <option value="">Same as Unit of Measure</option>
                                             @foreach(($units ?? collect()) as $unit)
-                                                <option value="{{ $unit->id }}" @selected((string) old('base_unit_id') === (string) $unit->id)>
+                                                <option value="{{ $unit->id }}" data-symbol="{{ $unit->symbol }}" @selected((string) old('base_unit_id') === (string) $unit->id)>
                                                     {{ $unit->name }} ({{ $unit->symbol }})
                                                 </option>
                                             @endforeach
@@ -380,7 +399,7 @@
                                         <select name="purchase_unit_id" class="form-select @error('purchase_unit_id') is-invalid @enderror">
                                             <option value="">No bulk purchase unit</option>
                                             @foreach(($units ?? collect()) as $unit)
-                                                <option value="{{ $unit->id }}" @selected((string) old('purchase_unit_id') === (string) $unit->id)>
+                                                <option value="{{ $unit->id }}" data-symbol="{{ $unit->symbol }}" @selected((string) old('purchase_unit_id') === (string) $unit->id)>
                                                     {{ $unit->name }} ({{ $unit->symbol }})
                                                 </option>
                                             @endforeach
@@ -861,9 +880,26 @@ $(document).ready(function () {
         calculateQuickStock();
     });
 
+    var unitSyncing = false;
+
     $('input[name="base_unit_name"]').on('input', function () {
-        refreshQuickPackagingLabels();
+        applyUnitSymbol($(this).val());
     });
+
+    function optionSymbol(option) {
+        if (!option) return '';
+        var direct = String(option.getAttribute('data-symbol') || '').trim();
+        if (direct) return direct;
+        var text = String(option.textContent || '').trim();
+        var match = text.match(/\(([^)]+)\)\s*$/);
+        return match ? match[1].trim() : text;
+    }
+
+    function selectedUnitSymbol(selector) {
+        var select = document.querySelector(selector);
+        if (!select || !select.value) return '';
+        return optionSymbol(select.options[select.selectedIndex]);
+    }
 
     function selectUnitBySuggestion(selector, symbol) {
         var select = document.querySelector(selector);
@@ -872,22 +908,56 @@ $(document).ready(function () {
         if (!normalized) return;
         var option = Array.from(select.options).find(function (opt) {
             var text = String(opt.textContent || '').trim().toLowerCase();
-            return text === normalized || text.indexOf('(' + normalized + ')') !== -1;
+            var dataSymbol = optionSymbol(opt).toLowerCase();
+            return dataSymbol === normalized || text === normalized || text.indexOf('(' + normalized + ')') !== -1;
         });
         if (option) {
+            var changed = select.value !== option.value;
             select.value = option.value;
-            $(select).trigger('change');
+            if (changed && !unitSyncing) {
+                $(select).trigger('change');
+            }
         }
     }
 
-    $('.unit-suggestion-chip').on('click', function () {
-        var symbol = $(this).data('unit-suggestion') || '';
+    function applyUnitSymbol(symbol) {
+        symbol = String(symbol || '').trim();
+        if (!symbol) return;
+        if (unitSyncing) return;
+        unitSyncing = true;
+        $('input[name="base_unit_name"]').val(symbol);
+        selectUnitBySuggestion('select[name="unit_id"]', symbol);
+        selectUnitBySuggestion('select[name="base_unit_id"]', symbol);
+        selectUnitBySuggestion('select[name="purchase_unit_id"]', symbol);
+        unitSyncing = false;
+        refreshQuickPackagingLabels();
+        calculateQuickCartonContent();
+        calculateQuickStock();
+    }
+
+    $('select[name="unit_id"]').on('change', function () {
+        applyUnitSymbol(selectedUnitSymbol('select[name="unit_id"]'));
+    });
+
+    $('select[name="base_unit_id"]').on('change', function () {
+        var symbol = selectedUnitSymbol('select[name="base_unit_id"]') || selectedUnitSymbol('select[name="unit_id"]');
+        applyUnitSymbol(symbol);
+    });
+
+    $('select[name="purchase_unit_id"]').on('change', function () {
+        var symbol = selectedUnitSymbol('select[name="purchase_unit_id"]');
+        if (!symbol) return;
         $('input[name="base_unit_name"]').val(symbol);
         selectUnitBySuggestion('select[name="unit_id"]', symbol);
         selectUnitBySuggestion('select[name="base_unit_id"]', symbol);
         refreshQuickPackagingLabels();
         calculateQuickCartonContent();
         calculateQuickStock();
+    });
+
+    $('.unit-suggestion-chip').on('click', function () {
+        var symbol = $(this).data('unit-suggestion') || '';
+        applyUnitSymbol(symbol);
     });
 
     $('#add_product_form').on('submit', function () {
