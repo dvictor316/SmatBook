@@ -13,6 +13,8 @@ class PlatformPayout extends Model
 
     protected $fillable = [
         'recipient_name',
+        'recipient_type',
+        'recipient_user_id',
         'amount',
         'payout_type',
         'description',
@@ -29,5 +31,20 @@ class PlatformPayout extends Model
     public function recorder()
     {
         return $this->belongsTo(User::class, 'recorded_by');
+    }
+
+    public function recipient()
+    {
+        return $this->belongsTo(User::class, 'recipient_user_id');
+    }
+
+    public function getRecipientTypeLabelAttribute(): string
+    {
+        return match ($this->recipient_type) {
+            'state_manager' => 'State Manager',
+            'agent' => 'Agent',
+            'app_user' => 'App User',
+            default => 'External',
+        };
     }
 }

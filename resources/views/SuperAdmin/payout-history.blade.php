@@ -48,6 +48,16 @@
                         @endforeach
                     </select>
                 </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label small fw-semibold mb-1">Recipient Category</label>
+                    <select name="recipient_type" class="form-select form-select-sm">
+                        <option value="">All Categories</option>
+                        <option value="state_manager" {{ request('recipient_type') === 'state_manager' ? 'selected' : '' }}>State Managers</option>
+                        <option value="agent" {{ request('recipient_type') === 'agent' ? 'selected' : '' }}>Agents</option>
+                        <option value="app_user" {{ request('recipient_type') === 'app_user' ? 'selected' : '' }}>App Users</option>
+                        <option value="external" {{ request('recipient_type') === 'external' ? 'selected' : '' }}>External</option>
+                    </select>
+                </div>
                 <div class="col-sm-6 col-md-3">
                     <label class="form-label small fw-semibold mb-1">Recipient</label>
                     <input type="text" name="recipient" class="form-control form-control-sm" placeholder="Search name..." value="{{ request('recipient') }}">
@@ -64,7 +74,7 @@
         <div class="col-md-4">
             <div class="card border-0 shadow-sm text-center p-3">
                 <div class="text-muted small mb-1">
-                    @if(request()->hasAny(['from','to','payout_type','recipient']))
+                    @if(request()->hasAny(['from','to','payout_type','recipient_type','recipient']))
                         Total for Filtered Period
                     @else
                         Total Paid Out (All Time)
@@ -89,6 +99,7 @@
                             <tr>
                                 <th>#</th>
                                 <th>Recipient</th>
+                                <th>Category</th>
                                 <th>Type</th>
                                 <th>Amount</th>
                                 <th>Description</th>
@@ -102,6 +113,7 @@
                                 <tr>
                                     <td class="text-muted small">{{ $loop->iteration + ($payouts->currentPage() - 1) * $payouts->perPage() }}</td>
                                     <td class="fw-semibold">{{ $payout->recipient_name }}</td>
+                                    <td><span class="badge bg-light text-dark border">{{ $payout->recipient_type_label ?? 'External' }}</span></td>
                                     <td><span class="badge bg-secondary text-capitalize">{{ $payout->payout_type }}</span></td>
                                     <td class="text-danger fw-semibold">₦{{ number_format($payout->amount, 2) }}</td>
                                     <td class="text-muted small">{{ $payout->description ?: '—' }}</td>
@@ -117,7 +129,7 @@
                                 </tr>
                                 @if($payout->notes)
                                     <tr class="bg-light">
-                                        <td colspan="8" class="small text-muted ps-5 py-1">
+                                        <td colspan="9" class="small text-muted ps-5 py-1">
                                             <i class="fas fa-sticky-note me-1"></i>{{ $payout->notes }}
                                         </td>
                                     </tr>
@@ -147,8 +159,32 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Recipient Name <span class="text-danger">*</span></label>
-                        <input type="text" name="recipient_name" class="form-control" placeholder="e.g. John Investor" required maxlength="255">
+                        <label class="form-label fw-semibold">Recipient Category <span class="text-danger">*</span></label>
+                        <select name="recipient_type" class="form-select payout-recipient-type" required>
+                            <option value="state_manager">State Manager</option>
+                            <option value="agent">Agent</option>
+                            <option value="app_user">App User With Plan</option>
+                            <option value="external">External / Investor</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 payout-user-wrap">
+                        <label class="form-label fw-semibold">Recipient <span class="text-danger">*</span></label>
+                        <select name="recipient_user_id" class="form-select payout-recipient-user">
+                            <option value="">Select recipient...</option>
+                            @foreach(($payoutRecipientGroups ?? []) as $groupKey => $group)
+                                <optgroup label="{{ $group['label'] ?? ucfirst(str_replace('_', ' ', $groupKey)) }}">
+                                    @foreach(($group['users'] ?? collect()) as $recipientUser)
+                                        <option value="{{ $recipientUser->id }}" data-recipient-type="{{ $groupKey }}">
+                                            {{ $recipientUser->name ?: $recipientUser->email }}{{ $recipientUser->email ? ' - ' . $recipientUser->email : '' }}
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3 payout-external-wrap d-none">
+                        <label class="form-label fw-semibold">External Recipient Name <span class="text-danger">*</span></label>
+                        <input type="text" name="recipient_name" class="form-control" placeholder="e.g. John Investor" maxlength="255">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Amount (₦) <span class="text-danger">*</span></label>
@@ -187,4 +223,44 @@
         </div>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var modal = document.getElementById('recordPayoutModal');
+        if (!modal) return;
+
+        var typeSelect = modal.querySelector('.payout-recipient-type');
+        var userWrap = modal.querySelector('.payout-user-wrap');
+        var externalWrap = modal.querySelector('.payout-external-wrap');
+        var userSelect = modal.querySelector('.payout-recipient-user');
+        var externalInput = modal.querySelector('input[name="recipient_name"]');
+
+        function syncRecipients() {
+            var type = typeSelect ? typeSelect.value : 'external';
+            var isExternal = type === 'external';
+
+            if (userWrap) userWrap.classList.toggle('d-none', isExternal);
+            if (externalWrap) externalWrap.classList.toggle('d-none', !isExternal);
+            if (userSelect) userSelect.required = !isExternal;
+            if (externalInput) externalInput.required = isExternal;
+
+            if (!userSelect) return;
+
+            Array.from(userSelect.options).forEach(function (option) {
+                var optionType = option.getAttribute('data-recipient-type');
+                if (!optionType) return;
+                option.hidden = optionType !== type;
+            });
+
+            var selected = userSelect.options[userSelect.selectedIndex];
+            if (selected && selected.hidden) {
+                userSelect.value = '';
+            }
+        }
+
+        if (typeSelect) {
+            typeSelect.addEventListener('change', syncRecipients);
+            syncRecipients();
+        }
+    });
+</script>
 @endsection

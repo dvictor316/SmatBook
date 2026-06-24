@@ -141,6 +141,84 @@ class SuperAdminDashboardController extends Controller
         return Subscription::withoutGlobalScope('tenant');
     }
 
+    private function payoutRecipientGroups(): array
+    {
+        $baseColumns = ['id', 'name', 'email', 'role'];
+        foreach (['status', 'company_id', 'state_region', 'country'] as $column) {
+            if (Schema::hasColumn('users', $column)) {
+                $baseColumns[] = $column;
+            }
+        }
+
+        return [
+            'state_manager' => [
+                'label' => 'State Managers',
+                'users' => User::query()
+                    ->select($baseColumns)
+                    ->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), ['state_manager', 'deployment_manager', 'manager'])
+                    ->orderBy('name')
+                    ->limit(250)
+                    ->get(),
+            ],
+            'agent' => [
+                'label' => 'Agents',
+                'users' => User::query()
+                    ->select($baseColumns)
+                    ->whereRaw("LOWER(COALESCE(role, '')) = ?", ['agent'])
+                    ->orderBy('name')
+                    ->limit(250)
+                    ->get(),
+            ],
+            'app_user' => [
+                'label' => 'App Users With Plans',
+                'users' => $this->customerUsersQuery()
+                    ->whereNotIn(DB::raw("LOWER(COALESCE(role, ''))"), ['agent', 'sales_agent'])
+                    ->select($baseColumns)
+                    ->orderBy('name')
+                    ->limit(300)
+                    ->get(),
+            ],
+        ];
+    }
+
+    private function resolvePayoutRecipient(string $recipientType, ?int $recipientUserId, ?string $recipientName): array
+    {
+        if ($recipientType === 'external') {
+            $name = trim((string) $recipientName);
+
+            if ($name === '') {
+                throw new \InvalidArgumentException('Recipient name is required for external payouts.');
+            }
+
+            return ['name' => $name, 'user_id' => null];
+        }
+
+        if (!$recipientUserId) {
+            throw new \InvalidArgumentException('Please select a recipient from the chosen category.');
+        }
+
+        $query = User::query()->whereKey($recipientUserId);
+
+        match ($recipientType) {
+            'state_manager' => $query->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), ['state_manager', 'deployment_manager', 'manager']),
+            'agent' => $query->whereRaw("LOWER(COALESCE(role, '')) = ?", ['agent']),
+            'app_user' => $this->applyPlanUserScope(
+                $query->whereNotIn(DB::raw("LOWER(COALESCE(role, ''))"), ['super_admin', 'superadmin', 'state_manager', 'deployment_manager', 'manager', 'agent'])
+            ),
+            default => throw new \InvalidArgumentException('Invalid recipient category selected.'),
+        };
+
+        $user = $query->first();
+        if (!$user) {
+            throw new \InvalidArgumentException('The selected recipient does not match the chosen category.');
+        }
+
+        return [
+            'name' => trim((string) ($user->name ?: $user->email)),
+            'user_id' => $user->id,
+        ];
+    }
+
     public function index()
     {
         $user = Auth::user();
@@ -741,6 +819,12 @@ class SuperAdminDashboardController extends Controller
                     ->get();
             }
 
+            $recentPayouts = Schema::hasTable('platform_payouts')
+                ? PlatformPayout::with(['recipient', 'recorder'])->latest()->limit(5)->get()
+                : collect();
+
+            $payoutRecipientGroups = $this->payoutRecipientGroups();
+
             // VIEW ATTRIBUTES
             $userRole    = $user->role;
             $permissions = ['view_reports', 'manage_users', 'manage_domains', 'super_access', 'verify_managers'];
@@ -755,7 +839,9 @@ class SuperAdminDashboardController extends Controller
                 'deploymentLimit', 'statusDistribution', 'isDeploymentView',
                 'chartSeries', 'activityHeatmap', 'systemHealth', 'managerPerformance',
                 'activeBranch',
-                'expiringSubscriptions'
+                'expiringSubscriptions',
+                'recentPayouts',
+                'payoutRecipientGroups'
             ));
 
         } catch (\Exception $e) {
@@ -804,6 +890,8 @@ class SuperAdminDashboardController extends Controller
                 'isDeploymentView' => false,
                 'domain' => env('SESSION_DOMAIN', 'Error State'),
                 'expiringSubscriptions' => collect(),
+                'recentPayouts' => collect(),
+                'payoutRecipientGroups' => [],
             ])->with('error', 'System Error: ' . $e->getMessage());
         }
     }
@@ -1544,7 +1632,9 @@ public function pendingManagers()
         }
 
         $validated = $request->validate([
-            'recipient_name' => 'required|string|max:255',
+            'recipient_type' => 'required|in:state_manager,agent,app_user,external',
+            'recipient_user_id' => 'nullable|integer|exists:users,id',
+            'recipient_name' => 'nullable|string|max:255',
             'amount'         => 'required|numeric|min:0.01',
             'payout_type'    => 'required|in:dividend,commission,salary,refund,other',
             'description'    => 'nullable|string|max:500',
@@ -1553,20 +1643,38 @@ public function pendingManagers()
         ]);
 
         try {
-            PlatformPayout::create([
-                'recipient_name' => $validated['recipient_name'],
+            $recipient = $this->resolvePayoutRecipient(
+                $validated['recipient_type'],
+                isset($validated['recipient_user_id']) ? (int) $validated['recipient_user_id'] : null,
+                $validated['recipient_name'] ?? null
+            );
+
+            $payload = [
+                'recipient_name' => $recipient['name'],
                 'amount'         => $validated['amount'],
                 'payout_type'    => $validated['payout_type'],
                 'description'    => $validated['description'] ?? null,
                 'notes'          => $validated['notes'] ?? null,
                 'recorded_by'    => Auth::id(),
                 'paid_at'        => $validated['paid_at'] ?? now(),
-            ]);
+            ];
+
+            if (Schema::hasColumn('platform_payouts', 'recipient_type')) {
+                $payload['recipient_type'] = $validated['recipient_type'];
+            }
+
+            if (Schema::hasColumn('platform_payouts', 'recipient_user_id')) {
+                $payload['recipient_user_id'] = $recipient['user_id'];
+            }
+
+            PlatformPayout::create($payload);
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->back()->withInput()->with('payout_error', $e->getMessage());
         } catch (\Exception $e) {
             return redirect()->back()->with('payout_error', 'Failed to save payout: ' . $e->getMessage());
         }
 
-        return redirect()->back()->with('payout_success', 'Payout of ₦' . number_format($validated['amount'], 2) . ' to ' . $validated['recipient_name'] . ' recorded successfully.');
+        return redirect()->back()->with('payout_success', 'Payout of ₦' . number_format($validated['amount'], 2) . ' to ' . $recipient['name'] . ' recorded successfully.');
     }
 
     public function payoutHistory(\Illuminate\Http\Request $request)
@@ -1574,18 +1682,22 @@ public function pendingManagers()
         $from      = $request->filled('from')      ? \Carbon\Carbon::parse($request->from)->startOfDay()      : null;
         $to        = $request->filled('to')        ? \Carbon\Carbon::parse($request->to)->endOfDay()          : null;
         $type      = $request->input('payout_type');
+        $recipientType = $request->input('recipient_type');
         $recipient = $request->input('recipient');
 
         $query = PlatformPayout::query()
+            ->with(['recipient', 'recorder'])
             ->when($from,      fn ($q) => $q->where('paid_at', '>=', $from))
             ->when($to,        fn ($q) => $q->where('paid_at', '<=', $to))
             ->when($type,      fn ($q) => $q->where('payout_type', $type))
+            ->when($recipientType && Schema::hasColumn('platform_payouts', 'recipient_type'), fn ($q) => $q->where('recipient_type', $recipientType))
             ->when($recipient, fn ($q) => $q->where('recipient_name', 'like', '%' . $recipient . '%'))
             ->latest();
 
+        $totalPayouts = (float) (clone $query)->sum('amount');
         $payouts      = $query->paginate(20)->withQueryString();
-        $totalPayouts = (float) $query->sum('amount');
+        $payoutRecipientGroups = $this->payoutRecipientGroups();
 
-        return view('SuperAdmin.payout-history', compact('payouts', 'totalPayouts', 'from', 'to', 'type', 'recipient'));
+        return view('SuperAdmin.payout-history', compact('payouts', 'totalPayouts', 'from', 'to', 'type', 'recipientType', 'recipient', 'payoutRecipientGroups'));
     }
 }

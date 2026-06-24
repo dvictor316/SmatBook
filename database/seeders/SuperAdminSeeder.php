@@ -8,24 +8,43 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class SuperAdminSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Remove any existing user with this email to prevent "Duplicate Entry"
-        User::where('email', 'donvictorlive@gmail.com')->delete();
+        $email = config('internal.super_admin_email', 'donvictorlive@gmail.com');
 
-        // 2. Create the unique Super Admin account
-        $user = User::create([
+        $user = User::withTrashed()->firstOrNew(['email' => $email]);
+
+        if (method_exists($user, 'trashed') && $user->trashed()) {
+            $user->restore();
+        }
+
+        $attributes = [
             'name' => 'Victor Yusuf',
-            'email' => 'donvictorlive@gmail.com',
+            'email' => $email,
             'password' => Hash::make('@Dononim1'),
-            'role' => 'super_admin', // Ensure your 'users' table has a 'role' column
-            'email_verified_at' => now(),
-        ]);
+            'role' => 'super_admin',
+        ];
 
-        echo "Super Admin Victor Yusuf created successfully.\n";
+        foreach ([
+            'role_id' => null,
+            'status' => 'active',
+            'is_verified' => 1,
+            'email_verified_at' => now(),
+            'verified_at' => now(),
+            'allow_login' => 1,
+            'is_protected_super_admin' => 1,
+        ] as $column => $value) {
+            if (Schema::hasColumn('users', $column)) {
+                $attributes[$column] = $value;
+            }
+        }
+
+        $user->forceFill($attributes)->save();
+
+        echo "Protected super admin {$email} is ready.\n";
     }
 }

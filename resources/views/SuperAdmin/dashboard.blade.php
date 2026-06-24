@@ -1376,11 +1376,6 @@
                                         </div>
 
                                         {{-- Recent Payouts --}}
-                                        @php
-                                            $recentPayouts = \Illuminate\Support\Facades\Schema::hasTable('platform_payouts')
-                                                ? \App\Models\PlatformPayout::latest()->limit(5)->get()
-                                                : collect();
-                                        @endphp
                                         @if($recentPayouts->isNotEmpty())
                                             <div class="mt-4">
                                                 <h6 class="text-muted mb-2 small fw-semibold text-uppercase">Recent Payouts</h6>
@@ -1389,6 +1384,7 @@
                                                         <thead class="table-light">
                                                             <tr>
                                                                 <th>Recipient</th>
+                                                                <th>Category</th>
                                                                 <th>Type</th>
                                                                 <th>Amount</th>
                                                                 <th>Description</th>
@@ -1399,6 +1395,7 @@
                                                             @foreach($recentPayouts as $payout)
                                                                 <tr>
                                                                     <td class="fw-semibold">{{ $payout->recipient_name }}</td>
+                                                                    <td><span class="badge bg-light text-dark border">{{ $payout->recipient_type_label ?? 'External' }}</span></td>
                                                                     <td><span class="badge bg-secondary text-capitalize">{{ $payout->payout_type }}</span></td>
                                                                     <td class="text-danger fw-semibold">₦{{ number_format($payout->amount, 2) }}</td>
                                                                     <td class="text-muted small">{{ $payout->description ?: '—' }}</td>
@@ -1441,8 +1438,32 @@
                                                 </div>
                                             @endif
                                             <div class="mb-3">
-                                                <label class="form-label fw-semibold">Recipient Name <span class="text-danger">*</span></label>
-                                                <input type="text" name="recipient_name" class="form-control @error('recipient_name') is-invalid @enderror" placeholder="e.g. John Investor" required maxlength="255" value="{{ old('recipient_name') }}">
+                                                <label class="form-label fw-semibold">Recipient Category <span class="text-danger">*</span></label>
+                                                <select name="recipient_type" class="form-select payout-recipient-type @error('recipient_type') is-invalid @enderror" required>
+                                                    <option value="state_manager" {{ old('recipient_type', 'state_manager') === 'state_manager' ? 'selected' : '' }}>State Manager</option>
+                                                    <option value="agent" {{ old('recipient_type') === 'agent' ? 'selected' : '' }}>Agent</option>
+                                                    <option value="app_user" {{ old('recipient_type') === 'app_user' ? 'selected' : '' }}>App User With Plan</option>
+                                                    <option value="external" {{ old('recipient_type') === 'external' ? 'selected' : '' }}>External / Investor</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3 payout-user-wrap">
+                                                <label class="form-label fw-semibold">Recipient <span class="text-danger">*</span></label>
+                                                <select name="recipient_user_id" class="form-select payout-recipient-user @error('recipient_user_id') is-invalid @enderror">
+                                                    <option value="">Select recipient...</option>
+                                                    @foreach(($payoutRecipientGroups ?? []) as $groupKey => $group)
+                                                        <optgroup label="{{ $group['label'] ?? ucfirst(str_replace('_', ' ', $groupKey)) }}">
+                                                            @foreach(($group['users'] ?? collect()) as $recipientUser)
+                                                                <option value="{{ $recipientUser->id }}" data-recipient-type="{{ $groupKey }}" {{ (string) old('recipient_user_id') === (string) $recipientUser->id ? 'selected' : '' }}>
+                                                                    {{ $recipientUser->name ?: $recipientUser->email }}{{ $recipientUser->email ? ' - ' . $recipientUser->email : '' }}
+                                                                </option>
+                                                            @endforeach
+                                                        </optgroup>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="mb-3 payout-external-wrap d-none">
+                                                <label class="form-label fw-semibold">External Recipient Name <span class="text-danger">*</span></label>
+                                                <input type="text" name="recipient_name" class="form-control @error('recipient_name') is-invalid @enderror" placeholder="e.g. John Investor" maxlength="255" value="{{ old('recipient_name') }}">
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label fw-semibold">Amount (₦) <span class="text-danger">*</span></label>
@@ -1489,6 +1510,46 @@
                             });
                         </script>
                         @endif
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function () {
+                                var modal = document.getElementById('recordPayoutModal');
+                                if (!modal) return;
+
+                                var typeSelect = modal.querySelector('.payout-recipient-type');
+                                var userWrap = modal.querySelector('.payout-user-wrap');
+                                var externalWrap = modal.querySelector('.payout-external-wrap');
+                                var userSelect = modal.querySelector('.payout-recipient-user');
+                                var externalInput = modal.querySelector('input[name="recipient_name"]');
+
+                                function syncRecipients() {
+                                    var type = typeSelect ? typeSelect.value : 'external';
+                                    var isExternal = type === 'external';
+
+                                    if (userWrap) userWrap.classList.toggle('d-none', isExternal);
+                                    if (externalWrap) externalWrap.classList.toggle('d-none', !isExternal);
+                                    if (userSelect) userSelect.required = !isExternal;
+                                    if (externalInput) externalInput.required = isExternal;
+
+                                    if (!userSelect) return;
+
+                                    Array.from(userSelect.options).forEach(function (option) {
+                                        var optionType = option.getAttribute('data-recipient-type');
+                                        if (!optionType) return;
+                                        option.hidden = optionType !== type;
+                                    });
+
+                                    var selected = userSelect.options[userSelect.selectedIndex];
+                                    if (selected && selected.hidden) {
+                                        userSelect.value = '';
+                                    }
+                                }
+
+                                if (typeSelect) {
+                                    typeSelect.addEventListener('change', syncRecipients);
+                                    syncRecipients();
+                                }
+                            });
+                        </script>
 
                         <div class="row mt-2">
                             <div class="col-12 grid-margin stretch-card">
