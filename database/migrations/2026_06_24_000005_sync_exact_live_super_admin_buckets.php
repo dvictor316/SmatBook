@@ -61,9 +61,9 @@ return new class extends Migration
         }
 
         $agentIds = DB::table('users')
-            ->whereNotIn(DB::raw("LOWER(COALESCE(role, ''))"), ['super_admin', 'superadmin', 'administrator', 'admin'])
-            ->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), ['deployment_manager', 'manager', 'state_manager'])
+            ->whereNotIn(DB::raw("LOWER(COALESCE(role, ''))"), ['super_admin', 'superadmin'])
             ->when($stateManagerIds !== [], fn ($query) => $query->whereNotIn('id', $stateManagerIds))
+            ->when($registeredBusinessIds !== [], fn ($query) => $query->whereNotIn('id', $registeredBusinessIds))
             ->pluck('id')
             ->all();
 

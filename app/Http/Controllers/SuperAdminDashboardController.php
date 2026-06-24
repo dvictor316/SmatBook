@@ -235,7 +235,7 @@ class SuperAdminDashboardController extends Controller
         $registeredBusinessIds = $this->registeredBusinessUserIds();
 
         if (Schema::hasColumn('users', 'role')) {
-            $query->whereNotIn(DB::raw("LOWER(COALESCE(role, ''))"), ['super_admin', 'superadmin']);
+            $query->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), ['agent']);
         }
 
         if ($stateManagerIds !== []) {
