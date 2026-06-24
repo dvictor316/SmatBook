@@ -1,6 +1,10 @@
-<?php $page = 'profile'; ?>
-@php($hideSidebar = true)
+@php
+    $page = 'profile';
+    $hideSidebar = true;
+@endphp
+
 @extends('layout.mainlayout')
+
 @section('content')
 
     @php
@@ -130,4 +134,4 @@
             </div>
         </div>
     </div>
-@endsection
+@stop
