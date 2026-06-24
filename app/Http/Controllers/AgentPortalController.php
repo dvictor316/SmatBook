@@ -109,6 +109,8 @@ class AgentPortalController extends Controller
             'lead_type' => ['nullable', 'in:personal,company,state_manager'],
             'priority' => ['nullable', 'in:low,normal,high,hot'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ]);
 
         if (!Schema::hasTable('agent_leads')) {
