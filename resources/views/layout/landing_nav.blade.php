@@ -296,6 +296,13 @@
             box-shadow: 0 0 0 1px var(--primary) inset, 0 12px 30px rgba(0, 98, 255, 0.18);
         }
 
+        .btn-portal:hover *,
+        .btn-portal:focus-visible,
+        .btn-portal:focus-visible * {
+            color: var(--primary) !important;
+            -webkit-text-fill-color: var(--primary) !important;
+        }
+
         /* ===== HAMBURGER MENU ===== */
         .hamburger { 
             display: none; 
