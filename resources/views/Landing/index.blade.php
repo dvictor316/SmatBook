@@ -159,10 +159,10 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 
 .btn-portal {
     background: linear-gradient(135deg, #1170ec, #19b9e6); color: #fff !important;
-    padding: 10px 28px; border-radius: var(--radius-md); font-weight: 800; font-size: 0.78rem;
+    padding: 10px 28px; border-radius: 14px; font-weight: 800; font-size: 0.78rem;
     letter-spacing: 1.2px; text-transform: uppercase; text-decoration: none;
     box-shadow: 0 4px 16px rgba(17,112,236,0.25); transition: all 0.3s; border: none;
-    display: inline-flex; align-items: center; gap: 8px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px;
 }
 .btn-portal:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(17,112,236,0.35); color: #fff !important; }
 

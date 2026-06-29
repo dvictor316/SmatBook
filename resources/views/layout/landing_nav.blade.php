@@ -188,7 +188,8 @@
             margin: 0;
             padding: 0;
             flex: 1 1 auto;
-            justify-content: center;
+            justify-content: flex-end;
+            margin-left: auto;
             min-width: 0;
         }
 
@@ -199,7 +200,7 @@
         .nav-action-item {
             display: flex;
             align-items: center;
-            margin-left: 12px;
+            margin-left: 4px;
         }
 
         .nav-links a { 
