@@ -420,6 +420,7 @@
                     <h3 class="plan-name">{{ $planCards['starter']['label'] }}</h3>
                     <p class="plan-desc">{{ $planCards['starter']['description'] }}</p>
                     <div class="price-display">
+                        1 user:
                         <span id="price-starter-solo">₦1,000</span><small id="period-starter-solo">/mo</small>
                     </div>
                     <p class="price-secondary">1 user only: <strong id="price-starter">₦1,000</strong><span id="period-starter">/mo</span></p>
@@ -440,6 +441,7 @@
                     <h3 class="plan-name">{{ $planCards['basic']['label'] }}</h3>
                     <p class="plan-desc">{{ $planCards['basic']['description'] }}</p>
                     <div class="price-display">
+                        1 user:
                         <span id="price-basic-solo">₦3,000</span><small id="period-basic-solo">/mo</small>
                     </div>
                     <p class="price-secondary">3 users: <strong id="price-basic">₦5,500</strong><span id="period-basic">/mo</span></p>
@@ -460,6 +462,7 @@
                     <h3 class="plan-name">{{ $planCards['pro']['label'] }}</h3>
                     <p class="plan-desc">{{ $planCards['pro']['description'] }}</p>
                     <div class="price-display">
+                        2 users:
                         <span id="price-pro-solo">₦7,000</span><small id="period-pro-solo">/mo</small>
                     </div>
                     <p class="price-secondary">5 users: <strong id="price-pro">₦19,500</strong><span id="period-pro">/mo</span></p>
@@ -479,6 +482,7 @@
                     <h3 class="plan-name">{{ $planCards['enterprise']['label'] }}</h3>
                     <p class="plan-desc">{{ $planCards['enterprise']['description'] }}</p>
                     <div class="price-display">
+                        3 users:
                         <span id="price-enterprise-solo">₦15,000</span><small id="period-enterprise-solo">/mo</small>
                     </div>
                     <p class="price-secondary">8 users: <strong id="price-enterprise">₦28,500</strong><span id="period-enterprise">/mo</span></p>
