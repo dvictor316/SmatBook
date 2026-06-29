@@ -161,8 +161,8 @@
         .plan-name { font-weight: 700; color: var(--muji-blue-deep); font-size: 1.25rem; margin-bottom: 8px; }
         .plan-desc { font-size: 0.9rem; color: #64748b; margin-bottom: 30px; line-height: 1.4; height: 40px; }
 
-        .price-display { font-size: 2.25rem; font-weight: 800; color: var(--muji-blue-deep); margin-bottom: 12px; letter-spacing: -1px; }
-        .price-display small { font-size: 0.9rem; color: #64748b; font-weight: 500; letter-spacing: 0; }
+        .price-display { font-size: 1.85rem; font-weight: 800; color: var(--muji-blue-deep); margin-bottom: 12px; letter-spacing: -0.6px; line-height: 1.25; }
+        .price-display small { font-size: 0.78rem; color: #64748b; font-weight: 600; letter-spacing: 0; }
         .price-secondary { font-size: 1.05rem; font-weight: 800; color: var(--muji-gold); margin: -2px 0 24px; line-height: 1.4; }
         .price-secondary strong { color: var(--muji-gold); font-weight: 800; }
         .price-secondary span { color: var(--muji-gold); }
@@ -423,7 +423,7 @@
                         1 user:
                         <span id="price-starter-solo">₦1,000</span><small id="period-starter-solo">/mo</small>
                     </div>
-                    <p class="price-secondary">1 user only: <strong id="price-starter">₦1,000</strong><span id="period-starter">/mo</span></p>
+                    <p class="price-secondary">1 user: <strong id="price-starter">₦1,000</strong><span id="period-starter">/mo</span></p>
                     <ul class="feature-list">
                         @foreach($tierBenefits['starter'] as $benefit)
                             <li><i class="fas fa-check-circle"></i> {{ $benefit }}</li>

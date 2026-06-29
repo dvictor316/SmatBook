@@ -199,11 +199,11 @@
         .nav-links a { 
             text-decoration: none; 
             color: var(--dark); 
-            font-weight: 700; 
+            font-weight: 800; 
             font-size: 0.85rem; 
             text-transform: uppercase; 
             transition: 0.3s ease; 
-            letter-spacing: 0.5px; 
+            letter-spacing: 0.45px; 
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
         }
@@ -820,8 +820,9 @@
             }
 
             .nav-links a {
-                font-size: 0.74rem;
-                letter-spacing: 0.18px;
+                font-size: 0.8rem;
+                font-weight: 800;
+                letter-spacing: 0.22px;
                 white-space: nowrap;
             }
 
@@ -847,7 +848,7 @@
             }
 
             .logo-text {
-                font-size: 0.72rem;
+                font-size: 0.84rem;
             }
 
             .nav-links {
@@ -858,8 +859,9 @@
             }
 
             .nav-links a {
-                font-size: 0.6rem;
-                letter-spacing: 0;
+                font-size: 0.72rem;
+                font-weight: 800;
+                letter-spacing: 0.1px;
             }
 
             .nav-demo-link {
@@ -898,7 +900,7 @@
             }
 
             .logo-text {
-                font-size: 0.74rem;
+                font-size: 0.8rem;
             }
 
             .nav-links {
@@ -906,8 +908,9 @@
             }
 
             .nav-links a {
-                font-size: 0.56rem;
-                letter-spacing: 0;
+                font-size: 0.68rem;
+                font-weight: 800;
+                letter-spacing: 0.08px;
             }
 
             .nav-demo-link {
