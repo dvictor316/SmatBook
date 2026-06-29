@@ -142,7 +142,7 @@ class ProductController extends Controller
 
         $companyId = $this->tenantCompanyId();
 
-        return Unit::query()
+        return Unit::withoutGlobalScopes()
             ->when($activeOnly, fn ($query) => $query->where('status', 'active'))
             ->where(function ($query) use ($companyId) {
                 $query->whereNull('company_id');
@@ -163,10 +163,11 @@ class ProductController extends Controller
         $now = now();
 
         foreach ($this->defaultUnitCatalog() as [$name, $symbol]) {
-            Unit::query()->updateOrCreate(
+            Unit::withoutGlobalScopes()->updateOrCreate(
                 ['company_id' => null, 'symbol' => $symbol],
                 [
                     'name' => $name,
+                    'user_id' => null,
                     'status' => 'active',
                     'updated_at' => $now,
                     'created_at' => $now,
@@ -199,10 +200,10 @@ class ProductController extends Controller
             return null;
         }
 
-        $unitId = Unit::query()
+        $unitId = Unit::withoutGlobalScopes()
             ->whereNull('company_id')
             ->where('symbol', 'pcs')
-            ->value('id') ?: Unit::query()->where('status', 'active')->value('id');
+            ->value('id') ?: Unit::withoutGlobalScopes()->where('status', 'active')->value('id');
 
         return $unitId ? (int) $unitId : null;
     }
@@ -219,7 +220,7 @@ class ProductController extends Controller
 
         if (Schema::hasTable('units') && Schema::hasColumn('products', 'base_unit_name')) {
             $baseUnitId = $validated['base_unit_id'] ?? $validated['unit_id'] ?? null;
-            $baseSymbol = $baseUnitId ? Unit::query()->whereKey($baseUnitId)->value('symbol') : null;
+            $baseSymbol = $baseUnitId ? Unit::withoutGlobalScopes()->whereKey($baseUnitId)->value('symbol') : null;
             if ($baseSymbol) {
                 $validated['base_unit_name'] = $baseSymbol;
             }
