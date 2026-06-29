@@ -138,6 +138,8 @@ class ProductController extends Controller
             return collect();
         }
 
+        $this->ensureDefaultUnitsAvailable();
+
         $companyId = $this->tenantCompanyId();
 
         return Unit::query()
@@ -150,6 +152,45 @@ class ProductController extends Controller
             })
             ->orderBy('name')
             ->get();
+    }
+
+    private function ensureDefaultUnitsAvailable(): void
+    {
+        if (!Schema::hasTable('units')) {
+            return;
+        }
+
+        $now = now();
+
+        foreach ($this->defaultUnitCatalog() as [$name, $symbol]) {
+            Unit::query()->updateOrCreate(
+                ['company_id' => null, 'symbol' => $symbol],
+                [
+                    'name' => $name,
+                    'status' => 'active',
+                    'updated_at' => $now,
+                    'created_at' => $now,
+                ]
+            );
+        }
+    }
+
+    private function defaultUnitCatalog(): array
+    {
+        return [
+            ['Piece', 'pcs'],
+            ['Kilogram', 'kg'],
+            ['Gram', 'g'],
+            ['Litre', 'L'],
+            ['Millilitre', 'ml'],
+            ['Metre', 'm'],
+            ['Carton', 'ctn'],
+            ['Pack', 'pack'],
+            ['Dozen', 'doz'],
+            ['Bag', 'bag'],
+            ['Bottle', 'bottle'],
+            ['Roll', 'roll'],
+        ];
     }
 
     private function defaultUnitId(): ?int
