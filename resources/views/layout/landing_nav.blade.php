@@ -116,7 +116,7 @@
             color: var(--dark); 
             line-height: 1.8; 
             overflow-x: hidden;
-            padding-top: 68px;
+            padding-top: 102px;
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
         }
@@ -132,38 +132,40 @@
             width: 100%; 
             top: 0; 
             z-index: 9999;
-            background: rgba(255, 255, 255, 0.98); 
+            background: rgba(248, 250, 255, 0.98); 
             backdrop-filter: blur(20px);
-            border-bottom: 1px solid #e2e8f0; 
-            height: 68px; 
+            border-bottom: 3px solid rgba(212, 168, 69, 0.9); 
+            height: 102px; 
             display: flex; 
             align-items: center;
-            box-shadow: 0 4px 20px rgba(0, 98, 255, 0.08);
+            box-shadow: 0 6px 22px rgba(15, 23, 42, 0.08);
         }
 
         .nav-container { 
-            max-width: 1500px; 
+            max-width: 1920px; 
             margin: 0 auto; 
             width: 100%; 
-            padding: 0 40px; 
+            padding: 0 26px 0 34px; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
+            gap: 24px;
         }
 
         .logo-container { 
             display: flex; 
             align-items: center; 
-            gap: 12px; 
+            gap: 14px; 
             z-index: 10001; 
             text-decoration: none; 
+            flex: 0 0 auto;
         }
 
         .logo-text {
-            font-size: 1.2rem;
+            font-size: 1.95rem;
             font-weight: 800;
             color: #0b2a63;
-            letter-spacing: -0.3px;
+            letter-spacing: -0.8px;
             line-height: 1;
             white-space: nowrap;
         }
@@ -173,18 +175,21 @@
         }
 
         .brand-img { 
-            height: 56px; 
+            height: 62px; 
             width: auto; 
         }
 
         .nav-links { 
             display: flex; 
             list-style: none; 
-            gap: 35px; 
+            gap: 22px; 
             align-items: center; 
             flex-wrap: nowrap;
             margin: 0;
             padding: 0;
+            flex: 1 1 auto;
+            justify-content: center;
+            min-width: 0;
         }
 
         .nav-links li {
@@ -194,16 +199,23 @@
         .nav-action-item {
             display: flex;
             align-items: center;
+            margin-left: 26px;
         }
 
         .nav-links a { 
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            padding: 10px 18px;
+            border-radius: 14px;
             text-decoration: none; 
             color: var(--dark); 
             font-weight: 800; 
-            font-size: 0.85rem; 
+            font-size: 1rem; 
             text-transform: uppercase; 
             transition: 0.3s ease; 
-            letter-spacing: 0.45px; 
+            letter-spacing: 0.85px; 
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
         }
@@ -211,6 +223,7 @@
         .nav-links a:hover, 
         .nav-links a.active { 
             color: var(--primary); 
+            background: rgba(37, 99, 235, 0.1);
         }
 
         .nav-demo-link {
@@ -257,16 +270,19 @@
         .btn-portal {
             background: var(--grad-blue);
             color: white !important;
-            padding: 10px 18px;
-            border-radius: 8px;
-            font-weight: 700;
+            padding: 18px 34px;
+            border-radius: 22px;
+            font-weight: 800;
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             transition: 0.3s ease;
             box-shadow: 0 8px 20px rgba(0, 98, 255, 0.2);
-            font-size: 0.8rem;
-            letter-spacing: 0.2px;
+            font-size: 1rem;
+            letter-spacing: 0.65px;
             white-space: nowrap;
+            min-height: 62px;
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
         }
@@ -807,34 +823,34 @@
             }
 
             .brand-img {
-                height: 44px;
+                height: 52px;
             }
 
             .logo-text {
-                font-size: 0.92rem;
+                font-size: 1.35rem;
             }
 
             .nav-links {
-                gap: 14px;
+                gap: 16px;
                 flex-wrap: nowrap;
             }
 
             .nav-links a {
-                font-size: 0.8rem;
+                font-size: 0.88rem;
                 font-weight: 800;
-                letter-spacing: 0.22px;
+                letter-spacing: 0.45px;
                 white-space: nowrap;
             }
 
             .nav-demo-link {
-                padding: 7px 10px !important;
+                padding: 8px 11px !important;
             }
 
             .btn-portal {
-                padding: 9px 14px;
-                font-size: 0.74rem;
+                padding: 14px 20px;
+                font-size: 0.84rem;
                 white-space: nowrap;
-                border-radius: 9px;
+                border-radius: 16px;
             }
         }
 
@@ -844,11 +860,11 @@
             }
 
             .brand-img {
-                height: 38px;
+                height: 46px;
             }
 
             .logo-text {
-                font-size: 0.84rem;
+                font-size: 1.08rem;
             }
 
             .nav-links {
@@ -859,9 +875,9 @@
             }
 
             .nav-links a {
-                font-size: 0.72rem;
+                font-size: 0.8rem;
                 font-weight: 800;
-                letter-spacing: 0.1px;
+                letter-spacing: 0.24px;
             }
 
             .nav-demo-link {
@@ -871,10 +887,10 @@
             }
 
             .btn-portal {
-                padding: 7px 9px;
-                font-size: 0.62rem;
+                padding: 11px 14px;
+                font-size: 0.74rem;
                 letter-spacing: 0;
-                min-height: 34px;
+                min-height: 44px;
             }
 
             .nav-label-full {
@@ -896,11 +912,11 @@
             }
 
             .brand-img {
-                height: 36px;
+                height: 42px;
             }
 
             .logo-text {
-                font-size: 0.8rem;
+                font-size: 0.96rem;
             }
 
             .nav-links {
@@ -908,9 +924,9 @@
             }
 
             .nav-links a {
-                font-size: 0.68rem;
+                font-size: 0.74rem;
                 font-weight: 800;
-                letter-spacing: 0.08px;
+                letter-spacing: 0.16px;
             }
 
             .nav-demo-link {
@@ -919,8 +935,8 @@
             }
 
             .btn-portal {
-                padding: 6px 7px;
-                font-size: 0.58rem;
+                padding: 10px 12px;
+                font-size: 0.68rem;
             }
         }
 
