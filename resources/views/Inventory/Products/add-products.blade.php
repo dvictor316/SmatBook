@@ -1006,9 +1006,7 @@ $(document).ready(function () {
     });
 
     $('select[name="purchase_unit_id"]').on('change', function () {
-        refreshQuickPackagingLabels();
-        calculateQuickCartonContent();
-        calculateQuickStock();
+        applyUnitSymbol(selectedUnitKey('select[name="purchase_unit_id"]'));
     });
 
     $('.unit-suggestion-chip').on('click', function () {

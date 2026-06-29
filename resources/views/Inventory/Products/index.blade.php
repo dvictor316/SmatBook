@@ -1529,8 +1529,7 @@
         });
 
         $('#addProductModal').on('input', 'input[name="base_unit_name"]', function() {
-            refreshQuickPackagingLabels();
-            calculateQuickStock();
+            applyQuickUnitSymbol($(this).val());
         });
 
         $('#addProductModal').on('change', 'select[name="unit_id"]', function () {
@@ -1543,9 +1542,7 @@
         });
 
         $('#addProductModal').on('change', 'select[name="purchase_unit_id"]', function () {
-            refreshQuickPackagingLabels();
-            calculateQuickCartonContent();
-            calculateQuickStock();
+            applyQuickUnitSymbol(selectedUnitKey('#addProductModal select[name="purchase_unit_id"]'));
         });
 
         $('#addProductModal').on('click', '.unit-suggestion-chip', function () {
