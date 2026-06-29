@@ -1301,21 +1301,88 @@
             return raw.length ? raw : 'pcs';
         }
 
-        function optionSymbol(option) {
-            if (!option) {
-                return '';
-            }
+        function normalizeUnitKey(value) {
+            var normalized = String(value || '').trim().toLowerCase();
+            var aliases = {
+                pc: 'pcs',
+                pcs: 'pcs',
+                piece: 'pcs',
+                pieces: 'pcs',
+                kg: 'kg',
+                kilogram: 'kg',
+                kilograms: 'kg',
+                kilo: 'kg',
+                g: 'g',
+                gram: 'g',
+                grams: 'g',
+                l: 'litre',
+                lt: 'litre',
+                ltr: 'litre',
+                litre: 'litre',
+                liter: 'litre',
+                liters: 'litre',
+                litres: 'litre',
+                ml: 'ml',
+                millilitre: 'ml',
+                millilitres: 'ml',
+                milliliter: 'ml',
+                milliliters: 'ml',
+                m: 'meter',
+                meter: 'meter',
+                metre: 'meter',
+                metres: 'meter',
+                pk: 'pack',
+                pack: 'pack',
+                packs: 'pack',
+                bottle: 'bottle',
+                bottles: 'bottle',
+                carton: 'carton',
+                cartons: 'carton',
+                ctn: 'carton',
+                roll: 'roll',
+                rolls: 'roll'
+            };
 
-            return String(option.getAttribute('data-symbol') || option.dataset.symbol || '').trim();
+            return aliases[normalized] || normalized;
         }
 
-        function selectedUnitSymbol(selector) {
+        function preferredUnitLabel(value) {
+            var normalized = normalizeUnitKey(value);
+            var labels = {
+                pcs: 'pcs',
+                kg: 'kg',
+                g: 'g',
+                litre: 'litre',
+                ml: 'ml',
+                meter: 'meter',
+                pack: 'pack',
+                bottle: 'bottle',
+                carton: 'carton',
+                roll: 'roll'
+            };
+
+            return labels[normalized] || String(value || '').trim();
+        }
+
+        function optionUnitKeys(option) {
+            if (!option) {
+                return [];
+            }
+
+            var direct = String(option.getAttribute('data-symbol') || option.dataset.symbol || '').trim();
+            var text = String(option.textContent || '').trim().toLowerCase();
+            var match = text.match(/^(.*?)\s*\((.*?)\)\s*$/);
+            var parts = [direct, text, match ? match[1] : '', match ? match[2] : ''];
+            return Array.from(new Set(parts.map(normalizeUnitKey).filter(Boolean)));
+        }
+
+        function selectedUnitKey(selector) {
             var select = document.querySelector(selector);
             if (!select || !select.value) {
                 return '';
             }
 
-            return optionSymbol(select.options[select.selectedIndex]);
+            return optionUnitKeys(select.options[select.selectedIndex])[0] || '';
         }
 
         var quickUnitSyncing = false;
@@ -1326,15 +1393,13 @@
                 return;
             }
 
-            var normalized = String(symbol || '').trim().toLowerCase();
+            var normalized = normalizeUnitKey(symbol);
             if (!normalized) {
                 return;
             }
 
             var option = Array.from(select.options).find(function (opt) {
-                var text = String(opt.textContent || '').trim().toLowerCase();
-                var dataSymbol = optionSymbol(opt).toLowerCase();
-                return dataSymbol === normalized || text === normalized || text.indexOf('(' + normalized + ')') !== -1;
+                return optionUnitKeys(opt).includes(normalized);
             });
 
             if (option) {
@@ -1347,7 +1412,7 @@
         }
 
         function applyQuickUnitSymbol(symbol) {
-            symbol = String(symbol || '').trim();
+            symbol = preferredUnitLabel(symbol);
             if (!symbol || quickUnitSyncing) {
                 return;
             }
@@ -1356,6 +1421,7 @@
             $('#addProductModal input[name="base_unit_name"]').val(symbol);
             selectUnitBySuggestion('#addProductModal select[name="unit_id"]', symbol);
             selectUnitBySuggestion('#addProductModal select[name="base_unit_id"]', symbol);
+            selectUnitBySuggestion('#addProductModal select[name="purchase_unit_id"]', symbol);
             quickUnitSyncing = false;
 
             refreshQuickPackagingLabels();
@@ -1468,11 +1534,11 @@
         });
 
         $('#addProductModal').on('change', 'select[name="unit_id"]', function () {
-            applyQuickUnitSymbol(selectedUnitSymbol('#addProductModal select[name="unit_id"]'));
+            applyQuickUnitSymbol(selectedUnitKey('#addProductModal select[name="unit_id"]'));
         });
 
         $('#addProductModal').on('change', 'select[name="base_unit_id"]', function () {
-            var symbol = selectedUnitSymbol('#addProductModal select[name="base_unit_id"]') || selectedUnitSymbol('#addProductModal select[name="unit_id"]');
+            var symbol = selectedUnitKey('#addProductModal select[name="base_unit_id"]') || selectedUnitKey('#addProductModal select[name="unit_id"]');
             applyQuickUnitSymbol(symbol);
         });
 

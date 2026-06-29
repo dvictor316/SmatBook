@@ -886,30 +886,91 @@ $(document).ready(function () {
         applyUnitSymbol($(this).val());
     });
 
-    function optionSymbol(option) {
-        if (!option) return '';
-        var direct = String(option.getAttribute('data-symbol') || '').trim();
-        if (direct) return direct;
-        var text = String(option.textContent || '').trim();
-        var match = text.match(/\(([^)]+)\)\s*$/);
-        return match ? match[1].trim() : text;
+    function normalizeUnitKey(value) {
+        var normalized = String(value || '').trim().toLowerCase();
+        var aliases = {
+            pc: 'pcs',
+            pcs: 'pcs',
+            piece: 'pcs',
+            pieces: 'pcs',
+            kg: 'kg',
+            kilogram: 'kg',
+            kilograms: 'kg',
+            kilo: 'kg',
+            g: 'g',
+            gram: 'g',
+            grams: 'g',
+            l: 'litre',
+            lt: 'litre',
+            ltr: 'litre',
+            litre: 'litre',
+            liter: 'litre',
+            liters: 'litre',
+            litres: 'litre',
+            ml: 'ml',
+            millilitre: 'ml',
+            millilitres: 'ml',
+            milliliter: 'ml',
+            milliliters: 'ml',
+            m: 'meter',
+            meter: 'meter',
+            metre: 'meter',
+            metres: 'meter',
+            pk: 'pack',
+            pack: 'pack',
+            packs: 'pack',
+            bottle: 'bottle',
+            bottles: 'bottle',
+            carton: 'carton',
+            cartons: 'carton',
+            ctn: 'carton',
+            roll: 'roll',
+            rolls: 'roll'
+        };
+
+        return aliases[normalized] || normalized;
     }
 
-    function selectedUnitSymbol(selector) {
+    function preferredUnitLabel(value) {
+        var normalized = normalizeUnitKey(value);
+        var labels = {
+            pcs: 'pcs',
+            kg: 'kg',
+            g: 'g',
+            litre: 'litre',
+            ml: 'ml',
+            meter: 'meter',
+            pack: 'pack',
+            bottle: 'bottle',
+            carton: 'carton',
+            roll: 'roll'
+        };
+
+        return labels[normalized] || String(value || '').trim();
+    }
+
+    function optionUnitKeys(option) {
+        if (!option) return [];
+        var direct = String(option.getAttribute('data-symbol') || option.dataset.symbol || '').trim();
+        var text = String(option.textContent || '').trim().toLowerCase();
+        var match = text.match(/^(.*?)\s*\((.*?)\)\s*$/);
+        var parts = [direct, text, match ? match[1] : '', match ? match[2] : ''];
+        return Array.from(new Set(parts.map(normalizeUnitKey).filter(Boolean)));
+    }
+
+    function selectedUnitKey(selector) {
         var select = document.querySelector(selector);
         if (!select || !select.value) return '';
-        return optionSymbol(select.options[select.selectedIndex]);
+        return optionUnitKeys(select.options[select.selectedIndex])[0] || '';
     }
 
     function selectUnitBySuggestion(selector, symbol) {
         var select = document.querySelector(selector);
         if (!select) return;
-        var normalized = String(symbol || '').trim().toLowerCase();
+        var normalized = normalizeUnitKey(symbol);
         if (!normalized) return;
         var option = Array.from(select.options).find(function (opt) {
-            var text = String(opt.textContent || '').trim().toLowerCase();
-            var dataSymbol = optionSymbol(opt).toLowerCase();
-            return dataSymbol === normalized || text === normalized || text.indexOf('(' + normalized + ')') !== -1;
+            return optionUnitKeys(opt).includes(normalized);
         });
         if (option) {
             var changed = select.value !== option.value;
@@ -921,7 +982,7 @@ $(document).ready(function () {
     }
 
     function applyUnitSymbol(symbol) {
-        symbol = String(symbol || '').trim();
+        symbol = preferredUnitLabel(symbol);
         if (!symbol) return;
         if (unitSyncing) return;
         unitSyncing = true;
@@ -936,11 +997,11 @@ $(document).ready(function () {
     }
 
     $('select[name="unit_id"]').on('change', function () {
-        applyUnitSymbol(selectedUnitSymbol('select[name="unit_id"]'));
+        applyUnitSymbol(selectedUnitKey('select[name="unit_id"]'));
     });
 
     $('select[name="base_unit_id"]').on('change', function () {
-        var symbol = selectedUnitSymbol('select[name="base_unit_id"]') || selectedUnitSymbol('select[name="unit_id"]');
+        var symbol = selectedUnitKey('select[name="base_unit_id"]') || selectedUnitKey('select[name="unit_id"]');
         applyUnitSymbol(symbol);
     });
 
