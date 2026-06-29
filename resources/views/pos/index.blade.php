@@ -277,6 +277,21 @@
     background-clip: text;
 }
 
+body.pos-terminal-workspace #mobile_btn,
+body.pos-terminal-workspace #toggle_btn {
+    border-radius: 12px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+body.pos-terminal-workspace #mobile_btn:hover,
+body.pos-terminal-workspace #mobile_btn:focus-visible,
+body.pos-terminal-workspace #toggle_btn:hover,
+body.pos-terminal-workspace #toggle_btn:focus-visible {
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow: 0 10px 22px rgba(6, 26, 68, 0.12);
+    transform: translateY(-1px);
+}
+
 /* Clock Badge */
 .clock-badge {
     background: linear-gradient(135deg, #f4d37a 0%, #d4af37 100%);
@@ -493,7 +508,7 @@
     justify-content: center;
     gap: 8px;
     font-size: 0.82rem;
-    font-weight: 700;
+    font-weight: 800;
     letter-spacing: 0;
     transition: var(--transition);
     text-decoration: none;
@@ -1386,7 +1401,7 @@
     color: #ffffff;
     --spb-btn-hover-color: #ffffff;
     border: none;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 0.8125rem;
     border-radius: var(--radius-md);
     padding: 12px;
@@ -1413,7 +1428,7 @@
     color: #ffffff;
     --spb-btn-hover-color: #ffffff;
     border: none;
-    font-weight: 700;
+    font-weight: 800;
     padding: 16px;
     font-size: 0.875rem;
     border-radius: var(--radius-lg);
@@ -2482,7 +2497,7 @@ body.pos-terminal-workspace .summary-panel {
     background: linear-gradient(180deg, #6d9bea 0%, #315fbd 100%);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.36), 0 1px 1px rgba(0,0,0,0.12);
     font-size: 0.68rem;
-    font-weight: 800;
+    font-weight: 900;
     text-transform: uppercase;
 }
 
@@ -3156,6 +3171,11 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-card::after {
     box-shadow: 0 6px 12px rgba(15, 58, 138, 0.08);
 }
 
+.category-toggle-btn,
+.category-pill {
+    font-weight: 800;
+}
+
 .pos-secondary-action:hover {
     border-color: #1459d9;
     color: #063078;
@@ -3340,13 +3360,8 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-card-img img {
     }
 }
 
-/* POS action rail: iPad/tablet keeps visible buttons; hamburger drawer is phone-only. */
-@media (min-width: 768px) and (max-width: 1199.98px) {
-    body.pos-terminal-workspace #mobile_btn,
-    body.pos-terminal-workspace #toggle_btn {
-        display: none !important;
-    }
-
+/* POS action rail: iPad portrait and smaller use the drawer so the workspace gets more room. */
+@media (min-width: 1024.02px) and (max-width: 1199.98px) {
     body.pos-terminal-workspace .pos-shell {
         display: flex !important;
         gap: 0;
@@ -3390,7 +3405,17 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-card-img img {
     }
 }
 
-@media (max-width: 767.98px) {
+@media (max-width: 1024px) {
+    body.pos-terminal-workspace .header-util-bar,
+    body.pos-terminal-workspace .pos-header-bar {
+        gap: 12px;
+    }
+
+    body.pos-terminal-workspace .pos-header-bar {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
     body.pos-terminal-workspace .pos-shell {
         display: block !important;
         min-height: 0;
@@ -7269,7 +7294,7 @@ document.addEventListener('DOMContentLoaded', function () {
     ].filter(Boolean);
     const posRailBackdrop = document.getElementById('pos-rail-backdrop');
     const posRail = document.getElementById('pos-action-rail');
-    const isPosDrawerMode = () => window.matchMedia('(max-width: 767.98px)').matches;
+    const isPosDrawerMode = () => window.matchMedia('(max-width: 1024px)').matches;
 
     headerMenuButtons.forEach((button) => {
         button.setAttribute('aria-controls', 'pos-action-rail');
