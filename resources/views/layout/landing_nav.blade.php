@@ -116,7 +116,7 @@
             color: var(--dark); 
             line-height: 1.8; 
             overflow-x: hidden;
-            padding-top: 102px;
+            padding-top: 78px;
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
         }
@@ -132,40 +132,40 @@
             width: 100%; 
             top: 0; 
             z-index: 9999;
-            background: rgba(248, 250, 255, 0.98); 
+            background: rgba(255, 255, 255, 0.98); 
             backdrop-filter: blur(20px);
-            border-bottom: 3px solid rgba(212, 168, 69, 0.9); 
-            height: 102px; 
+            border-bottom: 1px solid #e2e8f0; 
+            height: 78px; 
             display: flex; 
             align-items: center;
-            box-shadow: 0 6px 22px rgba(15, 23, 42, 0.08);
+            box-shadow: 0 4px 20px rgba(0, 98, 255, 0.08);
         }
 
         .nav-container { 
-            max-width: 1920px; 
+            max-width: 1500px; 
             margin: 0 auto; 
             width: 100%; 
-            padding: 0 26px 0 34px; 
+            padding: 0 28px; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            gap: 24px;
+            gap: 18px;
         }
 
         .logo-container { 
             display: flex; 
             align-items: center; 
-            gap: 14px; 
+            gap: 12px; 
             z-index: 10001; 
             text-decoration: none; 
             flex: 0 0 auto;
         }
 
         .logo-text {
-            font-size: 1.95rem;
+            font-size: 1.2rem;
             font-weight: 800;
             color: #0b2a63;
-            letter-spacing: -0.8px;
+            letter-spacing: -0.3px;
             line-height: 1;
             white-space: nowrap;
         }
@@ -175,14 +175,14 @@
         }
 
         .brand-img { 
-            height: 62px; 
+            height: 56px; 
             width: auto; 
         }
 
         .nav-links { 
             display: flex; 
             list-style: none; 
-            gap: 22px; 
+            gap: 16px; 
             align-items: center; 
             flex-wrap: nowrap;
             margin: 0;
@@ -199,23 +199,23 @@
         .nav-action-item {
             display: flex;
             align-items: center;
-            margin-left: 26px;
+            margin-left: 12px;
         }
 
         .nav-links a { 
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-height: 42px;
-            padding: 10px 18px;
-            border-radius: 14px;
+            min-height: 34px;
+            padding: 6px 14px;
+            border-radius: 12px;
             text-decoration: none; 
             color: var(--dark); 
-            font-weight: 800; 
-            font-size: 1rem; 
+            font-weight: 700; 
+            font-size: 0.78rem; 
             text-transform: uppercase; 
             transition: 0.3s ease; 
-            letter-spacing: 0.85px; 
+            letter-spacing: 1px; 
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
         }
@@ -270,8 +270,8 @@
         .btn-portal {
             background: var(--grad-blue);
             color: white !important;
-            padding: 18px 34px;
-            border-radius: 22px;
+            padding: 10px 28px;
+            border-radius: 14px;
             font-weight: 800;
             text-decoration: none;
             display: inline-flex;
@@ -279,10 +279,10 @@
             justify-content: center;
             transition: 0.3s ease;
             box-shadow: 0 8px 20px rgba(0, 98, 255, 0.2);
-            font-size: 1rem;
-            letter-spacing: 0.65px;
+            font-size: 0.78rem;
+            letter-spacing: 1.2px;
             white-space: nowrap;
-            min-height: 62px;
+            min-height: 44px;
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
         }
@@ -822,7 +822,7 @@
         /* ===== TABLET LANDSCAPE / SMALL LAPTOP NAV TUNING ===== */
         @media (min-width: 992px) and (max-width: 1320px) {
             .nav-container {
-                padding: 0 20px;
+                padding: 0 18px;
             }
 
             .logo-container {
@@ -830,34 +830,34 @@
             }
 
             .brand-img {
-                height: 52px;
+                height: 46px;
             }
 
             .logo-text {
-                font-size: 1.35rem;
+                font-size: 1rem;
             }
 
             .nav-links {
-                gap: 16px;
+                gap: 12px;
                 flex-wrap: nowrap;
             }
 
             .nav-links a {
-                font-size: 0.88rem;
-                font-weight: 800;
-                letter-spacing: 0.45px;
+                font-size: 0.74rem;
+                font-weight: 700;
+                letter-spacing: 0.5px;
                 white-space: nowrap;
             }
 
             .nav-demo-link {
-                padding: 8px 11px !important;
+                padding: 7px 10px !important;
             }
 
             .btn-portal {
-                padding: 14px 20px;
-                font-size: 0.84rem;
+                padding: 9px 16px;
+                font-size: 0.74rem;
                 white-space: nowrap;
-                border-radius: 16px;
+                border-radius: 10px;
             }
         }
 
@@ -867,11 +867,11 @@
             }
 
             .brand-img {
-                height: 46px;
+                height: 42px;
             }
 
             .logo-text {
-                font-size: 1.08rem;
+                font-size: 0.9rem;
             }
 
             .nav-links {
@@ -882,9 +882,9 @@
             }
 
             .nav-links a {
-                font-size: 0.8rem;
-                font-weight: 800;
-                letter-spacing: 0.24px;
+                font-size: 0.66rem;
+                font-weight: 700;
+                letter-spacing: 0.14px;
             }
 
             .nav-demo-link {
@@ -894,10 +894,10 @@
             }
 
             .btn-portal {
-                padding: 11px 14px;
-                font-size: 0.74rem;
+                padding: 7px 10px;
+                font-size: 0.62rem;
                 letter-spacing: 0;
-                min-height: 44px;
+                min-height: 36px;
             }
 
             .nav-label-full {
@@ -919,11 +919,11 @@
             }
 
             .brand-img {
-                height: 42px;
+                height: 38px;
             }
 
             .logo-text {
-                font-size: 0.96rem;
+                font-size: 0.82rem;
             }
 
             .nav-links {
@@ -931,9 +931,9 @@
             }
 
             .nav-links a {
-                font-size: 0.74rem;
-                font-weight: 800;
-                letter-spacing: 0.16px;
+                font-size: 0.6rem;
+                font-weight: 700;
+                letter-spacing: 0.08px;
             }
 
             .nav-demo-link {
@@ -942,8 +942,8 @@
             }
 
             .btn-portal {
-                padding: 10px 12px;
-                font-size: 0.68rem;
+                padding: 6px 8px;
+                font-size: 0.56rem;
             }
         }
 
