@@ -158,12 +158,39 @@
             letter-spacing: 1px;
         }
 
-        .plan-name { font-weight: 700; color: var(--muji-blue-deep); font-size: 1.25rem; margin-bottom: 8px; }
-        .plan-desc { font-size: 0.9rem; color: #64748b; margin-bottom: 30px; line-height: 1.4; height: 40px; }
+        .plan-name { font-weight: 700; color: var(--muji-blue-deep); font-size: 1.25rem; margin-bottom: 10px; }
+        .plan-desc { font-size: 0.9rem; color: #64748b; margin-bottom: 22px; line-height: 1.45; min-height: 120px; }
 
-        .price-display { font-size: 1.85rem; font-weight: 800; color: var(--muji-blue-deep); margin-bottom: 12px; letter-spacing: -0.6px; line-height: 1.25; }
-        .price-display small { font-size: 0.78rem; color: #64748b; font-weight: 600; letter-spacing: 0; }
-        .price-secondary { font-size: 1.05rem; font-weight: 800; color: var(--muji-gold); margin: -2px 0 24px; line-height: 1.4; }
+        .price-display {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 18px;
+            color: var(--muji-blue-deep);
+        }
+        .price-display .price-seat {
+            font-size: 0.95rem;
+            font-weight: 800;
+            letter-spacing: 0.2px;
+            line-height: 1.2;
+        }
+        .price-display .price-amount {
+            display: inline-flex;
+            align-items: flex-end;
+            gap: 4px;
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.35px;
+            line-height: 1;
+        }
+        .price-display .price-amount small {
+            font-size: 0.78rem;
+            color: #64748b;
+            font-weight: 600;
+            letter-spacing: 0;
+            line-height: 1.2;
+            margin-bottom: 3px;
+        }
+        .price-secondary { font-size: 0.98rem; font-weight: 800; color: var(--muji-gold); margin: 0 0 28px; line-height: 1.45; }
         .price-secondary strong { color: var(--muji-gold); font-weight: 800; }
         .price-secondary span { color: var(--muji-gold); }
 
@@ -420,8 +447,10 @@
                     <h3 class="plan-name">{{ $planCards['starter']['label'] }}</h3>
                     <p class="plan-desc">{{ $planCards['starter']['description'] }}</p>
                     <div class="price-display">
-                        1 user:
-                        <span id="price-starter-solo">₦1,000</span><small id="period-starter-solo">/mo</small>
+                        <span class="price-seat">1 user:</span>
+                        <div class="price-amount">
+                            <span id="price-starter-solo">₦1,000</span><small id="period-starter-solo">/mo</small>
+                        </div>
                     </div>
                     <p class="price-secondary">1 user: <strong id="price-starter">₦1,000</strong><span id="period-starter">/mo</span></p>
                     <ul class="feature-list">
@@ -441,8 +470,10 @@
                     <h3 class="plan-name">{{ $planCards['basic']['label'] }}</h3>
                     <p class="plan-desc">{{ $planCards['basic']['description'] }}</p>
                     <div class="price-display">
-                        1 user:
-                        <span id="price-basic-solo">₦3,000</span><small id="period-basic-solo">/mo</small>
+                        <span class="price-seat">1 user:</span>
+                        <div class="price-amount">
+                            <span id="price-basic-solo">₦3,000</span><small id="period-basic-solo">/mo</small>
+                        </div>
                     </div>
                     <p class="price-secondary">3 users: <strong id="price-basic">₦5,500</strong><span id="period-basic">/mo</span></p>
                     <ul class="feature-list">
@@ -462,8 +493,10 @@
                     <h3 class="plan-name">{{ $planCards['pro']['label'] }}</h3>
                     <p class="plan-desc">{{ $planCards['pro']['description'] }}</p>
                     <div class="price-display">
-                        2 users:
-                        <span id="price-pro-solo">₦7,000</span><small id="period-pro-solo">/mo</small>
+                        <span class="price-seat">2 users:</span>
+                        <div class="price-amount">
+                            <span id="price-pro-solo">₦7,000</span><small id="period-pro-solo">/mo</small>
+                        </div>
                     </div>
                     <p class="price-secondary">5 users: <strong id="price-pro">₦19,500</strong><span id="period-pro">/mo</span></p>
                     <ul class="feature-list">
@@ -482,8 +515,10 @@
                     <h3 class="plan-name">{{ $planCards['enterprise']['label'] }}</h3>
                     <p class="plan-desc">{{ $planCards['enterprise']['description'] }}</p>
                     <div class="price-display">
-                        3 users:
-                        <span id="price-enterprise-solo">₦15,000</span><small id="period-enterprise-solo">/mo</small>
+                        <span class="price-seat">3 users:</span>
+                        <div class="price-amount">
+                            <span id="price-enterprise-solo">₦15,000</span><small id="period-enterprise-solo">/mo</small>
+                        </div>
                     </div>
                     <p class="price-secondary">8 users: <strong id="price-enterprise">₦28,500</strong><span id="period-enterprise">/mo</span></p>
                     <ul class="feature-list">
