@@ -132,6 +132,25 @@ class SettingController extends Controller
         $this->setJsonSettingArray($this->companyScopedSettingKey($baseKey), $value);
     }
 
+    private function getCompanyScopedSettingValue(string $baseKey, mixed $default = null): mixed
+    {
+        $value = Setting::where('key', $this->companyScopedSettingKey($baseKey))->value('value');
+
+        if ($value !== null) {
+            return $value;
+        }
+
+        return Setting::where('key', $baseKey)->value('value') ?? $default;
+    }
+
+    private function setCompanyScopedSettingValue(string $baseKey, mixed $value): void
+    {
+        Setting::updateOrCreate(
+            ['key' => $this->companyScopedSettingKey($baseKey)],
+            ['value' => (string) ($value ?? '')]
+        );
+    }
+
     private function resolveCurrentSubscription(): ?Subscription
     {
         if (!Auth::check() || !Schema::hasTable('subscriptions')) {
@@ -171,6 +190,8 @@ class SettingController extends Controller
     public function index()
     {
         $settings = $this->getSettings();
+        $settings['expiry_notification_enabled'] = (string) $this->getCompanyScopedSettingValue('expiry_notification_enabled', '0');
+        $settings['expiry_notification_months'] = (string) $this->getCompanyScopedSettingValue('expiry_notification_months', '1');
         $emailLogs = collect();
 
         if (Schema::hasTable('email_audit_logs')) {
@@ -225,6 +246,7 @@ class SettingController extends Controller
             'email'        => 'nullable|email',
             'company_email' => 'nullable|email',
             'mail_from_address' => 'nullable|email',
+            'expiry_notification_months' => 'nullable|in:1,2,6',
         ]);
 
         // 2. Dynamic File Upload Handler
@@ -271,6 +293,17 @@ class SettingController extends Controller
             }
         }
 
+        if ($request->has('expiry_notification_months') || $request->has('expiry_notification_enabled')) {
+            $this->setCompanyScopedSettingValue(
+                'expiry_notification_enabled',
+                $request->boolean('expiry_notification_enabled') ? '1' : '0'
+            );
+            $this->setCompanyScopedSettingValue(
+                'expiry_notification_months',
+                (string) $request->input('expiry_notification_months', '1')
+            );
+        }
+
         // 3. Sensitive fields are encrypted and never echoed back in plain text.
         $sensitiveFields = [
             'stripe_key',
@@ -295,6 +328,7 @@ class SettingController extends Controller
         foreach ($sensitiveFields as $sensitiveField) {
             unset($inputs[$sensitiveField]);
         }
+        unset($inputs['expiry_notification_enabled'], $inputs['expiry_notification_months']);
 
         foreach ($inputs as $key => $value) {
             Setting::updateOrCreate(

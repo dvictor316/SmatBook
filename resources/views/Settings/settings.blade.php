@@ -146,6 +146,31 @@
                                 </div>
                             </div>
 
+                            <div class="col-lg-12">
+                                <div class="form-title">
+                                    <h5>Expiry Notification Settings</h5>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-12">
+                                <div class="input-block mb-3">
+                                    <label class="d-flex align-items-center gap-2">
+                                        <input type="checkbox" name="expiry_notification_enabled" value="1" {{ (string) ($settings->expiry_notification_enabled ?? '0') === '1' ? 'checked' : '' }}>
+                                        <span>Show expiry warning when selling products</span>
+                                    </label>
+                                    <p class="mt-2 mb-0 text-muted">Useful for pharmacies and other businesses selling perishable items.</p>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-12">
+                                <div class="input-block mb-3">
+                                    <label>Notify Before Expiry</label>
+                                    <select class="select" name="expiry_notification_months">
+                                        <option value="1" {{ (string) ($settings->expiry_notification_months ?? '1') === '1' ? 'selected' : '' }}>1 month before expiry</option>
+                                        <option value="2" {{ (string) ($settings->expiry_notification_months ?? '1') === '2' ? 'selected' : '' }}>2 months before expiry</option>
+                                        <option value="6" {{ (string) ($settings->expiry_notification_months ?? '1') === '6' ? 'selected' : '' }}>6 months before expiry</option>
+                                    </select>
+                                </div>
+                            </div>
+
                             <div class="col-lg-12 d-print-none">
                                 <div class="btn-path text-end">
                                     @php

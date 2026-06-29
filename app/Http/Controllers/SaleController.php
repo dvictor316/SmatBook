@@ -138,11 +138,14 @@ class SaleController extends Controller
     private function posViewMeta(): array
     {
         $defaultAvatar = asset('assets/img/profiles/avatar-07.jpg');
+        $expiryAlertMonths = (int) $this->getCompanyScopedSettingValue('expiry_notification_months', '1');
 
         return array_merge($this->posRouteUrls(), [
             'isStarterPos' => PlanAccess::resolveTierForUser(auth()->user()) === 'starter',
             'defaultAvatar' => $defaultAvatar,
             'profileImagePath' => auth()->user()?->avatar_url ?: $defaultAvatar,
+            'posExpiryAlertsEnabled' => (string) $this->getCompanyScopedSettingValue('expiry_notification_enabled', '0') === '1',
+            'posExpiryAlertMonths' => in_array($expiryAlertMonths, [1, 2, 6], true) ? $expiryAlertMonths : 1,
         ]);
     }
 
@@ -357,6 +360,17 @@ class SaleController extends Controller
         $companyId = $this->tenantCompanyId();
 
         return $companyId > 0 ? "{$baseKey}_company_{$companyId}" : $baseKey;
+    }
+
+    private function getCompanyScopedSettingValue(string $baseKey, mixed $default = null): mixed
+    {
+        $value = Setting::where('key', $this->companyScopedSettingKey($baseKey))->value('value');
+
+        if ($value !== null) {
+            return $value;
+        }
+
+        return Setting::where('key', $baseKey)->value('value') ?? $default;
     }
 
     private function getAvailableBranches(): array
@@ -752,7 +766,18 @@ public function customerDetails($id = null)
                         ->map(fn ($lots) => $lots->first()->expiry_date?->toDateString());
 
                     $products = $products->map(function ($product) use ($expiryByProduct) {
-                        $product->setAttribute('earliest_expiry', $expiryByProduct->get($product->id) ?? null);
+                        $fallbackExpiry = $product->expiry_date instanceof Carbon
+                            ? $product->expiry_date->toDateString()
+                            : (!empty($product->expiry_date) ? (string) $product->expiry_date : null);
+                        $product->setAttribute('earliest_expiry', $expiryByProduct->get($product->id) ?? $fallbackExpiry);
+                        return $product;
+                    });
+                } else {
+                    $products = $products->map(function ($product) {
+                        $fallbackExpiry = $product->expiry_date instanceof Carbon
+                            ? $product->expiry_date->toDateString()
+                            : (!empty($product->expiry_date) ? (string) $product->expiry_date : null);
+                        $product->setAttribute('earliest_expiry', $fallbackExpiry);
                         return $product;
                     });
                 }

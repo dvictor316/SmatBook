@@ -4111,6 +4111,8 @@ $(document).ready(function() {
     let isSyncingProductSearch = false;
     const fmt = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' });
     const isStarterPos = @json($isStarterPos ?? false);
+    const posExpiryAlertsEnabled = @json($posExpiryAlertsEnabled ?? false);
+    const posExpiryAlertMonths = Number(@json($posExpiryAlertMonths ?? 1)) || 1;
     const posPriceLists = @json($priceListData ?? []);
     const posPriceListById = new Map(posPriceLists.map(list => [String(list.id), list]));
     const showAlert = (options) => {
@@ -4123,6 +4125,66 @@ $(document).ready(function() {
         const message = options?.text || options?.title || 'Action required';
         window.alert(message);
     };
+
+    function maybeShowExpiryAlert(payload) {
+        const expiry = String(payload?.expiry || '').trim();
+        if (!expiry) {
+            return;
+        }
+
+        const expiryDate = new Date(expiry + 'T00:00:00');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (Number.isNaN(expiryDate.getTime())) {
+            return;
+        }
+
+        const diffMs = expiryDate.getTime() - today.getTime();
+        const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+        if (diffDays <= 0) {
+            const key = `${payload?.id || payload?.name || 'product'}:${expiry}:expired`;
+            if (window.__posLastExpiryAlertKey === key) {
+                return;
+            }
+            window.__posLastExpiryAlertKey = key;
+            showAlert({
+                icon: 'error',
+                title: 'Product Expired!',
+                html: `<b>${payload?.name || 'This product'}</b> expired on <b>${expiry}</b>.<br>Please check your inventory before selling.`,
+                confirmButtonText: 'Understood',
+            });
+            return;
+        }
+
+        if (!posExpiryAlertsEnabled) {
+            return;
+        }
+
+        const notifyFrom = new Date(expiryDate.getTime());
+        notifyFrom.setMonth(notifyFrom.getMonth() - posExpiryAlertMonths);
+
+        if (today < notifyFrom) {
+            return;
+        }
+
+        const key = `${payload?.id || payload?.name || 'product'}:${expiry}:near:${posExpiryAlertMonths}`;
+        if (window.__posLastExpiryAlertKey === key) {
+            return;
+        }
+        window.__posLastExpiryAlertKey = key;
+
+        showAlert({
+            icon: 'warning',
+            title: 'Near Expiry!',
+            html: `<b>${payload?.name || 'This product'}</b> expires on <b>${expiry}</b> (<b>${diffDays}</b> day${diffDays === 1 ? '' : 's'} left). Notification window: <b>${posExpiryAlertMonths} month${posExpiryAlertMonths === 1 ? '' : 's'}</b>.`,
+            timer: 5000,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+        });
+    }
 
     // Clock
     setInterval(() => $('#live-clock').text(new Date().toLocaleTimeString('en-US', { hour12: false })), 1000);
@@ -4801,6 +4863,12 @@ $(document).ready(function() {
             $('#no-img').show();
         }
 
+        maybeShowExpiryAlert({
+            id: productId,
+            name: opt.data('name'),
+            expiry: opt.data('expiry'),
+        });
+
         calculate();
     }
 
@@ -5167,6 +5235,8 @@ window.POS_ENABLE_FALLBACK = function () {
     const categoryToggle = document.getElementById('category-toggle');
     const categoryPillsWrap = document.getElementById('category-pills');
     const isStarterPos = @json($isStarterPos ?? false);
+    const posExpiryAlertsEnabled = @json($posExpiryAlertsEnabled ?? false);
+    const posExpiryAlertMonths = Number(@json($posExpiryAlertMonths ?? 1)) || 1;
     const quickSearch = document.getElementById('quick-search');
     const barcodeInput = document.getElementById('barcode-input');
     const productSelect = document.getElementById('product-select');
@@ -5193,6 +5263,66 @@ window.POS_ENABLE_FALLBACK = function () {
     const hdrSelected = document.getElementById('hdr-selected-product');
     const qtyLabel = document.getElementById('qty-label');
     const unitHelperCopy = document.getElementById('unit-helper-copy');
+
+    function maybeShowExpiryAlert(payload) {
+        const expiry = String(payload?.expiry || '').trim();
+        if (!expiry) {
+            return;
+        }
+
+        const expiryDate = new Date(expiry + 'T00:00:00');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (Number.isNaN(expiryDate.getTime())) {
+            return;
+        }
+
+        const diffMs = expiryDate.getTime() - today.getTime();
+        const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+        if (diffDays <= 0) {
+            const key = `${payload?.id || payload?.name || 'product'}:${expiry}:expired`;
+            if (window.__posLastExpiryAlertKey === key) {
+                return;
+            }
+            window.__posLastExpiryAlertKey = key;
+            showAlert({
+                icon: 'error',
+                title: 'Product Expired!',
+                html: `<b>${payload?.name || 'This product'}</b> expired on <b>${expiry}</b>.<br>Please check your inventory before selling.`,
+                confirmButtonText: 'Understood',
+            });
+            return;
+        }
+
+        if (!posExpiryAlertsEnabled) {
+            return;
+        }
+
+        const notifyFrom = new Date(expiryDate.getTime());
+        notifyFrom.setMonth(notifyFrom.getMonth() - posExpiryAlertMonths);
+
+        if (today < notifyFrom) {
+            return;
+        }
+
+        const key = `${payload?.id || payload?.name || 'product'}:${expiry}:near:${posExpiryAlertMonths}`;
+        if (window.__posLastExpiryAlertKey === key) {
+            return;
+        }
+        window.__posLastExpiryAlertKey = key;
+
+        showAlert({
+            icon: 'warning',
+            title: 'Near Expiry!',
+            html: `<b>${payload?.name || 'This product'}</b> expires on <b>${expiry}</b> (<b>${diffDays}</b> day${diffDays === 1 ? '' : 's'} left). Notification window: <b>${posExpiryAlertMonths} month${posExpiryAlertMonths === 1 ? '' : 's'}</b>.`,
+            timer: 5000,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+        });
+    }
     const vanillaPriceLists = @json($priceListData ?? []);
     const vanillaPriceListById = new Map(vanillaPriceLists.map(list => [String(list.id), list]));
     const hdrShelfCount = document.getElementById('hdr-shelf-count');
@@ -6099,33 +6229,11 @@ window.POS_ENABLE_FALLBACK = function () {
         if (hdrSelected) hdrSelected.textContent = data.name || 'Product';
         productCards.forEach((card) => card.classList.toggle('active', card.dataset.id === String(productId)));
 
-        // Expiry date alert
-        const expiry = String(data.expiry || '').trim();
-        if (expiry) {
-            const expiryDate = new Date(expiry + 'T00:00:00');
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const diffMs = expiryDate - today;
-            const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-            if (diffDays <= 0) {
-                showAlert({
-                    icon: 'error',
-                    title: 'Product Expired!',
-                    html: `<b>${data.name || 'This product'}</b> expired on <b>${expiry}</b>.<br>Please check your inventory before selling.`,
-                    confirmButtonText: 'Understood',
-                });
-            } else if (diffDays <= 30) {
-                showAlert({
-                    icon: 'warning',
-                    title: 'Near Expiry!',
-                    html: `<b>${data.name || 'This product'}</b> expires on <b>${expiry}</b> (<b>${diffDays}</b> day${diffDays === 1 ? '' : 's'} left).`,
-                    timer: 5000,
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                });
-            }
-        }
+        maybeShowExpiryAlert({
+            id: productId,
+            name: data.name,
+            expiry: data.expiry,
+        });
 
         updateItemTotal();
     }
