@@ -7,6 +7,7 @@
     $productRows = $productRows ?? collect();
     $hasProductRows = isset($hasProductRows) ? (bool) $hasProductRows : ($productRows->count() > 0);
     $categories = $categories ?? collect();
+    $units = $units ?? collect();
     $availableBranches = $availableBranches ?? [];
     $activeBranch = $activeBranch ?? [];
     $stockTransferEnabled = $stockTransferEnabled ?? false;
@@ -251,6 +252,57 @@
         font-size: 1rem;
         color: #0f172a;
         font-weight: 800;
+    }
+
+    .unit-suggestion-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-top: 0.55rem;
+    }
+
+    .unit-suggestion-chip {
+        border: 1px solid #dbe3f0;
+        background: #f8fafc;
+        color: #334155;
+        border-radius: 999px;
+        padding: 0.28rem 0.65rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .unit-suggestion-chip:hover {
+        border-color: #0f766e;
+        background: #ecfdf5;
+        color: #0f766e;
+    }
+
+    .unit-action-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.2rem;
+        border: 1px solid #bfdbfe;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        padding: 0.12rem 0.45rem !important;
+        font-weight: 800;
+        font-size: 0.68rem;
+        line-height: 1.15;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .unit-action-link i {
+        font-size: 0.7rem;
+    }
+
+    .unit-action-link:hover {
+        border-color: #93c5fd;
+        background: #dbeafe;
+        color: #1d4ed8;
     }
 
     .product-collapse-toggle {
@@ -605,7 +657,7 @@
                                         <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" placeholder="e.g. Big Bull Rice 50kg" value="{{ old('name') }}" required>
                                         @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
                                         <label class="form-label">Category</label>
                                         <div class="input-group">
                                             <select name="category_id" id="product_category_select" class="form-select quick-category-select @error('category_id') is-invalid @enderror">
@@ -618,10 +670,75 @@
                                         </div>
                                         @error('category_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label">Base Unit</label>
-                                        <input type="text" name="base_unit_name" class="form-control @error('base_unit_name') is-invalid @enderror" value="{{ old('base_unit_name', 'pcs') }}" required>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Legacy Unit Label</label>
+                                        <input type="text" name="base_unit_name" class="form-control @error('base_unit_name') is-invalid @enderror" value="{{ old('base_unit_name', 'pcs') }}" list="quickBaseUnitSuggestions" required>
+                                        <datalist id="quickBaseUnitSuggestions">
+                                            <option value="pcs">
+                                            <option value="kg">
+                                            <option value="g">
+                                            <option value="litre">
+                                            <option value="ml">
+                                            <option value="meter">
+                                            <option value="pack">
+                                            <option value="bottle">
+                                            <option value="carton">
+                                            <option value="roll">
+                                        </datalist>
                                         @error('base_unit_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Unit of Measure <span class="text-danger">*</span></label>
+                                        <select name="unit_id" class="form-select @error('unit_id') is-invalid @enderror" required>
+                                            <option value="">Select unit</option>
+                                            @foreach($units as $unit)
+                                                <option value="{{ $unit->id }}" data-symbol="{{ $unit->symbol }}" @selected((string) old('unit_id') === (string) $unit->id || (!old('unit_id') && $unit->symbol === 'pcs'))>
+                                                    {{ $unit->name }} ({{ $unit->symbol }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center gap-2">
+                                            <label class="form-label mb-0">Base Unit</label>
+                                            <button type="button" class="btn btn-link unit-action-link" data-bs-toggle="modal" data-bs-target="#addUnitModal" title="Add base measurement">
+                                                <i class="fas fa-plus-circle"></i> Add unit
+                                            </button>
+                                        </div>
+                                        <select name="base_unit_id" class="form-select @error('base_unit_id') is-invalid @enderror">
+                                            <option value="">Same as Unit of Measure</option>
+                                            @foreach($units as $unit)
+                                                <option value="{{ $unit->id }}" data-symbol="{{ $unit->symbol }}" @selected((string) old('base_unit_id') === (string) $unit->id)>
+                                                    {{ $unit->name }} ({{ $unit->symbol }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <div class="unit-suggestion-row" aria-label="Base unit suggestions">
+                                            <button type="button" class="unit-suggestion-chip" data-unit-suggestion="pcs">pcs</button>
+                                            <button type="button" class="unit-suggestion-chip" data-unit-suggestion="kg">kg</button>
+                                            <button type="button" class="unit-suggestion-chip" data-unit-suggestion="litre">litre</button>
+                                            <button type="button" class="unit-suggestion-chip" data-unit-suggestion="pack">pack</button>
+                                        </div>
+                                        @error('base_unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Purchase Unit</label>
+                                        <select name="purchase_unit_id" class="form-select @error('purchase_unit_id') is-invalid @enderror">
+                                            <option value="">No bulk purchase unit</option>
+                                            @foreach($units as $unit)
+                                                <option value="{{ $unit->id }}" data-symbol="{{ $unit->symbol }}" @selected((string) old('purchase_unit_id') === (string) $unit->id)>
+                                                    {{ $unit->name }} ({{ $unit->symbol }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('purchase_unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Conversion Rate</label>
+                                        <input type="number" step="0.000001" min="0" name="conversion_rate" class="form-control @error('conversion_rate') is-invalid @enderror" value="{{ old('conversion_rate') }}" placeholder="e.g. 12">
+                                        <small class="text-muted">Base units inside one purchase unit.</small>
+                                        @error('conversion_rate')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label">Retail / Default Price <span class="text-danger">*</span></label>
@@ -854,6 +971,65 @@
                 </div>
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addUnitModal" tabindex="-1" aria-hidden="true" style="z-index:1060;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="POST" action="{{ route('units.store') }}">
+                @csrf
+                <input type="hidden" name="status" value="active">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title mb-0">Add Base Measurement</h5>
+                        <small class="text-muted">Create a unit like Pieces, Kilogram, Litre, Pack, or Bottle.</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            <label class="form-label">Measurement Name <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" placeholder="e.g. Pieces" list="unitNameSuggestions" required>
+                            <datalist id="unitNameSuggestions">
+                                <option value="Pieces">
+                                <option value="Kilogram">
+                                <option value="Gram">
+                                <option value="Litre">
+                                <option value="Millilitre">
+                                <option value="Meter">
+                                <option value="Pack">
+                                <option value="Bottle">
+                                <option value="Carton">
+                                <option value="Roll">
+                            </datalist>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Symbol <span class="text-danger">*</span></label>
+                            <input type="text" name="symbol" class="form-control" placeholder="e.g. pcs" list="unitSymbolSuggestions" required>
+                            <datalist id="unitSymbolSuggestions">
+                                <option value="pcs">
+                                <option value="kg">
+                                <option value="g">
+                                <option value="litre">
+                                <option value="ml">
+                                <option value="m">
+                                <option value="pack">
+                                <option value="bottle">
+                                <option value="ctn">
+                                <option value="roll">
+                            </datalist>
+                        </div>
+                    </div>
+                    <p class="text-muted small mb-0 mt-3">After saving, come back to this product form and select the new measurement from the unit list.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Add Measurement</button>
                 </div>
             </form>
         </div>
@@ -1125,6 +1301,68 @@
             return raw.length ? raw : 'pcs';
         }
 
+        function optionSymbol(option) {
+            if (!option) {
+                return '';
+            }
+
+            return String(option.getAttribute('data-symbol') || option.dataset.symbol || '').trim();
+        }
+
+        function selectedUnitSymbol(selector) {
+            var select = document.querySelector(selector);
+            if (!select || !select.value) {
+                return '';
+            }
+
+            return optionSymbol(select.options[select.selectedIndex]);
+        }
+
+        var quickUnitSyncing = false;
+
+        function selectUnitBySuggestion(selector, symbol) {
+            var select = document.querySelector(selector);
+            if (!select) {
+                return;
+            }
+
+            var normalized = String(symbol || '').trim().toLowerCase();
+            if (!normalized) {
+                return;
+            }
+
+            var option = Array.from(select.options).find(function (opt) {
+                var text = String(opt.textContent || '').trim().toLowerCase();
+                var dataSymbol = optionSymbol(opt).toLowerCase();
+                return dataSymbol === normalized || text === normalized || text.indexOf('(' + normalized + ')') !== -1;
+            });
+
+            if (option) {
+                var changed = select.value !== option.value;
+                select.value = option.value;
+                if (changed && !quickUnitSyncing) {
+                    $(select).trigger('change');
+                }
+            }
+        }
+
+        function applyQuickUnitSymbol(symbol) {
+            symbol = String(symbol || '').trim();
+            if (!symbol || quickUnitSyncing) {
+                return;
+            }
+
+            quickUnitSyncing = true;
+            $('#addProductModal input[name="base_unit_name"]').val(symbol);
+            selectUnitBySuggestion('#addProductModal select[name="unit_id"]', symbol);
+            selectUnitBySuggestion('#addProductModal select[name="base_unit_id"]', symbol);
+            quickUnitSyncing = false;
+
+            refreshQuickPackagingLabels();
+            calculateQuickCartonContent();
+            calculateQuickStock();
+        }
+
         function formatQuickQty(value) {
             return (parseFloat(value) || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
         }
@@ -1227,6 +1465,26 @@
         $('#addProductModal').on('input', 'input[name="base_unit_name"]', function() {
             refreshQuickPackagingLabels();
             calculateQuickStock();
+        });
+
+        $('#addProductModal').on('change', 'select[name="unit_id"]', function () {
+            applyQuickUnitSymbol(selectedUnitSymbol('#addProductModal select[name="unit_id"]'));
+        });
+
+        $('#addProductModal').on('change', 'select[name="base_unit_id"]', function () {
+            var symbol = selectedUnitSymbol('#addProductModal select[name="base_unit_id"]') || selectedUnitSymbol('#addProductModal select[name="unit_id"]');
+            applyQuickUnitSymbol(symbol);
+        });
+
+        $('#addProductModal').on('change', 'select[name="purchase_unit_id"]', function () {
+            refreshQuickPackagingLabels();
+            calculateQuickCartonContent();
+            calculateQuickStock();
+        });
+
+        $('#addProductModal').on('click', '.unit-suggestion-chip', function () {
+            var symbol = $(this).data('unit-suggestion') || '';
+            applyQuickUnitSymbol(symbol);
         });
 
         refreshQuickPackagingLabels();

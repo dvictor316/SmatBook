@@ -945,11 +945,6 @@ $(document).ready(function () {
     });
 
     $('select[name="purchase_unit_id"]').on('change', function () {
-        var symbol = selectedUnitSymbol('select[name="purchase_unit_id"]');
-        if (!symbol) return;
-        $('input[name="base_unit_name"]').val(symbol);
-        selectUnitBySuggestion('select[name="unit_id"]', symbol);
-        selectUnitBySuggestion('select[name="base_unit_id"]', symbol);
         refreshQuickPackagingLabels();
         calculateQuickCartonContent();
         calculateQuickStock();

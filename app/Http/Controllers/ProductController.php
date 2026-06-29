@@ -55,6 +55,7 @@ class ProductController extends Controller
             'products' => collect(),
             'productRows' => collect(),
             'categories' => collect(),
+            'units' => collect(),
             'availableBranches' => [],
             'stockTransferEnabled' => $this->planSupportsStockTransfer(),
             'search' => trim((string) $request->input('search', '')),
@@ -749,6 +750,7 @@ class ProductController extends Controller
                 'products' => collect(),
                 'productRows' => $productRows,
                 'categories' => collect(),
+                'units' => $this->unitOptions(),
                 'availableBranches' => $this->getAvailableBranches(),
                 'search' => trim((string) $request->input('search', '')),
                 'session_domain' => env('SESSION_DOMAIN', null)
@@ -826,11 +828,13 @@ class ProductController extends Controller
                 ? $products->getCollection()
                 : $products;
             $categories = $this->availableCategories();
+            $units = $this->unitOptions();
 
             return view('Inventory.Products.index', [
                 'products' => $products,
                 'productRows' => $productRows,
                 'categories' => $categories,
+                'units' => $units,
                 'availableBranches' => $this->getAvailableBranches(),
                 'stockTransferEnabled' => $this->planSupportsStockTransfer(),
                 'search' => $search,
