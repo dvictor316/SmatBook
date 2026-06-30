@@ -1843,6 +1843,7 @@
             'saas-login', 'saas-register', 'saas-register-initial',
             'manager.verification.form', 'manager.pending.notice', 'submit.verification', 'manager.submit.verification',
         ]) && !str_starts_with((string) $route, 'deployment.')
+           && !str_starts_with((string) $route, 'agent.')
            && !str_starts_with((string) $route, 'reports.')
            && !str_starts_with((string) $route, 'saas.');
     @endphp
