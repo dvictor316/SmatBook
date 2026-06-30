@@ -26,8 +26,8 @@
         $profileImagesRoute = $isAgentProfile && Route::has('agent.profile.update.images')
             ? route('agent.profile.update.images')
             : route('profile.update.images');
-        $profileEditUrl = $isAgentProfile && Route::has('agent.profile')
-            ? route('agent.profile')
+        $profileEditUrl = $isAgentProfile && Route::has('agent.settings')
+            ? route('agent.settings')
             : url('settings');
     @endphp
 

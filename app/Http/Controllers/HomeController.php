@@ -12,6 +12,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\{Auth, Cache, DB, Http, Log, Schema, Storage, Hash};
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Validation\Rule;
 
 class HomeController extends Controller
 {
@@ -1252,6 +1253,16 @@ class HomeController extends Controller
         return view('Pages.profile', compact('user', 'completeness', 'profilePhoto', 'coverPhoto'));
     }
 
+    public function agentSettings()
+    {
+        $user = Auth::user();
+        $defaultProfileImage = asset('assets/img/profiles/avatar-02.jpg');
+        $profilePhoto = $user?->profile_photo_url ?? $defaultProfileImage;
+        $coverPhoto = $user?->cover_photo_url ?? $defaultProfileImage;
+
+        return view('agent.settings', compact('user', 'profilePhoto', 'coverPhoto'));
+    }
+
     /*
     |--------------------------------------------------------------------------
     | UPDATE PROFILE IMAGES — profile photo + cover photo
@@ -1306,12 +1317,18 @@ class HomeController extends Controller
     */
     public function updateProfile(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
+        $user = Auth::user();
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'phone' => ['nullable', 'string', 'max:30'],
         ]);
 
-        $user = Auth::user();
-        $user->update($request->only(['name']));
+        $user->update([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+        ]);
 
         return back()->with('success', 'Profile details updated successfully.');
     }

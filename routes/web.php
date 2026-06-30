@@ -455,6 +455,7 @@ Route::middleware(['auth', 'role:agent,state_manager,super_admin'])
     ->group(function () {
         Route::get('/dashboard', [AgentPortalController::class, 'dashboard'])->name('dashboard');
         Route::get('/profile', [HomeController::class, 'profile'])->name('profile');
+        Route::get('/settings', [HomeController::class, 'agentSettings'])->name('settings');
         Route::post('/profile/update', [HomeController::class, 'updateProfile'])->name('profile.update');
         Route::post('/profile/avatar', [HomeController::class, 'uploadAvatar'])->name('profile.avatar');
         Route::post('/profile/password', [HomeController::class, 'changePassword'])->name('profile.password');

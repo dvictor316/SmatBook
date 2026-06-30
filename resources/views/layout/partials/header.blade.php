@@ -66,8 +66,8 @@
         : ($isDeploymentManagerHeader && Route::has('deployment.profile')
             ? route('deployment.profile')
             : url('profile'));
-    $settingsUrl = $isAgentHeader && Route::has('agent.profile')
-        ? route('agent.profile')
+    $settingsUrl = $isAgentHeader && Route::has('agent.settings')
+        ? route('agent.settings')
         : ($isDeploymentManagerHeader && Route::has('deployment.settings')
             ? route('deployment.settings')
             : url('settings'));
