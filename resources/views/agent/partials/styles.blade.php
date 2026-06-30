@@ -26,20 +26,26 @@
     .agent-sidebar-menu li a.active { background: var(--agent-navy); color: #fff; box-shadow: 0 12px 24px rgba(6, 47, 104, .18); }
     .agent-sidebar-menu li i { width: 20px; text-align: center; }
     .agent-sidebar-menu li.agent-soon > a {
-        background: rgba(255, 255, 255, .08);
-        color: #eef4ff;
-        border: 1px solid rgba(255, 255, 255, .12);
+        background: #ffffff !important;
+        color: var(--agent-navy) !important;
+        border: 1px solid #dbe7f6;
+        box-shadow: 0 8px 18px rgba(6, 47, 104, .10);
     }
     .agent-sidebar-menu li.agent-soon > a:hover {
-        background: rgba(255, 255, 255, .14);
-        color: #ffffff;
+        background: #f6faff !important;
+        color: var(--agent-navy) !important;
         transform: translateX(3px);
+    }
+    .agent-sidebar-menu li.agent-soon > a span,
+    .agent-sidebar-menu li.agent-soon > a i {
+        color: var(--agent-navy) !important;
+        opacity: 1;
     }
     .agent-soon small {
         margin-left: auto;
         border-radius: 999px;
-        background: #ffffff;
-        color: var(--agent-navy);
+        background: #eef5ff;
+        color: var(--agent-navy) !important;
         border: 1px solid rgba(6, 47, 104, .12);
         padding: 3px 8px;
         font-size: 10px;
@@ -51,13 +57,13 @@
     .agent-sidebar-menu li.agent-logout > a,
     .agent-sidebar-menu li.agent-logout > a:hover {
         color: var(--agent-red) !important;
-        background: #fff4f7 !important;
+        background: #ffffff !important;
         border: 1px solid #ffd6e2;
-        box-shadow: inset 0 0 0 1px rgba(217, 31, 92, .06);
+        box-shadow: 0 8px 18px rgba(217, 31, 92, .08);
     }
     .agent-sidebar-menu li.agent-logout > a span,
     .agent-sidebar-menu li.agent-logout > a i {
-        color: inherit !important;
+        color: var(--agent-red) !important;
         opacity: 1;
     }
     .agent-page { background: radial-gradient(circle at top left, rgba(36, 107, 254, .07), transparent 24rem), linear-gradient(180deg, #fbfdff 0, var(--agent-bg) 240px); min-height: calc(100vh - 70px); padding: 18px; color: var(--agent-ink); font-size: 13px; }
