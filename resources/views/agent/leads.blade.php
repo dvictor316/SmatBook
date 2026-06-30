@@ -24,7 +24,7 @@
 
         <div class="agent-tabs mb-4">
             <a class="active" href="{{ route('agent.leads') }}"><i class="fa-solid fa-users"></i> Manage Leads</a>
-            <a href="{{ route('deployment.geo.index') }}"><i class="fa-solid fa-location-dot"></i> Find Nearby</a>
+            <a href="{{ route('agent.nearby-businesses') }}"><i class="fa-solid fa-location-dot"></i> Find Nearby</a>
             <a href="{{ route('agent.earnings') }}"><i class="fa-solid fa-file-invoice"></i> Invoices</a>
         </div>
 
