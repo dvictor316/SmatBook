@@ -203,6 +203,17 @@
                                : (str_contains($slug,'pro')        ? 'tier-pro'
                                : 'tier-basic');
                     $isPopular = str_contains($slug,'pro');
+                    $catalogCards = \App\Models\Plan::marketingCardCatalog();
+                    $hasCatalogTier = str_contains($slug, 'starter')
+                        || str_contains($slug, 'basic')
+                        || str_contains($slug, 'pro')
+                        || str_contains($slug, 'professional')
+                        || str_contains($slug, 'enterprise');
+                    $catalogTier = $hasCatalogTier ? \App\Models\Plan::normalizeTier($plan->name) : null;
+                    $catalogKey = $catalogTier === 'professional' ? 'pro' : $catalogTier;
+                    $catalogBenefits = $catalogKey && isset($catalogCards[$catalogKey]['benefits'])
+                        ? $catalogCards[$catalogKey]['benefits']
+                        : [];
                 @endphp
                 <div class="plan-item">
                     <div class="plan-card {{ $tierClass }}">
@@ -223,48 +234,13 @@
                             @php 
                                 $rawString = is_array($plan->features) ? implode(',', $plan->features) : (string)$plan->features;
                                 $featuresList = array_filter(array_map('trim', explode(',', str_replace(['[', ']', '"', '\\'], '', $rawString))));
+                                $displayFeatures = !empty($catalogBenefits) ? $catalogBenefits : $featuresList;
                             @endphp
 
-                            @forelse ($featuresList as $feature)
+                            @forelse ($displayFeatures as $feature)
                                 <li><i class="fas fa-check-circle"></i> {{ $feature }}</li>
                             @empty
-                                @php
-                                    $planSlug = strtolower($plan->name ?? '');
-                                    if (str_contains($planSlug, 'enterprise')) {
-                                        $defaultFeatures = [
-                                            'Unlimited Users',
-                                            'Everything in Pro',
-                                            'General Ledger & Trial Balance',
-                                            'Advanced Tax & Compliance Reports',
-                                            'Custom Report Builder',
-                                            'Full API Access',
-                                            'Dedicated Account Manager',
-                                            '24/7 Priority Support',
-                                        ];
-                                    } elseif (str_contains($planSlug, 'pro')) {
-                                        $defaultFeatures = [
-                                            'Up to 15 Users',
-                                            'Everything in Basic',
-                                            'Full Profit & Loss Reports',
-                                            'Balance Sheet & Cash Flow',
-                                            'Payroll Management',
-                                            'Multi-branch Support',
-                                            'Priority Email & Chat Support',
-                                        ];
-                                    } else {
-                                        $defaultFeatures = [
-                                            'Up to 3 Users',
-                                            'Invoicing & Billing',
-                                            'Basic Inventory Management',
-                                            'Customer & Supplier Records',
-                                            'Sales & Purchase Reports',
-                                            'Email Support',
-                                        ];
-                                    }
-                                @endphp
-                                @foreach ($defaultFeatures as $f)
-                                    <li><i class="fas fa-check-circle"></i> {{ $f }}</li>
-                                @endforeach
+                                <li><i class="fas fa-check-circle"></i> Package benefits will appear here.</li>
                             @endforelse
                         </ul>
 

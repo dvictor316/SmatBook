@@ -333,6 +333,19 @@ class HomeController extends Controller
     */
     private function handleRegularUserRedirect($user)
     {
+        $status = strtolower((string) ($user->status ?? ''));
+
+        if (in_array($status, ['suspended', 'inactive', 'rejected'], true)) {
+            Auth::logout();
+
+            return redirect()->route('login')
+                ->with('error', 'Your account is currently ' . $status . '. Please contact support.');
+        }
+
+        if ($status === 'pending' || (int) ($user->is_verified ?? 0) !== 1) {
+            return redirect()->route('registration.pending.notice');
+        }
+
         // Fetch latest subscription regardless of payment status
         $subscription = Subscription::where('user_id', $user->id)
             ->latest()

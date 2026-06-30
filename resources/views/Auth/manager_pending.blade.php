@@ -7,6 +7,9 @@
     $currentSubdomain = request()->route('subdomain') ?? explode('.', request()->getHost())[0];
     $supportChatUrl = Route::has('messages.index') ? route('messages.index', ['type' => 'chat']) : '#';
     $supportEmailUrl = Route::has('messages.index') ? route('messages.index', ['type' => 'email']) : '#';
+    $pendingUser = auth()->user();
+    $pendingRole = strtolower((string) ($pendingUser?->role ?? ''));
+    $isPartnerFlow = in_array($pendingRole, ['state_manager', 'deployment_manager', 'agent'], true);
 @endphp
 
 @section('content')
@@ -121,10 +124,14 @@
                     </div>
                     <div class="manager-pending-body">
                         <div class="text-center mb-4">
-                            <h3 class="font-weight-bold">Approval Pending</h3>
+                            <h3 class="font-weight-bold">{{ $isPartnerFlow ? 'Approval Pending' : 'Account Pending Approval' }}</h3>
                             <p class="text-muted">
-                                Hello <strong>{{ auth()->user()->name }}</strong>, your State Manager access for 
-                                <strong>{{ env('SESSION_DOMAIN', 'SmartProbook') }}</strong> has been received and is waiting for super admin approval.
+                                @if($isPartnerFlow)
+                                    Hello <strong>{{ $pendingUser->name }}</strong>, your State Manager access for
+                                    <strong>{{ env('SESSION_DOMAIN', 'SmartProbook') }}</strong> has been received and is waiting for super admin approval.
+                                @else
+                                    Hello <strong>{{ $pendingUser->name }}</strong>, your account has been created and is waiting for super admin approval before workspace access can open.
+                                @endif
                             </p>
                         </div>
 
@@ -135,18 +142,19 @@
                             </div>
                             <div class="d-flex align-items-center mb-3">
                                 <div class="badge badge-progress-border rounded-circle mr-3"><i class="fas fa-user-shield"></i></div>
-                                <div class="text-primary font-weight-bold">Awaiting Super Admin Review</div>
+                                <div class="text-primary font-weight-bold">{{ $isPartnerFlow ? 'Awaiting Super Admin Review' : 'Awaiting Super Admin Approval' }}</div>
                             </div>
                             <div class="d-flex align-items-center text-muted">
                                 <div class="badge badge-light rounded-circle mr-3"><i class="fas fa-lock"></i></div>
-                                <div>Dashboard Access Granted</div>
+                                <div>{{ $isPartnerFlow ? 'Dashboard Access Granted' : 'Workspace Access Granted' }}</div>
                             </div>
                         </div>
 
                         <div class="alert alert-custom bg-soft-info border-0 p-3">
                             <small class="d-block">
                                 <i class="fas fa-info-circle mr-1"></i>
-                                You will be notified at <strong>{{ auth()->user()->email }}</strong> as soon as a super admin approves this partner profile. Dashboard access remains locked until that approval is completed.
+                                You will be notified at <strong>{{ $pendingUser->email ?: ($pendingUser->phone ?: 'your contact address') }}</strong>
+                                as soon as a super admin completes approval. Access remains locked until that approval is completed.
                             </small>
                         </div>
 

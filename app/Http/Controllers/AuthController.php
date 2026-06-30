@@ -94,8 +94,8 @@ class AuthController extends Controller
         ];
 
         if ($isPartnerAgent) {
-            $rules['email'] = 'required|string|email|max:255';
-            $rules['phone'] = ['nullable', 'string', 'max:25', 'regex:/^\+?[0-9]{7,20}$/'];
+            $rules['email'] = 'nullable|required_without:phone|string|email|max:255|unique:users,email';
+            $rules['phone'] = ['nullable', 'required_without:email', 'string', 'max:25', 'regex:/^\+?[0-9]{7,20}$/'];
             $rules['country'] = 'required|string|max:120';
             $rules['state_region'] = 'required|string|max:120';
             $rules['local_council'] = 'nullable|string|max:120';
@@ -107,30 +107,34 @@ class AuthController extends Controller
             $rules['billing_cycle'] = 'required|string';
         }
 
-        if ($isPartnerAgent) {
-            if (!PartnerLocationRepository::hasCountry($validated['country'] ?? null)) {
-                return back()->withErrors(['country' => 'Select a valid country from the list.'])->withInput();
-            }
-
-            if (!PartnerLocationRepository::hasState($validated['country'] ?? null, $validated['state_region'] ?? null)) {
-                return back()->withErrors(['state_region' => 'Select a valid state, region, or county from the list.'])->withInput();
-            }
-
-            if (!PartnerLocationRepository::hasCouncil(
-                $validated['country'] ?? null,
-                $validated['state_region'] ?? null,
-                $validated['local_council'] ?? null
-            )) {
-                return back()->withErrors(['local_council' => 'Select a valid local government or council from the list.'])->withInput();
-            }
-        }
-
         $validated = $request->validate($rules, [
             'password.*' => 'Password must be at least 8 characters and include letters and numbers.',
             'phone.required_without' => 'Phone is required when email is not provided.',
             'email.required_without' => 'Email is required when phone is not provided.',
             'phone.regex' => 'Phone format is invalid. Use digits with optional leading +.',
         ]);
+
+        if ($isPartnerAgent) {
+            $validated['country'] = trim((string) ($validated['country'] ?? ''));
+            $validated['state_region'] = trim((string) ($validated['state_region'] ?? ''));
+            $validated['local_council'] = trim((string) ($validated['local_council'] ?? ''));
+
+            if (!PartnerLocationRepository::hasCountry($validated['country'])) {
+                return back()->withErrors(['country' => 'Select a valid country from the list.'])->withInput();
+            }
+
+            if (!PartnerLocationRepository::hasState($validated['country'], $validated['state_region'])) {
+                return back()->withErrors(['state_region' => 'Select a valid state, region, or county from the list.'])->withInput();
+            }
+
+            if (!PartnerLocationRepository::hasCouncil(
+                $validated['country'],
+                $validated['state_region'],
+                $validated['local_council']
+            )) {
+                return back()->withErrors(['local_council' => 'Select a valid local government or council from the list.'])->withInput();
+            }
+        }
 
         $normalizedPhone = $this->normalizePhoneForAuth($validated['phone'] ?? null);
         if ($normalizedPhone && Schema::hasColumn('users', 'phone')) {
@@ -195,14 +199,16 @@ class AuthController extends Controller
                     )
                     : null;
 
+                $requiresSuperAdminApproval = !$this->isManagerRoleName($role) && strtolower((string) $role) !== 'agent';
+
                 $userPayload = $this->filterPayloadForTable('users', [
                     'name' => $validated['name'],
                     'email' => $resolvedEmail,
                     'phone' => $normalizedPhone,
                     'password' => Hash::make($validated['password']),
                     'role' => $role,
-                    'is_verified' => ($this->isManagerRoleName($role) || strtolower((string) $role) === 'agent') ? 0 : 1,
-                    'status' => strtolower((string) $role) === 'agent' ? 'pending' : 'active',
+                    'is_verified' => 0,
+                    'status' => ($requiresSuperAdminApproval || strtolower((string) $role) === 'agent') ? 'pending' : 'active',
                     'country' => $validated['country'] ?? null,
                     'state_region' => $validated['state_region'] ?? null,
                     'local_council' => $validated['local_council'] ?? null,
@@ -346,8 +352,8 @@ class AuthController extends Controller
                     ->with('success', 'Partner registration submitted. Once approved, your profile will appear under your state manager.');
             }
 
-            return redirect()->route('saas.setup', ['id' => $registrationResult['subscription']->id])
-                ->with('success', 'Registration successful. Set up your workspace to continue.');
+            return redirect()->route('registration.pending.notice')
+                ->with('success', 'Registration submitted successfully. A super admin must approve your account before workspace access opens.');
 
         } catch (\Throwable $e) {
             Log::error('Registration failed', [

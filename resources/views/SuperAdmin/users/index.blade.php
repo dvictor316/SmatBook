@@ -162,6 +162,7 @@
                     <select name="status" class="form-select bg-light border-0 small">
                         <option value="">All Statuses</option>
                         <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
+                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending Approval</option>
                         <option value="suspended" {{ request('status') == 'suspended' ? 'selected' : '' }}>Suspended</option>
                     </select>
                 </div>
@@ -209,6 +210,7 @@
                     $status = strtolower((string) ($user->status ?? 'active'));
                     $pillClass = match($status) {
                         'active' => 'pill-active',
+                        'pending' => 'pill-pending',
                         'suspended' => 'pill-suspended',
                         default => 'pill-unknown'
                     };
@@ -259,7 +261,7 @@
                                     @if($status !== 'active')
                                     <form action="{{ route('super_admin.users.activate', $user->id) }}" method="POST">
                                         @csrf
-                                        <button type="submit" class="action-item" style="color:#10b981;"><i class="fas fa-check-circle me-2"></i>Activate</button>
+                                        <button type="submit" class="action-item" style="color:#10b981;"><i class="fas fa-check-circle me-2"></i>{{ $status === 'pending' ? 'Approve' : 'Activate' }}</button>
                                     </form>
                                     @endif
                                     @if($status === 'active')

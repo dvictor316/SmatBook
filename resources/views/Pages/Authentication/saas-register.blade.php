@@ -946,7 +946,7 @@
         if (!country || !state || !council) return;
 
         const oldCountry = @json(old('country', 'Nigeria'));
-        const oldState = @json(old('state_region', 'FCT'));
+        const oldState = @json(old('state_region', ''));
         const oldCouncil = @json(old('local_council', ''));
         const statesUrl = @json(route('saas-register.location.states'));
         const councilsUrl = @json(route('saas-register.location.councils'));
