@@ -12,7 +12,10 @@
                 <h1>Leads Center</h1>
                 <p>Monitor team prospects, ownership, conversion status, and activity across the state.</p>
             </div>
-            <a href="{{ route('deployment.geo.index') }}" class="agent-button"><i class="fa-solid fa-location-dot"></i> Find Nearby</a>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{{ route('deployment.customers.create') }}" class="agent-button"><i class="fa-solid fa-building-circle-check"></i> Register Business</a>
+                <a href="{{ route('deployment.geo.index') }}" class="agent-button soft"><i class="fa-solid fa-location-dot"></i> Find Nearby</a>
+            </div>
         </div>
 
         <div class="agent-tabs mb-4">

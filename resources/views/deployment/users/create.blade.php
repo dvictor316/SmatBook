@@ -5,6 +5,11 @@
 @section('content')
 @php
     $deploymentPlans = $deploymentPlans ?? [];
+    $dashboardRoute = $dashboardRoute ?? 'deployment.dashboard';
+    $listingRoute = $listingRoute ?? 'deployment.users.index';
+    $formActionRoute = $formActionRoute ?? 'deployment.customers.store';
+    $pageTitle = $pageTitle ?? 'Register New Customer';
+    $pageSubtitle = $pageSubtitle ?? 'Create account -> Select plan -> Set credentials -> SaaS checkout -> SaaS success';
     $planMeta = function (string $key, string $name, float $price, string $cycle, ?string $saveLabel = null) use ($deploymentPlans) {
         $commission = $price * 0.35;
 
@@ -392,18 +397,18 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1" style="font-size:12.5px;">
                     <li class="breadcrumb-item">
-                        <a href="{{ route('deployment.dashboard') }}" class="text-decoration-none text-muted">Dashboard</a>
+                        <a href="{{ route($dashboardRoute) }}" class="text-decoration-none text-muted">Dashboard</a>
                     </li>
                     <li class="breadcrumb-item">
-                        <a href="{{ route('deployment.users.index') }}" class="text-decoration-none text-muted">Customers</a>
+                        <a href="{{ route($listingRoute) }}" class="text-decoration-none text-muted">Customers</a>
                     </li>
                     <li class="breadcrumb-item active text-dark fw-semibold">Register New</li>
                 </ol>
             </nav>
-            <h4 class="fw-bold mb-1" style="color:var(--text)">Register New Customer</h4>
-            <p class="text-muted small mb-0">Create account → Select plan → Set credentials → SaaS checkout → SaaS success</p>
+            <h4 class="fw-bold mb-1" style="color:var(--text)">{{ $pageTitle }}</h4>
+            <p class="text-muted small mb-0">{{ $pageSubtitle }}</p>
         </div>
-        <a href="{{ route('deployment.users.index') }}" class="btn btn-sm btn-white border shadow-sm text-muted">
+        <a href="{{ route($listingRoute) }}" class="btn btn-sm btn-white border shadow-sm text-muted">
             <i class="fas fa-arrow-left me-1"></i> Back to Customers
         </a>
     </div>
@@ -423,7 +428,7 @@
         </div>
     </div>
 
-    <form action="{{ route('deployment.customers.store') }}" method="POST" id="regForm" novalidate>
+    <form action="{{ route($formActionRoute) }}" method="POST" id="regForm" novalidate>
         @csrf
 
         <div id="pane1">

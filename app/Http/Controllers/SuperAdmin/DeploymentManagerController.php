@@ -32,10 +32,12 @@ class DeploymentManagerController extends Controller
     // SHARED HELPERS
     // ---------------------------------------------------------------
     
-    private function managedCompanyIds(): array
+    private function managedCompanyIds(?int $managerId = null): array
     {
+        $managerId ??= Auth::id();
+
         $mappedIds = DB::table('deployment_companies')
-            ->where('manager_id', Auth::id())
+            ->where('manager_id', $managerId)
             ->pluck('company_id')
             ->toArray();
 
@@ -44,7 +46,7 @@ class DeploymentManagerController extends Controller
         $legacyIds = [];
         if (Schema::hasColumn('companies', 'deployed_by')) {
             $legacyIds = DB::table('companies')
-                ->where('deployed_by', Auth::id())
+                ->where('deployed_by', $managerId)
                 ->pluck('id')
                 ->toArray();
         }
@@ -671,20 +673,43 @@ class DeploymentManagerController extends Controller
 
     public function create()
     {
-        Log::info('Showing customer registration form', ['manager_id' => auth()->id()]);
-        
-        $managerRecord = DeploymentManager::where('user_id', Auth::id())->first();
-        $currentCount = count($this->managedCompanyIds());
-        $limit = $managerRecord->deployment_limit ?? 100;
+        $actor = Auth::user();
+
+        Log::info('Showing customer registration form', ['manager_id' => $actor?->id]);
+
+        $managerRecord = DeploymentManager::where('user_id', $actor?->id)->first();
+        $currentCount = count($this->managedCompanyIds($actor?->id));
+        $limit = (int) ($managerRecord?->deployment_limit ?? 100);
 
         if ($currentCount >= $limit) {
-            return redirect()->route('deployment.companies.index')
+            $fallbackRoute = request()->routeIs('agent.registration.create')
+                ? 'agent.leads'
+                : 'deployment.companies.index';
+
+            return redirect()->route($fallbackRoute)
                 ->with('warning', "Deployment limit reached ({$currentCount}/{$limit}).");
         }
 
         $deploymentPlans = $this->deploymentPlanOptions();
+        $isAgentRegistration = request()->routeIs('agent.registration.create');
+        $dashboardRoute = $isAgentRegistration ? 'agent.dashboard' : 'deployment.dashboard';
+        $listingRoute = $isAgentRegistration ? 'agent.leads' : 'deployment.users.index';
+        $formActionRoute = $isAgentRegistration ? 'agent.registration.store' : 'deployment.customers.store';
+        $pageTitle = $isAgentRegistration ? 'Register Business License' : 'Register New Customer';
+        $pageSubtitle = $isAgentRegistration
+            ? 'Create business account -> Select plan -> Set credentials -> SaaS checkout -> SaaS success'
+            : 'Create account -> Select plan -> Set credentials -> SaaS checkout -> SaaS success';
 
-        return view('deployment.users.create', compact('limit', 'currentCount', 'deploymentPlans'));
+        return view('deployment.users.create', compact(
+            'limit',
+            'currentCount',
+            'deploymentPlans',
+            'dashboardRoute',
+            'listingRoute',
+            'formActionRoute',
+            'pageTitle',
+            'pageSubtitle'
+        ));
     }
 
 

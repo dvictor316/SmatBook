@@ -12,9 +12,14 @@
                 <h1>Leads Center</h1>
                 <p>Manage prospects, track performance, find businesses, and prepare billing.</p>
             </div>
-            <button type="button" class="agent-button" data-bs-toggle="modal" data-bs-target="#agentLeadModal">
-                <i class="fa-solid fa-plus"></i> Add New Lead
-            </button>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{{ route('agent.registration.create') }}" class="agent-button">
+                    <i class="fa-solid fa-building-circle-check"></i> Register Business
+                </a>
+                <button type="button" class="agent-button soft" data-bs-toggle="modal" data-bs-target="#agentLeadModal">
+                    <i class="fa-solid fa-plus"></i> Quick Save Lead
+                </button>
+            </div>
         </div>
 
         <div class="agent-tabs mb-4">
@@ -102,8 +107,11 @@
             @empty
                 <section class="agent-card span-12 text-center py-5">
                     <h3>No leads yet</h3>
-                    <p class="agent-muted">Add your first lead or use Find Nearby to discover businesses around you.</p>
-                    <button type="button" class="agent-button" data-bs-toggle="modal" data-bs-target="#agentLeadModal"><i class="fa-solid fa-plus"></i> Add New Lead</button>
+                    <p class="agent-muted">Register a business license or save a quick prospect to follow up later.</p>
+                    <div class="d-flex flex-wrap justify-content-center gap-2">
+                        <a href="{{ route('agent.registration.create') }}" class="agent-button"><i class="fa-solid fa-building-circle-check"></i> Register Business</a>
+                        <button type="button" class="agent-button soft" data-bs-toggle="modal" data-bs-target="#agentLeadModal"><i class="fa-solid fa-plus"></i> Quick Save Lead</button>
+                    </div>
                 </section>
             @endforelse
         </div>
@@ -119,7 +127,7 @@
         <form method="POST" action="{{ route('agent.leads.store') }}" class="modal-content agent-card" style="border-radius:26px;">
             @csrf
             <div class="modal-header border-0">
-                <h3 class="modal-title">Add New Lead</h3>
+                <h3 class="modal-title">Quick Save Lead</h3>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -157,7 +165,7 @@
             </div>
             <div class="modal-footer border-0">
                 <button type="button" class="agent-button soft" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" class="agent-button">Add Lead</button>
+                <button type="submit" class="agent-button">Save Lead</button>
             </div>
         </form>
     </div>
