@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AgentActivity;
 use App\Models\AgentLead;
 use App\Models\Company;
+use App\Models\Plan;
 use App\Support\PartnerLocationRepository;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -207,6 +208,26 @@ class AgentPortalController extends Controller
         ]);
     }
 
+    public function upsellCenter(): View
+    {
+        $user = Auth::user();
+        $stats = $this->agentStats($user->id);
+        $companyIds = $this->agentCompanyIds($user->id);
+        $subscriptions = $this->upsellSubscriptions($user->id, $companyIds);
+        $planCards = Plan::marketingCardCatalog();
+        $pipeline = $this->upsellPipelineSnapshot($user->id);
+        $opportunities = $this->upsellOpportunities($subscriptions, $pipeline, $planCards);
+
+        return view('agent.upsell-center', [
+            'user' => $user,
+            'stats' => $stats,
+            'subscriptions' => $subscriptions,
+            'planCards' => $planCards,
+            'pipeline' => $pipeline,
+            'opportunities' => $opportunities,
+        ]);
+    }
+
     private function leadQuery(int $agentId)
     {
         if (!Schema::hasTable('agent_leads')) {
@@ -329,6 +350,128 @@ class AgentPortalController extends Controller
         return [
             'paid' => (float) $rows->where('status', 'paid')->sum('amount'),
             'pending' => (float) $rows->where('status', 'pending')->sum('amount'),
+        ];
+    }
+
+    private function upsellSubscriptions(int $agentId, array $companyIds): Collection
+    {
+        if (!Schema::hasTable('subscriptions')) {
+            return collect();
+        }
+
+        $query = DB::table('subscriptions');
+        $query->where(function ($q) use ($agentId, $companyIds) {
+            if (Schema::hasColumn('subscriptions', 'deployed_by')) {
+                $q->where('deployed_by', $agentId);
+            }
+            if ($companyIds && Schema::hasColumn('subscriptions', 'company_id')) {
+                $q->orWhereIn('company_id', $companyIds);
+            }
+        });
+
+        return $query
+            ->select([
+                'id',
+                'company_id',
+                'plan',
+                'plan_name',
+                'amount',
+                'billing_cycle',
+                'status',
+                'payment_status',
+                'end_date',
+                'created_at',
+            ])
+            ->latest('created_at')
+            ->get()
+            ->map(function ($row) {
+                $label = (string) ($row->plan_name ?? $row->plan ?? 'Basic');
+                $tier = Plan::normalizeTier($label);
+
+                return (object) [
+                    'id' => (int) ($row->id ?? 0),
+                    'company_id' => (int) ($row->company_id ?? 0),
+                    'plan_label' => $label,
+                    'tier' => $tier,
+                    'suggested_upgrade' => Plan::suggestedUpgradeForTier($tier),
+                    'amount' => (float) ($row->amount ?? 0),
+                    'billing_cycle' => strtolower((string) ($row->billing_cycle ?? 'monthly')),
+                    'status' => strtolower((string) ($row->status ?? 'pending')),
+                    'payment_status' => strtolower((string) ($row->payment_status ?? 'unpaid')),
+                    'end_date' => $row->end_date,
+                    'created_at' => $row->created_at,
+                ];
+            });
+    }
+
+    private function upsellPipelineSnapshot(int $agentId): array
+    {
+        if (!Schema::hasTable('agent_leads')) {
+            return [
+                'awaiting_payment' => 0,
+                'negotiating' => 0,
+                'interested' => 0,
+                'converted' => 0,
+            ];
+        }
+
+        $rows = AgentLead::query()
+            ->where('agent_id', $agentId)
+            ->select('status')
+            ->get();
+
+        return [
+            'awaiting_payment' => $rows->where('status', 'awaiting_payment')->count(),
+            'negotiating' => $rows->where('status', 'negotiating')->count(),
+            'interested' => $rows->where('status', 'interested')->count(),
+            'converted' => $rows->filter(fn ($lead) => $lead->status === 'converted')->count(),
+        ];
+    }
+
+    private function upsellOpportunities(Collection $subscriptions, array $pipeline, array $planCards): array
+    {
+        $trials = $subscriptions->filter(fn ($subscription) => str_contains($subscription->status, 'trial'))->count();
+        $starter = $subscriptions->where('tier', 'starter')->count();
+        $basic = $subscriptions->where('tier', 'basic')->count();
+        $professional = $subscriptions->where('tier', 'professional')->count();
+        $expiringSoon = $subscriptions->filter(function ($subscription) {
+            if (empty($subscription->end_date)) {
+                return false;
+            }
+
+            $endDate = \Illuminate\Support\Carbon::parse((string) $subscription->end_date);
+
+            return $endDate->isFuture() && $endDate->lte(now()->addDays(14));
+        })->count();
+
+        return [
+            [
+                'title' => 'Trial Conversion Push',
+                'count' => $trials + ($pipeline['interested'] ?? 0),
+                'accent' => 'blue',
+                'cta' => 'Turn active trials and interested leads into paid plans this week.',
+            ],
+            [
+                'title' => 'Starter To Basic',
+                'count' => $starter,
+                'accent' => 'amber',
+                'cta' => 'Position invoicing, purchases, and core reporting for single-counter businesses ready to grow.',
+                'plan' => $planCards['basic']['label'] ?? 'Basic Core',
+            ],
+            [
+                'title' => 'Basic To Pro',
+                'count' => $basic,
+                'accent' => 'purple',
+                'cta' => 'Upsell teams that need branch workflows, advanced inventory, and stronger controls.',
+                'plan' => $planCards['pro']['label'] ?? 'Pro Engine',
+            ],
+            [
+                'title' => 'Pro To Enterprise',
+                'count' => $professional + $expiringSoon,
+                'accent' => 'green',
+                'cta' => 'Target maturing customers with compliance, payroll, and enterprise reporting needs.',
+                'plan' => $planCards['enterprise']['label'] ?? 'Institutional',
+            ],
         ];
     }
 

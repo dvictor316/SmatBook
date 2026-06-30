@@ -465,6 +465,7 @@ Route::middleware(['auth', 'role:agent,state_manager,super_admin'])
         Route::get('/earnings', [AgentPortalController::class, 'earnings'])->name('earnings');
         Route::get('/knowledge-base', [AgentPortalController::class, 'knowledgeBase'])->name('knowledge-base');
         Route::get('/content-hub', [AgentPortalController::class, 'contentHub'])->name('content-hub');
+        Route::get('/upsell-center', [AgentPortalController::class, 'upsellCenter'])->name('upsell-center');
     });
 /*
 |--------------------------------------------------------------------------

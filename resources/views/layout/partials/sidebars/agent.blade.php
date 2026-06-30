@@ -9,6 +9,7 @@
         ['label' => 'Earnings', 'route' => 'agent.earnings', 'icon' => 'fa-solid fa-wallet'],
         ['label' => 'Knowledge Base', 'route' => 'agent.knowledge-base', 'icon' => 'fa-solid fa-graduation-cap'],
         ['label' => 'Content Hub', 'route' => 'agent.content-hub', 'icon' => 'fa-solid fa-photo-film'],
+        ['label' => 'Upsell Center', 'route' => 'agent.upsell-center', 'icon' => 'fa-solid fa-rocket'],
     ];
 @endphp
 
@@ -37,13 +38,6 @@
                         </a>
                     </li>
                 @endforeach
-                <li class="agent-soon">
-                    <a href="javascript:void(0);" class="agent-soon-link">
-                        <i class="fa-solid fa-rocket agent-soon-icon"></i>
-                        <span class="agent-soon-text">Upsell Center</span>
-                        <small class="agent-soon-badge">Soon</small>
-                    </a>
-                </li>
                 <li class="agent-logout">
                     <a href="{{ route('logout') }}" class="agent-logout-link" onclick="event.preventDefault(); document.getElementById('logout-form-agent').submit();">
                         <i class="fa-solid fa-right-from-bracket agent-logout-icon"></i>
