@@ -122,6 +122,13 @@
     .agent-field input:focus, .agent-field select:focus, .agent-field textarea:focus { outline: 2px solid rgba(36, 107, 254, .17); border-color: var(--agent-blue); }
     .agent-bar-chart { display: flex; align-items: end; gap: 6px; height: 54px; }
     .agent-bar-chart span { width: 15px; border-radius: 7px 7px 2px 2px; background: linear-gradient(180deg, #5b42f3, #2d72ff); }
+    .agent-chart-col { display: flex; flex-direction: column; align-items: center; justify-content: end; gap: 8px; min-width: 28px; height: 100%; }
+    .agent-chart-col small { font-size: 10px; color: var(--agent-muted); }
+    .agent-status-chart { display: grid; gap: 12px; }
+    .agent-status-row { display: grid; gap: 6px; }
+    .agent-status-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; }
+    .agent-status-track { height: 10px; border-radius: 999px; background: #e8eef6; overflow: hidden; }
+    .agent-status-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--agent-blue), var(--agent-purple)); }
     .agent-heatmap { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
     .agent-heat { aspect-ratio: 1; border-radius: 7px; background: #edf2f7; }
     .agent-tone-blue { background: linear-gradient(135deg, #eef5ff, #fff); border-color:#dbeafe; }

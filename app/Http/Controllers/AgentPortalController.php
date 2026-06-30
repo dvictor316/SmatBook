@@ -10,6 +10,7 @@ use App\Support\PartnerLocationRepository;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -262,13 +263,17 @@ class AgentPortalController extends Controller
             : 0;
 
         $salesVolume = $subscriptionSummary['sales_volume'];
-        $target = 1000000;
+        $target = 50000000;
         $xp = min(1000, (int) ($totalLeads * 35 + $convertedLeads * 120 + floor($salesVolume / 1000) + $activityCount * 5));
         $rank = $xp >= 700 ? 'New Star' : ($xp >= 200 ? 'Starter' : '-');
         $score = min(100, round(($leadConversion * 0.45) + (($xp / 1000) * 35) + min(20, $activityCount), 1));
         $activeCustomers = max($convertedLeads, $subscriptionSummary['active']);
         $inactiveCustomers = max(0, $totalBusinesses + $convertedLeads - $activeCustomers);
         $customerTotal = max(1, $activeCustomers + $inactiveCustomers);
+        $remainingToTarget = max(0, $target - $salesVolume);
+        $pipelineBreakdown = $this->leadPipelineBreakdown($agentId, $leadBase);
+        $salesTrend = $this->monthlySalesTrend($agentId, $companyIds);
+        $largestSalesMonth = collect($salesTrend)->max('amount') ?: 0;
 
         return [
             'total_leads' => $totalLeads,
@@ -280,6 +285,7 @@ class AgentPortalController extends Controller
             'sales_volume' => $salesVolume,
             'target' => $target,
             'target_percent' => $target > 0 ? min(100, round(($salesVolume / $target) * 100)) : 0,
+            'remaining_to_target' => $remainingToTarget,
             'paid_commissions' => $commissionSummary['paid'],
             'pending_commissions' => $commissionSummary['pending'],
             'xp' => $xp,
@@ -292,6 +298,9 @@ class AgentPortalController extends Controller
             'inactive_customers' => $inactiveCustomers,
             'performance_score' => $score,
             'activity_count' => $activityCount,
+            'pipeline_breakdown' => $pipelineBreakdown,
+            'sales_trend' => $salesTrend,
+            'largest_sales_month' => $largestSalesMonth,
         ];
     }
 
@@ -488,6 +497,88 @@ class AgentPortalController extends Controller
             })
             ->latest()
             ->get();
+    }
+
+    private function leadPipelineBreakdown(int $agentId, $leadBase): array
+    {
+        if (!Schema::hasTable('agent_leads') || !$leadBase) {
+            return [];
+        }
+
+        $rows = (clone $leadBase)->select('status')->get();
+        $statuses = [
+            'new' => 'New',
+            'interested' => 'Interested',
+            'negotiating' => 'Negotiating',
+            'awaiting_payment' => 'Awaiting Payment',
+            'converted' => 'Converted',
+        ];
+
+        $max = 1;
+        $items = [];
+        foreach ($statuses as $key => $label) {
+            $count = $rows->where('status', $key)->count();
+            $max = max($max, $count);
+            $items[] = [
+                'key' => $key,
+                'label' => $label,
+                'count' => $count,
+            ];
+        }
+
+        return array_map(function (array $item) use ($max) {
+            $item['percent'] = (int) round(($item['count'] / $max) * 100);
+
+            return $item;
+        }, $items);
+    }
+
+    private function monthlySalesTrend(int $agentId, array $companyIds): array
+    {
+        $months = collect(range(5, 0))->map(fn (int $offset) => now()->subMonths($offset)->startOfMonth())
+            ->push(now()->startOfMonth())
+            ->values();
+
+        if (!Schema::hasTable('subscriptions')) {
+            return $months->map(fn (Carbon $month) => [
+                'label' => $month->format('M'),
+                'amount' => 0.0,
+            ])->all();
+        }
+
+        $query = DB::table('subscriptions');
+        $query->where(function ($q) use ($agentId, $companyIds) {
+            if (Schema::hasColumn('subscriptions', 'deployed_by')) {
+                $q->where('deployed_by', $agentId);
+            }
+            if ($companyIds && Schema::hasColumn('subscriptions', 'company_id')) {
+                $q->orWhereIn('company_id', $companyIds);
+            }
+        });
+
+        $rows = $query
+            ->select(['amount', 'payment_status', 'created_at'])
+            ->where('created_at', '>=', $months->first()->copy()->startOfMonth())
+            ->get();
+
+        return $months->map(function (Carbon $month) use ($rows) {
+            $amount = (float) $rows
+                ->filter(function ($row) use ($month) {
+                    if (strtolower((string) ($row->payment_status ?? '')) !== 'paid' || empty($row->created_at)) {
+                        return false;
+                    }
+
+                    $createdAt = Carbon::parse((string) $row->created_at);
+
+                    return $createdAt->year === $month->year && $createdAt->month === $month->month;
+                })
+                ->sum('amount');
+
+            return [
+                'label' => $month->format('M'),
+                'amount' => $amount,
+            ];
+        })->all();
     }
 
     private function activityHeatmap(int $agentId): array

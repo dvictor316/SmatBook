@@ -7,6 +7,9 @@
 @section('content')
 @php
     $initials = collect(explode(' ', trim($user->name ?? 'Agent')))->filter()->map(fn($p) => mb_substr($p, 0, 1))->take(2)->implode('');
+    $salesTrend = collect($stats['sales_trend'] ?? []);
+    $largestSalesMonth = max(1, (float) ($stats['largest_sales_month'] ?? 0));
+    $pipelineBreakdown = collect($stats['pipeline_breakdown'] ?? []);
 @endphp
 <div class="page-wrapper">
     <div class="content agent-page">
@@ -58,15 +61,28 @@
             </section>
 
             <section class="agent-card span-3 agent-tone-purple">
-                <h4>Sales Pulse</h4>
-                <div class="agent-bar-chart mt-3">
-                    <span style="height:18px;opacity:.35"></span>
-                    <span style="height:34px;opacity:.55"></span>
-                    <span style="height:26px;opacity:.75"></span>
-                    <span style="height:54px"></span>
-                    <span style="height:38px;opacity:.85"></span>
+                <h4>Gap To Target</h4>
+                <div class="value" style="font-size:28px;margin-top:12px;">₦{{ number_format($stats['remaining_to_target']) }}</div>
+                <small class="agent-muted">Remaining to close before hitting the monthly target.</small>
+                <div class="agent-progress mt-3"><span style="width:{{ $stats['target_percent'] }}%"></span></div>
+            </section>
+
+            <section class="agent-card span-6 agent-tone-purple">
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                    <div>
+                        <h4>Monthly Paid Sales Trend</h4>
+                        <small class="agent-muted">Last 6 months of paid subscription volume.</small>
+                    </div>
+                    <span class="agent-pill">Peak ₦{{ number_format($stats['largest_sales_month']) }}</span>
                 </div>
-                <small class="agent-muted">Recent sales and follow-up activity trend.</small>
+                <div class="agent-bar-chart mt-3">
+                    @foreach($salesTrend as $point)
+                        <div class="agent-chart-col">
+                            <span style="height:{{ max(12, (int) round((($point['amount'] ?? 0) / $largestSalesMonth) * 54)) }}px;opacity:{{ (($point['amount'] ?? 0) > 0) ? '1' : '.25' }}"></span>
+                            <small>{{ $point['label'] ?? '-' }}</small>
+                        </div>
+                    @endforeach
+                </div>
             </section>
 
             <section class="agent-card span-3 agent-metric agent-tone-green">
@@ -134,6 +150,31 @@
                     @endforeach
                 </div>
                 <small class="agent-muted d-block mt-3">Calls, visits, notes, and lead updates.</small>
+            </section>
+
+            <section class="agent-card span-8">
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                    <div>
+                        <h4>Lead Pipeline Mix</h4>
+                        <small class="agent-muted">Where current prospects are sitting in the funnel.</small>
+                    </div>
+                    <span class="agent-pill">{{ number_format($stats['total_leads']) }} leads</span>
+                </div>
+                <div class="agent-status-chart mt-3">
+                    @forelse($pipelineBreakdown as $item)
+                        <div class="agent-status-row">
+                            <div class="agent-status-head">
+                                <strong>{{ $item['label'] }}</strong>
+                                <span>{{ number_format($item['count']) }}</span>
+                            </div>
+                            <div class="agent-status-track">
+                                <span style="width:{{ max(6, (int) ($item['percent'] ?? 0)) }}%"></span>
+                            </div>
+                        </div>
+                    @empty
+                        <p class="agent-muted mb-0">No pipeline data yet.</p>
+                    @endforelse
+                </div>
             </section>
         </div>
     </div>
