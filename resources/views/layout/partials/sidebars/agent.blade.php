@@ -4,7 +4,7 @@
         ['label' => 'Leads', 'route' => 'agent.leads', 'icon' => 'fa-solid fa-user-plus'],
         ['label' => 'Free Trials', 'route' => 'agent.leads', 'icon' => 'fa-solid fa-clock', 'query' => ['status' => 'interested']],
         ['label' => 'Businesses', 'route' => 'agent.leads', 'icon' => 'fa-solid fa-store', 'query' => ['type' => 'company']],
-        ['label' => 'Find Nearby', 'route' => 'agent.find-nearby', 'icon' => 'fa-solid fa-location-dot'],
+        ['label' => 'Find Nearby', 'route' => 'agent.nearby-businesses', 'icon' => 'fa-solid fa-location-dot', 'active' => ['agent.find-nearby', 'agent.nearby-businesses']],
         ['label' => 'Performance', 'route' => 'agent.performance', 'icon' => 'fa-solid fa-chart-line'],
         ['label' => 'Earnings', 'route' => 'agent.earnings', 'icon' => 'fa-solid fa-wallet'],
         ['label' => 'Knowledge Base', 'route' => 'agent.knowledge-base', 'icon' => 'fa-solid fa-graduation-cap'],
@@ -28,7 +28,8 @@
             <ul>
                 @foreach($agentNav as $item)
                     @php
-                        $isActive = request()->routeIs($item['route']);
+                        $activeRoutes = $item['active'] ?? [$item['route']];
+                        $isActive = collect($activeRoutes)->contains(fn ($route) => request()->routeIs($route));
                         $url = route($item['route'], $item['query'] ?? []);
                     @endphp
                     <li>

@@ -461,6 +461,7 @@ Route::middleware(['auth', 'role:agent,state_manager,super_admin'])
         Route::post('/profile/update-images', [HomeController::class, 'updateProfileImages'])->name('profile.update.images');
         Route::get('/leads', [AgentPortalController::class, 'leads'])->name('leads');
         Route::get('/find-nearby', [AgentPortalController::class, 'findNearby'])->name('find-nearby');
+        Route::get('/nearby-businesses', [AgentPortalController::class, 'findNearby'])->name('nearby-businesses');
         Route::get('/register-business', [DeploymentManagerController::class, 'create'])->name('registration.create');
         Route::post('/register-business', [DeploymentManagerController::class, 'store'])->name('registration.store');
         Route::post('/leads', [AgentPortalController::class, 'storeLead'])->name('leads.store');
