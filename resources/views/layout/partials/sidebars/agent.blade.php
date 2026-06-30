@@ -16,9 +16,9 @@
     <div class="sidebar-inner slimscroll">
         <div id="sidebar-menu" class="sidebar-menu agent-sidebar-menu">
             <div class="agent-brand">
-                <span class="agent-brand-mark">P</span>
+                <span class="agent-brand-mark">S</span>
                 <span>
-                    <strong>Prokip</strong>
+                    <strong>SmartProbook</strong>
                     <small>Agent Portal</small>
                 </span>
             </div>
