@@ -176,20 +176,48 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    document.getElementById('agentUseLocation').addEventListener('click', () => {
-        if (!navigator.geolocation) {
-            state.textContent = 'Please turn on location services in your browser/device settings.';
+    document.getElementById('agentUseLocation').addEventListener('click', async () => {
+        if (!window.isSecureContext) {
+            state.textContent = 'Location needs HTTPS. Open this page on the secure smartprobook.com URL and try again.';
+            mapStatus.textContent = 'HTTPS required';
             return;
         }
+        if (!navigator.geolocation) {
+            state.textContent = 'Please turn on location services in your browser/device settings.';
+            mapStatus.textContent = 'Location unavailable';
+            return;
+        }
+
+        if (navigator.permissions?.query) {
+            try {
+                const permission = await navigator.permissions.query({ name: 'geolocation' });
+                if (permission.state === 'denied') {
+                    state.textContent = 'Location access is blocked in your browser. Allow location for this site, then try again.';
+                    mapStatus.textContent = 'Permission blocked';
+                    return;
+                }
+            } catch (error) {
+                // Some browsers do not support permission preflight for geolocation.
+            }
+        }
+
         state.textContent = 'Please allow location access when your browser asks.';
+        mapStatus.textContent = 'Waiting for location';
         navigator.geolocation.getCurrentPosition((position) => {
             coords = { lat: position.coords.latitude, lon: position.coords.longitude };
             state.textContent = 'Location ready. Choose a category or search keyword.';
             mapStatus.textContent = 'Location locked';
             if (nearbyMap) nearbyMap.setView([coords.lat, coords.lon], 14);
             renderMapMarkers([], true);
-        }, () => {
-            state.textContent = 'Please turn on/allow location, then tap Use My Location again.';
+        }, (error) => {
+            const message = ({
+                1: 'Location access was denied. Allow location for this site and tap Use My Location again.',
+                2: 'Your location could not be determined right now. Check GPS, network, or device location settings.',
+                3: 'Location request timed out. Move to an area with better signal and try again.',
+            })[error?.code] || 'Please turn on/allow location, then tap Use My Location again.';
+
+            state.textContent = message;
+            mapStatus.textContent = 'Location failed';
         }, { enableHighAccuracy: true, timeout: 10000 });
     });
 
