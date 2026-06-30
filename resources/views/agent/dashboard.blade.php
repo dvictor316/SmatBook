@@ -58,10 +58,10 @@
                     </div>
                     <span class="agent-pill">Peak ₦{{ number_format($stats['largest_sales_month']) }}</span>
                 </div>
-                <div class="agent-bar-chart mt-3">
+                <div class="agent-bar-chart agent-bar-chart-full mt-3">
                     @foreach($salesTrend as $point)
                         <div class="agent-chart-col">
-                            <span style="height:{{ max(12, (int) round((($point['amount'] ?? 0) / $largestSalesMonth) * 54)) }}px;opacity:{{ (($point['amount'] ?? 0) > 0) ? '1' : '.25' }}"></span>
+                            <span style="height:{{ max(18, (int) round((($point['amount'] ?? 0) / $largestSalesMonth) * 220)) }}px;opacity:{{ (($point['amount'] ?? 0) > 0) ? '1' : '.25' }}"></span>
                             <small>{{ $point['label'] ?? '-' }}</small>
                         </div>
                     @endforeach
@@ -112,6 +112,20 @@
                         <small class="agent-muted">Progress toward the assigned monthly target.</small>
                     </div>
                     <div class="agent-donut agent-donut-compact" style="--value:{{ $stats['target_percent'] }};--color:var(--agent-navy);"><strong>{{ $stats['target_percent'] }}%</strong></div>
+                </div>
+                <div class="agent-mini-metrics mt-3">
+                    <div class="agent-mini-metric">
+                        <span class="mini-label">Gap</span>
+                        <strong>₦{{ number_format($stats['remaining_to_target']) }}</strong>
+                    </div>
+                    <div class="agent-mini-metric">
+                        <span class="mini-label">Trials</span>
+                        <strong>{{ number_format($stats['free_trials']) }}</strong>
+                    </div>
+                    <div class="agent-mini-metric">
+                        <span class="mini-label">Conversion</span>
+                        <strong>{{ $stats['lead_conversion'] }}%</strong>
+                    </div>
                 </div>
                 <div class="agent-stat-list mt-3">
                     <div class="agent-stat-row"><span><i class="agent-dot" style="background:var(--agent-blue);"></i>Target</span><strong>₦{{ number_format($stats['target']) }}</strong></div>
