@@ -75,14 +75,12 @@ class AuthController extends Controller
             $requestedRole = 'agent';
             $request->merge(['role' => 'agent']);
         }
-        $retryableManager = $this->isManagerRoleName($requestedRole)
-            ? $this->findRetryableDeploymentManager((string) $request->input('email', ''))
-            : null;
+        $retryableUser = $this->findRetryableRegistrationUser((string) $request->input('email', ''));
         $isPartnerAgent = strtolower((string) $requestedRole) === 'agent';
 
         $rules = [
             'name' => 'required|string|max:255',
-            'email' => 'nullable|required_without:phone|string|email|max:255|unique:users,email',
+            'email' => 'nullable|required_without:phone|string|email|max:255',
             'phone' => ['nullable', 'required_without:email', 'string', 'max:25', 'regex:/^\+?[0-9]{7,20}$/'],
             'password' => [
                 'required',
@@ -94,7 +92,7 @@ class AuthController extends Controller
         ];
 
         if ($isPartnerAgent) {
-            $rules['email'] = 'nullable|required_without:phone|string|email|max:255|unique:users,email';
+            $rules['email'] = 'nullable|required_without:phone|string|email|max:255';
             $rules['phone'] = ['nullable', 'required_without:email', 'string', 'max:25', 'regex:/^\+?[0-9]{7,20}$/'];
             $rules['country'] = 'required|string|max:120';
             $rules['state_region'] = 'required|string|max:120';
@@ -139,8 +137,8 @@ class AuthController extends Controller
         $normalizedPhone = $this->normalizePhoneForAuth($validated['phone'] ?? null);
         if ($normalizedPhone && Schema::hasColumn('users', 'phone')) {
             $phoneQuery = User::query()->where('phone', $normalizedPhone);
-            if ($retryableManager) {
-                $phoneQuery->where('id', '!=', $retryableManager->id);
+            if ($retryableUser) {
+                $phoneQuery->where('id', '!=', $retryableUser->id);
             }
             $phoneExists = $phoneQuery->exists();
             if ($phoneExists) {
@@ -148,18 +146,21 @@ class AuthController extends Controller
             }
         }
 
-        $resolvedEmail = $validated['email'] ?? null;
-        if ($this->isManagerRoleName($requestedRole) && $resolvedEmail) {
+        $resolvedEmail = $this->normalizeEmailForAuth($validated['email'] ?? null);
+        if ($resolvedEmail) {
             $emailOwner = User::withTrashed()
-                ->where('email', $resolvedEmail)
+                ->whereRaw('LOWER(email) = ?', [$resolvedEmail])
                 ->first();
 
-            if ($emailOwner && (!$retryableManager || (int) $emailOwner->id !== (int) $retryableManager->id)) {
-                return back()
-                    ->withErrors(['email' => 'This email is already registered.'])
-                    ->with('registered_manager_email', $resolvedEmail)
-                    ->with('registered_manager_hint', 'We found an existing account for this email. Sign in to continue, or use a different email.')
-                    ->withInput();
+            if ($emailOwner && (!$retryableUser || (int) $emailOwner->id !== (int) $retryableUser->id)) {
+                $response = back()->withErrors(['email' => 'This email is already registered.'])->withInput();
+
+                if ($this->isManagerRoleName($requestedRole)) {
+                    $response->with('registered_manager_email', $resolvedEmail)
+                        ->with('registered_manager_hint', 'We found an existing account for this email. Sign in to continue, or use a different email.');
+                }
+
+                return $response;
             }
         }
 
@@ -187,7 +188,7 @@ class AuthController extends Controller
         }
 
         try {
-            $registrationResult = DB::transaction(function () use ($validated, $request, $resolvedEmail, $normalizedPhone, $retryableManager) {
+            $registrationResult = DB::transaction(function () use ($validated, $request, $resolvedEmail, $normalizedPhone, $retryableUser) {
                 $role = $request->role ?? session('reg_role', 'admin');
                 if ($this->isManagerRoleName($role) && !Auth::check()) {
                     $role = 'agent';
@@ -215,7 +216,10 @@ class AuthController extends Controller
                     'state_manager_id' => $stateManagerId,
                 ]);
 
-                $user = $retryableManager ?: new User();
+                $user = $retryableUser ?: new User();
+                if ($user->exists && method_exists($user, 'trashed') && $user->trashed()) {
+                    $user->restore();
+                }
                 $user->fill($userPayload);
                 $user->save();
 
@@ -374,7 +378,7 @@ class AuthController extends Controller
 
     private function findRetryableDeploymentManager(string $email): ?User
     {
-        $email = trim(strtolower($email));
+        $email = (string) $this->normalizeEmailForAuth($email);
         if ($email === '') {
             return null;
         }
@@ -398,6 +402,44 @@ class AuthController extends Controller
         return in_array(strtolower((string) $manager->status), ['pending', 'pending_info'], true)
             ? $user
             : null;
+    }
+
+    private function findRetryableRegistrationUser(string $email): ?User
+    {
+        $email = (string) $this->normalizeEmailForAuth($email);
+        if ($email === '') {
+            return null;
+        }
+
+        $user = User::withTrashed()
+            ->whereRaw('LOWER(email) = ?', [$email])
+            ->first();
+
+        if (!$user) {
+            return null;
+        }
+
+        if ($this->isRegistrationRetryableUser($user)) {
+            return $user;
+        }
+
+        return $this->findRetryableDeploymentManager($email);
+    }
+
+    private function isRegistrationRetryableUser(User $user): bool
+    {
+        if (method_exists($user, 'trashed') && $user->trashed()) {
+            return true;
+        }
+
+        return strtolower((string) ($user->status ?? 'pending')) !== 'active';
+    }
+
+    private function normalizeEmailForAuth(?string $email): ?string
+    {
+        $email = trim(strtolower((string) $email));
+
+        return $email !== '' ? $email : null;
     }
 
     /*
