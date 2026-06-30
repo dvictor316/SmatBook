@@ -105,7 +105,7 @@
                 </div>
             </section>
 
-            <section class="agent-card span-4 agent-tone-blue">
+            <section class="agent-card span-6 agent-tone-blue">
                 <div class="d-flex justify-content-between align-items-start gap-3">
                     <div>
                         <h4>Target vs Actual Sales</h4>
