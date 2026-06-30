@@ -17,7 +17,7 @@
                     <i class="fa-solid fa-building-circle-check"></i> Register Business
                 </a>
                 <button type="button" class="agent-button soft" data-bs-toggle="modal" data-bs-target="#agentLeadModal">
-                    <i class="fa-solid fa-plus"></i> Quick Save Lead
+                    <i class="fa-solid fa-plus"></i> Save Prospect Only
                 </button>
             </div>
         </div>
@@ -107,10 +107,10 @@
             @empty
                 <section class="agent-card span-12 text-center py-5">
                     <h3>No leads yet</h3>
-                    <p class="agent-muted">Register a business license or save a quick prospect to follow up later.</p>
+                    <p class="agent-muted">Use Register Business to create a real business account. Use Save Prospect Only to keep contact details for follow-up without opening a licence registration.</p>
                     <div class="d-flex flex-wrap justify-content-center gap-2">
                         <a href="{{ route('agent.registration.create') }}" class="agent-button"><i class="fa-solid fa-building-circle-check"></i> Register Business</a>
-                        <button type="button" class="agent-button soft" data-bs-toggle="modal" data-bs-target="#agentLeadModal"><i class="fa-solid fa-plus"></i> Quick Save Lead</button>
+                        <button type="button" class="agent-button soft" data-bs-toggle="modal" data-bs-target="#agentLeadModal"><i class="fa-solid fa-plus"></i> Save Prospect Only</button>
                     </div>
                 </section>
             @endforelse
@@ -127,7 +127,10 @@
         <form method="POST" action="{{ route('agent.leads.store') }}" class="modal-content agent-card" style="border-radius:26px;">
             @csrf
             <div class="modal-header border-0">
-                <h3 class="modal-title">Quick Save Lead</h3>
+                <div>
+                    <h3 class="modal-title mb-1">Save Prospect Only</h3>
+                    <p class="agent-muted mb-0">This only saves the contact as a lead for follow-up. It does not register the business or start licence checkout.</p>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">

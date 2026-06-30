@@ -16,7 +16,7 @@
     }
     .agent-sidebar .sidebar-inner { background: #fff; border-right: 1px solid var(--agent-line); }
     .agent-brand { display: flex; align-items: center; gap: 12px; padding: 24px 24px 18px; color: var(--agent-navy); }
-    .agent-brand-mark { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--agent-navy); color: #ffc20f; font-size: 27px; font-weight: 900; box-shadow: 0 14px 28px rgba(6, 47, 104, .18); }
+    .agent-brand-mark { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--agent-navy); color: #ffffff; font-size: 27px; font-weight: 900; box-shadow: 0 14px 28px rgba(6, 47, 104, .18); }
     .agent-brand strong { display: block; font-size: 24px; line-height: 1; }
     .agent-brand small { display: block; color: var(--agent-muted); text-transform: uppercase; letter-spacing: .12em; font-size: 10px; margin-top: 4px; }
     .agent-menu-label { margin: 12px 24px; color: #9aa6ba; font-weight: 800; text-transform: uppercase; letter-spacing: .18em; font-size: 11px; }
