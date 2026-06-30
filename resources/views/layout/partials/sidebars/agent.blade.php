@@ -38,16 +38,16 @@
                     </li>
                 @endforeach
                 <li class="agent-soon">
-                    <a href="javascript:void(0);">
-                        <i class="fa-solid fa-rocket"></i>
-                        <span>Upsell Center</span>
-                        <small>Soon</small>
+                    <a href="javascript:void(0);" class="agent-soon-link">
+                        <i class="fa-solid fa-rocket agent-soon-icon"></i>
+                        <span class="agent-soon-text">Upsell Center</span>
+                        <small class="agent-soon-badge">Soon</small>
                     </a>
                 </li>
                 <li class="agent-logout">
-                    <a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form-agent').submit();">
-                        <i class="fa-solid fa-right-from-bracket"></i>
-                        <span>Logout</span>
+                    <a href="{{ route('logout') }}" class="agent-logout-link" onclick="event.preventDefault(); document.getElementById('logout-form-agent').submit();">
+                        <i class="fa-solid fa-right-from-bracket agent-logout-icon"></i>
+                        <span class="agent-logout-text">Logout</span>
                     </a>
                     <form id="logout-form-agent" action="{{ route('logout') }}" method="POST" class="d-none">@csrf</form>
                 </li>

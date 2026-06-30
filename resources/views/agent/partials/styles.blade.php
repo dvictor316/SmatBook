@@ -36,12 +36,20 @@
         color: var(--agent-navy) !important;
         transform: translateX(3px);
     }
-    .agent-sidebar-menu li.agent-soon > a span,
-    .agent-sidebar-menu li.agent-soon > a i {
+    body .sidebar.agent-sidebar .agent-sidebar-menu li.agent-soon > a,
+    body .sidebar.agent-sidebar .agent-sidebar-menu li.agent-soon > a span,
+    body .sidebar.agent-sidebar .agent-sidebar-menu li.agent-soon > a i,
+    body .sidebar.agent-sidebar .agent-sidebar-menu li.agent-soon > a small,
+    body .sidebar.agent-sidebar .agent-sidebar-menu .agent-soon-link,
+    body .sidebar.agent-sidebar .agent-sidebar-menu .agent-soon-text,
+    body .sidebar.agent-sidebar .agent-sidebar-menu .agent-soon-icon,
+    body .sidebar.agent-sidebar .agent-sidebar-menu .agent-soon-badge {
         color: var(--agent-navy) !important;
+        -webkit-text-fill-color: var(--agent-navy) !important;
         opacity: 1;
     }
-    .agent-soon small {
+    .agent-soon small,
+    .agent-soon-badge {
         margin-left: auto;
         border-radius: 999px;
         background: #eef5ff;
@@ -61,9 +69,14 @@
         border: 1px solid #ffd6e2;
         box-shadow: 0 8px 18px rgba(217, 31, 92, .08);
     }
-    .agent-sidebar-menu li.agent-logout > a span,
-    .agent-sidebar-menu li.agent-logout > a i {
+    body .sidebar.agent-sidebar .agent-sidebar-menu li.agent-logout > a,
+    body .sidebar.agent-sidebar .agent-sidebar-menu li.agent-logout > a span,
+    body .sidebar.agent-sidebar .agent-sidebar-menu li.agent-logout > a i,
+    body .sidebar.agent-sidebar .agent-sidebar-menu .agent-logout-link,
+    body .sidebar.agent-sidebar .agent-sidebar-menu .agent-logout-text,
+    body .sidebar.agent-sidebar .agent-sidebar-menu .agent-logout-icon {
         color: var(--agent-red) !important;
+        -webkit-text-fill-color: var(--agent-red) !important;
         opacity: 1;
     }
     .agent-page { background: radial-gradient(circle at top left, rgba(36, 107, 254, .07), transparent 24rem), linear-gradient(180deg, #fbfdff 0, var(--agent-bg) 240px); min-height: calc(100vh - 70px); padding: 18px; color: var(--agent-ink); font-size: 13px; }
