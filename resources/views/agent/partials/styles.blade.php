@@ -25,9 +25,41 @@
     .agent-sidebar-menu li a:hover { transform: translateX(3px); color: var(--agent-navy); background: #eef5ff; }
     .agent-sidebar-menu li a.active { background: var(--agent-navy); color: #fff; box-shadow: 0 12px 24px rgba(6, 47, 104, .18); }
     .agent-sidebar-menu li i { width: 20px; text-align: center; }
-    .agent-soon small { margin-left: auto; border-radius: 999px; background: #f1f4f8; color: #95a0b3; padding: 3px 8px; font-size: 10px; text-transform: uppercase; }
+    .agent-sidebar-menu li.agent-soon > a {
+        background: rgba(255, 255, 255, .08);
+        color: #eef4ff;
+        border: 1px solid rgba(255, 255, 255, .12);
+    }
+    .agent-sidebar-menu li.agent-soon > a:hover {
+        background: rgba(255, 255, 255, .14);
+        color: #ffffff;
+        transform: translateX(3px);
+    }
+    .agent-soon small {
+        margin-left: auto;
+        border-radius: 999px;
+        background: #ffffff;
+        color: var(--agent-navy);
+        border: 1px solid rgba(6, 47, 104, .12);
+        padding: 3px 8px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+    }
     .agent-logout { border-top: 1px solid var(--agent-line); margin-top: 18px; padding-top: 12px; }
-    .agent-logout a, .agent-logout a:hover { color: var(--agent-red) !important; background: #fff4f7 !important; }
+    .agent-sidebar-menu li.agent-logout > a,
+    .agent-sidebar-menu li.agent-logout > a:hover {
+        color: var(--agent-red) !important;
+        background: #fff4f7 !important;
+        border: 1px solid #ffd6e2;
+        box-shadow: inset 0 0 0 1px rgba(217, 31, 92, .06);
+    }
+    .agent-sidebar-menu li.agent-logout > a span,
+    .agent-sidebar-menu li.agent-logout > a i {
+        color: inherit !important;
+        opacity: 1;
+    }
     .agent-page { background: radial-gradient(circle at top left, rgba(36, 107, 254, .07), transparent 24rem), linear-gradient(180deg, #fbfdff 0, var(--agent-bg) 240px); min-height: calc(100vh - 70px); padding: 18px; color: var(--agent-ink); font-size: 13px; }
     .agent-topline { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
     .agent-title h1 { margin: 0; font-size: clamp(19px, 1.9vw, 25px); font-weight: 800; color: var(--agent-ink); letter-spacing: -.02em; }
