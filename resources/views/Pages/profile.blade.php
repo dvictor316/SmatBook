@@ -21,6 +21,16 @@
         $completeness = ($filledFields / count($profileFields)) * 100;
     @endphp
 
+    @php
+        $isAgentProfile = strtolower((string) ($user->role ?? '')) === 'agent';
+        $profileImagesRoute = $isAgentProfile && Route::has('agent.profile.update.images')
+            ? route('agent.profile.update.images')
+            : route('profile.update.images');
+        $profileEditUrl = $isAgentProfile && Route::has('agent.profile')
+            ? route('agent.profile')
+            : url('settings');
+    @endphp
+
     <div class="page-wrapper">
         <div class="content container-fluid">
             <div class="row justify-content-lg-center">
@@ -32,7 +42,7 @@
                         </div>
                     </div>
 
-                    <form action="{{ route('profile.update.images') }}" method="POST" enctype="multipart/form-data" id="imageUploadForm">
+                    <form action="{{ $profileImagesRoute }}" method="POST" enctype="multipart/form-data" id="imageUploadForm">
                         @csrf
                         <div class="profile-cover">
                             <div class="profile-cover-wrap">
@@ -88,7 +98,7 @@
                             <div class="card">
                                 <div class="card-header d-flex justify-content-between align-items-center">
                                     <h5 class="card-title mb-0">Basic Info</h5>
-                                    <a class="btn btn-sm btn-white" href="{{ url('settings') }}">Edit</a>
+                                    <a class="btn btn-sm btn-white" href="{{ $profileEditUrl }}">Edit</a>
                                 </div>
                                 <div class="card-body">
                                     <ul class="list-unstyled mb-0">

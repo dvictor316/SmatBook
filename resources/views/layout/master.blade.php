@@ -31,13 +31,18 @@
         /** 2. USER DATA */
         $user = Auth::user();
         $profileImg = $user?->avatar_url ?: asset('assets/img/profiles/avatar-07.jpg');
+        $isAgentHeader = $user && strtolower((string) ($user->role ?? '')) === 'agent';
         $isDeploymentManagerHeader = $user && in_array(strtolower((string) ($user->role ?? '')), ['state_manager', 'deployment_manager', 'manager'], true);
-        $profileUrl = $isDeploymentManagerHeader && Route::has('deployment.profile')
-            ? route('deployment.profile')
-            : url('profile');
-        $settingsUrl = $isDeploymentManagerHeader && Route::has('deployment.settings')
-            ? route('deployment.settings')
-            : url('settings');
+        $profileUrl = $isAgentHeader && Route::has('agent.profile')
+            ? route('agent.profile')
+            : ($isDeploymentManagerHeader && Route::has('deployment.profile')
+                ? route('deployment.profile')
+                : url('profile'));
+        $settingsUrl = $isAgentHeader && Route::has('agent.profile')
+            ? route('agent.profile')
+            : ($isDeploymentManagerHeader && Route::has('deployment.settings')
+                ? route('deployment.settings')
+                : url('settings'));
 
         /** 3. SUBSCRIPTION LOGIC */
         $host = request()->getHost();

@@ -454,6 +454,11 @@ Route::middleware(['auth', 'role:agent,state_manager,super_admin'])
     ->name('agent.')
     ->group(function () {
         Route::get('/dashboard', [AgentPortalController::class, 'dashboard'])->name('dashboard');
+        Route::get('/profile', [HomeController::class, 'profile'])->name('profile');
+        Route::post('/profile/update', [HomeController::class, 'updateProfile'])->name('profile.update');
+        Route::post('/profile/avatar', [HomeController::class, 'uploadAvatar'])->name('profile.avatar');
+        Route::post('/profile/password', [HomeController::class, 'changePassword'])->name('profile.password');
+        Route::post('/profile/update-images', [HomeController::class, 'updateProfileImages'])->name('profile.update.images');
         Route::get('/leads', [AgentPortalController::class, 'leads'])->name('leads');
         Route::get('/find-nearby', [AgentPortalController::class, 'findNearby'])->name('find-nearby');
         Route::get('/register-business', [DeploymentManagerController::class, 'create'])->name('registration.create');
