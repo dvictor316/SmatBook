@@ -347,10 +347,12 @@ class HomeController extends Controller
             return redirect()->route('registration.pending.notice');
         }
 
-        // Fetch latest subscription regardless of payment status
-        $subscription = Subscription::where('user_id', $user->id)
-            ->latest()
-            ->first();
+        // Use the same resolver the rest of the app relies on so demo and live
+        // users do not get bounced to an older pending checkout subscription.
+        $subscription = Subscription::resolveCurrentForUser($user)
+            ?? Subscription::where('user_id', $user->id)
+                ->latest()
+                ->first();
 
         Log::info('Regular user redirect', [
             'user_id'          => $user->id,
@@ -366,8 +368,28 @@ class HomeController extends Controller
                 ->with('info', 'Please select a plan to get started.');
         }
 
+        $isDemoWorkspace = $user->isDemoUser()
+            || (bool) optional($subscription->company)->is_demo
+            || (bool) optional(Company::find($subscription->company_id))->is_demo;
+
+        if ($isDemoWorkspace) {
+            Log::info('→ Demo subscription detected, bypassing checkout/setup gating', [
+                'subscription_id' => $subscription->id,
+                'payment_status' => $subscription->payment_status,
+                'sub_status' => $subscription->status,
+            ]);
+
+            if (strtolower((string) $subscription->status) !== 'active') {
+                $subscription->forceFill(['status' => 'Active'])->save();
+            }
+
+            if (!in_array(strtolower((string) $subscription->payment_status), ['paid', 'free'], true)) {
+                $subscription->forceFill(['payment_status' => 'free'])->save();
+            }
+        }
+
         // Unpaid → checkout (covers deployment-created customers on first login)
-        if ($subscription->payment_status !== 'paid') {
+        if (!in_array(strtolower((string) $subscription->payment_status), ['paid', 'free'], true)) {
             Log::info('→ Unpaid subscription, redirecting to checkout', [
                 'subscription_id' => $subscription->id,
             ]);
@@ -392,10 +414,12 @@ class HomeController extends Controller
         }
 
         // Active subscription — check company/domain exists
-        $company = Company::where(function ($q) use ($user) {
-            $q->where('user_id', $user->id)
-              ->orWhere('owner_id', $user->id);
-        })->first();
+        $company = $subscription->company_id
+            ? Company::find($subscription->company_id)
+            : Company::where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhere('owner_id', $user->id);
+            })->first();
 
         if (!$company || empty($company->domain_prefix)) {
             Log::info('→ No company/domain, redirecting to setup', [

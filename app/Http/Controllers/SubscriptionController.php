@@ -462,8 +462,33 @@ class SubscriptionController extends Controller
                 ->with(['user', 'company' => fn ($q) => $q->withoutGlobalScope('tenant')])
                 ->findOrFail($id);
 
+            $isDemoCheckout = (bool) optional($subscription->company)->is_demo
+                || (bool) optional($subscription->user)->isDemoUser();
+
+            if ($isDemoCheckout) {
+                if (strtolower((string) $subscription->status) !== 'active') {
+                    $subscription->forceFill(['status' => 'Active'])->save();
+                }
+
+                if (!in_array(strtolower((string) $subscription->payment_status), ['paid', 'free'], true)) {
+                    $subscription->forceFill(['payment_status' => 'free'])->save();
+                }
+
+                session([
+                    'user_plan' => strtolower((string) ($subscription->plan ?? $subscription->plan_name ?? optional($subscription->company)->plan ?? 'basic')),
+                    'current_tenant_id' => (int) ($subscription->company_id ?? $subscription->user?->company_id ?? 0),
+                    'current_tenant_name' => $subscription->company?->name ?? $subscription->company?->company_name ?? 'Demo Workspace',
+                    'workspace_context' => 'business',
+                    'is_demo_workspace' => true,
+                ]);
+
+                return redirect()->route('user.dashboard')
+                    ->with('info', 'Demo workspace is already active. Checkout is skipped for demo users.');
+            }
+
             // Already paid / active -> keep users out of checkout/payment pages
-            if ($subscription->payment_status === 'paid' || strtolower((string) $subscription->status) === 'active') {
+            if (in_array(strtolower((string) $subscription->payment_status), ['paid', 'free'], true)
+                || strtolower((string) $subscription->status) === 'active') {
                 return redirect()->route('home')
                     ->with('info', 'Your subscription is already active.');
             }
