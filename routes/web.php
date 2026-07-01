@@ -707,6 +707,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     // Customers
     Route::resource('customers', CustomerController::class)->middleware('plan.access:basic,professional,enterprise');
     Route::get('/add-customer', [CustomerController::class, 'create'])->middleware('plan.access:basic,professional,enterprise')->name('customers.add');
+    Route::get('/demo/workspace/plan/{plan}', [DemoCustomerWorkspaceController::class, 'switchWorkspacePlan'])->middleware('plan.access:basic,professional,enterprise')->name('demo.workspace.plan');
     Route::get('/customers/{id}/demo-preview', [DemoCustomerWorkspaceController::class, 'launch'])->middleware('plan.access:basic,professional,enterprise')->name('customers.demo-preview');
     Route::get('/demo/customer-preview/plan/{plan}', [DemoCustomerWorkspaceController::class, 'switchPlan'])->middleware('plan.access:basic,professional,enterprise')->name('demo.customer-preview.plan');
     Route::get('/demo/customer-preview/stop', [DemoCustomerWorkspaceController::class, 'stop'])->middleware('plan.access:basic,professional,enterprise')->name('demo.customer-preview.stop');

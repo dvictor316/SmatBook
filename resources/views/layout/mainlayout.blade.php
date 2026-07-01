@@ -1849,6 +1849,25 @@
             </div>
         </div>
     @endif
+    @if (($isDemoWorkspace ?? false) && empty($demoPreviewCustomer))
+        <div class="alert alert-info border-0 rounded-0 mb-0 py-2 px-3">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2">
+                <div class="small">
+                    <strong>Dashboard Preview:</strong> Switch between Basic, Pro, and Enterprise to see how each demo workspace looks.
+                    @if(!empty($demoPreviewPlan))
+                        <span class="ms-2 badge bg-primary">{{ strtoupper($demoPreviewPlan === 'professional' ? 'PRO' : $demoPreviewPlan) }}</span>
+                    @endif
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ route('demo.workspace.plan', ['plan' => 'basic']) }}" class="btn btn-sm btn-outline-primary">Basic</a>
+                    <a href="{{ route('demo.workspace.plan', ['plan' => 'pro']) }}" class="btn btn-sm btn-outline-primary">Pro</a>
+                    <a href="{{ route('demo.workspace.plan', ['plan' => 'enterprise']) }}" class="btn btn-sm btn-outline-primary">Enterprise</a>
+                    <a href="{{ route('customers.index') }}" class="btn btn-sm btn-outline-secondary">Customers</a>
+                    <a href="{{ route('reports.hub') }}" class="btn btn-sm btn-outline-secondary">Reports</a>
+                </div>
+            </div>
+        </div>
+    @endif
     @if (($isDemoWorkspace ?? false) && !empty($demoPreviewCustomer))
         <div class="alert alert-info border-0 rounded-0 mb-0">
             <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2">

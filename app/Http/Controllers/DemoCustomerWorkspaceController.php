@@ -9,6 +9,18 @@ use Illuminate\Support\Facades\Auth;
 
 class DemoCustomerWorkspaceController extends Controller
 {
+    public function switchWorkspacePlan(Request $request, string $plan)
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        abort_unless($user?->isDemoUser(), 403);
+
+        $request->session()->put('demo_customer_preview_plan', $this->normalizePlan($plan));
+
+        return redirect()->route('user.dashboard')
+            ->with('success', 'Demo dashboard switched to ' . ucfirst($this->normalizePlan($plan)) . ' preview.');
+    }
+
     public function launch(Request $request, int $customerId)
     {
         $customer = $this->resolveDemoCustomer($customerId);

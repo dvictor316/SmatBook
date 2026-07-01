@@ -84,7 +84,7 @@ class DashboardController extends Controller
 
         $currentSubscription = Subscription::resolveCurrentForUser($user);
         $demoPreviewCustomer = $this->resolveDemoPreviewCustomer($request, $user);
-        $demoPreviewPlan = $demoPreviewCustomer ? $this->resolveDemoPreviewPlan($request, $user) : null;
+        $demoPreviewPlan = $user?->isDemoUser() ? $this->resolveDemoPreviewPlan($request, $user) : null;
         $hasBusinessWorkspace = (int) ($user->company_id ?? 0) > 0
             || (int) ($currentSubscription?->company_id ?? 0) > 0
             || (int) session('current_tenant_id', 0) > 0;
