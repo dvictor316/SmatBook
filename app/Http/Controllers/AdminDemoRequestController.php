@@ -92,7 +92,7 @@ class AdminDemoRequestController extends Controller
                 'demo_user_id'    => $user->id,
             ]);
 
-            $loginUrl = config('app.url') . '/login';
+            $loginUrl = route('login', ['portal' => 1, 'demo' => 1]);
 
             Mail::to($demoRequest->email)
                 ->queue(new DemoApprovedMail($demoRequest, $plainPassword, $loginUrl, $loginEmail));

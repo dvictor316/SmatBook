@@ -454,16 +454,21 @@ class AuthController extends Controller
         $isDemoSession = $currentUser
             && (
                 strtolower((string) $currentUser->email) === 'demo@smartprobook.local'
+                || $currentUser->isDemoUser()
                 || $request->session()->boolean('is_demo_workspace')
             );
 
-        if (($request->boolean('portal') || $isDemoSession) && Auth::check()) {
+        if (($request->boolean('portal') || $request->boolean('demo') || $isDemoSession) && Auth::check()) {
             Auth::logout();
             $request->session()->forget([
                 'is_demo_workspace',
                 'user_plan',
                 'current_tenant_id',
                 'current_tenant_name',
+                'workspace_context',
+                'demo_customer_preview_id',
+                'demo_customer_preview_plan',
+                'demo_customer_preview_started_at',
             ]);
             $request->session()->invalidate();
             $request->session()->regenerateToken();
@@ -547,6 +552,12 @@ class AuthController extends Controller
         $request->session()->regenerate();
         
         $user = Auth::user();
+        $this->resetWorkspaceSessionState($request);
+
+        if ($user?->isDemoUser()) {
+            $this->forceDemoWorkspaceSession($request, $user);
+        }
+
         $deviceSession = app(DeviceSessionManager::class)->ensureCurrentSession($request, $user);
         if (($deviceSession['allowed'] ?? true) !== true) {
             Auth::logout();
@@ -633,6 +644,7 @@ class AuthController extends Controller
             'active_branch_id',
             'active_branch_name',
             'active_branch_scope',
+            'workspace_context',
             'selected_plan_id',
             'selected_plan',
             'selected_cycle',
@@ -650,6 +662,10 @@ class AuthController extends Controller
             'deployment_plan_name',
             'impersonator_user_id',
             'is_impersonating',
+            'is_demo_workspace',
+            'demo_customer_preview_id',
+            'demo_customer_preview_plan',
+            'demo_customer_preview_started_at',
             'social_auth_context',
             'last_activity',
         ]);
@@ -780,6 +796,13 @@ class AuthController extends Controller
     private function handlePostLoginRedirect()
     {
         $user = Auth::user();
+
+        if ($user?->isDemoUser()) {
+            $this->forceDemoWorkspaceSession(request(), $user);
+            app(ActiveBranchResolver::class)->ensureSession($user);
+
+            return redirect()->route('home');
+        }
 
         app(ActiveBranchResolver::class)->ensureSession($user);
 
@@ -1455,6 +1478,40 @@ class AuthController extends Controller
             'selected_amount',
             'reg_role'
         ]);
+    }
+
+    private function resetWorkspaceSessionState(Request $request): void
+    {
+        $request->session()->forget([
+            'current_tenant_id',
+            'current_tenant_name',
+            'active_branch_id',
+            'active_branch_name',
+            'active_branch_scope',
+            'workspace_context',
+            'is_demo_workspace',
+            'demo_customer_preview_id',
+            'demo_customer_preview_plan',
+            'demo_customer_preview_started_at',
+            'url.intended',
+        ]);
+    }
+
+    private function forceDemoWorkspaceSession(Request $request, User $user): void
+    {
+        $companyId = (int) ($user->company_id ?? 0);
+        if ($companyId <= 0) {
+            return;
+        }
+
+        $request->session()->put('is_demo_workspace', true);
+        $request->session()->put('workspace_context', 'business');
+        $request->session()->put('current_tenant_id', $companyId);
+
+        $companyName = $user->company?->company_name ?? $user->company?->name ?? null;
+        if ($companyName) {
+            $request->session()->put('current_tenant_name', $companyName);
+        }
     }
 
     public function registrationStates(Request $request)
