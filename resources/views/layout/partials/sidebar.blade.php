@@ -22,13 +22,27 @@
     // PRIORITY 3: Determine plan for regular tenants
     $plan = 'basic'; // default
     $isAgentPortalUser = !$isDeploymentManager && !$isSuperAdmin && strtolower((string) ($user->role ?? '')) === 'agent';
+    $isDemoWorkspace = method_exists($user, 'isDemoUser') && $user->isDemoUser();
+    $demoSidebarPlan = strtolower(trim((string) session('demo_customer_preview_plan', 'basic')));
 
     // Super admins always get enterprise sidebar — no subscription lookup needed
     if ($isSuperAdmin) {
         $plan = 'enterprise';
     }
 
-    $shouldResolveBusinessPlan = !$isDeploymentManager && !$isSuperAdmin;
+    if ($isDemoWorkspace) {
+        if (str_contains($demoSidebarPlan, 'starter')) {
+            $plan = 'starter';
+        } elseif (str_contains($demoSidebarPlan, 'enterprise')) {
+            $plan = 'enterprise';
+        } elseif (str_contains($demoSidebarPlan, 'prof') || str_contains($demoSidebarPlan, 'pro')) {
+            $plan = 'pro';
+        } else {
+            $plan = 'basic';
+        }
+    }
+
+    $shouldResolveBusinessPlan = !$isDeploymentManager && !$isSuperAdmin && !$isDemoWorkspace;
 
     if ($shouldResolveBusinessPlan) {
         $companyId = $user->company_id ?? optional($user->company)->id;

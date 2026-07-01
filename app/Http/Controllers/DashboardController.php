@@ -270,10 +270,6 @@ class DashboardController extends Controller
             return null;
         }
 
-        if ((int) $request->session()->get('demo_customer_preview_id', 0) <= 0) {
-            return null;
-        }
-
         return Plan::normalizeTier((string) $request->session()->get('demo_customer_preview_plan', 'basic'));
     }
 
