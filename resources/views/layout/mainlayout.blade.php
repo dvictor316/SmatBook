@@ -1837,11 +1837,16 @@
     {{-- MAIN PAGE CONTENT --}}
     @include('layout.partials.flash-messages')
     @if (($isDemoWorkspace ?? false) && isset($demoCompany) && $demoCompany)
-        <div class="alert alert-warning border-0 rounded-0 mb-0 text-center">
-            Demo Mode: every record in this workspace is temporary sample data. Live billing, payouts, subscriptions, backups, and admin-only system actions are disabled.
-            @if($demoCompany->demo_expires_at)
-                <span class="fw-semibold"> Demo access expires {{ $demoCompany->demo_expires_at->diffForHumans() }}.</span>
-            @endif
+        <div class="alert alert-warning border-0 rounded-0 mb-0 py-2 px-3">
+            <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-center gap-1 gap-lg-2 text-center">
+                <div class="fw-semibold small">Demo Mode</div>
+                <div class="small">
+                    Temporary sample data only. Live billing, payouts, subscriptions, backups, and admin-only actions are disabled.
+                </div>
+                @if($demoCompany->demo_expires_at)
+                    <div class="fw-semibold small">Expires {{ $demoCompany->demo_expires_at->diffForHumans() }}.</div>
+                @endif
+            </div>
         </div>
     @endif
     @if (($isDemoWorkspace ?? false) && !empty($demoPreviewCustomer))

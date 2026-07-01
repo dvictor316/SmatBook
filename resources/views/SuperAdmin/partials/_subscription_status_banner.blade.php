@@ -1,4 +1,4 @@
-@if(!empty($subscriptionStatus))
+@if(!empty($subscriptionStatus) && !($isDemoWorkspace ?? false))
     <style>
         .subscription-state-banner {
             border-radius: 18px;
