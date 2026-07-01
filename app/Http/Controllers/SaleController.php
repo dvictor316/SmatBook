@@ -1592,8 +1592,9 @@ public function create()
 {
     $customers = $this->scopedCustomers()->get();
     $products = $this->scopedProducts()->get();
+    $selected_customer = (string) request()->input('customer_id', session('demo_customer_preview_id', ''));
 
-    return view('Sales.Invoices.create-invoices', compact('customers', 'products'));
+    return view('Sales.Invoices.create-invoices', compact('customers', 'products', 'selected_customer'));
 }
 
     public function edit($id)

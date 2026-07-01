@@ -361,6 +361,24 @@
                                                                     <i class="far fa-file-alt me-2 text-secondary"></i>Statement
                                                                 </a>
                                                             </li>
+                                                            @if(auth()->user()?->isDemoUser())
+                                                                <li><hr class="dropdown-divider"></li>
+                                                                <li>
+                                                                    <a class="dropdown-item" href="{{ route('customers.demo-preview', ['id' => $customer->id, 'plan' => 'basic']) }}">
+                                                                        <i class="far fa-window-maximize me-2 text-primary"></i>Preview Demo Basic
+                                                                    </a>
+                                                                </li>
+                                                                <li>
+                                                                    <a class="dropdown-item" href="{{ route('customers.demo-preview', ['id' => $customer->id, 'plan' => 'pro']) }}">
+                                                                        <i class="far fa-window-maximize me-2 text-info"></i>Preview Demo Pro
+                                                                    </a>
+                                                                </li>
+                                                                <li>
+                                                                    <a class="dropdown-item" href="{{ route('customers.demo-preview', ['id' => $customer->id, 'plan' => 'enterprise']) }}">
+                                                                        <i class="far fa-window-maximize me-2 text-warning"></i>Preview Demo Enterprise
+                                                                    </a>
+                                                                </li>
+                                                            @endif
                                                             <li>
                                                                 <a class="dropdown-item" href="{{ route('customers.receive-payment', $customer->id) }}">
                                                                     <i class="far fa-credit-card me-2 text-success"></i>Receive Payment

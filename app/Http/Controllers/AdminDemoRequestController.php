@@ -7,14 +7,17 @@ use App\Mail\DemoRejectedMail;
 use App\Models\ActivityLog;
 use App\Models\DemoRequest;
 use App\Services\DemoProvisioningService;
+use App\Support\DemoSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 
 class AdminDemoRequestController extends Controller
 {
-    public function __construct(private DemoProvisioningService $provisioner)
-    {
+    public function __construct(
+        private DemoProvisioningService $provisioner,
+        private DemoSettings $demoSettings
+    ) {
     }
 
     /**
@@ -38,7 +41,9 @@ class AdminDemoRequestController extends Controller
             'expired'  => DemoRequest::expired()->count(),
         ];
 
-        return view('SuperAdmin.demo-requests.index', compact('demoRequests', 'status', 'counts'));
+        $demoConfig = $this->demoSettings->asArray();
+
+        return view('SuperAdmin.demo-requests.index', compact('demoRequests', 'status', 'counts', 'demoConfig'));
     }
 
     /**
@@ -47,7 +52,9 @@ class AdminDemoRequestController extends Controller
     public function show(int $id)
     {
         $demoRequest = DemoRequest::with(['approver', 'demoCompany', 'demoUser'])->findOrFail($id);
-        return view('SuperAdmin.demo-requests.show', compact('demoRequest'));
+        $demoConfig = $this->demoSettings->asArray();
+
+        return view('SuperAdmin.demo-requests.show', compact('demoRequest', 'demoConfig'));
     }
 
     /**
@@ -135,5 +142,71 @@ class AdminDemoRequestController extends Controller
 
         return redirect()->route('super_admin.demo_requests.index')
             ->with('success', "Demo request rejected. Notification sent to {$demoRequest->email}.");
+    }
+
+    public function updateSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'enabled' => 'nullable|boolean',
+            'auto_reset_on_session_start' => 'nullable|boolean',
+            'lifetime_hours' => 'required|integer|min:1|max:168',
+            'blocked_route_prefixes' => 'nullable|string|max:2000',
+            'blocked_routes' => 'nullable|string|max:2000',
+        ]);
+
+        $this->demoSettings->update([
+            'enabled' => $request->boolean('enabled'),
+            'auto_reset_on_session_start' => $request->boolean('auto_reset_on_session_start'),
+            'lifetime_hours' => (int) $validated['lifetime_hours'],
+            'blocked_route_prefixes' => $validated['blocked_route_prefixes'] ?? '',
+            'blocked_routes' => $validated['blocked_routes'] ?? '',
+        ]);
+
+        return redirect()->route('super_admin.demo_requests.index')
+            ->with('success', 'Demo mode settings updated.');
+    }
+
+    public function reset(int $id)
+    {
+        $demoRequest = DemoRequest::with('demoCompany')->findOrFail($id);
+        $company = $demoRequest->demoCompany;
+
+        if (! $company || ! $company->isDemo()) {
+            return back()->withErrors(['error' => 'No provisioned demo workspace was found for this request.']);
+        }
+
+        $this->provisioner->resetDemoWorkspace($company, Auth::user());
+
+        return redirect()->route('super_admin.demo_requests.show', $demoRequest->id)
+            ->with('success', 'Demo workspace reset and reseeded successfully.');
+    }
+
+    public function extend(Request $request, int $id)
+    {
+        $demoRequest = DemoRequest::findOrFail($id);
+        $validated = $request->validate([
+            'hours' => 'required|integer|min:1|max:168',
+        ]);
+
+        $this->provisioner->extendDemo($demoRequest, (int) $validated['hours']);
+
+        ActivityLog::record('Demo', 'extended', "Demo request extended for {$demoRequest->email}", [
+            'user_id' => Auth::id(),
+            'company_id' => $demoRequest->demo_company_id,
+            'properties' => ['hours' => (int) $validated['hours']],
+        ]);
+
+        return redirect()->route('super_admin.demo_requests.show', $demoRequest->id)
+            ->with('success', 'Demo access extended successfully.');
+    }
+
+    public function expire(int $id)
+    {
+        $demoRequest = DemoRequest::findOrFail($id);
+
+        $this->provisioner->expireDemo($demoRequest);
+
+        return redirect()->route('super_admin.demo_requests.show', $demoRequest->id)
+            ->with('success', 'Demo access expired successfully.');
     }
 }

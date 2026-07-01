@@ -22,6 +22,7 @@ use App\Http\Controllers\SuperAdmin\DeploymentManagerController;
 use App\Http\Controllers\FinancialResetController;
 use App\Http\Controllers\DatabaseResetController;
 use App\Http\Controllers\DemoRequestController;
+use App\Http\Controllers\DemoCustomerWorkspaceController;
 use App\Http\Controllers\AdminDemoRequestController;
 
 /*
@@ -614,9 +615,13 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     // Demo Requests Management
     Route::prefix('demo-requests')->name('demo_requests.')->group(function () {
         Route::get('/', [AdminDemoRequestController::class, 'index'])->name('index');
+        Route::post('/settings', [AdminDemoRequestController::class, 'updateSettings'])->name('settings.update');
         Route::get('/{id}', [AdminDemoRequestController::class, 'show'])->name('show');
         Route::post('/{id}/approve', [AdminDemoRequestController::class, 'approve'])->name('approve');
         Route::post('/{id}/reject', [AdminDemoRequestController::class, 'reject'])->name('reject');
+        Route::post('/{id}/reset', [AdminDemoRequestController::class, 'reset'])->name('reset');
+        Route::post('/{id}/extend', [AdminDemoRequestController::class, 'extend'])->name('extend');
+        Route::post('/{id}/expire', [AdminDemoRequestController::class, 'expire'])->name('expire');
     });
 });
 
@@ -702,6 +707,9 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     // Customers
     Route::resource('customers', CustomerController::class)->middleware('plan.access:basic,professional,enterprise');
     Route::get('/add-customer', [CustomerController::class, 'create'])->middleware('plan.access:basic,professional,enterprise')->name('customers.add');
+    Route::get('/customers/{id}/demo-preview', [DemoCustomerWorkspaceController::class, 'launch'])->middleware('plan.access:basic,professional,enterprise')->name('customers.demo-preview');
+    Route::get('/demo/customer-preview/plan/{plan}', [DemoCustomerWorkspaceController::class, 'switchPlan'])->middleware('plan.access:basic,professional,enterprise')->name('demo.customer-preview.plan');
+    Route::get('/demo/customer-preview/stop', [DemoCustomerWorkspaceController::class, 'stop'])->middleware('plan.access:basic,professional,enterprise')->name('demo.customer-preview.stop');
     Route::get('/customers/import/template', [CustomerController::class, 'downloadImportTemplate'])->middleware('plan.access:basic,professional,enterprise')->name('customers.import.template');
     Route::post('/customers/import', [CustomerController::class, 'import'])->middleware('plan.access:basic,professional,enterprise')->name('customers.import');
     Route::get('/customers/{id}/receive-payment', [CustomerController::class, 'receivePayment'])->middleware('plan.access:basic,professional,enterprise')->name('customers.receive-payment');

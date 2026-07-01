@@ -41,6 +41,8 @@ class Company extends Model
         'logo',
         'subscription_start',
         'subscription_end',
+        'is_demo',
+        'demo_expires_at',
     ];
 
     /**
@@ -49,6 +51,8 @@ class Company extends Model
     protected $casts = [
         'subscription_start' => 'datetime',
         'subscription_end'   => 'datetime',
+        'is_demo'            => 'boolean',
+        'demo_expires_at'    => 'datetime',
         'latitude'           => 'decimal:7',
         'longitude'          => 'decimal:7',
         'geocoded_at'        => 'datetime',
@@ -134,5 +138,15 @@ class Company extends Model
         $slug = $this->domain_prefix ?? $this->subdomain ?? $this->domain ?? 'app';
 
         return "https://$slug.$cleanBase";
+    }
+
+    public function isDemo(): bool
+    {
+        return (bool) $this->is_demo;
+    }
+
+    public function demoIsExpired(): bool
+    {
+        return $this->isDemo() && $this->demo_expires_at?->isPast() === true;
     }
 }

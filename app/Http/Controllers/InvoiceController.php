@@ -543,11 +543,12 @@ class InvoiceController extends Controller
         $customers = $this->applyTenantScope(Customer::query(), 'customers')->get();
         $products = $this->applyTenantScope(Product::query(), 'products')->get();
         $quotationPrefill = session('quotation_prefill');
+        $selected_customer = (string) request()->input('customer_id', session('demo_customer_preview_id', ''));
         $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
         $priceLists = $this->priceListUsage->activeForCurrentContext($companyId);
         $priceListData = $this->priceListUsage->toFrontend($priceLists);
 
-        return view('Sales.Invoices.create-invoices', compact('customers', 'products', 'quotationPrefill', 'priceLists', 'priceListData'));
+        return view('Sales.Invoices.create-invoices', compact('customers', 'products', 'quotationPrefill', 'priceLists', 'priceListData', 'selected_customer'));
     }
 
     public function add_invoice()

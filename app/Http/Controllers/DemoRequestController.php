@@ -4,17 +4,24 @@ namespace App\Http\Controllers;
 
 use App\Mail\DemoRequestNotificationMail;
 use App\Models\DemoRequest;
+use App\Support\DemoSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 
 class DemoRequestController extends Controller
 {
+    public function __construct(private readonly DemoSettings $demoSettings)
+    {
+    }
+
     /**
      * Show the public "Request a Demo" form.
      */
     public function create()
     {
+        abort_unless($this->demoSettings->isEnabled(), 404);
+
         return view('Landing.demo-request');
     }
 
@@ -23,6 +30,12 @@ class DemoRequestController extends Controller
      */
     public function store(Request $request)
     {
+        if (! $this->demoSettings->isEnabled()) {
+            return back()->withErrors([
+                'email' => 'Demo access is currently disabled. Please contact support for a guided walkthrough.',
+            ]);
+        }
+
         // Rate limit: 3 requests per IP per hour
         $key = 'demo-request:' . $request->ip();
         if (RateLimiter::tooManyAttempts($key, 3)) {
@@ -73,6 +86,8 @@ class DemoRequestController extends Controller
      */
     public function success()
     {
+        abort_unless($this->demoSettings->isEnabled(), 404);
+
         if (!session('success')) {
             return redirect()->route('demo.request.form');
         }

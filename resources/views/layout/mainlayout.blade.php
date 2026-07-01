@@ -1836,6 +1836,35 @@
 
     {{-- MAIN PAGE CONTENT --}}
     @include('layout.partials.flash-messages')
+    @if (($isDemoWorkspace ?? false) && isset($demoCompany) && $demoCompany)
+        <div class="alert alert-warning border-0 rounded-0 mb-0 text-center">
+            Demo Mode: every record in this workspace is temporary sample data. Live billing, payouts, subscriptions, backups, and admin-only system actions are disabled.
+            @if($demoCompany->demo_expires_at)
+                <span class="fw-semibold"> Demo access expires {{ $demoCompany->demo_expires_at->diffForHumans() }}.</span>
+            @endif
+        </div>
+    @endif
+    @if (($isDemoWorkspace ?? false) && !empty($demoPreviewCustomer))
+        <div class="alert alert-info border-0 rounded-0 mb-0">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2">
+                <div>
+                    <strong>Demo Customer Preview:</strong> {{ $demoPreviewCustomer->customer_name ?? 'Demo Customer' }}
+                    <span class="ms-2 badge bg-primary">{{ strtoupper(($demoPreviewPlan ?? 'basic') === 'professional' ? 'PRO' : ($demoPreviewPlan ?? 'basic')) }}</span>
+                    <span class="ms-2 text-muted">Preview the real dashboard style while staying inside demo-only data.</span>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ route('customers.demo-preview', ['id' => $demoPreviewCustomer->id, 'plan' => 'basic']) }}" class="btn btn-sm btn-outline-primary">Basic</a>
+                    <a href="{{ route('customers.demo-preview', ['id' => $demoPreviewCustomer->id, 'plan' => 'pro']) }}" class="btn btn-sm btn-outline-primary">Pro</a>
+                    <a href="{{ route('customers.demo-preview', ['id' => $demoPreviewCustomer->id, 'plan' => 'enterprise']) }}" class="btn btn-sm btn-outline-primary">Enterprise</a>
+                    <a href="{{ route('add-invoice', ['customer_id' => $demoPreviewCustomer->id]) }}" class="btn btn-sm btn-outline-secondary">New Invoice</a>
+                    <a href="{{ route('sales.create', ['customer_id' => $demoPreviewCustomer->id]) }}" class="btn btn-sm btn-outline-secondary">New Sale</a>
+                    <a href="{{ route('reports.customer-statement', $demoPreviewCustomer->id) }}" class="btn btn-sm btn-outline-secondary">Statement</a>
+                    <a href="{{ route('reports.hub') }}" class="btn btn-sm btn-outline-secondary">Reports</a>
+                    <a href="{{ route('demo.customer-preview.stop') }}" class="btn btn-sm btn-outline-danger">Exit Preview</a>
+                </div>
+            </div>
+        </div>
+    @endif
     @php
         $needsTenantBranch = !in_array($route, [
             'landing.index', 'index-five', 'mail-pay-invoice', 'cashreceipt-1', 'cashreceipt-2', 'cashreceipt-3', 'cashreceipt-4',

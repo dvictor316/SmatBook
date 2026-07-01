@@ -34,11 +34,18 @@ class ManagerVerified
             return $next($request);
         }
 
+        $role = strtolower((string) ($user->role ?? ''));
         $allowedRoles = ['state_manager', 'deployment_manager'];
+        $agentRoles = ['agent', 'sales_agent', 'sales agent'];
         $manager = DeploymentManager::where('user_id', $user->id)->first();
         $hasManagerRecord = (bool) $manager;
 
         if (!in_array($role, $allowedRoles, true) && !$hasManagerRecord) {
+            if (in_array($role, $agentRoles, true) && $request->routeIs('deployment.geo.*')) {
+                return redirect()->route('agent.nearby-businesses')
+                    ->with('info', 'Nearby businesses are available from the Agent Portal.');
+            }
+
             return redirect()->route('home')
                 ->with('error', 'Unauthorized access.');
         }

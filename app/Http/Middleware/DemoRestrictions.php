@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\ActivityLog;
+use App\Support\DemoSettings;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,23 +22,9 @@ use Illuminate\Support\Facades\Auth;
  */
 class DemoRestrictions
 {
-    /** Route name prefixes that demo users may NOT access */
-    protected array $blockedPrefixes = [
-        'super_admin.',
-        'subscription.',
-        'saas.',
-        'database.reset',
-        'financial.reset',
-        'backups.',
-        'reports.custom.',
-        'profile.delete',
-        'delete-account',
-    ];
-
-    /** Specific route names that are also blocked */
-    protected array $blockedRoutes = [
-        'account-settings.update',
-    ];
+    public function __construct(private readonly DemoSettings $demoSettings)
+    {
+    }
 
     public function handle(Request $request, Closure $next)
     {
@@ -49,15 +36,17 @@ class DemoRestrictions
 
         $company = \App\Models\Company::find($user->company_id);
 
-        if (!$company || !$company->is_demo) {
+        if (!$company || !$company->isDemo()) {
             return $next($request);
         }
 
         $routeName = $request->route()?->getName() ?? '';
+        $blockedPrefixes = $this->demoSettings->blockedRoutePrefixes();
+        $blockedRoutes = $this->demoSettings->blockedRoutes();
 
-        $isBlocked = collect($this->blockedPrefixes)
+        $isBlocked = collect($blockedPrefixes)
             ->contains(fn ($prefix) => str_starts_with($routeName, $prefix))
-            || in_array($routeName, $this->blockedRoutes, true);
+            || in_array($routeName, $blockedRoutes, true);
 
         if ($isBlocked) {
             ActivityLog::record('Demo', 'restricted_action_attempted', "Demo user {$user->email} tried to access restricted route: {$routeName}", [

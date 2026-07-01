@@ -1503,16 +1503,63 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     }
 }
 @media (max-width: 640px) {
-    .hero-content { padding: 16px 16px 24px; gap: 28px; }
-    .hero-circle { width: min(90vw,340px) !important; height: min(90vw,340px) !important; padding: clamp(46px,15%,62px) !important; }
+    .hero-wrap {
+        padding-top: calc(var(--nav-h) + var(--announce-h) + 18px);
+        min-height: auto;
+    }
+    .hero-content {
+        padding: 20px 16px 32px;
+        gap: 28px;
+        align-items: stretch;
+    }
+    .hero-left,
+    .hero-circle-wrapper {
+        width: 100%;
+    }
+    .hero-circle {
+        width: 100% !important;
+        max-width: 460px !important;
+        min-height: 430px !important;
+        height: auto !important;
+        margin-inline: auto;
+        border-radius: 28px !important;
+        padding: 34px 20px 28px !important;
+        overflow: visible;
+    }
     .hero-phone { width: clamp(220px,72vw,280px); }
-    .hero-h1 { font-size: clamp(0.66rem,2.9vw,0.9rem) !important; }
+    .hero-h1 {
+        font-size: clamp(1.35rem, 8vw, 2.2rem) !important;
+        max-width: 12ch !important;
+        line-height: 1.04 !important;
+        margin-bottom: 16px !important;
+    }
     .hero-title-line { color: #fff !important; -webkit-text-fill-color: #fff !important; font-size: 1.05em !important; }
-    .hero-body { font-size: 9px !important; }
-    .hero-cta-stack { width: min(100%, 226px) !important; transform: translateY(-4px) !important; }
+    .hero-body {
+        font-size: 0.92rem !important;
+        max-width: 28ch !important;
+        margin-bottom: 22px !important;
+    }
+    .hero-cta-stack {
+        width: 100% !important;
+        max-width: 360px !important;
+        transform: none !important;
+        gap: 12px !important;
+        margin-inline: auto;
+    }
+    .hero-btn-red,
+    .hero-btn-ghost,
+    .hero-btn-manager {
+        min-height: 58px !important;
+        width: 100% !important;
+        padding: 14px 18px !important;
+        font-size: 0.98rem !important;
+        line-height: 1.12 !important;
+        letter-spacing: 0 !important;
+        white-space: normal !important;
+        border-radius: 18px !important;
+    }
     .hero-trust { display: none !important; }
     .hero-eyebrow { margin-bottom: 10px !important; }
-    .hero-body { margin-bottom: 16px !important; }
     .gadget-stage {
         width: 100%;
         box-sizing: border-box;
@@ -1595,12 +1642,62 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 }
 @media (max-width: 480px) {
     :root { --nav-h: 60px; --announce-h: 32px; }
-    .sb-brand img { height: 44px; }
+    nav.sb-nav .container {
+        justify-content: space-between;
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+    .sb-brand {
+        display: inline-flex !important;
+        flex: 1 1 auto;
+        min-width: 0;
+        max-width: calc(100% - 64px);
+        position: relative;
+        z-index: 2;
+    }
+    .sb-brand img { height: 42px; flex: 0 0 auto; }
+    .navbar-toggler {
+        flex: 0 0 auto;
+        width: 52px;
+        height: 52px;
+        margin-left: 10px;
+    }
     .benefit-grid { grid-template-columns: 1fr; }
     .ticker-label { font-size: 0 !important; width: 34px; }
     .ticker-track-wrap { padding-left: 34px; }
     .benefit-belt { padding: 28px 12px 0; }
-    .spb-nav-wordmark { font-size: .84rem; letter-spacing: -0.2px; }
+    .spb-nav-wordmark {
+        display: inline-block !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: .9rem;
+        letter-spacing: 0;
+    }
+    .hero-wrap {
+        padding-top: calc(var(--nav-h) + var(--announce-h) + 16px);
+    }
+    .hero-content {
+        padding: 18px 12px 28px;
+    }
+    .hero-circle {
+        min-height: 414px !important;
+        padding: 30px 16px 24px !important;
+        border-radius: 24px !important;
+    }
+    .hero-h1 {
+        font-size: clamp(1.18rem, 9vw, 1.9rem) !important;
+        max-width: 12ch !important;
+    }
+    .hero-body {
+        font-size: 0.86rem !important;
+    }
+    .hero-btn-red,
+    .hero-btn-ghost,
+    .hero-btn-manager {
+        min-height: 56px !important;
+        font-size: 0.9rem !important;
+        padding: 13px 14px !important;
+    }
 }
 </style>
 

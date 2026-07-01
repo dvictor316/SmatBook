@@ -33,6 +33,10 @@ class SubscriptionActive
         }
 
         $user = Auth::user();
+
+        if ($user?->isDemoUser()) {
+            return $next($request);
+        }
         
         // Routes that should NOT be blocked by this middleware
         $allowedRoutes = [

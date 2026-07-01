@@ -156,6 +156,42 @@
                         </div>
                     </div>
 
+                    @if($demoRequest->demo_company_id)
+                        <div class="card border-primary">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Workspace Controls</h5>
+                            </div>
+                            <div class="card-body">
+                                <form method="POST" action="{{ route('super_admin.demo_requests.reset', $demoRequest->id) }}" onsubmit="return confirm('Reset this demo workspace and rebuild the sample data?');">
+                                    @csrf
+                                    <button type="submit" class="btn btn-primary btn-block mb-3">
+                                        <i class="fas fa-rotate-right mr-1"></i> Reset Demo Data
+                                    </button>
+                                </form>
+
+                                <form method="POST" action="{{ route('super_admin.demo_requests.extend', $demoRequest->id) }}" class="mb-3">
+                                    @csrf
+                                    <div class="form-group">
+                                        <label>Extend Access (hours)</label>
+                                        <input type="number" name="hours" min="1" max="168" value="{{ $demoConfig['lifetime_hours'] ?? 48 }}" class="form-control">
+                                    </div>
+                                    <button type="submit" class="btn btn-success btn-block">
+                                        <i class="fas fa-clock mr-1"></i> Extend Demo Access
+                                    </button>
+                                </form>
+
+                                @if($demoRequest->status === 'approved')
+                                    <form method="POST" action="{{ route('super_admin.demo_requests.expire', $demoRequest->id) }}" onsubmit="return confirm('Expire this demo workspace immediately?');">
+                                        @csrf
+                                        <button type="submit" class="btn btn-outline-danger btn-block">
+                                            <i class="fas fa-ban mr-1"></i> Expire Demo Now
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+
                 @elseif($demoRequest->status === 'rejected')
 
                     <div class="card">

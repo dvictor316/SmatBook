@@ -4,8 +4,13 @@ namespace App\Services;
 
 use App\Models\Company;
 use App\Models\DemoRequest;
+use App\Models\Plan;
+use App\Models\Setting;
+use App\Models\Subscription;
 use App\Models\User;
 use App\Models\ActivityLog;
+use App\Support\ActiveBranchResolver;
+use App\Support\DemoSettings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
@@ -14,6 +19,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DemoProvisioningService
 {
+    public function __construct(
+        private readonly DemoSettings $demoSettings,
+        private readonly ActiveBranchResolver $activeBranchResolver
+    ) {
+    }
+
     /**
      * Provision a demo company and user for an approved demo request.
      * Seeds the company with realistic fake accounting data.
@@ -26,6 +37,7 @@ class DemoProvisioningService
             $plainPassword = Str::random(12);
             $slug = $this->generateUniqueDemoSlug($demoRequest->company_name);
             $loginEmail = $this->resolveDemoLoginEmail($demoRequest);
+            $demoExpiresAt = now()->addHours($this->demoSettings->lifetimeHours());
 
             // 1. Create the demo company
             $company = Company::create($this->onlyExistingColumns('companies', [
@@ -38,11 +50,11 @@ class DemoProvisioningService
                 'currency_symbol' => '₦',
                 'status'          => 'demo',
                 'is_demo'         => true,
-                'demo_expires_at' => now()->addHours(48),
+                'demo_expires_at' => $demoExpiresAt,
                 'domain_prefix'   => $slug,
                 'domain'          => $slug,
                 'subdomain'       => $slug,
-                'plan'            => 'Demo',
+                'plan'            => 'Enterprise Demo',
                 'industry'        => $demoRequest->business_type ?? 'General',
             ]));
 
@@ -62,10 +74,14 @@ class DemoProvisioningService
             // Link company owner
             $company->update($this->onlyExistingColumns('companies', ['user_id' => $user->id, 'owner_id' => $user->id]));
 
-            // 3. Seed demo data (products, customers, transactions)
+            // 3. Make the workspace fully usable inside the normal tenant app.
+            $this->ensureDemoSubscription($company, $user, $slug, $demoExpiresAt);
+            $this->ensureDemoBranch($company);
+
+            // 4. Seed demo data (products, customers, transactions)
             $this->seedDemoData($company, $user);
 
-            // 4. Audit log
+            // 5. Audit log
             ActivityLog::record('Demo', 'provisioned', "Demo account provisioned for {$demoRequest->email}", [
                 'company_id' => $company->id,
                 'user_id'    => $user->id,
@@ -79,6 +95,77 @@ class DemoProvisioningService
                 'plain_password' => $plainPassword,
             ];
         });
+    }
+
+    public function resetDemoWorkspace(Company $company, ?User $actor = null): void
+    {
+        if (! $company->isDemo()) {
+            return;
+        }
+
+        DB::transaction(function () use ($company, $actor) {
+            $companyId = (int) $company->id;
+            $user = User::query()->where('company_id', $companyId)->orderBy('id')->first();
+
+            $this->purgeDemoTenantData($companyId);
+            $this->purgeCompanyScopedSettings($companyId);
+            $this->ensureDemoBranch($company);
+
+            if ($user) {
+                $this->seedDemoData($company->fresh(), $user);
+            }
+
+            $company->forceFill([
+                'demo_expires_at' => now()->addHours($this->demoSettings->lifetimeHours()),
+                'status' => 'demo',
+            ])->save();
+
+            if ($user) {
+                $this->ensureDemoSubscription($company->fresh(), $user, (string) ($company->domain_prefix ?? $company->subdomain ?? 'demo'), $company->demo_expires_at);
+            }
+
+            ActivityLog::record('Demo', 'reset', "Demo workspace reset for company #{$companyId}", [
+                'company_id' => $companyId,
+                'user_id' => $actor?->id,
+            ]);
+        });
+    }
+
+    public function expireDemo(DemoRequest $demoRequest): void
+    {
+        if ($demoRequest->demo_company_id && $company = Company::find($demoRequest->demo_company_id)) {
+            $company->update($this->onlyExistingColumns('companies', [
+                'status' => 'expired',
+                'demo_expires_at' => now()->subMinute(),
+            ]));
+        }
+
+        $this->deactivateExpiredDemo($demoRequest);
+    }
+
+    public function extendDemo(DemoRequest $demoRequest, int $hours): void
+    {
+        $hours = max(1, min(168, $hours));
+        $expiresAt = now()->addHours($hours);
+
+        if ($demoRequest->demo_company_id) {
+            Company::where('id', $demoRequest->demo_company_id)->update($this->onlyExistingColumns('companies', [
+                'status' => 'demo',
+                'demo_expires_at' => $expiresAt,
+            ]));
+        }
+
+        if ($demoRequest->demo_user_id) {
+            User::where('id', $demoRequest->demo_user_id)->update($this->onlyExistingColumns('users', [
+                'status' => 'active',
+                'allow_login' => true,
+            ]));
+        }
+
+        $demoRequest->update([
+            'status' => 'approved',
+            'expires_at' => $expiresAt,
+        ]);
     }
 
     private function generateUniqueDemoSlug(string $companyName): string
@@ -370,5 +457,113 @@ class DemoProvisioningService
         }
 
         return 'Demo Customer';
+    }
+
+    private function ensureDemoSubscription(Company $company, User $user, string $slug, $expiresAt): void
+    {
+        if (! Schema::hasTable('subscriptions')) {
+            return;
+        }
+
+        $enterprisePlanId = null;
+        if (Schema::hasTable('plans')) {
+            $enterprisePlanId = Plan::query()
+                ->where(function ($query) {
+                    $query->whereRaw('LOWER(name) like ?', ['%enterprise%'])
+                        ->orWhereRaw('LOWER(name) like ?', ['%professional%'])
+                        ->orWhereRaw('LOWER(name) like ?', ['%pro%']);
+                })
+                ->value('id');
+        }
+
+        Subscription::updateOrCreate(
+            ['company_id' => $company->id],
+            $this->onlyExistingColumns('subscriptions', [
+                'user_id' => $user->id,
+                'company_id' => $company->id,
+                'plan_id' => $enterprisePlanId,
+                'plan' => 'Enterprise Demo',
+                'plan_name' => 'Enterprise Demo',
+                'subscriber_name' => $company->company_name ?? $company->name,
+                'domain_prefix' => $slug,
+                'employee_size' => '1-10',
+                'amount' => 0,
+                'billing_cycle' => 'Demo',
+                'user_limit' => 50,
+                'start_date' => now(),
+                'end_date' => $expiresAt,
+                'status' => 'Active',
+                'payment_status' => 'free',
+                'payment_gateway' => 'demo',
+                'payment_reference' => 'demo-' . $company->id,
+                'transaction_reference' => 'demo-' . $company->id,
+                'activated_at' => now(),
+                'initialized_at' => now(),
+                'paid_at' => now(),
+                'payment_date' => now(),
+            ])
+        );
+    }
+
+    private function ensureDemoBranch(Company $company): void
+    {
+        $owner = User::find($company->user_id) ?? User::where('company_id', $company->id)->orderBy('id')->first();
+        $this->activeBranchResolver->seedDefaultBranch($owner, 'Demo HQ');
+    }
+
+    private function purgeDemoTenantData(int $companyId): void
+    {
+        if ($companyId <= 0) {
+            return;
+        }
+
+        $excludedTables = [
+            'companies',
+            'users',
+            'subscriptions',
+            'settings',
+            'demo_requests',
+            'plans',
+            'packages',
+            'migrations',
+            'password_reset_tokens',
+            'personal_access_tokens',
+            'failed_jobs',
+            'sessions',
+            'jobs',
+            'job_batches',
+            'cache',
+            'cache_locks',
+        ];
+
+        $driver = DB::getDriverName();
+        if ($driver === 'mysql') {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        }
+
+        try {
+            foreach (Schema::getTableListing() as $table) {
+                if (in_array($table, $excludedTables, true) || ! Schema::hasColumn($table, 'company_id')) {
+                    continue;
+                }
+
+                DB::table($table)->where('company_id', $companyId)->delete();
+            }
+        } finally {
+            if ($driver === 'mysql') {
+                DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            }
+        }
+    }
+
+    private function purgeCompanyScopedSettings(int $companyId): void
+    {
+        if (! Schema::hasTable('settings')) {
+            return;
+        }
+
+        Setting::query()
+            ->where('key', 'like', '%_company_' . $companyId)
+            ->delete();
     }
 }

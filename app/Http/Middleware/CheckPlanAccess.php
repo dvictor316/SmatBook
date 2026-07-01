@@ -26,6 +26,10 @@ class CheckPlanAccess
         }
 
         $user = Auth::user();
+        if ($user?->isDemoUser()) {
+            return $next($request);
+        }
+
         $normalizedUserPlan = PlanAccess::resolveTierForUser($user);
 
         if ($normalizedUserPlan === 'full') {

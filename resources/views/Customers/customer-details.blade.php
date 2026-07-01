@@ -424,6 +424,17 @@
                     <button type="button" class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#customerProfileModal">
                         <i class="fe fe-edit me-2"></i>Edit Profile
                     </button>
+                    @if(auth()->user()?->isDemoUser())
+                        <a href="{{ route('customers.demo-preview', ['id' => $customer->id, 'plan' => 'basic']) }}" class="btn btn-outline-primary rounded-pill px-4">
+                            <i class="fe fe-monitor me-2"></i>Demo Basic
+                        </a>
+                        <a href="{{ route('customers.demo-preview', ['id' => $customer->id, 'plan' => 'pro']) }}" class="btn btn-outline-primary rounded-pill px-4">
+                            <i class="fe fe-layers me-2"></i>Demo Pro
+                        </a>
+                        <a href="{{ route('customers.demo-preview', ['id' => $customer->id, 'plan' => 'enterprise']) }}" class="btn btn-outline-primary rounded-pill px-4">
+                            <i class="fe fe-grid me-2"></i>Demo Enterprise
+                        </a>
+                    @endif
                     <a href="{{ route('reports.customer-statement', $customer->id) }}" class="btn btn-outline-primary rounded-pill px-4">
                         <i class="fe fe-file-text me-2"></i>Customer Statement
                     </a>

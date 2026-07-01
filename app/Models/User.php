@@ -259,6 +259,20 @@ class User extends Authenticatable
         return $this->hasRole('super_admin');
     }
 
+    public function isDemoUser(): bool
+    {
+        if ($this->relationLoaded('company') && $this->company) {
+            return $this->company->isDemo();
+        }
+
+        return $this->company()->exists() && (bool) $this->company()->value('is_demo');
+    }
+
+    public function demoCompany(): ?Company
+    {
+        return $this->company;
+    }
+
     public function isProtectedSuperAdmin(): bool
     {
         return $this->isSuperAdmin() && (bool) ($this->is_protected_super_admin ?? false);

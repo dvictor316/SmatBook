@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\{Product, Expense, Sale, Company, Subscription, User, Plan, ProductBranchStock};
+use App\Models\Customer;
 use App\Support\InventoryQuantity;
 use Illuminate\Support\Facades\{DB, Auth, Schema, Cache, Log};
 use Illuminate\Database\QueryException;
@@ -82,6 +83,8 @@ class DashboardController extends Controller
         }
 
         $currentSubscription = Subscription::resolveCurrentForUser($user);
+        $demoPreviewCustomer = $this->resolveDemoPreviewCustomer($request, $user);
+        $demoPreviewPlan = $demoPreviewCustomer ? $this->resolveDemoPreviewPlan($request, $user) : null;
         $hasBusinessWorkspace = (int) ($user->company_id ?? 0) > 0
             || (int) ($currentSubscription?->company_id ?? 0) > 0
             || (int) session('current_tenant_id', 0) > 0;
@@ -143,7 +146,7 @@ class DashboardController extends Controller
                 ->toArray();
         });
 
-        $plan = Plan::normalizeTier(
+        $plan = $demoPreviewPlan ?: Plan::normalizeTier(
             $currentSubscription?->plan_name
             ?? $currentSubscription?->plan
             ?? ($company?->plan ?? ($isSuperAdmin ? 'enterprise' : 'basic'))
@@ -241,6 +244,9 @@ class DashboardController extends Controller
             'subscriptionStatus' => $this->subscriptionStatusPayload($currentSubscription, $seatCount, $seatLimit),
             'activeBranch'     => $activeBranch,
             'dashboardBranchLabel' => $dashboardBranchLabel,
+            'demoPreviewCustomer' => $demoPreviewCustomer,
+            'demoPreviewPlan' => $demoPreviewPlan,
+            'demoPreviewMode' => $demoPreviewCustomer !== null,
             // FIX: Added '?? []' to handle missing keys in old cache
             'countryHeatMap'   => $metrics['countryHeatMap'] ?? [], 
         ];
@@ -256,6 +262,35 @@ class DashboardController extends Controller
             'enterprise' => view('SuperAdmin.dashboards.enterprise', $data),
             default      => view('SuperAdmin.dashboards.basic', $data),
         };
+    }
+
+    private function resolveDemoPreviewPlan(Request $request, ?User $user): ?string
+    {
+        if (! $user?->isDemoUser()) {
+            return null;
+        }
+
+        if ((int) $request->session()->get('demo_customer_preview_id', 0) <= 0) {
+            return null;
+        }
+
+        return Plan::normalizeTier((string) $request->session()->get('demo_customer_preview_plan', 'basic'));
+    }
+
+    private function resolveDemoPreviewCustomer(Request $request, ?User $user): ?Customer
+    {
+        if (! $user?->isDemoUser()) {
+            return null;
+        }
+
+        $customerId = (int) $request->session()->get('demo_customer_preview_id', 0);
+        if ($customerId <= 0) {
+            return null;
+        }
+
+        return Customer::query()
+            ->where('company_id', $user->company_id)
+            ->find($customerId);
     }
 
     /**

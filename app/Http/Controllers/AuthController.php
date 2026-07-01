@@ -1403,7 +1403,47 @@ class AuthController extends Controller
     private function getTenantDetails()
     {
         $tenantId = session('current_tenant_id');
-        return $tenantId ? Company::find($tenantId) : null;
+        if ($tenantId) {
+            return Company::find($tenantId);
+        }
+
+        $host = Str::lower((string) request()->getHost());
+        if ($host === '') {
+            return null;
+        }
+
+        $mainDomain = Str::lower(ltrim((string) (config('app.domain') ?: config('session.domain') ?: parse_url((string) config('app.url'), PHP_URL_HOST) ?: ''), '.'));
+        $centralHosts = array_filter([
+            $mainDomain,
+            $mainDomain ? 'www.' . preg_replace('/^www\./i', '', $mainDomain) : null,
+            parse_url((string) config('app.url'), PHP_URL_HOST),
+            'localhost',
+            '127.0.0.1',
+        ]);
+
+        if (in_array($host, array_map(fn ($value) => Str::lower((string) $value), $centralHosts), true)) {
+            return null;
+        }
+
+        $subdomain = explode('.', $host)[0] ?? $host;
+        $hostWithoutWww = preg_replace('/^www\./i', '', $host);
+
+        return Company::query()
+            ->where(function ($query) use ($subdomain, $host, $hostWithoutWww) {
+                if (Schema::hasColumn('companies', 'domain_prefix')) {
+                    $query->orWhere('domain_prefix', $subdomain);
+                }
+
+                if (Schema::hasColumn('companies', 'subdomain')) {
+                    $query->orWhere('subdomain', $subdomain);
+                }
+
+                if (Schema::hasColumn('companies', 'domain')) {
+                    $query->orWhere('domain', $host)
+                        ->orWhere('domain', $hostWithoutWww);
+                }
+            })
+            ->first();
     }
 
     private function clearRegistrationSession()

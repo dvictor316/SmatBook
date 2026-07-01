@@ -5,7 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\{View, Schema, DB, Auth, Cache};
 use Illuminate\Pagination\Paginator;
-use App\Models\{Company, User, Subscription}; 
+use App\Models\{Company, User, Subscription, Customer}; 
 use App\Observers\UserObserver;
 use App\Livewire\InboxComponent;
 use Livewire\Livewire; 
@@ -187,6 +187,19 @@ class AppServiceProvider extends ServiceProvider
 
                 $view->with('currentSubscription', $resolvedSubscription);
                 $view->with('currentUser', $resolvedAuthUser);
+                $view->with('isDemoWorkspace', $resolvedAuthUser?->isDemoUser() ?? false);
+                $view->with('demoCompany', $resolvedAuthUser?->company);
+
+                $previewCustomer = null;
+                $previewCustomerId = (int) session('demo_customer_preview_id', 0);
+                if (($resolvedAuthUser?->isDemoUser() ?? false) && $previewCustomerId > 0) {
+                    $previewCustomer = Customer::query()
+                        ->where('company_id', $resolvedAuthUser?->company_id)
+                        ->find($previewCustomerId);
+                }
+
+                $view->with('demoPreviewCustomer', $previewCustomer);
+                $view->with('demoPreviewPlan', (string) session('demo_customer_preview_plan', ''));
             }
 
             $view->with('geoCountry', GeoCurrency::currentCountry('NG'));

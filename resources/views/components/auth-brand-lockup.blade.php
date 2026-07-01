@@ -4,10 +4,12 @@
     'size' => 'md',
     'stacked' => false,
     'tagline' => null,
+    'brandName' => 'SmartProbook',
 ])
 
 @php
     $logoSrc = $logo ?: asset('assets/img/logos.png');
+    $brandName = trim((string) $brandName) ?: 'SmartProbook';
     $isDark = $theme === 'dark';
     $sizeMap = [
         'sm' => ['logo' => '34px', 'brand' => '1.28rem', 'tag' => '0.62rem'],
@@ -18,13 +20,24 @@
     $brandColor = $isDark ? '#ffffff' : '#0b2a63';
     $accentColor = '#dc2626';
     $tagColor = $isDark ? 'rgba(255,255,255,0.74)' : '#64748b';
+    $brandParts = null;
+
+    if (strcasecmp($brandName, 'SmartProbook') === 0) {
+        $brandParts = ['SmartPro', 'book'];
+    } elseif (preg_match('/^(.*?)(Labo)$/i', $brandName, $matches)) {
+        $brandParts = [trim($matches[1]), $matches[2]];
+    }
 @endphp
 
 <div class="spb-auth-lockup{{ $stacked ? ' is-stacked' : '' }}{{ $isDark ? ' is-on-dark' : '' }}">
-    <img src="{{ $logoSrc }}" alt="SmartProbook" class="spb-auth-lockup__logo">
+    <img src="{{ $logoSrc }}" alt="{{ $brandName }}" class="spb-auth-lockup__logo" onerror="this.onerror=null;this.src='{{ asset('assets/img/logos.png') }}';">
     <div class="spb-auth-lockup__copy">
         <div class="spb-auth-lockup__brand">
-            <span class="spb-auth-lockup__brand-main">SmartPro</span><span class="spb-auth-lockup__brand-accent">book</span>
+            @if($brandParts)
+                <span class="spb-auth-lockup__brand-main">{{ $brandParts[0] }}</span><span class="spb-auth-lockup__brand-accent">{{ $brandParts[1] }}</span>
+            @else
+                <span class="spb-auth-lockup__brand-main">{{ $brandName }}</span>
+            @endif
         </div>
         @if($tagline)
             <div class="spb-auth-lockup__tagline">{{ $tagline }}</div>
@@ -69,7 +82,7 @@
     .spb-auth-lockup__brand {
         font-size: {{ $config['brand'] }};
         font-weight: 800;
-        letter-spacing: -0.03em;
+        letter-spacing: 0;
         color: {{ $brandColor }};
         white-space: nowrap;
     }
@@ -107,7 +120,7 @@
 
         .spb-auth-lockup__brand {
             font-size: min({{ $config['brand'] }}, 1.36rem);
-            letter-spacing: -0.024em;
+            letter-spacing: 0;
         }
 
         .spb-auth-lockup__tagline {
@@ -132,7 +145,7 @@
 
         .spb-auth-lockup__brand {
             font-size: min({{ $config['brand'] }}, 1.18rem);
-            letter-spacing: -0.02em;
+            letter-spacing: 0;
             white-space: nowrap;
         }
 

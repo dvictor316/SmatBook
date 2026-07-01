@@ -13,6 +13,13 @@
         $clientLogo = asset('storage/' . $currentCompany->logo);
     }
 
+    $clientBrandName = trim((string) (
+        $currentCompany->name
+        ?? $currentCompany->company_name
+        ?? $currentCompany->business_name
+        ?? 'SmartProbook'
+    ));
+
     $persistedPlan = strtolower((string) request('plan', session('selected_plan', '')));
     $persistedCycle = request('billing_cycle', request('cycle', session('selected_cycle', session('billing_cycle', 'monthly'))));
     $googleAuthUrl = route('social.login', [
@@ -222,6 +229,7 @@
     .mobile-brand-lockup {
         display: none;
         align-items: center;
+        justify-content: center;
         gap: 10px;
         margin-bottom: 16px;
         padding: 10px 12px;
@@ -229,6 +237,8 @@
         background: #f8fbff;
         border: 1px solid #dbeafe;
         box-shadow: 0 14px 28px rgba(37, 99, 235, 0.08);
+        width: 100%;
+        max-width: 100%;
     }
 
     .status-badge {
@@ -523,7 +533,26 @@
         .logo-img { height: 46px; }
         .brand-lockup { gap: 7px; margin-bottom: 6px; }
         .brand-name { font-size: 1.1rem; }
-        .mobile-brand-lockup { display: inline-flex; }
+        .mobile-brand-lockup { display: flex; }
+        .mobile-brand-lockup .spb-auth-lockup {
+            justify-content: center;
+            min-width: 0;
+            width: 100%;
+        }
+        .mobile-brand-lockup .spb-auth-lockup__logo {
+            max-width: 44%;
+            object-fit: contain;
+        }
+        .mobile-brand-lockup .spb-auth-lockup__copy {
+            min-width: 0;
+        }
+        .mobile-brand-lockup .spb-auth-lockup__brand {
+            max-width: 100%;
+            overflow-wrap: anywhere;
+            white-space: normal;
+            text-align: left;
+            line-height: 1.08;
+        }
         /* Reset viewport for mobile scrolling */
         .smat-viewport { display: grid !important; place-items: center !important; overflow: visible; }
     }
@@ -534,9 +563,23 @@
         .btn-smat-navy { padding: 13px; font-size: 13px; }
         .btn-social { font-size: 12px; padding: 9px; }
         .form-shell { padding: 18px 16px; border-radius: 18px; }
+        .mobile-brand-lockup {
+            padding: 8px 10px;
+            margin-bottom: 14px;
+        }
         .mobile-brand-lockup .logo-img { height: 34px; }
         .mobile-brand-lockup .brand-name { font-size: 0.98rem; }
         .mobile-brand-lockup .brand-tagline { font-size: 0.62rem; }
+        .mobile-brand-lockup .spb-auth-lockup {
+            gap: 8px;
+        }
+        .mobile-brand-lockup .spb-auth-lockup__logo {
+            height: 36px;
+            max-width: 42%;
+        }
+        .mobile-brand-lockup .spb-auth-lockup__brand {
+            font-size: clamp(0.98rem, 5vw, 1.18rem);
+        }
     }
 </style>
 
@@ -683,7 +726,7 @@
         
         <div class="smat-main">
             <div class="mobile-brand-lockup">
-                <x-auth-brand-lockup :logo="asset('/assets/img/logos.png')" size="md" :tagline="'Secure Business Stack'" />
+                <x-auth-brand-lockup :logo="$clientLogo" :brand-name="$clientBrandName" size="md" />
             </div>
             <span class="panel-kicker">Protected access</span>
             <form action="{{ route('saas-login.post') }}" method="POST" class="form-shell">

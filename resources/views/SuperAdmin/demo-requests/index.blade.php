@@ -96,6 +96,61 @@
             </div>
         </div>
 
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Demo Mode Controls</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ route('super_admin.demo_requests.settings.update') }}">
+                    @csrf
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="d-block">Availability</label>
+                                <div class="custom-control custom-switch">
+                                    <input type="hidden" name="enabled" value="0">
+                                    <input type="checkbox" class="custom-control-input" id="demo_enabled" name="enabled" value="1" {{ !empty($demoConfig['enabled']) ? 'checked' : '' }}>
+                                    <label class="custom-control-label" for="demo_enabled">Accept demo requests</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="d-block">Auto Reset</label>
+                                <div class="custom-control custom-switch">
+                                    <input type="hidden" name="auto_reset_on_session_start" value="0">
+                                    <input type="checkbox" class="custom-control-input" id="demo_auto_reset" name="auto_reset_on_session_start" value="1" {{ !empty($demoConfig['auto_reset_on_session_start']) ? 'checked' : '' }}>
+                                    <label class="custom-control-label" for="demo_auto_reset">Reset on new session</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>Lifetime (hours)</label>
+                                <input type="number" min="1" max="168" name="lifetime_hours" class="form-control" value="{{ $demoConfig['lifetime_hours'] ?? 48 }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Blocked Route Prefixes</label>
+                                <input type="text" name="blocked_route_prefixes" class="form-control" value="{{ implode(',', $demoConfig['blocked_route_prefixes'] ?? []) }}">
+                                <small class="text-muted">Comma-separated route prefixes blocked in demo mode.</small>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="form-group mb-0">
+                                <label>Blocked Route Names</label>
+                                <input type="text" name="blocked_routes" class="form-control" value="{{ implode(',', $demoConfig['blocked_routes'] ?? []) }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">Save Demo Settings</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         {{-- Filter tabs --}}
         <div class="card mb-0">
             <div class="card-header pt-3 pb-0">
