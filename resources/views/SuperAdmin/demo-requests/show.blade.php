@@ -4,7 +4,7 @@
 <style>
     .demo-reset-hero {
         border: 0;
-        border-radius: 22px;
+        border-radius: 18px;
         background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 48%, #fee2e2 100%);
         box-shadow: 0 18px 40px rgba(194, 65, 12, 0.14);
         overflow: hidden;
@@ -15,8 +15,8 @@
         flex-wrap: wrap;
         align-items: center;
         justify-content: space-between;
-        gap: 18px;
-        padding: 22px 24px;
+        gap: 14px;
+        padding: 16px 18px;
     }
 
     .demo-reset-hero__copy {
@@ -32,48 +32,48 @@
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.7);
         color: #9a3412;
-        font-size: 12px;
+        font-size: 10px;
         font-weight: 800;
         letter-spacing: 0.06em;
         text-transform: uppercase;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
     }
 
     .demo-reset-hero__title {
-        margin: 0 0 8px;
+        margin: 0 0 6px;
         color: #7c2d12;
-        font-size: 28px;
+        font-size: 20px;
         font-weight: 800;
-        line-height: 1.1;
+        line-height: 1.15;
     }
 
     .demo-reset-hero__text {
         margin: 0;
         color: #7c2d12;
-        font-size: 14px;
-        line-height: 1.55;
+        font-size: 12px;
+        line-height: 1.45;
         max-width: 760px;
     }
 
     .demo-reset-hero__actions {
         display: flex;
-        flex: 0 1 320px;
+        flex: 0 1 280px;
         justify-content: flex-end;
     }
 
     .demo-reset-hero__form {
         width: 100%;
-        max-width: 320px;
+        max-width: 280px;
     }
 
     .demo-reset-hero__button {
         width: 100%;
-        min-height: 58px;
+        min-height: 48px;
         border: 0;
-        border-radius: 18px;
+        border-radius: 14px;
         background: linear-gradient(135deg, #dc2626 0%, #ea580c 100%);
         color: #fff;
-        font-size: 16px;
+        font-size: 13px;
         font-weight: 800;
         box-shadow: 0 16px 28px rgba(220, 38, 38, 0.24);
     }
@@ -86,20 +86,20 @@
     }
 
     .demo-reset-hero__hint {
-        margin-top: 10px;
+        margin-top: 8px;
         color: #9a3412;
-        font-size: 12px;
+        font-size: 10.5px;
         text-align: center;
         font-weight: 600;
     }
 
     @media (max-width: 767.98px) {
         .demo-reset-hero__body {
-            padding: 18px;
+            padding: 14px;
         }
 
         .demo-reset-hero__title {
-            font-size: 23px;
+            font-size: 17px;
         }
 
         .demo-reset-hero__actions {
@@ -113,8 +113,7 @@
     }
 </style>
 
-<div class="page-wrapper">
-    <div class="content container-fluid">
+<div class="content container-fluid">
 
         <div class="page-header d-print-none">
             <div class="row align-items-center">
@@ -352,6 +351,5 @@
             </div>
         </div>
 
-    </div>
 </div>
 @endsection
