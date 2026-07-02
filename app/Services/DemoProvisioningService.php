@@ -323,84 +323,9 @@ class DemoProvisioningService
             ]));
         }
 
-        // Demo sales (last 7 days)
-        for ($i = 0; $i < 5; $i++) {
-            $productId    = $productIds[array_rand($productIds)];
-            $product      = DB::table('products')->find($productId);
-            $qty          = rand(1, 3);
-            $unitPrice    = $product->price ?? 10000;
-            $totalAmount  = $unitPrice * $qty;
-            $saleDate     = now()->subDays(rand(0, 6));
-            $customerId   = $customerIds[array_rand($customerIds)];
-            $customerName = $this->customerDisplayName($customerId);
-            $reference = 'DEMO-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(6)) . '-' . ($i + 1);
-
-            $saleId = DB::table('sales')->insertGetId($this->onlyExistingColumns('sales', [
-                'order_number' => $reference,
-                'invoice_no'    => 'INV-' . $reference,
-                'receipt_no'    => 'RCT-' . $reference,
-                'total'         => $totalAmount,
-                'total_amount'  => $totalAmount,
-                'subtotal'      => $totalAmount,
-                'paid'          => $totalAmount,
-                'amount_paid'   => $totalAmount,
-                'balance'       => 0,
-                'status'        => 'completed',
-                'payment_status'=> 'paid',
-                'payment_method'=> 'cash',
-                'currency'      => 'NGN',
-                'terminal_id'   => 'DEMO',
-                'company_id'    => $companyId,
-                'user_id'       => $user->id,
-                'customer_id'   => $customerId,
-                'customer_name' => $customerName,
-                'order_date'    => $saleDate,
-                'created_at'    => $saleDate,
-                'updated_at'    => $saleDate,
-            ]));
-
-            DB::table('sale_items')->insert($this->onlyExistingColumns('sale_items', [
-                'sale_id'     => $saleId,
-                'product_id'  => $productId,
-                'product_name'=> $product->name,
-                'quantity'    => $qty,
-                'qty'         => $qty,
-                'price'       => $unitPrice,
-                'unit_price'  => $unitPrice,
-                'total'       => $totalAmount,
-                'total_price' => $totalAmount,
-                'company_id'  => $companyId,
-                'user_id'     => $user->id,
-                'created_at'  => $saleDate,
-                'updated_at'  => $saleDate,
-            ]));
-        }
-
-        // Demo expenses (last 7 days)
-        foreach (['Office Supplies', 'Internet Bill', 'Transport'] as $i => $expenseName) {
-            $expenseDate = now()->subDays($i + 1);
-            $expenseAmount = rand(5000, 50000);
-            $expenseReference = 'EXP-DEMO-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(6)) . '-' . ($i + 1);
-
-            DB::table('expenses')->insert($this->onlyExistingColumns('expenses', [
-                'expense_id'     => $expenseReference,
-                'reference'      => $expenseReference,
-                'company_name'   => $company->company_name ?? $company->name ?? 'Demo Company',
-                'email'          => $company->email ?? $user->email,
-                'description'    => $expenseName . ' (Demo)',
-                'notes'          => $expenseName . ' demo operating expense',
-                'amount'         => $expenseAmount,
-                'category'       => 'Operating',
-                'payment_mode'   => 'cash',
-                'payment_status' => 'paid',
-                'status'         => 'Paid',
-                'company_id'     => $companyId,
-                'user_id'        => $user->id,
-                'created_by'     => $user->id,
-                'created_at'     => $expenseDate,
-                'updated_at'     => $expenseDate,
-            ]));
-        }
+        // Keep approved demos operational but financially blank:
+        // products and customers are available for exploration, while report-
+        // driving sales/expense records start empty until the user creates them.
     }
 
     /**
