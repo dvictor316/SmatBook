@@ -1,6 +1,117 @@
 @extends('layout.mainlayout')
 
 @section('content')
+<style>
+    .demo-reset-hero {
+        border: 0;
+        border-radius: 22px;
+        background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 48%, #fee2e2 100%);
+        box-shadow: 0 18px 40px rgba(194, 65, 12, 0.14);
+        overflow: hidden;
+    }
+
+    .demo-reset-hero__body {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 22px 24px;
+    }
+
+    .demo-reset-hero__copy {
+        flex: 1 1 420px;
+        min-width: 260px;
+    }
+
+    .demo-reset-hero__eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.7);
+        color: #9a3412;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }
+
+    .demo-reset-hero__title {
+        margin: 0 0 8px;
+        color: #7c2d12;
+        font-size: 28px;
+        font-weight: 800;
+        line-height: 1.1;
+    }
+
+    .demo-reset-hero__text {
+        margin: 0;
+        color: #7c2d12;
+        font-size: 14px;
+        line-height: 1.55;
+        max-width: 760px;
+    }
+
+    .demo-reset-hero__actions {
+        display: flex;
+        flex: 0 1 320px;
+        justify-content: flex-end;
+    }
+
+    .demo-reset-hero__form {
+        width: 100%;
+        max-width: 320px;
+    }
+
+    .demo-reset-hero__button {
+        width: 100%;
+        min-height: 58px;
+        border: 0;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #dc2626 0%, #ea580c 100%);
+        color: #fff;
+        font-size: 16px;
+        font-weight: 800;
+        box-shadow: 0 16px 28px rgba(220, 38, 38, 0.24);
+    }
+
+    .demo-reset-hero__button:hover,
+    .demo-reset-hero__button:focus {
+        color: #fff;
+        transform: translateY(-1px);
+        box-shadow: 0 18px 32px rgba(220, 38, 38, 0.28);
+    }
+
+    .demo-reset-hero__hint {
+        margin-top: 10px;
+        color: #9a3412;
+        font-size: 12px;
+        text-align: center;
+        font-weight: 600;
+    }
+
+    @media (max-width: 767.98px) {
+        .demo-reset-hero__body {
+            padding: 18px;
+        }
+
+        .demo-reset-hero__title {
+            font-size: 23px;
+        }
+
+        .demo-reset-hero__actions {
+            flex-basis: 100%;
+            justify-content: stretch;
+        }
+
+        .demo-reset-hero__form {
+            max-width: none;
+        }
+    }
+</style>
 
 <div class="page-wrapper">
     <div class="content container-fluid">
@@ -29,6 +140,38 @@
         @endif
         @if (session('error'))
             <div class="alert alert-danger alert-dismissible fade show"><span>{{ session('error') }}</span><button type="button" class="close" data-dismiss="alert">&times;</button></div>
+        @endif
+
+        @if($demoRequest->demo_company_id && in_array($demoRequest->status, ['approved', 'expired']))
+            <div class="card demo-reset-hero mb-4">
+                <div class="demo-reset-hero__body">
+                    <div class="demo-reset-hero__copy">
+                        <div class="demo-reset-hero__eyebrow">
+                            <i class="fas fa-triangle-exclamation"></i>
+                            Demo Reset
+                        </div>
+                        <h4 class="demo-reset-hero__title">Reset This Demo Workspace</h4>
+                        <p class="demo-reset-hero__text">
+                            Use this when the demo already contains old records or you want a fresh environment.
+                            The reset rebuilds the demo workspace using the latest clean seed rules.
+                        </p>
+                    </div>
+                    <div class="demo-reset-hero__actions">
+                        <form method="POST"
+                              action="{{ route('super_admin.demo_requests.reset', $demoRequest->id) }}"
+                              class="demo-reset-hero__form"
+                              onsubmit="return confirm('Reset this demo workspace now and rebuild it with fresh clean data?');">
+                            @csrf
+                            <button type="submit" class="btn demo-reset-hero__button">
+                                <i class="fas fa-rotate-right mr-2"></i> Reset Demo Workspace Now
+                            </button>
+                            <div class="demo-reset-hero__hint">
+                                Recommended after seed-rule changes or when reports should start empty.
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         @endif
 
         <div class="row">
