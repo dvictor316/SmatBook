@@ -1873,8 +1873,25 @@
                 line-height: 1.35;
                 color: #0f172a;
             }
+            .demo-top-strip__line--alert {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 7px 14px;
+                border: 1px solid rgba(220, 38, 38, 0.22);
+                border-radius: 999px;
+                background: linear-gradient(135deg, rgba(254, 240, 138, 0.97) 0%, rgba(254, 202, 202, 0.97) 100%);
+                color: #991b1b;
+                font-size: 12.5px;
+                font-weight: 700;
+                box-shadow: 0 10px 22px rgba(217, 119, 6, 0.14);
+            }
             .demo-top-strip__line strong {
                 color: #0f3d91;
+            }
+            .demo-top-strip__line--alert strong {
+                color: #7f1d1d;
             }
             .demo-top-strip__line--muted {
                 color: #475569;
@@ -1916,6 +1933,12 @@
                 .demo-top-strip__line {
                     font-size: 12.5px;
                 }
+                .demo-top-strip__line--alert {
+                    width: 100%;
+                    border-radius: 14px;
+                    padding: 8px 10px;
+                    font-size: 11.5px;
+                }
                 .demo-top-strip__line--muted {
                     font-size: 12px;
                 }
@@ -1937,7 +1960,7 @@
                                 <strong>Workspace Notice:</strong> {{ $demoWorkspaceNotice }}
                             </div>
                         @endif
-                        <div class="demo-top-strip__line demo-top-strip__line--muted">
+                        <div class="demo-top-strip__line demo-top-strip__line--alert">
                             <strong>Demo Mode:</strong> Sample data only. Live billing, payouts, subscriptions, backups, and admin-only actions are disabled.
                             @if($demoCompany->demo_expires_at)
                                 <strong class="ms-1">Expires {{ $demoCompany->demo_expires_at->diffForHumans() }}.</strong>

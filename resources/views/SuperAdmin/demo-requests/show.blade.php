@@ -7,6 +7,9 @@
     }
 
     .demo-reset-hero {
+        position: sticky;
+        top: calc(var(--sb-header-h, 76px) + 12px);
+        z-index: 4;
         border: 0;
         border-radius: 18px;
         background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 48%, #fee2e2 100%);
@@ -79,6 +82,7 @@
         color: #fff;
         font-size: 13px;
         font-weight: 800;
+        outline: 3px solid rgba(255, 255, 255, 0.55);
         box-shadow: 0 16px 28px rgba(220, 38, 38, 0.24);
     }
 
@@ -104,6 +108,10 @@
     }
 
     @media (max-width: 767.98px) {
+        .demo-reset-hero {
+            position: static;
+        }
+
         .demo-reset-hero__body {
             padding: 14px;
         }
