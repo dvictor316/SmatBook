@@ -337,6 +337,10 @@
 @endphp
 
 <style>
+    :root {
+        --spb-header-offset: 76px;
+    }
+
     /* ============================================
        HEADER
        ============================================ */
@@ -850,11 +854,12 @@
         /* ── Regular sidebar (#sidebar) ── */
         #sidebar {
             position: fixed !important;
-            top: 70px !important;
+            top: var(--spb-header-offset) !important;
             left: -280px !important;   /* off-screen by default */
+            margin-top: 0 !important;
             margin-left: 0 !important; /* cancel theme mobile -575px offset */
             width: 280px !important;
-            height: calc(100vh - 70px) !important;
+            height: calc(100vh - var(--spb-header-offset)) !important;
             z-index: 1045 !important;
             overflow: hidden !important;
             -webkit-overflow-scrolling: touch !important;
@@ -873,11 +878,12 @@
         #deploymentSidebar,
         .deployment-sidebar {
             position: fixed !important;
-            top: 70px !important;
+            top: var(--spb-header-offset) !important;
             left: -280px !important;
+            margin-top: 0 !important;
             margin-left: 0 !important;
             width: 280px !important;
-            height: calc(100vh - 70px) !important;
+            height: calc(100vh - var(--spb-header-offset)) !important;
             z-index: 1045 !important;
             overflow: hidden !important;
             -webkit-overflow-scrolling: touch !important;
@@ -914,7 +920,7 @@
     /* Mobile search overlay */
     .mobile-search-overlay {
         position: fixed;
-        top: 70px; left: 0; right: 0;
+        top: var(--spb-header-offset); left: 0; right: 0;
         background: white;
         border-bottom: 1px solid #e2e8f0;
         padding: 15px 20px;
@@ -929,9 +935,13 @@
     body.mini-sidebar .spb-wordmark { display: none; }
 
     @media (max-width: 991px) {
+        :root {
+            --spb-header-offset: 70px;
+        }
+
         .header {
             padding: 0 9px;
-            margin-bottom: 10px;
+            margin-bottom: 0;
             height: 70px;
         }
         .header-logo {
@@ -951,6 +961,10 @@
     }
 
     @media (max-width: 767px) {
+        :root {
+            --spb-header-offset: 68px;
+        }
+
         .header {
             padding: 0 8px;
             height: 68px;
@@ -1038,6 +1052,10 @@
     }
 
     @media (max-width: 430px) {
+        :root {
+            --spb-header-offset: 66px;
+        }
+
         .header {
             padding: 0 7px;
             height: 66px;

@@ -42,6 +42,11 @@ $allowedRoutes = [
         }
 
         $user = Auth::user();
+
+        if ($user?->isDemoUser()) {
+            return $next($request);
+        }
+
         $tenant = $user->tenant; // Ensure your User model has the tenant() relationship
 
         // 3. ENFORCEMENT: Check Tenant Status

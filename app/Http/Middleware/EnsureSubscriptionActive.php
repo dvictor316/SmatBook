@@ -26,6 +26,10 @@ class EnsureSubscriptionActive
 
         $user = Auth::user();
 
+        if ($user?->isDemoUser()) {
+            return $next($request);
+        }
+
         // 1. Bypass for Admin
         if ($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
             return $next($request);
