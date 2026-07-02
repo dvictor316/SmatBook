@@ -272,6 +272,13 @@ class SaleController extends Controller
         $this->applyTenantScope($query, 'customers');
         $this->applyBranchScope($query, 'customers');
 
+        if (auth()->user()?->isDemoUser()) {
+            $previewCustomerId = (int) session('demo_customer_preview_id', 0);
+            if ($previewCustomerId > 0) {
+                $query->whereKey($previewCustomerId);
+            }
+        }
+
         $customerNameColumn = $this->customerNameColumn() ?: 'id';
         return $query->orderBy($customerNameColumn, 'asc');
     }

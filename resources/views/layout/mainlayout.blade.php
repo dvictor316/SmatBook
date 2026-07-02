@@ -1837,54 +1837,133 @@
     {{-- MAIN PAGE CONTENT --}}
     @include('layout.partials.flash-messages')
     @if (($isDemoWorkspace ?? false) && isset($demoCompany) && $demoCompany)
-        <div class="alert alert-warning border-0 rounded-0 mb-0 py-2 px-3">
-            <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-center gap-1 gap-lg-2 text-center">
-                <div class="fw-semibold small">Demo Mode</div>
-                <div class="small">
-                    Temporary sample data only. Live billing, payouts, subscriptions, backups, and admin-only actions are disabled.
-                </div>
-                @if($demoCompany->demo_expires_at)
-                    <div class="fw-semibold small">Expires {{ $demoCompany->demo_expires_at->diffForHumans() }}.</div>
-                @endif
-            </div>
-        </div>
-    @endif
-    @if (($isDemoWorkspace ?? false) && empty($demoPreviewCustomer))
-        <div class="alert alert-info border-0 rounded-0 mb-0 py-2 px-3">
-            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2">
-                <div class="small">
-                    <strong>Dashboard Preview:</strong> Switch between Basic, Pro, and Enterprise to see how each demo workspace looks.
-                    @if(!empty($demoPreviewPlan))
-                        <span class="ms-2 badge bg-primary">{{ strtoupper($demoPreviewPlan === 'professional' ? 'PRO' : $demoPreviewPlan) }}</span>
+        @php
+            $demoWorkspaceNotice = trim((string) session('info', ''));
+            $demoWorkspaceNotice = $demoWorkspaceNotice !== '' ? $demoWorkspaceNotice : null;
+        @endphp
+        <style>
+            .demo-top-strip {
+                padding: 10px 14px 6px;
+            }
+            .demo-top-strip__card {
+                width: min(100%, 1080px);
+                margin: 0 auto;
+                border: 1px solid rgba(14, 116, 144, 0.12);
+                border-radius: 18px;
+                background: linear-gradient(180deg, #f7fbff 0%, #eef7ff 100%);
+                box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+                padding: 12px 14px;
+            }
+            .demo-top-strip__stack {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                text-align: center;
+            }
+            .demo-top-strip__copy {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                max-width: 900px;
+            }
+            .demo-top-strip__line {
+                font-size: 13px;
+                line-height: 1.35;
+                color: #0f172a;
+            }
+            .demo-top-strip__line strong {
+                color: #0f3d91;
+            }
+            .demo-top-strip__line--muted {
+                color: #475569;
+                font-size: 12.5px;
+            }
+            .demo-top-strip__actions {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 8px;
+            }
+            .demo-top-strip__actions .btn {
+                border-radius: 999px;
+                min-width: 92px;
+                font-weight: 700;
+                padding: 0.42rem 0.9rem;
+            }
+            @media (max-width: 767.98px) {
+                .demo-top-strip {
+                    padding: 8px 10px 4px;
+                }
+                .demo-top-strip__card {
+                    padding: 10px 12px;
+                    border-radius: 14px;
+                }
+                .demo-top-strip__line {
+                    font-size: 12.5px;
+                }
+                .demo-top-strip__line--muted {
+                    font-size: 12px;
+                }
+                .demo-top-strip__actions {
+                    gap: 6px;
+                }
+                .demo-top-strip__actions .btn {
+                    min-width: auto;
+                    padding: 0.38rem 0.8rem;
+                }
+            }
+        </style>
+        <div class="demo-top-strip">
+            <div class="demo-top-strip__card">
+                <div class="demo-top-strip__stack">
+                    <div class="demo-top-strip__copy">
+                        @if($demoWorkspaceNotice)
+                            <div class="demo-top-strip__line">
+                                <strong>Workspace Notice:</strong> {{ $demoWorkspaceNotice }}
+                            </div>
+                        @endif
+                        <div class="demo-top-strip__line demo-top-strip__line--muted">
+                            <strong>Demo Mode:</strong> Sample data only. Live billing, payouts, subscriptions, backups, and admin-only actions are disabled.
+                            @if($demoCompany->demo_expires_at)
+                                <strong class="ms-1">Expires {{ $demoCompany->demo_expires_at->diffForHumans() }}.</strong>
+                            @endif
+                        </div>
+                        @if (($isDemoWorkspace ?? false) && empty($demoPreviewCustomer))
+                            <div class="demo-top-strip__line demo-top-strip__line--muted">
+                                <strong>Dashboard Preview:</strong> Switch between Basic, Pro, and Enterprise to see how each demo workspace looks.
+                                @if(!empty($demoPreviewPlan))
+                                    <span class="ms-1 badge bg-primary">{{ strtoupper($demoPreviewPlan === 'professional' ? 'PRO' : $demoPreviewPlan) }}</span>
+                                @endif
+                            </div>
+                        @else
+                            <div class="demo-top-strip__line demo-top-strip__line--muted">
+                                <strong>Preview Customer:</strong> {{ $demoPreviewCustomer->customer_name ?? 'Demo Customer' }}
+                                <span class="ms-1 badge bg-primary">{{ strtoupper(($demoPreviewPlan ?? 'basic') === 'professional' ? 'PRO' : ($demoPreviewPlan ?? 'basic')) }}</span>
+                                <span class="ms-1">Preview stays locked to demo-only customer data.</span>
+                            </div>
+                        @endif
+                    </div>
+                    @if (($isDemoWorkspace ?? false) && empty($demoPreviewCustomer))
+                        <div class="demo-top-strip__actions">
+                            <a href="{{ route('demo.workspace.plan', ['plan' => 'basic']) }}" class="btn btn-sm btn-outline-primary">Basic</a>
+                            <a href="{{ route('demo.workspace.plan', ['plan' => 'pro']) }}" class="btn btn-sm btn-outline-primary">Pro</a>
+                            <a href="{{ route('demo.workspace.plan', ['plan' => 'enterprise']) }}" class="btn btn-sm btn-outline-primary">Enterprise</a>
+                            <a href="{{ route('customers.index') }}" class="btn btn-sm btn-outline-secondary">Customers</a>
+                            <a href="{{ route('reports.hub') }}" class="btn btn-sm btn-outline-secondary">Reports</a>
+                        </div>
+                    @else
+                        <div class="demo-top-strip__actions">
+                            <a href="{{ route('customers.demo-preview', ['id' => $demoPreviewCustomer->id, 'plan' => 'basic']) }}" class="btn btn-sm btn-outline-primary">Basic</a>
+                            <a href="{{ route('customers.demo-preview', ['id' => $demoPreviewCustomer->id, 'plan' => 'pro']) }}" class="btn btn-sm btn-outline-primary">Pro</a>
+                            <a href="{{ route('customers.demo-preview', ['id' => $demoPreviewCustomer->id, 'plan' => 'enterprise']) }}" class="btn btn-sm btn-outline-primary">Enterprise</a>
+                            <a href="{{ route('add-invoice', ['customer_id' => $demoPreviewCustomer->id]) }}" class="btn btn-sm btn-outline-secondary">New Invoice</a>
+                            <a href="{{ route('sales.create', ['customer_id' => $demoPreviewCustomer->id]) }}" class="btn btn-sm btn-outline-secondary">New Sale</a>
+                            <a href="{{ route('reports.customer-statement', $demoPreviewCustomer->id) }}" class="btn btn-sm btn-outline-secondary">Statement</a>
+                            <a href="{{ route('reports.hub') }}" class="btn btn-sm btn-outline-secondary">Reports</a>
+                            <a href="{{ route('demo.customer-preview.stop') }}" class="btn btn-sm btn-outline-danger">Exit Preview</a>
+                        </div>
                     @endif
-                </div>
-                <div class="d-flex flex-wrap gap-2">
-                    <a href="{{ route('demo.workspace.plan', ['plan' => 'basic']) }}" class="btn btn-sm btn-outline-primary">Basic</a>
-                    <a href="{{ route('demo.workspace.plan', ['plan' => 'pro']) }}" class="btn btn-sm btn-outline-primary">Pro</a>
-                    <a href="{{ route('demo.workspace.plan', ['plan' => 'enterprise']) }}" class="btn btn-sm btn-outline-primary">Enterprise</a>
-                    <a href="{{ route('customers.index') }}" class="btn btn-sm btn-outline-secondary">Customers</a>
-                    <a href="{{ route('reports.hub') }}" class="btn btn-sm btn-outline-secondary">Reports</a>
-                </div>
-            </div>
-        </div>
-    @endif
-    @if (($isDemoWorkspace ?? false) && !empty($demoPreviewCustomer))
-        <div class="alert alert-info border-0 rounded-0 mb-0">
-            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2">
-                <div>
-                    <strong>Demo Customer Preview:</strong> {{ $demoPreviewCustomer->customer_name ?? 'Demo Customer' }}
-                    <span class="ms-2 badge bg-primary">{{ strtoupper(($demoPreviewPlan ?? 'basic') === 'professional' ? 'PRO' : ($demoPreviewPlan ?? 'basic')) }}</span>
-                    <span class="ms-2 text-muted">Preview the real dashboard style while staying inside demo-only data.</span>
-                </div>
-                <div class="d-flex flex-wrap gap-2">
-                    <a href="{{ route('customers.demo-preview', ['id' => $demoPreviewCustomer->id, 'plan' => 'basic']) }}" class="btn btn-sm btn-outline-primary">Basic</a>
-                    <a href="{{ route('customers.demo-preview', ['id' => $demoPreviewCustomer->id, 'plan' => 'pro']) }}" class="btn btn-sm btn-outline-primary">Pro</a>
-                    <a href="{{ route('customers.demo-preview', ['id' => $demoPreviewCustomer->id, 'plan' => 'enterprise']) }}" class="btn btn-sm btn-outline-primary">Enterprise</a>
-                    <a href="{{ route('add-invoice', ['customer_id' => $demoPreviewCustomer->id]) }}" class="btn btn-sm btn-outline-secondary">New Invoice</a>
-                    <a href="{{ route('sales.create', ['customer_id' => $demoPreviewCustomer->id]) }}" class="btn btn-sm btn-outline-secondary">New Sale</a>
-                    <a href="{{ route('reports.customer-statement', $demoPreviewCustomer->id) }}" class="btn btn-sm btn-outline-secondary">Statement</a>
-                    <a href="{{ route('reports.hub') }}" class="btn btn-sm btn-outline-secondary">Reports</a>
-                    <a href="{{ route('demo.customer-preview.stop') }}" class="btn btn-sm btn-outline-danger">Exit Preview</a>
                 </div>
             </div>
         </div>

@@ -540,7 +540,14 @@ class InvoiceController extends Controller
      */
     public function create()
     {
-        $customers = $this->applyTenantScope(Customer::query(), 'customers')->get();
+        $customersQuery = $this->applyTenantScope(Customer::query(), 'customers');
+        if (auth()->user()?->isDemoUser()) {
+            $previewCustomerId = (int) session('demo_customer_preview_id', 0);
+            if ($previewCustomerId > 0) {
+                $customersQuery->whereKey($previewCustomerId);
+            }
+        }
+        $customers = $customersQuery->get();
         $products = $this->applyTenantScope(Product::query(), 'products')->get();
         $quotationPrefill = session('quotation_prefill');
         $selected_customer = (string) request()->input('customer_id', session('demo_customer_preview_id', ''));

@@ -5,8 +5,9 @@
     $hideHeader = true;
     /* Attempt to capture subdomain from route or host */
     $currentSubdomain = request()->route('subdomain') ?? explode('.', request()->getHost())[0];
-    $supportChatUrl = Route::has('messages.index') ? route('messages.index', ['type' => 'chat']) : '#';
-    $supportEmailUrl = Route::has('messages.index') ? route('messages.index', ['type' => 'email']) : '#';
+    $supportContactUrl = Route::has('landing.contact') ? route('landing.contact') : url('/contact-us');
+    $supportEmailAddress = config('mail.from.address', 'support@smartprobook.com');
+    $supportEmailUrl = 'mailto:' . $supportEmailAddress;
     $pendingUser = auth()->user();
     $pendingRole = strtolower((string) ($pendingUser?->role ?? ''));
     $isPartnerFlow = in_array($pendingRole, ['state_manager', 'deployment_manager', 'agent'], true);
@@ -176,7 +177,7 @@
                         <div class="mt-5 text-center pt-3 border-top">
                             <span class="text-muted small">Need to speak with us?</span><br>
 
-                            <a href="{{ $supportChatUrl }}" class="btn btn-sm btn-link font-weight-bold">Live Chat</a>
+                            <a href="{{ $supportContactUrl }}" class="btn btn-sm btn-link font-weight-bold">Contact Us</a>
                             <span class="text-muted">|</span>
                             <a href="{{ $supportEmailUrl }}" class="btn btn-sm btn-link font-weight-bold">Email Support</a>
                         </div>

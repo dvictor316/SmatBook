@@ -33,6 +33,13 @@ class CustomerController extends Controller
             $query->where('user_id', $userId);
         }
 
+        if (auth()->user()?->isDemoUser()) {
+            $previewCustomerId = (int) session('demo_customer_preview_id', 0);
+            if ($previewCustomerId > 0) {
+                $query->where('customers.id', $previewCustomerId);
+            }
+        }
+
         return $query;
     }
 
@@ -498,6 +505,13 @@ class CustomerController extends Controller
             $query->where('company_id', $companyId);
         } elseif ($userId > 0 && Schema::hasColumn('sales', 'user_id')) {
             $query->where('user_id', $userId);
+        }
+
+        if (auth()->user()?->isDemoUser()) {
+            $previewCustomerId = (int) session('demo_customer_preview_id', 0);
+            if ($previewCustomerId > 0 && Schema::hasColumn('sales', 'customer_id')) {
+                $query->where('customer_id', $previewCustomerId);
+            }
         }
 
         return $query;

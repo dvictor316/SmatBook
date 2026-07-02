@@ -750,9 +750,18 @@ class DashboardController extends Controller
 
     private function getTopCustomers($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('sales')) return collect();
-        return $this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
+        $query = $this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
             ->whereNotNull('customer_name')
-            ->select('customer_name', DB::raw('SUM(total) as total_spend'), DB::raw('COUNT(*) as invoices_count'))
+            ->select('customer_name', DB::raw('SUM(total) as total_spend'), DB::raw('COUNT(*) as invoices_count'));
+
+        if (auth()->user()?->isDemoUser()) {
+            $previewCustomerId = (int) session('demo_customer_preview_id', 0);
+            if ($previewCustomerId > 0 && Schema::hasColumn('sales', 'customer_id')) {
+                $query->where('customer_id', $previewCustomerId);
+            }
+        }
+
+        return $query
             ->groupBy('customer_name')
             ->orderByDesc('total_spend')
             ->limit(5)

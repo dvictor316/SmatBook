@@ -16,7 +16,19 @@
         ['type' => 'danger', 'icon' => 'fa-exclamation-triangle', 'message' => session('error')],
         ['type' => 'warning', 'icon' => 'fa-triangle-exclamation', 'message' => session('warning')],
         ['type' => 'info', 'icon' => 'fa-circle-info', 'message' => session('info') ?? session('status')],
-    ])->filter(fn ($item) => filled($item['message']))->values();
+    ])->filter(fn ($item) => filled($item['message']));
+
+    if (($isDemoWorkspace ?? false) && filled(session('info'))) {
+        $flashMessages = $flashMessages->reject(function ($item) {
+            return $item['type'] === 'info'
+                && str_contains(
+                    strtolower(trim((string) $item['message'])),
+                    'secure custom subdomain is still being finalized'
+                );
+        });
+    }
+
+    $flashMessages = $flashMessages->values();
 @endphp
 
 @if (!$suppressGlobalFlash && ($flashMessages->isNotEmpty() || $errors->any()))
