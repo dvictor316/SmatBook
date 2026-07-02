@@ -2,6 +2,10 @@
 
 @section('content')
 <style>
+    .demo-reset-hero-wrap {
+        width: 100%;
+    }
+
     .demo-reset-hero {
         border: 0;
         border-radius: 18px;
@@ -93,6 +97,12 @@
         font-weight: 600;
     }
 
+    @media (min-width: 992px) {
+        .demo-reset-hero-wrap {
+            padding-left: 270px;
+        }
+    }
+
     @media (max-width: 767.98px) {
         .demo-reset-hero__body {
             padding: 14px;
@@ -142,32 +152,34 @@
         @endif
 
         @if($demoRequest->demo_company_id && in_array($demoRequest->status, ['approved', 'expired']))
-            <div class="card demo-reset-hero mb-4">
-                <div class="demo-reset-hero__body">
-                    <div class="demo-reset-hero__copy">
-                        <div class="demo-reset-hero__eyebrow">
-                            <i class="fas fa-triangle-exclamation"></i>
-                            Demo Reset
-                        </div>
-                        <h4 class="demo-reset-hero__title">Reset This Demo Workspace</h4>
-                        <p class="demo-reset-hero__text">
-                            Use this when the demo already contains old records or you want a fresh environment.
-                            The reset rebuilds the demo workspace using the latest clean seed rules.
-                        </p>
-                    </div>
-                    <div class="demo-reset-hero__actions">
-                        <form method="POST"
-                              action="{{ route('super_admin.demo_requests.reset', $demoRequest->id) }}"
-                              class="demo-reset-hero__form"
-                              onsubmit="return confirm('Reset this demo workspace now and rebuild it with fresh clean data?');">
-                            @csrf
-                            <button type="submit" class="btn demo-reset-hero__button">
-                                <i class="fas fa-rotate-right mr-2"></i> Reset Demo Workspace Now
-                            </button>
-                            <div class="demo-reset-hero__hint">
-                                Recommended after seed-rule changes or when reports should start empty.
+            <div class="demo-reset-hero-wrap mb-4">
+                <div class="card demo-reset-hero">
+                    <div class="demo-reset-hero__body">
+                        <div class="demo-reset-hero__copy">
+                            <div class="demo-reset-hero__eyebrow">
+                                <i class="fas fa-triangle-exclamation"></i>
+                                Demo Reset
                             </div>
-                        </form>
+                            <h4 class="demo-reset-hero__title">Reset This Demo Workspace</h4>
+                            <p class="demo-reset-hero__text">
+                                Use this when the demo already contains old records or you want a fresh environment.
+                                The reset rebuilds the demo workspace using the latest clean seed rules.
+                            </p>
+                        </div>
+                        <div class="demo-reset-hero__actions">
+                            <form method="POST"
+                                  action="{{ route('super_admin.demo_requests.reset', $demoRequest->id) }}"
+                                  class="demo-reset-hero__form"
+                                  onsubmit="return confirm('Reset this demo workspace now and rebuild it with fresh clean data?');">
+                                @csrf
+                                <button type="submit" class="btn demo-reset-hero__button">
+                                    <i class="fas fa-rotate-right mr-2"></i> Reset Demo Workspace Now
+                                </button>
+                                <div class="demo-reset-hero__hint">
+                                    Recommended after seed-rule changes or when reports should start empty.
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
