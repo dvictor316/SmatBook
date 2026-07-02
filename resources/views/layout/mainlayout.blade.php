@@ -1844,6 +1844,7 @@
         <style>
             .demo-top-strip {
                 padding: 10px 14px 6px;
+                box-sizing: border-box;
             }
             .demo-top-strip__card {
                 width: min(100%, 1080px);
@@ -1890,6 +1891,19 @@
                 min-width: 92px;
                 font-weight: 700;
                 padding: 0.42rem 0.9rem;
+            }
+            @media (min-width: 992px) {
+                body:not(.sidebar-collapsed):not(.mini-sidebar):not(.sidebar-icon-only) .demo-top-strip {
+                    margin-left: var(--sb-sidebar-w, 270px);
+                    width: calc(100% - var(--sb-sidebar-w, 270px));
+                }
+
+                body.sidebar-collapsed .demo-top-strip,
+                body.mini-sidebar .demo-top-strip,
+                body.sidebar-icon-only .demo-top-strip {
+                    margin-left: var(--sb-sidebar-collapsed, 80px);
+                    width: calc(100% - var(--sb-sidebar-collapsed, 80px));
+                }
             }
             @media (max-width: 767.98px) {
                 .demo-top-strip {
