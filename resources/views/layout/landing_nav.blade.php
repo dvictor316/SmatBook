@@ -80,6 +80,7 @@
     <style>
         /* ===== SmartProbook 2026: ENTERPRISE CORE STYLING ===== */
         :root {
+            --landing-nav-height: 78px;
             --primary: #0062ff;      
             --primary-dark: #0046b8;
             --secondary: #ff9d00;    
@@ -116,7 +117,7 @@
             color: var(--dark); 
             line-height: 1.8; 
             overflow-x: hidden;
-            padding-top: 78px;
+            padding-top: var(--landing-nav-height);
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
         }
@@ -135,7 +136,7 @@
             background: rgba(255, 255, 255, 0.98); 
             backdrop-filter: blur(20px);
             border-bottom: 1px solid #e2e8f0; 
-            height: 78px; 
+            height: var(--landing-nav-height); 
             display: flex; 
             align-items: center;
             box-shadow: 0 4px 20px rgba(0, 98, 255, 0.08);
@@ -950,19 +951,18 @@
 
         /* ===== TABLET LAYOUT ===== */
         @media (max-width: 991px) {
+            :root {
+                --landing-nav-height: 64px;
+            }
+
             html, body {
                 overflow-x: hidden;
                 -webkit-overflow-scrolling: touch;
             }
 
             body {
-                padding-top: 64px;
                 touch-action: pan-y;
                 overscroll-behavior-y: auto;
-            }
-
-            nav {
-                height: 64px;
             }
 
             .nav-container {
@@ -975,14 +975,19 @@
 
             .nav-links { 
                 position: fixed; 
-                top: 64px; 
+                top: var(--landing-nav-height); 
                 left: -100%; 
                 width: 100%; 
                 max-width: 100%;
-                height: calc(100vh - 64px); 
+                min-height: calc(100dvh - var(--landing-nav-height));
+                max-height: calc(100dvh - var(--landing-nav-height));
+                height: auto;
                 background: white; 
                 flex-direction: column; 
-                padding: 22px 16px 28px; 
+                justify-content: flex-start;
+                align-items: stretch;
+                align-content: flex-start;
+                padding: 10px 16px 28px; 
                 gap: 0; 
                 transition: left 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
                 overflow-y: auto;
@@ -1096,12 +1101,11 @@
 
         /* ===== MOBILE LAYOUT ===== */
         @media (max-width: 480px) {
-            body {
-                padding-top: 60px;
+            :root {
+                --landing-nav-height: 60px;
             }
 
             nav {
-                height: 60px;
                 padding: 0 15px;
             }
 
@@ -1126,9 +1130,10 @@
             }
 
             .nav-links { 
-                top: 60px;
-                height: calc(100vh - 60px);
-                padding: 18px 12px 24px;
+                top: var(--landing-nav-height);
+                min-height: calc(100dvh - var(--landing-nav-height));
+                max-height: calc(100dvh - var(--landing-nav-height));
+                padding: 10px 12px 24px;
             }
 
             .nav-links a {
