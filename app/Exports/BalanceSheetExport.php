@@ -129,7 +129,13 @@ class BalanceSheetExport implements FromArray, WithHeadings
         $this->applyBranchTransactionVisibility($txnQuery);
 
         $txnTotals = $txnQuery->get()->keyBy('account_id');
-        $accountIds = $txnTotals->keys()->all();
+        $openingBalanceAccountIds = $this->openingBalanceAccountIds();
+        $postedOpeningBalanceAccountIds = $this->postedOpeningBalanceAccountIds();
+        $accountIds = $txnTotals->keys()
+            ->merge($openingBalanceAccountIds)
+            ->unique()
+            ->values()
+            ->all();
 
         $accountsQuery = Account::withoutGlobalScopes()
             ->whereNull('deleted_at')
@@ -143,21 +149,64 @@ class BalanceSheetExport implements FromArray, WithHeadings
         $this->applyCompanyScope($accountsQuery, 'accounts');
         $accounts = $accountsQuery->get();
 
-        return $accounts->map(function($account) use ($txnTotals) {
+        return $accounts->map(function($account) use ($txnTotals, $postedOpeningBalanceAccountIds) {
             $totals = $txnTotals->get($account->id);
             $debits = (float) ($totals->total_debit ?? 0);
             $credits = (float) ($totals->total_credit ?? 0);
+            $openingBalance = in_array((int) $account->id, $postedOpeningBalanceAccountIds, true)
+                ? 0.0
+                : (float) ($account->opening_balance ?? 0);
 
             $type = $this->normalizeAccountType($account->type ?? null);
             if (in_array($type, ['asset', 'expense'], true)) {
-                $balance = $debits - $credits;
+                $balance = $openingBalance + $debits - $credits;
             } else {
-                $balance = $credits - $debits;
+                $balance = $openingBalance + $credits - $debits;
             }
 
             $account->balance = $balance;
             return $account;
         })->filter(fn ($account) => abs((float) $account->balance) > 0.01);
+    }
+
+    private function openingBalanceAccountIds(): \Illuminate\Support\Collection
+    {
+        if (!\Schema::hasTable('accounts') || !\Schema::hasColumn('accounts', 'opening_balance')) {
+            return collect();
+        }
+
+        $query = Account::withoutGlobalScopes()
+            ->whereNull('deleted_at')
+            ->whereRaw('ABS(COALESCE(opening_balance, 0)) > 0.005');
+
+        if (\Schema::hasColumn('accounts', 'created_at')) {
+            $query->where(function ($created) {
+                $created->whereNull('created_at')
+                    ->orWhereDate('created_at', '<=', $this->reportDate->toDateString());
+            });
+        }
+
+        $this->applyCompanyScope($query, 'accounts');
+        $this->applyBranchAccountVisibility($query);
+
+        return $query->pluck('id')->map(fn ($id) => (int) $id);
+    }
+
+    private function postedOpeningBalanceAccountIds(): array
+    {
+        if (!\Schema::hasTable('transactions')) {
+            return [];
+        }
+
+        $query = \App\Models\Transaction::withoutGlobalScopes()
+            ->whereNull('deleted_at')
+            ->where('transaction_type', \App\Models\Transaction::TYPE_OPENING_BALANCE)
+            ->where('transaction_date', '<=', $this->reportDate->toDateString());
+
+        $this->applyCompanyScope($query, 'transactions');
+        $this->applyBranchTransactionVisibility($query);
+
+        return $query->distinct()->pluck('account_id')->filter()->map(fn ($id) => (int) $id)->all();
     }
 
     private function calculateRetainedEarnings($date)
@@ -274,6 +323,33 @@ class BalanceSheetExport implements FromArray, WithHeadings
 
             if ($branchName !== '') {
                 $sub->where('branch_name', $branchName);
+            }
+        });
+    }
+
+    private function applyBranchAccountVisibility($query): void
+    {
+        if ($this->branchScope === 'all') {
+            $this->applyConfiguredBranchUniverse($query, 'accounts');
+            return;
+        }
+
+        $branchId = trim((string) ($this->branchId ?? ''));
+        $branchName = trim((string) ($this->branchName ?? ''));
+        if ($branchId === '' && $branchName === '') {
+            return;
+        }
+
+        $query->where(function ($sub) use ($branchId, $branchName) {
+            if ($branchId !== '' && \Schema::hasColumn('accounts', 'branch_id')) {
+                $sub->where('branch_id', $branchId);
+            }
+            if ($branchName !== '' && \Schema::hasColumn('accounts', 'branch_name')) {
+                $method = ($branchId !== '' && \Schema::hasColumn('accounts', 'branch_id')) ? 'orWhere' : 'where';
+                $sub->{$method}('branch_name', $branchName);
+            }
+            if (\Schema::hasColumn('accounts', 'branch_id')) {
+                $sub->orWhereNull('branch_id')->orWhere('branch_id', '');
             }
         });
     }

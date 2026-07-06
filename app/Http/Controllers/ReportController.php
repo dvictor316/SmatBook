@@ -899,6 +899,70 @@ class ReportController extends Controller
             return $query;
         }
 
+        private function purchaseItemTotalSubquery()
+        {
+            if (!Schema::hasTable('purchase_items') || !Schema::hasColumn('purchase_items', 'purchase_id')) {
+                return null;
+            }
+
+            $fallbacks = [];
+            if (Schema::hasColumn('purchase_items', 'line_total')) {
+                $fallbacks[] = 'NULLIF(purchase_items.line_total, 0)';
+            }
+            if (Schema::hasColumn('purchase_items', 'amount')) {
+                $fallbacks[] = 'NULLIF(purchase_items.amount, 0)';
+            }
+            if (Schema::hasColumn('purchase_items', 'subtotal')) {
+                $fallbacks[] = 'NULLIF(purchase_items.subtotal, 0)';
+            }
+            if (Schema::hasColumn('purchase_items', 'total')) {
+                $fallbacks[] = 'NULLIF(purchase_items.total, 0)';
+            }
+            if (Schema::hasColumn('purchase_items', 'qty') && Schema::hasColumn('purchase_items', 'unit_price')) {
+                $fallbacks[] = '(COALESCE(purchase_items.qty, 0) * COALESCE(purchase_items.unit_price, 0))';
+            }
+            if (Schema::hasColumn('purchase_items', 'quantity') && Schema::hasColumn('purchase_items', 'rate')) {
+                $fallbacks[] = '(COALESCE(purchase_items.quantity, 0) * COALESCE(purchase_items.rate, 0))';
+            }
+
+            if (empty($fallbacks)) {
+                return null;
+            }
+
+            $itemAmountExpression = 'ABS(COALESCE(' . implode(', ', $fallbacks) . ', 0))';
+
+            return DB::table('purchase_items')
+                ->selectRaw("purchase_items.purchase_id, SUM({$itemAmountExpression}) as item_total")
+                ->groupBy('purchase_items.purchase_id');
+        }
+
+        private function attachPurchaseItemTotals($query): string
+        {
+            $itemTotals = $this->purchaseItemTotalSubquery();
+            if ($itemTotals) {
+                $query->leftJoinSub($itemTotals, 'purchase_item_totals', function ($join) {
+                    $join->on('purchase_item_totals.purchase_id', '=', 'purchases.id');
+                });
+            }
+
+            $fallbacks = [];
+            if (Schema::hasColumn('purchases', 'total_amount')) {
+                $fallbacks[] = 'NULLIF(purchases.total_amount, 0)';
+            }
+            if (Schema::hasColumn('purchases', 'amount')) {
+                $fallbacks[] = 'NULLIF(purchases.amount, 0)';
+            }
+            if ($itemTotals) {
+                $fallbacks[] = 'purchase_item_totals.item_total';
+            }
+
+            if (empty($fallbacks)) {
+                return '0';
+            }
+
+            return 'ABS(COALESCE(' . implode(', ', $fallbacks) . ', 0))';
+        }
+
         public function index(Request $request)
     {
         $activeBranch = $this->getActiveBranchContext();
@@ -3339,11 +3403,6 @@ public function destroy($id)
             : (Schema::hasColumn('sales', 'total_amount')
                 ? 'COALESCE(NULLIF(sales.total_amount, 0), sales.amount_paid, 0)'
                 : 'COALESCE(sales.amount_paid, 0)');
-        $purchaseAmountExpr = Schema::hasColumn('purchases', 'total_amount')
-            ? 'ABS(COALESCE(purchases.total_amount, 0))'
-            : (Schema::hasColumn('purchases', 'amount')
-                ? 'ABS(COALESCE(purchases.amount, 0))'
-                : '0');
         $purchasesHasStatus = Schema::hasColumn('purchases', 'status');
         $expensesHasStatus = Schema::hasTable('expenses') && Schema::hasColumn('expenses', 'status');
         $expenseStatusExpr = $expensesHasStatus
@@ -3440,6 +3499,7 @@ public function destroy($id)
             ->when($companyId > 0 && Schema::hasColumn('purchases', 'company_id'),
                 fn ($q) => $q->where('purchases.company_id', $companyId))
             ->whereBetween(DB::raw($purchDateExpr), [$startDate, $endDate]);
+        $purchaseAmountExpr = $this->attachPurchaseItemTotals($purchQuery);
         if (Schema::hasColumn('purchases', 'purchase_type')) {
             $purchQuery->where(function ($query) {
                 $query->whereNull('purchases.purchase_type')

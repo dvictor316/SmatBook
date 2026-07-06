@@ -40,24 +40,6 @@ class BalanceSheetController extends Controller
             $query->where('transactions.user_id', $userId);
         }
 
-        $activeBranch = $this->resolveActiveBranch($request);
-        if (($activeBranch['scope'] ?? 'branch') === 'all') {
-            $query->where(function ($branchScoped) {
-                if (Schema::hasColumn('transactions', 'branch_id')) {
-                    $branchScoped->whereNotNull('transactions.branch_id')
-                        ->where('transactions.branch_id', '<>', '');
-                }
-
-                if (Schema::hasColumn('transactions', 'branch_name')) {
-                    $method = Schema::hasColumn('transactions', 'branch_id') ? 'orWhere' : 'where';
-                    $branchScoped->{$method}(function ($named) {
-                        $named->whereNotNull('transactions.branch_name')
-                            ->where('transactions.branch_name', '<>', '');
-                    });
-                }
-            });
-        }
-
         return $query;
     }
 
@@ -606,14 +588,9 @@ class BalanceSheetController extends Controller
             $purchaseDateExpr = Schema::hasColumn('purchases', 'purchase_date')
                 ? 'COALESCE(DATE(purchases.purchase_date), DATE(purchases.created_at))'
                 : 'DATE(purchases.created_at)';
-            $purchaseAmountExpr = Schema::hasColumn('purchases', 'total_amount')
-                ? 'ABS(COALESCE(purchases.total_amount, 0))'
-                : (Schema::hasColumn('purchases', 'amount')
-                    ? 'ABS(COALESCE(purchases.amount, 0))'
-                    : '0');
-
             $purchaseQuery = DB::table('purchases')
                 ->whereBetween(DB::raw($purchaseDateExpr), [$startDate, $endDate]);
+            $purchaseAmountExpr = $this->attachPurchaseItemTotals($purchaseQuery);
             $applyTenant($purchaseQuery, 'purchases');
             $applyBranch($purchaseQuery, 'purchases');
             if (Schema::hasColumn('purchases', 'purchase_type')) {
@@ -781,6 +758,70 @@ class BalanceSheetController extends Controller
             'branch_name' => null,
             'balance' => round($balance, 2),
         ], $extra);
+    }
+
+    private function purchaseItemTotalSubquery()
+    {
+        if (!Schema::hasTable('purchase_items') || !Schema::hasColumn('purchase_items', 'purchase_id')) {
+            return null;
+        }
+
+        $fallbacks = [];
+        if (Schema::hasColumn('purchase_items', 'line_total')) {
+            $fallbacks[] = 'NULLIF(purchase_items.line_total, 0)';
+        }
+        if (Schema::hasColumn('purchase_items', 'amount')) {
+            $fallbacks[] = 'NULLIF(purchase_items.amount, 0)';
+        }
+        if (Schema::hasColumn('purchase_items', 'subtotal')) {
+            $fallbacks[] = 'NULLIF(purchase_items.subtotal, 0)';
+        }
+        if (Schema::hasColumn('purchase_items', 'total')) {
+            $fallbacks[] = 'NULLIF(purchase_items.total, 0)';
+        }
+        if (Schema::hasColumn('purchase_items', 'qty') && Schema::hasColumn('purchase_items', 'unit_price')) {
+            $fallbacks[] = '(COALESCE(purchase_items.qty, 0) * COALESCE(purchase_items.unit_price, 0))';
+        }
+        if (Schema::hasColumn('purchase_items', 'quantity') && Schema::hasColumn('purchase_items', 'rate')) {
+            $fallbacks[] = '(COALESCE(purchase_items.quantity, 0) * COALESCE(purchase_items.rate, 0))';
+        }
+
+        if (empty($fallbacks)) {
+            return null;
+        }
+
+        $itemAmountExpression = 'ABS(COALESCE(' . implode(', ', $fallbacks) . ', 0))';
+
+        return DB::table('purchase_items')
+            ->selectRaw("purchase_items.purchase_id, SUM({$itemAmountExpression}) as item_total")
+            ->groupBy('purchase_items.purchase_id');
+    }
+
+    private function attachPurchaseItemTotals($query): string
+    {
+        $itemTotals = $this->purchaseItemTotalSubquery();
+        if ($itemTotals) {
+            $query->leftJoinSub($itemTotals, 'purchase_item_totals', function ($join) {
+                $join->on('purchase_item_totals.purchase_id', '=', 'purchases.id');
+            });
+        }
+
+        $fallbacks = [];
+        if (Schema::hasColumn('purchases', 'total_amount')) {
+            $fallbacks[] = 'NULLIF(purchases.total_amount, 0)';
+        }
+        if (Schema::hasColumn('purchases', 'amount')) {
+            $fallbacks[] = 'NULLIF(purchases.amount, 0)';
+        }
+        if ($itemTotals) {
+            $fallbacks[] = 'purchase_item_totals.item_total';
+        }
+
+        if (empty($fallbacks)) {
+            return '0';
+        }
+
+        return 'ABS(COALESCE(' . implode(', ', $fallbacks) . ', 0))';
     }
 
     private function applyBranchPresentation(array $collections, bool $isAllBranches, bool $consolidate): array
@@ -978,40 +1019,6 @@ class BalanceSheetController extends Controller
             'equityReserves' => $equityReserves,
             'retainedEarningsLines' => $retainedEarningsLines,
         ], $isAllBranches, $consolidate);
-
-        $fixedAssetBridge = $this->fixedAssetRegisterBridgeAmount($request, $reportDate, $activeBranch, $fixedAssets);
-        if ($fixedAssetBridge > 0.005) {
-            $fixedAssets->push($this->syntheticLine(
-                'Fixed Assets Register',
-                'Asset',
-                $fixedAssetBridge,
-                ['_bs_group' => 'Other Fixed Assets', '_display_name' => 'Fixed Assets Register', '_bs_section' => 'fixed']
-            ));
-
-            $currentLiabilities->push($this->syntheticLine(
-                'Fixed Asset Payables',
-                'Liability',
-                $fixedAssetBridge,
-                ['_bs_group' => 'Accounts Payable', '_display_name' => 'Fixed Asset Payables', '_bs_section' => 'current']
-            ));
-        }
-
-        $legacyInventoryBridge = $this->getLegacyInventoryBridgeAmount($request, $reportDate, $currentAssets, $activeBranch);
-        if ($legacyInventoryBridge > 0.005) {
-            $currentAssets->push($this->syntheticLine(
-                'Inventory Register',
-                'Asset',
-                $legacyInventoryBridge,
-                ['_bs_group' => 'Inventory', '_display_name' => 'Inventory Register', '_bs_section' => 'current']
-            ));
-
-            $equityReserves->push($this->syntheticLine(
-                'Opening Balance Equity - Inventory',
-                'Equity',
-                $legacyInventoryBridge,
-                ['_bs_group' => 'Opening Balance Equity', '_display_name' => 'Opening Balance Equity - Inventory']
-            ));
-        }
 
         $customerOpeningBridge = $this->getUnpostedCustomerOpeningBalanceSum($request, $reportDate, $activeBranch);
         if ($customerOpeningBridge > 0.005) {
@@ -1283,7 +1290,13 @@ class BalanceSheetController extends Controller
             ->limit(10)
             ->get();
 
-        $accountIds = $txnTotals->keys()->all();
+        $openingBalanceAccountIds = $this->openingBalanceAccountIds($request, $reportDate, $activeBranch);
+        $postedOpeningBalanceAccountIds = $this->postedOpeningBalanceAccountIds($request, $reportDate, $activeBranch);
+        $accountIds = collect($txnTotals->keys())
+            ->merge($openingBalanceAccountIds)
+            ->unique()
+            ->values()
+            ->all();
         // Use withoutGlobalScopes() to bypass TenantScoped's branch filter.
         // TenantScoped excludes accounts with empty/null branch_id, which misses
         // system-generated accounts (AR, Revenue, Cash) created without a branch.
@@ -1307,10 +1320,13 @@ class BalanceSheetController extends Controller
 
         $accounts = $accountsQuery->get();
 
-        $accounts->transform(function ($account) use ($txnTotals) {
+        $accounts->transform(function ($account) use ($txnTotals, $postedOpeningBalanceAccountIds) {
             $totals = $txnTotals->get($account->id);
             $account->total_debit  = (float) ($totals->total_debit  ?? 0);
             $account->total_credit = (float) ($totals->total_credit ?? 0);
+            $account->unposted_opening_balance = in_array((int) $account->id, $postedOpeningBalanceAccountIds, true)
+                ? 0.0
+                : (float) ($account->opening_balance ?? 0);
             return $account;
         });
 
@@ -1325,7 +1341,8 @@ class BalanceSheetController extends Controller
             // debit-normal so unknown accounts don't get sign-flipped silently.
             $isCreditNormal = in_array($type, ['liability', 'equity', 'revenue'], true);
 
-            $account->balance = $isCreditNormal ? $cr - $dr : $dr - $cr;
+            $ledgerBalance = $isCreditNormal ? $cr - $dr : $dr - $cr;
+            $account->balance = $ledgerBalance + (float) ($account->unposted_opening_balance ?? 0);
 
             return $account;
         })->filter(fn ($account) => abs((float) ($account->balance ?? 0)) > 0.005)->values();
@@ -1776,7 +1793,13 @@ class BalanceSheetController extends Controller
         $this->applyTransactionScope($txnQuery, $request);
         $txnTotals = $txnQuery->groupBy('account_id')->get()->keyBy('account_id');
 
-        $accountIds   = $txnTotals->keys()->all();
+        $openingBalanceAccountIds = $this->openingBalanceAccountIds($request, $date, $activeBranch);
+        $postedOpeningBalanceAccountIds = $this->postedOpeningBalanceAccountIds($request, $date, $activeBranch);
+        $accountIds = collect($txnTotals->keys())
+            ->merge($openingBalanceAccountIds)
+            ->unique()
+            ->values()
+            ->all();
         $accountsQuery = Account::withoutGlobalScopes()
             ->whereNull('deleted_at')
             ->where(function ($q) use ($accountIds) {
@@ -1817,13 +1840,17 @@ class BalanceSheetController extends Controller
         $this->applyAccountScope($accountsQuery, $request);
         $accounts = $accountsQuery->get();
 
-        $accounts->transform(function ($account) use ($txnTotals) {
+        $accounts->transform(function ($account) use ($txnTotals, $postedOpeningBalanceAccountIds) {
             $totals  = $txnTotals->get($account->id);
             $dr      = (float) ($totals->total_debit  ?? 0);
             $cr      = (float) ($totals->total_credit ?? 0);
             $type    = $this->normalizeAccountType($account->type ?? null);
             $isCreditNormal = in_array($type, ['liability', 'equity', 'revenue'], true);
-            $account->balance = $isCreditNormal ? ($cr - $dr) : ($dr - $cr);
+            $ledgerBalance = $isCreditNormal ? ($cr - $dr) : ($dr - $cr);
+            $openingBalance = in_array((int) $account->id, $postedOpeningBalanceAccountIds, true)
+                ? 0.0
+                : (float) ($account->opening_balance ?? 0);
+            $account->balance = $ledgerBalance + $openingBalance;
             return $account;
         })->filter(fn ($account) => abs((float) ($account->balance ?? 0)) > 0.005)->values();
 
@@ -2021,6 +2048,64 @@ class BalanceSheetController extends Controller
         }
 
         return $query;
+    }
+
+    private function openingBalanceAccountIds(Request $request, Carbon $reportDate, array $activeBranch): array
+    {
+        if (!Schema::hasTable('accounts') || !Schema::hasColumn('accounts', 'opening_balance')) {
+            return [];
+        }
+
+        $query = Account::withoutGlobalScopes()
+            ->whereNull('deleted_at')
+            ->whereRaw('ABS(COALESCE(opening_balance, 0)) > 0.005');
+
+        if (Schema::hasColumn('accounts', 'created_at')) {
+            $query->where(function ($created) use ($reportDate) {
+                $created->whereNull('created_at')
+                    ->orWhereDate('created_at', '<=', $reportDate->toDateString());
+            });
+        }
+
+        if (($activeBranch['scope'] ?? 'branch') !== 'all') {
+            $branchId = trim((string) ($activeBranch['id'] ?? ''));
+            $branchName = trim((string) ($activeBranch['name'] ?? ''));
+            if (($branchId !== '' || $branchName !== '') && (Schema::hasColumn('accounts', 'branch_id') || Schema::hasColumn('accounts', 'branch_name'))) {
+                $query->where(function ($branchQuery) use ($branchId, $branchName) {
+                    if ($branchId !== '' && Schema::hasColumn('accounts', 'branch_id')) {
+                        $branchQuery->where('branch_id', $branchId);
+                    }
+                    if ($branchName !== '' && Schema::hasColumn('accounts', 'branch_name')) {
+                        $method = ($branchId !== '' && Schema::hasColumn('accounts', 'branch_id')) ? 'orWhere' : 'where';
+                        $branchQuery->{$method}('branch_name', $branchName);
+                    }
+                    if (Schema::hasColumn('accounts', 'branch_id')) {
+                        $branchQuery->orWhereNull('branch_id')->orWhere('branch_id', '');
+                    }
+                });
+            }
+        }
+
+        $this->applyAccountScope($query, $request);
+
+        return $query->pluck('id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    private function postedOpeningBalanceAccountIds(Request $request, Carbon $reportDate, array $activeBranch): array
+    {
+        if (!Schema::hasTable('transactions')) {
+            return [];
+        }
+
+        $query = Transaction::withoutGlobalScopes()
+            ->whereNull('deleted_at')
+            ->where('transaction_type', Transaction::TYPE_OPENING_BALANCE)
+            ->where('transaction_date', '<=', $reportDate->toDateString());
+
+        $this->applyTransactionScope($query, $request);
+        $this->applyBranchScopeToTransactionsQuery($query, $activeBranch);
+
+        return $query->distinct()->pluck('account_id')->filter()->map(fn ($id) => (int) $id)->all();
     }
 
     /**
