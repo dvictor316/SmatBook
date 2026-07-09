@@ -555,19 +555,6 @@ class SuperAdminDashboardController extends Controller
             'id' => session('active_branch_id') ? (string) session('active_branch_id') : null,
             'name' => session('active_branch_name') ? (string) session('active_branch_name') : null,
         ];
-        if (method_exists(Subscription::class, 'expireDueSubscriptions')) {
-            Subscription::expireDueSubscriptions();
-        } else {
-            $this->platformSubscriptionsQuery()
-                ->whereRaw("LOWER(COALESCE(status, '')) IN ('active','trial')")
-                ->whereNotNull('end_date')
-                ->whereDate('end_date', '<', now()->toDateString())
-                ->update([
-                    'status' => 'Expired',
-                    'updated_at' => now(),
-                ]);
-        }
-
         // FIXED: More inclusive security check
         if (!$this->isSuperAdmin($user)) {
             Log::warning('Unauthorized super admin access attempt', [
@@ -593,13 +580,15 @@ class SuperAdminDashboardController extends Controller
             $activeSubscriptionStatuses = ['active', 'trial'];
             $pendingSubscriptionStatuses = ['pending', 'awaiting payment', 'awaiting_payment', 'unpaid'];
             $activeCompanyStatuses = ['active', 'trial', 'enabled'];
+            $subscriptionRevenueExpr = $this->subscriptionRevenueExpression('subscriptions');
+            $subscriptionBuyerKeyExpr = $this->subscriptionBuyerKeyExpression('subscriptions');
 
             $paidSubscriptionsQuery = Schema::hasTable('subscriptions')
-                ? $this->platformSubscriptionsQuery()->where(function ($query) use ($paidPaymentStatuses) {
+                ? $this->platformSubscriptionsQuery()->where(function ($query) use ($paidPaymentStatuses, $subscriptionRevenueExpr) {
                     $query->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), $paidPaymentStatuses);
 
                     if (Schema::hasColumn('subscriptions', 'status')) {
-                        $query->orWhereIn(DB::raw("LOWER(COALESCE(status, ''))"), array_merge($paidPaymentStatuses, ['active']));
+                        $query->orWhereIn(DB::raw("LOWER(COALESCE(status, ''))"), array_merge($paidPaymentStatuses, ['active', 'trial', 'expired']));
                     }
 
                     if (Schema::hasColumn('subscriptions', 'paid_at')) {
@@ -609,6 +598,14 @@ class SuperAdminDashboardController extends Controller
                     if (Schema::hasColumn('subscriptions', 'payment_date')) {
                         $query->orWhereNotNull('payment_date');
                     }
+
+                    $query->orWhere(function ($valueQuery) use ($subscriptionRevenueExpr) {
+                        $valueQuery->whereRaw("{$subscriptionRevenueExpr} > 0");
+
+                        if (Schema::hasColumn('subscriptions', 'status')) {
+                            $valueQuery->whereNotIn(DB::raw("LOWER(COALESCE(status, ''))"), ['pending', 'awaiting payment', 'awaiting_payment', 'unpaid', 'cancelled', 'canceled']);
+                        }
+                    });
                 })
                 : null;
 
@@ -625,8 +622,6 @@ class SuperAdminDashboardController extends Controller
             $salesRevenue = Schema::hasTable('sales')
                 ? ((float) ($this->applyFinalizedSalesFilter($salesBranchScope(DB::table('sales')))->sum('total') ?? 0))
                 : 0.0;
-            $subscriptionRevenueExpr = $this->subscriptionRevenueExpression('subscriptions');
-            $subscriptionBuyerKeyExpr = $this->subscriptionBuyerKeyExpression('subscriptions');
             $subscriptionRevenue = $paidSubscriptionsQuery
                 ? ((float) ((clone $paidSubscriptionsQuery)->selectRaw("SUM({$subscriptionRevenueExpr}) as total_revenue")->value('total_revenue') ?? 0))
                 : 0.0;
