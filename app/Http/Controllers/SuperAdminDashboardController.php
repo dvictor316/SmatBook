@@ -296,21 +296,24 @@ class SuperAdminDashboardController extends Controller
                 DB::raw("COALESCE(companies.plan, '') as company_plan"),
                 DB::raw('0 as total_paid'),
                 DB::raw('NULL as last_paid_at')
-            );
+        );
 
         if (Schema::hasTable('subscriptions')) {
+            $subscriptionRevenueExpr = $this->subscriptionRevenueExpression('subscriptions');
+            $subscriptionPaidCondition = $this->subscriptionPaidCondition('subscriptions');
+            $subscriptionPaidAtExpr = $this->subscriptionPaidAtExpression('subscriptions');
             $query->addSelect(
-                DB::raw("(SELECT COALESCE(SUM(subscriptions.amount), 0)
+                DB::raw("(SELECT COALESCE(SUM({$subscriptionRevenueExpr}), 0)
                     FROM subscriptions
-                    WHERE LOWER(COALESCE(subscriptions.payment_status, '')) IN ('paid','completed','success','successful','verified')
+                    WHERE {$subscriptionPaidCondition}
                       AND (
                         subscriptions.user_id = users.id
                         OR (users.company_id IS NOT NULL AND subscriptions.company_id = users.company_id)
                       )
                 ) as total_paid"),
-                DB::raw("(SELECT MAX(COALESCE(subscriptions.paid_at, subscriptions.payment_date, subscriptions.created_at))
+                DB::raw("(SELECT MAX({$subscriptionPaidAtExpr})
                     FROM subscriptions
-                    WHERE LOWER(COALESCE(subscriptions.payment_status, '')) IN ('paid','completed','success','successful','verified')
+                    WHERE {$subscriptionPaidCondition}
                       AND (
                         subscriptions.user_id = users.id
                         OR (users.company_id IS NOT NULL AND subscriptions.company_id = users.company_id)
@@ -324,10 +327,11 @@ class SuperAdminDashboardController extends Controller
         } else {
             $query->where(function ($innerQuery) use ($registeredBusinessIds) {
                 if (Schema::hasTable('subscriptions')) {
-                    $innerQuery->whereExists(function ($subQuery) {
+                    $subscriptionPaidCondition = $this->subscriptionPaidCondition('subscriptions');
+                    $innerQuery->whereExists(function ($subQuery) use ($subscriptionPaidCondition) {
                         $subQuery->select(DB::raw(1))
                             ->from('subscriptions')
-                            ->whereRaw("LOWER(COALESCE(subscriptions.payment_status, '')) IN ('paid','completed','success','successful','verified')")
+                            ->whereRaw($subscriptionPaidCondition)
                             ->where(function ($matchQuery) {
                                 $matchQuery->whereColumn('subscriptions.user_id', 'users.id')
                                     ->orWhere(function ($companyQuery) {
@@ -401,6 +405,71 @@ class SuperAdminDashboardController extends Controller
     private function platformSubscriptionsQuery()
     {
         return Subscription::withoutGlobalScope('tenant');
+    }
+
+    private function subscriptionRevenueExpression(string $table = 'subscriptions'): string
+    {
+        $amountExpr = Schema::hasColumn('subscriptions', 'amount') ? "NULLIF({$table}.amount, 0)" : 'NULL';
+        $planIdExpr = Schema::hasColumn('subscriptions', 'plan_id') && Schema::hasTable('plans')
+            ? "(SELECT plans.price FROM plans WHERE plans.id = {$table}.plan_id LIMIT 1)"
+            : 'NULL';
+        $planNameExpr = Schema::hasColumn('subscriptions', 'plan') && Schema::hasTable('plans')
+            ? "(SELECT plans.price FROM plans WHERE LOWER(plans.name) = LOWER({$table}.plan) LIMIT 1)"
+            : 'NULL';
+        $packageIdExpr = Schema::hasColumn('subscriptions', 'package_id') && Schema::hasTable('packages')
+            ? "(SELECT packages.price FROM packages WHERE packages.id = {$table}.package_id LIMIT 1)"
+            : 'NULL';
+
+        return "COALESCE({$amountExpr}, {$planIdExpr}, {$planNameExpr}, {$packageIdExpr}, 0)";
+    }
+
+    private function subscriptionBuyerKeyExpression(string $table = 'subscriptions'): string
+    {
+        $columns = [];
+
+        foreach (['company_id', 'user_id', 'id'] as $column) {
+            if (Schema::hasColumn('subscriptions', $column)) {
+                $columns[] = "{$table}.{$column}";
+            }
+        }
+
+        return 'COALESCE(' . implode(', ', $columns ?: ["{$table}.id"]) . ')';
+    }
+
+    private function subscriptionPaidCondition(string $table = 'subscriptions'): string
+    {
+        $conditions = [];
+
+        if (Schema::hasColumn('subscriptions', 'payment_status')) {
+            $conditions[] = "LOWER(COALESCE({$table}.payment_status, '')) IN ('paid','completed','success','successful','verified')";
+        }
+
+        if (Schema::hasColumn('subscriptions', 'status')) {
+            $conditions[] = "LOWER(COALESCE({$table}.status, '')) IN ('paid','completed','success','successful','verified','active')";
+        }
+
+        if (Schema::hasColumn('subscriptions', 'paid_at')) {
+            $conditions[] = "{$table}.paid_at IS NOT NULL";
+        }
+
+        if (Schema::hasColumn('subscriptions', 'payment_date')) {
+            $conditions[] = "{$table}.payment_date IS NOT NULL";
+        }
+
+        return '(' . implode(' OR ', $conditions ?: ['1 = 0']) . ')';
+    }
+
+    private function subscriptionPaidAtExpression(string $table = 'subscriptions'): string
+    {
+        $columns = [];
+
+        foreach (['paid_at', 'payment_date', 'created_at'] as $column) {
+            if (Schema::hasColumn('subscriptions', $column)) {
+                $columns[] = "{$table}.{$column}";
+            }
+        }
+
+        return 'COALESCE(' . implode(', ', $columns ?: ["{$table}.created_at"]) . ')';
     }
 
     private function payoutRecipientGroups(): array
@@ -556,15 +625,17 @@ class SuperAdminDashboardController extends Controller
             $salesRevenue = Schema::hasTable('sales')
                 ? ((float) ($this->applyFinalizedSalesFilter($salesBranchScope(DB::table('sales')))->sum('total') ?? 0))
                 : 0.0;
+            $subscriptionRevenueExpr = $this->subscriptionRevenueExpression('subscriptions');
+            $subscriptionBuyerKeyExpr = $this->subscriptionBuyerKeyExpression('subscriptions');
             $subscriptionRevenue = $paidSubscriptionsQuery
-                ? ((float) ((clone $paidSubscriptionsQuery)->sum('amount') ?? 0))
+                ? ((float) ((clone $paidSubscriptionsQuery)->selectRaw("SUM({$subscriptionRevenueExpr}) as total_revenue")->value('total_revenue') ?? 0))
                 : 0.0;
             $paidSubscriptionsCount = $paidSubscriptionsQuery
                 ? (int) ((clone $paidSubscriptionsQuery)->count() ?? 0)
                 : 0;
             // Distinct buying companies (not transaction count)
             $paidBuyersCount = $paidSubscriptionsQuery
-                ? (int) ((clone $paidSubscriptionsQuery)->distinct()->count('company_id') ?? 0)
+                ? (int) ((clone $paidSubscriptionsQuery)->selectRaw("COUNT(DISTINCT {$subscriptionBuyerKeyExpr}) as buyer_count")->value('buyer_count') ?? 0)
                 : 0;
             $platformRevenue = !empty($activeBranch['id']) || !empty($activeBranch['name'])
                 ? $salesRevenue
@@ -649,7 +720,7 @@ class SuperAdminDashboardController extends Controller
                 $deploymentSubscriptionsQuery = (clone $paidSubscriptionsQuery)
                     ->select('subscriptions.*')
                     ->leftJoin('companies as source_companies', 'subscriptions.company_id', '=', 'source_companies.id')
-                    ->where('subscriptions.amount', '>', 0)
+                    ->whereRaw("{$subscriptionRevenueExpr} > 0")
                     ->where(function ($query) {
                         $hasSource = false;
 
@@ -673,8 +744,8 @@ class SuperAdminDashboardController extends Controller
                         }
                     });
 
-                $deploymentSubscriptionRevenue = (float) ($deploymentSubscriptionsQuery->sum('subscriptions.amount') ?? 0);
-                $deploymentPaidSubs = (int) ($deploymentSubscriptionsQuery->distinct()->count('subscriptions.company_id') ?? 0);
+                $deploymentSubscriptionRevenue = (float) ((clone $deploymentSubscriptionsQuery)->selectRaw("SUM({$subscriptionRevenueExpr}) as total_revenue")->value('total_revenue') ?? 0);
+                $deploymentPaidSubs = (int) ((clone $deploymentSubscriptionsQuery)->selectRaw("COUNT(DISTINCT {$subscriptionBuyerKeyExpr}) as buyer_count")->value('buyer_count') ?? 0);
                 $deployedPaidSubscriptionsQuery = clone $deploymentSubscriptionsQuery;
             }
 
@@ -713,9 +784,9 @@ class SuperAdminDashboardController extends Controller
             }
 
             $planSalesBaseQuery = $paidSubscriptionsQuery ? clone $paidSubscriptionsQuery : null;
-            $planSalesToday = $planSalesBaseQuery ? (clone $planSalesBaseQuery)->whereDate('subscriptions.created_at', today())->distinct()->count('subscriptions.company_id') : 0;
-            $planSalesMonth = $planSalesBaseQuery ? (clone $planSalesBaseQuery)->whereMonth('subscriptions.created_at', now()->month)->whereYear('subscriptions.created_at', now()->year)->distinct()->count('subscriptions.company_id') : 0;
-            $planSalesValueMonth = $planSalesBaseQuery ? (float) ((clone $planSalesBaseQuery)->whereMonth('subscriptions.created_at', now()->month)->whereYear('subscriptions.created_at', now()->year)->sum('subscriptions.amount') ?? 0) : 0;
+            $planSalesToday = $planSalesBaseQuery ? (int) ((clone $planSalesBaseQuery)->whereDate('subscriptions.created_at', today())->selectRaw("COUNT(DISTINCT {$subscriptionBuyerKeyExpr}) as buyer_count")->value('buyer_count') ?? 0) : 0;
+            $planSalesMonth = $planSalesBaseQuery ? (int) ((clone $planSalesBaseQuery)->whereMonth('subscriptions.created_at', now()->month)->whereYear('subscriptions.created_at', now()->year)->selectRaw("COUNT(DISTINCT {$subscriptionBuyerKeyExpr}) as buyer_count")->value('buyer_count') ?? 0) : 0;
+            $planSalesValueMonth = $planSalesBaseQuery ? (float) ((clone $planSalesBaseQuery)->whereMonth('subscriptions.created_at', now()->month)->whereYear('subscriptions.created_at', now()->year)->selectRaw("SUM({$subscriptionRevenueExpr}) as total_revenue")->value('total_revenue') ?? 0) : 0;
             $avgPlanSale = $paidBuyersCount > 0 ? ($subscriptionRevenue / $paidBuyersCount) : 0;
 
             // METRICS
@@ -791,7 +862,7 @@ class SuperAdminDashboardController extends Controller
                 $revenueTrends = (clone $paidSubscriptionsQuery)
                     ->select(
                         DB::raw('MONTHNAME(created_at) as month'), 
-                        DB::raw('SUM(amount) as total'), 
+                        DB::raw("SUM({$subscriptionRevenueExpr}) as total"),
                         DB::raw('COUNT(*) as subscriptions_count'),
                         DB::raw('MONTH(created_at) as month_num')
                     )
@@ -858,7 +929,7 @@ class SuperAdminDashboardController extends Controller
                         DB::raw('MONTHNAME(created_at) as month'),
                         DB::raw('MONTH(created_at) as month_num'),
                         DB::raw("{$planExpr} as plan_name"),
-                        DB::raw('SUM(amount) as revenue')
+                        DB::raw("SUM({$subscriptionRevenueExpr}) as revenue")
                     )
                     ->groupByRaw("MONTHNAME(created_at), MONTH(created_at), {$planExpr}")
                     ->orderBy('month_num', 'asc')
@@ -896,7 +967,7 @@ class SuperAdminDashboardController extends Controller
                     ->select('users.id', 'users.name', 'users.status')
                     ->get();
 
-                $rows = $stateManagerUsers->map(function ($manager) use ($paidSubscriptionsQuery) {
+                $rows = $stateManagerUsers->map(function ($manager) use ($paidSubscriptionsQuery, $subscriptionRevenueExpr) {
                     $planSales = 0;
                     $revenue = 0.0;
 
@@ -923,7 +994,7 @@ class SuperAdminDashboardController extends Controller
                             });
 
                         $planSales = (int) (clone $managerSalesQuery)->count();
-                        $revenue = (float) ((clone $managerSalesQuery)->sum('subscriptions.amount') ?? 0);
+                        $revenue = (float) ((clone $managerSalesQuery)->selectRaw("SUM({$subscriptionRevenueExpr}) as total_revenue")->value('total_revenue') ?? 0);
                     }
 
                     $deployments = (
@@ -979,8 +1050,8 @@ class SuperAdminDashboardController extends Controller
                 $deployedMonthlyTrends = (clone $deployedPaidSubscriptionsQuery)
                     ->select(
                         DB::raw('MONTH(subscriptions.created_at) as month_num'),
-                        DB::raw('SUM(subscriptions.amount) as total'),
-                        DB::raw('COUNT(DISTINCT subscriptions.company_id) as subscriptions_count')
+                        DB::raw("SUM({$subscriptionRevenueExpr}) as total"),
+                        DB::raw("COUNT(DISTINCT {$subscriptionBuyerKeyExpr}) as subscriptions_count")
                     )
                     ->whereYear('subscriptions.created_at', date('Y'))
                     ->groupBy('month_num')
