@@ -963,6 +963,29 @@ class ReportController extends Controller
             return 'ABS(COALESCE(' . implode(', ', $fallbacks) . ', 0))';
         }
 
+        private function productStockColumn(string $table = 'products'): ?string
+        {
+            foreach (['stock', 'stock_quantity', 'quantity'] as $column) {
+                if (Schema::hasColumn('products', $column)) {
+                    return "{$table}.{$column}";
+                }
+            }
+
+            return null;
+        }
+
+        private function productCostExpression(string $table = 'products'): string
+        {
+            $columns = [];
+            foreach (['purchase_price', 'cost_price', 'product_price', 'price'] as $column) {
+                if (Schema::hasColumn('products', $column)) {
+                    $columns[] = "NULLIF({$table}.{$column}, 0)";
+                }
+            }
+
+            return 'COALESCE(' . implode(', ', $columns ?: ['0']) . ', 0)';
+        }
+
         public function index(Request $request)
     {
         $activeBranch = $this->getActiveBranchContext();
@@ -3952,10 +3975,9 @@ public function destroy($id)
             $sales = $this->scopedTable('sales')
                 ->select('id', 'invoice_no', 'customer_name', 'total', 'amount_paid', 'balance', 'payment_status', DB::raw($dateCol.' as sale_date'))
                 ->where(function ($q) { $q->where('payment_status', '!=', 'paid')->orWhereNull('payment_status'); })
-                ->where($dateCol, '<=', $asOf.' 23:59:59')
-                ->orderByDesc($dateCol)
-                ->get();
-            $this->applySalesScope($this->scopedTable('sales'), 'sales');
+                ->where($dateCol, '<=', $asOf.' 23:59:59');
+            $this->applySalesScope($sales, 'sales');
+            $sales = $sales->orderByDesc($dateCol)->get();
 
             $rows = $sales->map(function ($sale) use ($asOf) {
                 $balance = max(0, (float)($sale->balance ?? ($sale->total - ($sale->amount_paid ?? 0))));
@@ -3981,7 +4003,10 @@ public function destroy($id)
 
             $query = $this->scopedTable('sales')
                 ->select('id', 'invoice_no', 'customer_name', 'total', 'amount_paid', 'balance', 'payment_status', DB::raw($dateCol.' as sale_date'))
-                ->whereIn('payment_status', ['unpaid', 'partial', null])
+                ->where(function ($statusQuery) {
+                    $statusQuery->whereIn('payment_status', ['unpaid', 'partial'])
+                        ->orWhereNull('payment_status');
+                })
                 ->whereBetween($dateCol, [$from.' 00:00:00', $to.' 23:59:59']);
             $this->applySalesScope($query, 'sales');
 
@@ -4035,28 +4060,37 @@ public function destroy($id)
                             ? "{$itemsTable}.item_name"
                             : null));
 
-                // Resolve price column
+                $qtyCol = Schema::hasColumn($itemsTable, 'qty')
+                    ? "{$itemsTable}.qty"
+                    : (Schema::hasColumn($itemsTable, 'quantity') ? "{$itemsTable}.quantity" : null);
+
+                $lineTotalCol = Schema::hasColumn($itemsTable, 'line_total')
+                    ? "{$itemsTable}.line_total"
+                    : (Schema::hasColumn($itemsTable, 'total')
+                        ? "{$itemsTable}.total"
+                        : (Schema::hasColumn($itemsTable, 'amount') ? "{$itemsTable}.amount" : null));
+
                 $priceCol = Schema::hasColumn($itemsTable, 'price')
                     ? "{$itemsTable}.price"
-                    : (Schema::hasColumn($itemsTable, 'unit_price')
-                        ? "{$itemsTable}.unit_price"
-                        : (Schema::hasColumn($itemsTable, 'amount')
-                            ? "{$itemsTable}.amount"
-                            : null));
+                    : (Schema::hasColumn($itemsTable, 'unit_price') ? "{$itemsTable}.unit_price" : null);
 
-                if (!$nameCol || !Schema::hasColumn($itemsTable, 'quantity')) {
+                if (!$nameCol || !$qtyCol) {
                     $rows = collect();
                 } else {
                     $productExpr = "COALESCE({$nameCol}, 'Unknown')";
-                    $revenueExpr = $priceCol
-                        ? "SUM({$itemsTable}.quantity * COALESCE({$priceCol}, 0))"
-                        : "0";
+                    $lineRevenueExpr = $lineTotalCol
+                        ? "NULLIF({$lineTotalCol}, 0)"
+                        : 'NULL';
+                    $unitRevenueExpr = $priceCol
+                        ? "({$qtyCol} * COALESCE({$priceCol}, 0))"
+                        : '0';
+                    $revenueExpr = "SUM(COALESCE({$lineRevenueExpr}, {$unitRevenueExpr}, 0))";
 
                     $query = DB::table($itemsTable)
                         ->join('sales', "{$itemsTable}.{$salesJoinCol}", '=', 'sales.id')
                         ->select(
                             DB::raw("{$productExpr} as product"),
-                            DB::raw("SUM({$itemsTable}.quantity) as qty_sold"),
+                            DB::raw("SUM(COALESCE({$qtyCol}, 0)) as qty_sold"),
                             DB::raw("{$revenueExpr} as revenue")
                         )
                         ->whereBetween("sales.{$dateCol}", [$from.' 00:00:00', $to.' 23:59:59'])
@@ -4194,19 +4228,40 @@ public function destroy($id)
         /** Stock Valuation */
         public function stockValuation(Request $request)
         {
+            $activeBranch = $this->getActiveBranchContext();
             $rows = collect();
             if (Schema::hasTable('products')) {
-                $qtyCol  = Schema::hasColumn('products', 'quantity') ? 'quantity' : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
-                $costCol = Schema::hasColumn('products', 'purchase_price') ? 'purchase_price' : (Schema::hasColumn('products', 'cost_price') ? 'cost_price' : 'price');
+                $qtyCol = $this->productStockColumn('products');
+                $costExpr = $this->productCostExpression('products');
                 if ($qtyCol) {
                     $catExpr = Schema::hasColumn('products', 'category')
-                        ? "COALESCE(category,'Uncategorized')"
+                        ? "COALESCE(products.category,'Uncategorized')"
                         : "'Uncategorized'";
+                    $qtyExpr = "COALESCE({$qtyCol}, 0)";
                     $query = DB::table('products')
-                        ->select('name', 'sku', DB::raw("{$catExpr} as category"), DB::raw("{$qtyCol} as qty"), DB::raw("{$costCol} as unit_cost"), DB::raw("{$qtyCol} * {$costCol} as total_value"))
-                        ->where($qtyCol, '>', 0)
-                        ->orderByDesc(DB::raw("{$qtyCol} * {$costCol}"));
+                        ->select('products.name', 'products.sku', DB::raw("{$catExpr} as category"));
                     $this->applyTenantScope($query, 'products');
+
+                    if (
+                        !empty($activeBranch['id'])
+                        && Schema::hasTable('product_branch_stocks')
+                        && Schema::hasColumn('product_branch_stocks', 'quantity')
+                    ) {
+                        $query->leftJoin('product_branch_stocks', function ($join) use ($activeBranch) {
+                            $join->on('product_branch_stocks.product_id', '=', 'products.id')
+                                ->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
+                        });
+                        $qtyExpr = "COALESCE(product_branch_stocks.quantity, {$qtyCol}, 0)";
+                    }
+
+                    $query->addSelect(
+                        DB::raw("{$qtyExpr} as qty"),
+                        DB::raw("{$costExpr} as unit_cost"),
+                        DB::raw("{$qtyExpr} * {$costExpr} as total_value")
+                    )
+                        ->whereRaw("{$qtyExpr} > 0")
+                        ->orderByDesc(DB::raw("{$qtyExpr} * {$costExpr}"));
+
                     $rows = $query->get();
                 }
             }
@@ -4219,19 +4274,40 @@ public function destroy($id)
         /** Stock by Category */
         public function stockByCategory(Request $request)
         {
+            $activeBranch = $this->getActiveBranchContext();
             $rows = collect();
             if (Schema::hasTable('products')) {
-                $qtyCol  = Schema::hasColumn('products', 'quantity') ? 'quantity' : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
-                $costCol = Schema::hasColumn('products', 'purchase_price') ? 'purchase_price' : (Schema::hasColumn('products', 'cost_price') ? 'cost_price' : 'price');
+                $qtyCol = $this->productStockColumn('products');
+                $costExpr = $this->productCostExpression('products');
                 if ($qtyCol) {
                     $catExpr = Schema::hasColumn('products', 'category')
-                        ? "COALESCE(category,'Uncategorized')"
+                        ? "COALESCE(products.category,'Uncategorized')"
                         : "'Uncategorized'";
+                    $qtyExpr = "COALESCE({$qtyCol}, 0)";
                     $query = DB::table('products')
-                        ->select(DB::raw("{$catExpr} as category"), DB::raw("COUNT(*) as product_count"), DB::raw("SUM({$qtyCol}) as total_qty"), DB::raw("SUM({$qtyCol} * {$costCol}) as total_value"))
-                        ->groupBy(DB::raw($catExpr))
-                        ->orderByDesc(DB::raw("SUM({$qtyCol} * {$costCol})"));
+                        ->select(DB::raw("{$catExpr} as category"));
                     $this->applyTenantScope($query, 'products');
+
+                    if (
+                        !empty($activeBranch['id'])
+                        && Schema::hasTable('product_branch_stocks')
+                        && Schema::hasColumn('product_branch_stocks', 'quantity')
+                    ) {
+                        $query->leftJoin('product_branch_stocks', function ($join) use ($activeBranch) {
+                            $join->on('product_branch_stocks.product_id', '=', 'products.id')
+                                ->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
+                        });
+                        $qtyExpr = "COALESCE(product_branch_stocks.quantity, {$qtyCol}, 0)";
+                    }
+
+                    $query->addSelect(
+                        DB::raw('COUNT(*) as product_count'),
+                        DB::raw("SUM({$qtyExpr}) as total_qty"),
+                        DB::raw("SUM({$qtyExpr} * {$costExpr}) as total_value")
+                    )
+                        ->groupBy(DB::raw($catExpr))
+                        ->orderByDesc(DB::raw("SUM({$qtyExpr} * {$costExpr})"));
+
                     $rows = $query->get();
                 }
             }
