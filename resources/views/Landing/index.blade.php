@@ -1674,19 +1674,20 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         letter-spacing: 0;
     }
     .hero-wrap {
-        padding-top: calc(var(--nav-h) + var(--announce-h) + 16px);
+        padding-top: calc(var(--nav-h) + var(--announce-h) + 6px);
     }
     .hero-content {
         padding: 18px 12px 28px;
     }
     .hero-circle {
         min-height: 414px !important;
-        padding: 30px 16px 24px !important;
+        padding: 28px 24px 24px 16px !important;
         border-radius: 24px !important;
     }
     .hero-h1 {
         font-size: clamp(1.18rem, 9vw, 1.9rem) !important;
-        max-width: 12ch !important;
+        max-width: 11.2ch !important;
+        padding-right: 6px !important;
     }
     .hero-body {
         font-size: 0.86rem !important;
