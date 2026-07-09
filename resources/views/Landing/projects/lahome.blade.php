@@ -21,7 +21,7 @@
                 </div>
             </div>
             <div class="col-lg-6">
-                <img src="https://images.pexels.com/photos/3182812/pexels-photo-3182812.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="African real estate team reviewing property listings on a laptop" class="img-fluid rounded-4 shadow">
+                <img src="https://images.pexels.com/photos/3184286/pexels-photo-3184286.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="African real estate team reviewing property listings on a laptop" class="img-fluid rounded-4 shadow">
             </div>
         </div>
     </div>

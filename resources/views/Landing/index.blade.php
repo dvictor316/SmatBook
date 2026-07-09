@@ -17,7 +17,7 @@
         [
             'name' => 'Property234.com',
             'role' => 'Real Estate Platform',
-            'img' => 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=1200',
+            'img' => 'https://images.pexels.com/photos/3184338/pexels-photo-3184338.jpeg?auto=compress&cs=tinysrgb&w=1200',
             'alt' => 'African real estate entrepreneurs reviewing property listings on a laptop',
             'bio' => 'A global real estate listing ecosystem for owners, surveyors, legal advisers, agents, and every key stakeholder in the property market.',
             'link' => route('landing.projects.lahome'),
@@ -25,7 +25,7 @@
         [
             'name' => 'Master JAMB',
             'role' => 'CBT Examination Platform',
-            'img' => 'https://images.pexels.com/photos/4144222/pexels-photo-4144222.jpeg?auto=compress&cs=tinysrgb&w=1200',
+            'img' => 'https://images.pexels.com/photos/4145153/pexels-photo-4145153.jpeg?auto=compress&cs=tinysrgb&w=1200',
             'alt' => 'African students and education founders using laptops for online learning',
             'bio' => 'An online CBT platform for schools and institutions, built for exam readiness, timed assessments, and performance tracking.',
             'link' => route('landing.projects.master-jamb'),
@@ -33,7 +33,7 @@
         [
             'name' => 'PayPlus',
             'role' => 'Payment Gateway',
-            'img' => 'https://images.pexels.com/photos/4968634/pexels-photo-4968634.jpeg?auto=compress&cs=tinysrgb&w=1200',
+            'img' => 'https://images.pexels.com/photos/6863255/pexels-photo-6863255.jpeg?auto=compress&cs=tinysrgb&w=1200',
             'alt' => 'African finance professional managing digital payments on a laptop',
             'bio' => 'A global payment gateway designed for secure processing of everyday transactions across web, mobile, and enterprise channels.',
             'link' => route('landing.projects.payplus'),
@@ -1120,6 +1120,16 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     transition: transform 0.32s ease, box-shadow 0.32s ease, border-color 0.32s ease;
     height: 100%;
     box-shadow: 0 18px 45px rgba(15,23,42,0.08);
+    cursor: pointer;
+}
+.project-card-link {
+    color: inherit;
+    display: block;
+    text-decoration: none;
+}
+.project-card-link:focus-visible {
+    outline: 3px solid rgba(197,160,89,0.55);
+    outline-offset: 4px;
 }
 .project-card:hover {
     transform: translateY(-6px);
@@ -2429,10 +2439,14 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         <div class="row g-4">
             @foreach($landingProjects as $m)
             <div class="col-lg-4 col-md-6">
-                <div class="project-card">
-                    <div class="project-img"><img src="{{ $m['img'] }}" alt="{{ $m['alt'] ?? $m['name'] }}" loading="lazy" onerror="this.onerror=null;this.src='{{ asset('assets/img/demo-two.png') }}';"></div>
+                <div class="project-card" role="link" tabindex="0" data-project-url="{{ $m['link'] }}" onclick="if (!event.target.closest('a')) window.location.href=this.dataset.projectUrl;" onkeydown="if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a')) { event.preventDefault(); window.location.href=this.dataset.projectUrl; }">
+                    <a href="{{ $m['link'] }}" class="project-card-link" aria-label="View {{ $m['name'] }} project">
+                        <div class="project-img"><img src="{{ $m['img'] }}" alt="{{ $m['alt'] ?? $m['name'] }}" loading="lazy" onerror="this.onerror=null;this.src='{{ asset('assets/img/demo-two.png') }}';"></div>
+                    </a>
                     <div class="p-4 text-center">
-                        <h5 class="fw-bold mb-1" style="font-family:var(--font-display);color:var(--navy);">{{ $m['name'] }}</h5>
+                        <a href="{{ $m['link'] }}" class="project-card-link">
+                            <h5 class="fw-bold mb-1" style="font-family:var(--font-display);color:var(--navy);">{{ $m['name'] }}</h5>
+                        </a>
                         <p style="color:var(--gold);font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">{{ $m['role'] }}</p>
                         <p class="mb-4" style="font-size:13px;color:var(--muted);line-height:1.7;padding:0 6px;">{{ $m['bio'] }}</p>
                         <div class="d-flex justify-content-center gap-2">
