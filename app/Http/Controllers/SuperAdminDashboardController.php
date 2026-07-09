@@ -287,16 +287,21 @@ class SuperAdminDashboardController extends Controller
         $paidStatuses = ['paid', 'completed', 'success', 'successful', 'verified'];
         $exactMode = $this->bucketOverrideUserIds('registered_business') !== [];
 
+        $selects = [
+            'users.*',
+            DB::raw("COALESCE(companies.name, companies.company_name, '') as company_name"),
+            DB::raw("COALESCE(companies.domain_prefix, '') as company_domain_prefix"),
+            DB::raw("COALESCE(companies.plan, '') as company_plan"),
+        ];
+
+        if (!Schema::hasTable('subscriptions')) {
+            $selects[] = DB::raw('0 as total_paid');
+            $selects[] = DB::raw('NULL as last_paid_at');
+        }
+
         $query = User::query()
             ->leftJoin('companies', 'users.company_id', '=', 'companies.id')
-            ->select(
-                'users.*',
-                DB::raw("COALESCE(companies.name, companies.company_name, '') as company_name"),
-                DB::raw("COALESCE(companies.domain_prefix, '') as company_domain_prefix"),
-                DB::raw("COALESCE(companies.plan, '') as company_plan"),
-                DB::raw('0 as total_paid'),
-                DB::raw('NULL as last_paid_at')
-        );
+            ->select($selects);
 
         if (Schema::hasTable('subscriptions')) {
             $subscriptionRevenueExpr = $this->subscriptionRevenueExpression('subscriptions');
@@ -350,6 +355,19 @@ class SuperAdminDashboardController extends Controller
         }
 
         return $query->distinct('users.id');
+    }
+
+    private function registeredBusinessMetrics(): array
+    {
+        $rows = (clone $this->registeredBusinessesQuery())->get();
+        $total = $rows
+            ->pluck('id')
+            ->filter()
+            ->unique()
+            ->count();
+        $revenue = (float) $rows->sum(fn ($row) => (float) ($row->total_paid ?? 0));
+
+        return compact('total', 'revenue');
     }
 
     private function applyPlanUserScope($query)
@@ -681,15 +699,9 @@ class SuperAdminDashboardController extends Controller
             $recentSignups = (clone $customerUsersBaseQuery)
                 ->where('created_at', '>=', now()->subDays(30))
                 ->count();
-            $registeredBusinessesRows = (clone $this->registeredBusinessesQuery())->get(['users.id', 'total_paid', 'last_paid_at']);
-            $registeredBusinessesTotal = $registeredBusinessesRows
-                ->pluck('id')
-                ->filter()
-                ->unique()
-                ->count();
-            $registeredBusinessRevenue = (float) $registeredBusinessesRows->sum(
-                fn ($row) => (float) ($row->total_paid ?? 0)
-            );
+            $registeredBusinessMetrics = $this->registeredBusinessMetrics();
+            $registeredBusinessesTotal = (int) $registeredBusinessMetrics['total'];
+            $registeredBusinessRevenue = (float) $registeredBusinessMetrics['revenue'];
 
             $deploymentCustomerUsers = 0;
             if (
@@ -1936,6 +1948,7 @@ public function pendingManagers()
                 ->withQueryString();
 
             $baseBusinesses = $this->registeredBusinessesQuery();
+            $registeredBusinessMetrics = $this->registeredBusinessMetrics();
             $metrics = [
                 'total' => (clone $baseBusinesses)->count(),
                 'active' => (clone $baseBusinesses)->where(function ($q) {
@@ -1946,7 +1959,7 @@ public function pendingManagers()
                 'with_domains' => Schema::hasColumn('companies', 'domain_prefix')
                     ? (clone $baseBusinesses)->whereNotNull('companies.domain_prefix')->where('companies.domain_prefix', '!=', '')->count()
                     : 0,
-                'revenue' => (float) collect((clone $baseBusinesses)->get(['total_paid']))->sum(fn ($row) => (float) ($row->total_paid ?? 0)),
+                'revenue' => (float) $registeredBusinessMetrics['revenue'],
             ];
 
             return view('SuperAdmin.users.businesses', compact('businesses', 'metrics'));
