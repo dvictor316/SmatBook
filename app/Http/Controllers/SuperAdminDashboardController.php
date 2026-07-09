@@ -370,6 +370,74 @@ class SuperAdminDashboardController extends Controller
         return compact('total', 'revenue');
     }
 
+    private function safeRegisteredBusinessMetrics(): array
+    {
+        try {
+            return $this->registeredBusinessMetrics();
+        } catch (\Throwable $e) {
+            Log::warning('Registered business dashboard metrics fallback used: ' . $e->getMessage());
+        }
+
+        $metrics = ['total' => 0, 'revenue' => 0.0];
+
+        try {
+            if (!Schema::hasTable('subscriptions')) {
+                return $metrics;
+            }
+
+            $subscriptionRevenueExpr = $this->subscriptionRevenueExpression('subscriptions');
+            $subscriptionPaidCondition = $this->subscriptionPaidCondition('subscriptions');
+            $registeredBusinessIds = $this->registeredBusinessUserIds();
+            $companyIds = collect();
+
+            if ($registeredBusinessIds !== [] && Schema::hasColumn('users', 'company_id')) {
+                $companyIds = DB::table('users')
+                    ->whereIn('id', $registeredBusinessIds)
+                    ->whereNotNull('company_id')
+                    ->pluck('company_id');
+            }
+
+            $paidSubscriptions = $this->platformSubscriptionsQuery()
+                ->whereRaw($subscriptionPaidCondition)
+                ->whereRaw("{$subscriptionRevenueExpr} > 0");
+
+            if ($registeredBusinessIds !== []) {
+                $paidSubscriptions->where(function ($query) use ($registeredBusinessIds, $companyIds) {
+                    if (Schema::hasColumn('subscriptions', 'user_id')) {
+                        $query->whereIn('subscriptions.user_id', $registeredBusinessIds);
+                    }
+
+                    if (Schema::hasColumn('subscriptions', 'company_id') && $companyIds->isNotEmpty()) {
+                        $method = Schema::hasColumn('subscriptions', 'user_id') ? 'orWhereIn' : 'whereIn';
+                        $query->{$method}('subscriptions.company_id', $companyIds->all());
+                    }
+                });
+            }
+
+            $metrics['revenue'] = (float) ((clone $paidSubscriptions)
+                ->selectRaw("SUM({$subscriptionRevenueExpr}) as total_revenue")
+                ->value('total_revenue') ?? 0);
+
+            if ($registeredBusinessIds !== []) {
+                $metrics['total'] = count($registeredBusinessIds);
+            } elseif (Schema::hasColumn('subscriptions', 'company_id')) {
+                $metrics['total'] = (int) ((clone $paidSubscriptions)
+                    ->whereNotNull('subscriptions.company_id')
+                    ->distinct()
+                    ->count('subscriptions.company_id') ?? 0);
+            } elseif (Schema::hasColumn('subscriptions', 'user_id')) {
+                $metrics['total'] = (int) ((clone $paidSubscriptions)
+                    ->whereNotNull('subscriptions.user_id')
+                    ->distinct()
+                    ->count('subscriptions.user_id') ?? 0);
+            }
+        } catch (\Throwable $e) {
+            Log::error('Registered business dashboard metrics fallback failed: ' . $e->getMessage());
+        }
+
+        return $metrics;
+    }
+
     private function applyPlanUserScope($query)
     {
         if (Schema::hasTable('deployment_managers') && Schema::hasColumn('deployment_managers', 'user_id')) {
@@ -699,7 +767,7 @@ class SuperAdminDashboardController extends Controller
             $recentSignups = (clone $customerUsersBaseQuery)
                 ->where('created_at', '>=', now()->subDays(30))
                 ->count();
-            $registeredBusinessMetrics = $this->registeredBusinessMetrics();
+            $registeredBusinessMetrics = $this->safeRegisteredBusinessMetrics();
             $registeredBusinessesTotal = (int) $registeredBusinessMetrics['total'];
             $registeredBusinessRevenue = (float) $registeredBusinessMetrics['revenue'];
 
@@ -1368,18 +1436,27 @@ class SuperAdminDashboardController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
+            $registeredBusinessMetrics = $this->safeRegisteredBusinessMetrics();
+            $registeredBusinessesTotal = (int) ($registeredBusinessMetrics['total'] ?? 0);
+            $registeredBusinessRevenue = (float) ($registeredBusinessMetrics['revenue'] ?? 0);
+            $registeredBusinessAverage = $registeredBusinessesTotal > 0
+                ? $registeredBusinessRevenue / $registeredBusinessesTotal
+                : 0;
+
             $emptyMetrics = [
                 'total_companies' => 0, 'total_tenants' => 0, 'active_subs' => 0, 
-                'platform_revenue' => 0, 'owner_subscription_revenue' => 0, 'total_users' => 0, 'pending_setups' => 0, 
+                'platform_revenue' => $registeredBusinessRevenue, 'owner_subscription_revenue' => $registeredBusinessRevenue, 'total_users' => 0, 'pending_setups' => 0,
                 'pending_managers' => 0, 'active_managers' => 0, 'total_stock_val' => 0,
-                'paid_subs' => 0, 'total_subs' => 0, 'verified_users' => 0, 'recent_signups' => 0,
+                'paid_subs' => $registeredBusinessesTotal, 'total_subs' => 0, 'verified_users' => 0, 'recent_signups' => 0,
                 'direct_paid_subs' => 0, 'deployment_paid_subs' => 0,
                 'direct_subscription_revenue' => 0, 'deployment_subscription_revenue' => 0,
                 'direct_customer_users' => 0, 'deployment_customer_users' => 0,
                 'low_stock_items' => 0, 'plan_sales_today' => 0, 'plan_sales_month' => 0,
-                'plan_sales_value_month' => 0, 'avg_plan_sale' => 0,
+                'plan_sales_value_month' => 0, 'avg_plan_sale' => $registeredBusinessAverage,
                 'item_sales_revenue' => 0, 'item_sales_today_revenue' => 0, 'item_sales_orders' => 0, 'item_sales_units' => 0,
-                'expiring_soon_subs' => 0, 'expired_subs' => 0
+                'expiring_soon_subs' => 0, 'expired_subs' => 0,
+                'registered_businesses_total' => $registeredBusinessesTotal,
+                'registered_user_revenue' => $registeredBusinessRevenue,
             ];
 
             return view('SuperAdmin.dashboard', [
@@ -1948,7 +2025,7 @@ public function pendingManagers()
                 ->withQueryString();
 
             $baseBusinesses = $this->registeredBusinessesQuery();
-            $registeredBusinessMetrics = $this->registeredBusinessMetrics();
+            $registeredBusinessMetrics = $this->safeRegisteredBusinessMetrics();
             $metrics = [
                 'total' => (clone $baseBusinesses)->count(),
                 'active' => (clone $baseBusinesses)->where(function ($q) {
