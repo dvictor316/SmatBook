@@ -20,7 +20,7 @@
             <div class="contact-info-panel">
                 <div class="info-content">
                     <h2>How It Works</h2>
-                    <p>Fill in the form, and our team will review your request. Once approved, you'll receive login credentials by email with a 48-hour access window.</p>
+                    <p>Fill in the form and SmartProbook will create your controlled 48-hour demo environment instantly, then send your login credentials by email.</p>
 
                     <div class="contact-item">
                         <i class="fas fa-paper-plane"></i>
@@ -34,7 +34,7 @@
                         <i class="fas fa-user-check"></i>
                         <div>
                             <h6>Step 2</h6>
-                            <p>Our team reviews and approves your request (usually within 24 hours).</p>
+                            <p>Your request is approved automatically and your demo workspace is provisioned immediately.</p>
                         </div>
                     </div>
 

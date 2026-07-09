@@ -23,7 +23,7 @@ class DemoRequestNotificationMail extends Mailable
 
     public function build(): self
     {
-        return $this->subject('New Demo Request: ' . $this->demoRequest->company_name)
+        return $this->subject('Demo Auto-Approved: ' . $this->demoRequest->company_name)
                     ->markdown('emails.demo-request-notification');
     }
 }

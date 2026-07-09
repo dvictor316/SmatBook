@@ -33,7 +33,7 @@
         [
             'name' => 'PayPlus',
             'role' => 'Payment Gateway',
-            'img' => 'https://images.pexels.com/photos/6863255/pexels-photo-6863255.jpeg?auto=compress&cs=tinysrgb&w=1200',
+            'img' => 'https://images.pexels.com/photos/4968634/pexels-photo-4968634.jpeg?auto=compress&cs=tinysrgb&w=1200',
             'alt' => 'African finance professional managing digital payments on a laptop',
             'bio' => 'A global payment gateway designed for secure processing of everyday transactions across web, mobile, and enterprise channels.',
             'link' => route('landing.projects.payplus'),

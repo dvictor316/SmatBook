@@ -1,7 +1,7 @@
 @component('mail::message')
-# New Demo Request Received
+# Demo Request Auto-Approved
 
-A new demo request has been submitted on **SmartProbook**.
+A new demo request has been submitted on **SmartProbook** and was automatically approved. The applicant has been sent their demo credentials.
 
 | Field | Value |
 |---|---|
@@ -16,7 +16,7 @@ A new demo request has been submitted on **SmartProbook**.
 | **Submitted** | {{ $demoRequest->created_at->format('D, d M Y H:i') }} |
 
 @component('mail::button', ['url' => config('app.url') . '/superadmin/demo-requests/' . $demoRequest->id, 'color' => 'primary'])
-Review & Approve / Reject
+View Demo Request
 @endcomponent
 
 Thanks,<br>

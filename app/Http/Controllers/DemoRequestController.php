@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\DemoApprovedMail;
 use App\Mail\DemoRequestNotificationMail;
+use App\Models\ActivityLog;
 use App\Models\DemoRequest;
+use App\Services\DemoProvisioningService;
 use App\Support\DemoSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -11,8 +14,10 @@ use Illuminate\Support\Facades\RateLimiter;
 
 class DemoRequestController extends Controller
 {
-    public function __construct(private readonly DemoSettings $demoSettings)
-    {
+    public function __construct(
+        private readonly DemoSettings $demoSettings,
+        private readonly DemoProvisioningService $provisioner
+    ) {
     }
 
     /**
@@ -68,17 +73,72 @@ class DemoRequestController extends Controller
 
         $demoRequest = DemoRequest::create($validated);
 
-        // Notify the super-admin
+        try {
+            $result = $this->provisioner->provision($demoRequest);
+
+            /** @var \App\Models\Company $company */
+            $company = $result['company'];
+            /** @var \App\Models\User $user */
+            $user = $result['user'];
+            $loginEmail = $result['login_email'] ?? $user->email;
+            $plainPassword = $result['plain_password'];
+
+            $demoRequest->update([
+                'status'          => 'approved',
+                'admin_note'      => 'Automatically approved and provisioned after public demo request.',
+                'approved_by'     => null,
+                'approved_at'     => now(),
+                'expires_at'      => $company->demo_expires_at,
+                'demo_company_id' => $company->id,
+                'demo_user_id'    => $user->id,
+            ]);
+
+            $loginUrl = route('login', ['portal' => 1, 'demo' => 1]);
+
+            $credentialEmailSent = true;
+            try {
+                Mail::to($demoRequest->email)
+                    ->send(new DemoApprovedMail($demoRequest->fresh(), $plainPassword, $loginUrl, $loginEmail));
+            } catch (\Throwable $e) {
+                $credentialEmailSent = false;
+                logger()->warning('Instant demo credential email failed: ' . $e->getMessage(), [
+                    'demo_request_id' => $demoRequest->id,
+                ]);
+            }
+
+            ActivityLog::record('Demo', 'auto_approved', "Demo request auto-approved for {$demoRequest->email}", [
+                'company_id' => $company->id,
+                'user_id'    => $user->id,
+                'properties' => ['demo_request_id' => $demoRequest->id],
+            ]);
+        } catch (\Throwable $e) {
+            logger()->error('Instant demo provisioning failed: ' . $e->getMessage(), [
+                'demo_request_id' => $demoRequest->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()->withErrors([
+                'email' => 'We could not create your instant demo right now. Please try again or contact support.',
+            ])->withInput();
+        }
+
+        // Notify the super-admin for visibility; no manual approval is required.
         $adminEmail = config('internal.admin_email', 'support@smartprobook.com');
         try {
-            Mail::to($adminEmail)->queue(new DemoRequestNotificationMail($demoRequest));
+            Mail::to($adminEmail)->queue(new DemoRequestNotificationMail($demoRequest->fresh()));
         } catch (\Throwable $e) {
-            // Non-fatal: log but don't block the user
             logger()->warning('DemoRequest admin notification failed: ' . $e->getMessage());
         }
 
         return redirect()->route('demo.request.success')
-            ->with('success', 'Your demo request has been received. Our team will review and contact you shortly.');
+            ->with('success', $credentialEmailSent
+                ? 'Your demo is ready. We have sent the login details to your email.'
+                : 'Your demo is ready. Your login details are shown below; email delivery may be delayed.')
+            ->with('demo_login_url', $loginUrl)
+            ->with('demo_login_email', $loginEmail)
+            ->with('demo_plain_password', $plainPassword)
+            ->with('demo_email_sent', $credentialEmailSent)
+            ->with('demo_expires_at', optional($company->demo_expires_at)->format('D, d M Y H:i'));
     }
 
     /**
