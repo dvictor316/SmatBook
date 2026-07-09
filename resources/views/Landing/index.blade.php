@@ -1538,7 +1538,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         margin-bottom: 16px !important;
     }
     .hero-title-line { color: #fff !important; -webkit-text-fill-color: #fff !important; font-size: 1.05em !important; }
-    .hero-h1 .hero-title-line { transform: translateX(-4px); }
+    .hero-h1 .hero-title-line { transform: translateX(-8px); }
     .hero-body {
         font-size: 0.92rem !important;
         max-width: 28ch !important;
