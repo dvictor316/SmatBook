@@ -1,6 +1,39 @@
 @extends('layout.landing_nav')
 
 @section('content')
+<style>
+    .project-detail-actions {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: 28px;
+    }
+    .project-back-link {
+        align-items: center;
+        background: linear-gradient(135deg, #0f172a, #123d79);
+        border: 1px solid rgba(37,99,235,0.28);
+        border-radius: 999px;
+        box-shadow: 0 18px 44px rgba(15,23,42,0.18);
+        color: #fff;
+        display: inline-flex;
+        font-weight: 800;
+        gap: 10px;
+        letter-spacing: 0.4px;
+        padding: 13px 24px;
+        text-decoration: none;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .project-back-link:hover {
+        color: #fff;
+        box-shadow: 0 22px 54px rgba(15,23,42,0.24);
+        transform: translateY(-2px);
+    }
+    .project-back-link span {
+        color: #bfdbfe;
+        font-size: 1rem;
+    }
+</style>
 <section style="margin-top: 85px; padding: 90px 20px; background: linear-gradient(135deg,#f8fafc 0%,#eaf2ff 100%);">
     <div class="container" style="max-width: 1200px;">
         <div class="row align-items-center g-5">
@@ -15,9 +48,8 @@
                     From verified property discovery to document-driven transactions, Property234.com streamlines listing quality, due diligence,
                     stakeholder collaboration, and deal completion across local and cross-border markets.
                 </p>
-                <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:24px;">
-                    <a href="{{ route('landing.contact') }}" class="btn btn-primary px-4 py-2">Request a Demo</a>
-                    <a href="{{ url('/#team') }}" class="btn btn-outline-dark px-4 py-2">Back to Projects</a>
+                <div class="project-detail-actions">
+                    <a href="{{ url('/#team') }}" class="project-back-link"><span>&larr;</span> Back to Projects</a>
                 </div>
             </div>
             <div class="col-lg-6">

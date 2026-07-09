@@ -1158,6 +1158,39 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     filter: saturate(1.03) contrast(1.02);
 }
 .project-card:hover img { transform: scale(1.045); }
+.project-read-more {
+    align-items: center;
+    background: linear-gradient(135deg, var(--navy), var(--navy-mid));
+    border: 1px solid rgba(197,160,89,0.38);
+    border-radius: 999px;
+    box-shadow: 0 14px 34px rgba(0,35,71,0.18);
+    color: #fff !important;
+    display: inline-flex;
+    font-family: var(--font-display);
+    font-size: 0.76rem;
+    font-weight: 800;
+    gap: 10px;
+    justify-content: center;
+    letter-spacing: 1.2px;
+    min-width: 168px;
+    padding: 12px 24px;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+}
+.project-read-more::after {
+    content: '\2192';
+    color: var(--gold-bright);
+    font-size: 1rem;
+    line-height: 1;
+    transition: transform 0.28s ease;
+}
+.project-read-more:hover {
+    border-color: var(--gold-bright);
+    box-shadow: 0 18px 44px rgba(0,35,71,0.24);
+    transform: translateY(-2px);
+}
+.project-read-more:hover::after { transform: translateX(4px); }
 
 /* Testimonials */
 .testi-section { padding: 100px 0; overflow: hidden; position: relative; }
@@ -2449,9 +2482,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                         </a>
                         <p style="color:var(--gold);font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">{{ $m['role'] }}</p>
                         <p class="mb-4" style="font-size:13px;color:var(--muted);line-height:1.7;padding:0 6px;">{{ $m['bio'] }}</p>
-                        <div class="d-flex justify-content-center gap-2">
-                            <a href="{{ $m['link'] }}" class="btn-outline-navy">Learn More</a>
-                            <a href="{{ route('landing.contact') }}" class="btn-outline-navy">Request Demo</a>
+                        <div class="d-flex justify-content-center">
+                            <a href="{{ $m['link'] }}" class="project-read-more">Read More</a>
                         </div>
                     </div>
                 </div>
