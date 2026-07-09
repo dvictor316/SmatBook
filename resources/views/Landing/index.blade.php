@@ -1525,24 +1525,24 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         border-radius: 28px !important;
         padding: 34px 20px 28px !important;
         overflow: visible;
-        align-items: flex-start !important;
-        text-align: left !important;
+        align-items: center !important;
+        text-align: center !important;
     }
     .hero-phone { width: clamp(220px,72vw,280px); }
     .hero-h1 {
         font-size: clamp(1.35rem, 7.8vw, 2.05rem) !important;
         max-width: 13ch !important;
         line-height: 1.04 !important;
-        margin-left: 0 !important;
-        margin-right: 0 !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
         margin-bottom: 16px !important;
     }
     .hero-title-line { color: #fff !important; -webkit-text-fill-color: #fff !important; font-size: 1.05em !important; }
     .hero-body {
         font-size: 0.92rem !important;
         max-width: 28ch !important;
-        margin-left: 0 !important;
-        margin-right: 0 !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
         margin-bottom: 22px !important;
     }
     .hero-cta-stack {
