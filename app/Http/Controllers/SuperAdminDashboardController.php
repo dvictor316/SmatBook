@@ -671,25 +671,25 @@ class SuperAdminDashboardController extends Controller
 
             $paidSubscriptionsQuery = Schema::hasTable('subscriptions')
                 ? $this->platformSubscriptionsQuery()->where(function ($query) use ($paidPaymentStatuses, $subscriptionRevenueExpr) {
-                    $query->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), $paidPaymentStatuses);
+                    $query->whereIn(DB::raw("LOWER(COALESCE(subscriptions.payment_status, ''))"), $paidPaymentStatuses);
 
                     if (Schema::hasColumn('subscriptions', 'status')) {
-                        $query->orWhereIn(DB::raw("LOWER(COALESCE(status, ''))"), array_merge($paidPaymentStatuses, ['active', 'trial', 'expired']));
+                        $query->orWhereIn(DB::raw("LOWER(COALESCE(subscriptions.status, ''))"), array_merge($paidPaymentStatuses, ['active', 'trial', 'expired']));
                     }
 
                     if (Schema::hasColumn('subscriptions', 'paid_at')) {
-                        $query->orWhereNotNull('paid_at');
+                        $query->orWhereNotNull('subscriptions.paid_at');
                     }
 
                     if (Schema::hasColumn('subscriptions', 'payment_date')) {
-                        $query->orWhereNotNull('payment_date');
+                        $query->orWhereNotNull('subscriptions.payment_date');
                     }
 
                     $query->orWhere(function ($valueQuery) use ($subscriptionRevenueExpr) {
                         $valueQuery->whereRaw("{$subscriptionRevenueExpr} > 0");
 
                         if (Schema::hasColumn('subscriptions', 'status')) {
-                            $valueQuery->whereNotIn(DB::raw("LOWER(COALESCE(status, ''))"), ['pending', 'awaiting payment', 'awaiting_payment', 'unpaid', 'cancelled', 'canceled']);
+                            $valueQuery->whereNotIn(DB::raw("LOWER(COALESCE(subscriptions.status, ''))"), ['pending', 'awaiting payment', 'awaiting_payment', 'unpaid', 'cancelled', 'canceled']);
                         }
                     });
                 })
@@ -750,8 +750,8 @@ class SuperAdminDashboardController extends Controller
             $activeSubs = Schema::hasTable('subscriptions')
                 ? $this->platformSubscriptionsQuery()
                     ->where(function ($query) use ($activeSubscriptionStatuses, $paidPaymentStatuses) {
-                        $query->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), $activeSubscriptionStatuses)
-                            ->orWhereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), array_merge($paidPaymentStatuses, ['free']));
+                        $query->whereIn(DB::raw("LOWER(COALESCE(subscriptions.status, ''))"), $activeSubscriptionStatuses)
+                            ->orWhereIn(DB::raw("LOWER(COALESCE(subscriptions.payment_status, ''))"), array_merge($paidPaymentStatuses, ['free']));
                     })
                     ->count()
                 : 0;
@@ -891,18 +891,18 @@ class SuperAdminDashboardController extends Controller
                 'direct_subscription_revenue' => $directSubscriptionRevenue,
                 'deployment_subscription_revenue' => $deploymentSubscriptionRevenue,
                 'pending_setups'   => Schema::hasTable('subscriptions')
-                                      ? $this->platformSubscriptionsQuery()->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), $pendingSubscriptionStatuses)->count()
+                                      ? $this->platformSubscriptionsQuery()->whereIn(DB::raw("LOWER(COALESCE(subscriptions.status, ''))"), $pendingSubscriptionStatuses)->count()
                                       : 0,
                 'pending_managers' => Schema::hasColumn('users', 'status')
-                                      ? (clone $managerStatusBaseQuery)->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['pending', 'pending_info'])->count()
+                                      ? (clone $managerStatusBaseQuery)->whereIn(DB::raw("LOWER(COALESCE(users.status, ''))"), ['pending', 'pending_info'])->count()
                                       : 0,
                 'active_managers'  => $stateManagerIds !== []
                                       ? (Schema::hasColumn('users', 'status')
-                                          ? (clone $managerStatusBaseQuery)->whereIn(DB::raw("LOWER(COALESCE(status, 'active'))"), ['active'])->count()
+                                          ? (clone $managerStatusBaseQuery)->whereIn(DB::raw("LOWER(COALESCE(users.status, 'active'))"), ['active'])->count()
                                           : count($stateManagerIds))
                                       : 0,
                 'suspended_managers'  => Schema::hasColumn('users', 'status')
-                                      ? (clone $managerStatusBaseQuery)->whereRaw("LOWER(COALESCE(status, '')) = ?", ['suspended'])->count()
+                                      ? (clone $managerStatusBaseQuery)->whereRaw("LOWER(COALESCE(users.status, '')) = ?", ['suspended'])->count()
                                       : 0,
                 'total_stock_val'  => $stockValue,
                 'low_stock_items'  => $lowStockItems,
@@ -921,7 +921,7 @@ class SuperAdminDashboardController extends Controller
                                       ? $this->platformSubscriptionsQuery()->expiringSoon(7)->count()
                                       : 0,
                 'expired_subs'       => Schema::hasTable('subscriptions')
-                                      ? $this->platformSubscriptionsQuery()->whereRaw("LOWER(COALESCE(status, '')) = 'expired'")->count()
+                                      ? $this->platformSubscriptionsQuery()->whereRaw("LOWER(COALESCE(subscriptions.status, '')) = 'expired'")->count()
                                       : 0,
                 'total_payouts'      => Schema::hasTable('platform_payouts')
                                       ? (float) PlatformPayout::sum('amount')
@@ -1468,8 +1468,8 @@ class SuperAdminDashboardController extends Controller
             $fallbackTotalCompanies = $safeCount(fn () => Schema::hasTable('companies') ? Company::count() : 0);
             $fallbackActiveCompanies = $safeCount(fn () => Schema::hasTable('companies')
                 ? Company::query()->where(function ($query) {
-                    $query->whereNull('status')
-                        ->orWhereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['active', 'trial', 'enabled']);
+                    $query->whereNull('companies.status')
+                        ->orWhereIn(DB::raw("LOWER(COALESCE(companies.status, ''))"), ['active', 'trial', 'enabled']);
                 })->count()
                 : 0);
             $fallbackTotalUsers = $safeCount(fn () => Schema::hasTable('users') ? (clone $this->customerUsersQuery())->count() : 0);
@@ -1521,8 +1521,8 @@ class SuperAdminDashboardController extends Controller
             $emptyMetrics = [
                 'total_companies' => $fallbackTotalCompanies, 'total_tenants' => $fallbackActiveCompanies > 0 ? $fallbackActiveCompanies : $fallbackTotalCompanies, 'active_subs' => $fallbackActiveCompanies,
                 'platform_revenue' => $fallbackSubscriptionRevenue > 0 ? $fallbackSubscriptionRevenue : $fallbackSalesRevenue, 'owner_subscription_revenue' => $fallbackSubscriptionRevenue, 'total_users' => $fallbackTotalUsers, 'pending_setups' => 0,
-                'pending_managers' => $safeCount(fn () => Schema::hasColumn('users', 'status') ? (clone $this->stateManagersQuery())->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['pending', 'pending_info'])->count() : 0),
-                'active_managers' => $safeCount(fn () => Schema::hasColumn('users', 'status') ? (clone $this->stateManagersQuery())->whereIn(DB::raw("LOWER(COALESCE(status, 'active'))"), ['active'])->count() : 0),
+                'pending_managers' => $safeCount(fn () => Schema::hasColumn('users', 'status') ? (clone $this->stateManagersQuery())->whereIn(DB::raw("LOWER(COALESCE(users.status, ''))"), ['pending', 'pending_info'])->count() : 0),
+                'active_managers' => $safeCount(fn () => Schema::hasColumn('users', 'status') ? (clone $this->stateManagersQuery())->whereIn(DB::raw("LOWER(COALESCE(users.status, 'active'))"), ['active'])->count() : 0),
                 'total_stock_val' => 0,
                 'state_managers_total' => $safeCount(fn () => (clone $this->stateManagersQuery())->count()),
                 'agents_total' => $safeCount(fn () => (clone $this->agentsQuery())->count()),
