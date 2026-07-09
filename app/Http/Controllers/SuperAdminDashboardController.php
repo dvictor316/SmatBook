@@ -529,6 +529,10 @@ class SuperAdminDashboardController extends Controller
                 ? $this->platformSubscriptionsQuery()->where(function ($query) use ($paidPaymentStatuses) {
                     $query->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), $paidPaymentStatuses);
 
+                    if (Schema::hasColumn('subscriptions', 'status')) {
+                        $query->orWhereIn(DB::raw("LOWER(COALESCE(status, ''))"), array_merge($paidPaymentStatuses, ['active']));
+                    }
+
                     if (Schema::hasColumn('subscriptions', 'paid_at')) {
                         $query->orWhereNotNull('paid_at');
                     }
@@ -708,12 +712,11 @@ class SuperAdminDashboardController extends Controller
                 }
             }
 
-            $planSalesBaseQuery = $deployedPaidSubscriptionsQuery ? clone $deployedPaidSubscriptionsQuery : null;
+            $planSalesBaseQuery = $paidSubscriptionsQuery ? clone $paidSubscriptionsQuery : null;
             $planSalesToday = $planSalesBaseQuery ? (clone $planSalesBaseQuery)->whereDate('subscriptions.created_at', today())->distinct()->count('subscriptions.company_id') : 0;
             $planSalesMonth = $planSalesBaseQuery ? (clone $planSalesBaseQuery)->whereMonth('subscriptions.created_at', now()->month)->whereYear('subscriptions.created_at', now()->year)->distinct()->count('subscriptions.company_id') : 0;
             $planSalesValueMonth = $planSalesBaseQuery ? (float) ((clone $planSalesBaseQuery)->whereMonth('subscriptions.created_at', now()->month)->whereYear('subscriptions.created_at', now()->year)->sum('subscriptions.amount') ?? 0) : 0;
-            // Deployed business average, not all direct subscription rows.
-            $avgPlanSale = $deploymentPaidSubs > 0 ? ($deploymentSubscriptionRevenue / $deploymentPaidSubs) : 0;
+            $avgPlanSale = $paidBuyersCount > 0 ? ($subscriptionRevenue / $paidBuyersCount) : 0;
 
             // METRICS
             $metrics = [
@@ -729,7 +732,7 @@ class SuperAdminDashboardController extends Controller
                 'registered_businesses_total' => $registeredBusinessesTotal,
                 'other_users_total' => (clone $this->otherUsersQuery())->count(),
                 'active_subs'      => $activeSubs > 0 ? $activeSubs : $activeCompanies,
-                'paid_subs'        => $deploymentPaidSubs,
+                'paid_subs'        => $paidBuyersCount,
                 'direct_paid_subs' => $directPaidSubs,
                 'deployment_paid_subs' => $deploymentPaidSubs,
                 'total_subs'       => Schema::hasTable('subscriptions')
