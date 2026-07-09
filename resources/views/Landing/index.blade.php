@@ -1052,6 +1052,16 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     flex-wrap: wrap;
     gap: 12px;
 }
+.impact-story--dark .impact-story-actions .btn-outline-navy {
+    border-color: rgba(255,255,255,0.82);
+    color: #f8fbff !important;
+    text-shadow: 0 1px 10px rgba(0,0,0,0.22);
+}
+.impact-story--dark .impact-story-actions .btn-outline-navy:hover {
+    background: rgba(255,255,255,0.10);
+    border-color: var(--gold-bright);
+    color: #fff !important;
+}
 
 /* Feature cards */
 .feat-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px; transition: all 0.3s; position: relative; overflow: hidden; }
