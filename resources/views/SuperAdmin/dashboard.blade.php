@@ -171,9 +171,23 @@
     .chart-container.chart-container-xs {
         height: 118px;
     }
+    .chart-container.chart-container-md {
+        height: 210px;
+    }
 
     .visit-analytics-board {
         margin-top: 0.35rem;
+    }
+    .visit-analytics-board .row {
+        align-items: stretch;
+    }
+    .visit-analytics-board [class*="col-"] {
+        display: flex;
+    }
+    .visit-analytics-board .card,
+    .visit-analytics-board .visit-mini-card,
+    .visit-analytics-board .visit-decision-card {
+        width: 100%;
     }
     .visit-mini-card {
         border: 1px solid rgba(148, 163, 184, 0.26);
@@ -233,7 +247,18 @@
         margin-top: 0.25rem;
     }
     .visit-chart-card .card-body {
+        display: flex;
+        flex-direction: column;
         padding: 0.72rem 0.82rem !important;
+    }
+    .visit-chart-card .chart-container {
+        flex: 1 1 auto;
+    }
+    .visit-chart-card--tall {
+        min-height: 322px;
+    }
+    .visit-chart-card--tall .card-body {
+        min-height: 322px;
     }
     .visit-decision-card {
         background: #f8fbff;
@@ -1504,8 +1529,8 @@
                             </div>
 
                             <div class="row g-2 mt-2">
-                                <div class="col-12 col-xl-5">
-                                    <div class="card card-rounded shadow-sm visit-chart-card h-100">
+                                <div class="col-12 col-xl-4">
+                                    <div class="card card-rounded shadow-sm visit-chart-card visit-chart-card--tall h-100">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                                                 <div>
@@ -1521,17 +1546,31 @@
                                     </div>
                                 </div>
 
-                                <div class="col-12 col-xl-7">
-                                    <div class="row g-2 h-100">
-                                        @foreach($visitorAnalytics['decisionCards'] ?? [] as $decisionCard)
-                                            <div class="col-6 col-lg-3">
-                                                <div class="visit-decision-card">
-                                                    <div class="label">{{ $decisionCard['label'] ?? 'Signal' }}</div>
-                                                    <div class="value">{{ $decisionCard['value'] ?? '0' }}</div>
-                                                    <div class="note">{{ $decisionCard['note'] ?? 'Management decision signal' }}</div>
+                                <div class="col-12 col-xl-8">
+                                    <div class="card card-rounded shadow-sm visit-chart-card visit-chart-card--tall h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                                <div>
+                                                    <h5 class="mb-0 fw-bold text-dark">Daily Comparison Waves</h5>
+                                                    <small class="text-muted">Bars by day with wave lines comparing visits, users, and paid businesses</small>
                                                 </div>
+                                                <span class="live-badge-soft">Compare</span>
                                             </div>
-                                        @endforeach
+                                            <div class="chart-container chart-container-md">
+                                                <canvas id="dailyComparisonWaveChart"></canvas>
+                                            </div>
+                                            <div class="row g-2 mt-2">
+                                                @foreach($visitorAnalytics['decisionCards'] ?? [] as $decisionCard)
+                                                    <div class="col-6 col-lg-3">
+                                                        <div class="visit-decision-card">
+                                                            <div class="label">{{ $decisionCard['label'] ?? 'Signal' }}</div>
+                                                            <div class="value">{{ $decisionCard['value'] ?? '0' }}</div>
+                                                            <div class="note">{{ $decisionCard['note'] ?? 'Management decision signal' }}</div>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -3564,6 +3603,91 @@
                     scales: {
                         y: { beginAtZero: true, grid: { color: '#eef3f8', drawBorder: false } },
                         x: { grid: { display: false }, ticks: { maxTicksLimit: 7 } }
+                    }
+                }
+            });
+        }
+
+        const dailyComparisonWaveCtx = document.getElementById('dailyComparisonWaveChart');
+        if (dailyComparisonWaveCtx) {
+            const dayVisits = visitorAnalytics.dailyVisits || [];
+            const dayVisitors = visitorAnalytics.dailyVisitors || [];
+            const dayUsers = visitorAnalytics.dailyUsers || [];
+            const dayPaid = visitorAnalytics.dailyPaid || [];
+            const hasDailyComparisonData = hasPositiveData([...dayVisits, ...dayVisitors, ...dayUsers, ...dayPaid]);
+
+            new Chart(dailyComparisonWaveCtx.getContext('2d'), {
+                data: {
+                    labels: visitorAnalytics.dailyLabels || [],
+                    datasets: [
+                        {
+                            type: 'bar',
+                            label: 'Daily Visits',
+                            data: hasDailyComparisonData ? dayVisits : [0],
+                            backgroundColor: 'rgba(37, 99, 235, 0.22)',
+                            borderColor: 'rgba(37, 99, 235, 0.45)',
+                            borderWidth: 1,
+                            borderRadius: 8,
+                            barPercentage: 0.82,
+                            categoryPercentage: 0.62
+                        },
+                        {
+                            type: 'line',
+                            label: 'Unique Visitors',
+                            data: hasDailyComparisonData ? dayVisitors : [0],
+                            borderColor: '#14b8a6',
+                            backgroundColor: 'rgba(20, 184, 166, 0.12)',
+                            borderWidth: 3,
+                            tension: 0.48,
+                            fill: true,
+                            pointRadius: 2,
+                            pointHoverRadius: 5
+                        },
+                        {
+                            type: 'line',
+                            label: 'New Users',
+                            data: hasDailyComparisonData ? dayUsers : [0],
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.10)',
+                            borderWidth: 3,
+                            tension: 0.48,
+                            fill: false,
+                            pointRadius: 2,
+                            pointHoverRadius: 5
+                        },
+                        {
+                            type: 'line',
+                            label: 'Paid Businesses',
+                            data: hasDailyComparisonData ? dayPaid : [0],
+                            borderColor: '#8b5cf6',
+                            backgroundColor: 'rgba(139, 92, 246, 0.10)',
+                            borderWidth: 3,
+                            tension: 0.48,
+                            fill: false,
+                            pointRadius: 2,
+                            pointHoverRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { usePointStyle: true, boxWidth: 9, padding: 12 }
+                        },
+                        tooltip: { enabled: hasDailyComparisonData }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#edf2f7', drawBorder: false }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { maxTicksLimit: 8 }
+                        }
                     }
                 }
             });
