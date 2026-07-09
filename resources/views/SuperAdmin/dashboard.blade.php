@@ -246,6 +246,25 @@
         font-weight: 600;
         margin-top: 0.25rem;
     }
+    .visit-mini-card .visitor-count-badge {
+        align-items: center;
+        background: rgba(15, 23, 42, 0.06);
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 999px;
+        color: #0f172a;
+        display: inline-flex;
+        font-size: 0.68rem;
+        font-weight: 800;
+        gap: 5px;
+        margin-top: 0.5rem;
+        padding: 0.28rem 0.52rem;
+        position: relative;
+        z-index: 1;
+    }
+    .visit-mini-card .visitor-count-badge i {
+        color: #2563eb;
+        font-size: 0.86rem;
+    }
     .visit-chart-card .card-body {
         display: flex;
         flex-direction: column;
@@ -1465,6 +1484,10 @@
                                                     <div class="visit-label">{{ $visitCard['label'] ?? 'Visits' }}</div>
                                                     <div class="visit-value">{{ number_format((int) ($visitCard['value'] ?? 0)) }}</div>
                                                     <div class="visit-note">{{ $visitCard['note'] ?? 'Visit signal' }}</div>
+                                                    <div class="visitor-count-badge">
+                                                        <i class="mdi mdi-account-eye-outline"></i>
+                                                        {{ number_format((int) ($visitCard['visitors'] ?? 0)) }} visitors
+                                                    </div>
                                                 </div>
                                                 <div class="visit-icon">
                                                     <i class="mdi {{ $visitCard['icon'] ?? 'mdi-eye-outline' }}"></i>

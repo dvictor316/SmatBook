@@ -1030,10 +1030,10 @@ class SuperAdminDashboardController extends Controller
 
             $visitorAnalytics = [
                 'cards' => [
-                    ['label' => 'Daily Visits', 'value' => 0, 'note' => 'Today', 'tone' => 'visit-blue', 'icon' => 'mdi-eye-outline'],
-                    ['label' => 'Weekly Visits', 'value' => 0, 'note' => 'Last 7 days', 'tone' => 'visit-green', 'icon' => 'mdi-calendar-week'],
-                    ['label' => 'Monthly Visits', 'value' => 0, 'note' => 'Current month', 'tone' => 'visit-violet', 'icon' => 'mdi-chart-timeline-variant'],
-                    ['label' => 'Yearly Visits', 'value' => 0, 'note' => 'Current year', 'tone' => 'visit-amber', 'icon' => 'mdi-calendar-star'],
+                    ['label' => 'Daily Visits', 'value' => 0, 'visitors' => 0, 'note' => 'Today', 'tone' => 'visit-blue', 'icon' => 'mdi-eye-outline'],
+                    ['label' => 'Weekly Visits', 'value' => 0, 'visitors' => 0, 'note' => 'Last 7 days', 'tone' => 'visit-green', 'icon' => 'mdi-calendar-week'],
+                    ['label' => 'Monthly Visits', 'value' => 0, 'visitors' => 0, 'note' => 'Current month', 'tone' => 'visit-violet', 'icon' => 'mdi-chart-timeline-variant'],
+                    ['label' => 'Yearly Visits', 'value' => 0, 'visitors' => 0, 'note' => 'Current year', 'tone' => 'visit-amber', 'icon' => 'mdi-calendar-star'],
                 ],
                 'dailyLabels' => [],
                 'dailyVisits' => [],
@@ -1062,6 +1062,18 @@ class SuperAdminDashboardController extends Controller
                 $weeklyVisitCount = (clone $activityBase)->where('created_at', '>=', $weekStart)->count();
                 $monthlyVisitCount = (clone $activityBase)->where('created_at', '>=', $monthStart)->count();
                 $yearlyVisitCount = (clone $activityBase)->where('created_at', '>=', $yearStart)->count();
+                $dailyVisitorCount = $visitorColumn
+                    ? (clone $activityBase)->where('created_at', '>=', $todayStart)->distinct()->count($visitorColumn)
+                    : $dailyVisitCount;
+                $weeklyVisitorCount = $visitorColumn
+                    ? (clone $activityBase)->where('created_at', '>=', $weekStart)->distinct()->count($visitorColumn)
+                    : $weeklyVisitCount;
+                $monthlyVisitorCount = $visitorColumn
+                    ? (clone $activityBase)->where('created_at', '>=', $monthStart)->distinct()->count($visitorColumn)
+                    : $monthlyVisitCount;
+                $yearlyVisitorCount = $visitorColumn
+                    ? (clone $activityBase)->where('created_at', '>=', $yearStart)->distinct()->count($visitorColumn)
+                    : $yearlyVisitCount;
 
                 $dailyRows = (clone $activityBase)
                     ->selectRaw(
@@ -1095,6 +1107,10 @@ class SuperAdminDashboardController extends Controller
                     ($chartSeries['orders'][$currentMonthIndex] ?? 0)
                 );
                 $yearlyVisitCount = (int) (array_sum($chartSeries['users']) + array_sum($chartSeries['companies']) + array_sum($chartSeries['orders']));
+                $dailyVisitorCount = (int) ($metrics['recent_signups'] ?? 0);
+                $weeklyVisitorCount = (int) array_sum(array_slice($chartSeries['users'], -2));
+                $monthlyVisitorCount = (int) ($chartSeries['users'][$currentMonthIndex] ?? 0);
+                $yearlyVisitorCount = (int) array_sum($chartSeries['users']);
                 $dailyRows = collect();
             }
 
@@ -1132,6 +1148,10 @@ class SuperAdminDashboardController extends Controller
             $visitorAnalytics['cards'][1]['value'] = (int) $weeklyVisitCount;
             $visitorAnalytics['cards'][2]['value'] = (int) $monthlyVisitCount;
             $visitorAnalytics['cards'][3]['value'] = (int) $yearlyVisitCount;
+            $visitorAnalytics['cards'][0]['visitors'] = (int) $dailyVisitorCount;
+            $visitorAnalytics['cards'][1]['visitors'] = (int) $weeklyVisitorCount;
+            $visitorAnalytics['cards'][2]['visitors'] = (int) $monthlyVisitorCount;
+            $visitorAnalytics['cards'][3]['visitors'] = (int) $yearlyVisitorCount;
             $visitorAnalytics['periodVisits'] = [(int) $dailyVisitCount, (int) $weeklyVisitCount, (int) $monthlyVisitCount, (int) $yearlyVisitCount];
 
             if (empty($visitorAnalytics['moduleLabels'])) {
