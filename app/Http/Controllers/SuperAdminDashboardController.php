@@ -1442,21 +1442,103 @@ class SuperAdminDashboardController extends Controller
             $registeredBusinessAverage = $registeredBusinessesTotal > 0
                 ? $registeredBusinessRevenue / $registeredBusinessesTotal
                 : 0;
+            $safeCount = function (callable $callback): int {
+                try {
+                    return (int) $callback();
+                } catch (\Throwable $fallbackError) {
+                    Log::warning('Super admin fallback count failed: ' . $fallbackError->getMessage());
+                    return 0;
+                }
+            };
+            $safeFloat = function (callable $callback): float {
+                try {
+                    return (float) $callback();
+                } catch (\Throwable $fallbackError) {
+                    Log::warning('Super admin fallback amount failed: ' . $fallbackError->getMessage());
+                    return 0.0;
+                }
+            };
+
+            $fallbackPaidCondition = Schema::hasTable('subscriptions') ? $this->subscriptionPaidCondition('subscriptions') : '1 = 0';
+            $fallbackRevenueExpr = Schema::hasTable('subscriptions') ? $this->subscriptionRevenueExpression('subscriptions') : '0';
+            $fallbackBuyerExpr = Schema::hasTable('subscriptions') ? $this->subscriptionBuyerKeyExpression('subscriptions') : 'subscriptions.id';
+            $fallbackPaidSubscriptions = fn () => $this->platformSubscriptionsQuery()
+                ->whereRaw($fallbackPaidCondition)
+                ->whereRaw("{$fallbackRevenueExpr} > 0");
+            $fallbackTotalCompanies = $safeCount(fn () => Schema::hasTable('companies') ? Company::count() : 0);
+            $fallbackActiveCompanies = $safeCount(fn () => Schema::hasTable('companies')
+                ? Company::query()->where(function ($query) {
+                    $query->whereNull('status')
+                        ->orWhereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['active', 'trial', 'enabled']);
+                })->count()
+                : 0);
+            $fallbackTotalUsers = $safeCount(fn () => Schema::hasTable('users') ? (clone $this->customerUsersQuery())->count() : 0);
+            $fallbackVerifiedUsers = $safeCount(fn () => Schema::hasColumn('users', 'is_verified')
+                ? (clone $this->customerUsersQuery())->where('is_verified', 1)->count()
+                : 0);
+            $fallbackRecentSignups = $safeCount(fn () => Schema::hasTable('users')
+                ? (clone $this->customerUsersQuery())->where('created_at', '>=', now()->subDays(30))->count()
+                : 0);
+            $fallbackPaidBusinesses = $registeredBusinessesTotal > 0
+                ? $registeredBusinessesTotal
+                : $safeCount(fn () => Schema::hasTable('subscriptions')
+                    ? (clone $fallbackPaidSubscriptions())->selectRaw("COUNT(DISTINCT {$fallbackBuyerExpr}) as buyer_count")->value('buyer_count')
+                    : 0);
+            $fallbackSubscriptionRevenue = $registeredBusinessRevenue > 0
+                ? $registeredBusinessRevenue
+                : $safeFloat(fn () => Schema::hasTable('subscriptions')
+                    ? (clone $fallbackPaidSubscriptions())->selectRaw("SUM({$fallbackRevenueExpr}) as total_revenue")->value('total_revenue')
+                    : 0);
+            $fallbackMonthlyPlanRevenue = $safeFloat(fn () => Schema::hasTable('subscriptions')
+                ? (clone $fallbackPaidSubscriptions())
+                    ->whereMonth('subscriptions.created_at', now()->month)
+                    ->whereYear('subscriptions.created_at', now()->year)
+                    ->selectRaw("SUM({$fallbackRevenueExpr}) as total_revenue")
+                    ->value('total_revenue')
+                : 0);
+            $fallbackPlanSalesToday = $safeCount(fn () => Schema::hasTable('subscriptions')
+                ? (clone $fallbackPaidSubscriptions())
+                    ->whereDate('subscriptions.created_at', today())
+                    ->selectRaw("COUNT(DISTINCT {$fallbackBuyerExpr}) as buyer_count")
+                    ->value('buyer_count')
+                : 0);
+            $fallbackPlanSalesMonth = $safeCount(fn () => Schema::hasTable('subscriptions')
+                ? (clone $fallbackPaidSubscriptions())
+                    ->whereMonth('subscriptions.created_at', now()->month)
+                    ->whereYear('subscriptions.created_at', now()->year)
+                    ->selectRaw("COUNT(DISTINCT {$fallbackBuyerExpr}) as buyer_count")
+                    ->value('buyer_count')
+                : 0);
+            $fallbackAveragePlanSale = $fallbackPaidBusinesses > 0
+                ? $fallbackSubscriptionRevenue / $fallbackPaidBusinesses
+                : $registeredBusinessAverage;
+            $fallbackSalesRevenue = $safeFloat(fn () => Schema::hasTable('sales')
+                ? $this->applyFinalizedSalesFilter(DB::table('sales'))->sum('total')
+                : 0);
+            $fallbackPayouts = $safeFloat(fn () => Schema::hasTable('platform_payouts') ? PlatformPayout::sum('amount') : 0);
+            $fallbackTotalSubscriptions = $safeCount(fn () => Schema::hasTable('subscriptions') ? $this->platformSubscriptionsQuery()->count() : 0);
 
             $emptyMetrics = [
-                'total_companies' => 0, 'total_tenants' => 0, 'active_subs' => 0, 
-                'platform_revenue' => $registeredBusinessRevenue, 'owner_subscription_revenue' => $registeredBusinessRevenue, 'total_users' => 0, 'pending_setups' => 0,
-                'pending_managers' => 0, 'active_managers' => 0, 'total_stock_val' => 0,
-                'paid_subs' => $registeredBusinessesTotal, 'total_subs' => 0, 'verified_users' => 0, 'recent_signups' => 0,
+                'total_companies' => $fallbackTotalCompanies, 'total_tenants' => $fallbackActiveCompanies > 0 ? $fallbackActiveCompanies : $fallbackTotalCompanies, 'active_subs' => $fallbackActiveCompanies,
+                'platform_revenue' => $fallbackSubscriptionRevenue > 0 ? $fallbackSubscriptionRevenue : $fallbackSalesRevenue, 'owner_subscription_revenue' => $fallbackSubscriptionRevenue, 'total_users' => $fallbackTotalUsers, 'pending_setups' => 0,
+                'pending_managers' => $safeCount(fn () => Schema::hasColumn('users', 'status') ? (clone $this->stateManagersQuery())->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['pending', 'pending_info'])->count() : 0),
+                'active_managers' => $safeCount(fn () => Schema::hasColumn('users', 'status') ? (clone $this->stateManagersQuery())->whereIn(DB::raw("LOWER(COALESCE(status, 'active'))"), ['active'])->count() : 0),
+                'total_stock_val' => 0,
+                'state_managers_total' => $safeCount(fn () => (clone $this->stateManagersQuery())->count()),
+                'agents_total' => $safeCount(fn () => (clone $this->agentsQuery())->count()),
+                'other_users_total' => $safeCount(fn () => (clone $this->otherUsersQuery())->count()),
+                'paid_subs' => $fallbackPaidBusinesses, 'total_subs' => $fallbackTotalSubscriptions, 'verified_users' => $fallbackVerifiedUsers, 'recent_signups' => $fallbackRecentSignups,
                 'direct_paid_subs' => 0, 'deployment_paid_subs' => 0,
                 'direct_subscription_revenue' => 0, 'deployment_subscription_revenue' => 0,
                 'direct_customer_users' => 0, 'deployment_customer_users' => 0,
-                'low_stock_items' => 0, 'plan_sales_today' => 0, 'plan_sales_month' => 0,
-                'plan_sales_value_month' => 0, 'avg_plan_sale' => $registeredBusinessAverage,
-                'item_sales_revenue' => 0, 'item_sales_today_revenue' => 0, 'item_sales_orders' => 0, 'item_sales_units' => 0,
+                'low_stock_items' => 0, 'plan_sales_today' => $fallbackPlanSalesToday, 'plan_sales_month' => $fallbackPlanSalesMonth,
+                'plan_sales_value_month' => $fallbackMonthlyPlanRevenue, 'avg_plan_sale' => $fallbackAveragePlanSale,
+                'item_sales_revenue' => $fallbackSalesRevenue, 'item_sales_today_revenue' => 0, 'item_sales_orders' => 0, 'item_sales_units' => 0,
                 'expiring_soon_subs' => 0, 'expired_subs' => 0,
-                'registered_businesses_total' => $registeredBusinessesTotal,
-                'registered_user_revenue' => $registeredBusinessRevenue,
+                'total_payouts' => $fallbackPayouts,
+                'net_platform_balance' => $fallbackSubscriptionRevenue - $fallbackPayouts,
+                'registered_businesses_total' => $fallbackPaidBusinesses,
+                'registered_user_revenue' => $fallbackSubscriptionRevenue,
             ];
 
             return view('SuperAdmin.dashboard', [
