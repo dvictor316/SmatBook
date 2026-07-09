@@ -804,7 +804,7 @@ class ReportController extends Controller
                 $sub->orWhere("{$salesTable}.branch_name", $branchName);
             }
 
-                if ($branchName !== '') {
+                if ($branchName !== '' && Schema::hasColumn('sales', 'payment_details')) {
                     $sub->orWhereRaw(
                         "JSON_UNQUOTE(JSON_EXTRACT(COALESCE({$salesTable}.payment_details, '{}'), '$.branch_name')) = ?",
                         [$branchName]
@@ -4097,8 +4097,8 @@ public function destroy($id)
                         ->groupBy(DB::raw($productExpr))
                         ->orderByDesc(DB::raw($revenueExpr));
 
-                    // Scope via the sales table to prevent cross-tenant data leakage
-                    $this->applyTenantScope($query, 'sales');
+                    // Scope via the sales table to prevent cross-tenant or cross-branch data leakage.
+                    $this->applySalesScope($query, 'sales');
 
                     $rows = $query->get();
                 }
@@ -4158,6 +4158,7 @@ public function destroy($id)
                         $query->select(DB::raw("'Unknown' as supplier"), DB::raw("COUNT(*) as order_count"), DB::raw("SUM({$amtCol}) as total_amount"));
                     }
                     $this->applyTenantScope($query, 'purchases');
+                    $this->applyGenericBranchFilter($query, 'purchases');
                     $rows = $query->whereBetween("purchases.{$dateCol}", [$from, $to])->orderByDesc(DB::raw("SUM(purchases.{$amtCol})"))->get();
                 }
             }
@@ -4179,7 +4180,9 @@ public function destroy($id)
                 $amtCol  = Schema::hasColumn('purchases', 'total_amount') ? 'total_amount'
                     : (Schema::hasColumn('purchases', 'amount') ? 'amount' : null);
                 if ($amtCol) {
-                    $query = $this->applyTenantScope(DB::table('purchases'), 'purchases')->whereBetween($dateCol, [$from, $to]);
+                    $query = $this->applyTenantScope(DB::table('purchases'), 'purchases');
+                    $this->applyGenericBranchFilter($query, 'purchases');
+                    $query->whereBetween("purchases.{$dateCol}", [$from, $to]);
                     $totalAmount = (float) $query->sum($amtCol);
                     $totalCount  = (int)   $query->count();
                 }
@@ -4243,13 +4246,22 @@ public function destroy($id)
                     $this->applyTenantScope($query, 'products');
 
                     if (
-                        !empty($activeBranch['id'])
+                        (!empty($activeBranch['id']) || !empty($activeBranch['name']))
                         && Schema::hasTable('product_branch_stocks')
                         && Schema::hasColumn('product_branch_stocks', 'quantity')
                     ) {
                         $query->leftJoin('product_branch_stocks', function ($join) use ($activeBranch) {
                             $join->on('product_branch_stocks.product_id', '=', 'products.id')
-                                ->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
+                                ->where(function ($branchJoin) use ($activeBranch) {
+                                    if (!empty($activeBranch['id']) && Schema::hasColumn('product_branch_stocks', 'branch_id')) {
+                                        $branchJoin->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
+                                    }
+
+                                    if (!empty($activeBranch['name']) && Schema::hasColumn('product_branch_stocks', 'branch_name')) {
+                                        $method = !empty($activeBranch['id']) && Schema::hasColumn('product_branch_stocks', 'branch_id') ? 'orWhere' : 'where';
+                                        $branchJoin->{$method}('product_branch_stocks.branch_name', (string) $activeBranch['name']);
+                                    }
+                                });
                         });
                         $qtyExpr = "COALESCE(product_branch_stocks.quantity, {$qtyCol}, 0)";
                     }
@@ -4289,13 +4301,22 @@ public function destroy($id)
                     $this->applyTenantScope($query, 'products');
 
                     if (
-                        !empty($activeBranch['id'])
+                        (!empty($activeBranch['id']) || !empty($activeBranch['name']))
                         && Schema::hasTable('product_branch_stocks')
                         && Schema::hasColumn('product_branch_stocks', 'quantity')
                     ) {
                         $query->leftJoin('product_branch_stocks', function ($join) use ($activeBranch) {
                             $join->on('product_branch_stocks.product_id', '=', 'products.id')
-                                ->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
+                                ->where(function ($branchJoin) use ($activeBranch) {
+                                    if (!empty($activeBranch['id']) && Schema::hasColumn('product_branch_stocks', 'branch_id')) {
+                                        $branchJoin->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
+                                    }
+
+                                    if (!empty($activeBranch['name']) && Schema::hasColumn('product_branch_stocks', 'branch_name')) {
+                                        $method = !empty($activeBranch['id']) && Schema::hasColumn('product_branch_stocks', 'branch_id') ? 'orWhere' : 'where';
+                                        $branchJoin->{$method}('product_branch_stocks.branch_name', (string) $activeBranch['name']);
+                                    }
+                                });
                         });
                         $qtyExpr = "COALESCE(product_branch_stocks.quantity, {$qtyCol}, 0)";
                     }
