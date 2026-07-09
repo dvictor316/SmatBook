@@ -21,10 +21,9 @@
                 </div>
             </div>
             <div class="col-lg-6">
-                <img src="https://images.pexels.com/photos/4968634/pexels-photo-4968634.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="PayPlus Payment Gateway" class="img-fluid rounded-4 shadow">
+                <img src="https://images.pexels.com/photos/6863183/pexels-photo-6863183.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="African finance professional managing digital payments on a laptop" class="img-fluid rounded-4 shadow">
             </div>
         </div>
     </div>
 </section>
 @endsection
-

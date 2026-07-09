@@ -483,40 +483,40 @@
         <div class="swiper-wrapper">
             @foreach([
                 [
-                    'img' => asset('assets/img/demo-one.png'),
+                    'img' => 'https://images.pexels.com/photos/3184325/pexels-photo-3184325.jpeg?auto=compress&cs=tinysrgb&w=1200',
                     'name' => 'Operations Dashboard',
                     'role' => 'Control Center',
-                    'description' => 'Central workspace for daily KPIs, account position tracking, and rapid operational decisions.'
+                    'description' => 'Business operators coordinating daily KPIs, account position tracking, and rapid operational decisions.'
                 ],
                 [
-                    'img' => asset('assets/img/demo-two.png'),
+                    'img' => 'https://images.pexels.com/photos/3184296/pexels-photo-3184296.jpeg?auto=compress&cs=tinysrgb&w=1200',
                     'name' => 'Analytics Reports',
                     'role' => 'Reporting Suite',
-                    'description' => 'Decision-grade visuals for profitability, tax exposure, cashflow, and trend forecasting.'
+                    'description' => 'Finance teams reviewing profitability, tax exposure, cashflow, and trend forecasting from modern devices.'
                 ],
                 [
-                    'img' => asset('assets/img/demo-three.png'),
+                    'img' => 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1200&auto=format&fit=crop',
                     'name' => 'Deployment Overview',
                     'role' => 'Infrastructure Ops',
-                    'description' => 'Unified monitoring for provisioned clients, lifecycle milestones, and infrastructure state.'
+                    'description' => 'Implementation teams coordinating provisioned clients, lifecycle milestones, and infrastructure state.'
                 ],
                 [
-                    'img' => asset('assets/img/demo-four.png'),
+                    'img' => 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?q=80&w=1200&auto=format&fit=crop',
                     'name' => 'Audit & Compliance',
                     'role' => 'Governance Panel',
-                    'description' => 'Structured evidence trail with controls and policy-driven review checkpoints.'
+                    'description' => 'Governance teams reviewing controls, documents, and policy-driven approval checkpoints.'
                 ],
                 [
-                    'img' => asset('assets/img/invoice-one.jpg'),
+                    'img' => 'https://images.unsplash.com/photo-1556761175-b413da4baf72?q=80&w=1200&auto=format&fit=crop',
                     'name' => 'Invoice Workspace',
                     'role' => 'Billing Engine',
-                    'description' => 'End-to-end invoicing, approvals, and payment-state tracking with traceable references.'
+                    'description' => 'Sales and billing teams managing invoices, approvals, and payment-state tracking with traceable references.'
                 ],
                 [
-                    'img' => asset('assets/img/invoice-two.jpg'),
+                    'img' => 'https://images.pexels.com/photos/3184639/pexels-photo-3184639.jpeg?auto=compress&cs=tinysrgb&w=1200',
                     'name' => 'Receipts & Collections',
                     'role' => 'Cash Management',
-                    'description' => 'Collection workflows for receipts, settlements, and account reconciliation.'
+                    'description' => 'Collections teams handling receipts, settlements, mobile payments, and account reconciliation.'
                 ],
             ] as $member)
                 <div class="swiper-slide">
@@ -551,45 +551,45 @@
         <div class="team-grid">
             @foreach([
                 [
-                    'img' => asset('assets/img/demo-one.png'),
+                    'img' => 'https://images.pexels.com/photos/3183197/pexels-photo-3183197.jpeg?auto=compress&cs=tinysrgb&w=1200',
                     'name' => 'Operations Dashboard',
                     'role' => 'Control Center',
-                    'description' => 'Unified dashboard for transactions, performance snapshots, and global operational control.',
+                    'description' => 'Human-led operations workspace for transactions, performance snapshots, and global operational control.',
                     'social' => ['linkedin' => route('landing.about'), 'twitter' => route('landing.contact')]
                 ],
                 [
-                    'img' => asset('assets/img/demo-two.png'),
+                    'img' => 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?q=80&w=1200&auto=format&fit=crop',
                     'name' => 'Analytics Reports',
                     'role' => 'Reporting Suite',
-                    'description' => 'Performance intelligence workspace for trend analysis, margin control, and executive reporting.',
+                    'description' => 'Performance intelligence workspace where teams review trends, margins, and executive reports on shared screens.',
                     'social' => ['linkedin' => route('landing.about')]
                 ],
                 [
-                    'img' => asset('assets/img/demo-three.png'),
+                    'img' => 'https://images.pexels.com/photos/3184339/pexels-photo-3184339.jpeg?auto=compress&cs=tinysrgb&w=1200',
                     'name' => 'Deployment Overview',
                     'role' => 'Infrastructure Ops',
-                    'description' => 'Deployment board for provisioning status, role workflows, and regional infrastructure readiness.',
+                    'description' => 'Deployment teams planning provisioning status, role workflows, and regional infrastructure readiness.',
                     'social' => ['github' => route('saas-login'), 'linkedin' => route('landing.contact')]
                 ],
                 [
-                    'img' => asset('assets/img/demo-four.png'),
+                    'img' => 'https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop',
                     'name' => 'Audit & Compliance',
                     'role' => 'Governance Panel',
-                    'description' => 'Audit-centric workflows with traceability, policy alignment, and structured approval checkpoints.',
+                    'description' => 'Audit-centric teams working through traceability, policy alignment, and structured approval checkpoints.',
                     'social' => ['linkedin' => route('landing.policy')]
                 ],
                 [
-                    'img' => asset('assets/img/invoice-one.jpg'),
+                    'img' => 'https://images.pexels.com/photos/3182773/pexels-photo-3182773.jpeg?auto=compress&cs=tinysrgb&w=1200',
                     'name' => 'Invoice Workspace',
                     'role' => 'Billing Engine',
-                    'description' => 'Invoice generation, approval routing, and customer payment lifecycle management in one interface.',
+                    'description' => 'Sales professionals using laptops and tablets to manage invoices, approvals, and customer payments.',
                     'social' => ['linkedin' => route('membership-plans')]
                 ],
                 [
-                    'img' => asset('assets/img/invoice-two.jpg'),
+                    'img' => 'https://images.unsplash.com/photo-1563986768609-322da13575f3?q=80&w=1200&auto=format&fit=crop',
                     'name' => 'Receipts & Collections',
                     'role' => 'Cash Management',
-                    'description' => 'Collection management for receipts, posted payments, reconciliations, and treasury visibility.',
+                    'description' => 'Payment operators managing receipts, posted payments, reconciliations, and treasury visibility.',
                     'social' => ['linkedin' => route('landing.contact')]
                 ],
             ] as $member)

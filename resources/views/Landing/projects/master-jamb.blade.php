@@ -21,7 +21,7 @@
                 </div>
             </div>
             <div class="col-lg-6">
-                <img src="https://images.unsplash.com/photo-1588072432836-e10032774350?q=80&w=1200&auto=format&fit=crop" alt="Master JAMB CBT" class="img-fluid rounded-4 shadow" onerror="this.onerror=null;this.src='{{ asset('assets/img/demo-two.png') }}';">
+                <img src="https://images.pexels.com/photos/4145190/pexels-photo-4145190.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="African students using laptops for CBT practice and online learning" class="img-fluid rounded-4 shadow" onerror="this.onerror=null;this.src='{{ asset('assets/img/user-5.jpg') }}';">
             </div>
         </div>
     </div>

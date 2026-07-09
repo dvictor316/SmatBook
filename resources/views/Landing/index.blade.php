@@ -17,7 +17,7 @@
         [
             'name' => 'Property234.com',
             'role' => 'Real Estate Platform',
-            'img' => 'https://images.pexels.com/photos/30677714/pexels-photo-30677714.jpeg?auto=compress&cs=tinysrgb&w=1200',
+            'img' => 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=1200',
             'alt' => 'African real estate entrepreneurs reviewing property listings on a laptop',
             'bio' => 'A global real estate listing ecosystem for owners, surveyors, legal advisers, agents, and every key stakeholder in the property market.',
             'link' => route('landing.projects.lahome'),
@@ -25,7 +25,7 @@
         [
             'name' => 'Master JAMB',
             'role' => 'CBT Examination Platform',
-            'img' => 'https://images.pexels.com/photos/30690402/pexels-photo-30690402.jpeg?auto=compress&cs=tinysrgb&w=1200',
+            'img' => 'https://images.pexels.com/photos/4144222/pexels-photo-4144222.jpeg?auto=compress&cs=tinysrgb&w=1200',
             'alt' => 'African students and education founders using laptops for online learning',
             'bio' => 'An online CBT platform for schools and institutions, built for exam readiness, timed assessments, and performance tracking.',
             'link' => route('landing.projects.master-jamb'),
@@ -33,7 +33,7 @@
         [
             'name' => 'PayPlus',
             'role' => 'Payment Gateway',
-            'img' => 'https://images.pexels.com/photos/7688374/pexels-photo-7688374.jpeg?auto=compress&cs=tinysrgb&w=1200',
+            'img' => 'https://images.pexels.com/photos/4968634/pexels-photo-4968634.jpeg?auto=compress&cs=tinysrgb&w=1200',
             'alt' => 'African finance professional managing digital payments on a laptop',
             'bio' => 'A global payment gateway designed for secure processing of everyday transactions across web, mobile, and enterprise channels.',
             'link' => route('landing.projects.payplus'),
