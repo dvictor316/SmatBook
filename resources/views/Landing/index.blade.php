@@ -17,21 +17,24 @@
         [
             'name' => 'Property234.com',
             'role' => 'Real Estate Platform',
-            'img' => 'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=1200',
+            'img' => 'https://images.pexels.com/photos/30677714/pexels-photo-30677714.jpeg?auto=compress&cs=tinysrgb&w=1200',
+            'alt' => 'African real estate entrepreneurs reviewing property listings on a laptop',
             'bio' => 'A global real estate listing ecosystem for owners, surveyors, legal advisers, agents, and every key stakeholder in the property market.',
             'link' => route('landing.projects.lahome'),
         ],
         [
             'name' => 'Master JAMB',
             'role' => 'CBT Examination Platform',
-            'img' => 'https://images.unsplash.com/photo-1588072432836-e10032774350?q=80&w=1200&auto=format&fit=crop',
+            'img' => 'https://images.pexels.com/photos/30690402/pexels-photo-30690402.jpeg?auto=compress&cs=tinysrgb&w=1200',
+            'alt' => 'African students and education founders using laptops for online learning',
             'bio' => 'An online CBT platform for schools and institutions, built for exam readiness, timed assessments, and performance tracking.',
             'link' => route('landing.projects.master-jamb'),
         ],
         [
             'name' => 'PayPlus',
             'role' => 'Payment Gateway',
-            'img' => 'https://images.pexels.com/photos/4968634/pexels-photo-4968634.jpeg?auto=compress&cs=tinysrgb&w=1200',
+            'img' => 'https://images.pexels.com/photos/7688374/pexels-photo-7688374.jpeg?auto=compress&cs=tinysrgb&w=1200',
+            'alt' => 'African finance professional managing digital payments on a laptop',
             'bio' => 'A global payment gateway designed for secure processing of everyday transactions across web, mobile, and enterprise channels.',
             'link' => route('landing.projects.payplus'),
         ],
@@ -1109,11 +1112,42 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 .cap-img:hover img { transform: scale(1.04); }
 
 /* Projects */
-.project-card { border: 1px solid var(--border); background: #fff; border-radius: var(--radius-md); overflow: hidden; transition: all 0.4s; height: 100%; box-shadow: var(--shadow-sm); }
-.project-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-lg); }
-.project-img { height: 380px; overflow: hidden; border-bottom: 4px solid var(--gold); }
-.project-img img { width: 100%; height: 100%; object-fit: cover; transition: all 0.6s; filter: grayscale(20%); }
-.project-card:hover img { transform: scale(1.07); filter: grayscale(0%); }
+.project-card {
+    border: 1px solid rgba(15,23,42,0.08);
+    background: #fff;
+    border-radius: 20px;
+    overflow: hidden;
+    transition: transform 0.32s ease, box-shadow 0.32s ease, border-color 0.32s ease;
+    height: 100%;
+    box-shadow: 0 18px 45px rgba(15,23,42,0.08);
+}
+.project-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(197,160,89,0.42);
+    box-shadow: 0 26px 70px rgba(15,23,42,0.14);
+}
+.project-img {
+    height: 280px;
+    overflow: hidden;
+    border-bottom: 1px solid rgba(197,160,89,0.30);
+    background: #eef2f7;
+    position: relative;
+}
+.project-img::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,12,30,0.02) 30%, rgba(0,12,30,0.18) 100%);
+    pointer-events: none;
+}
+.project-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.55s ease, filter 0.55s ease;
+    filter: saturate(1.03) contrast(1.02);
+}
+.project-card:hover img { transform: scale(1.045); }
 
 /* Testimonials */
 .testi-section { padding: 100px 0; overflow: hidden; position: relative; }
@@ -2396,7 +2430,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             @foreach($landingProjects as $m)
             <div class="col-lg-4 col-md-6">
                 <div class="project-card">
-                    <div class="project-img"><img src="{{ $m['img'] }}" alt="{{ $m['name'] }}" onerror="this.onerror=null;this.src='{{ asset('assets/img/demo-two.png') }}';"></div>
+                    <div class="project-img"><img src="{{ $m['img'] }}" alt="{{ $m['alt'] ?? $m['name'] }}" loading="lazy" onerror="this.onerror=null;this.src='{{ asset('assets/img/demo-two.png') }}';"></div>
                     <div class="p-4 text-center">
                         <h5 class="fw-bold mb-1" style="font-family:var(--font-display);color:var(--navy);">{{ $m['name'] }}</h5>
                         <p style="color:var(--gold);font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">{{ $m['role'] }}</p>
