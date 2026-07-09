@@ -32,9 +32,9 @@
                 'keywords' => 'SmartProbook policy, company policy, software terms, platform compliance',
             ],
             'landing.projects.lahome' => [
-                'title' => 'Lahome Properties Project',
-                'description' => 'See how SmartProbook supports Lahome Properties with real estate operations, listings workflows, and digital business infrastructure.',
-                'keywords' => 'Lahome Properties, real estate platform, property management software, SmartProbook projects',
+                'title' => 'Property234.com Project',
+                'description' => 'See how SmartProbook supports Property234.com with real estate operations, listings workflows, and digital business infrastructure.',
+                'keywords' => 'Property234.com, real estate platform, property management software, SmartProbook projects',
             ],
             'landing.projects.master-jamb' => [
                 'title' => 'Master JAMB CBT Platform Project',

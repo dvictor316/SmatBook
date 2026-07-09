@@ -86,7 +86,8 @@ Route::get('/media/public/{path}', [ProductController::class, 'serveImage'])
     ->name('media.public');
 Route::get('/our-team', [LandingController::class, 'team'])->name('landing.team');
 Route::get('/company-policy', [LandingController::class, 'policy'])->name('landing.policy');
-Route::get('/projects/lahome-properties', [LandingController::class, 'projectLahome'])->name('landing.projects.lahome');
+Route::redirect('/projects/lahome-properties', '/projects/property234-com', 301);
+Route::get('/projects/property234-com', [LandingController::class, 'projectLahome'])->name('landing.projects.lahome');
 Route::get('/projects/master-jamb', [LandingController::class, 'projectMasterJamb'])->name('landing.projects.master-jamb');
 Route::get('/projects/payplus', [LandingController::class, 'projectPayplus'])->name('landing.projects.payplus');
 Route::get('/pricing', [SubscriptionController::class, 'plans'])->name('pricing');
