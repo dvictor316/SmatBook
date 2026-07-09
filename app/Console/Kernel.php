@@ -88,7 +88,7 @@ class Kernel extends ConsoleKernel
             
         })->dailyAt('21:00');
 
-        // Expire demo accounts whose 48-hour window has passed
+        // Expire demo accounts whose 72-hour window has passed
         $schedule->command('demo:expire-accounts')->dailyAt('00:30')->withoutOverlapping();
     }
 
