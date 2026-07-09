@@ -558,6 +558,13 @@ class SuperAdminDashboardController extends Controller
         return 'COALESCE(' . implode(', ', $columns ?: ["{$table}.created_at"]) . ')';
     }
 
+    private function clearSelectedColumns($query)
+    {
+        $query->getQuery()->columns = null;
+
+        return $query;
+    }
+
     private function payoutRecipientGroups(): array
     {
         $baseColumns = ['id', 'name', 'email', 'role'];
@@ -819,8 +826,12 @@ class SuperAdminDashboardController extends Controller
                         }
                     });
 
-                $deploymentSubscriptionRevenue = (float) ((clone $deploymentSubscriptionsQuery)->selectRaw("SUM({$subscriptionRevenueExpr}) as total_revenue")->value('total_revenue') ?? 0);
-                $deploymentPaidSubs = (int) ((clone $deploymentSubscriptionsQuery)->selectRaw("COUNT(DISTINCT {$subscriptionBuyerKeyExpr}) as buyer_count")->value('buyer_count') ?? 0);
+                $deploymentSubscriptionRevenue = (float) ($this->clearSelectedColumns(clone $deploymentSubscriptionsQuery)
+                    ->selectRaw("SUM({$subscriptionRevenueExpr}) as total_revenue")
+                    ->value('total_revenue') ?? 0);
+                $deploymentPaidSubs = (int) ($this->clearSelectedColumns(clone $deploymentSubscriptionsQuery)
+                    ->selectRaw("COUNT(DISTINCT {$subscriptionBuyerKeyExpr}) as buyer_count")
+                    ->value('buyer_count') ?? 0);
                 $deployedPaidSubscriptionsQuery = clone $deploymentSubscriptionsQuery;
             }
 
@@ -1275,7 +1286,10 @@ class SuperAdminDashboardController extends Controller
             $dailyPaidMap = [];
             if ($deployedPaidSubscriptionsQuery) {
                 $dailyPaidMap = (clone $deployedPaidSubscriptionsQuery)
-                    ->selectRaw('DATE(subscriptions.created_at) as paid_date, COUNT(DISTINCT subscriptions.company_id) as total')
+                    ->select([
+                        DB::raw('DATE(subscriptions.created_at) as paid_date'),
+                        DB::raw('COUNT(DISTINCT subscriptions.company_id) as total'),
+                    ])
                     ->where('subscriptions.created_at', '>=', now()->subDays(13)->startOfDay())
                     ->groupBy('paid_date')
                     ->pluck('total', 'paid_date')
