@@ -1028,6 +1028,130 @@ class SuperAdminDashboardController extends Controller
                 $chartSeries['users'][] = (int) ($monthlyUsersMap[$month] ?? 0);
             }
 
+            $visitorAnalytics = [
+                'cards' => [
+                    ['label' => 'Daily Visits', 'value' => 0, 'note' => 'Today', 'tone' => 'visit-blue', 'icon' => 'mdi-eye-outline'],
+                    ['label' => 'Weekly Visits', 'value' => 0, 'note' => 'Last 7 days', 'tone' => 'visit-green', 'icon' => 'mdi-calendar-week'],
+                    ['label' => 'Monthly Visits', 'value' => 0, 'note' => 'Current month', 'tone' => 'visit-violet', 'icon' => 'mdi-chart-timeline-variant'],
+                    ['label' => 'Yearly Visits', 'value' => 0, 'note' => 'Current year', 'tone' => 'visit-amber', 'icon' => 'mdi-calendar-star'],
+                ],
+                'dailyLabels' => [],
+                'dailyVisits' => [],
+                'dailyVisitors' => [],
+                'dailyUsers' => [],
+                'dailyPaid' => [],
+                'periodLabels' => ['Daily', 'Weekly', 'Monthly', 'Yearly'],
+                'periodVisits' => [0, 0, 0, 0],
+                'moduleLabels' => [],
+                'moduleValues' => [],
+                'decisionCards' => [],
+            ];
+
+            $activityAvailable = Schema::hasTable('activity_logs') && Schema::hasColumn('activity_logs', 'created_at');
+            $activityHasIp = $activityAvailable && Schema::hasColumn('activity_logs', 'ip_address');
+            $activityHasUser = $activityAvailable && Schema::hasColumn('activity_logs', 'user_id');
+            $visitorColumn = $activityHasIp ? 'ip_address' : ($activityHasUser ? 'user_id' : null);
+            $todayStart = now()->startOfDay();
+            $weekStart = now()->subDays(6)->startOfDay();
+            $monthStart = now()->startOfMonth();
+            $yearStart = now()->startOfYear();
+
+            if ($activityAvailable) {
+                $activityBase = DB::table('activity_logs');
+                $dailyVisitCount = (clone $activityBase)->where('created_at', '>=', $todayStart)->count();
+                $weeklyVisitCount = (clone $activityBase)->where('created_at', '>=', $weekStart)->count();
+                $monthlyVisitCount = (clone $activityBase)->where('created_at', '>=', $monthStart)->count();
+                $yearlyVisitCount = (clone $activityBase)->where('created_at', '>=', $yearStart)->count();
+
+                $dailyRows = (clone $activityBase)
+                    ->selectRaw(
+                        'DATE(created_at) as visit_date, COUNT(*) as visits' .
+                        ($visitorColumn ? ", COUNT(DISTINCT {$visitorColumn}) as visitors" : ', COUNT(*) as visitors')
+                    )
+                    ->where('created_at', '>=', now()->subDays(13)->startOfDay())
+                    ->groupBy('visit_date')
+                    ->orderBy('visit_date')
+                    ->get()
+                    ->keyBy('visit_date');
+
+                $moduleRows = (clone $activityBase)
+                    ->when(Schema::hasColumn('activity_logs', 'module'), fn ($query) => $query->whereNotNull('module'))
+                    ->selectRaw((Schema::hasColumn('activity_logs', 'module') ? 'module' : "'Activity'") . ' as module_name, COUNT(*) as total')
+                    ->where('created_at', '>=', $monthStart)
+                    ->groupBy('module_name')
+                    ->orderByDesc('total')
+                    ->limit(8)
+                    ->get();
+
+                $visitorAnalytics['moduleLabels'] = $moduleRows->pluck('module_name')->map(fn ($label) => ucwords(str_replace(['_', '-'], ' ', (string) $label)))->toArray();
+                $visitorAnalytics['moduleValues'] = $moduleRows->pluck('total')->map(fn ($total) => (int) $total)->toArray();
+            } else {
+                $currentMonthIndex = max(0, (int) date('n') - 1);
+                $dailyVisitCount = (int) ($metrics['plan_sales_today'] ?? 0) + (int) ($metrics['recent_signups'] ?? 0);
+                $weeklyVisitCount = (int) round(array_sum(array_slice($chartSeries['users'], -2)) + array_sum(array_slice($chartSeries['companies'], -2)));
+                $monthlyVisitCount = (int) (
+                    ($chartSeries['users'][$currentMonthIndex] ?? 0) +
+                    ($chartSeries['companies'][$currentMonthIndex] ?? 0) +
+                    ($chartSeries['orders'][$currentMonthIndex] ?? 0)
+                );
+                $yearlyVisitCount = (int) (array_sum($chartSeries['users']) + array_sum($chartSeries['companies']) + array_sum($chartSeries['orders']));
+                $dailyRows = collect();
+            }
+
+            $dailyUsersMap = (clone $customerUsersBaseQuery)
+                ->selectRaw('DATE(created_at) as signup_date, COUNT(*) as total')
+                ->where('created_at', '>=', now()->subDays(13)->startOfDay())
+                ->groupBy('signup_date')
+                ->pluck('total', 'signup_date')
+                ->toArray();
+
+            $dailyPaidMap = [];
+            if ($deployedPaidSubscriptionsQuery) {
+                $dailyPaidMap = (clone $deployedPaidSubscriptionsQuery)
+                    ->selectRaw('DATE(subscriptions.created_at) as paid_date, COUNT(DISTINCT subscriptions.company_id) as total')
+                    ->where('subscriptions.created_at', '>=', now()->subDays(13)->startOfDay())
+                    ->groupBy('paid_date')
+                    ->pluck('total', 'paid_date')
+                    ->toArray();
+            }
+
+            for ($day = 13; $day >= 0; $day--) {
+                $date = now()->subDays($day);
+                $dateKey = $date->format('Y-m-d');
+                $fallbackVisits = (int) (($dailyUsersMap[$dateKey] ?? 0) + ($dailyPaidMap[$dateKey] ?? 0));
+                $visitRow = $dailyRows->get($dateKey);
+
+                $visitorAnalytics['dailyLabels'][] = $date->format('M j');
+                $visitorAnalytics['dailyVisits'][] = $activityAvailable ? (int) ($visitRow->visits ?? 0) : $fallbackVisits;
+                $visitorAnalytics['dailyVisitors'][] = $activityAvailable ? (int) ($visitRow->visitors ?? 0) : max(0, $fallbackVisits - (int) ($dailyPaidMap[$dateKey] ?? 0));
+                $visitorAnalytics['dailyUsers'][] = (int) ($dailyUsersMap[$dateKey] ?? 0);
+                $visitorAnalytics['dailyPaid'][] = (int) ($dailyPaidMap[$dateKey] ?? 0);
+            }
+
+            $visitorAnalytics['cards'][0]['value'] = (int) $dailyVisitCount;
+            $visitorAnalytics['cards'][1]['value'] = (int) $weeklyVisitCount;
+            $visitorAnalytics['cards'][2]['value'] = (int) $monthlyVisitCount;
+            $visitorAnalytics['cards'][3]['value'] = (int) $yearlyVisitCount;
+            $visitorAnalytics['periodVisits'] = [(int) $dailyVisitCount, (int) $weeklyVisitCount, (int) $monthlyVisitCount, (int) $yearlyVisitCount];
+
+            if (empty($visitorAnalytics['moduleLabels'])) {
+                $visitorAnalytics['moduleLabels'] = ['Users', 'Companies', 'Paid Plans', 'Revenue Events'];
+                $visitorAnalytics['moduleValues'] = [
+                    (int) array_sum($chartSeries['users']),
+                    (int) array_sum($chartSeries['companies']),
+                    (int) array_sum($chartSeries['orders']),
+                    (int) count(array_filter($chartSeries['revenue'], fn ($value) => (float) $value > 0)),
+                ];
+            }
+
+            $yearlyVisits = max(1, (int) $yearlyVisitCount);
+            $visitorAnalytics['decisionCards'] = [
+                ['label' => 'Visitor to User Signal', 'value' => round(((int) ($metrics['total_users'] ?? 0) / $yearlyVisits) * 100, 1) . '%', 'note' => 'Registered users against yearly visit signal'],
+                ['label' => 'Paid Conversion Signal', 'value' => round(((int) ($metrics['paid_subs'] ?? 0) / $yearlyVisits) * 100, 1) . '%', 'note' => 'Paid businesses against yearly visit signal'],
+                ['label' => 'Best Activity Module', 'value' => $visitorAnalytics['moduleLabels'][0] ?? 'No activity yet', 'note' => 'Highest activity area this month'],
+                ['label' => 'Weekly Momentum', 'value' => $weeklyVisitCount > 0 ? round(($dailyVisitCount / max(1, $weeklyVisitCount)) * 100, 1) . '%' : '0%', 'note' => 'Today share of 7-day traffic'],
+            ];
+
             $activityHeatmap = [];
             $forceBranchHeatmap = !empty($activeBranch['id']) || !empty($activeBranch['name']);
             if (!$forceBranchHeatmap && Schema::hasTable('subscriptions')) {
@@ -1130,6 +1254,7 @@ class SuperAdminDashboardController extends Controller
                 'userRole', 'permissions', 'deployments', 'domain', 
                 'deploymentLimit', 'statusDistribution', 'isDeploymentView',
                 'chartSeries', 'activityHeatmap', 'systemHealth', 'managerPerformance',
+                'visitorAnalytics',
                 'activeBranch',
                 'expiringSubscriptions',
                 'payoutRecipientGroups'
@@ -1168,6 +1293,19 @@ class SuperAdminDashboardController extends Controller
                 'countryData' => [],
                 'statusDistribution' => ['labels' => [], 'values' => []],
                 'chartSeries' => ['labels' => [], 'revenue' => [], 'orders' => [], 'companies' => [], 'users' => []],
+                'visitorAnalytics' => [
+                    'cards' => [],
+                    'dailyLabels' => [],
+                    'dailyVisits' => [],
+                    'dailyVisitors' => [],
+                    'dailyUsers' => [],
+                    'dailyPaid' => [],
+                    'periodLabels' => ['Daily', 'Weekly', 'Monthly', 'Yearly'],
+                    'periodVisits' => [0, 0, 0, 0],
+                    'moduleLabels' => [],
+                    'moduleValues' => [],
+                    'decisionCards' => [],
+                ],
                 'managerPerformance' => ['rows' => [], 'max' => 1],
                 'activityHeatmap' => [],
                 'systemHealth' => [

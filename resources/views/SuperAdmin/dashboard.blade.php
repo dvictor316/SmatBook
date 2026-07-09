@@ -5,6 +5,19 @@
 @section('content')
 @php
     $recentUsers = $recentUsers ?? collect();
+    $visitorAnalytics = $visitorAnalytics ?? [
+        'cards' => [],
+        'dailyLabels' => [],
+        'dailyVisits' => [],
+        'dailyVisitors' => [],
+        'dailyUsers' => [],
+        'dailyPaid' => [],
+        'periodLabels' => ['Daily', 'Weekly', 'Monthly', 'Yearly'],
+        'periodVisits' => [0, 0, 0, 0],
+        'moduleLabels' => [],
+        'moduleValues' => [],
+        'decisionCards' => [],
+    ];
 @endphp
 
 <style>
@@ -154,6 +167,100 @@
     }
     .chart-container.chart-container-sm {
         height: 150px;
+    }
+    .chart-container.chart-container-xs {
+        height: 118px;
+    }
+
+    .visit-analytics-board {
+        margin-top: 0.35rem;
+    }
+    .visit-mini-card {
+        border: 1px solid rgba(148, 163, 184, 0.26);
+        border-radius: 16px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.055);
+        padding: 0.72rem 0.82rem;
+        height: 100%;
+        overflow: hidden;
+        position: relative;
+    }
+    .visit-mini-card::after {
+        content: '';
+        position: absolute;
+        inset: auto -24px -34px auto;
+        width: 90px;
+        height: 90px;
+        border-radius: 999px;
+        opacity: 0.14;
+    }
+    .visit-mini-card.visit-blue::after { background: #2563eb; }
+    .visit-mini-card.visit-green::after { background: #10b981; }
+    .visit-mini-card.visit-violet::after { background: #8b5cf6; }
+    .visit-mini-card.visit-amber::after { background: #f59e0b; }
+    .visit-mini-card .visit-icon {
+        align-items: center;
+        border-radius: 12px;
+        color: #fff;
+        display: inline-flex;
+        height: 34px;
+        justify-content: center;
+        width: 34px;
+    }
+    .visit-mini-card.visit-blue .visit-icon { background: linear-gradient(135deg, #1d4ed8, #38bdf8); }
+    .visit-mini-card.visit-green .visit-icon { background: linear-gradient(135deg, #047857, #34d399); }
+    .visit-mini-card.visit-violet .visit-icon { background: linear-gradient(135deg, #6d28d9, #a78bfa); }
+    .visit-mini-card.visit-amber .visit-icon { background: linear-gradient(135deg, #b45309, #fbbf24); }
+    .visit-mini-card .visit-label {
+        color: #64748b;
+        font-size: 0.66rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .visit-mini-card .visit-value {
+        color: var(--dash-ink);
+        font-family: var(--kpi-display-font);
+        font-size: clamp(1.1rem, 1.8vw, 1.45rem);
+        font-weight: 800;
+        line-height: 1;
+        margin-top: 0.36rem;
+    }
+    .visit-mini-card .visit-note {
+        color: #7b8794;
+        font-size: 0.72rem;
+        font-weight: 600;
+        margin-top: 0.25rem;
+    }
+    .visit-chart-card .card-body {
+        padding: 0.72rem 0.82rem !important;
+    }
+    .visit-decision-card {
+        background: #f8fbff;
+        border: 1px solid #e2e8f0;
+        border-radius: 13px;
+        padding: 0.62rem 0.7rem;
+        height: 100%;
+    }
+    .visit-decision-card .label {
+        color: #64748b;
+        font-size: 0.64rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+    .visit-decision-card .value {
+        color: #0f172a;
+        font-family: var(--kpi-display-font);
+        font-size: 1rem;
+        font-weight: 800;
+        margin-top: 0.2rem;
+    }
+    .visit-decision-card .note {
+        color: #7b8794;
+        font-size: 0.68rem;
+        line-height: 1.35;
+        margin-top: 0.14rem;
     }
 
     /* Pulse animation for live indicators */
@@ -1318,6 +1425,113 @@
                                             <h3 class="fw-bold mb-0 kpi-value">₦{{ number_format($metrics['avg_plan_sale'] ?? 0, 2) }}</h3>
                                             <p class="kpi-note mb-0 mt-2">Average income per verified plan purchase</p>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="visit-analytics-board">
+                            <div class="row g-2">
+                                @foreach($visitorAnalytics['cards'] ?? [] as $visitCard)
+                                    <div class="col-6 col-lg-3">
+                                        <div class="visit-mini-card {{ $visitCard['tone'] ?? 'visit-blue' }}">
+                                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                                <div>
+                                                    <div class="visit-label">{{ $visitCard['label'] ?? 'Visits' }}</div>
+                                                    <div class="visit-value">{{ number_format((int) ($visitCard['value'] ?? 0)) }}</div>
+                                                    <div class="visit-note">{{ $visitCard['note'] ?? 'Visit signal' }}</div>
+                                                </div>
+                                                <div class="visit-icon">
+                                                    <i class="mdi {{ $visitCard['icon'] ?? 'mdi-eye-outline' }}"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <div class="row g-2 mt-2">
+                                <div class="col-12 col-xl-5">
+                                    <div class="card card-rounded shadow-sm visit-chart-card h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                                <div>
+                                                    <h5 class="mb-0 fw-bold text-dark">Visit Trend</h5>
+                                                    <small class="text-muted">Daily visitor signal, unique visitors, and new users</small>
+                                                </div>
+                                                <span class="live-badge-soft">Live</span>
+                                            </div>
+                                            <div class="chart-container chart-container-xs">
+                                                <canvas id="visitTrendChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-md-6 col-xl-3">
+                                    <div class="card card-rounded shadow-sm visit-chart-card h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                                <div>
+                                                    <h5 class="mb-0 fw-bold text-dark">Period Breakdown</h5>
+                                                    <small class="text-muted">Daily, weekly, monthly, yearly visits</small>
+                                                </div>
+                                                <span class="live-badge-soft">Visits</span>
+                                            </div>
+                                            <div class="chart-container chart-container-xs">
+                                                <canvas id="visitPeriodChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <div class="card card-rounded shadow-sm visit-chart-card h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                                <div>
+                                                    <h5 class="mb-0 fw-bold text-dark">Activity Mix</h5>
+                                                    <small class="text-muted">Most active modules and operational touchpoints</small>
+                                                </div>
+                                                <span class="live-badge-soft">Activity</span>
+                                            </div>
+                                            <div class="chart-container chart-container-xs">
+                                                <canvas id="activityMixChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row g-2 mt-2">
+                                <div class="col-12 col-xl-5">
+                                    <div class="card card-rounded shadow-sm visit-chart-card h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                                <div>
+                                                    <h5 class="mb-0 fw-bold text-dark">Visitor to Business Funnel</h5>
+                                                    <small class="text-muted">Visits compared with users and paid business conversions</small>
+                                                </div>
+                                                <span class="live-badge-soft">Decision</span>
+                                            </div>
+                                            <div class="chart-container chart-container-xs">
+                                                <canvas id="visitorFunnelChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-xl-7">
+                                    <div class="row g-2 h-100">
+                                        @foreach($visitorAnalytics['decisionCards'] ?? [] as $decisionCard)
+                                            <div class="col-6 col-lg-3">
+                                                <div class="visit-decision-card">
+                                                    <div class="label">{{ $decisionCard['label'] ?? 'Signal' }}</div>
+                                                    <div class="value">{{ $decisionCard['value'] ?? '0' }}</div>
+                                                    <div class="note">{{ $decisionCard['note'] ?? 'Management decision signal' }}</div>
+                                                </div>
+                                            </div>
+                                        @endforeach
                                     </div>
                                 </div>
                             </div>
@@ -3177,6 +3391,183 @@
     document.addEventListener("DOMContentLoaded", function() {
         const chartSeries = @json($dashboardChartSeries);
         const activityHeatmap = @json($dashboardActivityHeatmap);
+        const visitorAnalytics = @json($visitorAnalytics);
+        const hasPositiveData = values => (values || []).some(value => Number(value) > 0);
+
+        const visitTrendCtx = document.getElementById('visitTrendChart');
+        if (visitTrendCtx) {
+            const visits = visitorAnalytics.dailyVisits || [];
+            const visitors = visitorAnalytics.dailyVisitors || [];
+            const users = visitorAnalytics.dailyUsers || [];
+            const hasVisitTrend = hasPositiveData([...visits, ...visitors, ...users]);
+
+            new Chart(visitTrendCtx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: visitorAnalytics.dailyLabels || [],
+                    datasets: [
+                        {
+                            label: 'Visits',
+                            data: hasVisitTrend ? visits : [0],
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.38,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Unique Visitors',
+                            data: hasVisitTrend ? visitors : [0],
+                            borderColor: '#10b981',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.38,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'New Users',
+                            data: hasVisitTrend ? users : [0],
+                            borderColor: '#f59e0b',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.38,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, padding: 10 } },
+                        tooltip: { enabled: hasVisitTrend }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#eef3f8', drawBorder: false } },
+                        x: { grid: { display: false }, ticks: { maxTicksLimit: 7 } }
+                    }
+                }
+            });
+        }
+
+        const visitPeriodCtx = document.getElementById('visitPeriodChart');
+        if (visitPeriodCtx) {
+            const periodVisits = visitorAnalytics.periodVisits || [];
+            const hasPeriodData = hasPositiveData(periodVisits);
+
+            new Chart(visitPeriodCtx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: visitorAnalytics.periodLabels || ['Daily', 'Weekly', 'Monthly', 'Yearly'],
+                    datasets: [{
+                        label: 'Visits',
+                        data: hasPeriodData ? periodVisits : [0, 0, 0, 0],
+                        backgroundColor: ['#2563eb', '#10b981', '#8b5cf6', '#f59e0b'],
+                        borderRadius: 8,
+                        barPercentage: 0.62
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: hasPeriodData } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#eef3f8', drawBorder: false } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        const activityMixCtx = document.getElementById('activityMixChart');
+        if (activityMixCtx) {
+            const moduleValues = visitorAnalytics.moduleValues || [];
+            const hasModuleData = hasPositiveData(moduleValues);
+
+            new Chart(activityMixCtx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: hasModuleData ? (visitorAnalytics.moduleLabels || []) : ['No activity yet'],
+                    datasets: [{
+                        label: 'Activities',
+                        data: hasModuleData ? moduleValues : [1],
+                        backgroundColor: ['#1d4ed8', '#0891b2', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#64748b'],
+                        borderRadius: 7,
+                        barPercentage: 0.58
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: hasModuleData } },
+                    scales: {
+                        y: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                        x: { beginAtZero: true, grid: { color: '#eef3f8', drawBorder: false } }
+                    }
+                }
+            });
+        }
+
+        const visitorFunnelCtx = document.getElementById('visitorFunnelChart');
+        if (visitorFunnelCtx) {
+            const funnelVisits = visitorAnalytics.dailyVisits || [];
+            const funnelUsers = visitorAnalytics.dailyUsers || [];
+            const funnelPaid = visitorAnalytics.dailyPaid || [];
+            const hasFunnelData = hasPositiveData([...funnelVisits, ...funnelUsers, ...funnelPaid]);
+
+            new Chart(visitorFunnelCtx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: visitorAnalytics.dailyLabels || [],
+                    datasets: [
+                        {
+                            label: 'Visits',
+                            data: hasFunnelData ? funnelVisits : [0],
+                            backgroundColor: 'rgba(37, 99, 235, 0.72)',
+                            borderRadius: 6,
+                            barPercentage: 0.72,
+                            categoryPercentage: 0.58
+                        },
+                        {
+                            label: 'Users',
+                            data: hasFunnelData ? funnelUsers : [0],
+                            type: 'line',
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                            borderWidth: 2,
+                            tension: 0.35,
+                            fill: false,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Paid Businesses',
+                            data: hasFunnelData ? funnelPaid : [0],
+                            type: 'line',
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                            borderWidth: 2,
+                            tension: 0.35,
+                            fill: false,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, padding: 10 } },
+                        tooltip: { enabled: hasFunnelData }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#eef3f8', drawBorder: false } },
+                        x: { grid: { display: false }, ticks: { maxTicksLimit: 7 } }
+                    }
+                }
+            });
+        }
 
         // --- 1. REVENUE TREND CHART (Line) ---
         const revenueCtx = document.getElementById('revenueTrendChart');
