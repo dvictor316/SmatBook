@@ -782,7 +782,9 @@ class SuperAdminDashboardController extends Controller
             $planSalesToday = $planSalesBaseQuery ? (int) ((clone $planSalesBaseQuery)->whereDate('subscriptions.created_at', today())->selectRaw("COUNT(DISTINCT {$subscriptionBuyerKeyExpr}) as buyer_count")->value('buyer_count') ?? 0) : 0;
             $planSalesMonth = $planSalesBaseQuery ? (int) ((clone $planSalesBaseQuery)->whereMonth('subscriptions.created_at', now()->month)->whereYear('subscriptions.created_at', now()->year)->selectRaw("COUNT(DISTINCT {$subscriptionBuyerKeyExpr}) as buyer_count")->value('buyer_count') ?? 0) : 0;
             $planSalesValueMonth = $planSalesBaseQuery ? (float) ((clone $planSalesBaseQuery)->whereMonth('subscriptions.created_at', now()->month)->whereYear('subscriptions.created_at', now()->year)->selectRaw("SUM({$subscriptionRevenueExpr}) as total_revenue")->value('total_revenue') ?? 0) : 0;
-            $avgPlanSale = $paidBuyersCount > 0 ? ($subscriptionRevenue / $paidBuyersCount) : 0;
+            $dashboardPaidBusinesses = $registeredBusinessesTotal > 0 ? $registeredBusinessesTotal : $paidBuyersCount;
+            $dashboardSubscriptionRevenue = $registeredBusinessRevenue > 0 ? $registeredBusinessRevenue : $subscriptionRevenue;
+            $avgPlanSale = $dashboardPaidBusinesses > 0 ? ($dashboardSubscriptionRevenue / $dashboardPaidBusinesses) : 0;
 
             // METRICS
             $metrics = [
@@ -798,14 +800,14 @@ class SuperAdminDashboardController extends Controller
                 'registered_businesses_total' => $registeredBusinessesTotal,
                 'other_users_total' => (clone $this->otherUsersQuery())->count(),
                 'active_subs'      => $activeSubs > 0 ? $activeSubs : $activeCompanies,
-                'paid_subs'        => $paidBuyersCount,
+                'paid_subs'        => $dashboardPaidBusinesses,
                 'direct_paid_subs' => $directPaidSubs,
                 'deployment_paid_subs' => $deploymentPaidSubs,
                 'total_subs'       => Schema::hasTable('subscriptions')
                                       ? $this->platformSubscriptionsQuery()->count()
                                       : 0,
-                'platform_revenue' => $platformRevenue,
-                'owner_subscription_revenue' => $subscriptionRevenue,
+                'platform_revenue' => $dashboardSubscriptionRevenue > 0 ? $dashboardSubscriptionRevenue : $platformRevenue,
+                'owner_subscription_revenue' => $dashboardSubscriptionRevenue,
                 'direct_subscription_revenue' => $directSubscriptionRevenue,
                 'deployment_subscription_revenue' => $deploymentSubscriptionRevenue,
                 'pending_setups'   => Schema::hasTable('subscriptions')
