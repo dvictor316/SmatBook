@@ -132,7 +132,7 @@ class ProductController extends Controller
         return $query;
     }
 
-    private function unitOptions(bool $activeOnly = true)
+    private function unitOptions(bool $activeOnly = true, array $preferredIds = [])
     {
         if (!Schema::hasTable('units')) {
             return collect();
@@ -141,6 +141,10 @@ class ProductController extends Controller
         $this->ensureDefaultUnitsAvailable();
 
         $companyId = $this->tenantCompanyId();
+        $preferredIds = collect($preferredIds)
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->all();
 
         return Unit::withoutGlobalScopes()
             ->when($activeOnly, fn ($query) => $query->where('status', 'active'))
@@ -151,7 +155,32 @@ class ProductController extends Controller
                 }
             })
             ->orderBy('name')
-            ->get();
+            ->orderBy('id')
+            ->get()
+            ->groupBy(fn ($unit) => $this->unitDuplicateKey($unit))
+            ->map(function ($duplicates) use ($companyId, $preferredIds) {
+                return $duplicates
+                    ->sortBy(function ($unit) use ($companyId, $preferredIds) {
+                        return sprintf(
+                            '%d-%d-%010d',
+                            in_array((int) $unit->id, $preferredIds, true) ? 0 : 1,
+                            $companyId > 0 && (int) $unit->company_id === $companyId ? 0 : 1,
+                            (int) $unit->id
+                        );
+                    })
+                    ->first();
+            })
+            ->sortBy(fn ($unit) => Str::lower($unit->name . ' ' . $unit->symbol))
+            ->values();
+    }
+
+    private function unitDuplicateKey(Unit $unit): string
+    {
+        $symbol = Str::lower(trim((string) $unit->symbol));
+
+        return $symbol !== ''
+            ? 'symbol:' . $symbol
+            : 'name:' . Str::lower(trim((string) $unit->name));
     }
 
     private function ensureDefaultUnitsAvailable(): void
@@ -917,7 +946,17 @@ class ProductController extends Controller
         $validated['company_id'] = $this->tenantCompanyId() ?: null;
         $validated['user_id'] = auth()->id();
 
-        Unit::query()->create($validated);
+        $validated['symbol'] = trim($validated['symbol']);
+        $validated['name'] = trim($validated['name']);
+
+        $existingUnit = Unit::withoutGlobalScopes()
+            ->where('company_id', $validated['company_id'])
+            ->whereRaw('LOWER(symbol) = ?', [Str::lower($validated['symbol'])])
+            ->first();
+
+        $existingUnit
+            ? $existingUnit->update($validated)
+            : Unit::query()->create($validated);
 
         return back()->with('success', 'Unit created successfully.');
     }
@@ -930,6 +969,21 @@ class ProductController extends Controller
             'symbol' => 'required|string|max:30',
             'status' => 'required|in:active,inactive',
         ]);
+
+        $validated['symbol'] = trim($validated['symbol']);
+        $validated['name'] = trim($validated['name']);
+
+        $duplicateUnit = Unit::withoutGlobalScopes()
+            ->where('company_id', $unit->company_id)
+            ->whereKeyNot($unit->id)
+            ->whereRaw('LOWER(symbol) = ?', [Str::lower($validated['symbol'])])
+            ->first();
+
+        if ($duplicateUnit) {
+            return back()
+                ->withErrors(['symbol' => 'A unit with this symbol already exists.'])
+                ->withInput();
+        }
 
         $unit->update($validated);
 
@@ -1249,7 +1303,11 @@ class ProductController extends Controller
         $activeBranch = $this->getActiveBranchContext();
         $product->setAttribute('active_branch_stock', $this->branchInventory->getAvailableStock($product, $activeBranch));
         $categories = $this->availableCategories();
-        $units = $this->unitOptions();
+        $units = $this->unitOptions(true, [
+            $product->unit_id,
+            $product->base_unit_id,
+            $product->purchase_unit_id,
+        ]);
         
         return view('Inventory.Products.edit', compact('product', 'categories', 'activeBranch', 'units'));
     }
