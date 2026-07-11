@@ -159,16 +159,19 @@ class ProductController extends Controller
             ->get()
             ->groupBy(fn ($unit) => $this->unitDuplicateKey($unit))
             ->map(function ($duplicates) use ($companyId, $preferredIds) {
-                return $duplicates
+                $unit = $duplicates
                     ->sortBy(function ($unit) use ($companyId, $preferredIds) {
                         return sprintf(
-                            '%d-%d-%010d',
+                            '%d-%d-%d-%010d',
                             in_array((int) $unit->id, $preferredIds, true) ? 0 : 1,
                             $companyId > 0 && (int) $unit->company_id === $companyId ? 0 : 1,
+                            $this->normalizeUnitSymbol($unit->symbol) === Str::lower(trim((string) $unit->symbol)) ? 0 : 1,
                             (int) $unit->id
                         );
                     })
                     ->first();
+
+                return $this->normalizeUnitForDisplay($unit);
             })
             ->sortBy(fn ($unit) => Str::lower($unit->name . ' ' . $unit->symbol))
             ->values();
@@ -176,11 +179,41 @@ class ProductController extends Controller
 
     private function unitDuplicateKey(Unit $unit): string
     {
-        $symbol = Str::lower(trim((string) $unit->symbol));
+        $symbol = $this->normalizeUnitSymbol($unit->symbol);
 
         return $symbol !== ''
             ? 'symbol:' . $symbol
             : 'name:' . Str::lower(trim((string) $unit->name));
+    }
+
+    private function normalizeUnitForDisplay(Unit $unit): Unit
+    {
+        $symbol = $this->normalizeUnitSymbol($unit->symbol);
+
+        if ($symbol === 'litre') {
+            $unit->setAttribute('name', 'Litre');
+            $unit->setAttribute('symbol', 'litre');
+        }
+
+        return $unit;
+    }
+
+    private function normalizeUnitSymbol(?string $symbol): string
+    {
+        $symbol = Str::lower(trim((string) $symbol));
+
+        return match ($symbol) {
+            'l', 'lt', 'ltr', 'liter', 'liters', 'litre', 'litres' => 'litre',
+            default => $symbol,
+        };
+    }
+
+    private function unitSymbolAliases(string $symbol): array
+    {
+        return match ($this->normalizeUnitSymbol($symbol)) {
+            'litre' => ['l', 'lt', 'ltr', 'liter', 'liters', 'litre', 'litres'],
+            default => [Str::lower(trim($symbol))],
+        };
     }
 
     private function ensureDefaultUnitsAvailable(): void
@@ -211,7 +244,7 @@ class ProductController extends Controller
             ['Piece', 'pcs'],
             ['Kilogram', 'kg'],
             ['Gram', 'g'],
-            ['Litre', 'L'],
+            ['Litre', 'litre'],
             ['Millilitre', 'ml'],
             ['Metre', 'm'],
             ['Carton', 'ctn'],
@@ -951,7 +984,7 @@ class ProductController extends Controller
 
         $existingUnit = Unit::withoutGlobalScopes()
             ->where('company_id', $validated['company_id'])
-            ->whereRaw('LOWER(symbol) = ?', [Str::lower($validated['symbol'])])
+            ->whereIn(DB::raw('LOWER(symbol)'), $this->unitSymbolAliases($validated['symbol']))
             ->first();
 
         $existingUnit
@@ -976,7 +1009,7 @@ class ProductController extends Controller
         $duplicateUnit = Unit::withoutGlobalScopes()
             ->where('company_id', $unit->company_id)
             ->whereKeyNot($unit->id)
-            ->whereRaw('LOWER(symbol) = ?', [Str::lower($validated['symbol'])])
+            ->whereIn(DB::raw('LOWER(symbol)'), $this->unitSymbolAliases($validated['symbol']))
             ->first();
 
         if ($duplicateUnit) {

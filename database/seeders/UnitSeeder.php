@@ -23,7 +23,7 @@ class UnitSeeder extends Seeder
             ['Piece', 'pcs'],
             ['Kilogram', 'kg'],
             ['Gram', 'g'],
-            ['Litre', 'L'],
+            ['Litre', 'litre'],
             ['Millilitre', 'ml'],
             ['Metre', 'm'],
             ['Carton', 'ctn'],
