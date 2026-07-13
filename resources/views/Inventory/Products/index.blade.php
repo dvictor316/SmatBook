@@ -737,7 +737,7 @@
                                     <div class="col-md-6">
                                         <label class="form-label">Conversion Rate</label>
                                         <input type="number" step="0.000001" min="0" name="conversion_rate" class="form-control @error('conversion_rate') is-invalid @enderror" value="{{ old('conversion_rate') }}" placeholder="e.g. 12">
-                                        <small class="text-muted">Base units inside one purchase unit.</small>
+                                        <small class="text-muted">Optional when selling directly in the same unit. Use only when one purchase unit contains multiple base units.</small>
                                         @error('conversion_rate')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-4">

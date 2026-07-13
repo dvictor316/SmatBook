@@ -276,8 +276,9 @@ class ProductController extends Controller
         $validated['unit_id'] = !empty($validated['unit_id']) ? (int) $validated['unit_id'] : $defaultUnitId;
         $validated['base_unit_id'] = !empty($validated['base_unit_id']) ? (int) $validated['base_unit_id'] : $validated['unit_id'];
         $validated['purchase_unit_id'] = !empty($validated['purchase_unit_id']) ? (int) $validated['purchase_unit_id'] : null;
-        $validated['conversion_rate'] = $validated['purchase_unit_id']
-            ? round((float) ($validated['conversion_rate'] ?? 0), 6)
+        $hasConversionRate = isset($validated['conversion_rate']) && $validated['conversion_rate'] !== null && $validated['conversion_rate'] !== '';
+        $validated['conversion_rate'] = $hasConversionRate
+            ? round((float) $validated['conversion_rate'], 6)
             : null;
 
         if (Schema::hasTable('units') && Schema::hasColumn('products', 'base_unit_name')) {
@@ -316,9 +317,15 @@ class ProductController extends Controller
     {
         $purchaseUnit = trim((string) $request->input('purchase_unit_id', ''));
         $conversionRate = trim((string) $request->input('conversion_rate', ''));
+        $saleUnit = trim((string) $request->input('unit_id', ''));
+        $baseUnit = trim((string) ($request->input('base_unit_id') ?: $saleUnit));
 
-        if ($purchaseUnit !== '' && $conversionRate === '') {
-            $validator->errors()->add('conversion_rate', 'Enter a conversion rate when purchase unit is selected.');
+        if (
+            $purchaseUnit !== ''
+            && $conversionRate === ''
+            && !$this->unitsRepresentSameMeasure($purchaseUnit, $baseUnit)
+        ) {
+            $validator->errors()->add('conversion_rate', 'Enter a conversion rate only when the purchase unit is different from the base unit.');
         }
 
         if ($purchaseUnit === '' && $conversionRate !== '') {
@@ -336,6 +343,34 @@ class ProductController extends Controller
                 $validator->errors()->add($field, 'Choose a unit that belongs to this workspace.');
             }
         }
+    }
+
+    private function unitsRepresentSameMeasure(string|int|null $firstUnitId, string|int|null $secondUnitId): bool
+    {
+        $firstUnitId = (int) $firstUnitId;
+        $secondUnitId = (int) $secondUnitId;
+
+        if ($firstUnitId <= 0 || $secondUnitId <= 0) {
+            return false;
+        }
+
+        if ($firstUnitId === $secondUnitId) {
+            return true;
+        }
+
+        if (!Schema::hasTable('units')) {
+            return false;
+        }
+
+        $symbols = Unit::withoutGlobalScopes()
+            ->whereIn('id', [$firstUnitId, $secondUnitId])
+            ->pluck('symbol', 'id');
+
+        if ($symbols->count() < 2) {
+            return false;
+        }
+
+        return $this->normalizeUnitSymbol($symbols[$firstUnitId] ?? null) === $this->normalizeUnitSymbol($symbols[$secondUnitId] ?? null);
     }
 
     private function applyBranchScope($query, string $table, ?array $activeBranch = null)
