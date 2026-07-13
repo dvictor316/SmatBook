@@ -636,8 +636,8 @@ Route::middleware(['auth'])->prefix('ajax/inventory')->name('ajax.inventory.')->
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
 });
 
-// Reports hub — accessible to all authenticated users (superadmin, managers, staff)
-Route::middleware(['auth'])->group(function () {
+// Reports hub — authenticated users with an active workspace; individual report routes enforce plan tiers.
+Route::middleware(['auth', 'subscription.active'])->group(function () {
     Route::get('/reports', [ReportController::class, 'reportsHub'])->name('reports.hub');
     Route::post('/reports/custom-templates', [ReportController::class, 'storeCustomReportTemplate'])->middleware('plan.access:enterprise')->name('reports.custom.store');
     Route::get('/reports/custom-templates/{templateId}/run', [ReportController::class, 'runCustomReportTemplate'])->middleware('plan.access:enterprise')->name('reports.custom.run');
@@ -815,10 +815,10 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/invoice/{id}/print', 'printInvoice')->name('invoice.print');
         Route::get('/chart-data', 'getChartData')->name('chart-data');
         Route::get('/return-to-pos', 'returnToPos')->name('returnToPos');
-        Route::get('/reports', 'report')->name('reports');
+        Route::get('/reports', 'report')->middleware('plan.access:basic,professional,enterprise')->name('reports');
     });
     Route::get('/pos', [SaleController::class, 'showPos'])->name('sales.showPos');
-    Route::get('/pos/reports', [SaleController::class, 'report'])->name('pos.reports');
+    Route::get('/pos/reports', [SaleController::class, 'report'])->middleware('plan.access:basic,professional,enterprise')->name('pos.reports');
     Route::get('/pos/sales', [SaleController::class, 'posSales'])->name('pos.sales');
     Route::get('/pos/return', [SaleController::class, 'showPosReturn'])->name('pos.return.show');
     Route::post('/pos/return', [SaleController::class, 'storePosReturn'])->name('pos.return.store');
@@ -996,7 +996,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
 	    Route::get('/get-invoice-items/{id}', [ReportController::class, 'get_invoice_items'])->middleware('plan.access:basic,professional,enterprise')->name('get-invoice-items');
 	    
     // Reports
-    Route::controller(ReportController::class)->prefix('reports')->name('reports.')->group(function () {
+    Route::controller(ReportController::class)->prefix('reports')->name('reports.')->middleware('plan.access:basic,professional,enterprise')->group(function () {
         Route::get('/expense-report', 'expense_report')->middleware('plan.access:basic,professional,enterprise')->name('expense');
         Route::get('/income-report', 'income_report')->middleware('plan.access:basic,professional,enterprise')->name('income');
         Route::get('/payment-report', 'payment_report')->middleware('plan.access:basic,professional,enterprise')->name('payment');
