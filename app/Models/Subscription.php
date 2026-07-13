@@ -284,6 +284,25 @@ class Subscription extends Model
             ]);
     }
 
+    public static function trialPayload(?Carbon $startDate = null): array
+    {
+        $startDate = $startDate ?: now();
+
+        return [
+            'status' => 'Trial',
+            'payment_status' => 'free',
+            'start_date' => $startDate,
+            'end_date' => $startDate->copy()->addMonth(),
+            'initialized_at' => $startDate,
+        ];
+    }
+
+    public function isTrial(): bool
+    {
+        return strtolower((string) $this->status) === 'trial'
+            && strtolower((string) $this->payment_status) === 'free';
+    }
+
     protected static function boot()
     {
         parent::boot();

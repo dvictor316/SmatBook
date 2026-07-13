@@ -312,7 +312,7 @@ class AuthController extends Controller
                 $planId = $plan?->id ?? $planId;
                 $billingCycle = ucfirst($request->billing_cycle ?? session('selected_cycle', 'Monthly'));
 
-                $subscription = Subscription::create($this->filterPayloadForTable('subscriptions', [
+                $subscription = Subscription::create($this->filterPayloadForTable('subscriptions', array_merge([
                     'user_id' => $user->id,
                     'plan_id' => $planId,
                     'plan' => $planName,
@@ -320,9 +320,7 @@ class AuthController extends Controller
                     'billing_cycle' => $billingCycle,
                     'amount' => $planAmount,
                     'user_limit' => $plan?->resolvedUserLimit(),
-                    'status' => 'Pending',
-                    'payment_status' => 'unpaid',
-                ]));
+                ], Subscription::trialPayload())));
 
                 DB::afterCommit(function () use ($user, $planName, $planAmount, $billingCycle) {
                     SystemEventMailer::notifyRegistration($user, 'user', [
@@ -957,12 +955,12 @@ class AuthController extends Controller
                 ->first();
 
             if ($existingSubscription) {
-                if (strtolower((string) $existingSubscription->payment_status) !== 'paid') {
+                if (!in_array(strtolower((string) $existingSubscription->payment_status), ['paid', 'free'], true)) {
                     return redirect()->route('saas.checkout', ['id' => $existingSubscription->id])
                         ->with('success', ucfirst($provider) . ' account connected. Complete your checkout to continue.');
                 }
 
-                if (strtolower((string) $existingSubscription->status) !== 'active' || empty($existingSubscription->company_id)) {
+                if (!in_array(strtolower((string) $existingSubscription->status), ['active', 'trial'], true) || empty($existingSubscription->company_id)) {
                     return redirect()->route('saas.setup', ['id' => $existingSubscription->id])
                         ->with('success', ucfirst($provider) . ' account connected. Complete your workspace setup to continue.');
                 }
@@ -1121,7 +1119,7 @@ class AuthController extends Controller
             'reg_role' => 'admin',
         ]);
 
-        return Subscription::create($this->filterPayloadForTable('subscriptions', [
+        return Subscription::create($this->filterPayloadForTable('subscriptions', array_merge([
             'user_id' => $user->id,
             'plan_id' => $plan?->id,
             'plan' => $planName,
@@ -1129,9 +1127,7 @@ class AuthController extends Controller
             'billing_cycle' => $billingCycle,
             'amount' => $amount,
             'user_limit' => $plan?->resolvedUserLimit(),
-            'status' => 'Pending',
-            'payment_status' => 'unpaid',
-        ]));
+        ], Subscription::trialPayload())));
     }
 
     /*

@@ -47,6 +47,11 @@ class TenantController extends Controller
 
         // 4. SMART REDIRECT: Check if Company (Workspace) is already created
         if ($company && !empty($company->domain_prefix)) {
+            if (in_array(strtolower((string) $subscription->payment_status), ['paid', 'free'], true)) {
+                return redirect()->route('user.dashboard')
+                    ->with('info', 'Workspace details are already saved.');
+            }
+
             return redirect()->route('saas.checkout', ['id' => $subscription->id])
                 ->with('info', 'Workspace details are already saved. Continue to payment.');
         }
@@ -79,7 +84,7 @@ class TenantController extends Controller
                     'name'            => $request->subscriber_name,
                     'industry'        => $request->industry,
                     'domain_prefix'   => strtolower($request->domain_prefix),
-                    'status'          => 'pending_payment',
+                    'status'          => $subscription->isTrial() ? 'active' : 'pending_payment',
                     'plan'            => $subscription->plan_name,
                     'email'           => Auth::user()->email,
                     'onboarding_step' => 3, // Set checkpoint to Payment
@@ -91,8 +96,20 @@ class TenantController extends Controller
                 'subscriber_name' => $request->subscriber_name,
                 'domain_prefix'   => strtolower($request->domain_prefix),
                 'employee_size'   => $request->employee_size,
-                'status'          => 'pending_payment'
+                'status'          => $subscription->isTrial() ? 'Trial' : 'pending_payment'
             ]);
+
+            if ($subscription->isTrial()) {
+                session([
+                    'user_plan' => strtolower($subscription->plan ?? $subscription->plan_name ?? $company->plan ?? 'basic'),
+                    'current_tenant_id' => $company->id,
+                    'current_tenant_name' => $company->name ?? $company->company_name ?? 'Workspace',
+                    'workspace_context' => 'business',
+                ]);
+
+                return redirect()->route('user.dashboard')
+                    ->with('success', 'Your one-month free trial is active. Payment will be due after the trial ends.');
+            }
 
             return redirect()->route('saas.checkout', ['id' => $subscription->id])
                              ->with('success', 'Workspace details saved. Proceed to payment.');

@@ -125,7 +125,11 @@ class SubscriptionController extends Controller
             && $sameCycle
             && str_contains(strtolower($currentPlanName), 'solo') === str_contains(strtolower((string) $plan->name), 'solo');
 
-        if ($samePlan && in_array(strtolower((string) $currentSubscription->payment_status), ['paid', 'free'], true)) {
+        if (
+            $samePlan
+            && !$currentSubscription->isExpired()
+            && in_array(strtolower((string) $currentSubscription->payment_status), ['paid', 'free'], true)
+        ) {
             return redirect()->route('membership-plans')
                 ->with('success', 'You are already on that plan.');
         }
@@ -137,6 +141,15 @@ class SubscriptionController extends Controller
             ?: optional($currentSubscription?->company)->subdomain
             ?: ''
         );
+        $hasSubscriptionHistory = Subscription::query()
+            ->where(function ($query) use ($user, $companyId) {
+                $query->where('user_id', $user->id);
+                if ($companyId > 0) {
+                    $query->orWhere('company_id', $companyId);
+                }
+            })
+            ->exists();
+        $startsWithFreeTrial = ! $hasSubscriptionHistory;
 
         $pendingSubscription = Subscription::query()
             ->where('user_id', $user->id)
@@ -144,7 +157,7 @@ class SubscriptionController extends Controller
             ->orderByDesc('id')
             ->first();
 
-        $payload = $this->filterPayloadForTable('subscriptions', [
+        $payload = $this->filterPayloadForTable('subscriptions', array_merge([
             'user_id' => $user->id,
             'company_id' => $companyId ?: null,
             'plan_id' => $plan->id,
@@ -156,7 +169,7 @@ class SubscriptionController extends Controller
             'status' => 'Pending',
             'payment_status' => 'unpaid',
             'domain_prefix' => $domainPrefix !== '' ? $domainPrefix : null,
-        ]);
+        ], $startsWithFreeTrial ? Subscription::trialPayload() : []));
 
         if ($pendingSubscription) {
             $pendingSubscription->fill($payload);
@@ -175,6 +188,11 @@ class SubscriptionController extends Controller
             'plan' => $requestedPlan,
             'reg_role' => 'admin',
         ]);
+
+        if ($startsWithFreeTrial) {
+            return redirect()->route('saas.setup', ['id' => $subscription->id])
+                ->with('success', 'Your one-month free trial has started. Complete workspace setup to begin using the app.');
+        }
 
         return redirect()->route('saas.checkout', ['id' => $subscription->id])
             ->with('success', 'Upgrade plan selected. Complete payment to activate it.');
@@ -221,12 +239,12 @@ class SubscriptionController extends Controller
             && filled($existingCompany->domain_prefix ?? $existingCompany->subdomain ?? $existingCompany->domain ?? null);
 
         if ($hasConfiguredWorkspace) {
-            if (strtolower((string) $subscription->payment_status) !== 'paid') {
+            if (!in_array(strtolower((string) $subscription->payment_status), ['paid', 'free'], true)) {
                 return redirect()->route('saas.checkout', ['id' => $subscription->id])
                     ->with('info', 'Your workspace URL is already configured. Complete checkout to activate it.');
             }
 
-            if (strtolower((string) $subscription->status) === 'active') {
+            if (in_array(strtolower((string) $subscription->status), ['active', 'trial'], true)) {
                 session([
                     'user_plan' => strtolower($subscription->plan ?? $subscription->plan_name ?? $existingCompany->plan ?? 'basic'),
                     'current_tenant_id' => $existingCompany->id,
@@ -374,6 +392,8 @@ class SubscriptionController extends Controller
                 'employee_size' => $request->employees,
             ]);
 
+            $isTrialSubscription = $subscription->isTrial();
+
             $company = Company::updateOrCreate(
                 ['user_id' => $user->id],
                 $this->filterPayloadForTable('companies', [
@@ -382,7 +402,7 @@ class SubscriptionController extends Controller
                     'domain'        => $prefix,
                     'company_name'  => (string) $request->customer_name,
                     'name'          => (string) $request->customer_name,
-                    'status'        => 'pending',
+                    'status'        => $isTrialSubscription ? 'active' : 'pending',
                     'owner_id'      => $user->id,
                 ])
             );
@@ -410,7 +430,25 @@ class SubscriptionController extends Controller
                     ->with('success', 'State manager hub initialized!');
             }
 
+            if ($isTrialSubscription) {
+                $subscription->setRelation('company', $company);
+                $this->deployWorkspace($subscription->fresh(['user', 'company']));
+
+                session([
+                    'user_plan' => strtolower($subscription->plan ?? $subscription->plan_name ?? $company->plan ?? 'basic'),
+                    'current_tenant_id' => $company->id,
+                    'current_tenant_name' => $company->name ?? $company->company_name ?? 'Workspace',
+                    'workspace_context' => 'business',
+                ]);
+
+                DB::commit();
+
+                return redirect()->route('user.dashboard')
+                    ->with('success', 'Your one-month free trial is active. Payment will be due after the trial ends.');
+            }
+
             DB::commit();
+
             return redirect()->route('saas.checkout', $subscription->id)
                 ->with('success', 'Workspace configured! Proceed to payment.');
 
@@ -1481,8 +1519,8 @@ class SubscriptionController extends Controller
     {
         $subscription = Subscription::findOrFail($id);
         $subscription->update($request->validate([
-            'status'         => 'required|in:Active,Pending,Cancelled,Expired',
-            'payment_status' => 'required|in:paid,unpaid,pending,failed,pending_verification',
+            'status'         => 'required|in:Active,Trial,Pending,Cancelled,Expired',
+            'payment_status' => 'required|in:paid,free,unpaid,pending,failed,pending_verification',
             'end_date'       => 'required|date',
         ]));
         return redirect()->route('super_admin.subscriptions.transactions')

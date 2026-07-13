@@ -379,7 +379,7 @@ class HomeController extends Controller
                 'sub_status' => $subscription->status,
             ]);
 
-            if (strtolower((string) $subscription->status) !== 'active') {
+            if (!in_array(strtolower((string) $subscription->status), ['active', 'trial'], true)) {
                 $subscription->forceFill(['status' => 'Active'])->save();
             }
 
@@ -406,7 +406,7 @@ class HomeController extends Controller
         }
 
         // Paid but subscription not yet Active
-        if (strtolower((string) $subscription->status) !== 'active') {
+        if (!in_array(strtolower((string) $subscription->status), ['active', 'trial'], true)) {
             Log::info('→ Inactive subscription, redirecting to setup', [
                 'subscription_id' => $subscription->id,
             ]);
@@ -734,7 +734,7 @@ class HomeController extends Controller
             ->first();
 
         $subscription = Subscription::where('user_id', $user->id)
-            ->where('payment_status', 'paid')
+            ->whereIn('payment_status', ['paid', 'free'])
             ->latest()
             ->first();
 
@@ -746,7 +746,7 @@ class HomeController extends Controller
             return redirect()->route('subscription.expired');
         }
 
-        if (strtolower((string) $subscription->status) !== 'active') {
+        if (!in_array(strtolower((string) $subscription->status), ['active', 'trial'], true)) {
             return redirect()->route('saas.setup', $subscription->id);
         }
 
