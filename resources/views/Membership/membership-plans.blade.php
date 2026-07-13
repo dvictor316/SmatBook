@@ -410,6 +410,10 @@
             <span class="gold-label">Enterprise Solutions</span>
             <h1 class="hero-title">Select Your <span>Growth Infrastructure</span></h1>
             <p class="hero-subtitle">Professional accounting nodes designed for institutional precision and high-volume data management.</p>
+            <div style="display:inline-flex;align-items:center;gap:10px;margin-top:18px;padding:10px 16px;border-radius:999px;background:#ecfdf5;border:1px solid #bbf7d0;color:#065f46;font-weight:800;font-size:.9rem;">
+                <i class="fas fa-gift"></i>
+                <span>First month free on every plan. Payment starts after your trial.</span>
+            </div>
             <div class="flash-wrap">
                 @if(session('success'))
                     <div class="flash-msg success">{{ session('success') }}</div>

@@ -663,7 +663,10 @@ class SubscriptionController extends Controller
         // withoutGlobalScope('tenant'): allows deployment manager to process payment for client subscriptions.
         $subscription = Subscription::withoutGlobalScope('tenant')->findOrFail($id);
 
-        if ($subscription->payment_status === 'paid' || strtolower((string) $subscription->status) === 'active') {
+        if (
+            in_array(strtolower((string) $subscription->payment_status), ['paid', 'free'], true)
+            || in_array(strtolower((string) $subscription->status), ['active', 'trial'], true)
+        ) {
             return redirect()->route('home')
                 ->with('info', 'Your subscription is already active.');
         }

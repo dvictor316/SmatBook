@@ -217,8 +217,9 @@
                         <div class="fw-bold text-primary" style="font-size: 15px;">{{ ucfirst($plan ?? ($subscription->plan_name ?? 'Business')) }}</div>
                     </div>
                     <div class="col-6 ps-3">
-                        <span class="label-caps" style="font-size: 9px;">Total Fee</span>
+                        <span class="label-caps" style="font-size: 9px;">Due After Trial</span>
                         <div class="fw-bold text-dark" style="font-size: 15px;">₦{{ number_format($selectedPrice ?? ($subscription->amount ?? 0), 2) }}</div>
+                        <div class="text-success fw-bold mt-1" style="font-size:10px;">First month free</div>
                     </div>
                 </div>
             </div>
@@ -227,7 +228,7 @@
         
         <div class="smat-main">
             <h1 class="form-title">Setup Subdomain</h1>
-            <p class="form-subtitle">Configure your unique workspace URL below.</p>
+            <p class="form-subtitle">Configure your unique workspace URL and start the one-month free trial.</p>
 
             <form action="{{ route('saas.store') }}" method="POST">
                 @csrf
@@ -289,7 +290,7 @@
                 </div>
 
                 <button type="submit" class="btn btn-deploy-red">
-                    Deploy Node & Proceed <i class="fas fa-arrow-right ms-2"></i>
+                    Deploy Node & Start Free Trial <i class="fas fa-arrow-right ms-2"></i>
                 </button>
 
                 <div class="text-center mt-4">

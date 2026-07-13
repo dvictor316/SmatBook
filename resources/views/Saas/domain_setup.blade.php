@@ -252,8 +252,9 @@
                 <div class="info-row"><span class="info-label">Billing Cycle</span><span class="info-value">{{ strtoupper($cycle) }}</span></div>
 
                 <div class="amount-display text-center">
-                    <span class="info-label" style="display: block; margin-bottom: 5px;">Payable Amount</span>
+                    <span class="info-label" style="display: block; margin-bottom: 5px;">Due After Free Trial</span>
                     <div class="amount-value">₦{{ number_format($displayPrice, 2) }}</div>
+                    <div class="text-success fw-bold mt-2" style="font-size: 11px;">First month free. Payment starts after trial.</div>
                 </div>
                 <div class="text-center mt-3">
                     <p class="mb-0 text-muted" style="font-size: 10px; font-weight: 700;">OPERATOR: {{ Auth::user()->email }}</p>
@@ -264,7 +265,7 @@
         
         <div class="smat-main">
             <h1 class="form-title">Identity Setup</h1>
-            <p class="form-subtitle">Claim your unique subdomain and name your workspace.</p>
+                <p class="form-subtitle">Claim your unique subdomain and start your one-month free trial workspace.</p>
 
             @if ($errors->any())
                 <div class="error-pill">

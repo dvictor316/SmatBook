@@ -704,7 +704,7 @@
                 </div>
 
                 <div class="amount-display text-center">
-                    <span class="info-label" style="display: block; margin-bottom: 5px;">{{ $isManager ? 'Setup Status' : 'Final Commitment' }}</span>
+                    <span class="info-label" style="display: block; margin-bottom: 5px;">{{ $isManager ? 'Setup Status' : 'After Free Trial' }}</span>
                     <div class="amount-value">
                         @if($isManager)
                             FREE <span style="font-size: 0.8rem; color: #94a3b8;">(Partner)</span>
@@ -713,6 +713,11 @@
                             ₦{{ number_format($displayPrice, 2) }}
                         @endif
                     </div>
+                    @unless($isManager)
+                        <div style="margin-top:8px;font-size:.74rem;font-weight:800;color:#bbf7d0;text-transform:uppercase;letter-spacing:.08em;">
+                            First month free. No payment today.
+                        </div>
+                    @endunless
                 </div>
                 <div class="aside-points">
                     <div class="aside-point">
@@ -782,7 +787,7 @@
 
                 <div class="info-banner">
                     <i class="fas fa-sparkles"></i>
-                    <span>{{ $isManager ? 'Partner registrations create agent profiles tied to a country, state/county, and local council. State managers are created only by super admin.' : 'Your registration prepares a secure admin workspace aligned to the selected billing plan.' }}</span>
+                    <span>{{ $isManager ? 'Partner registrations create agent profiles tied to a country, state/county, and local council. State managers are created only by super admin.' : 'Your registration starts a one-month free trial. Payment is not required until the trial ends.' }}</span>
                 </div>
 
                 <div class="field-grid mb-3">
