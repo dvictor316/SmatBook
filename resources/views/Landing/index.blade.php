@@ -1241,23 +1241,29 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     z-index: -1;
 }
 .product-video-container {
-    padding-left: clamp(20px, 3vw, 46px);
-    padding-right: clamp(20px, 3vw, 46px);
+    padding-left: clamp(24px, 4vw, 58px);
+    padding-right: clamp(24px, 4vw, 58px);
 }
 .product-video-shell {
     display: grid;
-    grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+    grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.1fr);
     align-items: stretch;
-    gap: 48px;
+    gap: clamp(24px, 3vw, 42px);
 }
 .product-video-heading {
-    max-width: 960px;
-    margin: 0 0 34px;
+    max-width: 880px;
+    margin: 0 0 30px;
+}
+.product-video-heading .sb-h1 {
+    max-width: 14.5ch;
+    font-size: clamp(2.25rem, 4.4vw, 4.55rem);
+    line-height: 1.04;
+    letter-spacing: -0.055em;
 }
 .product-video-copy {
     height: 100%;
-    min-height: 438px;
-    padding: 28px;
+    min-height: 424px;
+    padding: clamp(22px, 2.4vw, 30px);
     border-radius: 30px;
     background: rgba(255,255,255,0.68);
     border: 1px solid rgba(0,35,71,0.08);
@@ -1333,7 +1339,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     padding: 12px;
     background: linear-gradient(135deg, rgba(0,35,71,0.96), rgba(3,23,56,0.92));
     box-shadow: 0 34px 90px rgba(0,35,71,0.30), 0 0 0 1px rgba(197,160,89,0.20);
-    min-height: 438px;
+    min-height: 424px;
     display: flex;
     flex-direction: column;
 }
@@ -1375,7 +1381,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     position: relative;
     overflow: hidden;
     border-radius: 26px;
-    min-height: 390px;
+    min-height: 376px;
     background: #03122d;
     flex: 1;
 }
@@ -1702,6 +1708,13 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         grid-template-columns: 1fr;
         gap: 30px;
     }
+    .product-video-heading {
+        max-width: 760px;
+    }
+    .product-video-heading .sb-h1 {
+        max-width: 15ch;
+        font-size: clamp(2.05rem, 6vw, 3.4rem);
+    }
     .product-video-copy {
         max-width: none;
     }
@@ -1742,8 +1755,17 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .product-video-section {
         padding: 64px 0 76px;
     }
+    .product-video-container {
+        padding-left: clamp(18px, 5vw, 28px);
+        padding-right: clamp(18px, 5vw, 28px);
+    }
     .product-video-heading {
         margin-bottom: 24px;
+    }
+    .product-video-heading .sb-h1 {
+        max-width: 12.5ch;
+        font-size: clamp(1.9rem, 8.4vw, 2.85rem);
+        letter-spacing: -0.045em;
     }
     .product-video-copy,
     .product-video-frame {
