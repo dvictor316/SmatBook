@@ -1365,6 +1365,10 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     object-fit: cover;
     opacity: 0.72;
     filter: saturate(1.04) contrast(1.05);
+    transition: opacity .35s ease;
+}
+.product-video-window video.is-switching {
+    opacity: 0.35;
 }
 .product-video-window::after {
     content: '';
@@ -2454,8 +2458,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                             <span>Accounting workflow preview</span>
                         </div>
                         <div class="product-video-window">
-                            <video autoplay muted loop playsinline preload="metadata" poster="{{ asset('assets/img/demo-two.png') }}" aria-label="Short SmartProbook accounting software workflow video">
-                                <source src="https://www.pexels.com/download/video/8478748/" type="video/mp4">
+                            <video id="accountingSceneVideo" autoplay muted playsinline preload="metadata" poster="{{ asset('assets/img/demo-two.png') }}" aria-label="Short SmartProbook accounting software workflow video playlist">
+                                <source src="https://videos.pexels.com/video-files/8478748/8478748-hd_1920_1080_25fps.mp4" type="video/mp4">
                                 <source src="{{ asset('assets/video/neu.mp4') }}" type="video/mp4">
                             </video>
                             <div class="video-flow" aria-hidden="true">
@@ -3019,6 +3023,41 @@ document.addEventListener('DOMContentLoaded', function () {
             if (navCollapse?.classList.contains('show')) bsCollapse?.hide();
         });
     });
+
+    const accountingSceneVideo = document.getElementById('accountingSceneVideo');
+    if (accountingSceneVideo) {
+        const accountingScenes = [
+            'https://videos.pexels.com/video-files/8478748/8478748-hd_1920_1080_25fps.mp4',
+            'https://cdn.pixabay.com/video/2023/02/01/148867-794951490_tiny.mp4',
+            'https://cdn.pixabay.com/video/2025/07/23/293084_tiny.mp4',
+        ];
+        let accountingSceneIndex = 0;
+        let accountingSceneTimer = null;
+        const sceneDurationMs = 3000;
+
+        const playAccountingScene = index => {
+            accountingSceneIndex = index % accountingScenes.length;
+            accountingSceneVideo.classList.add('is-switching');
+            window.clearTimeout(accountingSceneTimer);
+
+            window.setTimeout(() => {
+                accountingSceneVideo.src = accountingScenes[accountingSceneIndex];
+                accountingSceneVideo.load();
+                const playPromise = accountingSceneVideo.play();
+                if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(() => {});
+                accountingSceneVideo.classList.remove('is-switching');
+                accountingSceneTimer = window.setTimeout(() => {
+                    playAccountingScene(accountingSceneIndex + 1);
+                }, sceneDurationMs);
+            }, 180);
+        };
+
+        accountingSceneVideo.addEventListener('ended', () => playAccountingScene(accountingSceneIndex + 1));
+        accountingSceneVideo.addEventListener('error', () => {
+            if (accountingScenes.length > 1) playAccountingScene(accountingSceneIndex + 1);
+        });
+        playAccountingScene(0);
+    }
 
     const msgs = document.querySelectorAll('.announce-msg');
     let cur = 0;
