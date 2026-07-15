@@ -109,7 +109,7 @@ Route::get('/deploy-infrastructure', function (\Illuminate\Http\Request $request
         'deployment_subscription_id',
     ]);
 
-    return redirect()->to(route('landing.index') . '#licensing');
+    return redirect()->to(route('landing.index') . '#product-video');
 })->name('deploy.infrastructure');
 Route::get('/session/ping', function () {
     return response()->json([

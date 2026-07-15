@@ -1285,7 +1285,7 @@
             <li><a href="{{ route('landing.about') }}" class="{{ Route::is('landing.about') ? 'active' : '' }}">About</a></li>
             <li><a href="{{ route('landing.team') }}" class="{{ Route::is('landing.team') ? 'active' : '' }}">Projects</a></li>
             <li><a href="{{ route('landing.contact') }}" class="{{ Route::is('landing.contact') ? 'active' : '' }}">Contact</a></li>
-            <li><a href="{{ url('/#licensing') }}">Licensing</a></li>
+            <li><a href="{{ url('/#product-video') }}">Video</a></li>
             <li><a href="{{ route('landing.policy') }}" class="{{ Route::is('landing.policy') ? 'active' : '' }}">Policy</a></li>
             <li class="nav-action-item"><a href="{{ route('saas-login', ['portal' => 1]) }}" class="btn-portal"><span class="nav-label-full">Client Portal</span><span class="nav-label-short">Portal</span></a></li>
         </ul>
@@ -1314,7 +1314,7 @@
                 <ul class="footer-links">
                     <li><a href="{{ route('landing.about') }}" class="footer-link">Intelligence Solutions</a></li>
                     <li><a href="{{ route('landing.team') }}" class="footer-link">Other Projects</a></li>
-                    <li><a href="{{ url('/#licensing') }}" class="footer-link">Licensing</a></li>
+                    <li><a href="{{ url('/#product-video') }}" class="footer-link">Product Video</a></li>
                 </ul>
             </div>
 

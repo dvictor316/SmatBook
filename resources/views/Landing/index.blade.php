@@ -1212,14 +1212,226 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 .testi-card:hover { background: rgba(255,255,255,0.08); border-color: var(--gold); transform: translateY(-5px); }
 .testi-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold); }
 
-/* Pricing */
-.plan-card { border: 1px solid var(--border); background: #fff; padding: 42px 28px; border-radius: var(--radius-md); height: 100%; display: flex; flex-direction: column; transition: all 0.4s; border-top: 3px solid transparent; box-shadow: var(--shadow-sm); }
-.plan-card:hover:not(.plan-featured) { border-top-color: var(--gold); transform: translateY(-7px); box-shadow: var(--shadow-lg); }
-.plan-featured { border: 2px solid var(--gold); background: var(--surface-2); border-top-color: var(--gold); transform: scale(1.03); box-shadow: var(--shadow-gold); }
-.plan-name { font-family: var(--font-display); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 16px; text-align: center; }
-.plan-price { font-family: var(--font-display); font-size: clamp(1.8rem,3vw,2.2rem); font-weight: 900; color: var(--navy); text-align: center; margin-bottom: 32px; }
-.plan-feature { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
-.plan-feature i { color: #22c55e; margin-top: 2px; flex-shrink: 0; }
+/* Product video */
+.product-video-section {
+    position: relative;
+    padding: 92px 0 104px;
+    overflow: hidden;
+    isolation: isolate;
+}
+.product-video-section::before {
+    content: '';
+    position: absolute;
+    inset: 18px 0 auto;
+    height: 78%;
+    background:
+        radial-gradient(circle at 12% 24%, rgba(197,160,89,0.22), transparent 32%),
+        radial-gradient(circle at 86% 18%, rgba(28,102,232,0.18), transparent 34%),
+        linear-gradient(135deg, #f8fafc 0%, #ffffff 54%, #f7efe0 100%);
+    z-index: -2;
+}
+.product-video-section::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(rgba(0,35,71,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(0,35,71,0.045) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent);
+    z-index: -1;
+}
+.product-video-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+    align-items: center;
+    gap: 48px;
+}
+.product-video-copy {
+    max-width: 520px;
+}
+.video-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(0,35,71,0.06);
+    border: 1px solid rgba(0,35,71,0.10);
+    color: var(--navy);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+}
+.video-pill span {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--crimson);
+    box-shadow: 0 0 0 7px rgba(188,0,45,0.11);
+}
+.product-video-points {
+    display: grid;
+    gap: 12px;
+    margin: 26px 0 30px;
+}
+.product-video-point {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 13px 14px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.76);
+    border: 1px solid rgba(0,35,71,0.08);
+    box-shadow: 0 18px 44px rgba(0,35,71,0.06);
+}
+.product-video-point i {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--navy);
+    background: rgba(197,160,89,0.20);
+    flex-shrink: 0;
+}
+.product-video-point strong {
+    display: block;
+    color: var(--navy);
+    font-size: 0.92rem;
+    line-height: 1.2;
+}
+.product-video-point span {
+    display: block;
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 1.55;
+    margin-top: 3px;
+}
+.product-video-frame {
+    position: relative;
+    border-radius: 34px;
+    padding: 12px;
+    background: linear-gradient(135deg, rgba(0,35,71,0.96), rgba(3,23,56,0.92));
+    box-shadow: 0 34px 90px rgba(0,35,71,0.30), 0 0 0 1px rgba(197,160,89,0.20);
+}
+.product-video-frame::before {
+    content: '';
+    position: absolute;
+    inset: -18px;
+    border-radius: 44px;
+    background: linear-gradient(135deg, rgba(197,160,89,0.34), rgba(28,102,232,0.16), transparent);
+    filter: blur(18px);
+    z-index: -1;
+}
+.product-video-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: rgba(255,255,255,0.86);
+    padding: 8px 12px 14px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+}
+.video-dots {
+    display: inline-flex;
+    gap: 7px;
+}
+.video-dots span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.28);
+}
+.video-dots span:nth-child(1) { background: #ef4444; }
+.video-dots span:nth-child(2) { background: #f59e0b; }
+.video-dots span:nth-child(3) { background: #22c55e; }
+.product-video-window {
+    position: relative;
+    overflow: hidden;
+    border-radius: 26px;
+    min-height: 390px;
+    background: #03122d;
+}
+.product-video-window video {
+    width: 100%;
+    height: 100%;
+    min-height: 390px;
+    display: block;
+    object-fit: cover;
+    opacity: 0.72;
+    filter: saturate(1.04) contrast(1.05);
+}
+.product-video-window::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(0,17,42,0.82), rgba(0,17,42,0.20) 44%, rgba(0,17,42,0.55));
+    pointer-events: none;
+}
+.video-overlay-card {
+    position: absolute;
+    left: 24px;
+    bottom: 24px;
+    width: min(360px, calc(100% - 48px));
+    z-index: 2;
+    padding: 22px;
+    border-radius: 24px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 26px 70px rgba(0,0,0,0.24);
+}
+.video-overlay-card h3 {
+    font-family: var(--font-display);
+    color: var(--navy);
+    font-size: 1.18rem;
+    font-weight: 900;
+    margin: 0 0 8px;
+}
+.video-overlay-card p {
+    color: var(--muted);
+    font-size: 0.84rem;
+    line-height: 1.65;
+    margin: 0;
+}
+.video-flow {
+    position: absolute;
+    right: 22px;
+    top: 24px;
+    z-index: 2;
+    display: grid;
+    gap: 10px;
+    width: min(230px, 36%);
+}
+.video-flow-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.88);
+    box-shadow: 0 18px 40px rgba(0,0,0,0.15);
+    animation: videoPulse 5.6s ease-in-out infinite;
+}
+.video-flow-step:nth-child(2) { animation-delay: .8s; }
+.video-flow-step:nth-child(3) { animation-delay: 1.6s; }
+.video-flow-step i {
+    color: var(--gold);
+}
+.video-flow-step span {
+    color: var(--navy);
+    font-size: 0.75rem;
+    font-weight: 900;
+    line-height: 1.2;
+}
+@keyframes videoPulse {
+    0%, 100% { transform: translateY(0); opacity: .9; }
+    50% { transform: translateY(-5px); opacity: 1; }
+}
 
 /* Footer */
 .sb-footer { background: var(--surface-2); padding: 96px 0 40px; border-top: 5px solid var(--gold); position: relative; overflow: hidden; }
@@ -1520,6 +1732,17 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .impact-story-grid--reverse .impact-story-media {
         order: -1;
     }
+    .product-video-shell {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+    .product-video-copy {
+        max-width: none;
+    }
+    .product-video-window,
+    .product-video-window video {
+        min-height: 330px;
+    }
 }
 @media (max-width: 768px) {
     :root { --announce-h: 34px; }
@@ -1549,6 +1772,29 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .impact-story-image-wrap img {
         min-height: 300px;
     }
+    .product-video-section {
+        padding: 64px 0 76px;
+    }
+    .video-flow {
+        position: static;
+        width: auto;
+        padding: 14px;
+        grid-template-columns: 1fr;
+        background: rgba(255,255,255,0.08);
+    }
+    .video-overlay-card {
+        position: static;
+        width: auto;
+        margin: 12px;
+    }
+    .product-video-window {
+        display: flex;
+        flex-direction: column;
+    }
+    .product-video-window::after {
+        background: linear-gradient(180deg, rgba(0,17,42,0.38), rgba(0,17,42,0.16));
+    }
+}
 @media (max-width: 480px) {
     .hero-circle {
         width: min(86vw, 300px) !important;
@@ -1733,6 +1979,18 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         width: 100%;
         justify-content: center;
     }
+    .product-video-frame {
+        border-radius: 24px;
+        padding: 8px;
+    }
+    .product-video-window,
+    .product-video-window video {
+        border-radius: 18px;
+        min-height: 240px;
+    }
+    .product-video-points {
+        margin-top: 20px;
+    }
 }
 @media (max-width: 480px) {
     :root { --nav-h: 60px; --announce-h: 32px; }
@@ -1811,7 +2069,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                 <li class="nav-item"><a class="sb-nav-link {{ request()->routeIs('landing.about') ? 'active' : '' }}" href="{{ route('landing.about') }}">About</a></li>
                 <li class="nav-item"><a class="sb-nav-link" href="{{ route('landing.index') }}#team">Projects</a></li>
                 <li class="nav-item"><a class="sb-nav-link {{ request()->routeIs('landing.contact') ? 'active' : '' }}" href="{{ route('landing.contact') }}">Contact</a></li>
-                <li class="nav-item"><a class="sb-nav-link" href="{{ route('landing.index') }}#licensing">Licensing</a></li>
+                <li class="nav-item"><a class="sb-nav-link" href="{{ route('landing.index') }}#product-video">Video</a></li>
                 <li class="nav-item"><a class="sb-nav-link {{ request()->routeIs('landing.policy') ? 'active' : '' }}" href="{{ route('landing.policy') }}">Policy</a></li>
                 <li class="nav-item ms-lg-3">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -2164,25 +2422,52 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             </div>
         </div>
 
-        <section class="sb-section pt-4" id="licensing">
+        <section class="product-video-section" id="product-video">
             <div class="container px-0">
-                <div class="text-center mb-5">
-                    <span class="sb-eyebrow" style="justify-content:center;display:inline-flex;">Service Access</span>
-                    <h2 class="sb-h1 text-center">Plans & <span class="accent">Licensing</span></h2>
-                </div>
-                <div class="row g-4 justify-content-center">
-                    @php($plans = \App\Models\Plan::marketingCardCatalog())
-                    @foreach($plans as $tier => $plan)
-                    <div class="col-xl col-lg-4 col-md-6">
-                        <div class="plan-card {{ $plan['featured'] ? 'plan-featured' : '' }}">
-                            @if($plan['featured'])<div style="text-align:center;margin-bottom:12px;"><span style="background:var(--gold);color:var(--navy);font-size:0.62rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:4px 14px;border-radius:20px;">MOST POPULAR</span></div>@endif
-                            <div class="plan-name">{{ $plan['label'] }}</div>
-                            <div class="plan-price"><span class="geo-price" data-ngn="{{ $plan['from_price'] }}">From ₦{{ number_format($plan['from_price']) }}</span></div>
-                            <div class="flex-grow-1">@foreach($plan['benefits'] as $benefit)<div class="plan-feature"><i class="fas fa-check-circle"></i><span>{{ $benefit }}</span></div>@endforeach</div>
-                            <div class="mt-4"><a href="{{ url('/membership-plans') }}" class="{{ $plan['featured'] ? 'btn-red' : 'btn-outline-navy' }} w-100 justify-content-center">ACQUIRE SYSTEM</a></div>
+                <div class="product-video-shell">
+                    <div class="product-video-copy">
+                        <div class="video-pill"><span></span> Product walkthrough</div>
+                        <h2 class="sb-h1">See how SmartProbook turns daily business activity into <span class="accent">clean accounting.</span></h2>
+                        <p class="sb-lead">Watch the workflow in motion: sell, invoice, collect payments, control stock, and read your reports without jumping between spreadsheets.</p>
+                        <div class="product-video-points">
+                            <div class="product-video-point">
+                                <i class="fas fa-receipt"></i>
+                                <div><strong>Record sales and invoices</strong><span>Create transactions and receipts while SmartProbook keeps the ledger updated.</span></div>
+                            </div>
+                            <div class="product-video-point">
+                                <i class="fas fa-boxes-stacked"></i>
+                                <div><strong>Track stock and branches</strong><span>Monitor inventory movement, low stock, and product value across your operation.</span></div>
+                            </div>
+                            <div class="product-video-point">
+                                <i class="fas fa-chart-line"></i>
+                                <div><strong>Read reports instantly</strong><span>Profit, cash flow, receivables, taxes, and management reports are always close.</span></div>
+                            </div>
+                        </div>
+                        <div class="impact-story-actions">
+                            <a href="{{ route('demo.request.form') }}" class="btn-red"><i class="fas fa-play-circle"></i> Request Live Demo</a>
+                            <a href="{{ route('membership-plans') }}" class="btn-outline-navy">Start Today</a>
                         </div>
                     </div>
-                    @endforeach
+                    <div class="product-video-frame">
+                        <div class="product-video-topbar">
+                            <span class="video-dots"><span></span><span></span><span></span></span>
+                            <span>SmartProbook workflow preview</span>
+                        </div>
+                        <div class="product-video-window">
+                            <video autoplay muted loop playsinline preload="metadata" poster="{{ asset('assets/img/demo-two.png') }}" aria-label="Short SmartProbook accounting software workflow video">
+                                <source src="{{ asset('assets/video/neu.mp4') }}" type="video/mp4">
+                            </video>
+                            <div class="video-flow" aria-hidden="true">
+                                <div class="video-flow-step"><i class="fas fa-cash-register"></i><span>Sale captured</span></div>
+                                <div class="video-flow-step"><i class="fas fa-book"></i><span>Ledger updated</span></div>
+                                <div class="video-flow-step"><i class="fas fa-file-lines"></i><span>Report ready</span></div>
+                            </div>
+                            <div class="video-overlay-card">
+                                <h3>From transaction to report in seconds</h3>
+                                <p>A short look at how SmartProbook connects sales, expenses, stock, invoices, and financial reports in one accounting-first workspace.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -2656,7 +2941,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                 <div class="d-flex flex-column gap-2">
                     <a href="#solutions" class="footer-link">Neural Engine Core</a>
                     <a href="#capabilities" class="footer-link">Security Hub</a>
-                    <a href="#licensing" class="footer-link">API Documentation</a>
+                    <a href="#product-video" class="footer-link">Product Video</a>
                 </div>
             </div>
             <div class="col-md-3 col-lg-2">

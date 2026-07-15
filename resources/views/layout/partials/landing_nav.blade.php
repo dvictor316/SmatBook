@@ -54,7 +54,7 @@
 
             <li><a href="{{ route('landing.team') }}" class="{{ Route::is('landing.team') ? 'active-red' : '' }}" style="text-decoration: none; font-weight: 700; color: #020617; font-size: 0.85rem; text-transform: uppercase;">Other Projects</a></li>
 
-            <li><a href="{{ url('/#licensing') }}" style="text-decoration: none; font-weight: 700; color: #020617; font-size: 0.85rem; text-transform: uppercase;">Licensing</a></li>
+            <li><a href="{{ url('/#product-video') }}" style="text-decoration: none; font-weight: 700; color: #020617; font-size: 0.85rem; text-transform: uppercase;">Video</a></li>
 
             <li><a href="{{ route('landing.policy') }}" class="{{ Route::is('landing.policy') ? 'active-red' : '' }}" style="text-decoration: none; font-weight: 700; color: #020617; font-size: 0.85rem; text-transform: uppercase;">Policy</a></li>
 
