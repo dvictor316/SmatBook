@@ -1808,35 +1808,10 @@ class BalanceSheetController extends Controller
                 } else {
                     $q->whereRaw('1 = 0');
                 }
-            })
-            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($q) use ($activeBranch, $accountIds) {
-                $branchId   = trim((string) ($activeBranch['id']   ?? ''));
-                $branchName = trim((string) ($activeBranch['name'] ?? ''));
-                if ($branchId === '' && $branchName === '') return;
-                return $q->where(function ($sub) use ($branchId, $branchName, $accountIds) {
-                    if ($branchId !== '') {
-                        $sub->where('branch_id', $branchId);
-                        if (!empty($accountIds)) {
-                            $sub->orWhere(function ($inner) use ($accountIds) {
-                                $inner->where(function ($b) {
-                                    $b->whereNull('branch_id')->orWhere('branch_id', '');
-                                })->whereIn('id', $accountIds);
-                            });
-                        }
-                        return;
-                    }
-                    if ($branchName !== '') {
-                        $sub->where('branch_name', $branchName);
-                    }
-                    if (!empty($accountIds)) {
-                        $sub->orWhere(function ($inner) use ($accountIds) {
-                            $inner->where(function ($b) {
-                                $b->whereNull('branch_id')->orWhere('branch_id', '');
-                            })->whereIn('id', $accountIds);
-                        });
-                    }
-                });
             });
+        // Account IDs already come from branch-scoped transactions/opening balances.
+        // A second branch filter on account master rows can hide shared/global asset
+        // accounts and create a false balance-sheet gap.
         $this->applyAccountScope($accountsQuery, $request);
         $accounts = $accountsQuery->get();
 
@@ -1883,6 +1858,7 @@ class BalanceSheetController extends Controller
             'totalLongTermLiabilities' => $snapshot['totalLongTermLiabilities'],
             'totalLiabilities' => $snapshot['totalLiabilities'],
             'totalEquity' => $snapshot['totalEquity'],
+            'retainedEarnings' => $snapshot['retainedEarnings'],
             'reconciliationReserveDiagnostic' => $snapshot['reconciliationReserveDiagnostic'],
             'reconciliationReserveNeedsReview' => $snapshot['reconciliationReserveNeedsReview'],
         ];
@@ -1910,6 +1886,7 @@ class BalanceSheetController extends Controller
             'totalLongTermLiabilities' => 0.0,
             'totalLiabilities'   => 0.0,
             'totalEquity'        => 0.0,
+            'retainedEarnings'   => 0.0,
             'reconciliationReserveDiagnostic' => 0.0,
             'reconciliationReserveNeedsReview' => false,
         ];
@@ -2322,48 +2299,14 @@ class BalanceSheetController extends Controller
             ]);
         }
 
-        $txnTotals = Transaction::withoutGlobalScopes()
-            ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
-            ->whereNull('deleted_at')
-            ->where('transaction_date', '<=', $reportDate)
-            ->tap(fn ($q) => $this->applyTransactionScope($q, $request))
-            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($q) use ($activeBranch) {
-                $branchId = trim((string) ($activeBranch['id'] ?? ''));
-                $branchName = trim((string) ($activeBranch['name'] ?? ''));
-                $this->applyLegacyOpeningBalanceBranchScope($q, $activeBranch);
-            })
-            ->groupBy('account_id')->get()->keyBy('account_id');
-
-        $accounts = Account::withoutGlobalScopes()
-            ->whereNull('deleted_at')
-            ->where(function ($q) use ($txnTotals) {
-                if (!$txnTotals->isEmpty()) {
-                    $q->whereIn('id', $txnTotals->keys()->all());
-                } else {
-                    $q->whereRaw('1 = 0');
-                }
-            })
-            ->tap(fn ($q) => $this->applyAccountScope($q, $request))->get()
-            ->transform(function ($a) use ($txnTotals) {
-                $t = $txnTotals->get($a->id);
-                $a->total_debit  = (float)($t->total_debit ?? 0);
-                $a->total_credit = (float)($t->total_credit ?? 0);
-                $type = $this->normalizeAccountType($a->type ?? null);
-                $isDebit = in_array($type, ['asset', 'expense'], true);
-                $a->balance = $isDebit
-                    ? ($a->total_debit - $a->total_credit)
-                    : ($a->total_credit - $a->total_debit);
-                return $a;
-            })->filter(fn ($a) => abs((float) ($a->balance ?? 0)) > 0.005)->values();
-
-        $earningsRollup = $this->computeEarningsRollup($request, $reportDate, $activeBranch);
-        $retainedEarnings = (float) ($earningsRollup['prior_years'] ?? 0);
-        $currentYearEarnings = (float) ($earningsRollup['current_year'] ?? 0);
-
-        $totalAssets      = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'asset')->sum('balance');
-        $totalLiabilities = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'liability')->sum('balance');
-        $equityBase       = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'equity')->sum('balance');
-        $totalEquity      = $equityBase + $retainedEarnings + $currentYearEarnings;
+        $method = in_array($request->input('accounting_method'), ['cash', 'accrual'], true)
+            ? $request->input('accounting_method')
+            : 'accrual';
+        $snapshot = $this->computeComparisonSnapshot($request, $reportDate, $activeBranch, $method);
+        $totalAssets = $snapshot['totalAssets'];
+        $totalLiabilities = $snapshot['totalLiabilities'];
+        $totalEquity = $snapshot['totalEquity'];
+        $retainedEarnings = (float) ($snapshot['retainedEarnings'] ?? 0) + (float) ($snapshot['netIncome'] ?? 0);
 
         return view('Reports.Reports.balance-sheet-summary', compact('reportDate', 'totalAssets', 'totalLiabilities', 'totalEquity', 'retainedEarnings', 'activeBranch'));
     }
@@ -2379,46 +2322,16 @@ class BalanceSheetController extends Controller
             if (!Schema::hasTable('accounts') || !Schema::hasTable('transactions')) {
                 return ['assets' => 0, 'liabilities' => 0, 'equity' => 0, 'retained' => 0];
             }
-            $txnTotals = Transaction::withoutGlobalScopes()
-                ->selectRaw('account_id, SUM(debit) as td, SUM(credit) as tc')
-                ->whereNull('deleted_at')
-                ->where('transaction_date', '<=', $reportDate)
-                ->tap(fn ($q) => $this->applyTransactionScope($q, $request))
-                ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($q) use ($activeBranch) {
-                    $branchId = trim((string) ($activeBranch['id'] ?? ''));
-                    $branchName = trim((string) ($activeBranch['name'] ?? ''));
-                    $this->applyLegacyOpeningBalanceBranchScope($q, $activeBranch);
-                })
-                ->groupBy('account_id')->get()->keyBy('account_id');
+            $method = in_array($request->input('accounting_method'), ['cash', 'accrual'], true)
+                ? $request->input('accounting_method')
+                : 'accrual';
+            $snapshot = $this->computeComparisonSnapshot($request, $reportDate, $activeBranch, $method);
 
-            $accountIds = $txnTotals->keys()->all();
-            $accounts = Account::withoutGlobalScopes()
-                ->whereNull('deleted_at')
-                ->where(function ($q) use ($accountIds) {
-                    if (!empty($accountIds)) {
-                        $q->whereIn('id', $accountIds);
-                    } else {
-                        $q->whereRaw('1 = 0');
-                    }
-                })
-                ->tap(fn ($q) => $this->applyAccountScope($q, $request))->get()
-                ->transform(function ($a) use ($txnTotals) {
-                    $t = $txnTotals->get($a->id);
-                    $type    = $this->normalizeAccountType($a->type ?? null);
-                    $isDebit = in_array($type, ['asset', 'expense'], true);
-                    $dr = (float)($t->td ?? 0); $cr = (float)($t->tc ?? 0);
-                    $a->balance = $isDebit ? ($dr - $cr) : ($cr - $dr);
-                    return $a;
-                })->filter(fn ($a) => abs((float) ($a->balance ?? 0)) > 0.005)->values();
-
-            $earningsRollup = $this->computeEarningsRollup($request, $reportDate, $activeBranch);
-            $priorYears = (float) ($earningsRollup['prior_years'] ?? 0);
-            $currentYear = (float) ($earningsRollup['current_year'] ?? 0);
             return [
-                'assets'      => $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type) === 'asset')->sum('balance'),
-                'liabilities' => $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type) === 'liability')->sum('balance'),
-                'equity'      => $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type) === 'equity')->sum('balance') + $priorYears + $currentYear,
-                'retained'    => $priorYears + $currentYear,
+                'assets'      => $snapshot['totalAssets'],
+                'liabilities' => $snapshot['totalLiabilities'],
+                'equity'      => $snapshot['totalEquity'],
+                'retained'    => (float) ($snapshot['retainedEarnings'] ?? 0) + (float) ($snapshot['netIncome'] ?? 0),
             ];
         };
 

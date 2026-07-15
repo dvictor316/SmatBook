@@ -128,8 +128,8 @@
                         @endif
                         <li><a href="{{ route('chart-of-accounts') }}">Chart of Accounts</a></li>
                         <li><a href="{{ route('manual-journal') }}">Manual Journal</a></li>
-                        @if(Route::has('general-ledger.index'))
-                            <li><a href="{{ route('general-ledger.index') }}">General Ledger</a></li>
+                        @if(Route::has('general-ledger'))
+                            <li><a href="{{ route('general-ledger') }}">General Ledger</a></li>
                         @endif
                         <li><a href="{{ route('exchange-rates.index') }}">Exchange Rates</a></li>
                         @if(Route::has('fx-revaluation.index'))
