@@ -895,6 +895,12 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     object-fit: cover;
     display: block;
 }
+.impact-story-image-wrap video {
+    transition: opacity .35s ease;
+}
+.impact-story-image-wrap video.is-switching {
+    opacity: .45;
+}
 .impact-story-note-card {
     position: absolute;
     left: 20px;
@@ -2443,9 +2449,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                             <span>Accounting workflow preview</span>
                         </div>
                         <div class="product-video-window">
-                            <video id="accountingSceneVideo" autoplay muted playsinline preload="metadata" aria-label="Short SmartProbook accounting software workflow video playlist">
-                                <source src="https://videos.pexels.com/video-files/8478748/8478748-hd_1920_1080_25fps.mp4" type="video/mp4">
-                                <source src="{{ asset('assets/video/neu.mp4') }}" type="video/mp4">
+                            <video autoplay muted loop playsinline preload="metadata" aria-label="SmartProbook business management video preview">
+                                <source src="{{ asset('assets/video/videoPM.mp4') }}" type="video/mp4">
                             </video>
                         </div>
                     </div>
@@ -2697,8 +2702,9 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <div class="impact-story-grid">
                 <div class="impact-story-media">
                     <div class="impact-story-image-wrap">
-                        <video autoplay muted loop playsinline preload="metadata" aria-label="SmartProbook business management video preview">
-                            <source src="{{ asset('assets/video/videoPM.mp4') }}" type="video/mp4">
+                        <video id="impactStorySceneVideo" autoplay muted playsinline preload="metadata" aria-label="Short accounting software operations video playlist">
+                            <source src="https://videos.pexels.com/video-files/8478748/8478748-hd_1920_1080_25fps.mp4" type="video/mp4">
+                            <source src="{{ asset('assets/video/neu.mp4') }}" type="video/mp4">
                         </video>
                         <div class="impact-story-note-card">
                             <strong>Sell easily</strong>
@@ -3002,8 +3008,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    const accountingSceneVideo = document.getElementById('accountingSceneVideo');
-    if (accountingSceneVideo) {
+    const impactStorySceneVideo = document.getElementById('impactStorySceneVideo');
+    if (impactStorySceneVideo) {
         const accountingScenes = [
             'https://videos.pexels.com/video-files/8478748/8478748-hd_1920_1080_25fps.mp4',
             'https://cdn.pixabay.com/video/2023/02/01/148867-794951490_tiny.mp4',
@@ -3015,22 +3021,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const playAccountingScene = index => {
             accountingSceneIndex = index % accountingScenes.length;
-            accountingSceneVideo.classList.add('is-switching');
+            impactStorySceneVideo.classList.add('is-switching');
             window.clearTimeout(accountingSceneTimer);
 
             window.setTimeout(() => {
-                accountingSceneVideo.src = accountingScenes[accountingSceneIndex];
-                const playPromise = accountingSceneVideo.play();
+                impactStorySceneVideo.src = accountingScenes[accountingSceneIndex];
+                const playPromise = impactStorySceneVideo.play();
                 if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(() => {});
-                accountingSceneVideo.classList.remove('is-switching');
+                impactStorySceneVideo.classList.remove('is-switching');
                 accountingSceneTimer = window.setTimeout(() => {
                     playAccountingScene(accountingSceneIndex + 1);
                 }, sceneDurationMs);
             }, 180);
         };
 
-        accountingSceneVideo.addEventListener('ended', () => playAccountingScene(accountingSceneIndex + 1));
-        accountingSceneVideo.addEventListener('error', () => {
+        impactStorySceneVideo.addEventListener('ended', () => playAccountingScene(accountingSceneIndex + 1));
+        impactStorySceneVideo.addEventListener('error', () => {
             if (accountingScenes.length > 1) playAccountingScene(accountingSceneIndex + 1);
         });
         playAccountingScene(0);
