@@ -1239,6 +1239,10 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent);
     z-index: -1;
 }
+.product-video-container {
+    padding-left: clamp(20px, 3vw, 46px);
+    padding-right: clamp(20px, 3vw, 46px);
+}
 .product-video-shell {
     display: grid;
     grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
@@ -2381,7 +2385,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         </div>
 
         <section class="product-video-section" id="product-video">
-            <div class="container px-0">
+            <div class="container product-video-container">
                 <div class="product-video-heading">
                     <div class="video-pill"><span></span> Accounting software video</div>
                     <h2 class="sb-h1">See how SmartProbook turns daily business activity into <span class="accent">clean accounting.</span></h2>
