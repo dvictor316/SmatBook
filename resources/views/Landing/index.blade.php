@@ -2426,7 +2426,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <div class="container px-0">
                 <div class="product-video-shell">
                     <div class="product-video-copy">
-                        <div class="video-pill"><span></span> Product walkthrough</div>
+                        <div class="video-pill"><span></span> Accounting software video</div>
                         <h2 class="sb-h1">See how SmartProbook turns daily business activity into <span class="accent">clean accounting.</span></h2>
                         <p class="sb-lead">Watch the workflow in motion: sell, invoice, collect payments, control stock, and read your reports without jumping between spreadsheets.</p>
                         <div class="product-video-points">
@@ -2451,10 +2451,11 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                     <div class="product-video-frame">
                         <div class="product-video-topbar">
                             <span class="video-dots"><span></span><span></span><span></span></span>
-                            <span>SmartProbook workflow preview</span>
+                            <span>Accounting workflow preview</span>
                         </div>
                         <div class="product-video-window">
                             <video autoplay muted loop playsinline preload="metadata" poster="{{ asset('assets/img/demo-two.png') }}" aria-label="Short SmartProbook accounting software workflow video">
+                                <source src="https://www.pexels.com/download/video/8478748/" type="video/mp4">
                                 <source src="{{ asset('assets/video/neu.mp4') }}" type="video/mp4">
                             </video>
                             <div class="video-flow" aria-hidden="true">
