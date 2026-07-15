@@ -2519,7 +2519,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                             <span>Accounting workflow preview</span>
                         </div>
                         <div class="product-video-window">
-                            <video autoplay muted loop playsinline preload="metadata" aria-label="SmartProbook business management video preview">
+                            <video id="productFeatureVideo" autoplay muted loop playsinline preload="metadata" data-skip-tail="2.5" aria-label="SmartProbook business management video preview">
                                 <source src="{{ asset('assets/video/videoPM.mp4') }}" type="video/mp4">
                             </video>
                         </div>
@@ -3074,15 +3074,41 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    document.querySelectorAll('a[href^="#"]').forEach(a => {
+    document.querySelectorAll('a[href*="#"]').forEach(a => {
         a.addEventListener('click', e => {
-            const t = document.querySelector(a.getAttribute('href'));
+            const rawHref = a.getAttribute('href') || '';
+            let url;
+            try {
+                url = new URL(rawHref, window.location.href);
+            } catch (err) {
+                return;
+            }
+            const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
+            const targetPath = url.pathname.replace(/\/$/, '') || '/';
+            if (!url.hash || url.origin !== window.location.origin || targetPath !== currentPath) return;
+
+            const t = document.querySelector(url.hash);
             if (!t) return;
             e.preventDefault();
+            history.pushState(null, '', url.hash);
             window.scrollTo({ top: t.offsetTop - 100, behavior: 'smooth' });
             if (navCollapse?.classList.contains('show')) bsCollapse?.hide();
         });
     });
+
+    const productFeatureVideo = document.getElementById('productFeatureVideo');
+    if (productFeatureVideo) {
+        const skipTailSeconds = Number(productFeatureVideo.dataset.skipTail || 2.5);
+        productFeatureVideo.addEventListener('timeupdate', () => {
+            const duration = productFeatureVideo.duration;
+            if (!Number.isFinite(duration) || duration <= skipTailSeconds + 1) return;
+            if (productFeatureVideo.currentTime >= duration - skipTailSeconds) {
+                productFeatureVideo.currentTime = 0;
+                const playPromise = productFeatureVideo.play();
+                if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(() => {});
+            }
+        });
+    }
 
     const impactStorySceneVideo = document.getElementById('impactStorySceneVideo');
     if (impactStorySceneVideo) {
