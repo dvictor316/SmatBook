@@ -2405,7 +2405,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                         </div>
                         <div class="impact-story-actions">
                             <a href="{{ route('demo.request.form') }}" class="btn-red"><i class="fas fa-play-circle"></i> Request Live Demo</a>
-                            <a href="{{ route('membership-plans') }}" class="btn-outline-navy">Start Today</a>
+                            <a href="{{ route('login', ['portal' => 1]) }}" class="btn-outline-navy">Open Portal</a>
                         </div>
                     </div>
                     <div class="product-video-frame">
