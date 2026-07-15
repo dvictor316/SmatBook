@@ -202,11 +202,30 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     font-family: var(--font-display);
 }
 .sb-eyebrow::before { content: ''; width: 24px; height: 2px; background: var(--gold); display: block; border-radius: 2px; }
-.sb-h1 { font-family: var(--font-display); font-size: clamp(1.9rem,3.5vw,2.7rem); font-weight: 800; line-height: 1.15; color: var(--navy); letter-spacing: -1px; margin-bottom: 18px; }
+.sb-h1 { font-family: var(--font-display); font-size: clamp(1.72rem,2.8vw,2.35rem); font-weight: 800; line-height: 1.16; color: var(--navy); letter-spacing: -0.8px; margin-bottom: 16px; }
 .sb-h1 .accent { color: var(--gold); }
 .sb-h1-white { color: #fff; }
-.sb-lead { font-size: 15px; line-height: 1.9; color: var(--muted); max-width: 580px; }
+.sb-lead { font-size: 14.5px; line-height: 1.72; color: var(--muted); max-width: 720px; }
 .sb-lead-white { color: rgba(255,255,255,0.72); }
+.sb-section .text-center.mb-5,
+.strip-section .text-center.mb-5 {
+    max-width: 920px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 2rem !important;
+}
+.sb-section .text-center.mb-5 .sb-h1,
+.strip-section .text-center.mb-5 .sb-h1 {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: none;
+}
+.sb-section .text-center.mb-5 .sb-lead,
+.strip-section .text-center.mb-5 .sb-lead {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 760px;
+}
 
 /* ── ANNOUNCE BAR ── */
 .announce-bar {
@@ -569,15 +588,16 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     max-width: 1280px; margin: 0 auto; padding-bottom: 16px;
 }
 .benefit-card {
-    border: 2px solid var(--gold); border-radius: var(--radius-lg); padding: 22px 18px;
+    border: 2px solid var(--gold); border-radius: var(--radius-lg); padding: 18px 16px;
     background: linear-gradient(145deg, #f8fbff 0%, #eef4ff 100%);
     box-shadow: var(--shadow-sm); transition: transform 0.28s, box-shadow 0.28s;
     animation: fadeInUp 0.6s ease-out both;
+    height: 100%;
 }
 .benefit-card:nth-child(2){animation-delay:.07s} .benefit-card:nth-child(3){animation-delay:.14s} .benefit-card:nth-child(4){animation-delay:.21s}
-.benefit-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-md); }
-.benefit-card h6 { font-family: var(--font-display); font-size: 1.05rem; font-weight: 800; color: var(--navy); margin: 0 0 8px; }
-.benefit-card p  { font-size: 0.9rem; line-height: 1.6; color: #1e3f77; margin: 0; }
+.benefit-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.benefit-card h6 { font-family: var(--font-display); font-size: 0.96rem; font-weight: 800; color: var(--navy); margin: 0 0 7px; }
+.benefit-card p  { font-size: 0.83rem; line-height: 1.52; color: #1e3f77; margin: 0; }
 @keyframes fadeInUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
 @keyframes floatBob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
 
@@ -993,10 +1013,10 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 }
 .impact-story-title {
     font-family: var(--font-display);
-    font-size: clamp(1.55rem, 2.8vw, 2.2rem);
+    font-size: clamp(1.28rem, 2.2vw, 1.78rem);
     font-weight: 800;
-    line-height: 1.14;
-    letter-spacing: -0.8px;
+    line-height: 1.18;
+    letter-spacing: -0.55px;
     color: var(--navy);
     margin-bottom: 14px;
 }
@@ -1004,8 +1024,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     color: #fff;
 }
 .impact-story-text {
-    font-size: 0.98rem;
-    line-height: 1.8;
+    font-size: 0.92rem;
+    line-height: 1.68;
     color: #526173;
     margin-bottom: 18px;
 }
@@ -1021,8 +1041,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    padding: 12px 14px;
-    border-radius: 16px;
+    padding: 10px 12px;
+    border-radius: 14px;
     background: rgba(255,255,255,0.85);
     border: 1px solid rgba(0,35,71,0.08);
 }
@@ -1033,15 +1053,15 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 }
 .impact-story-item strong {
     display: block;
-    font-size: 0.94rem;
+    font-size: 0.88rem;
     color: var(--navy);
     font-weight: 800;
     margin-bottom: 3px;
 }
 .impact-story-item span {
     display: block;
-    font-size: 0.88rem;
-    line-height: 1.65;
+    font-size: 0.82rem;
+    line-height: 1.55;
     color: #5c6b7c;
 }
 .impact-story--dark .impact-story-item {
@@ -1104,19 +1124,19 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 
 /* Strip */
 .strip-section { background: linear-gradient(135deg, var(--surface-2) 0%, #fff 100%); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 80px 0; }
-.strip-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 30px 26px; height: 100%; position: relative; overflow: hidden; transition: all 0.4s cubic-bezier(.175,.885,.32,1.275); }
+.strip-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px 22px; height: 100%; position: relative; overflow: hidden; transition: all 0.32s ease; }
 .strip-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(to right, var(--navy), var(--gold)); transform:scaleX(0); transform-origin:left; transition:transform 0.4s; }
-.strip-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-lg); }
+.strip-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
 .strip-card:hover::before { transform: scaleX(1); }
-.strip-icon { width: 54px; height: 54px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; margin-bottom: 18px; font-size: 22px; }
-.strip-card h5 { font-family: var(--font-display); font-size: 15px; font-weight: 800; color: var(--navy); margin: 0 0 10px; }
-.strip-card p  { font-size: 13px; color: var(--muted); line-height: 1.75; margin: 0; }
+.strip-icon { width: 48px; height: 48px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; margin-bottom: 14px; font-size: 20px; }
+.strip-card h5 { font-family: var(--font-display); font-size: 14px; font-weight: 800; color: var(--navy); margin: 0 0 8px; }
+.strip-card p  { font-size: 12.5px; color: var(--muted); line-height: 1.62; margin: 0; }
 
 /* Solutions */
-.sol-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(270px,1fr)); gap: 28px; }
-.sol-tile { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 42px 24px; transition: all 0.5s cubic-bezier(.175,.885,.32,1.275); height: 100%; overflow: hidden; position: relative; }
+.sol-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); gap: 22px; align-items: stretch; }
+.sol-tile { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 30px 22px; transition: all 0.32s ease; height: 100%; overflow: hidden; position: relative; }
 .sol-tile::after { content:''; position:absolute; bottom:0; left:0; width:0; height:4px; background:var(--gold); transition:width 0.4s ease; }
-.sol-tile:hover { background: #fff; transform: translateY(-10px); box-shadow: var(--shadow-lg); border-color: var(--gold); }
+.sol-tile:hover { background: #fff; transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--gold); }
 .sol-tile:hover::after { width: 100%; }
 .sol-tile i { transition: all 0.4s; }
 .sol-tile:hover i { transform: scale(1.18) rotate(4deg); color: var(--gold) !important; }
@@ -1247,30 +1267,32 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     z-index: -1;
 }
 .product-video-container {
-    padding-left: clamp(24px, 4vw, 58px);
-    padding-right: clamp(24px, 4vw, 58px);
+    padding-left: clamp(26px, 4vw, 58px);
+    padding-right: clamp(26px, 4vw, 58px);
 }
 .product-video-shell {
     display: grid;
-    grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.1fr);
+    grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.1fr);
     align-items: stretch;
-    gap: clamp(24px, 3vw, 42px);
+    gap: clamp(22px, 2.6vw, 36px);
 }
 .product-video-heading {
-    max-width: 880px;
-    margin: 0 0 30px;
+    width: 100%;
+    max-width: none;
+    margin: 0 0 24px;
 }
 .product-video-heading .sb-h1 {
-    max-width: 14.5ch;
-    font-size: clamp(2.25rem, 4.4vw, 4.55rem);
-    line-height: 1.04;
-    letter-spacing: -0.055em;
+    max-width: none;
+    font-size: clamp(1.85rem, 3.25vw, 3.05rem);
+    line-height: 1.08;
+    letter-spacing: -0.04em;
+    margin-bottom: 0;
 }
 .product-video-copy {
     height: 100%;
-    min-height: 424px;
-    padding: clamp(22px, 2.4vw, 30px);
-    border-radius: 30px;
+    min-height: 398px;
+    padding: clamp(20px, 2.2vw, 26px);
+    border-radius: 26px;
     background: rgba(255,255,255,0.68);
     border: 1px solid rgba(0,35,71,0.08);
     box-shadow: 0 22px 64px rgba(0,35,71,0.08);
@@ -1302,15 +1324,15 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 }
 .product-video-points {
     display: grid;
-    gap: 12px;
-    margin: 22px 0 24px;
+    gap: 10px;
+    margin: 18px 0 20px;
 }
 .product-video-point {
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    padding: 13px 14px;
-    border-radius: 18px;
+    padding: 11px 12px;
+    border-radius: 16px;
     background: rgba(255,255,255,0.76);
     border: 1px solid rgba(0,35,71,0.08);
     box-shadow: 0 18px 44px rgba(0,35,71,0.06);
@@ -1345,7 +1367,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     padding: 12px;
     background: linear-gradient(135deg, rgba(0,35,71,0.96), rgba(3,23,56,0.92));
     box-shadow: 0 34px 90px rgba(0,35,71,0.30), 0 0 0 1px rgba(197,160,89,0.20);
-    min-height: 424px;
+    min-height: 398px;
     display: flex;
     flex-direction: column;
 }
@@ -1387,7 +1409,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     position: relative;
     overflow: hidden;
     border-radius: 26px;
-    min-height: 376px;
+    min-height: 350px;
     background: #03122d;
     flex: 1;
 }
@@ -1715,11 +1737,11 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         gap: 30px;
     }
     .product-video-heading {
-        max-width: 760px;
+        max-width: none;
     }
     .product-video-heading .sb-h1 {
-        max-width: 15ch;
-        font-size: clamp(2.05rem, 6vw, 3.4rem);
+        max-width: none;
+        font-size: clamp(1.75rem, 4.8vw, 2.55rem);
     }
     .product-video-copy {
         max-width: none;
@@ -1769,8 +1791,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         margin-bottom: 24px;
     }
     .product-video-heading .sb-h1 {
-        max-width: 12.5ch;
-        font-size: clamp(1.9rem, 8.4vw, 2.85rem);
+        max-width: none;
+        font-size: clamp(1.5rem, 6.8vw, 2.2rem);
         letter-spacing: -0.045em;
     }
     .product-video-copy,
@@ -2267,7 +2289,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 
 <section class="sb-section" id="platform-features">
     <div class="container">
-        <div class="text-center mb-5">
+        <div class="text-center mb-5 landing-heading-row">
             <span class="sb-eyebrow" style="justify-content:center;display:inline-flex;">Platform Features</span>
             <h2 class="sb-h1 text-center">Everything your business needs, <span class="accent">built in.</span></h2>
             <p class="sb-lead text-center mx-auto">SmartProbook is not just bookkeeping software. It's a complete business management system — from your first sale to your annual tax filing.</p>
@@ -2749,7 +2771,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 
 <section class="sb-section sb-section--alt" id="team">
     <div class="container">
-        <div class="text-center mb-5">
+        <div class="text-center mb-5 landing-heading-row">
             <span class="sb-eyebrow" style="justify-content:center;display:inline-flex;">Portfolio</span>
             <h2 class="sb-h1 text-center">Our <span class="accent">Other Projects</span></h2>
         </div>
@@ -2779,7 +2801,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 
 <section class="strip-section">
     <div class="container">
-        <div class="text-center mb-5">
+        <div class="text-center mb-5 landing-heading-row">
             <span class="sb-eyebrow" style="justify-content:center;display:inline-flex;">Everything included</span>
             <h2 class="sb-h1 text-center">One platform. <span class="accent">Every function.</span></h2>
             <p class="sb-lead text-center mx-auto">SmartProbook brings together every tool your business needs to run — from staff management to customer records, POS to cloud backup.</p>
@@ -2794,7 +2816,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 
 <section class="sb-section sb-section--alt" id="solutions">
     <div class="container">
-        <div class="text-center mb-5">
+        <div class="text-center mb-5 landing-heading-row">
             <span class="sb-eyebrow" style="justify-content:center;display:inline-flex;">Operational Utility</span>
             <h2 class="sb-h1 text-center">Engine <span class="accent">Capabilities</span></h2>
         </div>
