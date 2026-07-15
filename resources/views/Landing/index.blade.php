@@ -863,11 +863,11 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     padding: 24px 0 24px 24px;
 }
 .feature-section-heading {
-    margin-bottom: 28px;
+    margin-bottom: 24px;
     max-width: 1040px;
 }
 .feature-split-row {
-    align-items: stretch !important;
+    align-items: flex-start !important;
 }
 .feature-split-row > [class*="col-"] {
     display: flex;
@@ -885,6 +885,30 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     border-radius: 24px;
     background: rgba(255,255,255,0.06);
     border: 1px solid rgba(255,255,255,0.10);
+}
+.reports-feature-row {
+    row-gap: 28px;
+}
+.reports-feature-visual .gadget-stage {
+    padding: 18px 16px 16px;
+}
+.reports-feature-visual .gadget-grid {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+}
+.reports-feature-visual .gadget-card.accent-blue {
+    display: none;
+}
+.reports-feature-visual .gadget-orbit {
+    bottom: 0;
+    right: 0;
+    transform: rotate(-6deg) scale(0.9);
+}
+.reports-feature-copy {
+    justify-content: flex-start;
+    padding: 22px;
+}
+.reports-feature-copy .sb-lead {
+    margin-bottom: 18px;
 }
 
 /* Business impact stories */
@@ -1459,7 +1483,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     border-radius: 26px;
     min-height: 350px;
     background:
-        linear-gradient(rgba(3, 18, 45, 0.88), rgba(3, 18, 45, 0.88)),
+        linear-gradient(rgba(3, 18, 45, 0.58), rgba(3, 18, 45, 0.58)),
         url('https://images.pexels.com/photos/6801648/pexels-photo-6801648.jpeg?auto=compress&cs=tinysrgb&w=1200') center/cover;
     flex: 1;
 }
@@ -2676,9 +2700,9 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <span class="sb-eyebrow">03 — Expenses &amp; Reports</span>
             <h2 class="sb-h1 sb-h1-white">Board-ready reports <span class="accent">in one click</span></h2>
         </div>
-        <div class="row g-5 feature-split-row">
+        <div class="row g-5 feature-split-row reports-feature-row">
             <div class="col-lg-7 gadget-mobile-column">
-                <div class="gadget-visual gadget-visual--left gadget-mobile-bleed">
+                <div class="gadget-visual gadget-visual--left gadget-mobile-bleed reports-feature-visual">
                     <div class="float-badge" style="top:-10px;left:10px;animation:floatBob 4s ease-in-out infinite;">
                         <div class="fb-icon" style="background:#ede9fe;"><svg width="16" height="16" fill="none" stroke="#7c3aed" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
                         <div><div class="fb-val">Auto</div><div class="fb-lbl">Bank reconciled</div></div>
@@ -2764,7 +2788,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                 </div>
             </div>
             <div class="col-lg-5">
-                <div class="feature-copy-card">
+                <div class="feature-copy-card reports-feature-copy">
                 <p class="sb-lead sb-lead-white">Stop spending weekends building spreadsheets. SmartProbook generates polished financial reports automatically — daily, weekly, monthly, or on demand.</p>
                 <div class="d-flex flex-column gap-3 mt-4">
                     <div class="feat-card-dark"><div class="d-flex align-items-start gap-3"><div class="feat-icon feat-icon-dark"><svg viewBox="0 0 24 24" fill="none" stroke="#c5a059" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div><div><h6>Automatic Expense Categorization</h6><p>SmartProbook learns your spending patterns and auto-tags expenses to the right accounts without manual entry.</p></div></div></div>
