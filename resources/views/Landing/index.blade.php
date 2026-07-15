@@ -1458,7 +1458,9 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     overflow: hidden;
     border-radius: 26px;
     min-height: 350px;
-    background: #03122d;
+    background:
+        linear-gradient(rgba(3, 18, 45, 0.88), rgba(3, 18, 45, 0.88)),
+        url('https://images.pexels.com/photos/6801648/pexels-photo-6801648.jpeg?auto=compress&cs=tinysrgb&w=1200') center/cover;
     flex: 1;
 }
 .product-video-window video {
