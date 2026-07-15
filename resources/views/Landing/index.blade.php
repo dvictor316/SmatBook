@@ -1377,66 +1377,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     background: linear-gradient(90deg, rgba(0,17,42,0.82), rgba(0,17,42,0.20) 44%, rgba(0,17,42,0.55));
     pointer-events: none;
 }
-.video-overlay-card {
-    position: absolute;
-    left: 24px;
-    bottom: 24px;
-    width: min(360px, calc(100% - 48px));
-    z-index: 2;
-    padding: 22px;
-    border-radius: 24px;
-    background: rgba(255,255,255,0.92);
-    backdrop-filter: blur(16px);
-    box-shadow: 0 26px 70px rgba(0,0,0,0.24);
-}
-.video-overlay-card h3 {
-    font-family: var(--font-display);
-    color: var(--navy);
-    font-size: 1.18rem;
-    font-weight: 900;
-    margin: 0 0 8px;
-}
-.video-overlay-card p {
-    color: var(--muted);
-    font-size: 0.84rem;
-    line-height: 1.65;
-    margin: 0;
-}
-.video-flow {
-    position: absolute;
-    right: 22px;
-    top: 24px;
-    z-index: 2;
-    display: grid;
-    gap: 10px;
-    width: min(230px, 36%);
-}
-.video-flow-step {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: 16px;
-    background: rgba(255,255,255,0.88);
-    box-shadow: 0 18px 40px rgba(0,0,0,0.15);
-    animation: videoPulse 5.6s ease-in-out infinite;
-}
-.video-flow-step:nth-child(2) { animation-delay: .8s; }
-.video-flow-step:nth-child(3) { animation-delay: 1.6s; }
-.video-flow-step i {
-    color: var(--gold);
-}
-.video-flow-step span {
-    color: var(--navy);
-    font-size: 0.75rem;
-    font-weight: 900;
-    line-height: 1.2;
-}
-@keyframes videoPulse {
-    0%, 100% { transform: translateY(0); opacity: .9; }
-    50% { transform: translateY(-5px); opacity: 1; }
-}
-
 /* Footer */
 .sb-footer { background: var(--surface-2); padding: 96px 0 40px; border-top: 5px solid var(--gold); position: relative; overflow: hidden; }
 .sb-footer::before { content:''; position:absolute; inset:0; background:repeating-linear-gradient(45deg,transparent,transparent 48px,rgba(197,160,89,0.04) 48px,rgba(197,160,89,0.04) 50px); pointer-events:none; }
@@ -1779,21 +1719,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .product-video-section {
         padding: 64px 0 76px;
     }
-    .video-flow {
-        position: static;
-        width: auto;
-        padding: 14px;
-        grid-template-columns: 1fr;
-        background: rgba(255,255,255,0.08);
-    }
-    .video-overlay-card {
-        position: static;
-        width: auto;
-        margin: 12px;
-    }
     .product-video-window {
-        display: flex;
-        flex-direction: column;
+        min-height: 320px;
     }
     .product-video-window::after {
         background: linear-gradient(180deg, rgba(0,17,42,0.38), rgba(0,17,42,0.16));
@@ -2458,19 +2385,10 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                             <span>Accounting workflow preview</span>
                         </div>
                         <div class="product-video-window">
-                            <video id="accountingSceneVideo" autoplay muted playsinline preload="metadata" poster="{{ asset('assets/img/demo-two.png') }}" aria-label="Short SmartProbook accounting software workflow video playlist">
+                            <video id="accountingSceneVideo" autoplay muted playsinline preload="metadata" aria-label="Short SmartProbook accounting software workflow video playlist">
                                 <source src="https://videos.pexels.com/video-files/8478748/8478748-hd_1920_1080_25fps.mp4" type="video/mp4">
                                 <source src="{{ asset('assets/video/neu.mp4') }}" type="video/mp4">
                             </video>
-                            <div class="video-flow" aria-hidden="true">
-                                <div class="video-flow-step"><i class="fas fa-cash-register"></i><span>Sale captured</span></div>
-                                <div class="video-flow-step"><i class="fas fa-book"></i><span>Ledger updated</span></div>
-                                <div class="video-flow-step"><i class="fas fa-file-lines"></i><span>Report ready</span></div>
-                            </div>
-                            <div class="video-overlay-card">
-                                <h3>From transaction to report in seconds</h3>
-                                <p>A short look at how SmartProbook connects sales, expenses, stock, invoices, and financial reports in one accounting-first workspace.</p>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -3042,7 +2960,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
             window.setTimeout(() => {
                 accountingSceneVideo.src = accountingScenes[accountingSceneIndex];
-                accountingSceneVideo.load();
                 const playPromise = accountingSceneVideo.play();
                 if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(() => {});
                 accountingSceneVideo.classList.remove('is-switching');
