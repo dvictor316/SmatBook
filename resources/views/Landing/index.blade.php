@@ -2647,7 +2647,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                     </div>
                     <div class="impact-story-actions">
                         <a href="{{ route('landing.contact') }}" class="btn-red">Talk To Sales</a>
-                        <a href="#expenses" class="btn-outline-navy">See Reporting</a>
+                        <a href="{{ route('login', ['portal' => 1]) }}" class="btn-outline-navy">Visit Portal</a>
                     </div>
                 </div>
                 <div class="impact-story-media">
