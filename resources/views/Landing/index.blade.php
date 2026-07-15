@@ -1242,11 +1242,24 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 .product-video-shell {
     display: grid;
     grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
-    align-items: center;
+    align-items: stretch;
     gap: 48px;
 }
+.product-video-heading {
+    max-width: 960px;
+    margin: 0 0 34px;
+}
 .product-video-copy {
-    max-width: 520px;
+    height: 100%;
+    min-height: 438px;
+    padding: 28px;
+    border-radius: 30px;
+    background: rgba(255,255,255,0.68);
+    border: 1px solid rgba(0,35,71,0.08);
+    box-shadow: 0 22px 64px rgba(0,35,71,0.08);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 .video-pill {
     display: inline-flex;
@@ -1273,7 +1286,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 .product-video-points {
     display: grid;
     gap: 12px;
-    margin: 26px 0 30px;
+    margin: 22px 0 24px;
 }
 .product-video-point {
     display: flex;
@@ -1315,6 +1328,9 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     padding: 12px;
     background: linear-gradient(135deg, rgba(0,35,71,0.96), rgba(3,23,56,0.92));
     box-shadow: 0 34px 90px rgba(0,35,71,0.30), 0 0 0 1px rgba(197,160,89,0.20);
+    min-height: 438px;
+    display: flex;
+    flex-direction: column;
 }
 .product-video-frame::before {
     content: '';
@@ -1356,6 +1372,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     border-radius: 26px;
     min-height: 390px;
     background: #03122d;
+    flex: 1;
 }
 .product-video-window video {
     width: 100%;
@@ -1718,6 +1735,16 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     }
     .product-video-section {
         padding: 64px 0 76px;
+    }
+    .product-video-heading {
+        margin-bottom: 24px;
+    }
+    .product-video-copy,
+    .product-video-frame {
+        min-height: auto;
+    }
+    .product-video-copy {
+        padding: 22px;
     }
     .product-video-window {
         min-height: 320px;
@@ -2355,10 +2382,12 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 
         <section class="product-video-section" id="product-video">
             <div class="container px-0">
+                <div class="product-video-heading">
+                    <div class="video-pill"><span></span> Accounting software video</div>
+                    <h2 class="sb-h1">See how SmartProbook turns daily business activity into <span class="accent">clean accounting.</span></h2>
+                </div>
                 <div class="product-video-shell">
                     <div class="product-video-copy">
-                        <div class="video-pill"><span></span> Accounting software video</div>
-                        <h2 class="sb-h1">See how SmartProbook turns daily business activity into <span class="accent">clean accounting.</span></h2>
                         <p class="sb-lead">Watch the workflow in motion: sell, invoice, collect payments, control stock, and read your reports without jumping between spreadsheets.</p>
                         <div class="product-video-points">
                             <div class="product-video-point">
