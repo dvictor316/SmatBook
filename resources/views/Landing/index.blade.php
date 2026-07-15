@@ -887,7 +887,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     background: linear-gradient(180deg, rgba(0,35,71,0.05) 0%, rgba(0,35,71,0.30) 100%);
     pointer-events: none;
 }
-.impact-story-image-wrap img {
+.impact-story-image-wrap img,
+.impact-story-image-wrap video {
     width: 100%;
     height: 100%;
     min-height: 360px;
@@ -1734,7 +1735,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .benefit-card { border-color: var(--border); background: #fff; }
     .benefit-belt { padding: 32px 12px 0; }
     .impact-story-image-wrap,
-    .impact-story-image-wrap img {
+    .impact-story-image-wrap img,
+    .impact-story-image-wrap video {
         min-height: 300px;
     }
     .product-video-section {
@@ -1911,7 +1913,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         gap: 18px;
     }
     .impact-story-image-wrap,
-    .impact-story-image-wrap img {
+    .impact-story-image-wrap img,
+    .impact-story-image-wrap video {
         min-height: 260px;
         border-radius: 20px;
     }
@@ -2672,7 +2675,9 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <div class="impact-story-grid">
                 <div class="impact-story-media">
                     <div class="impact-story-image-wrap">
-                        <img src="https://images.pexels.com/photos/7688374/pexels-photo-7688374.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Nigerian business professional reviewing financial records on laptop" loading="lazy">
+                        <video autoplay muted loop playsinline preload="metadata" aria-label="SmartProbook business management video preview">
+                            <source src="{{ asset('assets/video/videoPM.mp4') }}" type="video/mp4">
+                        </video>
                         <div class="impact-story-note-card">
                             <strong>Sell easily</strong>
                             <span>Manage your business with SmartProbook.</span>
