@@ -862,6 +862,30 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 .gadget-visual--right {
     padding: 24px 0 24px 24px;
 }
+.feature-section-heading {
+    margin-bottom: 28px;
+    max-width: 1040px;
+}
+.feature-split-row {
+    align-items: stretch !important;
+}
+.feature-split-row > [class*="col-"] {
+    display: flex;
+}
+.feature-split-row .gadget-visual,
+.feature-copy-card {
+    width: 100%;
+}
+.feature-copy-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100%;
+    padding: 24px;
+    border-radius: 24px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+}
 
 /* Business impact stories */
 .impact-story {
@@ -879,6 +903,30 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
     border-color: rgba(255,255,255,0.12);
     box-shadow: 0 24px 56px rgba(0,0,0,0.24);
+}
+.impact-story--dark .impact-story-heading {
+    margin-bottom: 22px;
+    max-width: 1040px;
+}
+.impact-story--dark .impact-story-heading .impact-story-title {
+    margin-bottom: 0;
+}
+.impact-story--dark .impact-story-grid {
+    align-items: stretch;
+}
+.impact-story--dark .impact-story-media,
+.impact-story--dark .impact-story-copy,
+.impact-story--dark .impact-story-image-wrap {
+    height: 100%;
+}
+.impact-story--dark .impact-story-copy {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 24px;
+    border-radius: 24px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
 }
 .impact-story-grid {
     display: grid;
@@ -2621,7 +2669,11 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 
 <section class="sb-section sb-section--dark" id="expenses">
     <div class="container">
-        <div class="row align-items-center g-5">
+        <div class="feature-section-heading">
+            <span class="sb-eyebrow">03 — Expenses &amp; Reports</span>
+            <h2 class="sb-h1 sb-h1-white">Board-ready reports <span class="accent">in one click</span></h2>
+        </div>
+        <div class="row g-5 feature-split-row">
             <div class="col-lg-7 gadget-mobile-column">
                 <div class="gadget-visual gadget-visual--left gadget-mobile-bleed">
                     <div class="float-badge" style="top:-10px;left:10px;animation:floatBob 4s ease-in-out infinite;">
@@ -2709,18 +2761,22 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                 </div>
             </div>
             <div class="col-lg-5">
-                <span class="sb-eyebrow">03 — Expenses &amp; Reports</span>
-                <h2 class="sb-h1 sb-h1-white">Board-ready reports <span class="accent">in one click</span></h2>
+                <div class="feature-copy-card">
                 <p class="sb-lead sb-lead-white">Stop spending weekends building spreadsheets. SmartProbook generates polished financial reports automatically — daily, weekly, monthly, or on demand.</p>
                 <div class="d-flex flex-column gap-3 mt-4">
                     <div class="feat-card-dark"><div class="d-flex align-items-start gap-3"><div class="feat-icon feat-icon-dark"><svg viewBox="0 0 24 24" fill="none" stroke="#c5a059" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div><div><h6>Automatic Expense Categorization</h6><p>SmartProbook learns your spending patterns and auto-tags expenses to the right accounts without manual entry.</p></div></div></div>
                     <div class="feat-card-dark"><div class="d-flex align-items-start gap-3"><div class="feat-icon feat-icon-dark"><svg viewBox="0 0 24 24" fill="none" stroke="#c5a059" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div><div><h6>One-Click Tax Reports</h6><p>Generate VAT, PAYE, and annual tax summaries in seconds — fully formatted for FIRS submission.</p></div></div></div>
                     <div class="feat-card-dark"><div class="d-flex align-items-start gap-3"><div class="feat-icon feat-icon-dark"><svg viewBox="0 0 24 24" fill="none" stroke="#c5a059" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><div><h6>Bank Reconciliation</h6><p>Import your bank statements and SmartProbook matches every transaction automatically — zero manual reconciliation.</p></div></div></div>
                 </div>
+                </div>
             </div>
         </div>
 
         <div class="impact-story impact-story--dark">
+            <div class="impact-story-heading">
+                <span class="impact-story-kicker"><i class="fas fa-briefcase"></i> For owners, executives, and finance leads</span>
+                <h3 class="impact-story-title">SmartProbook helps decision-makers see the health of the business without waiting days for manual reports.</h3>
+            </div>
             <div class="impact-story-grid">
                 <div class="impact-story-media">
                     <div class="impact-story-image-wrap">
@@ -2742,8 +2798,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                     </div>
                 </div>
                 <div class="impact-story-copy">
-                    <span class="impact-story-kicker"><i class="fas fa-briefcase"></i> For owners, executives, and finance leads</span>
-                    <h3 class="impact-story-title">SmartProbook helps decision-makers see the health of the business without waiting days for manual reports.</h3>
                     <p class="impact-story-text">From profit snapshots to export-ready tax summaries, SmartProbook gives leadership a cleaner reporting layer for board reviews, lending conversations, and day-to-day control.</p>
                     <div class="impact-story-list">
                         <div class="impact-story-item">
@@ -2760,7 +2814,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                         </div>
                     </div>
                     <div class="impact-story-actions">
-                        <a href="{{ url('/membership-plans') }}" class="btn-red">View Plans</a>
+                        <a href="{{ route('login', ['portal' => 1]) }}" class="btn-red">Visit Portal</a>
                         <a href="{{ route('demo.request.form') }}" class="btn-outline-navy">Request Demo Access</a>
                     </div>
                 </div>
