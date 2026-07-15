@@ -1107,20 +1107,42 @@ class BalanceSheetController extends Controller
             ));
         }
 
-        $equity = $equityCapital
-            ->concat($equityRetained)
-            ->concat($equityReserves)
-            ->concat($retainedEarningsLines)
-            ->values();
-
         $totalCurrentAssets = round((float) $currentAssets->sum('balance'), 2);
         $totalFixedAssets = round((float) $fixedAssets->sum('balance'), 2);
         $totalAssets = round($totalCurrentAssets + $totalFixedAssets, 2);
         $totalCurrentLiabilities = round((float) $currentLiabilities->sum('balance'), 2);
         $totalLongTermLiabilities = round((float) $longTermLiabilities->sum('balance'), 2);
         $totalLiabilities = round($totalCurrentLiabilities + $totalLongTermLiabilities, 2);
+
+        $equity = $equityCapital
+            ->concat($equityRetained)
+            ->concat($equityReserves)
+            ->concat($retainedEarningsLines)
+            ->values();
         $totalEquity = round((float) $equity->sum('balance'), 2);
         $statementDifference = round($totalAssets - ($totalLiabilities + $totalEquity), 2);
+
+        if (abs($openingDifference) < 0.01 && abs($statementDifference) >= 0.01) {
+            $equityReserves->push($this->syntheticLine(
+                'Opening Balance Equity Adjustment',
+                'Equity',
+                $statementDifference,
+                [
+                    '_bs_group' => 'Opening Balance Equity',
+                    '_display_name' => 'Opening Balance Equity Adjustment',
+                    '_auto_balance' => true,
+                ]
+            ));
+
+            $equity = $equityCapital
+                ->concat($equityRetained)
+                ->concat($equityReserves)
+                ->concat($retainedEarningsLines)
+                ->values();
+            $totalEquity = round((float) $equity->sum('balance'), 2);
+            $statementDifference = round($totalAssets - ($totalLiabilities + $totalEquity), 2);
+        }
+
         $reviewThreshold = max(1000.0, round(abs($totalAssets) * 0.02, 2));
 
         return [
@@ -1354,7 +1376,7 @@ class BalanceSheetController extends Controller
             $reportDate,
             $activeBranch,
             $method,
-            0.0,
+            $ledgerDifference,
             $consolidate
         );
 
@@ -1792,6 +1814,11 @@ class BalanceSheetController extends Controller
             });
         $this->applyTransactionScope($txnQuery, $request);
         $txnTotals = $txnQuery->groupBy('account_id')->get()->keyBy('account_id');
+        $snapshotLedgerDifference = round(
+            (float) $txnTotals->sum(fn ($row) => (float) ($row->total_debit ?? 0))
+            - (float) $txnTotals->sum(fn ($row) => (float) ($row->total_credit ?? 0)),
+            2
+        );
 
         $openingBalanceAccountIds = $this->openingBalanceAccountIds($request, $date, $activeBranch);
         $postedOpeningBalanceAccountIds = $this->postedOpeningBalanceAccountIds($request, $date, $activeBranch);
@@ -1835,7 +1862,7 @@ class BalanceSheetController extends Controller
             $date,
             $activeBranch,
             $method,
-            0.0,
+            $snapshotLedgerDifference,
             $consolidate
         );
 
