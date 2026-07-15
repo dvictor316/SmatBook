@@ -1466,7 +1466,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     height: 100%;
     min-height: 390px;
     display: block;
-    object-fit: cover;
+    object-fit: contain;
+    background: #03122d;
     opacity: 1;
     filter: saturate(1.06) contrast(1.02);
     transition: opacity .35s ease;
