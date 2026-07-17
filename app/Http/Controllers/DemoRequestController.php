@@ -7,8 +7,10 @@ use App\Mail\DemoRequestNotificationMail;
 use App\Models\ActivityLog;
 use App\Models\DemoRequest;
 use App\Services\DemoProvisioningService;
+use App\Support\AppMailer;
 use App\Support\DemoSettings;
 use Illuminate\Http\Request;
+use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 
@@ -95,16 +97,12 @@ class DemoRequestController extends Controller
 
             $loginUrl = route('login', ['portal' => 1, 'demo' => 1]);
 
-            $credentialEmailSent = true;
-            try {
-                Mail::to($demoRequest->email)
-                    ->send(new DemoApprovedMail($demoRequest->fresh(), $plainPassword, $loginUrl, $loginEmail));
-            } catch (\Throwable $e) {
-                $credentialEmailSent = false;
-                logger()->warning('Instant demo credential email failed: ' . $e->getMessage(), [
-                    'demo_request_id' => $demoRequest->id,
-                ]);
-            }
+            $credentialEmailSent = $this->sendDemoMail(
+                $demoRequest->email,
+                new DemoApprovedMail($demoRequest->fresh(), $plainPassword, $loginUrl, $loginEmail),
+                'Instant demo credential email failed',
+                ['demo_request_id' => $demoRequest->id]
+            );
 
             ActivityLog::record('Demo', 'auto_approved', "Demo request auto-approved for {$demoRequest->email}", [
                 'company_id' => $company->id,
@@ -124,11 +122,12 @@ class DemoRequestController extends Controller
 
         // Notify the super-admin for visibility; no manual approval is required.
         $adminEmail = config('internal.admin_email', 'support@smartprobook.com');
-        try {
-            Mail::to($adminEmail)->queue(new DemoRequestNotificationMail($demoRequest->fresh()));
-        } catch (\Throwable $e) {
-            logger()->warning('DemoRequest admin notification failed: ' . $e->getMessage());
-        }
+        $this->sendDemoMail(
+            $adminEmail,
+            new DemoRequestNotificationMail($demoRequest->fresh()),
+            'DemoRequest admin notification failed',
+            ['demo_request_id' => $demoRequest->id]
+        );
 
         return redirect()->route('demo.request.success')
             ->with('success', $credentialEmailSent
@@ -152,5 +151,43 @@ class DemoRequestController extends Controller
             return redirect()->route('demo.request.form');
         }
         return view('Landing.demo-request-success');
+    }
+
+    private function sendDemoMail(string $recipient, Mailable $mailable, string $failureMessage, array $context = []): bool
+    {
+        AppMailer::bootCurrentSettings();
+
+        if (! $this->demoMailCanUseConfiguredTransport()) {
+            logger()->warning($failureMessage . ': configured SMTP port is blocked for demo flow', $context + [
+                'recipient' => $recipient,
+                'smtp_port' => (int) config('mail.mailers.smtp.port'),
+            ]);
+
+            return false;
+        }
+
+        try {
+            Mail::to($recipient)->send($mailable);
+
+            return true;
+        } catch (\Throwable $e) {
+            logger()->warning($failureMessage . ': ' . $e->getMessage(), $context + [
+                'recipient' => $recipient,
+            ]);
+
+            return false;
+        }
+    }
+
+    private function demoMailCanUseConfiguredTransport(): bool
+    {
+        $defaultMailer = strtolower((string) config('mail.default', 'smtp'));
+        $smtpPort = (int) config('mail.mailers.smtp.port');
+
+        if (in_array($defaultMailer, ['smtp', 'failover'], true) && in_array($smtpPort, [465, 587], true)) {
+            return false;
+        }
+
+        return true;
     }
 }

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     @php
         $routeName = Route::currentRouteName();
+        $hideLandingChrome = trim($__env->yieldContent('hide_landing_chrome')) !== '';
         $publicSeoMap = [
             'landing.index' => [
                 'title' => 'AI Accounting Software, ERP and Business Automation',
@@ -117,7 +118,7 @@
             color: var(--dark); 
             line-height: 1.8; 
             overflow-x: hidden;
-            padding-top: var(--landing-nav-height);
+            padding-top: {{ $hideLandingChrome ? '0' : 'var(--landing-nav-height)' }};
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
         }
@@ -1267,6 +1268,7 @@
 <body>
 
 
+@unless($hideLandingChrome)
 <nav>
     <div class="nav-container">
         <a href="{{ url('/') }}" class="logo-container">
@@ -1291,6 +1293,7 @@
         </ul>
     </div>
 </nav>
+@endunless
 
 
 <main>
@@ -1299,6 +1302,7 @@
 </main>
 
 
+@unless($hideLandingChrome)
 <footer class="master-footer">
     <div class="footer-content">
         <div class="footer-grid">
@@ -1358,10 +1362,12 @@
         </div>
     </div>
 </footer>
+@endunless
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 
+@unless($hideLandingChrome)
 <script>
     // Mobile menu toggle
     const navTrigger = document.getElementById('navTrigger');
@@ -1492,6 +1498,7 @@
 
     initGlobalCountry();
 </script>
+@endunless
 
 </body>
 </html>

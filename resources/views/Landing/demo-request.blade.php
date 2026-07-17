@@ -20,7 +20,7 @@
             <div class="contact-info-panel">
                 <div class="info-content">
                     <h2>How It Works</h2>
-                    <p>Fill in the form and SmartProbook will create your controlled 48-hour demo environment instantly, then send your login credentials by email.</p>
+                    <p>Fill in the form and SmartProbook will create your controlled 48-hour demo environment instantly, then show your login credentials on the next screen.</p>
 
                     <div class="contact-item">
                         <i class="fas fa-paper-plane"></i>
@@ -42,7 +42,7 @@
                         <i class="fas fa-envelope-open-text"></i>
                         <div>
                             <h6>Step 3</h6>
-                            <p>You receive an email with your login credentials and a direct access link.</p>
+                            <p>Your login credentials and direct access link are shown immediately after setup.</p>
                         </div>
                     </div>
 

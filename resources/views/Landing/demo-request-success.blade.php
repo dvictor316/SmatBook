@@ -1,6 +1,7 @@
 @extends('layout.landing_nav')
 
 @section('title', 'Demo Request Received | SmartProbook')
+@section('hide_landing_chrome', '1')
 
 @section('content')
 
@@ -13,7 +14,7 @@
             @if(session('demo_email_sent', true))
                 The login details have also been sent to your email.
             @else
-                Your login details are available below while email delivery is retried.
+                Your login details are available below because email delivery is not available right now.
             @endif
         </p>
     </div>
