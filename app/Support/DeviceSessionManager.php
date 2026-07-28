@@ -211,6 +211,10 @@ class DeviceSessionManager
             return null;
         }
 
+        // Free unlimited workspaces created by superadmin are a sponsorship-style
+        // license: each account can only be active on one system at a time.
+        // Paid plans, including paid custom licenses, return null here and are
+        // controlled by the workspace seat limit below.
         return $this->isFreeCustomOnlyAccount($user) ? 1 : null;
     }
 
@@ -222,6 +226,9 @@ class DeviceSessionManager
 
         $subscription = Subscription::resolveCurrentForUser($user);
 
+        // Paid/custom paid licenses use the purchased user_limit as the normal
+        // seat allowance. Example: a paid custom license for 15 users allows
+        // up to 15 distinct users in the workspace.
         return $subscription?->resolvedUserLimit();
     }
 
@@ -279,7 +286,12 @@ class DeviceSessionManager
             return false;
         }
 
-        return !Subscription::withoutGlobalScope('tenant')
+        return !$this->hasActivePaidLicense($user, $companyId);
+    }
+
+    private function hasActivePaidLicense(User $user, ?int $companyId): bool
+    {
+        return Subscription::withoutGlobalScope('tenant')
             ->where(function ($query) use ($user, $companyId) {
                 $query->where('user_id', $user->id);
 
@@ -302,6 +314,10 @@ class DeviceSessionManager
     {
         if ($this->isSuperAdmin($user)) {
             return "Super admin access is limited to {$limit} devices at a time. Log out from another device first.";
+        }
+
+        if ($this->isFreeCustomOnlyAccount($user)) {
+            return 'This free custom account is already active on another system. Please log out from that system first.';
         }
 
         return 'This account is already active on another device. Please log out from that device first.';
