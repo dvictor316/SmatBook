@@ -1559,6 +1559,7 @@ if (app()->environment('local')) {
 */
 
 Route::match(['get', 'post'], '/logout-emergency', function () {
+    app(\App\Support\DeviceSessionManager::class)->forgetCurrentSession(request());
     Auth::logout();
     request()->session()->flush();
     request()->session()->forget([

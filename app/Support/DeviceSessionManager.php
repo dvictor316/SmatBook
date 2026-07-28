@@ -203,7 +203,15 @@ class DeviceSessionManager
 
     private function allowedUserSessions(User $user): ?int
     {
-        return $this->isSuperAdmin($user) ? 2 : 1;
+        if ($this->isSuperAdmin($user)) {
+            return 2;
+        }
+
+        if ($this->isPlatformStaff($user)) {
+            return null;
+        }
+
+        return $this->isFreeCustomOnlyAccount($user) ? 1 : null;
     }
 
     private function allowedWorkspaceSessions(User $user, ?int $companyId): ?int
@@ -241,6 +249,53 @@ class DeviceSessionManager
 
         return in_array($role, ['super_admin', 'superadmin'], true)
             || strtolower((string) $user->email) === 'donvictorlive@gmail.com';
+    }
+
+    private function isPlatformStaff(User $user): bool
+    {
+        $role = strtolower(trim((string) ($user->role ?? '')));
+
+        return in_array($role, [
+            'state_manager',
+            'deployment_manager',
+            'agent',
+            'sales_agent',
+        ], true);
+    }
+
+    private function isFreeCustomOnlyAccount(User $user): bool
+    {
+        $subscription = Subscription::resolveCurrentForUser($user);
+
+        if (!$subscription) {
+            return false;
+        }
+
+        $companyId = $this->resolveCompanyId($user);
+        $freeCurrentSubscription = strtolower((string) ($subscription->payment_status ?? '')) === 'free'
+            && strtolower((string) ($subscription->status ?? '')) === 'active';
+
+        if (!$freeCurrentSubscription) {
+            return false;
+        }
+
+        return !Subscription::withoutGlobalScope('tenant')
+            ->where(function ($query) use ($user, $companyId) {
+                $query->where('user_id', $user->id);
+
+                if ($companyId) {
+                    $query->orWhere('company_id', $companyId);
+                }
+            })
+            ->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), [
+                'paid',
+                'completed',
+                'success',
+                'successful',
+                'verified',
+            ])
+            ->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['active', 'trial'])
+            ->exists();
     }
 
     private function userLimitMessage(User $user, int $limit): string
