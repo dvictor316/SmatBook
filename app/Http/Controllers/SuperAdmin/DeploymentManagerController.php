@@ -1052,12 +1052,15 @@ private function activateFreeDeploymentWorkspace(Subscription $subscription): vo
     ]));
 
     if ($company) {
+        // companies.subscription_end is a TIMESTAMP on older installs, so keep it below 2038.
+        $companySubscriptionEnd = now()->addYears(10);
+
         $company->update($this->filterPayloadForTable('companies', [
             'domain_prefix' => $prefix,
             'subdomain' => $prefix,
             'domain' => $prefix . '.' . $domain,
             'status' => 'active',
-            'subscription_end' => now()->addYears(100),
+            'subscription_end' => $companySubscriptionEnd,
         ]));
     }
 
