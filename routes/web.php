@@ -615,8 +615,14 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
 
     // Super-admin free/custom deployment. Uses the normal tenant-safe deployment flow,
     // but activates the subscription without sending the customer through payment.
+    Route::get('/custom-deployments', [DeploymentManagerController::class, 'customDeploymentsIndex'])->name('custom_deployments.index');
     Route::get('/custom-deployments/create', [DeploymentManagerController::class, 'create'])->name('custom_deployments.create');
     Route::post('/custom-deployments', [DeploymentManagerController::class, 'store'])->name('custom_deployments.store');
+    Route::get('/custom-deployments/{subscription}/edit', [DeploymentManagerController::class, 'customDeploymentEdit'])->name('custom_deployments.edit');
+    Route::put('/custom-deployments/{subscription}', [DeploymentManagerController::class, 'customDeploymentUpdate'])->name('custom_deployments.update');
+    Route::post('/custom-deployments/{subscription}/suspend', [DeploymentManagerController::class, 'customDeploymentSuspend'])->name('custom_deployments.suspend');
+    Route::post('/custom-deployments/{subscription}/activate', [DeploymentManagerController::class, 'customDeploymentActivate'])->name('custom_deployments.activate');
+    Route::delete('/custom-deployments/{subscription}', [DeploymentManagerController::class, 'customDeploymentDestroy'])->name('custom_deployments.destroy');
 
     // Demo Requests Management
     Route::prefix('demo-requests')->name('demo_requests.')->group(function () {

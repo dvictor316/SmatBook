@@ -69,6 +69,21 @@ class DeploymentManagerController extends Controller
         return Subscription::withoutGlobalScope('tenant')->whereIn('company_id', $this->managedCompanyIds());
     }
 
+    private function customDeploymentsQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return Subscription::withoutGlobalScope('tenant')
+            ->with([
+                'user',
+                'company' => fn ($query) => $query->withoutGlobalScope('tenant'),
+            ])
+            ->whereRaw("LOWER(COALESCE(payment_status, '')) = ?", ['free']);
+    }
+
+    private function findCustomDeployment(int|string $id): Subscription
+    {
+        return $this->customDeploymentsQuery()->findOrFail($id);
+    }
+
     private function resolveDeploymentManager(string|int $id): DeploymentManager
     {
         return DeploymentManager::withoutGlobalScopes()
@@ -716,6 +731,216 @@ class DeploymentManagerController extends Controller
             'pageSubtitle',
             'isSuperAdminDeployment'
         ));
+    }
+
+    public function customDeploymentsIndex(Request $request)
+    {
+        $query = $this->customDeploymentsQuery()->latest('subscriptions.created_at');
+
+        if ($search = trim((string) $request->query('search', ''))) {
+            $query->where(function ($q) use ($search) {
+                $q->where('subscriber_name', 'like', "%{$search}%")
+                    ->orWhere('plan_name', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($userQuery) use ($search) {
+                        $userQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('company', function ($companyQuery) use ($search) {
+                        $companyQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('company_name', 'like', "%{$search}%")
+                            ->orWhere('domain_prefix', 'like', "%{$search}%")
+                            ->orWhere('subdomain', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($status = strtolower(trim((string) $request->query('status', '')))) {
+            if ($status === 'suspended') {
+                $query->where(function ($statusQuery) {
+                    $statusQuery->whereRaw("LOWER(COALESCE(status, '')) IN (?, ?)", ['cancelled', 'expired'])
+                        ->orWhereHas('user', fn ($userQuery) => $userQuery->whereRaw("LOWER(COALESCE(status, '')) = ?", ['suspended']))
+                        ->orWhereHas('company', fn ($companyQuery) => $companyQuery->whereRaw("LOWER(COALESCE(status, '')) = ?", ['suspended']));
+                });
+            } else {
+                $query->whereRaw('LOWER(status) = ?', [$status]);
+            }
+        }
+
+        $deployments = $query->paginate(15)->withQueryString();
+
+        $base = $this->customDeploymentsQuery();
+        $metrics = [
+            'total' => (clone $base)->count(),
+            'active' => (clone $base)->whereRaw("LOWER(COALESCE(status, '')) = ?", ['active'])->count(),
+            'suspended' => (clone $base)
+                ->where(function ($statusQuery) {
+                    $statusQuery->whereRaw("LOWER(COALESCE(status, '')) IN (?, ?)", ['cancelled', 'expired'])
+                        ->orWhereHas('user', fn ($userQuery) => $userQuery->whereRaw("LOWER(COALESCE(status, '')) = ?", ['suspended']))
+                        ->orWhereHas('company', fn ($companyQuery) => $companyQuery->whereRaw("LOWER(COALESCE(status, '')) = ?", ['suspended']));
+                })
+                ->count(),
+            'seats' => (int) (clone $base)->sum('user_limit'),
+            'license_value' => (float) (clone $base)->sum('amount'),
+        ];
+
+        return view('SuperAdmin.custom-deployments.index', compact('deployments', 'metrics'));
+    }
+
+    public function customDeploymentEdit(int $subscription)
+    {
+        $deployment = $this->findCustomDeployment($subscription);
+        $plans = Plan::query()->orderBy('price')->get();
+
+        return view('SuperAdmin.custom-deployments.edit', compact('deployment', 'plans'));
+    }
+
+    public function customDeploymentUpdate(Request $request, int $subscription)
+    {
+        $deployment = $this->findCustomDeployment($subscription);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($deployment->user_id)],
+            'company_name' => 'required|string|max:255',
+            'domain_prefix' => ['required', 'string', 'max:50', 'alpha_dash'],
+            'plan_name' => 'required|string|max:120',
+            'billing_cycle' => 'required|in:monthly,yearly',
+            'amount' => 'nullable|numeric|min:0',
+            'user_limit' => 'required|integer|min:1|max:100000',
+            'status' => 'required|in:Active,Suspended',
+        ]);
+
+        DB::transaction(function () use ($deployment, $validated) {
+            $originalDomainPrefix = (string) ($deployment->domain_prefix ?? $deployment->company?->domain_prefix ?? $deployment->company?->subdomain ?? '');
+            $prefix = strtolower((string) preg_replace('/[^a-z0-9-]/', '', $validated['domain_prefix']));
+            $status = $validated['status'];
+            $subscriptionStatus = $status === 'Active' ? 'Active' : 'Cancelled';
+
+            $deployment->update($this->filterPayloadForTable('subscriptions', [
+                'subscriber_name' => $validated['name'],
+                'domain_prefix' => $prefix,
+                'plan' => $validated['plan_name'],
+                'plan_name' => $validated['plan_name'],
+                'amount' => (float) ($validated['amount'] ?? 0),
+                'billing_cycle' => $validated['billing_cycle'],
+                'user_limit' => (int) $validated['user_limit'],
+                'employee_size' => (int) $validated['user_limit'],
+                'status' => $subscriptionStatus,
+                'payment_status' => 'free',
+            ]));
+
+            $userStatus = strtolower($status) === 'active' ? 'active' : 'suspended';
+            $deployment->user?->update($this->filterPayloadForTable('users', [
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'status' => $userStatus,
+                'is_verified' => $userStatus === 'active' ? 1 : 0,
+            ]));
+
+            $domain = $this->resolveWorkspaceDomain();
+            $deployment->company?->update($this->filterPayloadForTable('companies', [
+                'name' => $validated['company_name'],
+                'company_name' => $validated['company_name'],
+                'email' => $validated['email'],
+                'domain_prefix' => $prefix,
+                'subdomain' => $prefix,
+                'domain' => $prefix . '.' . $domain,
+                'plan' => $validated['plan_name'],
+                'status' => $userStatus,
+            ]));
+
+            $this->updateCustomDeploymentDomain($deployment, [
+                'customer_name' => $validated['name'],
+                'email' => $validated['email'],
+                'domain_name' => $prefix,
+                'package_name' => $validated['plan_name'],
+                'package_type' => $validated['billing_cycle'],
+                'price' => (float) ($validated['amount'] ?? 0),
+                'employees' => (int) $validated['user_limit'],
+                'status' => $status === 'Active' ? 'Active' : 'Pending',
+            ], $originalDomainPrefix);
+        });
+
+        return redirect()->route('super_admin.custom_deployments.index')
+            ->with('success', 'Custom deployment updated successfully.');
+    }
+
+    public function customDeploymentSuspend(int $subscription)
+    {
+        $deployment = $this->findCustomDeployment($subscription);
+        $this->setCustomDeploymentStatus($deployment, 'Suspended');
+
+        return back()->with('success', 'Custom deployment suspended.');
+    }
+
+    public function customDeploymentActivate(int $subscription)
+    {
+        $deployment = $this->findCustomDeployment($subscription);
+        $this->setCustomDeploymentStatus($deployment, 'Active');
+
+        return back()->with('success', 'Custom deployment activated.');
+    }
+
+    public function customDeploymentDestroy(int $subscription)
+    {
+        $deployment = $this->findCustomDeployment($subscription);
+
+        DB::transaction(function () use ($deployment) {
+            $this->setCustomDeploymentStatus($deployment, 'Suspended');
+
+            $this->updateCustomDeploymentDomain($deployment, ['status' => 'Rejected']);
+
+            $deployment->delete();
+        });
+
+        return back()->with('success', 'Custom deployment removed from active list.');
+    }
+
+    private function setCustomDeploymentStatus(Subscription $deployment, string $status): void
+    {
+        DB::transaction(function () use ($deployment, $status) {
+            $userStatus = strtolower($status) === 'active' ? 'active' : 'suspended';
+            $subscriptionStatus = strtolower($status) === 'active' ? 'Active' : 'Cancelled';
+
+            $deployment->update($this->filterPayloadForTable('subscriptions', [
+                'status' => $subscriptionStatus,
+                'payment_status' => 'free',
+            ]));
+
+            $deployment->user?->update($this->filterPayloadForTable('users', [
+                'status' => $userStatus,
+                'is_verified' => $userStatus === 'active' ? 1 : 0,
+            ]));
+
+            $deployment->company?->update($this->filterPayloadForTable('companies', [
+                'status' => $userStatus,
+            ]));
+
+            $this->updateCustomDeploymentDomain($deployment, [
+                'status' => $status === 'Active' ? 'Active' : 'Pending',
+            ]);
+        });
+    }
+
+    private function updateCustomDeploymentDomain(Subscription $deployment, array $payload, ?string $domainPrefix = null): void
+    {
+        if (!Schema::hasTable('domains')) {
+            return;
+        }
+
+        $domainPrefix = filled($domainPrefix) ? $domainPrefix : $deployment->domain_prefix;
+        $query = Domain::withoutGlobalScopes();
+        if (Schema::hasColumn('domains', 'subscription_id')) {
+            $query->where('subscription_id', $deployment->id);
+        } elseif (Schema::hasColumn('domains', 'tenant_id')) {
+            $query->where('tenant_id', $deployment->user_id);
+        } elseif (Schema::hasColumn('domains', 'domain_name') && filled($domainPrefix)) {
+            $query->where('domain_name', $domainPrefix);
+        } else {
+            return;
+        }
+
+        $query->update($this->filterPayloadForTable('domains', $payload));
     }
 
 

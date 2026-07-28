@@ -596,9 +596,9 @@
                         <li class="{{ Request::is('superadmin/users*') && request('category') === 'registered_businesses' ? 'active' : '' }}">
                             <a href="{{ route('super_admin.users.index', array_merge($routeParams, ['category' => 'registered_businesses'])) }}">Registered Businesses</a>
                         </li>
-                        @if(Route::has('super_admin.custom_deployments.create'))
+                        @if(Route::has('super_admin.custom_deployments.index'))
                             <li class="{{ Request::is('superadmin/custom-deployments*') ? 'active' : '' }}">
-                                <a href="{{ route('super_admin.custom_deployments.create') }}">Custom Unlimited Deployment</a>
+                                <a href="{{ route('super_admin.custom_deployments.index') }}">Custom Unlimited Deployments</a>
                             </li>
                         @endif
                         <li class="{{ Request::is('superadmin/users*') && (request('category') === 'other_users' || !request()->has('category')) ? 'active' : '' }}">
