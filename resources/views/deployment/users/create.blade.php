@@ -373,27 +373,6 @@
 </style>
 
 <div class="sb-shell" id="register-wrapper">
-
-    @if ($errors->any())
-    <div class="alert alert-danger alert-dismissible fade show mb-4 rounded-3">
-        <i class="fas fa-exclamation-triangle me-2"></i>
-        <strong>Please fix the following:</strong>
-        <ul class="mb-0 mt-2 ps-3">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    @endif
-
-    @if (session('error'))
-    <div class="alert alert-danger alert-dismissible fade show mb-4 rounded-3">
-        <i class="fas fa-times-circle me-2"></i>{{ session('error') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    @endif
-
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
         <div>
             <nav aria-label="breadcrumb">

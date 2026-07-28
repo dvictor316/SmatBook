@@ -1046,11 +1046,20 @@ private function activateFreeDeploymentWorkspace(Subscription $subscription): vo
     }
 
     if (Schema::hasTable('domains')) {
-        $lookup = Schema::hasColumn('domains', 'subscription_id')
-            ? ['subscription_id' => $subscription->id]
-            : ['domain_name' => $prefix];
+        $lookup = [];
+        if (Schema::hasColumn('domains', 'subscription_id')) {
+            $lookup['subscription_id'] = $subscription->id;
+        } elseif (Schema::hasColumn('domains', 'tenant_id')) {
+            $lookup['tenant_id'] = $subscription->user_id;
+        } elseif (Schema::hasColumn('domains', 'domain_name')) {
+            $lookup['domain_name'] = $prefix;
+        }
 
-        Domain::updateOrCreate($lookup, $this->filterPayloadForTable('domains', [
+        if ($lookup === []) {
+            return;
+        }
+
+        Domain::withoutGlobalScopes()->updateOrCreate($lookup, $this->filterPayloadForTable('domains', [
             'tenant_id' => $subscription->user_id,
             'subscription_id' => $subscription->id,
             'customer_name' => $subscription->user?->name ?? $company?->name,

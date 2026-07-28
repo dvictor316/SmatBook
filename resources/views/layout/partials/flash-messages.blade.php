@@ -29,6 +29,24 @@
     }
 
     $flashMessages = $flashMessages->values();
+    $popupMessages = $flashMessages
+        ->map(fn ($item) => [
+            'type' => $item['type'],
+            'message' => trim((string) $item['message']),
+        ])
+        ->filter(fn ($item) => filled($item['message']))
+        ->values();
+
+    if ($errors->any()) {
+        $popupMessages->push([
+            'type' => 'danger',
+            'message' => $errors->first(),
+        ]);
+    }
+
+    $popupMessages = $popupMessages
+        ->unique(fn ($item) => $item['type'] . '|' . strtolower($item['message']))
+        ->values();
 @endphp
 
 @if (!$suppressGlobalFlash && ($flashMessages->isNotEmpty() || $errors->any()))
@@ -104,6 +122,68 @@
                 padding-inline: 12px;
             }
         }
+
+        .spb-flash-popup-stack {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            z-index: 10060;
+            display: grid;
+            gap: 10px;
+            width: min(360px, calc(100vw - 28px));
+            pointer-events: none;
+        }
+
+        .spb-flash-popup {
+            pointer-events: auto;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 13px 14px;
+            border-radius: 14px;
+            background: #ffffff;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
+            color: #0f172a;
+            animation: spbFlashSlideIn 0.22s ease-out both;
+        }
+
+        .spb-flash-popup[data-type="success"] { border-left: 5px solid #10b981; }
+        .spb-flash-popup[data-type="danger"] { border-left: 5px solid #ef4444; }
+        .spb-flash-popup[data-type="warning"] { border-left: 5px solid #f59e0b; }
+        .spb-flash-popup[data-type="info"] { border-left: 5px solid #2563eb; }
+
+        .spb-flash-popup i {
+            margin-top: 2px;
+        }
+
+        .spb-flash-popup[data-type="success"] i { color: #10b981; }
+        .spb-flash-popup[data-type="danger"] i { color: #ef4444; }
+        .spb-flash-popup[data-type="warning"] i { color: #f59e0b; }
+        .spb-flash-popup[data-type="info"] i { color: #2563eb; }
+
+        .spb-flash-popup-copy {
+            flex: 1;
+            min-width: 0;
+            font-size: 0.9rem;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+
+        .spb-flash-popup-close {
+            border: 0;
+            background: transparent;
+            color: #64748b;
+            font-size: 1.05rem;
+            line-height: 1;
+            cursor: pointer;
+            padding: 2px;
+        }
+
+        @keyframes spbFlashSlideIn {
+            from { opacity: 0; transform: translate3d(16px, -8px, 0); }
+            to { opacity: 1; transform: translate3d(0, 0, 0); }
+        }
     </style>
 
     <div class="global-flash-stack" data-global-flash-stack>
@@ -137,6 +217,37 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const popupMessages = @json($popupMessages);
+            const iconMap = {
+                success: 'fa-check-circle',
+                danger: 'fa-circle-xmark',
+                warning: 'fa-triangle-exclamation',
+                info: 'fa-circle-info',
+            };
+
+            if (Array.isArray(popupMessages) && popupMessages.length > 0) {
+                const popupStack = document.createElement('div');
+                popupStack.className = 'spb-flash-popup-stack';
+                document.body.appendChild(popupStack);
+
+                popupMessages.forEach((item, index) => {
+                    const popup = document.createElement('div');
+                    const type = item.type || 'info';
+                    popup.className = 'spb-flash-popup';
+                    popup.dataset.type = type;
+                    popup.innerHTML = `
+                        <i class="fas ${iconMap[type] || iconMap.info}"></i>
+                        <div class="spb-flash-popup-copy"></div>
+                        <button type="button" class="spb-flash-popup-close" aria-label="Close">&times;</button>
+                    `;
+                    popup.querySelector('.spb-flash-popup-copy').textContent = item.message || '';
+                    popup.querySelector('.spb-flash-popup-close').addEventListener('click', () => popup.remove());
+                    popupStack.appendChild(popup);
+
+                    window.setTimeout(() => popup.remove(), 5200 + (index * 500));
+                });
+            }
+
             const flashStack = document.querySelector('[data-global-flash-stack]');
             if (!flashStack) {
                 return;
