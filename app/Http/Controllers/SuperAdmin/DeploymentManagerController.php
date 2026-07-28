@@ -930,19 +930,35 @@ public function store(Request $request)
             ? 'Customer email or company subdomain already exists. Please use a different value.'
             : 'Unable to save this registration right now. Please try again.';
 
+        if ($isSuperAdminDeployment) {
+            $friendly = 'Database error: ' . Str::limit(preg_replace('/\s+/', ' ', $e->getMessage()), 420);
+        }
+
         Log::error('DB error creating deployment customer', [
             'manager_id' => $manager->id ?? null,
+            'route' => $request->route()?->getName(),
+            'is_superadmin_deployment' => $isSuperAdminDeployment,
             'error' => $e->getMessage(),
+            'sql' => method_exists($e, 'getSql') ? $e->getSql() : null,
+            'bindings' => method_exists($e, 'getBindings') ? $e->getBindings() : [],
         ]);
 
         return back()->withErrors(['registration' => $friendly])->withInput();
     } catch (\Exception $e) {
         Log::error('Failed to create deployment customer', [
+            'manager_id' => $manager->id ?? null,
+            'route' => $request->route()?->getName(),
+            'is_superadmin_deployment' => $isSuperAdminDeployment,
             'error' => $e->getMessage(),
             'line'  => $e->getLine(),
         ]);
+
+        $friendly = $isSuperAdminDeployment
+            ? 'Server error: ' . Str::limit(preg_replace('/\s+/', ' ', $e->getMessage()), 420)
+            : 'Registration failed unexpectedly. Please retry, and contact support if it continues.';
+
         return back()->withErrors([
-            'registration' => 'Registration failed unexpectedly. Please retry, and contact support if it continues.',
+            'registration' => $friendly,
         ])->withInput();
     }
 
