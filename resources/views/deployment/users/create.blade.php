@@ -8,8 +8,10 @@
     $dashboardRoute = $dashboardRoute ?? 'deployment.dashboard';
     $listingRoute = $listingRoute ?? 'deployment.users.index';
     $formActionRoute = $formActionRoute ?? 'deployment.customers.store';
+    $isSuperAdminDeployment = $isSuperAdminDeployment ?? false;
     $pageTitle = $pageTitle ?? 'Register New Customer';
     $pageSubtitle = $pageSubtitle ?? 'Create account -> Select plan -> Set credentials -> SaaS checkout -> SaaS success';
+    $previewMode = $isSuperAdminDeployment ? 'license' : 'commission';
     $planMeta = function (string $key, string $name, float $price, string $cycle, ?string $saveLabel = null) use ($deploymentPlans) {
         $commission = $price * 0.35;
 
@@ -445,8 +447,12 @@
 
                             <div class="tip-box mb-4">
                                 <i class="fas fa-bolt me-2"></i>
-                                <strong>Quick setup:</strong> Customer gets an instant subdomain workspace after payment.
-                                You automatically earn <strong>35% commission</strong>.
+                                @if($isSuperAdminDeployment)
+                                    <strong>Admin deployment:</strong> This creates and activates the customer's workspace instantly without payment.
+                                @else
+                                    <strong>Quick setup:</strong> Customer gets an instant subdomain workspace after payment.
+                                    You automatically earn <strong>35% commission</strong>.
+                                @endif
                             </div>
 
                             <div class="mb-3">
@@ -539,6 +545,9 @@
                             <input type="hidden" name="plan_name"     id="planName"  value="{{ old('plan_name') }}">
                             <input type="hidden" name="plan_price"    id="planPrice" value="{{ old('plan_price') }}">
                             <input type="hidden" name="billing_cycle" id="planCycle" value="{{ old('billing_cycle', 'monthly') }}">
+                            @if($isSuperAdminDeployment)
+                                <input type="hidden" name="free_unlimited" value="1">
+                            @endif
 
                             <div class="text-center mb-4">
                                 <div class="billing-toggle">
@@ -804,13 +813,31 @@
                             <div class="commission-banner mt-4">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                     <div>
-                                        <div class="fw-bold text-dark small mb-1">Your commission (35%)</div>
+                                        <div class="fw-bold text-dark small mb-1">{{ $isSuperAdminDeployment ? 'License per user basis' : 'Your commission (35%)' }}</div>
                                         <div class="big-num">₦<span id="commPreview">0</span></div>
                                     </div>
                                     <div class="text-muted small">
-                                        Credited automatically<br>after successful payment
+                                        @if($isSuperAdminDeployment)
+                                            Plan price divided by<br>custom seat count
+                                        @else
+                                            Credited automatically<br>after successful payment
+                                        @endif
                                     </div>
                                 </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <label class="form-label">Custom User Seats</label>
+                                <input type="number" name="custom_user_limit" id="customUserLimit" min="1" max="100000"
+                                    class="form-control @error('custom_user_limit') is-invalid @enderror"
+                                    value="{{ old('custom_user_limit') }}"
+                                    placeholder="{{ $isSuperAdminDeployment ? 'Leave empty for unlimited' : 'Enter requested users e.g. 15' }}">
+                                @error('custom_user_limit')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <small class="text-muted">
+                                    {{ $isSuperAdminDeployment ? 'Leave empty to create the subscription as unlimited. If entered, this becomes the seat limit.' : 'If the customer asks for more users, enter the requested number and the license basis will be divided by seats.' }}
+                                </small>
                             </div>
 
                             <div class="d-flex justify-content-between mt-4 pt-3 border-top">
@@ -843,9 +870,14 @@
                             <div class="tip-box mb-4">
                                 <i class="fas fa-info-circle me-2"></i>
                                 <strong>What happens next:</strong>
-                                Clicking <strong>Proceed to Payment</strong> creates the account, takes you
-                                to the <strong>SaaS checkout page</strong>, then to the
-                                <strong>SaaS success page</strong> after payment where the workspace is deployed.
+                                @if($isSuperAdminDeployment)
+                                    Clicking <strong>Activate Workspace</strong> creates the account, grants free access,
+                                    and deploys the workspace immediately.
+                                @else
+                                    Clicking <strong>Proceed to Payment</strong> creates the account, takes you
+                                    to the <strong>SaaS checkout page</strong>, then to the
+                                    <strong>SaaS success page</strong> after payment where the workspace is deployed.
+                                @endif
                             </div>
 
                             <div class="mb-3">
@@ -911,9 +943,14 @@
 
                             <div class="warn-box mt-4">
                                 <i class="fas fa-credit-card me-2"></i>
-                                <strong>Payment step follows:</strong>
-                                After this, you'll be taken to the <strong>SaaS checkout page</strong>.
-                                On successful payment, you'll land on <strong>SaaS success</strong> and the workspace is deployed.
+                                @if($isSuperAdminDeployment)
+                                    <strong>No payment required:</strong>
+                                    Super admin will activate this workspace instantly on submission.
+                                @else
+                                    <strong>Payment step follows:</strong>
+                                    After this, you'll be taken to the <strong>SaaS checkout page</strong>.
+                                    On successful payment, you'll land on <strong>SaaS success</strong> and the workspace is deployed.
+                                @endif
                             </div>
 
                             <div class="d-flex justify-content-between mt-4 pt-3 border-top">
@@ -922,7 +959,7 @@
                                 </button>
 
                                 <button type="submit" class="btn-submit" id="btnSubmit">
-                                    <i class="fas fa-credit-card me-2"></i>Proceed to Payment
+                                    <i class="fas {{ $isSuperAdminDeployment ? 'fa-rocket' : 'fa-credit-card' }} me-2"></i>{{ $isSuperAdminDeployment ? 'Activate Workspace' : 'Proceed to Payment' }}
                                 </button>
                             </div>
                         </div>
@@ -1062,9 +1099,25 @@ window.pickPlan = function(id, name, price, cycle) {
     document.getElementById('planName').value  = name;
     document.getElementById('planPrice').value = price;
     document.getElementById('planCycle').value = cycle;
-    document.getElementById('commPreview').textContent = fmt(price * 0.35);
+    refreshPlanPreview();
     document.getElementById('btnToCreds').disabled = false;
 };
+
+function refreshPlanPreview() {
+    const preview = document.getElementById('commPreview');
+    const seatsInput = document.getElementById('customUserLimit');
+    if (!preview) return;
+
+    if (@js($previewMode) === 'license') {
+        const seats = Math.max(1, parseInt(seatsInput?.value || '1', 10));
+        preview.textContent = fmt((plan.price || 0) / seats);
+        return;
+    }
+
+    preview.textContent = fmt((plan.price || 0) * 0.35);
+}
+
+document.getElementById('customUserLimit')?.addEventListener('input', refreshPlanPreview);
 
 /* ── Step navigation ─────────────────────── */
 window.toStep = function(n) {

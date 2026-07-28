@@ -149,7 +149,7 @@ class AdminDemoRequestController extends Controller
         $validated = $request->validate([
             'enabled' => 'nullable|boolean',
             'auto_reset_on_session_start' => 'nullable|boolean',
-            'lifetime_hours' => 'required|integer|min:1|max:168',
+            'lifetime_hours' => 'required|integer|min:1|max:720',
             'blocked_route_prefixes' => 'nullable|string|max:2000',
             'blocked_routes' => 'nullable|string|max:2000',
         ]);
@@ -185,7 +185,7 @@ class AdminDemoRequestController extends Controller
     {
         $demoRequest = DemoRequest::findOrFail($id);
         $validated = $request->validate([
-            'hours' => 'required|integer|min:1|max:168',
+            'hours' => 'required|integer|min:1|max:720',
         ]);
 
         $this->provisioner->extendDemo($demoRequest, (int) $validated['hours']);

@@ -127,7 +127,8 @@
                         <div class="col-md-2">
                             <div class="form-group">
                                 <label>Lifetime (hours)</label>
-                                <input type="number" min="1" max="168" name="lifetime_hours" class="form-control" value="{{ $demoConfig['lifetime_hours'] ?? 48 }}">
+                                <input type="number" min="1" max="720" name="lifetime_hours" class="form-control" value="{{ $demoConfig['lifetime_hours'] ?? 720 }}">
+                                <small class="text-muted">720 hours = 30 days.</small>
                             </div>
                         </div>
                         <div class="col-md-4">

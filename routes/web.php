@@ -613,6 +613,11 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     Route::get('/database-reset',  [DatabaseResetController::class, 'index'])  ->name('database.reset');
     Route::post('/database-reset', [DatabaseResetController::class, 'execute'])->name('database.reset.execute');
 
+    // Super-admin free/custom deployment. Uses the normal tenant-safe deployment flow,
+    // but activates the subscription without sending the customer through payment.
+    Route::get('/custom-deployments/create', [DeploymentManagerController::class, 'create'])->name('custom_deployments.create');
+    Route::post('/custom-deployments', [DeploymentManagerController::class, 'store'])->name('custom_deployments.store');
+
     // Demo Requests Management
     Route::prefix('demo-requests')->name('demo_requests.')->group(function () {
         Route::get('/', [AdminDemoRequestController::class, 'index'])->name('index');

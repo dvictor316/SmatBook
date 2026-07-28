@@ -8,13 +8,15 @@ use Illuminate\Support\Facades\{Auth, DB, Hash, Http, Mail, Log, Storage, Schema
 use Illuminate\Support\{Str, Carbon};
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use App\Models\{Company, User, Subscription, ActivityLog, DeploymentManager, DeploymentCompany, Plan, Setting};
+use App\Models\{Company, User, Subscription, ActivityLog, DeploymentManager, DeploymentCompany, Domain, Plan, Setting};
 use App\Models\DeploymentManagerPayout;
 use App\Models\Role;
 use App\Support\{AppMailer, SystemEventMailer, DeploymentCommissionPayoutService};
 
 class DeploymentManagerController extends Controller
 {
+    private const UNLIMITED_USER_LIMIT = 100000;
+
     public function __construct(
         private readonly DeploymentCommissionPayoutService $deploymentCommissionPayouts
     ) {
@@ -677,11 +679,12 @@ class DeploymentManagerController extends Controller
 
         Log::info('Showing customer registration form', ['manager_id' => $actor?->id]);
 
+        $isSuperAdminDeployment = request()->routeIs('super_admin.custom_deployments.create');
         $managerRecord = DeploymentManager::where('user_id', $actor?->id)->first();
         $currentCount = count($this->managedCompanyIds($actor?->id));
-        $limit = (int) ($managerRecord?->deployment_limit ?? 100);
+        $limit = $isSuperAdminDeployment ? PHP_INT_MAX : (int) ($managerRecord?->deployment_limit ?? 100);
 
-        if ($currentCount >= $limit) {
+        if (!$isSuperAdminDeployment && $currentCount >= $limit) {
             $fallbackRoute = request()->routeIs('agent.registration.create')
                 ? 'agent.leads'
                 : 'deployment.companies.index';
@@ -692,13 +695,15 @@ class DeploymentManagerController extends Controller
 
         $deploymentPlans = $this->deploymentPlanOptions();
         $isAgentRegistration = request()->routeIs('agent.registration.create');
-        $dashboardRoute = $isAgentRegistration ? 'agent.dashboard' : 'deployment.dashboard';
-        $listingRoute = $isAgentRegistration ? 'agent.leads' : 'deployment.users.index';
-        $formActionRoute = $isAgentRegistration ? 'agent.registration.store' : 'deployment.customers.store';
-        $pageTitle = $isAgentRegistration ? 'Register Business License' : 'Register New Customer';
-        $pageSubtitle = $isAgentRegistration
+        $dashboardRoute = $isSuperAdminDeployment ? 'super_admin.dashboard' : ($isAgentRegistration ? 'agent.dashboard' : 'deployment.dashboard');
+        $listingRoute = $isSuperAdminDeployment ? 'super_admin.super_admin.users.index' : ($isAgentRegistration ? 'agent.leads' : 'deployment.users.index');
+        $formActionRoute = $isSuperAdminDeployment ? 'super_admin.custom_deployments.store' : ($isAgentRegistration ? 'agent.registration.store' : 'deployment.customers.store');
+        $pageTitle = $isSuperAdminDeployment ? 'Deploy Custom Unlimited User' : ($isAgentRegistration ? 'Register Business License' : 'Register New Customer');
+        $pageSubtitle = $isSuperAdminDeployment
+            ? 'Create tenant -> Select license -> Set custom seats -> Activate instantly without payment'
+            : ($isAgentRegistration
             ? 'Create business account -> Select plan -> Set credentials -> SaaS checkout -> SaaS success'
-            : 'Create account -> Select plan -> Set credentials -> SaaS checkout -> SaaS success';
+            : 'Create account -> Select plan -> Set credentials -> SaaS checkout -> SaaS success');
 
         return view('deployment.users.create', compact(
             'limit',
@@ -708,7 +713,8 @@ class DeploymentManagerController extends Controller
             'listingRoute',
             'formActionRoute',
             'pageTitle',
-            'pageSubtitle'
+            'pageSubtitle',
+            'isSuperAdminDeployment'
         ));
     }
 
@@ -775,6 +781,8 @@ public function store(Request $request)
         'plan_name'       => 'required|string',
         'plan_price'      => 'required|numeric|min:0',
         'billing_cycle'   => 'required|in:monthly,yearly',
+        'custom_user_limit' => 'nullable|integer|min:1|max:100000',
+        'free_unlimited'  => 'nullable|boolean',
         'email'           => 'required|email|unique:users,email',
         'password'        => [
             'required',
@@ -796,11 +804,18 @@ public function store(Request $request)
     $validated['company_email'] = $validated['company_email'] ?? $validated['email'];
 
     $manager = auth()->user();
+    $isSuperAdminDeployment = $request->routeIs('super_admin.custom_deployments.store')
+        && in_array(strtolower((string) ($manager?->role ?? '')), ['super_admin', 'superadmin'], true);
+    $isFreeUnlimited = $isSuperAdminDeployment && $request->boolean('free_unlimited');
+    $customUserLimit = $isFreeUnlimited && empty($validated['custom_user_limit'])
+        ? self::UNLIMITED_USER_LIMIT
+        : $this->resolveCustomUserLimit($validated);
+    $licenseUnitAmount = $this->resolveLicenseUnitAmount((float) $validated['plan_price'], $customUserLimit);
 
     // ── Run DB work inside transaction ──────────────────────
     // session() is NOT called inside — that was causing the bug
     try {
-        $result = DB::transaction(function () use ($validated, $manager) {
+        $result = DB::transaction(function () use ($validated, $manager, $isFreeUnlimited, $customUserLimit, $licenseUnitAmount) {
 
             // 1. Create customer user
             $customer = User::create($this->filterPayloadForTable('users', [
@@ -808,10 +823,10 @@ public function store(Request $request)
                 'email'             => $validated['email'],
                 'password'          => Hash::make($validated['password']),
                 'role'              => 'admin',
-                'is_verified'       => 0,
-                'status'            => 'pending',
+                'is_verified'       => $isFreeUnlimited ? 1 : 0,
+                'status'            => $isFreeUnlimited ? 'active' : 'pending',
                 'phone'             => $validated['customer_phone'] ?? null,
-                'email_verified_at' => null,
+                'email_verified_at' => $isFreeUnlimited ? now() : null,
             ]));
 
             // 2. Create company
@@ -824,7 +839,7 @@ public function store(Request $request)
                 'email'         => $validated['company_email'],
                 'phone'         => $validated['phone'] ?? null,
                 'industry'      => $validated['industry'] ?? null,
-                'status'        => 'pending',
+                'status'        => $isFreeUnlimited ? 'active' : 'pending',
                 'plan'          => $validated['plan_name'],
                 'user_id'       => $customer->id,
                 'owner_id'      => $customer->id,
@@ -846,10 +861,20 @@ public function store(Request $request)
                 'subscriber_name' => $validated['name'],
                 'amount'          => $validated['plan_price'],
                 'billing_cycle'   => $validated['billing_cycle'],
-                'status'          => 'Pending',
-                'payment_status'  => 'unpaid',
+                'status'          => $isFreeUnlimited ? 'Active' : 'Pending',
+                'payment_status'  => $isFreeUnlimited ? 'free' : 'unpaid',
+                'user_limit'      => $customUserLimit,
+                'employee_size'   => $customUserLimit,
+                'paid_at'         => $isFreeUnlimited ? now() : null,
+                'payment_date'    => $isFreeUnlimited ? now() : null,
+                'start_date'      => $isFreeUnlimited ? now() : null,
+                'end_date'        => $isFreeUnlimited ? now()->addYears(100) : null,
                 'deployed_by'     => $manager->id,  // KEY: stored in DB for fallback
             ]));
+
+            if ($isFreeUnlimited) {
+                $this->activateFreeDeploymentWorkspace($subscription->fresh(['user']));
+            }
 
             DB::afterCommit(function () use ($customer, $validated, $manager) {
                 SystemEventMailer::notifyRegistration($customer, 'user', [
@@ -869,12 +894,15 @@ public function store(Request $request)
                 [
                     'manager_id'         => $manager->id,
                     'company_id'         => $company->id,
-                    'deployment_status'  => 'pending',
-                    'manager_commission' => round(((float) $validated['plan_price']) * (self::COMMISSION_RATE / 100), 2),
+                    'deployment_status'  => $isFreeUnlimited ? 'active' : 'pending',
+                    'manager_commission' => $isFreeUnlimited ? 0 : round(((float) $validated['plan_price']) * (self::COMMISSION_RATE / 100), 2),
                     'setup_config'       => json_encode([
                         'plan_id' => $validated['plan_id'],
                         'plan' => $validated['plan_name'],
                         'billing_cycle' => $validated['billing_cycle'],
+                        'custom_user_limit' => $customUserLimit,
+                        'license_unit_amount' => $licenseUnitAmount,
+                        'free_unlimited' => $isFreeUnlimited,
                     ]),
                     'created_at'         => now(),
                     'updated_at'         => now(),
@@ -918,6 +946,12 @@ public function store(Request $request)
         ])->withInput();
     }
 
+    if ($isFreeUnlimited) {
+        return redirect()
+            ->route('super_admin.dashboard')
+            ->with('success', 'Custom unlimited workspace created and activated without payment.');
+    }
+
     // ── FIX: Set session AFTER transaction completes successfully ──
     // This guarantees the session data is written and readable
     // by the checkout and payment controllers.
@@ -953,6 +987,96 @@ public function store(Request $request)
     // Ensured checkout redirect for deployment manager registration (GitHub Copilot marker)
     return redirect()->route('saas.checkout', ['id' => $result['subscription_id']])
         ->with('success', 'Customer account created. Continue checkout to activate workspace.');
+}
+
+private function resolveCustomUserLimit(array $validated): int
+{
+    $requested = (int) ($validated['custom_user_limit'] ?? 0);
+    if ($requested > 0) {
+        return $requested;
+    }
+
+    if (!empty($validated['plan_id']) && is_numeric($validated['plan_id'])) {
+        $plan = Plan::find((int) $validated['plan_id']);
+        if ($plan && $plan->resolvedUserLimit() !== null) {
+            return (int) $plan->resolvedUserLimit();
+        }
+    }
+
+    return (int) (Plan::defaultUserLimitForName($validated['plan_name'] ?? null) ?? 1);
+}
+
+private function resolveLicenseUnitAmount(float $planPrice, ?int $userLimit): float
+{
+    if ($userLimit === null || $userLimit <= 0) {
+        return 0.0;
+    }
+
+    return round($planPrice / $userLimit, 2);
+}
+
+private function activateFreeDeploymentWorkspace(Subscription $subscription): void
+{
+    $subscription->loadMissing(['user']);
+    $company = Company::withoutGlobalScope('tenant')->find($subscription->company_id);
+    if ($company) {
+        $subscription->setRelation('company', $company);
+    }
+
+    $prefix = strtolower((string) ($subscription->domain_prefix ?? $company?->domain_prefix ?? $company?->subdomain));
+    $prefix = (string) preg_replace('/[^a-z0-9-]/', '', $prefix);
+    if ($prefix === '') {
+        return;
+    }
+
+    $domain = $this->resolveWorkspaceDomain();
+    $subscription->update($this->filterPayloadForTable('subscriptions', [
+        'domain_prefix' => $prefix,
+        'initialized_at' => now(),
+    ]));
+
+    if ($company) {
+        $company->update($this->filterPayloadForTable('companies', [
+            'domain_prefix' => $prefix,
+            'subdomain' => $prefix,
+            'domain' => $prefix . '.' . $domain,
+            'status' => 'active',
+            'subscription_end' => now()->addYears(100),
+        ]));
+    }
+
+    if (Schema::hasTable('domains')) {
+        $lookup = Schema::hasColumn('domains', 'subscription_id')
+            ? ['subscription_id' => $subscription->id]
+            : ['domain_name' => $prefix];
+
+        Domain::updateOrCreate($lookup, $this->filterPayloadForTable('domains', [
+            'tenant_id' => $subscription->user_id,
+            'subscription_id' => $subscription->id,
+            'customer_name' => $subscription->user?->name ?? $company?->name,
+            'email' => $subscription->user?->email ?? $company?->email,
+            'domain_name' => $prefix,
+            'package_name' => $subscription->plan_name ?? $subscription->plan,
+            'package_type' => strtolower((string) $subscription->billing_cycle),
+            'price' => $subscription->amount,
+            'status' => 'Active',
+            'approved_at' => now(),
+            'setup_completed_at' => now(),
+        ]));
+    }
+}
+
+private function resolveWorkspaceDomain(): string
+{
+    $domain = trim((string) config('session.domain', ''), ". \t\n\r\0\x0B");
+    if ($domain === '') {
+        $domain = trim((string) parse_url((string) config('app.url', ''), PHP_URL_HOST), ". \t\n\r\0\x0B");
+    }
+    if ($domain === '') {
+        $domain = 'smartprobook.com';
+    }
+
+    return $domain;
 }
 
 private function normalizePhoneForStorage(?string $phone): ?string
