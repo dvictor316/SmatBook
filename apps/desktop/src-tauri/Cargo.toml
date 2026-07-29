@@ -1,0 +1,15 @@
+[package]
+name = "smartprobook_desktop"
+version = "0.1.0"
+description = "SmartProbook desktop client"
+authors = ["SmartProbook"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "1.5", features = [] }
+
+[dependencies]
+tauri = { version = "1.6", features = ["shell-open"] }
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]

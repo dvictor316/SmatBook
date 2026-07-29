@@ -21,3 +21,10 @@ yarn-error.log
 /.idea
 /.vscode
 /.codex
+
+# Isolated mobile and desktop app build artifacts
+/apps/*/node_modules
+/apps/mobile/.expo
+/apps/mobile/dist
+/apps/desktop/src-tauri/target
+/apps/desktop/dist

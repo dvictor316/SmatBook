@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "SmartProbook",
+    "slug": "smartprobook",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "smartprobook",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.smartprobook.mobile"
+    },
+    "android": {
+      "package": "com.smartprobook.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#061a44"
+      }
+    },
+    "extra": {
+      "smartprobookUrl": "https://smartprobook.com"
+    }
+  }
+}
