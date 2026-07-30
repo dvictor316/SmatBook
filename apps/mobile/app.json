@@ -4,8 +4,14 @@
     "slug": "smartprobook",
     "version": "0.1.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "scheme": "smartprobook",
     "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#061a44"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.smartprobook.mobile"
@@ -13,11 +19,19 @@
     "android": {
       "package": "com.smartprobook.mobile",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#061a44"
       }
     },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
     "extra": {
-      "smartprobookUrl": "https://smartprobook.com"
-    }
+      "smartprobookUrl": "https://smartprobook.com",
+      "eas": {
+        "projectId": "6c0dc2bb-ce75-462b-a010-31b1f3848caa"
+      }
+    },
+    "owner": "smartprobook"
   }
 }
