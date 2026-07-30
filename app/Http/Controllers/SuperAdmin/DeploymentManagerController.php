@@ -769,6 +769,7 @@ class DeploymentManagerController extends Controller
         $deployments = $query->paginate(15)->withQueryString();
 
         $base = $this->customDeploymentsQuery();
+        $unlimitedDeployments = (clone $base)->where('user_limit', '>=', self::UNLIMITED_USER_LIMIT)->count();
         $metrics = [
             'total' => (clone $base)->count(),
             'active' => (clone $base)->whereRaw("LOWER(COALESCE(status, '')) = ?", ['active'])->count(),
@@ -779,7 +780,7 @@ class DeploymentManagerController extends Controller
                         ->orWhereHas('company', fn ($companyQuery) => $companyQuery->whereRaw("LOWER(COALESCE(status, '')) = ?", ['suspended']));
                 })
                 ->count(),
-            'seats' => (int) (clone $base)->sum('user_limit'),
+            'unlimited' => $unlimitedDeployments,
             'license_value' => (float) (clone $base)->sum('amount'),
         ];
 

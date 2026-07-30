@@ -32,7 +32,7 @@
             ['label' => 'Total Custom', 'value' => $metrics['total'] ?? 0, 'class' => ''],
             ['label' => 'Active', 'value' => $metrics['active'] ?? 0, 'class' => 'success'],
             ['label' => 'Suspended', 'value' => $metrics['suspended'] ?? 0, 'class' => 'danger'],
-            ['label' => 'Seat Capacity', 'value' => $metrics['seats'] ?? 0, 'class' => 'warn'],
+            ['label' => 'Unlimited Access', 'value' => $metrics['unlimited'] ?? 0, 'class' => 'warn'],
         ] as $metric)
             <div class="col-lg-3 col-sm-6">
                 <div class="cd-card cd-metric {{ $metric['class'] }}">
@@ -71,7 +71,7 @@
                     <th class="ps-4">Business</th>
                     <th>Owner</th>
                     <th>Plan</th>
-                    <th>Seats</th>
+                    <th>User Access</th>
                     <th>Domain</th>
                     <th>Status</th>
                     <th class="text-end pe-4">Actions</th>
@@ -86,6 +86,13 @@
                         }
                         $company = $deployment->company;
                         $owner = $deployment->user;
+                        $isUnlimited = strtolower((string) ($deployment->payment_status ?? '')) === 'free'
+                            && (int) ($deployment->user_limit ?? 0) >= 100000;
+                        $planTitle = $isUnlimited ? 'Custom Unlimited' : ($deployment->plan_name ?? $deployment->plan ?? 'Custom');
+                        $licenseSummary = $isUnlimited
+                            ? 'Unlimited · Free license'
+                            : (ucfirst($deployment->billing_cycle ?? 'monthly') . ' · ₦' . number_format((float) ($deployment->amount ?? 0), 2));
+                        $accessLabel = $isUnlimited ? 'Unlimited users' : number_format((int) ($deployment->user_limit ?? 0)) . ' users';
                     @endphp
                     <tr>
                         <td class="ps-4">
@@ -97,10 +104,10 @@
                             <div class="text-muted small">{{ $owner?->email ?? '—' }}</div>
                         </td>
                         <td>
-                            <div>{{ $deployment->plan_name ?? $deployment->plan ?? 'Custom' }}</div>
-                            <div class="text-muted small">{{ ucfirst($deployment->billing_cycle ?? 'monthly') }} · ₦{{ number_format((float) ($deployment->amount ?? 0), 2) }}</div>
+                            <div>{{ $planTitle }}</div>
+                            <div class="text-muted small">{{ $licenseSummary }}</div>
                         </td>
-                        <td>{{ number_format((int) ($deployment->user_limit ?? 0)) }}</td>
+                        <td>{{ $accessLabel }}</td>
                         <td>
                             <div>{{ $company?->domain ?? (($company?->domain_prefix ?? $deployment->domain_prefix) ? (($company?->domain_prefix ?? $deployment->domain_prefix) . '.' . config('session.domain', 'smartprobook.com')) : '—') }}</div>
                         </td>

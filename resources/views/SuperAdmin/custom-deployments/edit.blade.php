@@ -8,6 +8,8 @@
         || strtolower((string) ($owner?->status ?? '')) === 'suspended'
         ? 'Suspended'
         : 'Active';
+    $isUnlimited = strtolower((string) ($deployment->payment_status ?? '')) === 'free'
+        && (int) ($deployment->user_limit ?? 0) >= 100000;
 @endphp
 <style>
     .custom-edit-wrapper { margin-left: 250px; padding: 1.5rem; background: #f8fafc; min-height: 100vh; }
@@ -51,19 +53,25 @@
                     <input type="text" name="plan_name" class="form-control" value="{{ old('plan_name', $deployment->plan_name ?? $deployment->plan ?? 'Custom Unlimited') }}" required>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label fw-bold">Billing Cycle</label>
+                    <label class="form-label fw-bold">License Duration</label>
                     <select name="billing_cycle" class="form-select" required>
                         <option value="monthly" @selected(old('billing_cycle', $deployment->billing_cycle) === 'monthly')>Monthly</option>
                         <option value="yearly" @selected(old('billing_cycle', $deployment->billing_cycle) === 'yearly')>Yearly</option>
                     </select>
+                    @if($isUnlimited)
+                        <div class="form-text">This free deployment displays as Unlimited; this value only preserves the selected base license.</div>
+                    @endif
                 </div>
                 <div class="col-md-4">
                     <label class="form-label fw-bold">License Amount</label>
                     <input type="number" step="0.01" min="0" name="amount" class="form-control" value="{{ old('amount', $deployment->amount ?? 0) }}">
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-bold">User Seats</label>
+                    <label class="form-label fw-bold">User Access Limit</label>
                     <input type="number" min="1" max="100000" name="user_limit" class="form-control" value="{{ old('user_limit', $deployment->user_limit ?? 100000) }}" required>
+                    <div class="form-text">
+                        {{ $isUnlimited ? '100000 is the internal safety ceiling used to represent unlimited users on free custom deployments.' : 'This is the number of users allowed under this custom license.' }}
+                    </div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-bold">Status</label>
