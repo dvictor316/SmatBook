@@ -70,6 +70,7 @@
             : ($publicSeo['keywords'] ?? 'SmartProbook, accounting software, ERP software, invoicing, inventory, reporting');
     @endphp
     @include('layout.partials.seo-meta')
+    @include('layout.partials.pwa-head')
     @php($faviconVersion = file_exists(public_path('assets/img/log-favicon.png')) ? filemtime(public_path('assets/img/log-favicon.png')) : time())
     <link rel="icon" type="image/png" href="{{ asset('assets/img/log-favicon.png') }}?v={{ $faviconVersion }}">
     <link rel="shortcut icon" href="{{ asset('assets/img/log-favicon.png') }}?v={{ $faviconVersion }}">
@@ -1499,6 +1500,8 @@
     initGlobalCountry();
 </script>
 @endunless
+
+@include('layout.partials.pwa-install')
 
 </body>
 </html>

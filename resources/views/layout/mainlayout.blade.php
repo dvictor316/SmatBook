@@ -72,6 +72,7 @@
         $seoTitle = $seoTitle ?? ($siteTitle . ' Dashboard');
     @endphp
     @include('layout.partials.seo-meta')
+    @include('layout.partials.pwa-head')
     <meta name="author" content="Dreamguys - Bootstrap Admin Template">
 
     {{-- CRITICAL: Prevent theme flickering on load --}}
@@ -2144,6 +2145,7 @@
     @include('layout.partials.footer-scripts')
     @yield('script')
     @stack('scripts')
+    @include('layout.partials.pwa-install')
 
     @livewireScripts
 

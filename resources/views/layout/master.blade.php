@@ -13,6 +13,7 @@
         $seoTitle = 'SmartProbook';
     @endphp
     @include('layout.partials.seo-meta')
+    @include('layout.partials.pwa-head')
 
     @php
         /** 1. ROUTE & ASSET LOGIC */
@@ -299,6 +300,7 @@
     </script>
 
     @stack('scripts')
+    @include('layout.partials.pwa-install')
 
 </body>
 </html>
