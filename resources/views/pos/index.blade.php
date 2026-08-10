@@ -3633,12 +3633,15 @@ body.pos-terminal-workspace .search-input::placeholder {
 }
 
 body.pos-terminal-workspace .pos-customer-compact {
-    grid-template-columns: auto minmax(220px, 0.72fr) !important;
+    grid-template-columns: auto minmax(180px, 260px) !important;
+    max-width: 360px !important;
+    min-width: 0 !important;
 }
 
 body.pos-terminal-workspace .pos-customer-compact .form-select,
 body.pos-terminal-workspace #customer-select {
-    min-width: 220px !important;
+    min-width: 180px !important;
+    max-width: 260px !important;
     padding-left: 12px !important;
     padding-right: 34px !important;
     color: #071635 !important;
@@ -3654,14 +3657,19 @@ body.pos-terminal-workspace .receipt-toolbar-label {
 }
 
 body.pos-terminal-workspace .pos-payment-tabs {
-    gap: 8px !important;
-    justify-content: flex-end !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(68px, 1fr)) !important;
+    gap: 6px !important;
+    justify-content: stretch !important;
+    min-width: 0 !important;
+    width: 100% !important;
 }
 
 body.pos-terminal-workspace .pos-pay-tab {
-    min-width: 82px !important;
-    min-height: 36px !important;
-    padding: 7px 14px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    min-height: 34px !important;
+    padding: 6px 8px !important;
     color: #ffffff !important;
     font-size: 0.78rem !important;
     font-weight: 900 !important;
@@ -3676,9 +3684,39 @@ body.pos-terminal-workspace .pos-pay-tab.active {
 
 @media (min-width: 1200px) {
     body.pos-terminal-workspace .pos-receipt-toolbar {
-        grid-template-columns: minmax(330px, 0.82fr) minmax(390px, 1fr) !important;
-        gap: 10px !important;
-        padding: 7px 10px !important;
+        grid-template-columns: minmax(285px, 0.78fr) minmax(300px, 1fr) !important;
+        gap: 8px !important;
+        padding: 7px 8px !important;
+        overflow: hidden !important;
+    }
+}
+
+@media (min-width: 1200px) and (max-width: 1399.98px) {
+    body.pos-terminal-workspace .pos-receipt-toolbar {
+        grid-template-columns: minmax(260px, 0.72fr) minmax(272px, 1fr) !important;
+    }
+
+    body.pos-terminal-workspace .pos-customer-compact {
+        grid-template-columns: auto minmax(160px, 220px) !important;
+        max-width: 310px !important;
+    }
+
+    body.pos-terminal-workspace .pos-customer-compact .form-select,
+    body.pos-terminal-workspace #customer-select {
+        min-width: 160px !important;
+        max-width: 220px !important;
+        font-size: 0.72rem !important;
+    }
+
+    body.pos-terminal-workspace .pos-payment-tabs {
+        grid-template-columns: repeat(4, minmax(58px, 1fr)) !important;
+        gap: 5px !important;
+    }
+
+    body.pos-terminal-workspace .pos-pay-tab {
+        min-height: 32px !important;
+        padding: 5px 6px !important;
+        font-size: 0.68rem !important;
     }
 }
 </style>
