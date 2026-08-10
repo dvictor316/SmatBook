@@ -90,10 +90,11 @@
 
     .inventory-toolbar {
         display: grid;
-        grid-template-columns: minmax(340px, 1fr) minmax(130px, 160px) minmax(210px, 240px) minmax(230px, 260px) minmax(200px, 230px);
+        grid-template-columns: minmax(250px, 320px) minmax(125px, 150px) minmax(205px, 235px) minmax(230px, 255px) minmax(185px, 215px);
         gap: 0.75rem 1rem;
-        justify-content: stretch;
+        justify-content: end;
         align-items: center;
+        max-width: 100%;
     }
 
     .inventory-page-title {
@@ -107,6 +108,8 @@
 
     .inventory-search-form {
         min-width: 0;
+        width: 100%;
+        max-width: 320px;
     }
 
     .inventory-search-form .form-control {
