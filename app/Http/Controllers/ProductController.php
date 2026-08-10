@@ -1604,7 +1604,17 @@ public function inventory(Request $request)
                         purchases.created_at as created_at,
                         'in' as type,
                         COALESCE(" . ($purchaseReferenceColumn ? "purchases.{$purchaseReferenceColumn}" : 'NULL') . ", purchases.purchase_no, CONCAT('PUR-', purchases.id)) as reference,
-                        COALESCE(purchase_items.{$purchaseQtyColumn}, 0) as quantity,
+                        " . (
+                            Schema::hasColumn('products', 'purchase_unit_id') && Schema::hasColumn('products', 'conversion_rate')
+                                ? "COALESCE(purchase_items.{$purchaseQtyColumn}, 0) *
+                                    CASE
+                                        WHEN products.purchase_unit_id IS NOT NULL
+                                            AND COALESCE(products.conversion_rate, 0) > 0
+                                        THEN products.conversion_rate
+                                        ELSE 1
+                                    END"
+                                : "COALESCE(purchase_items.{$purchaseQtyColumn}, 0)"
+                        ) . " as quantity,
                         products.name as name,
                         products.sku as sku,
                         products.purchase_price as purchase_price,
@@ -1779,6 +1789,7 @@ public function inventory(Request $request)
         $totalOut = (float) $inventoryHistories
             ->filter(fn ($row) => in_array(strtolower((string) ($row->type ?? '')), ['out', 'stock out'], true))
             ->sum(fn ($row) => (float) ($row->quantity ?? 0));
+        $currentStock = round($totalIn - $totalOut, 2);
 
         $runningBalance = 0.0;
         $inventoryHistories = $inventoryHistories
