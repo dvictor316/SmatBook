@@ -5,8 +5,10 @@ namespace App\Support;
 use App\Models\Setting;
 use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
+use Throwable;
 
 class AppMailer
 {
@@ -23,8 +25,8 @@ class AppMailer
 
         $preferredMailer = strtolower((string) config('mail.default', 'smtp'));
 
-        if ($preferredMailer === 'log' && self::smtpReady()) {
-            return 'failover';
+        if (self::smtpReady()) {
+            return 'smtp';
         }
 
         if (in_array($preferredMailer, ['smtp', 'sendmail', 'failover'], true)) {
@@ -45,17 +47,43 @@ class AppMailer
 
     public static function sendView(string $view, array $data, callable $callback): void
     {
-        Mail::mailer(self::preferredMailer())->send($view, $data, $callback);
+        self::sendUsingAvailableMailers(fn (string $mailer) => Mail::mailer($mailer)->send($view, $data, $callback));
     }
 
     public static function raw(string $text, callable $callback): void
     {
-        Mail::mailer(self::preferredMailer())->raw($text, $callback);
+        self::sendUsingAvailableMailers(fn (string $mailer) => Mail::mailer($mailer)->raw($text, $callback));
     }
 
     public static function sendMailable(array|string $recipients, Mailable $mailable): void
     {
-        Mail::mailer(self::preferredMailer())->to($recipients)->send($mailable);
+        self::sendUsingAvailableMailers(fn (string $mailer) => Mail::mailer($mailer)->to($recipients)->send($mailable));
+    }
+
+    private static function sendUsingAvailableMailers(callable $send): void
+    {
+        $attempts = [];
+        $mailers = array_values(array_unique(array_filter([
+            self::preferredMailer(),
+            self::smtpReady() ? null : 'smtp',
+            'sendmail',
+            'log',
+        ])));
+
+        foreach ($mailers as $mailer) {
+            try {
+                $send($mailer);
+                return;
+            } catch (Throwable $e) {
+                $attempts[$mailer] = $e->getMessage();
+                Log::warning('Mail delivery attempt failed', [
+                    'mailer' => $mailer,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        throw new \RuntimeException('Mail delivery failed via configured mailers: ' . json_encode($attempts, JSON_UNESCAPED_SLASHES));
     }
 
     private static function configure(): void
@@ -114,7 +142,16 @@ class AppMailer
         Config::set('mail.from.address', $fromAddress);
         Config::set('mail.from.name', $fromName);
 
-        if ($smtpEnabled && self::smtpReady()) {
+        $adminInbox = self::settingValue(['mail_admin_inbox', 'mail_activity_inbox', 'mail_notification_inbox']);
+        if ($adminInbox !== '' && filter_var($adminInbox, FILTER_VALIDATE_EMAIL)) {
+            Config::set('mail.admin_inbox', $adminInbox);
+        }
+
+        $smtpReady = trim((string) config('mail.mailers.smtp.host')) !== ''
+            && trim((string) config('mail.mailers.smtp.username')) !== ''
+            && trim((string) config('mail.mailers.smtp.password')) !== '';
+
+        if ($smtpEnabled && $smtpReady) {
             Config::set('mail.default', 'smtp');
         } elseif ($phpEnabled) {
             Config::set('mail.default', 'sendmail');

@@ -143,6 +143,13 @@
                                         <textarea class="form-control" rows="3" name="mail_global_footer" placeholder="Enter Email Global Footer">{{ $settings['mail_global_footer'] ?? '' }}</textarea>
                                     </div>
                                 </div>
+                                <div class="col-lg-12 col-12">
+                                    <div class="input-block mb-3">
+                                        <label class="form-label fw-semibold">Activity/Admin Notification Inbox</label>
+                                        <input type="email" class="form-control" name="mail_admin_inbox" value="{{ $settings['mail_admin_inbox'] ?? config('mail.admin_inbox') }}" placeholder="admin@smartprobook.com">
+                                        <div class="form-text">System activity emails, registrations, approvals and operational alerts will copy this inbox.</div>
+                                    </div>
+                                </div>
 
                                 <div class="col-lg-12 col-12 mt-3">
                                     <div class="bg-light p-3 rounded-3 mb-4">

@@ -67,6 +67,8 @@ class SystemEventMailer
 
     private static function adminInbox(): string
     {
+        AppMailer::bootCurrentSettings();
+
         $configured = (string) config('mail.admin_inbox', self::ADMIN_INBOX);
         return filter_var($configured, FILTER_VALIDATE_EMAIL) ? $configured : self::ADMIN_INBOX;
     }

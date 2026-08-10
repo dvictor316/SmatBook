@@ -246,6 +246,7 @@ class SettingController extends Controller
             'email'        => 'nullable|email',
             'company_email' => 'nullable|email',
             'mail_from_address' => 'nullable|email',
+            'mail_admin_inbox' => 'nullable|email',
             'expiry_notification_months' => 'nullable|in:1,2,6',
         ]);
 
@@ -319,7 +320,10 @@ class SettingController extends Controller
 
         foreach ($sensitiveFields as $sensitiveField) {
             if ($request->has($sensitiveField)) {
-                Setting::putSensitive($sensitiveField, (string) $request->input($sensitiveField, ''));
+                $sensitiveValue = (string) $request->input($sensitiveField, '');
+                if ($sensitiveValue !== '' || $sensitiveField !== 'mail_smtp_password') {
+                    Setting::putSensitive($sensitiveField, $sensitiveValue);
+                }
             }
         }
 
