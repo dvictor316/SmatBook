@@ -83,8 +83,8 @@
 
     .inventory-toolbar {
         display: grid;
-        grid-template-columns: minmax(340px, 1fr) 132px 190px;
-        gap: 0.75rem 1rem;
+        grid-template-columns: minmax(300px, 1fr) minmax(230px, 250px) minmax(220px, 240px);
+        gap: 0.75rem 1.25rem;
         justify-content: stretch;
         align-items: center;
     }
@@ -118,11 +118,15 @@
         min-height: 46px;
         font-weight: 800;
         border-radius: 999px;
-        padding-left: 1rem;
-        padding-right: 1rem;
+        padding-left: 1.1rem;
+        padding-right: 1.1rem;
         width: 100%;
         justify-content: center;
         white-space: nowrap;
+    }
+
+    .inventory-toolbar .dropdown-toggle.inventory-tool-btn {
+        padding-right: 1.45rem;
     }
 
     .inventory-toolbar .dropdown > .inventory-tool-btn,
