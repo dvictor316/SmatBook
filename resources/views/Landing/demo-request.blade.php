@@ -8,7 +8,7 @@
     <div class="container text-center">
         <h6 class="section-label">Live Demo</h6>
         <h1 class="section-title">Experience SmartProbook <span>First-Hand.</span></h1>
-        <p class="section-subtitle">Request a controlled 48-hour demo environment, pre-loaded with sample data, so you can explore every feature before committing.</p>
+        <p class="section-subtitle">Request a controlled 7-day demo environment, pre-loaded with sample data, so you can explore every feature before committing.</p>
     </div>
 </section>
 
@@ -20,7 +20,7 @@
             <div class="contact-info-panel">
                 <div class="info-content">
                     <h2>How It Works</h2>
-                    <p>Fill in the form and SmartProbook will create your controlled 48-hour demo environment instantly, then show your login credentials on the next screen.</p>
+                    <p>Fill in the form and SmartProbook will create your controlled 7-day demo environment instantly, then show your login credentials on the next screen.</p>
 
                     <div class="contact-item">
                         <i class="fas fa-paper-plane"></i>
@@ -49,7 +49,7 @@
                     <div class="contact-item">
                         <i class="fas fa-clock"></i>
                         <div>
-                            <h6>48-Hour Access</h6>
+                            <h6>7-Day Access</h6>
                             <p>Explore the full platform with sample data — sales, reports, inventory, accounting and more.</p>
                         </div>
                     </div>

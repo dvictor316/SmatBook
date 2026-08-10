@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * Blocks login and access for demo users whose 48-hour window has expired.
+ * Blocks login and access for demo users whose demo window has expired.
  * Also blocks demo users from reaching superadmin routes.
  */
 class BlockExpiredDemoUser

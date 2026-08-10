@@ -61,15 +61,27 @@ class DemoRequestController extends Controller
             'purpose'         => 'required|string|max:1000',
         ]);
 
-        // Prevent duplicate pending requests from same email
+        // A fresh public request should supersede any old pending/active demo
+        // for the same email, so the requester always receives current access.
         $existing = DemoRequest::where('email', $validated['email'])
             ->whereIn('status', ['pending', 'approved'])
             ->first();
 
         if ($existing) {
-            return back()->withErrors([
-                'email' => 'A demo request with this email is already pending or active. Please check your inbox or contact support.',
-            ])->withInput();
+            try {
+                $this->provisioner->expireDemo($existing);
+            } catch (\Throwable $e) {
+                logger()->warning('Previous demo request could not be expired before renewal: ' . $e->getMessage(), [
+                    'demo_request_id' => $existing->id,
+                    'email' => $validated['email'],
+                ]);
+            }
+
+            $existing->forceFill([
+                'status' => 'expired',
+                'admin_note' => trim((string) $existing->admin_note . "\nVoided by a newer public demo request on " . now()->toDateTimeString()),
+                'expires_at' => now(),
+            ])->save();
         }
 
         $demoRequest = DemoRequest::create($validated);
