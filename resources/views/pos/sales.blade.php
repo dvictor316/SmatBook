@@ -1,6 +1,29 @@
 @extends('layout.mainlayout')
 
 @section('content')
+@php
+    $posSalesUser = auth()->user();
+    $posSalesRole = strtolower((string) ($posSalesUser->role ?? ''));
+    $posSalesIsAdmin = in_array($posSalesRole, ['super_admin', 'superadmin', 'administrator', 'admin'], true)
+        || ($posSalesUser && method_exists($posSalesUser, 'hasRole') && ($posSalesUser->hasRole('super_admin') || $posSalesUser->hasRole('administrator')));
+    $posSalesCan = function (array|string $permissions) use ($posSalesUser, $posSalesIsAdmin): bool {
+        if ($posSalesIsAdmin) {
+            return true;
+        }
+        if (!$posSalesUser || !method_exists($posSalesUser, 'hasPermissionTo')) {
+            return false;
+        }
+        foreach ((array) $permissions as $permission) {
+            if ($posSalesUser->hasPermissionTo((string) $permission)) {
+                return true;
+            }
+        }
+        return false;
+    };
+    $posCanManageSalesLog = $posSalesCan(['sales.sales.edit', 'sales.sales.delete', 'sales.sales.return', 'reports.reports.view', 'sales.sales.view_all']);
+    $posCanExportSalesLog = $posSalesCan(['reports.reports.export', 'reports.reports.view', 'sales.sales.view_all']);
+    $posReceiptLookupMode = request()->boolean('reprint') && !$posCanManageSalesLog;
+@endphp
 <style>
     .pos-content-area {
         padding: 24px;
@@ -289,29 +312,36 @@
     <div class="card summary-card mb-4">
         <div class="card-body p-4 p-lg-5">
             <div class="summary-toolbar no-print">
-                <div class="summary-label mb-0">Sales Summary & Filters</div>
+                <div class="summary-label mb-0">{{ $posReceiptLookupMode ? 'Receipt Lookup' : 'Sales Summary & Filters' }}</div>
                 <div class="summary-actions">
                     <button type="button" class="summary-btn" onclick="window.print()">
                         <i class="fas fa-print"></i>
                         <span>Print</span>
                     </button>
-                    <a href="{{ request()->fullUrlWithQuery(['export' => 'xlsx']) }}" class="summary-btn">
-                        <i class="fas fa-file-excel"></i>
-                        <span>Excel</span>
-                    </a>
+                    @if($posCanExportSalesLog)
+                        <a href="{{ request()->fullUrlWithQuery(['export' => 'xlsx']) }}" class="summary-btn">
+                            <i class="fas fa-file-excel"></i>
+                            <span>Excel</span>
+                        </a>
+                    @endif
                 </div>
             </div>
 
             <div class="row g-4 align-items-center">
                 <div class="col-lg-8">
-                    <div class="summary-label">Gross POS Sales Amount</div>
-                    <div class="summary-value">₦{{ number_format((float) ($totalRevenue ?? 0), 2) }}</div>
-                    <div class="summary-subtle mt-2">{{ $filterDateLabel }} • Gross sales before Balance Sheet profit adjustments</div>
+                    <div class="summary-label">{{ $posReceiptLookupMode ? 'Receipt Search' : 'Gross POS Sales Amount' }}</div>
+                    @if($posReceiptLookupMode)
+                        <div class="summary-value" style="font-size: 1.35rem;">Find and reprint receipts only</div>
+                        <div class="summary-subtle mt-2">Use invoice number, customer, or date to locate a receipt.</div>
+                    @else
+                        <div class="summary-value">₦{{ number_format((float) ($totalRevenue ?? 0), 2) }}</div>
+                        <div class="summary-subtle mt-2">{{ $filterDateLabel }} • Gross sales before Balance Sheet profit adjustments</div>
+                    @endif
                 </div>
                 <div class="col-lg-4 text-lg-end">
-                    <div class="summary-label">Sales Count</div>
+                    <div class="summary-label">{{ $posReceiptLookupMode ? 'Matches' : 'Sales Count' }}</div>
                     <div class="fs-2 fw-bold">{{ number_format((int) ($totalSalesCount ?? 0)) }}</div>
-                    <div class="summary-subtle mt-2">Filtered POS transactions</div>
+                    <div class="summary-subtle mt-2">{{ $posReceiptLookupMode ? 'Receipt records found' : 'Filtered POS transactions' }}</div>
                 </div>
             </div>
 
@@ -430,21 +460,29 @@
                                         Action
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
-                                        <li><a class="dropdown-item" href="{{ route('sales.show', $sale->id) }}">View Items</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('sales.show', $sale->id) }}"><i class="fas fa-eye me-1"></i> View Items</a></li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ \Illuminate\Support\Facades\Route::has('sales.invoice.print') ? route('sales.invoice.print', $sale->id) : url('/sales/invoice/' . $sale->id . '/print') }}" target="_blank" rel="noopener">
+                                                <i class="fas fa-print me-1"></i> Print Receipt
+                                            </a>
+                                        </li>
                                         @php
                                             $posReturnUrl = \Illuminate\Support\Facades\Route::has('pos.return.show')
                                                 ? route('pos.return.show', ['sale_id' => $sale->id])
                                                 : url('/pos/return') . '?sale_id=' . urlencode((string) $sale->id);
                                         @endphp
-                                        <li><a class="dropdown-item text-warning" href="{{ $posReturnUrl }}"><i class="fas fa-undo me-1"></i> Process Return</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('sales.edit', $sale->id) }}">Edit Sale</a></li>
-                                        <li>
-                                            <form method="POST" action="{{ route('sales.destroy', $sale->id) }}" onsubmit="return confirm('Delete this sale?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="dropdown-item text-danger">Delete Sale</button>
-                                            </form>
-                                        </li>
+                                        @if($posCanManageSalesLog)
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item text-warning" href="{{ $posReturnUrl }}"><i class="fas fa-undo me-1"></i> Process Return</a></li>
+                                            <li><a class="dropdown-item" href="{{ route('sales.edit', $sale->id) }}">Edit Sale</a></li>
+                                            <li>
+                                                <form method="POST" action="{{ route('sales.destroy', $sale->id) }}" onsubmit="return confirm('Delete this sale?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="dropdown-item text-danger">Delete Sale</button>
+                                                </form>
+                                            </li>
+                                        @endif
                                     </ul>
                                 </div>
                             </td>

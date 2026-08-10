@@ -54,6 +54,7 @@
     $posCanSell = $posCan(['sales.sales.create', 'sales.invoices.create', 'pos.sales.create']);
     $posCanDiscount = $posCan(['sales.sales.discount', 'sales.sales.edit', 'sales.invoices.edit']);
     $posCanManageCustomers = $posCan(['customers.customers.view', 'customers.customers.create', 'sales.sales.create']);
+    $posShowAdminRailActions = false;
 @endphp
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -3776,16 +3777,23 @@ body.pos-terminal-workspace .pos-pay-tab.active {
                         <span>Sell Misc Item</span>
                     </span>
                 @endif
-                @if($posCanAddProduct)
-                    <a href="{{ $posAddProductUrl ?? url('/add-products') }}" class="pos-rail-btn mt-2">
-                        <i class="fas fa-plus"></i>
-                        <span>Add New Item</span>
-                    </a>
+                @if($posShowAdminRailActions)
+                    @if($posCanAddProduct)
+                        <a href="{{ $posAddProductUrl ?? url('/add-products') }}" class="pos-rail-btn mt-2">
+                            <i class="fas fa-plus"></i>
+                            <span>Add New Item</span>
+                        </a>
+                    @else
+                        <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to add products.">
+                            <i class="fas fa-plus"></i>
+                            <span>Add New Item</span>
+                        </span>
+                    @endif
                 @else
-                    <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to add products.">
-                        <i class="fas fa-plus"></i>
-                        <span>Add New Item</span>
-                    </span>
+                    <button type="button" class="pos-rail-btn mt-2" id="rail-calculator-btn">
+                        <i class="fas fa-calculator"></i>
+                        <span>Calculator</span>
+                    </button>
                 @endif
                 @if($posCanDiscount)
                     <button type="button" class="pos-rail-btn mt-2" id="rail-discount-btn">
@@ -3809,49 +3817,64 @@ body.pos-terminal-workspace .pos-pay-tab.active {
                         <span>Customer</span>
                     </span>
                 @endif
-                @if($posCanReturn)
-                    <a href="{{ $posReturnUrl ?? url('/pos/return') }}" class="pos-rail-btn mt-2">
-                        <i class="fas fa-undo-alt"></i>
-                        <span>Return/Exchange</span>
-                    </a>
+                @if($posShowAdminRailActions)
+                    @if($posCanReturn)
+                        <a href="{{ $posReturnUrl ?? url('/pos/return') }}" class="pos-rail-btn mt-2">
+                            <i class="fas fa-undo-alt"></i>
+                            <span>Return/Exchange</span>
+                        </a>
+                    @else
+                        <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to process returns.">
+                            <i class="fas fa-undo-alt"></i>
+                            <span>Return/Exchange</span>
+                        </span>
+                    @endif
+                    @if($posCanReceiveItems)
+                        <a href="{{ $posReceiveItemsUrl ?? url('/grn/create') }}" class="pos-rail-btn mt-2">
+                            <i class="fas fa-dolly"></i>
+                            <span>Receive Items</span>
+                        </a>
+                    @else
+                        <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to receive inventory.">
+                            <i class="fas fa-dolly"></i>
+                            <span>Receive Items</span>
+                        </span>
+                    @endif
+                    @if($posCanViewReports)
+                        <a href="{{ $posReportsUrl ?? url('/pos/reports') }}" class="pos-rail-btn mt-2">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Reports</span>
+                        </a>
+                    @else
+                        <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to view reports.">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Reports</span>
+                        </span>
+                    @endif
+                    @if($posCanViewInventory)
+                        <a href="{{ $posInventoryUrl ?? url('/product-list') }}" class="pos-rail-btn mt-2">
+                            <i class="fas fa-boxes"></i>
+                            <span>Item List</span>
+                        </a>
+                    @else
+                        <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to view inventory.">
+                            <i class="fas fa-boxes"></i>
+                            <span>Item List</span>
+                        </span>
+                    @endif
                 @else
-                    <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to process returns.">
-                        <i class="fas fa-undo-alt"></i>
-                        <span>Return/Exchange</span>
-                    </span>
-                @endif
-                @if($posCanReceiveItems)
-                    <a href="{{ $posReceiveItemsUrl ?? url('/grn/create') }}" class="pos-rail-btn mt-2">
-                        <i class="fas fa-dolly"></i>
-                        <span>Receive Items</span>
-                    </a>
-                @else
-                    <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to receive inventory.">
-                        <i class="fas fa-dolly"></i>
-                        <span>Receive Items</span>
-                    </span>
-                @endif
-                @if($posCanViewReports)
-                    <a href="{{ $posReportsUrl ?? url('/pos/reports') }}" class="pos-rail-btn mt-2">
-                        <i class="fas fa-chart-bar"></i>
-                        <span>Reports</span>
-                    </a>
-                @else
-                    <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to view reports.">
-                        <i class="fas fa-chart-bar"></i>
-                        <span>Reports</span>
-                    </span>
-                @endif
-                @if($posCanViewInventory)
-                    <a href="{{ $posInventoryUrl ?? url('/product-list') }}" class="pos-rail-btn mt-2">
-                        <i class="fas fa-boxes"></i>
-                        <span>Item List</span>
-                    </a>
-                @else
-                    <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to view inventory.">
-                        <i class="fas fa-boxes"></i>
-                        <span>Item List</span>
-                    </span>
+                    <button type="button" class="pos-rail-btn mt-2" id="rail-reprint-btn">
+                        <i class="fas fa-receipt"></i>
+                        <span>Reprint Receipt</span>
+                    </button>
+                    <button type="button" class="pos-rail-btn mt-2" id="rail-price-check-btn">
+                        <i class="fas fa-tags"></i>
+                        <span>Price Check</span>
+                    </button>
+                    <button type="button" class="pos-rail-btn mt-2" id="rail-clear-cart-btn">
+                        <i class="fas fa-eraser"></i>
+                        <span>Clear Cart</span>
+                    </button>
                 @endif
                 @if($posCanSell)
                     <button type="button" class="pos-rail-btn mt-2" id="rail-checkout-btn">
@@ -4360,8 +4383,8 @@ body.pos-terminal-workspace .pos-pay-tab.active {
                     <button type="button" id="save-invoice-btn" class="btn pos-secondary-action">
                         <i class="fas fa-save me-1"></i> Save Invoice
                     </button>
-                    <a href="{{ $posSalesLogUrl ?? url('/pos/sales') }}" class="btn pos-secondary-action">
-                        <i class="fas fa-list me-1"></i> Sales Log
+                    <a href="{{ $posShowAdminRailActions ? ($posSalesLogUrl ?? url('/pos/sales')) : (($posSalesLogUrl ?? url('/pos/sales')) . '?reprint=1') }}" class="btn pos-secondary-action">
+                        <i class="fas fa-list me-1"></i> {{ $posShowAdminRailActions ? 'Sales Log' : 'Receipt Lookup' }}
                     </a>
                     <button type="button" id="new-sale-btn" class="btn pos-secondary-action">
                         <i class="fas fa-plus me-1"></i> New Sale
@@ -5652,6 +5675,10 @@ window.POS_ENABLE_FALLBACK = function () {
     const railMiscBtn = document.getElementById('rail-misc-btn');
     const railDiscountBtn = document.getElementById('rail-discount-btn');
     const railCustomerBtn = document.getElementById('rail-customer-btn');
+    const railCalculatorBtn = document.getElementById('rail-calculator-btn');
+    const railReprintBtn = document.getElementById('rail-reprint-btn');
+    const railPriceCheckBtn = document.getElementById('rail-price-check-btn');
+    const railClearCartBtn = document.getElementById('rail-clear-cart-btn');
     const railCheckoutBtn = document.getElementById('rail-checkout-btn');
     const railMessagesBtn = document.getElementById('rail-messages-btn');
     let processBtn = document.getElementById('process-btn');
@@ -5685,10 +5712,12 @@ window.POS_ENABLE_FALLBACK = function () {
     };
 	    const saleStoreUrl = @json($posSaleStoreUrl ?? url('/sales'));
 	    const invoicePrintBaseUrl = @json(url('/sales/invoice'));
+    const posSalesLogUrl = @json($posSalesLogUrl ?? url('/pos/sales'));
     const posPermissions = {
         sell: @json((bool) $posCanSell),
         discount: @json((bool) $posCanDiscount),
         customers: @json((bool) $posCanManageCustomers),
+        addProduct: @json((bool) $posCanAddProduct),
     };
 
     function requirePosPermission(flag, message) {
@@ -5869,6 +5898,17 @@ window.POS_ENABLE_FALLBACK = function () {
             : [];
 
         if (!options.length) {
+            if (!posPermissions.addProduct) {
+                showAlert({
+                    icon: 'info',
+                    title: 'No misc item found',
+                    text: 'Search existing products or ask an admin to create the miscellaneous item first.',
+                    confirmButtonColor: '#0f3a8a',
+                });
+                openQuickPickItems('misc');
+                return;
+            }
+
             const prompt = showAlert({
                 icon: 'info',
                 title: 'Create a miscellaneous item first',
@@ -6126,10 +6166,147 @@ window.POS_ENABLE_FALLBACK = function () {
         });
     }
 
+    function openPosCalculator() {
+        if (!window.Swal || typeof Swal.fire !== 'function') {
+            alertFallback('Calculator is available when the POS alert panel is loaded.');
+            return;
+        }
+
+        Swal.fire({
+            title: 'Calculator',
+            html: `
+                <div class="text-start">
+                    <label class="form-label fw-bold">Calculation</label>
+                    <input id="pos-calculator-expression" class="form-control" inputmode="decimal" placeholder="Example: 3400 * 5">
+                    <div class="mt-3 p-3 rounded border bg-light">
+                        <div class="small text-muted fw-bold text-uppercase">Result</div>
+                        <div id="pos-calculator-result" class="fs-4 fw-bold">0</div>
+                    </div>
+                </div>
+            `,
+            confirmButtonText: 'Close',
+            confirmButtonColor: '#0f3a8a',
+            didOpen: () => {
+                const input = document.getElementById('pos-calculator-expression');
+                const result = document.getElementById('pos-calculator-result');
+                const update = () => {
+                    const expression = String(input?.value || '').trim();
+                    if (!expression) {
+                        result.textContent = '0';
+                        return;
+                    }
+                    if (!/^[0-9+\-*/().\s]+$/.test(expression)) {
+                        result.textContent = 'Use numbers and + - * / only';
+                        return;
+                    }
+                    try {
+                        const value = Function(`"use strict"; return (${expression});`)();
+                        result.textContent = Number.isFinite(value) ? new Intl.NumberFormat('en-NG').format(value) : 'Invalid';
+                    } catch (error) {
+                        result.textContent = 'Invalid';
+                    }
+                };
+                input?.addEventListener('input', update);
+                window.setTimeout(() => input?.focus(), 80);
+            },
+        });
+    }
+
+    function openReprintLookup() {
+        if (!requirePosPermission('sell', 'You do not have permission to reprint POS receipts.')) {
+            return;
+        }
+
+        if (!window.Swal || typeof Swal.fire !== 'function') {
+            window.location.href = posSalesLogUrl;
+            return;
+        }
+
+        Swal.fire({
+            title: 'Reprint Receipt',
+            input: 'text',
+            inputLabel: 'Invoice or receipt number',
+            inputPlaceholder: 'Type invoice number',
+            showCancelButton: true,
+            confirmButtonText: 'Find Receipt',
+            confirmButtonColor: '#0f3a8a',
+            inputValidator: (value) => (!String(value || '').trim() ? 'Enter the invoice or receipt number.' : undefined),
+        }).then((result) => {
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            const invoiceNo = String(result.value || '').trim();
+            const url = new URL(posSalesLogUrl, window.location.origin);
+            url.searchParams.set('invoice_no', invoiceNo);
+            url.searchParams.set('reprint', '1');
+            window.location.href = url.toString();
+        });
+    }
+
+    function openPriceCheck() {
+        if (!requirePosPermission('sell', 'You do not have permission to check POS prices.')) {
+            return;
+        }
+
+        openQuickPickItems('');
+        showAlert({
+            icon: 'info',
+            title: 'Price check',
+            text: 'Search and select a product to view its price. It will not enter the cart until Add to Cart is pressed.',
+            timer: 2200,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+        });
+    }
+
+    function confirmClearCart() {
+        if (!requirePosPermission('sell', 'You do not have permission to clear POS carts.')) {
+            return;
+        }
+
+        if (!cart.length) {
+            showAlert({
+                icon: 'info',
+                title: 'Cart already empty',
+                timer: 1200,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+            });
+            return;
+        }
+
+        if (!window.Swal || typeof Swal.fire !== 'function') {
+            if (window.confirm('Clear the current cart?')) {
+                resetVanillaPosWorkspace();
+            }
+            return;
+        }
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'Clear current cart?',
+            text: 'This only clears the unsaved POS cart.',
+            showCancelButton: true,
+            confirmButtonText: 'Clear Cart',
+            confirmButtonColor: '#0f3a8a',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                resetVanillaPosWorkspace();
+            }
+        });
+    }
+
     railSearchBtn?.addEventListener('click', () => openQuickPickItems(''));
     railMiscBtn?.addEventListener('click', openSellMiscItem);
     railDiscountBtn?.addEventListener('click', openDiscountPanel);
     railCustomerBtn?.addEventListener('click', openCustomerPicker);
+    railCalculatorBtn?.addEventListener('click', openPosCalculator);
+    railReprintBtn?.addEventListener('click', openReprintLookup);
+    railPriceCheckBtn?.addEventListener('click', openPriceCheck);
+    railClearCartBtn?.addEventListener('click', confirmClearCart);
     railCheckoutBtn?.addEventListener('click', openCheckoutPanel);
     railMessagesBtn?.addEventListener('click', showPosMessages);
     railScanBtn?.addEventListener('click', () => {
