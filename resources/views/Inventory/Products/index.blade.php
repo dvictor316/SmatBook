@@ -90,9 +90,9 @@
 
     .inventory-toolbar {
         display: grid;
-        grid-template-columns: minmax(210px, 260px) minmax(100px, 115px) minmax(175px, 195px) minmax(200px, 225px) minmax(160px, 180px);
-        gap: 0.65rem 0.7rem;
-        justify-content: end;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.8rem 1rem;
+        justify-content: stretch;
         align-items: center;
         max-width: 100%;
     }
@@ -109,7 +109,7 @@
     .inventory-search-form {
         min-width: 0;
         width: 100%;
-        max-width: 260px;
+        max-width: none;
     }
 
     .inventory-search-form .form-control {
@@ -118,7 +118,7 @@
     }
 
     .inventory-search-form .btn {
-        min-width: 50px;
+        min-width: 54px;
         padding-left: 0.85rem;
         padding-right: 0.85rem;
         border-radius: 999px;
@@ -136,7 +136,7 @@
     }
 
     .inventory-tool-btn {
-        min-height: 44px;
+        min-height: 46px;
         font-weight: 800;
         border-radius: 999px;
         padding-left: 0.85rem;
@@ -144,7 +144,7 @@
         width: 100%;
         justify-content: center;
         white-space: nowrap;
-        font-size: 0.93rem;
+        font-size: 0.96rem;
     }
 
     .inventory-toolbar .dropdown-toggle.inventory-tool-btn {
@@ -160,27 +160,37 @@
 
     .inventory-toolbar-primary {
         grid-column: 1 / 2;
+        grid-row: 1;
     }
 
     .inventory-toolbar-print {
         grid-column: 2 / 3;
+        grid-row: 1;
     }
 
     .inventory-toolbar-export {
         grid-column: 3 / 4;
+        grid-row: 1;
     }
 
     .inventory-toolbar-import {
-        grid-column: 4 / 5;
+        grid-column: 1 / 2;
+        grid-row: 2;
     }
 
     .inventory-toolbar-add {
-        grid-column: 5 / 6;
+        grid-column: 2 / 3;
+        grid-row: 2;
     }
 
-    .inventory-toolbar-clear,
     .inventory-toolbar-transfer {
-        grid-column: auto;
+        grid-column: 3 / 4;
+        grid-row: 2;
+    }
+
+    .inventory-toolbar-clear {
+        grid-column: 1 / -1;
+        grid-row: 3;
     }
 
     .inventory-bulk-bar {
@@ -303,6 +313,7 @@
         .inventory-toolbar-clear,
         .inventory-toolbar-transfer {
             grid-column: auto;
+            grid-row: auto;
         }
 
         .inventory-toolbar .btn,
@@ -804,15 +815,23 @@
             bulkForm.toggleClass('is-visible', selectedProductIds.size > 0);
         }
 
+        function currentPageProductChecks() {
+            if (typeof table !== 'undefined' && table) {
+                return $(table.rows({ page: 'current', search: 'applied' }).nodes()).find('.product-select-checkbox');
+            }
+
+            return $('.product-select-checkbox');
+        }
+
         function syncVisibleProductChecks() {
             $('.product-select-checkbox').each(function() {
                 this.checked = selectedProductIds.has(String(this.value));
             });
 
-            var visibleChecks = $('.product-select-checkbox:visible');
-            var checkedVisible = visibleChecks.filter(':checked').length;
-            selectAllProducts.prop('checked', visibleChecks.length > 0 && checkedVisible === visibleChecks.length);
-            selectAllProducts.prop('indeterminate', checkedVisible > 0 && checkedVisible < visibleChecks.length);
+            var pageChecks = currentPageProductChecks();
+            var checkedOnPage = pageChecks.filter(':checked').length;
+            selectAllProducts.prop('checked', pageChecks.length > 0 && checkedOnPage === pageChecks.length);
+            selectAllProducts.prop('indeterminate', checkedOnPage > 0 && checkedOnPage < pageChecks.length);
         }
 
         // PREVENT RE-INITIALIZATION ERROR
@@ -892,7 +911,7 @@
 
         selectAllProducts.on('change', function() {
             var checked = this.checked;
-            $('.product-select-checkbox:visible').each(function() {
+            currentPageProductChecks().each(function() {
                 var id = String(this.value);
                 this.checked = checked;
                 if (checked) {
