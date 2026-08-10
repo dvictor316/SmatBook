@@ -393,9 +393,9 @@
         <div class="card shadow-sm mb-3 no-print">
             <div class="card-body">
                 <div class="inventory-toolbar">
-                    <form method="GET" action="{{ route('product-list') }}" class="d-flex inventory-search-form inventory-toolbar-primary">
+                    <form method="GET" action="{{ route('product-list') }}" class="d-flex inventory-search-form inventory-toolbar-primary" id="inventory-toolbar-search-form">
                         <div class="input-group">
-                            <input type="text" name="search" value="{{ $search ?? '' }}" class="form-control" placeholder="Search SKU or Name...">
+                            <input type="text" name="search" value="{{ $search ?? '' }}" class="form-control" id="inventory-toolbar-search-input" placeholder="Search SKU or Name...">
                             <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i><span class="visually-hidden">Filter</span></button>
                         </div>
                     </form>
@@ -837,6 +837,7 @@
         var bulkForm = $('#bulk-delete-products-form');
         var bulkCount = $('#bulk-selected-count');
         var selectAllProducts = $('#select-all-products');
+        var toolbarSearchInput = $('#inventory-toolbar-search-input');
 
         function syncBulkDeleteForm() {
             bulkForm.find('input[name="product_ids[]"]').remove();
@@ -877,7 +878,7 @@
         }
 
         var table = $('#products-table').DataTable({
-            dom: 'Bfrtip',
+            dom: 'Brtip',
             buttons: [
                 { extend: 'excelHtml5', className: 'dt-excel d-none', title: 'Product_Inventory_List', exportOptions: { columns: ':not(.no-print)', modifier: { page: 'all', search: 'applied' } } },
                 { extend: 'csvHtml5', className: 'dt-csv d-none', title: 'Product_Inventory_List', exportOptions: { columns: ':not(.no-print)', modifier: { page: 'all', search: 'applied' } } },
@@ -934,6 +935,15 @@
         table.page.len(500).draw(false);
         table.on('draw', syncVisibleProductChecks);
         syncVisibleProductChecks();
+
+        var searchDebounce;
+        toolbarSearchInput.on('input', function() {
+            var query = this.value;
+            clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(function() {
+                table.search(query).draw();
+            }, 120);
+        });
 
         $('#products-table').on('change', '.product-select-checkbox', function() {
             var id = String(this.value);
