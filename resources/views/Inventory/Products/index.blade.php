@@ -833,7 +833,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
 
 <script>
     $(document).ready(function() {
@@ -876,6 +875,97 @@
             selectAllProducts.prop('indeterminate', checkedOnPage > 0 && checkedOnPage < pageChecks.length);
         }
 
+        function htmlEscape(value) {
+            return String(value == null ? '' : value).replace(/[&<>"']/g, function(match) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                }[match];
+            });
+        }
+
+        function printableCellText(cell) {
+            return $(cell)
+                .clone()
+                .find('img, button, .dropdown, input, .product-thumb-empty')
+                .remove()
+                .end()
+                .text()
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function printInventoryTable() {
+            var printableColumns = [];
+            $('#products-table thead th').each(function(index) {
+                if (!$(this).hasClass('no-print')) {
+                    printableColumns.push({
+                        index: index,
+                        label: $(this).text().replace(/\s+/g, ' ').trim()
+                    });
+                }
+            });
+
+            var rows = table.rows({ search: 'applied', page: 'all' }).nodes().toArray();
+            var bodyRows = rows.map(function(row) {
+                var cells = $(row).children('td');
+                var cellHtml = printableColumns.map(function(column) {
+                    return '<td>' + htmlEscape(printableCellText(cells[column.index])) + '</td>';
+                }).join('');
+
+                return '<tr>' + cellHtml + '</tr>';
+            }).join('');
+
+            var printWindow = window.open('', 'inventory-print', 'width=1200,height=800');
+            if (!printWindow) {
+                window.print();
+                return;
+            }
+
+            var printedAt = new Date().toLocaleString();
+            var headerHtml = printableColumns.map(function(column) {
+                return '<th>' + htmlEscape(column.label) + '</th>';
+            }).join('');
+
+            printWindow.document.open();
+            printWindow.document.write(`<!doctype html>
+                <html>
+                <head>
+                    <title>Product Inventory</title>
+                    <style>
+                        @page { size: A4 landscape; margin: 8mm; }
+                        * { box-sizing: border-box; }
+                        body { margin: 0; font-family: Arial, sans-serif; color: #111827; }
+                        h1 { margin: 0 0 4px; font-size: 18px; }
+                        .meta { margin: 0 0 10px; color: #475569; font-size: 11px; }
+                        table { width: 100%; border-collapse: collapse; font-size: 9.5px; }
+                        th, td { border: 1px solid #d1d5db; padding: 4px 5px; text-align: left; vertical-align: top; }
+                        th { background: #eef2ff; color: #0f172a; font-weight: 700; }
+                        tr:nth-child(even) td { background: #f8fafc; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Product Inventory</h1>
+                    <p class="meta">Printed ${htmlEscape(printedAt)} &middot; ${rows.length} item(s)</p>
+                    <table>
+                        <thead><tr>${headerHtml}</tr></thead>
+                        <tbody>${bodyRows || '<tr><td colspan="' + printableColumns.length + '">No products found.</td></tr>'}</tbody>
+                    </table>
+                    <script>
+                        window.onload = function() {
+                            window.focus();
+                            window.print();
+                            window.onafterprint = function() { window.close(); };
+                        };
+                    <\/script>
+                </body>
+                </html>`);
+            printWindow.document.close();
+        }
+
         // PREVENT RE-INITIALIZATION ERROR
         if ($.fn.DataTable.isDataTable('#products-table')) {
             $('#products-table').DataTable().destroy();
@@ -886,27 +976,7 @@
             buttons: [
                 { extend: 'excelHtml5', className: 'dt-excel d-none', title: 'Product_Inventory_List', exportOptions: { columns: ':not(.no-print)', modifier: { page: 'all', search: 'applied' } } },
                 { extend: 'csvHtml5', className: 'dt-csv d-none', title: 'Product_Inventory_List', exportOptions: { columns: ':not(.no-print)', modifier: { page: 'all', search: 'applied' } } },
-                { extend: 'pdfHtml5', className: 'dt-pdf d-none', title: 'Product Inventory List', orientation: 'landscape', pageSize: 'A4', exportOptions: { columns: ':not(.no-print)', modifier: { page: 'all', search: 'applied' } } },
-                {
-                    extend: 'print',
-                    className: 'dt-print d-none',
-                    title: 'Product Inventory',
-                    messageTop: 'Printed on ' + new Date().toLocaleString(),
-                    exportOptions: { columns: ':not(.no-print)', modifier: { page: 'all', search: 'applied' } },
-                    customize: function(win) {
-                        var css = `
-                            @page { size: A4 landscape; margin: 12mm; }
-                            body { font-family: Arial, sans-serif; color: #111827; }
-                            h1 { font-size: 18px; margin: 0 0 8px; }
-                            table { width: 100% !important; border-collapse: collapse !important; font-size: 10px; }
-                            th { background: #eef2ff !important; color: #0f172a; font-weight: 700; }
-                            th, td { border: 1px solid #d1d5db !important; padding: 6px 7px !important; vertical-align: top; }
-                            tr:nth-child(even) td { background: #f9fafb !important; }
-                            img { width: 24px !important; height: 24px !important; object-fit: cover; }
-                        `;
-                        $(win.document.head).append('<style>' + css + '</style>');
-                    }
-                }
+                { extend: 'pdfHtml5', className: 'dt-pdf d-none', title: 'Product Inventory List', orientation: 'landscape', pageSize: 'A4', exportOptions: { columns: ':not(.no-print)', modifier: { page: 'all', search: 'applied' } } }
             ],
             pageLength: 500,
             displayLength: 500,
@@ -934,7 +1004,10 @@
         $('#export_excel').on('click', function(e) { e.preventDefault(); table.button('.dt-excel').trigger(); });
         $('#export_csv').on('click', function(e) { e.preventDefault(); table.button('.dt-csv').trigger(); });
         $('#export_pdf').on('click', function(e) { e.preventDefault(); table.button('.dt-pdf').trigger(); });
-        $('#inventory_print_btn').on('click', function(e) { e.preventDefault(); table.button('.dt-print').trigger(); });
+        $('#inventory_print_btn').on('click', function(e) {
+            e.preventDefault();
+            printInventoryTable();
+        });
 
         table.page.len(500).draw(false);
         table.on('draw', syncVisibleProductChecks);
