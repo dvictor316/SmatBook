@@ -83,10 +83,27 @@
 
     .inventory-toolbar {
         display: grid;
-        grid-template-columns: minmax(300px, 1fr) minmax(230px, 250px) minmax(220px, 240px);
+        grid-template-columns: minmax(280px, 1fr) minmax(220px, 235px) minmax(230px, 250px);
         gap: 0.75rem 1.25rem;
         justify-content: stretch;
         align-items: center;
+    }
+
+    .inventory-page-header {
+        display: grid;
+        grid-template-columns: minmax(245px, 0.26fr) minmax(760px, 1fr);
+        gap: 1.25rem;
+        align-items: center;
+    }
+
+    .inventory-page-header > [class*="col-"] {
+        width: auto;
+        max-width: none;
+        flex: none;
+    }
+
+    .inventory-page-title h4 {
+        white-space: nowrap;
     }
 
     .inventory-search-form {
@@ -256,6 +273,11 @@
     }
 
     @media (max-width: 767.98px) {
+        .inventory-page-header {
+            display: grid;
+            grid-template-columns: 1fr;
+        }
+
         .inventory-page-header > [class*="col-"] {
             width: 100%;
         }
