@@ -258,8 +258,8 @@
     }
 
     .inventory-table-shell {
-        max-height: calc(100vh - 125px);
-        min-height: 660px;
+        max-height: calc(100vh - 70px);
+        min-height: 760px;
         overflow: auto;
     }
 
@@ -273,14 +273,18 @@
 
     #products-table_wrapper .dataTables_scrollBody {
         border: 0;
-        max-height: calc(100vh - 155px) !important;
+        max-height: calc(100vh - 95px) !important;
     }
 
     #products-table_wrapper .dataTables_paginate,
     #products-table_wrapper .dataTables_info {
-        padding-top: 0.35rem;
+        padding-top: 0.2rem;
         padding-bottom: 0;
         font-size: 0.78rem;
+    }
+
+    .inventory-table-card-body {
+        padding-bottom: 0.45rem;
     }
 
     #products-table_wrapper .dataTables_paginate {
@@ -290,10 +294,10 @@
     #products-table_wrapper .dataTables_paginate .pagination {
         display: inline-flex;
         width: auto;
-        margin: 0.15rem auto 0 !important;
+        margin: 0.1rem auto 0 !important;
         gap: 0.25rem;
         justify-content: center;
-        padding: 0.25rem;
+        padding: 0.2rem;
         border: 1px solid #e5e7eb;
         border-radius: 12px;
         background: #fff;
@@ -301,8 +305,8 @@
     }
 
     #products-table_wrapper .dataTables_paginate .page-link {
-        min-height: 34px;
-        padding: 0.38rem 0.72rem;
+        min-height: 30px;
+        padding: 0.28rem 0.62rem;
         border-radius: 8px;
     }
 
@@ -455,7 +459,7 @@
         </div>
 
         <div class="card shadow-sm">
-            <div class="card-body">
+            <div class="card-body inventory-table-card-body">
                 <form id="bulk-delete-products-form" method="POST" action="{{ route('inventory.Products.bulk-destroy') }}" class="inventory-bulk-bar no-print">
                     @csrf
                     @method('DELETE')
