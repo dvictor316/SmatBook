@@ -909,9 +909,13 @@
             syncVisibleProductChecks();
         });
 
-        selectAllProducts.on('change', function() {
-            var checked = this.checked;
-            currentPageProductChecks().each(function() {
+        selectAllProducts.on('click', function(e) {
+            e.preventDefault();
+            var pageChecks = currentPageProductChecks();
+            var checkedOnPage = pageChecks.filter(':checked').length;
+            var checked = pageChecks.length > 0 && checkedOnPage < pageChecks.length;
+
+            pageChecks.each(function() {
                 var id = String(this.value);
                 this.checked = checked;
                 if (checked) {
