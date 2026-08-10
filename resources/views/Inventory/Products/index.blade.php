@@ -139,8 +139,8 @@
     }
 
     .inventory-table-shell {
-        max-height: calc(100vh - 315px);
-        min-height: 420px;
+        max-height: calc(100vh - 195px);
+        min-height: 560px;
         overflow: auto;
     }
 
@@ -154,7 +154,7 @@
 
     #products-table_wrapper .dataTables_scrollBody {
         border: 0;
-        max-height: calc(100vh - 360px) !important;
+        max-height: calc(100vh - 235px) !important;
     }
 
     #products-table_wrapper .dataTables_paginate,
@@ -265,7 +265,7 @@
                             
                             <div class="dropdown">
                                 <button class="btn btn-outline-primary dropdown-toggle inventory-tool-btn" type="button" data-bs-toggle="dropdown">
-                                    <i class="fas fa-download me-1"></i> Stock Export
+                                    <i class="fas fa-upload me-1"></i> Stock Export
                                 </button>
                                 <ul class="dropdown-menu">
                                     <li><a class="dropdown-item" href="#" id="export_excel"><i class="far fa-file-excel me-2 text-success"></i>Export Stock Excel</a></li>
@@ -276,7 +276,7 @@
 
                             <div class="dropdown">
                                 <button class="btn btn-outline-success dropdown-toggle inventory-tool-btn" type="button" data-bs-toggle="dropdown">
-                                    <i class="fas fa-upload me-1"></i> Bulk Stock Import
+                                    <i class="fas fa-download me-1"></i> Bulk Stock Import
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li><a class="dropdown-item" href="{{ route('inventory.Products.import.template') }}"><i class="far fa-file-lines me-2 text-primary"></i>Download Stock Template</a></li>
@@ -737,7 +737,7 @@
             stateSave: false,
             stateLoadCallback: function() { return null; },
             deferRender: true,
-            scrollY: 'calc(100vh - 360px)',
+            scrollY: 'calc(100vh - 235px)',
             scrollCollapse: false,
             paging: true,
             lengthMenu: [[500, -1], [500, 'All']],
