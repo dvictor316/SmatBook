@@ -7,6 +7,7 @@ use App\Mail\DemoRejectedMail;
 use App\Models\ActivityLog;
 use App\Models\DemoRequest;
 use App\Services\DemoProvisioningService;
+use App\Support\AppMailer;
 use App\Support\DemoSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -94,8 +95,7 @@ class AdminDemoRequestController extends Controller
 
             $loginUrl = route('login', ['portal' => 1, 'demo' => 1]);
 
-            Mail::to($demoRequest->email)
-                ->queue(new DemoApprovedMail($demoRequest, $plainPassword, $loginUrl, $loginEmail));
+            $this->sendDemoApprovalMail($demoRequest, $plainPassword, $loginUrl, $loginEmail);
 
             ActivityLog::record('Demo', 'approved', "Demo request approved for {$demoRequest->email}", [
                 'user_id'    => Auth::id(),
@@ -208,5 +208,14 @@ class AdminDemoRequestController extends Controller
 
         return redirect()->route('super_admin.demo_requests.show', $demoRequest->id)
             ->with('success', 'Demo access expired successfully.');
+    }
+
+    private function sendDemoApprovalMail(DemoRequest $demoRequest, string $plainPassword, string $loginUrl, string $loginEmail): void
+    {
+        AppMailer::bootCurrentSettings();
+        AppMailer::sendMailable(
+            $demoRequest->email,
+            new DemoApprovedMail($demoRequest->fresh(), $plainPassword, $loginUrl, $loginEmail)
+        );
     }
 }

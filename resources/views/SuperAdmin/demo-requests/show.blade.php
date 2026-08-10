@@ -335,8 +335,8 @@
                                     @csrf
                                     <div class="form-group">
                                         <label>Extend Access (hours)</label>
-                                        <input type="number" name="hours" min="1" max="720" value="{{ $demoConfig['lifetime_hours'] ?? 720 }}" class="form-control">
-                                        <small class="text-muted">720 hours = 30 days.</small>
+                                        <input type="number" name="hours" min="1" max="720" value="{{ $demoConfig['lifetime_hours'] ?? 168 }}" class="form-control">
+                                        <small class="text-muted">168 hours = 7 days.</small>
                                     </div>
                                     <button type="submit" class="btn btn-success btn-block">
                                         <i class="fas fa-clock mr-1"></i> Extend Demo Access

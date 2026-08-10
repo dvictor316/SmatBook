@@ -53,7 +53,7 @@
                 <ul class="mt-2 mb-0">
                     <li>Your demo account has already been created.</li>
                     <li>You can log in now using the button below.</li>
-                    <li>Your demo environment will be active for <strong>48 hours</strong>.</li>
+                    <li>Your demo environment will be active for <strong>7 days</strong>.</li>
                     <li>No payment or credit card is required.</li>
                 </ul>
             </div>

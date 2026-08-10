@@ -59,7 +59,7 @@
                     <h6>Important</h6>
                     <div class="status-indicator">
                         <span class="status-dot" style="background:#f39c12;"></span>
-                        <p>Demo environments use <strong>sample data only</strong>. No real payment integrations are active. Access expires automatically after 48 hours.</p>
+                        <p>Demo environments use <strong>sample data only</strong>. No real payment integrations are active. Access expires automatically after 7 days.</p>
                     </div>
                 </div>
             </div>

@@ -37,7 +37,7 @@ class DemoSettings
 
     public function lifetimeHours(): int
     {
-        return max(1, min(720, $this->getInt('demo_lifetime_hours', 720)));
+        return max(1, min(720, $this->getInt('demo_lifetime_hours', 168)));
     }
 
     public function blockedRoutePrefixes(): array
@@ -65,7 +65,7 @@ class DemoSettings
     {
         $this->putBoolean('demo_mode_enabled', (bool) ($attributes['enabled'] ?? true));
         $this->putBoolean('demo_auto_reset_on_session_start', (bool) ($attributes['auto_reset_on_session_start'] ?? true));
-        $this->putInt('demo_lifetime_hours', (int) ($attributes['lifetime_hours'] ?? 720));
+        $this->putInt('demo_lifetime_hours', (int) ($attributes['lifetime_hours'] ?? 168));
         $this->putCsvList('demo_blocked_route_prefixes', $attributes['blocked_route_prefixes'] ?? self::DEFAULT_BLOCKED_PREFIXES);
         $this->putCsvList('demo_blocked_routes', $attributes['blocked_routes'] ?? self::DEFAULT_BLOCKED_ROUTES);
     }

@@ -14,11 +14,11 @@ Great news! Your SmartProbook demo request has been approved. Your temporary dem
 | **Login URL** | [{{ $loginUrl }}]({{ $loginUrl }}) |
 | **Email** | {{ $loginEmail }} |
 | **Password** | `{{ $plainPassword }}` |
-| **Access Expires** | {{ $demoRequest->expires_at ? $demoRequest->expires_at->format('D, d M Y H:i') . ' (48 hours)' : 'N/A' }} |
+| **Access Expires** | {{ $demoRequest->expires_at ? $demoRequest->expires_at->format('D, d M Y H:i') . ' (7 days)' : 'N/A' }} |
 
 ---
 
-> **Important:** This is a **DEMO environment** seeded with sample data. Do not enter any real business data. The account will be automatically deactivated after 48 hours.
+> **Important:** This is a **DEMO environment** seeded with sample data. Do not enter any real business data. The account will be automatically deactivated after 7 days.
 
 @component('mail::button', ['url' => $loginUrl, 'color' => 'success'])
 Log In to Your Demo

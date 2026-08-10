@@ -11,7 +11,6 @@ use App\Support\AppMailer;
 use App\Support\DemoSettings;
 use Illuminate\Http\Request;
 use Illuminate\Mail\Mailable;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 
 class DemoRequestController extends Controller
@@ -157,17 +156,8 @@ class DemoRequestController extends Controller
     {
         AppMailer::bootCurrentSettings();
 
-        if (! $this->demoMailCanUseConfiguredTransport()) {
-            logger()->warning($failureMessage . ': configured SMTP port is blocked for demo flow', $context + [
-                'recipient' => $recipient,
-                'smtp_port' => (int) config('mail.mailers.smtp.port'),
-            ]);
-
-            return false;
-        }
-
         try {
-            Mail::to($recipient)->send($mailable);
+            AppMailer::sendMailable($recipient, $mailable);
 
             return true;
         } catch (\Throwable $e) {
@@ -177,17 +167,5 @@ class DemoRequestController extends Controller
 
             return false;
         }
-    }
-
-    private function demoMailCanUseConfiguredTransport(): bool
-    {
-        $defaultMailer = strtolower((string) config('mail.default', 'smtp'));
-        $smtpPort = (int) config('mail.mailers.smtp.port');
-
-        if (in_array($defaultMailer, ['smtp', 'failover'], true) && in_array($smtpPort, [465, 587], true)) {
-            return false;
-        }
-
-        return true;
     }
 }
