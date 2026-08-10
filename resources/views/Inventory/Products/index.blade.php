@@ -83,26 +83,18 @@
 
     .inventory-toolbar {
         display: grid;
-        grid-template-columns: minmax(280px, 1fr) minmax(220px, 235px) minmax(230px, 250px);
-        gap: 0.75rem 1.25rem;
+        grid-template-columns: minmax(340px, 1fr) minmax(130px, 160px) minmax(210px, 240px) minmax(230px, 260px) minmax(200px, 230px);
+        gap: 0.75rem 1rem;
         justify-content: stretch;
         align-items: center;
     }
 
-    .inventory-page-header {
-        display: grid;
-        grid-template-columns: minmax(245px, 0.26fr) minmax(760px, 1fr);
-        gap: 1.25rem;
-        align-items: center;
-    }
-
-    .inventory-page-header > [class*="col-"] {
-        width: auto;
-        max-width: none;
-        flex: none;
+    .inventory-page-title {
+        margin: 0 0 0.65rem;
     }
 
     .inventory-page-title h4 {
+        font-size: 1.08rem;
         white-space: nowrap;
     }
 
@@ -166,16 +158,16 @@
     }
 
     .inventory-toolbar-import {
-        grid-column: 2 / 3;
+        grid-column: 4 / 5;
     }
 
     .inventory-toolbar-add {
-        grid-column: 3 / 4;
+        grid-column: 5 / 6;
     }
 
     .inventory-toolbar-clear,
     .inventory-toolbar-transfer {
-        grid-column: 1 / 2;
+        grid-column: auto;
     }
 
     .inventory-bulk-bar {
@@ -273,15 +265,6 @@
     }
 
     @media (max-width: 767.98px) {
-        .inventory-page-header {
-            display: grid;
-            grid-template-columns: 1fr;
-        }
-
-        .inventory-page-header > [class*="col-"] {
-            width: 100%;
-        }
-
         .inventory-page-title {
             margin-bottom: 0.85rem;
         }
@@ -343,73 +326,69 @@
     <div class="content container-fluid">
 
         {{-- INLINE HEADER & CONTROLS --}}
+        <div class="inventory-page-title no-print">
+            <h4 class="mb-0 text-primary"><i class="fas fa-boxes me-2"></i>Inventory Management</h4>
+        </div>
         <div class="card shadow-sm mb-3 no-print">
             <div class="card-body">
-                <div class="row align-items-center inventory-page-header">
-                    <div class="col-lg-3 col-md-4 inventory-page-title">
-                        <h4 class="mb-0 text-primary"><i class="fas fa-boxes me-2"></i>Inventory Management</h4>
-                    </div>
-                    <div class="col-lg-9 col-md-8 text-end">
-                        <div class="inventory-toolbar">
-                            <form method="GET" action="{{ route('product-list') }}" class="d-flex inventory-search-form inventory-toolbar-primary">
-                                <div class="input-group">
-                                    <input type="text" name="search" value="{{ $search ?? '' }}" class="form-control" placeholder="Search SKU or Name...">
-                                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i><span class="visually-hidden">Filter</span></button>
-                                </div>
-                            </form>
-
-                            @if(!empty($search))
-                                <a href="{{ route('product-list') }}" class="btn btn-outline-secondary inventory-tool-btn inventory-toolbar-clear">
-                                    <i class="fas fa-filter-circle-xmark me-1"></i> Clear Filter
-                                </a>
-                            @endif
-
-                            <button type="button" class="btn btn-outline-secondary inventory-tool-btn inventory-toolbar-print" id="inventory_print_btn">
-                                <i class="fas fa-print me-1"></i> Print
-                            </button>
-                            
-                            <div class="dropdown inventory-toolbar-export">
-                                <button class="btn btn-outline-primary dropdown-toggle inventory-tool-btn" type="button" data-bs-toggle="dropdown">
-                                    <i class="fas fa-upload me-1"></i> Stock Export
-                                </button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#" id="export_excel"><i class="far fa-file-excel me-2 text-success"></i>Export Stock Excel</a></li>
-                                    <li><a class="dropdown-item" href="#" id="export_csv"><i class="fas fa-file-csv me-2 text-primary"></i>Export Stock CSV</a></li>
-                                    <li><a class="dropdown-item" href="#" id="export_pdf"><i class="far fa-file-pdf me-2 text-danger"></i>Export Stock PDF</a></li>
-                                </ul>
-                            </div>
-
-                            <div class="dropdown inventory-toolbar-import">
-                                <button class="btn btn-outline-success dropdown-toggle inventory-tool-btn" type="button" data-bs-toggle="dropdown">
-                                    <i class="fas fa-download me-1"></i> Bulk Stock Import
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item" href="{{ route('inventory.Products.import.template') }}"><i class="far fa-file-lines me-2 text-primary"></i>Download Stock Template</a></li>
-                                    <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importProductsModal"><i class="fas fa-file-upload me-2 text-success"></i>Upload Stock Spreadsheet</button></li>
-                                    @php($lastImportKey = 'product_import_last_' . (auth()->id() ?? 'guest'))
-                                    @if (\Illuminate\Support\Facades\Cache::has($lastImportKey))
-                                        <li>
-                                            <form action="{{ route('inventory.Products.import.undo') }}" method="POST" onsubmit="return confirm('Undo the last product import? This will delete the imported items and reset their stock.');">
-                                                @csrf
-                                                  <button type="submit" class="dropdown-item text-danger">
-                                                      <i class="fa-solid fa-rotate me-2"></i>Undo Last Import
-                                                  </button>
-                                            </form>
-                                        </li>
-                                    @endif
-                                </ul>
-                            </div>
-
-                            <button type="button" class="btn btn-success desktop-add-product-trigger inventory-tool-btn inventory-toolbar-add" data-bs-toggle="modal" data-bs-target="#addProductModal">
-                                <i class="fa fa-plus"></i> Add Product
-                            </button>
-                            @if($showStockTransferModal)
-                                <button type="button" class="btn btn-outline-dark inventory-tool-btn inventory-toolbar-transfer" data-bs-toggle="modal" data-bs-target="#transferStockModal">
-                                    <i class="fas fa-right-left"></i> Transfer Stock
-                                </button>
-                            @endif
+                <div class="inventory-toolbar">
+                    <form method="GET" action="{{ route('product-list') }}" class="d-flex inventory-search-form inventory-toolbar-primary">
+                        <div class="input-group">
+                            <input type="text" name="search" value="{{ $search ?? '' }}" class="form-control" placeholder="Search SKU or Name...">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i><span class="visually-hidden">Filter</span></button>
                         </div>
+                    </form>
+
+                    @if(!empty($search))
+                        <a href="{{ route('product-list') }}" class="btn btn-outline-secondary inventory-tool-btn inventory-toolbar-clear">
+                            <i class="fas fa-filter-circle-xmark me-1"></i> Clear Filter
+                        </a>
+                    @endif
+
+                    <button type="button" class="btn btn-outline-secondary inventory-tool-btn inventory-toolbar-print" id="inventory_print_btn">
+                        <i class="fas fa-print me-1"></i> Print
+                    </button>
+
+                    <div class="dropdown inventory-toolbar-export">
+                        <button class="btn btn-outline-primary dropdown-toggle inventory-tool-btn" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-upload me-1"></i> Stock Export
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" id="export_excel"><i class="far fa-file-excel me-2 text-success"></i>Export Stock Excel</a></li>
+                            <li><a class="dropdown-item" href="#" id="export_csv"><i class="fas fa-file-csv me-2 text-primary"></i>Export Stock CSV</a></li>
+                            <li><a class="dropdown-item" href="#" id="export_pdf"><i class="far fa-file-pdf me-2 text-danger"></i>Export Stock PDF</a></li>
+                        </ul>
                     </div>
+
+                    <div class="dropdown inventory-toolbar-import">
+                        <button class="btn btn-outline-success dropdown-toggle inventory-tool-btn" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-download me-1"></i> Bulk Stock Import
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ route('inventory.Products.import.template') }}"><i class="far fa-file-lines me-2 text-primary"></i>Download Stock Template</a></li>
+                            <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importProductsModal"><i class="fas fa-file-upload me-2 text-success"></i>Upload Stock Spreadsheet</button></li>
+                            @php($lastImportKey = 'product_import_last_' . (auth()->id() ?? 'guest'))
+                            @if (\Illuminate\Support\Facades\Cache::has($lastImportKey))
+                                <li>
+                                    <form action="{{ route('inventory.Products.import.undo') }}" method="POST" onsubmit="return confirm('Undo the last product import? This will delete the imported items and reset their stock.');">
+                                        @csrf
+                                          <button type="submit" class="dropdown-item text-danger">
+                                              <i class="fa-solid fa-rotate me-2"></i>Undo Last Import
+                                          </button>
+                                    </form>
+                                </li>
+                            @endif
+                        </ul>
+                    </div>
+
+                    <button type="button" class="btn btn-success desktop-add-product-trigger inventory-tool-btn inventory-toolbar-add" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                        <i class="fa fa-plus"></i> Add Product
+                    </button>
+                    @if($showStockTransferModal)
+                        <button type="button" class="btn btn-outline-dark inventory-tool-btn inventory-toolbar-transfer" data-bs-toggle="modal" data-bs-target="#transferStockModal">
+                            <i class="fas fa-right-left"></i> Transfer Stock
+                        </button>
+                    @endif
                 </div>
             </div>
         </div>
