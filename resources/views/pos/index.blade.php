@@ -3603,6 +3603,84 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-card-img img {
         line-height: 1.12 !important;
     }
 }
+
+/* POS terminal polish: keep controls sharp and icons clear of text. */
+body.pos-terminal-workspace .search-icon-wrapper {
+    left: auto !important;
+    right: 14px !important;
+    width: 24px !important;
+}
+
+body.pos-terminal-workspace .search-icon {
+    color: #2563eb !important;
+    font-size: 1rem !important;
+}
+
+body.pos-terminal-workspace .search-wrapper .search-input,
+body.pos-terminal-workspace .search-input {
+    padding-left: 16px !important;
+    padding-right: 48px !important;
+    color: #0b1733 !important;
+    font-weight: 800 !important;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
+}
+
+body.pos-terminal-workspace .search-input::placeholder {
+    color: #7b8aa5 !important;
+    opacity: 1 !important;
+    font-weight: 800 !important;
+}
+
+body.pos-terminal-workspace .pos-customer-compact {
+    grid-template-columns: auto minmax(220px, 0.72fr) !important;
+}
+
+body.pos-terminal-workspace .pos-customer-compact .form-select,
+body.pos-terminal-workspace #customer-select {
+    min-width: 220px !important;
+    padding-left: 12px !important;
+    padding-right: 34px !important;
+    color: #071635 !important;
+    font-weight: 900 !important;
+    background-position: right 12px center !important;
+    background-size: 13px 10px !important;
+    text-rendering: geometricPrecision;
+}
+
+body.pos-terminal-workspace .receipt-toolbar-label {
+    color: #0f2147 !important;
+    font-weight: 900 !important;
+}
+
+body.pos-terminal-workspace .pos-payment-tabs {
+    gap: 8px !important;
+    justify-content: flex-end !important;
+}
+
+body.pos-terminal-workspace .pos-pay-tab {
+    min-width: 82px !important;
+    min-height: 36px !important;
+    padding: 7px 14px !important;
+    color: #ffffff !important;
+    font-size: 0.78rem !important;
+    font-weight: 900 !important;
+    letter-spacing: 0 !important;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.22);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.42), 0 2px 3px rgba(6, 26, 68, 0.18) !important;
+}
+
+body.pos-terminal-workspace .pos-pay-tab.active {
+    color: #ffffff !important;
+}
+
+@media (min-width: 1200px) {
+    body.pos-terminal-workspace .pos-receipt-toolbar {
+        grid-template-columns: minmax(330px, 0.82fr) minmax(390px, 1fr) !important;
+        gap: 10px !important;
+        padding: 7px 10px !important;
+    }
+}
 </style>
 
 <div class="pos-full-page-wrapper">
