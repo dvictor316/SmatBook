@@ -36,14 +36,14 @@
 
         <form action="{{ route('purchases.store') }}" method="POST" enctype="multipart/form-data" id="purchaseForm">
             @csrf
-
             
+            <!-- Purchase Details Section -->
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card p-3">
                         <h5 class="card-title">Purchase Details</h5>
                         <div class="row g-3">
-                            
+                            <!-- Purchase ID (Auto-generated or manual) -->
                             <div class="col-md-4">
                                 <label for="purchase_id" class="form-label">Purchase ID</label>
                                 <input type="text" id="purchase_id" name="purchase_id" 
@@ -51,7 +51,7 @@
                                        class="form-control" readonly>
                             </div>
 
-                            
+                            <!-- Select Supplier -->
                             <div class="col-md-4">
                                 <label for="vendor_id" class="form-label">Select Supplier *</label>
                                 <div class="input-group">
@@ -73,7 +73,7 @@
                                 @enderror
                             </div>
 
-                            
+                            <!-- Purchase Date -->
                             <div class="col-md-4">
                                 <label for="purchase_date" class="form-label">Purchase Date *</label>
                                 <input type="date" id="purchase_date" name="purchase_date" 
@@ -84,7 +84,7 @@
                                 @enderror
                             </div>
 
-                            
+                            <!-- Due Date -->
                             <div class="col-md-4">
                                 <label for="due_date" class="form-label">Due Date</label>
                                 <input type="date" id="due_date" name="due_date" 
@@ -95,7 +95,7 @@
                                 @enderror
                             </div>
 
-                            
+                            <!-- Reference No -->
                             <div class="col-md-4">
                                 <label for="reference_no" class="form-label">Reference No</label>
                                 <input type="text" id="reference_no" name="reference_no" 
@@ -107,7 +107,7 @@
                                 @enderror
                             </div>
 
-                            
+                            <!-- Supplier Invoice Serial No -->
                             <div class="col-md-4">
                                 <label for="invoice_serial_no" class="form-label">Supplier Invoice Serial No</label>
                                 <input type="text" id="invoice_serial_no" name="invoice_serial_no" 
@@ -123,7 +123,7 @@
                 </div>
             </div>
 
-            
+            <!-- Products Selection & Table -->
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card">
@@ -156,13 +156,13 @@
                 </div>
             </div>
 
-            
+            <!-- Discount & Tax -->
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card p-3">
                         <h5 class="card-title">Discount & Tax</h5>
                         <div class="row g-3 align-items-center">
-                            
+                            <!-- Discount Type -->
                             <div class="col-md-4">
                                 <label for="discount_type" class="form-label">Discount Type</label>
                                 <select id="discount_type" name="discount_type" class="form-select">
@@ -171,7 +171,7 @@
                                 </select>
                             </div>
 
-                            
+                            <!-- Discount Value -->
                             <div class="col-md-4">
                                 <label for="discount_value" class="form-label">Discount</label>
                                 <input type="number" id="discount_value" name="discount_value" 
@@ -179,7 +179,7 @@
                                        class="form-control" step="0.01" min="0">
                             </div>
 
-                            
+                            <!-- Tax Selection -->
                             <div class="col-md-4">
                                 <label for="tax_id" class="form-label">Tax</label>
                                 <select id="tax_id" name="tax_id" class="form-select">
@@ -197,16 +197,16 @@
                 </div>
             </div>
 
-            
+            <!-- Bank Details & Totals -->
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card p-3">
                         <div class="row g-3">
-                            
+                            <!-- Bank & Notes -->
                             <div class="col-md-6">
                                 <h5>Bank Details</h5>
-
                                 
+                                <!-- Select Bank -->
                                 <div class="mb-3">
                                     <label for="bank_id" class="form-label">Select Bank</label>
                                     <div class="input-group">
@@ -225,14 +225,14 @@
                                     </div>
                                 </div>
 
-                                
+                                <!-- Notes -->
                                 <div class="mb-3">
                                     <label for="notes" class="form-label">Notes</label>
                                     <textarea id="notes" name="notes" class="form-control" rows="3" 
                                               placeholder="Enter Notes">{{ old('notes') }}</textarea>
                                 </div>
 
-                                
+                                <!-- Terms & Conditions -->
                                 <div class="mb-3">
                                     <label for="terms_conditions" class="form-label">Terms & Conditions</label>
                                     <textarea id="terms_conditions" name="terms_conditions" class="form-control" rows="3" 
@@ -240,7 +240,7 @@
                                 </div>
                             </div>
 
-                            
+                            <!-- Totals & Signature -->
                             <div class="col-md-6">
                                 <h5>Totals & Signature</h5>
                                 <div class="mb-3">
@@ -257,7 +257,7 @@
                                     <h4>Total Amount: <span id="totalAmount">0.00</span></h4>
                                 </div>
 
-                                
+                                <!-- Signature Name -->
                                 <div class="mb-3">
                                     <label for="signature_name" class="form-label">Signature Name</label>
                                     <input type="text" id="signature_name" name="signature_name" 
@@ -265,7 +265,7 @@
                                            class="form-control" placeholder="Enter Signature Name">
                                 </div>
 
-                                
+                                <!-- Signature Upload -->
                                 <div class="mb-3">
                                     <label for="signature_image" class="form-label">Upload Signature</label>
                                     <input type="file" id="signature_image" name="signature_image" 
@@ -280,10 +280,10 @@
                 </div>
             </div>
 
-            
+            <!-- Hidden fields for products -->
             <div id="productsData"></div>
 
-            
+            <!-- Submit Buttons -->
             <div class="row">
                 <div class="col-12 d-flex justify-content-end gap-2">
                     <button type="reset" class="btn btn-secondary">Reset</button>
@@ -293,7 +293,7 @@
         </form>
     </div>
 
-    
+    <!-- JavaScript for dynamic product handling -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -306,13 +306,25 @@
             function buildProductOptions() {
                 const options = ['<option value="">Select Product</option>'];
                 products.forEach((product) => {
-                    const unit = product.unit ?? 'pcs';
-                    const price = product.price ?? 0;
+                    const unit = product.base_unit_name || product.unit || product.unit_type || '';
+                    const price = product.purchase_price ?? product.price ?? 0;
                     options.push(
-                        `<option value="${product.id}" data-name="${escapeHtml(product.name)}" data-unit="${escapeHtml(unit)}" data-price="${price}">${escapeHtml(product.name)} - $${Number(price).toFixed(2)}</option>`
+                        `<option value="${product.id}" data-name="${escapeHtml(product.name)}" data-unit="${escapeHtml(unit)}" data-price="${price}">${escapeHtml(product.name)} - ₦${Number(price).toFixed(2)}</option>`
                     );
                 });
                 return options.join('');
+            }
+
+            function initProductSearch(select) {
+                if (!window.jQuery || !jQuery.fn || !jQuery.fn.select2) {
+                    return;
+                }
+
+                jQuery(select).select2({
+                    width: '100%',
+                    placeholder: 'Search product...',
+                    allowClear: true
+                });
             }
 
             function escapeHtml(value) {
@@ -367,6 +379,7 @@
                 tableBody.appendChild(row);
                 productCounter += 1;
                 bindRowEvents(row);
+                initProductSearch(row.querySelector('.product-select'));
                 return row;
             }
 
@@ -427,19 +440,19 @@
             });
 
             createEmptyRow();
-
+            
             // Global functions for inline event handlers
             window.updateProductAmount = function(rowIndex) {
                 const quantity = parseFloat(document.querySelector(`input[name="products[${rowIndex}][quantity]"]`).value) || 0;
                 const rate = parseFloat(document.querySelector(`input[name="products[${rowIndex}][rate]"]`).value) || 0;
                 const discount = parseFloat(document.querySelector(`input[name="products[${rowIndex}][discount]"]`).value) || 0;
-
+                
                 const amount = (quantity * rate) - discount;
                 document.getElementById(`amount_${rowIndex}`).textContent = amount.toFixed(2);
-
+                
                 updateTotals();
             };
-
+            
             window.removeProductRow = function(rowId) {
                 const row = document.getElementById(rowId);
                 if (row) {
@@ -449,39 +462,39 @@
                 if (tableBody.children.length === 0) {
                     createEmptyRow();
                 }
-
+                
                 updateTotals();
             };
-
+            
             function updateTotals() {
                 let taxableAmount = 0;
                 let totalDiscount = 0;
-
+                
                 // Calculate from visible rows
                 const quantityInputs = document.querySelectorAll('.quantity-input');
                 const rateInputs = document.querySelectorAll('.rate-input');
                 const discountInputs = document.querySelectorAll('.discount-input');
-
+                
                 for (let i = 0; i < quantityInputs.length; i++) {
                     const quantity = parseFloat(quantityInputs[i].value) || 0;
                     const rate = parseFloat(rateInputs[i].value) || 0;
                     const discount = parseFloat(discountInputs[i].value) || 0;
-
+                    
                     taxableAmount += quantity * rate;
                     totalDiscount += discount;
                 }
-
+                
                 // Apply global discount
                 const discountType = document.getElementById('discount_type').value;
                 const discountValue = parseFloat(document.getElementById('discount_value').value) || 0;
                 let globalDiscount = 0;
-
+                
                 if (discountType === 'percentage') {
                     globalDiscount = (taxableAmount * discountValue) / 100;
                 } else {
                     globalDiscount = discountValue;
                 }
-
+                
                 // Calculate tax
                 const taxId = document.getElementById('tax_id').value;
                 let taxRate = 0;
@@ -490,20 +503,20 @@
                         taxRate = {{ $tax->rate ?? 0 }};
                     }
                 @endforeach
-
+                
                 const vatAmount = ((taxableAmount - totalDiscount - globalDiscount) * taxRate) / 100;
-
+                
                 // Calculate totals
                 const subtotal = taxableAmount - totalDiscount - globalDiscount;
                 const roundOff = document.getElementById('round_off').checked;
                 let roundOffAmount = 0;
                 let totalAmount = subtotal + vatAmount;
-
+                
                 if (roundOff) {
                     totalAmount = Math.round(totalAmount);
                     roundOffAmount = totalAmount - (subtotal + vatAmount);
                 }
-
+                
                 // Update UI
                 document.getElementById('taxableAmount').textContent = taxableAmount.toFixed(2);
                 document.getElementById('totalDiscount').textContent = (totalDiscount + globalDiscount).toFixed(2);
@@ -511,31 +524,31 @@
                 document.getElementById('roundOffAmount').textContent = roundOffAmount.toFixed(2);
                 document.getElementById('totalAmount').textContent = totalAmount.toFixed(2);
             }
-
+            
             // Event listeners for dynamic updates
             document.getElementById('discount_type').addEventListener('change', updateTotals);
             document.getElementById('discount_value').addEventListener('input', updateTotals);
             document.getElementById('tax_id').addEventListener('change', updateTotals);
             document.getElementById('round_off').addEventListener('change', updateTotals);
-
+            
             // Form validation
             document.getElementById('purchaseForm').addEventListener('submit', function(e) {
                 const vendorId = document.getElementById('vendor_id').value;
                 const purchaseDate = document.getElementById('purchase_date').value;
                 const productRows = document.querySelectorAll('#productsTableBody tr:not(#noProductsRow)');
-
+                
                 if (!vendorId) {
                     e.preventDefault();
                     alert('Please select a vendor');
                     return;
                 }
-
+                
                 if (!purchaseDate) {
                     e.preventDefault();
                     alert('Please select a purchase date');
                     return;
                 }
-
+                
                 if (productRows.length === 0) {
                     e.preventDefault();
                     alert('Please add at least one product');

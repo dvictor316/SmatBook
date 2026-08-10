@@ -5,18 +5,10 @@
     <div class="content container-fluid">
     <div class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h1 class="mb-1">Create Direct Purchase</h1>
-                <p class="text-muted mb-0">Use this when the supplier has already delivered the goods and they should enter stock immediately.</p>
-            </div>
-            <div class="d-flex gap-2">
-                <a href="{{ route('add-purchases-order') }}" class="btn btn-outline-primary">
-                    <i class="fe fe-shopping-bag"></i> Use Purchase Order Instead
-                </a>
-                <a href="{{ route('purchases.index') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Back to List
-                </a>
-            </div>
+            <h1>Create Purchase</h1>
+            <a href="{{ route('purchases.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
         </div>
 
         @if(session('success'))
@@ -47,22 +39,14 @@
 
         <form action="{{ route('purchases.store') }}" method="POST" enctype="multipart/form-data" id="purchaseForm" novalidate>
             @csrf
-
             
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="alert alert-info border-0 shadow-sm">
-                        Direct purchase flow: goods received now, stock updates now, and payment can be made now or left as supplier debt.
-                    </div>
-                </div>
-            </div>
-
+            <!-- Purchase Details Section -->
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card p-3">
                         <h5 class="card-title">Purchase Details</h5>
                         <div class="row g-3">
-                            
+                            <!-- Purchase ID (Auto-generated or manual) -->
                             <div class="col-md-4">
                                 <label for="purchase_id" class="form-label">Purchase ID</label>
                                 <input type="text" id="purchase_id" name="purchase_id" 
@@ -70,7 +54,7 @@
                                        class="form-control" readonly>
                             </div>
 
-                            
+                            <!-- Select Supplier -->
                             <div class="col-md-4">
                                 <label for="supplier_id" class="form-label">Select Supplier *</label>
                                 <div class="input-group">
@@ -97,7 +81,7 @@
                                 @enderror
                             </div>
 
-                            
+                            <!-- Purchase Date -->
                             <div class="col-md-4">
                                 <label for="purchase_date" class="form-label">Purchase Date *</label>
                                 <input type="date" id="purchase_date" name="purchase_date" 
@@ -108,7 +92,7 @@
                                 @enderror
                             </div>
 
-                            
+                            <!-- Due Date -->
                             <div class="col-md-4">
                                 <label for="due_date" class="form-label">Due Date</label>
                                 <input type="date" id="due_date" name="due_date" 
@@ -119,7 +103,7 @@
                                 @enderror
                             </div>
 
-                            
+                            <!-- Reference No -->
                             <div class="col-md-4">
                                 <label for="reference_no" class="form-label">Reference No</label>
                                 <input type="text" id="reference_no" name="reference_no" 
@@ -131,7 +115,7 @@
                                 @enderror
                             </div>
 
-                            
+                            <!-- Supplier Invoice Serial No -->
                             <div class="col-md-4">
                                 <label for="invoice_serial_no" class="form-label">Supplier Invoice Serial No</label>
                                 <input type="text" id="invoice_serial_no" name="invoice_serial_no" 
@@ -147,72 +131,8 @@
                 </div>
             </div>
 
-            {{-- ========== Purchase Type Selector ========== --}}
+            <!-- Products Selection & Table -->
             <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card p-3">
-                        <h5 class="card-title mb-3">Purchase Type</h5>
-                        <div class="row g-3 align-items-start">
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">What are you purchasing?</label>
-                                <div class="d-flex gap-4 mt-1">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="purchase_type"
-                                               id="type_inventory" value="inventory"
-                                               {{ old('purchase_type', 'inventory') === 'inventory' ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="type_inventory">
-                                            <strong>Inventory / Goods</strong>
-                                            <small class="text-muted d-block">Products that go into stock</small>
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="purchase_type"
-                                               id="type_fixed_asset" value="fixed_asset"
-                                               {{ old('purchase_type') === 'fixed_asset' ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="type_fixed_asset">
-                                            <strong>Fixed Asset</strong>
-                                            <small class="text-muted d-block">Equipment, furniture, vehicles, etc.</small>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6" id="fixedAssetAccountWrapper" style="display:none;">
-                                <label for="asset_account_id" class="form-label fw-semibold">Asset Ledger Account</label>
-                                <select id="asset_account_id" name="asset_account_id"
-                                        class="form-select @error('asset_account_id') is-invalid @enderror">
-                                    <option value="">-- Select Fixed Asset Account --</option>
-                                    @foreach($fixedAssetAccounts ?? collect() as $acct)
-                                        <option value="{{ $acct->id }}"
-                                            {{ old('asset_account_id') == $acct->id ? 'selected' : '' }}>
-                                            {{ $acct->name }}{{ $acct->code ? ' (' . $acct->code . ')' : '' }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('asset_account_id')
-                                    <div class="invalid-feedback d-block">{{ $message }}</div>
-                                @enderror
-                                @if(($fixedAssetAccounts ?? collect())->isEmpty())
-                                    <small class="text-warning d-block mt-1">
-                                        No fixed asset accounts found. Create one in Chart of Accounts with sub-type "Fixed Asset".
-                                    </small>
-                                @endif
-                                <small class="text-muted d-block mt-1">
-                                    This purchase will appear in the Balance Sheet under Non-Current Assets.
-                                </small>
-                            </div>
-                        </div>
-                        <div id="fixedAssetPurchaseNote" class="alert alert-info mt-3 mb-0" style="display:none;">
-                            <i class="fas fa-info-circle me-1"></i>
-                            <strong>Fixed Asset Purchase:</strong>
-                            Enter the asset cost as a single line item below. No stock will be incremented.
-                            The amount is posted as: DR Asset Account / CR Accounts Payable.
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            
-            <div class="row mb-4" id="inventoryItemsSection">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
@@ -244,13 +164,13 @@
                 </div>
             </div>
 
-            
+            <!-- Discount & Tax -->
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card p-3">
                         <h5 class="card-title">Discount & Tax</h5>
                         <div class="row g-3 align-items-center">
-                            
+                            <!-- Discount Type -->
                             <div class="col-md-4">
                                 <label for="discount_type" class="form-label">Discount Type</label>
                                 <select id="discount_type" name="discount_type" class="form-select">
@@ -259,7 +179,7 @@
                                 </select>
                             </div>
 
-                            
+                            <!-- Discount Value -->
                             <div class="col-md-4">
                                 <label for="discount_value" class="form-label">Discount</label>
                                 <input type="number" id="discount_value" name="discount_value" 
@@ -267,7 +187,7 @@
                                        class="form-control" step="0.01" min="0">
                             </div>
 
-                            
+                            <!-- Tax Selection -->
                             <div class="col-md-4">
                                 <label for="tax_id" class="form-label">Tax</label>
                                 <select id="tax_id" name="tax_id" class="form-select">
@@ -290,16 +210,16 @@
                 </div>
             </div>
 
-            
+            <!-- Bank Details & Totals -->
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card p-3">
                         <div class="row g-3">
-                            
+                            <!-- Bank & Notes -->
                             <div class="col-md-6">
                                 <h5>Bank Details</h5>
-
                                 
+                                <!-- Select Bank -->
                                 <div class="mb-3">
                                     <label for="bank_id" class="form-label">Select Bank</label>
                                     <div class="input-group">
@@ -318,14 +238,14 @@
                                     </div>
                                 </div>
 
-                                
+                                <!-- Notes -->
                                 <div class="mb-3">
                                     <label for="notes" class="form-label">Notes</label>
                                     <textarea id="notes" name="notes" class="form-control" rows="3" 
                                               placeholder="Enter Notes">{{ old('notes') }}</textarea>
                                 </div>
 
-                                
+                                <!-- Terms & Conditions -->
                                 <div class="mb-3">
                                     <label for="terms_conditions" class="form-label">Terms & Conditions</label>
                                     <textarea id="terms_conditions" name="terms_conditions" class="form-control" rows="3" 
@@ -333,7 +253,7 @@
                                 </div>
                             </div>
 
-                            
+                            <!-- Totals & Signature -->
                             <div class="col-md-6">
                                 <h5>Totals & Signature</h5>
                                 <div class="mb-3">
@@ -352,7 +272,7 @@
                                     <h4>Total Amount: <span id="totalAmount">0.00</span></h4>
                                 </div>
 
-                                
+                                <!-- Signature Name -->
                                 <div class="mb-3">
                                     <label for="signature_name" class="form-label">Signature Name</label>
                                     <input type="text" id="signature_name" name="signature_name" 
@@ -360,7 +280,7 @@
                                            class="form-control" placeholder="Enter Signature Name">
                                 </div>
 
-                                
+                                <!-- Signature Upload -->
                                 <div class="mb-3">
                                     <label for="signature_image" class="form-label">Upload Signature</label>
                                     <input type="file" id="signature_image" name="signature_image" 
@@ -375,10 +295,10 @@
                 </div>
             </div>
 
-            
+            <!-- Hidden fields for products -->
             <div id="productsData"></div>
 
-            
+            <!-- Submit Buttons -->
             <div class="row">
                 <div class="col-12 d-flex justify-content-end gap-2">
                     <button type="reset" class="btn btn-secondary">Reset</button>
@@ -393,8 +313,6 @@
 <script>
         document.addEventListener('DOMContentLoaded', function() {
             const products = @json($products);
-            const initialRows = @json(old('products', $initialProducts ?? []));
-            const currencySymbol = @json(\App\Support\GeoCurrency::currentSymbol());
             let productCounter = 0;
 
             const tableBody = document.getElementById('productsTableBody');
@@ -403,13 +321,25 @@
             function buildProductOptions() {
                 const options = ['<option value="">Select Product</option>'];
                 products.forEach((product) => {
-                    const unit = product.unit ?? 'pcs';
-                    const price = product.price ?? 0;
+                    const unit = product.base_unit_name || product.unit || product.unit_type || '';
+                    const price = product.purchase_price ?? product.price ?? 0;
                     options.push(
-                        `<option value="${product.id}" data-name="${escapeHtml(product.name)}" data-unit="${escapeHtml(unit)}" data-price="${price}">${escapeHtml(product.name)} - ${currencySymbol}${Number(price).toFixed(2)}</option>`
+                        `<option value="${product.id}" data-name="${escapeHtml(product.name)}" data-unit="${escapeHtml(unit)}" data-price="${price}">${escapeHtml(product.name)} - ₦${Number(price).toFixed(2)}</option>`
                     );
                 });
                 return options.join('');
+            }
+
+            function initProductSearch(select) {
+                if (!window.jQuery || !jQuery.fn || !jQuery.fn.select2) {
+                    return;
+                }
+
+                jQuery(select).select2({
+                    width: '100%',
+                    placeholder: 'Search product...',
+                    allowClear: true
+                });
             }
 
             function escapeHtml(value) {
@@ -421,50 +351,9 @@
                     .replace(/'/g, '&#39;');
             }
 
-            function updateProductAmount(rowIndex) {
-                const quantityField = document.querySelector(`input[name="products[${rowIndex}][quantity]"]`);
-                const rateField = document.querySelector(`input[name="products[${rowIndex}][rate]"]`);
-                const discountField = document.querySelector(`input[name="products[${rowIndex}][discount]"]`);
-                const amountCell = document.getElementById(`amount_${rowIndex}`);
-
-                if (!quantityField || !rateField || !discountField || !amountCell) {
-                    return;
-                }
-
-                const quantity = parseFloat(quantityField.value) || 0;
-                const rate = parseFloat(rateField.value) || 0;
-                const discount = parseFloat(discountField.value) || 0;
-                const amount = Math.max(0, (quantity * rate) - discount);
-
-                amountCell.textContent = amount.toFixed(2);
-                updateTotals();
-            }
-
-            function removeProductRow(rowId) {
-                const row = document.getElementById(rowId);
-                if (row) {
-                    row.remove();
-                }
-
-                if (tableBody.children.length === 0) {
-                    createEmptyRow();
-                }
-
-                updateTotals();
-            }
-
-            function createEmptyRow(seed = {}) {
+            function createEmptyRow() {
                 const rowId = `productRow_${productCounter}`;
                 const rowIndex = productCounter;
-                const normalizedSeed = {
-                    product_id: seed.product_id ? String(seed.product_id) : '',
-                    product_name: seed.product_name ?? '',
-                    quantity: Number(seed.quantity ?? 1),
-                    unit: seed.unit ?? '',
-                    rate: Number(seed.rate ?? 0),
-                    discount: Number(seed.discount ?? 0),
-                    tax_id: seed.tax_id ? String(seed.tax_id) : '',
-                };
                 const row = document.createElement('tr');
                 row.id = rowId;
                 row.innerHTML = `
@@ -474,19 +363,19 @@
                         </select>
                     </td>
                     <td>
-                        <input type="number" name="products[${rowIndex}][quantity]" value="${normalizedSeed.quantity > 0 ? normalizedSeed.quantity : 1}" class="form-control quantity-input" min="0.01" step="0.01"
-                               data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})" oninput="updateProductAmount(${rowIndex})">
+                        <input type="number" name="products[${rowIndex}][quantity]" value="1" class="form-control quantity-input" min="1"
+                               data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
                     </td>
                     <td>
-                        <input type="text" name="products[${rowIndex}][unit]" value="${escapeHtml(normalizedSeed.unit)}" class="form-control unit-input" data-row="${rowIndex}">
+                        <input type="text" name="products[${rowIndex}][unit]" value="" class="form-control unit-input" data-row="${rowIndex}">
                     </td>
                     <td>
-                        <input type="number" name="products[${rowIndex}][rate]" value="${normalizedSeed.rate}" class="form-control rate-input" step="0.01" min="0"
-                               data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})" oninput="updateProductAmount(${rowIndex})">
+                        <input type="number" name="products[${rowIndex}][rate]" value="0" class="form-control rate-input" step="0.01" min="0"
+                               data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
                     </td>
                     <td>
-                        <input type="number" name="products[${rowIndex}][discount]" value="${normalizedSeed.discount}" class="form-control discount-input" step="0.01" min="0"
-                               data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})" oninput="updateProductAmount(${rowIndex})">
+                        <input type="number" name="products[${rowIndex}][discount]" value="0" class="form-control discount-input" step="0.01" min="0"
+                               data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
                     </td>
                     <td>
                         <select name="products[${rowIndex}][tax_id]" class="form-select tax-select" data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
@@ -505,63 +394,8 @@
                 tableBody.appendChild(row);
                 productCounter += 1;
                 bindRowEvents(row);
-
-                const productSelect = row.querySelector('.product-select');
-                const taxSelect = row.querySelector('.tax-select');
-
-                if (productSelect && normalizedSeed.product_id) {
-                    productSelect.value = normalizedSeed.product_id;
-                }
-
-                if (taxSelect && normalizedSeed.tax_id) {
-                    taxSelect.value = normalizedSeed.tax_id;
-                }
-
-                if (normalizedSeed.product_id) {
-                    syncSelectedProductDetails(row, normalizedSeed.product_name);
-                } else {
-                    updateProductAmount(rowIndex);
-                }
-
+                initProductSearch(row.querySelector('.product-select'));
                 return row;
-            }
-
-            function syncSelectedProductDetails(row, seededProductName = '') {
-                const productSelect = row.querySelector('.product-select');
-                if (!productSelect) {
-                    return;
-                }
-
-                const selectedOption = productSelect.options[productSelect.selectedIndex];
-                const rowIndex = productSelect.getAttribute('data-row');
-                let nameField = document.querySelector(`input[name="products[${rowIndex}][product_name]"]`);
-                const unitInput = row.querySelector('.unit-input');
-                const rateInput = row.querySelector('.rate-input');
-
-                const unit = selectedOption?.getAttribute('data-unit') || '';
-                const price = Number(selectedOption?.getAttribute('data-price') || 0);
-                const productName = selectedOption?.getAttribute('data-name') || seededProductName || '';
-
-                if (!nameField && productName) {
-                    nameField = document.createElement('input');
-                    nameField.type = 'hidden';
-                    nameField.name = `products[${rowIndex}][product_name]`;
-                    row.querySelector('td').appendChild(nameField);
-                }
-
-                if (nameField) {
-                    nameField.value = productName;
-                }
-
-                if (unitInput && !String(unitInput.value || '').trim()) {
-                    unitInput.value = unit;
-                }
-
-                if (rateInput && Number(rateInput.value || 0) <= 0) {
-                    rateInput.value = price;
-                }
-
-                updateProductAmount(rowIndex);
             }
 
             function bindRowEvents(row) {
@@ -571,7 +405,34 @@
                 }
 
                 productSelect.addEventListener('change', function() {
-                    syncSelectedProductDetails(row);
+                    const selectedOption = this.options[this.selectedIndex];
+                    const rowIndex = this.getAttribute('data-row');
+                    const nameField = document.querySelector(`input[name="products[${rowIndex}][product_name]"]`);
+                    const unitInput = row.querySelector('.unit-input');
+                    const rateInput = row.querySelector('.rate-input');
+
+                    const unit = selectedOption.getAttribute('data-unit') || '';
+                    const price = selectedOption.getAttribute('data-price') || 0;
+                    const productName = selectedOption.getAttribute('data-name') || '';
+
+                    if (!nameField && productName) {
+                        const hiddenName = document.createElement('input');
+                        hiddenName.type = 'hidden';
+                        hiddenName.name = `products[${rowIndex}][product_name]`;
+                        hiddenName.value = productName;
+                        row.querySelector('td').appendChild(hiddenName);
+                    } else if (nameField) {
+                        nameField.value = productName;
+                    }
+
+                    if (unitInput) {
+                        unitInput.value = unit;
+                    }
+                    if (rateInput && Number(rateInput.value || 0) <= 0) {
+                        rateInput.value = price;
+                    }
+
+                    updateProductAmount(rowIndex);
 
                     if (isLastRowFilled()) {
                         createEmptyRow();
@@ -604,50 +465,62 @@
                 createEmptyRow();
             });
 
-            if (Array.isArray(initialRows) && initialRows.length > 0) {
-                initialRows.forEach((row) => createEmptyRow(row));
-                if (isLastRowFilled()) {
+            createEmptyRow();
+            
+            // Global functions for inline event handlers
+            window.updateProductAmount = function(rowIndex) {
+                const quantity = parseFloat(document.querySelector(`input[name="products[${rowIndex}][quantity]"]`).value) || 0;
+                const rate = parseFloat(document.querySelector(`input[name="products[${rowIndex}][rate]"]`).value) || 0;
+                const discount = parseFloat(document.querySelector(`input[name="products[${rowIndex}][discount]"]`).value) || 0;
+                
+                const amount = (quantity * rate) - discount;
+                document.getElementById(`amount_${rowIndex}`).textContent = amount.toFixed(2);
+                
+                updateTotals();
+            };
+            
+            window.removeProductRow = function(rowId) {
+                const row = document.getElementById(rowId);
+                if (row) {
+                    row.remove();
+                }
+
+                if (tableBody.children.length === 0) {
                     createEmptyRow();
                 }
-            } else {
-                createEmptyRow();
-            }
-
-            updateTotals();
-
-            // Expose helpers for inline handlers in the dynamic row template
-            window.updateProductAmount = updateProductAmount;
-            window.removeProductRow = removeProductRow;
-
+                
+                updateTotals();
+            };
+            
             function updateTotals() {
                 let taxableAmount = 0;
                 let totalDiscount = 0;
-
+                
                 // Calculate from visible rows
                 const quantityInputs = document.querySelectorAll('.quantity-input');
                 const rateInputs = document.querySelectorAll('.rate-input');
                 const discountInputs = document.querySelectorAll('.discount-input');
-
+                
                 for (let i = 0; i < quantityInputs.length; i++) {
                     const quantity = parseFloat(quantityInputs[i].value) || 0;
                     const rate = parseFloat(rateInputs[i].value) || 0;
                     const discount = parseFloat(discountInputs[i].value) || 0;
-
+                    
                     taxableAmount += quantity * rate;
                     totalDiscount += discount;
                 }
-
+                
                 // Apply global discount
                 const discountType = document.getElementById('discount_type').value;
                 const discountValue = parseFloat(document.getElementById('discount_value').value) || 0;
                 let globalDiscount = 0;
-
+                
                 if (discountType === 'percentage') {
                     globalDiscount = (taxableAmount * discountValue) / 100;
                 } else {
                     globalDiscount = discountValue;
                 }
-
+                
                 // Calculate tax
                 const taxId = document.getElementById('tax_id').value;
                 let taxRate = 0;
@@ -656,20 +529,20 @@
                         taxRate = {{ $tax->rate ?? 0 }};
                     }
                 @endforeach
-
+                
                 const vatAmount = ((taxableAmount - totalDiscount - globalDiscount) * taxRate) / 100;
-
+                
                 // Calculate totals
                 const subtotal = taxableAmount - totalDiscount - globalDiscount;
                 const roundOff = document.getElementById('round_off').checked;
                 let roundOffAmount = 0;
                 let totalAmount = subtotal + vatAmount;
-
+                
                 if (roundOff) {
                     totalAmount = Math.round(totalAmount);
                     roundOffAmount = totalAmount - (subtotal + vatAmount);
                 }
-
+                
                 // Update UI
                 document.getElementById('taxableAmount').textContent = taxableAmount.toFixed(2);
                 document.getElementById('totalDiscount').textContent = (totalDiscount + globalDiscount).toFixed(2);
@@ -677,35 +550,33 @@
                 document.getElementById('roundOffAmount').textContent = roundOffAmount.toFixed(2);
                 document.getElementById('totalAmount').textContent = totalAmount.toFixed(2);
             }
-
+            
             // Event listeners for dynamic updates
             document.getElementById('discount_type').addEventListener('change', updateTotals);
             document.getElementById('discount_value').addEventListener('input', updateTotals);
             document.getElementById('tax_id').addEventListener('change', updateTotals);
             document.getElementById('round_off').addEventListener('change', updateTotals);
-
+            
             // Form validation
             document.getElementById('purchaseForm').addEventListener('submit', function(e) {
                 const supplierId = document.getElementById('supplier_id').value;
                 const purchaseDate = document.getElementById('purchase_date').value;
-                const purchaseType = document.querySelector('input[name="purchase_type"]:checked')?.value ?? 'inventory';
-                const isFixedAsset = purchaseType === 'fixed_asset';
                 const productRows = Array.from(document.querySelectorAll('#productsTableBody tr:not(#noProductsRow)'));
                 const filledRows = productRows.filter(rowHasSelectedProduct);
-
+                
                 if (!supplierId) {
                     e.preventDefault();
                     alert('Please select a supplier');
                     return;
                 }
-
+                
                 if (!purchaseDate) {
                     e.preventDefault();
                     alert('Please select a purchase date');
                     return;
                 }
-
-                if (!isFixedAsset && filledRows.length === 0) {
+                
+                if (filledRows.length === 0) {
                     e.preventDefault();
                     alert('Please select at least one product before saving this purchase');
                     return;
@@ -716,27 +587,5 @@
                 });
             });
         });
-    </script>
-
-    <script>
-        // Purchase type toggle: show/hide asset account selector and products section label
-        (function () {
-            function togglePurchaseTypeUI() {
-                var isFixedAsset = (document.querySelector('input[name="purchase_type"]:checked') || {}).value === 'fixed_asset';
-                var faWrapper    = document.getElementById('fixedAssetAccountWrapper');
-                var faNote       = document.getElementById('fixedAssetPurchaseNote');
-                var addProductBtn = document.getElementById('addProductBtn');
-
-                if (faWrapper)    faWrapper.style.display    = isFixedAsset ? 'block' : 'none';
-                if (faNote)       faNote.style.display       = isFixedAsset ? 'block' : 'none';
-                if (addProductBtn) addProductBtn.style.display = isFixedAsset ? 'none'  : '';
-            }
-
-            document.querySelectorAll('input[name="purchase_type"]').forEach(function (radio) {
-                radio.addEventListener('change', togglePurchaseTypeUI);
-            });
-
-            togglePurchaseTypeUI(); // run on page load
-        })();
     </script>
 @endsection

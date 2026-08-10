@@ -16,11 +16,9 @@ class PurchaseItem extends Model
         'branch_name',
         'purchase_id', 
         'product_id', 
-        'description',
         'qty', 
-        'received_qty',
         'unit_price',
-        'line_total',
+        'unit',
     ];
 
     // Link back to the main Purchase

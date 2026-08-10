@@ -152,6 +152,7 @@
                                                         <tr>
                                                             <th>Item</th>
                                                             <th class="text-end">Qty</th>
+                                                            <th class="text-end">Unit</th>
                                                             <th class="text-end">Received</th>
                                                             <th class="text-end">Unit Price</th>
                                                             <th class="text-end">Total</th>
@@ -162,13 +163,14 @@
                                                             <tr>
                                                                 <td>{{ $item->product_name }}</td>
                                                                 <td class="text-end">{{ number_format((float) ($item->qty ?? 0)) }}</td>
+                                                                <td class="text-end">{{ $item->unit_name ?? 'unit' }}</td>
                                                                 <td class="text-end">{{ number_format((float) ($item->received_qty ?? 0)) }}</td>
                                                                 <td class="text-end">{{ number_format((float) ($item->unit_price ?? 0), 2) }}</td>
                                                                 <td class="text-end">{{ number_format((float) ($item->line_total ?? 0), 2) }}</td>
                                                             </tr>
                                                         @empty
                                                             <tr>
-                                                                <td colspan="5" class="text-center text-muted">No items recorded for this purchase.</td>
+                                                                <td colspan="6" class="text-center text-muted">No items recorded for this purchase.</td>
                                                             </tr>
                                                         @endforelse
                                                     </tbody>

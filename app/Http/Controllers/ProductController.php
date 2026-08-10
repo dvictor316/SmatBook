@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Category;
-use App\Models\Unit;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Setting;
@@ -18,11 +17,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Str;
 use App\Support\BranchInventoryService;
-use App\Support\InventoryQuantity;
-use App\Support\LedgerService;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ProductController extends Controller
@@ -55,7 +51,6 @@ class ProductController extends Controller
             'products' => collect(),
             'productRows' => collect(),
             'categories' => collect(),
-            'units' => collect(),
             'availableBranches' => [],
             'stockTransferEnabled' => $this->planSupportsStockTransfer(),
             'search' => trim((string) $request->input('search', '')),
@@ -132,247 +127,6 @@ class ProductController extends Controller
         return $query;
     }
 
-    private function unitOptions(bool $activeOnly = true, array $preferredIds = [])
-    {
-        if (!Schema::hasTable('units')) {
-            return collect();
-        }
-
-        $this->ensureDefaultUnitsAvailable();
-
-        $companyId = $this->tenantCompanyId();
-        $preferredIds = collect($preferredIds)
-            ->filter()
-            ->map(fn ($id) => (int) $id)
-            ->all();
-
-        return Unit::withoutGlobalScopes()
-            ->when($activeOnly, fn ($query) => $query->where('status', 'active'))
-            ->where(function ($query) use ($companyId) {
-                $query->whereNull('company_id');
-                if ($companyId > 0) {
-                    $query->orWhere('company_id', $companyId);
-                }
-            })
-            ->orderBy('name')
-            ->orderBy('id')
-            ->get()
-            ->groupBy(fn ($unit) => $this->unitDuplicateKey($unit))
-            ->map(function ($duplicates) use ($companyId, $preferredIds) {
-                $unit = $duplicates
-                    ->sortBy(function ($unit) use ($companyId, $preferredIds) {
-                        return sprintf(
-                            '%d-%d-%d-%010d',
-                            in_array((int) $unit->id, $preferredIds, true) ? 0 : 1,
-                            $companyId > 0 && (int) $unit->company_id === $companyId ? 0 : 1,
-                            $this->normalizeUnitSymbol($unit->symbol) === Str::lower(trim((string) $unit->symbol)) ? 0 : 1,
-                            (int) $unit->id
-                        );
-                    })
-                    ->first();
-
-                return $this->normalizeUnitForDisplay($unit);
-            })
-            ->sortBy(fn ($unit) => Str::lower($unit->name . ' ' . $unit->symbol))
-            ->values();
-    }
-
-    private function unitDuplicateKey(Unit $unit): string
-    {
-        $symbol = $this->normalizeUnitSymbol($unit->symbol);
-
-        return $symbol !== ''
-            ? 'symbol:' . $symbol
-            : 'name:' . Str::lower(trim((string) $unit->name));
-    }
-
-    private function normalizeUnitForDisplay(Unit $unit): Unit
-    {
-        $symbol = $this->normalizeUnitSymbol($unit->symbol);
-
-        if ($symbol === 'litre') {
-            $unit->setAttribute('name', 'Litre');
-            $unit->setAttribute('symbol', 'litre');
-        }
-
-        return $unit;
-    }
-
-    private function normalizeUnitSymbol(?string $symbol): string
-    {
-        $symbol = Str::lower(trim((string) $symbol));
-
-        return match ($symbol) {
-            'l', 'lt', 'ltr', 'liter', 'liters', 'litre', 'litres' => 'litre',
-            default => $symbol,
-        };
-    }
-
-    private function unitSymbolAliases(string $symbol): array
-    {
-        return match ($this->normalizeUnitSymbol($symbol)) {
-            'litre' => ['l', 'lt', 'ltr', 'liter', 'liters', 'litre', 'litres'],
-            default => [Str::lower(trim($symbol))],
-        };
-    }
-
-    private function ensureDefaultUnitsAvailable(): void
-    {
-        if (!Schema::hasTable('units')) {
-            return;
-        }
-
-        $now = now();
-
-        foreach ($this->defaultUnitCatalog() as [$name, $symbol]) {
-            Unit::withoutGlobalScopes()->updateOrCreate(
-                ['company_id' => null, 'symbol' => $symbol],
-                [
-                    'name' => $name,
-                    'user_id' => null,
-                    'status' => 'active',
-                    'updated_at' => $now,
-                    'created_at' => $now,
-                ]
-            );
-        }
-    }
-
-    private function defaultUnitCatalog(): array
-    {
-        return [
-            ['Piece', 'pcs'],
-            ['Kilogram', 'kg'],
-            ['Gram', 'g'],
-            ['Litre', 'litre'],
-            ['Millilitre', 'ml'],
-            ['Metre', 'm'],
-            ['Carton', 'ctn'],
-            ['Pack', 'pack'],
-            ['Dozen', 'doz'],
-            ['Bag', 'bag'],
-            ['Bottle', 'bottle'],
-            ['Roll', 'roll'],
-        ];
-    }
-
-    private function defaultUnitId(): ?int
-    {
-        if (!Schema::hasTable('units')) {
-            return null;
-        }
-
-        $unitId = Unit::withoutGlobalScopes()
-            ->whereNull('company_id')
-            ->where('symbol', 'pcs')
-            ->value('id') ?: Unit::withoutGlobalScopes()->where('status', 'active')->value('id');
-
-        return $unitId ? (int) $unitId : null;
-    }
-
-    private function prepareUnitPayload(array $validated): array
-    {
-        $defaultUnitId = $this->defaultUnitId();
-        $validated['unit_id'] = !empty($validated['unit_id']) ? (int) $validated['unit_id'] : $defaultUnitId;
-        $validated['base_unit_id'] = !empty($validated['base_unit_id']) ? (int) $validated['base_unit_id'] : $validated['unit_id'];
-        $validated['purchase_unit_id'] = !empty($validated['purchase_unit_id']) ? (int) $validated['purchase_unit_id'] : null;
-        $hasConversionRate = isset($validated['conversion_rate']) && $validated['conversion_rate'] !== null && $validated['conversion_rate'] !== '';
-        $validated['conversion_rate'] = $hasConversionRate
-            ? round((float) $validated['conversion_rate'], 6)
-            : null;
-
-        if (Schema::hasTable('units') && Schema::hasColumn('products', 'base_unit_name')) {
-            $baseUnitId = $validated['base_unit_id'] ?? $validated['unit_id'] ?? null;
-            $baseSymbol = $baseUnitId ? Unit::withoutGlobalScopes()->whereKey($baseUnitId)->value('symbol') : null;
-            if ($baseSymbol) {
-                $validated['base_unit_name'] = $baseSymbol;
-            }
-        }
-
-        if (!Schema::hasColumn('products', 'unit_id')) {
-            unset($validated['unit_id']);
-        }
-        if (!Schema::hasColumn('products', 'base_unit_id')) {
-            unset($validated['base_unit_id']);
-        }
-        if (!Schema::hasColumn('products', 'purchase_unit_id')) {
-            unset($validated['purchase_unit_id']);
-        }
-        if (!Schema::hasColumn('products', 'conversion_rate')) {
-            unset($validated['conversion_rate']);
-        }
-
-        return $validated;
-    }
-
-    private function addUnitValidationRules(array &$rules): void
-    {
-        $rules['unit_id'] = Schema::hasTable('units') ? 'nullable|exists:units,id' : 'nullable';
-        $rules['base_unit_id'] = Schema::hasTable('units') ? 'nullable|exists:units,id' : 'nullable';
-        $rules['purchase_unit_id'] = Schema::hasTable('units') ? 'nullable|exists:units,id' : 'nullable';
-        $rules['conversion_rate'] = 'nullable|numeric|gt:0';
-    }
-
-    private function validateUnitConversion($validator, Request $request): void
-    {
-        $purchaseUnit = trim((string) $request->input('purchase_unit_id', ''));
-        $conversionRate = trim((string) $request->input('conversion_rate', ''));
-        $saleUnit = trim((string) $request->input('unit_id', ''));
-        $baseUnit = trim((string) ($request->input('base_unit_id') ?: $saleUnit));
-
-        if (
-            $purchaseUnit !== ''
-            && $conversionRate === ''
-            && !$this->unitsRepresentSameMeasure($purchaseUnit, $baseUnit)
-        ) {
-            $validator->errors()->add('conversion_rate', 'Enter a conversion rate only when the purchase unit is different from the base unit.');
-        }
-
-        if ($purchaseUnit === '' && $conversionRate !== '') {
-            $validator->errors()->add('purchase_unit_id', 'Choose a purchase unit when conversion rate is entered.');
-        }
-
-        if (!Schema::hasTable('units')) {
-            return;
-        }
-
-        $allowedUnitIds = $this->unitOptions(false)->pluck('id')->map(fn ($id) => (int) $id)->all();
-        foreach (['unit_id', 'base_unit_id', 'purchase_unit_id'] as $field) {
-            $value = $request->input($field);
-            if ($value !== null && $value !== '' && !in_array((int) $value, $allowedUnitIds, true)) {
-                $validator->errors()->add($field, 'Choose a unit that belongs to this workspace.');
-            }
-        }
-    }
-
-    private function unitsRepresentSameMeasure(string|int|null $firstUnitId, string|int|null $secondUnitId): bool
-    {
-        $firstUnitId = (int) $firstUnitId;
-        $secondUnitId = (int) $secondUnitId;
-
-        if ($firstUnitId <= 0 || $secondUnitId <= 0) {
-            return false;
-        }
-
-        if ($firstUnitId === $secondUnitId) {
-            return true;
-        }
-
-        if (!Schema::hasTable('units')) {
-            return false;
-        }
-
-        $symbols = Unit::withoutGlobalScopes()
-            ->whereIn('id', [$firstUnitId, $secondUnitId])
-            ->pluck('symbol', 'id');
-
-        if ($symbols->count() < 2) {
-            return false;
-        }
-
-        return $this->normalizeUnitSymbol($symbols[$firstUnitId] ?? null) === $this->normalizeUnitSymbol($symbols[$secondUnitId] ?? null);
-    }
-
     private function applyBranchScope($query, string $table, ?array $activeBranch = null)
     {
         $activeBranch = $activeBranch ?: $this->getActiveBranchContext();
@@ -407,49 +161,6 @@ class ProductController extends Controller
         if ($resolvedBranchId) {
             Cache::forget('metrics_co_' . $companyId . '_branch_' . $resolvedBranchId);
         }
-    }
-
-    private function inventoryHistoryBranchContext(?object $history = null): array
-    {
-        $activeBranch = $this->getActiveBranchContext();
-
-        return [
-            'id' => isset($history?->branch_id) && trim((string) $history->branch_id) !== ''
-                ? (string) $history->branch_id
-                : ($activeBranch['id'] ?? null),
-            'name' => isset($history?->branch_name) && trim((string) $history->branch_name) !== ''
-                ? (string) $history->branch_name
-                : ($activeBranch['name'] ?? null),
-        ];
-    }
-
-    private function syncBranchStockFromHistoryRecord(object $history): void
-    {
-        if (!Schema::hasTable('product_branch_stocks')) {
-            return;
-        }
-
-        $product = Product::query()->find((int) ($history->product_id ?? 0));
-        if (!$product) {
-            return;
-        }
-
-        $branch = $this->inventoryHistoryBranchContext($history);
-        if (empty($branch['id'])) {
-            return;
-        }
-
-        $calculated = $this->branchInventory->calculateBranchStock($product, $branch);
-        if ($calculated === null) {
-            return;
-        }
-
-        $this->branchInventory->setBranchStock(
-            $product,
-            max(0, $calculated),
-            $branch,
-            (int) ($product->company_id ?? $this->tenantCompanyId())
-        );
     }
 
     public function undoLastImport(Request $request): RedirectResponse
@@ -504,34 +215,12 @@ class ProductController extends Controller
 
     private function firstOrCreateImportCategory(string $categoryName): Category
     {
-        $query = Category::withoutGlobalScopes()->newQuery()->where('name', $categoryName);
-        $this->applyTenantScope($query, 'categories');
-
-        $activeBranch = $this->getActiveBranchContext();
-        $activeBranchId = trim((string) ($activeBranch['id'] ?? ''));
-        $activeBranchName = trim((string) ($activeBranch['name'] ?? ''));
-        if ($activeBranchId !== '' || $activeBranchName !== '') {
-            $query->where(function ($branchQuery) use ($activeBranchId, $activeBranchName) {
-                if ($activeBranchId !== '' && Schema::hasColumn('categories', 'branch_id')) {
-                    $branchQuery->where('categories.branch_id', $activeBranchId);
-                }
-                if ($activeBranchName !== '' && Schema::hasColumn('categories', 'branch_name')) {
-                    $method = ($activeBranchId !== '' && Schema::hasColumn('categories', 'branch_id')) ? 'orWhere' : 'where';
-                    $branchQuery->{$method}('categories.branch_name', $activeBranchName);
-                }
-            });
-        }
-
-        $existing = $query->first();
+        $existing = Category::query()->where('name', $categoryName)->first();
         if ($existing) {
             return $existing;
         }
 
         $payload = ['name' => $categoryName];
-
-        if (Schema::hasColumn('categories', 'type')) {
-            $payload['type'] = 'product';
-        }
 
         if (Schema::hasColumn('categories', 'description')) {
             $payload['description'] = 'Auto-created during product import';
@@ -541,36 +230,7 @@ class ProductController extends Controller
             $payload['status'] = 1;
         }
 
-        if (Schema::hasColumn('categories', 'company_id')) {
-            $payload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
-        }
-
-        if (Schema::hasColumn('categories', 'user_id')) {
-            $payload['user_id'] = auth()->id();
-        }
-
-        if (Schema::hasColumn('categories', 'branch_id')) {
-            $payload['branch_id'] = $activeBranchId !== '' ? $activeBranchId : null;
-        }
-
-        if (Schema::hasColumn('categories', 'branch_name')) {
-            $payload['branch_name'] = $activeBranchName !== '' ? $activeBranchName : null;
-        }
-
         return Category::query()->create($payload);
-    }
-
-    private function resolveProductCategoryId($categoryId): ?int
-    {
-        if (!Schema::hasColumn('products', 'category_id') || !Schema::hasTable('categories')) {
-            return null;
-        }
-
-        if (!empty($categoryId)) {
-            return (int) $categoryId;
-        }
-
-        return null;
     }
 
     private function getAvailableBranches(): array
@@ -599,63 +259,6 @@ class ProductController extends Controller
         }
 
         return $this->getActiveBranchContext();
-    }
-
-    private function availableCategories()
-    {
-        if (!Schema::hasTable('categories')) {
-            return collect();
-        }
-
-        $query = Category::withoutGlobalScopes()->newQuery();
-        $this->applyTenantScope($query, 'categories');
-
-        // Only show product-typed categories (or unclassified legacy rows).
-        // Expense-typed categories must never appear in the product dropdown.
-        if (Schema::hasColumn('categories', 'type')) {
-            $query->where(function ($q) {
-                $q->where('categories.type', 'product')
-                  ->orWhereNull('categories.type');
-            });
-        }
-
-        $activeBranch = $this->getActiveBranchContext();
-        $branchId = trim((string) ($activeBranch['id'] ?? ''));
-        $branchName = trim((string) ($activeBranch['name'] ?? ''));
-        $hasBranchId = Schema::hasColumn('categories', 'branch_id');
-        $hasBranchName = Schema::hasColumn('categories', 'branch_name');
-
-        if (($branchId !== '' || $branchName !== '') && ($hasBranchId || $hasBranchName)) {
-            $query->where(function ($scoped) use ($branchId, $branchName, $hasBranchId, $hasBranchName) {
-                $matched = false;
-
-                if ($hasBranchId && $branchId !== '') {
-                    $scoped->where('categories.branch_id', $branchId);
-                    $matched = true;
-                }
-
-                if ($hasBranchName && $branchName !== '') {
-                    $method = $matched ? 'orWhere' : 'where';
-                    $scoped->{$method}('categories.branch_name', $branchName);
-                    $matched = true;
-                }
-
-                $method = $matched ? 'orWhere' : 'where';
-                $scoped->{$method}(function ($fallback) use ($hasBranchId, $hasBranchName) {
-                    if ($hasBranchId) {
-                        $fallback->whereNull('categories.branch_id');
-                    }
-
-                    if ($hasBranchName) {
-                        $fallback->whereNull('categories.branch_name');
-                    }
-                });
-            });
-        }
-
-        $orderColumn = Schema::hasColumn('categories', 'name') ? 'name' : 'id';
-
-        return $query->orderBy($orderColumn)->get();
     }
 
     private function currentPlanName(): string
@@ -696,31 +299,6 @@ class ProductController extends Controller
             : $stockRolls;
 
         return (int) round($cartonUnits + $rollUnits + $stockUnits);
-    }
-
-    private function resolveInitialStock(array $validated): int
-    {
-        $calculatedStock = $validated['stock'] ?? null;
-
-        if ($calculatedStock === null) {
-            $calculatedStock = $this->calculateStockFromPackaging($validated);
-        }
-
-        $calculatedStock = (int) round((float) ($calculatedStock ?? 0));
-
-        if ($calculatedStock > 0) {
-            return $calculatedStock;
-        }
-
-        $stockCartons = (float) ($validated['stock_cartons'] ?? 0);
-        $stockRolls = (float) ($validated['stock_rolls'] ?? 0);
-        $stockUnits = (float) ($validated['stock_units'] ?? 0);
-
-        if ($stockCartons > 0 || $stockRolls > 0 || $stockUnits > 0) {
-            return $calculatedStock;
-        }
-
-        return 0;
     }
 
     private function spreadsheetRowIterator(UploadedFile $file): \Generator
@@ -768,18 +346,13 @@ class ProductController extends Controller
 
         try {
             $sheet = $spreadsheet->getActiveSheet();
-            $highestRow = (int) $sheet->getHighestDataRow();
-            $highestColumn = $sheet->getHighestDataColumn();
+            foreach ($sheet->getRowIterator() as $row) {
+                $cells = [];
+                $cellIterator = $row->getCellIterator();
+                $cellIterator->setIterateOnlyExistingCells(false);
 
-            if ($highestRow <= 0 || $highestColumn === '') {
-                return;
-            }
-
-            foreach ($sheet->rangeToArray("A1:{$highestColumn}{$highestRow}", null, true, false, false) as $cells) {
-                $cells = array_map(fn ($value) => is_scalar($value) ? trim((string) $value) : $value, $cells);
-                $hasValue = collect($cells)->contains(fn ($value) => trim((string) $value) !== '');
-                if (!$hasValue) {
-                    continue;
+                foreach ($cellIterator as $cell) {
+                    $cells[] = $cell?->getFormattedValue();
                 }
 
                 yield $cells;
@@ -889,7 +462,6 @@ class ProductController extends Controller
                 'products' => collect(),
                 'productRows' => $productRows,
                 'categories' => collect(),
-                'units' => $this->unitOptions(),
                 'availableBranches' => $this->getAvailableBranches(),
                 'search' => trim((string) $request->input('search', '')),
                 'session_domain' => env('SESSION_DOMAIN', null)
@@ -909,10 +481,6 @@ class ProductController extends Controller
 
             if ($hasCategories) {
                 $query->with('category');
-            }
-
-            if (Schema::hasTable('units')) {
-                $query->with(['unit', 'baseUnit', 'purchaseUnit']);
             }
 
             if (!empty($activeBranch['id']) && $hasBranchStocksBranchId) {
@@ -956,7 +524,7 @@ class ProductController extends Controller
                 }
             }
 
-            $products = $query->paginate(15)->withQueryString();
+            $products = $query->paginate(500)->withQueryString();
             $products->getCollection()->transform(function ($product) use ($activeBranch, $hasCategories) {
                 $product->setAttribute('active_branch_stock', $this->branchInventory->getAvailableStock($product, $activeBranch));
                 $product->setAttribute('category_name', $hasCategories ? ($product->category->name ?? null) : null);
@@ -966,14 +534,14 @@ class ProductController extends Controller
             $productRows = $products instanceof \Illuminate\Pagination\AbstractPaginator
                 ? $products->getCollection()
                 : $products;
-            $categories = $this->availableCategories();
-            $units = $this->unitOptions();
+            $categories = Schema::hasTable('categories')
+                ? Category::orderBy(Schema::hasColumn('categories', 'name') ? 'name' : 'id')->get()
+                : collect();
 
             return view('Inventory.Products.index', [
                 'products' => $products,
                 'productRows' => $productRows,
                 'categories' => $categories,
-                'units' => $units,
                 'availableBranches' => $this->getAvailableBranches(),
                 'stockTransferEnabled' => $this->planSupportsStockTransfer(),
                 'search' => $search,
@@ -998,122 +566,14 @@ class ProductController extends Controller
      */
     public function units()
     {
-        $units = $this->unitOptions(false);
+        $units = [
+            (object)['name' => 'Unit', 'short_name' => 'unit'],
+            (object)['name' => 'Roll', 'short_name' => 'rl'],
+            (object)['name' => 'Carton', 'short_name' => 'ctn'],
+        ];
+
         $products = collect();
         return view('Inventory.Products.units', compact('products', 'units'));
-    }
-
-    public function storeUnit(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:120',
-            'symbol' => 'required|string|max:30',
-            'status' => 'required|in:active,inactive',
-        ]);
-
-        $validated['company_id'] = $this->tenantCompanyId() ?: null;
-        $validated['user_id'] = auth()->id();
-
-        $validated['symbol'] = trim($validated['symbol']);
-        $validated['name'] = trim($validated['name']);
-
-        $existingUnit = Unit::withoutGlobalScopes()
-            ->where('company_id', $validated['company_id'])
-            ->whereIn(DB::raw('LOWER(symbol)'), $this->unitSymbolAliases($validated['symbol']))
-            ->first();
-
-        $existingUnit
-            ? $existingUnit->update($validated)
-            : Unit::query()->create($validated);
-
-        return back()->with('success', 'Unit created successfully.');
-    }
-
-    public function updateUnit(Request $request, int $id)
-    {
-        $unit = Unit::query()->findOrFail($id);
-        $validated = $request->validate([
-            'name' => 'required|string|max:120',
-            'symbol' => 'required|string|max:30',
-            'status' => 'required|in:active,inactive',
-        ]);
-
-        $validated['symbol'] = trim($validated['symbol']);
-        $validated['name'] = trim($validated['name']);
-
-        $duplicateUnit = Unit::withoutGlobalScopes()
-            ->where('company_id', $unit->company_id)
-            ->whereKeyNot($unit->id)
-            ->whereIn(DB::raw('LOWER(symbol)'), $this->unitSymbolAliases($validated['symbol']))
-            ->first();
-
-        if ($duplicateUnit) {
-            return back()
-                ->withErrors(['symbol' => 'A unit with this symbol already exists.'])
-                ->withInput();
-        }
-
-        $unit->update($validated);
-
-        return back()->with('success', 'Unit updated successfully.');
-    }
-
-    public function toggleUnit(int $id)
-    {
-        $unit = Unit::query()->findOrFail($id);
-        $unit->status = $unit->status === 'active' ? 'inactive' : 'active';
-        $unit->save();
-
-        return back()->with('success', 'Unit status updated.');
-    }
-
-    public function destroyUnit(int $id)
-    {
-        $unit = Unit::query()->findOrFail($id);
-        if (Schema::hasTable('products')) {
-            $query = Product::query();
-            $checked = false;
-
-            foreach (['unit_id', 'base_unit_id', 'purchase_unit_id'] as $column) {
-                if (!Schema::hasColumn('products', $column)) {
-                    continue;
-                }
-
-                $checked
-                    ? $query->orWhere($column, $unit->id)
-                    : $query->where($column, $unit->id);
-                $checked = true;
-            }
-
-            if ($checked && $query->exists()) {
-                return back()->with('error', 'This unit is attached to products. Deactivate it instead.');
-            }
-        }
-
-        $unit->delete();
-
-        return back()->with('success', 'Unit deleted successfully.');
-    }
-
-    public function serveImage(string $path)
-    {
-        $path = ltrim(trim($path), '/');
-
-        if ($path === '' || str_contains($path, '..')) {
-            abort(404);
-        }
-
-        if (!Storage::disk('public')->exists($path)) {
-            abort(404);
-        }
-
-        $absolutePath = Storage::disk('public')->path($path);
-        $mimeType = Storage::disk('public')->mimeType($path) ?: 'application/octet-stream';
-
-        return response()->file($absolutePath, [
-            'Content-Type' => $mimeType,
-            'Cache-Control' => 'public, max-age=86400',
-        ]);
     }
 
     /**
@@ -1121,10 +581,11 @@ class ProductController extends Controller
      */
     public function create()
     {
-        $categories = $this->availableCategories();
+        $categories = Schema::hasTable('categories')
+            ? Category::orderBy('name')->get()
+            : collect();
         $availableBranches = $this->getAvailableBranches();
-        $units = $this->unitOptions();
-        return view('Inventory.Products.add-products', compact('categories', 'availableBranches', 'units'));
+        return view('Inventory.Products.add-products', compact('categories', 'availableBranches'));
     }
 
     /**
@@ -1148,32 +609,16 @@ class ProductController extends Controller
                 'units_per_carton' => 'nullable|integer|min:0',
                 'units_per_roll'   => 'nullable|integer|min:0',
                 'base_unit_name'   => 'required|string|max:100',
-                'category_id'      => 'nullable|exists:categories,id',
+                'category_id'      => 'required|exists:categories,id',
                 'unit_type'        => 'required|in:unit,sachet,roll,carton',
                 'branch_id'        => 'nullable|string',
                 'reorder_level'    => 'nullable|integer|min:0',
                 'reorder_quantity' => 'nullable|integer|min:0',
                 'description'      => 'nullable|string',
                 'barcode'          => 'nullable|string|max:191',
-                'expiry_date'      => 'nullable|date',
             ];
-            $this->addUnitValidationRules($rules);
 
-            $validator = Validator::make($request->except('image'), $rules, [], [
-                'name' => 'product name',
-                'sku' => 'SKU / code',
-                'price' => 'retail / default price',
-                'purchase_price' => 'purchase price',
-                'category_id' => 'category',
-                'unit_type' => 'default sale unit',
-                'units_per_carton' => 'carton content',
-                'units_per_roll' => 'roll content',
-                'base_unit_name' => 'base unit name',
-                'unit_id' => 'unit of measure',
-                'base_unit_id' => 'base unit',
-                'purchase_unit_id' => 'purchase unit',
-                'conversion_rate' => 'conversion rate',
-            ]);
+            $validator = Validator::make($request->except('image'), $rules);
             $validator->after(function ($v) use ($request) {
                 $price = trim((string) $request->input('price', ''));
                 $purchase = trim((string) $request->input('purchase_price', ''));
@@ -1181,10 +626,8 @@ class ProductController extends Controller
                     $v->errors()->add('price', 'Enter a selling price or a purchase price before saving this product.');
                     $v->errors()->add('purchase_price', 'Enter a selling price or a purchase price before saving this product.');
                 }
-                $this->validateUnitConversion($v, $request);
             });
             $validated = $validator->validate();
-            $validated = $this->prepareUnitPayload($validated);
 
             $uploadedImage = $request->file('image');
 
@@ -1195,17 +638,8 @@ class ProductController extends Controller
             $validated['stock_units'] = (float) ($validated['stock_units'] ?? 0);
             $validated['reorder_level'] = max(0, (int) ($validated['reorder_level'] ?? 0));
             $validated['reorder_quantity'] = max(0, (int) ($validated['reorder_quantity'] ?? 0));
-            $validated['category_id'] = $this->resolveProductCategoryId($validated['category_id'] ?? null);
-
-            $retailPriceSource = $validated['retail_price'] ?? null;
-            if ($retailPriceSource === null || $retailPriceSource === '') {
-                $retailPriceSource = $validated['price'] ?? 0;
-            }
-            $retailPrice = (float) ($retailPriceSource ?: 0);
+            $retailPrice = (float) ($validated['retail_price'] ?? $validated['price']);
             $validated['price'] = $retailPrice;
-            $validated['purchase_price'] = isset($validated['purchase_price']) && $validated['purchase_price'] !== null && $validated['purchase_price'] !== ''
-                ? (float) $validated['purchase_price']
-                : 0;
             if (Schema::hasColumn('products', 'retail_price')) {
                 $validated['retail_price'] = $retailPrice;
             } else {
@@ -1227,7 +661,12 @@ class ProductController extends Controller
             }
             $validated['sku'] = $this->generateUniqueSku($validated['sku'] ?? null, $validated['name']);
 
-            $validated['stock'] = $this->resolveInitialStock($validated);
+            $calculatedStock = $validated['stock'] ?? null;
+
+            if ($calculatedStock === null) {
+                $calculatedStock = $this->calculateStockFromPackaging($validated);
+            }
+            $validated['stock'] = (int) ($calculatedStock ?? 0);
 
             if ($validated['unit_type'] === 'carton' && $validated['units_per_carton'] < 1) {
                 return back()->withErrors([
@@ -1237,6 +676,11 @@ class ProductController extends Controller
             if ($validated['unit_type'] === 'roll' && $validated['units_per_roll'] < 1) {
                 return back()->withErrors([
                     'units_per_roll' => 'Enter the number of sachets or loose pieces inside one roll before saving this roll product.'
+                ])->withInput();
+            }
+            if ($validated['unit_type'] === 'sachet' && $validated['stock_units'] < 1 && $validated['stock_rolls'] < 1 && $validated['stock_cartons'] < 1) {
+                return back()->withErrors([
+                    'stock_units' => 'Enter opening stock for sachets, rolls, or cartons before saving this sachet product.'
                 ])->withInput();
             }
 
@@ -1298,17 +742,6 @@ class ProductController extends Controller
                 $selectedBranch,
                 $product->company_id ?: ($resolvedCompanyId ?: null)
             );
-
-            // Post opening-stock journal: DR Inventory / CR Opening Balance Equity
-            LedgerService::postProductOpeningStock(
-                $product,
-                (float) $validated['stock'],
-                $selectedBranch['id'] ?? null,
-                $selectedBranch['name'] ?? null,
-                $product->company_id ?: ($resolvedCompanyId ?: null),
-                auth()->id()
-            );
-
             $this->clearDashboardMetricsCache($selectedBranch['id'] ?? null);
 
             return redirect()->route('product-list')
@@ -1321,32 +754,6 @@ class ProductController extends Controller
                 'user_id' => auth()->id(),
                 'payload' => $request->except(['image']),
             ]);
-
-            $errorText = strtolower($e->getMessage());
-            $fieldErrors = [];
-
-            if (str_contains($errorText, 'category_id')) {
-                $fieldErrors['category_id'] = 'The selected category could not be used. Choose another category or leave it as No category.';
-            }
-
-            if (str_contains($errorText, 'products_sku_unique') || (str_contains($errorText, 'duplicate') && str_contains($errorText, 'sku'))) {
-                $fieldErrors['sku'] = 'This SKU / code is already in use. Leave it blank so the system can generate a new one.';
-            }
-
-            if (str_contains($errorText, 'purchase_price') && (str_contains($errorText, 'cannot be null') || str_contains($errorText, "doesn't have a default value"))) {
-                $fieldErrors['purchase_price'] = 'Enter a purchase price, or enter a retail price if you do not know the cost price yet.';
-            }
-
-            if (!str_contains($errorText, 'purchase_price') && str_contains($errorText, 'price') && (str_contains($errorText, 'cannot be null') || str_contains($errorText, "doesn't have a default value"))) {
-                $fieldErrors['price'] = 'Enter a retail price, or enter a purchase price if you do not know the selling price yet.';
-            }
-
-            if ($fieldErrors) {
-                return back()
-                    ->withInput()
-                    ->withErrors($fieldErrors)
-                    ->with('error', 'Product could not be added. Please fix the highlighted field and try again.');
-            }
 
             $message = 'Product could not be added.';
             $showDetail = config('app.debug') || (auth()->user()?->role === 'super_admin');
@@ -1368,103 +775,290 @@ class ProductController extends Controller
     public function edit($id)
     {
         $product = Product::findOrFail($id);
-        $activeBranch = $this->getActiveBranchContext();
-        $product->setAttribute('active_branch_stock', $this->branchInventory->getAvailableStock($product, $activeBranch));
-        $categories = $this->availableCategories();
-        $units = $this->unitOptions(true, [
-            $product->unit_id,
-            $product->base_unit_id,
-            $product->purchase_unit_id,
-        ]);
+        $categories = Category::orderBy('name')->get();
         
-        return view('Inventory.Products.edit', compact('product', 'categories', 'activeBranch', 'units'));
+        return view('Inventory.Products.edit', compact('product', 'categories'));
     }
 
 public function inventory(Request $request)
 {
+    $fromDate = $request->input('from_date');
+    $toDate = $request->input('to_date');
+    $productId = $request->input('product_id');
+    $fromStart = $fromDate ? \Carbon\Carbon::parse($fromDate)->startOfDay()->toDateTimeString() : null;
+    $toEnd = $toDate ? \Carbon\Carbon::parse($toDate)->endOfDay()->toDateTimeString() : null;
+
     $user = auth()->user();
     $companyId = (int) ($user?->company_id ?? 0);
-    $activeBranch = $this->getActiveBranchContext();
-    $this->branchInventory->backfillMissingBranchStocks($activeBranch, $companyId > 0 ? $companyId : null);
+    $applyTenantScope = function ($query, string $table) use ($companyId, $user) {
+        if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
+            $query->where(function ($sub) use ($table, $companyId, $user) {
+                $sub->where("{$table}.company_id", $companyId);
 
-    $stockColumn = Schema::hasColumn('products', 'stock')
-        ? 'stock'
-        : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
-    $priceColumn = Schema::hasColumn('products', 'retail_price')
-        ? 'retail_price'
-        : (Schema::hasColumn('products', 'price') ? 'price' : null);
-    $purchasePriceColumn = Schema::hasColumn('products', 'purchase_price')
-        ? 'purchase_price'
-        : (Schema::hasColumn('products', 'cost_price') ? 'cost_price' : null);
-    $branchId = trim((string) ($activeBranch['id'] ?? ''));
-    $branchName = trim((string) ($activeBranch['name'] ?? ''));
-    $stockExpr = $stockColumn ? "products.{$stockColumn}" : '0';
-    $sellExpr = $priceColumn ? "products.{$priceColumn}" : '0';
-    $buyExpr = $purchasePriceColumn ? "products.{$purchasePriceColumn}" : '0';
-
-    $productsQuery = Product::query()
-        ->with(Schema::hasTable('units') ? ['unit', 'baseUnit', 'purchaseUnit'] : [])
-        ->select('products.*')
-        ->selectRaw("COALESCE(product_branch_stocks.quantity, {$stockExpr}, 0) as branch_stock_on_hand")
-        ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
-        ->orderBy('products.name', 'asc');
-
-    if (Schema::hasTable('product_branch_stocks') && ($branchId !== '' || $branchName !== '')) {
-        $productsQuery->leftJoin('product_branch_stocks', function ($join) use ($branchId, $branchName) {
-            $join->on('product_branch_stocks.product_id', '=', 'products.id');
-
-            if ($branchId !== '' && Schema::hasColumn('product_branch_stocks', 'branch_id')) {
-                $join->where('product_branch_stocks.branch_id', $branchId);
-            } elseif ($branchName !== '' && Schema::hasColumn('product_branch_stocks', 'branch_name')) {
-                $join->where('product_branch_stocks.branch_name', $branchName);
-            }
-        });
-
-        $productsQuery->where(function ($query) use ($branchId, $branchName) {
-            $query->whereNotNull('product_branch_stocks.product_id');
-
-            if ($branchId !== '' && Schema::hasColumn('products', 'branch_id')) {
-                $query->orWhere('products.branch_id', $branchId);
-            }
-
-            if ($branchName !== '' && Schema::hasColumn('products', 'branch_name')) {
-                $query->orWhere('products.branch_name', $branchName);
-            }
-
-            $query->orWhereDoesntHave('branchStocks');
-        });
-    } else {
-        $this->applyBranchScope($productsQuery, 'products', $activeBranch);
-    }
-
-    $products = $productsQuery->get()->map(function ($product) use ($activeBranch) {
-        // Always derive stock from actual transaction history (inventory_history +
-        // purchase_items - sale_items) so the inventory list stays in sync with
-        // the Inventory History page and cannot drift when product_branch_stocks
-        // gets stale. getAvailableStock() falls back to branch-stock / products.stock
-        // for products that have no transactional records yet.
-        $stock = max(0, $this->branchInventory->getAvailableStock($product, $activeBranch));
-        $product->stock = $stock;
-        $product->stock_quantity = $stock;
-        $product->price = (float) ($product->price ?? $product->retail_price ?? 0);
-        $product->purchase_price = (float) ($product->purchase_price ?? 0);
-        $product->unit_type = $product->unit_type ?: ($product->base_unit_name ?: 'unit');
-
-        // Keep product_branch_stocks in sync so every other page that reads it
-        // directly (e.g. POS available-stock check) is always accurate.
-        if (!empty($activeBranch['id'])) {
-            $this->branchInventory->setBranchStock(
-                $product,
-                $stock,
-                $activeBranch,
-                (int) ($product->company_id ?? $this->tenantCompanyId())
-            );
+                if ($user && Schema::hasColumn($table, 'user_id')) {
+                    $sub->orWhere(function ($fallback) use ($table, $user) {
+                        $fallback->whereNull("{$table}.company_id")
+                            ->where("{$table}.user_id", $user->id);
+                    });
+                }
+            });
+        } elseif ($user && Schema::hasColumn($table, 'user_id')) {
+            $query->where("{$table}.user_id", $user->id);
         }
 
-        return $product;
-    })->filter(fn ($product) => trim((string) ($product->name ?? '')) !== '')->values();
+        return $query;
+    };
 
-    return view('Inventory.inventory', compact('products', 'activeBranch'));
+    $activeBranch = $this->getActiveBranchContext();
+    $productsQuery = Product::query()
+        ->orderBy('name', 'asc')
+        ->tap(fn ($q) => $applyTenantScope($q, 'products'));
+
+    if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+        $productsQuery->whereHas('branchStocks', fn ($q) => $q->where('branch_id', $activeBranch['id']));
+    } elseif (!empty($activeBranch['id']) && Schema::hasColumn('products', 'branch_id')) {
+        $productsQuery->where('products.branch_id', $activeBranch['id']);
+    } elseif (!empty($activeBranch['name']) && Schema::hasColumn('products', 'branch_name')) {
+        $productsQuery->where('products.branch_name', $activeBranch['name']);
+    }
+
+    $products = $productsQuery->get(['id', 'name']);
+
+    $purchaseDateColumn = Schema::hasColumn('purchases', 'purchase_date')
+        ? 'purchase_date'
+        : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
+
+    $saleDateColumn = Schema::hasColumn('sales', 'order_date')
+        ? 'order_date'
+        : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+
+    if (!$fromDate || !$toDate) {
+        $latestActivity = null;
+
+        if (Schema::hasTable('inventory_history')) {
+            $historyLatest = DB::table('inventory_history')
+                ->when(
+                    $companyId > 0 && Schema::hasColumn('products', 'company_id'),
+                    function ($q) use ($companyId) {
+                        $q->join('products', 'inventory_history.product_id', '=', 'products.id')
+                          ->where('products.company_id', $companyId);
+                    }
+                )
+                ->tap(fn ($q) => $this->applyBranchScope($q, 'inventory_history', $activeBranch))
+                ->when(
+                    $companyId === 0 && $user && Schema::hasColumn('inventory_history', 'user_id'),
+                    fn ($q) => $q->where('inventory_history.user_id', $user->id)
+                )
+                ->max('inventory_history.created_at');
+            $latestActivity = $historyLatest ?: $latestActivity;
+        }
+
+        if (Schema::hasTable('purchases')) {
+            $purchaseLatest = DB::table('purchases')
+                ->tap(fn ($q) => $applyTenantScope($q, 'purchases'))
+                ->tap(fn ($q) => $this->applyBranchScope($q, 'purchases', $activeBranch))
+                ->max('purchases.' . $purchaseDateColumn);
+            if ($purchaseLatest && (!$latestActivity || $purchaseLatest > $latestActivity)) {
+                $latestActivity = $purchaseLatest;
+            }
+        }
+
+        if (Schema::hasTable('sales')) {
+            $saleLatest = DB::table('sales')
+                ->tap(fn ($q) => $applyTenantScope($q, 'sales'))
+                ->tap(fn ($q) => $this->applyBranchScope($q, 'sales', $activeBranch))
+                ->max('sales.' . $saleDateColumn);
+            if ($saleLatest && (!$latestActivity || $saleLatest > $latestActivity)) {
+                $latestActivity = $saleLatest;
+            }
+        }
+
+        $effectiveEnd = $latestActivity
+            ? \Carbon\Carbon::parse($latestActivity)->endOfDay()
+            : now()->endOfDay();
+
+        $toDate = $toDate ?: $effectiveEnd->toDateString();
+        $fromDate = $fromDate ?: $effectiveEnd->copy()->startOfMonth()->toDateString();
+        $fromStart = \Carbon\Carbon::parse($fromDate)->startOfDay()->toDateTimeString();
+        $toEnd = \Carbon\Carbon::parse($toDate)->endOfDay()->toDateTimeString();
+    }
+
+    $hasPurchaseQty = Schema::hasColumn('purchase_items', 'qty');
+    $hasPurchaseQuantity = Schema::hasColumn('purchase_items', 'quantity');
+    $hasPurchaseUnitPrice = Schema::hasColumn('purchase_items', 'unit_price');
+    $hasPurchaseRate = Schema::hasColumn('purchase_items', 'rate');
+    $hasSaleQty = Schema::hasColumn('sale_items', 'qty');
+    $hasSaleQuantity = Schema::hasColumn('sale_items', 'quantity');
+    $hasSaleUnitPrice = Schema::hasColumn('sale_items', 'unit_price');
+    $hasSaleRate = Schema::hasColumn('sale_items', 'rate');
+    $saleTotalColumn = Schema::hasColumn('sale_items', 'total_price')
+        ? 'total_price'
+        : (Schema::hasColumn('sale_items', 'subtotal') ? 'subtotal' : null);
+
+    $purchaseQtyExpr = match (true) {
+        $hasPurchaseQty && $hasPurchaseQuantity =>
+            'COALESCE(NULLIF(purchase_items.qty, 0), purchase_items.quantity, 0)',
+        $hasPurchaseQty => 'COALESCE(purchase_items.qty, 0)',
+        $hasPurchaseQuantity => 'COALESCE(purchase_items.quantity, 0)',
+        default => '0',
+    };
+    $purchasePriceExpr = match (true) {
+        $hasPurchaseUnitPrice && $hasPurchaseRate =>
+            'COALESCE(NULLIF(purchase_items.unit_price, 0), purchase_items.rate, 0)',
+        $hasPurchaseUnitPrice => 'COALESCE(purchase_items.unit_price, 0)',
+        $hasPurchaseRate => 'COALESCE(purchase_items.rate, 0)',
+        default => '0',
+    };
+    $saleQtyExpr = match (true) {
+        $hasSaleQty && $hasSaleQuantity =>
+            'COALESCE(NULLIF(sale_items.qty, 0), sale_items.quantity, 0)',
+        $hasSaleQty => 'COALESCE(sale_items.qty, 0)',
+        $hasSaleQuantity => 'COALESCE(sale_items.quantity, 0)',
+        default => '0',
+    };
+    $saleUnitPriceExpr = match (true) {
+        $hasSaleUnitPrice && $hasSaleRate =>
+            'COALESCE(NULLIF(sale_items.unit_price, 0), sale_items.rate, 0)',
+        $hasSaleUnitPrice => 'COALESCE(sale_items.unit_price, 0)',
+        $hasSaleRate => 'COALESCE(sale_items.rate, 0)',
+        default => '0',
+    };
+    $saleTotalExpr = $saleTotalColumn
+        ? "COALESCE(sale_items.{$saleTotalColumn}, ({$saleQtyExpr} * {$saleUnitPriceExpr}))"
+        : "({$saleQtyExpr} * {$saleUnitPriceExpr})";
+
+    $stockIn = DB::table('purchase_items')
+        ->join('purchases', 'purchase_items.purchase_id', '=', 'purchases.id')
+        ->select([
+            DB::raw('DATE(purchases.' . $purchaseDateColumn . ') as log_date'),
+            DB::raw("SUM({$purchaseQtyExpr}) as qty_in"),
+            DB::raw('0 as qty_out'),
+            DB::raw("SUM({$purchaseQtyExpr} * {$purchasePriceExpr}) as val_in"),
+            DB::raw('0 as val_out'),
+        ])
+        ->whereBetween('purchases.' . $purchaseDateColumn, [$fromStart, $toEnd])
+        ->when(!empty($productId), fn ($q) => $q->where('purchase_items.product_id', $productId))
+        ->tap(fn ($q) => $applyTenantScope($q, 'purchases'))
+        ->tap(fn ($q) => $this->applyBranchScope($q, 'purchases', $activeBranch))
+        ->groupBy('log_date');
+
+    if (!(clone $stockIn)->exists()) {
+        if (Schema::hasTable('inventory_history') && Schema::hasTable('products')) {
+            $historyStockIn = DB::table('inventory_history')
+                ->join('products', 'inventory_history.product_id', '=', 'products.id')
+                ->select([
+                    DB::raw('DATE(inventory_history.created_at) as log_date'),
+                    DB::raw('SUM(COALESCE(inventory_history.quantity, 0)) as qty_in'),
+                    DB::raw('0 as qty_out'),
+                    DB::raw('SUM(COALESCE(inventory_history.quantity, 0) * COALESCE(products.purchase_price, products.price, 0)) as val_in'),
+                    DB::raw('0 as val_out'),
+                ])
+                ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) = 'in'")
+                ->whereBetween('inventory_history.created_at', [$fromStart, $toEnd])
+                ->when(!empty($productId), fn ($q) => $q->where('inventory_history.product_id', $productId))
+                ->when(
+                    $companyId > 0 && Schema::hasColumn('products', 'company_id'),
+                    fn ($q) => $q->where('products.company_id', $companyId)
+                )
+                ->tap(fn ($q) => $this->applyBranchScope($q, 'inventory_history', $activeBranch))
+                ->groupBy('log_date');
+
+            $stockIn = DB::query()->fromSub($historyStockIn, 'stk_in');
+        } elseif (Schema::hasTable('purchases')) {
+            $headerStockIn = DB::table('purchases')
+                ->select([
+                    DB::raw('DATE(purchases.' . $purchaseDateColumn . ') as log_date'),
+                    DB::raw('COUNT(*) as qty_in'),
+                    DB::raw('0 as qty_out'),
+                    DB::raw('SUM(COALESCE(purchases.total_amount, 0)) as val_in'),
+                    DB::raw('0 as val_out'),
+                ])
+                ->whereBetween('purchases.' . $purchaseDateColumn, [$fromStart, $toEnd])
+                ->tap(fn ($q) => $applyTenantScope($q, 'purchases'))
+                ->tap(fn ($q) => $this->applyBranchScope($q, 'purchases', $activeBranch))
+                ->groupBy('log_date');
+
+            $stockIn = DB::query()->fromSub($headerStockIn, 'stk_in');
+        }
+    }
+
+    $stockOut = DB::table('sale_items')
+        ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+        ->select([
+            DB::raw('DATE(sales.' . $saleDateColumn . ') as log_date'),
+            DB::raw('0 as qty_in'),
+            DB::raw("SUM({$saleQtyExpr}) as qty_out"),
+            DB::raw('0 as val_in'),
+            DB::raw("SUM({$saleTotalExpr}) as val_out"),
+        ])
+        ->whereBetween('sales.' . $saleDateColumn, [$fromStart, $toEnd])
+        ->when(!empty($productId), fn ($q) => $q->where('sale_items.product_id', $productId))
+        ->tap(fn ($q) => $applyTenantScope($q, 'sales'))
+        ->tap(fn ($q) => $this->applyBranchScope($q, 'sales', $activeBranch))
+        ->groupBy('log_date');
+
+    if (!(clone $stockOut)->exists()) {
+        if (Schema::hasTable('inventory_history') && Schema::hasTable('products')) {
+            $historyStockOut = DB::table('inventory_history')
+                ->join('products', 'inventory_history.product_id', '=', 'products.id')
+                ->select([
+                    DB::raw('DATE(inventory_history.created_at) as log_date'),
+                    DB::raw('0 as qty_in'),
+                    DB::raw('SUM(COALESCE(inventory_history.quantity, 0)) as qty_out'),
+                    DB::raw('0 as val_in'),
+                    DB::raw('SUM(COALESCE(inventory_history.quantity, 0) * COALESCE(products.price, products.purchase_price, 0)) as val_out'),
+                ])
+                ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) = 'out'")
+                ->whereBetween('inventory_history.created_at', [$fromStart, $toEnd])
+                ->when(!empty($productId), fn ($q) => $q->where('inventory_history.product_id', $productId))
+                ->when(
+                    $companyId > 0 && Schema::hasColumn('products', 'company_id'),
+                    fn ($q) => $q->where('products.company_id', $companyId)
+                )
+                ->tap(fn ($q) => $this->applyBranchScope($q, 'inventory_history', $activeBranch))
+                ->groupBy('log_date');
+
+            $stockOut = DB::query()->fromSub($historyStockOut, 'stk_out');
+        } elseif (Schema::hasTable('sales')) {
+            $headerStockOut = DB::table('sales')
+                ->select([
+                    DB::raw('DATE(sales.' . $saleDateColumn . ') as log_date'),
+                    DB::raw('0 as qty_in'),
+                    DB::raw('COUNT(*) as qty_out'),
+                    DB::raw('0 as val_in'),
+                    DB::raw('SUM(COALESCE(sales.total, 0)) as val_out'),
+                ])
+                ->whereBetween('sales.' . $saleDateColumn, [$fromStart, $toEnd])
+                ->tap(fn ($q) => $applyTenantScope($q, 'sales'))
+                ->tap(fn ($q) => $this->applyBranchScope($q, 'sales', $activeBranch))
+                ->groupBy('log_date');
+
+            $stockOut = DB::query()->fromSub($headerStockOut, 'stk_out');
+        }
+    }
+
+    $rows = DB::table(DB::query()->fromSub($stockIn->unionAll($stockOut), 'stk'))
+        ->select([
+            'log_date',
+            DB::raw('SUM(qty_in) as total_qty_in'),
+            DB::raw('SUM(qty_out) as total_qty_out'),
+            DB::raw('SUM(val_in) as total_val_in'),
+            DB::raw('SUM(val_out) as total_val_out'),
+        ])
+        ->groupBy('log_date')
+        ->orderBy('log_date', 'desc')
+        ->get();
+
+    $stockreports = $rows->map(fn($item) => [
+        'Date' => \Carbon\Carbon::parse($item->log_date)->format('d M y'),
+        'QtyIn' => (float) $item->total_qty_in,
+        'QtyOut' => (float) $item->total_qty_out,
+        'ValIn' => (float) $item->total_val_in,
+        'ValOut' => (float) $item->total_val_out,
+        'NetValue' => (float) $item->total_val_in - (float) $item->total_val_out,
+    ]);
+
+    return view('Reports.Reports.stock-report', compact('products', 'stockreports', 'fromDate', 'toDate', 'productId'));
 }
     /**
      * Update Product
@@ -1472,9 +1066,8 @@ public function inventory(Request $request)
     public function update(Request $request, $id)
     {
         $product = Product::findOrFail($id);
-        $activeBranch = $this->getActiveBranchContext();
 
-        $rules = [
+        $validated = $request->validate([
             'name'             => 'required|string|max:191',
             'sku'              => 'nullable|string|max:191|unique:products,sku,' . $id,
             'price'            => 'required|numeric|min:0',
@@ -1489,20 +1082,14 @@ public function inventory(Request $request)
             'units_per_carton' => 'nullable|integer|min:0',
             'units_per_roll'   => 'nullable|integer|min:0',
             'base_unit_name'   => 'required|string|max:100',
-            'category_id'      => 'nullable|exists:categories,id',
+            'category_id'      => 'required|exists:categories,id',
             'unit_type'        => 'required|in:unit,sachet,roll,carton',
             'status'           => 'required|in:active,inactive',
             'description'      => 'nullable|string',
             'barcode'          => 'nullable|string|max:191',
-            'expiry_date'      => 'nullable|date',
             'reorder_level'    => 'nullable|integer|min:0',
             'reorder_quantity' => 'nullable|integer|min:0',
-        ];
-        $this->addUnitValidationRules($rules);
-        $validator = Validator::make($request->all(), $rules);
-        $validator->after(fn ($v) => $this->validateUnitConversion($v, $request));
-        $validated = $validator->validate();
-        $validated = $this->prepareUnitPayload($validated);
+        ]);
 
         $validated['units_per_carton'] = (int) ($validated['units_per_carton'] ?? 0);
         $validated['units_per_roll'] = (int) ($validated['units_per_roll'] ?? 0);
@@ -1511,7 +1098,6 @@ public function inventory(Request $request)
         $validated['stock_units'] = (float) ($validated['stock_units'] ?? 0);
         $validated['reorder_level'] = max(0, (int) ($validated['reorder_level'] ?? 0));
         $validated['reorder_quantity'] = max(0, (int) ($validated['reorder_quantity'] ?? 0));
-        $validated['category_id'] = $this->resolveProductCategoryId($validated['category_id'] ?? null);
         $retailPrice = (float) ($validated['retail_price'] ?? $validated['price']);
         $validated['price'] = $retailPrice;
         if (Schema::hasColumn('products', 'retail_price')) {
@@ -1535,7 +1121,11 @@ public function inventory(Request $request)
         }
         $validated['sku'] = $this->generateUniqueSku($validated['sku'] ?? null, $validated['name'], $product->id);
 
-        $validated['stock'] = $this->resolveInitialStock($validated);
+        $calculatedStock = $validated['stock'] ?? null;
+        if ($calculatedStock === null) {
+            $calculatedStock = $this->calculateStockFromPackaging($validated);
+        }
+        $validated['stock'] = (int) ($calculatedStock ?? (int) $product->stock);
 
         if ($validated['unit_type'] === 'carton' && $validated['units_per_carton'] < 1) {
             return back()->withErrors([
@@ -1567,19 +1157,9 @@ public function inventory(Request $request)
             unset($validated['reorder_quantity']);
         }
 
-        $validated['stock_quantity'] = $validated['stock'];
+        $validated['stock_quantity'] = $validated['stock']; 
         $product->update($validated);
-
-        if (!empty($activeBranch['id'])) {
-            $this->branchInventory->setBranchStock(
-                $product->fresh(),
-                (float) ($validated['stock'] ?? 0),
-                $activeBranch,
-                $this->tenantCompanyId()
-            );
-        }
-
-        $this->clearDashboardMetricsCache($activeBranch['id'] ?? null);
+        $this->clearDashboardMetricsCache();
 
         return redirect()->route('product-list')->with('success', 'Update pushed to ' . env('SESSION_DOMAIN'));
     }
@@ -1857,12 +1437,6 @@ public function inventory(Request $request)
     public function inventory_history($id)
     {
         $activeBranch = $this->getActiveBranchContext();
-        $product = Product::find($id);
-
-        if (!$product) {
-            return redirect()->back()->with('error', 'Product not found.');
-        }
-
         $inventoryHistories = collect();
         $branchId = trim((string) ($activeBranch['id'] ?? ''));
         $branchName = trim((string) ($activeBranch['name'] ?? ''));
@@ -1882,17 +1456,6 @@ public function inventory(Request $request)
                 )
                 ->where('inventory_history.product_id', $id)
                 ->tap(fn ($q) => $this->applyTenantScope($q, 'products'));
-
-            if (
-                Schema::hasTable('sale_items')
-                && Schema::hasTable('sales')
-                && Schema::hasColumn('inventory_history', 'reference')
-            ) {
-                $historyQuery->where(function ($sub) {
-                    $sub->whereNull('inventory_history.reference')
-                        ->orWhereRaw("LOWER(TRIM(inventory_history.reference)) != 'sales'");
-                });
-            }
 
             if ($branchId !== '' || $branchName !== '') {
                 $historyQuery->where(function ($sub) use ($branchId, $branchName) {
@@ -1954,7 +1517,7 @@ public function inventory(Request $request)
                         CONCAT('purchase-', purchase_items.id) as id,
                         purchases.created_at as created_at,
                         'in' as type,
-                        CONCAT('Purchase - ', COALESCE(" . ($purchaseReferenceColumn ? "purchases.{$purchaseReferenceColumn}" : 'NULL') . ", purchases.purchase_no, CONCAT('PUR-', purchases.id))) as reference,
+                        COALESCE(" . ($purchaseReferenceColumn ? "purchases.{$purchaseReferenceColumn}" : 'NULL') . ", purchases.purchase_no, CONCAT('PUR-', purchases.id)) as reference,
                         COALESCE(purchase_items.{$purchaseQtyColumn}, 0) as quantity,
                         products.name as name,
                         products.sku as sku,
@@ -2037,9 +1600,6 @@ public function inventory(Request $request)
             $saleReferenceColumn = Schema::hasColumn('sales', 'invoice_no')
                 ? 'invoice_no'
                 : (Schema::hasColumn('sales', 'order_number') ? 'order_number' : null);
-            $saleUnitTypeColumn = Schema::hasColumn('sale_items', 'unit_type')
-                ? 'sale_items.unit_type'
-                : 'NULL';
 
             if ($saleQtyColumn) {
                 $saleHistoryQuery = DB::table('sale_items')
@@ -2049,10 +1609,8 @@ public function inventory(Request $request)
                         CONCAT('sale-', sale_items.id) as id,
                         sales.created_at as created_at,
                         'out' as type,
-                        CONCAT('Sales - ', COALESCE(" . ($saleReferenceColumn ? "sales.{$saleReferenceColumn}" : 'NULL') . ", CONCAT('SALE-', sales.id))) as reference,
+                        COALESCE(" . ($saleReferenceColumn ? "sales.{$saleReferenceColumn}" : 'NULL') . ", CONCAT('SALE-', sales.id)) as reference,
                         COALESCE(sale_items.{$saleQtyColumn}, 0) as quantity,
-                        {$saleUnitTypeColumn} as unit_type,
-                        " . InventoryQuantity::saleStockUnitsExpression('sale_items', 'products') . " as stock_quantity,
                         products.name as name,
                         products.sku as sku,
                         products.purchase_price as purchase_price
@@ -2128,50 +1686,10 @@ public function inventory(Request $request)
         }
 
         $inventoryHistories = $inventoryHistories
-            ->map(function ($row) {
-                $reference = trim((string) ($row->reference ?? ''));
-                $normalizedReference = strtolower($reference);
-
-                if (in_array($normalizedReference, ['sales return', 'stock return'], true)) {
-                    $row->reference = 'Stock Return';
-                } elseif ($reference === '' || strcasecmp($reference, 'Stock Update') === 0) {
-                    $isStockIn = in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true);
-                    $row->reference = $isStockIn ? 'Stock Adjustment - Increase' : 'Stock Adjustment - Reduction';
-                }
-
-                return $row;
-            })
             ->sortByDesc(fn ($row) => strtotime((string) ($row->created_at ?? '1970-01-01 00:00:00')))
             ->values();
 
-        // Calculate totalIn and totalOut FIRST from history records.
-        $totalIn  = $inventoryHistories->filter(fn ($row) => in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true))->sum('quantity');
-        $totalOut = $inventoryHistories->filter(fn ($row) => !in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true))->sum(fn ($row) => (float) ($row->stock_quantity ?? $row->quantity ?? 0));
-
-        // Derive currentStock from history so all three summary cards are
-        // internally consistent: totalIn - totalOut = currentStock.
-        // Using the product-table stock as the starting point caused a mismatch
-        // whenever stock was adjusted outside this history (e.g. direct edits,
-        // branch-scoping gaps) — making 30 − 1 show as 19 instead of 29.
-        $currentStock = round(max(0, $totalIn - $totalOut), 2);
-
-        $runningBalance = $currentStock;
-        $inventoryHistories = $inventoryHistories
-            ->map(function ($row) use (&$runningBalance) {
-                $quantity = (float) ($row->quantity ?? 0);
-                $stockQuantity = (float) ($row->stock_quantity ?? $quantity);
-                $isStockIn = in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true);
-                $signedQuantity = $isStockIn ? $stockQuantity : -1 * $stockQuantity;
-
-                $row->running_balance = $runningBalance;
-                $row->stock_value = round($runningBalance * (float) ($row->purchase_price ?? 0), 2);
-                $runningBalance = round($runningBalance - $signedQuantity, 2);
-
-                return $row;
-            })
-            ->values();
-
-        return view('Inventory.inventory-history', compact('inventoryHistories', 'activeBranch', 'product', 'currentStock', 'totalIn', 'totalOut'));
+        return view('Inventory.inventory-history', compact('inventoryHistories', 'activeBranch'));
     }
 
     public function update_history(Request $request)
@@ -2191,19 +1709,15 @@ public function inventory(Request $request)
             return redirect()->back()->with('error', 'Inventory history record not found for the active branch.');
         }
 
-        DB::transaction(function () use ($validated, $history) {
-            DB::table('inventory_history')
-                ->where('id', (int) $validated['id'])
-                ->update([
-                    'quantity' => (float) $validated['quantity'],
-                    'type' => $validated['type'],
-                    'updated_at' => now(),
-                ]);
+        DB::table('inventory_history')
+            ->where('id', (int) $validated['id'])
+            ->update([
+                'quantity' => (float) $validated['quantity'],
+                'type' => $validated['type'],
+                'updated_at' => now(),
+            ]);
 
-            $this->syncBranchStockFromHistoryRecord($history);
-        });
-
-        $this->clearDashboardMetricsCache($this->inventoryHistoryBranchContext($history)['id'] ?? null);
+        $this->clearDashboardMetricsCache();
 
         return redirect()->back()->with('success', 'Inventory history record updated successfully.');
     }
@@ -2223,12 +1737,8 @@ public function inventory(Request $request)
             return redirect()->back()->with('error', 'Inventory history record not found for the active branch.');
         }
 
-        DB::transaction(function () use ($validated, $history) {
-            DB::table('inventory_history')->where('id', (int) $validated['id'])->delete();
-            $this->syncBranchStockFromHistoryRecord($history);
-        });
-
-        $this->clearDashboardMetricsCache($this->inventoryHistoryBranchContext($history)['id'] ?? null);
+        DB::table('inventory_history')->where('id', (int) $validated['id'])->delete();
+        $this->clearDashboardMetricsCache();
 
         return redirect()->back()->with('success', 'Inventory history record deleted successfully.');
     }
@@ -2373,7 +1883,7 @@ public function inventory(Request $request)
                 'user_id' => auth()->id(),
                 'header' => $header,
             ]);
-            $required = ['name', 'base_unit_name', 'unit_type', 'purchase_price'];
+            $required = ['name', 'category', 'base_unit_name', 'unit_type', 'purchase_price'];
             foreach ($required as $column) {
                 if (!in_array($column, $header, true)) {
                     Log::warning('Product import missing required column.', [
@@ -2402,22 +1912,9 @@ public function inventory(Request $request)
             $rowErrors = [];
             $updateExisting = $request->boolean('update_existing');
             $createdIds = [];
-            $sessionBranch = $this->getActiveBranchContext();
-            $requestedBranchId = trim((string) $request->input('branch_id', ''));
-            if (
-                $requestedBranchId !== ''
-                && trim((string) ($sessionBranch['id'] ?? '')) !== ''
-                && $requestedBranchId !== trim((string) ($sessionBranch['id'] ?? ''))
-            ) {
-                return redirect()->back()->with(
-                    'error',
-                    'Product imports are restricted to the active branch. Switch to the target branch before importing.'
-                );
-            }
 
             DB::transaction(function () use ($file, $header, &$created, &$updated, &$updatedExisting, &$skipped, &$duplicates, &$missingRequired, &$rowErrors, $updateExisting, $request) {
                 $activeBranch = $this->resolveBranchContext($request->input('branch_id'));
-                $activeBranchName = trim((string) ($activeBranch['name'] ?? ''));
 
                 foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
                     if ($rowNumber === 0) {
@@ -2429,7 +1926,7 @@ public function inventory(Request $request)
                         $rowData[$column] = trim((string) ($row[$index] ?? ''));
                     }
 
-                    $requiredFields = ['name', 'base_unit_name', 'unit_type', 'purchase_price'];
+                    $requiredFields = ['name', 'category', 'base_unit_name', 'unit_type', 'purchase_price'];
                     $missing = [];
                     foreach ($requiredFields as $field) {
                         if (($rowData[$field] ?? '') === '') {
@@ -2449,16 +1946,7 @@ public function inventory(Request $request)
                     }
 
                     try {
-                        $csvBranchName = trim((string) ($rowData['branch_name'] ?? ''));
-                        if ($csvBranchName !== '' && $activeBranchName !== '' && strcasecmp($csvBranchName, $activeBranchName) !== 0) {
-                            $skipped++;
-                            if (count($rowErrors) < 10) {
-                                $rowErrors[] = 'Row ' . ($rowNumber + 1) . ': branch_name does not match the active branch';
-                            }
-                            continue;
-                        }
-
-                        $categoryName = ($rowData['category'] ?? '') !== '' ? $rowData['category'] : 'Uncategorized';
+                        $categoryName = $rowData['category'];
                         $category = $this->firstOrCreateImportCategory($categoryName);
 
                         $unitType = strtolower($rowData['unit_type'] ?: 'unit');

@@ -8,20 +8,10 @@
         $balanceAmount = max(0, $totalAmount - $paidAmount);
         $taxAmount = abs((float) ($purchase->tax_amount ?? 0));
         $subTotalAmount = max(0, $totalAmount - $taxAmount);
-        $orderSummary = $orderSummary ?? [
-            'ordered_quantity' => number_format((float) $purchase->items->sum('qty'), 2),
-            'received_quantity' => number_format((float) $purchase->items->sum('received_qty'), 2),
-            'outstanding_quantity' => number_format(max(0, (float) $purchase->items->sum('qty') - (float) $purchase->items->sum('received_qty')), 2),
-            'receipt_label' => 'Pending Receipt',
-            'payment_label' => $balanceAmount > 0 ? 'Unpaid' : 'Paid',
-            'status_label' => $balanceAmount > 0 ? 'Pending Receipt / Unpaid' : 'Received / Paid',
-        ];
-        $currencyCode = \App\Support\GeoCurrency::currentCurrency();
-        $currencyLocale = \App\Support\GeoCurrency::currentLocale();
     @endphp
     <div class="page-wrapper">
         <div class="content container-fluid">
-
+            
             <div class="page-header">
                 <div class="row align-items-center">
                     <div class="col">
@@ -40,9 +30,6 @@
                     </div>
                     <div class="col-auto">
                         <div class="d-print-none">
-                            <a href="{{ route('grn.create', ['purchase_order_id' => $purchase->id]) }}" class="btn btn-primary me-1">
-                                <i class="fe fe-truck"></i> Receive Items
-                            </a>
                             <button onclick="window.print()" class="btn btn-white text-black border me-1">
                                 <i class="fe fe-printer"></i> Print
                             </button>
@@ -63,7 +50,7 @@
                         <div class="card-body">
                             <div class="card-table">
                                 <div class="card-body">
-
+                                    
                                     <div class="invoice-item invoice-item-one">
                                         <div class="row align-items-center">
                                             <div class="col-md-6">
@@ -77,8 +64,8 @@
                                                     <p class="mb-0">Ref: <strong>{{ $purchase->purchase_no }}</strong></p>
                                                     <p class="mb-0">Branch: <strong>{{ $purchase->branch_label ?? 'Workspace Default' }}</strong></p>
                                                     <p>Status: 
-                                                        <span class="badge {{ str_contains(strtolower($orderSummary['status_label'] ?? ''), 'received') ? 'bg-success-light' : 'bg-warning-light' }}">
-                                                            {{ $orderSummary['status_label'] ?? ucfirst($purchase->status ?? 'Pending') }}
+                                                        <span class="badge {{ $purchase->status == 'paid' ? 'bg-success-light' : 'bg-warning-light' }}">
+                                                            {{ ucfirst($purchase->status ?? 'Pending') }}
                                                         </span>
                                                     </p>
                                                 </div>
@@ -117,56 +104,30 @@
                                     </div>
 
                                     <div class="invoice-item invoice-table-wrap">
-                                        <div class="row mb-3">
-                                            <div class="col-md-4">
-                                                <div class="border rounded-3 p-3 h-100">
-                                                    <div class="text-muted small mb-1">Receipt Status</div>
-                                                    <div class="fw-semibold">{{ $orderSummary['receipt_label'] ?? 'Pending Receipt' }}</div>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="border rounded-3 p-3 h-100">
-                                                    <div class="text-muted small mb-1">Ordered / Received</div>
-                                                    <div class="fw-semibold">{{ $orderSummary['ordered_quantity'] ?? '0.00' }} / {{ $orderSummary['received_quantity'] ?? '0.00' }}</div>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="border rounded-3 p-3 h-100">
-                                                    <div class="text-muted small mb-1">Outstanding Qty</div>
-                                                    <div class="fw-semibold">{{ $orderSummary['outstanding_quantity'] ?? '0.00' }}</div>
-                                                </div>
-                                            </div>
-                                        </div>
                                         <div class="table-responsive">
                                             <table class="table table-center table-hover mb-4" id="items-table">
                                                 <thead class="thead-light">
                                                     <tr>
                                                         <th>Product</th>
-                                                        <th class="text-center">Ordered</th>
-                                                        <th class="text-center">Received</th>
-                                                        <th class="text-center">Outstanding</th>
+                                                        <th class="text-center">Qty</th>
+                                                        <th class="text-center">Unit</th>
                                                         <th>Rate</th>
+                                                        <th>Tax</th>
                                                         <th class="text-end">Amount</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     @forelse($purchase->items as $item)
-                                                    @php
-                                                        $orderedQty = (float) ($item->qty ?? 0);
-                                                        $receivedQty = (float) ($item->received_qty ?? 0);
-                                                        $outstandingQty = max(0, $orderedQty - $receivedQty);
-                                                        $lineTotal = (float) ($item->line_total ?? ($orderedQty * (float) ($item->unit_price ?? 0)));
-                                                    @endphp
                                                     <tr>
                                                         <td>
-                                                            <strong>{{ $item->product->name ?? ($item->product_name ?? 'N/A') }}</strong>
-                                                            <p class="small text-muted mb-0">{{ $item->description ?? ($item->product->sku ?? '') }}</p>
+                                                            <strong>{{ $item->product->name ?? 'N/A' }}</strong>
+                                                            <p class="small text-muted mb-0">{{ $item->product->sku ?? '' }}</p>
                                                         </td>
-                                                        <td class="text-center">{{ number_format($orderedQty, 2) }}</td>
-                                                        <td class="text-center">{{ number_format($receivedQty, 2) }}</td>
-                                                        <td class="text-center">{{ number_format($outstandingQty, 2) }}</td>
-                                                        <td>{{ \App\Support\GeoCurrency::format((float) ($item->unit_price ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
-                                                        <td class="text-end font-weight-bold">{{ \App\Support\GeoCurrency::format($lineTotal, 'NGN', $currencyCode, $currencyLocale) }}</td>
+                                                        <td class="text-center">{{ $item->qty }}</td>
+                                                        <td class="text-center">{{ $item->product->base_unit_name ?? $item->unit ?? 'unit' }}</td>
+                                                        <td>{{ number_format($item->unit_price, 2) }}</td>
+                                                        <td>{{ number_format($item->tax_amount ?? 0, 2) }}</td>
+                                                        <td class="text-end font-weight-bold">{{ number_format($item->total_amount, 2) }}</td>
                                                     </tr>
                                                     @empty
                                                     <tr><td colspan="6" class="text-center p-4">No items recorded.</td></tr>
@@ -187,16 +148,16 @@
                                             <div class="invoice-total-card">
                                                 <div class="invoice-total-box">
                                                     <div class="invoice-total-inner">
-                                                        <p>Subtotal <span>{{ \App\Support\GeoCurrency::format($subTotalAmount, 'NGN', $currencyCode, $currencyLocale) }}</span></p>
-                                                        <p>Tax <span>{{ \App\Support\GeoCurrency::format($taxAmount, 'NGN', $currencyCode, $currencyLocale) }}</span></p>
-                                                        <p>Amount Paid <span>{{ \App\Support\GeoCurrency::format($paidAmount, 'NGN', $currencyCode, $currencyLocale) }}</span></p>
-                                                        <p>Balance Due <span>{{ \App\Support\GeoCurrency::format($balanceAmount, 'NGN', $currencyCode, $currencyLocale) }}</span></p>
+                                                        <p>Subtotal <span>{{ number_format($subTotalAmount, 2) }}</span></p>
+                                                        <p>Tax <span>{{ number_format($taxAmount, 2) }}</span></p>
+                                                        <p>Amount Paid <span>{{ number_format($paidAmount, 2) }}</span></p>
+                                                        <p>Balance Due <span>{{ number_format($balanceAmount, 2) }}</span></p>
                                                     </div>
                                                     <div class="invoice-total-footer bg-light p-2">
                                                         @if($balanceAmount > 0)
-                                                            <h4 class="mb-0">Purchase Value <span>{{ \App\Support\GeoCurrency::format($totalAmount, 'NGN', $currencyCode, $currencyLocale) }}</span></h4>
+                                                            <h4 class="mb-0">Purchase Value <span>{{ number_format($totalAmount, 2) }}</span></h4>
                                                         @else
-                                                            <h4 class="mb-0 text-success">Settled in Full <span>{{ \App\Support\GeoCurrency::format(0, 'NGN', $currencyCode, $currencyLocale) }} Due</span></h4>
+                                                            <h4 class="mb-0 text-success">Settled in Full <span>₦0.00 Due</span></h4>
                                                         @endif
                                                     </div>
                                                 </div>
@@ -237,9 +198,9 @@
                                                         <div class="d-flex flex-wrap gap-3">
                                                             <div class="me-auto">
                                                                 <span class="text-muted">Paid:</span>
-                                                                <strong>{{ \App\Support\GeoCurrency::format($paidAmount, 'NGN', $currencyCode, $currencyLocale) }}</strong>
+                                                                <strong>{{ number_format($paidAmount, 2) }}</strong>
                                                                 <span class="text-muted ms-3">Balance:</span>
-                                                                <strong>{{ \App\Support\GeoCurrency::format($balanceAmount, 'NGN', $currencyCode, $currencyLocale) }}</strong>
+                                                                <strong>{{ number_format($balanceAmount, 2) }}</strong>
                                                             </div>
                                                             <button type="submit" class="btn btn-primary">Record Payment</button>
                                                         </div>
@@ -263,7 +224,7 @@
                                                                 </small>
                                                             </div>
                                                             <div class="text-end">
-                                                                <div class="fw-bold text-success">{{ \App\Support\GeoCurrency::format((float) ($payment->amount ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</div>
+                                                                <div class="fw-bold text-success">{{ number_format((float) ($payment->amount ?? 0), 2) }}</div>
                                                                 <form method="POST" action="{{ route('purchases.destroy-payment', [$purchase->id, $payment->id]) }}" onsubmit="return confirm('Delete this payment and reverse its purchase payment entry?')">
                                                                     @csrf
                                                                     @method('DELETE')
@@ -295,7 +256,7 @@
     </div>
 
             <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
+            
             <script>
         function generatePDF() {
             window.smartProbookExportElementToPdf('#invoice-content', {

@@ -23,71 +23,11 @@ use App\Exports\PurchaseExport;
 use App\Models\Transaction;
 use App\Support\BranchInventoryService;
 use App\Support\LedgerService;
-use App\Support\TaxComputationService;
-use App\Models\Account;
 use App\Models\Transaction as LedgerTransaction;
 // -----------------------------
 
 class PurchaseController extends Controller
 {
-    private function scopeSuppliersForActiveBranch($query)
-    {
-        $this->applyTenantScope($query, 'suppliers');
-
-        $activeBranch = $this->getActiveBranchContext();
-        $branchId = trim((string) ($activeBranch['id'] ?? ''));
-        $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-        if ($branchId === '' && $branchName === '') {
-            return $query;
-        }
-
-        return $query->where(function ($sub) use ($branchId, $branchName) {
-            $matched = false;
-
-            if ($branchId !== '' && Schema::hasColumn('suppliers', 'branch_id')) {
-                $sub->where('suppliers.branch_id', $branchId);
-                $matched = true;
-            }
-
-            if ($branchName !== '' && Schema::hasColumn('suppliers', 'branch_name')) {
-                $method = $matched ? 'orWhere' : 'where';
-                $sub->{$method}('suppliers.branch_name', $branchName);
-                $matched = true;
-            }
-
-            if (Schema::hasColumn('suppliers', 'branch_id') || Schema::hasColumn('suppliers', 'branch_name')) {
-                $method = $matched ? 'orWhere' : 'where';
-                $sub->{$method}(function ($fallback) {
-                    if (Schema::hasColumn('suppliers', 'branch_id')) {
-                        $fallback->whereNull('suppliers.branch_id');
-                    }
-                    if (Schema::hasColumn('suppliers', 'branch_name')) {
-                        $fallback->whereNull('suppliers.branch_name');
-                    }
-                });
-            }
-        });
-    }
-
-    private function scopeProductsForActiveBranch($query, array $activeBranch)
-    {
-        $this->applyTenantScope($query, 'products');
-
-        if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
-            $branchId = (string) $activeBranch['id'];
-            $query->where(function ($productQuery) use ($branchId) {
-                $productQuery
-                    ->whereHas('branchStocks', fn ($stockQuery) => $stockQuery->where('branch_id', $branchId))
-                    ->orWhereDoesntHave('branchStocks');
-            });
-        } else {
-            $this->applyBranchScope($query, 'products');
-        }
-
-        return $query;
-    }
-
 public function applyTenantScope($query, string $table)
     {
         $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
@@ -152,56 +92,6 @@ private function applyBranchScope($query, string $table = 'purchases')
         });
     }
 
-    private function applyBranchScopeWithFallback($query, string $table = 'purchases')
-    {
-        $activeBranch = $this->getActiveBranchContext();
-        $branchId = trim((string) ($activeBranch['id'] ?? ''));
-        $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-        if ($branchId === '' && $branchName === '') {
-            return $query;
-        }
-
-        $hasBranchId = Schema::hasColumn($table, 'branch_id');
-        $hasBranchName = Schema::hasColumn($table, 'branch_name');
-        if (!$hasBranchId && !$hasBranchName) {
-            return $query;
-        }
-
-        return $query->where(function ($sub) use ($table, $branchId, $branchName, $hasBranchId, $hasBranchName) {
-            $matched = false;
-
-            if ($branchId !== '' && $hasBranchId) {
-                $sub->where("{$table}.branch_id", $branchId);
-                $matched = true;
-            }
-            if ($branchName !== '' && $hasBranchName) {
-                $method = $matched ? 'orWhere' : 'where';
-                $sub->{$method}("{$table}.branch_name", $branchName);
-                $matched = true;
-            }
-
-            $method = $matched ? 'orWhere' : 'where';
-            $sub->{$method}(function ($fallback) use ($table, $hasBranchId, $hasBranchName) {
-                if ($hasBranchId) {
-                    $fallback->where(function ($branchIdQuery) use ($table) {
-                        $branchIdQuery
-                            ->whereNull("{$table}.branch_id")
-                            ->orWhere("{$table}.branch_id", '');
-                    });
-                }
-
-                if ($hasBranchName) {
-                    $fallback->where(function ($branchNameQuery) use ($table) {
-                        $branchNameQuery
-                            ->whereNull("{$table}.branch_name")
-                            ->orWhere("{$table}.branch_name", '');
-                    });
-                }
-            });
-        });
-    }
-
     private function findScopedPurchase(int|string $purchaseId, array $with = [])
     {
         $baseQuery = Purchase::query()->with($with);
@@ -220,7 +110,7 @@ private function applyBranchScope($query, string $table = 'purchases')
         // 1. Fetch Purchases (using 'vendor' or 'supplier' based on your model relation)
         $purchaseQuery = Purchase::with(['supplier', 'items.product']);
         $this->applyTenantScope($purchaseQuery, 'purchases');
-        $this->applyBranchScopeWithFallback($purchaseQuery, 'purchases');
+        $this->applyBranchScope($purchaseQuery, 'purchases');
         $purchases = $purchaseQuery->orderBy('created_at', 'desc')->paginate(10);
         $purchases->getCollection()->transform(function (Purchase $purchase) {
             $normalizedTotalAmount = abs((float) ($purchase->total_amount ?? 0));
@@ -235,7 +125,12 @@ private function applyBranchScope($query, string $table = 'purchases')
 
         // 2. Fetch Products (CRITICAL: This fixes the "Product data not loaded" error)
         $productQuery = Product::with('category')->latest();
-        $this->scopeProductsForActiveBranch($productQuery, $activeBranch);
+        $this->applyTenantScope($productQuery, 'products');
+        if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+            $productQuery->whereHas('branchStocks', fn ($q) => $q->where('branch_id', $activeBranch['id']));
+        } else {
+            $this->applyBranchScope($productQuery, 'products');
+        }
         $products = $productQuery->paginate(10);
             
         // 3. Pass BOTH variables to the view
@@ -248,13 +143,15 @@ private function applyBranchScope($query, string $table = 'purchases')
     public function purchaseReport(Request $request)
     {
         $activeBranch = $this->getActiveBranchContext();
-        $search = trim((string) $request->input('search', ''));
-        $dateFrom = trim((string) $request->input('date_from', ''));
-        $dateTo = trim((string) $request->input('date_to', ''));
-        $purchaseDateColumn = Schema::hasColumn('purchases', 'purchase_date') ? 'purchase_date' : 'created_at';
+        $search = $request->input('search');
 
         $productQuery = Product::with('category');
-        $this->scopeProductsForActiveBranch($productQuery, $activeBranch);
+        $this->applyTenantScope($productQuery, 'products');
+        if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+            $productQuery->whereHas('branchStocks', fn ($q) => $q->where('branch_id', $activeBranch['id']));
+        } else {
+            $this->applyBranchScope($productQuery, 'products');
+        }
         $products = $productQuery
             ->when($search, function ($query) use ($search) {
                 return $query->where('name', 'like', "%{$search}%")
@@ -265,32 +162,8 @@ private function applyBranchScope($query, string $table = 'purchases')
 
         $purchaseQuery = Purchase::with(['supplier', 'items.product']);
         $this->applyTenantScope($purchaseQuery, 'purchases');
-        $this->applyBranchScopeWithFallback($purchaseQuery, 'purchases');
-        if ($search !== '') {
-            $purchaseQuery->where(function ($query) use ($search) {
-                $query->where('purchase_no', 'like', '%' . $search . '%')
-                    ->orWhereHas('supplier', fn ($supplierQuery) => $supplierQuery->where('name', 'like', '%' . $search . '%'));
-
-                if (Schema::hasColumn('purchases', 'vendor_id')) {
-                    $query->orWhereHas('vendor', fn ($vendorQuery) => $vendorQuery->where('name', 'like', '%' . $search . '%'));
-                }
-
-                $query->orWhereHas('items.product', function ($productQuery) use ($search) {
-                    $productQuery->where('name', 'like', '%' . $search . '%');
-                    if (Schema::hasColumn('products', 'sku')) {
-                        $productQuery->orWhere('sku', 'like', '%' . $search . '%');
-                    }
-                });
-            });
-        }
-        if ($dateFrom !== '') {
-            $purchaseQuery->whereDate($purchaseDateColumn, '>=', $dateFrom);
-        }
-        if ($dateTo !== '') {
-            $purchaseQuery->whereDate($purchaseDateColumn, '<=', $dateTo);
-        }
-
-        $purchases = $purchaseQuery->latest()->paginate(10)->withQueryString();
+        $this->applyBranchScope($purchaseQuery, 'purchases');
+        $purchases = $purchaseQuery->latest()->paginate(10);
         $purchases->getCollection()->transform(function (Purchase $purchase) {
             $normalizedTotalAmount = abs((float) ($purchase->total_amount ?? 0));
             $paidAmount = $this->resolvePurchasePaidAmount($purchase);
@@ -306,8 +179,6 @@ private function applyBranchScope($query, string $table = 'purchases')
             'products'  => $products,
             'purchases' => $purchases,
             'search'    => $search,
-            'dateFrom'  => $dateFrom,
-            'dateTo'    => $dateTo,
             'page'      => 'products',
             'activeBranch' => $activeBranch,
         ]);
@@ -316,7 +187,7 @@ private function applyBranchScope($query, string $table = 'purchases')
     /**
      * Show the form for creating a new purchase.
      */
-    public function create(Request $request)
+    public function create()
     {
         $activeBranch = $this->getActiveBranchContext();
         $vendorsQuery = Vendor::orderBy('name');
@@ -326,11 +197,17 @@ private function applyBranchScope($query, string $table = 'purchases')
         $suppliers = collect();
         if (Schema::hasTable('suppliers')) {
             $suppliersQuery = Supplier::orderBy('name');
-            $this->scopeSuppliersForActiveBranch($suppliersQuery);
+            $this->applyTenantScope($suppliersQuery, 'suppliers');
+            $this->applyBranchScope($suppliersQuery, 'suppliers');
             $suppliers = $suppliersQuery->get();
         }
         $productsQuery = Product::orderBy('name');
-        $this->scopeProductsForActiveBranch($productsQuery, $activeBranch);
+        $this->applyTenantScope($productsQuery, 'products');
+        if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+            $productsQuery->whereHas('branchStocks', fn ($q) => $q->where('branch_id', $activeBranch['id']));
+        } else {
+            $this->applyBranchScope($productsQuery, 'products');
+        }
         $products = $productsQuery->get();
         $taxOptions = collect();
         if (class_exists(TaxCode::class) && Schema::hasTable('tax_codes')) {
@@ -345,43 +222,14 @@ private function applyBranchScope($query, string $table = 'purchases')
         }
         $banksQuery = Bank::orderBy('name');
         $this->applyTenantScope($banksQuery, 'banks');
+        $this->applyBranchScope($banksQuery, 'banks');
         $banks = $banksQuery->get();
         
         // Generate a unique purchase ID
         $purchaseId = 'PUR-' . date('Ymd') . '-' . strtoupper(Str::random(6));
         $referenceNo = 'REF-' . date('ymd') . '-' . strtoupper(Str::random(4));
         $invoiceSerialNo = 'INV-' . date('ymd') . '-' . strtoupper(Str::random(4));
-
-        $prefillProductId = (int) ($request->query('product_id') ?? 0);
-        $prefillQuantity = max(0.01, (float) ($request->query('quantity', $request->query('qty', 1)) ?? 1));
-        $initialProducts = [];
-
-        if ($prefillProductId > 0) {
-            $prefillProduct = $products->firstWhere('id', $prefillProductId);
-
-            if ($prefillProduct) {
-                $initialProducts[] = [
-                    'product_id' => $prefillProduct->id,
-                    'product_name' => (string) ($prefillProduct->name ?? ''),
-                    'quantity' => $prefillQuantity,
-                    'unit' => (string) ($prefillProduct->unit ?? ''),
-                    'rate' => (float) ($prefillProduct->purchase_price ?? $prefillProduct->price ?? 0),
-                    'discount' => 0,
-                    'tax_id' => null,
-                ];
-            }
-        }
         
-        $fixedAssetAccounts = collect();
-        if (Schema::hasTable('accounts')) {
-            $faQuery = Account::query()
-                ->where('is_active', true)
-                ->whereIn('sub_type', ['Fixed Asset', 'Non-Current Asset', 'Intangible Asset'])
-                ->orderBy('name');
-            $this->applyTenantScope($faQuery, 'accounts');
-            $fixedAssetAccounts = $faQuery->get();
-        }
-
         return view('Purchases.add-purchases', compact(
             'vendors',
             'suppliers',
@@ -391,9 +239,7 @@ private function applyBranchScope($query, string $table = 'purchases')
             'purchaseId',
             'referenceNo',
             'invoiceSerialNo',
-            'activeBranch',
-            'initialProducts',
-            'fixedAssetAccounts'
+            'activeBranch'
         ));
     }
 
@@ -415,8 +261,6 @@ private function applyBranchScope($query, string $table = 'purchases')
 
         $request->merge(['products' => $filteredProducts]);
 
-        $isFixedAsset = $request->input('purchase_type') === 'fixed_asset';
-
         // Validate the request (schema-safe)
         $validated = $request->validate([
             'purchase_id' => 'nullable|string|max:50',
@@ -427,11 +271,9 @@ private function applyBranchScope($query, string $table = 'purchases')
             'due_date' => 'nullable|date|after_or_equal:purchase_date',
             'reference_no' => 'nullable|string|max:50',
             'invoice_serial_no' => 'nullable|string|max:50',
-            'purchase_type' => 'nullable|in:inventory,fixed_asset',
-            'asset_account_id' => 'nullable|exists:accounts,id',
-            'products' => $isFixedAsset ? 'nullable|array' : 'required|array|min:1',
-            'products.*.product_id' => $isFixedAsset ? 'nullable' : 'required|exists:products,id',
-            'products.*.quantity' => 'required_unless:purchase_type,fixed_asset|nullable|numeric|min:0.01',
+            'products' => 'required|array|min:1',
+            'products.*.product_id' => 'required|exists:products,id',
+            'products.*.quantity' => 'required|numeric|min:0.01',
             'products.*.rate' => 'required|numeric|min:0',
             'products.*.unit' => 'nullable|string|max:20',
             'products.*.discount' => 'nullable|numeric|min:0',
@@ -494,41 +336,16 @@ private function applyBranchScope($query, string $table = 'purchases')
             if (Schema::hasColumn('purchases', 'vendor_id')) {
                 $purchasePayload['vendor_id'] = $validated['vendor_id'] ?? null;
             }
-            if (Schema::hasColumn('purchases', 'purchase_date')) {
-                $purchasePayload['purchase_date'] = $validated['purchase_date'] ?? now()->toDateString();
-            }
-            if (Schema::hasColumn('purchases', 'due_date')) {
-                $purchasePayload['due_date'] = $validated['due_date'] ?? null;
-            }
-            if (Schema::hasColumn('purchases', 'reference_no')) {
-                $purchasePayload['reference_no'] = $validated['reference_no'] ?? null;
-            }
-            if (Schema::hasColumn('purchases', 'invoice_serial_no')) {
-                $purchasePayload['invoice_serial_no'] = $validated['invoice_serial_no'] ?? null;
-            }
-            if (Schema::hasColumn('purchases', 'bank_id')) {
-                $purchasePayload['bank_id'] = $validated['bank_id'] ?? null;
-            }
-            if (Schema::hasColumn('purchases', 'notes')) {
-                $purchasePayload['notes'] = $validated['notes'] ?? null;
-            }
             if (Schema::hasColumn('purchases', 'company_id')) {
                 $purchasePayload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
             }
             if (Schema::hasColumn('purchases', 'user_id')) {
                 $purchasePayload['user_id'] = auth()->id();
             }
-            if (Schema::hasColumn('purchases', 'purchase_type')) {
-                $purchasePayload['purchase_type'] = $request->input('purchase_type') ?? 'inventory';
-            }
-            if (Schema::hasColumn('purchases', 'asset_account_id')) {
-                $purchasePayload['asset_account_id'] = $request->input('asset_account_id') ?: null;
-            }
 
             $purchase = Purchase::create($purchasePayload);
 
-            // Create purchase items (skip for fixed asset purchases — no stock to increment)
-            if (!$isFixedAsset) {
+            // Create purchase items
             foreach ($request->products as $item) {
                 $itemAmount = ($item['quantity'] * $item['rate']) - ($item['discount'] ?? 0);
                 $product = Product::query()->lockForUpdate()->findOrFail($item['product_id']);
@@ -557,6 +374,9 @@ private function applyBranchScope($query, string $table = 'purchases')
                 if (Schema::hasColumn('purchase_items', 'amount')) {
                     $itemPayload['amount'] = $itemAmount;
                 }
+                if (Schema::hasColumn('purchase_items', 'unit')) {
+                    $itemPayload['unit'] = $product->base_unit_name ?: ($item['unit'] ?? null);
+                }
                 if (Schema::hasColumn('purchase_items', 'company_id')) {
                     $itemPayload['company_id'] = $purchase->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
                 }
@@ -568,20 +388,17 @@ private function applyBranchScope($query, string $table = 'purchases')
                 }
 
                 PurchaseItem::create($itemPayload);
-                $stockQuantity = $product->purchaseQuantityToBase($quantity);
-                Product::setInventoryContext('Purchase');
-                $product->increment('stock', $stockQuantity);
+                $product->increment('stock', $quantity);
                 if (Schema::hasColumn('products', 'stock_quantity')) {
-                    $product->increment('stock_quantity', $stockQuantity);
+                    $product->increment('stock_quantity', $quantity);
                 }
                 $this->branchInventory->adjustBranchStock(
                     $product,
-                    $stockQuantity,
+                    $quantity,
                     $activeBranch,
                     (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
                 );
             }
-            } // end if (!$isFixedAsset)
 
             LedgerService::postPurchase($purchase->fresh());
 
@@ -628,7 +445,6 @@ public function show($id)
 
     $normalizedTotalAmount = abs((float) ($purchase->total_amount ?? 0));
     $paidAmount = $this->resolvePurchasePaidAmount($purchase);
-    $orderSummary = $this->summarizePurchaseOrder($purchase, $paidAmount);
     $purchase->setAttribute('resolved_total_amount', $normalizedTotalAmount);
     $purchase->setAttribute('paid_amount', $paidAmount);
     $purchase->setAttribute('balance_amount', max(0, $normalizedTotalAmount - $paidAmount));
@@ -640,7 +456,6 @@ public function show($id)
         'page'     => 'purchase-details',
         'activeBranch' => $activeBranch,
         'banks' => $banks,
-        'orderSummary' => $orderSummary,
     ]);
 }
 
@@ -703,13 +518,7 @@ public function show($id)
         $productsQuery = Product::orderBy('name');
         $this->applyTenantScope($productsQuery, 'products');
         $products = $productsQuery->get();
-        $taxOptions = collect();
-        if (class_exists(TaxCode::class) && Schema::hasTable('tax_codes')) {
-            $taxOrderColumn = Schema::hasColumn('tax_codes', 'name')
-                ? 'name'
-                : (Schema::hasColumn('tax_codes', 'description') ? 'description' : 'code');
-            $taxOptions = TaxCode::orderBy($taxOrderColumn)->get();
-        }
+        $taxOptions = Tax::orderBy('name')->get();
         $banksQuery = Bank::orderBy('name');
         $this->applyTenantScope($banksQuery, 'banks');
         $banks = $banksQuery->get();
@@ -797,29 +606,17 @@ public function show($id)
                 }
 
                 $previousQty = (float) ($previousItem->qty ?? $previousItem->quantity ?? 0);
-                $previousStockQty = $previousProduct->purchaseQuantityToBase($previousQty);
                 if ($previousQty <= 0) {
                     continue;
                 }
 
-                $availableBranchStock = $this->branchInventory->getAvailableStock($previousProduct, $activeBranch);
-                if ($availableBranchStock < $previousStockQty) {
-                    throw new \RuntimeException("Cannot reduce {$previousProduct->name} below zero while updating this purchase.");
-                }
-
-                $currentProductStock = (float) ($previousProduct->stock ?? $previousProduct->stock_quantity ?? 0);
-                if ($currentProductStock < $previousStockQty) {
-                    throw new \RuntimeException("Cannot update this purchase because {$previousProduct->name} stock has already been used elsewhere.");
-                }
-
-                Product::setInventoryContext('Purchase Correction');
-                $previousProduct->decrement('stock', $previousStockQty);
+                $previousProduct->decrement('stock', $previousQty);
                 if (Schema::hasColumn('products', 'stock_quantity')) {
-                    $previousProduct->decrement('stock_quantity', $previousStockQty);
+                    $previousProduct->decrement('stock_quantity', $previousQty);
                 }
                 $this->branchInventory->adjustBranchStock(
                     $previousProduct,
-                    -$previousStockQty,
+                    -$previousQty,
                     $activeBranch,
                     (int) ($previousProduct->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
                 );
@@ -854,6 +651,9 @@ public function show($id)
                 if (Schema::hasColumn('purchase_items', 'amount')) {
                     $itemPayload['amount'] = $itemAmount;
                 }
+                if (Schema::hasColumn('purchase_items', 'unit')) {
+                    $itemPayload['unit'] = $product->base_unit_name ?: ($item['unit'] ?? null);
+                }
                 if (Schema::hasColumn('purchase_items', 'company_id')) {
                     $itemPayload['company_id'] = $purchase->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
                 }
@@ -865,15 +665,13 @@ public function show($id)
                 }
 
                 PurchaseItem::create($itemPayload);
-                $stockQuantity = $product->purchaseQuantityToBase($quantity);
-                Product::setInventoryContext('Purchase');
-                $product->increment('stock', $stockQuantity);
+                $product->increment('stock', $quantity);
                 if (Schema::hasColumn('products', 'stock_quantity')) {
-                    $product->increment('stock_quantity', $stockQuantity);
+                    $product->increment('stock_quantity', $quantity);
                 }
                 $this->branchInventory->adjustBranchStock(
                     $product,
-                    $stockQuantity,
+                    $quantity,
                     $activeBranch,
                     (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
                 );
@@ -964,8 +762,8 @@ public function show($id)
         $purchase->save();
 
         $reference = $validated['reference'] ?: ($purchase->purchase_no ?: ('PUR-' . $purchase->id)) . '-PAY';
-        $activeBranch = $this->getActiveBranchContext();
         if (Schema::hasTable('supplier_payments') && !empty($purchase->supplier_id)) {
+            $activeBranch = $this->getActiveBranchContext();
             SupplierPayment::create([
                 'supplier_id' => $purchase->supplier_id,
                 'purchase_id' => $purchase->id,
@@ -983,18 +781,7 @@ public function show($id)
                 'created_by' => auth()->id(),
             ]);
         }
-        LedgerService::postPurchasePayment(
-            $purchase->fresh(),
-            $amount,
-            $bank?->name ?: 'Manual Payment',
-            $reference,
-            null,
-            $bank?->name,
-            $request->input('payment_date', now()->toDateString()),
-            auth()->id(),
-            $purchase->branch_id ?? $activeBranch['id'],
-            $purchase->branch_name ?? $activeBranch['name']
-        );
+        LedgerService::postPurchasePayment($purchase, $amount, $bank?->name, $reference);
 
         return redirect()
             ->route('purchases.show', $purchase->id)
@@ -1048,63 +835,16 @@ public function show($id)
 
         $paidFromPayments = 0.0;
         if (Schema::hasTable('supplier_payments')) {
-            $paymentsQuery = SupplierPayment::query()->where('purchase_id', $purchase->id);
-            $this->applyTenantScope($paymentsQuery, 'supplier_payments');
-            $this->applySupplierPaymentBranchScopeForPurchase($paymentsQuery, $purchase);
-            $paidFromPayments = (float) $paymentsQuery->sum('amount');
+            if ($purchase->relationLoaded('supplierPayments')) {
+                $paidFromPayments = (float) $purchase->supplierPayments->sum('amount');
+            } else {
+                $paidFromPayments = (float) SupplierPayment::query()
+                    ->where('purchase_id', $purchase->id)
+                    ->sum('amount');
+            }
         }
 
         return round(max($paidFromColumn, $paidFromPayments), 2);
-    }
-
-    private function applySupplierPaymentBranchScopeForPurchase($query, Purchase $purchase)
-    {
-        $branchId = trim((string) ($purchase->branch_id ?? $this->getActiveBranchContext()['id'] ?? ''));
-        $branchName = trim((string) ($purchase->branch_name ?? $this->getActiveBranchContext()['name'] ?? ''));
-
-        if ($branchId === '' && $branchName === '') {
-            return $query;
-        }
-
-        $hasBranchId = Schema::hasColumn('supplier_payments', 'branch_id');
-        $hasBranchName = Schema::hasColumn('supplier_payments', 'branch_name');
-        if (!$hasBranchId && !$hasBranchName) {
-            return $query;
-        }
-
-        return $query->where(function ($sub) use ($branchId, $branchName, $hasBranchId, $hasBranchName) {
-            $matched = false;
-
-            if ($branchId !== '' && $hasBranchId) {
-                $sub->where('supplier_payments.branch_id', $branchId);
-                $matched = true;
-            }
-
-            if ($branchName !== '' && $hasBranchName) {
-                $method = $matched ? 'orWhere' : 'where';
-                $sub->{$method}('supplier_payments.branch_name', $branchName);
-                $matched = true;
-            }
-
-            $method = $matched ? 'orWhere' : 'where';
-            $sub->{$method}(function ($fallback) use ($hasBranchId, $hasBranchName) {
-                if ($hasBranchId) {
-                    $fallback->where(function ($branchIdQuery) {
-                        $branchIdQuery
-                            ->whereNull('supplier_payments.branch_id')
-                            ->orWhere('supplier_payments.branch_id', '');
-                    });
-                }
-
-                if ($hasBranchName) {
-                    $fallback->where(function ($branchNameQuery) {
-                        $branchNameQuery
-                            ->whereNull('supplier_payments.branch_name')
-                            ->orWhere('supplier_payments.branch_name', '');
-                    });
-                }
-            });
-        });
     }
 
     private function resolvePurchaseStatus(Purchase $purchase, ?float $paidAmount = null): string
@@ -1117,52 +857,6 @@ public function show($id)
         }
 
         return $paidAmount >= $totalAmount ? 'paid' : 'partial';
-    }
-
-    private function summarizePurchaseOrder(Purchase $purchase, ?float $paidAmount = null): array
-    {
-        $purchase->loadMissing('items');
-
-        $orderedQty = round((float) $purchase->items->sum(fn ($item) => (float) ($item->qty ?? 0)), 2);
-        $receivedQty = round((float) $purchase->items->sum(function ($item) {
-            return Schema::hasColumn('purchase_items', 'received_qty')
-                ? (float) ($item->received_qty ?? 0)
-                : 0;
-        }), 2);
-        $outstandingQty = round(max(0, $orderedQty - $receivedQty), 2);
-
-        if ($orderedQty <= 0) {
-            $receiptLabel = 'Draft';
-        } elseif ($receivedQty <= 0) {
-            $receiptLabel = 'Pending Receipt';
-        } elseif ($outstandingQty > 0) {
-            $receiptLabel = 'Partial Received';
-        } else {
-            $receiptLabel = 'Received';
-        }
-
-        $paidAmount = $paidAmount ?? $this->resolvePurchasePaidAmount($purchase);
-        $totalAmount = abs((float) ($purchase->total_amount ?? 0));
-
-        if ($totalAmount <= 0 || $paidAmount <= 0) {
-            $paymentLabel = 'Unpaid';
-        } elseif ($paidAmount >= $totalAmount) {
-            $paymentLabel = 'Paid';
-        } else {
-            $paymentLabel = 'Part Paid';
-        }
-
-        return [
-            'ordered_quantity' => number_format($orderedQty, 2),
-            'received_quantity' => number_format($receivedQty, 2),
-            'outstanding_quantity' => number_format($outstandingQty, 2),
-            'ordered_quantity_value' => $orderedQty,
-            'received_quantity_value' => $receivedQty,
-            'outstanding_quantity_value' => $outstandingQty,
-            'receipt_label' => $receiptLabel,
-            'payment_label' => $paymentLabel,
-            'status_label' => $receiptLabel . ' / ' . $paymentLabel,
-        ];
     }
 
     /**
@@ -1195,21 +889,6 @@ public function show($id)
                     continue;
                 }
 
-                $purchaseBranch = [
-                    'id' => $purchase->branch_id ?? $activeBranch['id'],
-                    'name' => $purchase->branch_name ?? $activeBranch['name'],
-                ];
-                $availableBranchStock = $this->branchInventory->getAvailableStock($product, $purchaseBranch);
-                if ($availableBranchStock < $quantity) {
-                    throw new \RuntimeException("Cannot delete purchase because {$product->name} has already been issued, sold, or transferred. Available stock is {$availableBranchStock}, but this purchase would remove {$quantity}.");
-                }
-
-                $currentProductStock = (float) ($product->stock ?? $product->stock_quantity ?? 0);
-                if ($currentProductStock < $quantity) {
-                    throw new \RuntimeException("Cannot delete purchase because {$product->name} stock has already been used elsewhere.");
-                }
-
-                Product::setInventoryContext('Purchase Deletion');
                 $product->decrement('stock', $quantity);
                 if (Schema::hasColumn('products', 'stock_quantity')) {
                     $product->decrement('stock_quantity', $quantity);
@@ -1217,7 +896,10 @@ public function show($id)
                 $this->branchInventory->adjustBranchStock(
                     $product,
                     -$quantity,
-                    $purchaseBranch,
+                    [
+                        'id' => $purchase->branch_id ?? $activeBranch['id'],
+                        'name' => $purchase->branch_name ?? $activeBranch['name'],
+                    ],
                     (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
                 );
             }
@@ -1279,12 +961,7 @@ public function show($id)
             if (class_exists(TaxCode::class) && Schema::hasTable('tax_codes')) {
                 $tax = TaxCode::find($request->tax_id);
                 if ($tax && isset($tax->rate)) {
-                    $taxBreakdown = app(TaxComputationService::class)->computeBreakdown(
-                        max(0, $taxableAmount - $totalDiscount),
-                        [$tax],
-                        ['currency_code' => 'NGN']
-                    );
-                    $vatAmount = (float) ($taxBreakdown['total_tax'] ?? 0);
+                    $vatAmount = (($taxableAmount - $totalDiscount) * $tax->rate) / 100;
                 }
             }
         }
@@ -1353,29 +1030,22 @@ public function show($id)
             return redirect()->back()->with('error', 'Unauthorized! Only authorized roles can process returns.');
         }
 
-	        $purchasesQuery = Purchase::with('supplier')->orderBy('created_at', 'desc');
-	        $this->applyTenantScope($purchasesQuery, 'purchases');
-	        $this->applyBranchScopeWithFallback($purchasesQuery, 'purchases');
-	        $purchases = $purchasesQuery->get();
-	        return view('Reports.Reports.create-purchase-return', compact('purchases'));
-	    }
+        $purchases = Purchase::with('supplier')->orderBy('created_at', 'desc')->get();
+        return view('Reports.Reports.create-purchase-return', compact('purchases'));
+    }
 
     /**
      * Get purchase items for a specific purchase (AJAX)
      */
     public function getPurchaseItems($id)
     {
-	        $purchaseQuery = Purchase::query()->whereKey($id);
-	        $this->applyTenantScope($purchaseQuery, 'purchases');
-	        $this->applyBranchScopeWithFallback($purchaseQuery, 'purchases');
-	        abort_unless($purchaseQuery->exists(), 404);
-
-	        $items = DB::table('purchase_items')
-	            ->join('products', 'purchase_items.product_id', '=', 'products.id')
-	            ->where('purchase_items.purchase_id', $id)
+        $items = DB::table('purchase_items')
+            ->join('products', 'purchase_items.product_id', '=', 'products.id')
+            ->where('purchase_items.purchase_id', $id)
             ->select(
                 'products.id as product_id', 
                 'products.name', 
+                'products.base_unit_name',
                 'purchase_items.qty',
                 'purchase_items.unit_price'
             )
@@ -1411,89 +1081,28 @@ public function show($id)
         }
 
         // Get the purchase and vendor
-	        $purchaseQuery = Purchase::query()->whereKey($request->purchase_id);
-	        $this->applyTenantScope($purchaseQuery, 'purchases');
-	        $this->applyBranchScopeWithFallback($purchaseQuery, 'purchases');
-	        $purchase = $purchaseQuery->firstOrFail();
+        $purchase = Purchase::findOrFail($request->purchase_id);
 
-        DB::beginTransaction();
-        try {
-	            $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
-	            $userId    = (int) (auth()->id() ?? 0);
-	            $activeBranch = $this->getActiveBranchContext();
-	            $returnNo  = 'RTN-' . strtoupper(Str::random(8));
+        // Create the Purchase Return (Debit Note)
+        $purchaseReturn = PurchaseReturn::create([
+            'purchase_id' => $purchase->id,
+            'vendor_id' => null,
+            'return_no' => 'RTN-' . strtoupper(Str::random(8)),
+            'amount' => $totalAmount,
+            'reason' => $request->reason ?? 'Item Return',
+            'created_at' => $request->return_date ?? now(),
+        ]);
 
-            $returnData = [
-                'purchase_id' => $purchase->id,
-                'vendor_id'   => null,
-                'return_no'   => $returnNo,
-                'amount'      => $totalAmount,
-                'reason'      => $request->reason ?? 'Item Return',
-                'return_date' => $request->return_date ?? now()->toDateString(),
-                'total_amount'=> $totalAmount,
-            ];
-            if ($companyId > 0 && Schema::hasColumn('purchase_returns', 'company_id')) {
-                $returnData['company_id'] = $companyId;
-            }
-            if ($userId > 0 && Schema::hasColumn('purchase_returns', 'user_id')) {
-                $returnData['user_id'] = $userId;
-            }
+        LedgerService::postPurchaseReturn(
+            relatedId: $purchaseReturn->id,
+            amount: (float) $totalAmount,
+            reference: $purchaseReturn->return_no,
+            date: $request->return_date,
+            userId: auth()->id(),
+            relatedType: PurchaseReturn::class
+        );
 
-            // Create the Purchase Return (Debit Note)
-            $purchaseReturn = PurchaseReturn::create($returnData);
-
-            // Insert return items and decrement stock (goods leave inventory back to supplier)
-            if (Schema::hasTable('purchase_return_items')) {
-                foreach ($request->items as $productId => $data) {
-                    if (isset($data['qty']) && $data['qty'] > 0) {
-                        $itemRow = [
-                            'purchase_return_id' => $purchaseReturn->id,
-                            'product_id'         => $productId,
-                            'qty'                => $data['qty'],
-                            'unit_price'         => $data['unit_price'],
-                            'subtotal'           => $data['qty'] * $data['unit_price'],
-                        ];
-                        if ($companyId > 0 && Schema::hasColumn('purchase_return_items', 'company_id')) {
-                            $itemRow['company_id'] = $companyId;
-                        }
-                        if ($userId > 0 && Schema::hasColumn('purchase_return_items', 'user_id')) {
-                            $itemRow['user_id'] = $userId;
-                        }
-                        DB::table('purchase_return_items')->insert($itemRow);
-
-	                        // Decrement stock — goods sent back to supplier from the active branch.
-	                        $product = Product::query()->lockForUpdate()->find($productId);
-	                        if ($product) {
-	                            $quantity = $product->purchaseQuantityToBase((float) $data['qty']);
-	                            Product::setInventoryContext('Purchase Return');
-	                            $product->decrement('stock', $quantity);
-	                            $this->branchInventory->adjustBranchStock(
-	                                $product,
-	                                -$quantity,
-	                                $activeBranch,
-	                                $companyId > 0 ? $companyId : (int) ($product->company_id ?? 0)
-	                            );
-	                        }
-	                    }
-	                }
-            }
-
-            LedgerService::postPurchaseReturn(
-                relatedId: $purchaseReturn->id,
-                amount: (float) $totalAmount,
-                reference: $returnNo,
-                date: $request->return_date,
-                userId: auth()->id(),
-                relatedType: PurchaseReturn::class
-            );
-
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Error processing return: ' . $e->getMessage());
-        }
-
-        return redirect()->route('debit-notes')->with('success', 'Return processed and stock updated successfully!');
+        return redirect()->route('debit-notes')->with('success', 'Return processed successfully!');
     }
 
     /**
@@ -1546,7 +1155,7 @@ public function show($id)
      */
     public function purchaseOrders()
     {
-        $ordersQuery = Purchase::with(['vendor', 'supplier', 'bank', 'items', 'supplierPayments']);
+        $ordersQuery = Purchase::with(['vendor', 'supplier', 'bank']);
         $this->applyTenantScope($ordersQuery, 'purchases');
         $this->applyBranchScope($ordersQuery, 'purchases');
 
@@ -1568,13 +1177,12 @@ public function show($id)
                 ?? '';
             $amount = abs((float) ($row->resolved_total_amount ?? $row->total_amount ?? $row->total ?? 0));
             $paidAmount = $this->resolvePurchasePaidAmount($row);
-            $orderSummary = $this->summarizePurchaseOrder($row, $paidAmount);
-            $status = $orderSummary['status_label'];
+            $status = $this->resolvePurchaseStatus($row, $paidAmount);
 
             $statusClass = match (strtolower($status)) {
-                'received / paid', 'received / unpaid', 'received / part paid' => 'badge bg-success-light text-success',
-                'partial received / unpaid', 'partial received / part paid', 'pending receipt / part paid' => 'badge bg-info-light text-info',
-                'pending receipt / unpaid', 'draft / unpaid', 'draft' => 'badge bg-warning-light text-warning',
+                'paid', 'received', 'completed' => 'badge bg-success-light text-success',
+                'partial' => 'badge bg-info-light text-info',
+                'pending', 'draft' => 'badge bg-warning-light text-warning',
                 default => 'badge bg-secondary-light text-secondary',
             };
 
@@ -1593,11 +1201,6 @@ public function show($id)
                 'Vendor' => $vendorName,
                 'Phone' => $vendorPhone,
                 'Amount' => number_format($amount, 2),
-                'OrderedQty' => $orderSummary['ordered_quantity'],
-                'ReceivedQty' => $orderSummary['received_quantity'],
-                'OutstandingQty' => $orderSummary['outstanding_quantity'],
-                'ReceiptStatus' => $orderSummary['receipt_label'],
-                'PaymentStatus' => $orderSummary['payment_label'],
                 'PaymentMode' => $paymentMode,
                 'Date' => $rowDate ? \Carbon\Carbon::parse($rowDate)->format('d M Y') : 'N/A',
                 'Status' => ucfirst($status),
@@ -1616,18 +1219,10 @@ public function show($id)
      */
     public function createOrder()
     {
-        $activeBranch = $this->getActiveBranchContext();
-        $vendorsQuery = Vendor::query()->orderBy('name');
-        $this->applyTenantScope($vendorsQuery, 'vendors');
-        $vendors = $vendorsQuery->get();
-        $suppliersQuery = Supplier::query()->orderBy('name');
-        $this->scopeSuppliersForActiveBranch($suppliersQuery);
-        $suppliers = $suppliersQuery->get();
-        $productsQuery = Product::query()->orderBy('name');
-        $this->scopeProductsForActiveBranch($productsQuery, $activeBranch);
-        $products = $productsQuery->get();
+        $vendors = Vendor::orderBy('name')->get();
+        $products = Product::orderBy('name')->get();
         
-        return view('Purchases.add-purchases-order', compact('vendors', 'suppliers', 'products'));
+        return view('Purchases.add-purchases-order', compact('vendors', 'products'));
     }
 
     public function storeOrder(Request $request)
@@ -1635,37 +1230,19 @@ public function show($id)
         $validated = $request->validate([
             'purchase_id' => 'nullable|string|max:100',
             'vendor_id' => 'nullable|exists:vendors,id',
-            'supplier_id' => 'required|exists:suppliers,id',
-            'purchase_date' => 'required|date',
+            'supplier_id' => 'nullable|exists:suppliers,id',
+            'purchase_date' => 'nullable|date',
             'reference_no' => 'nullable|string|max:100',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.rate' => 'required|numeric|min:0',
-            'items.*.description' => 'nullable|string|max:255',
+            'product_id' => 'nullable|exists:products,id',
+            'quantity' => 'nullable|numeric|min:0',
+            'rate' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:1000',
         ]);
 
         $purchaseNo = $validated['purchase_id'] ?? ('PO-' . date('Ymd') . '-' . strtoupper(Str::random(5)));
-        $items = collect($validated['items'] ?? [])
-            ->map(function (array $item) {
-                return [
-                    'product_id' => (int) $item['product_id'],
-                    'quantity' => round((float) $item['quantity'], 4),
-                    'rate' => round((float) $item['rate'], 4),
-                    'description' => trim((string) ($item['description'] ?? '')),
-                ];
-            })
-            ->filter(fn (array $item) => $item['quantity'] > 0)
-            ->values();
-
-        if ($items->isEmpty()) {
-            return back()->withInput()->withErrors([
-                'items' => 'Add at least one purchase order line item.',
-            ]);
-        }
-
-        $total = (float) $items->sum(fn (array $item) => $item['quantity'] * $item['rate']);
+        $qty = (float) ($validated['quantity'] ?? 0);
+        $rate = (float) ($validated['rate'] ?? 0);
+        $total = max(0, $qty * $rate);
 
         DB::beginTransaction();
         try {
@@ -1675,10 +1252,10 @@ public function show($id)
                 $purchase->vendor_id = $validated['vendor_id'] ?? null;
             }
             if (Schema::hasColumn('purchases', 'supplier_id')) {
-                $purchase->supplier_id = $validated['supplier_id'];
+                $purchase->supplier_id = $validated['supplier_id'] ?? ($validated['vendor_id'] ?? null);
             }
             if (Schema::hasColumn('purchases', 'purchase_date')) {
-                $purchase->purchase_date = $validated['purchase_date'];
+                $purchase->purchase_date = $validated['purchase_date'] ?? now()->toDateString();
             }
             if (Schema::hasColumn('purchases', 'reference_no')) {
                 $purchase->reference_no = $validated['reference_no'] ?? null;
@@ -1700,28 +1277,16 @@ public function show($id)
                 $purchase->branch_name = $activeBranch['name'] ?? null;
             }
             $purchase->total_amount = $total;
-            $purchase->status = 'ordered';
-            if (Schema::hasColumn('purchases', 'paid_amount')) {
-                $purchase->paid_amount = 0;
-            }
+            $purchase->status = 'pending';
             $purchase->save();
 
-            foreach ($items as $item) {
+            if (!empty($validated['product_id']) && $qty > 0 && $rate >= 0) {
                 $itemPayload = [
                     'purchase_id' => $purchase->id,
-                    'product_id' => $item['product_id'],
-                    'qty' => $item['quantity'],
-                    'unit_price' => $item['rate'],
+                    'product_id' => $validated['product_id'],
+                    'qty' => $qty,
+                    'unit_price' => $rate,
                 ];
-                if (Schema::hasColumn('purchase_items', 'received_qty')) {
-                    $itemPayload['received_qty'] = 0;
-                }
-                if (Schema::hasColumn('purchase_items', 'description')) {
-                    $itemPayload['description'] = $item['description'] ?: null;
-                }
-                if (Schema::hasColumn('purchase_items', 'line_total')) {
-                    $itemPayload['line_total'] = round($item['quantity'] * $item['rate'], 2);
-                }
                 if (Schema::hasColumn('purchase_items', 'company_id')) {
                     $itemPayload['company_id'] = $purchase->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
                 }
@@ -1747,19 +1312,11 @@ public function show($id)
      */
     public function editOrder($id)
     {
-        $activeBranch = $this->getActiveBranchContext();
-        $vendorsQuery = Vendor::query()->orderBy('name');
-        $this->applyTenantScope($vendorsQuery, 'vendors');
-        $vendors = $vendorsQuery->get();
-        $suppliersQuery = Supplier::query()->orderBy('name');
-        $this->scopeSuppliersForActiveBranch($suppliersQuery);
-        $suppliers = $suppliersQuery->get();
-        $productsQuery = Product::query()->orderBy('name');
-        $this->scopeProductsForActiveBranch($productsQuery, $activeBranch);
-        $products = $productsQuery->get();
-        $order = Purchase::with(['vendor', 'supplier', 'items.product'])->find($id);
+        $vendors = Vendor::orderBy('name')->get();
+        $products = Product::orderBy('name')->get();
+        $order = Purchase::with(['vendor', 'items'])->find($id);
 
-        return view('Purchases.edit-purchases-order', compact('order', 'vendors', 'suppliers', 'products'));
+        return view('Purchases.edit-purchases-order', compact('order', 'vendors', 'products'));
     }
 
     // ========== PURCHASE TRANSACTIONS (SUPER ADMIN) ==========

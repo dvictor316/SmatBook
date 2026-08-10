@@ -6,7 +6,6 @@ use App\Models\Supplier;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\SupplierPayment;
-use App\Models\Account;
 use App\Models\Bank;
 use App\Support\LedgerService;
 use Illuminate\Http\Request;
@@ -18,60 +17,6 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class SupplierController extends Controller
 {
-    private function applyCompanyUserScope($query, string $table): void
-    {
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
-        $userId = (int) (auth()->id() ?? 0);
-
-        if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
-            $query->where("{$table}.company_id", $companyId);
-        } elseif ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
-            $query->where("{$table}.user_id", $userId);
-        }
-    }
-
-    private function applyBranchFilter($query, string $table, bool $includeUnassignedFallback = false): void
-    {
-        $activeBranch = $this->getActiveBranchContext();
-        $branchId = trim((string) ($activeBranch['id'] ?? ''));
-        $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-        if ($branchId === '' && $branchName === '') {
-            return;
-        }
-
-        $query->where(function ($sub) use ($table, $branchId, $branchName, $includeUnassignedFallback) {
-            $matched = false;
-
-            if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
-                $sub->where("{$table}.branch_id", $branchId);
-                $matched = true;
-            }
-            if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
-                $method = $matched ? 'orWhere' : 'where';
-                $sub->{$method}("{$table}.branch_name", $branchName);
-                $matched = true;
-            }
-
-            if ($includeUnassignedFallback && (Schema::hasColumn($table, 'branch_id') || Schema::hasColumn($table, 'branch_name'))) {
-                $method = $matched ? 'orWhere' : 'where';
-                $sub->{$method}(function ($fallback) use ($table) {
-                    if (Schema::hasColumn($table, 'branch_id')) {
-                        $fallback->whereNull("{$table}.branch_id");
-                    }
-                    if (Schema::hasColumn($table, 'branch_name')) {
-                        $fallback->whereNull("{$table}.branch_name");
-                    }
-                });
-            }
-        });
-    }
-
-    private function newSupplierQuery()
-    {
-        return Supplier::withoutGlobalScope('tenant');
-    }
-
     private function purchaseGrossTotal($purchase): float
     {
         return round(abs((float) ($purchase->total_amount ?? 0)), 2);
@@ -121,125 +66,30 @@ class SupplierController extends Controller
 
     private function applyTenantScope($query, string $table = 'suppliers')
     {
-        $this->applyCompanyUserScope($query, $table);
-        $this->applyBranchFilter($query, $table, $table === 'suppliers');
+        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $userId = (int) (auth()->id() ?? 0);
+        $activeBranch = $this->getActiveBranchContext();
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+        if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
+            $query->where("{$table}.company_id", $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
+            $query->where("{$table}.user_id", $userId);
+        }
+
+        if ($branchId !== '' || $branchName !== '') {
+            $query->where(function ($sub) use ($table, $branchId, $branchName) {
+                if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
+                    $sub->where("{$table}.branch_id", $branchId);
+                }
+                if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
+                    $sub->orWhere("{$table}.branch_name", $branchName);
+                }
+            });
+        }
 
         return $query;
-    }
-
-    private function findScopedBank(int $bankId): ?Bank
-    {
-        if (!Schema::hasTable('banks')) {
-            return null;
-        }
-
-        $tenantQuery = Bank::query();
-        $this->applyCompanyUserScope($tenantQuery, 'banks');
-
-        $branchQuery = clone $tenantQuery;
-        $this->applyBranchFilter($branchQuery, 'banks');
-
-        return $branchQuery->find($bankId) ?: $tenantQuery->find($bankId);
-    }
-
-    private function findScopedAccount(int $accountId): ?Account
-    {
-        if (!Schema::hasTable('accounts')) {
-            return null;
-        }
-
-        $tenantQuery = Account::query();
-        $this->applyCompanyUserScope($tenantQuery, 'accounts');
-        if (Schema::hasColumn('accounts', 'is_active')) {
-            $tenantQuery->where('is_active', 1);
-        }
-
-        $branchQuery = clone $tenantQuery;
-        $this->applyBranchFilter($branchQuery, 'accounts');
-
-        return $branchQuery->find($accountId) ?: $tenantQuery->find($accountId);
-    }
-
-    private function resolveSourceBalance(?Bank $bank, ?Account $account): float
-    {
-        if ($bank && Schema::hasColumn('banks', 'balance')) {
-            return round((float) ($bank->balance ?? 0), 2);
-        }
-
-        if ($account) {
-            if (Schema::hasColumn('accounts', 'current_balance')) {
-                return round((float) ($account->current_balance ?? 0), 2);
-            }
-            if (Schema::hasColumn('accounts', 'opening_balance')) {
-                return round((float) ($account->opening_balance ?? 0), 2);
-            }
-        }
-
-        return 0.0;
-    }
-
-    private function supplierPaymentSources()
-    {
-        $sources = collect();
-
-        if (Schema::hasTable('banks')) {
-            $tenantBanksQuery = Bank::query()->orderBy('name');
-            $this->applyCompanyUserScope($tenantBanksQuery, 'banks');
-
-            $branchBanksQuery = clone $tenantBanksQuery;
-            $this->applyBranchFilter($branchBanksQuery, 'banks');
-
-            $banks = $branchBanksQuery->get();
-            if ($banks->isEmpty()) {
-                $banks = $tenantBanksQuery->get();
-            }
-
-            $sources = $sources->merge($banks->map(function ($bank) {
-                return (object) [
-                    'value' => 'bank:' . $bank->id,
-                    'label' => $bank->name,
-                    'type' => 'Bank',
-                    'balance' => round((float) ($bank->balance ?? 0), 2),
-                    'bank_id' => $bank->id,
-                    'account_id' => null,
-                ];
-            }));
-        }
-
-        if (Schema::hasTable('accounts')) {
-            $tenantAccountsQuery = Account::query()->orderBy('name');
-            $this->applyCompanyUserScope($tenantAccountsQuery, 'accounts');
-            if (Schema::hasColumn('accounts', 'is_active')) {
-                $tenantAccountsQuery->where('is_active', 1);
-            }
-            if (Schema::hasColumn('accounts', 'type')) {
-                $tenantAccountsQuery->where('type', Account::TYPE_ASSET);
-            }
-
-            $branchAccountsQuery = clone $tenantAccountsQuery;
-            $this->applyBranchFilter($branchAccountsQuery, 'accounts');
-
-            $accounts = $branchAccountsQuery->get();
-            if ($accounts->isEmpty()) {
-                $accounts = $tenantAccountsQuery->get();
-            }
-
-            $sources = $sources->merge($accounts->map(function ($account) {
-                return (object) [
-                    'value' => 'account:' . $account->id,
-                    'label' => $account->name,
-                    'type' => 'Account',
-                    'balance' => round((float) ($account->current_balance ?? $account->opening_balance ?? 0), 2),
-                    'bank_id' => null,
-                    'account_id' => $account->id,
-                ];
-            }));
-        }
-
-        return $sources
-            ->unique('value')
-            ->sortBy(fn ($source) => strtolower((string) $source->label))
-            ->values();
     }
 
     private function resolveNameColumn(): string
@@ -280,7 +130,7 @@ class SupplierController extends Controller
 
     public function index(Request $request)
     {
-        $query = $this->newSupplierQuery()->latest();
+        $query = Supplier::query()->latest();
         $this->applyTenantScope($query);
 
         $search = trim((string) $request->input('search', ''));
@@ -365,13 +215,13 @@ class SupplierController extends Controller
 
     public function edit($id)
     {
-        $supplier = $this->applyTenantScope($this->newSupplierQuery())->findOrFail($id);
+        $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
         return view('Customers.suppliers-edit', compact('supplier'));
     }
 
     public function show($id)
     {
-        $supplier = $this->applyTenantScope($this->newSupplierQuery())->findOrFail($id);
+        $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
 
         $hasPurchases = Schema::hasTable('purchases');
         $purchaseDateColumn = $hasPurchases && Schema::hasColumn('purchases', 'purchase_date')
@@ -463,6 +313,7 @@ class SupplierController extends Controller
                     'purchase_items.purchase_id',
                     'purchase_items.product_id',
                     DB::raw($productNameExpression . ' as product_name'),
+                    DB::raw("COALESCE(products.base_unit_name, 'unit') as unit_name"),
                     $qtyColumn ? "purchase_items.{$qtyColumn} as qty" : DB::raw('0 as qty'),
                     $receivedQtyColumn ? "purchase_items.{$receivedQtyColumn} as received_qty" : DB::raw('0 as received_qty'),
                     $rateColumn ? "purchase_items.{$rateColumn} as unit_price" : DB::raw('0 as unit_price'),
@@ -497,7 +348,7 @@ class SupplierController extends Controller
 
     public function pay($id)
     {
-        $supplier = $this->applyTenantScope($this->newSupplierQuery())->findOrFail($id);
+        $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
         $purchaseDateColumn = Schema::hasColumn('purchases', 'purchase_date')
             ? 'purchase_date'
             : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
@@ -515,11 +366,31 @@ class SupplierController extends Controller
             return $purchase;
         })->filter(fn ($purchase) => $purchase->outstanding_balance > 0)->values();
 
-        $paymentSources = $this->supplierPaymentSources();
+        $banks = collect();
+        if (Schema::hasTable('banks')) {
+            $banksQuery = Bank::query()->orderBy('name');
+            $this->applyTenantScope($banksQuery, 'banks');
+            if (Schema::hasColumn('banks', 'branch_id') || Schema::hasColumn('banks', 'branch_name')) {
+                $activeBranch = $this->getActiveBranchContext();
+                $branchId = trim((string) ($activeBranch['id'] ?? ''));
+                $branchName = trim((string) ($activeBranch['name'] ?? ''));
+                if ($branchId !== '' || $branchName !== '') {
+                    $banksQuery->where(function ($sub) use ($branchId, $branchName) {
+                        if ($branchId !== '' && Schema::hasColumn('banks', 'branch_id')) {
+                            $sub->where('branch_id', $branchId);
+                        }
+                        if ($branchName !== '' && Schema::hasColumn('banks', 'branch_name')) {
+                            $sub->orWhere('branch_name', $branchName);
+                        }
+                    });
+                }
+            }
+            $banks = $banksQuery->get();
+        }
 
         $supplierPayments = collect();
         if (Schema::hasTable('supplier_payments')) {
-            $supplierPaymentsQuery = SupplierPayment::with(['purchase', 'bank', 'account'])
+            $supplierPaymentsQuery = SupplierPayment::with(['purchase', 'bank'])
                 ->where('supplier_id', $supplier->id)
                 ->latest('payment_date')
                 ->latest('id');
@@ -543,7 +414,7 @@ class SupplierController extends Controller
         return view('Customers.supplier-payments', compact(
             'supplier',
             'outstandingPurchases',
-            'paymentSources',
+            'banks',
             'supplierPayments',
             'summary'
         ));
@@ -551,7 +422,7 @@ class SupplierController extends Controller
 
     public function statement(Request $request, $id)
     {
-        $supplier = $this->applyTenantScope($this->newSupplierQuery())->findOrFail($id);
+        $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
         $purchaseDateColumn = Schema::hasColumn('purchases', 'purchase_date')
             ? 'purchase_date'
             : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
@@ -626,11 +497,10 @@ class SupplierController extends Controller
 
     public function storePayment(Request $request, $id): RedirectResponse
     {
-        $supplier = $this->applyTenantScope($this->newSupplierQuery())->findOrFail($id);
+        $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
 
         $request->validate([
             'payment_date' => 'required|date',
-            'payment_source' => 'nullable|string|max:50',
             'bank_id' => Schema::hasTable('banks') ? 'nullable|exists:banks,id' : 'nullable',
             'reference' => 'nullable|string|max:191',
             'method' => 'nullable|string|max:100',
@@ -648,17 +518,11 @@ class SupplierController extends Controller
 
         $paymentDate = $request->input('payment_date');
         $paymentGroup = trim((string) $request->input('reference', '')) ?: ('SUPPAY-' . now()->format('YmdHis'));
-        $paymentSource = trim((string) $request->input('payment_source', ''));
-        if ($paymentSource === '' && $request->filled('bank_id')) {
-            $paymentSource = 'bank:' . (int) $request->input('bank_id');
-        }
-
         $bank = null;
-        $account = null;
-        if (str_starts_with($paymentSource, 'bank:')) {
-            $bank = $this->findScopedBank((int) substr($paymentSource, 5));
-        } elseif (str_starts_with($paymentSource, 'account:')) {
-            $account = $this->findScopedAccount((int) substr($paymentSource, 8));
+        if ($request->filled('bank_id') && Schema::hasTable('banks')) {
+            $bankQuery = Bank::query();
+            $this->applyTenantScope($bankQuery, 'banks');
+            $bank = $bankQuery->find((int) $request->input('bank_id'));
         }
 
         if ($paymentAmount > 0 && $allocations->isEmpty() && $openingBalancePayment <= 0) {
@@ -712,15 +576,15 @@ class SupplierController extends Controller
         }
 
         $totalPayment = round($paymentAmount > 0 ? $paymentAmount : ($allocations->sum() + $openingBalancePayment), 2);
-        if ($bank || $account) {
-            $availableBalance = $this->resolveSourceBalance($bank, $account);
+        if ($bank && Schema::hasColumn('banks', 'balance')) {
+            $availableBalance = (float) $bank->balance;
             if ($totalPayment > $availableBalance) {
-                return back()->withInput()->with('error', 'Selected payment source does not have enough funds to cover the payment total of ₦' . number_format($totalPayment, 2) . '.');
+                return back()->withInput()->with('error', 'Selected bank does not have enough funds to cover the payment total of ₦' . number_format($totalPayment, 2) . '.');
             }
         }
 
         try {
-            DB::transaction(function () use ($supplier, $allocations, $openingBalancePayment, $request, $paymentDate, $paymentGroup, $bank, $account) {
+            DB::transaction(function () use ($supplier, $allocations, $openingBalancePayment, $request, $paymentDate, $paymentGroup, $bank) {
                 $purchasesQuery = Purchase::query()
                     ->where('supplier_id', $supplier->id)
                     ->whereIn('id', $allocations->keys())
@@ -766,8 +630,7 @@ class SupplierController extends Controller
                     $purchase->save();
 
                     if (Schema::hasTable('supplier_payments')) {
-                        $sourceBalanceBefore = $this->resolveSourceBalance($bank, $account);
-                        $paymentPayload = [
+                        SupplierPayment::create([
                             'supplier_id' => $supplier->id,
                             'purchase_id' => $purchase->id,
                             'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
@@ -782,38 +645,14 @@ class SupplierController extends Controller
                             'note' => $request->input('note'),
                             'payment_date' => $paymentDate,
                             'created_by' => auth()->id(),
-                        ];
-
-                        if (Schema::hasColumn('supplier_payments', 'account_id')) {
-                            $paymentPayload['account_id'] = $account?->id;
-                        }
-                        if (Schema::hasColumn('supplier_payments', 'source_balance_before')) {
-                            $paymentPayload['source_balance_before'] = $sourceBalanceBefore;
-                        }
-                        if (Schema::hasColumn('supplier_payments', 'source_balance_after')) {
-                            $paymentPayload['source_balance_after'] = max(0, $sourceBalanceBefore - $amount);
-                        }
-
-                        SupplierPayment::create($paymentPayload);
-                    }
-
-                    // Deduct from bank balance if applicable
-                    if ($bank && Schema::hasColumn('banks', 'balance')) {
-                        $bank->balance = max(0, (float)$bank->balance - $amount);
-                        $bank->save();
-                    }
-                    if ($account && Schema::hasColumn('accounts', 'current_balance')) {
-                        $account->current_balance = max(0, (float) $account->current_balance - $amount);
-                        $account->save();
+                        ]);
                     }
 
                     LedgerService::postPurchasePayment(
                         $purchase->fresh(),
                         $amount,
-                        $request->input('method') ?: ($bank?->name ?: ($account?->name ?: 'Bank Transfer')),
-                        $paymentGroup,
-                        $account?->id,
-                        $paymentDate
+                        $request->input('method') ?: ($bank?->name ?: 'Bank Transfer'),
+                        $paymentGroup
                     );
                 }
 
@@ -826,8 +665,7 @@ class SupplierController extends Controller
                         $supplier->save();
 
                         if (Schema::hasTable('supplier_payments')) {
-                            $sourceBalanceBefore = $this->resolveSourceBalance($bank, $account);
-                            $paymentPayload = [
+                            SupplierPayment::create([
                                 'supplier_id' => $supplier->id,
                                 'purchase_id' => null,
                                 'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
@@ -842,42 +680,8 @@ class SupplierController extends Controller
                                 'note' => $request->input('note') ?: 'Supplier opening balance payment.',
                                 'payment_date' => $paymentDate,
                                 'created_by' => auth()->id(),
-                            ];
-
-                            if (Schema::hasColumn('supplier_payments', 'account_id')) {
-                                $paymentPayload['account_id'] = $account?->id;
-                            }
-                            if (Schema::hasColumn('supplier_payments', 'source_balance_before')) {
-                                $paymentPayload['source_balance_before'] = $sourceBalanceBefore;
-                            }
-                            if (Schema::hasColumn('supplier_payments', 'source_balance_after')) {
-                                $paymentPayload['source_balance_after'] = max(0, $sourceBalanceBefore - $amount);
-                            }
-
-                            SupplierPayment::create($paymentPayload);
+                            ]);
                         }
-
-                        // Deduct from bank balance if applicable
-                        if ($bank && Schema::hasColumn('banks', 'balance')) {
-                            $bank->balance = max(0, (float)$bank->balance - $amount);
-                            $bank->save();
-                        }
-                        if ($account && Schema::hasColumn('accounts', 'current_balance')) {
-                            $account->current_balance = max(0, (float) $account->current_balance - $amount);
-                            $account->save();
-                        }
-
-                        LedgerService::postSupplierOpeningBalancePayment(
-                            $supplier->id,
-                            $amount,
-                            $request->input('method') ?: ($bank?->name ?: ($account?->name ?: 'Bank Transfer')),
-                            $paymentGroup,
-                            $account?->id,
-                            $paymentDate,
-                            auth()->id(),
-                            $activeBranch['id'],
-                            $activeBranch['name']
-                        );
                     }
                 }
             });
@@ -892,7 +696,7 @@ class SupplierController extends Controller
 
     public function update(Request $request, $id): RedirectResponse
     {
-        $supplier = $this->applyTenantScope($this->newSupplierQuery())->findOrFail($id);
+        $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
         $request->validate([
             'name'    => 'required|string|max:191',
             'contact' => 'nullable|string|max:191',
@@ -920,7 +724,7 @@ class SupplierController extends Controller
 
     public function destroy($id): RedirectResponse
     {
-        $supplier = $this->applyTenantScope($this->newSupplierQuery())->findOrFail($id);
+        $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
         $supplier->delete();
         return redirect()->route('suppliers.index')->with('success', 'Supplier deleted.');
     }
@@ -988,9 +792,6 @@ class SupplierController extends Controller
             $companyId = (int) (auth()->user()?->company_id ?? 0);
             $userId = (int) (auth()->id() ?? 0);
             $updateExisting = $request->boolean('update_existing');
-            $activeBranch = $this->getActiveBranchContext();
-            $activeBranchId = trim((string) ($activeBranch['id'] ?? ''));
-            $activeBranchName = trim((string) ($activeBranch['name'] ?? ''));
 
             foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
                 if ($rowNumber === 0) {
@@ -1014,33 +815,12 @@ class SupplierController extends Controller
                 try {
                     $lookupEmail = $rowData['email'] ?? '';
                     $lookupPhone = $rowData['phone'] ?? '';
-                    $csvBranchName = trim((string) ($rowData['branch_name'] ?? ''));
 
-                    if ($csvBranchName !== '' && $activeBranchName !== '' && strcasecmp($csvBranchName, $activeBranchName) !== 0) {
-                        $skipped++;
-                        if (count($rowErrors) < 10) {
-                            $rowErrors[] = 'Row ' . ($rowNumber + 1) . ': branch_name does not match the active branch';
-                        }
-                        continue;
-                    }
-
-                    $supplierQuery = $this->newSupplierQuery();
+                    $supplierQuery = Supplier::query();
                     if ($companyId > 0 && Schema::hasColumn('suppliers', 'company_id')) {
                         $supplierQuery->where('company_id', $companyId);
                     } elseif ($userId > 0 && Schema::hasColumn('suppliers', 'user_id')) {
                         $supplierQuery->where('user_id', $userId);
-                    }
-
-                    if ($activeBranchId !== '' || $activeBranchName !== '') {
-                        $supplierQuery->where(function ($branchQuery) use ($activeBranchId, $activeBranchName) {
-                            if ($activeBranchId !== '' && Schema::hasColumn('suppliers', 'branch_id')) {
-                                $branchQuery->where('branch_id', $activeBranchId);
-                            }
-                            if ($activeBranchName !== '' && Schema::hasColumn('suppliers', 'branch_name')) {
-                                $method = ($activeBranchId !== '' && Schema::hasColumn('suppliers', 'branch_id')) ? 'orWhere' : 'where';
-                                $branchQuery->{$method}('branch_name', $activeBranchName);
-                            }
-                        });
                     }
 
                     if ($lookupEmail !== '' && Schema::hasColumn('suppliers', 'email')) {
@@ -1075,17 +855,8 @@ class SupplierController extends Controller
                         'email' => $lookupEmail !== '' ? $lookupEmail : null,
                         'phone' => $lookupPhone !== '' ? $lookupPhone : null,
                         'address' => $rowData['address'] ?? null,
-                        'opening_balance' => is_numeric($rowData['opening_balance'] ?? ($rowData['balance'] ?? null))
-                            ? (float) ($rowData['opening_balance'] ?? $rowData['balance'])
-                            : 0,
-                        'opening_balance_date' => is_numeric($rowData['opening_balance'] ?? ($rowData['balance'] ?? null))
-                            && (float) ($rowData['opening_balance'] ?? $rowData['balance']) > 0
-                                ? ($rowData['opening_balance_date'] ?? now()->toDateString())
-                                : null,
                         'company_id' => $companyId > 0 ? $companyId : null,
                         'user_id' => $userId > 0 ? $userId : null,
-                        'branch_id' => $activeBranchId !== '' ? $activeBranchId : null,
-                        'branch_name' => $activeBranchName !== '' ? $activeBranchName : null,
                     ]);
                     $payload[$nameColumn] = $rowData['name'];
 
@@ -1211,43 +982,34 @@ class SupplierController extends Controller
 
     private function calculateTotalPayables(): float
     {
-        $supplierQuery = $this->newSupplierQuery();
+        $openingBalances = 0.0;
+        $purchaseBalances = 0.0;
+
+        $supplierQuery = Supplier::query();
         $this->applyTenantScope($supplierQuery);
+        if (Schema::hasColumn('suppliers', 'opening_balance')) {
+            $openingBalances = (float) $supplierQuery->sum('opening_balance');
+        }
 
-        $suppliers = $supplierQuery->select(array_values(array_filter([
-            'id',
-            Schema::hasColumn('suppliers', 'opening_balance') ? 'opening_balance' : null,
-        ])))->get();
+        if (Schema::hasTable('purchases')) {
+            $query = Purchase::query()->select(array_values(array_filter([
+                'id',
+                'supplier_id',
+                'total_amount',
+                Schema::hasColumn('purchases', 'paid_amount') ? 'paid_amount' : null,
+            ])));
+            $this->applyTenantScope($query, 'purchases');
+            $this->applyBranchScopeToPurchases($query);
+            $purchaseBalances = round((float) $query->get()->sum(fn ($purchase) => $this->resolvePurchaseOutstandingAmount($purchase)), 2);
+        }
 
-        $supplierIds = $suppliers->pluck('id')->map(fn ($id) => (int) $id)->filter(fn ($id) => $id > 0)->all();
-        $openingBalances = round((float) $suppliers->sum(fn ($supplier) => (float) ($supplier->opening_balance ?? 0)), 2);
-        $purchaseBalances = round((float) collect($this->supplierOutstandingBalances($supplierIds))->sum(), 2);
-
-        return round($openingBalances + $purchaseBalances, 2);
+        return $openingBalances + $purchaseBalances;
     }
 
     private function normalizeImportHeaderCell($value): string
     {
         $header = strtolower(trim((string) $value));
-        $header = preg_replace('/^\x{FEFF}/u', '', $header) ?? $header;
-
-        $aliases = [
-            'supplier' => 'name',
-            'supplier_name' => 'name',
-            'vendor' => 'name',
-            'vendor_name' => 'name',
-            'mobile' => 'phone',
-            'phone_number' => 'phone',
-            'email_address' => 'email',
-            'opening_bal' => 'opening_balance',
-            'opening_balance' => 'opening_balance',
-            'balance' => 'opening_balance',
-            'ob' => 'opening_balance',
-            'opening_balance_date' => 'opening_balance_date',
-            'opening_date' => 'opening_balance_date',
-        ];
-
-        return $aliases[$header] ?? $header;
+        return preg_replace('/^\x{FEFF}/u', '', $header) ?? $header;
     }
 
     private function spreadsheetRowIterator(\Illuminate\Http\UploadedFile $file): \Generator
@@ -1294,19 +1056,13 @@ class SupplierController extends Controller
         $spreadsheet = $reader->load($file->getRealPath());
 
         try {
-            $sheet = $spreadsheet->getActiveSheet();
-            $highestRow = (int) $sheet->getHighestDataRow();
-            $highestColumn = $sheet->getHighestDataColumn();
+            foreach ($spreadsheet->getActiveSheet()->getRowIterator() as $row) {
+                $cells = [];
+                $cellIterator = $row->getCellIterator();
+                $cellIterator->setIterateOnlyExistingCells(false);
 
-            if ($highestRow <= 0 || $highestColumn === '') {
-                return;
-            }
-
-            foreach ($sheet->rangeToArray("A1:{$highestColumn}{$highestRow}", null, true, false, false) as $cells) {
-                $cells = array_map(fn ($value) => is_scalar($value) ? trim((string) $value) : $value, $cells);
-                $hasValue = collect($cells)->contains(fn ($value) => trim((string) $value) !== '');
-                if (!$hasValue) {
-                    continue;
+                foreach ($cellIterator as $cell) {
+                    $cells[] = $cell?->getFormattedValue();
                 }
 
                 yield $cells;

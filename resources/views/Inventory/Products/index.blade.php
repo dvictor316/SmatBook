@@ -7,13 +7,11 @@
     $productRows = $productRows ?? collect();
     $hasProductRows = isset($hasProductRows) ? (bool) $hasProductRows : ($productRows->count() > 0);
     $categories = $categories ?? collect();
-    $units = $units ?? collect();
     $availableBranches = $availableBranches ?? [];
     $activeBranch = $activeBranch ?? [];
     $stockTransferEnabled = $stockTransferEnabled ?? false;
     $branchOptions = $availableBranches;
     $showStockTransferModal = $stockTransferEnabled && count($branchOptions) > 1;
-    $showQuickProductAdvancedFields = $errors->hasAny(['sku', 'barcode', 'wholesale_price', 'special_price', 'reorder_level', 'reorder_quantity', 'unit_type']);
 @endphp
 <style>
     /* Hide default DataTables buttons as we trigger them via our custom dropdown */
@@ -24,29 +22,29 @@
         align-items: center;
         gap: 0.45rem;
         padding: 0.55rem 0.95rem;
-        border: 1px solid #0f3a8a;
+        border: 1px solid rgba(13, 110, 253, 0.25);
         border-radius: 999px;
-        background: linear-gradient(135deg, #0f3a8a 0%, #2563eb 100%);
-        color: #ffffff;
+        background: #eef4ff;
+        color: #0d4fd6;
         font-size: 0.875rem;
         font-weight: 700;
         text-decoration: none;
-        box-shadow: 0 10px 22px rgba(15, 58, 138, 0.18);
+        box-shadow: 0 8px 20px rgba(13, 110, 253, 0.12);
         transition: all 0.2s ease;
     }
 
     .product-action-trigger:hover,
     .product-action-trigger:focus {
-        background: #ffffff;
-        color: #0f3a8a;
-        border-color: #d7a928;
+        background: #0d6efd;
+        color: #fff;
+        border-color: #0d6efd;
     }
 
     .product-action-menu {
         min-width: 11rem;
-        border: 1px solid rgba(15, 58, 138, 0.14);
+        border: 0;
         border-radius: 1rem;
-        box-shadow: 0 18px 40px rgba(6, 26, 68, 0.14);
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
         overflow: hidden;
     }
 
@@ -56,14 +54,6 @@
         gap: 0.65rem;
         padding: 0.8rem 1rem;
         font-weight: 600;
-        color: #061a44;
-        background: #ffffff;
-    }
-
-    .product-action-menu .dropdown-item:hover,
-    .product-action-menu .dropdown-item:focus {
-        background: #fff8e1;
-        color: #0f3a8a;
     }
 
     .product-action-menu .dropdown-item.text-danger {
@@ -106,212 +96,7 @@
     .mobile-add-product-trigger {
         display: none;
     }
-
-    .product-form-sheet {
-        border: 1px solid #edf2f7;
-        border-radius: 14px;
-        background: #fbfdff;
-        padding: 1rem;
-    }
-
-    .product-form-sheet h6 {
-        margin-bottom: 0.25rem;
-        font-weight: 800;
-        color: #1f2937;
-    }
-
-    #addProductModal .modal-content,
-    #addProductModal .modal-body,
-    #addProductModal .product-form-sheet,
-    #addProductModal .form-control,
-    #addProductModal .form-select,
-    #addProductModal .input-group .btn {
-        color: #1f2937;
-    }
-
-    #addProductModal .form-control,
-    #addProductModal .form-select {
-        background-color: #ffffff;
-        border-color: #dbe3f0;
-    }
-
-    #addProductModal .form-select option,
-    #addProductModal .form-control option {
-        background-color: #ffffff;
-        color: #111827;
-    }
-
-    #addProductModal .form-select:focus,
-    #addProductModal .form-control:focus {
-        border-color: #60a5fa;
-        box-shadow: 0 0 0 0.2rem rgba(96, 165, 250, 0.18);
-    }
-
-    #addProductModal .select2-container {
-        width: 100% !important;
-    }
-
-    #addProductModal .select2-container--default .select2-selection--single {
-        height: 49px;
-        border-radius: 12px;
-        border: 1px solid #dbe3f0;
-        background: #ffffff;
-        display: flex;
-        align-items: center;
-    }
-
-    #addProductModal .select2-container--default .select2-selection--single .select2-selection__rendered {
-        color: #111827;
-        line-height: 47px;
-        padding-left: 14px;
-        padding-right: 36px;
-    }
-
-    #addProductModal .select2-container--default .select2-selection--single .select2-selection__placeholder {
-        color: #6b7280;
-    }
-
-    .select2-container--open .select2-dropdown.quick-category-dropdown {
-        z-index: 2000;
-        border-color: #dbe3f0;
-        border-radius: 12px;
-        overflow: hidden;
-        background: #ffffff;
-    }
-
-    .select2-container--open .select2-dropdown.quick-category-dropdown .select2-results__option {
-        color: #111827;
-        background: #ffffff;
-        padding: 10px 14px;
-    }
-
-    .select2-container--open .select2-dropdown.quick-category-dropdown .select2-results__option--highlighted[aria-selected] {
-        background: #fff8e1;
-        color: #0f3a8a;
-    }
-
-    .product-form-muted {
-        color: #6b7280;
-        font-size: 0.9rem;
-        margin-bottom: 0.9rem;
-    }
-
-    .product-flow-banner {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        padding: 0.9rem 1rem;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #f4f7ff 0%, #f8fbff 100%);
-        border: 1px solid #dbe7ff;
-    }
-
-    .product-flow-step {
-        flex: 1 1 180px;
-        min-width: 0;
-    }
-
-    .product-flow-step strong {
-        display: block;
-        color: #1d4ed8;
-        font-size: 0.86rem;
-        margin-bottom: 0.15rem;
-    }
-
-    .product-flow-step span {
-        color: #475569;
-        font-size: 0.82rem;
-        line-height: 1.45;
-    }
-
-    .quick-summary-pills {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-    }
-
-    .quick-summary-pill {
-        flex: 1 1 180px;
-        min-width: 0;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        background: #fff;
-        padding: 0.75rem 0.9rem;
-    }
-
-    .quick-summary-pill span {
-        display: block;
-        font-size: 0.78rem;
-        color: #64748b;
-        margin-bottom: 0.2rem;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-
-    .quick-summary-pill strong {
-        font-size: 1rem;
-        color: #0f172a;
-        font-weight: 800;
-    }
-
-    .unit-suggestion-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.45rem;
-        margin-top: 0.55rem;
-    }
-
-    .unit-suggestion-chip {
-        border: 1px solid #dbe3f0;
-        background: #f8fafc;
-        color: #334155;
-        border-radius: 999px;
-        padding: 0.28rem 0.65rem;
-        font-size: 0.78rem;
-        font-weight: 700;
-        line-height: 1.2;
-    }
-
-    .unit-suggestion-chip:hover {
-        border-color: #0f766e;
-        background: #ecfdf5;
-        color: #0f766e;
-    }
-
-    .unit-action-link {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.2rem;
-        border: 1px solid #bfdbfe;
-        border-radius: 999px;
-        background: #eff6ff;
-        color: #1d4ed8;
-        padding: 0.12rem 0.45rem !important;
-        font-weight: 800;
-        font-size: 0.68rem;
-        line-height: 1.15;
-        text-decoration: none;
-        white-space: nowrap;
-    }
-
-    .unit-action-link i {
-        font-size: 0.7rem;
-    }
-
-    .unit-action-link:hover {
-        border-color: #93c5fd;
-        background: #dbeafe;
-        color: #1d4ed8;
-    }
-
-    .product-collapse-toggle {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.45rem;
-        font-weight: 700;
-    }
-
+    
     @media print {
         .no-print, .dt-buttons, .main-header, .sidebar { display: none !important; }
         .card { border: none !important; box-shadow: none !important; }
@@ -366,9 +151,9 @@
             padding: 0.9rem 1rem;
             border: 0;
             border-radius: 999px;
-            background: linear-gradient(135deg, #0f3a8a 0%, #2563eb 100%);
+            background: linear-gradient(135deg, #198754 0%, #0f9d58 100%);
             color: #fff;
-            box-shadow: 0 16px 36px rgba(15, 58, 138, 0.24);
+            box-shadow: 0 16px 36px rgba(15, 157, 88, 0.32);
             font-weight: 800;
         }
     }
@@ -377,6 +162,7 @@
 <div class="page-wrapper" id="main-content-wrapper">
     <div class="content container-fluid">
 
+        {{-- INLINE HEADER & CONTROLS --}}
         <div class="card shadow-sm mb-3 no-print">
             <div class="card-body">
                 <div class="row align-items-center inventory-page-header">
@@ -391,7 +177,7 @@
                                     <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
                                 </div>
                             </form>
-
+                            
                             <div class="dropdown">
                                 <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                                     <i class="fas fa-download me-1"></i> Export
@@ -457,14 +243,13 @@
                         </thead>
                         <tbody>
                             <?php if ($hasProductRows): ?>
-                                <?php $productIndex = 1; foreach ($productRows as $product): ?>
+                                <?php $productIndex = method_exists($products, 'firstItem') ? ($products->firstItem() ?? 1) : 1; foreach ($productRows as $product): ?>
                                     <tr>
                                         <td>{{ $productIndex }}</td>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 @if($product->image_url)
-                                                    <img src="{{ $product->image_url }}" class="rounded me-2" width="35" height="35" alt="{{ $product->name }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
-                                                    <span class="product-thumb-empty" style="display:none;"><i class="fas fa-box-open"></i></span>
+                                                    <img src="{{ $product->image_url }}" class="rounded me-2" width="35" height="35" alt="{{ $product->name }}">
                                                 @else
                                                     <span class="product-thumb-empty"><i class="fas fa-box-open"></i></span>
                                                 @endif
@@ -475,7 +260,7 @@
                                             </div>
                                         </td>
                                         <td>{{ $product->category_name ?? 'N/A' }}</td>
-                                        <td><span class="badge bg-soft-info text-info">{{ method_exists($product, 'stockUnitSymbol') ? $product->stockUnitSymbol() : ($product->base_unit_name ?? 'pcs') }}</span></td>
+                                        <td><span class="badge bg-soft-info text-info">{{ $product->base_unit_name }}</span></td>
                                         <td>
                                                 @if((int) ($product->units_per_roll ?? 0) > 0)
                                                     <small class="d-block text-nowrap">Rolls / Carton: <strong>{{ $product->units_per_carton }}</strong></small>
@@ -487,32 +272,10 @@
                                         </td>
                                         <td>
                                             <?php $displayStock = (float) ($product->active_branch_stock ?? $product->stock); ?>
-                                            <?php
-                                                $stockStatusLabel = $displayStock <= 0 ? 'Out of stock' : ($displayStock <= 5 ? 'Low stock' : 'In stock');
-                                                $stockStatusClass = $displayStock <= 0 ? 'text-danger' : ($displayStock <= 5 ? 'text-warning' : 'text-success');
-                                                $stockBreakdown = method_exists($product, 'stockBreakdown')
-                                                    ? $product->stockBreakdown($displayStock)
-                                                    : ['cartons' => 0, 'rolls' => 0, 'units' => (int) floor($displayStock)];
-                                                $baseUnitLabel = method_exists($product, 'stockUnitSymbol')
-                                                    ? $product->stockUnitSymbol()
-                                                    : (trim((string) ($product->base_unit_name ?? 'pcs')) ?: 'pcs');
-                                                $stockMix = [];
-                                                if (($stockBreakdown['cartons'] ?? 0) > 0) {
-                                                    $stockMix[] = rtrim(rtrim(number_format((float) $stockBreakdown['cartons'], 2), '0'), '.') . ' ctn';
-                                                }
-                                                if (($stockBreakdown['rolls'] ?? 0) > 0) {
-                                                    $stockMix[] = rtrim(rtrim(number_format((float) $stockBreakdown['rolls'], 2), '0'), '.') . ' roll';
-                                                }
-                                                if (($stockBreakdown['units'] ?? 0) > 0 || empty($stockMix)) {
-                                                    $stockMix[] = rtrim(rtrim(number_format((float) ($stockBreakdown['units'] ?? 0), 2), '0'), '.') . ' ' . $baseUnitLabel;
-                                                }
-                                            ?>
                                             <?php $hasActiveBranch = !empty($activeBranch['name'] ?? null); ?>
                                             <span class="badge {{ $displayStock <= 5 ? 'bg-danger' : 'bg-success' }}">
-                                                {{ method_exists($product, 'formatStockQuantity') ? $product->formatStockQuantity($displayStock) : rtrim(rtrim(number_format((float) $displayStock, 2), '0'), '.') }}
+                                                {{ rtrim(rtrim(number_format((float) $displayStock, 2), '0'), '.') }}
                                             </span>
-                                            <div class="small fw-semibold {{ $stockStatusClass }} mt-1">{{ $stockStatusLabel }}</div>
-                                            <div class="small text-muted mt-1">{{ implode(' + ', $stockMix) }}</div>
                                             @if($hasActiveBranch)
                                                 <div class="small text-muted mt-1">{{ $activeBranch['name'] }}</div>
                                             @endif
@@ -527,10 +290,10 @@
                                         <td>{{ number_format((float) $product->purchase_price, 2) }}</td>
                                         <td class="text-center no-print">
                                             <div class="dropdown">
-                                                <button type="button" class="product-action-trigger dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <a href="#" class="product-action-trigger dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                                                     <i class="fas fa-bolt"></i>
                                                     <span>Manage</span>
-                                                </button>
+                                                </a>
                                                 <div class="dropdown-menu dropdown-menu-end product-action-menu">
                                                     <a class="dropdown-item" href="{{ route('inventory.history', $product->id) }}"><i class="fas fa-chart-line me-2"></i>Run Report</a>
                                                     <a class="dropdown-item" href="{{ route('inventory.Products.edit', $product->id) }}"><i class="far fa-edit me-2"></i>Edit</a>
@@ -617,6 +380,7 @@
 </div>
 @endif
 
+{{-- MODAL: ADD PRODUCT --}}
 <div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -627,275 +391,113 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="quick_product_success_message" class="alert alert-success d-none" role="alert"></div>
-                    <div id="quick_product_error_message" class="alert alert-danger d-none" role="alert"></div>
                     <div class="row g-3">
-                        <div class="col-12">
-                            <div class="product-flow-banner">
-                                <div class="product-flow-step">
-                                    <strong>1. Product Details</strong>
-                                    <span>Name, optional category, branch, prices, and image.</span>
-                                </div>
-                                <div class="product-flow-step">
-                                    <strong>2. Packaging Setup</strong>
-                                    <span>Tell the system how many pcs make one roll and one carton.</span>
-                                </div>
-                                <div class="product-flow-step">
-                                    <strong>3. Opening Stock</strong>
-                                    <span>Type only your current ctn, roll, and pcs. Total stock updates automatically.</span>
-                                </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Product Name</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">SKU</label>
+                            <input type="text" name="sku" class="form-control" placeholder="Leave blank to auto-generate">
+                            <small class="text-muted">If the product does not come with a code, the system will generate a unique SKU.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Barcode</label>
+                            <input type="text" name="barcode" class="form-control" placeholder="Scan or type barcode">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Category</label>
+                            <div class="input-group">
+                                <select name="category_id" id="product_category_select" class="form-select" required>
+                                    <?php foreach ($categories as $cat): ?>
+                                        <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">+</button>
                             </div>
                         </div>
-
-                        <div class="col-12">
-                            <div class="product-form-sheet">
-                                <h6>Product Details</h6>
-                                <p class="product-form-muted">Enter the basic information first. This is all most products need.</p>
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label">Product Name <span class="text-danger">*</span></label>
-                                        <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" placeholder="e.g. Big Bull Rice 50kg" value="{{ old('name') }}" required>
-                                        @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Category</label>
-                                        <div class="input-group">
-                                            <select name="category_id" id="product_category_select" class="form-select quick-category-select @error('category_id') is-invalid @enderror">
-                                                <option value="">No category</option>
-                                                <?php foreach ($categories as $cat): ?>
-                                                    <option value="{{ $cat->id }}" @selected((string) old('category_id') === (string) $cat->id)>{{ $cat->name }}</option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal" title="Quick add category">+</button>
-                                        </div>
-                                        @error('category_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Legacy Unit Label</label>
-                                        <input type="text" name="base_unit_name" class="form-control @error('base_unit_name') is-invalid @enderror" value="{{ old('base_unit_name', 'pcs') }}" list="quickBaseUnitSuggestions" required>
-                                        <datalist id="quickBaseUnitSuggestions">
-                                            <option value="pcs">
-                                            <option value="kg">
-                                            <option value="g">
-                                            <option value="litre">
-                                            <option value="ml">
-                                            <option value="meter">
-                                            <option value="pack">
-                                            <option value="bottle">
-                                            <option value="carton">
-                                            <option value="roll">
-                                        </datalist>
-                                        @error('base_unit_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Unit of Measure <span class="text-danger">*</span></label>
-                                        <select name="unit_id" class="form-select @error('unit_id') is-invalid @enderror" required>
-                                            <option value="">Select unit</option>
-                                            @foreach($units as $unit)
-                                                <option value="{{ $unit->id }}" data-symbol="{{ $unit->symbol }}" @selected((string) old('unit_id') === (string) $unit->id || (!old('unit_id') && $unit->symbol === 'pcs'))>
-                                                    {{ $unit->name }} ({{ $unit->symbol }})
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                        @error('unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="d-flex justify-content-between align-items-center gap-2">
-                                            <label class="form-label mb-0">Base Unit</label>
-                                            <button type="button" class="btn btn-link unit-action-link" data-bs-toggle="modal" data-bs-target="#addUnitModal" title="Add base measurement">
-                                                <i class="fas fa-plus-circle"></i> Add unit
-                                            </button>
-                                        </div>
-                                        <select name="base_unit_id" class="form-select @error('base_unit_id') is-invalid @enderror">
-                                            <option value="">Same as Unit of Measure</option>
-                                            @foreach($units as $unit)
-                                                <option value="{{ $unit->id }}" data-symbol="{{ $unit->symbol }}" @selected((string) old('base_unit_id') === (string) $unit->id)>
-                                                    {{ $unit->name }} ({{ $unit->symbol }})
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                        <div class="unit-suggestion-row" aria-label="Base unit suggestions">
-                                            <button type="button" class="unit-suggestion-chip" data-unit-suggestion="pcs">pcs</button>
-                                            <button type="button" class="unit-suggestion-chip" data-unit-suggestion="kg">kg</button>
-                                            <button type="button" class="unit-suggestion-chip" data-unit-suggestion="litre">litre</button>
-                                            <button type="button" class="unit-suggestion-chip" data-unit-suggestion="pack">pack</button>
-                                        </div>
-                                        @error('base_unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Purchase Unit</label>
-                                        <select name="purchase_unit_id" class="form-select @error('purchase_unit_id') is-invalid @enderror">
-                                            <option value="">No bulk purchase unit</option>
-                                            @foreach($units as $unit)
-                                                <option value="{{ $unit->id }}" data-symbol="{{ $unit->symbol }}" @selected((string) old('purchase_unit_id') === (string) $unit->id)>
-                                                    {{ $unit->name }} ({{ $unit->symbol }})
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                        @error('purchase_unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Conversion Rate</label>
-                                        <input type="number" step="0.000001" min="0" name="conversion_rate" class="form-control @error('conversion_rate') is-invalid @enderror" value="{{ old('conversion_rate') }}" placeholder="e.g. 12">
-                                        <small class="text-muted">Optional when selling directly in the same unit. Use only when one purchase unit contains multiple base units.</small>
-                                        @error('conversion_rate')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Retail / Default Price <span class="text-danger">*</span></label>
-                                        <input type="number" step="0.01" name="price" class="form-control @error('price') is-invalid @enderror" placeholder="0.00" value="{{ old('price') }}" required>
-                                        @error('price')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Purchase Price <span class="text-danger">*</span></label>
-                                        <input type="number" step="0.01" name="purchase_price" class="form-control @error('purchase_price') is-invalid @enderror" placeholder="0.00" value="{{ old('purchase_price') }}" required>
-                                        @error('purchase_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Stock Branch</label>
-                                        <select name="branch_id" class="form-select @error('branch_id') is-invalid @enderror">
-                                            <option value="">Use Active Branch</option>
-                                            <?php foreach ($branchOptions as $branch): ?>
-                                                <option value="{{ $branch['id'] }}" @selected((string) old('branch_id') === (string) ($branch['id'] ?? ''))>{{ $branch['name'] }}</option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        @error('branch_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Product Image</label>
-                                        <input type="file" name="image" id="quick_add_product_image" class="form-control @error('image') is-invalid @enderror">
-                                        <small class="text-muted">Optional.</small>
-                                        @error('image')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Expiry Date <span class="text-muted small">(optional)</span></label>
-                                        <input type="date" name="expiry_date" class="form-control @error('expiry_date') is-invalid @enderror" value="{{ old('expiry_date') }}">
-                                        <small class="text-muted">Use this for perishable or date-sensitive products.</small>
-                                        @error('expiry_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Base Unit (e.g. pcs)</label>
+                            <input type="text" name="base_unit_name" class="form-control" value="pcs" required>
                         </div>
-
-                        <div class="col-12">
-                            <div class="product-form-sheet">
-                                <h6>Packaging Setup</h6>
-                                <p class="product-form-muted">Enter any two values below and the third one fills automatically.</p>
-                                <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <label class="form-label">Rolls Per Ctn</label>
-                                        <input type="number" id="quick_rolls_per_carton_helper" min="0" step="0.01" class="form-control" value="{{ old('units_per_roll', 0) > 0 ? old('units_per_carton', 0) : 0 }}">
-                                        <small class="text-muted">How many rolls are inside one carton.</small>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Pcs Per Roll</label>
-                                        <input type="number" id="quick_pcs_per_roll_helper" min="0" step="0.01" class="form-control" value="{{ old('units_per_roll', 0) }}">
-                                        <small class="text-muted">How many pcs are inside one roll.</small>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Pcs Per Ctn</label>
-                                        <input type="number" id="quick_pcs_per_carton_helper" min="0" step="0.01" class="form-control" value="{{ old('units_per_roll', 0) > 0 ? old('units_per_carton', 0) * old('units_per_roll', 0) : old('units_per_carton', 0) }}">
-                                        <small class="text-muted">Enter any two fields and this last one will calculate.</small>
-                                        @error('units_per_carton')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                                        @error('units_per_roll')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                                    </div>
-                                    <input type="hidden" name="units_per_roll" id="quick_units_per_roll_input" value="{{ old('units_per_roll', 0) }}">
-                                    <input type="hidden" name="units_per_carton" id="quick_units_per_carton_input" value="{{ old('units_per_carton', 0) }}">
-                                </div>
-                            </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Default Unit Type</label>
+                            <select name="unit_type" class="form-select">
+                                <option value="unit">Unit</option>
+                                <option value="sachet">Sachet</option>
+                                <option value="roll">Roll</option>
+                                <option value="carton">Carton</option>
+                            </select>
                         </div>
-
-                        <div class="col-12">
-                            <div class="product-form-sheet">
-                                <h6>Opening Stock</h6>
-                                <p class="product-form-muted">Type the quantity you currently have. Total stock appears automatically. If you do not have stock yet, leave all three fields at `0` and save the product first.</p>
-                                <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <label class="form-label">Opening Ctn</label>
-                                        <input type="number" step="0.01" name="stock_cartons" class="form-control @error('stock_cartons') is-invalid @enderror" value="{{ old('stock_cartons', 0) }}">
-                                        @error('stock_cartons')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Opening Roll</label>
-                                        <input type="number" step="0.01" name="stock_rolls" class="form-control @error('stock_rolls') is-invalid @enderror" value="{{ old('stock_rolls', 0) }}">
-                                        @error('stock_rolls')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label" id="quick_opening_unit_label">Opening Pcs</label>
-                                        <input type="number" step="0.01" name="stock_units" class="form-control @error('stock_units') is-invalid @enderror" value="{{ old('stock_units', 0) }}">
-                                        @error('stock_units')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-12">
-                                        <div class="quick-summary-pills">
-                                            <div class="quick-summary-pill">
-                                                <span>Pcs Per Ctn</span>
-                                                <strong id="quick_units_per_carton_preview_text">0 pcs</strong>
-                                            </div>
-                                            <div class="quick-summary-pill">
-                                                <span>Total Opening Stock</span>
-                                                <strong id="quick_stock_preview_text">0 pcs</strong>
-                                            </div>
-                                            <div class="quick-summary-pill">
-                                                <span>Entered Mix</span>
-                                                <strong id="quick_stock_mix_preview_text">0 ctn + 0 roll + 0 pcs</strong>
-                                            </div>
-                                            <div class="quick-summary-pill">
-                                                <span>Estimated Opening Value</span>
-                                                <strong id="quick_stock_value_preview">0.00</strong>
-                                            </div>
-                                        </div>
-                                        <input type="hidden" name="stock" id="quick_final_stock_input" value="{{ old('stock', '') }}">
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Stock Branch</label>
+                            <select name="branch_id" class="form-select">
+                                <option value="">Use Active Branch</option>
+                                <?php foreach ($branchOptions as $branch): ?>
+                                    <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
-
-                        <div class="col-12">
-                            <button class="btn btn-light border product-collapse-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#advancedProductFields" aria-expanded="false" aria-controls="advancedProductFields">
-                                <i class="fas fa-sliders-h"></i>
-                                <span>Advanced Fields</span>
-                            </button>
+                        <div class="col-md-3">
+                            <label class="form-label">Unit Total <span class="text-muted d-block small" id="quick_unit_total_hint">Total units inside one carton</span></label>
+                            <input type="number" id="quick_unit_total_per_carton" class="form-control" value="0" min="0" step="0.01">
+                            <small class="text-muted" id="quick_unit_total_help">Type the full number of sellable units inside one carton first.</small>
                         </div>
-
-                        <div class="col-12 collapse {{ $showQuickProductAdvancedFields ? 'show' : '' }}" id="advancedProductFields">
-                            <div class="product-form-sheet">
-                                <h6>Advanced Options</h6>
-                                <p class="product-form-muted">Only open this when the product needs a SKU, barcode, or extra price levels.</p>
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label">SKU</label>
-                                        <input type="text" name="sku" class="form-control @error('sku') is-invalid @enderror" placeholder="Leave blank to auto-generate" value="{{ old('sku') }}">
-                                        <small class="text-muted">If there is no product code yet, the system creates one automatically.</small>
-                                        @error('sku')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Barcode</label>
-                                        <input type="text" name="barcode" class="form-control @error('barcode') is-invalid @enderror" placeholder="Scan or type barcode" value="{{ old('barcode') }}">
-                                        @error('barcode')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                    <input type="hidden" name="unit_type" id="quick_unit_type_input" value="{{ old('unit_type', 'unit') }}">
-                                    @error('unit_type')<div class="col-12"><div class="alert alert-danger mb-0">{{ $message }}</div></div>@enderror
-                                    <div class="col-md-4">
-                                        <label class="form-label">Wholesale Price</label>
-                                        <input type="number" step="0.01" name="wholesale_price" class="form-control @error('wholesale_price') is-invalid @enderror" placeholder="Optional" value="{{ old('wholesale_price') }}">
-                                        @error('wholesale_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Special Discount Price</label>
-                                        <input type="number" step="0.01" name="special_price" class="form-control @error('special_price') is-invalid @enderror" placeholder="Optional" value="{{ old('special_price') }}">
-                                        @error('special_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Reorder Level</label>
-                                        <input type="number" name="reorder_level" min="0" class="form-control @error('reorder_level') is-invalid @enderror" value="{{ old('reorder_level', 0) }}">
-                                        @error('reorder_level')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Reorder Quantity</label>
-                                        <input type="number" name="reorder_quantity" min="0" class="form-control @error('reorder_quantity') is-invalid @enderror" value="{{ old('reorder_quantity', 0) }}">
-                                        @error('reorder_quantity')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Roll Content <span class="text-muted d-block small" id="quick_roll_content_hint">Units per roll</span></label>
+                            <input type="number" name="units_per_roll" min="0" class="form-control" value="0">
+                            <small class="text-muted" id="quick_roll_content_help">Leave `0` if the product is sold in cartons and units only.</small>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Carton Content <span class="text-muted d-block small" id="quick_carton_content_hint">Auto-calculated rolls per carton</span></label>
+                            <input type="number" name="units_per_carton" min="0" step="0.01" class="form-control" value="0">
+                            <small class="text-muted" id="quick_carton_content_help">This is calculated from unit total and roll content. If rolls are not used, it matches the unit total.</small>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Retail / Default Price</label>
+                            <input type="number" step="0.01" name="price" class="form-control" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Purchase Price</label>
+                            <input type="number" step="0.01" name="purchase_price" class="form-control" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Wholesale Price</label>
+                            <input type="number" step="0.01" name="wholesale_price" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Special Discount Price</label>
+                            <input type="number" step="0.01" name="special_price" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" id="quick_units_per_carton_label">Units Per Carton</label>
+                            <input type="text" class="form-control bg-light" id="quick_units_per_carton_preview" value="0 Units" readonly>
+                            <small class="text-muted">Packaging preview only. This does not increase stock until you enter opening cartons, rolls, or loose units below.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Opening Roll Quantity</label>
+                            <input type="number" step="0.01" name="stock_rolls" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Opening Carton Quantity</label>
+                            <input type="number" step="0.01" name="stock_cartons" class="form-control" value="0">
+                            <small class="text-muted">Cartons convert through rolls when present, or directly to pieces when rolls are not used.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" id="quick_opening_unit_label">Opening Loose Unit Quantity</label>
+                            <input type="number" step="0.01" name="stock_units" class="form-control" value="0">
+                            <small class="text-muted">Enter only the loose units/pieces already on hand, not the carton definition above.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Calculated Total Opening Stock</label>
+                            <input type="text" class="form-control bg-light" id="quick_stock_preview" value="0 Units" readonly>
+                            <input type="hidden" name="stock" id="quick_final_stock_input" value="">
+                            <small class="text-muted">Calculated from opening cartons + opening rolls + opening loose units only.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Product Image</label>
+                            <input type="file" name="image" id="quick_add_product_image" class="form-control">
+                            <small class="text-muted">Any file extension can be uploaded if the browser sends it as a valid file.</small>
                         </div>
                     </div>
                 </div>
@@ -954,19 +556,16 @@
     </div>
 </div>
 
+{{-- MODAL: QUICK ADD CATEGORY --}}
 <div class="modal fade" id="addCategoryModal" tabindex="-1" style="z-index: 1060;">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <form id="ajaxAddCategoryForm" method="POST" action="{{ route('ajax.inventory.categories.store') }}">
+            <form id="ajaxAddCategoryForm">
                 @csrf
-                <input type="hidden" name="type" value="product">
                 <div class="modal-header">
                     <h5 class="modal-title">Quick Category</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="quick_category_success_message" class="alert alert-success d-none" role="alert"></div>
-                    <div id="quick_category_error_message" class="alert alert-danger d-none" role="alert"></div>
                     <input type="text" name="name" id="new_category_name" class="form-control" placeholder="Category Name" required>
                 </div>
                 <div class="modal-footer">
@@ -977,67 +576,8 @@
     </div>
 </div>
 
-<div class="modal fade" id="addUnitModal" tabindex="-1" aria-hidden="true" style="z-index:1060;">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <form method="POST" action="{{ route('units.store') }}">
-                @csrf
-                <input type="hidden" name="status" value="active">
-                <div class="modal-header">
-                    <div>
-                        <h5 class="modal-title mb-0">Add Base Measurement</h5>
-                        <small class="text-muted">Create a unit like Pieces, Kilogram, Litre, Pack, or Bottle.</small>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-md-7">
-                            <label class="form-label">Measurement Name <span class="text-danger">*</span></label>
-                            <input type="text" name="name" class="form-control" placeholder="e.g. Pieces" list="unitNameSuggestions" required>
-                            <datalist id="unitNameSuggestions">
-                                <option value="Pieces">
-                                <option value="Kilogram">
-                                <option value="Gram">
-                                <option value="Litre">
-                                <option value="Millilitre">
-                                <option value="Meter">
-                                <option value="Pack">
-                                <option value="Bottle">
-                                <option value="Carton">
-                                <option value="Roll">
-                            </datalist>
-                        </div>
-                        <div class="col-md-5">
-                            <label class="form-label">Symbol <span class="text-danger">*</span></label>
-                            <input type="text" name="symbol" class="form-control" placeholder="e.g. pcs" list="unitSymbolSuggestions" required>
-                            <datalist id="unitSymbolSuggestions">
-                                <option value="pcs">
-                                <option value="kg">
-                                <option value="g">
-                                <option value="litre">
-                                <option value="ml">
-                                <option value="m">
-                                <option value="pack">
-                                <option value="bottle">
-                                <option value="ctn">
-                                <option value="roll">
-                            </datalist>
-                        </div>
-                    </div>
-                    <p class="text-muted small mb-0 mt-3">After saving, come back to this product form and select the new measurement from the unit list.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Add Measurement</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
 @push('scripts')
-
+{{-- Required DataTables Buttons Assets --}}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
@@ -1047,507 +587,82 @@
 
 <script>
     $(document).ready(function() {
-        const categoryIndexUrl = @json(route('ajax.inventory.categories.index', [], false)) + '?type=product';
-        const categoryStoreUrl = @json(route('ajax.inventory.categories.store', [], false));
-        const shouldReopenProductModal = @json($errors->any() || session()->has('error'));
-        const serverProductError = @json(session('error') ?: ($errors->any() ? $errors->first() : ''));
-        const quickCategoryError = $('#quick_category_error_message');
-        const quickCategorySuccess = $('#quick_category_success_message');
-        const quickProductSuccess = $('#quick_product_success_message');
-        const quickProductError = $('#quick_product_error_message');
-
-        function showQuickCategoryError(message) {
-            quickCategorySuccess.addClass('d-none').text('');
-            quickCategoryError.removeClass('d-none').text(message || 'Unable to complete category request.');
+        // PREVENT RE-INITIALIZATION ERROR
+        if ($.fn.DataTable.isDataTable('#products-table')) {
+            $('#products-table').DataTable().destroy();
         }
 
-        function clearQuickCategoryError() {
-            quickCategoryError.addClass('d-none').text('');
-        }
-
-        function showQuickCategorySuccess(message) {
-            clearQuickCategoryError();
-            quickCategorySuccess.removeClass('d-none').text(message || 'Category added successfully.');
-        }
-
-        function clearQuickCategorySuccess() {
-            quickCategorySuccess.addClass('d-none').text('');
-        }
-
-        function showQuickProductMessage(type, message) {
-            const isSuccess = type === 'success';
-            quickProductSuccess.toggleClass('d-none', !isSuccess).text(isSuccess ? (message || 'Product saved successfully.') : '');
-            quickProductError.toggleClass('d-none', isSuccess).text(!isSuccess ? (message || 'Unable to save product.') : '');
-        }
-
-        function clearQuickProductMessages() {
-            quickProductSuccess.addClass('d-none').text('');
-            quickProductError.addClass('d-none').text('');
-        }
-
-        async function parseJsonResponse(response, fallbackMessage) {
-            const raw = await response.text();
-            try {
-                return JSON.parse(raw);
-            } catch (error) {
-                throw new Error(raw && raw.trim().startsWith('<')
-                    ? fallbackMessage
-                    : (raw || fallbackMessage));
-            }
-        }
-
-        async function reloadQuickCategoryOptions(selectedValue = '') {
-            const categorySelect = document.getElementById('product_category_select');
-            if (!categorySelect) {
-                return;
-            }
-
-            try {
-                const response = await fetch(categoryIndexUrl, {
-                    method: 'GET',
-                    credentials: 'same-origin',
-                    cache: 'no-store',
-                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                const payload = await parseJsonResponse(response, 'Category list returned HTML instead of JSON.');
-                const categories = Array.isArray(payload?.data) ? payload.data : [];
-
-                categorySelect.innerHTML = '';
-                categorySelect.add(new Option('No category', '', false, false));
-
-                categories.forEach((category) => {
-                    if (!category?.id || !category?.name) {
-                        return;
-                    }
-
-                    const isSelected = selectedValue !== '' && String(category.id) === String(selectedValue);
-                    categorySelect.add(new Option(category.name, category.id, isSelected, isSelected));
-                });
-
-                if (selectedValue !== '') {
-                    categorySelect.value = String(selectedValue);
-                }
-            } catch (error) {
-                console.error('Unable to reload categories', error);
-                showQuickCategoryError(error.message || 'Unable to load categories.');
-            }
-        }
-
-        function initializeQuickCategorySelect() {
-            const categorySelect = $('#product_category_select');
-            if (!categorySelect.length || !$.fn.select2) {
-                return;
-            }
-
-            if (!categorySelect.find('option[value=""]').length) {
-                categorySelect.prepend(new Option('No category', '', false, false));
-            }
-
-            if (categorySelect.hasClass('select2-hidden-accessible')) {
-                categorySelect.select2('destroy');
-            }
-
-            categorySelect.select2({
-                dropdownParent: $('#addProductModal'),
-                width: '100%',
-                placeholder: 'No category',
-                dropdownCssClass: 'quick-category-dropdown',
-                minimumResultsForSearch: Infinity
-            });
-        }
-
-        function upsertCategoryOption(selectSelector, category) {
-            if (!category || !category.id || !category.name) {
-                return;
-            }
-
-            const select = document.querySelector(selectSelector);
-            if (!select) {
-                return;
-            }
-
-            const optionValue = String(category.id);
-            let existingOption = Array.from(select.options).find((option) => option.value === optionValue);
-
-            if (!existingOption) {
-                existingOption = new Option(category.name, category.id, true, true);
-                select.add(existingOption);
-            } else {
-                existingOption.text = category.name;
-                existingOption.selected = true;
-            }
-
-            select.value = optionValue;
-            $(select).trigger('change');
-            $(select).trigger('change.select2');
-        }
-
-        function findExistingCategory(selectSelector, rawName) {
-            const normalizedName = String(rawName || '').trim().toLowerCase();
-            if (!normalizedName) {
-                return null;
-            }
-
-            const select = document.querySelector(selectSelector);
-            if (!select) {
-                return null;
-            }
-
-            const existingOption = Array.from(select.options).find((option) => {
-                return option.value && String(option.textContent || '').trim().toLowerCase() === normalizedName;
-            });
-
-            if (!existingOption) {
-                return null;
-            }
-
-            return {
-                id: existingOption.value,
-                name: String(existingOption.textContent || '').trim(),
-            };
-        }
-
-        // PREVENT RE-INITIALIZATION ERROR — wrapped in try/catch so a DataTables
-        // CDN failure never aborts the rest of the ready block (which registers
-        // the modal event handlers and backdrop cleanup).
-        var table = null;
-        try {
-            if ($.fn.DataTable && $.fn.DataTable.isDataTable('#products-table')) {
-                $('#products-table').DataTable().destroy();
-            }
-            if ($.fn.DataTable) {
-                table = $('#products-table').DataTable({
-                    dom: 'Bfrtip',
-                    buttons: [
-                        { extend: 'excelHtml5', className: 'dt-excel d-none', title: 'Product_Inventory_List', exportOptions: { columns: ':not(.no-print)' } },
-                        { extend: 'pdfHtml5', className: 'dt-pdf d-none', title: 'Product Inventory List', exportOptions: { columns: ':not(.no-print)' } },
-                        { extend: 'print', className: 'dt-print d-none', title: 'Product Inventory', exportOptions: { columns: ':not(.no-print)' } }
-                    ],
-                    pageLength: 25,
-                    language: { search: "" , searchPlaceholder: "Search..." }
-                });
-            }
-        } catch (dtError) {
-            console.warn('DataTables init warning (export buttons unavailable):', dtError);
-        }
+        var table = $('#products-table').DataTable({
+            dom: 'Bfrtip',
+            buttons: [
+                { extend: 'excelHtml5', className: 'dt-excel d-none', title: 'Product_Inventory_List', exportOptions: { columns: ':not(.no-print)' } },
+                { extend: 'pdfHtml5', className: 'dt-pdf d-none', title: 'Product Inventory List', exportOptions: { columns: ':not(.no-print)' } },
+                { extend: 'print', className: 'dt-print d-none', title: 'Product Inventory', exportOptions: { columns: ':not(.no-print)' } }
+            ],
+            pageLength: 500,
+            lengthMenu: [[25, 50, 100, 500, -1], [25, 50, 100, 500, 'All']],
+            language: { search: "" , searchPlaceholder: "Search..." }
+        });
 
         // Trigger Exports from Custom Dropdown
-        $('#export_excel').on('click', function(e) { e.preventDefault(); if (table) table.button('.dt-excel').trigger(); });
-        $('#export_pdf').on('click', function(e) { e.preventDefault(); if (table) table.button('.dt-pdf').trigger(); });
-        $('#export_print').on('click', function(e) { e.preventDefault(); if (table) table.button('.dt-print').trigger(); });
-        reloadQuickCategoryOptions().finally(() => {
-            initializeQuickCategorySelect();
-        });
-
-        $('#addProductModal').on('shown.bs.modal', function() {
-            clearQuickCategorySuccess();
-            clearQuickCategoryError();
-            clearQuickProductMessages();
-            reloadQuickCategoryOptions($('#product_category_select').val() || '').finally(() => {
-                initializeQuickCategorySelect();
-            });
-            refreshQuickPackagingLabels();
-            calculateQuickCartonContent();
-            calculateQuickStock();
-        });
-
-        $('#addProductModal').on('hidden.bs.modal', function() {
-            clearQuickCategorySuccess();
-            clearQuickCategoryError();
-            clearQuickProductMessages();
-            // Permanent fix: remove any stuck backdrop divs and body modal state.
-            // Leftover backdrops block ALL page clicks, making the Add button
-            // appear non-responsive. This happens when nested modals (e.g. Quick
-            // Category) leave an extra backdrop behind when closed.
-            if (!document.querySelectorAll('.modal.show').length) {
-                document.querySelectorAll('.modal-backdrop').forEach(function(el) { el.remove(); });
-                document.body.classList.remove('modal-open');
-                document.body.style.overflow = '';
-                document.body.style.paddingRight = '';
-            }
-        });
-
-        if (shouldReopenProductModal) {
-            const productModalElement = document.getElementById('addProductModal');
-            if (productModalElement) {
-                const productModal = bootstrap.Modal.getOrCreateInstance(productModalElement);
-                productModal.show();
-
-                if (serverProductError) {
-                    showQuickProductMessage('error', serverProductError);
-                }
-            }
-        }
+        $('#export_excel').on('click', function(e) { e.preventDefault(); table.button('.dt-excel').trigger(); });
+        $('#export_pdf').on('click', function(e) { e.preventDefault(); table.button('.dt-pdf').trigger(); });
+        $('#export_print').on('click', function(e) { e.preventDefault(); table.button('.dt-print').trigger(); });
 
         $('#quick_add_product_form').on('submit', function() {
             const imageInput = document.getElementById('quick_add_product_image');
-            const submitButton = $(this).find('button[type="submit"]');
             if (imageInput && (!imageInput.files || imageInput.files.length === 0)) {
                 imageInput.disabled = true;
             }
-            submitButton.prop('disabled', true).text('Saving Product...');
-            showQuickProductMessage('success', 'Saving product...');
         });
 
         function refreshQuickPackagingLabels() {
-            var baseUnitName = ($('#addProductModal input[name="base_unit_name"]').val() || 'pcs').trim();
-            var unitLabel = baseUnitName.length ? baseUnitName : 'pcs';
-            var titleUnit = unitLabel.charAt(0).toUpperCase() + unitLabel.slice(1);
-            $('#quick_opening_unit_label').text('Opening ' + titleUnit);
-        }
+            const baseUnitName = ($('input[name="base_unit_name"]').val() || 'unit').trim();
+            const unitLabel = baseUnitName.length ? baseUnitName : 'unit';
+            const titleUnit = unitLabel.charAt(0).toUpperCase() + unitLabel.slice(1);
 
-        function quickBaseUnitLabel() {
-            var raw = ($('#addProductModal input[name="base_unit_name"]').val() || 'pcs').trim();
-            return raw.length ? raw : 'pcs';
-        }
-
-        function normalizeUnitKey(value) {
-            var normalized = String(value || '').trim().toLowerCase();
-            var aliases = {
-                pc: 'pcs',
-                pcs: 'pcs',
-                piece: 'pcs',
-                pieces: 'pcs',
-                kg: 'kg',
-                kilogram: 'kg',
-                kilograms: 'kg',
-                kilo: 'kg',
-                g: 'g',
-                gram: 'g',
-                grams: 'g',
-                l: 'litre',
-                lt: 'litre',
-                ltr: 'litre',
-                litre: 'litre',
-                liter: 'litre',
-                liters: 'litre',
-                litres: 'litre',
-                ml: 'ml',
-                millilitre: 'ml',
-                millilitres: 'ml',
-                milliliter: 'ml',
-                milliliters: 'ml',
-                m: 'meter',
-                meter: 'meter',
-                metre: 'meter',
-                metres: 'meter',
-                pk: 'pack',
-                pack: 'pack',
-                packs: 'pack',
-                bottle: 'bottle',
-                bottles: 'bottle',
-                carton: 'carton',
-                cartons: 'carton',
-                ctn: 'carton',
-                roll: 'roll',
-                rolls: 'roll'
-            };
-
-            return aliases[normalized] || normalized;
-        }
-
-        function preferredUnitLabel(value) {
-            var normalized = normalizeUnitKey(value);
-            var labels = {
-                pcs: 'pcs',
-                kg: 'kg',
-                g: 'g',
-                litre: 'litre',
-                ml: 'ml',
-                meter: 'meter',
-                pack: 'pack',
-                bottle: 'bottle',
-                carton: 'carton',
-                roll: 'roll'
-            };
-
-            return labels[normalized] || String(value || '').trim();
-        }
-
-        function optionUnitKeys(option) {
-            if (!option) {
-                return [];
-            }
-
-            var direct = String(option.getAttribute('data-symbol') || option.dataset.symbol || '').trim();
-            var text = String(option.textContent || '').trim().toLowerCase();
-            var match = text.match(/^(.*?)\s*\((.*?)\)\s*$/);
-            var parts = [direct, text, match ? match[1] : '', match ? match[2] : ''];
-            return Array.from(new Set(parts.map(normalizeUnitKey).filter(Boolean)));
-        }
-
-        function selectedUnitKey(selector) {
-            var select = document.querySelector(selector);
-            if (!select || !select.value) {
-                return '';
-            }
-
-            return optionUnitKeys(select.options[select.selectedIndex])[0] || '';
-        }
-
-        var quickUnitSyncing = false;
-
-        function selectUnitBySuggestion(selector, symbol) {
-            var select = document.querySelector(selector);
-            if (!select) {
-                return;
-            }
-
-            var normalized = normalizeUnitKey(symbol);
-            if (!normalized) {
-                return;
-            }
-
-            var option = Array.from(select.options).find(function (opt) {
-                return optionUnitKeys(opt).includes(normalized);
-            });
-
-            if (option) {
-                var changed = select.value !== option.value;
-                select.value = option.value;
-                if (changed && !quickUnitSyncing) {
-                    $(select).trigger('change');
-                }
-            }
-        }
-
-        function applyQuickUnitSymbol(symbol) {
-            symbol = preferredUnitLabel(symbol);
-            if (!symbol || quickUnitSyncing) {
-                return;
-            }
-
-            quickUnitSyncing = true;
-            $('#addProductModal input[name="base_unit_name"]').val(symbol);
-            selectUnitBySuggestion('#addProductModal select[name="unit_id"]', symbol);
-            selectUnitBySuggestion('#addProductModal select[name="base_unit_id"]', symbol);
-            selectUnitBySuggestion('#addProductModal select[name="purchase_unit_id"]', symbol);
-            quickUnitSyncing = false;
-
-            refreshQuickPackagingLabels();
-            calculateQuickCartonContent();
-            calculateQuickStock();
-        }
-
-        function formatQuickQty(value) {
-            return (parseFloat(value) || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
-        }
-
-        var lastPackagingFieldEdited = null;
-
-        function packagingValue(selector) {
-            return parseFloat($(selector).val()) || 0;
-        }
-
-        function setPackagingValue(selector, value) {
-            $(selector).val(value > 0 ? value : 0);
-        }
-
-        function syncPackagingHiddenFields() {
-            var rollsPerCtn = packagingValue('#quick_rolls_per_carton_helper');
-            var pcsPerRoll  = packagingValue('#quick_pcs_per_roll_helper');
-            var pcsPerCtn   = packagingValue('#quick_pcs_per_carton_helper');
-            var unitLabel   = quickBaseUnitLabel();
-            $('#quick_units_per_roll_input').val(pcsPerRoll > 0 ? pcsPerRoll : 0);
-            $('#quick_units_per_carton_input').val(rollsPerCtn > 0 ? rollsPerCtn : pcsPerCtn);
-            $('#quick_units_per_carton_preview_text').text(formatQuickQty(pcsPerCtn > 0 ? pcsPerCtn : 0) + ' ' + unitLabel);
-        }
-
-        function syncQuickUnitType() {
-            var pcsPerRoll  = packagingValue('#quick_pcs_per_roll_helper');
-            var rollsPerCtn = packagingValue('#quick_rolls_per_carton_helper');
-            var unitType = 'unit';
-            if (rollsPerCtn > 0) unitType = 'carton';
-            else if (pcsPerRoll > 0) unitType = 'roll';
-            $('#quick_unit_type_input').val(unitType);
+            $('#quick_unit_total_hint').text('Total ' + unitLabel + 's inside one carton');
+            $('#quick_unit_total_help').text('Type the full number of sellable ' + unitLabel + 's inside one carton first.');
+            $('#quick_roll_content_hint').text(unitLabel + 's per roll');
+            $('#quick_roll_content_help').text('Leave `0` if the product is sold in cartons and ' + unitLabel + 's only.');
+            $('#quick_carton_content_hint').text('Auto-calculated rolls per carton');
+            $('#quick_carton_content_help').text('This is calculated from total ' + unitLabel + 's and ' + unitLabel + 's per roll. If rolls are not used, it matches the unit total.');
+            $('#quick_units_per_carton_label').text(titleUnit + 's Per Carton');
+            $('#quick_opening_unit_label').text('Opening Loose ' + titleUnit + ' Quantity');
         }
 
         function calculateQuickCartonContent() {
-            var rollsPerCtn = packagingValue('#quick_rolls_per_carton_helper');
-            var pcsPerRoll  = packagingValue('#quick_pcs_per_roll_helper');
-            var pcsPerCtn   = packagingValue('#quick_pcs_per_carton_helper');
+            const unitTotal = parseFloat($('#quick_unit_total_per_carton').val()) || 0;
+            const unitsPerRoll = parseFloat($('#quick_add_product_form').find('input[name="units_per_roll"]').val()) || 0;
+            const cartonContent = unitsPerRoll > 0 ? (unitTotal / unitsPerRoll) : unitTotal;
 
-            var filled = [rollsPerCtn, pcsPerRoll, pcsPerCtn].filter(function(v) { return v > 0; }).length;
-            if (filled >= 2) {
-                if ((lastPackagingFieldEdited === 'rolls' || lastPackagingFieldEdited === 'pcs_per_roll') && rollsPerCtn > 0 && pcsPerRoll > 0) {
-                    pcsPerCtn = rollsPerCtn * pcsPerRoll;
-                    setPackagingValue('#quick_pcs_per_carton_helper', pcsPerCtn);
-                } else if (lastPackagingFieldEdited === 'pcs_per_ctn' && rollsPerCtn > 0 && pcsPerCtn > 0) {
-                    pcsPerRoll = pcsPerCtn / rollsPerCtn;
-                    setPackagingValue('#quick_pcs_per_roll_helper', pcsPerRoll);
-                } else if (lastPackagingFieldEdited === 'pcs_per_ctn' && pcsPerRoll > 0 && pcsPerCtn > 0) {
-                    rollsPerCtn = pcsPerCtn / pcsPerRoll;
-                    setPackagingValue('#quick_rolls_per_carton_helper', rollsPerCtn);
-                } else if (rollsPerCtn > 0 && pcsPerRoll > 0 && pcsPerCtn <= 0) {
-                    pcsPerCtn = rollsPerCtn * pcsPerRoll;
-                    setPackagingValue('#quick_pcs_per_carton_helper', pcsPerCtn);
-                } else if (rollsPerCtn > 0 && pcsPerCtn > 0 && pcsPerRoll <= 0) {
-                    pcsPerRoll = pcsPerCtn / rollsPerCtn;
-                    setPackagingValue('#quick_pcs_per_roll_helper', pcsPerRoll);
-                } else if (pcsPerRoll > 0 && pcsPerCtn > 0 && rollsPerCtn <= 0) {
-                    rollsPerCtn = pcsPerCtn / pcsPerRoll;
-                    setPackagingValue('#quick_rolls_per_carton_helper', rollsPerCtn);
-                }
-            }
-            syncPackagingHiddenFields();
-            syncQuickUnitType();
+            $('#quick_add_product_form').find('input[name="units_per_carton"]').val(Number.isFinite(cartonContent) ? cartonContent : 0);
+            $('#quick_units_per_carton_preview').val(unitTotal.toLocaleString() + ' Units');
         }
 
         function calculateQuickStock() {
-            var cartons       = parseFloat($('#addProductModal input[name="stock_cartons"]').val()) || 0;
-            var rolls         = parseFloat($('#addProductModal input[name="stock_rolls"]').val()) || 0;
-            var pieces        = parseFloat($('#addProductModal input[name="stock_units"]').val()) || 0;
-            var rollsPerCtn   = parseFloat($('#quick_units_per_carton_input').val()) || 0;
-            var pcsPerRoll    = parseFloat($('#quick_units_per_roll_input').val()) || 0;
-            var pcsPerCtn     = packagingValue('#quick_pcs_per_carton_helper');
-            var purchasePrice = parseFloat($('#addProductModal input[name="purchase_price"]').val()) || 0;
-            var unitLabel     = quickBaseUnitLabel();
+            const cartons = parseFloat($('input[name="stock_cartons"]').val()) || 0;
+            const rolls = parseFloat($('input[name="stock_rolls"]').val()) || 0;
+            const sachets = parseFloat($('input[name="stock_units"]').val()) || 0;
+            const rollsPerCarton = parseFloat($('input[name="units_per_carton"]').val()) || 0;
+            const sachetsPerRoll = parseFloat($('input[name="units_per_roll"]').val()) || 0;
 
-            var fromCartons = pcsPerCtn > 0
-                ? cartons * pcsPerCtn
-                : (pcsPerRoll > 0 ? cartons * rollsPerCtn * pcsPerRoll : cartons * rollsPerCtn);
-            var fromRolls = pcsPerRoll > 0 ? rolls * pcsPerRoll : rolls;
-            var total = fromCartons + fromRolls + pieces;
-
-            var stockValue = total * purchasePrice;
-            $('#quick_stock_preview_text').text(formatQuickQty(total) + ' ' + unitLabel);
-            $('#quick_stock_mix_preview_text').text(formatQuickQty(cartons) + ' ctn + ' + formatQuickQty(rolls) + ' roll + ' + formatQuickQty(pieces) + ' ' + unitLabel);
-            $('#quick_stock_value_preview').text(stockValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            const fromCartons = sachetsPerRoll > 0 ? cartons * rollsPerCarton * sachetsPerRoll : cartons * rollsPerCarton;
+            const fromRolls = sachetsPerRoll > 0 ? rolls * sachetsPerRoll : rolls;
+            const total = fromCartons + fromRolls + sachets;
+            $('#quick_stock_preview').val(total.toLocaleString() + ' Units');
             $('#quick_final_stock_input').val(Math.round(total));
         }
 
-        $('#addProductModal').on('input', '#quick_rolls_per_carton_helper, #quick_pcs_per_roll_helper, #quick_pcs_per_carton_helper', function() {
-            lastPackagingFieldEdited = $(this).attr('id') === 'quick_rolls_per_carton_helper'
-                ? 'rolls'
-                : ($(this).attr('id') === 'quick_pcs_per_roll_helper' ? 'pcs_per_roll' : 'pcs_per_ctn');
-            calculateQuickCartonContent();
+        $('#quick_add_product_form').find('input[name="stock_cartons"], input[name="stock_rolls"], input[name="stock_units"], input[name="units_per_carton"], input[name="units_per_roll"], #quick_unit_total_per_carton').on('input', function() {
+            if ($(this).attr('name') === 'units_per_roll' || this.id === 'quick_unit_total_per_carton') {
+                calculateQuickCartonContent();
+            }
             calculateQuickStock();
         });
 
-        $('#addProductModal').on('input', 'input[name="stock_cartons"], input[name="stock_rolls"], input[name="stock_units"], input[name="purchase_price"]', function() {
-            calculateQuickStock();
-        });
-
-        $('#addProductModal').on('input', 'input[name="base_unit_name"]', function() {
-            applyQuickUnitSymbol($(this).val());
-        });
-
-        $('#addProductModal').on('change', 'select[name="unit_id"]', function () {
-            applyQuickUnitSymbol(selectedUnitKey('#addProductModal select[name="unit_id"]'));
-        });
-
-        $('#addProductModal').on('change', 'select[name="base_unit_id"]', function () {
-            var symbol = selectedUnitKey('#addProductModal select[name="base_unit_id"]') || selectedUnitKey('#addProductModal select[name="unit_id"]');
-            applyQuickUnitSymbol(symbol);
-        });
-
-        $('#addProductModal').on('change', 'select[name="purchase_unit_id"]', function () {
-            applyQuickUnitSymbol(selectedUnitKey('#addProductModal select[name="purchase_unit_id"]'));
-        });
-
-        $('#addProductModal').on('click', '.unit-suggestion-chip', function () {
-            var symbol = $(this).data('unit-suggestion') || '';
-            applyQuickUnitSymbol(symbol);
+        $('#quick_add_product_form').find('input[name="base_unit_name"]').on('input', function() {
+            refreshQuickPackagingLabels();
         });
 
         refreshQuickPackagingLabels();
@@ -1559,30 +674,15 @@
             e.preventDefault();
             const form = this;
             const btn = $(this).find('button[type="submit"]');
-            const typedName = $('#new_category_name').val();
             btn.prop('disabled', true);
-            clearQuickCategorySuccess();
-            clearQuickCategoryError();
-
-            const existingCategory = findExistingCategory('#product_category_select', typedName);
-            if (existingCategory) {
-                upsertCategoryOption('#product_category_select', existingCategory);
-                clearQuickCategoryError();
-                showQuickCategorySuccess('Existing category selected.');
-                bootstrap.Modal.getOrCreateInstance(document.getElementById('addCategoryModal')).hide();
-                form.reset();
-                btn.prop('disabled', false);
-                return;
-            }
-
-            fetch(categoryStoreUrl, {
+            
+            fetch("{{ route('categories.store') }}", {
                 method: "POST",
-                credentials: 'same-origin',
-                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                body: JSON.stringify({ name: $('#new_category_name').val(), type: 'product' })
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ name: $('#new_category_name').val() })
             })
             .then(async (res) => {
-                const data = await parseJsonResponse(res, 'Category save returned HTML instead of JSON.');
+                const data = await res.json();
                 if (!res.ok) {
                     const msg = data?.message || Object.values(data?.errors || {})?.[0]?.[0] || 'Failed to add category.';
                     throw new Error(msg);
@@ -1591,18 +691,13 @@
             })
             .then(data => {
                 if(data.data) {
-                    upsertCategoryOption('#product_category_select', data.data);
-                    reloadQuickCategoryOptions(String(data.data.id)).finally(() => {
-                        clearQuickCategoryError();
-                        showQuickCategorySuccess(data?.message || 'Category added successfully.');
-                        initializeQuickCategorySelect();
-                        bootstrap.Modal.getOrCreateInstance(document.getElementById('addCategoryModal')).hide();
-                        form.reset();
-                    });
+                    $('#product_category_select').append(new Option(data.data.name, data.data.id, true, true));
+                    bootstrap.Modal.getInstance(document.getElementById('addCategoryModal')).hide();
+                    form.reset();
                 }
             })
             .catch((err) => {
-                showQuickCategoryError(err.message || 'Unable to add category.');
+                alert(err.message || 'Unable to add category.');
             })
             .finally(() => btn.prop('disabled', false));
         });

@@ -127,7 +127,7 @@ $(document).ready(function() {
                         html += `
                         <tr>
                             <td><span class="text-dark fw-bold">${item.name}</span></td>
-                            <td class="text-center"><span class="badge bg-soft-secondary text-secondary fs-6 border">${item.qty}</span></td>
+                            <td class="text-center"><span class="badge bg-soft-secondary text-secondary fs-6 border">${item.qty} ${item.base_unit_name || 'unit'}</span></td>
                             <td>
                                 <input type="number" 
                                        name="items[${item.product_id}][qty]" 
