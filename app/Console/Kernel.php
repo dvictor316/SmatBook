@@ -84,7 +84,7 @@ class Kernel extends ConsoleKernel
                 'sources'          => 'Automated System Check'
             ];
 
-            AppMailer::sendMailable('support@smartprobook.com', new \App\Mail\DailyBusinessSummary($data));
+            AppMailer::sendMailable(config('mail.admin_inbox', 'smartprobookoffice@gmail.com'), new \App\Mail\DailyBusinessSummary($data));
             
         })->dailyAt('21:00');
 

@@ -101,7 +101,7 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'support@smartprobook.com'),
+        'address' => env('MAIL_FROM_ADDRESS', 'smartprobookoffice@gmail.com'),
         'name' => env('MAIL_FROM_NAME', 'Smartprobook Accounting'),
     ],
 
@@ -114,7 +114,7 @@ return [
     | to a single admin inbox. Set MAIL_ADMIN_INBOX in .env to change target.
     |
     */
-    'admin_inbox' => env('MAIL_ADMIN_INBOX', 'donvictorlive@gmail.com'),
+    'admin_inbox' => env('MAIL_ADMIN_INBOX', 'smartprobookoffice@gmail.com'),
 
     /*
     |--------------------------------------------------------------------------

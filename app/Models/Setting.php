@@ -116,7 +116,7 @@ class Setting extends Model
             (string) config('mail.from.address', ''),
             (string) env('MAIL_FROM_ADDRESS', ''),
             (string) ($fallback ?? ''),
-            'contact@smartprobook.com',
+            'smartprobookoffice@gmail.com',
         ];
 
         foreach ($candidates as $candidate) {
@@ -126,6 +126,6 @@ class Setting extends Model
             }
         }
 
-        return 'support@smartprobook.com';
+        return 'smartprobookoffice@gmail.com';
     }
 }

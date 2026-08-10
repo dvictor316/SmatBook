@@ -120,7 +120,7 @@ class DemoRequestController extends Controller
         }
 
         // Notify the super-admin for visibility; no manual approval is required.
-        $adminEmail = config('internal.admin_email', 'support@smartprobook.com');
+        $adminEmail = config('internal.admin_email', config('mail.admin_inbox', 'smartprobookoffice@gmail.com'));
         $this->sendDemoMail(
             $adminEmail,
             new DemoRequestNotificationMail($demoRequest->fresh()),

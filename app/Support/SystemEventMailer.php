@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Schema;
 
 class SystemEventMailer
 {
-    private const ADMIN_INBOX = 'donvictorlive@gmail.com';
+    private const ADMIN_INBOX = 'smartprobookoffice@gmail.com';
 
     public static function notifyRegistration(User $registrant, string $type = 'user', array $context = []): void
     {

@@ -133,8 +133,8 @@
                                 <div class="col-lg-6 col-12">
                                     <div class="input-block mb-3">
                                         <label class="form-label fw-semibold">Email From Address</label>
-                                        <input type="email" class="form-control" name="mail_from_address" value="{{ $settings['mail_from_address'] ?? ($settings['mail_smtp_username'] ?? 'contact@smartprobook.com') }}" placeholder="contact@smartprobook.com">
-                                        <div class="form-text">Use <strong>contact@smartprobook.com</strong> only if that mailbox really exists on your provider. Otherwise use your live SMTP mailbox, for example your Gmail address.</div>
+                                        <input type="email" class="form-control" name="mail_from_address" value="{{ $settings['mail_from_address'] ?? ($settings['mail_smtp_username'] ?? 'smartprobookoffice@gmail.com') }}" placeholder="smartprobookoffice@gmail.com">
+                                        <div class="form-text">Use the live SMTP mailbox here. For SmartProbook, use <strong>smartprobookoffice@gmail.com</strong>.</div>
                                     </div>
                                 </div>
                                 <div class="col-lg-12 col-12">
@@ -146,7 +146,7 @@
                                 <div class="col-lg-12 col-12">
                                     <div class="input-block mb-3">
                                         <label class="form-label fw-semibold">Activity/Admin Notification Inbox</label>
-                                        <input type="email" class="form-control" name="mail_admin_inbox" value="{{ $settings['mail_admin_inbox'] ?? config('mail.admin_inbox') }}" placeholder="admin@smartprobook.com">
+                                        <input type="email" class="form-control" name="mail_admin_inbox" value="{{ $settings['mail_admin_inbox'] ?? config('mail.admin_inbox') }}" placeholder="smartprobookoffice@gmail.com">
                                         <div class="form-text">System activity emails, registrations, approvals and operational alerts will copy this inbox.</div>
                                     </div>
                                 </div>

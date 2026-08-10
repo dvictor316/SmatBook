@@ -281,7 +281,7 @@ class LandingController extends Controller
                 $settings?->contact_email,
                 env('MAIL_ADMIN_INBOX'),
                 config('mail.from.address'),
-                'donvictorlive@gmail.com',
+                'smartprobookoffice@gmail.com',
             ]), fn ($email) => is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL)));
 
             if (empty($recipients)) {
