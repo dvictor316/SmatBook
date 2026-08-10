@@ -321,11 +321,10 @@
     }
     
     @media print {
+        @page { size: A4 landscape; margin: 5mm; }
         .no-print, .dt-buttons, .main-header, .sidebar { display: none !important; }
-        .card { border: none !important; box-shadow: none !important; }
-        .page-wrapper { margin: 0 !important; padding: 0 !important; }
-        table { width: 100% !important; border-collapse: collapse; }
-        th, td { border: 1px solid #dee2e6 !important; padding: 8px !important; }
+        body.inventory-print-mode > *:not(#inventory-print-root) { display: none !important; }
+        body.inventory-print-mode #inventory-print-root { display: block !important; }
     }
 
     @media (max-width: 767.98px) {
@@ -919,12 +918,6 @@
                 return '<tr>' + cellHtml + '</tr>';
             }).join('');
 
-            var printWindow = window.open('', 'inventory-print', 'width=1200,height=800');
-            if (!printWindow) {
-                window.print();
-                return;
-            }
-
             var printedAt = new Date().toLocaleString();
             var headerHtml = printableColumns.map(function(column) {
                 return '<th>' + htmlEscape(column.label) + '</th>';
@@ -934,28 +927,28 @@
                 return '<col style="width:' + (columnWidths[index] || 'auto') + '">';
             }).join('');
 
-            printWindow.document.open();
-            printWindow.document.write(`<!doctype html>
-                <html>
-                <head>
-                    <title>Product Inventory</title>
+            $('#inventory-print-root').remove();
+            $('body').append(`
+                <div id="inventory-print-root">
                     <style>
-                        @page { size: A4 landscape; margin: 5mm; }
-                        * { box-sizing: border-box; }
-                        body { margin: 0; font-family: Arial, sans-serif; color: #111827; }
-                        h1 { margin: 0 0 3px; font-size: 16px; }
-                        .meta { margin: 0 0 7px; color: #475569; font-size: 10px; }
-                        table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 8px; }
-                        th, td { border: 1px solid #d1d5db; padding: 3px 4px; text-align: left; vertical-align: top; overflow-wrap: anywhere; word-break: break-word; }
-                        th { background: #eef2ff; color: #0f172a; font-weight: 700; }
-                        td:nth-child(1), th:nth-child(1),
-                        td:nth-child(6), th:nth-child(6),
-                        td:nth-child(7), th:nth-child(7),
-                        td:nth-child(8), th:nth-child(8) { text-align: right; }
-                        tr:nth-child(even) td { background: #f8fafc; }
+                        #inventory-print-root { font-family: Arial, sans-serif; color: #111827; }
+                        #inventory-print-root * { box-sizing: border-box; }
+                        #inventory-print-root h1 { margin: 0 0 3px; font-size: 16px; }
+                        #inventory-print-root .meta { margin: 0 0 7px; color: #475569; font-size: 10px; }
+                        #inventory-print-root table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 8px; }
+                        #inventory-print-root th,
+                        #inventory-print-root td { border: 1px solid #d1d5db; padding: 3px 4px; text-align: left; vertical-align: top; overflow-wrap: anywhere; word-break: break-word; }
+                        #inventory-print-root th { background: #eef2ff; color: #0f172a; font-weight: 700; }
+                        #inventory-print-root td:nth-child(1),
+                        #inventory-print-root th:nth-child(1),
+                        #inventory-print-root td:nth-child(6),
+                        #inventory-print-root th:nth-child(6),
+                        #inventory-print-root td:nth-child(7),
+                        #inventory-print-root th:nth-child(7),
+                        #inventory-print-root td:nth-child(8),
+                        #inventory-print-root th:nth-child(8) { text-align: right; }
+                        #inventory-print-root tr:nth-child(even) td { background: #f8fafc; }
                     </style>
-                </head>
-                <body>
                     <h1>Product Inventory</h1>
                     <p class="meta">Printed ${htmlEscape(printedAt)} &middot; ${rows.length} item(s)</p>
                     <table>
@@ -963,16 +956,13 @@
                         <thead><tr>${headerHtml}</tr></thead>
                         <tbody>${bodyRows || '<tr><td colspan="' + printableColumns.length + '">No products found.</td></tr>'}</tbody>
                     </table>
-                    <script>
-                        window.onload = function() {
-                            window.focus();
-                            window.print();
-                            window.onafterprint = function() { window.close(); };
-                        };
-                    <\/script>
-                </body>
-                </html>`);
-            printWindow.document.close();
+                </div>
+            `);
+
+            $('body').addClass('inventory-print-mode');
+            setTimeout(function() {
+                window.print();
+            }, 80);
         }
 
         // PREVENT RE-INITIALIZATION ERROR
@@ -1016,6 +1006,11 @@
         $('#inventory_print_btn').on('click', function(e) {
             e.preventDefault();
             printInventoryTable();
+        });
+
+        window.addEventListener('afterprint', function() {
+            $('body').removeClass('inventory-print-mode');
+            $('#inventory-print-root').remove();
         });
 
         table.page.len(500).draw(false);
