@@ -82,15 +82,26 @@
     }
 
     .inventory-toolbar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        justify-content: flex-end;
+        display: grid;
+        grid-template-columns: minmax(340px, 1fr) 132px 190px;
+        gap: 0.75rem 1rem;
+        justify-content: stretch;
         align-items: center;
     }
 
     .inventory-search-form {
-        min-width: 240px;
+        min-width: 0;
+    }
+
+    .inventory-search-form .form-control {
+        min-height: 46px;
+        font-size: 1rem;
+    }
+
+    .inventory-search-form .btn {
+        min-width: 62px;
+        border-radius: 999px;
+        margin-left: -1px;
     }
 
     .inventory-toolbar .dropdown {
@@ -104,11 +115,46 @@
     }
 
     .inventory-tool-btn {
-        min-height: 42px;
+        min-height: 46px;
         font-weight: 800;
         border-radius: 999px;
         padding-left: 1rem;
         padding-right: 1rem;
+        width: 100%;
+        justify-content: center;
+        white-space: nowrap;
+    }
+
+    .inventory-toolbar .dropdown > .inventory-tool-btn,
+    .desktop-add-product-trigger.inventory-tool-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .inventory-toolbar-primary {
+        grid-column: 1 / 2;
+    }
+
+    .inventory-toolbar-print {
+        grid-column: 2 / 3;
+    }
+
+    .inventory-toolbar-export {
+        grid-column: 3 / 4;
+    }
+
+    .inventory-toolbar-import {
+        grid-column: 2 / 3;
+    }
+
+    .inventory-toolbar-add {
+        grid-column: 3 / 4;
+    }
+
+    .inventory-toolbar-clear,
+    .inventory-toolbar-transfer {
+        grid-column: 1 / 2;
     }
 
     .inventory-bulk-bar {
@@ -139,8 +185,8 @@
     }
 
     .inventory-table-shell {
-        max-height: calc(100vh - 195px);
-        min-height: 560px;
+        max-height: calc(100vh - 125px);
+        min-height: 660px;
         overflow: auto;
     }
 
@@ -154,12 +200,37 @@
 
     #products-table_wrapper .dataTables_scrollBody {
         border: 0;
-        max-height: calc(100vh - 235px) !important;
+        max-height: calc(100vh - 155px) !important;
     }
 
     #products-table_wrapper .dataTables_paginate,
     #products-table_wrapper .dataTables_info {
-        padding-top: 0.85rem;
+        padding-top: 0.35rem;
+        padding-bottom: 0;
+        font-size: 0.78rem;
+    }
+
+    #products-table_wrapper .dataTables_paginate {
+        text-align: center !important;
+    }
+
+    #products-table_wrapper .dataTables_paginate .pagination {
+        display: inline-flex;
+        width: auto;
+        margin: 0.15rem auto 0 !important;
+        gap: 0.25rem;
+        justify-content: center;
+        padding: 0.25rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+    }
+
+    #products-table_wrapper .dataTables_paginate .page-link {
+        min-height: 34px;
+        padding: 0.38rem 0.72rem;
+        border-radius: 8px;
     }
 
     .inventory-page-header,
@@ -190,18 +261,26 @@
         }
 
         .inventory-toolbar {
-            justify-content: stretch;
+            grid-template-columns: 1fr 1fr;
             width: 100%;
         }
 
         .inventory-toolbar > * {
-            flex: 1 1 calc(50% - 0.375rem);
             min-width: 0;
         }
 
         .inventory-search-form {
-            flex: 1 1 100%;
+            grid-column: 1 / -1;
             min-width: 100%;
+        }
+
+        .inventory-toolbar-print,
+        .inventory-toolbar-export,
+        .inventory-toolbar-import,
+        .inventory-toolbar-add,
+        .inventory-toolbar-clear,
+        .inventory-toolbar-transfer {
+            grid-column: auto;
         }
 
         .inventory-toolbar .btn,
@@ -241,12 +320,12 @@
         <div class="card shadow-sm mb-3 no-print">
             <div class="card-body">
                 <div class="row align-items-center inventory-page-header">
-                    <div class="col-md-4 inventory-page-title">
+                    <div class="col-lg-3 col-md-4 inventory-page-title">
                         <h4 class="mb-0 text-primary"><i class="fas fa-boxes me-2"></i>Inventory Management</h4>
                     </div>
-                    <div class="col-md-8 text-end">
+                    <div class="col-lg-9 col-md-8 text-end">
                         <div class="inventory-toolbar">
-                            <form method="GET" action="{{ route('product-list') }}" class="d-flex inventory-search-form">
+                            <form method="GET" action="{{ route('product-list') }}" class="d-flex inventory-search-form inventory-toolbar-primary">
                                 <div class="input-group">
                                     <input type="text" name="search" value="{{ $search ?? '' }}" class="form-control" placeholder="Search SKU or Name...">
                                     <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i><span class="visually-hidden">Filter</span></button>
@@ -254,16 +333,16 @@
                             </form>
 
                             @if(!empty($search))
-                                <a href="{{ route('product-list') }}" class="btn btn-outline-secondary inventory-tool-btn">
+                                <a href="{{ route('product-list') }}" class="btn btn-outline-secondary inventory-tool-btn inventory-toolbar-clear">
                                     <i class="fas fa-filter-circle-xmark me-1"></i> Clear Filter
                                 </a>
                             @endif
 
-                            <button type="button" class="btn btn-outline-secondary inventory-tool-btn" id="inventory_print_btn">
+                            <button type="button" class="btn btn-outline-secondary inventory-tool-btn inventory-toolbar-print" id="inventory_print_btn">
                                 <i class="fas fa-print me-1"></i> Print
                             </button>
                             
-                            <div class="dropdown">
+                            <div class="dropdown inventory-toolbar-export">
                                 <button class="btn btn-outline-primary dropdown-toggle inventory-tool-btn" type="button" data-bs-toggle="dropdown">
                                     <i class="fas fa-upload me-1"></i> Stock Export
                                 </button>
@@ -274,7 +353,7 @@
                                 </ul>
                             </div>
 
-                            <div class="dropdown">
+                            <div class="dropdown inventory-toolbar-import">
                                 <button class="btn btn-outline-success dropdown-toggle inventory-tool-btn" type="button" data-bs-toggle="dropdown">
                                     <i class="fas fa-download me-1"></i> Bulk Stock Import
                                 </button>
@@ -295,11 +374,11 @@
                                 </ul>
                             </div>
 
-                            <button type="button" class="btn btn-success desktop-add-product-trigger" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                            <button type="button" class="btn btn-success desktop-add-product-trigger inventory-tool-btn inventory-toolbar-add" data-bs-toggle="modal" data-bs-target="#addProductModal">
                                 <i class="fa fa-plus"></i> Add Product
                             </button>
                             @if($showStockTransferModal)
-                                <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#transferStockModal">
+                                <button type="button" class="btn btn-outline-dark inventory-tool-btn inventory-toolbar-transfer" data-bs-toggle="modal" data-bs-target="#transferStockModal">
                                     <i class="fas fa-right-left"></i> Transfer Stock
                                 </button>
                             @endif
@@ -737,7 +816,7 @@
             stateSave: false,
             stateLoadCallback: function() { return null; },
             deferRender: true,
-            scrollY: 'calc(100vh - 235px)',
+            scrollY: 'calc(100vh - 155px)',
             scrollCollapse: false,
             paging: true,
             lengthMenu: [[500, -1], [500, 'All']],
