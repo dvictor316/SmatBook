@@ -3426,7 +3426,6 @@ public function destroy($id)
             : (Schema::hasColumn('sales', 'total_amount')
                 ? 'COALESCE(NULLIF(sales.total_amount, 0), sales.amount_paid, 0)'
                 : 'COALESCE(sales.amount_paid, 0)');
-        $purchasesHasStatus = Schema::hasColumn('purchases', 'status');
         $expensesHasStatus = Schema::hasTable('expenses') && Schema::hasColumn('expenses', 'status');
         $expenseStatusExpr = $expensesHasStatus
             ? "LOWER(COALESCE(expenses.status, 'pending'))"
@@ -3512,41 +3511,44 @@ public function destroy($id)
             ->groupByRaw($salesDateExpr)
             ->get()->keyBy('txn_date');
 
-        // ── Purchase Cost: query purchases table directly ─────────────────────
-        // purchase_date may not exist or be null; fall back to created_at
-        $purchDateExpr = Schema::hasColumn('purchases', 'purchase_date')
-            ? 'COALESCE(DATE(purchases.purchase_date), DATE(purchases.created_at))'
-            : 'DATE(purchases.created_at)';
+        // ── Cost of Goods Sold: cost only the inventory units actually sold ───
+        $cogsByDate = collect();
+        if (
+            Schema::hasTable('sale_items')
+            && Schema::hasTable('products')
+            && Schema::hasColumn('sale_items', 'sale_id')
+            && Schema::hasColumn('sale_items', 'product_id')
+            && Schema::hasColumn('products', 'purchase_price')
+        ) {
+            $soldUnitsExpr = InventoryQuantity::saleStockUnitsExpression('sale_items', 'products');
 
-        $purchQuery = DB::table('purchases')
-            ->when($companyId > 0 && Schema::hasColumn('purchases', 'company_id'),
-                fn ($q) => $q->where('purchases.company_id', $companyId))
-            ->whereBetween(DB::raw($purchDateExpr), [$startDate, $endDate]);
-        $purchaseAmountExpr = $this->attachPurchaseItemTotals($purchQuery);
-        if (Schema::hasColumn('purchases', 'purchase_type')) {
-            $purchQuery->where(function ($query) {
-                $query->whereNull('purchases.purchase_type')
-                    ->orWhereRaw('LOWER(purchases.purchase_type) <> ?', ['fixed_asset']);
-            });
-        }
-        if ($purchasesHasStatus) {
-            $purchQuery->where(function ($query) {
-                $query->whereNull('purchases.status')
-                    ->orWhereRaw('LOWER(purchases.status) not in (?, ?, ?, ?, ?)', [
-                        'draft',
-                        'cancelled',
-                        'canceled',
-                        'rejected',
-                        'returned',
-                    ]);
-            });
-        }
-        $applyBranch($purchQuery, 'purchases');
+            $cogsQuery = DB::table('sale_items')
+                ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                ->join('products', 'sale_items.product_id', '=', 'products.id')
+                ->when($companyId > 0 && Schema::hasColumn('sales', 'company_id'),
+                    fn ($q) => $q->where('sales.company_id', $companyId))
+                ->whereBetween(DB::raw($salesDateExpr), [$startDate, $endDate]);
 
-        $purchasesByDate = $purchQuery
-            ->selectRaw("{$purchDateExpr} as txn_date, SUM({$purchaseAmountExpr}) as total")
-            ->groupByRaw($purchDateExpr)
-            ->get()->keyBy('txn_date');
+            if ($salesHasDeletedAt) {
+                $cogsQuery->whereNull('sales.deleted_at');
+            }
+            if (Schema::hasColumn('sale_items', 'deleted_at')) {
+                $cogsQuery->whereNull('sale_items.deleted_at');
+            }
+            if ($salesHasOrderStatus) {
+                $cogsQuery->where(function ($query) {
+                    $query->whereNull('sales.order_status')
+                        ->orWhereRaw('LOWER(sales.order_status) <> ?', ['draft']);
+                });
+            }
+            $applyBranch($cogsQuery, 'sales');
+
+            $cogsByDate = $cogsQuery
+                ->selectRaw("{$salesDateExpr} as txn_date, SUM(({$soldUnitsExpr}) * COALESCE(products.purchase_price, 0)) as total")
+                ->groupByRaw($salesDateExpr)
+                ->get()
+                ->keyBy('txn_date');
+        }
 
         // ── Operating Expenses: query expenses table directly ─────────────────
         $expensesByDate = collect();
@@ -3681,17 +3683,17 @@ public function destroy($id)
 
         // ── Merge all dates and build daily rows ──────────────────────────────
         $allDates = collect($salesByDate->keys())
-            ->merge($purchasesByDate->keys())
+            ->merge($cogsByDate->keys())
             ->merge($expensesByDate->keys())
             ->merge($depreciationByDate->keys())
             ->merge($journalIncomeByDate->keys())
             ->merge($journalExpenseByDate->keys())
             ->unique()->sort()->values();
 
-        $dailyRows = $allDates->map(function ($date) use ($salesByDate, $purchasesByDate, $expensesByDate, $depreciationByDate, $journalIncomeByDate, $journalExpenseByDate) {
+        $dailyRows = $allDates->map(function ($date) use ($salesByDate, $cogsByDate, $expensesByDate, $depreciationByDate, $journalIncomeByDate, $journalExpenseByDate) {
             $income    = (float) ($salesByDate[$date]->total     ?? 0)
                 + (float) ($journalIncomeByDate[$date]->total ?? 0);
-            $purchases = (float) ($purchasesByDate[$date]->total ?? 0);
+            $purchases = (float) ($cogsByDate[$date]->total ?? 0);
             $opex      = (float) ($expensesByDate[$date]->total  ?? 0)
                 + (float) ($depreciationByDate[$date]->total ?? 0)
                 + (float) ($journalExpenseByDate[$date]->total ?? 0);

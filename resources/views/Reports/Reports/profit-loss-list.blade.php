@@ -397,7 +397,7 @@
                             <td></td>
                         </tr>
                         <tr class="pl-line">
-                            <td>Cost of Purchases</td>
+                            <td>Cost of Goods Sold</td>
                             <td class="pl-amount">{{ $fmt($grandPurchaseExpense) }}</td>
                         </tr>
                         <tr class="pl-total" style="font-weight:700;">
@@ -431,7 +431,7 @@
                 </table>
 
                 <div class="pl-note">
-                    Revenue, purchase cost and operating expenses are laid out in statement form to match the balance sheet reading pattern.
+                    Inventory purchases remain stock assets until items are sold; Cost of Goods Sold reflects only the cost of sold inventory units.
                 </div>
 
                 <div class="pl-breakdown">
@@ -442,7 +442,7 @@
                             <tr>
                                 <th>{{ __('Transaction Date') }}</th>
                                 <th>{{ __('Income (₦)') }}</th>
-                                <th>{{ __('Purchases (₦)') }}</th>
+                                <th>{{ __('COGS (₦)') }}</th>
                                 <th>{{ __('OpEx (₦)') }}</th>
                                 <th>{{ __('Expenses (₦)') }}</th>
                                 <th>{{ __('Net (₦)') }}</th>

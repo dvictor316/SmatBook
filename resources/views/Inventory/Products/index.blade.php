@@ -93,6 +93,22 @@
         min-width: 240px;
     }
 
+    .inventory-toolbar .dropdown {
+        position: relative;
+    }
+
+    .inventory-toolbar .dropdown-menu {
+        z-index: 1085;
+        min-width: 230px;
+        box-shadow: 0 14px 34px rgba(15, 23, 42, 0.16);
+    }
+
+    .inventory-page-header,
+    .inventory-page-header .card-body,
+    .inventory-page-header .inventory-toolbar {
+        overflow: visible;
+    }
+
     .mobile-add-product-trigger {
         display: none;
     }

@@ -915,7 +915,8 @@ body.pos-terminal-workspace #toggle_btn:focus-visible {
     border-radius: 14px;
     box-shadow: 0 20px 50px rgba(6,26,68,.22), 0 0 0 1px rgba(215,169,40,.08), inset 0 1px 0 rgba(255,255,255,.70);
     z-index: 99999;
-    max-height: 260px;
+    max-height: min(540px, calc(100vh - 150px));
+    min-width: 360px;
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(215,169,40,.40) transparent;
@@ -927,7 +928,7 @@ body.pos-terminal-workspace #toggle_btn:focus-visible {
     list-style: none; margin: 0; padding: 6px 0;
 }
 #pos-product-dropdown-portal li {
-    padding: 9px 16px; cursor: pointer; font-size: .875rem;
+    padding: 11px 16px; cursor: pointer; font-size: .9rem;
     color: #061a44;
     font-weight: 600;
     letter-spacing: .01em;
@@ -1283,7 +1284,7 @@ body.pos-terminal-workspace #toggle_btn:focus-visible {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 28px 20px;
+    padding: 10px 12px;
     z-index: 0;
     background:
         radial-gradient(circle at top, rgba(250, 204, 21, 0.10) 0%, rgba(250, 204, 21, 0) 58%),
@@ -1298,20 +1299,20 @@ body.pos-terminal-workspace #toggle_btn:focus-visible {
 }
 
 .cart-empty-shell {
-    width: min(100%, 320px);
-    padding: 26px 22px;
+    width: min(100%, 250px);
+    padding: 14px 16px;
     text-align: center;
     border: 1px dashed #bfdbfe;
-    border-radius: 20px;
+    border-radius: 10px;
     background: linear-gradient(180deg, rgba(255, 253, 244, 0.98) 0%, rgba(255, 250, 236, 0.96) 100%);
     box-shadow: 0 14px 34px rgba(212, 175, 55, 0.10);
 }
 
 .cart-empty-icon {
-    width: 64px;
-    height: 64px;
-    margin: 0 auto 14px;
-    border-radius: 18px;
+    width: 42px;
+    height: 42px;
+    margin: 0 auto 8px;
+    border-radius: 10px;
     display: grid;
     place-items: center;
     background: linear-gradient(135deg, #eaf2ff 0%, #ffffff 100%);
@@ -1322,8 +1323,8 @@ body.pos-terminal-workspace #toggle_btn:focus-visible {
 }
 
 .cart-empty-icon svg {
-    width: 30px;
-    height: 30px;
+    width: 22px;
+    height: 22px;
     display: block;
 }
 
@@ -2921,8 +2922,8 @@ body.pos-terminal-workspace .quick-fill-row {
     }
 
     body.pos-terminal-workspace .cart-wrapper {
-        height: clamp(210px, calc(100vh - 355px), 430px);
-        min-height: 205px;
+        height: clamp(180px, calc(100vh - 385px), 360px);
+        min-height: 180px;
         margin-bottom: 4px;
     }
 
@@ -4525,7 +4526,7 @@ $(document).ready(function() {
             if (!items.length) {
                 $list.append('<li class="combo-no-results">No products found</li>');
             } else {
-                items.slice(0, 120).forEach(function (item) {
+                items.slice(0, 500).forEach(function (item) {
                     const $li = $('<li>').attr('data-id', item.id);
                     $li.html(highlight(item.name, kw));
                     if (item.sku) {
@@ -4556,10 +4557,12 @@ $(document).ready(function() {
 
         function positionPortal() {
             const rect = $input[0].getBoundingClientRect();
+            const width = Math.min(Math.max(rect.width, 380), window.innerWidth - 24);
+            const left = Math.min(Math.max(12, rect.left), window.innerWidth - width - 12);
             $portal.css({
                 top   : rect.bottom + 2,
-                left  : rect.left,
-                width : rect.width,
+                left  : left,
+                width : width,
             });
         }
 
@@ -7125,7 +7128,7 @@ window.POS_ENABLE_FALLBACK = function () {
                 list.innerHTML = '<li class="combo-no-results">No products found</li>';
                 return;
             }
-            items.slice(0, 120).forEach(function(item) {
+            items.slice(0, 500).forEach(function(item) {
                 const li = document.createElement('li');
                 li.dataset.id = item.id;
                 li.innerHTML = hlite(item.name, kw);
@@ -7165,9 +7168,11 @@ window.POS_ENABLE_FALLBACK = function () {
 
         function reposition() {
             const r = input.getBoundingClientRect();
+            const width = Math.min(Math.max(r.width, 380), window.innerWidth - 24);
+            const left = Math.min(Math.max(12, r.left), window.innerWidth - width - 12);
             portal.style.top   = (r.bottom + 2) + 'px';
-            portal.style.left  = r.left + 'px';
-            portal.style.width = r.width + 'px';
+            portal.style.left  = left + 'px';
+            portal.style.width = width + 'px';
         }
 
         function openWith(kw) {
