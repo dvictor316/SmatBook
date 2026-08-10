@@ -103,6 +103,38 @@
         box-shadow: 0 14px 34px rgba(15, 23, 42, 0.16);
     }
 
+    .inventory-tool-btn {
+        min-height: 42px;
+        font-weight: 800;
+        border-radius: 999px;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .inventory-table-shell {
+        max-height: calc(100vh - 315px);
+        min-height: 420px;
+        overflow: auto;
+    }
+
+    .inventory-table-shell thead th {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background: #f8fafc;
+        box-shadow: inset 0 -1px 0 #e5e7eb;
+    }
+
+    #products-table_wrapper .dataTables_scrollBody {
+        border: 0;
+        max-height: calc(100vh - 360px) !important;
+    }
+
+    #products-table_wrapper .dataTables_paginate,
+    #products-table_wrapper .dataTables_info {
+        padding-top: 0.85rem;
+    }
+
     .inventory-page-header,
     .inventory-page-header .card-body,
     .inventory-page-header .inventory-toolbar {
@@ -190,28 +222,38 @@
                             <form method="GET" action="{{ route('product-list') }}" class="d-flex inventory-search-form">
                                 <div class="input-group">
                                     <input type="text" name="search" value="{{ $search ?? '' }}" class="form-control" placeholder="Search SKU or Name...">
-                                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i><span class="visually-hidden">Filter</span></button>
                                 </div>
                             </form>
+
+                            @if(!empty($search))
+                                <a href="{{ route('product-list') }}" class="btn btn-outline-secondary inventory-tool-btn">
+                                    <i class="fas fa-filter-circle-xmark me-1"></i> Clear Filter
+                                </a>
+                            @endif
+
+                            <button type="button" class="btn btn-outline-secondary inventory-tool-btn" id="inventory_print_btn">
+                                <i class="fas fa-print me-1"></i> Print
+                            </button>
                             
                             <div class="dropdown">
-                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                    <i class="fas fa-download me-1"></i> Export
+                                <button class="btn btn-outline-primary dropdown-toggle inventory-tool-btn" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-download me-1"></i> Stock Export
                                 </button>
                                 <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#" id="export_print"><i class="fas fa-print me-2 text-secondary"></i>Print</a></li>
-                                    <li><a class="dropdown-item" href="#" id="export_excel"><i class="far fa-file-excel me-2 text-success"></i>Excel</a></li>
-                                    <li><a class="dropdown-item" href="#" id="export_pdf"><i class="far fa-file-pdf me-2 text-danger"></i>PDF</a></li>
+                                    <li><a class="dropdown-item" href="#" id="export_excel"><i class="far fa-file-excel me-2 text-success"></i>Export Stock Excel</a></li>
+                                    <li><a class="dropdown-item" href="#" id="export_csv"><i class="fas fa-file-csv me-2 text-primary"></i>Export Stock CSV</a></li>
+                                    <li><a class="dropdown-item" href="#" id="export_pdf"><i class="far fa-file-pdf me-2 text-danger"></i>Export Stock PDF</a></li>
                                 </ul>
                             </div>
 
                             <div class="dropdown">
-                                <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                    <i class="fas fa-upload me-1"></i> Import
+                                <button class="btn btn-outline-success dropdown-toggle inventory-tool-btn" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-upload me-1"></i> Bulk Stock Import
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item" href="{{ route('inventory.Products.import.template') }}"><i class="far fa-file-lines me-2 text-primary"></i>Download Spreadsheet Template</a></li>
-                                    <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importProductsModal"><i class="fas fa-file-upload me-2 text-success"></i>Import Products</button></li>
+                                    <li><a class="dropdown-item" href="{{ route('inventory.Products.import.template') }}"><i class="far fa-file-lines me-2 text-primary"></i>Download Stock Template</a></li>
+                                    <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importProductsModal"><i class="fas fa-file-upload me-2 text-success"></i>Upload Stock Spreadsheet</button></li>
                                     @php($lastImportKey = 'product_import_last_' . (auth()->id() ?? 'guest'))
                                     @if (\Illuminate\Support\Facades\Cache::has($lastImportKey))
                                         <li>
@@ -242,7 +284,7 @@
 
         <div class="card shadow-sm">
             <div class="card-body">
-                <div class="table-responsive">
+                <div class="table-responsive inventory-table-shell">
                     <table class="table table-hover" id="products-table">
                         <thead class="thead-light">
                             <tr>
@@ -532,14 +574,14 @@
             <form method="POST" action="{{ route('inventory.Products.import') }}" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-header">
-                    <h5 class="modal-title">Bulk Import Products</h5>
+                    <h5 class="modal-title">Bulk Stock Import</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted mb-3">Use the CSV template for large catalogs. Missing SKU values will be generated automatically during import.</p>
+                    <p class="text-muted mb-3">Use the stock spreadsheet template to import many products, prices, packaging, and opening stock quantities at once. Missing SKU values will be generated automatically.</p>
                     <div class="mb-3">
                         <a href="{{ route('inventory.Products.import.template') }}" class="btn btn-light border w-100">
-                            <i class="far fa-file-lines me-2"></i>Download CSV Template
+                            <i class="far fa-file-lines me-2"></i>Download Stock CSV Template
                         </a>
                     </div>
                     <div>
@@ -565,7 +607,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Import Products</button>
+                    <button type="submit" class="btn btn-primary">Import Stock Spreadsheet</button>
                 </div>
             </form>
         </div>
@@ -612,18 +654,39 @@
             dom: 'Bfrtip',
             buttons: [
                 { extend: 'excelHtml5', className: 'dt-excel d-none', title: 'Product_Inventory_List', exportOptions: { columns: ':not(.no-print)' } },
+                { extend: 'csvHtml5', className: 'dt-csv d-none', title: 'Product_Inventory_List', exportOptions: { columns: ':not(.no-print)' } },
                 { extend: 'pdfHtml5', className: 'dt-pdf d-none', title: 'Product Inventory List', exportOptions: { columns: ':not(.no-print)' } },
                 { extend: 'print', className: 'dt-print d-none', title: 'Product Inventory', exportOptions: { columns: ':not(.no-print)' } }
             ],
             pageLength: 500,
-            lengthMenu: [[25, 50, 100, 500, -1], [25, 50, 100, 500, 'All']],
-            language: { search: "" , searchPlaceholder: "Search..." }
+            displayLength: 500,
+            iDisplayLength: 500,
+            lengthChange: false,
+            stateSave: false,
+            stateLoadCallback: function() { return null; },
+            deferRender: true,
+            scrollY: 'calc(100vh - 360px)',
+            scrollCollapse: false,
+            paging: true,
+            lengthMenu: [[500, -1], [500, 'All']],
+            language: {
+                search: "",
+                searchPlaceholder: "Search...",
+                info: "Showing _START_ to _END_ of _TOTAL_ stock items",
+                paginate: {
+                    previous: "Previous 500",
+                    next: "Next 500"
+                }
+            }
         });
 
         // Trigger Exports from Custom Dropdown
         $('#export_excel').on('click', function(e) { e.preventDefault(); table.button('.dt-excel').trigger(); });
+        $('#export_csv').on('click', function(e) { e.preventDefault(); table.button('.dt-csv').trigger(); });
         $('#export_pdf').on('click', function(e) { e.preventDefault(); table.button('.dt-pdf').trigger(); });
-        $('#export_print').on('click', function(e) { e.preventDefault(); table.button('.dt-print').trigger(); });
+        $('#inventory_print_btn').on('click', function(e) { e.preventDefault(); table.button('.dt-print').trigger(); });
+
+        table.page.len(500).draw(false);
 
         $('#quick_add_product_form').on('submit', function() {
             const imageInput = document.getElementById('quick_add_product_image');
