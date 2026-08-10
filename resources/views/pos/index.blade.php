@@ -3967,7 +3967,7 @@ body.pos-terminal-workspace .pos-pay-tab.active {
                 @if($isOutOfStock) aria-disabled="true" style="opacity:.55; filter:grayscale(.15);" @endif>
                 <div class="product-card-img">
                     @if($p->image_url)
-                        <img src="{{ $p->image_url }}" alt="{{ $p->name }}" onerror="this.style.display='none'; this.parentElement.querySelector('.product-fallback-icon')?.classList.remove('d-none');">
+                        <img src="{{ $p->image_url }}" alt="{{ $p->name }}" onerror="this.style.display='none'; var fallback = this.parentElement.querySelector('.product-fallback-icon'); if (fallback) fallback.classList.remove('d-none');">
                     @else
                         <div class="d-flex align-items-center justify-content-center h-100 w-100 text-primary bg-light product-fallback-icon">
                             <i class="fas fa-box-open"></i>

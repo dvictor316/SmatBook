@@ -444,6 +444,36 @@ class ProductController extends Controller
         return preg_replace('/^\x{FEFF}/u', '', $header) ?? $header;
     }
 
+    public function serveImage(string $path)
+    {
+        $normalized = str_replace('\\', '/', urldecode($path));
+        $normalized = ltrim(preg_replace('#\.\./#', '', $normalized) ?? '', '/');
+        $normalized = preg_replace('#^public/#', '', $normalized) ?? $normalized;
+        $normalized = preg_replace('#^storage/#', '', $normalized) ?? $normalized;
+
+        if ($normalized === '') {
+            abort(404);
+        }
+
+        if (Storage::disk('public')->exists($normalized)) {
+            return response()->file(Storage::disk('public')->path($normalized));
+        }
+
+        $publicCandidates = [
+            public_path($normalized),
+            public_path('storage/' . $normalized),
+            public_path('uploads/' . $normalized),
+        ];
+
+        foreach ($publicCandidates as $candidate) {
+            if (is_file($candidate)) {
+                return response()->file($candidate);
+            }
+        }
+
+        abort(404);
+    }
+
     /**
      * Product List View with Search and Database Falling Check
      */

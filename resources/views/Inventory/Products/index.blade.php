@@ -81,6 +81,13 @@
         font-size: 0.9rem;
     }
 
+    .product-thumb-img {
+        width: 35px;
+        height: 35px;
+        object-fit: cover;
+        background: #eef2ff;
+    }
+
     .inventory-toolbar {
         display: grid;
         grid-template-columns: minmax(340px, 1fr) minmax(130px, 160px) minmax(210px, 240px) minmax(230px, 260px) minmax(200px, 230px);
@@ -433,7 +440,8 @@
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 @if($product->image_url)
-                                                    <img src="{{ $product->image_url }}" class="rounded me-2" width="35" height="35" alt="{{ $product->name }}">
+                                                    <img src="{{ $product->image_url }}" class="rounded me-2 product-thumb-img" alt="{{ $product->name }}" loading="lazy" onerror="this.classList.add('d-none'); if (this.nextElementSibling) this.nextElementSibling.classList.remove('d-none');">
+                                                    <span class="product-thumb-empty d-none"><i class="fas fa-box-open"></i></span>
                                                 @else
                                                     <span class="product-thumb-empty"><i class="fas fa-box-open"></i></span>
                                                 @endif
@@ -809,10 +817,29 @@
         var table = $('#products-table').DataTable({
             dom: 'Bfrtip',
             buttons: [
-                { extend: 'excelHtml5', className: 'dt-excel d-none', title: 'Product_Inventory_List', exportOptions: { columns: ':not(.no-print)' } },
-                { extend: 'csvHtml5', className: 'dt-csv d-none', title: 'Product_Inventory_List', exportOptions: { columns: ':not(.no-print)' } },
-                { extend: 'pdfHtml5', className: 'dt-pdf d-none', title: 'Product Inventory List', exportOptions: { columns: ':not(.no-print)' } },
-                { extend: 'print', className: 'dt-print d-none', title: 'Product Inventory', exportOptions: { columns: ':not(.no-print)' } }
+                { extend: 'excelHtml5', className: 'dt-excel d-none', title: 'Product_Inventory_List', exportOptions: { columns: ':not(.no-print)', modifier: { page: 'all', search: 'applied' } } },
+                { extend: 'csvHtml5', className: 'dt-csv d-none', title: 'Product_Inventory_List', exportOptions: { columns: ':not(.no-print)', modifier: { page: 'all', search: 'applied' } } },
+                { extend: 'pdfHtml5', className: 'dt-pdf d-none', title: 'Product Inventory List', orientation: 'landscape', pageSize: 'A4', exportOptions: { columns: ':not(.no-print)', modifier: { page: 'all', search: 'applied' } } },
+                {
+                    extend: 'print',
+                    className: 'dt-print d-none',
+                    title: 'Product Inventory',
+                    messageTop: 'Printed on ' + new Date().toLocaleString(),
+                    exportOptions: { columns: ':not(.no-print)', modifier: { page: 'all', search: 'applied' } },
+                    customize: function(win) {
+                        var css = `
+                            @page { size: A4 landscape; margin: 12mm; }
+                            body { font-family: Arial, sans-serif; color: #111827; }
+                            h1 { font-size: 18px; margin: 0 0 8px; }
+                            table { width: 100% !important; border-collapse: collapse !important; font-size: 10px; }
+                            th { background: #eef2ff !important; color: #0f172a; font-weight: 700; }
+                            th, td { border: 1px solid #d1d5db !important; padding: 6px 7px !important; vertical-align: top; }
+                            tr:nth-child(even) td { background: #f9fafb !important; }
+                            img { width: 24px !important; height: 24px !important; object-fit: cover; }
+                        `;
+                        $(win.document.head).append('<style>' + css + '</style>');
+                    }
+                }
             ],
             pageLength: 500,
             displayLength: 500,

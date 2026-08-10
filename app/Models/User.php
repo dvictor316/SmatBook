@@ -379,10 +379,23 @@ class User extends Authenticatable
             return asset(ltrim($path, '/'));
         }
 
-        $normalizedPath = preg_replace('#^storage/#', '', ltrim($path, '/'));
+        $normalizedPath = str_replace('\\', '/', ltrim($path, '/'));
+        foreach (['public/', 'storage/', 'public/storage/'] as $prefix) {
+            if (Str::startsWith($normalizedPath, $prefix)) {
+                $normalizedPath = ltrim(substr($normalizedPath, strlen($prefix)), '/');
+            }
+        }
 
         if ($normalizedPath && Storage::disk('public')->exists($normalizedPath)) {
             return route('media.public', ['path' => $normalizedPath]);
+        }
+
+        if (Str::startsWith(ltrim($path, '/'), 'storage/')) {
+            return asset(ltrim($path, '/'));
+        }
+
+        if ($normalizedPath && file_exists(public_path('storage/' . $normalizedPath))) {
+            return asset('storage/' . $normalizedPath);
         }
 
         if (file_exists(public_path(ltrim($path, '/')))) {

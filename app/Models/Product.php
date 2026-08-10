@@ -212,16 +212,15 @@ class Product extends Model
             return $image;
         }
 
-        $normalized = ltrim($image, '/');
-        $publicDiskPath = Str::startsWith($normalized, 'public/')
-            ? ltrim(substr($normalized, 7), '/')
-            : $normalized;
-
-        if (Str::startsWith($normalized, 'storage/')) {
-            return asset($normalized);
+        $normalized = str_replace('\\', '/', ltrim($image, '/'));
+        $publicDiskPath = $normalized;
+        foreach (['public/', 'storage/', 'public/storage/'] as $prefix) {
+            if (Str::startsWith($publicDiskPath, $prefix)) {
+                $publicDiskPath = ltrim(substr($publicDiskPath, strlen($prefix)), '/');
+            }
         }
 
-        if (Str::startsWith($normalized, 'assets/')) {
+        if (Str::startsWith($normalized, ['assets/', 'uploads/'])) {
             return asset($normalized);
         }
 
@@ -229,8 +228,16 @@ class Product extends Model
             return route('products.image', ['path' => $publicDiskPath]);
         }
 
+        if (Str::startsWith($normalized, 'storage/')) {
+            return asset($normalized);
+        }
+
         if (file_exists(public_path('storage/' . $normalized))) {
             return asset('storage/' . $normalized);
+        }
+
+        if ($publicDiskPath !== '' && file_exists(public_path('storage/' . $publicDiskPath))) {
+            return asset('storage/' . $publicDiskPath);
         }
 
         if (file_exists(public_path($normalized))) {
