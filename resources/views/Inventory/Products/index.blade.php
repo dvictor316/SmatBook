@@ -211,7 +211,7 @@
     }
 
     .inventory-toolbar-import {
-        grid-column: 1 / 2;
+        grid-column: 3 / 4;
         grid-row: 2;
     }
 
