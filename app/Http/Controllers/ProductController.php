@@ -1437,9 +1437,15 @@ public function inventory(Request $request)
     public function inventory_history($id)
     {
         $activeBranch = $this->getActiveBranchContext();
+        $product = Product::query()
+            ->with(['baseUnit', 'unit'])
+            ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
+            ->findOrFail($id);
         $inventoryHistories = collect();
         $branchId = trim((string) ($activeBranch['id'] ?? ''));
         $branchName = trim((string) ($activeBranch['name'] ?? ''));
+        $stockUnitLabel = $product->stockUnitSymbol();
+        $currentStock = $this->branchInventory->getAvailableStock($product, $activeBranch);
 
         if (Schema::hasTable('inventory_history') && Schema::hasTable('products')) {
             $historyQuery = DB::table('inventory_history')
@@ -1452,7 +1458,8 @@ public function inventory(Request $request)
                     'inventory_history.quantity',
                     'products.name',
                     'products.sku',
-                    'products.purchase_price'
+                    'products.purchase_price',
+                    'products.unit_type'
                 )
                 ->where('inventory_history.product_id', $id)
                 ->tap(fn ($q) => $this->applyTenantScope($q, 'products'));
@@ -1521,7 +1528,8 @@ public function inventory(Request $request)
                         COALESCE(purchase_items.{$purchaseQtyColumn}, 0) as quantity,
                         products.name as name,
                         products.sku as sku,
-                        products.purchase_price as purchase_price
+                        products.purchase_price as purchase_price,
+                        products.unit_type as unit_type
                     ")
                     ->where('purchase_items.product_id', $id)
                     ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
@@ -1613,7 +1621,8 @@ public function inventory(Request $request)
                         COALESCE(sale_items.{$saleQtyColumn}, 0) as quantity,
                         products.name as name,
                         products.sku as sku,
-                        products.purchase_price as purchase_price
+                        products.purchase_price as purchase_price,
+                        products.unit_type as unit_type
                     ")
                     ->where('sale_items.product_id', $id)
                     ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
@@ -1685,11 +1694,38 @@ public function inventory(Request $request)
             }
         }
 
+        $totalIn = (float) $inventoryHistories
+            ->filter(fn ($row) => in_array(strtolower((string) ($row->type ?? '')), ['in', 'stock in'], true))
+            ->sum(fn ($row) => (float) ($row->quantity ?? 0));
+        $totalOut = (float) $inventoryHistories
+            ->filter(fn ($row) => in_array(strtolower((string) ($row->type ?? '')), ['out', 'stock out'], true))
+            ->sum(fn ($row) => (float) ($row->quantity ?? 0));
+
+        $runningBalance = 0.0;
         $inventoryHistories = $inventoryHistories
+            ->sortBy(fn ($row) => strtotime((string) ($row->created_at ?? '1970-01-01 00:00:00')))
+            ->values()
+            ->map(function ($row) use (&$runningBalance) {
+                $isStockIn = in_array(strtolower((string) ($row->type ?? '')), ['in', 'stock in'], true);
+                $quantity = (float) ($row->quantity ?? 0);
+                $runningBalance += $isStockIn ? $quantity : -$quantity;
+                $row->running_balance = $runningBalance;
+                $row->stock_value = $runningBalance * (float) ($row->purchase_price ?? 0);
+
+                return $row;
+            })
             ->sortByDesc(fn ($row) => strtotime((string) ($row->created_at ?? '1970-01-01 00:00:00')))
             ->values();
 
-        return view('Inventory.inventory-history', compact('inventoryHistories', 'activeBranch'));
+        return view('Inventory.inventory-history', compact(
+            'inventoryHistories',
+            'activeBranch',
+            'product',
+            'currentStock',
+            'totalIn',
+            'totalOut',
+            'stockUnitLabel'
+        ));
     }
 
     public function update_history(Request $request)

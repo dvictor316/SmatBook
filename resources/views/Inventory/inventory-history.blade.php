@@ -4,6 +4,10 @@
     @php
         $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
         $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
+        $stockUnitLabel = $stockUnitLabel ?? ($product->base_unit_name ?? $product->unit_type ?? 'pcs');
+        $currentStock = (float) ($currentStock ?? 0);
+        $totalIn = (float) ($totalIn ?? 0);
+        $totalOut = (float) ($totalOut ?? 0);
     @endphp
     <div class="page-wrapper">
         <div class="content container-fluid">
@@ -48,7 +52,7 @@
                         <div class="card-body py-3 px-4 d-flex align-items-center justify-content-between">
                             <div>
                                 <p class="mb-1 text-muted small text-uppercase">Current Stock</p>
-                                <h5 class="mb-0">{{ number_format($currentStock, 2) }} {{ $product->unit_type ?? '' }}</h5>
+                                <h5 class="mb-0">{{ number_format($currentStock, 2) }} {{ $stockUnitLabel }}</h5>
                             </div>
                             <span class="badge bg-primary px-3 py-2">Live</span>
                         </div>
@@ -91,25 +95,25 @@
                                     <div class="col-sm-6">
                                         <div class="inventory-metric-card">
                                             <p class="text-muted small mb-1">Total Purchase</p>
-                                            <h5 class="mb-0">{{ number_format($totalIn, 2) }} <span class="text-muted metric-unit">{{ $product->unit_type ?? 'pc' }}(s)</span></h5>
+                                            <h5 class="mb-0">{{ number_format($totalIn, 2) }} <span class="text-muted metric-unit">{{ $stockUnitLabel }}</span></h5>
                                         </div>
                                     </div>
                                     <div class="col-sm-6">
                                         <div class="inventory-metric-card">
                                             <p class="text-muted small mb-1">Stock Adjustment (In)</p>
-                                            <h5 class="mb-0">0.00 <span class="text-muted metric-unit">{{ $product->unit_type ?? 'pc' }}(s)</span></h5>
+                                            <h5 class="mb-0">0.00 <span class="text-muted metric-unit">{{ $stockUnitLabel }}</span></h5>
                                         </div>
                                     </div>
                                     <div class="col-sm-6">
                                         <div class="inventory-metric-card">
                                             <p class="text-muted small mb-1">Reconciliation (In)</p>
-                                            <h5 class="mb-0">0.00 <span class="text-muted metric-unit">{{ $product->unit_type ?? 'pc' }}(s)</span></h5>
+                                            <h5 class="mb-0">0.00 <span class="text-muted metric-unit">{{ $stockUnitLabel }}</span></h5>
                                         </div>
                                     </div>
                                     <div class="col-sm-6">
                                         <div class="inventory-metric-card">
                                             <p class="text-muted small mb-1">Opening Stock</p>
-                                            <h5 class="mb-0">0.00 <span class="text-muted metric-unit">{{ $product->unit_type ?? 'pc' }}(s)</span></h5>
+                                            <h5 class="mb-0">0.00 <span class="text-muted metric-unit">{{ $stockUnitLabel }}</span></h5>
                                         </div>
                                     </div>
                                 </div>
@@ -125,25 +129,25 @@
                                     <div class="col-sm-6">
                                         <div class="inventory-metric-card">
                                             <p class="text-muted small mb-1">Total Sold</p>
-                                            <h5 class="mb-0">{{ number_format($totalOut, 2) }} <span class="text-muted metric-unit">{{ $product->unit_type ?? 'pc' }}(s)</span></h5>
+                                            <h5 class="mb-0">{{ number_format($totalOut, 2) }} <span class="text-muted metric-unit">{{ $stockUnitLabel }}</span></h5>
                                         </div>
                                     </div>
                                     <div class="col-sm-6">
                                         <div class="inventory-metric-card">
                                             <p class="text-muted small mb-1">Stock Adjustment (Out)</p>
-                                            <h5 class="mb-0">0.00 <span class="text-muted metric-unit">{{ $product->unit_type ?? 'pc' }}(s)</span></h5>
+                                            <h5 class="mb-0">0.00 <span class="text-muted metric-unit">{{ $stockUnitLabel }}</span></h5>
                                         </div>
                                     </div>
                                     <div class="col-sm-6">
                                         <div class="inventory-metric-card">
                                             <p class="text-muted small mb-1">Reconciliation (Out)</p>
-                                            <h5 class="mb-0">0.00 <span class="text-muted metric-unit">{{ $product->unit_type ?? 'pc' }}(s)</span></h5>
+                                            <h5 class="mb-0">0.00 <span class="text-muted metric-unit">{{ $stockUnitLabel }}</span></h5>
                                         </div>
                                     </div>
                                     <div class="col-sm-6">
                                         <div class="inventory-metric-card">
                                             <p class="text-muted small mb-1">Sell Returns</p>
-                                            <h5 class="mb-0">0.00 <span class="text-muted metric-unit">{{ $product->unit_type ?? 'pc' }}(s)</span></h5>
+                                            <h5 class="mb-0">0.00 <span class="text-muted metric-unit">{{ $stockUnitLabel }}</span></h5>
                                         </div>
                                     </div>
                                 </div>

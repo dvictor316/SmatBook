@@ -54,7 +54,6 @@
     $posCanSell = $posCan(['sales.sales.create', 'sales.invoices.create', 'pos.sales.create']);
     $posCanDiscount = $posCan(['sales.sales.discount', 'sales.sales.edit', 'sales.invoices.edit']);
     $posCanManageCustomers = $posCan(['customers.customers.view', 'customers.customers.create', 'sales.sales.create']);
-    $posShowAdminRailActions = false;
 @endphp
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -3777,24 +3776,10 @@ body.pos-terminal-workspace .pos-pay-tab.active {
                         <span>Sell Misc Item</span>
                     </span>
                 @endif
-                @if($posShowAdminRailActions)
-                    @if($posCanAddProduct)
-                        <a href="{{ $posAddProductUrl ?? url('/add-products') }}" class="pos-rail-btn mt-2">
-                            <i class="fas fa-plus"></i>
-                            <span>Add New Item</span>
-                        </a>
-                    @else
-                        <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to add products.">
-                            <i class="fas fa-plus"></i>
-                            <span>Add New Item</span>
-                        </span>
-                    @endif
-                @else
-                    <button type="button" class="pos-rail-btn mt-2" id="rail-calculator-btn">
-                        <i class="fas fa-calculator"></i>
-                        <span>Calculator</span>
-                    </button>
-                @endif
+                <button type="button" class="pos-rail-btn mt-2" id="rail-calculator-btn">
+                    <i class="fas fa-calculator"></i>
+                    <span>Calculator</span>
+                </button>
                 @if($posCanDiscount)
                     <button type="button" class="pos-rail-btn mt-2" id="rail-discount-btn">
                         <i class="fas fa-percent"></i>
@@ -3817,65 +3802,18 @@ body.pos-terminal-workspace .pos-pay-tab.active {
                         <span>Customer</span>
                     </span>
                 @endif
-                @if($posShowAdminRailActions)
-                    @if($posCanReturn)
-                        <a href="{{ $posReturnUrl ?? url('/pos/return') }}" class="pos-rail-btn mt-2">
-                            <i class="fas fa-undo-alt"></i>
-                            <span>Return/Exchange</span>
-                        </a>
-                    @else
-                        <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to process returns.">
-                            <i class="fas fa-undo-alt"></i>
-                            <span>Return/Exchange</span>
-                        </span>
-                    @endif
-                    @if($posCanReceiveItems)
-                        <a href="{{ $posReceiveItemsUrl ?? url('/grn/create') }}" class="pos-rail-btn mt-2">
-                            <i class="fas fa-dolly"></i>
-                            <span>Receive Items</span>
-                        </a>
-                    @else
-                        <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to receive inventory.">
-                            <i class="fas fa-dolly"></i>
-                            <span>Receive Items</span>
-                        </span>
-                    @endif
-                    @if($posCanViewReports)
-                        <a href="{{ $posReportsUrl ?? url('/pos/reports') }}" class="pos-rail-btn mt-2">
-                            <i class="fas fa-chart-bar"></i>
-                            <span>Reports</span>
-                        </a>
-                    @else
-                        <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to view reports.">
-                            <i class="fas fa-chart-bar"></i>
-                            <span>Reports</span>
-                        </span>
-                    @endif
-                    @if($posCanViewInventory)
-                        <a href="{{ $posInventoryUrl ?? url('/product-list') }}" class="pos-rail-btn mt-2">
-                            <i class="fas fa-boxes"></i>
-                            <span>Item List</span>
-                        </a>
-                    @else
-                        <span class="pos-rail-btn mt-2 is-disabled" aria-disabled="true" title="You do not have permission to view inventory.">
-                            <i class="fas fa-boxes"></i>
-                            <span>Item List</span>
-                        </span>
-                    @endif
-                @else
-                    <button type="button" class="pos-rail-btn mt-2" id="rail-reprint-btn">
-                        <i class="fas fa-receipt"></i>
-                        <span>Reprint Receipt</span>
-                    </button>
-                    <button type="button" class="pos-rail-btn mt-2" id="rail-price-check-btn">
-                        <i class="fas fa-tags"></i>
-                        <span>Price Check</span>
-                    </button>
-                    <button type="button" class="pos-rail-btn mt-2" id="rail-clear-cart-btn">
-                        <i class="fas fa-eraser"></i>
-                        <span>Clear Cart</span>
-                    </button>
-                @endif
+                <button type="button" class="pos-rail-btn mt-2" id="rail-reprint-btn">
+                    <i class="fas fa-receipt"></i>
+                    <span>Reprint Receipt</span>
+                </button>
+                <button type="button" class="pos-rail-btn mt-2" id="rail-price-check-btn">
+                    <i class="fas fa-tags"></i>
+                    <span>Price Check</span>
+                </button>
+                <button type="button" class="pos-rail-btn mt-2" id="rail-clear-cart-btn">
+                    <i class="fas fa-eraser"></i>
+                    <span>Clear Cart</span>
+                </button>
                 @if($posCanSell)
                     <button type="button" class="pos-rail-btn mt-2" id="rail-checkout-btn">
                         <i class="fas fa-cash-register"></i>
@@ -4383,8 +4321,8 @@ body.pos-terminal-workspace .pos-pay-tab.active {
                     <button type="button" id="save-invoice-btn" class="btn pos-secondary-action">
                         <i class="fas fa-save me-1"></i> Save Invoice
                     </button>
-                    <a href="{{ $posShowAdminRailActions ? ($posSalesLogUrl ?? url('/pos/sales')) : (($posSalesLogUrl ?? url('/pos/sales')) . '?reprint=1') }}" class="btn pos-secondary-action">
-                        <i class="fas fa-list me-1"></i> {{ $posShowAdminRailActions ? 'Sales Log' : 'Receipt Lookup' }}
+                    <a href="{{ ($posSalesLogUrl ?? url('/pos/sales')) . '?reprint=1' }}" class="btn pos-secondary-action">
+                        <i class="fas fa-list me-1"></i> Receipt Lookup
                     </a>
                     <button type="button" id="new-sale-btn" class="btn pos-secondary-action">
                         <i class="fas fa-plus me-1"></i> New Sale
@@ -5898,37 +5836,13 @@ window.POS_ENABLE_FALLBACK = function () {
             : [];
 
         if (!options.length) {
-            if (!posPermissions.addProduct) {
-                showAlert({
-                    icon: 'info',
-                    title: 'No misc item found',
-                    text: 'Search existing products or ask an admin to create the miscellaneous item first.',
-                    confirmButtonColor: '#0f3a8a',
-                });
-                openQuickPickItems('misc');
-                return;
-            }
-
-            const prompt = showAlert({
+            showAlert({
                 icon: 'info',
-                title: 'Create a miscellaneous item first',
-                text: 'Add a product named Miscellaneous Item, Custom Sale, or Service Item so POS can sell it without breaking stock and receipt records.',
-                showCancelButton: true,
-                confirmButtonText: 'Add New Item',
-                cancelButtonText: 'Search products',
+                title: 'No misc item found',
+                text: 'Search existing products or ask an admin to create the miscellaneous item first.',
                 confirmButtonColor: '#0f3a8a',
             });
-            if (!prompt || typeof prompt.then !== 'function') {
-                openQuickPickItems('misc');
-                return;
-            }
-            prompt.then((result) => {
-                if (result?.isConfirmed) {
-                    window.location.href = @json($posAddProductUrl ?? url('/add-products'));
-                    return;
-                }
-                openQuickPickItems('misc');
-            });
+            openQuickPickItems('misc');
             return;
         }
 
