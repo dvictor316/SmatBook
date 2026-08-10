@@ -929,6 +929,10 @@
             var headerHtml = printableColumns.map(function(column) {
                 return '<th>' + htmlEscape(column.label) + '</th>';
             }).join('');
+            var columnWidths = ['5%', '25%', '12%', '9%', '19%', '10%', '10%', '10%'];
+            var colgroupHtml = printableColumns.map(function(column, index) {
+                return '<col style="width:' + (columnWidths[index] || 'auto') + '">';
+            }).join('');
 
             printWindow.document.open();
             printWindow.document.write(`<!doctype html>
@@ -936,14 +940,18 @@
                 <head>
                     <title>Product Inventory</title>
                     <style>
-                        @page { size: A4 landscape; margin: 8mm; }
+                        @page { size: A4 landscape; margin: 5mm; }
                         * { box-sizing: border-box; }
                         body { margin: 0; font-family: Arial, sans-serif; color: #111827; }
-                        h1 { margin: 0 0 4px; font-size: 18px; }
-                        .meta { margin: 0 0 10px; color: #475569; font-size: 11px; }
-                        table { width: 100%; border-collapse: collapse; font-size: 9.5px; }
-                        th, td { border: 1px solid #d1d5db; padding: 4px 5px; text-align: left; vertical-align: top; }
+                        h1 { margin: 0 0 3px; font-size: 16px; }
+                        .meta { margin: 0 0 7px; color: #475569; font-size: 10px; }
+                        table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 8px; }
+                        th, td { border: 1px solid #d1d5db; padding: 3px 4px; text-align: left; vertical-align: top; overflow-wrap: anywhere; word-break: break-word; }
                         th { background: #eef2ff; color: #0f172a; font-weight: 700; }
+                        td:nth-child(1), th:nth-child(1),
+                        td:nth-child(6), th:nth-child(6),
+                        td:nth-child(7), th:nth-child(7),
+                        td:nth-child(8), th:nth-child(8) { text-align: right; }
                         tr:nth-child(even) td { background: #f8fafc; }
                     </style>
                 </head>
@@ -951,6 +959,7 @@
                     <h1>Product Inventory</h1>
                     <p class="meta">Printed ${htmlEscape(printedAt)} &middot; ${rows.length} item(s)</p>
                     <table>
+                        <colgroup>${colgroupHtml}</colgroup>
                         <thead><tr>${headerHtml}</tr></thead>
                         <tbody>${bodyRows || '<tr><td colspan="' + printableColumns.length + '">No products found.</td></tr>'}</tbody>
                     </table>
