@@ -874,11 +874,11 @@ body.pos-terminal-workspace #toggle_btn:focus-visible {
 .pos-product-combo { position: relative; }
 .pos-product-combo__input-wrap { position: relative; display: flex; align-items: center; }
 .pos-product-combo__icon {
-    position: absolute; left: 14px;
+    position: absolute; right: 14px;
     color: #7a90b3; font-size: .85rem; pointer-events: none; z-index: 2;
 }
 .pos-product-combo__caret {
-    position: absolute; right: 32px;
+    position: absolute; right: 38px;
     color: #7a90b3; font-size: .72rem; pointer-events: none; z-index: 2;
     transition: transform .18s;
 }
@@ -886,7 +886,7 @@ body.pos-terminal-workspace #toggle_btn:focus-visible {
 .pos-product-combo__input {
     width: 100%; min-height: 46px;
     border: 1px solid rgba(18,52,98,.18); border-radius: 14px;
-    padding: 0 58px 0 38px;
+    padding: 0 64px 0 16px;
     font-size: .9rem; color: var(--text-primary, #1e3a5f);
     background: #fff; outline: none; cursor: pointer;
     transition: border-color .18s, box-shadow .18s;
@@ -3090,20 +3090,20 @@ body.pos-terminal-workspace .pos-product-combo__input-wrap {
 body.pos-terminal-workspace .pos-product-combo__input {
     width: 100%;
     min-height: 38px;
-    padding-left: 36px !important;
-    padding-right: 42px !important;
+    padding-left: 12px !important;
+    padding-right: 58px !important;
     border-radius: 999px;
     border: 1px solid #b9cdf3;
     background: #ffffff;
 }
 
 body.pos-terminal-workspace .pos-product-combo__icon {
-    left: 13px;
+    right: 13px;
     color: #1459d9;
 }
 
 body.pos-terminal-workspace .pos-product-combo__caret {
-    right: 14px;
+    right: 35px;
     color: #31598d;
 }
 
