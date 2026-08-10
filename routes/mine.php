@@ -645,6 +645,7 @@ Route::get('/purchases/{id}/excel', [PurchaseController::class, 'exportExcel'])-
         Route::put('/products/update/{id}', 'update')->name('inventory.Products.update');
         
         // Delete Product
+        Route::delete('/products/delete-selected', 'bulkDestroy')->name('inventory.Products.bulk-destroy');
         Route::delete('/products/delete/{id}', 'destroy')->name('inventory.Products.destroy');
 
         // These can remain generic or be moved to ProductController if they handle data
@@ -703,6 +704,7 @@ Route::prefix('super-admin')->name('SuperAdmin.')->group(function () {
 
         // Add these to make the Save/Delete buttons work in your view
         Route::post('/products/store', [ProductController::class, 'store'])->name('inventory.Products.store');
+        Route::delete('/products/delete-selected', [ProductController::class, 'bulkDestroy'])->name('inventory.Products.bulk-destroy');
         Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('inventory.Products.destroy');
         Route::post('/categories/store', [CategoryController::class, 'store']);
     });

@@ -1431,6 +1431,55 @@ public function inventory(Request $request)
         return redirect()->route('product-list')->with('success', 'Product purged from ' . env('SESSION_DOMAIN'));
     }
 
+    public function bulkDestroy(Request $request)
+    {
+        $validated = $request->validate([
+            'product_ids' => 'required|array|min:1',
+            'product_ids.*' => 'integer',
+        ]);
+
+        $ids = collect($validated['product_ids'])
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return redirect()->route('product-list')->with('warning', 'Select at least one stock item to delete.');
+        }
+
+        $deleted = 0;
+
+        DB::transaction(function () use ($ids, &$deleted) {
+            Product::query()
+                ->whereIn('id', $ids)
+                ->tap(fn ($query) => $this->applyTenantScope($query, 'products'))
+                ->chunkById(100, function ($products) use (&$deleted) {
+                    foreach ($products as $product) {
+                        if ($product->image) {
+                            Storage::disk('public')->delete($product->image);
+                        }
+
+                        if (Schema::hasTable('product_branch_stocks')) {
+                            DB::table('product_branch_stocks')->where('product_id', $product->id)->delete();
+                        }
+                        if (Schema::hasTable('inventory_history')) {
+                            DB::table('inventory_history')->where('product_id', $product->id)->delete();
+                        }
+
+                        $product->delete();
+                        $deleted++;
+                    }
+                });
+        });
+
+        $this->clearDashboardMetricsCache();
+
+        return redirect()
+            ->route('product-list')
+            ->with('success', "{$deleted} stock item(s) deleted successfully.");
+    }
+
     /**
      * Inventory History
      */

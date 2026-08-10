@@ -111,6 +111,33 @@
         padding-right: 1rem;
     }
 
+    .inventory-bulk-bar {
+        display: none;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        border: 1px solid #fecaca;
+        border-radius: 12px;
+        background: #fff7f7;
+        color: #991b1b;
+        margin-bottom: 1rem;
+    }
+
+    .inventory-bulk-bar.is-visible {
+        display: flex;
+    }
+
+    .inventory-select-cell {
+        width: 44px;
+        text-align: center;
+    }
+
+    .inventory-select-cell .form-check-input {
+        cursor: pointer;
+        width: 1.05rem;
+        height: 1.05rem;
+    }
+
     .inventory-table-shell {
         max-height: calc(100vh - 315px);
         min-height: 420px;
@@ -284,10 +311,22 @@
 
         <div class="card shadow-sm">
             <div class="card-body">
+                <form id="bulk-delete-products-form" method="POST" action="{{ route('inventory.Products.bulk-destroy') }}" class="inventory-bulk-bar no-print">
+                    @csrf
+                    @method('DELETE')
+                    <strong><span id="bulk-selected-count">0</span> selected</strong>
+                    <span class="text-muted">Delete selected stock items from inventory.</span>
+                    <button type="submit" class="btn btn-danger btn-sm ms-auto">
+                        <i class="far fa-trash-alt me-1"></i> Delete Selected
+                    </button>
+                </form>
                 <div class="table-responsive inventory-table-shell">
                     <table class="table table-hover" id="products-table">
                         <thead class="thead-light">
                             <tr>
+                                <th class="inventory-select-cell no-print">
+                                    <input type="checkbox" class="form-check-input" id="select-all-products" aria-label="Select all visible stock items">
+                                </th>
                                 <th>#</th>
                                 <th>Item / SKU</th>
                                 <th>Category</th>
@@ -303,6 +342,9 @@
                             <?php if ($hasProductRows): ?>
                                 <?php $productIndex = method_exists($products, 'firstItem') ? ($products->firstItem() ?? 1) : 1; foreach ($productRows as $product): ?>
                                     <tr>
+                                        <td class="inventory-select-cell no-print">
+                                            <input type="checkbox" class="form-check-input product-select-checkbox" value="{{ $product->id }}" aria-label="Select {{ $product->name }}">
+                                        </td>
                                         <td>{{ $productIndex }}</td>
                                         <td>
                                             <div class="d-flex align-items-center">
@@ -366,7 +408,7 @@
                                 <?php $productIndex++; endforeach; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="9" class="text-center text-muted py-4">No products found.</td>
+                                    <td colspan="10" class="text-center text-muted py-4">No products found.</td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
@@ -645,6 +687,36 @@
 
 <script>
     $(document).ready(function() {
+        var selectedProductIds = new Set();
+        var bulkForm = $('#bulk-delete-products-form');
+        var bulkCount = $('#bulk-selected-count');
+        var selectAllProducts = $('#select-all-products');
+
+        function syncBulkDeleteForm() {
+            bulkForm.find('input[name="product_ids[]"]').remove();
+            selectedProductIds.forEach(function(id) {
+                $('<input>', {
+                    type: 'hidden',
+                    name: 'product_ids[]',
+                    value: id
+                }).appendTo(bulkForm);
+            });
+
+            bulkCount.text(selectedProductIds.size);
+            bulkForm.toggleClass('is-visible', selectedProductIds.size > 0);
+        }
+
+        function syncVisibleProductChecks() {
+            $('.product-select-checkbox').each(function() {
+                this.checked = selectedProductIds.has(String(this.value));
+            });
+
+            var visibleChecks = $('.product-select-checkbox:visible');
+            var checkedVisible = visibleChecks.filter(':checked').length;
+            selectAllProducts.prop('checked', visibleChecks.length > 0 && checkedVisible === visibleChecks.length);
+            selectAllProducts.prop('indeterminate', checkedVisible > 0 && checkedVisible < visibleChecks.length);
+        }
+
         // PREVENT RE-INITIALIZATION ERROR
         if ($.fn.DataTable.isDataTable('#products-table')) {
             $('#products-table').DataTable().destroy();
@@ -687,6 +759,46 @@
         $('#inventory_print_btn').on('click', function(e) { e.preventDefault(); table.button('.dt-print').trigger(); });
 
         table.page.len(500).draw(false);
+        table.on('draw', syncVisibleProductChecks);
+        syncVisibleProductChecks();
+
+        $('#products-table').on('change', '.product-select-checkbox', function() {
+            var id = String(this.value);
+            if (this.checked) {
+                selectedProductIds.add(id);
+            } else {
+                selectedProductIds.delete(id);
+            }
+            syncBulkDeleteForm();
+            syncVisibleProductChecks();
+        });
+
+        selectAllProducts.on('change', function() {
+            var checked = this.checked;
+            $('.product-select-checkbox:visible').each(function() {
+                var id = String(this.value);
+                this.checked = checked;
+                if (checked) {
+                    selectedProductIds.add(id);
+                } else {
+                    selectedProductIds.delete(id);
+                }
+            });
+            syncBulkDeleteForm();
+            syncVisibleProductChecks();
+        });
+
+        bulkForm.on('submit', function(e) {
+            if (selectedProductIds.size < 1) {
+                e.preventDefault();
+                alert('Select at least one stock item to delete.');
+                return;
+            }
+
+            if (!confirm('Delete ' + selectedProductIds.size + ' selected stock item(s)? This cannot be undone.')) {
+                e.preventDefault();
+            }
+        });
 
         $('#quick_add_product_form').on('submit', function() {
             const imageInput = document.getElementById('quick_add_product_image');
