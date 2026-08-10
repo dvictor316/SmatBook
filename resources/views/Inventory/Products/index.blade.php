@@ -258,8 +258,8 @@
     }
 
     .inventory-table-shell {
-        max-height: calc(100vh - 70px);
-        min-height: 760px;
+        max-height: none;
+        min-height: 0;
         overflow: auto;
     }
 
@@ -284,7 +284,7 @@
     }
 
     .inventory-table-card-body {
-        padding-bottom: 0.45rem;
+        padding: 0.65rem 0.65rem 0.35rem;
     }
 
     #products-table_wrapper .dataTables_paginate {
@@ -915,7 +915,7 @@
             stateSave: false,
             stateLoadCallback: function() { return null; },
             deferRender: true,
-            scrollY: 'calc(100vh - 155px)',
+            scrollY: 'calc(100vh - 255px)',
             scrollCollapse: false,
             paging: true,
             lengthMenu: [[500, -1], [500, 'All']],
