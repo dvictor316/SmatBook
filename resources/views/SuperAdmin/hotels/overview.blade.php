@@ -4,9 +4,9 @@
 <style>
     .sa-hotel { background:#eef3f8; color:#09213d; }
     .sa-hero { background:linear-gradient(135deg,#06264a,#0b5fb8 58%,#0f766e); color:#fff; border-radius:18px; padding:22px; margin-bottom:16px; display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; box-shadow:0 18px 36px rgba(8,47,73,.18); }
-    .sa-hero h2 { color:#f5c451 !important; margin:0; font-size:31px; font-weight:900; text-shadow:0 2px 16px rgba(0,0,0,.22); }
-    .sa-hero p { color:#fff !important; }
-    .sa-hero small { color:#f7d777 !important; text-transform:uppercase; letter-spacing:.14em; font-weight:900; }
+    .page-wrapper.sa-hotel .sa-hero h2, body.spb-super-admin-theme .page-wrapper.sa-hotel .sa-hero h2, body:not(.login-body):not(.landing-page-body) .page-wrapper.sa-hotel .sa-hero h2 { color:#f5c451 !important; -webkit-text-fill-color:#f5c451 !important; margin:0; font-size:31px; font-weight:900; text-shadow:0 2px 16px rgba(0,0,0,.22); }
+    .page-wrapper.sa-hotel .sa-hero p, body.spb-super-admin-theme .page-wrapper.sa-hotel .sa-hero p, body:not(.login-body):not(.landing-page-body) .page-wrapper.sa-hotel .sa-hero p { color:#fff !important; -webkit-text-fill-color:#fff !important; }
+    .page-wrapper.sa-hotel .sa-hero small, body.spb-super-admin-theme .page-wrapper.sa-hotel .sa-hero small, body:not(.login-body):not(.landing-page-body) .page-wrapper.sa-hotel .sa-hero small { color:#f7d777 !important; -webkit-text-fill-color:#f7d777 !important; text-transform:uppercase; letter-spacing:.14em; font-weight:900; }
     .sa-panel, .sa-card, .sa-filter { background:#fff; border:1px solid #d8e2ee; border-radius:14px; box-shadow:0 10px 28px rgba(15,23,42,.06); }
     .sa-tabs { display:flex; gap:8px; overflow:auto; padding:12px; margin-bottom:16px; }
     .sa-tabs a { white-space:nowrap; border:1px solid #cbd8e8; border-radius:999px; padding:8px 13px; color:#0b2f54; text-decoration:none; font-weight:800; }
@@ -63,7 +63,7 @@
     .sa-health { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
     .sa-health-row { display:flex; justify-content:space-between; align-items:center; padding:14px; border:1px solid #dbe4ef; border-radius:12px; background:#fff; }
     @media(max-width:1199px){.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health{grid-template-columns:repeat(2,1fr)}.sa-workspace,.sa-cashier{grid-template-columns:1fr}.sa-board-row{grid-template-columns:1fr}}
-    @media(max-width:767px){.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health{grid-template-columns:1fr}.sa-hero h2{font-size:23px}}
+    @media(max-width:767px){.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health{grid-template-columns:1fr}.page-wrapper.sa-hotel .sa-hero h2{font-size:23px}}
 </style>
 @endsection
 
