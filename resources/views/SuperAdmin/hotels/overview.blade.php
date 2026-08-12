@@ -84,9 +84,9 @@
     <div class="content container-fluid">
         <section class="sa-hero">
             <div>
-                <small>Super Admin Hotel PMS Monitor</small>
+                <small>SmartProbook Hotel PMS · Super Admin Enterprise Monitor</small>
                 <h2>{{ $panelTitle }}</h2>
-                <p class="mb-0">This mirrors tenant hotel operations at platform level: room rack, reservation flow, folios, housekeeping, maintenance and reporting.</p>
+                <p class="mb-0">Platform-level mirror of tenant hotel operations: room rack, reservation journey, guest folios, housekeeping, maintenance, night audit and reporting.</p>
             </div>
             <div class="d-flex flex-wrap gap-2 align-self-start">
                 <a href="{{ route('super_admin.hotels.index') }}" class="btn btn-light">Dashboard</a>
@@ -119,9 +119,9 @@
 
         @if($panel === 'overview')
             <div class="sa-workspace">
-                <aside class="sa-rail"><h5>Command Areas</h5><a href="{{ route('super_admin.hotels.index', ['panel' => 'rooms']) }}"><strong>Room Rack</strong><br>Availability, occupied and reserved</a><a href="{{ route('super_admin.hotels.index', ['panel' => 'reservations']) }}"><strong>Reservations</strong><br>Booking pipeline and assignments</a><a href="{{ route('super_admin.hotels.index', ['panel' => 'folios']) }}"><strong>Cashier</strong><br>Folios and receivables</a><a href="{{ route('super_admin.hotels.index', ['panel' => 'reports']) }}"><strong>Reports</strong><br>Platform PMS intelligence</a></aside>
+                <aside class="sa-rail"><h5>Enterprise Monitor</h5><a href="{{ route('super_admin.hotels.index', ['panel' => 'rooms']) }}"><strong>Room Rack</strong><br>Availability, occupied and reserved</a><a href="{{ route('super_admin.hotels.index', ['panel' => 'reservations']) }}"><strong>Reservations</strong><br>Booking pipeline and assignments</a><a href="{{ route('super_admin.hotels.index', ['panel' => 'folios']) }}"><strong>Cashier</strong><br>Folios and receivables</a><a href="{{ route('super_admin.hotels.index', ['panel' => 'reports']) }}"><strong>Reports</strong><br>Platform PMS intelligence</a></aside>
                 <main class="sa-grid">
-                    <a class="sa-card" href="{{ route('super_admin.hotels.index', ['panel' => 'tenants']) }}"><span class="label">01 Tenant Control</span><h5>Hotel Tenants</h5><p class="text-muted mb-0">Inspect companies that have hotel access and subscriptions.</p></a>
+                    <a class="sa-card" href="{{ route('super_admin.hotels.index', ['panel' => 'tenants']) }}"><span class="label">01 Tenant Control</span><h5>Hotel Tenants</h5><p class="text-muted mb-0">Inspect hotel-enabled companies, plan access and subscription readiness.</p></a>
                     <a class="sa-card" href="{{ route('super_admin.hotels.index', ['panel' => 'properties']) }}"><span class="label">02 Properties</span><h5>Property Directory</h5><p class="text-muted mb-0">Monitor branches/properties under each hotel tenant.</p></a>
                     <a class="sa-card" href="{{ route('super_admin.hotels.index', ['panel' => 'rooms']) }}"><span class="label">03 Room Board</span><h5>Room State Grid</h5><p class="text-muted mb-0">Cloudbeds-style operational room visibility.</p></a>
                     <a class="sa-card" href="{{ route('super_admin.hotels.index', ['panel' => 'reservations']) }}"><span class="label">04 Reservations</span><h5>Booking Timeline</h5><p class="text-muted mb-0">Arrival, departure and status tracking.</p></a>
@@ -155,7 +155,7 @@
         @elseif($panel === 'reports')
             <section class="sa-report-grid"><a class="sa-report" href="{{ route('super_admin.hotels.index', ['panel'=>'reservations']) }}"><span>Front Office</span><h4>Reservation Register</h4><p>All hotel reservation activity by tenant.</p></a><a class="sa-report" href="{{ route('super_admin.hotels.index', ['panel'=>'folios']) }}"><span>Finance</span><h4>Folio Receivables</h4><p>Guest balances and folio exposure.</p></a><a class="sa-report" href="{{ route('super_admin.hotels.index', ['panel'=>'revenue']) }}"><span>Revenue</span><h4>Hotel Revenue</h4><p>Daily totals and transaction count.</p></a><a class="sa-report" href="{{ route('super_admin.hotels.index', ['panel'=>'housekeeping']) }}"><span>Rooms</span><h4>Housekeeping</h4><p>Room readiness workload.</p></a><a class="sa-report" href="{{ route('super_admin.hotels.index', ['panel'=>'maintenance']) }}"><span>Engineering</span><h4>Maintenance</h4><p>Tickets and unavailable rooms.</p></a><a class="sa-report" href="{{ route('super_admin.hotels.index', ['panel'=>'night_audits']) }}"><span>Audit</span><h4>Night Audits</h4><p>Business day close history.</p></a></section>
         @elseif($panel === 'settings')
-            <section class="sa-health">@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<div class="sa-health-row"><div><strong>{{ str_replace('_',' ', $r['setting'] ?? 'Setting') }}</strong><div class="small text-muted">Hotel PMS dependency</div></div><span class="badge {{ ($r['status'] ?? '') === 'available' ? 'bg-success' : 'bg-danger' }}">{{ ucfirst((string)($r['status'] ?? 'missing')) }}</span></div>@empty<div class="sa-empty">No hotel settings found.</div>@endforelse</section>
+            <section class="sa-health">@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<div class="sa-health-row"><div><strong>{{ str_replace('_',' ', $r['setting'] ?? 'Setting') }}</strong><div class="small text-muted">Tenant PMS dependency</div></div><span class="badge {{ ($r['status'] ?? '') === 'available' ? 'bg-success' : 'bg-danger' }}">{{ ucfirst((string)($r['status'] ?? 'missing')) }}</span></div>@empty<div class="sa-empty">No hotel settings found.</div>@endforelse</section>
         @else
             <section class="sa-panel p-3"><h4>{{ $panelTitle }}</h4>@if($panelRows->isEmpty())<div class="sa-empty">No {{ strtolower($panelTitle) }} found.</div>@else<div class="table-responsive"><table class="table table-sm sa-table align-middle"><thead><tr>@foreach(array_keys($rowArray($panelRows->first())) as $col)<th>{{ str_replace('_',' ', $col) }}</th>@endforeach</tr></thead><tbody>@foreach($panelRows as $row)@php $r=$rowArray($row); @endphp<tr>@foreach($rowArray($panelRows->first()) as $col => $_)<td>{{ is_scalar($r[$col] ?? null) || is_null($r[$col] ?? null) ? ($r[$col] ?? '') : json_encode($r[$col]) }}</td>@endforeach</tr>@endforeach</tbody></table></div>@endif</section>
         @endif
