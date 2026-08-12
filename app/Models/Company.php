@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Traits\TenantScoped;
 
 class Company extends Model
@@ -148,5 +149,26 @@ class Company extends Model
     public function demoIsExpired(): bool
     {
         return $this->isDemo() && $this->demo_expires_at?->isPast() === true;
+    }
+
+    public static function businessTypeColumn(): ?string
+    {
+        foreach (['business_type', 'industry', 'business_category', 'business_sector'] as $column) {
+            if (Schema::hasColumn('companies', $column)) {
+                return $column;
+            }
+        }
+
+        return null;
+    }
+
+    public function businessTypeValue(): ?string
+    {
+        $column = static::businessTypeColumn();
+        if (!$column) {
+            return null;
+        }
+
+        return $this->{$column} ? strtolower(trim((string) $this->{$column})) : null;
     }
 }

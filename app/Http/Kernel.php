@@ -183,6 +183,7 @@ class Kernel extends HttpKernel
         'branch.required' => \App\Http\Middleware\RequireActiveBranch::class,
         'device.limit' => \App\Http\Middleware\EnforceDeviceSessionLimit::class,
         'tenant.branch.required' => \App\Http\Middleware\RequireTenantAndBranch::class,
+        'hotel.tenant' => \App\Http\Middleware\EnsureHotelTenant::class,
         'demo.expired'      => \App\Http\Middleware\BlockExpiredDemoUser::class,
         'demo.restrictions' => \App\Http\Middleware\DemoRestrictions::class,
         // Add any other custom middleware aliases here

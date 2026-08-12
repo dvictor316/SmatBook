@@ -24,6 +24,26 @@
                     </a>
                 </li>
 
+                @if(\App\Support\HotelAccess::userIsHotelTenant(auth()->user()))
+                <li class="submenu {{ Request::is('hotel*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-briefcase"></i><span>Hotel</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('hotel.dashboard') }}">Dashboard</a></li>
+                        <li><a href="{{ route('hotel.frontdesk') }}">Front Desk</a></li>
+                        <li><a href="{{ route('hotel.reservations.index') }}">Reservations</a></li>
+                        <li><a href="{{ route('hotel.availability.index') }}">Availability</a></li>
+                        <li><a href="{{ route('hotel.walkin.create') }}">Walk-In</a></li>
+                        <li><a href="{{ route('hotel.in_house') }}">In-House Guests</a></li>
+                        <li><a href="{{ route('hotel.guests') }}">Guests</a></li>
+                        <li><a href="{{ route('hotel.folios.index') }}">Guest Folios</a></li>
+                        <li><a href="{{ route('hotel.rooms.index') }}">Rooms</a></li>
+                        <li><a href="{{ route('hotel.room_types.index') }}">Room Types</a></li>
+                        <li><a href="{{ route('hotel.deposits') }}">Deposits</a></li>
+                        <li><a href="{{ route('hotel.settings') }}">Hotel Settings</a></li>
+                    </ul>
+                </li>
+                @endif
+
                 <li class="submenu {{ Request::is('pos*', 'sales*', 'quotations*', 'invoices*', 'estimates*', 'customers*', 'price-lists*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-dollar-sign"></i><span>Sales</span><span class="menu-arrow"></span></a>
                     <ul>

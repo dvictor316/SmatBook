@@ -29,6 +29,17 @@
         </a>
     </li>
 
+    @if(\App\Support\HotelAccess::userIsHotelTenant(auth()->user()))
+        <li class="menu-title"><span>Hotel</span></li>
+        <li class="{{ Request::routeIs('hotel.dashboard') ? 'active' : '' }}"><a href="{{ route('hotel.dashboard') }}"><i class="fe fe-home"></i><span>Hotel Dashboard</span></a></li>
+        <li class="{{ Request::routeIs('hotel.frontdesk') ? 'active' : '' }}"><a href="{{ route('hotel.frontdesk') }}"><i class="fe fe-briefcase"></i><span>Front Desk</span></a></li>
+        <li class="{{ Request::routeIs('hotel.reservations.*') ? 'active' : '' }}"><a href="{{ route('hotel.reservations.index') }}"><i class="fe fe-book"></i><span>Reservations</span></a></li>
+        <li class="{{ Request::routeIs('hotel.availability.*') ? 'active' : '' }}"><a href="{{ route('hotel.availability.index') }}"><i class="fe fe-grid"></i><span>Availability</span></a></li>
+        <li class="{{ Request::routeIs('hotel.walkin.*') ? 'active' : '' }}"><a href="{{ route('hotel.walkin.create') }}"><i class="fe fe-user-plus"></i><span>Walk-In</span></a></li>
+        <li class="{{ Request::routeIs('hotel.in_house') ? 'active' : '' }}"><a href="{{ route('hotel.in_house') }}"><i class="fe fe-users"></i><span>In-House Guests</span></a></li>
+        <li class="{{ Request::routeIs('hotel.folios.*') ? 'active' : '' }}"><a href="{{ route('hotel.folios.index') }}"><i class="fe fe-file-text"></i><span>Guest Folios</span></a></li>
+    @endif
+
     <li class="{{ Request::routeIs('inventory.Products', 'product-list') ? 'active' : '' }}">
         <a href="{{ route('product-list') }}">
             <i class="fe fe-archive"></i>

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Reservation;
 use App\Models\Stay;
 use App\Models\GuestFolio;
+use App\Models\HotelRoom;
 use Illuminate\Support\Facades\DB;
 
 class CheckInController extends Controller
@@ -27,6 +28,12 @@ class CheckInController extends Controller
                 'agreed_rate' => $reservation->nightly_rate,
                 'status' => 'checked_in'
             ]);
+
+            if ($reservation->room_id) {
+                HotelRoom::where('id', $reservation->room_id)
+                    ->where('company_id', $reservation->company_id)
+                    ->update(['operational_status' => 'occupied']);
+            }
 
             $folio = GuestFolio::create([
                 'company_id' => $reservation->company_id,
@@ -57,6 +64,11 @@ class CheckInController extends Controller
         try {
             // finalize folio and post accounting entries here (left for integration)
             $stay->update(['status' => 'checked_out', 'actual_checkout_at' => now()]);
+            if ($stay->room_id) {
+                HotelRoom::where('id', $stay->room_id)
+                    ->where('company_id', $stay->company_id)
+                    ->update(['operational_status' => 'available']);
+            }
             if ($stay->reservation) {
                 $stay->reservation->update(['status' => 'completed','checkout_id' => $stay->id]);
             }

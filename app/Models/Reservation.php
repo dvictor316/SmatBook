@@ -3,10 +3,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\TenantScoped;
 
 class Reservation extends Model
 {
-    use HasFactory;
+    use HasFactory, TenantScoped;
 
     protected $fillable = [
         'company_id','property_id','reservation_number','customer_id','room_type_id','room_id',
@@ -33,6 +34,11 @@ class Reservation extends Model
     public function roomType()
     {
         return $this->belongsTo(HotelRoomType::class, 'room_type_id');
+    }
+
+    public function stay()
+    {
+        return $this->hasOne(Stay::class);
     }
 
 }

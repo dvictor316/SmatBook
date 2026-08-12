@@ -623,15 +623,27 @@
 
                 {{-- HOTEL MANAGEMENT (Super Admin) --}}
                 @if(Route::has('super_admin.hotels.index'))
-                <li class="menu-title"><span>Hotel</span></li>
+                <li class="menu-title"><span>Hotel Management</span></li>
                 <li class="submenu {{ Request::is('superadmin/hotels*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fas fa-hotel"></i><span>Hotel</span><span class="menu-arrow"></span></a>
+                    <a href="#"><i class="fas fa-hotel"></i><span>Hotel Management</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}">Overview</a></li>
+                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=tenants">Hotel Tenants</a></li>
+                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=properties">Properties</a></li>
+                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=rooms">Rooms</a></li>
+                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=room_types">Room Types</a></li>
                         <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=reservations">Reservations</a></li>
                         <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=stays">Current Stays</a></li>
+                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=guests">Guests</a></li>
                         <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=folios">Folios</a></li>
                         <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=deposits">Deposits</a></li>
+                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=housekeeping">Housekeeping</a></li>
+                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=maintenance">Maintenance</a></li>
+                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=revenue">Revenue</a></li>
+                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=hotel_transactions">Hotel Transactions</a></li>
+                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=night_audits">Night Audits</a></li>
+                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=reports">Reports</a></li>
+                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=settings">Hotel Settings / Feature Status</a></li>
                     </ul>
                 </li>
                 @endif

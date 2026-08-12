@@ -9,8 +9,7 @@
         <div class="card"><div class="card-body">
             <div class="mb-3"><label>Property</label>
                 <select name="property_id" class="form-select">
-                    @php $props = \App\Models\HotelProperty::where('company_id', auth()->user()->company_id)->get(); @endphp
-                    @foreach($props as $p)
+                    @foreach($properties as $p)
                         <option value="{{ $p->id }}">{{ $p->name }}</option>
                     @endforeach
                 </select>

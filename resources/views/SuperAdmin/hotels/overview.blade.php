@@ -118,6 +118,64 @@
                 </div>
             </div>
         </div>
+
+        <div class="card mt-4">
+            <div class="card-body">
+                <form method="GET" action="{{ route('super_admin.hotels.index') }}" class="row g-2 align-items-end">
+                    <input type="hidden" name="panel" value="{{ $panel }}">
+                    <div class="col-md-4">
+                        <label class="form-label">Hotel Tenant</label>
+                        <select name="company_id" class="form-control">
+                            <option value="">All Hotel Tenants</option>
+                            @foreach($hotelCompanies as $company)
+                                <option value="{{ $company->id }}" {{ (int) $selectedCompanyId === (int) $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary">Apply Filter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        @if($panel !== 'overview')
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0 text-capitalize">{{ str_replace('_', ' ', $panel) }}</h5>
+            </div>
+            <div class="card-body">
+                @php $isPaginator = $panelData instanceof \Illuminate\Pagination\LengthAwarePaginator; @endphp
+                @if(($isPaginator && $panelData->count() === 0) || (!$isPaginator && $panelData->isEmpty()))
+                    <div class="alert alert-info mb-0">No {{ str_replace('_', ' ', $panel) }} found.</div>
+                @else
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm">
+                            <thead>
+                                <tr>
+                                    @foreach(array_keys((array) (($isPaginator ? $panelData->first() : $panelData->first()) ?? [])) as $col)
+                                        <th>{{ $col }}</th>
+                                    @endforeach
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($panelData as $row)
+                                    <tr>
+                                        @foreach((array) $row as $value)
+                                            <td>{{ is_scalar($value) || is_null($value) ? $value : json_encode($value) }}</td>
+                                        @endforeach
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @if($isPaginator)
+                        {{ $panelData->links() }}
+                    @endif
+                @endif
+            </div>
+        </div>
+        @endif
     </div>
 </div>
 @endsection

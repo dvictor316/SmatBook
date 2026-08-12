@@ -11,6 +11,15 @@
             @csrf
             <div class="card">
                 <div class="card-body">
+                    <div class="mb-3">
+                        <label>Property</label>
+                        <select name="property_id" class="form-control">
+                            <option value="">Select property</option>
+                            @foreach($properties as $property)
+                                <option value="{{ $property->id }}">{{ $property->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                     <div class="mb-3"><label>Name</label><input name="name" class="form-control" required></div>
                     <div class="mb-3"><label>Code</label><input name="code" class="form-control"></div>
                     <div class="mb-3"><label>Beds</label><input name="beds" class="form-control" type="number"></div>

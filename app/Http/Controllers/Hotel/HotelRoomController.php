@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\HotelRoom;
 use App\Models\HotelRoomType;
+use App\Models\HotelProperty;
 use Illuminate\Support\Facades\Auth;
 
 class HotelRoomController extends Controller
@@ -17,15 +18,33 @@ class HotelRoomController extends Controller
     public function index()
     {
         $companyId = Auth::user()->company_id;
-        $rooms = HotelRoom::where('company_id', $companyId)->paginate(30);
+        $propertyId = HotelProperty::where('company_id', $companyId)
+            ->when(Auth::user()->branch_id, fn($q) => $q->where('branch_id', Auth::user()->branch_id))
+            ->value('id');
+
+        $rooms = HotelRoom::where('company_id', $companyId)
+            ->when($propertyId, fn($q) => $q->where('property_id', $propertyId))
+            ->paginate(30);
         return view('hotel.rooms.index', compact('rooms'));
     }
 
     public function create()
     {
         $companyId = Auth::user()->company_id;
-        $roomTypes = HotelRoomType::where('company_id', $companyId)->where('is_active', true)->get();
-        return view('hotel.rooms.create', compact('roomTypes'));
+        $propertyId = HotelProperty::where('company_id', $companyId)
+            ->when(Auth::user()->branch_id, fn($q) => $q->where('branch_id', Auth::user()->branch_id))
+            ->value('id');
+
+        $roomTypes = HotelRoomType::where('company_id', $companyId)
+            ->when($propertyId, fn($q) => $q->where('property_id', $propertyId))
+            ->where('is_active', true)
+            ->get();
+
+        $properties = HotelProperty::where('company_id', $companyId)
+            ->when(Auth::user()->branch_id, fn($q) => $q->where('branch_id', Auth::user()->branch_id))
+            ->get();
+
+        return view('hotel.rooms.create', compact('roomTypes', 'properties'));
     }
 
     public function store(Request $request)
@@ -56,6 +75,7 @@ class HotelRoomController extends Controller
 
     public function edit(HotelRoom $room)
     {
+        abort_unless($room->company_id === Auth::user()->company_id, 404);
         $companyId = Auth::user()->company_id;
         $roomTypes = HotelRoomType::where('company_id', $companyId)->where('is_active', true)->get();
         return view('hotel.rooms.edit', compact('room', 'roomTypes'));
@@ -63,6 +83,7 @@ class HotelRoomController extends Controller
 
     public function update(Request $request, HotelRoom $room)
     {
+        abort_unless($room->company_id === Auth::user()->company_id, 404);
         $data = $request->validate([
             'room_type_id' => 'nullable|exists:hotel_room_types,id',
             'floor' => 'nullable|string|max:50',
@@ -80,6 +101,7 @@ class HotelRoomController extends Controller
 
     public function destroy(HotelRoom $room)
     {
+        abort_unless($room->company_id === Auth::user()->company_id, 404);
         $room->is_active = false;
         $room->save();
         return redirect()->route('hotel.rooms.index')->with('success', 'Room deactivated.');
