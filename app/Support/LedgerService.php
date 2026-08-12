@@ -5,6 +5,8 @@ namespace App\Support;
 use App\Models\Account;
 use App\Models\Bank;
 use App\Models\Expense;
+use App\Models\FolioItem;
+use App\Models\GuestFolio;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Purchase;
@@ -1267,6 +1269,116 @@ class LedgerService
             userId: $userId,
             branchId: $branch['id'] ?? null,
             branchName: $branch['name'] ?? null
+        );
+    }
+
+    public static function postHotelFolioCharge(
+        FolioItem $item,
+        GuestFolio $folio,
+        ?string $branchId = null,
+        ?string $branchName = null
+    ): void {
+        if (!self::isReady()) {
+            return;
+        }
+
+        $amount = round((float) ($item->amount ?? 0), 2);
+        if ($amount <= 0) {
+            return;
+        }
+
+        self::$currentCompanyId = (int) ($folio->company_id
+            ?? Auth::user()?->company_id
+            ?? session('current_tenant_id')
+            ?? 0) ?: null;
+
+        Transaction::query()
+            ->where('related_id', $item->id)
+            ->where('related_type', FolioItem::class)
+            ->where('transaction_type', Transaction::TYPE_JOURNAL)
+            ->delete();
+
+        $reference = (string) ($folio->folio_number ?: ('FOLIO-' . $folio->id));
+        $description = (string) ($item->description ?: 'Hotel folio charge');
+        $serviceCode = strtoupper(trim((string) ($item->service_code ?? 'OTHER_SERVICE')));
+        $date = self::resolveDate($item->service_date ?? $item->created_at ?? now());
+        $userId = $item->posted_by ?? auth()->id();
+
+        $receivableAccount = self::resolveAccount('Accounts Receivable', 'Asset', ['receivable', 'debtor'], 'AUTO-AST-AR');
+
+        $revenueAccount = match ($serviceCode) {
+            'ROOM_NIGHT' => self::resolveAccount('Room Revenue', 'Revenue', ['room revenue', 'accommodation revenue', 'lodging revenue'], 'AUTO-REV-ROOM'),
+            'RESTAURANT', 'ROOM_SERVICE', 'LAUNDRY', 'MINIBAR' => self::resolveAccount('Service Revenue', 'Revenue', ['service revenue', 'other income'], 'AUTO-REV-SERVICE'),
+            'POS_CHARGE' => self::resolveAccount('Sales Revenue', 'Revenue', ['sales', 'income'], 'AUTO-REV-SALES'),
+            default => self::resolveAccount('Service Revenue', 'Revenue', ['service revenue', 'other income'], 'AUTO-REV-SERVICE'),
+        };
+
+        self::postDoubleEntry(
+            debitAccountId: $receivableAccount->id,
+            creditAccountId: $revenueAccount->id,
+            amount: $amount,
+            date: $date,
+            reference: $reference,
+            description: $description,
+            transactionType: Transaction::TYPE_JOURNAL,
+            relatedId: $item->id,
+            relatedType: FolioItem::class,
+            userId: $userId,
+            branchId: $branchId,
+            branchName: $branchName
+        );
+    }
+
+    public static function postHotelFolioPayment(
+        FolioItem $item,
+        GuestFolio $folio,
+        ?int $depositAccountId = null,
+        ?string $branchId = null,
+        ?string $branchName = null
+    ): void {
+        if (!self::isReady()) {
+            return;
+        }
+
+        $amount = round((float) ($item->amount ?? 0), 2);
+        if ($amount <= 0) {
+            return;
+        }
+
+        self::$currentCompanyId = (int) ($folio->company_id
+            ?? Auth::user()?->company_id
+            ?? session('current_tenant_id')
+            ?? 0) ?: null;
+
+        Transaction::query()
+            ->where('related_id', $item->id)
+            ->where('related_type', FolioItem::class)
+            ->where('transaction_type', Transaction::TYPE_RECEIPT)
+            ->delete();
+
+        $reference = (string) ($folio->folio_number ?: ('FOLIO-' . $folio->id));
+        $description = (string) ($item->description ?: 'Hotel folio payment');
+        $date = self::resolveDate($item->service_date ?? $item->created_at ?? now());
+        $userId = $item->posted_by ?? auth()->id();
+
+        $receivableAccount = self::resolveAccount('Accounts Receivable', 'Asset', ['receivable', 'debtor'], 'AUTO-AST-AR');
+        $cashAccount = $depositAccountId
+            ? (Account::withoutGlobalScopes()->find($depositAccountId) ?? self::resolveCashAccount('cash'))
+            : self::resolveCashAccount('cash');
+
+        self::postDoubleEntry(
+            debitAccountId: $cashAccount->id,
+            creditAccountId: $receivableAccount->id,
+            amount: $amount,
+            date: $date,
+            reference: $reference,
+            description: $description,
+            transactionType: Transaction::TYPE_RECEIPT,
+            relatedId: $item->id,
+            relatedType: FolioItem::class,
+            userId: $userId,
+            branchId: $branchId,
+            branchName: $branchName
         );
     }
 

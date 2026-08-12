@@ -5,9 +5,16 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\GuestFolio;
 use App\Models\FolioItem;
+use App\Services\Hotel\HotelFolioService;
+use App\Support\LedgerService;
 
 class FolioController extends Controller
 {
+    public function __construct(
+        private readonly HotelFolioService $folioService
+    ) {
+    }
+
     public function index()
     {
         $folios = GuestFolio::where('company_id', auth()->user()->company_id)
@@ -38,21 +45,68 @@ class FolioController extends Controller
 
         $data = $request->validate([
             'description' => 'required|string|max:255',
-            'amount' => 'required|numeric|min:0.01'
+            'amount' => 'required|numeric|min:0.01',
+            'service_code' => 'nullable|string|max:60',
+            'service_date' => 'nullable|date',
         ]);
 
-        $item = FolioItem::create(array_merge($data, [
-            'company_id' => $folio->company_id,
-            'property_id' => $folio->property_id,
-            'folio_id' => $folio->id,
+        $item = $this->folioService->postCharge($folio, [
+            'description' => $data['description'],
+            'amount' => (float) $data['amount'],
             'type' => 'charge',
-            'posted_by' => auth()->id()
-        ]));
+            'service_code' => $data['service_code'] ?? 'OTHER_SERVICE',
+            'service_date' => $data['service_date'] ?? now()->toDateString(),
+            'source_type' => self::class,
+            'source_id' => $folio->id,
+            'posted_by' => auth()->id(),
+        ]);
 
-        // update folio totals (simplified)
-        $folio->increment('total_charges', $item->amount);
-        $folio->increment('balance', $item->amount);
+        $stay = $folio->stay;
+        LedgerService::postHotelFolioCharge(
+            $item,
+            $folio,
+            $stay?->branch_id,
+            $stay?->branch_name
+        );
 
         return back()->with('success','Item posted');
+    }
+
+    public function postService(Request $request, GuestFolio $folio)
+    {
+        abort_unless($folio->company_id == auth()->user()->company_id, 404);
+
+        $data = $request->validate([
+            'service_type' => 'required|string|in:restaurant,room_service,laundry,minibar,other',
+            'description' => 'nullable|string|max:255',
+            'amount' => 'required|numeric|min:0.01',
+            'quantity' => 'nullable|numeric|gt:0',
+            'unit_price' => 'nullable|numeric|min:0',
+            'service_date' => 'nullable|date',
+        ]);
+
+        $serviceCode = strtoupper((string) $data['service_type']);
+        $item = $this->folioService->postCharge($folio, [
+            'description' => $data['description'] ?: ('Hotel service: ' . str_replace('_', ' ', $data['service_type'])),
+            'amount' => (float) $data['amount'],
+            'quantity' => (float) ($data['quantity'] ?? 1),
+            'unit_price' => (float) ($data['unit_price'] ?? $data['amount']),
+            'type' => 'service',
+            'service_code' => $serviceCode,
+            'service_date' => $data['service_date'] ?? now()->toDateString(),
+            'source_type' => self::class,
+            'source_id' => $folio->id,
+            'posted_by' => auth()->id(),
+        ]);
+
+        $stay = $folio->stay;
+        LedgerService::postHotelFolioCharge(
+            $item,
+            $folio,
+            $stay?->branch_id,
+            $stay?->branch_name
+        );
+
+        return back()->with('success', 'Service charge posted to folio.');
     }
 }

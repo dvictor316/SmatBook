@@ -13,6 +13,13 @@ class GuestFolio extends Model
         'company_id','property_id','stay_id','reservation_id','customer_id','folio_number','opening_deposit','total_charges','total_payments','balance','status'
     ];
 
+    protected $casts = [
+        'opening_deposit' => 'decimal:2',
+        'total_charges' => 'decimal:2',
+        'total_payments' => 'decimal:2',
+        'balance' => 'decimal:2',
+    ];
+
     public function stay()
     {
         return $this->belongsTo(Stay::class);

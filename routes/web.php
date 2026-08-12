@@ -696,6 +696,20 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
     Route::get('/folios', [\App\Http\Controllers\Hotel\FolioController::class, 'index'])->name('folios.index');
     Route::get('/folios/{folio}', [\App\Http\Controllers\Hotel\FolioController::class, 'show'])->name('folios.show');
     Route::post('/folios/{folio}/items', [\App\Http\Controllers\Hotel\FolioController::class, 'storeItem'])->name('folios.items.store');
+    Route::post('/folios/{folio}/services', [\App\Http\Controllers\Hotel\FolioController::class, 'postService'])->name('folios.services.store');
+
+    Route::get('/night-audit', [\App\Http\Controllers\Hotel\NightAuditController::class, 'index'])->name('night_audit.index');
+    Route::post('/night-audit/run', [\App\Http\Controllers\Hotel\NightAuditController::class, 'run'])->name('night_audit.run');
+    Route::post('/night-audit/{audit}/reopen', [\App\Http\Controllers\Hotel\NightAuditController::class, 'reopen'])->name('night_audit.reopen');
+
+    Route::get('/housekeeping', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'index'])->name('housekeeping.index');
+    Route::post('/housekeeping/rooms/{room}/dirty', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'markDirty'])->name('housekeeping.rooms.dirty');
+    Route::post('/housekeeping/rooms/{room}/clean', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'markClean'])->name('housekeeping.rooms.clean');
+    Route::post('/housekeeping/tasks/{task}/complete', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'completeTask'])->name('housekeeping.tasks.complete');
+
+    Route::get('/maintenance', [\App\Http\Controllers\Hotel\MaintenanceController::class, 'index'])->name('maintenance.index');
+    Route::post('/maintenance', [\App\Http\Controllers\Hotel\MaintenanceController::class, 'store'])->name('maintenance.store');
+    Route::post('/maintenance/{ticket}/status', [\App\Http\Controllers\Hotel\MaintenanceController::class, 'updateStatus'])->name('maintenance.status');
 });
 
 // Reports hub — authenticated users with an active workspace; individual report routes enforce plan tiers.

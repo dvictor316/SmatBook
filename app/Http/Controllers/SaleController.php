@@ -8,6 +8,7 @@ use App\Models\Product;
 use Illuminate\Support\Str;
 use App\Models\Customer;
 use App\Models\Company;
+use App\Models\GuestFolio;
 use App\Models\Payment;
 use App\Models\Quotation;
 use App\Models\Account;
@@ -31,6 +32,7 @@ use App\Support\InventoryQuantity;
 use App\Support\LedgerService;
 use App\Support\PlanAccess;
 use App\Support\PriceListUsage;
+use App\Services\Hotel\HotelFolioService;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -41,7 +43,8 @@ class SaleController extends Controller
 
     public function __construct(
         private readonly BranchInventoryService $branchInventory,
-        private readonly PriceListUsage $priceListUsage
+        private readonly PriceListUsage $priceListUsage,
+        private readonly HotelFolioService $hotelFolioService
     )
     {
     }
@@ -935,7 +938,7 @@ public function store(Request $request)
     $isStarterPlan = PlanAccess::resolveTierForUser(auth()->user()) === 'starter';
     $validator = Validator::make($request->all(), [
         'customer_id'    => 'nullable|integer',
-        'payment_method' => 'required|string|in:Cash,cash,Split,split',
+        'payment_method' => 'required|string|in:Cash,cash,Split,split,ChargeToRoom,charge_to_room,charge-room',
         'total'          => 'required|numeric|min:0',
 	        'paid'           => 'required|numeric|min:0',
 	        'wallet_amount'  => 'nullable|numeric|min:0',
@@ -948,6 +951,7 @@ public function store(Request $request)
         'source' => 'nullable|string|max:40',
         'source_id' => 'nullable|integer',
         'source_reference' => 'nullable|string|max:120',
+        'folio_id' => 'nullable|integer',
         'deposit_account_id' => 'nullable|integer',
         'payment_account_id' => 'nullable|integer',
         'split_details.card_account_id' => 'nullable|integer',
@@ -990,6 +994,25 @@ public function store(Request $request)
                 $validator->errors()->add($field, 'The selected deposit account is not available for this tenant/branch.');
             }
         }
+
+        $paymentMethod = strtolower((string) $request->input('payment_method'));
+        if (in_array($paymentMethod, ['chargetoroom', 'charge_to_room', 'charge-room'], true)) {
+            $folioId = (int) $request->input('folio_id', 0);
+            if ($folioId <= 0) {
+                $validator->errors()->add('folio_id', 'A guest folio is required for charge-to-room sales.');
+                return;
+            }
+
+            $folio = GuestFolio::query()
+                ->where('company_id', $this->tenantCompanyId())
+                ->where('id', $folioId)
+                ->whereIn('status', ['open', 'city_ledger'])
+                ->first();
+
+            if (!$folio) {
+                $validator->errors()->add('folio_id', 'The selected folio is invalid or closed for this tenant.');
+            }
+        }
     });
 
     if ($validator->fails()) {
@@ -1011,13 +1034,14 @@ public function store(Request $request)
 	    if ($customerIdForWallet > 0 && Schema::hasColumn('customers', 'wallet_balance')) {
 	        $availableWalletAmount = round(max(0, (float) $this->scopedCustomers()->whereKey($customerIdForWallet)->value('wallet_balance')), 2);
 	    }
-	    $walletAmount = min($requestedWalletAmount, $availableWalletAmount, $totalAmount);
+        $walletAmount = min($requestedWalletAmount, $availableWalletAmount, $totalAmount);
+        $isChargeToRoom = in_array($paymentMethod, ['chargetoroom', 'charge_to_room', 'charge-room'], true);
 
-    if (!in_array($paymentMethod, ['cash', 'split'], true)) {
-        return response()->json(['success' => false, 'message' => 'POS only accepts cash or split (cash + transfer) sales. Use Invoices for credit sales.'], 422);
+    if (!in_array($paymentMethod, ['cash', 'split', 'chargetoroom', 'charge_to_room', 'charge-room'], true)) {
+        return response()->json(['success' => false, 'message' => 'POS accepts cash, split, or charge-to-room sales only. Use Invoices for credit sales.'], 422);
     }
 
-	    if ($paymentMethod === 'split') {
+        if ($paymentMethod === 'split') {
 	        $splitPaid = round(((float) $splitDetails['cash']) + ((float) $splitDetails['transfer']) + ((float) $splitDetails['card']), 2);
 	        if ($splitPaid <= 0 && $walletAmount <= 0) {
 	            return response()->json(['success' => false, 'message' => 'Enter split payment amounts before processing this sale.'], 422);
@@ -1026,10 +1050,13 @@ public function store(Request $request)
 	            return response()->json(['success' => false, 'message' => 'POS split sales must be fully paid. Use Invoices for credit sales.'], 422);
 	        }
 	        $paidAmount = $splitPaid;
-	    } else {
+        } elseif (!$isChargeToRoom) {
 	        if (($paidAmount + $walletAmount) < $totalAmount) {
 	            return response()->json(['success' => false, 'message' => 'POS cash sales must be fully paid. Use Invoices for credit sales.'], 422);
 	        }
+        } else {
+            $paidAmount = 0;
+            $walletAmount = 0;
 	    }
 
     DB::beginTransaction();
@@ -1041,12 +1068,14 @@ public function store(Request $request)
         $orderNumber = $this->generateSaleOrderNo();
         
         $totalAmount = (float) $request->total;
-        $amountPaid = (float) $request->paid;
+        $amountPaid = $isChargeToRoom ? 0.0 : (float) $request->paid;
         $changeAmount = $amountPaid > $totalAmount ? $amountPaid - $totalAmount : 0;
         $actualPaymentKept = $amountPaid - $changeAmount;
         $balance = $totalAmount > $actualPaymentKept ? $totalAmount - $actualPaymentKept : 0;
 
-        $paymentStatus = ($balance <= 0) ? 'paid' : (($actualPaymentKept > 0) ? 'partial' : 'unpaid');
+        $paymentStatus = $isChargeToRoom
+            ? 'unpaid'
+            : (($balance <= 0) ? 'paid' : (($actualPaymentKept > 0) ? 'partial' : 'unpaid'));
 
         $selectedCustomer = $request->customer_id
             ? $this->scopedCustomers()->whereKey((int) $request->customer_id)->first()
@@ -1060,6 +1089,15 @@ public function store(Request $request)
         $sourceType = strtolower(trim((string) $request->input('source', '')));
         $sourceId = (int) $request->input('source_id', 0);
         $sourceReference = trim((string) $request->input('source_reference', ''));
+        $folioId = (int) $request->input('folio_id', 0);
+        $chargeFolio = $isChargeToRoom
+            ? GuestFolio::query()
+                ->where('company_id', $this->tenantCompanyId())
+                ->where('id', $folioId)
+                ->whereIn('status', ['open', 'city_ledger'])
+                ->lockForUpdate()
+                ->first()
+            : null;
         $sourceQuotation = null;
 
         if ($sourceType === 'quotation' && $sourceId > 0) {
@@ -1139,7 +1177,7 @@ $sale = Sale::create([
     'change_amount'  => $changeAmount,
     'balance'        => $balance,
     'currency'       => 'NGN',
-    'payment_method' => $paymentMethod,
+    'payment_method' => $isChargeToRoom ? 'charge_to_room' : $paymentMethod,
     'payment_status' => $paymentStatus,
         'payment_details' => [
         'source' => 'pos',
@@ -1290,7 +1328,7 @@ $sale = Sale::create([
             ],
         ]);
 
-        if ($finalPaid > 0) {
+        if (!$isChargeToRoom && $finalPaid > 0) {
             $paymentRecordStatus = $finalBalance <= 0 ? 'Completed' : 'Pending';
             $paymentPayload = [
                 'sale_id' => $sale->id,
@@ -1337,6 +1375,32 @@ $sale = Sale::create([
 	        // Use the explicitly selected deposit account for journal entries
 	        $primaryDepositAccount = $paymentAccount ?? $transferSplitAccount ?? $cardSplitAccount;
 	        LedgerService::postSale($sale->fresh(), $primaryDepositAccount?->id);
+
+            if ($isChargeToRoom && $chargeFolio) {
+                $folioItem = $this->hotelFolioService->postCharge($chargeFolio, [
+                    'description' => 'POS charge to room - ' . ($sale->invoice_no ?: ('SALE-' . $sale->id)),
+                    'amount' => (float) $sale->total,
+                    'type' => 'pos_charge',
+                    'service_code' => 'POS_CHARGE',
+                    'service_date' => now()->toDateString(),
+                    'source_type' => Sale::class,
+                    'source_id' => $sale->id,
+                    'posting_key' => 'pos:folio:' . $sale->id,
+                    'posted_by' => auth()->id(),
+                ]);
+
+                LedgerService::postHotelFolioCharge(
+                    $folioItem,
+                    $chargeFolio,
+                    $sale->branch_id,
+                    $sale->branch_name
+                );
+
+                $details = $sale->payment_details ?? [];
+                $details['hotel_folio_id'] = $chargeFolio->id;
+                $details['hotel_folio_number'] = $chargeFolio->folio_number;
+                $sale->update(['payment_details' => $details]);
+            }
 
 	        if ($walletAmount > 0 && $selectedCustomer) {
 	            $this->applyCustomerWalletToPosSale($sale->fresh(), $selectedCustomer, $activeBranch, $walletAmount);
