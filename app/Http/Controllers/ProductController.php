@@ -670,7 +670,78 @@ class ProductController extends Controller
     private function normalizeImportHeaderCell($value): string
     {
         $header = strtolower(trim((string) $value));
-        return preg_replace('/^\x{FEFF}/u', '', $header) ?? $header;
+        $header = preg_replace('/^\x{FEFF}/u', '', $header) ?? $header;
+        $header = preg_replace('/\s+/', ' ', $header) ?? $header;
+        $key = str_replace([' ', '-', '/', '.', '(', ')'], '_', $header);
+        $key = preg_replace('/_+/', '_', $key) ?? $key;
+        $key = trim($key, '_');
+
+        $aliases = [
+            'product' => 'name',
+            'product_name' => 'name',
+            'item' => 'name',
+            'item_name' => 'name',
+            'stock_item' => 'name',
+            'description_name' => 'name',
+            'product_code' => 'sku',
+            'item_code' => 'sku',
+            'code' => 'sku',
+            'bar_code' => 'barcode',
+            'category_name' => 'category',
+            'unit_of_measure' => 'unit',
+            'uom' => 'unit',
+            'measurement_unit' => 'unit',
+            'base_unit' => 'unit',
+            'base_unit_name' => 'unit',
+            'unit_measure' => 'unit',
+            'packaging' => 'unit_type',
+            'packaging_type' => 'unit_type',
+            'type' => 'unit_type',
+            'selling_price' => 'retail_price',
+            'sales_price' => 'retail_price',
+            'sale_price' => 'retail_price',
+            's_price' => 'retail_price',
+            'cost_price' => 'purchase_price',
+            'buying_price' => 'purchase_price',
+            'p_price' => 'purchase_price',
+            'opening_stock' => 'stock',
+            'quantity' => 'stock',
+            'qty' => 'stock',
+            'stock_qty' => 'stock',
+            'opening_qty' => 'stock',
+            'cartons' => 'stock_cartons',
+            'opening_cartons' => 'stock_cartons',
+            'rolls' => 'stock_rolls',
+            'opening_rolls' => 'stock_rolls',
+            'pieces' => 'stock_units',
+            'loose_units' => 'stock_units',
+            'opening_units' => 'stock_units',
+            'units_per_ctn' => 'units_per_carton',
+            'pieces_per_carton' => 'units_per_carton',
+            'pcs_per_carton' => 'units_per_carton',
+            'pcs_per_ctn' => 'units_per_carton',
+            'units_per_packet' => 'units_per_roll',
+            'pieces_per_roll' => 'units_per_roll',
+            'pcs_per_roll' => 'units_per_roll',
+        ];
+
+        return $aliases[$key] ?? $key;
+    }
+
+    private function isImportHeaderRow(array $header): bool
+    {
+        $header = array_values(array_filter($header, fn ($column) => $column !== ''));
+        if (empty($header)) {
+            return false;
+        }
+
+        $hasName = in_array('name', $header, true);
+        $hasPrice = in_array('purchase_price', $header, true)
+            || in_array('retail_price', $header, true)
+            || in_array('price', $header, true)
+            || in_array('stock', $header, true);
+
+        return $hasName && $hasPrice;
     }
 
     public function serveImage(string $path)
@@ -2436,26 +2507,31 @@ public function inventory(Request $request)
         try {
             $file = $request->file('import_file');
             $header = null;
+            $headerRowNumber = null;
 
-            foreach ($this->spreadsheetRowIterator($file) as $row) {
-                $header = $row;
-                break;
+            foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
+                $candidateHeader = array_map(fn ($value) => $this->normalizeImportHeaderCell($value), $row);
+                if ($this->isImportHeaderRow($candidateHeader)) {
+                    $header = $candidateHeader;
+                    $headerRowNumber = $rowNumber;
+                    break;
+                }
             }
 
             if (!$header) {
-                Log::warning('Product import file was empty after parsing.', [
+                Log::warning('Product import header was not recognized.', [
                     'user_id' => auth()->id(),
                     'filename' => $file?->getClientOriginalName(),
                 ]);
-                return redirect()->back()->with('error', 'The import file is empty.');
+                return redirect()->back()->with('error', 'No valid product header row was found. Use headers like Product Name, Category, Unit/KG, Retail Price, and Purchase Price.');
             }
 
-            $header = array_map(fn ($value) => $this->normalizeImportHeaderCell($value), $header);
             Log::info('Product import header parsed.', [
                 'user_id' => auth()->id(),
                 'header' => $header,
+                'header_row' => $headerRowNumber !== null ? $headerRowNumber + 1 : null,
             ]);
-            $required = ['name', 'category', 'purchase_price'];
+            $required = ['name', 'purchase_price'];
             foreach ($required as $column) {
                 if (!in_array($column, $header, true)) {
                     Log::warning('Product import missing required column.', [
@@ -2485,11 +2561,11 @@ public function inventory(Request $request)
             $updateExisting = $request->boolean('update_existing');
             $createdIds = [];
 
-            DB::transaction(function () use ($file, $header, &$created, &$updated, &$updatedExisting, &$skipped, &$duplicates, &$missingRequired, &$rowErrors, $updateExisting, $request) {
+            DB::transaction(function () use ($file, $header, $headerRowNumber, &$created, &$updated, &$updatedExisting, &$skipped, &$duplicates, &$missingRequired, &$rowErrors, $updateExisting, $request) {
                 $activeBranch = $this->resolveBranchContext($request->input('branch_id'));
 
                 foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
-                    if ($rowNumber === 0) {
+                    if ($headerRowNumber !== null && $rowNumber <= $headerRowNumber) {
                         continue;
                     }
 
@@ -2498,7 +2574,7 @@ public function inventory(Request $request)
                         $rowData[$column] = trim((string) ($row[$index] ?? ''));
                     }
 
-                    $requiredFields = ['name', 'category', 'purchase_price'];
+                    $requiredFields = ['name', 'purchase_price'];
                     $missing = [];
                     foreach ($requiredFields as $field) {
                         if (($rowData[$field] ?? '') === '') {
@@ -2518,8 +2594,8 @@ public function inventory(Request $request)
                     }
 
                     try {
-                        $categoryName = $rowData['category'];
-                        $category = $this->firstOrCreateImportCategory($categoryName);
+                        $categoryName = trim((string) ($rowData['category'] ?? 'General'));
+                        $category = $this->firstOrCreateImportCategory($categoryName !== '' ? $categoryName : 'General');
 
                         $rawUnitType = trim((string) ($rowData['unit_type'] ?? ''));
                         $unitType = $this->normalizeImportUnitType($rawUnitType);
