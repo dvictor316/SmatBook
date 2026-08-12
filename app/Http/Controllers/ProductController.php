@@ -248,6 +248,80 @@ class ProductController extends Controller
         return $this->normalizeUnitRows($units);
     }
 
+    private function normalizeImportUnitType(string $value): string
+    {
+        $value = Str::lower(trim($value));
+        $aliases = [
+            'unit' => 'unit',
+            'single' => 'unit',
+            'loose' => 'unit',
+            'each' => 'unit',
+            'sachet' => 'sachet',
+            'satchet' => 'sachet',
+            'roll' => 'roll',
+            'carton' => 'carton',
+            'ctn' => 'carton',
+            'box' => 'carton',
+            'case' => 'carton',
+        ];
+
+        return $aliases[$value] ?? 'unit';
+    }
+
+    private function isPackagingUnitType(string $value): bool
+    {
+        $value = Str::lower(trim($value));
+
+        return in_array($value, ['unit', 'single', 'loose', 'each', 'sachet', 'satchet', 'roll', 'carton', 'ctn', 'box', 'case'], true);
+    }
+
+    private function resolveImportUnit(string $baseUnitName, string $unitTypeValue = ''): array
+    {
+        $source = trim($baseUnitName);
+        if ($source === '' || Str::lower($source) === 'unit') {
+            $source = trim($unitTypeValue);
+        }
+        if ($source === '' || $this->isPackagingUnitType($source)) {
+            $source = 'pcs';
+        }
+
+        $definition = $this->canonicalUnitDefinition($source, $source);
+        $name = $definition['name'] ?? Str::title($source);
+        $symbol = $definition['symbol'] ?? Str::lower($source);
+        $duplicateKey = $this->unitDuplicateKey($name, $symbol);
+        $existing = $this->unitRows(false)
+            ->first(fn ($unit) => $this->unitDuplicateKey($unit->name, $unit->symbol) === $duplicateKey);
+
+        if ($existing) {
+            return ['id' => (int) $existing->id, 'name' => $existing->name, 'symbol' => $existing->symbol];
+        }
+
+        $id = null;
+        if (Schema::hasTable('units')) {
+            $payload = [
+                'name' => $name,
+                'symbol' => $symbol,
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+            if (Schema::hasColumn('units', 'company_id')) {
+                $payload['company_id'] = $this->tenantCompanyId() ?: null;
+            }
+            if (Schema::hasColumn('units', 'user_id')) {
+                $payload['user_id'] = auth()->id();
+            }
+
+            try {
+                $id = (int) DB::table('units')->insertGetId($payload);
+            } catch (\Throwable $e) {
+                $id = optional($this->unitRows(false)
+                    ->first(fn ($unit) => $this->unitDuplicateKey($unit->name, $unit->symbol) === $duplicateKey))->id;
+            }
+        }
+
+        return ['id' => $id ? (int) $id : null, 'name' => $name, 'symbol' => $symbol];
+    }
     private function visibleUnitQuery(int $id)
     {
         $companyId = $this->tenantCompanyId();
@@ -2208,6 +2282,95 @@ public function inventory(Request $request)
         return $query->first();
     }
 
+    public function exportStock(Request $request, string $format = 'csv')
+    {
+        if (!Schema::hasTable('products')) {
+            return redirect()->route('product-list')->with('error', 'Products table is not available for export.');
+        }
+
+        $format = in_array(Str::lower($format), ['csv', 'xls'], true) ? Str::lower($format) : 'csv';
+        $filename = 'stock-export-' . now()->format('Y-m-d-His') . '.' . $format;
+        $delimiter = $format === 'xls' ? "\t" : ',';
+        $contentType = $format === 'xls' ? 'application/vnd.ms-excel' : 'text/csv';
+        $search = trim((string) $request->input('search', ''));
+        $activeBranch = $this->getActiveBranchContext();
+
+        return response()->streamDownload(function () use ($delimiter, $search, $activeBranch) {
+            $out = fopen('php://output', 'w');
+            $writeRow = function (array $row) use ($out, $delimiter) {
+                fputcsv($out, $row, $delimiter);
+            };
+
+            $writeRow([
+                'name', 'sku', 'barcode', 'category', 'unit', 'unit_type',
+                'units_per_carton', 'units_per_roll', 'stock_cartons', 'stock_rolls',
+                'stock_units', 'retail_price', 'wholesale_price', 'special_price',
+                'purchase_price', 'stock', 'description',
+            ]);
+
+            $query = Product::query();
+            $this->applyTenantScope($query, 'products');
+
+            if (Schema::hasTable('categories') && Schema::hasColumn('products', 'category_id')) {
+                $query->with('category');
+            }
+            if (Schema::hasTable('product_branch_stocks') && !empty($activeBranch['id'])) {
+                $query->with(['branchStocks' => function ($branchQuery) use ($activeBranch) {
+                    $branchQuery->where('branch_id', $activeBranch['id']);
+                }]);
+                $query->whereHas('branchStocks', function ($branchQuery) use ($activeBranch) {
+                    $branchQuery->where('branch_id', $activeBranch['id']);
+                });
+            } elseif (!empty($activeBranch['name']) && Schema::hasColumn('products', 'branch_name')) {
+                $query->where('products.branch_name', $activeBranch['name']);
+            } elseif (!empty($activeBranch['id']) && Schema::hasColumn('products', 'branch_id')) {
+                $query->where('products.branch_id', $activeBranch['id']);
+            }
+
+            if ($search !== '') {
+                $query->where(function ($q) use ($search) {
+                    if (Schema::hasColumn('products', 'name')) {
+                        $q->where('products.name', 'like', "%{$search}%");
+                    }
+                    if (Schema::hasColumn('products', 'sku')) {
+                        $q->orWhere('products.sku', 'like', "%{$search}%");
+                    }
+                    if (Schema::hasColumn('products', 'barcode')) {
+                        $q->orWhere('products.barcode', 'like', "%{$search}%");
+                    }
+                });
+            }
+
+            $query->orderBy('products.id')->chunkById(1000, function ($products) use ($writeRow, $activeBranch) {
+                foreach ($products as $product) {
+                    $stock = $this->branchInventory->getAvailableStock($product, $activeBranch);
+                    $writeRow([
+                        $product->name,
+                        $product->sku,
+                        $product->barcode,
+                        $product->category->name ?? '',
+                        $product->base_unit_name ?? '',
+                        $product->unit_type ?? 'unit',
+                        $product->units_per_carton ?? 0,
+                        $product->units_per_roll ?? 0,
+                        '',
+                        '',
+                        $stock,
+                        $product->retail_price ?? $product->price ?? 0,
+                        $product->wholesale_price ?? '',
+                        $product->special_price ?? '',
+                        $product->purchase_price ?? 0,
+                        $stock,
+                        $product->description ?? '',
+                    ]);
+                }
+            }, 'id');
+
+            fclose($out);
+        }, $filename, [
+            'Content-Type' => $contentType,
+        ]);
+    }
     public function downloadImportTemplate()
     {
         $headers = [
@@ -2215,7 +2378,7 @@ public function inventory(Request $request)
             'sku',
             'barcode',
             'category',
-            'base_unit_name',
+            'unit',
             'unit_type',
             'units_per_carton',
             'units_per_roll',
@@ -2231,7 +2394,8 @@ public function inventory(Request $request)
         ];
 
         $rows = [
-            ['Indomie Chicken', '', '1234567890123', 'Noodles', 'pcs', 'carton', '40', '0', '10', '0', '0', '250', '230', '220', '180', '400', 'Fast moving carton item'],
+            ['Rice 50kg', '', '1234567890123', 'Foodstuff', 'kg', 'unit', '0', '0', '0', '0', '25', '75000', '73500', '72000', '70000', '25', 'Measured directly in kilogram'],
+            ['Indomie Chicken Carton', '', '2234567890123', 'Noodles', 'pcs', 'carton', '40', '0', '10', '0', '0', '250', '230', '220', '180', '400', 'Fast moving carton item'],
             ['Tissue Roll Premium', '', '8800112233445', 'Toiletries', 'roll', 'roll', '12', '1', '5', '12', '0', '1500', '1400', '1350', '1100', '120', 'Can be sold as roll or carton'],
         ];
 
@@ -2291,7 +2455,7 @@ public function inventory(Request $request)
                 'user_id' => auth()->id(),
                 'header' => $header,
             ]);
-            $required = ['name', 'category', 'base_unit_name', 'unit_type', 'purchase_price'];
+            $required = ['name', 'category', 'purchase_price'];
             foreach ($required as $column) {
                 if (!in_array($column, $header, true)) {
                     Log::warning('Product import missing required column.', [
@@ -2334,7 +2498,7 @@ public function inventory(Request $request)
                         $rowData[$column] = trim((string) ($row[$index] ?? ''));
                     }
 
-                    $requiredFields = ['name', 'category', 'base_unit_name', 'unit_type', 'purchase_price'];
+                    $requiredFields = ['name', 'category', 'purchase_price'];
                     $missing = [];
                     foreach ($requiredFields as $field) {
                         if (($rowData[$field] ?? '') === '') {
@@ -2357,14 +2521,15 @@ public function inventory(Request $request)
                         $categoryName = $rowData['category'];
                         $category = $this->firstOrCreateImportCategory($categoryName);
 
-                        $unitType = strtolower($rowData['unit_type'] ?: 'unit');
-                        if (!in_array($unitType, ['unit', 'sachet', 'roll', 'carton'], true)) {
-                            $skipped++;
-                            if (count($rowErrors) < 10) {
-                                $rowErrors[] = 'Row ' . ($rowNumber + 1) . ': invalid unit_type ' . ($rowData['unit_type'] ?? '');
-                            }
-                            continue;
-                        }
+                        $rawUnitType = trim((string) ($rowData['unit_type'] ?? ''));
+                        $unitType = $this->normalizeImportUnitType($rawUnitType);
+                        $importUnitValue = $rowData['unit']
+                            ?? $rowData['unit_of_measure']
+                            ?? $rowData['uom']
+                            ?? $rowData['measurement_unit']
+                            ?? $rowData['base_unit_name']
+                            ?? '';
+                        $importUnit = $this->resolveImportUnit($importUnitValue, $rawUnitType);
 
                         $providedSku = $rowData['sku'] ?? null;
                         $barcode = $rowData['barcode'] ?? null;
@@ -2398,29 +2563,33 @@ public function inventory(Request $request)
                                 'stock_cartons' => (float) ($rowData['stock_cartons'] ?? 0),
                                 'stock_rolls' => (float) ($rowData['stock_rolls'] ?? 0),
                                 'stock_units' => (float) ($rowData['stock_units'] ?? 0),
-                                'units_per_carton' => max(0, (int) ($rowData['units_per_carton'] ?: 0)),
-                                'units_per_roll' => max(0, (int) ($rowData['units_per_roll'] ?: 0)),
+                                'units_per_carton' => max(0, (int) (($rowData['units_per_carton'] ?? 0) ?: 0)),
+                                'units_per_roll' => max(0, (int) (($rowData['units_per_roll'] ?? 0) ?: 0)),
                             ]);
 
                         $retailPrice = ($rowData['retail_price'] ?? '') !== '' ? $rowData['retail_price'] : ($rowData['price'] ?? '');
                         $payload = $this->sanitizeForProductColumns([
                             'name' => $rowData['name'],
                             'sku' => $sku,
-                            'barcode' => $rowData['barcode'] ?: null,
+                            'barcode' => ($rowData['barcode'] ?? '') ?: null,
                             'category_id' => $category->id,
-                            'base_unit_name' => $rowData['base_unit_name'] ?: 'pcs',
+                            'base_unit_name' => $importUnit['symbol'] ?: 'pcs',
+                            'unit_id' => $importUnit['id'],
+                            'base_unit_id' => $importUnit['id'],
+                            'purchase_unit_id' => null,
+                            'conversion_rate' => null,
                             'unit_type' => $unitType,
-                            'units_per_carton' => max(0, (int) ($rowData['units_per_carton'] ?: 0)),
-                            'units_per_roll' => max(0, (int) ($rowData['units_per_roll'] ?: 0)),
+                            'units_per_carton' => max(0, (int) (($rowData['units_per_carton'] ?? 0) ?: 0)),
+                            'units_per_roll' => max(0, (int) (($rowData['units_per_roll'] ?? 0) ?: 0)),
                             'price' => (float) ($retailPrice ?: 0),
                             'retail_price' => (float) ($retailPrice ?: 0),
                             'wholesale_price' => ($rowData['wholesale_price'] ?? '') !== '' ? (float) $rowData['wholesale_price'] : null,
                             'special_price' => ($rowData['special_price'] ?? '') !== '' ? (float) $rowData['special_price'] : null,
-                            'purchase_price' => (float) ($rowData['purchase_price'] ?: 0),
+                            'purchase_price' => (float) (($rowData['purchase_price'] ?? 0) ?: 0),
                             'stock' => $stock,
                             'stock_quantity' => $stock,
                             'status' => 'active',
-                            'description' => $rowData['description'] ?: null,
+                            'description' => ($rowData['description'] ?? '') ?: null,
                             'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
                             'user_id' => auth()->id(),
                         ]);

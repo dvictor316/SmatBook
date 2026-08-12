@@ -379,8 +379,8 @@
                             <i class="fas fa-upload me-1"></i> Stock Export
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" id="export_excel"><i class="far fa-file-excel me-2 text-success"></i>Export Stock Excel</a></li>
-                            <li><a class="dropdown-item" href="#" id="export_csv"><i class="fas fa-file-csv me-2 text-primary"></i>Export Stock CSV</a></li>
+                            <li><a class="dropdown-item" href="{{ route('inventory.Products.export', ['format' => 'xls', 'search' => $search ?? null]) }}"><i class="far fa-file-excel me-2 text-success"></i>Export Stock Excel</a></li>
+                            <li><a class="dropdown-item" href="{{ route('inventory.Products.export', ['format' => 'csv', 'search' => $search ?? null]) }}"><i class="fas fa-file-csv me-2 text-primary"></i>Export Stock CSV</a></li>
                             <li><a class="dropdown-item" href="#" id="export_pdf"><i class="far fa-file-pdf me-2 text-danger"></i>Export Stock PDF</a></li>
                         </ul>
                     </div>
@@ -836,8 +836,6 @@
         });
 
         // Trigger Exports from Custom Dropdown
-        $('#export_excel').on('click', function(e) { e.preventDefault(); table.button('.dt-excel').trigger(); });
-        $('#export_csv').on('click', function(e) { e.preventDefault(); table.button('.dt-csv').trigger(); });
         $('#export_pdf').on('click', function(e) { e.preventDefault(); table.button('.dt-pdf').trigger(); });
         $('#inventory_print_btn').on('click', function(e) {
             e.preventDefault();

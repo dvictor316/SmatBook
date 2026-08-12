@@ -155,7 +155,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/login-account', [AuthController::class, 'showLogin'])->name('login-account');
     Route::post('/login-account', [AuthController::class, 'login'])->name('login-account.post');
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    
+
     Route::get('/saas-register', [AuthController::class, 'showRegister'])->name('saas-register');
     Route::post('/saas-register', [AuthController::class, 'register'])->name('saas-register.post');
     Route::get('/saas-register/location/states', [AuthController::class, 'registrationStates'])->name('saas-register.location.states');
@@ -163,10 +163,10 @@ Route::middleware('guest')->group(function () {
     Route::get('/register-account', [AuthController::class, 'showRegister'])->name('saas-register-initial');
     Route::post('/register-account', [AuthController::class, 'register'])->name('saas-register-initial.post');
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    
+
     Route::get('/auth/{provider}', [AuthController::class, 'redirectToProvider'])->name('social.login');
     Route::get('/auth/{provider}/callback', [AuthController::class, 'handleProviderCallback'])->name('social.callback');
-    
+
     Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])->name('password.request');
     Route::post('/forgot-password', [AuthController::class, 'sendResetLinkEmail'])->name('password.email');
     Route::get('/reset-password', function () {
@@ -202,8 +202,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/manager/pending-approval', fn() => view('Auth.manager_pending'))->name('manager.pending.notice');
     Route::get('/registration/pending-approval', fn() => view('Auth.manager_pending'))->name('registration.pending.notice');
     Route::get('/manager/verify-profile', [DeploymentManagerController::class, 'showVerificationForm'])->name('manager.verification.form');
-    Route::post('/manager/verify-profile', [DeploymentManagerController::class, 'submitVerification'])->name('manager.submit.verification'); 
-    Route::post('/verify', [DeploymentManagerController::class, 'submitVerification'])->name('submit.verification'); 
+    Route::post('/manager/verify-profile', [DeploymentManagerController::class, 'submitVerification'])->name('manager.submit.verification');
+    Route::post('/verify', [DeploymentManagerController::class, 'submitVerification'])->name('submit.verification');
 });
 
 
@@ -483,13 +483,13 @@ Route::middleware(['auth', 'role:agent,state_manager,super_admin'])
 */
 
 Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('super_admin.')->group(function () {
-    
+
     Route::get('/dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/export', [SuperAdminDashboardController::class, 'exportStats'])->name('dashboard.export');
     Route::post('/platform-payouts', [SuperAdminDashboardController::class, 'storePayout'])->name('platform_payouts.store');
     Route::get('/platform-payouts', [SuperAdminDashboardController::class, 'payoutHistory'])->name('platform_payouts.index');
     Route::delete('/platform-payouts/{platformPayout}', [SuperAdminDashboardController::class, 'destroyPayout'])->name('platform_payouts.destroy');
-    
+
     // User Management
     Route::controller(UserController::class)->group(function () {
         Route::get('/users-list', 'userIndex')->name('super_admin.users.index');
@@ -507,7 +507,7 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
 
     // TEMP: Superadmin user impersonation for editing/testing dashboards
     Route::post('/users/{id}/impersonate', [AuthController::class, 'impersonateUser'])->name('users.impersonate');
-    
+
     // Subscription Management
     Route::controller(SubscriptionController::class)->group(function () {
         Route::get('/subscriptions', 'index')->name('subscriptions.index');
@@ -524,7 +524,7 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
         Route::patch('/domain/{id}/status', 'updateStatus')->name('domain.update');
         Route::delete('/domain/{id}', 'destroy')->name('domain.destroy');
     });
-    
+
     // Company Management
     Route::resource('companies', CompanyController::class);
     Route::controller(CompanyController::class)->prefix('companies')->name('companies.')->group(function () {
@@ -533,49 +533,9 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
 
     // Hotel Management (Super Admin)
     Route::get('/hotels', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'index'])->name('hotels.index');
-    
-    // Hotel tenant routes (setup, room types, rooms) and operational flows
-    Route::group(['prefix' => 'hotel', 'as' => 'hotel.','middleware' => ['auth','branch.required','subscription.active']], function () {
-        Route::get('/setup/step1', [\App\Http\Controllers\Hotel\HotelSetupController::class, 'step1'])->name('setup.step1');
-        Route::post('/setup/step1', [\App\Http\Controllers\Hotel\HotelSetupController::class, 'storeStep1'])->name('setup.storeStep1');
-        Route::get('/setup/step2', [\App\Http\Controllers\Hotel\HotelSetupController::class, 'step2'])->name('setup.step2');
 
-        // Room types
-        Route::get('/room-types', [\App\Http\Controllers\Hotel\HotelRoomTypeController::class, 'index'])->name('room_types.index');
-        Route::get('/room-types/create', [\App\Http\Controllers\Hotel\HotelRoomTypeController::class, 'create'])->name('room_types.create');
-        Route::post('/room-types', [\App\Http\Controllers\Hotel\HotelRoomTypeController::class, 'store'])->name('room_types.store');
-        Route::get('/room-types/{room_type}/edit', [\App\Http\Controllers\Hotel\HotelRoomTypeController::class, 'edit'])->name('room_types.edit');
-        Route::put('/room-types/{room_type}', [\App\Http\Controllers\Hotel\HotelRoomTypeController::class, 'update'])->name('room_types.update');
-        Route::delete('/room-types/{room_type}', [\App\Http\Controllers\Hotel\HotelRoomTypeController::class, 'destroy'])->name('room_types.destroy');
 
-        // Rooms
-        Route::get('/rooms', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'index'])->name('rooms.index');
-        Route::get('/rooms/create', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'create'])->name('rooms.create');
-        Route::post('/rooms', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'store'])->name('rooms.store');
-        Route::get('/rooms/{room}/edit', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'edit'])->name('rooms.edit');
-        Route::put('/rooms/{room}', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'update'])->name('rooms.update');
-        Route::delete('/rooms/{room}', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'destroy'])->name('rooms.destroy');
-        
-        // Availability & Reservations
-        Route::get('/availability', [\App\Http\Controllers\Hotel\AvailabilityController::class, 'index'])->name('availability.index');
-        Route::post('/availability/search', [\App\Http\Controllers\Hotel\AvailabilityController::class, 'search'])->name('availability.search');
 
-        Route::get('/reservations', [\App\Http\Controllers\Hotel\ReservationController::class, 'index'])->name('reservations.index');
-        Route::get('/reservations/create', [\App\Http\Controllers\Hotel\ReservationController::class, 'create'])->name('reservations.create');
-        Route::post('/reservations', [\App\Http\Controllers\Hotel\ReservationController::class, 'store'])->name('reservations.store');
-        Route::get('/reservations/{reservation}', [\App\Http\Controllers\Hotel\ReservationController::class, 'show'])->name('reservations.show');
-
-        // Walk-in, Check-in/out, Folio
-        Route::get('/walkin', [\App\Http\Controllers\Hotel\WalkInController::class, 'create'])->name('walkin.create');
-        Route::post('/walkin', [\App\Http\Controllers\Hotel\WalkInController::class, 'store'])->name('walkin.store');
-
-        Route::post('/checkin/{reservation}', [\App\Http\Controllers\Hotel\CheckInController::class, 'checkin'])->name('checkin');
-        Route::post('/checkout/{stay}', [\App\Http\Controllers\Hotel\CheckInController::class, 'checkout'])->name('checkout');
-
-        Route::get('/folios/{folio}', [\App\Http\Controllers\Hotel\FolioController::class, 'show'])->name('folios.show');
-        Route::post('/folios/{folio}/items', [\App\Http\Controllers\Hotel\FolioController::class, 'storeItem'])->name('folios.items.store');
-    });
-    
     // Domains
     Route::controller(DomainController::class)->group(function () {
         Route::get('/domains', 'index')->name('domains.index');
@@ -588,7 +548,7 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
         Route::post('/domains/store-setup/{id}', 'storeSetup')->name('domain.store-setup');
         Route::post('/domains/{id}/verify', 'verify')->name('domains.verify');
     });
-    
+
     // Plans
     Route::controller(PlanController::class)->group(function () {
         Route::get('/plans', 'index')->name('plans.index');
@@ -604,7 +564,7 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
         Route::delete('/plans/{id}', 'destroy')->name('plans.destroy');
         Route::delete('/packages/{id}', 'destroy')->name('packages.delete');
     });
-    
+
     // Analytics
     Route::controller(AnalyticsDashboardController::class)->group(function () {
         Route::get('/analytics', 'getSalesAnalytics')->name('analytics');
@@ -692,6 +652,52 @@ Route::middleware(['auth'])->prefix('ajax/inventory')->name('ajax.inventory.')->
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
 });
 
+// Hotel tenant routes (isolated from superadmin and protected by hotel tenant gate)
+Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 'subscription.active', 'branch.required', 'hotel.tenant']], function () {
+    Route::get('/dashboard', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'dashboard'])->name('dashboard');
+    Route::get('/front-desk', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'frontDesk'])->name('frontdesk');
+    Route::get('/in-house', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'inHouse'])->name('in_house');
+    Route::get('/guests', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'guests'])->name('guests');
+    Route::get('/deposits', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'deposits'])->name('deposits');
+    Route::get('/settings', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'settings'])->name('settings');
+
+    Route::get('/setup/step1', [\App\Http\Controllers\Hotel\HotelSetupController::class, 'step1'])->name('setup.step1');
+    Route::post('/setup/step1', [\App\Http\Controllers\Hotel\HotelSetupController::class, 'storeStep1'])->name('setup.storeStep1');
+    Route::get('/setup/step2', [\App\Http\Controllers\Hotel\HotelSetupController::class, 'step2'])->name('setup.step2');
+
+    Route::get('/room-types', [\App\Http\Controllers\Hotel\HotelRoomTypeController::class, 'index'])->name('room_types.index');
+    Route::get('/room-types/create', [\App\Http\Controllers\Hotel\HotelRoomTypeController::class, 'create'])->name('room_types.create');
+    Route::post('/room-types', [\App\Http\Controllers\Hotel\HotelRoomTypeController::class, 'store'])->name('room_types.store');
+    Route::get('/room-types/{room_type}/edit', [\App\Http\Controllers\Hotel\HotelRoomTypeController::class, 'edit'])->name('room_types.edit');
+    Route::put('/room-types/{room_type}', [\App\Http\Controllers\Hotel\HotelRoomTypeController::class, 'update'])->name('room_types.update');
+    Route::delete('/room-types/{room_type}', [\App\Http\Controllers\Hotel\HotelRoomTypeController::class, 'destroy'])->name('room_types.destroy');
+
+    Route::get('/rooms', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'index'])->name('rooms.index');
+    Route::get('/rooms/create', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'create'])->name('rooms.create');
+    Route::post('/rooms', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'store'])->name('rooms.store');
+    Route::get('/rooms/{room}/edit', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'edit'])->name('rooms.edit');
+    Route::put('/rooms/{room}', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'update'])->name('rooms.update');
+    Route::delete('/rooms/{room}', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'destroy'])->name('rooms.destroy');
+
+    Route::get('/availability', [\App\Http\Controllers\Hotel\AvailabilityController::class, 'index'])->name('availability.index');
+    Route::post('/availability/search', [\App\Http\Controllers\Hotel\AvailabilityController::class, 'search'])->name('availability.search');
+
+    Route::get('/reservations', [\App\Http\Controllers\Hotel\ReservationController::class, 'index'])->name('reservations.index');
+    Route::get('/reservations/create', [\App\Http\Controllers\Hotel\ReservationController::class, 'create'])->name('reservations.create');
+    Route::post('/reservations', [\App\Http\Controllers\Hotel\ReservationController::class, 'store'])->name('reservations.store');
+    Route::get('/reservations/{reservation}', [\App\Http\Controllers\Hotel\ReservationController::class, 'show'])->name('reservations.show');
+
+    Route::get('/walkin', [\App\Http\Controllers\Hotel\WalkInController::class, 'create'])->name('walkin.create');
+    Route::post('/walkin', [\App\Http\Controllers\Hotel\WalkInController::class, 'store'])->name('walkin.store');
+
+    Route::post('/checkin/{reservation}', [\App\Http\Controllers\Hotel\CheckInController::class, 'checkin'])->name('checkin');
+    Route::post('/checkout/{stay}', [\App\Http\Controllers\Hotel\CheckInController::class, 'checkout'])->name('checkout');
+
+    Route::get('/folios', [\App\Http\Controllers\Hotel\FolioController::class, 'index'])->name('folios.index');
+    Route::get('/folios/{folio}', [\App\Http\Controllers\Hotel\FolioController::class, 'show'])->name('folios.show');
+    Route::post('/folios/{folio}/items', [\App\Http\Controllers\Hotel\FolioController::class, 'storeItem'])->name('folios.items.store');
+});
+
 // Reports hub — authenticated users with an active workspace; individual report routes enforce plan tiers.
 Route::middleware(['auth', 'subscription.active'])->group(function () {
     Route::get('/reports', [ReportController::class, 'reportsHub'])->name('reports.hub');
@@ -708,10 +714,10 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
 */
 
 Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(function () {
-    
+
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('user.dashboard');
     Route::get('/blank-page', [HomeController::class, 'blankpage'])->name('blank-page');
-    
+
     // Profile
     Route::get('/profile', [HomeController::class, 'profile'])->name('profile');
     Route::post('/profile/update', [HomeController::class, 'updateProfile'])->name('profile.update');
@@ -727,20 +733,20 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     Route::get('/permission', [HomeController::class, 'permission'])->name('permission');
     Route::get('/contact-messages', [HomeController::class, 'contactMessages'])->name('contact-messages');
     Route::delete('/contact-messages/{id}', [HomeController::class, 'deleteContactMessage'])->name('contact-messages.delete');
-    
+
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/header-summary', [NotificationController::class, 'summary'])->name('notifications.summary');
     Route::post('/notifications/mark-read/{id}', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
-    
+
     // Activity Log
     Route::middleware('plan.access:enterprise')->group(function () {
         Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
         Route::get('/activity-log/export', [ActivityLogController::class, 'export'])->name('activity-log.export');
     });
-    
+
     // User Management
     Route::middleware('role:super_admin,administrator')->group(function () {
         Route::resource('users', UserController::class);
@@ -760,7 +766,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::post('/permission/update', 'updatePermissions')->name('permissions.update');
         Route::delete('/delete-user', 'deleteUserRequest')->name('delete-user');
     });
-    
+
     // Customers
     Route::resource('customers', CustomerController::class)->middleware('plan.access:basic,professional,enterprise');
     Route::get('/add-customer', [CustomerController::class, 'create'])->middleware('plan.access:basic,professional,enterprise')->name('customers.add');
@@ -781,7 +787,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/customers', [AdvancePaymentController::class, 'customers'])->name('customers');
         Route::get('/suppliers', [AdvancePaymentController::class, 'suppliers'])->name('suppliers');
     });
-    
+
     // Vendors
     Route::controller(VendorController::class)->prefix('vendors')->name('vendors.')->middleware('plan.access:basic,professional,enterprise')->group(function () {
         Route::get('/', 'index')->name('index');
@@ -818,7 +824,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::put('/{id}', 'update')->name('update');
         Route::delete('/{id}', 'destroy')->name('destroy');
     });
-    
+
     // Products
     Route::controller(ProductController::class)->group(function () {
         Route::get('/product-list', 'index')->name('product-list');
@@ -828,6 +834,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::post('/products/import', 'import')->name('inventory.Products.import');
         Route::post('/products/import/undo', 'undoLastImport')->name('inventory.Products.import.undo');
         Route::get('/products/import/template', 'downloadImportTemplate')->name('inventory.Products.import.template');
+        Route::get('/products/export/{format?}', 'exportStock')->name('inventory.Products.export');
         Route::get('/edit-products/{id}', 'edit')->name('inventory.Products.edit');
         Route::put('/products/update/{id}', 'update')->name('inventory.Products.update');
         Route::delete('/products/delete-selected', 'bulkDestroy')->name('inventory.Products.bulk-destroy');
@@ -846,18 +853,18 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/api/products', 'apiIndex')->name('api.products');
         Route::get('/api/products/search', 'search')->name('api.products.search');
     });
-    
+
     // Categories
     Route::resource('categories', CategoryController::class);
     Route::post('/categories/{category}/clear-products', [CategoryController::class, 'clearProducts'])->name('categories.clear-products');
     Route::get('/inventory/products/category', [CategoryController::class, 'index'])->name('inventory.categories');
     Route::post('/inventory/products/category', [CategoryController::class, 'store'])->name('inventory.categories.store');
-    
+
     // Product Sales
     Route::post('/products/{product}/sales', [ProductSaleController::class, 'store'])->name('product_sales.store');
     Route::get('/products/{product}/sales', [ProductSaleController::class, 'index'])->name('product_sales.index');
     Route::delete('/products/{product}/sales/{sale}', [ProductSaleController::class, 'destroy'])->name('product_sales.destroy');
-    
+
     // Sales
     Route::controller(SaleController::class)->prefix('sales')->name('sales.')->group(function () {
         Route::get('/', 'index')->name('index');
@@ -880,7 +887,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     Route::get('/pos/return', [SaleController::class, 'showPosReturn'])->name('pos.return.show');
     Route::post('/pos/return', [SaleController::class, 'storePosReturn'])->name('pos.return.store');
     Route::get('/sales/items/{item}/delete', [SaleItemController::class, 'destroy'])->name('sales.items.delete');
-    
+
     // Invoices
     Route::controller(InvoiceController::class)->middleware('plan.access:basic,professional,enterprise')->group(function () {
         Route::get('/invoices', 'invoices')->name('invoices');
@@ -910,7 +917,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::post('/invoices/{id}/pay', 'processPayment')->name('invoices.pay');
         Route::post('/invoices/{id}/status', 'updateStatus')->name('invoices.update-status');
     });
-    
+
     // Recurring Invoices – full engine
     Route::prefix('recurring-invoices')->name('sales.recurring-invoices.')->middleware('plan.access:basic,professional,enterprise')->group(function () {
         Route::get('/',                                    [RecurringInvoiceController::class, 'index'])->name('index');
@@ -975,7 +982,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
             Route::post('/budgets/{budget}/toggle', [BudgetController::class, 'toggleStatus'])->name('budgets.toggle');
         });
     });
-    
+
     // Estimates
     Route::get('estimates/{estimate}/convert-invoice', [EstimateController::class, 'convertToInvoice'])->middleware('plan.access:basic,professional,enterprise')->name('estimates.convert-invoice');
     Route::get('estimates/{estimate}/convert-cash-sale', [EstimateController::class, 'convertToCashSale'])->middleware('plan.access:basic,professional,enterprise')->name('estimates.convert-cash-sale');
@@ -1031,7 +1038,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/purchase-report', 'purchaseReport')->name('purchase-report');
     });
     Route::get('/admin/purchase-orders', [PurchaseOrderViewController::class, 'showOrdersTable'])->name('admin.purchase.orders');
-    
+
     // Expenses
     Route::resource('expenses', ExpenseController::class)->middleware('plan.access:basic,professional,enterprise');
     Route::post('/expenses/{id}/mark-paid', [ExpenseController::class, 'markPaid'])->middleware('plan.access:basic,professional,enterprise')->name('expenses.mark-paid');
@@ -1039,7 +1046,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     Route::post('/expenses/quick-add-bank', [ExpenseController::class, 'quickAddBank'])->middleware('plan.access:basic,professional,enterprise')->name('expenses.quick-add-bank');
     Route::post('/expenses/quick-add-category', [ExpenseController::class, 'quickAddCategory'])->middleware('plan.access:basic,professional,enterprise')->name('expenses.quick-add-category');
     Route::post('/expenses/quick-add-supplier', [ExpenseController::class, 'quickAddSupplier'])->middleware('plan.access:basic,professional,enterprise')->name('expenses.quick-add-supplier');
-    
+
     // Payments
     Route::resource('payments', PaymentController::class)->middleware('plan.access:basic,professional,enterprise');
     Route::controller(PaymentController::class)->prefix('payments')->name('payments.')->middleware('plan.access:basic,professional,enterprise')->group(function () {
@@ -1051,7 +1058,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
 	    Route::post('/payments/bulk-update', [ReportController::class, 'bulkUpdate'])->middleware('plan.access:basic,professional,enterprise')->name('payments.bulk-update');
 	    Route::delete('/payments/{id}', [ReportController::class, 'destroy'])->middleware('plan.access:basic,professional,enterprise')->name('payments.report-destroy');
 	    Route::get('/get-invoice-items/{id}', [ReportController::class, 'get_invoice_items'])->middleware('plan.access:basic,professional,enterprise')->name('get-invoice-items');
-	    
+
     // Reports
     Route::controller(ReportController::class)->prefix('reports')->name('reports.')->middleware('plan.access:basic,professional,enterprise')->group(function () {
         Route::get('/expense-report', 'expense_report')->middleware('plan.access:basic,professional,enterprise')->name('expense');
@@ -1118,7 +1125,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
             Route::delete('/{id}', 'destroy')->name('destroy');
         });
     });
-    
+
     // Financial Reports
     Route::get('/cash-flow', [CashFlowController::class, 'cashFlow'])->middleware('plan.access:pro,enterprise')->name('reports.cash-flow');
     Route::get('/cash-flow/export', [CashFlowController::class, 'exportCashFlow'])->middleware('plan.access:pro,enterprise')->name('reports.cash-flow.export');
@@ -1166,7 +1173,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::post('/periods/{periodId}/request-close', [PeriodCloseController::class, 'requestClose'])->name('request');
         Route::post('/approvals/{approvalId}/approve', [PeriodCloseController::class, 'approve'])->name('approve');
     });
-    
+
     // Settings
     Route::controller(SettingController::class)->group(function () {
         Route::post('/settings/send-test-email', 'sendTestEmail')->name('settings.send-test-email');
@@ -1242,7 +1249,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/seo-settings', 'seosettings');
         Route::get('/saas-settings', 'saassettings');
     });
-    
+
     // Chat
     Route::controller(ChatController::class)->prefix('chat')->name('chat.')->group(function () {
         Route::get('/', 'index')->name('index');
@@ -1256,7 +1263,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/search-users', 'searchUsers')->name('search-users');
         Route::delete('/message/{id}', 'deleteMessage')->name('delete');
     });
-    
+
     // Calendar
     Route::get('/calendar', [HomeController::class, 'calendar'])->name('calendar');
     Route::get('/inbox', [HomeController::class, 'inbox'])->name('inbox');
@@ -1266,11 +1273,11 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::put('/api/events/update/{id}', 'update')->name('api.events.update');
         Route::delete('/api/events/destroy/{id}', 'destroy')->name('api.events.destroy');
     });
-    
+
     // Maps
     Route::get('/maps-vector', [MapController::class, 'index'])->name('maps-vector');
     Route::get('/global-activity', [CustomAuthController::class, 'showMapVectors'])->name('admin.map');
-    
+
     // API
     Route::prefix('api')->name('api.')->group(function () {
         Route::get('/products', [ProductController::class, 'apiIndex']);
@@ -1283,7 +1290,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
             Route::get('/sales-data', 'getSalesData')->name('sales-data');
         });
     });
-    
+
     // Tenant
     Route::prefix('tenant')->name('tenant.')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -1572,7 +1579,7 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
         Route::get('/export', 'export')->name('export');
         Route::get('/{id}', 'show')->name('show');
     });
-    
+
     Route::controller(BackupController::class)->prefix('backups')->name('backups.')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/create', 'create')->name('create');
