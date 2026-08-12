@@ -534,6 +534,29 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     // Hotel Management (Super Admin)
     Route::get('/hotels', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'index'])->name('hotels.index');
     
+    // Hotel tenant routes (setup, room types, rooms)
+    Route::prefix('hotel')->name('hotel.')->group(function () {
+        Route::get('/setup/step1', [\App\Http\Controllers\Hotel\HotelSetupController::class, 'step1'])->name('setup.step1');
+        Route::post('/setup/step1', [\App\Http\Controllers\Hotel\HotelSetupController::class, 'storeStep1'])->name('setup.storeStep1');
+        Route::get('/setup/step2', [\App\Http\Controllers\Hotel\HotelSetupController::class, 'step2'])->name('setup.step2');
+
+        // Room types
+        Route::get('/room-types', [\App\Http\Controllers\Hotel\HotelRoomTypeController::class, 'index'])->name('room_types.index');
+        Route::get('/room-types/create', [\App\Http\Controllers\Hotel\HotelRoomTypeController::class, 'create'])->name('room_types.create');
+        Route::post('/room-types', [\App\Http\Controllers\Hotel\HotelRoomTypeController::class, 'store'])->name('room_types.store');
+        Route::get('/room-types/{room_type}/edit', [\App\Http\Controllers\Hotel\HotelRoomTypeController::class, 'edit'])->name('room_types.edit');
+        Route::put('/room-types/{room_type}', [\App\Http\Controllers\Hotel\HotelRoomTypeController::class, 'update'])->name('room_types.update');
+        Route::delete('/room-types/{room_type}', [\App\Http\Controllers\Hotel\HotelRoomTypeController::class, 'destroy'])->name('room_types.destroy');
+
+        // Rooms
+        Route::get('/rooms', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'index'])->name('rooms.index');
+        Route::get('/rooms/create', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'create'])->name('rooms.create');
+        Route::post('/rooms', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'store'])->name('rooms.store');
+        Route::get('/rooms/{room}/edit', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'edit'])->name('rooms.edit');
+        Route::put('/rooms/{room}', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'update'])->name('rooms.update');
+        Route::delete('/rooms/{room}', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'destroy'])->name('rooms.destroy');
+    });
+    
     // Domains
     Route::controller(DomainController::class)->group(function () {
         Route::get('/domains', 'index')->name('domains.index');
