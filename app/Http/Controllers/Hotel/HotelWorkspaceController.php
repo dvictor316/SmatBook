@@ -694,7 +694,7 @@ class HotelWorkspaceController extends Controller
         $propertyId = $this->resolvePropertyId($request);
 
         $orders = FolioItem::query()
-            ->with('folio.customer')
+            ->with(['folio.customer', 'folio.stay.room'])
             ->where('company_id', $companyId)
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->where('service_code', 'LAUNDRY')
@@ -711,7 +711,7 @@ class HotelWorkspaceController extends Controller
         $propertyId = $this->resolvePropertyId($request);
 
         $entries = FolioItem::query()
-            ->with('folio.customer')
+            ->with(['folio.customer', 'folio.stay.room'])
             ->where('company_id', $companyId)
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->where('service_code', 'MINIBAR')
@@ -737,7 +737,7 @@ class HotelWorkspaceController extends Controller
         $propertyId = $this->resolvePropertyId($request);
 
         $items = FolioItem::query()
-            ->with('folio.customer')
+            ->with(['folio.customer', 'folio.stay.room'])
             ->where('company_id', $companyId)
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->whereIn('service_code', ['ROOM_SERVICE', 'RESTAURANT'])
@@ -753,7 +753,7 @@ class HotelWorkspaceController extends Controller
         $companyId = (int) auth()->user()->company_id;
         $propertyId = $this->resolvePropertyId($request);
 
-        $bookings = Reservation::query()
+        $bookings            ->with(['customer', 'property'])
             ->where('company_id', $companyId)
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->whereRaw('LOWER(COALESCE(source, "")) in (?, ?)', ['conference', 'event'])
@@ -786,8 +786,7 @@ class HotelWorkspaceController extends Controller
         $companyId = (int) auth()->user()->company_id;
         $propertyId = $this->resolvePropertyId($request);
 
-        $groups = Reservation::query()
-            ->with('customer')
+        $groups            ->with(['customer', 'roomType', 'room'])
             ->where('company_id', $companyId)
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->where('adults', '>=', 4)

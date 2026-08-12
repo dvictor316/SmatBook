@@ -1,28 +1,45 @@
 @extends('layout.mainlayout')
 
 @section('content')
+@include('hotel.partials.pms-styles')
+@php
+    $totalBookings = $sources->sum(fn($source) => (int) ($source->reservations_count ?? 0));
+    $grossValue = $sources->sum(fn($source) => (float) ($source->gross_value ?? 0));
+    $topSource = $sources->first();
+@endphp
 <div class="page-wrapper">
     <div class="content container-fluid">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div>
-                <h3 class="mb-0">Travel Agents / Booking Sources</h3>
-                <p class="text-muted mb-0">Channel performance and booking value comparison</p>
+        <div class="hotel-pms-shell">
+            <div class="hotel-pms-hero">
+                <span class="hotel-pms-eyebrow"><i class="fe fe-link"></i> Booking sources</span>
+                <h2>Know which channels are feeding the hotel.</h2>
+                <p>Compare direct bookings, travel agents, OTAs, corporate sources, and event channels by booking count and value.</p>
             </div>
-        </div>
-        <div class="card">
-            <div class="card-body table-responsive">
-                <table class="table table-sm align-middle mb-0">
-                    <thead><tr><th>Source</th><th>Bookings</th><th>Revenue</th><th>Average Value</th></tr></thead>
+            <div class="hotel-pms-kpis">
+                <div class="hotel-pms-kpi"><small>Total Bookings</small><strong>{{ $totalBookings }}</strong></div>
+                <div class="hotel-pms-kpi"><small>Gross Value</small><strong>{{ number_format($grossValue, 2) }}</strong></div>
+                <div class="hotel-pms-kpi"><small>Top Source</small><strong>{{ $topSource ? ucfirst((string) $topSource->booking_source) : 'N/A' }}</strong></div>
+            </div>
+            <div class="hotel-pms-card table-responsive">
+                <h4 class="hotel-pms-card-title">Channel Performance</h4>
+                <table class="table hotel-pms-table align-middle mb-0">
+                    <thead><tr><th>Source</th><th>Bookings</th><th>Revenue</th><th>Average Value</th><th>Share</th></tr></thead>
                     <tbody>
                     @forelse($sources as $source)
+                        @php
+                            $count = (int) ($source->reservations_count ?? 0);
+                            $value = (float) ($source->gross_value ?? 0);
+                            $share = $totalBookings > 0 ? round(($count / $totalBookings) * 100, 1) : 0;
+                        @endphp
                         <tr>
-                            <td>{{ ucfirst((string)$source->booking_source) }}</td>
-                            <td>{{ $source->reservations_count }}</td>
-                            <td>{{ number_format((float)$source->gross_value,2) }}</td>
-                            <td>{{ number_format($source->reservations_count > 0 ? ((float)$source->gross_value / (int)$source->reservations_count) : 0,2) }}</td>
+                            <td><strong>{{ ucfirst((string)$source->booking_source) }}</strong></td>
+                            <td>{{ $count }}</td>
+                            <td>{{ number_format($value,2) }}</td>
+                            <td>{{ number_format($count > 0 ? ($value / $count) : 0,2) }}</td>
+                            <td><span class="hotel-pms-pill gold">{{ $share }}%</span></td>
                         </tr>
                     @empty
-                        <tr><td colspan="4" class="text-muted">No booking source data found.</td></tr>
+                        <tr><td colspan="5" class="hotel-pms-muted">No booking source data found.</td></tr>
                     @endforelse
                     </tbody>
                 </table>
