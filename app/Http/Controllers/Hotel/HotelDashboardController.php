@@ -287,10 +287,15 @@ class HotelDashboardController extends Controller
     public function frontDesk(Request $request)
     {
         $companyId = (int) auth()->user()->company_id;
-        $propertyId = $this->currentPropertyId();
+        $propertyId = $this->currentPropertyId($request);
         $today = now()->toDateString();
 
         $search = trim((string) $request->query('q', ''));
+
+        $properties = HotelProperty::query()
+            ->where('company_id', $companyId)
+            ->orderBy('name')
+            ->get();
 
         $rooms = HotelRoom::query()
             ->with('type')
@@ -307,6 +312,27 @@ class HotelDashboardController extends Controller
             ->limit(60)
             ->get();
 
+        $activeStaysByRoom = Stay::query()
+            ->with('customer')
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->where('status', 'checked_in')
+            ->whereIn('room_id', $rooms->pluck('id'))
+            ->get()
+            ->keyBy('room_id');
+
+        $roomReservationsToday = Reservation::query()
+            ->with('customer')
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->whereIn('status', ['reserved', 'confirmed'])
+            ->whereDate('arrival_date', '<=', $today)
+            ->whereDate('departure_date', '>=', $today)
+            ->whereIn('room_id', $rooms->pluck('id'))
+            ->orderBy('arrival_date')
+            ->get()
+            ->groupBy('room_id');
+
         $arrivals = Reservation::query()
             ->with(['customer', 'room', 'roomType'])
             ->where('company_id', $companyId)
@@ -316,6 +342,8 @@ class HotelDashboardController extends Controller
             ->orderBy('arrival_date')
             ->limit(20)
             ->get();
+
+        $arrivalWithoutRoomCount = $arrivals->filter(fn ($reservation) => !$reservation->room_id)->count();
 
         $departures = Reservation::query()
             ->with(['customer', 'room'])
@@ -327,6 +355,30 @@ class HotelDashboardController extends Controller
             ->limit(20)
             ->get();
 
+        $departureRoomIds = $departures->pluck('room_id')->filter()->values();
+        $departuresStayMap = Stay::query()
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->where('status', 'checked_in')
+            ->whereIn('room_id', $departureRoomIds)
+            ->get()
+            ->keyBy('room_id');
+
+        $departureFolioMap = GuestFolio::query()
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->whereIn('stay_id', $departuresStayMap->pluck('id'))
+            ->get()
+            ->keyBy('stay_id');
+
+        $departures = $departures->map(function ($reservation) use ($departuresStayMap, $departureFolioMap) {
+            $stay = $reservation->room_id ? $departuresStayMap->get((int) $reservation->room_id) : null;
+            $folio = $stay ? $departureFolioMap->get((int) $stay->id) : null;
+            $reservation->frontdesk_folio_balance = (float) ($folio->balance ?? 0);
+            $reservation->frontdesk_payment_status = (float) ($folio->balance ?? 0) > 0 ? 'outstanding' : 'cleared';
+            return $reservation;
+        });
+
         $inHouse = Stay::query()
             ->with(['customer', 'room'])
             ->where('company_id', $companyId)
@@ -335,6 +387,19 @@ class HotelDashboardController extends Controller
             ->latest('id')
             ->limit(20)
             ->get();
+
+        $inHouseFolioMap = GuestFolio::query()
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->whereIn('stay_id', $inHouse->pluck('id'))
+            ->get()
+            ->keyBy('stay_id');
+
+        $inHouse = $inHouse->map(function ($stay) use ($inHouseFolioMap) {
+            $folio = $inHouseFolioMap->get((int) $stay->id);
+            $stay->frontdesk_balance = (float) ($folio->balance ?? 0);
+            return $stay;
+        });
 
         $pendingCheckins = Reservation::query()
             ->with(['customer', 'roomType'])
@@ -345,6 +410,55 @@ class HotelDashboardController extends Controller
             ->orderBy('arrival_date')
             ->limit(20)
             ->get();
+
+        $maintenanceWithFutureReservations = Reservation::query()
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->whereDate('arrival_date', '>=', $today)
+            ->whereIn('status', ['reserved', 'confirmed'])
+            ->whereHas('room', function ($query) {
+                $query->whereIn('operational_status', ['maintenance', 'out_of_order']);
+            })
+            ->count();
+
+        $dirtyArrivalRoomsCount = $arrivals
+            ->filter(function ($reservation) {
+                return $reservation->room && (string) $reservation->room->housekeeping_status === 'dirty';
+            })
+            ->count();
+
+        $lowDepositArrivalsCount = $arrivals
+            ->filter(function ($reservation) {
+                return (float) ($reservation->deposit_required ?? 0) > (float) ($reservation->deposit_received ?? 0);
+            })
+            ->count();
+
+        $overdueCheckoutCount = Stay::query()
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->where('status', 'checked_in')
+            ->whereNotNull('expected_checkout_at')
+            ->where('expected_checkout_at', '<', now())
+            ->count();
+
+        $unpostedNightlyChargesCount = Stay::query()
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->where('status', 'checked_in')
+            ->whereDoesntHave('reservation')
+            ->count();
+
+        $departureOutstandingCount = $departures->filter(fn ($reservation) => (float) ($reservation->frontdesk_folio_balance ?? 0) > 0)->count();
+
+        $alerts = collect([
+            ['severity' => 'warning', 'label' => 'Arrivals without assigned room', 'count' => $arrivalWithoutRoomCount],
+            ['severity' => 'danger', 'label' => 'Departures with outstanding balance', 'count' => $departureOutstandingCount],
+            ['severity' => 'warning', 'label' => 'Dirty rooms needed for arrivals', 'count' => $dirtyArrivalRoomsCount],
+            ['severity' => 'danger', 'label' => 'Maintenance rooms with future reservations', 'count' => $maintenanceWithFutureReservations],
+            ['severity' => 'warning', 'label' => 'Reservations below required deposit', 'count' => $lowDepositArrivalsCount],
+            ['severity' => 'danger', 'label' => 'Overdue checkouts', 'count' => $overdueCheckoutCount],
+            ['severity' => 'info', 'label' => 'Potential unposted nightly charges', 'count' => $unpostedNightlyChargesCount],
+        ])->filter(fn ($alert) => (int) $alert['count'] > 0)->values();
 
         $availableCount = HotelRoom::where('company_id', $companyId)
             ->when($propertyId, fn($q) => $q->where('property_id', $propertyId))
@@ -368,7 +482,8 @@ class HotelDashboardController extends Controller
 
         return view('hotel.frontdesk.index', compact(
             'rooms', 'search', 'arrivals', 'departures', 'inHouse', 'pendingCheckins',
-            'availableCount', 'occupiedCount', 'reservedCount', 'dirtyCount'
+            'availableCount', 'occupiedCount', 'reservedCount', 'dirtyCount',
+            'alerts', 'activeStaysByRoom', 'roomReservationsToday', 'properties', 'propertyId'
         ));
     }
 
@@ -498,9 +613,39 @@ class HotelDashboardController extends Controller
         return view('hotel.settings.index', compact('property'));
     }
 
-    private function currentPropertyId(): ?int
+    private function currentPropertyId(?Request $request = null): ?int
     {
         $companyId = (int) auth()->user()->company_id;
+
+        if ($request && $request->has('property_id')) {
+            $requested = (string) $request->query('property_id');
+            if ($requested === 'all' || $requested === '') {
+                session(['hotel_property_id' => 'all']);
+                return null;
+            }
+
+            $candidate = HotelProperty::query()
+                ->where('company_id', $companyId)
+                ->where('id', (int) $requested)
+                ->value('id');
+
+            if ($candidate) {
+                session(['hotel_property_id' => (int) $candidate]);
+                return (int) $candidate;
+            }
+        }
+
+        $sessionProperty = session('hotel_property_id');
+        if ($sessionProperty === 'all') {
+            return null;
+        }
+        if ((int) $sessionProperty > 0) {
+            $exists = HotelProperty::query()->where('company_id', $companyId)->where('id', (int) $sessionProperty)->exists();
+            if ($exists) {
+                return (int) $sessionProperty;
+            }
+        }
+
         $branchId = auth()->user()->branch_id;
 
         $property = HotelProperty::where('company_id', $companyId)

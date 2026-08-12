@@ -7,6 +7,7 @@ use App\Models\Reservation;
 use App\Models\Stay;
 use App\Models\GuestFolio;
 use App\Models\HotelHousekeepingTask;
+use App\Models\HotelOperationalEvent;
 use App\Models\HotelRoom;
 use App\Services\Hotel\HotelFolioService;
 use App\Support\LedgerService;
@@ -87,6 +88,16 @@ class CheckInController extends Controller
     {
         abort_unless($reservation->company_id == auth()->user()->company_id, 404);
 
+        if ($reservation->room_id) {
+            $room = HotelRoom::query()
+                ->where('company_id', $reservation->company_id)
+                ->find((int) $reservation->room_id);
+
+            if ($room && (string) $room->housekeeping_status === 'dirty' && !$this->canOverrideDirtyCheckin()) {
+                return back()->withErrors(['error' => 'Room Not Ready: selected room is still dirty. Complete housekeeping or use authorized override.']);
+            }
+        }
+
         DB::beginTransaction();
         try {
             $stay = Stay::create([
@@ -122,6 +133,20 @@ class CheckInController extends Controller
             ]);
 
             $reservation->update(['status' => 'checked_in','checkin_id' => $stay->id]);
+
+            HotelOperationalEvent::create([
+                'company_id' => $reservation->company_id,
+                'property_id' => $reservation->property_id,
+                'reservation_id' => $reservation->id,
+                'stay_id' => $stay->id,
+                'customer_id' => $reservation->customer_id,
+                'room_id' => $reservation->room_id,
+                'event_type' => 'stay.checked_in',
+                'title' => 'Checked in',
+                'description' => 'Guest checked in successfully.',
+                'meta' => ['reservation_number' => $reservation->reservation_number],
+                'created_by' => auth()->id(),
+            ]);
 
             DB::commit();
             return redirect()->route('hotel.folios.show', $folio)->with('success','Checked in successfully');
@@ -272,6 +297,21 @@ class CheckInController extends Controller
             if ($stay->reservation) {
                 $stay->reservation->update(['status' => 'completed','checkout_id' => $stay->id]);
             }
+
+            HotelOperationalEvent::create([
+                'company_id' => $stay->company_id,
+                'property_id' => $stay->property_id,
+                'reservation_id' => $stay->reservation_id,
+                'stay_id' => $stay->id,
+                'customer_id' => $stay->customer_id,
+                'room_id' => $stay->room_id,
+                'event_type' => 'stay.checked_out',
+                'title' => 'Checked out',
+                'description' => 'Guest checked out and room marked dirty for housekeeping.',
+                'meta' => ['folio_id' => $folio->id, 'remaining_balance' => $balance],
+                'created_by' => auth()->id(),
+            ]);
+
             DB::commit();
             return back()->with('success','Checked out and folio settled successfully');
         } catch (\Exception $e) {
@@ -291,5 +331,11 @@ class CheckInController extends Controller
             : (session('active_branch_name') ? (string) session('active_branch_name') : null);
 
         return [$branchId, $branchName];
+    }
+
+    private function canOverrideDirtyCheckin(): bool
+    {
+        $role = strtolower((string) (auth()->user()->role ?? ''));
+        return in_array($role, ['super_admin', 'administrator', 'admin', 'manager'], true);
     }
 }

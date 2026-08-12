@@ -682,6 +682,11 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
     Route::delete('/rooms/{room}', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'destroy'])->name('rooms.destroy');
     Route::get('/rooms-status', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'roomStatus'])->name('rooms.status');
     Route::get('/rooms-calendar', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'roomCalendar'])->name('rooms.calendar');
+    Route::post('/rooms-calendar/quick-create', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'quickCreateFromCalendar'])->name('rooms.calendar.quick_create');
+    Route::post('/rooms-calendar/block-room', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'blockRoom'])->name('rooms.calendar.block_room');
+    Route::post('/reservations/{reservation}/assign-room', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'assignRoom'])->name('reservations.assign_room');
+    Route::post('/reservations/{reservation}/extend', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'extendReservation'])->name('reservations.extend');
+    Route::post('/stays/{stay}/change-room', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'changeRoom'])->name('stays.change_room');
 
     Route::get('/rate-plans', [\App\Http\Controllers\Hotel\HotelRatePlanController::class, 'index'])->name('rate_plans.index');
     Route::post('/rate-plans', [\App\Http\Controllers\Hotel\HotelRatePlanController::class, 'store'])->name('rate_plans.store');
@@ -724,6 +729,7 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
     Route::get('/group-bookings', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'groupBookings'])->name('group_bookings.index');
     Route::get('/booking-sources', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'bookingSources'])->name('booking_sources.index');
     Route::get('/reports', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'reports'])->name('reports.index');
+    Route::get('/search', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'search'])->name('search');
 
     Route::get('/housekeeping', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'index'])->name('housekeeping.index');
     Route::post('/housekeeping/rooms/{room}/dirty', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'markDirty'])->name('housekeeping.rooms.dirty');
