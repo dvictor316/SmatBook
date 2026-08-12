@@ -48,8 +48,8 @@ return new class extends Migration
             $table->unsignedBigInteger('checkout_id')->nullable()->index();
             $table->timestamps();
 
-            $table->unique(['company_id', 'reservation_number']);
-            $table->index(['company_id','property_id','arrival_date','departure_date']);
+            $table->unique(['company_id', 'reservation_number'], 'res_company_resno_uq');
+            $table->index(['company_id','property_id','arrival_date','departure_date'], 'res_cmp_prop_arr_dep_idx');
         });
     }
 
