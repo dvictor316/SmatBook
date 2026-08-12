@@ -621,6 +621,17 @@
 
                 <li class="menu-title"><span>Sales &amp; Customers</span></li>
 
+                {{-- HOTEL MANAGEMENT --}}
+                @if(Route::has('super_admin.hotels.index'))
+                <li class="menu-title"><span>Hotel Management</span></li>
+                <li class="submenu {{ Request::is('superadmin/hotels*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fas fa-hotel"></i><span>Hotel Management</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}">Hotel Overview</a></li>
+                    </ul>
+                </li>
+                @endif
+
                 <li class="{{ request()->routeIs('sales.index', 'sales.show', 'sales.create', 'sales.edit', 'sales.pdf', 'sales.invoice.show', 'sales.invoice.print') ? 'active' : '' }}">
                     <a href="{{ route('sales.index') }}"><i class="fas fa-receipt"></i><span>Sales</span></a>
                 </li>

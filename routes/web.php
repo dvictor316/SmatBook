@@ -530,6 +530,9 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     Route::controller(CompanyController::class)->prefix('companies')->name('companies.')->group(function () {
         Route::post('/{company}/impersonate', 'impersonate')->name('impersonate');
     });
+
+    // Hotel Management (Super Admin)
+    Route::get('/hotels', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'index'])->name('hotels.index');
     
     // Domains
     Route::controller(DomainController::class)->group(function () {
