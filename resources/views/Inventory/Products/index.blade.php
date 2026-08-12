@@ -88,42 +88,6 @@
         background: #eef2ff;
     }
 
-    #addProductModal .modal-content {
-        color: #111827;
-    }
-
-    #addProductModal .modal-title {
-        color: #2b0b4f;
-        font-weight: 800;
-    }
-
-    #addProductModal .form-label {
-        color: #334155;
-        font-weight: 700;
-    }
-
-    #addProductModal .form-control,
-    #addProductModal .form-select {
-        color: #111827;
-        border-color: #cbd5e1;
-        background-color: #fff;
-        font-weight: 500;
-    }
-
-    #addProductModal .form-control::placeholder {
-        color: #64748b;
-        opacity: 1;
-    }
-
-    #addProductModal .text-muted {
-        color: #64748b !important;
-    }
-
-    #addProductModal .form-control:focus,
-    #addProductModal .form-select:focus {
-        border-color: #2563eb;
-        box-shadow: 0 0 0 0.18rem rgba(37, 99, 235, 0.16);
-    }
 
     .inventory-toolbar {
         display: grid;
@@ -442,9 +406,9 @@
                         </ul>
                     </div>
 
-                    <button type="button" class="btn btn-success desktop-add-product-trigger inventory-tool-btn inventory-toolbar-add" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                    <a href="{{ route('add-products') }}" class="btn btn-success desktop-add-product-trigger inventory-tool-btn inventory-toolbar-add">
                         <i class="fa fa-plus"></i> Add Product
-                    </button>
+                    </a>
                     @if($showStockTransferModal)
                         <button type="button" class="btn btn-outline-dark inventory-tool-btn inventory-toolbar-transfer" data-bs-toggle="modal" data-bs-target="#transferStockModal">
                             <i class="fas fa-right-left"></i> Transfer Stock
@@ -565,10 +529,10 @@
     </div>
 </div>
 
-<button type="button" class="mobile-add-product-trigger no-print" data-bs-toggle="modal" data-bs-target="#addProductModal" aria-label="Add product">
+<a href="{{ route('add-products') }}" class="mobile-add-product-trigger no-print" aria-label="Add product">
     <i class="fas fa-plus"></i>
     <span>Add Product</span>
-</button>
+</a>
 
 @if($showStockTransferModal)
 <div class="modal fade" id="transferStockModal" tabindex="-1" aria-hidden="true">
@@ -626,136 +590,6 @@
 </div>
 @endif
 
-{{-- MODAL: ADD PRODUCT --}}
-<div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <form method="POST" action="{{ route('inventory.Products.store') }}" enctype="multipart/form-data" id="quick_add_product_form">
-                @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title">Add New Product</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Product Name</label>
-                            <input type="text" name="name" class="form-control" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">SKU</label>
-                            <input type="text" name="sku" class="form-control" placeholder="Leave blank to auto-generate">
-                            <small class="text-muted">If the product does not come with a code, the system will generate a unique SKU.</small>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Barcode</label>
-                            <input type="text" name="barcode" class="form-control" placeholder="Scan or type barcode">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Category</label>
-                            <div class="input-group">
-                                <select name="category_id" id="product_category_select" class="form-select" required>
-                                    <?php foreach ($categories as $cat): ?>
-                                        <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">+</button>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Base Unit (e.g. pcs)</label>
-                            <input type="text" name="base_unit_name" class="form-control" value="pcs" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Default Unit Type</label>
-                            <select name="unit_type" class="form-select">
-                                <option value="unit">Unit</option>
-                                <option value="sachet">Sachet</option>
-                                <option value="roll">Roll</option>
-                                <option value="carton">Carton</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Stock Branch</label>
-                            <select name="branch_id" class="form-select">
-                                <option value="">Use Active Branch</option>
-                                <?php foreach ($branchOptions as $branch): ?>
-                                    <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Unit Total <span class="text-muted d-block small" id="quick_unit_total_hint">Total units inside one carton</span></label>
-                            <input type="number" id="quick_unit_total_per_carton" class="form-control" value="0" min="0" step="0.01">
-                            <small class="text-muted" id="quick_unit_total_help">Type the full number of sellable units inside one carton first.</small>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Roll Content <span class="text-muted d-block small" id="quick_roll_content_hint">Units per roll</span></label>
-                            <input type="number" name="units_per_roll" min="0" class="form-control" value="0">
-                            <small class="text-muted" id="quick_roll_content_help">Leave `0` if the product is sold in cartons and units only.</small>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Carton Content <span class="text-muted d-block small" id="quick_carton_content_hint">Auto-calculated rolls per carton</span></label>
-                            <input type="number" name="units_per_carton" min="0" step="0.01" class="form-control" value="0">
-                            <small class="text-muted" id="quick_carton_content_help">This is calculated from unit total and roll content. If rolls are not used, it matches the unit total.</small>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Retail / Default Price</label>
-                            <input type="number" step="0.01" name="price" class="form-control" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Purchase Price</label>
-                            <input type="number" step="0.01" name="purchase_price" class="form-control" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Wholesale Price</label>
-                            <input type="number" step="0.01" name="wholesale_price" class="form-control">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Special Discount Price</label>
-                            <input type="number" step="0.01" name="special_price" class="form-control">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label" id="quick_units_per_carton_label">Units Per Carton</label>
-                            <input type="text" class="form-control bg-light" id="quick_units_per_carton_preview" value="0 Units" readonly>
-                            <small class="text-muted">Packaging preview only. This does not increase stock until you enter opening cartons, rolls, or loose units below.</small>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Opening Roll Quantity</label>
-                            <input type="number" step="0.01" name="stock_rolls" class="form-control" value="0">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Opening Carton Quantity</label>
-                            <input type="number" step="0.01" name="stock_cartons" class="form-control" value="0">
-                            <small class="text-muted">Cartons convert through rolls when present, or directly to pieces when rolls are not used.</small>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" id="quick_opening_unit_label">Opening Loose Unit Quantity</label>
-                            <input type="number" step="0.01" name="stock_units" class="form-control" value="0">
-                            <small class="text-muted">Enter only the loose units/pieces already on hand, not the carton definition above.</small>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Calculated Total Opening Stock</label>
-                            <input type="text" class="form-control bg-light" id="quick_stock_preview" value="0 Units" readonly>
-                            <input type="hidden" name="stock" id="quick_final_stock_input" value="">
-                            <small class="text-muted">Calculated from opening cartons + opening rolls + opening loose units only.</small>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Product Image</label>
-                            <input type="file" name="image" id="quick_add_product_image" class="form-control">
-                            <small class="text-muted">Any file extension can be uploaded if the browser sends it as a valid file.</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Save Product</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
 <div class="modal fade" id="importProductsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -796,26 +630,6 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="submit" class="btn btn-primary">Import Stock Spreadsheet</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-{{-- MODAL: QUICK ADD CATEGORY --}}
-<div class="modal fade" id="addCategoryModal" tabindex="-1" style="z-index: 1060;">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form id="ajaxAddCategoryForm">
-                @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title">Quick Category</h5>
-                </div>
-                <div class="modal-body">
-                    <input type="text" name="name" id="new_category_name" class="form-control" placeholder="Category Name" required>
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Add</button>
                 </div>
             </form>
         </div>
@@ -1085,98 +899,6 @@
             }
         });
 
-        $('#quick_add_product_form').on('submit', function() {
-            const imageInput = document.getElementById('quick_add_product_image');
-            if (imageInput && (!imageInput.files || imageInput.files.length === 0)) {
-                imageInput.disabled = true;
-            }
-        });
-
-        function refreshQuickPackagingLabels() {
-            const baseUnitName = ($('input[name="base_unit_name"]').val() || 'unit').trim();
-            const unitLabel = baseUnitName.length ? baseUnitName : 'unit';
-            const titleUnit = unitLabel.charAt(0).toUpperCase() + unitLabel.slice(1);
-
-            $('#quick_unit_total_hint').text('Total ' + unitLabel + 's inside one carton');
-            $('#quick_unit_total_help').text('Type the full number of sellable ' + unitLabel + 's inside one carton first.');
-            $('#quick_roll_content_hint').text(unitLabel + 's per roll');
-            $('#quick_roll_content_help').text('Leave `0` if the product is sold in cartons and ' + unitLabel + 's only.');
-            $('#quick_carton_content_hint').text('Auto-calculated rolls per carton');
-            $('#quick_carton_content_help').text('This is calculated from total ' + unitLabel + 's and ' + unitLabel + 's per roll. If rolls are not used, it matches the unit total.');
-            $('#quick_units_per_carton_label').text(titleUnit + 's Per Carton');
-            $('#quick_opening_unit_label').text('Opening Loose ' + titleUnit + ' Quantity');
-        }
-
-        function calculateQuickCartonContent() {
-            const unitTotal = parseFloat($('#quick_unit_total_per_carton').val()) || 0;
-            const unitsPerRoll = parseFloat($('#quick_add_product_form').find('input[name="units_per_roll"]').val()) || 0;
-            const cartonContent = unitsPerRoll > 0 ? (unitTotal / unitsPerRoll) : unitTotal;
-
-            $('#quick_add_product_form').find('input[name="units_per_carton"]').val(Number.isFinite(cartonContent) ? cartonContent : 0);
-            $('#quick_units_per_carton_preview').val(unitTotal.toLocaleString() + ' Units');
-        }
-
-        function calculateQuickStock() {
-            const cartons = parseFloat($('input[name="stock_cartons"]').val()) || 0;
-            const rolls = parseFloat($('input[name="stock_rolls"]').val()) || 0;
-            const sachets = parseFloat($('input[name="stock_units"]').val()) || 0;
-            const rollsPerCarton = parseFloat($('input[name="units_per_carton"]').val()) || 0;
-            const sachetsPerRoll = parseFloat($('input[name="units_per_roll"]').val()) || 0;
-
-            const fromCartons = sachetsPerRoll > 0 ? cartons * rollsPerCarton * sachetsPerRoll : cartons * rollsPerCarton;
-            const fromRolls = sachetsPerRoll > 0 ? rolls * sachetsPerRoll : rolls;
-            const total = fromCartons + fromRolls + sachets;
-            $('#quick_stock_preview').val(total.toLocaleString() + ' Units');
-            $('#quick_final_stock_input').val(Math.round(total));
-        }
-
-        $('#quick_add_product_form').find('input[name="stock_cartons"], input[name="stock_rolls"], input[name="stock_units"], input[name="units_per_carton"], input[name="units_per_roll"], #quick_unit_total_per_carton').on('input', function() {
-            if ($(this).attr('name') === 'units_per_roll' || this.id === 'quick_unit_total_per_carton') {
-                calculateQuickCartonContent();
-            }
-            calculateQuickStock();
-        });
-
-        $('#quick_add_product_form').find('input[name="base_unit_name"]').on('input', function() {
-            refreshQuickPackagingLabels();
-        });
-
-        refreshQuickPackagingLabels();
-        calculateQuickCartonContent();
-        calculateQuickStock();
-
-        // AJAX Category Store
-        $('#ajaxAddCategoryForm').on('submit', function(e) {
-            e.preventDefault();
-            const form = this;
-            const btn = $(this).find('button[type="submit"]');
-            btn.prop('disabled', true);
-            
-            fetch("{{ route('categories.store') }}", {
-                method: "POST",
-                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({ name: $('#new_category_name').val() })
-            })
-            .then(async (res) => {
-                const data = await res.json();
-                if (!res.ok) {
-                    const msg = data?.message || Object.values(data?.errors || {})?.[0]?.[0] || 'Failed to add category.';
-                    throw new Error(msg);
-                }
-                return data;
-            })
-            .then(data => {
-                if(data.data) {
-                    $('#product_category_select').append(new Option(data.data.name, data.data.id, true, true));
-                    bootstrap.Modal.getInstance(document.getElementById('addCategoryModal')).hide();
-                    form.reset();
-                }
-            })
-            .catch((err) => {
-                alert(err.message || 'Unable to add category.');
-            })
-            .finally(() => btn.prop('disabled', false));
-        });
     });
 </script>
 @endpush
