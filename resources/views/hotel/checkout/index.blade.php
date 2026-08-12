@@ -77,6 +77,30 @@
                 </div>
             </div>
         </div>
+
+        @if($selectedStay)
+            <div class="card mt-3">
+                <div class="card-header"><h5 class="mb-0">Detailed Folio</h5></div>
+                <div class="card-body table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead><tr><th>Date</th><th>Description</th><th>Department</th><th>Type</th><th>Amount</th></tr></thead>
+                        <tbody>
+                        @forelse($folioItems as $item)
+                            <tr>
+                                <td>{{ optional($item->service_date)->format('d M Y') }}</td>
+                                <td>{{ $item->description }}</td>
+                                <td>{{ strtoupper((string) ($item->service_code ?? '-')) }}</td>
+                                <td>{{ ucfirst(str_replace('_', ' ', (string) $item->type)) }}</td>
+                                <td>{{ number_format((float) $item->amount, 2) }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="5" class="text-muted">No folio line items available.</td></tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
         <div class="mt-3">{{ $stays->links() }}</div>
     </div>
 </div>

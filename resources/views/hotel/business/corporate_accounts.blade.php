@@ -3,7 +3,12 @@
 @section('content')
 <div class="page-wrapper">
     <div class="content container-fluid">
-        <h3 class="mb-3">Corporate Accounts</h3>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h3 class="mb-0">Corporate Accounts</h3>
+                <p class="text-muted mb-0">B2B receivables and company-ledger relationships</p>
+            </div>
+        </div>
         <div class="card">
             <div class="card-body table-responsive">
                 <table class="table table-sm align-middle mb-0">

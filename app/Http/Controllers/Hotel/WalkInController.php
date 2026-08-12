@@ -8,13 +8,36 @@ use App\Models\Stay;
 use App\Models\GuestFolio;
 use App\Models\HotelProperty;
 use App\Models\HotelRoom;
+use App\Models\HotelRoomType;
 use Illuminate\Support\Facades\DB;
 
 class WalkInController extends Controller
 {
     public function create()
     {
-        return view('hotel.walkin.create');
+        $companyId = (int) auth()->user()->company_id;
+        $property = HotelProperty::query()
+            ->where('company_id', $companyId)
+            ->when(auth()->user()->branch_id, fn($q) => $q->where('branch_id', auth()->user()->branch_id))
+            ->first();
+
+        $rooms = HotelRoom::query()
+            ->with('type')
+            ->where('company_id', $companyId)
+            ->when($property?->id, fn ($q) => $q->where('property_id', $property->id))
+            ->where('is_active', true)
+            ->where('operational_status', 'available')
+            ->orderBy('room_number')
+            ->get();
+
+        $roomTypes = HotelRoomType::query()
+            ->where('company_id', $companyId)
+            ->when($property?->id, fn ($q) => $q->where('property_id', $property->id))
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('hotel.walkin.create', compact('property', 'rooms', 'roomTypes'));
     }
 
     public function store(Request $request)

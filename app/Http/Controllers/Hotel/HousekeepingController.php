@@ -4,20 +4,73 @@ namespace App\Http\Controllers\Hotel;
 
 use App\Http\Controllers\Controller;
 use App\Models\HotelHousekeepingTask;
+use App\Models\HotelProperty;
 use App\Models\HotelRoom;
+use App\Models\Reservation;
+use App\Models\Stay;
 use Illuminate\Http\Request;
 
 class HousekeepingController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $companyId = (int) auth()->user()->company_id;
+        $propertyId = HotelProperty::query()
+            ->where('company_id', $companyId)
+            ->when(auth()->user()->branch_id, fn ($query) => $query->where('branch_id', auth()->user()->branch_id))
+            ->value('id');
+
         $tasks = HotelHousekeepingTask::query()
-            ->where('company_id', auth()->user()->company_id)
+            ->with(['room.type', 'stay.customer'])
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->when($request->filled('priority'), fn ($query) => $query->where('priority', $request->query('priority')))
             ->latest('id')
-            ->paginate(30);
+            ->get()
+            ->groupBy(fn ($task) => (string) $task->status);
+
+        $departedDirtyRooms = HotelRoom::query()
+            ->with('type')
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->where('housekeeping_status', 'dirty')
+            ->whereHas('property')
+            ->orderBy('room_number')
+            ->get();
+
+        $arrivalsWaitingForRoom = Reservation::query()
+            ->with(['customer', 'roomType', 'room'])
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->whereDate('arrival_date', now()->toDateString())
+            ->where(function ($query) {
+                $query->whereNull('room_id')
+                    ->orWhereHas('room', fn ($roomQuery) => $roomQuery->where('housekeeping_status', 'dirty'));
+            })
+            ->orderBy('arrival_date')
+            ->limit(12)
+            ->get();
+
+        $priorityTasks = HotelHousekeepingTask::query()
+            ->with(['room.type', 'stay.customer'])
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->where('priority', 'high')
+            ->whereIn('status', ['open', 'assigned', 'cleaning'])
+            ->latest('id')
+            ->limit(12)
+            ->get();
+
+        $summary = [
+            'dirty' => HotelRoom::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->where('housekeeping_status', 'dirty')->count(),
+            'assigned' => (int) ($tasks->get('assigned')?->count() ?? 0),
+            'cleaning' => (int) ($tasks->get('cleaning')?->count() ?? 0),
+            'clean' => HotelRoom::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->where('housekeeping_status', 'clean')->count(),
+            'inspection' => (int) ($tasks->get('inspection')?->count() ?? 0),
+        ];
 
         if (view()->exists('hotel.housekeeping.index')) {
-            return view('hotel.housekeeping.index', compact('tasks'));
+            return view('hotel.housekeeping.index', compact('tasks', 'summary', 'departedDirtyRooms', 'arrivalsWaitingForRoom', 'priorityTasks'));
         }
 
         return response()->json(['data' => $tasks]);

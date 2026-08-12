@@ -17,7 +17,8 @@ class FolioController extends Controller
 
     public function index()
     {
-        $folios = GuestFolio::where('company_id', auth()->user()->company_id)
+        $folios = GuestFolio::with(['customer', 'stay.room'])
+            ->where('company_id', auth()->user()->company_id)
             ->when(auth()->user()->branch_id, function ($q) {
                 $propertyId = \App\Models\HotelProperty::where('company_id', auth()->user()->company_id)
                     ->where('branch_id', auth()->user()->branch_id)
@@ -35,8 +36,26 @@ class FolioController extends Controller
     public function show(GuestFolio $folio)
     {
         abort_unless($folio->company_id == auth()->user()->company_id, 404);
-        $items = FolioItem::where('folio_id', $folio->id)->latest('id')->get();
-        return view('hotel.folios.show', compact('folio','items'));
+        $folio->load(['customer', 'stay.room', 'reservation']);
+        $items = FolioItem::where('folio_id', $folio->id)
+            ->orderBy('service_date')
+            ->orderBy('id')
+            ->get();
+
+        $runningBalance = 0;
+        $ledgerItems = $items->map(function ($item) use (&$runningBalance) {
+            $isPayment = in_array((string) $item->type, ['payment', 'deposit_applied'], true);
+            $charge = $isPayment ? 0 : (float) $item->amount;
+            $payment = $isPayment ? (float) $item->amount : 0;
+            $runningBalance += $charge;
+            $runningBalance -= $payment;
+            $item->ledger_charge = $charge;
+            $item->ledger_payment = $payment;
+            $item->ledger_running_balance = $runningBalance;
+            return $item;
+        });
+
+        return view('hotel.folios.show', ['folio' => $folio, 'items' => $ledgerItems]);
     }
 
     public function storeItem(Request $request, GuestFolio $folio)

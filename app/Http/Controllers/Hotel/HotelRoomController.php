@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\HotelRoom;
 use App\Models\HotelRoomType;
 use App\Models\HotelProperty;
+use App\Models\Reservation;
+use App\Models\Stay;
 use Illuminate\Support\Facades\Auth;
 
 class HotelRoomController extends Controller
@@ -15,17 +17,54 @@ class HotelRoomController extends Controller
         $this->middleware('auth');
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $companyId = Auth::user()->company_id;
         $propertyId = HotelProperty::where('company_id', $companyId)
             ->when(Auth::user()->branch_id, fn($q) => $q->where('branch_id', Auth::user()->branch_id))
             ->value('id');
 
-        $rooms = HotelRoom::where('company_id', $companyId)
+        $status = trim((string) $request->query('status', ''));
+        $viewMode = (string) $request->query('view', 'grid');
+
+        $rooms = HotelRoom::with('type')
+            ->where('company_id', $companyId)
             ->when($propertyId, fn($q) => $q->where('property_id', $propertyId))
+            ->when($status !== '', fn ($q) => $q->where(function ($sub) use ($status) {
+                $sub->where('operational_status', $status)
+                    ->orWhere('housekeeping_status', $status);
+            }))
             ->paginate(30);
-        return view('hotel.rooms.index', compact('rooms'));
+
+        $activeStays = Stay::query()
+            ->with('customer')
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn($q) => $q->where('property_id', $propertyId))
+            ->where('status', 'checked_in')
+            ->whereIn('room_id', $rooms->pluck('id'))
+            ->get()
+            ->keyBy('room_id');
+
+        $nextReservations = Reservation::query()
+            ->with('customer')
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn($q) => $q->where('property_id', $propertyId))
+            ->whereIn('status', ['reserved', 'confirmed'])
+            ->whereIn('room_id', $rooms->pluck('id'))
+            ->whereDate('arrival_date', '>=', now()->toDateString())
+            ->orderBy('arrival_date')
+            ->get()
+            ->groupBy('room_id')
+            ->map(fn ($items) => $items->first());
+
+        $summary = [
+            'available' => HotelRoom::query()->where('company_id', $companyId)->when($propertyId, fn($q) => $q->where('property_id', $propertyId))->where('operational_status', 'available')->count(),
+            'occupied' => HotelRoom::query()->where('company_id', $companyId)->when($propertyId, fn($q) => $q->where('property_id', $propertyId))->where('operational_status', 'occupied')->count(),
+            'dirty' => HotelRoom::query()->where('company_id', $companyId)->when($propertyId, fn($q) => $q->where('property_id', $propertyId))->where('housekeeping_status', 'dirty')->count(),
+            'maintenance' => HotelRoom::query()->where('company_id', $companyId)->when($propertyId, fn($q) => $q->where('property_id', $propertyId))->whereIn('operational_status', ['maintenance', 'out_of_order'])->count(),
+        ];
+
+        return view('hotel.rooms.index', compact('rooms', 'activeStays', 'nextReservations', 'summary', 'status', 'viewMode'));
     }
 
     public function create()

@@ -28,4 +28,14 @@ class HotelHousekeepingTask extends Model
     protected $casts = [
         'completed_at' => 'datetime',
     ];
+
+    public function room()
+    {
+        return $this->belongsTo(HotelRoom::class, 'room_id');
+    }
+
+    public function stay()
+    {
+        return $this->belongsTo(Stay::class, 'stay_id');
+    }
 }

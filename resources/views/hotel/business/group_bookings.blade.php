@@ -3,7 +3,12 @@
 @section('content')
 <div class="page-wrapper">
     <div class="content container-fluid">
-        <h3 class="mb-3">Group Bookings</h3>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h3 class="mb-0">Group Bookings</h3>
+                <p class="text-muted mb-0">Organization-led bookings and rooming coordination</p>
+            </div>
+        </div>
         <div class="card">
             <div class="card-body table-responsive">
                 <table class="table table-sm align-middle mb-0">

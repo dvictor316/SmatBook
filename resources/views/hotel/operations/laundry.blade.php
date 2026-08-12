@@ -3,7 +3,17 @@
 @section('content')
 <div class="page-wrapper">
     <div class="content container-fluid">
-        <h3 class="mb-3">Laundry Operations</h3>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h3 class="mb-0">Laundry</h3>
+                <p class="text-muted mb-0">Laundry order tracking and folio charge review</p>
+            </div>
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-md-4"><div class="card"><div class="card-body"><small class="text-muted">Orders Logged</small><h4>{{ $orders->total() }}</h4></div></div></div>
+            <div class="col-md-4"><div class="card"><div class="card-body"><small class="text-muted">Recent Charges</small><h4>{{ $orders->count() }}</h4></div></div></div>
+            <div class="col-md-4"><div class="card"><div class="card-body"><small class="text-muted">Workflow</small><h4>Received to Delivered</h4></div></div></div>
+        </div>
         <div class="card">
             <div class="card-body table-responsive">
                 <table class="table table-sm align-middle mb-0">

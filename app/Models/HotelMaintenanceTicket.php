@@ -29,4 +29,9 @@ class HotelMaintenanceTicket extends Model
     protected $casts = [
         'resolved_at' => 'datetime',
     ];
+
+    public function room()
+    {
+        return $this->belongsTo(HotelRoom::class, 'room_id');
+    }
 }

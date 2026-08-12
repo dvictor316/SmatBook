@@ -4,20 +4,55 @@ namespace App\Http\Controllers\Hotel;
 
 use App\Http\Controllers\Controller;
 use App\Models\HotelMaintenanceTicket;
+use App\Models\HotelProperty;
 use App\Models\HotelRoom;
+use App\Models\Reservation;
 use Illuminate\Http\Request;
 
 class MaintenanceController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $companyId = (int) auth()->user()->company_id;
+        $propertyId = HotelProperty::query()
+            ->where('company_id', $companyId)
+            ->when(auth()->user()->branch_id, fn ($query) => $query->where('branch_id', auth()->user()->branch_id))
+            ->value('id');
+
         $tickets = HotelMaintenanceTicket::query()
-            ->where('company_id', auth()->user()->company_id)
+            ->with('room.type')
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->query('status')))
             ->latest('id')
-            ->paginate(30);
+            ->paginate(30)
+            ->withQueryString();
+
+        $rooms = HotelRoom::query()
+            ->with('type')
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->orderBy('room_number')
+            ->get();
+
+        $summary = [
+            'open' => HotelMaintenanceTicket::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->where('status', 'open')->count(),
+            'urgent' => HotelMaintenanceTicket::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->whereIn('severity', ['high', 'critical'])->whereIn('status', ['open', 'in_progress'])->count(),
+            'in_progress' => HotelMaintenanceTicket::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->where('status', 'in_progress')->count(),
+            'completed_today' => HotelMaintenanceTicket::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->where('status', 'resolved')->whereDate('resolved_at', now()->toDateString())->count(),
+        ];
+
+        $reservationConflicts = Reservation::query()
+            ->with(['customer', 'room'])
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->whereDate('arrival_date', '>=', now()->toDateString())
+            ->whereHas('room', fn ($query) => $query->whereIn('operational_status', ['maintenance', 'out_of_order']))
+            ->limit(10)
+            ->get();
 
         if (view()->exists('hotel.maintenance.index')) {
-            return view('hotel.maintenance.index', compact('tickets'));
+            return view('hotel.maintenance.index', compact('tickets', 'rooms', 'summary', 'reservationConflicts'));
         }
 
         return response()->json(['data' => $tickets]);
