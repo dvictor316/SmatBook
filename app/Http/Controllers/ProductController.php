@@ -152,21 +152,81 @@ class ProductController extends Controller
         return collect([
             (object) ['id' => 1, 'name' => 'Piece', 'symbol' => 'pcs', 'status' => 'active'],
             (object) ['id' => 2, 'name' => 'Kilogram', 'symbol' => 'kg', 'status' => 'active'],
-            (object) ['id' => 3, 'name' => 'Litre', 'symbol' => 'L', 'status' => 'active'],
+            (object) ['id' => 3, 'name' => 'Litre', 'symbol' => 'litre', 'status' => 'active'],
             (object) ['id' => 4, 'name' => 'Pack', 'symbol' => 'pack', 'status' => 'active'],
         ]);
+    }
+
+    private function canonicalUnitDefinition(string $name, string $symbol): ?array
+    {
+        $nameKey = Str::lower(trim($name));
+        $symbolKey = Str::lower(trim($symbol));
+        $aliases = [
+            'piece' => ['name' => 'Piece', 'symbol' => 'pcs', 'keys' => ['piece', 'pieces', 'pc', 'pcs']],
+            'kilogram' => ['name' => 'Kilogram', 'symbol' => 'kg', 'keys' => ['kilogram', 'kilograms', 'kg', 'kilo']],
+            'litre' => ['name' => 'Litre', 'symbol' => 'litre', 'keys' => ['litre', 'liter', 'litres', 'liters', 'l']],
+            'pack' => ['name' => 'Pack', 'symbol' => 'pack', 'keys' => ['pack', 'packs', 'packet']],
+            'bag' => ['name' => 'Bag', 'symbol' => 'bag', 'keys' => ['bag', 'bags']],
+            'bottle' => ['name' => 'Bottle', 'symbol' => 'bottle', 'keys' => ['bottle', 'bottles']],
+            'carton' => ['name' => 'Carton', 'symbol' => 'ctn', 'keys' => ['carton', 'cartons', 'ctn']],
+            'dozen' => ['name' => 'Dozen', 'symbol' => 'doz', 'keys' => ['dozen', 'dozens', 'doz']],
+            'gram' => ['name' => 'Gram', 'symbol' => 'g', 'keys' => ['gram', 'grams', 'g']],
+        ];
+
+        foreach ($aliases as $key => $definition) {
+            if (in_array($nameKey, $definition['keys'], true) || in_array($symbolKey, $definition['keys'], true)) {
+                return ['key' => $key, 'name' => $definition['name'], 'symbol' => $definition['symbol']];
+            }
+        }
+
+        return null;
+    }
+
+    private function unitDuplicateKey(string $name, string $symbol): string
+    {
+        $definition = $this->canonicalUnitDefinition($name, $symbol);
+
+        return $definition['key'] ?? Str::lower(trim($name) . '|' . trim($symbol));
+    }
+    private function normalizeUnitRows($units)
+    {
+        return collect($units)
+            ->map(function ($unit) {
+                $definition = $this->canonicalUnitDefinition($unit->name ?? '', $unit->symbol ?? '');
+                $unit->name = $definition['name'] ?? trim((string) ($unit->name ?? ''));
+                $unit->symbol = $definition['symbol'] ?? trim((string) ($unit->symbol ?? ''));
+                $unit->status = $unit->status ?? 'active';
+                $unit->sort_key = $definition['key'] ?? Str::lower($unit->name . '|' . $unit->symbol);
+
+                return $unit;
+            })
+            ->filter(fn ($unit) => $unit->name !== '' && $unit->symbol !== '')
+            ->sortBy([
+                fn ($a, $b) => strcmp($a->sort_key, $b->sort_key),
+                fn ($a, $b) => ((int) ($a->company_id ?? 0) <=> (int) ($b->company_id ?? 0)) * -1,
+                fn ($a, $b) => ((int) ($a->user_id ?? 0) <=> (int) ($b->user_id ?? 0)) * -1,
+                fn ($a, $b) => (int) $a->id <=> (int) $b->id,
+            ])
+            ->unique('sort_key')
+            ->sortBy('name')
+            ->values()
+            ->map(function ($unit) {
+                unset($unit->sort_key);
+
+                return $unit;
+            });
     }
 
     private function unitRows(bool $activeOnly = true)
     {
         if (!Schema::hasTable('units')) {
-            return $this->fallbackUnits();
+            return $this->normalizeUnitRows($this->fallbackUnits());
         }
 
         $companyId = $this->tenantCompanyId();
         $userId = (int) (auth()->id() ?? 0);
 
-        return DB::table('units')
+        $units = DB::table('units')
             ->select('id', 'name', 'symbol', 'status', 'company_id', 'user_id')
             ->where(function ($query) use ($companyId, $userId) {
                 $query->whereNull('company_id');
@@ -183,9 +243,9 @@ class ProductController extends Controller
                 }
             })
             ->when($activeOnly, fn ($query) => $query->where('status', 'active'))
-            ->orderByRaw('company_id IS NOT NULL')
-            ->orderBy('name')
             ->get();
+
+        return $this->normalizeUnitRows($units);
     }
 
     private function visibleUnitQuery(int $id)
@@ -710,8 +770,9 @@ class ProductController extends Controller
         ]);
 
         $symbol = trim($validated['symbol']);
+        $duplicateKey = $this->unitDuplicateKey($validated['name'], $symbol);
         $duplicate = $this->unitRows(false)
-            ->contains(fn ($unit) => Str::lower($unit->symbol) === Str::lower($symbol));
+            ->contains(fn ($unit) => $this->unitDuplicateKey($unit->name, $unit->symbol) === $duplicateKey);
 
         if ($duplicate) {
             return back()->withErrors(['symbol' => 'This unit symbol already exists.'])->withInput();
@@ -743,9 +804,10 @@ class ProductController extends Controller
         ]);
 
         $symbol = trim($validated['symbol']);
+        $duplicateKey = $this->unitDuplicateKey($validated['name'], $symbol);
         $duplicate = $this->unitRows(false)
             ->filter(fn ($unit) => (int) $unit->id !== (int) $id)
-            ->contains(fn ($unit) => Str::lower($unit->symbol) === Str::lower($symbol));
+            ->contains(fn ($unit) => $this->unitDuplicateKey($unit->name, $unit->symbol) === $duplicateKey);
 
         if ($duplicate) {
             return back()->withErrors(['symbol' => 'This unit symbol already exists.'])->withInput();
