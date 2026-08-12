@@ -147,6 +147,101 @@ class ProductController extends Controller
         });
     }
 
+    private function fallbackUnits()
+    {
+        return collect([
+            (object) ['id' => 1, 'name' => 'Piece', 'symbol' => 'pcs', 'status' => 'active'],
+            (object) ['id' => 2, 'name' => 'Kilogram', 'symbol' => 'kg', 'status' => 'active'],
+            (object) ['id' => 3, 'name' => 'Litre', 'symbol' => 'L', 'status' => 'active'],
+            (object) ['id' => 4, 'name' => 'Pack', 'symbol' => 'pack', 'status' => 'active'],
+        ]);
+    }
+
+    private function unitRows(bool $activeOnly = true)
+    {
+        if (!Schema::hasTable('units')) {
+            return $this->fallbackUnits();
+        }
+
+        $companyId = $this->tenantCompanyId();
+        $userId = (int) (auth()->id() ?? 0);
+
+        return DB::table('units')
+            ->select('id', 'name', 'symbol', 'status', 'company_id', 'user_id')
+            ->where(function ($query) use ($companyId, $userId) {
+                $query->whereNull('company_id');
+
+                if ($companyId > 0) {
+                    $query->orWhere('company_id', $companyId);
+                }
+
+                if ($userId > 0) {
+                    $query->orWhere(function ($userUnits) use ($userId) {
+                        $userUnits->whereNull('company_id')
+                            ->where('user_id', $userId);
+                    });
+                }
+            })
+            ->when($activeOnly, fn ($query) => $query->where('status', 'active'))
+            ->orderByRaw('company_id IS NOT NULL')
+            ->orderBy('name')
+            ->get();
+    }
+
+    private function visibleUnitQuery(int $id)
+    {
+        $companyId = $this->tenantCompanyId();
+        $userId = (int) (auth()->id() ?? 0);
+
+        return DB::table('units')
+            ->where('id', $id)
+            ->where(function ($query) use ($companyId, $userId) {
+                $query->whereNull('company_id');
+
+                if ($companyId > 0) {
+                    $query->orWhere('company_id', $companyId);
+                }
+
+                if ($userId > 0) {
+                    $query->orWhere(function ($userUnits) use ($userId) {
+                        $userUnits->whereNull('company_id')
+                            ->where('user_id', $userId);
+                    });
+                }
+            });
+    }
+    private function applyProductUnitFields(array $validated): array
+    {
+        $unitId = !empty($validated['unit_id']) ? (int) $validated['unit_id'] : null;
+        $baseUnitId = !empty($validated['base_unit_id']) ? (int) $validated['base_unit_id'] : $unitId;
+        $purchaseUnitId = !empty($validated['purchase_unit_id']) ? (int) $validated['purchase_unit_id'] : null;
+        $conversionRate = isset($validated['conversion_rate']) && $validated['conversion_rate'] !== ''
+            ? (float) $validated['conversion_rate']
+            : null;
+
+        if (!$purchaseUnitId) {
+            $conversionRate = null;
+        }
+
+        foreach (['unit_id', 'base_unit_id', 'purchase_unit_id', 'conversion_rate'] as $column) {
+            unset($validated[$column]);
+        }
+
+        if (Schema::hasColumn('products', 'unit_id')) {
+            $validated['unit_id'] = $unitId;
+        }
+        if (Schema::hasColumn('products', 'base_unit_id')) {
+            $validated['base_unit_id'] = $baseUnitId;
+        }
+        if (Schema::hasColumn('products', 'purchase_unit_id')) {
+            $validated['purchase_unit_id'] = $purchaseUnitId;
+        }
+        if (Schema::hasColumn('products', 'conversion_rate')) {
+            $validated['conversion_rate'] = $conversionRate;
+        }
+
+        return $validated;
+    }
     private function clearDashboardMetricsCache(?string $branchId = null): void
     {
         $companyId = $this->tenantCompanyId();
@@ -596,16 +691,128 @@ class ProductController extends Controller
      */
     public function units()
     {
-        $units = [
-            (object)['name' => 'Unit', 'short_name' => 'unit'],
-            (object)['name' => 'Roll', 'short_name' => 'rl'],
-            (object)['name' => 'Carton', 'short_name' => 'ctn'],
-        ];
-
+        $units = $this->unitRows(false);
         $products = collect();
+
         return view('Inventory.Products.units', compact('products', 'units'));
     }
 
+    public function storeUnit(Request $request)
+    {
+        if (!Schema::hasTable('units')) {
+            return back()->with('error', 'Units table is not available yet. Please run migrations first.');
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:120',
+            'symbol' => 'required|string|max:30',
+            'status' => 'required|in:active,inactive',
+        ]);
+
+        $symbol = trim($validated['symbol']);
+        $duplicate = $this->unitRows(false)
+            ->contains(fn ($unit) => Str::lower($unit->symbol) === Str::lower($symbol));
+
+        if ($duplicate) {
+            return back()->withErrors(['symbol' => 'This unit symbol already exists.'])->withInput();
+        }
+
+        DB::table('units')->insert([
+            'company_id' => $this->tenantCompanyId() ?: null,
+            'user_id' => auth()->id(),
+            'name' => trim($validated['name']),
+            'symbol' => $symbol,
+            'status' => $validated['status'],
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return back()->with('success', 'Unit added successfully.');
+    }
+
+    public function updateUnit(Request $request, int $id)
+    {
+        if (!Schema::hasTable('units') || !$this->visibleUnitQuery($id)->exists()) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:120',
+            'symbol' => 'required|string|max:30',
+            'status' => 'required|in:active,inactive',
+        ]);
+
+        $symbol = trim($validated['symbol']);
+        $duplicate = $this->unitRows(false)
+            ->filter(fn ($unit) => (int) $unit->id !== (int) $id)
+            ->contains(fn ($unit) => Str::lower($unit->symbol) === Str::lower($symbol));
+
+        if ($duplicate) {
+            return back()->withErrors(['symbol' => 'This unit symbol already exists.'])->withInput();
+        }
+
+        $this->visibleUnitQuery($id)->update([
+            'name' => trim($validated['name']),
+            'symbol' => $symbol,
+            'status' => $validated['status'],
+            'updated_at' => now(),
+        ]);
+
+        return back()->with('success', 'Unit updated successfully.');
+    }
+
+    public function toggleUnit(int $id)
+    {
+        if (!Schema::hasTable('units')) {
+            abort(404);
+        }
+
+        $unit = $this->visibleUnitQuery($id)->first();
+        if (!$unit) {
+            abort(404);
+        }
+
+        $this->visibleUnitQuery($id)->update([
+            'status' => $unit->status === 'active' ? 'inactive' : 'active',
+            'updated_at' => now(),
+        ]);
+
+        return back()->with('success', 'Unit status updated.');
+    }
+
+    public function destroyUnit(int $id)
+    {
+        if (!Schema::hasTable('units')) {
+            abort(404);
+        }
+
+        $unit = $this->visibleUnitQuery($id)->first();
+        if (!$unit) {
+            abort(404);
+        }
+
+        $unitColumns = collect(['unit_id', 'base_unit_id', 'purchase_unit_id'])
+            ->filter(fn ($column) => Schema::hasColumn('products', $column))
+            ->values();
+
+        $isUsed = Schema::hasTable('products') && $unitColumns->isNotEmpty() && DB::table('products')
+            ->where(function ($query) use ($id, $unitColumns) {
+                foreach ($unitColumns as $column) {
+                    $query->orWhere($column, $id);
+                }
+            })
+            ->exists();
+
+        if ($isUsed) {
+            $this->visibleUnitQuery($id)->update(['status' => 'inactive', 'updated_at' => now()]);
+
+            return back()->with('success', 'Unit is already used by products, so it was deactivated instead of deleted.');
+        }
+
+        $this->visibleUnitQuery($id)->delete();
+
+        return back()->with('success', 'Unit deleted successfully.');
+    }
     /**
      * Create Product View
      */
@@ -615,7 +822,9 @@ class ProductController extends Controller
             ? Category::orderBy('name')->get()
             : collect();
         $availableBranches = $this->getAvailableBranches();
-        return view('Inventory.Products.add-products', compact('categories', 'availableBranches'));
+        $units = $this->unitRows();
+
+        return view('Inventory.Products.add-products', compact('categories', 'availableBranches', 'units'));
     }
 
     /**
@@ -640,6 +849,10 @@ class ProductController extends Controller
                 'units_per_roll'   => 'nullable|integer|min:0',
                 'base_unit_name'   => 'required|string|max:100',
                 'category_id'      => 'required|exists:categories,id',
+                'unit_id'          => 'required|integer' . (Schema::hasTable('units') ? '|exists:units,id' : ''),
+                'base_unit_id'     => 'nullable|integer' . (Schema::hasTable('units') ? '|exists:units,id' : ''),
+                'purchase_unit_id' => 'nullable|integer' . (Schema::hasTable('units') ? '|exists:units,id' : ''),
+                'conversion_rate'  => 'nullable|numeric|min:0',
                 'unit_type'        => 'required|in:unit,sachet,roll,carton',
                 'branch_id'        => 'nullable|string',
                 'reorder_level'    => 'nullable|integer|min:0',
@@ -689,6 +902,7 @@ class ProductController extends Controller
             } else {
                 unset($validated['special_price']);
             }
+            $validated = $this->applyProductUnitFields($validated);
             $validated['sku'] = $this->generateUniqueSku($validated['sku'] ?? null, $validated['name']);
 
             $calculatedStock = $validated['stock'] ?? null;
@@ -806,8 +1020,9 @@ class ProductController extends Controller
     {
         $product = Product::findOrFail($id);
         $categories = Category::orderBy('name')->get();
+        $units = $this->unitRows();
         
-        return view('Inventory.Products.edit', compact('product', 'categories'));
+        return view('Inventory.Products.edit', compact('product', 'categories', 'units'));
     }
 
 public function inventory(Request $request)
@@ -1113,6 +1328,10 @@ public function inventory(Request $request)
             'units_per_roll'   => 'nullable|integer|min:0',
             'base_unit_name'   => 'required|string|max:100',
             'category_id'      => 'required|exists:categories,id',
+            'unit_id'          => 'required|integer' . (Schema::hasTable('units') ? '|exists:units,id' : ''),
+            'base_unit_id'     => 'nullable|integer' . (Schema::hasTable('units') ? '|exists:units,id' : ''),
+            'purchase_unit_id' => 'nullable|integer' . (Schema::hasTable('units') ? '|exists:units,id' : ''),
+            'conversion_rate'  => 'nullable|numeric|min:0',
             'unit_type'        => 'required|in:unit,sachet,roll,carton',
             'status'           => 'required|in:active,inactive',
             'description'      => 'nullable|string',
@@ -1149,6 +1368,7 @@ public function inventory(Request $request)
         } else {
             unset($validated['special_price']);
         }
+        $validated = $this->applyProductUnitFields($validated);
         $validated['sku'] = $this->generateUniqueSku($validated['sku'] ?? null, $validated['name'], $product->id);
 
         $calculatedStock = $validated['stock'] ?? null;
