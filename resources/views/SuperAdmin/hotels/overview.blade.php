@@ -51,13 +51,16 @@
     .sa-cashier-side h3 { color:#fff; font-size:38px; }
     .sa-pad { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
     .sa-pad div { min-height:74px; border:1px solid #d8e2ee; border-radius:10px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:900; background:#fff; }
+    .sa-service-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-bottom:16px; }
+    .sa-service { min-height:132px; padding:16px; border-radius:14px; border:1px solid #d8e2ee; background:#fff; color:#09213d; text-decoration:none; box-shadow:0 10px 28px rgba(15,23,42,.06); }
+    .sa-service span { color:#d4a23a; text-transform:uppercase; letter-spacing:.12em; font-size:12px; font-weight:900; }
     .sa-report-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
     .sa-report { min-height:160px; background:#082f55; color:#fff; border-radius:14px; padding:18px; text-decoration:none; display:flex; flex-direction:column; justify-content:space-between; }
     .sa-report span { color:#f1c15c; letter-spacing:.12em; text-transform:uppercase; font-size:12px; font-weight:900; }
     .sa-health { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
     .sa-health-row { display:flex; justify-content:space-between; align-items:center; padding:14px; border:1px solid #dbe4ef; border-radius:12px; background:#fff; }
-    @media(max-width:1199px){.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-profile-grid,.sa-health{grid-template-columns:repeat(2,1fr)}.sa-workspace,.sa-cashier{grid-template-columns:1fr}.sa-board-row{grid-template-columns:1fr}}
-    @media(max-width:767px){.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-profile-grid,.sa-health{grid-template-columns:1fr}.sa-hero h2{font-size:23px}}
+    @media(max-width:1199px){.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health{grid-template-columns:repeat(2,1fr)}.sa-workspace,.sa-cashier{grid-template-columns:1fr}.sa-board-row{grid-template-columns:1fr}}
+    @media(max-width:767px){.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health{grid-template-columns:1fr}.sa-hero h2{font-size:23px}}
 </style>
 @endsection
 
@@ -120,13 +123,21 @@
         @if($panel === 'overview')
             <div class="sa-workspace">
                 <aside class="sa-rail"><h5>Enterprise Monitor</h5><a href="{{ route('super_admin.hotels.index', ['panel' => 'rooms']) }}"><strong>Room Rack</strong><br>Availability, occupied and reserved</a><a href="{{ route('super_admin.hotels.index', ['panel' => 'reservations']) }}"><strong>Reservations</strong><br>Booking pipeline and assignments</a><a href="{{ route('super_admin.hotels.index', ['panel' => 'folios']) }}"><strong>Cashier</strong><br>Folios and receivables</a><a href="{{ route('super_admin.hotels.index', ['panel' => 'reports']) }}"><strong>Reports</strong><br>Platform PMS intelligence</a></aside>
-                <main class="sa-grid">
+                <main>
+                    <div class="sa-service-grid">
+                        <a class="sa-service" href="{{ route('super_admin.hotels.index', ['panel' => 'revenue']) }}"><span>Restaurant</span><h5>Restaurant POS</h5><p class="text-muted mb-0">Food sales and room-posted meals.</p></a>
+                        <a class="sa-service" href="{{ route('super_admin.hotels.index', ['panel' => 'revenue']) }}"><span>Bar</span><h5>Bar & Lounge</h5><p class="text-muted mb-0">Drinks and lounge revenue.</p></a>
+                        <a class="sa-service" href="{{ route('super_admin.hotels.index', ['panel' => 'revenue']) }}"><span>Spa/Gym</span><h5>Wellness Centers</h5><p class="text-muted mb-0">Spa, gym and fitness charges.</p></a>
+                        <a class="sa-service" href="{{ route('super_admin.hotels.index', ['panel' => 'revenue']) }}"><span>Events</span><h5>Conference</h5><p class="text-muted mb-0">Events and banquet revenue.</p></a>
+                    </div>
+                    <div class="sa-grid">
                     <a class="sa-card" href="{{ route('super_admin.hotels.index', ['panel' => 'tenants']) }}"><span class="label">01 Tenant Control</span><h5>Hotel Tenants</h5><p class="text-muted mb-0">Inspect hotel-enabled companies, plan access and subscription readiness.</p></a>
                     <a class="sa-card" href="{{ route('super_admin.hotels.index', ['panel' => 'properties']) }}"><span class="label">02 Properties</span><h5>Property Directory</h5><p class="text-muted mb-0">Monitor branches/properties under each hotel tenant.</p></a>
                     <a class="sa-card" href="{{ route('super_admin.hotels.index', ['panel' => 'rooms']) }}"><span class="label">03 Room Board</span><h5>Room State Grid</h5><p class="text-muted mb-0">Cloudbeds-style operational room visibility.</p></a>
                     <a class="sa-card" href="{{ route('super_admin.hotels.index', ['panel' => 'reservations']) }}"><span class="label">04 Reservations</span><h5>Booking Timeline</h5><p class="text-muted mb-0">Arrival, departure and status tracking.</p></a>
                     <a class="sa-card" href="{{ route('super_admin.hotels.index', ['panel' => 'housekeeping']) }}"><span class="label">05 Housekeeping</span><h5>Cleaning Board</h5><p class="text-muted mb-0">Dirty, assigned, cleaning and inspection lanes.</p></a>
                     <a class="sa-card" href="{{ route('super_admin.hotels.index', ['panel' => 'night_audits']) }}"><span class="label">06 Night Audit</span><h5>Close Day</h5><p class="text-muted mb-0">Audit history and close-day monitoring.</p></a>
+                    </div>
                 </main>
             </div>
         @elseif(in_array($panel, ['tenants','properties'], true))

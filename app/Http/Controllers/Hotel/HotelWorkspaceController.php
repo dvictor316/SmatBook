@@ -753,7 +753,8 @@ class HotelWorkspaceController extends Controller
         $companyId = (int) auth()->user()->company_id;
         $propertyId = $this->resolvePropertyId($request);
 
-        $bookings            ->with(['customer', 'property'])
+        $bookings = Reservation::query()
+            ->with(['customer', 'property'])
             ->where('company_id', $companyId)
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->whereRaw('LOWER(COALESCE(source, "")) in (?, ?)', ['conference', 'event'])
@@ -762,6 +763,39 @@ class HotelWorkspaceController extends Controller
             ->withQueryString();
 
         return view('hotel.operations.conference', compact('bookings'));
+    }
+
+
+    public function serviceCenter(Request $request, string $center)
+    {
+        $companyId = (int) auth()->user()->company_id;
+        $propertyId = $this->resolvePropertyId($request);
+
+        $centers = [
+            'bar' => ['title' => 'Bar Sales', 'codes' => ['BAR'], 'description' => 'Bar orders, drinks, lounge bills and guest-room postings.'],
+            'gym' => ['title' => 'Gym & Fitness', 'codes' => ['GYM', 'FITNESS'], 'description' => 'Gym day passes, membership charges and in-house guest postings.'],
+            'spa' => ['title' => 'Spa & Wellness', 'codes' => ['SPA', 'WELLNESS'], 'description' => 'Spa treatments, wellness packages and guest folio charges.'],
+        ];
+
+        abort_unless(array_key_exists($center, $centers), 404);
+        $meta = $centers[$center];
+
+        $items = FolioItem::query()
+            ->with(['folio.customer', 'folio.stay.room'])
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->whereIn('service_code', $meta['codes'])
+            ->latest('service_date')
+            ->paginate(20)
+            ->withQueryString();
+
+        $total = (float) FolioItem::query()
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->whereIn('service_code', $meta['codes'])
+            ->sum('amount');
+
+        return view('hotel.operations.service_center', compact('items', 'meta', 'center', 'total'));
     }
 
     public function corporateAccounts(Request $request)
@@ -786,7 +820,8 @@ class HotelWorkspaceController extends Controller
         $companyId = (int) auth()->user()->company_id;
         $propertyId = $this->resolvePropertyId($request);
 
-        $groups            ->with(['customer', 'roomType', 'room'])
+        $groups = Reservation::query()
+            ->with(['customer', 'roomType', 'room'])
             ->where('company_id', $companyId)
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->where('adults', '>=', 4)

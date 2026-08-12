@@ -724,6 +724,7 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
     Route::get('/laundry', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'laundry'])->name('laundry.index');
     Route::get('/minibar', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'minibar'])->name('minibar.index');
     Route::get('/conference-events', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'conference'])->name('conference.index');
+    Route::get('/service-centers/{center}', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'serviceCenter'])->whereIn('center', ['bar', 'gym', 'spa'])->name('service_centers.show');
 
     Route::get('/corporate-accounts', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'corporateAccounts'])->name('corporate_accounts.index');
     Route::get('/group-bookings', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'groupBookings'])->name('group_bookings.index');
