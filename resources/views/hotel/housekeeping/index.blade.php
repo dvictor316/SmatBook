@@ -1,109 +1,48 @@
 @extends('layout.mainlayout')
 
+@section('style')
+<style>
+    .hk-page { background:#f4f4f2; }
+    .hk-shell { display:grid; grid-template-columns:180px minmax(0,1fr); min-height:calc(100vh - 160px); }
+    .hk-floors { background:#263f42; color:#fff; padding:18px 0; }
+    .hk-floors a, .hk-floors span { display:block; padding:14px 20px; color:#fff; text-decoration:none; font-weight:700; }
+    .hk-floors .active { background:#1d3033; border-left:6px solid #f5c242; }
+    .hk-main { background:#fff; }
+    .hk-titlebar { background:#d25b42; color:#fff; padding:20px 24px; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .hk-tabs { display:flex; justify-content:flex-end; background:#f0f0f0; border-bottom:1px solid #cfd5db; }
+    .hk-tabs span { padding:16px 22px; border-left:1px solid #cfd5db; font-weight:800; }
+    .hk-tabs .active { background:#2f5054; color:#fff; }
+    .hk-table th { background:#18587d; color:#fff; border:0; padding:14px; text-transform:uppercase; }
+    .hk-table td { padding:12px 14px; vertical-align:middle; border-color:#e5e5e5; }
+    .hk-table tbody tr:nth-child(even) { background:#ededed; }
+    .hk-room { display:inline-flex; width:68px; height:42px; align-items:center; justify-content:center; border:1px solid #c8ced6; background:#fff; font-weight:900; }
+    .hk-badge { display:inline-flex; align-items:center; justify-content:center; min-width:44px; padding:8px 10px; border-radius:4px; color:#fff; font-weight:900; }
+    .hk-badge.dep { background:#7fb24d; } .hk-badge.arr { background:#6f589d; } .hk-badge.vip { background:#f2b13c; } .hk-badge.prio { background:#c7584f; } .hk-badge.stay { background:#947356; }
+    @media(max-width:991px){.hk-shell{grid-template-columns:1fr}.hk-floors{display:flex;overflow:auto;padding:0}.hk-floors a,.hk-floors span{white-space:nowrap}.hk-tabs{justify-content:flex-start;overflow:auto}}
+</style>
+@endsection
+
 @section('content')
-<div class="page-wrapper">
+<div class="page-wrapper hk-page">
     <div class="content container-fluid">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-            <div>
-                <h3 class="mb-0">Housekeeping</h3>
-                <p class="text-muted mb-0">Room cleaning and readiness workflow</p>
-            </div>
-            <a href="{{ route('hotel.frontdesk') }}" class="btn btn-outline-secondary">Front Desk</a>
-        </div>
-
-        <div class="row g-3 mb-3">
-            <div class="col-lg col-md-4 col-6"><div class="card"><div class="card-body"><small class="text-muted">Dirty</small><h4>{{ $summary['dirty'] }}</h4></div></div></div>
-            <div class="col-lg col-md-4 col-6"><div class="card"><div class="card-body"><small class="text-muted">Assigned</small><h4>{{ $summary['assigned'] }}</h4></div></div></div>
-            <div class="col-lg col-md-4 col-6"><div class="card"><div class="card-body"><small class="text-muted">Cleaning</small><h4>{{ $summary['cleaning'] }}</h4></div></div></div>
-            <div class="col-lg col-md-4 col-6"><div class="card"><div class="card-body"><small class="text-muted">Clean</small><h4>{{ $summary['clean'] }}</h4></div></div></div>
-            <div class="col-lg col-md-4 col-6"><div class="card"><div class="card-body"><small class="text-muted">Inspection</small><h4>{{ $summary['inspection'] }}</h4></div></div></div>
-        </div>
-
-        <div class="row g-3 mb-3">
-            <div class="col-xl-8">
-                <div class="card">
-                    <div class="card-header"><h5 class="mb-0">Workflow Board</h5></div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            @foreach(['open' => 'Dirty', 'assigned' => 'Assigned', 'cleaning' => 'Cleaning', 'completed' => 'Clean', 'inspection' => 'Inspection'] as $statusKey => $label)
-                                <div class="col-xl-2 col-lg-4 col-md-6">
-                                    <div class="border rounded h-100 p-2 bg-light">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <strong>{{ $label }}</strong>
-                                            <span class="badge bg-secondary">{{ $tasks->get($statusKey)?->count() ?? 0 }}</span>
-                                        </div>
-                                        @forelse(($tasks->get($statusKey) ?? collect())->take(8) as $task)
-                                            <div class="border rounded bg-white p-2 mb-2">
-                                                <div class="fw-semibold">Room {{ $task->room?->room_number ?? 'N/A' }}</div>
-                                                <div class="small text-muted">{{ $task->room?->type?->name ?? 'No Type' }}</div>
-                                                <div class="small">Priority: {{ ucfirst((string) $task->priority) }}</div>
-                                                @if($task->stay?->customer)
-                                                    <div class="small">Guest: {{ $task->stay->customer->customer_name ?? $task->stay->customer->name }}</div>
-                                                @endif
-                                                <div class="d-grid gap-1 mt-2">
-                                                    @if($statusKey !== 'completed')
-                                                        <form method="POST" action="{{ route('hotel.housekeeping.tasks.complete', $task) }}">@csrf<button class="btn btn-sm btn-outline-success w-100">Complete</button></form>
-                                                    @endif
-                                                    @if($task->room)
-                                                        <form method="POST" action="{{ route('hotel.housekeeping.rooms.clean', $task->room) }}">@csrf<button class="btn btn-sm btn-light w-100">Mark Clean</button></form>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        @empty
-                                            <div class="text-muted small">No rooms in {{ strtolower($label) }}.</div>
-                                        @endforelse
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-4">
-                <div class="card mb-3">
-                    <div class="card-header"><h5 class="mb-0">Priority Cleaning</h5></div>
-                    <div class="card-body">
-                        @forelse($priorityTasks as $task)
-                            <div class="border rounded p-2 mb-2">
-                                <div class="fw-semibold">Room {{ $task->room?->room_number ?? 'N/A' }}</div>
-                                <div class="small">{{ $task->note ?: 'Priority task' }}</div>
-                            </div>
+        <div class="hk-shell">
+            <aside class="hk-floors"><span>ALL FLOORS</span><a class="active" href="#">FLOOR 1</a><a href="#">FLOOR 2</a><a href="#">FLOOR 3</a><a href="{{ route('hotel.frontdesk') }}">FRONT DESK</a></aside>
+            <main class="hk-main">
+                <div class="hk-titlebar"><div><h3 class="mb-0 text-white">Housekeeping</h3><small>Rooms on active floor and cleaning workload</small></div><a href="{{ route('hotel.frontdesk') }}" class="btn btn-light">Front Desk</a></div>
+                <div class="hk-tabs"><span class="active">All</span><span>Special</span><span>Dirty</span><span>Stayovers</span><span>My Rooms</span></div>
+                <div class="table-responsive"><table class="table hk-table mb-0"><thead><tr><th>Room</th><th>Occupancy</th><th>Special</th><th>Status</th><th>Cleaner</th><th>Alerts</th></tr></thead><tbody>
+                    @foreach(['open' => 'Dirty', 'assigned' => 'Assigned', 'cleaning' => 'Cleaning', 'inspection' => 'Inspection', 'completed' => 'Clean'] as $statusKey => $label)
+                        @forelse(($tasks->get($statusKey) ?? collect()) as $task)
+                            <tr><td><span class="hk-room">{{ $task->room?->room_number ?? 'N/A' }}</span></td><td><i class="fe fe-user me-1"></i>{{ $task->stay?->customer?->customer_name ?? $task->stay?->customer?->name ?? 'Vacant' }}</td><td><span class="hk-badge {{ $task->priority === 'high' ? 'prio' : 'stay' }}">{{ $task->priority === 'high' ? 'PRIO' : 'STAY' }}</span></td><td><form method="POST" action="{{ route('hotel.housekeeping.tasks.complete', $task) }}">@csrf<button class="btn btn-sm {{ $statusKey === 'completed' ? 'btn-success' : 'btn-outline-dark' }}">{{ $label }}</button></form></td><td>{{ $task->assigned_to ?? 'Unassigned' }}</td><td>{{ $task->note ?: 'No alerts' }}</td></tr>
                         @empty
-                            <div class="alert alert-light mb-0">No priority cleaning tasks right now.</div>
                         @endforelse
-                    </div>
-                </div>
-                <div class="card mb-3">
-                    <div class="card-header"><h5 class="mb-0">Arrivals Waiting for Room</h5></div>
-                    <div class="card-body">
-                        @forelse($arrivalsWaitingForRoom as $reservation)
-                            <div class="border rounded p-2 mb-2">
-                                <div class="fw-semibold">{{ $reservation->customer?->customer_name ?? $reservation->customer?->name ?? 'Guest' }}</div>
-                                <div class="small">{{ $reservation->roomType?->name ?? 'Room Type N/A' }} | Arrival {{ optional($reservation->arrival_date)->format('d M') }}</div>
-                            </div>
-                        @empty
-                            <div class="alert alert-light mb-0">No arrivals are waiting for room readiness.</div>
-                        @endforelse
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-header"><h5 class="mb-0">Dirty Rooms Ready for Action</h5></div>
-                    <div class="card-body">
-                        @forelse($departedDirtyRooms->take(10) as $room)
-                            <form method="POST" action="{{ route('hotel.housekeeping.rooms.clean', $room) }}" class="border rounded p-2 mb-2 d-flex justify-content-between align-items-center gap-2">
-                                @csrf
-                                <div>
-                                    <div class="fw-semibold">Room {{ $room->room_number }}</div>
-                                    <div class="small text-muted">{{ $room->type?->name ?? 'No Type' }}</div>
-                                </div>
-                                <button class="btn btn-sm btn-primary">Mark Clean</button>
-                            </form>
-                        @empty
-                            <div class="alert alert-light mb-0">All rooms are currently clear. No housekeeping tasks require attention.</div>
-                        @endforelse
-                    </div>
-                </div>
-            </div>
+                    @endforeach
+                    @foreach($departedDirtyRooms->take(12) as $room)
+                        <tr><td><span class="hk-room">{{ $room->room_number }}</span></td><td><i class="fe fe-user me-1"></i>Vacant</td><td><span class="hk-badge dep">DEP</span></td><td><form method="POST" action="{{ route('hotel.housekeeping.rooms.clean', $room) }}">@csrf<button class="btn btn-sm btn-outline-dark">Dirty</button></form></td><td>Housekeeping</td><td>Departure clean</td></tr>
+                    @endforeach
+                    @if($tasks->flatten(1)->isEmpty() && $departedDirtyRooms->isEmpty())<tr><td colspan="6" class="text-muted">No housekeeping tasks require attention.</td></tr>@endif
+                </tbody></table></div>
+            </main>
         </div>
     </div>
 </div>
