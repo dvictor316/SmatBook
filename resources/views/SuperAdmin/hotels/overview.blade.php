@@ -6,14 +6,81 @@
         <div class="page-header">
             <div class="row align-items-center">
                 <div class="col">
-                    <h3 class="page-title">Hotel Dashboard</h3>
+                    <h3 class="page-title">{{ $panels[$panel] ?? 'Hotel Dashboard' }}</h3>
                     <ul class="breadcrumb">
-                        <li class="breadcrumb-item active">Hotel module dashboard and live metrics</li>
+                        <li class="breadcrumb-item active">Super Admin Hotel Management / {{ $panels[$panel] ?? ucfirst($panel) }}</li>
                     </ul>
                 </div>
             </div>
         </div>
 
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                    <div>
+                        <h5 class="mb-1">Hotel Management Navigation</h5>
+                        <p class="text-muted mb-0">Current panel: <strong>{{ $panels[$panel] ?? ucfirst($panel) }}</strong></p>
+                    </div>
+                    <span class="badge bg-primary text-white text-uppercase">{{ $panel }}</span>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach($panels as $panelKey => $panelLabel)
+                        <a href="{{ route('super_admin.hotels.index', $panelKey === 'overview' ? [] : ['panel' => $panelKey]) }}" class="btn btn-sm {{ $panel === $panelKey ? 'btn-primary' : 'btn-outline-primary' }}">
+                            {{ $panelLabel }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
+        @if($panel !== 'overview')
+        <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h5 class="mb-0">{{ $panels[$panel] ?? str_replace('_', ' ', $panel) }}</h5>
+                    <small>Showing live {{ strtolower($panels[$panel] ?? str_replace('_', ' ', $panel)) }} records</small>
+                </div>
+                <a href="{{ route('super_admin.hotels.index') }}" class="btn btn-sm btn-light">Back to Hotel Dashboard</a>
+            </div>
+            <div class="card-body">
+                @php
+                    $isPaginator = $panelData instanceof \Illuminate\Pagination\LengthAwarePaginator;
+                    $panelRows = $isPaginator ? collect($panelData->items()) : collect($panelData);
+                    $firstRow = $panelRows->first();
+                    $firstArray = $firstRow instanceof \Illuminate\Database\Eloquent\Model ? $firstRow->getAttributes() : (array) ($firstRow ?? []);
+                @endphp
+                @if($panelRows->isEmpty())
+                    <div class="alert alert-info mb-0">No {{ strtolower($panels[$panel] ?? str_replace('_', ' ', $panel)) }} found.</div>
+                @else
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm align-middle">
+                            <thead>
+                                <tr>
+                                    @foreach(array_keys($firstArray) as $col)
+                                        <th>{{ str_replace('_', ' ', $col) }}</th>
+                                    @endforeach
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($panelRows as $row)
+                                    @php $rowArray = $row instanceof \Illuminate\Database\Eloquent\Model ? $row->getAttributes() : (array) $row; @endphp
+                                    <tr>
+                                        @foreach($firstArray as $col => $_)
+                                            @php $value = $rowArray[$col] ?? null; @endphp
+                                            <td>{{ is_scalar($value) || is_null($value) ? $value : json_encode($value) }}</td>
+                                        @endforeach
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @if($isPaginator)
+                        {{ $panelData->links() }}
+                    @endif
+                @endif
+            </div>
+        </div>
+        @endif
         <div class="row">
             <div class="col-md-3">
                 <div class="card dash-card">
@@ -139,43 +206,6 @@
             </div>
         </div>
 
-        @if($panel !== 'overview')
-        <div class="card mt-3">
-            <div class="card-header">
-                <h5 class="mb-0 text-capitalize">{{ str_replace('_', ' ', $panel) }}</h5>
-            </div>
-            <div class="card-body">
-                @php $isPaginator = $panelData instanceof \Illuminate\Pagination\LengthAwarePaginator; @endphp
-                @if(($isPaginator && $panelData->count() === 0) || (!$isPaginator && $panelData->isEmpty()))
-                    <div class="alert alert-info mb-0">No {{ str_replace('_', ' ', $panel) }} found.</div>
-                @else
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-sm">
-                            <thead>
-                                <tr>
-                                    @foreach(array_keys((array) (($isPaginator ? $panelData->first() : $panelData->first()) ?? [])) as $col)
-                                        <th>{{ $col }}</th>
-                                    @endforeach
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($panelData as $row)
-                                    <tr>
-                                        @foreach((array) $row as $value)
-                                            <td>{{ is_scalar($value) || is_null($value) ? $value : json_encode($value) }}</td>
-                                        @endforeach
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    @if($isPaginator)
-                        {{ $panelData->links() }}
-                    @endif
-                @endif
-            </div>
-        </div>
-        @endif
     </div>
 </div>
 @endsection

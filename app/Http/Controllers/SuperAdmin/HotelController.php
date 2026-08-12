@@ -15,6 +15,28 @@ class HotelController extends Controller
     public function index(Request $request)
     {
         $panel = (string) $request->query('panel', 'overview');
+        $panels = [
+            'overview' => 'Dashboard',
+            'tenants' => 'Hotel Tenants',
+            'properties' => 'Properties',
+            'rooms' => 'Rooms',
+            'room_types' => 'Room Types',
+            'reservations' => 'Reservations',
+            'stays' => 'Current Stays',
+            'guests' => 'Guests',
+            'folios' => 'Folios',
+            'deposits' => 'Deposits',
+            'housekeeping' => 'Housekeeping',
+            'maintenance' => 'Maintenance',
+            'revenue' => 'Revenue',
+            'hotel_transactions' => 'Hotel Transactions',
+            'night_audits' => 'Night Audits',
+            'reports' => 'Reports',
+            'settings' => 'Hotel Settings / Feature Status',
+        ];
+        if (!array_key_exists($panel, $panels)) {
+            $panel = 'overview';
+        }
         $hotelCompanyIds = HotelAccess::hotelCompanyIds();
         $selectedCompanyId = $request->filled('company_id') ? (int) $request->query('company_id') : null;
 
@@ -97,7 +119,7 @@ class HotelController extends Controller
         $panelData = $this->panelData($panel, $selectedCompanyId, $hotelCompanyIds);
 
         return view('SuperAdmin.hotels.overview', compact(
-            'totalHotelTenants', 'activeHotelSubscriptions', 'totalProperties', 'totalRooms', 'availableRooms', 'occupiedRooms', 'reservedRooms', 'todayReservations', 'currentInHouseGuests', 'hotelRevenueToday', 'hotelRevenueThisMonth', 'outstandingReceivables', 'panel', 'panelData', 'hotelCompanies', 'selectedCompanyId'
+            'totalHotelTenants', 'activeHotelSubscriptions', 'totalProperties', 'totalRooms', 'availableRooms', 'occupiedRooms', 'reservedRooms', 'todayReservations', 'currentInHouseGuests', 'hotelRevenueToday', 'hotelRevenueThisMonth', 'outstandingReceivables', 'panel', 'panels', 'panelData', 'hotelCompanies', 'selectedCompanyId'
         ));
     }
 
@@ -237,13 +259,19 @@ class HotelController extends Controller
                 ->withQueryString();
         }
 
-        if ($panel === 'maintenance' && Schema::hasTable('hotel_maintenance_requests')) {
-            return \DB::table('hotel_maintenance_requests')
-                ->when($companyId, fn($q) => $q->where('company_id', $companyId))
-                ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
-                ->orderByDesc('id')
-                ->paginate(20)
-                ->withQueryString();
+        if ($panel === 'maintenance') {
+            $maintenanceTable = Schema::hasTable('hotel_maintenance_tickets')
+                ? 'hotel_maintenance_tickets'
+                : (Schema::hasTable('hotel_maintenance_requests') ? 'hotel_maintenance_requests' : null);
+
+            if ($maintenanceTable) {
+                return \DB::table($maintenanceTable)
+                    ->when($companyId, fn($q) => $q->where('company_id', $companyId))
+                    ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
+                    ->orderByDesc('id')
+                    ->paginate(20)
+                    ->withQueryString();
+            }
         }
 
         if ($panel === 'night_audits' && Schema::hasTable('hotel_night_audits')) {
@@ -255,15 +283,29 @@ class HotelController extends Controller
                 ->withQueryString();
         }
 
-        if ($panel === 'reports' && Schema::hasTable('hotel_transactions')) {
-            return \DB::table('hotel_transactions')
-                ->selectRaw('company_id, DATE(created_at) as business_date, SUM(amount) as total_amount, COUNT(*) as tx_count')
-                ->when($companyId, fn($q) => $q->where('company_id', $companyId))
-                ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
-                ->groupBy('company_id', 'business_date')
-                ->orderByDesc('business_date')
-                ->paginate(20)
-                ->withQueryString();
+        if ($panel === 'reports') {
+            if (Schema::hasTable('hotel_transactions')) {
+                return \DB::table('hotel_transactions')
+                    ->selectRaw('company_id, DATE(created_at) as business_date, SUM(amount) as total_amount, COUNT(*) as tx_count')
+                    ->when($companyId, fn($q) => $q->where('company_id', $companyId))
+                    ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
+                    ->groupBy('company_id', 'business_date')
+                    ->orderByDesc('business_date')
+                    ->paginate(20)
+                    ->withQueryString();
+            }
+
+            if (Schema::hasTable('folio_items')) {
+                return \DB::table('folio_items')
+                    ->selectRaw('company_id, DATE(service_date) as business_date, SUM(amount) as total_amount, COUNT(*) as tx_count')
+                    ->when($companyId, fn($q) => $q->where('company_id', $companyId))
+                    ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
+                    ->whereIn('type', ['charge', 'room_night', 'service', 'pos_charge'])
+                    ->groupBy('company_id', 'business_date')
+                    ->orderByDesc('business_date')
+                    ->paginate(20)
+                    ->withQueryString();
+            }
         }
 
         if ($panel === 'settings') {
