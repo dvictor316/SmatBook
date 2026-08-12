@@ -170,6 +170,7 @@
     .product-form-card-icon i,
     .product-form-card-icon svg {
         color: inherit;
+        font-size: 1.12rem;
     }
 
     .product-form-card-icon.icon-tone-amber {
@@ -336,7 +337,7 @@
                                         <h6>Identity, Pricing & Category</h6>
                                         <p class="product-form-muted mb-0">Enter the product details customers and your team will recognize.</p>
                                     </div>
-                                    <span class="product-form-card-icon icon-tone-amber"><i class="feather-package"></i></span>
+                                    <span class="product-form-card-icon icon-tone-amber"><i class="fas fa-box-open"></i></span>
                                 </div>
                                 <div class="row g-3">
                                     <div class="col-md-6">
