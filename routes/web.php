@@ -534,8 +534,8 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     // Hotel Management (Super Admin)
     Route::get('/hotels', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'index'])->name('hotels.index');
     
-    // Hotel tenant routes (setup, room types, rooms)
-    Route::prefix('hotel')->name('hotel.')->group(function () {
+    // Hotel tenant routes (setup, room types, rooms) and operational flows
+    Route::group(['prefix' => 'hotel', 'as' => 'hotel.','middleware' => ['auth','branch.required','subscription.active']], function () {
         Route::get('/setup/step1', [\App\Http\Controllers\Hotel\HotelSetupController::class, 'step1'])->name('setup.step1');
         Route::post('/setup/step1', [\App\Http\Controllers\Hotel\HotelSetupController::class, 'storeStep1'])->name('setup.storeStep1');
         Route::get('/setup/step2', [\App\Http\Controllers\Hotel\HotelSetupController::class, 'step2'])->name('setup.step2');
@@ -555,6 +555,25 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
         Route::get('/rooms/{room}/edit', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'edit'])->name('rooms.edit');
         Route::put('/rooms/{room}', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'update'])->name('rooms.update');
         Route::delete('/rooms/{room}', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'destroy'])->name('rooms.destroy');
+        
+        // Availability & Reservations
+        Route::get('/availability', [\App\Http\Controllers\Hotel\AvailabilityController::class, 'index'])->name('availability.index');
+        Route::post('/availability/search', [\App\Http\Controllers\Hotel\AvailabilityController::class, 'search'])->name('availability.search');
+
+        Route::get('/reservations', [\App\Http\Controllers\Hotel\ReservationController::class, 'index'])->name('reservations.index');
+        Route::get('/reservations/create', [\App\Http\Controllers\Hotel\ReservationController::class, 'create'])->name('reservations.create');
+        Route::post('/reservations', [\App\Http\Controllers\Hotel\ReservationController::class, 'store'])->name('reservations.store');
+        Route::get('/reservations/{reservation}', [\App\Http\Controllers\Hotel\ReservationController::class, 'show'])->name('reservations.show');
+
+        // Walk-in, Check-in/out, Folio
+        Route::get('/walkin', [\App\Http\Controllers\Hotel\WalkInController::class, 'create'])->name('walkin.create');
+        Route::post('/walkin', [\App\Http\Controllers\Hotel\WalkInController::class, 'store'])->name('walkin.store');
+
+        Route::post('/checkin/{reservation}', [\App\Http\Controllers\Hotel\CheckInController::class, 'checkin'])->name('checkin');
+        Route::post('/checkout/{stay}', [\App\Http\Controllers\Hotel\CheckInController::class, 'checkout'])->name('checkout');
+
+        Route::get('/folios/{folio}', [\App\Http\Controllers\Hotel\FolioController::class, 'show'])->name('folios.show');
+        Route::post('/folios/{folio}/items', [\App\Http\Controllers\Hotel\FolioController::class, 'storeItem'])->name('folios.items.store');
     });
     
     // Domains

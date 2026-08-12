@@ -621,13 +621,17 @@
 
                 <li class="menu-title"><span>Sales &amp; Customers</span></li>
 
-                {{-- HOTEL MANAGEMENT --}}
+                {{-- HOTEL MANAGEMENT (Super Admin) --}}
                 @if(Route::has('super_admin.hotels.index'))
-                <li class="menu-title"><span>Hotel Management</span></li>
+                <li class="menu-title"><span>Hotel</span></li>
                 <li class="submenu {{ Request::is('superadmin/hotels*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fas fa-hotel"></i><span>Hotel Management</span><span class="menu-arrow"></span></a>
+                    <a href="#"><i class="fas fa-hotel"></i><span>Hotel</span><span class="menu-arrow"></span></a>
                     <ul>
-                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}">Hotel Overview</a></li>
+                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}">Overview</a></li>
+                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=reservations">Reservations</a></li>
+                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=stays">Current Stays</a></li>
+                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=folios">Folios</a></li>
+                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=deposits">Deposits</a></li>
                     </ul>
                 </li>
                 @endif
