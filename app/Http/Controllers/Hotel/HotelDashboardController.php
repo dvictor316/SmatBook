@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\FolioItem;
 use App\Models\GuestFolio;
+use App\Models\HotelHousekeepingTask;
 use App\Models\HotelProperty;
 use App\Models\HotelRoom;
 use App\Models\HotelRoomType;
@@ -21,8 +22,12 @@ class HotelDashboardController extends Controller
     public function dashboard(Request $request)
     {
         $companyId = (int) auth()->user()->company_id;
-        $propertyId = $this->currentPropertyId();
+        $propertyId = $this->currentPropertyId($request);
         $property = $propertyId ? HotelProperty::query()->find($propertyId) : null;
+        $properties = HotelProperty::query()
+            ->where('company_id', $companyId)
+            ->orderBy('name')
+            ->get();
 
         [$fromDate, $toDate, $rangeKey] = $this->resolveRange($request);
         $daysInRange = max(1, Carbon::parse($fromDate)->diffInDays(Carbon::parse($toDate)) + 1);
@@ -247,8 +252,64 @@ class HotelDashboardController extends Controller
                 : 0,
         ];
 
+        $arrivalsNeedRoomAssignment = Reservation::query()
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->whereDate('arrival_date', $today)
+            ->whereNull('room_id')
+            ->count();
+
+        $dirtyArrivalRooms = Reservation::query()
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->whereDate('arrival_date', $today)
+            ->whereHas('room', fn ($query) => $query->where('housekeeping_status', 'dirty'))
+            ->count();
+
+        $maintenanceConflicts = Reservation::query()
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->whereDate('arrival_date', '>=', $today)
+            ->whereIn('status', ['reserved', 'confirmed'])
+            ->whereHas('room', fn ($query) => $query->whereIn('operational_status', ['maintenance', 'out_of_order']))
+            ->count();
+
+        $outstandingDepartures = Reservation::query()
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->whereDate('departure_date', $today)
+            ->where('balance', '>', 0)
+            ->count();
+
+        $nightAuditPending = Schema::hasTable('hotel_night_audits')
+            ? DB::table('hotel_night_audits')
+                ->where('company_id', $companyId)
+                ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+                ->whereDate('audit_date', $today)
+                ->doesntExist()
+            : false;
+
+        $managementAlerts = collect([
+            ['label' => 'Arrivals need room assignment', 'count' => $arrivalsNeedRoomAssignment, 'route' => route('hotel.rooms.calendar'), 'tone' => 'warning'],
+            ['label' => 'Arriving rooms still dirty', 'count' => $dirtyArrivalRooms, 'route' => route('hotel.housekeeping.index'), 'tone' => 'danger'],
+            ['label' => 'Maintenance conflict with reservation', 'count' => $maintenanceConflicts, 'route' => route('hotel.maintenance.index'), 'tone' => 'danger'],
+            ['label' => 'Departures with outstanding balance', 'count' => $outstandingDepartures, 'route' => route('hotel.folios.index'), 'tone' => 'warning'],
+            ['label' => 'Night audit pending', 'count' => $nightAuditPending ? 1 : 0, 'route' => route('hotel.night_audit.index'), 'tone' => 'info'],
+        ])->filter(fn ($alert) => (int) $alert['count'] > 0)->values();
+
+        $roomStatusBreakdown = [
+            ['key' => 'available', 'label' => 'Available', 'count' => $availableRooms, 'route' => route('hotel.rooms.index', ['status' => 'available'])],
+            ['key' => 'occupied', 'label' => 'Occupied', 'count' => $occupiedRooms, 'route' => route('hotel.rooms.index', ['status' => 'occupied'])],
+            ['key' => 'reserved', 'label' => 'Reserved', 'count' => $reservedRooms, 'route' => route('hotel.rooms.index', ['status' => 'reserved'])],
+            ['key' => 'dirty', 'label' => 'Dirty', 'count' => $dirtyRooms, 'route' => route('hotel.housekeeping.index')],
+            ['key' => 'cleaning', 'label' => 'Cleaning', 'count' => $cleaningRooms, 'route' => route('hotel.housekeeping.index')],
+            ['key' => 'maintenance', 'label' => 'Maintenance', 'count' => $maintenanceRooms, 'route' => route('hotel.maintenance.index')],
+            ['key' => 'out_of_order', 'label' => 'Out of Order', 'count' => $outOfOrderRooms, 'route' => route('hotel.maintenance.index')],
+        ];
+
         return view('hotel.dashboard.index', compact(
             'property',
+            'properties',
             'rangeKey',
             'fromDate',
             'toDate',
@@ -280,7 +341,10 @@ class HotelDashboardController extends Controller
             'revenueTrend',
             'todayActivity',
             'arrivalsPanel',
-            'departuresPanel'
+            'departuresPanel',
+            'managementAlerts',
+            'roomStatusBreakdown',
+            'propertyId'
         ));
     }
 
@@ -297,10 +361,35 @@ class HotelDashboardController extends Controller
             ->orderBy('name')
             ->get();
 
+        $floor = trim((string) $request->query('floor', ''));
+        $roomTypeId = (int) $request->query('room_type_id', 0);
+        $status = trim((string) $request->query('status', ''));
+        $viewMode = (string) $request->query('view', 'grid');
+
+        $roomTypes = HotelRoomType::query()
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->orderBy('name')
+            ->get();
+
+        $floors = HotelRoom::query()
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->whereNotNull('floor')
+            ->distinct()
+            ->orderBy('floor')
+            ->pluck('floor');
+
         $rooms = HotelRoom::query()
             ->with('type')
             ->where('company_id', $companyId)
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->when($floor !== '', fn ($query) => $query->where('floor', $floor))
+            ->when($roomTypeId > 0, fn ($query) => $query->where('room_type_id', $roomTypeId))
+            ->when($status !== '', fn ($query) => $query->where(function ($sub) use ($status) {
+                $sub->where('operational_status', $status)
+                    ->orWhere('housekeeping_status', $status);
+            }))
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($sub) use ($search) {
                     $sub->where('room_number', 'like', '%' . $search . '%')
@@ -480,10 +569,31 @@ class HotelDashboardController extends Controller
             ->where('housekeeping_status', 'dirty')
             ->count();
 
+        $priorityCleaning = HotelHousekeepingTask::query()
+            ->with(['room.type', 'stay.customer'])
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn($query) => $query->where('property_id', $propertyId))
+            ->where('priority', 'high')
+            ->whereIn('status', ['open', 'assigned', 'cleaning'])
+            ->latest('id')
+            ->limit(8)
+            ->get();
+
+        $waitingForRoom = Reservation::query()
+            ->with(['customer', 'roomType'])
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn($query) => $query->where('property_id', $propertyId))
+            ->whereDate('arrival_date', $today)
+            ->whereNull('room_id')
+            ->latest('id')
+            ->limit(8)
+            ->get();
+
         return view('hotel.frontdesk.index', compact(
             'rooms', 'search', 'arrivals', 'departures', 'inHouse', 'pendingCheckins',
             'availableCount', 'occupiedCount', 'reservedCount', 'dirtyCount',
-            'alerts', 'activeStaysByRoom', 'roomReservationsToday', 'properties', 'propertyId'
+            'alerts', 'activeStaysByRoom', 'roomReservationsToday', 'properties', 'propertyId',
+            'floors', 'floor', 'roomTypes', 'roomTypeId', 'status', 'viewMode', 'priorityCleaning', 'waitingForRoom'
         ));
     }
 

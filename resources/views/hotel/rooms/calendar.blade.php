@@ -1,20 +1,113 @@
 @extends('layout.mainlayout')
 
+@section('style')
+<style>
+    .calendar-shell {
+        --cal-line: #d9e2ef;
+        --cal-soft: #f5f7fb;
+    }
+    .calendar-shell .cal-panel {
+        background: #fff;
+        border: 1px solid var(--cal-line);
+        border-radius: 14px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    }
+    .calendar-shell .cal-toolbar {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+    .calendar-shell .cal-filter-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 10px;
+    }
+    .calendar-shell .cal-stage {
+        overflow-x: auto;
+    }
+    .calendar-shell .cal-table {
+        border-collapse: separate;
+        border-spacing: 0;
+        min-width: 1180px;
+        margin-bottom: 0;
+    }
+    .calendar-shell .cal-table th,
+    .calendar-shell .cal-table td {
+        border-color: var(--cal-line);
+        vertical-align: top;
+    }
+    .calendar-shell .cal-table th:first-child,
+    .calendar-shell .cal-table td:first-child {
+        position: sticky;
+        left: 0;
+        background: #fff;
+        z-index: 2;
+    }
+    .calendar-shell .cal-room-label {
+        min-width: 180px;
+    }
+    .calendar-shell .cal-empty-slot {
+        min-height: 72px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+        background: linear-gradient(180deg, #fff, #f8fafc);
+    }
+    .calendar-shell .cal-block {
+        min-height: 72px;
+        border-radius: 12px;
+        padding: 8px 10px;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
+    }
+    .calendar-shell .cal-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    .calendar-shell .cal-legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: #475569;
+    }
+    .calendar-shell .cal-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        display: inline-block;
+    }
+    @media (max-width: 1199px) {
+        .calendar-shell .cal-toolbar { grid-template-columns: 1fr; }
+        .calendar-shell .cal-filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 767px) {
+        .calendar-shell .cal-filter-grid { grid-template-columns: 1fr; }
+    }
+</style>
+@endsection
+
 @section('content')
-<div class="page-wrapper">
+<div class="page-wrapper calendar-shell">
     <div class="content container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-            <h3 class="mb-0">Visual Reservation Calendar</h3>
+            <div>
+                <h3 class="mb-0">Room Calendar</h3>
+                <p class="text-muted mb-0">Timeline view of rooms, stays, and booking conflicts</p>
+            </div>
             <div class="d-flex gap-2">
                 <a href="{{ route('hotel.frontdesk') }}" class="btn btn-outline-secondary">Front Desk</a>
                 <a href="{{ route('hotel.availability.index') }}" class="btn btn-outline-primary">Availability Search</a>
             </div>
         </div>
 
-        <form method="GET" class="card mb-3">
-            <div class="card-body">
-                <div class="row g-2 align-items-end">
-                    <div class="col-xl-2 col-lg-3 col-md-6">
+        <div class="cal-toolbar">
+            <form method="GET" class="cal-panel p-3">
+                <div class="cal-filter-grid">
+                    <div>
                         <label class="form-label">Property</label>
                         <select name="property_id" class="form-control">
                             <option value="all" {{ !$propertyId ? 'selected' : '' }}>All Properties</option>
@@ -23,7 +116,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-xl-2 col-lg-3 col-md-6">
+                    <div>
                         <label class="form-label">Floor</label>
                         <select name="floor" class="form-control">
                             <option value="">All Floors</option>
@@ -32,7 +125,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-xl-2 col-lg-3 col-md-6">
+                    <div>
                         <label class="form-label">Room Type</label>
                         <select name="room_type_id" class="form-control">
                             <option value="0">All Room Types</option>
@@ -41,7 +134,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-xl-2 col-lg-3 col-md-6">
+                    <div>
                         <label class="form-label">Room Status</label>
                         <select name="room_status" class="form-control">
                             <option value="">All Room Statuses</option>
@@ -50,7 +143,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-xl-2 col-lg-3 col-md-6">
+                    <div>
                         <label class="form-label">Reservation Status</label>
                         <select name="reservation_status" class="form-control">
                             <option value="">All</option>
@@ -59,7 +152,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-xl-2 col-lg-3 col-md-6">
+                    <div>
                         <label class="form-label">View</label>
                         <select name="view" class="form-control">
                             <option value="7d" {{ $viewPreset === '7d' ? 'selected' : '' }}>7 Days</option>
@@ -67,38 +160,50 @@
                             <option value="30d" {{ $viewPreset === '30d' ? 'selected' : '' }}>30 Days</option>
                         </select>
                     </div>
-                    <div class="col-xl-2 col-lg-3 col-md-6">
+                    <div>
                         <label class="form-label">Custom From</label>
                         <input type="date" name="from_date" value="{{ request('from_date') }}" class="form-control">
                     </div>
-                    <div class="col-xl-2 col-lg-3 col-md-6">
+                </div>
+                <div class="d-flex flex-wrap gap-2 align-items-end mt-2">
+                    <div>
                         <label class="form-label">Custom To</label>
                         <input type="date" name="to_date" value="{{ request('to_date') }}" class="form-control">
                     </div>
-                    <div class="col-auto">
+                    <div>
                         <input type="hidden" name="start_date" value="{{ $start->toDateString() }}">
                         <button class="btn btn-primary">Apply</button>
                     </div>
                 </div>
+            </form>
+            <div class="cal-panel p-3 d-grid gap-2 align-content-start">
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('hotel.rooms.calendar', array_merge(request()->query(), ['nav' => 'prev', 'start_date' => $start->toDateString()])) }}">Previous</a>
+                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('hotel.rooms.calendar', array_merge(request()->query(), ['nav' => 'today', 'start_date' => now()->toDateString()])) }}">Today</a>
+                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('hotel.rooms.calendar', array_merge(request()->query(), ['nav' => 'next', 'start_date' => $start->toDateString()])) }}">Next</a>
+                </div>
+                <div class="text-muted small">{{ $start->format('d M Y') }} to {{ $end->format('d M Y') }}</div>
+                <div class="badge bg-light text-dark text-start">Unassigned Reservations: {{ $unassignedReservations->count() }}</div>
             </div>
-        </form>
-
-        <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
-            <a class="btn btn-sm btn-outline-secondary" href="{{ route('hotel.rooms.calendar', array_merge(request()->query(), ['nav' => 'prev', 'start_date' => $start->toDateString()])) }}">Previous</a>
-            <a class="btn btn-sm btn-outline-secondary" href="{{ route('hotel.rooms.calendar', array_merge(request()->query(), ['nav' => 'today', 'start_date' => now()->toDateString()])) }}">Today</a>
-            <a class="btn btn-sm btn-outline-secondary" href="{{ route('hotel.rooms.calendar', array_merge(request()->query(), ['nav' => 'next', 'start_date' => $start->toDateString()])) }}">Next</a>
-            <span class="text-muted small ms-2">{{ $start->format('d M Y') }} to {{ $end->format('d M Y') }}</span>
-            <span class="ms-auto badge bg-light text-dark">Unassigned Reservations: {{ $unassignedReservations->count() }}</span>
         </div>
 
-        <div class="card mb-3">
-            <div class="card-body table-responsive" style="overflow-x:auto;">
-                <table class="table table-sm table-bordered align-middle mb-0">
+        <div class="cal-panel p-3 mb-3">
+            <div class="cal-legend">
+                <span><i class="cal-dot" style="background:#e2e8f0"></i>Tentative</span>
+                <span><i class="cal-dot" style="background:#0ea5e9"></i>Confirmed</span>
+                <span><i class="cal-dot" style="background:#2563eb"></i>Guaranteed</span>
+                <span><i class="cal-dot" style="background:#16a34a"></i>Checked In</span>
+                <span><i class="cal-dot" style="background:#f59e0b"></i>Reserved</span>
+                <span><i class="cal-dot" style="background:#dc2626"></i>Blocked/Maintenance</span>
+                <span><i class="cal-dot" style="background:#334155"></i>Out of Order</span>
+            </div>
+            <div class="cal-stage">
+                <table class="table table-sm table-bordered align-middle cal-table">
                     <thead>
                     <tr>
-                        <th style="min-width:170px;">Room</th>
+                        <th class="cal-room-label">Room</th>
                         @foreach($dates as $date)
-                            <th class="text-center" style="min-width:120px;">
+                            <th class="text-center" style="min-width:116px;">
                                 <div>{{ $date->format('d M') }}</div>
                                 <small class="text-muted">{{ $date->format('D') }}</small>
                             </th>
@@ -108,7 +213,7 @@
                     <tbody>
                     @forelse($calendarRows as $row)
                         <tr>
-                            <td>
+                            <td class="cal-room-label">
                                 <strong>{{ $row['room']->room_number }}</strong><br>
                                 <small class="text-muted">{{ $row['room']->type?->name ?? 'No Type' }}</small><br>
                                 <small class="text-muted">Floor: {{ $row['room']->floor ?: 'N/A' }}</small><br>
@@ -122,7 +227,7 @@
                                             <input type="hidden" name="room_id" value="{{ $row['room']->id }}">
                                             <input type="hidden" name="arrival_date" value="{{ $segment['date'] }}">
                                             <input type="hidden" name="departure_date" value="{{ \Carbon\Carbon::parse($segment['date'])->addDay()->toDateString() }}">
-                                            <button class="btn btn-link btn-sm text-muted p-0 text-start">+ Reserve</button>
+                                            <button class="btn btn-link btn-sm cal-empty-slot text-decoration-none">+ Reserve</button>
                                         </form>
                                     </td>
                                     @continue
@@ -142,7 +247,7 @@
                                     };
                                 @endphp
                                 <td colspan="{{ $segment['colspan'] }}" class="p-1">
-                                    <div class="rounded p-1 {{ $statusClass }}" style="min-height:56px;">
+                                    <div class="cal-block {{ $statusClass }}">
                                         <div class="d-flex justify-content-between align-items-start">
                                             <strong class="small">{{ $segment['label'] }}</strong>
                                             <span class="small">{{ ucfirst(str_replace('_',' ', (string) $segment['status'])) }}</span>
