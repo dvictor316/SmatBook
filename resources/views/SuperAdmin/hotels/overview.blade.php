@@ -4,8 +4,9 @@
 <style>
     .sa-hotel { background:#eef3f8; color:#09213d; }
     .sa-hero { background:linear-gradient(135deg,#06264a,#0b5fb8 58%,#0f766e); color:#fff; border-radius:18px; padding:22px; margin-bottom:16px; display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; box-shadow:0 18px 36px rgba(8,47,73,.18); }
-    .sa-hero h2 { color:#fff; margin:0; font-size:31px; font-weight:900; }
-    .sa-hero small { color:#d9eaff; text-transform:uppercase; letter-spacing:.14em; font-weight:900; }
+    .sa-hero h2 { color:#f5c451 !important; margin:0; font-size:31px; font-weight:900; text-shadow:0 2px 16px rgba(0,0,0,.22); }
+    .sa-hero p { color:#fff !important; }
+    .sa-hero small { color:#f7d777 !important; text-transform:uppercase; letter-spacing:.14em; font-weight:900; }
     .sa-panel, .sa-card, .sa-filter { background:#fff; border:1px solid #d8e2ee; border-radius:14px; box-shadow:0 10px 28px rgba(15,23,42,.06); }
     .sa-tabs { display:flex; gap:8px; overflow:auto; padding:12px; margin-bottom:16px; }
     .sa-tabs a { white-space:nowrap; border:1px solid #cbd8e8; border-radius:999px; padding:8px 13px; color:#0b2f54; text-decoration:none; font-weight:800; }
@@ -24,7 +25,8 @@
     .sa-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
     .sa-card { padding:16px; color:#09213d; text-decoration:none; min-height:145px; }
     .sa-card .label { color:#d4a23a; text-transform:uppercase; letter-spacing:.12em; font-size:12px; font-weight:900; }
-    .sa-empty { border:1px dashed #afbdd0; border-radius:12px; padding:22px; background:#f8fafc; color:#64748b; }
+    .sa-empty { grid-column:1 / -1; border:1px dashed #d4a23a; border-radius:12px; padding:22px; background:#fff8e1; color:#5a3d00; font-weight:800; }
+    .sa-sample { border-style:dashed; background:#fffdf5; }
     .sa-room-rack { display:grid; grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); gap:10px; }
     .sa-room { min-height:138px; border-radius:8px; border:1px solid #d8e2ee; background:#fff; padding:10px; position:relative; overflow:hidden; }
     .sa-room.available { background:#ecfdf3; } .sa-room.occupied { background:#e8f2ff; } .sa-room.reserved { background:#fff8e5; } .sa-room.maintenance, .sa-room.out_of_order { background:#fff1f2; }
@@ -57,6 +59,7 @@
     .sa-report-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
     .sa-report { min-height:160px; background:#082f55; color:#fff; border-radius:14px; padding:18px; text-decoration:none; display:flex; flex-direction:column; justify-content:space-between; }
     .sa-report span { color:#f1c15c; letter-spacing:.12em; text-transform:uppercase; font-size:12px; font-weight:900; }
+    .sa-report h4, .sa-report p, .sa-cashier-side h3, .sa-cashier-side p, .sa-cashier-side small { color:#fff !important; }
     .sa-health { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
     .sa-health-row { display:flex; justify-content:space-between; align-items:center; padding:14px; border:1px solid #dbe4ef; border-radius:12px; background:#fff; }
     @media(max-width:1199px){.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health{grid-template-columns:repeat(2,1fr)}.sa-workspace,.sa-cashier{grid-template-columns:1fr}.sa-board-row{grid-template-columns:1fr}}
@@ -109,6 +112,17 @@
             <button class="btn btn-primary">Apply Filter</button>
         </form>
 
+        <div class="sa-service-grid">
+            @foreach($serviceCenters as $serviceKey => $serviceMeta)
+                @continue($serviceKey === 'all')
+                <a class="sa-service" href="{{ route('super_admin.hotels.index', ['panel' => 'services', 'service' => $serviceKey, 'company_id' => $selectedCompanyId]) }}">
+                    <span>{{ strtoupper($serviceKey === 'room_service' ? 'Room Service' : $serviceKey) }}</span>
+                    <h5>{{ $serviceMeta['label'] }}</h5>
+                    <p class="text-muted mb-0">Monitor tenant {{ strtolower($serviceMeta['label']) }} charges, postings and revenue from Super Admin.</p>
+                </a>
+            @endforeach
+        </div>
+
         <div class="sa-kpis">
             <div class="sa-panel sa-kpi"><span>Total Hotel Tenants</span><strong>{{ $totalHotelTenants }}</strong><small>Hotel-enabled companies</small></div>
             <div class="sa-panel sa-kpi green"><span>Active Subscriptions</span><strong>{{ $activeHotelSubscriptions }}</strong><small>Paid active hotels</small></div>
@@ -124,12 +138,6 @@
             <div class="sa-workspace">
                 <aside class="sa-rail"><h5>Enterprise Monitor</h5><a href="{{ route('super_admin.hotels.index', ['panel' => 'rooms']) }}"><strong>Room Rack</strong><br>Availability, occupied and reserved</a><a href="{{ route('super_admin.hotels.index', ['panel' => 'reservations']) }}"><strong>Reservations</strong><br>Booking pipeline and assignments</a><a href="{{ route('super_admin.hotels.index', ['panel' => 'folios']) }}"><strong>Cashier</strong><br>Folios and receivables</a><a href="{{ route('super_admin.hotels.index', ['panel' => 'reports']) }}"><strong>Reports</strong><br>Platform PMS intelligence</a></aside>
                 <main>
-                    <div class="sa-service-grid">
-                        <a class="sa-service" href="{{ route('super_admin.hotels.index', ['panel' => 'revenue']) }}"><span>Restaurant</span><h5>Restaurant POS</h5><p class="text-muted mb-0">Food sales and room-posted meals.</p></a>
-                        <a class="sa-service" href="{{ route('super_admin.hotels.index', ['panel' => 'revenue']) }}"><span>Bar</span><h5>Bar & Lounge</h5><p class="text-muted mb-0">Drinks and lounge revenue.</p></a>
-                        <a class="sa-service" href="{{ route('super_admin.hotels.index', ['panel' => 'revenue']) }}"><span>Spa/Gym</span><h5>Wellness Centers</h5><p class="text-muted mb-0">Spa, gym and fitness charges.</p></a>
-                        <a class="sa-service" href="{{ route('super_admin.hotels.index', ['panel' => 'revenue']) }}"><span>Events</span><h5>Conference</h5><p class="text-muted mb-0">Events and banquet revenue.</p></a>
-                    </div>
                     <div class="sa-grid">
                     <a class="sa-card" href="{{ route('super_admin.hotels.index', ['panel' => 'tenants']) }}"><span class="label">01 Tenant Control</span><h5>Hotel Tenants</h5><p class="text-muted mb-0">Inspect hotel-enabled companies, plan access and subscription readiness.</p></a>
                     <a class="sa-card" href="{{ route('super_admin.hotels.index', ['panel' => 'properties']) }}"><span class="label">02 Properties</span><h5>Property Directory</h5><p class="text-muted mb-0">Monitor branches/properties under each hotel tenant.</p></a>
@@ -152,13 +160,61 @@
         @elseif($panel === 'rooms')
             <div class="sa-workspace"><aside class="sa-rail"><h5>Room State</h5><div><strong>{{ $availableRooms }}</strong><br>Available</div><div><strong>{{ $occupiedRooms }}</strong><br>Occupied</div><div><strong>{{ $reservedRooms }}</strong><br>Reserved</div><div><strong>{{ $totalRooms }}</strong><br>Total Rooms</div></aside><section class="sa-panel p-3"><h4 class="mb-3">Global Room Rack</h4>@if($panelRows->isEmpty())<div class="sa-empty">No rooms found yet. The rack will show each tenant room as a colored operational tile.</div>@else<div class="sa-room-rack">@foreach($panelRows as $row)@php $r=$rowArray($row); $state=(string)($r['operational_status'] ?? 'available'); @endphp<div class="sa-room {{ $state }}"><div class="d-flex justify-content-between"><span>{{ ucfirst(str_replace('_',' ', $state)) }}</span><span>⋮ □</span></div><div class="sa-room-num">{{ $r['room_number'] ?? ('#'.($r['id'] ?? '-')) }}</div><div class="small text-muted">Company {{ $r['company_id'] ?? '-' }} · Property {{ $r['property_id'] ?? '-' }}</div><div class="small">{{ ucfirst((string)($r['housekeeping_status'] ?? 'clean')) }} · Type {{ $r['room_type_id'] ?? '-' }}</div></div>@endforeach</div>@endif</section></div>
         @elseif($panel === 'room_types')
-            <section class="sa-grid">@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<div class="sa-card"><span class="label">Room Type</span><h5>{{ $r['name'] ?? ('Type #'.($r['id'] ?? '-')) }}</h5><p class="text-muted">Company {{ $r['company_id'] ?? '-' }} · Property {{ $r['property_id'] ?? '-' }}</p><div class="d-flex justify-content-between"><span>Occupancy</span><strong>{{ $r['max_occupancy'] ?? '-' }}</strong></div><div class="d-flex justify-content-between"><span>Base Rate</span><strong>{{ $money($r['base_rate'] ?? 0) }}</strong></div></div>@empty<div class="sa-empty">No room types found. Room type cards will show occupancy and rate catalogue.</div>@endforelse</section>
+            <section class="sa-grid">@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<div class="sa-card"><span class="label">Room Type</span><h5>{{ $r['name'] ?? ('Type #'.($r['id'] ?? '-')) }}</h5><p class="text-muted">Company {{ $r['company_id'] ?? '-' }} · Property {{ $r['property_id'] ?? '-' }}</p><div class="d-flex justify-content-between"><span>Occupancy</span><strong>{{ $r['max_occupancy'] ?? '-' }}</strong></div><div class="d-flex justify-content-between"><span>Base Rate</span><strong>{{ $money($r['base_rate'] ?? 0) }}</strong></div></div>@empty<div class="sa-empty"><strong>No room types found yet.</strong><br>Super Admin will show tenant room type catalogue here after hotel setup.</div>@foreach(['Standard Room','Deluxe Room','Executive Suite'] as $sampleType)<div class="sa-card sa-sample"><span class="label">Setup Preview</span><h5>{{ $sampleType }}</h5><p class="text-muted">Configure this inside the tenant hotel setup.</p><span class="badge bg-warning text-dark">Waiting for tenant data</span></div>@endforeach@endforelse</section>
         @elseif($panel === 'reservations')
             <section class="sa-panel p-3"><h4>Reservation Calendar Board</h4><div class="sa-calendar"><table class="table table-bordered"><thead><tr><th>Reservation</th><th>Guest</th><th>Room</th><th>Arrival</th><th>Departure</th><th>Status</th></tr></thead><tbody>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<tr><td><div class="sa-event {{ ($r['status'] ?? '') === 'confirmed' ? 'green' : 'gold' }}">{{ $r['reservation_number'] ?? ('#'.($r['id'] ?? '-')) }}</div></td><td>Guest #{{ $r['customer_id'] ?? '-' }}</td><td>{{ $r['room_id'] ?? 'Unassigned' }}</td><td>{{ $r['arrival_date'] ?? '-' }}</td><td>{{ $r['departure_date'] ?? '-' }}</td><td><span class="badge {{ $statusBadge($r['status'] ?? 'reserved') }}">{{ ucfirst(str_replace('_',' ', (string)($r['status'] ?? 'reserved'))) }}</span></td></tr>@empty<tr><td colspan="6"><div class="sa-empty">No reservations found. This panel is the platform-level reservation operations board.</div></td></tr>@endforelse</tbody></table></div></section>
         @elseif($panel === 'stays')
             <section class="sa-panel sa-row-list"><div class="p-3 border-bottom"><h4 class="mb-0">In-House Guest Control</h4></div>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<div class="sa-board-row"><div><strong>Stay #{{ $r['id'] ?? '-' }}</strong><div class="small text-muted">Company {{ $r['company_id'] ?? '-' }}</div></div><div>Guest #{{ $r['customer_id'] ?? '-' }} · Room #{{ $r['room_id'] ?? 'N/A' }}</div><div>{{ $r['checkin_at'] ?? '-' }}</div><div><span class="badge {{ $statusBadge($r['status'] ?? 'checked_in') }}">{{ ucfirst(str_replace('_',' ', (string)($r['status'] ?? 'checked_in'))) }}</span></div></div>@empty<div class="p-4"><div class="sa-empty">No current stays found. This panel becomes an in-house guest register once rooms are occupied.</div></div>@endforelse</section>
         @elseif($panel === 'guests')
             <section class="sa-profile-grid">@forelse($panelRows as $row)@php $r=$rowArray($row); $name=$r['customer_name'] ?? $r['name'] ?? 'Guest'; @endphp<div class="sa-profile"><div class="sa-avatar">{{ strtoupper(substr((string)$name,0,1)) }}</div><div><h5 class="mb-1">{{ $name }}</h5><div class="text-muted small">{{ $r['phone'] ?? 'No phone' }} · {{ $r['email'] ?? 'No email' }}</div><span class="badge bg-light text-dark mt-2">Guest #{{ $r['id'] ?? '-' }}</span></div></div>@empty<div class="sa-empty">No guest profiles found. Guest CRM cards will appear here when hotel reservations/stays exist.</div>@endforelse</section>
+        @elseif($panel === 'services')
+            <section class="sa-panel p-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div>
+                        <h4 class="mb-1">Hotel Service Centers</h4>
+                        <p class="text-muted mb-0">Super Admin mirror for Restaurant, Bar, Spa, Gym, Room Service, Minibar, Laundry and Events operations.</p>
+                    </div>
+                    <form method="GET" action="{{ route('super_admin.hotels.index') }}" class="d-flex gap-2">
+                        <input type="hidden" name="panel" value="services">
+                        @if($selectedCompanyId)<input type="hidden" name="company_id" value="{{ $selectedCompanyId }}">@endif
+                        <select name="service" class="form-control" onchange="this.form.submit()">
+                            @foreach($serviceCenters as $serviceKey => $serviceMeta)
+                                <option value="{{ $serviceKey }}" {{ $selectedServiceCenter === $serviceKey ? 'selected' : '' }}>{{ $serviceMeta['label'] }}</option>
+                            @endforeach
+                        </select>
+                    </form>
+                </div>
+                <div class="sa-service-grid">
+                    @foreach($serviceCenters as $serviceKey => $serviceMeta)
+                        @continue($serviceKey === 'all')
+                        <a class="sa-service {{ $selectedServiceCenter === $serviceKey ? 'border-warning' : '' }}" href="{{ route('super_admin.hotels.index', ['panel' => 'services', 'service' => $serviceKey, 'company_id' => $selectedCompanyId]) }}">
+                            <span>{{ strtoupper(str_replace('_',' ', $serviceKey)) }}</span>
+                            <h5>{{ $serviceMeta['label'] }}</h5>
+                            <p class="text-muted mb-0">Live service-code monitor for tenant hotel postings.</p>
+                        </a>
+                    @endforeach
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm sa-table align-middle mb-0">
+                        <thead><tr><th>Posting</th><th>Company</th><th>Service</th><th>Type</th><th>Amount</th><th>Date</th></tr></thead>
+                        <tbody>
+                            @forelse($panelRows as $row)
+                                @php $r=$rowArray($row); @endphp
+                                <tr>
+                                    <td>{{ $r['description'] ?? $r['folio_number'] ?? ('#'.($r['id'] ?? '-')) }}</td>
+                                    <td>{{ $r['company_id'] ?? '-' }}</td>
+                                    <td><span class="badge bg-warning text-dark">{{ $r['service_code'] ?? $r['department'] ?? 'SERVICE' }}</span></td>
+                                    <td>{{ $r['type'] ?? $r['payment_method'] ?? '-' }}</td>
+                                    <td>{{ $money($r['amount'] ?? $r['total_amount'] ?? 0) }}</td>
+                                    <td>{{ $r['service_date'] ?? $r['created_at'] ?? $r['business_date'] ?? '-' }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="6"><div class="sa-empty">No service center postings found yet. The service cards are active and will populate from tenant hotel folio/POS postings when records exist.</div></td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         @elseif(in_array($panel, ['folios','deposits','revenue','hotel_transactions'], true))
             <section class="sa-cashier"><aside class="sa-cashier-side"><small>{{ strtoupper($panelTitle) }}</small><h3>{{ $money($outstandingReceivables) }}</h3><p>Outstanding receivables monitored from tenant folios and hotel transactions.</p></aside><main class="sa-panel p-3"><h4>Cashier Ledger</h4><div class="table-responsive"><table class="table table-sm sa-table align-middle mb-0"><thead><tr><th>Record</th><th>Company</th><th>Guest/Stay</th><th>Status/Type</th><th>Amount</th><th>Date</th></tr></thead><tbody>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<tr><td>{{ $r['folio_number'] ?? $r['reservation_number'] ?? ('#'.($r['id'] ?? '-')) }}</td><td>{{ $r['company_id'] ?? '-' }}</td><td>{{ $r['customer_id'] ?? $r['stay_id'] ?? '-' }}</td><td>{{ $r['status'] ?? $r['type'] ?? $r['service_code'] ?? '-' }}</td><td>{{ $money($r['balance'] ?? $r['amount'] ?? $r['deposit_received'] ?? $r['total_amount'] ?? 0) }}</td><td>{{ $r['created_at'] ?? $r['service_date'] ?? $r['business_date'] ?? '-' }}</td></tr>@empty<tr><td colspan="6" class="text-muted">No {{ strtolower($panelTitle) }} found.</td></tr>@endforelse</tbody></table></div></main><aside class="sa-pad"><div>Payment</div><div>Charge</div><div>Deposit</div><div>Transfer</div><div>POS</div><div>City Ledger</div></aside></section>
         @elseif(in_array($panel, ['housekeeping','maintenance','night_audits'], true))
