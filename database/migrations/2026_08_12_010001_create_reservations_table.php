@@ -2,12 +2,18 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up()
     {
+        if (Schema::hasTable('reservations')) {
+            $this->ensureIndexes();
+            return;
+        }
+
         Schema::create('reservations', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('company_id')->index();
@@ -51,6 +57,33 @@ return new class extends Migration
             $table->unique(['company_id', 'reservation_number'], 'res_company_resno_uq');
             $table->index(['company_id','property_id','arrival_date','departure_date'], 'res_cmp_prop_arr_dep_idx');
         });
+
+        $this->ensureIndexes();
+    }
+
+    private function ensureIndexes(): void
+    {
+        Schema::table('reservations', function (Blueprint $table) {
+            if (!$this->indexExists('reservations', 'res_company_resno_uq')) {
+                $table->unique(['company_id', 'reservation_number'], 'res_company_resno_uq');
+            }
+
+            if (!$this->indexExists('reservations', 'res_cmp_prop_arr_dep_idx')) {
+                $table->index(['company_id','property_id','arrival_date','departure_date'], 'res_cmp_prop_arr_dep_idx');
+            }
+        });
+    }
+
+    private function indexExists(string $tableName, string $indexName): bool
+    {
+        $database = DB::getDatabaseName();
+
+        $result = DB::select(
+            'SELECT COUNT(1) AS count FROM information_schema.statistics WHERE table_schema = ? AND table_name = ? AND index_name = ?',
+            [$database, $tableName, $indexName]
+        );
+
+        return (int) ($result[0]->count ?? 0) > 0;
     }
 
     public function down()
