@@ -162,9 +162,24 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        color: #0f172a;
-        background: #fef3c7;
+        color: var(--spb-icon-fg, #92400e);
+        background: var(--spb-icon-bg, #fef3c7);
         flex: 0 0 auto;
+    }
+
+    .product-form-card-icon i,
+    .product-form-card-icon svg {
+        color: inherit;
+    }
+
+    .product-form-card-icon.icon-tone-amber {
+        --spb-icon-bg: #fef3c7;
+        --spb-icon-fg: #92400e;
+    }
+
+    .product-form-card-icon.icon-tone-green {
+        --spb-icon-bg: #dcfce7;
+        --spb-icon-fg: #065f46;
     }
 
     .unit-suggestion-row {
@@ -321,7 +336,7 @@
                                         <h6>Identity, Pricing & Category</h6>
                                         <p class="product-form-muted mb-0">Enter the product details customers and your team will recognize.</p>
                                     </div>
-                                    <span class="product-form-card-icon"><i class="feather-package"></i></span>
+                                    <span class="product-form-card-icon icon-tone-amber"><i class="feather-package"></i></span>
                                 </div>
                                 <div class="row g-3">
                                     <div class="col-md-6">
@@ -457,7 +472,7 @@
                                         <h6>Packaging & Opening Stock</h6>
                                         <p class="product-form-muted mb-0">Set how the product is counted, then enter what is currently on hand.</p>
                                     </div>
-                                    <span class="product-form-card-icon" style="background:#dcfce7;"><i class="fas fa-balance-scale"></i></span>
+                                    <span class="product-form-card-icon icon-tone-green"><i class="fas fa-balance-scale"></i></span>
                                 </div>
                                 <h6 class="mb-1">Packaging Setup</h6>
                                 <p class="product-form-muted">Enter any two values below and the third one fills automatically.</p>

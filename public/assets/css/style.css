@@ -26743,3 +26743,73 @@ td .invoice-detail i {
 }
 
 /*# sourceMappingURL=style.css.map */
+
+/* SmartProbook icon contrast: keep small icon buttons visible on pale cards. */
+.btn-action-icon,
+.product-form-card-icon,
+.dash-widget-icon,
+.db-icon,
+.icon-circle,
+.stat-icon-circle,
+.kpi-icon-shell,
+.visit-icon {
+  color: var(--spb-icon-fg, #06285f) !important;
+  -webkit-text-fill-color: var(--spb-icon-fg, #06285f) !important;
+}
+
+.btn-action-icon i,
+.btn-action-icon svg,
+.product-form-card-icon i,
+.product-form-card-icon svg,
+.dash-widget-icon i,
+.dash-widget-icon svg,
+.db-icon i,
+.db-icon svg,
+.icon-circle i,
+.icon-circle svg,
+.stat-icon-circle i,
+.stat-icon-circle svg,
+.kpi-icon-shell i,
+.kpi-icon-shell svg,
+.visit-icon i,
+.visit-icon svg {
+  color: inherit !important;
+  -webkit-text-fill-color: inherit !important;
+}
+
+.btn-action-icon,
+button.btn-action-icon {
+  background-color: var(--spb-icon-bg, #eef4ff) !important;
+  border: 1px solid var(--spb-icon-border, rgba(6, 40, 95, 0.16)) !important;
+}
+
+.btn-action-icon:hover,
+.btn-action-icon:focus-visible,
+button.btn-action-icon:hover,
+button.btn-action-icon:focus-visible {
+  --spb-icon-bg: #06285f;
+  --spb-icon-fg: #ffffff;
+  --spb-icon-border: #06285f;
+}
+
+.bg-primary-light,
+.bg-soft-primary,
+.bg-info-light,
+.bg-soft-info {
+  --spb-icon-fg: #075985;
+}
+
+.bg-success-light,
+.bg-soft-success {
+  --spb-icon-fg: #065f46;
+}
+
+.bg-warning-light,
+.bg-soft-warning {
+  --spb-icon-fg: #92400e;
+}
+
+.bg-danger-light,
+.bg-soft-danger {
+  --spb-icon-fg: #991b1b;
+}
