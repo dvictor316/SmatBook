@@ -627,7 +627,7 @@
                 <li class="submenu {{ Request::is('superadmin/hotels*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fas fa-hotel"></i><span>Hotel Management</span><span class="menu-arrow"></span></a>
                     <ul>
-                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}">Overview</a></li>
+                        <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}">Dashboard</a></li>
                         <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=tenants">Hotel Tenants</a></li>
                         <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=properties">Properties</a></li>
                         <li><a href="{{ route('super_admin.hotels.index', $routeParams ?? []) }}?panel=rooms">Rooms</a></li>

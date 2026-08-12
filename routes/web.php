@@ -656,6 +656,8 @@ Route::middleware(['auth'])->prefix('ajax/inventory')->name('ajax.inventory.')->
 Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 'subscription.active', 'branch.required', 'hotel.tenant']], function () {
     Route::get('/dashboard', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'dashboard'])->name('dashboard');
     Route::get('/front-desk', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'frontDesk'])->name('frontdesk');
+    Route::get('/checkin', [\App\Http\Controllers\Hotel\CheckInController::class, 'index'])->name('checkin.index');
+    Route::get('/checkout', [\App\Http\Controllers\Hotel\CheckInController::class, 'checkoutDesk'])->name('checkout.index');
     Route::get('/in-house', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'inHouse'])->name('in_house');
     Route::get('/guests', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'guests'])->name('guests');
     Route::get('/deposits', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'deposits'])->name('deposits');
@@ -678,6 +680,13 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
     Route::get('/rooms/{room}/edit', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'edit'])->name('rooms.edit');
     Route::put('/rooms/{room}', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'update'])->name('rooms.update');
     Route::delete('/rooms/{room}', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'destroy'])->name('rooms.destroy');
+    Route::get('/rooms-status', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'roomStatus'])->name('rooms.status');
+    Route::get('/rooms-calendar', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'roomCalendar'])->name('rooms.calendar');
+
+    Route::get('/rate-plans', [\App\Http\Controllers\Hotel\HotelRatePlanController::class, 'index'])->name('rate_plans.index');
+    Route::post('/rate-plans', [\App\Http\Controllers\Hotel\HotelRatePlanController::class, 'store'])->name('rate_plans.store');
+    Route::post('/rate-plans/{plan}/duplicate', [\App\Http\Controllers\Hotel\HotelRatePlanController::class, 'duplicate'])->name('rate_plans.duplicate');
+    Route::post('/rate-plans/{plan}/toggle', [\App\Http\Controllers\Hotel\HotelRatePlanController::class, 'toggle'])->name('rate_plans.toggle');
 
     Route::get('/availability', [\App\Http\Controllers\Hotel\AvailabilityController::class, 'index'])->name('availability.index');
     Route::post('/availability/search', [\App\Http\Controllers\Hotel\AvailabilityController::class, 'search'])->name('availability.search');
@@ -701,6 +710,20 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
     Route::get('/night-audit', [\App\Http\Controllers\Hotel\NightAuditController::class, 'index'])->name('night_audit.index');
     Route::post('/night-audit/run', [\App\Http\Controllers\Hotel\NightAuditController::class, 'run'])->name('night_audit.run');
     Route::post('/night-audit/{audit}/reopen', [\App\Http\Controllers\Hotel\NightAuditController::class, 'reopen'])->name('night_audit.reopen');
+
+    Route::get('/restaurant-pos', function () {
+        return redirect()->route('sales.showPos', ['context' => 'hotel']);
+    })->name('restaurant.pos');
+
+    Route::get('/room-service', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'roomService'])->name('room_service.index');
+    Route::get('/laundry', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'laundry'])->name('laundry.index');
+    Route::get('/minibar', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'minibar'])->name('minibar.index');
+    Route::get('/conference-events', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'conference'])->name('conference.index');
+
+    Route::get('/corporate-accounts', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'corporateAccounts'])->name('corporate_accounts.index');
+    Route::get('/group-bookings', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'groupBookings'])->name('group_bookings.index');
+    Route::get('/booking-sources', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'bookingSources'])->name('booking_sources.index');
+    Route::get('/reports', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'reports'])->name('reports.index');
 
     Route::get('/housekeeping', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'index'])->name('housekeeping.index');
     Route::post('/housekeeping/rooms/{room}/dirty', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'markDirty'])->name('housekeeping.rooms.dirty');

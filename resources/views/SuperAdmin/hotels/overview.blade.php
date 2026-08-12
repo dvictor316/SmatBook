@@ -6,9 +6,9 @@
         <div class="page-header">
             <div class="row align-items-center">
                 <div class="col">
-                    <h3 class="page-title">Hotel Overview</h3>
+                    <h3 class="page-title">Hotel Dashboard</h3>
                     <ul class="breadcrumb">
-                        <li class="breadcrumb-item active">Hotel module summary and live metrics</li>
+                        <li class="breadcrumb-item active">Hotel module dashboard and live metrics</li>
                     </ul>
                 </div>
             </div>

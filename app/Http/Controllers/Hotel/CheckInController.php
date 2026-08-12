@@ -10,6 +10,7 @@ use App\Models\HotelHousekeepingTask;
 use App\Models\HotelRoom;
 use App\Services\Hotel\HotelFolioService;
 use App\Support\LedgerService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class CheckInController extends Controller
@@ -17,6 +18,69 @@ class CheckInController extends Controller
     public function __construct(
         private readonly HotelFolioService $folioService
     ) {
+    }
+
+    public function index(Request $request)
+    {
+        $companyId = (int) auth()->user()->company_id;
+        $query = Reservation::query()
+            ->with(['customer', 'room', 'roomType'])
+            ->where('company_id', $companyId)
+            ->whereIn('status', ['reserved', 'confirmed'])
+            ->orderBy('arrival_date');
+
+        if ($request->filled('q')) {
+            $term = trim((string) $request->query('q'));
+            $query->where(function ($sub) use ($term) {
+                $sub->where('reservation_number', 'like', '%' . $term . '%')
+                    ->orWhereHas('customer', function ($customerQuery) use ($term) {
+                        $customerQuery->where('customer_name', 'like', '%' . $term . '%')
+                            ->orWhere('phone', 'like', '%' . $term . '%');
+                    });
+            });
+        }
+
+        if ($request->filled('arrival')) {
+            $query->whereDate('arrival_date', (string) $request->query('arrival'));
+        }
+
+        $reservations = $query->paginate(20)->withQueryString();
+        return view('hotel.checkin.index', compact('reservations'));
+    }
+
+    public function checkoutDesk(Request $request)
+    {
+        $companyId = (int) auth()->user()->company_id;
+        $stays = Stay::query()
+            ->with(['customer', 'room', 'reservation'])
+            ->where('company_id', $companyId)
+            ->where('status', 'checked_in')
+            ->latest('id')
+            ->paginate(20)
+            ->withQueryString();
+
+        $selectedStay = null;
+        if ($request->filled('stay_id')) {
+            $selectedStay = Stay::query()
+                ->with(['customer', 'room', 'reservation'])
+                ->where('company_id', $companyId)
+                ->where('status', 'checked_in')
+                ->find((int) $request->query('stay_id'));
+        }
+
+        $selectedFolio = $selectedStay
+            ? GuestFolio::query()
+                ->where('company_id', $companyId)
+                ->where('stay_id', $selectedStay->id)
+                ->latest('id')
+                ->first()
+            : null;
+
+        $folioItems = $selectedFolio
+            ? \App\Models\FolioItem::query()->where('folio_id', $selectedFolio->id)->latest('id')->get()
+            : collect();
+
+        return view('hotel.checkout.index', compact('stays', 'selectedStay', 'selectedFolio', 'folioItems'));
     }
 
     public function checkin(Reservation $reservation)
@@ -119,12 +183,14 @@ class CheckInController extends Controller
                         'posted_by' => auth()->id(),
                     ]);
 
+                    [$branchId, $branchName] = $this->resolveBranchContext();
+
                     LedgerService::postHotelFolioPayment(
                         $depositItem,
                         $folio,
                         (int) ($validated['deposit_account_id'] ?? 0),
-                        $stay->branch_id ?? null,
-                        $stay->branch_name ?? null
+                        $branchId,
+                        $branchName
                     );
 
                     $folio = $this->folioService->recalculate($folio);
@@ -160,12 +226,14 @@ class CheckInController extends Controller
                     'posted_by' => auth()->id(),
                 ]);
 
+                [$branchId, $branchName] = $this->resolveBranchContext();
+
                 LedgerService::postHotelFolioPayment(
                     $cashItem,
                     $folio,
                     (int) ($validated['deposit_account_id'] ?? 0),
-                    $stay->branch_id ?? null,
-                    $stay->branch_name ?? null
+                    $branchId,
+                    $branchName
                 );
             }
 
@@ -210,5 +278,18 @@ class CheckInController extends Controller
             DB::rollBack();
             return back()->withErrors(['error' => $e->getMessage()]);
         }
+    }
+
+    private function resolveBranchContext(): array
+    {
+        $branchId = Auth::user()?->branch_id
+            ? (string) Auth::user()->branch_id
+            : (session('active_branch_id') ? (string) session('active_branch_id') : null);
+
+        $branchName = Auth::user()?->branch_name
+            ? (string) Auth::user()->branch_name
+            : (session('active_branch_name') ? (string) session('active_branch_name') : null);
+
+        return [$branchId, $branchName];
     }
 }
