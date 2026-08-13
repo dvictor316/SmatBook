@@ -119,17 +119,13 @@
         }
         @endif
 
-        html.spb-fast-loading #spb-page-content {
-            opacity: .55;
-            transform: translateY(3px);
-            transition: opacity .12s ease, transform .12s ease;
-            pointer-events: none;
+        #spb-page-content {
+            opacity: 1;
+            transform: none;
         }
 
-        html:not(.spb-fast-loading) #spb-page-content {
-            opacity: 1;
-            transform: translateY(0);
-            transition: opacity .16s ease, transform .16s ease;
+        html.spb-fast-loading #spb-page-content {
+            pointer-events: auto;
         }
 
         @media print {
@@ -2251,7 +2247,6 @@
             const url = eligible(anchor, true);
             if (!url || navigating) return false;
             navigating = true;
-            setLoading(true);
 
             try {
                 const html = (await (prefetched.get(url.href) || fetch(url.href, {
