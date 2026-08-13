@@ -256,6 +256,7 @@ class HotelDemoDataSeeder
             $ids[$email] = $this->upsertAndGetId('customers', $where, [
                 'company_id' => $companyId,
                 'name' => $guest[0],
+                'customer_name' => $guest[0],
                 'phone' => $guest[1],
                 'address' => $guest[2] . ' [' . self::TAG . ']',
                 'status' => 'active',
