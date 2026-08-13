@@ -119,6 +119,19 @@
         }
         @endif
 
+        html.spb-fast-loading #spb-page-content {
+            opacity: .55;
+            transform: translateY(3px);
+            transition: opacity .12s ease, transform .12s ease;
+            pointer-events: none;
+        }
+
+        html:not(.spb-fast-loading) #spb-page-content {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity .16s ease, transform .16s ease;
+        }
+
         @media print {
             @page { size: auto; margin: 10mm; }
             .header,
@@ -1836,6 +1849,7 @@
 
 
     {{-- MAIN PAGE CONTENT --}}
+    <div id="spb-page-content" data-spb-fast-region="content">
     @include('layout.partials.flash-messages')
     @if (($isDemoWorkspace ?? false) && isset($demoCompany) && $demoCompany)
         @php
@@ -1987,6 +2001,9 @@
                             <a href="{{ route('demo.workspace.plan', ['plan' => 'basic']) }}" class="btn btn-sm btn-outline-primary">Basic</a>
                             <a href="{{ route('demo.workspace.plan', ['plan' => 'pro']) }}" class="btn btn-sm btn-outline-primary">Pro</a>
                             <a href="{{ route('demo.workspace.plan', ['plan' => 'enterprise']) }}" class="btn btn-sm btn-outline-primary">Enterprise</a>
+                            @if(Route::has('hotel.dashboard'))
+                                <a href="{{ route('hotel.dashboard') }}" class="btn btn-sm btn-outline-secondary">Hotel</a>
+                            @endif
                             <a href="{{ route('customers.index') }}" class="btn btn-sm btn-outline-secondary">Customers</a>
                             <a href="{{ route('reports.hub') }}" class="btn btn-sm btn-outline-secondary">Reports</a>
                         </div>
@@ -1998,6 +2015,9 @@
                             <a href="{{ route('add-invoice', ['customer_id' => $demoPreviewCustomer->id]) }}" class="btn btn-sm btn-outline-secondary">New Invoice</a>
                             <a href="{{ route('sales.create', ['customer_id' => $demoPreviewCustomer->id]) }}" class="btn btn-sm btn-outline-secondary">New Sale</a>
                             <a href="{{ route('reports.customer-statement', $demoPreviewCustomer->id) }}" class="btn btn-sm btn-outline-secondary">Statement</a>
+                            @if(Route::has('hotel.dashboard'))
+                                <a href="{{ route('hotel.dashboard') }}" class="btn btn-sm btn-outline-secondary">Hotel</a>
+                            @endif
                             <a href="{{ route('reports.hub') }}" class="btn btn-sm btn-outline-secondary">Reports</a>
                             <a href="{{ route('demo.customer-preview.stop') }}" class="btn btn-sm btn-outline-danger">Exit Preview</a>
                         </div>
@@ -2039,6 +2059,7 @@
     @else
         @yield('content')
     @endif
+    </div>
 
     @php
         $skipGlobalModals = in_array($route, [
@@ -2148,50 +2169,123 @@
 
     <script>
     (function () {
-        const prefetched = new Set();
+        const prefetched = new Map();
         const blockedPathWords = [
             'logout', 'delete', 'destroy', 'remove', 'download', 'export',
-            'print', 'receipt', 'pay-online', 'mail-pay-invoice'
+            'print', 'receipt', 'pay-online', 'mail-pay-invoice', 'checkout',
+            'return', 'password', 'subscription', 'saas/checkout'
         ];
+        const hardReloadPrefixes = ['/pos', '/hotel/restaurant-pos'];
         const skipExtensions = /\.(?:pdf|csv|xlsx?|zip|rar|png|jpe?g|gif|webp|svg|mp4|mov|avi|webm)(?:$|[?#])/i;
         const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        let navigating = false;
 
         if (connection && (connection.saveData || /2g/.test(connection.effectiveType || ''))) {
             return;
         }
 
-        function eligible(anchor) {
-            if (!anchor || anchor.dataset.noPrefetch === 'true') return null;
-            if (anchor.target && anchor.target !== '_self') return null;
-            if ((anchor.getAttribute('download') || '').trim() !== '') return null;
-            const rawHref = anchor.getAttribute('href') || '';
+        function sameOriginUrl(rawHref) {
             if (!rawHref || rawHref[0] === '#' || rawHref.startsWith('javascript:') || rawHref.startsWith('mailto:') || rawHref.startsWith('tel:')) return null;
-
-            let url;
             try {
-                url = new URL(rawHref, window.location.href);
+                const url = new URL(rawHref, window.location.href);
+                return url.origin === window.location.origin ? url : null;
             } catch (e) {
                 return null;
             }
+        }
 
-            if (url.origin !== window.location.origin) return null;
+        function eligible(anchor, forSwap) {
+            if (!anchor || anchor.dataset.noPrefetch === 'true' || anchor.dataset.noFastNav === 'true') return null;
+            if (anchor.target && anchor.target !== '_self') return null;
+            if ((anchor.getAttribute('download') || '').trim() !== '') return null;
+            const url = sameOriginUrl(anchor.getAttribute('href') || '');
+            if (!url) return null;
             if (url.href === window.location.href) return null;
             if (skipExtensions.test(url.pathname)) return null;
             if (blockedPathWords.some((word) => url.pathname.toLowerCase().includes(word))) return null;
-
-            return url.href;
+            if (forSwap && hardReloadPrefixes.some((prefix) => url.pathname === prefix || url.pathname.startsWith(prefix + '/'))) return null;
+            if (forSwap && hardReloadPrefixes.some((prefix) => window.location.pathname === prefix || window.location.pathname.startsWith(prefix + '/'))) return null;
+            return url;
         }
 
         function prefetch(anchor) {
-            const href = eligible(anchor);
-            if (!href || prefetched.has(href) || prefetched.size > 60) return;
-            prefetched.add(href);
+            const url = eligible(anchor, false);
+            if (!url || prefetched.has(url.href) || prefetched.size > 80) return;
 
-            const link = document.createElement('link');
-            link.rel = 'prefetch';
-            link.as = 'document';
-            link.href = href;
-            document.head.appendChild(link);
+            const request = fetch(url.href, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: { 'X-SmartProbook-Prefetch': '1' }
+            }).then((response) => {
+                const type = response.headers.get('content-type') || '';
+                if (!response.ok || !type.includes('text/html')) return null;
+                return response.text();
+            }).catch(() => null);
+
+            prefetched.set(url.href, request);
+        }
+
+        function runInlineScripts(container) {
+            container.querySelectorAll('script').forEach((oldScript) => {
+                if (oldScript.src) return;
+                const script = document.createElement('script');
+                Array.from(oldScript.attributes).forEach((attr) => script.setAttribute(attr.name, attr.value));
+                script.textContent = oldScript.textContent;
+                oldScript.replaceWith(script);
+            });
+        }
+
+        function syncSidebar(doc) {
+            const incomingSidebar = doc.querySelector('#sidebar');
+            const currentSidebar = document.querySelector('#sidebar');
+            if (incomingSidebar && currentSidebar) {
+                currentSidebar.innerHTML = incomingSidebar.innerHTML;
+            }
+        }
+
+        function setLoading(active) {
+            document.documentElement.classList.toggle('spb-fast-loading', active);
+        }
+
+        async function softNavigate(anchor) {
+            const url = eligible(anchor, true);
+            if (!url || navigating) return false;
+            navigating = true;
+            setLoading(true);
+
+            try {
+                const html = (await (prefetched.get(url.href) || fetch(url.href, {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: { 'X-SmartProbook-Navigate': '1' }
+                }).then((response) => {
+                    const type = response.headers.get('content-type') || '';
+                    if (!response.ok || !type.includes('text/html')) return null;
+                    return response.text();
+                }))) || null;
+
+                if (!html) return false;
+
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const incoming = doc.querySelector('#spb-page-content');
+                const current = document.querySelector('#spb-page-content');
+                if (!incoming || !current) return false;
+
+                document.title = doc.title || document.title;
+                document.body.className = doc.body.className;
+                current.replaceWith(incoming);
+                syncSidebar(doc);
+                runInlineScripts(document.querySelector('#spb-page-content'));
+                window.history.pushState({ spbFastNav: true }, '', url.href);
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+                document.dispatchEvent(new CustomEvent('smartprobook:page-loaded', { detail: { url: url.href } }));
+                return true;
+            } catch (e) {
+                return false;
+            } finally {
+                navigating = false;
+                setLoading(false);
+            }
         }
 
         document.addEventListener('pointerenter', function (event) {
@@ -2206,6 +2300,20 @@
             const anchor = event.target.closest && event.target.closest('a[href]');
             prefetch(anchor);
         }, { passive: true, capture: true });
+
+        document.addEventListener('click', async function (event) {
+            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            const anchor = event.target.closest && event.target.closest('a[href]');
+            if (!anchor) return;
+            if (!eligible(anchor, true)) return;
+            event.preventDefault();
+            const handled = await softNavigate(anchor);
+            if (!handled) window.location.href = anchor.href;
+        });
+
+        window.addEventListener('popstate', function () {
+            window.location.reload();
+        });
     })();
     </script>
 

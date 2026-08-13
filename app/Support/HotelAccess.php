@@ -9,9 +9,20 @@ class HotelAccess
 {
     public static function userIsHotelTenant($user): bool
     {
+        if ($user && method_exists($user, 'isDemoUser') && $user->isDemoUser()) {
+            return true;
+        }
+
         $companyId = (int) ($user?->company_id ?? 0);
         if ($companyId <= 0) {
             return false;
+        }
+
+        if (Schema::hasTable('companies') && Schema::hasColumn('companies', 'is_demo')) {
+            $isDemoCompany = (bool) \DB::table('companies')->where('id', $companyId)->value('is_demo');
+            if ($isDemoCompany) {
+                return true;
+            }
         }
 
         if (Schema::hasTable('hotel_properties')) {
