@@ -4,7 +4,7 @@
 <style>
     .availability-search { background:#f4f7fb; color:#172033; }
     .av-hero { background:linear-gradient(135deg,#0b2f54,#0f766e); color:#fff; border-radius:16px; padding:22px; margin-bottom:16px; }
-    .av-hero h3 { color:#fff; margin:0; font-size:28px; font-weight:900; }
+    .av-hero h3 { color:#fff; margin:0; font-size:28px; font-weight:700; }
     .av-card { background:#fff; border:1px solid #dce4ef; border-radius:14px; box-shadow:0 10px 28px rgba(15,23,42,.06); }
     .av-form { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; }
     .av-steps { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-top:16px; }

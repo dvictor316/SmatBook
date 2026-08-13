@@ -5,15 +5,15 @@
     .reservation-workspace { background:#f5f7fb; color:#172033; }
     .res-top { background:#fff; border:1px solid #dce4ef; border-radius:12px; padding:16px; box-shadow:0 8px 24px rgba(15,23,42,.05); }
     .res-pipeline { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:8px; margin:14px 0; }
-    .res-step { border-radius:10px; padding:10px; background:#fff; border:1px solid #dce4ef; text-align:center; font-weight:900; color:#172033; }
+    .res-step { border-radius:10px; padding:10px; background:#fff; border:1px solid #dce4ef; text-align:center; font-weight:700; color:#172033; }
     .res-step span { display:block; font-size:12px; color:#64748b; font-weight:700; }
     .res-shell { display:grid; grid-template-columns:260px minmax(0,1fr); gap:14px; }
     .res-filter, .res-list { background:#fff; border:1px solid #dce4ef; border-radius:12px; box-shadow:0 8px 24px rgba(15,23,42,.05); }
     .res-filter { padding:16px; align-self:start; }
     .res-card { display:grid; grid-template-columns:150px minmax(0,1fr) 160px 150px 145px; gap:12px; align-items:center; padding:14px; border-bottom:1px solid #edf1f6; }
     .res-card:last-child { border-bottom:0; }
-    .res-number { color:#0b5fb8; font-weight:900; text-decoration:none; }
-    .res-guest { font-size:16px; font-weight:900; }
+    .res-number { color:#0b5fb8; font-weight:700; text-decoration:none; }
+    .res-guest { font-size:16px; font-weight:700; }
     .res-date { background:#f8fafc; border:1px solid #e5eaf2; border-radius:8px; padding:8px; font-size:12px; }
     .res-money { text-align:right; }
     .res-actions { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }

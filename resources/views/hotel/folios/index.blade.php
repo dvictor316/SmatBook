@@ -4,19 +4,19 @@
 <style>
     .folio-register { background:#f3f5f7; color:#1f2937; }
     .folio-hero { background:#24333a; color:#fff; padding:16px 18px; border-radius:6px 6px 0 0; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; }
-    .folio-hero h3 { color:#fff; margin:0; font-weight:900; }
+    .folio-hero h3 { color:#fff; margin:0; font-weight:700; }
     .folio-strip { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:14px 0; }
     .folio-stat { background:#fff; border:1px solid #d7dde5; border-radius:6px; padding:13px; box-shadow:0 6px 18px rgba(15,23,42,.04); }
-    .folio-stat span { color:#64748b; text-transform:uppercase; font-size:11px; letter-spacing:.08em; font-weight:900; }
+    .folio-stat span { color:#64748b; text-transform:uppercase; font-size:11px; letter-spacing:.08em; font-weight:700; }
     .folio-stat strong { display:block; font-size:24px; margin-top:5px; }
     .folio-shell { display:grid; grid-template-columns:260px minmax(0,1fr); gap:14px; }
     .folio-side, .folio-table-card { background:#fff; border:1px solid #d7dde5; box-shadow:0 6px 18px rgba(15,23,42,.04); }
     .folio-side { padding:14px; border-radius:6px; align-self:start; }
-    .folio-side a { display:flex; justify-content:space-between; color:#27313f; text-decoration:none; border-bottom:1px solid #edf1f5; padding:11px 0; font-weight:800; }
+    .folio-side a { display:flex; justify-content:space-between; color:#27313f; text-decoration:none; border-bottom:1px solid #edf1f5; padding:11px 0; font-weight:600; }
     .folio-table-card { border-radius:6px; overflow:hidden; }
     .folio-table th { background:#f4f5f7; color:#1f2937; font-size:12px; text-transform:uppercase; border-bottom:1px solid #cfd6df; }
     .folio-table td { vertical-align:middle; }
-    .folio-number { color:#8a174f; font-weight:900; text-decoration:none; }
+    .folio-number { color:#8a174f; font-weight:700; text-decoration:none; }
     @media(max-width:991px){.folio-shell{grid-template-columns:1fr}.folio-strip{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:575px){.folio-strip{grid-template-columns:1fr}}
 </style>

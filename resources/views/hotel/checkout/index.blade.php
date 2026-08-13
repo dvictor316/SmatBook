@@ -12,7 +12,7 @@
     .timeline span { flex:1; height:3px; background:#cdd7e7; position:relative; }
     .timeline span:before { content:''; position:absolute; left:0; top:-4px; width:11px; height:11px; border-radius:50%; background:#315bdc; }
     .settle-tabs { display:flex; gap:8px; flex-wrap:wrap; }
-    .settle-tabs label { border:1px solid #cfd6df; border-radius:7px; padding:10px 14px; min-width:105px; text-align:center; font-weight:800; cursor:pointer; background:#fff; }
+    .settle-tabs label { border:1px solid #cfd6df; border-radius:7px; padding:10px 14px; min-width:105px; text-align:center; font-weight:600; cursor:pointer; background:#fff; }
     .settle-tabs input { display:none; }
     .settle-tabs input:checked + span { color:#315bdc; }
     .settle-summary { background:#f6f7f9; border-top:1px solid #d9dee7; padding:18px; }
@@ -68,7 +68,7 @@
 
                         <form method="POST" action="{{ route('hotel.checkout', $selectedStay) }}">
                             @csrf
-                            <label class="form-label fw-bold">Payment Method</label>
+                            <label class="form-label fw-semibold">Payment Method</label>
                             <div class="settle-tabs mb-3">
                                 @foreach(['cash' => 'Cash', 'transfer' => 'Transfer', 'pos' => 'POS', 'split' => 'Split', 'corporate_credit' => 'City Ledger'] as $method => $label)
                                     <label><input type="radio" name="settlement_method" value="{{ $method }}" {{ $loop->first ? 'checked' : '' }}><span>{{ $label }}</span></label>

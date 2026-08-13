@@ -5,11 +5,11 @@
     .pms-maintenance { background:#eef3f6; color:#172033; }
     .maint-console { display:grid; grid-template-columns:300px minmax(0,1fr); gap:16px; }
     .maint-hero { background:#111827; color:#fff; border-radius:18px; padding:18px; margin-bottom:16px; display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap; border-left:8px solid #d4a23a; }
-    .maint-hero h3 { color:#fff; margin:0; font-weight:900; }
+    .maint-hero h3 { color:#fff; margin:0; font-weight:700; }
     .maint-hero p { color:#d1d5db; margin:4px 0 0; }
     .maint-stat-row { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:16px; }
     .maint-stat { background:#fff; border:1px solid #dce4ef; border-radius:14px; padding:14px; box-shadow:0 10px 24px rgba(15,23,42,.05); }
-    .maint-stat span { display:block; color:#64748b; text-transform:uppercase; letter-spacing:.08em; font-size:11px; font-weight:900; }
+    .maint-stat span { display:block; color:#64748b; text-transform:uppercase; letter-spacing:.08em; font-size:11px; font-weight:700; }
     .maint-stat strong { display:block; font-size:30px; line-height:1; margin-top:8px; }
     .maint-panel { background:#fff; border:1px solid #dce4ef; border-radius:16px; box-shadow:0 12px 28px rgba(15,23,42,.06); overflow:hidden; }
     .maint-panel-head { padding:14px 16px; background:#f8fafc; border-bottom:1px solid #e5edf6; display:flex; justify-content:space-between; gap:10px; align-items:center; }
@@ -20,7 +20,7 @@
     .maint-ticket.high, .maint-ticket.critical { border-left-color:#dc2626; background:#fff7f7; }
     .maint-ticket.medium { border-left-color:#d4a23a; }
     .maint-room { font-size:28px; font-weight:300; color:#0b5fb8; line-height:1; }
-    .maint-priority { display:inline-flex; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:900; background:#eef2ff; color:#1d4ed8; }
+    .maint-priority { display:inline-flex; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:700; background:#eef2ff; color:#1d4ed8; }
     .maint-priority.hot { background:#fee2e2; color:#991b1b; }
     @media(max-width:1199px){.maint-console{grid-template-columns:1fr}.maint-ticket{grid-template-columns:1fr}.maint-stat-row{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:575px){.maint-stat-row{grid-template-columns:1fr}}

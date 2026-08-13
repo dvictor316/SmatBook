@@ -4,11 +4,11 @@
 <style>
     .hotel-reports-hub { background:#06213a; color:#dbeafe; }
     .report-hero { display:flex; justify-content:space-between; align-items:flex-end; gap:14px; flex-wrap:wrap; padding:20px; border:1px solid rgba(255,255,255,.14); border-radius:16px; background:linear-gradient(135deg,#082f55,#0b1f35); margin-bottom:16px; }
-    .report-hero h3 { color:#fff; font-size:30px; font-weight:900; margin:0; }
+    .report-hero h3 { color:#fff; font-size:30px; font-weight:700; margin:0; }
     .report-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
     .report-tile { min-height:170px; padding:18px; border-radius:14px; background:#102f4d; border:1px solid rgba(255,255,255,.13); color:#fff; text-decoration:none; display:flex; flex-direction:column; justify-content:space-between; }
     .report-tile:hover { color:#fff; transform:translateY(-2px); }
-    .report-tile span { color:#f1c15c; text-transform:uppercase; letter-spacing:.12em; font-size:12px; font-weight:900; }
+    .report-tile span { color:#f1c15c; text-transform:uppercase; letter-spacing:.12em; font-size:12px; font-weight:700; }
     .report-tile p { color:#cbd5e1; margin:0; }
     @media(max-width:991px){.report-grid{grid-template-columns:1fr 1fr}}
     @media(max-width:575px){.report-grid{grid-template-columns:1fr}.report-hero h3{font-size:23px}}
@@ -18,7 +18,7 @@
 @section('content')
 <div class="page-wrapper hotel-reports-hub">
     <div class="content container-fluid">
-        <section class="report-hero"><div><span class="text-warning fw-bold">HOTEL REPORTS</span><h3>Operational reports centre</h3><p class="mb-0">Front-office, housekeeping, folio, source and night-audit report destinations.</p></div><a href="{{ route('hotel.night_audit.index') }}" class="btn btn-warning">Night Audit</a></section>
+        <section class="report-hero"><div><span class="text-warning fw-semibold">HOTEL REPORTS</span><h3>Operational reports centre</h3><p class="mb-0">Front-office, housekeeping, folio, source and night-audit report destinations.</p></div><a href="{{ route('hotel.night_audit.index') }}" class="btn btn-warning">Night Audit</a></section>
         <div class="report-grid">
             <a href="{{ route('hotel.frontdesk') }}" class="report-tile"><span>Front Office</span><h4>Arrivals & Departures</h4><p>Daily guest movement and desk queue.</p></a>
             <a href="{{ route('hotel.reservations.index') }}" class="report-tile"><span>Reservations</span><h4>Reservation Register</h4><p>Booking status, room assignments and source tracking.</p></a>

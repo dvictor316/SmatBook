@@ -13,7 +13,7 @@
 
 @section('content')
 <div class="page-wrapper room-form-page"><div class="content container-fluid">
-    <section class="room-form-hero"><div><small class="text-warning fw-bold">ROOM SETUP</small><h3 class="mb-1">Add Available Room</h3><p class="mb-0">Create the room, attach it to a room type, set override pricing if needed, and upload client-facing visuals.</p></div><div class="d-flex gap-2 flex-wrap align-self-start"><a href="{{ route('hotel.room_types.index') }}" class="btn btn-light">Room Types & Prices</a><a href="{{ route('hotel.rate_plans.index') }}" class="btn btn-warning">Rate Plans</a></div></section>
+    <section class="room-form-hero"><div><small class="text-warning fw-semibold">ROOM SETUP</small><h3 class="mb-1">Add Available Room</h3><p class="mb-0">Create the room, attach it to a room type, set override pricing if needed, and upload client-facing visuals.</p></div><div class="d-flex gap-2 flex-wrap align-self-start"><a href="{{ route('hotel.room_types.index') }}" class="btn btn-light">Room Types & Prices</a><a href="{{ route('hotel.rate_plans.index') }}" class="btn btn-warning">Rate Plans</a></div></section>
 
     <form method="POST" action="{{ route('hotel.rooms.store') }}" enctype="multipart/form-data">
         @csrf

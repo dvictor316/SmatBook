@@ -5,20 +5,20 @@
     .guest-crm { background:#f1f2f4; color:#2d3748; }
     .crm-top { display:grid; grid-template-columns:220px repeat(4,minmax(0,1fr)); gap:14px; align-items:stretch; margin-bottom:18px; }
     .crm-profile-rail { display:flex; gap:12px; align-items:center; padding:16px; }
-    .crm-avatar { width:64px; height:64px; border-radius:50%; background:#22343b; color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:900; }
+    .crm-avatar { width:64px; height:64px; border-radius:50%; background:#22343b; color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:700; }
     .crm-stat, .crm-profile-rail, .crm-panel { background:#fff; border:1px solid #e1e5eb; border-radius:6px; box-shadow:0 6px 16px rgba(15,23,42,.035); }
     .crm-stat { padding:18px; min-height:92px; }
     .crm-stat small { color:#6b7280; text-transform:uppercase; letter-spacing:.04em; }
     .crm-tabs { display:flex; gap:24px; border-bottom:1px solid #dce2ea; margin-bottom:18px; padding-left:4px; }
-    .crm-tabs span { padding:12px 0; color:#6b7280; font-weight:800; }
+    .crm-tabs span { padding:12px 0; color:#6b7280; font-weight:600; }
     .crm-tabs .active { color:#315bdc; border-bottom:4px solid #6366f1; }
     .crm-shell { display:grid; grid-template-columns:260px minmax(0,1fr); gap:18px; }
     .crm-side { padding:18px; }
     .crm-side .field { display:flex; justify-content:space-between; border-bottom:1px solid #edf1f5; padding:11px 0; color:#6b7280; }
     .guest-row { display:grid; grid-template-columns:70px 1.1fr 1fr .7fr 1fr 1.2fr auto; gap:12px; align-items:center; padding:13px; border-bottom:1px solid #edf1f5; }
-    .guest-row.header { background:#fbfbfb; color:#6b7280; text-transform:uppercase; font-size:12px; font-weight:900; }
-    .guest-photo { width:48px; height:48px; border-radius:8px; background:#e5e7eb; display:flex; align-items:center; justify-content:center; font-weight:900; color:#334155; }
-    .guest-tag { display:inline-flex; border-radius:999px; padding:5px 8px; background:#eef2ff; color:#3742a0; font-size:12px; font-weight:800; }
+    .guest-row.header { background:#fbfbfb; color:#6b7280; text-transform:uppercase; font-size:12px; font-weight:700; }
+    .guest-photo { width:48px; height:48px; border-radius:8px; background:#e5e7eb; display:flex; align-items:center; justify-content:center; font-weight:700; color:#334155; }
+    .guest-tag { display:inline-flex; border-radius:999px; padding:5px 8px; background:#eef2ff; color:#3742a0; font-size:12px; font-weight:600; }
     .guest-alert { border:1px solid #e6dcc5; background:#fffdf5; border-radius:4px; padding:8px; font-size:12px; color:#5b4636; }
     @media(max-width:1199px){.crm-top,.crm-shell{grid-template-columns:1fr}.guest-row{grid-template-columns:60px 1fr}.guest-row.header{display:none}.guest-row > div{min-width:0}}
 </style>

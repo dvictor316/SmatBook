@@ -5,11 +5,11 @@
     .hk-page { background:#f5f8fc; color:#0b1f36; }
     .hk-wrap { padding:18px; }
     .hk-topbar { display:flex; justify-content:space-between; gap:14px; align-items:flex-end; margin-bottom:16px; }
-    .hk-topbar h2 { margin:0; font-weight:900; color:#071f3d; }
+    .hk-topbar h2 { margin:0; font-weight:700; color:#071f3d; }
     .hk-topbar p { margin:4px 0 0; color:#667085; font-size:15px; }
     .hk-actions { display:flex; gap:8px; flex-wrap:wrap; }
     .hk-chip-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
-    .hk-chip { border-radius:999px; padding:9px 14px; font-weight:900; border:1px solid transparent; background:#fff; box-shadow:0 8px 22px rgba(15,23,42,.06); }
+    .hk-chip { border-radius:999px; padding:9px 14px; font-weight:700; border:1px solid transparent; background:#fff; box-shadow:0 8px 22px rgba(15,23,42,.06); }
     .hk-chip.clean { background:#dcfce7; color:#166534; }
     .hk-chip.occupied { background:#dbeafe; color:#1d4ed8; }
     .hk-chip.dirty { background:#fee2e2; color:#b91c1c; }
@@ -18,8 +18,8 @@
     .hk-layout { display:grid; grid-template-columns:285px minmax(0,1fr); gap:16px; align-items:start; }
     .hk-panel { background:#fff; border:1px solid #dfe8f3; border-radius:18px; box-shadow:0 16px 34px rgba(15,23,42,.07); }
     .hk-filter { padding:16px; position:sticky; top:92px; }
-    .hk-filter h4 { font-weight:900; color:#061b33; margin-bottom:12px; }
-    .hk-filter label { color:#475569; font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:.08em; }
+    .hk-filter h4 { font-weight:700; color:#061b33; margin-bottom:12px; }
+    .hk-filter label { color:#475569; font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.08em; }
     .hk-filter .form-control, .hk-filter .form-select { border-radius:12px; border-color:#d8e2ee; min-height:44px; }
     .hk-room-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:14px; }
     .hk-room-card { min-height:205px; border-radius:18px; border:2px solid #2563eb; background:#eff6ff; padding:18px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 12px 28px rgba(15,23,42,.06); }
@@ -28,19 +28,19 @@
     .hk-room-card.maintenance { border-color:#d97706; background:#fffbeb; }
     .hk-room-card.inspection { border-color:#7c3aed; background:#f5f3ff; }
     .hk-room-head { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
-    .hk-room-no { font-size:38px; line-height:1; font-weight:900; color:#061b33; }
+    .hk-room-no { font-size:38px; line-height:1; font-weight:700; color:#061b33; }
     .hk-flag { font-size:18px; color:#7c3aed; }
-    .hk-tag { display:inline-flex; align-items:center; border-radius:7px; padding:5px 9px; font-size:12px; font-weight:900; margin:2px 3px 2px 0; }
+    .hk-tag { display:inline-flex; align-items:center; border-radius:7px; padding:5px 9px; font-size:12px; font-weight:700; margin:2px 3px 2px 0; }
     .hk-tag.type { background:#e0efff; color:#2563eb; }
     .hk-tag.clean { background:#bbf7d0; color:#166534; }
     .hk-tag.occupied { background:#bfdbfe; color:#1d4ed8; }
     .hk-tag.dirty { background:#fecaca; color:#b91c1c; }
     .hk-tag.maintenance { background:#fde68a; color:#92400e; }
     .hk-tag.arriving { background:#ede9fe; color:#6d28d9; }
-    .hk-guest { color:#334155; font-weight:900; font-size:18px; margin-top:12px; }
+    .hk-guest { color:#334155; font-weight:700; font-size:18px; margin-top:12px; }
     .hk-meta { color:#64748b; line-height:1.45; }
     .hk-card-actions { display:flex; gap:8px; margin-top:14px; }
-    .hk-card-actions .btn { border-radius:11px; font-weight:900; flex:1; }
+    .hk-card-actions .btn { border-radius:11px; font-weight:700; flex:1; }
     .hk-workbench { margin-top:18px; display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:16px; }
     .hk-table-wrap { overflow:auto; }
     .hk-table { min-width:850px; margin:0; }
@@ -48,7 +48,7 @@
     .hk-table td { padding:12px; vertical-align:middle; border-color:#e8eef6; }
     .hk-table tbody tr:nth-child(even) { background:#f8fafc; }
     .hk-side-card { padding:16px; }
-    .hk-side-card h4 { font-weight:900; color:#061b33; }
+    .hk-side-card h4 { font-weight:700; color:#061b33; }
     .hk-mini-task { border:1px solid #e2e8f0; border-left:5px solid #d97706; border-radius:14px; padding:12px; margin-bottom:10px; background:#fff; }
     .hk-mini-task.high { border-left-color:#dc2626; background:#fff7f7; }
     @media(max-width:1199px){.hk-layout,.hk-workbench{grid-template-columns:1fr}.hk-filter{position:static}.hk-room-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}}

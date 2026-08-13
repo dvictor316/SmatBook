@@ -13,7 +13,7 @@
 
 @section('content')
 <div class="page-wrapper room-form-page"><div class="content container-fluid">
-    <section class="room-form-hero"><div><small class="text-warning fw-bold">ROOM SETUP</small><h3 class="mb-1">Edit Room {{ $room->room_number }}</h3><p class="mb-0">Update room status, pricing override, photo and panorama preview.</p></div><a href="{{ route('hotel.rooms.index') }}" class="btn btn-light align-self-start">Back to Rooms</a></section>
+    <section class="room-form-hero"><div><small class="text-warning fw-semibold">ROOM SETUP</small><h3 class="mb-1">Edit Room {{ $room->room_number }}</h3><p class="mb-0">Update room status, pricing override, photo and panorama preview.</p></div><a href="{{ route('hotel.rooms.index') }}" class="btn btn-light align-self-start">Back to Rooms</a></section>
 
     <form method="POST" action="{{ route('hotel.rooms.update', $room) }}" enctype="multipart/form-data">@csrf @method('PUT')
         <div class="room-form-card"><div class="card-header"><h5 class="mb-0">Room Details</h5></div><div class="card-body">

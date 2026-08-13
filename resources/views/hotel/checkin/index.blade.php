@@ -6,14 +6,14 @@
     .journey-top { background:linear-gradient(135deg,#0b5fb8,#0f766e); color:#fff; border-radius:14px; padding:18px; margin-bottom:14px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
     .journey-top h3 { color:#fff; margin:0; }
     .journey-steps { display:flex; gap:8px; flex-wrap:wrap; }
-    .journey-steps span { background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.28); padding:8px 11px; border-radius:999px; font-weight:800; }
+    .journey-steps span { background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.28); padding:8px 11px; border-radius:999px; font-weight:600; }
     .ci-shell { display:grid; grid-template-columns:minmax(0,1.4fr) 360px; gap:14px; }
     .ci-panel { background:#fff; border:1px solid #dce4ef; border-radius:12px; box-shadow:0 8px 24px rgba(15,23,42,.05); }
     .ci-filter { padding:14px; margin-bottom:14px; }
     .arrival-card { border-bottom:1px solid #edf1f6; padding:15px; }
     .arrival-card:last-child { border-bottom:0; }
     .arrival-head { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; flex-wrap:wrap; }
-    .arrival-name { font-size:17px; font-weight:900; }
+    .arrival-name { font-size:17px; font-weight:700; }
     .arrival-details { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; margin:12px 0; }
     .arrival-details div { background:#f8fafc; border:1px solid #e5eaf2; border-radius:8px; padding:9px; font-size:13px; }
     .ci-side { padding:16px; }

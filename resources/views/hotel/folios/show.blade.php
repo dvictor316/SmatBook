@@ -7,15 +7,15 @@
     .cashier-shell { display:grid; grid-template-columns:280px minmax(0,1fr) 330px; gap:12px; }
     .cashier-card { background:#fff; border:1px solid #d7dde5; box-shadow:0 5px 16px rgba(15,23,42,.04); }
     .cashier-side { padding:12px; }
-    .cashier-room { font-size:42px; font-weight:900; color:#123456; line-height:1; }
-    .cashier-chip { display:inline-flex; align-items:center; padding:5px 9px; border-radius:4px; background:#eef2f7; color:#334155; font-weight:800; font-size:12px; }
+    .cashier-room { font-size:42px; font-weight:700; color:#123456; line-height:1; }
+    .cashier-chip { display:inline-flex; align-items:center; padding:5px 9px; border-radius:4px; background:#eef2f7; color:#334155; font-weight:600; font-size:12px; }
     .cashier-tabs { display:flex; border-bottom:3px solid #8a174f; background:#f7f7f7; }
-    .cashier-tab { padding:12px 18px; border-right:1px solid #d7dde5; font-weight:800; }
+    .cashier-tab { padding:12px 18px; border-right:1px solid #d7dde5; font-weight:600; }
     .cashier-tab.active { background:#8a174f; color:#fff; }
     .folio-ledger th { background:#f5f5f5; color:#1f2937; border-bottom:1px solid #cfd6df; font-size:12px; text-transform:uppercase; }
     .folio-ledger td { font-size:13px; vertical-align:middle; }
     .payment-pad { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; padding:12px; }
-    .payment-pad button, .payment-pad a, .payment-pad .pad-label { min-height:68px; border:1px solid #d7dde5; background:#fff; border-radius:5px; display:flex; align-items:center; justify-content:center; text-align:center; color:#27313f; font-weight:800; padding:8px; }
+    .payment-pad button, .payment-pad a, .payment-pad .pad-label { min-height:68px; border:1px solid #d7dde5; background:#fff; border-radius:5px; display:flex; align-items:center; justify-content:center; text-align:center; color:#27313f; font-weight:600; padding:8px; }
     .payment-pad .active { background:#8a174f; color:#fff; border-color:#8a174f; }
     .post-form { padding:12px; border-top:1px solid #e6ebf0; }
     .balance-strip { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }

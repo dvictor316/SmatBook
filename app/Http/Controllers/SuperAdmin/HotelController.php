@@ -138,6 +138,10 @@ class HotelController extends Controller
         $selectedServiceCenter = $servicePanelMap[$panel] ?? (string) $request->query('service', 'all');
         $panelData = $this->panelData($panel, $selectedCompanyId, $hotelCompanyIds, $selectedServiceCenter);
 
+        $hotelDemoSeedPresent = Schema::hasTable('hotel_properties')
+            && Schema::hasColumn('hotel_properties', 'code')
+            && \DB::table('hotel_properties')->where('code', 'like', 'SPB-DEMO-%')->exists();
+
         $serviceCenters = [
             'all' => ['label' => 'All Services', 'codes' => []],
             'restaurant' => ['label' => 'Restaurant', 'codes' => ['RESTAURANT', 'FOOD', 'POS']],
@@ -151,7 +155,7 @@ class HotelController extends Controller
         ];
 
         return view('SuperAdmin.hotels.overview', compact(
-            'totalHotelTenants', 'activeHotelSubscriptions', 'totalProperties', 'totalRooms', 'availableRooms', 'occupiedRooms', 'reservedRooms', 'todayReservations', 'currentInHouseGuests', 'hotelRevenueToday', 'hotelRevenueThisMonth', 'outstandingReceivables', 'panel', 'panels', 'panelData', 'hotelCompanies', 'selectedCompanyId', 'serviceCenters', 'selectedServiceCenter'
+            'totalHotelTenants', 'activeHotelSubscriptions', 'totalProperties', 'totalRooms', 'availableRooms', 'occupiedRooms', 'reservedRooms', 'todayReservations', 'currentInHouseGuests', 'hotelRevenueToday', 'hotelRevenueThisMonth', 'outstandingReceivables', 'panel', 'panels', 'panelData', 'hotelCompanies', 'selectedCompanyId', 'serviceCenters', 'selectedServiceCenter', 'hotelDemoSeedPresent'
         ));
     }
 

@@ -4,12 +4,12 @@
 <style>
     .audit-page { background:#071d35; color:#dbeafe; }
     .audit-hero { background:linear-gradient(135deg,#082f55,#0f172a); border:1px solid rgba(255,255,255,.14); border-radius:18px; padding:20px; margin-bottom:16px; display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap; }
-    .audit-hero h3 { color:#fff; font-weight:900; margin:0; }
+    .audit-hero h3 { color:#fff; font-weight:700; margin:0; }
     .audit-hero p { color:#cbd5e1; margin:5px 0 0; }
-    .audit-date { background:#f5c451; color:#111827; border-radius:999px; padding:9px 14px; font-weight:900; }
+    .audit-date { background:#f5c451; color:#111827; border-radius:999px; padding:9px 14px; font-weight:700; }
     .audit-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
     .audit-kpi { background:#fff; color:#0f172a; border-radius:16px; padding:16px; border:1px solid #d9e4ef; }
-    .audit-kpi span { display:block; color:#64748b; text-transform:uppercase; letter-spacing:.08em; font-size:11px; font-weight:900; }
+    .audit-kpi span { display:block; color:#64748b; text-transform:uppercase; letter-spacing:.08em; font-size:11px; font-weight:700; }
     .audit-kpi strong { display:block; font-size:30px; line-height:1; margin:8px 0; }
     .audit-grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(340px,.85fr); gap:16px; }
     .audit-panel { background:#fff; color:#172033; border:1px solid #d9e4ef; border-radius:16px; overflow:hidden; box-shadow:0 16px 34px rgba(0,0,0,.16); }

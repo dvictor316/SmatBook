@@ -12,7 +12,7 @@
     .ew-check { display:flex; align-items:center; gap:8px; color:#4b5563; margin:7px 0; font-size:13px; }
     .ew-main { min-width:0; }
     .ew-topbar { border-radius:4px; padding:12px; display:grid; grid-template-columns:minmax(220px,1fr) repeat(5,auto); gap:10px; align-items:center; margin-bottom:14px; }
-    .ew-iconbtn { border:1px solid #d5dce6; background:#fff; color:#0b2f54; border-radius:6px; padding:9px 12px; font-weight:800; }
+    .ew-iconbtn { border:1px solid #d5dce6; background:#fff; color:#0b2f54; border-radius:6px; padding:9px 12px; font-weight:600; }
     .ew-iconbtn.primary { background:#1d5fd1; color:#fff; border-color:#1d5fd1; }
     .ew-iconbtn.green { background:#159447; color:#fff; border-color:#159447; }
     .ew-board { border-radius:4px; padding:14px; }
