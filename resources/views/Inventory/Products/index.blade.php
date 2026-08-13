@@ -601,6 +601,16 @@
                 </div>
                 <div class="modal-body">
                     <p class="text-muted mb-3">Use the stock spreadsheet template to import many products, prices, packaging, and opening stock quantities at once. Missing SKU values will be generated automatically.</p>
+                    <div class="alert alert-info small mb-3">
+                        <strong>Prokip-style import guide:</strong>
+                        <ul class="mb-0 ps-3">
+                            <li>Only the product name is required. Other columns can be left blank and will default safely.</li>
+                            <li>Use existing column names where possible: name, sku, barcode, category, unit, unit_type, stock, retail_price, wholesale_price, special_price, purchase_price.</li>
+                            <li>For measured products, put KG or LITRE in unit_type or unit. The importer will map them to kg or litre units.</li>
+                            <li>Packaging fields such as units_per_carton, units_per_roll, stock_cartons, stock_rolls, and stock_units must be numbers. Text values are treated as 0.</li>
+                            <li>Leave SKU blank if you want the system to generate one automatically.</li>
+                        </ul>
+                    </div>
                     <div class="mb-3">
                         <a href="{{ route('inventory.Products.import.template') }}" class="btn btn-light border w-100">
                             <i class="far fa-file-lines me-2"></i>Download Stock CSV Template

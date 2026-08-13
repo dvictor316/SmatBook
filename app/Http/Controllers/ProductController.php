@@ -263,6 +263,15 @@ class ProductController extends Controller
             'ctn' => 'carton',
             'box' => 'carton',
             'case' => 'carton',
+            'kg' => 'unit',
+            'kgs' => 'unit',
+            'kilogram' => 'unit',
+            'kilograms' => 'unit',
+            'litre' => 'unit',
+            'liter' => 'unit',
+            'litres' => 'unit',
+            'liters' => 'unit',
+            'l' => 'unit',
         ];
 
         return $aliases[$value] ?? 'unit';
@@ -530,6 +539,13 @@ class ProductController extends Controller
         return (int) round($cartonUnits + $rollUnits + $stockUnits);
     }
 
+    private function importNumericValue($value): float
+    {
+        $value = trim(str_replace(',', '', (string) $value));
+
+        return is_numeric($value) ? (float) $value : 0.0;
+    }
+
     private function spreadsheetRowIterator(UploadedFile $file): \Generator
     {
         $extension = strtolower((string) $file->getClientOriginalExtension());
@@ -736,12 +752,8 @@ class ProductController extends Controller
         }
 
         $hasName = in_array('name', $header, true);
-        $hasPrice = in_array('purchase_price', $header, true)
-            || in_array('retail_price', $header, true)
-            || in_array('price', $header, true)
-            || in_array('stock', $header, true);
 
-        return $hasName && $hasPrice;
+        return $hasName;
     }
 
     public function serveImage(string $path)
@@ -2523,7 +2535,7 @@ public function inventory(Request $request)
                     'user_id' => auth()->id(),
                     'filename' => $file?->getClientOriginalName(),
                 ]);
-                return redirect()->back()->with('error', 'No valid product header row was found. Use headers like Product Name, Category, Unit/KG, Retail Price, and Purchase Price.');
+                return redirect()->back()->with('error', 'No valid product header row was found. At minimum, include a Product Name or name column.');
             }
 
             Log::info('Product import header parsed.', [
@@ -2531,7 +2543,7 @@ public function inventory(Request $request)
                 'header' => $header,
                 'header_row' => $headerRowNumber !== null ? $headerRowNumber + 1 : null,
             ]);
-            $required = ['name', 'purchase_price'];
+            $required = ['name'];
             foreach ($required as $column) {
                 if (!in_array($column, $header, true)) {
                     Log::warning('Product import missing required column.', [
@@ -2541,14 +2553,6 @@ public function inventory(Request $request)
                     ]);
                     return redirect()->back()->with('error', 'Missing required import column: ' . $column);
                 }
-            }
-            if (!in_array('retail_price', $header, true) && !in_array('price', $header, true)) {
-                Log::warning('Product import missing required column.', [
-                    'user_id' => auth()->id(),
-                    'missing' => 'retail_price',
-                    'header' => $header,
-                ]);
-                return redirect()->back()->with('error', 'Missing required import column: retail_price');
             }
 
             $created = 0;
@@ -2574,15 +2578,12 @@ public function inventory(Request $request)
                         $rowData[$column] = trim((string) ($row[$index] ?? ''));
                     }
 
-                    $requiredFields = ['name', 'purchase_price'];
+                    $requiredFields = ['name'];
                     $missing = [];
                     foreach ($requiredFields as $field) {
                         if (($rowData[$field] ?? '') === '') {
                             $missing[] = $field;
                         }
-                    }
-                    if (($rowData['retail_price'] ?? '') === '' && ($rowData['price'] ?? '') === '') {
-                        $missing[] = 'retail_price';
                     }
                     if (!empty($missing)) {
                         $skipped++;
@@ -2633,14 +2634,22 @@ public function inventory(Request $request)
                         $isNew = $product === null;
                         $product = $product ?: new Product();
 
-                        $stock = is_numeric($rowData['stock'] ?? null)
-                            ? (int) $rowData['stock']
+                        $packagingValues = [
+                            'stock_cartons' => $this->importNumericValue($rowData['stock_cartons'] ?? 0),
+                            'stock_rolls' => $this->importNumericValue($rowData['stock_rolls'] ?? 0),
+                            'stock_units' => $this->importNumericValue($rowData['stock_units'] ?? 0),
+                            'units_per_carton' => max(0, (int) $this->importNumericValue($rowData['units_per_carton'] ?? 0)),
+                            'units_per_roll' => max(0, (int) $this->importNumericValue($rowData['units_per_roll'] ?? 0)),
+                        ];
+
+                        $stock = is_numeric(str_replace(',', '', (string) ($rowData['stock'] ?? '')))
+                            ? (int) $this->importNumericValue($rowData['stock'])
                             : $this->calculateStockFromPackaging([
-                                'stock_cartons' => (float) ($rowData['stock_cartons'] ?? 0),
-                                'stock_rolls' => (float) ($rowData['stock_rolls'] ?? 0),
-                                'stock_units' => (float) ($rowData['stock_units'] ?? 0),
-                                'units_per_carton' => max(0, (int) (($rowData['units_per_carton'] ?? 0) ?: 0)),
-                                'units_per_roll' => max(0, (int) (($rowData['units_per_roll'] ?? 0) ?: 0)),
+                                'stock_cartons' => $packagingValues['stock_cartons'],
+                                'stock_rolls' => $packagingValues['stock_rolls'],
+                                'stock_units' => $packagingValues['stock_units'],
+                                'units_per_carton' => $packagingValues['units_per_carton'],
+                                'units_per_roll' => $packagingValues['units_per_roll'],
                             ]);
 
                         $retailPrice = ($rowData['retail_price'] ?? '') !== '' ? $rowData['retail_price'] : ($rowData['price'] ?? '');
@@ -2655,8 +2664,8 @@ public function inventory(Request $request)
                             'purchase_unit_id' => null,
                             'conversion_rate' => null,
                             'unit_type' => $unitType,
-                            'units_per_carton' => max(0, (int) (($rowData['units_per_carton'] ?? 0) ?: 0)),
-                            'units_per_roll' => max(0, (int) (($rowData['units_per_roll'] ?? 0) ?: 0)),
+                            'units_per_carton' => $packagingValues['units_per_carton'],
+                            'units_per_roll' => $packagingValues['units_per_roll'],
                             'price' => (float) ($retailPrice ?: 0),
                             'retail_price' => (float) ($retailPrice ?: 0),
                             'wholesale_price' => ($rowData['wholesale_price'] ?? '') !== '' ? (float) $rowData['wholesale_price'] : null,
