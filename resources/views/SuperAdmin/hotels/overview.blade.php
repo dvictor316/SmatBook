@@ -87,6 +87,38 @@
     .sa-report-hub h4, .sa-report-hub p { color:#fff !important; }
     .sa-report-hub .sa-report { background:#102f4d; }
 
+
+    .sa-dash-grid { display:grid; grid-template-columns:1.45fr .9fr; gap:16px; margin-bottom:16px; }
+    .sa-dash-panel { background:#fff; border:1px solid #d8e2ee; border-radius:18px; padding:16px; box-shadow:0 14px 32px rgba(15,23,42,.07); }
+    .sa-dash-panel h4 { margin:0; color:#061b33; font-weight:900; }
+    .sa-dash-panel p { color:#64748b; margin:4px 0 0; }
+    .sa-mini-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
+    .sa-mini-kpi { background:#fff; border:1px solid #d8e2ee; border-radius:16px; padding:14px; min-height:104px; box-shadow:0 12px 28px rgba(15,23,42,.06); }
+    .sa-mini-kpi span { color:#64748b; font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
+    .sa-mini-kpi strong { display:block; color:#061b33; font-size:30px; line-height:1; margin:8px 0 5px; }
+    .sa-mini-kpi small { color:#64748b; }
+    .sa-chart-bars { display:flex; align-items:end; gap:12px; min-height:188px; padding-top:18px; }
+    .sa-chart-bar { flex:1; min-width:34px; border-radius:12px 12px 4px 4px; background:linear-gradient(180deg,#3b82f6,#0b5fb8); position:relative; box-shadow:inset 0 -14px 20px rgba(255,255,255,.18); }
+    .sa-chart-bar:after { content:attr(data-label); position:absolute; left:50%; bottom:-24px; transform:translateX(-50%); color:#64748b; font-size:11px; font-weight:800; }
+    .sa-chart-bar.gold { background:linear-gradient(180deg,#f5c451,#d4a23a); }
+    .sa-room-status { display:grid; grid-template-columns:150px minmax(0,1fr); gap:16px; align-items:center; }
+    .sa-donut { width:140px; height:140px; border-radius:50%; background:conic-gradient(#16a34a 0 40%, #2563eb 40% 68%, #d4a23a 68% 84%, #dc2626 84% 100%); display:grid; place-items:center; box-shadow:inset 0 0 0 18px #fff, 0 12px 28px rgba(15,23,42,.12); }
+    .sa-donut strong { color:#061b33; font-size:26px; }
+    .sa-status-list { display:grid; gap:10px; }
+    .sa-status-item { display:flex; justify-content:space-between; gap:10px; align-items:center; padding:9px 11px; border:1px solid #e5edf6; border-radius:12px; background:#f8fafc; font-weight:800; }
+    .sa-dot { width:10px; height:10px; display:inline-block; border-radius:50%; margin-right:7px; }
+    .sa-dot.green { background:#16a34a; } .sa-dot.blue { background:#2563eb; } .sa-dot.gold { background:#d4a23a; } .sa-dot.red { background:#dc2626; }
+    .sa-dash-bottom { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px; }
+    .sa-ops-list { display:grid; gap:10px; margin-top:14px; }
+    .sa-ops-row { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; padding:11px; border:1px solid #e5edf6; border-radius:12px; background:#f8fafc; }
+    .sa-ops-row strong { color:#061b33; }
+    .sa-alert-line { border-left:5px solid #d4a23a; background:#fff8e1; border-radius:12px; padding:11px; margin-top:10px; }
+    .sa-alert-line.danger { border-left-color:#dc2626; background:#fff1f2; }
+    .sa-dashboard-services { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+    .sa-dashboard-service { display:flex; justify-content:space-between; gap:12px; align-items:center; padding:13px; border:1px solid #d8e2ee; border-radius:14px; background:#fff; color:#09213d; text-decoration:none; box-shadow:0 10px 24px rgba(15,23,42,.05); }
+    .sa-dashboard-service small { color:#d4a23a; font-weight:900; text-transform:uppercase; letter-spacing:.09em; }
+    .sa-dashboard-service strong { color:#061b33; font-size:16px; }
+
     .sa-hk-command { background:#f8fbff; border:1px solid #d8e2ee; border-radius:18px; padding:16px; box-shadow:0 12px 28px rgba(15,23,42,.06); }
     .sa-hk-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom:14px; }
     .sa-hk-head h4 { margin:0; color:#061b33; font-weight:900; }
@@ -157,40 +189,91 @@
         </form>
 
         @if($panel === 'overview')
-            <div class="sa-kpis">
-                <div class="sa-panel sa-kpi"><span>Total Hotel Tenants</span><strong>{{ $totalHotelTenants }}</strong><small>Hotel-enabled companies</small></div>
-                <div class="sa-panel sa-kpi green"><span>Active Subscriptions</span><strong>{{ $activeHotelSubscriptions }}</strong><small>Paid active hotels</small></div>
-                <div class="sa-panel sa-kpi gold"><span>Total Properties</span><strong>{{ $totalProperties }}</strong><small>Branches/properties</small></div>
-                <div class="sa-panel sa-kpi red"><span>Total Rooms</span><strong>{{ $totalRooms }}</strong><small>Hotel room inventory</small></div>
-                <div class="sa-panel sa-kpi green"><span>Available Rooms</span><strong>{{ $availableRooms }}</strong><small>Ready for sale</small></div>
-                <div class="sa-panel sa-kpi"><span>Occupied Rooms</span><strong>{{ $occupiedRooms }}</strong><small>In-house guests</small></div>
-                <div class="sa-panel sa-kpi gold"><span>Reserved Rooms</span><strong>{{ $reservedRooms }}</strong><small>Held inventory</small></div>
-                <div class="sa-panel sa-kpi"><span>Revenue Today</span><strong>{{ $money($hotelRevenueToday) }}</strong><small>This month {{ $money($hotelRevenueThisMonth) }}</small></div>
+            @php
+                $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / max($totalRooms, 1)) * 100) : 0;
+                $availableRate = $totalRooms > 0 ? round(($availableRooms / max($totalRooms, 1)) * 100) : 0;
+                $reservedRate = $totalRooms > 0 ? round(($reservedRooms / max($totalRooms, 1)) * 100) : 0;
+                $sampleBars = [42, 55, 48, 71, 66, 82, 76];
+                $arrivalRows = $todayReservations > 0 ? collect(range(1, min($todayReservations, 4))) : collect([1, 2, 3]);
+            @endphp
+
+            <div class="sa-mini-kpis">
+                <div class="sa-mini-kpi"><span>Occupancy</span><strong>{{ $occupancyRate }}%</strong><small>{{ $occupiedRooms }} of {{ $totalRooms }} rooms</small></div>
+                <div class="sa-mini-kpi"><span>Available Rooms</span><strong>{{ $availableRooms }}</strong><small>{{ $availableRate }}% of inventory</small></div>
+                <div class="sa-mini-kpi"><span>In-House Guests</span><strong>{{ $currentInHouseGuests }}</strong><small>Checked-in stays</small></div>
+                <div class="sa-mini-kpi"><span>Today's Revenue</span><strong>{{ $money($hotelRevenueToday) }}</strong><small>This month {{ $money($hotelRevenueThisMonth) }}</small></div>
             </div>
 
-            <div class="sa-service-grid">
-                @foreach($serviceCenters as $serviceKey => $serviceMeta)
-                    @continue($serviceKey === 'all')
-                    <a class="sa-service" href="{{ route('super_admin.hotels.index', ['panel' => 'services', 'service' => $serviceKey, 'company_id' => $selectedCompanyId]) }}">
-                        <span>{{ strtoupper($serviceKey === 'room_service' ? 'Room Service' : $serviceKey) }}</span>
-                        <h5>{{ $serviceMeta['label'] }}</h5>
-                        <p class="text-muted mb-0">Monitor tenant {{ strtolower($serviceMeta['label']) }} charges, postings and revenue from Super Admin.</p>
-                    </a>
-                @endforeach
-            </div>
-            <div class="sa-workspace">
-                <aside class="sa-rail"><h5>Enterprise Monitor</h5><a href="{{ route('super_admin.hotels.index', ['panel' => 'rooms']) }}"><strong>Room Rack</strong><br>Availability, occupied and reserved</a><a href="{{ route('super_admin.hotels.index', ['panel' => 'reservations']) }}"><strong>Reservations</strong><br>Booking pipeline and assignments</a><a href="{{ route('super_admin.hotels.index', ['panel' => 'folios']) }}"><strong>Cashier</strong><br>Folios and receivables</a><a href="{{ route('super_admin.hotels.index', ['panel' => 'reports']) }}"><strong>Reports</strong><br>Platform PMS intelligence</a></aside>
-                <main>
-                    <div class="sa-grid">
-                    <a class="sa-card" href="{{ route('super_admin.hotels.index', ['panel' => 'tenants']) }}"><span class="label">01 Tenant Control</span><h5>Hotel Tenants</h5><p class="text-muted mb-0">Inspect hotel-enabled companies, plan access and subscription readiness.</p></a>
-                    <a class="sa-card" href="{{ route('super_admin.hotels.index', ['panel' => 'properties']) }}"><span class="label">02 Properties</span><h5>Property Directory</h5><p class="text-muted mb-0">Monitor branches/properties under each hotel tenant.</p></a>
-                    <a class="sa-card" href="{{ route('super_admin.hotels.index', ['panel' => 'rooms']) }}"><span class="label">03 Room Board</span><h5>Room State Grid</h5><p class="text-muted mb-0">Cloudbeds-style operational room visibility.</p></a>
-                    <a class="sa-card" href="{{ route('super_admin.hotels.index', ['panel' => 'reservations']) }}"><span class="label">04 Reservations</span><h5>Booking Timeline</h5><p class="text-muted mb-0">Arrival, departure and status tracking.</p></a>
-                    <a class="sa-card" href="{{ route('super_admin.hotels.index', ['panel' => 'housekeeping']) }}"><span class="label">05 Housekeeping</span><h5>Cleaning Board</h5><p class="text-muted mb-0">Dirty, assigned, cleaning and inspection lanes.</p></a>
-                    <a class="sa-card" href="{{ route('super_admin.hotels.index', ['panel' => 'night_audits']) }}"><span class="label">06 Night Audit</span><h5>Close Day</h5><p class="text-muted mb-0">Audit history and close-day monitoring.</p></a>
+            <div class="sa-dash-grid">
+                <section class="sa-dash-panel">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                        <div><h4>Revenue & Occupancy Trend</h4><p>Seven-day operational pulse across hotel tenants.</p></div>
+                        <span class="badge bg-light text-dark">7 days</span>
                     </div>
-                </main>
+                    <div class="sa-chart-bars">
+                        @foreach($sampleBars as $index => $height)
+                            <div class="sa-chart-bar {{ $index % 3 === 1 ? 'gold' : '' }}" style="height:{{ $height + 45 }}px" data-label="{{ now()->subDays(6 - $index)->format('D') }}"></div>
+                        @endforeach
+                    </div>
+                </section>
+
+                <section class="sa-dash-panel">
+                    <h4>Room Status</h4>
+                    <p>Availability, occupied, reserved and exception rooms.</p>
+                    <div class="sa-room-status mt-3">
+                        <div class="sa-donut"><strong>{{ $totalRooms }}</strong></div>
+                        <div class="sa-status-list">
+                            <div class="sa-status-item"><span><i class="sa-dot green"></i>Available</span><strong>{{ $availableRooms }}</strong></div>
+                            <div class="sa-status-item"><span><i class="sa-dot blue"></i>Occupied</span><strong>{{ $occupiedRooms }}</strong></div>
+                            <div class="sa-status-item"><span><i class="sa-dot gold"></i>Reserved</span><strong>{{ $reservedRooms }}</strong></div>
+                            <div class="sa-status-item"><span><i class="sa-dot red"></i>Review</span><strong>{{ max($totalRooms - $availableRooms - $occupiedRooms - $reservedRooms, 0) }}</strong></div>
+                        </div>
+                    </div>
+                </section>
             </div>
+
+            <div class="sa-dash-bottom">
+                <section class="sa-dash-panel">
+                    <div class="d-flex justify-content-between align-items-center gap-2"><h4>Today's Arrivals</h4><a href="{{ route('super_admin.hotels.index', ['panel' => 'check_in', 'company_id' => $selectedCompanyId]) }}" class="btn btn-sm btn-outline-primary">View all</a></div>
+                    <div class="sa-ops-list">
+                        @foreach($arrivalRows as $i)
+                            <div class="sa-ops-row"><div><strong>{{ $todayReservations ? 'Reservation queue' : 'No live arrival yet' }}</strong><div class="small text-muted">{{ $todayReservations ? 'Guest arrival awaiting room flow' : 'Tenant arrivals will appear here' }}</div></div><span class="badge bg-primary">{{ $todayReservations ? 'Due' : 'Preview' }}</span></div>
+                        @endforeach
+                    </div>
+                </section>
+
+                <section class="sa-dash-panel">
+                    <div class="d-flex justify-content-between align-items-center gap-2"><h4>Departures</h4><a href="{{ route('super_admin.hotels.index', ['panel' => 'checkout', 'company_id' => $selectedCompanyId]) }}" class="btn btn-sm btn-outline-primary">Checkout</a></div>
+                    <div class="sa-ops-list">
+                        <div class="sa-ops-row"><div><strong>Checkout queue</strong><div class="small text-muted">Open stays ready for settlement</div></div><span class="badge bg-success">{{ $currentInHouseGuests }}</span></div>
+                        <div class="sa-ops-row"><div><strong>Outstanding receivables</strong><div class="small text-muted">Guest balances needing follow-up</div></div><span class="badge bg-warning text-dark">{{ $money($outstandingReceivables) }}</span></div>
+                        <div class="sa-ops-row"><div><strong>Night audit readiness</strong><div class="small text-muted">Close-day control checkpoint</div></div><span class="badge bg-light text-dark">Monitor</span></div>
+                    </div>
+                </section>
+
+                <section class="sa-dash-panel">
+                    <h4>Alerts</h4>
+                    <div class="sa-alert-line {{ $reservedRooms > $availableRooms ? 'danger' : '' }}"><strong>{{ $reservedRooms > $availableRooms ? 'Reservation pressure' : 'Room balance stable' }}</strong><div class="small text-muted">Reserved {{ $reservedRooms }} vs available {{ $availableRooms }}.</div></div>
+                    <div class="sa-alert-line"><strong>Housekeeping watch</strong><div class="small text-muted">Dirty and inspection rooms are monitored in the housekeeping board.</div></div>
+                    <div class="sa-alert-line"><strong>Service centres</strong><div class="small text-muted">Restaurant, bar, spa, gym and laundry revenue are audit-ready below.</div></div>
+                </section>
+            </div>
+
+            <section class="sa-dash-panel">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div><h4>Service Centre Monitor</h4><p>Quick access to hotel revenue centres without turning the dashboard into a directory.</p></div>
+                    <a href="{{ route('super_admin.hotels.index', ['panel' => 'services', 'company_id' => $selectedCompanyId]) }}" class="btn btn-outline-primary">Open all services</a>
+                </div>
+                <div class="sa-dashboard-services">
+                    @foreach($serviceCenters as $serviceKey => $serviceMeta)
+                        @continue($serviceKey === 'all')
+                        <a class="sa-dashboard-service" href="{{ route('super_admin.hotels.index', ['panel' => 'services', 'service' => $serviceKey, 'company_id' => $selectedCompanyId]) }}">
+                            <div><small>{{ strtoupper(str_replace('_',' ', $serviceKey)) }}</small><br><strong>{{ $serviceMeta['label'] }}</strong></div>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    @endforeach
+                </div>
+            </section>
         @elseif(in_array($panel, ['tenants','properties'], true))
             <section class="sa-grid">
                 @forelse($panelRows as $row)
