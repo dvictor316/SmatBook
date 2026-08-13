@@ -13,41 +13,7 @@
     <li class="submenu {{ Request::is('hotel*') ? 'active subdrop' : '' }}">
         <a href="#"><i class="fe fe-briefcase"></i><span>Hotel</span><span class="menu-arrow"></span></a>
         <ul>
-            <li class="menu-title"><span>HOTEL</span></li>
-            <li><a href="{{ route('hotel.dashboard') }}">Dashboard</a></li>
-            <li><a href="{{ route('hotel.frontdesk') }}">Front Desk</a></li>
-            <li><a href="{{ route('hotel.reservations.index') }}">Reservations</a></li>
-            <li><a href="{{ route('hotel.availability.index') }}">Availability</a></li>
-            <li><a href="{{ route('hotel.checkin.index') }}">Check In</a></li>
-            <li><a href="{{ route('hotel.walkin.create') }}">Walk-In</a></li>
-            <li><a href="{{ route('hotel.in_house') }}">In-House Guests</a></li>
-            <li><a href="{{ route('hotel.checkout.index') }}">Checkout</a></li>
-            <li><a href="{{ route('hotel.guests') }}">Guests</a></li>
-            <li><a href="{{ route('hotel.folios.index') }}">Guest Folios</a></li>
-
-            <li class="menu-title"><span>ROOMS</span></li>
-            <li><a href="{{ route('hotel.rooms.index') }}">All Rooms</a></li>
-            <li><a href="{{ route('hotel.room_types.index') }}">Room Types</a></li>
-            <li><a href="{{ route('hotel.rate_plans.index') }}">Rate Plans</a></li>
-            <li><a href="{{ route('hotel.rooms.status') }}">Room Status</a></li>
-            <li><a href="{{ route('hotel.rooms.calendar') }}">Room Calendar</a></li>
-
-            <li class="menu-title"><span>OPERATIONS</span></li>
-            <li><a href="{{ route('hotel.housekeeping.index') }}">Housekeeping</a></li>
-            <li><a href="{{ route('hotel.restaurant.pos') }}">Restaurant / POS</a></li>
-            <li><a href="{{ route('hotel.room_service.index') }}">Room Service</a></li>
-            <li><a href="{{ route('hotel.laundry.index') }}">Laundry</a></li>
-            <li><a href="{{ route('hotel.minibar.index') }}">Minibar</a></li>
-            <li><a href="{{ route('hotel.maintenance.index') }}">Maintenance</a></li>
-            <li><a href="{{ route('hotel.conference.index') }}">Conference & Events</a></li>
-
-            <li class="menu-title"><span>BUSINESS</span></li>
-            <li><a href="{{ route('hotel.corporate_accounts.index') }}">Corporate Accounts</a></li>
-            <li><a href="{{ route('hotel.group_bookings.index') }}">Group Bookings</a></li>
-            <li><a href="{{ route('hotel.booking_sources.index') }}">Travel Agents / Booking Sources</a></li>
-            <li><a href="{{ route('hotel.deposits') }}">Deposits</a></li>
-            <li><a href="{{ route('hotel.night_audit.index') }}">Night Audit</a></li>
-            <li><a href="{{ route('hotel.reports.index') }}">Hotel Reports</a></li>
+            @include('hotel.partials.tenant-sidebar-menu')
         </ul>
     </li>
     @endif

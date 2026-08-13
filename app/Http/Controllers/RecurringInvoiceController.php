@@ -99,9 +99,18 @@ class RecurringInvoiceController extends Controller
 
     public function store(Request $request)
     {
+        $companyId  = $this->companyId();
+        $branchId   = session('active_branch_id');
+        $branchName = session('active_branch_name');
+        $allBranches = session('active_branch_scope') === 'all' || strtolower((string) $branchId) === 'all';
+
         $validated = $request->validate([
             'template_name'        => 'required|string|max:191',
-            'customer_id'          => 'nullable|integer|exists:customers,id',
+            'customer_id'          => [
+                'nullable',
+                'integer',
+                Rule::exists('customers', 'id')->where(fn ($query) => $query->where('company_id', $companyId)),
+            ],
             'currency'             => 'nullable|string|max:10',
             'terms'                => 'nullable|string|max:100',
             'due_days'             => 'nullable|integer|min:0|max:365',
@@ -147,10 +156,6 @@ class RecurringInvoiceController extends Controller
             'items.*.product_id'    => 'nullable|integer',
         ]);
 
-        $companyId  = $this->companyId();
-        $branchId   = session('active_branch_id');
-        $branchName = session('active_branch_name');
-        $allBranches = session('active_branch_scope') === 'all' || strtolower((string) $branchId) === 'all';
         if ($allBranches) {
             $branchId = null;
             $branchName = null;
@@ -159,7 +164,7 @@ class RecurringInvoiceController extends Controller
         // Resolve customer name
         $customerName = null;
         if (!empty($validated['customer_id'])) {
-            $customer = Customer::find($validated['customer_id']);
+            $customer = Customer::where('company_id', $companyId)->find($validated['customer_id']);
             $customerName = $customer?->customer_name ?? $customer?->name;
         }
 
@@ -275,10 +280,15 @@ class RecurringInvoiceController extends Controller
     public function update(Request $request, RecurringInvoiceTemplate $recurringInvoice)
     {
         $this->authorizeTemplate($recurringInvoice);
+        $companyId = $this->companyId();
 
         $validated = $request->validate([
             'template_name'        => 'required|string|max:191',
-            'customer_id'          => 'nullable|integer|exists:customers,id',
+            'customer_id'          => [
+                'nullable',
+                'integer',
+                Rule::exists('customers', 'id')->where(fn ($query) => $query->where('company_id', $companyId)),
+            ],
             'currency'             => 'nullable|string|max:10',
             'terms'                => 'nullable|string|max:100',
             'due_days'             => 'nullable|integer|min:0|max:365',
@@ -316,7 +326,7 @@ class RecurringInvoiceController extends Controller
 
         $customerName = null;
         if (!empty($validated['customer_id'])) {
-            $customer = Customer::find($validated['customer_id']);
+            $customer = Customer::where('company_id', $companyId)->find($validated['customer_id']);
             $customerName = $customer?->customer_name ?? $customer?->name;
         }
 

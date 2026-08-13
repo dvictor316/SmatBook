@@ -10,6 +10,7 @@
     .ri-step-panel { padding: 18px; }
     .automation-card { min-height: 154px; transition: border-color .15s, box-shadow .15s, transform .15s; }
     .automation-card:hover { border-color: #93c5fd; box-shadow: 0 10px 24px rgba(37, 99, 235, .08); transform: translateY(-1px); }
+    .automation-card.active { border-color: #2563eb !important; box-shadow: 0 0 0 3px rgba(37, 99, 235, .16); }
 </style>
 <div class="page-wrapper">
 <div class="content container-fluid">
@@ -27,14 +28,15 @@
     <form method="POST" action="{{ route('sales.recurring-invoices.update', $template) }}" id="recurringForm">
         @csrf
         @method('PUT')
+        <div class="alert alert-danger d-none" id="recurringWizardMessage" role="alert"></div>
 
         <div class="ri-wizard-shell">
         <ul class="nav nav-tabs nav-tabs-solid ri-wizard-tabs mb-0" id="wizardTabs" role="tablist">
-            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#step1">1. Invoice Details</a></li>
-            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#step2">2. Recurrence</a></li>
-            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#step3">3. Reminders</a></li>
-            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#step4">4. Automation</a></li>
-            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#step5">5. Review</a></li>
+            <li class="nav-item"><a class="nav-link active" data-step-target="step1" data-bs-toggle="tab" href="#step1">1. Invoice Details</a></li>
+            <li class="nav-item"><a class="nav-link" data-step-target="step2" data-bs-toggle="tab" href="#step2">2. Recurrence</a></li>
+            <li class="nav-item"><a class="nav-link" data-step-target="step3" data-bs-toggle="tab" href="#step3">3. Reminders</a></li>
+            <li class="nav-item"><a class="nav-link" data-step-target="step4" data-bs-toggle="tab" href="#step4">4. Automation</a></li>
+            <li class="nav-item"><a class="nav-link" data-step-target="step5" data-bs-toggle="tab" href="#step5">5. Review</a></li>
         </ul>
 
         <div class="tab-content ri-step-panel">
@@ -202,6 +204,7 @@
                         </div>
                         <div class="col-12">
                             <div class="form-check">
+                                <input type="hidden" name="skip_weekends" value="0">
                                 <input class="form-check-input" type="checkbox" name="skip_weekends" value="1" id="skipWeekends" {{ old('skip_weekends', $template->skip_weekends) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="skipWeekends">Skip weekends</label>
                             </div>
@@ -221,6 +224,7 @@
                     <div class="card-body row g-3">
                         <div class="col-12">
                             <div class="form-check form-switch">
+                                <input type="hidden" name="send_email" value="0">
                                 <input class="form-check-input" type="checkbox" name="send_email" value="1" id="sendEmail"
                                     {{ old('send_email', $template->send_email) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="sendEmail">Send invoice by email</label>
@@ -275,8 +279,8 @@
                                 ['manual',         'Manual Trigger',   'Only run when manually triggered.',     'fe-settings'],
                             ] as [$val, $label, $desc, $icon])
                             <div class="col-md-6 col-lg-3">
-                                <div class="card border automation-card {{ old('automation_mode', $template->automation_mode) === $val ? 'border-primary' : '' }}"
-                                     role="button" onclick="selectMode('{{ $val }}', this)">
+                                <div class="card border automation-card {{ old('automation_mode', $template->automation_mode) === $val ? 'active border-primary' : '' }}"
+                                     role="button" tabindex="0" data-automation-mode="{{ $val }}" aria-pressed="{{ old('automation_mode', $template->automation_mode) === $val ? 'true' : 'false' }}">
                                     <div class="card-body text-center py-4">
                                         <i class="fe {{ $icon }} fs-3 mb-2 d-block text-primary"></i>
                                         <div class="fw-semibold">{{ $label }}</div>
@@ -290,12 +294,14 @@
                         <div class="row g-3 mt-2">
                             <div class="col-md-6">
                                 <div class="form-check form-switch">
+                                    <input type="hidden" name="payment_link_enabled" value="0">
                                     <input class="form-check-input" type="checkbox" name="payment_link_enabled" value="1" id="paymentLinkEnabled" @checked(old('payment_link_enabled', $template->payment_link_enabled ?? true))>
                                     <label class="form-check-label" for="paymentLinkEnabled">Include payment link when available</label>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-check form-switch">
+                                    <input type="hidden" name="auto_payment_enabled" value="0">
                                     <input class="form-check-input" type="checkbox" name="auto_payment_enabled" value="1" id="autoPaymentEnabled" @checked(old('auto_payment_enabled', $template->auto_payment_enabled ?? false))>
                                     <label class="form-check-label" for="autoPaymentEnabled">Mark as subscription-ready for saved payment methods</label>
                                 </div>
@@ -335,7 +341,7 @@
 
                 <div class="mt-3 d-flex justify-content-between">
                     <button type="button" class="btn btn-secondary prev-tab" data-target="step4">← Back</button>
-                    <button type="submit" class="btn btn-success px-5">
+                    <button type="submit" form="recurringForm" class="btn btn-success px-5">
                         <i class="fe fe-save me-2"></i> Save Changes
                     </button>
                 </div>
@@ -350,9 +356,26 @@
 @push('scripts')
 <script>
 const recurringForm = document.getElementById('recurringForm');
+const wizardMessage = document.getElementById('recurringWizardMessage');
+
+function showWizardMessage(message) {
+    if (!wizardMessage) {
+        return;
+    }
+    wizardMessage.textContent = message;
+    wizardMessage.classList.remove('d-none');
+}
+
+function clearWizardMessage() {
+    if (!wizardMessage) {
+        return;
+    }
+    wizardMessage.textContent = '';
+    wizardMessage.classList.add('d-none');
+}
 
 function showWizardStep(stepId) {
-    const tab = document.querySelector(`[href="#${stepId}"]`);
+    const tab = document.querySelector(`#wizardTabs [data-step-target="${stepId}"], #wizardTabs [href="#${stepId}"]`);
     const pane = document.getElementById(stepId);
     if (!tab || !pane) {
         return;
@@ -371,13 +394,23 @@ function showWizardStep(stepId) {
 
 document.querySelectorAll('.next-tab').forEach(btn => {
     btn.addEventListener('click', () => {
+        clearWizardMessage();
         updateReview();
         showWizardStep(btn.dataset.target);
     });
 });
 document.querySelectorAll('.prev-tab').forEach(btn => {
     btn.addEventListener('click', () => {
+        clearWizardMessage();
         showWizardStep(btn.dataset.target);
+    });
+});
+document.querySelectorAll('#wizardTabs [data-step-target]').forEach(tab => {
+    tab.addEventListener('click', (event) => {
+        event.preventDefault();
+        clearWizardMessage();
+        updateReview();
+        showWizardStep(tab.dataset.stepTarget);
     });
 });
 
@@ -434,7 +467,7 @@ function addRow(data = {}) {
     document.getElementById('itemsBody')?.appendChild(tr);
     tr.querySelectorAll('.item-calc').forEach(inp => inp.addEventListener('input', recalc));
     tr.querySelectorAll('.item-text').forEach(inp => inp.addEventListener('input', updateReview));
-    tr.querySelector('.remove-row').addEventListener('click', () => { tr.remove(); recalc(); });
+    tr.querySelector('.remove-row')?.addEventListener('click', () => { tr.remove(); recalc(); });
     recalc();
 }
 
@@ -461,12 +494,26 @@ function recalc() {
 document.getElementById('addItemBtn')?.addEventListener('click', () => addRow());
 
 function selectMode(val, card) {
-    document.querySelectorAll('.automation-card').forEach(c => c.classList.remove('border-primary'));
-    card?.classList.add('border-primary');
+    document.querySelectorAll('.automation-card').forEach(c => {
+        c.classList.remove('active', 'border-primary');
+        c.setAttribute('aria-pressed', 'false');
+    });
+    card?.classList.add('active', 'border-primary');
+    card?.setAttribute('aria-pressed', 'true');
     const automationModeInput = document.getElementById('automationModeInput');
     if (automationModeInput) automationModeInput.value = val;
     updateReview();
 }
+document.querySelectorAll('.automation-card[data-automation-mode]').forEach((card) => {
+    const activate = () => selectMode(card.dataset.automationMode, card);
+    card.addEventListener('click', activate);
+    card.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            activate();
+        }
+    });
+});
 
 function updateReview() {
     const named = (name) => document.querySelector(`[name="${name}"]`);
@@ -528,10 +575,14 @@ document.querySelectorAll('#recurringForm input, #recurringForm select, #recurri
 });
 
 recurringForm?.addEventListener('submit', function (event) {
+    clearWizardMessage();
+    recalc();
+
     if (validItemRows().length === 0) {
         event.preventDefault();
         event.stopPropagation();
         showWizardStep('step1');
+        showWizardMessage('Add at least one invoice item with a description, quantity, and unit price before saving the recurring template.');
         if (!recurringForm.querySelector('#itemsBody tr')) {
             addRow({ qty: 1, unit_price: 0 });
         }
@@ -551,6 +602,7 @@ recurringForm?.addEventListener('submit', function (event) {
         if (pane?.id) {
             showWizardStep(pane.id);
         }
+        showWizardMessage(firstInvalid?.validationMessage || 'Complete the required fields before saving the recurring template.');
 
         window.setTimeout(() => {
             firstInvalid?.focus({ preventScroll: false });

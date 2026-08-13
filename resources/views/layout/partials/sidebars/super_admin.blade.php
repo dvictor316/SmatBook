@@ -619,46 +619,18 @@
                     </ul>
                 </li>
 
-                <li class="menu-title"><span>Sales &amp; Customers</span></li>
-
                 {{-- HOTEL MANAGEMENT (Super Admin) --}}
                 @if(Route::has('super_admin.hotels.index'))
-                @php
-                    $hotelPanel = request('panel', 'overview');
-                    $hotelMenuPanels = [
-                        'overview' => 'Dashboard',
-                        'tenants' => 'Hotel Tenants',
-                        'properties' => 'Properties',
-                        'rooms' => 'Rooms',
-                        'room_types' => 'Room Types',
-                        'reservations' => 'Reservations',
-                        'stays' => 'Current Stays',
-                        'guests' => 'Guests',
-                        'folios' => 'Folios',
-                        'deposits' => 'Deposits',
-                        'housekeeping' => 'Housekeeping',
-                        'maintenance' => 'Maintenance',
-                        'revenue' => 'Revenue',
-                        'hotel_transactions' => 'Hotel Transactions',
-                        'night_audits' => 'Night Audits',
-                        'reports' => 'Reports',
-                        'settings' => 'Hotel Settings / Feature Status',
-                    ];
-                @endphp
                 <li class="menu-title"><span>Hotel Management</span></li>
                 <li class="submenu {{ Request::is('superadmin/hotels*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fas fa-hotel"></i><span>Hotel Management</span><span class="menu-arrow"></span></a>
                     <ul>
-                        @foreach($hotelMenuPanels as $hotelMenuPanel => $hotelMenuLabel)
-                            <li>
-                                <a class="{{ $hotelPanel === $hotelMenuPanel ? 'active' : '' }}" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], $hotelMenuPanel === 'overview' ? [] : ['panel' => $hotelMenuPanel])) }}">
-                                    {{ $hotelMenuLabel }}
-                                </a>
-                            </li>
-                        @endforeach
+                        @include('SuperAdmin.hotels._sidebar-menu')
                     </ul>
                 </li>
                 @endif
+
+                <li class="menu-title"><span>Sales &amp; Customers</span></li>
 
                 <li class="{{ request()->routeIs('sales.index', 'sales.show', 'sales.create', 'sales.edit', 'sales.pdf', 'sales.invoice.show', 'sales.invoice.print') ? 'active' : '' }}">
                     <a href="{{ route('sales.index') }}"><i class="fas fa-receipt"></i><span>Sales</span></a>
