@@ -86,6 +86,26 @@
     .sa-report-hub { background:#061d36; color:#fff; border-radius:18px; padding:16px; }
     .sa-report-hub h4, .sa-report-hub p { color:#fff !important; }
     .sa-report-hub .sa-report { background:#102f4d; }
+
+    .sa-hk-command { background:#f8fbff; border:1px solid #d8e2ee; border-radius:18px; padding:16px; box-shadow:0 12px 28px rgba(15,23,42,.06); }
+    .sa-hk-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom:14px; }
+    .sa-hk-head h4 { margin:0; color:#061b33; font-weight:900; }
+    .sa-hk-head p { margin:4px 0 0; color:#64748b; }
+    .sa-hk-chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+    .sa-hk-chip { border-radius:999px; padding:8px 12px; font-weight:900; background:#fff; border:1px solid #dbe4ef; color:#0f172a; }
+    .sa-hk-chip.dirty { background:#fee2e2; color:#991b1b; }
+    .sa-hk-chip.assigned { background:#ffedd5; color:#9a3412; }
+    .sa-hk-chip.cleaning { background:#dbeafe; color:#1d4ed8; }
+    .sa-hk-chip.clean { background:#dcfce7; color:#166534; }
+    .sa-hk-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(215px,1fr)); gap:12px; }
+    .sa-hk-room { min-height:178px; border-radius:16px; border:2px solid #2563eb; background:#eff6ff; padding:14px; display:flex; flex-direction:column; justify-content:space-between; }
+    .sa-hk-room.dirty { border-color:#dc2626; background:#fff1f2; }
+    .sa-hk-room.assigned { border-color:#d97706; background:#fffbeb; }
+    .sa-hk-room.cleaning { border-color:#2563eb; background:#eff6ff; }
+    .sa-hk-room.clean { border-color:#16a34a; background:#ecfdf3; }
+    .sa-hk-room-no { font-size:34px; line-height:1; font-weight:900; color:#061b33; }
+    .sa-hk-status { display:inline-flex; width:max-content; border-radius:8px; padding:5px 8px; font-size:12px; font-weight:900; background:#fff; color:#0f172a; margin-top:7px; }
+    .sa-hk-table { margin-top:14px; overflow:auto; }
     @media(max-width:1199px){.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid{grid-template-columns:repeat(2,1fr)}.sa-workspace,.sa-cashier,.sa-room-admin,.sa-folio-register,.sa-maint-desk{grid-template-columns:1fr}.sa-board-row,.sa-maint-ticket{grid-template-columns:1fr}}
     @media(max-width:767px){.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid{grid-template-columns:1fr}.page-wrapper.sa-hotel .sa-hero h2{font-size:23px}}
 </style>
@@ -259,7 +279,91 @@
         @elseif($panel === 'night_audits')
             <section class="sa-audit-command"><div class="d-flex justify-content-between align-items-center flex-wrap gap-2"><div><h4 class="mb-1">Night Audit Command Center</h4><p class="mb-0">Platform close-day history and audit health across hotel tenants.</p></div><span class="btn btn-warning disabled text-dark">{{ $panelRows->count() }} audit rows</span></div><div class="sa-audit-grid">@forelse($panelRows->take(8) as $row)@php $r=$rowArray($row); @endphp<div class="sa-audit-check {{ in_array(($r['status'] ?? ''), ['failed','pending'], true) ? 'danger' : '' }}"><span class="text-muted small">Business Date</span><h5>{{ $r['audit_date'] ?? $r['business_date'] ?? ('#'.($r['id'] ?? '-')) }}</h5><div class="d-flex justify-content-between"><span>Status</span><strong>{{ ucfirst((string)($r['status'] ?? 'completed')) }}</strong></div><div class="d-flex justify-content-between"><span>Total</span><strong>{{ $money($r['total_amount'] ?? 0) }}</strong></div><small class="text-muted">Company {{ $r['company_id'] ?? '-' }}</small></div>@empty<div class="sa-empty">No night audits have been run yet.</div>@endforelse</div></section>
         @elseif($panel === 'housekeeping')
-            <section class="sa-kanban">@foreach(['open'=>'Dirty','assigned'=>'Assigned','cleaning'=>'Cleaning','completed'=>'Clean'] as $laneKey => $laneLabel)<div class="sa-lane"><h5>{{ $laneLabel }}</h5>@php $laneRows = $panelRows->filter(function($row) use ($rowArray,$laneKey){$r=$rowArray($row);$status=(string)($r['status'] ?? 'open');return $laneKey === 'cleaning' ? in_array($status,['cleaning','inspection'],true) : ($laneKey === 'assigned' ? in_array($status,['assigned','in_progress'],true) : ($laneKey === 'completed' ? in_array($status,['completed','resolved','clean'],true) : in_array($status,['open','new','dirty','pending'],true)));}); @endphp @forelse($laneRows->take(8) as $row)@php $r=$rowArray($row); @endphp<div class="sa-ticket {{ ($r['priority'] ?? '') === 'high' ? 'danger' : '' }}"><strong>{{ $r['task_no'] ?? ('Task #'.($r['id'] ?? '-')) }}</strong><div class="small text-muted">Room {{ $r['room_id'] ?? '-' }} · Company {{ $r['company_id'] ?? '-' }}</div><div>{{ $r['note'] ?? $r['description'] ?? 'Housekeeping record' }}</div></div>@empty<div class="text-muted small">No {{ strtolower($laneLabel) }} items.</div>@endforelse</div>@endforeach</section>
+            @php
+                $sampleHousekeeping = collect([
+                    (object) ['id' => 'preview-101', 'room_id' => '101', 'company_id' => 'Preview', 'status' => 'open', 'priority' => 'high', 'task_type' => 'departure_clean', 'note' => 'Departure cleaning - guest arriving today'],
+                    (object) ['id' => 'preview-102', 'room_id' => '102', 'company_id' => 'Preview', 'status' => 'assigned', 'priority' => 'normal', 'task_type' => 'stayover', 'note' => 'Stayover service assigned to cleaner'],
+                    (object) ['id' => 'preview-103', 'room_id' => '103', 'company_id' => 'Preview', 'status' => 'cleaning', 'priority' => 'normal', 'task_type' => 'deep_clean', 'note' => 'Deep clean currently in progress'],
+                    (object) ['id' => 'preview-104', 'room_id' => '104', 'company_id' => 'Preview', 'status' => 'completed', 'priority' => 'normal', 'task_type' => 'inspection', 'note' => 'Inspected and ready for check-in'],
+                    (object) ['id' => 'preview-105', 'room_id' => '105', 'company_id' => 'Preview', 'status' => 'open', 'priority' => 'high', 'task_type' => 'rush_clean', 'note' => 'Rush room - front desk waiting'],
+                ]);
+                $hkRows = $panelRows->isEmpty() ? $sampleHousekeeping : $panelRows;
+                $hkIsPreview = $panelRows->isEmpty();
+                $hkLane = function ($status) {
+                    $status = (string) $status;
+                    if (in_array($status, ['completed', 'resolved', 'clean'], true)) return 'clean';
+                    if (in_array($status, ['cleaning', 'inspection', 'in_progress'], true)) return 'cleaning';
+                    if (in_array($status, ['assigned'], true)) return 'assigned';
+                    return 'dirty';
+                };
+                $hkCounts = [
+                    'dirty' => $hkRows->filter(fn($row) => $hkLane($rowArray($row)['status'] ?? 'open') === 'dirty')->count(),
+                    'assigned' => $hkRows->filter(fn($row) => $hkLane($rowArray($row)['status'] ?? 'open') === 'assigned')->count(),
+                    'cleaning' => $hkRows->filter(fn($row) => $hkLane($rowArray($row)['status'] ?? 'open') === 'cleaning')->count(),
+                    'clean' => $hkRows->filter(fn($row) => $hkLane($rowArray($row)['status'] ?? 'open') === 'clean')->count(),
+                ];
+            @endphp
+            <section class="sa-hk-command">
+                <div class="sa-hk-head">
+                    <div>
+                        <small class="text-warning fw-bold">HOUSEKEEPING CONTROL</small>
+                        <h4>Room Readiness Board</h4>
+                        <p>Super Admin mirror of dirty rooms, assigned cleaners, cleaning progress and inspected rooms across hotel tenants.</p>
+                    </div>
+                    <span class="btn btn-outline-secondary disabled">Read-only platform monitor</span>
+                </div>
+                @if($hkIsPreview)
+                    <div class="sa-empty mb-3">No live housekeeping tasks found yet. This preview shows the exact board layout that will populate from tenant rooms and tasks.</div>
+                @endif
+                <div class="sa-hk-chips">
+                    <span class="sa-hk-chip dirty">Dirty: {{ $hkCounts['dirty'] }}</span>
+                    <span class="sa-hk-chip assigned">Assigned: {{ $hkCounts['assigned'] }}</span>
+                    <span class="sa-hk-chip cleaning">Cleaning: {{ $hkCounts['cleaning'] }}</span>
+                    <span class="sa-hk-chip clean">Clean: {{ $hkCounts['clean'] }}</span>
+                </div>
+                <div class="sa-hk-grid">
+                    @foreach($hkRows->take(15) as $row)
+                        @php
+                            $r = $rowArray($row);
+                            $lane = $hkLane($r['status'] ?? 'open');
+                            $roomNo = $r['room_number'] ?? $r['room_id'] ?? ('#'.($r['id'] ?? '-'));
+                        @endphp
+                        <article class="sa-hk-room {{ $lane }}">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <div class="sa-hk-room-no">{{ $roomNo }}</div>
+                                    <span class="badge bg-light text-dark">{{ $hkIsPreview ? 'Preview' : 'Tenant' }}</span>
+                                </div>
+                                <span class="sa-hk-status">{{ ucfirst(str_replace('_', ' ', (string)($r['status'] ?? 'open'))) }}</span>
+                                <div class="mt-2 fw-bold">{{ ucfirst(str_replace('_', ' ', (string)($r['task_type'] ?? 'housekeeping'))) }}</div>
+                                <div class="text-muted small">{{ $r['note'] ?? $r['description'] ?? 'Housekeeping record' }}</div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-3 small">
+                                <span>Company {{ $r['company_id'] ?? '-' }}</span>
+                                <span class="badge {{ ($r['priority'] ?? '') === 'high' ? 'bg-danger' : 'bg-secondary' }}">{{ ucfirst((string)($r['priority'] ?? 'normal')) }}</span>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+                <div class="sa-hk-table">
+                    <table class="table table-sm sa-table align-middle mb-0">
+                        <thead><tr><th>Task</th><th>Room</th><th>Status</th><th>Priority</th><th>Company</th><th>Note</th></tr></thead>
+                        <tbody>
+                            @foreach($hkRows->take(10) as $row)
+                                @php $r = $rowArray($row); @endphp
+                                <tr>
+                                    <td>{{ $r['task_no'] ?? ('Task #'.($r['id'] ?? '-')) }}</td>
+                                    <td>{{ $r['room_number'] ?? $r['room_id'] ?? '-' }}</td>
+                                    <td><span class="badge {{ $statusBadge($r['status'] ?? 'open') }}">{{ ucfirst(str_replace('_', ' ', (string)($r['status'] ?? 'open'))) }}</span></td>
+                                    <td>{{ ucfirst((string)($r['priority'] ?? 'normal')) }}</td>
+                                    <td>{{ $r['company_id'] ?? '-' }}</td>
+                                    <td>{{ $r['note'] ?? $r['description'] ?? '-' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         @elseif($panel === 'reports')
             <section class="sa-report-hub"><div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3"><div><small class="text-warning fw-bold">HOTEL REPORTS · SUPER ADMIN</small><h4 class="mb-1">Platform PMS Reports Centre</h4><p class="mb-0">Distinct report destinations for reservations, cashier, room readiness, engineering and audit oversight.</p></div><span class="btn btn-warning disabled text-dark">Enterprise Monitor</span></div><div class="sa-report-grid"><a class="sa-report" href="{{ route('super_admin.hotels.index', ['panel'=>'reservations']) }}"><span>Front Office</span><h4>Reservation Register</h4><p>All hotel reservation activity by tenant.</p></a><a class="sa-report" href="{{ route('super_admin.hotels.index', ['panel'=>'folios']) }}"><span>Finance</span><h4>Folio Receivables</h4><p>Guest balances and folio exposure.</p></a><a class="sa-report" href="{{ route('super_admin.hotels.index', ['panel'=>'services']) }}"><span>Services</span><h4>Service Centers</h4><p>Restaurant, bar, spa, gym, room service and events.</p></a><a class="sa-report" href="{{ route('super_admin.hotels.index', ['panel'=>'housekeeping']) }}"><span>Rooms</span><h4>Housekeeping</h4><p>Room readiness workload.</p></a><a class="sa-report" href="{{ route('super_admin.hotels.index', ['panel'=>'maintenance']) }}"><span>Engineering</span><h4>Maintenance</h4><p>Tickets and unavailable rooms.</p></a><a class="sa-report" href="{{ route('super_admin.hotels.index', ['panel'=>'night_audits']) }}"><span>Audit</span><h4>Night Audits</h4><p>Business day close history.</p></a></div></section>
         @elseif($panel === 'settings')

@@ -29,14 +29,17 @@ class HousekeepingController extends Controller
             ->get()
             ->groupBy(fn ($task) => (string) $task->status);
 
-        $departedDirtyRooms = HotelRoom::query()
+        $rooms = HotelRoom::query()
             ->with('type')
             ->where('company_id', $companyId)
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
-            ->where('housekeeping_status', 'dirty')
             ->whereHas('property')
             ->orderBy('room_number')
             ->get();
+
+        $departedDirtyRooms = $rooms
+            ->filter(fn ($room) => (string) $room->housekeeping_status === 'dirty')
+            ->values();
 
         $arrivalsWaitingForRoom = Reservation::query()
             ->with(['customer', 'roomType', 'room'])
@@ -62,15 +65,19 @@ class HousekeepingController extends Controller
             ->get();
 
         $summary = [
-            'dirty' => HotelRoom::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->where('housekeeping_status', 'dirty')->count(),
+            'vacant_clean' => $rooms->filter(fn ($room) => (string) $room->operational_status === 'available' && (string) $room->housekeeping_status === 'clean')->count(),
+            'occupied' => $rooms->filter(fn ($room) => (string) $room->operational_status === 'occupied')->count(),
+            'dirty' => $rooms->filter(fn ($room) => (string) $room->housekeeping_status === 'dirty')->count(),
+            'maintenance' => $rooms->filter(fn ($room) => in_array((string) $room->operational_status, ['maintenance', 'out_of_order'], true))->count(),
+            'arriving' => $arrivalsWaitingForRoom->count(),
             'assigned' => (int) ($tasks->get('assigned')?->count() ?? 0),
             'cleaning' => (int) ($tasks->get('cleaning')?->count() ?? 0),
-            'clean' => HotelRoom::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->where('housekeeping_status', 'clean')->count(),
+            'clean' => $rooms->filter(fn ($room) => (string) $room->housekeeping_status === 'clean')->count(),
             'inspection' => (int) ($tasks->get('inspection')?->count() ?? 0),
         ];
 
         if (view()->exists('hotel.housekeeping.index')) {
-            return view('hotel.housekeeping.index', compact('tasks', 'summary', 'departedDirtyRooms', 'arrivalsWaitingForRoom', 'priorityTasks'));
+            return view('hotel.housekeeping.index', compact('tasks', 'summary', 'rooms', 'departedDirtyRooms', 'arrivalsWaitingForRoom', 'priorityTasks'));
         }
 
         return response()->json(['data' => $tasks]);
