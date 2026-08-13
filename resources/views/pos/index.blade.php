@@ -2929,20 +2929,30 @@ body.pos-terminal-workspace .quick-fill-row {
 
     body.pos-terminal-workspace .cart-table thead th,
     body.pos-terminal-workspace .pos-full-page-wrapper .cart-table thead th {
-        padding: 5px 6px !important;
-        font-size: 0.58rem !important;
+        padding: 7px 8px !important;
+        font-size: 0.76rem !important;
     }
 
     body.pos-terminal-workspace .cart-table td {
-        padding: 5px 6px !important;
-        font-size: 0.68rem;
+        padding: 8px 9px !important;
+        font-size: 0.88rem !important;
+        line-height: 1.35;
+    }
+
+    body.pos-terminal-workspace .cart-table td .fw-bold {
+        font-size: 0.95rem !important;
+    }
+
+    body.pos-terminal-workspace .cart-table td small {
+        font-size: 0.82rem !important;
     }
 
     body.pos-terminal-workspace .cart-qty-input {
-        width: 52px;
-        min-height: 24px;
-        padding: 2px 4px;
-        font-size: 0.68rem;
+        width: 66px;
+        min-width: 66px;
+        min-height: 30px;
+        padding: 4px 6px;
+        font-size: 0.9rem !important;
     }
 
     body.pos-terminal-workspace .summary-panel {
@@ -4114,7 +4124,7 @@ body.pos-terminal-workspace .pos-pay-tab.active {
                     </div>
                     <div class="col-6">
                         <label id="qty-label">Quantity</label>
-                        <input type="number" id="quantity" class="form-control fw-bold tabular-nums" value="1" min="0.01" step="1" inputmode="decimal">
+                        <input type="number" id="quantity" class="form-control fw-bold tabular-nums" value="1" min="1" step="1" inputmode="numeric">
                     </div>
                     <div class="col-6">
                         <label style="color: var(--danger-500);">Discount</label>
@@ -5240,11 +5250,11 @@ $(document).ready(function() {
                         <td class="text-center">
                             <input
                                 type="number"
-                                min="0.01"
+                                min="1"
                                 step="1"
-                                value="${item.qty}"
+                                value="${Math.max(1, Math.round(parseFloat(item.qty) || 1))}"
                                 class="cart-qty-input"
-                                inputmode="decimal"
+                                inputmode="numeric"
                                 onchange="updateCartQty(${i}, this.value)"
                                 onblur="updateCartQty(${i}, this.value)"
                                 onkeydown="if (event.key === 'Enter') { event.preventDefault(); updateCartQty(${i}, this.value); this.blur(); }"
@@ -5296,7 +5306,8 @@ $(document).ready(function() {
         if (!cart[i]) return;
 
         const parsedQty = parseFloat(value);
-        const nextQty = Number.isFinite(parsedQty) ? Math.max(0.01, parsedQty) : Math.max(0.01, parseFloat(cart[i].qty) || 0.01);
+        const fallbackQty = parseFloat(cart[i].qty) || 1;
+        const nextQty = Number.isFinite(parsedQty) ? Math.max(1, Math.round(parsedQty)) : Math.max(1, Math.round(fallbackQty));
 
         cart[i].qty = nextQty;
         calculateCartLine(cart[i]);
@@ -5866,7 +5877,7 @@ window.POS_ENABLE_FALLBACK = function () {
                     <label class="form-label fw-bold">Catalog item</label>
                     <select id="misc-product-id" class="form-select mb-2">${optionHtml}</select>
                     <label class="form-label fw-bold">Quantity</label>
-                    <input id="misc-qty" type="number" min="0.01" step="1" value="1" class="form-control mb-2">
+                    <input id="misc-qty" type="number" min="1" step="1" value="1" class="form-control mb-2" inputmode="numeric">
                     <label class="form-label fw-bold">Selling price</label>
                     <input id="misc-price" type="number" min="0" step="0.01" class="form-control mb-2" placeholder="Leave blank to use product price">
                     <label class="form-label fw-bold">Discount</label>
@@ -6925,7 +6936,7 @@ window.POS_ENABLE_FALLBACK = function () {
                         <small style="color: var(--text-secondary); font-size: 0.75rem;">${item.qty} ${item.unitLabel || 'unit'} × ${fmt.format(item.price)}</small>
                     </td>
                     <td class="text-center">
-                        <input type="number" min="0.01" step="1" value="${item.qty}" class="cart-qty-input" data-index="${i}" inputmode="decimal">
+                        <input type="number" min="1" step="1" value="${Math.max(1, Math.round(parseFloat(item.qty) || 1))}" class="cart-qty-input" data-index="${i}" inputmode="numeric">
                     </td>
                     <td class="text-end fw-bold tabular-nums" style="color: var(--text-primary);">${fmt.format(item.total)}</td>
                     <td class="text-center">
@@ -7050,8 +7061,8 @@ window.POS_ENABLE_FALLBACK = function () {
             const index = parseInt(target.getAttribute('data-index') || '0', 10);
             if (Number.isNaN(index) || !cart[index]) return;
             const parsedQty = parseFloat(target.value);
-            const previousQty = Math.max(0.01, parseFloat(cart[index].qty || '1') || 0.01);
-            const qty = Number.isFinite(parsedQty) ? Math.max(0.01, parsedQty) : Math.max(0.01, parseFloat(cart[index].qty || '1') || 0.01);
+            const previousQty = Math.max(1, Math.round(parseFloat(cart[index].qty || '1') || 1));
+            const qty = Number.isFinite(parsedQty) ? Math.max(1, Math.round(parsedQty)) : Math.max(1, Math.round(parseFloat(cart[index].qty || '1') || 1));
             target.value = String(qty);
             const price = cart[index].price;
             const discount = cart[index].discountValue ?? cart[index].discount ?? 0;
