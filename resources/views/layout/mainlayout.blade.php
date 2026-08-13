@@ -2145,6 +2145,70 @@
     @include('layout.partials.footer-scripts')
     @yield('script')
     @stack('scripts')
+
+    <script>
+    (function () {
+        const prefetched = new Set();
+        const blockedPathWords = [
+            'logout', 'delete', 'destroy', 'remove', 'download', 'export',
+            'print', 'receipt', 'pay-online', 'mail-pay-invoice'
+        ];
+        const skipExtensions = /\.(?:pdf|csv|xlsx?|zip|rar|png|jpe?g|gif|webp|svg|mp4|mov|avi|webm)(?:$|[?#])/i;
+        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+
+        if (connection && (connection.saveData || /2g/.test(connection.effectiveType || ''))) {
+            return;
+        }
+
+        function eligible(anchor) {
+            if (!anchor || anchor.dataset.noPrefetch === 'true') return null;
+            if (anchor.target && anchor.target !== '_self') return null;
+            if ((anchor.getAttribute('download') || '').trim() !== '') return null;
+            const rawHref = anchor.getAttribute('href') || '';
+            if (!rawHref || rawHref[0] === '#' || rawHref.startsWith('javascript:') || rawHref.startsWith('mailto:') || rawHref.startsWith('tel:')) return null;
+
+            let url;
+            try {
+                url = new URL(rawHref, window.location.href);
+            } catch (e) {
+                return null;
+            }
+
+            if (url.origin !== window.location.origin) return null;
+            if (url.href === window.location.href) return null;
+            if (skipExtensions.test(url.pathname)) return null;
+            if (blockedPathWords.some((word) => url.pathname.toLowerCase().includes(word))) return null;
+
+            return url.href;
+        }
+
+        function prefetch(anchor) {
+            const href = eligible(anchor);
+            if (!href || prefetched.has(href) || prefetched.size > 60) return;
+            prefetched.add(href);
+
+            const link = document.createElement('link');
+            link.rel = 'prefetch';
+            link.as = 'document';
+            link.href = href;
+            document.head.appendChild(link);
+        }
+
+        document.addEventListener('pointerenter', function (event) {
+            const anchor = event.target.closest && event.target.closest('a[href]');
+            prefetch(anchor);
+        }, true);
+        document.addEventListener('focusin', function (event) {
+            const anchor = event.target.closest && event.target.closest('a[href]');
+            prefetch(anchor);
+        });
+        document.addEventListener('touchstart', function (event) {
+            const anchor = event.target.closest && event.target.closest('a[href]');
+            prefetch(anchor);
+        }, { passive: true, capture: true });
+    })();
+    </script>
+
     @include('layout.partials.pwa-install')
 
     @livewireScripts

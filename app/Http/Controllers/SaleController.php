@@ -721,11 +721,28 @@ public function customerDetails($id = null)
                     $productsQuery->with('barcodes');
                 }
 
+                $salesRankingQuery = $this->posProductShelfRankingQuery($activeBranch);
+                if ($salesRankingQuery) {
+                    $productsQuery
+                        ->select('products.*')
+                        ->leftJoinSub($salesRankingQuery, 'pos_sales_rank', function ($join) {
+                            $join->on('pos_sales_rank.product_id', '=', 'products.id');
+                        })
+                        ->selectRaw('COALESCE(pos_sales_rank.sold_rank_qty, 0) as pos_sold_rank_qty')
+                        ->selectRaw('pos_sales_rank.last_sold_at as pos_last_sold_at');
+                }
+
                 $orderColumn = Schema::hasColumn('products', 'name')
                     ? 'name'
                     : (Schema::hasColumn('products', 'id') ? 'id' : null);
+                if ($salesRankingQuery) {
+                    $productsQuery
+                        ->orderByRaw('CASE WHEN pos_sales_rank.last_sold_at IS NULL THEN 1 ELSE 0 END ASC')
+                        ->orderByDesc('pos_sales_rank.last_sold_at')
+                        ->orderByDesc('pos_sales_rank.sold_rank_qty');
+                }
                 if ($orderColumn) {
-                    $productsQuery->orderBy($orderColumn, 'asc');
+                    $productsQuery->orderBy('products.' . $orderColumn, 'asc');
                 }
 
                 $this->applyTenantScope($productsQuery, 'products');
@@ -757,10 +774,31 @@ public function customerDetails($id = null)
                     ->map(function ($product) use ($activeBranch) {
                         $availableStock = $this->branchInventory->getAvailableStock($product, $activeBranch);
                         $product->setAttribute('available_stock', $availableStock);
+                        $product->setAttribute('pos_sold_rank_qty', (float) ($product->pos_sold_rank_qty ?? 0));
 
                         return $product;
                     })
-                    ->sortByDesc(fn ($product) => (float) ($product->available_stock ?? 0) > 0 ? 1 : 0)
+                    ->sort(function ($left, $right) {
+                        $leftInStock = (float) ($left->available_stock ?? 0) > 0 ? 1 : 0;
+                        $rightInStock = (float) ($right->available_stock ?? 0) > 0 ? 1 : 0;
+                        if ($leftInStock !== $rightInStock) {
+                            return $rightInStock <=> $leftInStock;
+                        }
+
+                        $leftLastSold = strtotime((string) ($left->pos_last_sold_at ?? '')) ?: 0;
+                        $rightLastSold = strtotime((string) ($right->pos_last_sold_at ?? '')) ?: 0;
+                        if ($leftLastSold !== $rightLastSold) {
+                            return $rightLastSold <=> $leftLastSold;
+                        }
+
+                        $leftSoldQty = (float) ($left->pos_sold_rank_qty ?? 0);
+                        $rightSoldQty = (float) ($right->pos_sold_rank_qty ?? 0);
+                        if ($leftSoldQty !== $rightSoldQty) {
+                            return $rightSoldQty <=> $leftSoldQty;
+                        }
+
+                        return strnatcasecmp((string) ($left->name ?? ''), (string) ($right->name ?? ''));
+                    })
                     ->values();
 
                 // Attach earliest upcoming expiry date per product (from product_lots)
@@ -1733,6 +1771,62 @@ public function create()
         });
 
         return redirect()->route('sales.index')->with('success', "Invoice #{$sale->invoice_no} updated.");
+    }
+
+    private function posProductShelfRankingQuery(array $activeBranch): ?\Illuminate\Database\Query\Builder
+    {
+        if (!Schema::hasTable('sale_items') || !Schema::hasTable('sales')) {
+            return null;
+        }
+
+        if (!Schema::hasColumn('sale_items', 'product_id')) {
+            return null;
+        }
+
+        $saleJoinColumn = Schema::hasColumn('sale_items', 'sale_id')
+            ? 'sale_id'
+            : (Schema::hasColumn('sale_items', 'order_id') ? 'order_id' : null);
+        if (!$saleJoinColumn) {
+            return null;
+        }
+
+        $dateExpression = Schema::hasColumn('sales', 'created_at')
+            ? 'sales.created_at'
+            : (Schema::hasColumn('sales', 'order_date') ? 'sales.order_date' : 'sale_items.created_at');
+
+        $quantityExpression = Schema::hasTable('products')
+            ? InventoryQuantity::saleStockUnitsExpression('sale_items', 'sale_products')
+            : InventoryQuantity::saleItemQuantityColumn('sale_items');
+
+        $ranking = DB::table('sale_items')
+            ->join('sales', "sale_items.{$saleJoinColumn}", '=', 'sales.id')
+            ->join('products as sale_products', 'sale_items.product_id', '=', 'sale_products.id')
+            ->whereNotNull('sale_items.product_id')
+            ->selectRaw("sale_items.product_id, MAX({$dateExpression}) as last_sold_at")
+            ->selectRaw("COALESCE(SUM({$quantityExpression}), 0) as sold_rank_qty")
+            ->groupBy('sale_items.product_id');
+
+        $this->applyTenantScope($ranking, 'sales');
+
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+        if ($branchId !== '' || $branchName !== '') {
+            $ranking->where(function ($query) use ($branchId, $branchName) {
+                $matched = false;
+
+                if ($branchId !== '' && Schema::hasColumn('sales', 'branch_id')) {
+                    $query->where('sales.branch_id', $branchId);
+                    $matched = true;
+                }
+
+                if ($branchName !== '' && Schema::hasColumn('sales', 'branch_name')) {
+                    $method = $matched ? 'orWhere' : 'where';
+                    $query->{$method}('sales.branch_name', $branchName);
+                }
+            });
+        }
+
+        return $ranking;
     }
 
     private function getActiveBranchContext(): array
