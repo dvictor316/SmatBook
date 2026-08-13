@@ -251,6 +251,73 @@
         padding: 0.65rem 0.65rem 0.35rem;
     }
 
+    .import-guide-modal .modal-content {
+        border: 0;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 28px 70px rgba(15, 23, 42, 0.24);
+    }
+
+    .import-guide-hero {
+        background: linear-gradient(135deg, #0f3a8a 0%, #2563eb 68%, #d7a928 100%);
+        color: #fff;
+        padding: 1.4rem 1.5rem;
+    }
+
+    .import-guide-hero h5 {
+        color: #fff;
+        font-size: 1.35rem;
+        font-weight: 900;
+    }
+
+    .import-guide-hero p {
+        color: rgba(255, 255, 255, 0.86);
+        margin-bottom: 0;
+    }
+
+    .import-guide-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .import-guide-panel {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1rem;
+        background: #fff;
+    }
+
+    .import-guide-panel h6,
+    .import-guide-examples h6 {
+        color: #0f172a;
+        font-weight: 900;
+        margin-bottom: 0.75rem;
+    }
+
+    .import-guide-list {
+        margin: 0;
+        padding-left: 1.15rem;
+        color: #475569;
+        font-size: 0.88rem;
+    }
+
+    .import-guide-list li + li {
+        margin-top: 0.4rem;
+    }
+
+    .import-guide-examples {
+        border: 1px solid #bfdbfe;
+        border-radius: 12px;
+        padding: 1rem;
+        background: #f8fbff;
+    }
+
+    .import-example-table {
+        margin-bottom: 0;
+        font-size: 0.82rem;
+    }
+
     #products-table_wrapper .dataTables_paginate {
         text-align: center !important;
     }
@@ -344,6 +411,10 @@
             box-shadow: 0 16px 36px rgba(15, 157, 88, 0.32);
             font-weight: 800;
         }
+
+        .import-guide-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
@@ -391,7 +462,7 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="{{ route('inventory.Products.import.template') }}"><i class="far fa-file-lines me-2 text-primary"></i>Download Stock Template</a></li>
-                            <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importProductsModal"><i class="fas fa-file-upload me-2 text-success"></i>Upload Stock Spreadsheet</button></li>
+                            <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importGuideModal"><i class="fas fa-file-upload me-2 text-success"></i>Upload Stock Spreadsheet</button></li>
                             @php($lastImportKey = 'product_import_last_' . (auth()->id() ?? 'guest'))
                             @if (\Illuminate\Support\Facades\Cache::has($lastImportKey))
                                 <li>
@@ -590,6 +661,92 @@
 </div>
 @endif
 
+<div class="modal fade import-guide-modal" id="importGuideModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="import-guide-hero">
+                <div class="d-flex align-items-start justify-content-between gap-3">
+                    <div>
+                        <h5 class="modal-title mb-2">Before You Import</h5>
+                        <p>SmartProbook can create or update products from CSV, XLS, or XLSX files. Only the product name is required.</p>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="modal-body p-4">
+                <div class="import-guide-grid mb-3">
+                    <div class="import-guide-panel">
+                        <h6><i class="fas fa-circle-check text-success me-2"></i>Required Column</h6>
+                        <ul class="import-guide-list">
+                            <li><strong>name</strong> - product or stock item name.</li>
+                        </ul>
+                    </div>
+                    <div class="import-guide-panel">
+                        <h6><i class="fas fa-sliders text-primary me-2"></i>Optional Columns</h6>
+                        <ul class="import-guide-list">
+                            <li>sku, barcode, category, unit, unit_type, description.</li>
+                            <li>retail_price, wholesale_price, special_price, purchase_price.</li>
+                            <li>stock, stock_units, stock_cartons, stock_rolls, units_per_carton, units_per_roll.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="import-guide-examples">
+                    <h6><i class="far fa-lightbulb text-warning me-2"></i>Examples</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm import-example-table">
+                            <thead>
+                                <tr>
+                                    <th>name</th>
+                                    <th>unit</th>
+                                    <th>unit_type</th>
+                                    <th>stock_units</th>
+                                    <th>stock</th>
+                                    <th>retail_price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Rice 50kg</td>
+                                    <td>kg</td>
+                                    <td>unit</td>
+                                    <td>25</td>
+                                    <td></td>
+                                    <td>75000</td>
+                                </tr>
+                                <tr>
+                                    <td>Groundnut Oil</td>
+                                    <td>litre</td>
+                                    <td>unit</td>
+                                    <td>30</td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>Indomie Chicken Carton</td>
+                                    <td>pcs</td>
+                                    <td>carton</td>
+                                    <td>0</td>
+                                    <td>400</td>
+                                    <td>250</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="small text-muted mb-0 mt-2">For KG and LITRE products, SmartProbook uses <strong>stock_units</strong> as opening stock. Blank or text values in number fields are safely treated as 0.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="{{ route('inventory.Products.import.template') }}" class="btn btn-light border">
+                    <i class="far fa-file-lines me-2"></i>Template
+                </a>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#importProductsModal">
+                    OK / Continue
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="importProductsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -602,7 +759,7 @@
                 <div class="modal-body">
                     <p class="text-muted mb-3">Use the stock spreadsheet template to import many products, prices, packaging, and opening stock quantities at once. Missing SKU values will be generated automatically.</p>
                     <div class="alert alert-info small mb-3">
-                        <strong>Prokip-style import guide:</strong>
+                        <strong>SmartProbook import guide:</strong>
                         <ul class="mb-0 ps-3">
                             <li>Only the product name is required. Other columns can be left blank and will default safely.</li>
                             <li>Use existing column names where possible: name, sku, barcode, category, unit, unit_type, stock, retail_price, wholesale_price, special_price, purchase_price.</li>

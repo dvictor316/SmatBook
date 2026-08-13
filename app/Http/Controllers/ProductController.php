@@ -546,6 +546,20 @@ class ProductController extends Controller
         return is_numeric($value) ? (float) $value : 0.0;
     }
 
+    private function importPriceValue($value): float
+    {
+        return max(0.0, $this->importNumericValue($value));
+    }
+
+    private function isMeasuredImportUnit(string $unitValue, string $unitTypeValue = ''): bool
+    {
+        $value = Str::lower(trim($unitValue));
+        $unitType = Str::lower(trim($unitTypeValue));
+        $measured = ['kg', 'kgs', 'kilogram', 'kilograms', 'litre', 'liter', 'litres', 'liters', 'l'];
+
+        return in_array($value, $measured, true) || in_array($unitType, $measured, true);
+    }
+
     private function spreadsheetRowIterator(UploadedFile $file): \Generator
     {
         $extension = strtolower((string) $file->getClientOriginalExtension());
@@ -2561,11 +2575,12 @@ public function inventory(Request $request)
             $skipped = 0;
             $duplicates = 0;
             $missingRequired = 0;
+            $openingStockAdded = 0.0;
             $rowErrors = [];
             $updateExisting = $request->boolean('update_existing');
             $createdIds = [];
 
-            DB::transaction(function () use ($file, $header, $headerRowNumber, &$created, &$updated, &$updatedExisting, &$skipped, &$duplicates, &$missingRequired, &$rowErrors, $updateExisting, $request) {
+            DB::transaction(function () use ($file, $header, $headerRowNumber, &$created, &$updated, &$updatedExisting, &$skipped, &$duplicates, &$missingRequired, &$openingStockAdded, &$rowErrors, $updateExisting, $request) {
                 $activeBranch = $this->resolveBranchContext($request->input('branch_id'));
 
                 foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
@@ -2642,7 +2657,11 @@ public function inventory(Request $request)
                             'units_per_roll' => max(0, (int) $this->importNumericValue($rowData['units_per_roll'] ?? 0)),
                         ];
 
-                        $stock = is_numeric(str_replace(',', '', (string) ($rowData['stock'] ?? '')))
+                        $isMeasuredUnit = $this->isMeasuredImportUnit((string) $importUnitValue, $rawUnitType)
+                            || $this->isMeasuredImportUnit((string) ($importUnit['symbol'] ?? ''), $rawUnitType);
+                        $stock = $isMeasuredUnit
+                            ? $packagingValues['stock_units']
+                            : (is_numeric(str_replace(',', '', (string) ($rowData['stock'] ?? '')))
                             ? (int) $this->importNumericValue($rowData['stock'])
                             : $this->calculateStockFromPackaging([
                                 'stock_cartons' => $packagingValues['stock_cartons'],
@@ -2650,7 +2669,7 @@ public function inventory(Request $request)
                                 'stock_units' => $packagingValues['stock_units'],
                                 'units_per_carton' => $packagingValues['units_per_carton'],
                                 'units_per_roll' => $packagingValues['units_per_roll'],
-                            ]);
+                            ]));
 
                         $retailPrice = ($rowData['retail_price'] ?? '') !== '' ? $rowData['retail_price'] : ($rowData['price'] ?? '');
                         $payload = $this->sanitizeForProductColumns([
@@ -2666,11 +2685,11 @@ public function inventory(Request $request)
                             'unit_type' => $unitType,
                             'units_per_carton' => $packagingValues['units_per_carton'],
                             'units_per_roll' => $packagingValues['units_per_roll'],
-                            'price' => (float) ($retailPrice ?: 0),
-                            'retail_price' => (float) ($retailPrice ?: 0),
-                            'wholesale_price' => ($rowData['wholesale_price'] ?? '') !== '' ? (float) $rowData['wholesale_price'] : null,
-                            'special_price' => ($rowData['special_price'] ?? '') !== '' ? (float) $rowData['special_price'] : null,
-                            'purchase_price' => (float) (($rowData['purchase_price'] ?? 0) ?: 0),
+                            'price' => $this->importPriceValue($retailPrice),
+                            'retail_price' => $this->importPriceValue($retailPrice),
+                            'wholesale_price' => $this->importPriceValue($rowData['wholesale_price'] ?? 0),
+                            'special_price' => $this->importPriceValue($rowData['special_price'] ?? 0),
+                            'purchase_price' => $this->importPriceValue($rowData['purchase_price'] ?? 0),
                             'stock' => $stock,
                             'stock_quantity' => $stock,
                             'status' => 'active',
@@ -2687,6 +2706,7 @@ public function inventory(Request $request)
                             $activeBranch,
                             (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
                         );
+                        $openingStockAdded += max(0.0, (float) $stock);
 
                         if ($isNew) {
                             $created++;
@@ -2723,9 +2743,11 @@ public function inventory(Request $request)
                 'skipped' => $skipped,
                 'duplicates' => $duplicates,
                 'missing_required' => $missingRequired,
+                'opening_stock_added' => $openingStockAdded,
             ]);
 
-            $summary = "Product import completed. Created: {$created}, Updated: {$updated}, Skipped: {$skipped}.";
+            $openingStockFormatted = rtrim(rtrim(number_format($openingStockAdded, 2), '0'), '.');
+            $summary = "Product import completed. Created: {$created}, Updated: {$updated}, Skipped: {$skipped}, Opening Stock Added: {$openingStockFormatted}.";
             if ($updatedExisting > 0) {
                 $summary .= " Updated existing: {$updatedExisting}.";
             }
