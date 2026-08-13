@@ -3729,6 +3729,35 @@ body.pos-terminal-workspace .pos-pay-tab.active {
         font-size: 0.68rem !important;
     }
 }
+
+/* Keep product shelf from stretching the POS page; scroll products inside shelf. */
+body.pos-terminal-workspace .pos-product-shelf-card {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+}
+
+body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+}
+
+@media (min-width: 1200px) {
+    body.pos-terminal-workspace .pos-product-shelf-card {
+        height: var(--pos-shelf-target-height, clamp(420px, calc(100vh - 255px), 680px)) !important;
+        min-height: 0 !important;
+        max-height: var(--pos-shelf-target-height, clamp(420px, calc(100vh - 255px), 680px)) !important;
+        align-self: start !important;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
+        height: auto !important;
+        max-height: none !important;
+    }
+}
+
 </style>
 
 <div class="pos-full-page-wrapper">
@@ -7706,6 +7735,29 @@ document.addEventListener('DOMContentLoaded', function () {
             togglePosRail(this);
         }, true);
     });
+
+
+    const syncProductShelfHeight = () => {
+        const shelf = document.querySelector('.pos-product-shelf-card');
+        const controls = document.querySelector('.controls-card');
+        if (!shelf || !controls) return;
+
+        if (window.matchMedia('(min-width: 1200px)').matches) {
+            const targetHeight = Math.max(360, Math.round(controls.getBoundingClientRect().height));
+            shelf.style.setProperty('--pos-shelf-target-height', `${targetHeight}px`);
+        } else {
+            shelf.style.removeProperty('--pos-shelf-target-height');
+        }
+    };
+
+    syncProductShelfHeight();
+    window.addEventListener('resize', syncProductShelfHeight);
+    if (window.ResizeObserver) {
+        const controls = document.querySelector('.controls-card');
+        if (controls) {
+            new ResizeObserver(syncProductShelfHeight).observe(controls);
+        }
+    }
 
     posRailBackdrop?.addEventListener('click', closePosRail);
     posRail?.querySelectorAll('button, a').forEach((item) => {
