@@ -13,7 +13,7 @@ class HotelRoom extends Model
     protected $table = 'hotel_rooms';
 
     protected $fillable = [
-        'company_id', 'property_id', 'room_type_id', 'room_number', 'floor', 'wing', 'base_rate_override', 'operational_status', 'housekeeping_status', 'is_active', 'notes'
+        'company_id', 'property_id', 'room_type_id', 'room_number', 'floor', 'wing', 'base_rate_override', 'room_image', 'panorama_image', 'operational_status', 'housekeeping_status', 'is_active', 'notes'
     ];
 
     protected $casts = [

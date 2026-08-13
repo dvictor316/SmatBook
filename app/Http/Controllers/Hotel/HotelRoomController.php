@@ -9,6 +9,7 @@ use App\Models\HotelProperty;
 use App\Models\Reservation;
 use App\Models\Stay;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class HotelRoomController extends Controller
 {
@@ -96,12 +97,16 @@ class HotelRoomController extends Controller
             'floor' => 'nullable|string|max:50',
             'wing' => 'nullable|string|max:50',
             'base_rate_override' => 'nullable|numeric|min:0',
+            'room_image' => 'nullable|image|max:5120',
+            'panorama_image' => 'nullable|image|max:8192',
             'operational_status' => 'nullable|string|max:50',
             'housekeeping_status' => 'nullable|string|max:50',
             'notes' => 'nullable|string',
         ]);
 
         $data['company_id'] = $companyId;
+        $data['room_image'] = $request->hasFile('room_image') ? $request->file('room_image')->store('hotel/rooms', 'public') : null;
+        $data['panorama_image'] = $request->hasFile('panorama_image') ? $request->file('panorama_image')->store('hotel/rooms/panoramas', 'public') : null;
 
         // enforce uniqueness per property
         if (HotelRoom::where('property_id', $data['property_id'])->where('room_number', $data['room_number'])->exists()) {
@@ -128,11 +133,31 @@ class HotelRoomController extends Controller
             'floor' => 'nullable|string|max:50',
             'wing' => 'nullable|string|max:50',
             'base_rate_override' => 'nullable|numeric|min:0',
+            'room_image' => 'nullable|image|max:5120',
+            'panorama_image' => 'nullable|image|max:8192',
             'operational_status' => 'nullable|string|max:50',
             'housekeeping_status' => 'nullable|string|max:50',
             'notes' => 'nullable|string',
             'is_active' => 'nullable|boolean',
         ]);
+
+        if ($request->hasFile('room_image')) {
+            if ($room->room_image) {
+                Storage::disk('public')->delete($room->room_image);
+            }
+            $data['room_image'] = $request->file('room_image')->store('hotel/rooms', 'public');
+        } else {
+            unset($data['room_image']);
+        }
+
+        if ($request->hasFile('panorama_image')) {
+            if ($room->panorama_image) {
+                Storage::disk('public')->delete($room->panorama_image);
+            }
+            $data['panorama_image'] = $request->file('panorama_image')->store('hotel/rooms/panoramas', 'public');
+        } else {
+            unset($data['panorama_image']);
+        }
 
         $room->update($data);
         return redirect()->route('hotel.rooms.index')->with('success', 'Room updated.');
