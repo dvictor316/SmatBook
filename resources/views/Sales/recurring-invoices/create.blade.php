@@ -365,10 +365,18 @@
                     <div class="card-body">
                         <div class="row g-3">
                             <div class="col-md-4"><div class="text-muted small">Template</div><div class="fw-semibold" id="reviewTemplate">-</div></div>
+                            <div class="col-md-4"><div class="text-muted small">Customer</div><div class="fw-semibold" id="reviewCustomer">-</div></div>
+                            <div class="col-md-4"><div class="text-muted small">Currency</div><div class="fw-semibold" id="reviewCurrency">-</div></div>
                             <div class="col-md-4"><div class="text-muted small">Frequency</div><div class="fw-semibold" id="reviewFrequency">-</div></div>
+                            <div class="col-md-4"><div class="text-muted small">Date Rule</div><div class="fw-semibold" id="reviewDateRule">-</div></div>
                             <div class="col-md-4"><div class="text-muted small">Automation</div><div class="fw-semibold" id="reviewAutomation">-</div></div>
                             <div class="col-md-4"><div class="text-muted small">Start Date</div><div class="fw-semibold" id="reviewStart">-</div></div>
                             <div class="col-md-4"><div class="text-muted small">End Rule</div><div class="fw-semibold" id="reviewEnd">-</div></div>
+                            <div class="col-md-4"><div class="text-muted small">Email</div><div class="fw-semibold" id="reviewEmail">-</div></div>
+                            <div class="col-md-4"><div class="text-muted small">Reminders Before</div><div class="fw-semibold" id="reviewBefore">-</div></div>
+                            <div class="col-md-4"><div class="text-muted small">Reminders After</div><div class="fw-semibold" id="reviewAfter">-</div></div>
+                            <div class="col-md-4"><div class="text-muted small">Payment Link</div><div class="fw-semibold" id="reviewPaymentLink">-</div></div>
+                            <div class="col-md-4"><div class="text-muted small">Auto Payment</div><div class="fw-semibold" id="reviewAutoPayment">-</div></div>
                             <div class="col-md-4"><div class="text-muted small">Estimated Total</div><div class="fw-semibold" id="reviewTotal">0.00</div></div>
                         </div>
                     </div>
@@ -393,64 +401,95 @@
 const recurringForm = document.getElementById('recurringForm');
 
 // ── Wizard tab navigation ──────────────────────────────────────────────────
+function showWizardStep(stepId) {
+    const tab = document.querySelector(`[href="#${stepId}"]`);
+    const pane = document.getElementById(stepId);
+    if (!tab || !pane) {
+        return;
+    }
+
+    if (window.bootstrap?.Tab) {
+        bootstrap.Tab.getOrCreateInstance(tab).show();
+        return;
+    }
+
+    document.querySelectorAll('#wizardTabs .nav-link').forEach(link => link.classList.remove('active'));
+    document.querySelectorAll('.tab-content .tab-pane').forEach(panel => panel.classList.remove('show', 'active'));
+    tab.classList.add('active');
+    pane.classList.add('show', 'active');
+}
+
 document.querySelectorAll('.next-tab').forEach(btn => {
     btn.addEventListener('click', () => {
         updateReview();
-        const tab = document.querySelector(`[href="#${btn.dataset.target}"]`);
-        if (tab) bootstrap.Tab.getOrCreateInstance(tab).show();
+        showWizardStep(btn.dataset.target);
     });
 });
 document.querySelectorAll('.prev-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-        const tab = document.querySelector(`[href="#${btn.dataset.target}"]`);
-        if (tab) bootstrap.Tab.getOrCreateInstance(tab).show();
+        showWizardStep(btn.dataset.target);
     });
 });
 
 // ── Frequency / date rule toggles ────────────────────────────────────────
 function toggleRecurrenceUI() {
-    const freq = document.getElementById('frequencySelect').value;
-    document.getElementById('customIntervalGroup').style.display = freq === 'custom' ? '' : 'none';
-    const rule = document.getElementById('dateRuleSelect').value;
-    document.getElementById('specificDayGroup').style.display = rule === 'specific_day' ? '' : 'none';
+    const freq = document.getElementById('frequencySelect')?.value;
+    const customIntervalGroup = document.getElementById('customIntervalGroup');
+    if (customIntervalGroup) customIntervalGroup.style.display = freq === 'custom' ? '' : 'none';
+    const rule = document.getElementById('dateRuleSelect')?.value;
+    const specificDayGroup = document.getElementById('specificDayGroup');
+    if (specificDayGroup) specificDayGroup.style.display = rule === 'specific_day' ? '' : 'none';
+    updateReview();
 }
-document.getElementById('frequencySelect').addEventListener('change', toggleRecurrenceUI);
-document.getElementById('dateRuleSelect').addEventListener('change', toggleRecurrenceUI);
+document.getElementById('frequencySelect')?.addEventListener('change', toggleRecurrenceUI);
+document.getElementById('dateRuleSelect')?.addEventListener('change', toggleRecurrenceUI);
 toggleRecurrenceUI();
 
 // ── End type toggles ─────────────────────────────────────────────────────
 function toggleEndType() {
-    const v = document.getElementById('endTypeSelect').value;
-    document.getElementById('endsOnGroup').style.display  = v === 'date'  ? '' : 'none';
-    document.getElementById('maxOccGroup').style.display  = v === 'count' ? '' : 'none';
+    const v = document.getElementById('endTypeSelect')?.value;
+    const endsOnGroup = document.getElementById('endsOnGroup');
+    const maxOccGroup = document.getElementById('maxOccGroup');
+    if (endsOnGroup) endsOnGroup.style.display = v === 'date' ? '' : 'none';
+    if (maxOccGroup) maxOccGroup.style.display = v === 'count' ? '' : 'none';
+    updateReview();
 }
-document.getElementById('endTypeSelect').addEventListener('change', toggleEndType);
+document.getElementById('endTypeSelect')?.addEventListener('change', toggleEndType);
 toggleEndType();
 
 // ── Customer → currency auto-fill ─────────────────────────────────────────
-document.getElementById('customerSelect').addEventListener('change', function() {
+document.getElementById('customerSelect')?.addEventListener('change', function() {
     const opt = this.options[this.selectedIndex];
-    const cur = opt.dataset.currency || 'NGN';
-    document.getElementById('currencyInput').value = cur;
+    const cur = opt?.dataset.currency || 'NGN';
+    const currencyInput = document.getElementById('currencyInput');
+    if (currencyInput) currencyInput.value = cur;
+    updateReview();
 });
 
 // ── Line items engine ─────────────────────────────────────────────────────
 let rowIdx = 0;
 
+function escapeAttr(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    }[char]));
+}
+
 function addRow(data = {}) {
     const i = rowIdx++;
     const tr = document.createElement('tr');
     tr.innerHTML = `
-        <td><input type="text"   name="items[${i}][product_name]" class="form-control form-control-sm" value="${data.product_name||''}" required placeholder="Description">
-            <input type="hidden" name="items[${i}][product_id]"   value="${data.product_id||''}"></td>
-        <td><input type="number" name="items[${i}][qty]"          class="form-control form-control-sm item-calc" value="${data.qty||1}" min="0.01" step="0.01"></td>
-        <td><input type="number" name="items[${i}][unit_price]"   class="form-control form-control-sm item-calc" value="${data.unit_price||0}" min="0" step="0.01"></td>
-        <td><input type="number" name="items[${i}][tax]"          class="form-control form-control-sm item-calc" value="${data.tax||0}" min="0" step="0.01"></td>
-        <td><input type="number" name="items[${i}][discount]"     class="form-control form-control-sm item-calc" value="${data.discount||0}" min="0" step="0.01"></td>
+        <td><input type="text"   name="items[${i}][product_name]" class="form-control form-control-sm item-text" value="${escapeAttr(data.product_name)}" required placeholder="Description">
+            <input type="hidden" name="items[${i}][product_id]"   value="${escapeAttr(data.product_id)}"></td>
+        <td><input type="number" name="items[${i}][qty]"          class="form-control form-control-sm item-calc" value="${escapeAttr(data.qty ?? 1)}" min="0.01" step="0.01" required></td>
+        <td><input type="number" name="items[${i}][unit_price]"   class="form-control form-control-sm item-calc" value="${escapeAttr(data.unit_price ?? 0)}" min="0" step="0.01" required></td>
+        <td><input type="number" name="items[${i}][tax]"          class="form-control form-control-sm item-calc" value="${escapeAttr(data.tax ?? 0)}" min="0" step="0.01"></td>
+        <td><input type="number" name="items[${i}][discount]"     class="form-control form-control-sm item-calc" value="${escapeAttr(data.discount ?? 0)}" min="0" step="0.01"></td>
         <td class="row-total fw-semibold">0.00</td>
         <td><button type="button" class="btn btn-sm btn-outline-danger remove-row"><i class="fe fe-x"></i></button></td>`;
-    document.getElementById('itemsBody').appendChild(tr);
+    document.getElementById('itemsBody')?.appendChild(tr);
     tr.querySelectorAll('.item-calc').forEach(inp => inp.addEventListener('input', recalc));
+    tr.querySelectorAll('.item-text').forEach(inp => inp.addEventListener('input', updateReview));
     tr.querySelector('.remove-row').addEventListener('click', () => { tr.remove(); recalc(); });
     recalc();
 }
@@ -464,25 +503,28 @@ function recalc() {
         const d     = parseFloat(tr.querySelector('[name$="[discount]"]')?.value) || 0;
         const line  = qty * price;
         const total = line + t - d;
-        tr.querySelector('.row-total').textContent = total.toFixed(2);
+        const rowTotal = tr.querySelector('.row-total');
+        if (rowTotal) rowTotal.textContent = total.toFixed(2);
         subtotal += line;
         tax      += t;
         discount += d;
     });
-    document.getElementById('sumSubtotal').textContent = subtotal.toFixed(2);
-    document.getElementById('sumTax').textContent      = tax.toFixed(2);
-    document.getElementById('sumDiscount').textContent = discount.toFixed(2);
-    document.getElementById('sumTotal').textContent    = (subtotal + tax - discount).toFixed(2);
+    const setTotal = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value.toFixed(2); };
+    setTotal('sumSubtotal', subtotal);
+    setTotal('sumTax', tax);
+    setTotal('sumDiscount', discount);
+    setTotal('sumTotal', subtotal + tax - discount);
     updateReview();
 }
 
-document.getElementById('addItemBtn').addEventListener('click', () => addRow());
+document.getElementById('addItemBtn')?.addEventListener('click', () => addRow());
 
 // ── Automation mode card select ───────────────────────────────────────────
 function selectMode(val, card) {
     document.querySelectorAll('.automation-card').forEach(c => c.classList.remove('border-primary'));
-    card.classList.add('border-primary');
-    document.getElementById('automationModeInput').value = val;
+    card?.classList.add('border-primary');
+    const automationModeInput = document.getElementById('automationModeInput');
+    if (automationModeInput) automationModeInput.value = val;
     updateReview();
 }
 
@@ -492,37 +534,85 @@ function updateReview() {
         const el = document.querySelector(selector);
         return el && el.selectedOptions && el.selectedOptions[0] ? el.selectedOptions[0].textContent.trim() : '-';
     };
+    const checkedValues = (name) => Array.from(document.querySelectorAll(`[name="${name}[]"]:checked`)).map(el => `${el.value} day${el.value === '1' ? '' : 's'}`).join(', ');
+    const yesNo = (id) => document.getElementById(id)?.checked ? 'Enabled' : 'Disabled';
+    const automationLabels = {
+        draft: 'Draft (Review Before Send)',
+        auto_send: 'Auto Send',
+        reminder_only: 'Reminder Only',
+        manual: 'Manual Trigger',
+    };
     const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value || '-'; };
     set('reviewTemplate', named('template_name')?.value || '-');
+    set('reviewCustomer', selectedText('[name="customer_id"]'));
+    set('reviewCurrency', named('currency')?.value || 'NGN');
     set('reviewFrequency', selectedText('[name="frequency"]'));
-    set('reviewAutomation', document.getElementById('automationModeInput')?.value || '-');
+    set('reviewDateRule', selectedText('[name="date_rule"]'));
+    const mode = document.getElementById('automationModeInput')?.value || 'draft';
+    set('reviewAutomation', automationLabels[mode] || mode);
     set('reviewStart', named('starts_on')?.value || '-');
-    set('reviewEnd', selectedText('[name="end_type"]'));
+    const endType = named('end_type')?.value;
+    const endDetail = endType === 'date' ? named('ends_on')?.value : (endType === 'count' ? `${named('max_occurrences')?.value || '-'} invoices` : '');
+    set('reviewEnd', `${selectedText('[name="end_type"]')}${endDetail ? `: ${endDetail}` : ''}`);
+    set('reviewEmail', yesNo('sendEmail'));
+    set('reviewBefore', checkedValues('reminder_before_days') || 'None');
+    set('reviewAfter', checkedValues('reminder_after_days') || 'None');
+    set('reviewPaymentLink', yesNo('paymentLinkEnabled'));
+    set('reviewAutoPayment', yesNo('autoPaymentEnabled'));
     set('reviewTotal', document.getElementById('sumTotal')?.textContent || '0.00');
 }
 
+function validItemRows() {
+    return Array.from(document.querySelectorAll('#itemsBody tr')).filter((tr) => {
+        const name = tr.querySelector('[name$="[product_name]"]')?.value.trim();
+        const qty = parseFloat(tr.querySelector('[name$="[qty]"]')?.value);
+        const price = parseFloat(tr.querySelector('[name$="[unit_price]"]')?.value);
+        return name && qty > 0 && price >= 0;
+    });
+}
+
 // ── Pre-fill from sale if present ─────────────────────────────────────────
-@if($prefillSale && $prefillSale->items)
-@foreach($prefillSale->items as $item)
-addRow({
-    product_id:   '{{ $item->product_id }}',
-    product_name: '{{ addslashes($item->product_name) }}',
-    qty:          {{ $item->qty }},
-    unit_price:   {{ $item->unit_price }},
-    tax:          {{ $item->tax ?? 0 }},
-    discount:     {{ $item->discount ?? 0 }},
-});
-@endforeach
-@else
-// Start with one blank row
-addRow();
-@endif
+@php
+    $initialItems = old('items');
+    if ($initialItems === null && $prefillSale && $prefillSale->items) {
+        $initialItems = $prefillSale->items->map(fn ($item) => [
+            'product_id' => $item->product_id,
+            'product_name' => $item->product_name,
+            'qty' => $item->qty,
+            'unit_price' => $item->unit_price,
+            'tax' => $item->tax ?? 0,
+            'discount' => $item->discount ?? 0,
+        ])->values();
+    }
+    $initialItems = collect($initialItems ?? [])->values();
+@endphp
+const initialItems = @json($initialItems);
+
+if (Array.isArray(initialItems) && initialItems.length) {
+    initialItems.forEach(item => addRow(item));
+} else {
+    addRow();
+}
 document.querySelectorAll('#recurringForm input, #recurringForm select, #recurringForm textarea').forEach((field) => {
     field.addEventListener('input', updateReview);
     field.addEventListener('change', updateReview);
 });
 
 recurringForm?.addEventListener('submit', function (event) {
+    if (validItemRows().length === 0) {
+        event.preventDefault();
+        event.stopPropagation();
+        showWizardStep('step1');
+        if (!recurringForm.querySelector('#itemsBody tr')) {
+            addRow({ qty: 1, unit_price: 0 });
+        }
+        const firstName = recurringForm.querySelector('#itemsBody [name$="[product_name]"]');
+        firstName?.setCustomValidity('Add at least one invoice item.');
+        firstName?.reportValidity();
+        window.setTimeout(() => firstName?.setCustomValidity(''), 500);
+        return;
+    }
+
     if (!recurringForm.checkValidity()) {
         event.preventDefault();
         event.stopPropagation();
@@ -530,10 +620,7 @@ recurringForm?.addEventListener('submit', function (event) {
         const firstInvalid = recurringForm.querySelector(':invalid');
         const pane = firstInvalid?.closest('.tab-pane');
         if (pane?.id) {
-            const tab = document.querySelector(`[href="#${pane.id}"]`);
-            if (tab) {
-                bootstrap.Tab.getOrCreateInstance(tab).show();
-            }
+            showWizardStep(pane.id);
         }
 
         window.setTimeout(() => {
