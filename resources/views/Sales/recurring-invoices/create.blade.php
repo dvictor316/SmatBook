@@ -8,7 +8,8 @@
     .ri-wizard-tabs .nav-link { border: 0; border-bottom: 3px solid transparent; color: #64748b; font-weight: 700; font-size: 13px; }
     .ri-wizard-tabs .nav-link.active { color: #1d4ed8; border-bottom-color: #2563eb; background: transparent; }
     .ri-step-panel { padding: 18px; }
-    .automation-card { min-height: 154px; transition: border-color .15s, box-shadow .15s, transform .15s; }
+    .automation-card { min-height: 154px; width: 100%; background: #fff; text-align: inherit; transition: border-color .15s, box-shadow .15s, transform .15s; cursor: pointer; }
+    .automation-card:focus { outline: 0; border-color: #2563eb !important; box-shadow: 0 0 0 3px rgba(37, 99, 235, .16); }
     .automation-card:hover { border-color: #93c5fd; box-shadow: 0 10px 24px rgba(37, 99, 235, .08); transform: translateY(-1px); }
     .automation-card.active { border-color: #2563eb !important; box-shadow: 0 0 0 3px rgba(37, 99, 235, .16); }
 </style>
@@ -25,7 +26,7 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('sales.recurring-invoices.store') }}" id="recurringForm">
+    <form method="POST" action="{{ route('sales.recurring-invoices.store') }}" id="recurringForm" novalidate>
         @csrf
         <div class="alert alert-danger d-none" id="recurringWizardMessage" role="alert"></div>
 
@@ -328,14 +329,16 @@
                                 ['manual',         'Manual Trigger',             'Template waits for you to run it manually.',     'fe-settings'],
                             ] as [$val, $label, $desc, $icon])
                             <div class="col-md-6 col-lg-3">
-                                <div class="card border automation-card {{ old('automation_mode', 'draft') === $val ? 'active border-primary' : '' }}" role="button" tabindex="0"
-                                     data-automation-mode="{{ $val }}" aria-pressed="{{ old('automation_mode', 'draft') === $val ? 'true' : 'false' }}">
+                                <button type="button"
+                                     class="card border automation-card {{ old('automation_mode', 'draft') === $val ? 'active border-primary' : '' }}"
+                                     data-automation-mode="{{ $val }}"
+                                     aria-pressed="{{ old('automation_mode', 'draft') === $val ? 'true' : 'false' }}">
                                     <div class="card-body text-center py-4">
                                         <i class="fe {{ $icon }} fs-3 mb-2 d-block text-primary"></i>
                                         <div class="fw-semibold">{{ $label }}</div>
                                         <div class="text-muted small mt-1">{{ $desc }}</div>
                                     </div>
-                                </div>
+                                </button>
                             </div>
                             @endforeach
                         </div>
@@ -390,7 +393,7 @@
 
                 <div class="mt-3 d-flex justify-content-between">
                     <button type="button" class="btn btn-secondary prev-tab" data-target="step4">← Back</button>
-                    <button type="submit" form="recurringForm" class="btn btn-success px-5">
+                    <button type="submit" form="recurringForm" id="createRecurringTemplateBtn" class="btn btn-success px-5">
                         <i class="fe fe-check me-2"></i> Create Recurring Template
                     </button>
                 </div>
@@ -404,7 +407,11 @@
 
 @push('scripts')
 <script>
+document.addEventListener('DOMContentLoaded', function () {
 const recurringForm = document.getElementById('recurringForm');
+if (!recurringForm) {
+    return;
+}
 const wizardMessage = document.getElementById('recurringWizardMessage');
 
 function showWizardMessage(message) {
@@ -413,6 +420,7 @@ function showWizardMessage(message) {
     }
     wizardMessage.textContent = message;
     wizardMessage.classList.remove('d-none');
+    wizardMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function clearWizardMessage() {
@@ -431,21 +439,81 @@ function showWizardStep(stepId) {
         return;
     }
 
-    if (window.bootstrap?.Tab) {
+    if (window.bootstrap && window.bootstrap.Tab) {
         bootstrap.Tab.getOrCreateInstance(tab).show();
         return;
     }
 
-    document.querySelectorAll('#wizardTabs .nav-link').forEach(link => link.classList.remove('active'));
+    document.querySelectorAll('#wizardTabs .nav-link').forEach(link => {
+        link.classList.remove('active');
+        link.setAttribute('aria-selected', 'false');
+    });
     document.querySelectorAll('.tab-content .tab-pane').forEach(panel => panel.classList.remove('show', 'active'));
     tab.classList.add('active');
+    tab.setAttribute('aria-selected', 'true');
     pane.classList.add('show', 'active');
 }
 
+function stepIndex(stepId) {
+    return Number(String(stepId || '').replace('step', '')) || 1;
+}
+
+function fieldsForStep(stepId) {
+    return Array.from(document.querySelectorAll(`#${stepId} input, #${stepId} select, #${stepId} textarea`))
+        .filter((field) => !field.disabled && field.type !== 'hidden');
+}
+
+function focusField(field) {
+    window.setTimeout(() => {
+        field?.focus({ preventScroll: false });
+        field?.reportValidity?.();
+    }, 180);
+}
+
+function validateStep(stepId) {
+    clearWizardMessage();
+
+    if (stepId === 'step1' && validItemRows().length === 0) {
+        showWizardStep('step1');
+        showWizardMessage('Add at least one invoice item with a description, quantity, and unit price before continuing.');
+        if (!recurringForm.querySelector('#itemsBody tr')) {
+            addRow({ qty: 1, unit_price: 0 });
+        }
+        const firstName = recurringForm.querySelector('#itemsBody [name$="[product_name]"]');
+        firstName?.setCustomValidity('Add at least one invoice item.');
+        focusField(firstName);
+        window.setTimeout(() => firstName?.setCustomValidity(''), 500);
+        return false;
+    }
+
+    const invalid = fieldsForStep(stepId).find((field) => !field.checkValidity());
+    if (invalid) {
+        showWizardStep(stepId);
+        showWizardMessage(invalid.validationMessage || 'Complete the required fields before continuing.');
+        focusField(invalid);
+        return false;
+    }
+
+    return true;
+}
+
+function validateThroughStep(targetStepId) {
+    const lastStep = Math.max(1, stepIndex(targetStepId) - 1);
+
+    for (let index = 1; index <= lastStep; index += 1) {
+        if (!validateStep(`step${index}`)) {
+            return false;
+        }
+    }
+
+    return true;
+}
 document.querySelectorAll('.next-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-        clearWizardMessage();
         updateReview();
+        if (!validateThroughStep(btn.dataset.target)) {
+            return;
+        }
         showWizardStep(btn.dataset.target);
     });
 });
@@ -458,10 +526,25 @@ document.querySelectorAll('.prev-tab').forEach(btn => {
 document.querySelectorAll('#wizardTabs [data-step-target]').forEach(tab => {
     tab.addEventListener('click', (event) => {
         event.preventDefault();
-        clearWizardMessage();
         updateReview();
+        if (!validateThroughStep(tab.dataset.stepTarget)) {
+            return;
+        }
         showWizardStep(tab.dataset.stepTarget);
     });
+});
+
+['skipWeekends', 'sendEmail', 'paymentLinkEnabled', 'autoPaymentEnabled'].forEach((id) => {
+    const checkbox = document.getElementById(id);
+    if (!checkbox) {
+        return;
+    }
+    const syncCheckboxValue = () => {
+        checkbox.value = checkbox.checked ? '1' : '0';
+        updateReview();
+    };
+    checkbox.addEventListener('change', syncCheckboxValue);
+    syncCheckboxValue();
 });
 
 // ── Frequency / date rule toggles ────────────────────────────────────────
@@ -649,47 +732,37 @@ recurringForm?.addEventListener('submit', function (event) {
     clearWizardMessage();
     recalc();
 
-    if (validItemRows().length === 0) {
+    if (!validateThroughStep('step6')) {
         event.preventDefault();
         event.stopPropagation();
-        showWizardStep('step1');
-        showWizardMessage('Add at least one invoice item with a description, quantity, and unit price before creating the recurring template.');
-        if (!recurringForm.querySelector('#itemsBody tr')) {
-            addRow({ qty: 1, unit_price: 0 });
-        }
-        const firstName = recurringForm.querySelector('#itemsBody [name$="[product_name]"]');
-        firstName?.setCustomValidity('Add at least one invoice item.');
-        firstName?.reportValidity();
-        window.setTimeout(() => firstName?.setCustomValidity(''), 500);
         return;
     }
 
-    if (!recurringForm.checkValidity()) {
+    const invalidField = Array.from(recurringForm.querySelectorAll('input, select, textarea'))
+        .filter((field) => !field.disabled && field.type !== 'hidden')
+        .find((field) => !field.checkValidity());
+
+    if (invalidField) {
         event.preventDefault();
         event.stopPropagation();
 
-        const firstInvalid = recurringForm.querySelector(':invalid');
-        const pane = firstInvalid?.closest('.tab-pane');
+        const pane = invalidField.closest('.tab-pane');
         if (pane?.id) {
             showWizardStep(pane.id);
         }
-        showWizardMessage(firstInvalid?.validationMessage || 'Complete the required fields before creating the recurring template.');
-
-        window.setTimeout(() => {
-            firstInvalid?.focus({ preventScroll: false });
-            firstInvalid?.reportValidity();
-        }, 180);
-
+        showWizardMessage(invalidField.validationMessage || 'Complete the required fields before creating the recurring template.');
+        focusField(invalidField);
         return;
     }
 
-    const submitButton = recurringForm.querySelector('button[type="submit"]');
+    const submitButton = document.getElementById('createRecurringTemplateBtn') || recurringForm.querySelector('button[type="submit"]');
     if (submitButton) {
         submitButton.disabled = true;
         submitButton.innerHTML = '<i class="fe fe-loader me-2"></i> Creating Template...';
     }
 });
 updateReview();
+});
 </script>
 @endpush
 @endsection

@@ -168,7 +168,9 @@
                         'customers-ledger',
                         'domain',
                         'purchase-transaction',
-                        'reports.*'
+                        'reports.*',
+                        'sales.recurring-invoices.create',
+                        'sales.recurring-invoices.edit'
                     ]))
                     <li>
                         <div class="dropdown">
@@ -265,6 +267,8 @@
                         'invoices-refunded',
                         'invoices-draft',
                         'recurring-invoices',
+                        'sales.recurring-invoices.create',
+                        'sales.recurring-invoices.edit',
                         'credit-notes',
                         'purchases',
                         'purchase-orders',
