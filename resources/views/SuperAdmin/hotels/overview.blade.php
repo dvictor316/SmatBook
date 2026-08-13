@@ -136,29 +136,28 @@
             <button class="btn btn-primary">Apply Filter</button>
         </form>
 
-        <div class="sa-service-grid">
-            @foreach($serviceCenters as $serviceKey => $serviceMeta)
-                @continue($serviceKey === 'all')
-                <a class="sa-service" href="{{ route('super_admin.hotels.index', ['panel' => 'services', 'service' => $serviceKey, 'company_id' => $selectedCompanyId]) }}">
-                    <span>{{ strtoupper($serviceKey === 'room_service' ? 'Room Service' : $serviceKey) }}</span>
-                    <h5>{{ $serviceMeta['label'] }}</h5>
-                    <p class="text-muted mb-0">Monitor tenant {{ strtolower($serviceMeta['label']) }} charges, postings and revenue from Super Admin.</p>
-                </a>
-            @endforeach
-        </div>
-
-        <div class="sa-kpis">
-            <div class="sa-panel sa-kpi"><span>Total Hotel Tenants</span><strong>{{ $totalHotelTenants }}</strong><small>Hotel-enabled companies</small></div>
-            <div class="sa-panel sa-kpi green"><span>Active Subscriptions</span><strong>{{ $activeHotelSubscriptions }}</strong><small>Paid active hotels</small></div>
-            <div class="sa-panel sa-kpi gold"><span>Total Properties</span><strong>{{ $totalProperties }}</strong><small>Branches/properties</small></div>
-            <div class="sa-panel sa-kpi red"><span>Total Rooms</span><strong>{{ $totalRooms }}</strong><small>Hotel room inventory</small></div>
-            <div class="sa-panel sa-kpi green"><span>Available Rooms</span><strong>{{ $availableRooms }}</strong><small>Ready for sale</small></div>
-            <div class="sa-panel sa-kpi"><span>Occupied Rooms</span><strong>{{ $occupiedRooms }}</strong><small>In-house guests</small></div>
-            <div class="sa-panel sa-kpi gold"><span>Reserved Rooms</span><strong>{{ $reservedRooms }}</strong><small>Held inventory</small></div>
-            <div class="sa-panel sa-kpi"><span>Revenue Today</span><strong>{{ $money($hotelRevenueToday) }}</strong><small>This month {{ $money($hotelRevenueThisMonth) }}</small></div>
-        </div>
-
         @if($panel === 'overview')
+            <div class="sa-kpis">
+                <div class="sa-panel sa-kpi"><span>Total Hotel Tenants</span><strong>{{ $totalHotelTenants }}</strong><small>Hotel-enabled companies</small></div>
+                <div class="sa-panel sa-kpi green"><span>Active Subscriptions</span><strong>{{ $activeHotelSubscriptions }}</strong><small>Paid active hotels</small></div>
+                <div class="sa-panel sa-kpi gold"><span>Total Properties</span><strong>{{ $totalProperties }}</strong><small>Branches/properties</small></div>
+                <div class="sa-panel sa-kpi red"><span>Total Rooms</span><strong>{{ $totalRooms }}</strong><small>Hotel room inventory</small></div>
+                <div class="sa-panel sa-kpi green"><span>Available Rooms</span><strong>{{ $availableRooms }}</strong><small>Ready for sale</small></div>
+                <div class="sa-panel sa-kpi"><span>Occupied Rooms</span><strong>{{ $occupiedRooms }}</strong><small>In-house guests</small></div>
+                <div class="sa-panel sa-kpi gold"><span>Reserved Rooms</span><strong>{{ $reservedRooms }}</strong><small>Held inventory</small></div>
+                <div class="sa-panel sa-kpi"><span>Revenue Today</span><strong>{{ $money($hotelRevenueToday) }}</strong><small>This month {{ $money($hotelRevenueThisMonth) }}</small></div>
+            </div>
+
+            <div class="sa-service-grid">
+                @foreach($serviceCenters as $serviceKey => $serviceMeta)
+                    @continue($serviceKey === 'all')
+                    <a class="sa-service" href="{{ route('super_admin.hotels.index', ['panel' => 'services', 'service' => $serviceKey, 'company_id' => $selectedCompanyId]) }}">
+                        <span>{{ strtoupper($serviceKey === 'room_service' ? 'Room Service' : $serviceKey) }}</span>
+                        <h5>{{ $serviceMeta['label'] }}</h5>
+                        <p class="text-muted mb-0">Monitor tenant {{ strtolower($serviceMeta['label']) }} charges, postings and revenue from Super Admin.</p>
+                    </a>
+                @endforeach
+            </div>
             <div class="sa-workspace">
                 <aside class="sa-rail"><h5>Enterprise Monitor</h5><a href="{{ route('super_admin.hotels.index', ['panel' => 'rooms']) }}"><strong>Room Rack</strong><br>Availability, occupied and reserved</a><a href="{{ route('super_admin.hotels.index', ['panel' => 'reservations']) }}"><strong>Reservations</strong><br>Booking pipeline and assignments</a><a href="{{ route('super_admin.hotels.index', ['panel' => 'folios']) }}"><strong>Cashier</strong><br>Folios and receivables</a><a href="{{ route('super_admin.hotels.index', ['panel' => 'reports']) }}"><strong>Reports</strong><br>Platform PMS intelligence</a></aside>
                 <main>

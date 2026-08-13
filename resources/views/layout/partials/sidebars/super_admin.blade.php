@@ -636,7 +636,7 @@
                     <a href="{{ route('sales.index') }}"><i class="fas fa-receipt"></i><span>Sales</span></a>
                 </li>
 
-                <li class="submenu {{ Request::is('pos*', 'sales*') ? 'active subdrop' : '' }}">
+                <li class="submenu {{ Request::is('pos*', 'sales*') && !Request::is('superadmin/hotels*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fas fa-cash-register"></i><span>POS</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('sales.showPos') }}">Sales Terminal</a></li>
@@ -1337,7 +1337,7 @@
 
                 <li><a href="{{ route('sales.recurring-invoices.index') }}"><i class="fe fe-clipboard"></i><span>Recurring Invoices</span></a></li>
 
-                <li class="submenu {{ Request::is('pos*', 'sales*') ? 'active subdrop' : '' }}">
+                <li class="submenu {{ Request::is('pos*', 'sales*') && !Request::is('superadmin/hotels*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-shopping-cart"></i><span>POS</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('sales.showPos') }}">Sales Terminal</a></li>

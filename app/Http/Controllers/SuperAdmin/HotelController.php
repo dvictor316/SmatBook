@@ -16,23 +16,32 @@ class HotelController extends Controller
     {
         $panel = (string) $request->query('panel', 'overview');
         $panels = [
-            'overview' => 'Dashboard',
+            'overview' => 'Hotel Dashboard',
             'tenants' => 'Hotel Tenants',
             'properties' => 'Properties',
-            'rooms' => 'Rooms',
+            'rooms' => 'Front Desk / Room Board',
+            'room_calendar' => 'Room Calendar',
             'room_types' => 'Room Types',
             'reservations' => 'Reservations',
-            'stays' => 'Current Stays',
-            'guests' => 'Guests',
-            'folios' => 'Folios',
-            'deposits' => 'Deposits',
+            'availability' => 'Availability Search',
+            'check_in' => 'Check-In',
+            'stays' => 'Current Stays / In-House',
+            'checkout' => 'Checkout',
+            'guests' => 'Guest Profiles',
+            'folios' => 'Guest Folios',
+            'deposits' => 'Deposits / Payments',
             'housekeeping' => 'Housekeeping',
             'maintenance' => 'Maintenance',
-            'revenue' => 'Revenue',
+            'service_restaurant' => 'Restaurant / POS',
+            'service_bar' => 'Bar',
+            'service_gym' => 'Gym',
+            'service_spa' => 'Spa',
+            'service_minibar' => 'Minibar',
+            'service_laundry' => 'Laundry',
+            'service_room_service' => 'Room Service',
             'services' => 'Service Centers',
-            'hotel_transactions' => 'Hotel Transactions',
             'night_audits' => 'Night Audits',
-            'reports' => 'Reports',
+            'reports' => 'Hotel Reports',
             'settings' => 'Hotel Settings / Feature Status',
         ];
         if (!array_key_exists($panel, $panels)) {
@@ -117,7 +126,16 @@ class HotelController extends Controller
                 ->sum('balance');
         }
 
-        $selectedServiceCenter = (string) $request->query('service', 'all');
+        $servicePanelMap = [
+            'service_restaurant' => 'restaurant',
+            'service_bar' => 'bar',
+            'service_gym' => 'gym',
+            'service_spa' => 'spa',
+            'service_minibar' => 'minibar',
+            'service_laundry' => 'laundry',
+            'service_room_service' => 'room_service',
+        ];
+        $selectedServiceCenter = $servicePanelMap[$panel] ?? (string) $request->query('service', 'all');
         $panelData = $this->panelData($panel, $selectedCompanyId, $hotelCompanyIds, $selectedServiceCenter);
 
         $serviceCenters = [
@@ -139,7 +157,7 @@ class HotelController extends Controller
 
     private function panelData(string $panel, ?int $companyId, array $hotelCompanyIds, string $selectedServiceCenter = 'all')
     {
-        if ($panel === 'reservations' && Schema::hasTable('reservations')) {
+        if (in_array($panel, ['reservations', 'room_calendar', 'availability', 'check_in'], true) && Schema::hasTable('reservations')) {
             return \DB::table('reservations')
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
@@ -148,7 +166,7 @@ class HotelController extends Controller
                 ->withQueryString();
         }
 
-        if ($panel === 'stays' && Schema::hasTable('stays')) {
+        if (in_array($panel, ['stays', 'checkout'], true) && Schema::hasTable('stays')) {
             return \DB::table('stays')
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
@@ -170,7 +188,6 @@ class HotelController extends Controller
             return \DB::table('reservations')
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
-                ->where('deposit_received', '>', 0)
                 ->orderByDesc('id')
                 ->paginate(20)
                 ->withQueryString();
@@ -234,28 +251,7 @@ class HotelController extends Controller
             return \DB::table('customers')->whereIn('id', $ids)->orderByDesc('id')->paginate(20)->withQueryString();
         }
 
-        if ($panel === 'revenue') {
-            if (Schema::hasTable('hotel_transactions')) {
-                return \DB::table('hotel_transactions')
-                    ->when($companyId, fn($q) => $q->where('company_id', $companyId))
-                    ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
-                    ->orderByDesc('id')
-                    ->paginate(20)
-                    ->withQueryString();
-            }
-
-            if (Schema::hasTable('folio_items')) {
-                return \DB::table('folio_items')
-                    ->when($companyId, fn($q) => $q->where('company_id', $companyId))
-                    ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
-                    ->where('type', 'charge')
-                    ->orderByDesc('id')
-                    ->paginate(20)
-                    ->withQueryString();
-            }
-        }
-
-        if ($panel === 'services') {
+        if ($panel === 'services' || str_starts_with($panel, 'service_')) {
             $serviceCodes = [
                 'restaurant' => ['RESTAURANT', 'FOOD', 'POS'],
                 'bar' => ['BAR'],
@@ -271,7 +267,7 @@ class HotelController extends Controller
                 return \DB::table('folio_items')
                     ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                     ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
-                    ->when(isset($serviceCodes[$selectedServiceCenter]), fn($q) => $q->whereIn('service_code', $serviceCodes[$selectedServiceCenter]))
+                    ->when(!empty($serviceCodes[$selectedServiceCenter] ?? []), fn($q) => $q->whereIn('service_code', $serviceCodes[$selectedServiceCenter]))
                     ->whereIn('type', ['charge', 'room_night', 'service', 'pos_charge'])
                     ->orderByDesc('id')
                     ->paginate(20)
@@ -288,15 +284,6 @@ class HotelController extends Controller
             }
 
             return collect();
-        }
-
-        if ($panel === 'hotel_transactions' && Schema::hasTable('hotel_transactions')) {
-            return \DB::table('hotel_transactions')
-                ->when($companyId, fn($q) => $q->where('company_id', $companyId))
-                ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
-                ->orderByDesc('id')
-                ->paginate(20)
-                ->withQueryString();
         }
 
         if ($panel === 'housekeeping' && Schema::hasTable('hotel_housekeeping_tasks')) {
