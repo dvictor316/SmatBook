@@ -64,6 +64,14 @@ class ProductController extends Controller
 
     private function getActiveBranchContext(): array
     {
+        if (session('active_branch_scope') === 'all') {
+            return [
+                'id' => null,
+                'name' => 'All Branches',
+                'scope' => 'all',
+            ];
+        }
+
         $branchId = session('active_branch_id') ? (string) session('active_branch_id') : null;
         $branchName = session('active_branch_name') ? (string) session('active_branch_name') : null;
 
@@ -84,6 +92,7 @@ class ProductController extends Controller
         return [
             'id' => $branchId,
             'name' => $branchName,
+            'scope' => 'branch',
         ];
     }
 
@@ -496,6 +505,16 @@ class ProductController extends Controller
             }
         }
 
+        if (session('active_branch_scope') === 'all') {
+            $branch = $branches->first();
+            if ($branch) {
+                return [
+                    'id' => (string) $branch['id'],
+                    'name' => (string) ($branch['name'] ?? ''),
+                ];
+            }
+        }
+
         return $this->getActiveBranchContext();
     }
 
@@ -839,17 +858,20 @@ class ProductController extends Controller
                 $query->with('category');
             }
 
-            if (!empty($activeBranch['id']) && $hasBranchStocksBranchId) {
-                $query->whereHas('branchStocks', function ($branchQuery) use ($activeBranch) {
-                    $branchQuery->where('branch_id', $activeBranch['id']);
+            if (($activeBranch['scope'] ?? 'branch') !== 'all' && !empty($activeBranch['id']) && $hasBranchStocksBranchId) {
+                $query->where(function ($branchScoped) use ($activeBranch) {
+                    $branchScoped->whereHas('branchStocks', function ($branchQuery) use ($activeBranch) {
+                        $branchQuery->where('branch_id', $activeBranch['id']);
+                    });
+                    $branchScoped->orWhereDoesntHave('branchStocks');
                 });
-            } elseif (!empty($activeBranch['name']) && $hasProductBranchName) {
+            } elseif (($activeBranch['scope'] ?? 'branch') !== 'all' && !empty($activeBranch['name']) && $hasProductBranchName) {
                 $query->where('products.branch_name', $activeBranch['name']);
-            } elseif (!empty($activeBranch['id']) && $hasProductBranchId) {
+            } elseif (($activeBranch['scope'] ?? 'branch') !== 'all' && !empty($activeBranch['id']) && $hasProductBranchId) {
                 $query->where('products.branch_id', $activeBranch['id']);
             }
 
-            if ($hasBranchStocksBranchId && !empty($activeBranch['id'])) {
+            if (($activeBranch['scope'] ?? 'branch') !== 'all' && $hasBranchStocksBranchId && !empty($activeBranch['id'])) {
                 $query->with(['branchStocks' => function ($branchQuery) use ($activeBranch) {
                     $branchQuery->where('branch_id', $activeBranch['id']);
                 }]);
@@ -2411,16 +2433,19 @@ public function inventory(Request $request)
             if (Schema::hasTable('categories') && Schema::hasColumn('products', 'category_id')) {
                 $query->with('category');
             }
-            if (Schema::hasTable('product_branch_stocks') && !empty($activeBranch['id'])) {
+            if (($activeBranch['scope'] ?? 'branch') !== 'all' && Schema::hasTable('product_branch_stocks') && !empty($activeBranch['id'])) {
                 $query->with(['branchStocks' => function ($branchQuery) use ($activeBranch) {
                     $branchQuery->where('branch_id', $activeBranch['id']);
                 }]);
-                $query->whereHas('branchStocks', function ($branchQuery) use ($activeBranch) {
-                    $branchQuery->where('branch_id', $activeBranch['id']);
+                $query->where(function ($branchScoped) use ($activeBranch) {
+                    $branchScoped->whereHas('branchStocks', function ($branchQuery) use ($activeBranch) {
+                        $branchQuery->where('branch_id', $activeBranch['id']);
+                    });
+                    $branchScoped->orWhereDoesntHave('branchStocks');
                 });
-            } elseif (!empty($activeBranch['name']) && Schema::hasColumn('products', 'branch_name')) {
+            } elseif (($activeBranch['scope'] ?? 'branch') !== 'all' && !empty($activeBranch['name']) && Schema::hasColumn('products', 'branch_name')) {
                 $query->where('products.branch_name', $activeBranch['name']);
-            } elseif (!empty($activeBranch['id']) && Schema::hasColumn('products', 'branch_id')) {
+            } elseif (($activeBranch['scope'] ?? 'branch') !== 'all' && !empty($activeBranch['id']) && Schema::hasColumn('products', 'branch_id')) {
                 $query->where('products.branch_id', $activeBranch['id']);
             }
 
@@ -2580,7 +2605,7 @@ public function inventory(Request $request)
             $updateExisting = $request->boolean('update_existing');
             $createdIds = [];
 
-            DB::transaction(function () use ($file, $header, $headerRowNumber, &$created, &$updated, &$updatedExisting, &$skipped, &$duplicates, &$missingRequired, &$openingStockAdded, &$rowErrors, $updateExisting, $request) {
+            DB::transaction(function () use ($file, $header, $headerRowNumber, &$created, &$updated, &$updatedExisting, &$skipped, &$duplicates, &$missingRequired, &$openingStockAdded, &$rowErrors, &$createdIds, $updateExisting, $request) {
                 $activeBranch = $this->resolveBranchContext($request->input('branch_id'));
 
                 foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
@@ -2694,6 +2719,8 @@ public function inventory(Request $request)
                             'stock_quantity' => $stock,
                             'status' => 'active',
                             'description' => ($rowData['description'] ?? '') ?: null,
+                            'branch_id' => $activeBranch['id'] ?? null,
+                            'branch_name' => $activeBranch['name'] ?? null,
                             'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
                             'user_id' => auth()->id(),
                         ]);

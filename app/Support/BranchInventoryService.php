@@ -422,10 +422,6 @@ class BranchInventoryService
 
     public function seedOpeningStock(Product $product, float $quantity, ?array $branch = null, ?int $companyId = null): ?ProductBranchStock
     {
-        if ($quantity <= 0) {
-            return null;
-        }
-
         $branch = $branch ?: $this->getActiveBranchContext();
 
         if (empty($branch['id']) || !Schema::hasTable('product_branch_stocks')) {
@@ -439,6 +435,18 @@ class BranchInventoryService
 
         if ($existing) {
             return $existing;
+        }
+
+        if ($quantity <= 0) {
+            $resolvedCompanyId = $companyId ?? (int) ($product->company_id ?? auth()->user()?->company_id ?? 0);
+
+            return ProductBranchStock::query()->create([
+                'product_id' => $product->id,
+                'company_id' => $resolvedCompanyId > 0 ? $resolvedCompanyId : null,
+                'branch_id' => (string) $branch['id'],
+                'branch_name' => $branch['name'] ?? null,
+                'quantity' => 0,
+            ]);
         }
 
         return $this->adjustBranchStock($product, $quantity, $branch, $companyId);
@@ -469,7 +477,6 @@ class BranchInventoryService
                 $companyId && Schema::hasColumn('products', 'company_id'),
                 fn (Builder $query) => $query->where('company_id', $companyId)
             )
-            ->where($stockColumn, '!=', 0)
             ->whereDoesntHave('branchStocks', fn (Builder $query) => $query->where('branch_id', $branchId))
             ->where(function (Builder $query) use ($branchId, $branchName) {
                 $query->doesntHave('branchStocks');
@@ -486,9 +493,6 @@ class BranchInventoryService
             ->chunkById(200, function ($products) use ($branch, $companyId, &$created, $stockColumn) {
                 foreach ($products as $product) {
                     $stock = (float) ($product->{$stockColumn} ?? 0);
-                    if ($stock <= 0) {
-                        continue;
-                    }
 
                     $existing = ProductBranchStock::query()
                         ->where('product_id', $product->id)
@@ -504,7 +508,7 @@ class BranchInventoryService
                         'company_id' => $companyId ?: ($product->company_id ?? null),
                         'branch_id' => (string) ($branch['id'] ?? ''),
                         'branch_name' => $branch['name'] ?? null,
-                        'quantity' => $stock,
+                        'quantity' => max(0, $stock),
                     ]);
 
                     $created++;
