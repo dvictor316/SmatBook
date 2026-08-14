@@ -37,11 +37,46 @@ body.hotel-workspace .sa-hotel {
 }
 
 body.hotel-workspace .sa-hero {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    padding: 24px;
     border-radius: 8px;
     background:
         linear-gradient(90deg, rgba(12, 29, 46, .92), rgba(12, 29, 46, .72), rgba(15, 118, 110, .45)),
         url("../img/hotel-keto/banner3.jpg") center / cover;
     box-shadow: 0 18px 44px rgba(16, 32, 50, .2);
+}
+
+body.hotel-workspace .page-wrapper.sa-hotel .sa-hero h2,
+body.hotel-workspace .sa-hero h2 {
+    margin: 4px 0 8px;
+    color: #f7d777 !important;
+    -webkit-text-fill-color: #f7d777 !important;
+    font-size: clamp(26px, 3vw, 36px);
+    font-weight: 800;
+    line-height: 1.1;
+    text-shadow: 0 2px 16px rgba(0, 0, 0, .22);
+}
+
+body.hotel-workspace .page-wrapper.sa-hotel .sa-hero p,
+body.hotel-workspace .page-wrapper.sa-hotel .sa-hero small,
+body.hotel-workspace .sa-hero p,
+body.hotel-workspace .sa-hero small {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+body.hotel-workspace .sa-hero small {
+    display: inline-block;
+    margin-bottom: 4px;
+    color: #f7d777 !important;
+    -webkit-text-fill-color: #f7d777 !important;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    font-weight: 700;
 }
 
 body.hotel-workspace .sa-panel,
@@ -57,13 +92,658 @@ body.hotel-workspace .sa-hk-command {
     box-shadow: 0 10px 28px rgba(16, 32, 50, .08);
 }
 
+body.hotel-workspace .sa-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    margin-bottom: 16px;
+    padding: 12px;
+    scrollbar-width: thin;
+}
+
 body.hotel-workspace .sa-tabs a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 38px;
+    white-space: nowrap;
+    padding: 8px 13px;
     border-radius: 999px;
+    border: 1px solid #cbd8e8;
+    color: #143756;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+body.hotel-workspace .sa-tabs a:hover,
+body.hotel-workspace .sa-tabs a:focus {
+    background: #eef6ff;
+    border-color: var(--hotel-blue);
+    color: var(--hotel-blue);
 }
 
 body.hotel-workspace .sa-tabs a.active {
     background: var(--hotel-blue);
     border-color: var(--hotel-blue);
+    color: #ffffff;
+}
+
+body.hotel-workspace .sa-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 16px;
+    padding: 14px;
+}
+
+body.hotel-workspace .sa-filter .form-label {
+    margin-bottom: 6px;
+    color: var(--hotel-muted);
+    font-weight: 700;
+}
+
+body.hotel-workspace .sa-mini-kpis,
+body.hotel-workspace .sa-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+body.hotel-workspace .sa-mini-kpi,
+body.hotel-workspace .sa-kpi {
+    position: relative;
+    min-height: 112px;
+    padding: 16px;
+    overflow: hidden;
+}
+
+body.hotel-workspace .sa-mini-kpi:before,
+body.hotel-workspace .sa-kpi:before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 5px;
+    background: var(--hotel-gold);
+}
+
+body.hotel-workspace .sa-mini-kpi span,
+body.hotel-workspace .sa-kpi span {
+    display: block;
+    color: var(--hotel-muted);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+body.hotel-workspace .sa-mini-kpi strong,
+body.hotel-workspace .sa-kpi strong {
+    display: block;
+    margin: 8px 0 5px;
+    color: var(--hotel-ink);
+    font-size: clamp(24px, 2.6vw, 34px);
+    line-height: 1;
+}
+
+body.hotel-workspace .sa-mini-kpi small,
+body.hotel-workspace .sa-kpi small {
+    color: var(--hotel-muted);
+}
+
+body.hotel-workspace .sa-dash-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, .9fr);
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+body.hotel-workspace .sa-dash-bottom {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+body.hotel-workspace .sa-dash-panel {
+    padding: 16px;
+}
+
+body.hotel-workspace .sa-dash-panel h4,
+body.hotel-workspace .sa-section-head h4,
+body.hotel-workspace .sa-hk-head h4 {
+    margin: 0;
+    color: #061b33;
+    font-weight: 800;
+}
+
+body.hotel-workspace .sa-dash-panel p,
+body.hotel-workspace .sa-section-head p,
+body.hotel-workspace .sa-hk-head p {
+    margin: 4px 0 0;
+    color: var(--hotel-muted);
+}
+
+body.hotel-workspace .sa-chart-bars {
+    display: flex;
+    align-items: end;
+    gap: 12px;
+    min-height: 188px;
+    padding-top: 18px;
+    padding-bottom: 26px;
+}
+
+body.hotel-workspace .sa-chart-bar {
+    position: relative;
+    flex: 1;
+    min-width: 34px;
+    border-radius: 8px 8px 4px 4px;
+    background: linear-gradient(180deg, #3b82f6, var(--hotel-blue));
+    box-shadow: inset 0 -14px 20px rgba(255, 255, 255, .18);
+}
+
+body.hotel-workspace .sa-chart-bar.gold {
+    background: linear-gradient(180deg, #f7d777, var(--hotel-gold));
+}
+
+body.hotel-workspace .sa-chart-bar:after {
+    content: attr(data-label);
+    position: absolute;
+    left: 50%;
+    bottom: -24px;
+    transform: translateX(-50%);
+    color: var(--hotel-muted);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+body.hotel-workspace .sa-room-status {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr);
+    gap: 16px;
+    align-items: center;
+}
+
+body.hotel-workspace .sa-donut {
+    display: grid;
+    place-items: center;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: conic-gradient(#16a34a 0 40%, #2563eb 40% 68%, #d6a238 68% 84%, #dc2626 84% 100%);
+    box-shadow: inset 0 0 0 18px #ffffff, 0 12px 28px rgba(15, 23, 42, .12);
+}
+
+body.hotel-workspace .sa-donut strong {
+    color: #061b33;
+    font-size: 26px;
+}
+
+body.hotel-workspace .sa-status-list,
+body.hotel-workspace .sa-ops-list {
+    display: grid;
+    gap: 10px;
+}
+
+body.hotel-workspace .sa-status-item,
+body.hotel-workspace .sa-ops-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 12px;
+    border: 1px solid #e5edf6;
+    border-radius: 8px;
+    background: #f8fafc;
+    color: var(--hotel-ink);
+    font-weight: 700;
+}
+
+body.hotel-workspace .sa-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 7px;
+    border-radius: 50%;
+}
+
+body.hotel-workspace .sa-dot.green { background: #16a34a; }
+body.hotel-workspace .sa-dot.blue { background: #2563eb; }
+body.hotel-workspace .sa-dot.gold { background: var(--hotel-gold); }
+body.hotel-workspace .sa-dot.red { background: #dc2626; }
+
+body.hotel-workspace .sa-alert-line {
+    margin-top: 10px;
+    padding: 12px;
+    border-left: 5px solid var(--hotel-gold);
+    border-radius: 8px;
+    background: #fff8e1;
+    color: #5a3d00;
+}
+
+body.hotel-workspace .sa-alert-line.danger {
+    border-left-color: #dc2626;
+    background: #fff1f2;
+    color: #7f1d1d;
+}
+
+body.hotel-workspace .sa-dashboard-services,
+body.hotel-workspace .sa-service-grid,
+body.hotel-workspace .sa-grid,
+body.hotel-workspace .sa-report-grid,
+body.hotel-workspace .sa-kanban,
+body.hotel-workspace .sa-health,
+body.hotel-workspace .sa-audit-grid,
+body.hotel-workspace .sa-directory-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+body.hotel-workspace .sa-grid,
+body.hotel-workspace .sa-report-grid,
+body.hotel-workspace .sa-directory-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+body.hotel-workspace .sa-profile-grid,
+body.hotel-workspace .sa-health {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.hotel-workspace .sa-dashboard-service,
+body.hotel-workspace .sa-service,
+body.hotel-workspace .sa-card,
+body.hotel-workspace .sa-report {
+    min-height: 132px;
+    padding: 16px;
+    border: 1px solid var(--hotel-line);
+    border-radius: 8px;
+    color: var(--hotel-ink);
+    text-decoration: none;
+}
+
+body.hotel-workspace .sa-dashboard-service {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+body.hotel-workspace .sa-dashboard-service:hover,
+body.hotel-workspace .sa-service:hover,
+body.hotel-workspace .sa-card:hover {
+    border-color: var(--hotel-blue);
+    color: var(--hotel-blue);
+    transform: translateY(-1px);
+}
+
+body.hotel-workspace .sa-dashboard-service small,
+body.hotel-workspace .sa-service span,
+body.hotel-workspace .sa-card .label,
+body.hotel-workspace .sa-directory-card .eyebrow,
+body.hotel-workspace .sa-report span {
+    color: var(--hotel-gold);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+body.hotel-workspace .sa-dashboard-service strong,
+body.hotel-workspace .sa-card strong,
+body.hotel-workspace .sa-ops-row strong {
+    color: #061b33;
+}
+
+body.hotel-workspace .sa-workspace,
+body.hotel-workspace .sa-pms-board,
+body.hotel-workspace .sa-room-admin,
+body.hotel-workspace .sa-folio-register,
+body.hotel-workspace .sa-maint-desk,
+body.hotel-workspace .sa-guest-ledger,
+body.hotel-workspace .sa-cashier-grid,
+body.hotel-workspace .sa-cashier,
+body.hotel-workspace .sa-desk {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 16px;
+}
+
+body.hotel-workspace .sa-cashier,
+body.hotel-workspace .sa-cashier-grid {
+    grid-template-columns: 285px minmax(0, 1fr) 270px;
+}
+
+body.hotel-workspace .sa-desk {
+    grid-template-columns: minmax(0, 1fr) 300px;
+}
+
+body.hotel-workspace .sa-room-rack,
+body.hotel-workspace .sa-room-wall,
+body.hotel-workspace .sa-hk-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 11px;
+}
+
+body.hotel-workspace .sa-room,
+body.hotel-workspace .sa-room-tile {
+    min-height: 155px;
+    padding: 12px;
+    border: 1px solid var(--hotel-line);
+    color: var(--hotel-ink);
+}
+
+body.hotel-workspace .sa-room-num,
+body.hotel-workspace .sa-room-tile .room-no,
+body.hotel-workspace .sa-maint-room,
+body.hotel-workspace .sa-hk-room-no {
+    color: #061b33;
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+body.hotel-workspace .sa-table th,
+body.hotel-workspace .sa-calendar th,
+body.hotel-workspace .sa-timeline th {
+    background: #143756;
+    color: #ffffff;
+    border: 0;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+body.hotel-workspace .sa-calendar,
+body.hotel-workspace .sa-timeline,
+body.hotel-workspace .sa-hk-table {
+    overflow-x: auto;
+}
+
+body.hotel-workspace .sa-calendar table,
+body.hotel-workspace .sa-timeline table {
+    min-width: 950px;
+}
+
+body.hotel-workspace .sa-event,
+body.hotel-workspace .sa-pill-event {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 7px 11px;
+    color: #ffffff;
+    background: #2563eb;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+body.hotel-workspace .sa-event.gold,
+body.hotel-workspace .sa-pill-event.gold {
+    background: var(--hotel-gold);
+    color: #111827;
+}
+
+body.hotel-workspace .sa-event.green,
+body.hotel-workspace .sa-pill-event.green { background: #16a34a; }
+body.hotel-workspace .sa-event.red,
+body.hotel-workspace .sa-pill-event.red { background: #dc2626; }
+
+body.hotel-workspace .sa-board-row,
+body.hotel-workspace .sa-maint-ticket {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr) 150px 160px;
+    gap: 12px;
+    align-items: center;
+    padding: 13px 16px;
+    border-bottom: 1px solid #edf1f6;
+}
+
+body.hotel-workspace .sa-maint-ticket {
+    margin-bottom: 10px;
+    border: 1px solid #e5edf6;
+    border-left: 6px solid #94a3b8;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .96);
+}
+
+body.hotel-workspace .sa-profile,
+body.hotel-workspace .sa-profile-card {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 13px;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid var(--hotel-line);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .96);
+}
+
+body.hotel-workspace .sa-avatar,
+body.hotel-workspace .sa-big-avatar {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #143756;
+    color: #ffffff;
+    font-size: 24px;
+    font-weight: 800;
+}
+
+body.hotel-workspace .sa-lane {
+    min-height: 250px;
+    padding: 12px;
+    border: 1px solid var(--hotel-line);
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+body.hotel-workspace .sa-ticket,
+body.hotel-workspace .sa-desk-card {
+    margin-bottom: 10px;
+    padding: 12px;
+    border: 1px solid #e5eaf2;
+    border-left: 5px solid var(--hotel-blue);
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+body.hotel-workspace .sa-ticket.danger,
+body.hotel-workspace .sa-desk-card.danger,
+body.hotel-workspace .sa-maint-ticket.danger { border-left-color: #dc2626; }
+body.hotel-workspace .sa-ticket.gold,
+body.hotel-workspace .sa-desk-card.warn { border-left-color: var(--hotel-gold); }
+body.hotel-workspace .sa-ticket.green,
+body.hotel-workspace .sa-desk-card.good { border-left-color: #16a34a; }
+
+body.hotel-workspace .sa-pad,
+body.hotel-workspace .sa-payment-pad {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+body.hotel-workspace .sa-pad div,
+body.hotel-workspace .sa-payment-pad div {
+    display: grid;
+    place-items: center;
+    min-height: 78px;
+    padding: 10px;
+    border: 1px solid var(--hotel-line);
+    border-radius: 8px;
+    background: #ffffff;
+    color: var(--hotel-ink);
+    text-align: center;
+    font-weight: 800;
+}
+
+body.hotel-workspace .sa-report {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background:
+        linear-gradient(rgba(8, 47, 85, .9), rgba(8, 47, 85, .88)),
+        url("../img/hotel-keto/banner1.jpg") center / cover;
+    color: #ffffff;
+}
+
+body.hotel-workspace .sa-report h4,
+body.hotel-workspace .sa-report p,
+body.hotel-workspace .sa-report:hover {
+    color: #ffffff;
+}
+
+body.hotel-workspace .sa-empty {
+    grid-column: 1 / -1;
+    padding: 22px;
+    border: 1px dashed var(--hotel-gold);
+    border-radius: 8px;
+    background: #fff8e1;
+    color: #5a3d00;
+    font-weight: 700;
+}
+
+body.hotel-workspace .sa-hk-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+body.hotel-workspace .sa-hk-chip,
+body.hotel-workspace .sa-hk-status {
+    display: inline-flex;
+    width: max-content;
+    padding: 7px 10px;
+    border: 1px solid #dbe4ef;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #0f172a;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+body.hotel-workspace .sa-hk-chip.dirty { background: #fee2e2; color: #991b1b; }
+body.hotel-workspace .sa-hk-chip.assigned { background: #ffedd5; color: #9a3412; }
+body.hotel-workspace .sa-hk-chip.cleaning { background: #dbeafe; color: #1d4ed8; }
+body.hotel-workspace .sa-hk-chip.clean { background: #dcfce7; color: #166534; }
+
+body.hotel-workspace .sa-action-disabled {
+    cursor: not-allowed;
+    opacity: .7;
+}
+
+body.hotel-workspace a,
+body.hotel-workspace .btn,
+body.hotel-workspace button {
+    transition: background-color .18s ease, border-color .18s ease, color .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+
+body.hotel-workspace .btn-primary:hover,
+body.hotel-workspace .btn-primary:focus,
+body.hotel-workspace .ew-iconbtn.primary:hover,
+body.hotel-workspace .ew-iconbtn.primary:focus {
+    background: #0f3558;
+    border-color: #0f3558;
+    color: #ffffff;
+}
+
+body.hotel-workspace .btn-success:hover,
+body.hotel-workspace .btn-success:focus,
+body.hotel-workspace .ew-iconbtn.green:hover,
+body.hotel-workspace .ew-iconbtn.green:focus {
+    background: #0b5f58;
+    border-color: #0b5f58;
+    color: #ffffff;
+}
+
+body.hotel-workspace .btn-light:hover,
+body.hotel-workspace .btn-light:focus {
+    background: #ffffff;
+    border-color: var(--hotel-gold);
+    color: #143756;
+}
+
+body.hotel-workspace .btn-outline-light {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, .72);
+}
+
+body.hotel-workspace .btn-outline-light:hover,
+body.hotel-workspace .btn-outline-light:focus {
+    background: #ffffff;
+    border-color: #ffffff;
+    color: #143756;
+}
+
+body.hotel-workspace .btn-outline-primary {
+    color: var(--hotel-blue);
+    border-color: var(--hotel-blue);
+}
+
+body.hotel-workspace .btn-outline-primary:hover,
+body.hotel-workspace .btn-outline-primary:focus {
+    background: var(--hotel-blue);
+    border-color: var(--hotel-blue);
+    color: #ffffff;
+}
+
+body.hotel-workspace .btn-outline-dark:hover,
+body.hotel-workspace .btn-outline-dark:focus {
+    background: #143756;
+    border-color: #143756;
+    color: #ffffff;
+}
+
+body.hotel-workspace .btn-warning,
+body.hotel-workspace .btn-warning:hover,
+body.hotel-workspace .btn-warning:focus {
+    background: #f7d777;
+    border-color: #f7d777;
+    color: #143756;
+}
+
+body.hotel-workspace .sidebar a,
+body.hotel-workspace .sidebar .submenu > a {
+    color: inherit;
+}
+
+body.hotel-workspace .sidebar a:hover,
+body.hotel-workspace .sidebar .submenu > a:hover,
+body.hotel-workspace .sidebar .submenu.active > a {
+    background: rgba(214, 162, 56, .16);
+    color: #ffffff;
+}
+
+body.hotel-workspace .sidebar ul ul a:hover,
+body.hotel-workspace .sidebar ul ul a.active {
+    background: rgba(255, 255, 255, .12);
+    color: #ffffff;
+}
+
+body.hotel-workspace .sa-rail a:hover,
+body.hotel-workspace .sa-pms-sidebar a:hover,
+body.hotel-workspace .sa-folio-rail a:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, .1);
+    padding-left: 12px;
+}
+
+body.hotel-workspace .table,
+body.hotel-workspace .table td,
+body.hotel-workspace .table th {
+    vertical-align: middle;
+}
+
+body.hotel-workspace .badge.bg-light,
+body.hotel-workspace .text-dark {
+    color: #143756 !important;
+}
+
+body.hotel-workspace .progress-bar {
+    background-color: var(--hotel-blue);
 }
 
 body.hotel-workspace .sa-rail,
@@ -349,6 +1029,48 @@ body.hotel-workspace .sticky-top.card {
     border-top: 4px solid var(--hotel-gold);
 }
 
+@media (max-width: 1199.98px) {
+    body.hotel-workspace .sa-mini-kpis,
+    body.hotel-workspace .sa-kpis,
+    body.hotel-workspace .sa-dashboard-services,
+    body.hotel-workspace .sa-service-grid,
+    body.hotel-workspace .sa-kanban,
+    body.hotel-workspace .sa-audit-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body.hotel-workspace .sa-grid,
+    body.hotel-workspace .sa-report-grid,
+    body.hotel-workspace .sa-directory-grid,
+    body.hotel-workspace .sa-dash-bottom,
+    body.hotel-workspace .sa-health,
+    body.hotel-workspace .sa-profile-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body.hotel-workspace .sa-dash-grid,
+    body.hotel-workspace .sa-workspace,
+    body.hotel-workspace .sa-pms-board,
+    body.hotel-workspace .sa-room-admin,
+    body.hotel-workspace .sa-folio-register,
+    body.hotel-workspace .sa-maint-desk,
+    body.hotel-workspace .sa-guest-ledger,
+    body.hotel-workspace .sa-cashier,
+    body.hotel-workspace .sa-cashier-grid,
+    body.hotel-workspace .sa-desk {
+        grid-template-columns: 1fr;
+    }
+
+    body.hotel-workspace .sa-rail,
+    body.hotel-workspace .sa-pms-sidebar,
+    body.hotel-workspace .sa-cashier-side,
+    body.hotel-workspace .sa-folio-rail,
+    body.hotel-workspace .sa-audit-command,
+    body.hotel-workspace .sa-report-hub {
+        min-height: auto;
+    }
+}
+
 @media (max-width: 767.98px) {
     body.hotel-workspace .page-wrapper .content.container-fluid {
         padding-left: 10px !important;
@@ -357,6 +1079,87 @@ body.hotel-workspace .sticky-top.card {
 
     body.hotel-workspace .hotel-hero {
         padding: 20px;
+    }
+
+    body.hotel-workspace .sa-hero {
+        padding: 18px;
+    }
+
+    body.hotel-workspace .sa-hero h2 {
+        font-size: 26px;
+    }
+
+    body.hotel-workspace .sa-tabs {
+        gap: 7px;
+        padding: 8px;
+    }
+
+    body.hotel-workspace .sa-tabs a {
+        min-height: 36px;
+        padding: 7px 11px;
+        font-size: 13px;
+    }
+
+    body.hotel-workspace .sa-filter {
+        display: grid;
+        grid-template-columns: 1fr;
+        align-items: stretch;
+        padding: 12px;
+    }
+
+    body.hotel-workspace .sa-filter > *,
+    body.hotel-workspace .sa-filter .form-control,
+    body.hotel-workspace .sa-filter .form-select,
+    body.hotel-workspace .sa-filter .btn {
+        width: 100%;
+    }
+
+    body.hotel-workspace .sa-mini-kpis,
+    body.hotel-workspace .sa-kpis,
+    body.hotel-workspace .sa-dashboard-services,
+    body.hotel-workspace .sa-service-grid,
+    body.hotel-workspace .sa-grid,
+    body.hotel-workspace .sa-report-grid,
+    body.hotel-workspace .sa-kanban,
+    body.hotel-workspace .sa-health,
+    body.hotel-workspace .sa-audit-grid,
+    body.hotel-workspace .sa-directory-grid,
+    body.hotel-workspace .sa-profile-grid,
+    body.hotel-workspace .sa-dash-bottom {
+        grid-template-columns: 1fr;
+    }
+
+    body.hotel-workspace .sa-room-status {
+        grid-template-columns: 1fr;
+    }
+
+    body.hotel-workspace .sa-donut {
+        width: 118px;
+        height: 118px;
+    }
+
+    body.hotel-workspace .sa-chart-bars {
+        gap: 7px;
+        overflow-x: auto;
+    }
+
+    body.hotel-workspace .sa-chart-bar {
+        flex: 0 0 42px;
+    }
+
+    body.hotel-workspace .sa-board-row,
+    body.hotel-workspace .sa-maint-ticket {
+        grid-template-columns: 1fr;
+        gap: 7px;
+    }
+
+    body.hotel-workspace .sa-dashboard-service,
+    body.hotel-workspace .sa-service,
+    body.hotel-workspace .sa-card,
+    body.hotel-workspace .sa-report,
+    body.hotel-workspace .sa-dash-panel {
+        min-height: auto;
+        padding: 14px;
     }
 
     body.hotel-workspace .ew-grid {
