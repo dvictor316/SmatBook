@@ -25,8 +25,8 @@
     $hideNavbar = $hideNavbar ?? false;
     $isPosWorkspace = request()->routeIs('sales.showPos')
         || request()->is('pos');
-    $isHotelWorkspace = request()->routeIs('hotel.*')
-        || request()->is('hotel*');
+    $isHotelWorkspace = request()->routeIs('hotel.*', 'super_admin.hotels.*')
+        || request()->is('hotel*', 'superadmin/hotels*');
     $hideSidebar = ($hideSidebar ?? false) || $isPosWorkspace;
     $bodyClasses = [];
 

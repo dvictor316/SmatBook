@@ -30,6 +30,102 @@ body.hotel-workspace .hotel-hero {
     box-shadow: 0 18px 44px rgba(16, 32, 50, .18);
 }
 
+body.hotel-workspace .sa-hotel {
+    background:
+        linear-gradient(rgba(238, 243, 248, .95), rgba(238, 243, 248, .98)),
+        url("../img/hotel-keto/gallery3.jpg") center / cover fixed;
+}
+
+body.hotel-workspace .sa-hero {
+    border-radius: 8px;
+    background:
+        linear-gradient(90deg, rgba(12, 29, 46, .92), rgba(12, 29, 46, .72), rgba(15, 118, 110, .45)),
+        url("../img/hotel-keto/banner3.jpg") center / cover;
+    box-shadow: 0 18px 44px rgba(16, 32, 50, .2);
+}
+
+body.hotel-workspace .sa-panel,
+body.hotel-workspace .sa-card,
+body.hotel-workspace .sa-filter,
+body.hotel-workspace .sa-dash-panel,
+body.hotel-workspace .sa-mini-kpi,
+body.hotel-workspace .sa-directory-card,
+body.hotel-workspace .sa-hk-command {
+    border-radius: 8px;
+    border-color: var(--hotel-line);
+    background: rgba(255, 255, 255, .96);
+    box-shadow: 0 10px 28px rgba(16, 32, 50, .08);
+}
+
+body.hotel-workspace .sa-tabs a {
+    border-radius: 999px;
+}
+
+body.hotel-workspace .sa-tabs a.active {
+    background: var(--hotel-blue);
+    border-color: var(--hotel-blue);
+}
+
+body.hotel-workspace .sa-rail,
+body.hotel-workspace .sa-pms-sidebar,
+body.hotel-workspace .sa-cashier-side,
+body.hotel-workspace .sa-folio-rail,
+body.hotel-workspace .sa-audit-command,
+body.hotel-workspace .sa-report-hub {
+    border-radius: 8px;
+    background:
+        linear-gradient(rgba(12, 29, 46, .88), rgba(12, 29, 46, .9)),
+        url("../img/hotel-keto/room4.jpg") center / cover;
+}
+
+body.hotel-workspace .sa-card,
+body.hotel-workspace .sa-service,
+body.hotel-workspace .sa-dashboard-service,
+body.hotel-workspace .sa-directory-card {
+    background:
+        linear-gradient(rgba(255, 255, 255, .92), rgba(255, 255, 255, .97)),
+        url("../img/hotel-keto/gallery6.jpg") center / cover;
+}
+
+body.hotel-workspace .sa-room,
+body.hotel-workspace .sa-room-tile,
+body.hotel-workspace .sa-hk-room {
+    border-radius: 8px;
+    background:
+        linear-gradient(rgba(255, 255, 255, .84), rgba(255, 255, 255, .94)),
+        url("../img/hotel-keto/room1.jpg") center / cover;
+}
+
+body.hotel-workspace .sa-room.occupied,
+body.hotel-workspace .sa-room-tile.occupied {
+    background:
+        linear-gradient(rgba(232, 246, 243, .88), rgba(232, 246, 243, .96)),
+        url("../img/hotel-keto/room2.jpg") center / cover;
+}
+
+body.hotel-workspace .sa-room.reserved,
+body.hotel-workspace .sa-room-tile.reserved {
+    background:
+        linear-gradient(rgba(255, 248, 230, .88), rgba(255, 248, 230, .96)),
+        url("../img/hotel-keto/room3.jpg") center / cover;
+}
+
+body.hotel-workspace .sa-room.maintenance,
+body.hotel-workspace .sa-room.out_of_order,
+body.hotel-workspace .sa-room-tile.maintenance,
+body.hotel-workspace .sa-room-tile.out_of_order,
+body.hotel-workspace .sa-hk-room.dirty {
+    background:
+        linear-gradient(rgba(255, 241, 242, .9), rgba(255, 241, 242, .97)),
+        url("../img/hotel-keto/room6.jpg") center / cover;
+}
+
+body.hotel-workspace .sidebar .submenu.active > a:has(.fa-hotel),
+body.hotel-workspace .sidebar a:has(.fa-hotel) {
+    background:
+        linear-gradient(90deg, rgba(20, 55, 86, .14), rgba(214, 162, 56, .14));
+}
+
 body.hotel-workspace .hotel-hero:after {
     display: none;
 }
