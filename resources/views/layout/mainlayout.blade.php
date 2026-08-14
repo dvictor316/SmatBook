@@ -25,6 +25,8 @@
     $hideNavbar = $hideNavbar ?? false;
     $isPosWorkspace = request()->routeIs('sales.showPos')
         || request()->is('pos');
+    $isHotelWorkspace = request()->routeIs('hotel.*')
+        || request()->is('hotel*');
     $hideSidebar = ($hideSidebar ?? false) || $isPosWorkspace;
     $bodyClasses = [];
 
@@ -50,6 +52,10 @@
 
     if ($isPosWorkspace) {
         $bodyClasses[] = 'pos-terminal-workspace';
+    }
+
+    if ($isHotelWorkspace) {
+        $bodyClasses[] = 'hotel-workspace';
     }
 @endphp
 
@@ -94,6 +100,13 @@
     @include('layout.partials.head')
     @include('layout.partials.design-system')
     @yield('style')
+    @if($isHotelWorkspace)
+        @php
+            $hotelSkinPath = 'assets/css/hotel-keto-skin.css';
+            $hotelSkinVersion = file_exists(public_path($hotelSkinPath)) ? filemtime(public_path($hotelSkinPath)) : null;
+        @endphp
+        <link rel="stylesheet" href="{{ asset($hotelSkinPath) }}{{ $hotelSkinVersion ? '?v='.$hotelSkinVersion : '' }}">
+    @endif
 
     {{-- GLOBAL PRINT STYLES --}}
     <style>

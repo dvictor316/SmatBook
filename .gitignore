@@ -21,6 +21,7 @@ yarn-error.log
 /.idea
 /.vscode
 /.codex
+/template-uploads
 
 # Isolated mobile and desktop app build artifacts
 /apps/*/node_modules
