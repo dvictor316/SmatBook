@@ -3,16 +3,24 @@
 @section('style')
 <style>
     .room-form-page { background:#f5f8fc; }
-    .room-form-hero { background:linear-gradient(135deg,#061b33,#0b5fb8); color:#fff; border-radius:20px; padding:22px; margin-bottom:18px; display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+    .room-form-shell { max-width:1180px; margin:0 auto; padding-bottom:28px; }
+    .room-form-hero { background:linear-gradient(135deg,#061b33,#0b5fb8); color:#fff; border-radius:8px; padding:28px 32px; margin-bottom:22px; display:flex; justify-content:space-between; gap:18px; flex-wrap:wrap; box-shadow:0 18px 40px rgba(6,27,51,.18); }
     .room-form-hero h3, .room-form-hero p { color:#fff !important; }
-    .room-form-card { background:#fff; border:1px solid #d8e2ee; border-radius:18px; box-shadow:0 14px 32px rgba(15,23,42,.07); overflow:hidden; }
-    .room-form-card .card-header { background:#eef5ff; border-bottom:1px solid #d8e2ee; }
-    .room-thumb { width:100%; max-height:180px; object-fit:cover; border-radius:14px; border:1px solid #d8e2ee; }
+    .room-form-card { background:#fff; border:1px solid #d8e2ee; border-radius:8px; box-shadow:0 18px 42px rgba(15,23,42,.08); overflow:hidden; }
+    .room-form-card .card-header { background:linear-gradient(180deg,#f8fbff,#eef5ff); border-bottom:1px solid #d8e2ee; padding:20px 28px; }
+    .room-form-card .card-header h5 { color:#061b33; font-size:20px; font-weight:800; }
+    .room-form-card .card-body { padding:28px !important; }
+    .room-form-card .form-label { margin-bottom:8px; color:#64748b; font-size:13px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
+    .room-form-card .form-control, .room-form-card .form-select { min-height:50px; border-color:#cfd9e3; color:#061b33; font-size:15px; }
+    .room-form-card textarea.form-control { min-height:116px; }
+    .room-form-actions { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; margin-top:22px; padding-top:20px; border-top:1px solid #edf2f7; }
+    .room-thumb { width:100%; max-height:180px; object-fit:cover; border-radius:8px; border:1px solid #d8e2ee; }
+    @media(max-width:767px){.room-form-shell{padding:0 2px 24px}.room-form-hero{padding:22px}.room-form-card .card-header,.room-form-card .card-body{padding:20px !important}}
 </style>
 @endsection
 
 @section('content')
-<div class="page-wrapper room-form-page"><div class="content container-fluid">
+<div class="page-wrapper room-form-page"><div class="content container-fluid"><div class="room-form-shell">
     <section class="room-form-hero"><div><small class="text-warning fw-semibold">ROOM SETUP</small><h3 class="mb-1">Edit Room {{ $room->room_number }}</h3><p class="mb-0">Update room status, pricing override, photo and panorama preview.</p></div><a href="{{ route('hotel.rooms.index') }}" class="btn btn-light align-self-start">Back to Rooms</a></section>
 
     <form method="POST" action="{{ route('hotel.rooms.update', $room) }}" enctype="multipart/form-data">@csrf @method('PUT')
@@ -30,8 +38,8 @@
                 <div class="col-md-6"><label class="form-label">Panorama / Wide Preview Image</label>@if($room->panorama_image)<img src="{{ asset('storage/'.$room->panorama_image) }}" class="room-thumb mb-2" alt="Room panorama">@endif<input type="file" name="panorama_image" class="form-control" accept="image/*"></div>
                 <div class="col-12"><label class="form-label">Room Notes</label><textarea name="notes" class="form-control" rows="3">{{ old('notes', $room->notes) }}</textarea></div>
             </div>
-            <div class="text-end mt-4"><a href="{{ route('hotel.rooms.index') }}" class="btn btn-outline-secondary">Cancel</a><button class="btn btn-primary">Save Room</button></div>
+            <div class="room-form-actions"><a href="{{ route('hotel.rooms.index') }}" class="btn btn-outline-secondary">Cancel</a><button class="btn btn-primary">Save Room</button></div>
         </div></div>
     </form>
-</div></div>
+</div></div></div>
 @endsection
