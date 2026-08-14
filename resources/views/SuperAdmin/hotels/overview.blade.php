@@ -202,7 +202,7 @@
             <div>
                 <small>SmartProbook Hotel PMS · Super Admin Enterprise Monitor</small>
                 <h2>{{ $panelTitle }}</h2>
-                <p class="mb-0">Platform-level mirror of tenant hotel operations: room rack, reservation journey, guest folios, housekeeping, maintenance, night audit and reporting.</p>
+                <p class="mb-0">Room rack, reservations, folios, housekeeping, maintenance and audit monitoring across hotel tenants.</p>
                 @if(!empty($hotelDemoSeedPresent))
                     <div class="mt-2 small" style="color:#fff">Demo hotel data is active. Remove after review with <code style="color:#f7d777">php artisan hotel:demo-data --cleanup</code>.</div>
                 @endif

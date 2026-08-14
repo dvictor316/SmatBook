@@ -37,12 +37,12 @@ body.hotel-workspace .sa-hotel {
 }
 
 body.hotel-workspace .sa-hero {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(250px, 320px);
+    align-items: end;
     gap: 18px;
-    flex-wrap: wrap;
     margin-bottom: 16px;
-    padding: 24px;
+    padding: 18px 22px;
     border-radius: 8px;
     background:
         linear-gradient(90deg, rgba(12, 29, 46, .92), rgba(12, 29, 46, .72), rgba(15, 118, 110, .45)),
@@ -55,7 +55,7 @@ body.hotel-workspace .sa-hero h2 {
     margin: 4px 0 8px;
     color: #f7d777 !important;
     -webkit-text-fill-color: #f7d777 !important;
-    font-size: clamp(26px, 3vw, 36px);
+    font-size: clamp(24px, 2.4vw, 32px);
     font-weight: 800;
     line-height: 1.1;
     text-shadow: 0 2px 16px rgba(0, 0, 0, .22);
@@ -79,22 +79,33 @@ body.hotel-workspace .sa-hero small {
     font-weight: 700;
 }
 
+body.hotel-workspace .sa-hero p {
+    max-width: 880px;
+    font-size: 15px;
+    line-height: 1.45;
+}
+
 body.hotel-workspace .sa-panel-switcher {
-    min-width: 250px;
-    padding: 12px;
+    width: 100%;
+    min-width: 0;
+    padding: 10px;
     border: 1px solid rgba(255, 255, 255, .34);
     border-radius: 8px;
-    background: rgba(255, 255, 255, .92);
+    background: rgba(255, 255, 255, .94);
     box-shadow: 0 10px 24px rgba(6, 27, 51, .18);
 }
 
 body.hotel-workspace .sa-panel-switcher .form-label {
-    margin-bottom: 6px;
+    margin-bottom: 5px;
     color: #143756;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 800;
     letter-spacing: .08em;
     text-transform: uppercase;
+}
+
+body.hotel-workspace .sa-panel-switcher .form-select {
+    min-height: 42px;
 }
 
 body.hotel-workspace .sa-inline-select {
@@ -155,7 +166,7 @@ body.hotel-workspace .sa-filter {
     gap: 12px;
     align-items: flex-end;
     margin-bottom: 16px;
-    padding: 14px;
+    padding: 12px;
 }
 
 body.hotel-workspace .sa-filter .form-label {
@@ -922,6 +933,22 @@ body.hotel-workspace .sa-report-hub {
     background:
         linear-gradient(rgba(12, 29, 46, .88), rgba(12, 29, 46, .9)),
         url("../img/hotel-keto/room4.jpg") center / cover;
+}
+
+body.hotel-workspace .sa-rail h4,
+body.hotel-workspace .sa-rail h5,
+body.hotel-workspace .sa-rail p,
+body.hotel-workspace .sa-pms-sidebar h4,
+body.hotel-workspace .sa-pms-sidebar h5,
+body.hotel-workspace .sa-pms-sidebar p,
+body.hotel-workspace .sa-pms-sidebar .metric,
+body.hotel-workspace .sa-pms-sidebar .metric strong {
+    color: #ffffff !important;
+}
+
+body.hotel-workspace .sa-pms-sidebar small,
+body.hotel-workspace .sa-rail small {
+    color: #f7d777 !important;
 }
 
 body.hotel-workspace .sa-card,
