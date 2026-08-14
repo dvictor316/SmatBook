@@ -24,6 +24,33 @@ class NightAuditController extends Controller
         $companyId = (int) auth()->user()->company_id;
         $propertyId = $this->currentPropertyId();
 
+        if (!$propertyId) {
+            $audits = HotelNightAudit::query()
+                ->where('company_id', $companyId)
+                ->latest('audit_date')
+                ->paginate(30);
+
+            $businessDate = now()->toDateString();
+            $arrivalsExpected = $arrivalsCheckedIn = $arrivalsPending = 0;
+            $departuresExpected = $departuresCheckedOut = $departuresPending = 0;
+            $financial = [
+                'room_charges_pending' => 0,
+                'open_folios' => 0,
+                'outstanding_balances' => 0,
+                'payments_today' => 0,
+            ];
+            $roomStatus = [
+                'occupied' => 0,
+                'dirty' => 0,
+                'maintenance' => 0,
+                'out_of_order' => 0,
+            ];
+            $blockingIssues = collect(['No hotel property is configured for this branch yet. Configure Hotel Setup before running night audit.']);
+            $canRunNightAudit = false;
+
+            return view('hotel.night_audit.index', compact('audits', 'businessDate', 'arrivalsExpected', 'arrivalsCheckedIn', 'arrivalsPending', 'departuresExpected', 'departuresCheckedOut', 'departuresPending', 'financial', 'roomStatus', 'blockingIssues', 'canRunNightAudit'));
+        }
+
         $audits = HotelNightAudit::query()
             ->where('company_id', $companyId)
             ->where('property_id', $propertyId)
@@ -59,8 +86,10 @@ class NightAuditController extends Controller
             $financial['open_folios'] > 0 ? $financial['open_folios'] . ' folios remain open.' : null,
         ])->filter()->values();
 
+        $canRunNightAudit = true;
+
         if (view()->exists('hotel.night_audit.index')) {
-            return view('hotel.night_audit.index', compact('audits', 'businessDate', 'arrivalsExpected', 'arrivalsCheckedIn', 'arrivalsPending', 'departuresExpected', 'departuresCheckedOut', 'departuresPending', 'financial', 'roomStatus', 'blockingIssues'));
+            return view('hotel.night_audit.index', compact('audits', 'businessDate', 'arrivalsExpected', 'arrivalsCheckedIn', 'arrivalsPending', 'departuresExpected', 'departuresCheckedOut', 'departuresPending', 'financial', 'roomStatus', 'blockingIssues', 'canRunNightAudit'));
         }
 
         return response()->json([
@@ -77,6 +106,9 @@ class NightAuditController extends Controller
 
         $companyId = (int) auth()->user()->company_id;
         $propertyId = $this->currentPropertyId();
+        if (!$propertyId) {
+            return back()->withErrors(['audit_date' => 'Configure a hotel property for this branch before running night audit.']);
+        }
         $auditDate = (string) ($validated['audit_date'] ?? now()->toDateString());
 
         $audit = $this->nightAuditService->run(
@@ -103,7 +135,7 @@ class NightAuditController extends Controller
         return back()->with('success', 'Night audit reopened for correction.');
     }
 
-    private function currentPropertyId(): int
+    private function currentPropertyId(): ?int
     {
         $companyId = (int) auth()->user()->company_id;
         $branchId = auth()->user()->branch_id;
@@ -113,10 +145,11 @@ class NightAuditController extends Controller
             ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
             ->value('id');
 
-        if (!$propertyId) {
-            abort(422, 'No hotel property is configured for this branch.');
-        }
+        $propertyId = $propertyId ?: HotelProperty::query()
+            ->where('company_id', $companyId)
+            ->orderBy('id')
+            ->value('id');
 
-        return (int) $propertyId;
+        return $propertyId ? (int) $propertyId : null;
     }
 }

@@ -33,6 +33,10 @@
             <span class="audit-date">Business Date {{ \Carbon\Carbon::parse($businessDate)->format('d M Y') }}</span>
         </section>
 
+        @if($errors->any())
+            <div class="alert alert-danger"><strong>Night audit could not run:</strong><ul class="mb-0 mt-2">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+        @endif
+
         @if($blockingIssues->isNotEmpty())
             <div class="alert alert-warning"><strong>Close-day attention required:</strong><ul class="mb-0 mt-2">@foreach($blockingIssues as $issue)<li>{{ $issue }}</li>@endforeach</ul></div>
         @endif
@@ -58,7 +62,7 @@
                         @csrf
                         <div class="col-md-5"><label class="form-label">Audit Date</label><input type="date" name="audit_date" class="form-control" value="{{ $businessDate }}"></div>
                         <div class="col-md-3 form-check mt-4"><input class="form-check-input" type="checkbox" name="force" value="1" id="force"><label class="form-check-label" for="force">Allow force run</label></div>
-                        <div class="col-md-4"><button class="btn btn-warning w-100">Run Night Audit</button></div>
+                        <div class="col-md-4"><button class="btn btn-warning w-100" {{ isset($canRunNightAudit) && !$canRunNightAudit ? 'disabled' : '' }}>Run Night Audit</button></div>
                     </form>
                 </div>
             </main>
