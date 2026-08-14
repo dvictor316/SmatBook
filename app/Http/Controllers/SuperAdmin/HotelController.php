@@ -66,11 +66,20 @@ class HotelController extends Controller
             ->when(!empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
             ->count();
 
-        $totalProperties = HotelProperty::when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))->count();
-        $totalRooms = HotelRoom::when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))->count();
-        $availableRooms = HotelRoom::when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))->where('operational_status', 'available')->count();
-        $occupiedRooms = HotelRoom::when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))->where('operational_status', 'occupied')->count();
-        $reservedRooms = HotelRoom::when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))->where('operational_status', 'reserved')->count();
+        $hotelScope = function ($query) use ($selectedCompanyId, $hotelCompanyIds) {
+            return $query
+                ->when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))
+                ->when(!$selectedCompanyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds));
+        };
+
+        $totalProperties = $hotelScope(HotelProperty::query())->count();
+        $roomHasActiveColumn = Schema::hasColumn('hotel_rooms', 'is_active');
+        $roomScope = fn() => $hotelScope(HotelRoom::query())
+            ->when($roomHasActiveColumn, fn($q) => $q->where('is_active', 1));
+        $totalRooms = $roomScope()->count();
+        $availableRooms = $roomScope()->where('operational_status', 'available')->count();
+        $occupiedRooms = $roomScope()->where('operational_status', 'occupied')->count();
+        $reservedRooms = $roomScope()->where('operational_status', 'reserved')->count();
 
         $todayReservations = 0;
         if (Schema::hasTable('reservations')) {
@@ -218,6 +227,7 @@ class HotelController extends Controller
             return \DB::table('hotel_rooms')
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
+                ->when(Schema::hasColumn('hotel_rooms', 'is_active'), fn($q) => $q->where('is_active', 1))
                 ->orderByDesc('id')
                 ->paginate(20)
                 ->withQueryString();

@@ -347,8 +347,56 @@
                     <div class="sa-section-head"><div><h4>Room State Grid</h4><p>PMS room-rack style view across hotel tenants.</p></div><span class="badge bg-light text-dark">{{ $panelRows->count() }} rooms loaded</span></div>
                     <div class="sa-room-wall">
                         @forelse($panelRows as $row)
-                            @php $r=$rowArray($row); $state=(string)($r['operational_status'] ?? 'available'); @endphp
-                            <article class="sa-room-tile {{ $state }}"><div><div class="d-flex justify-content-between"><span class="fw-semibold">{{ ucfirst(str_replace('_',' ', $state)) }}</span><span class="badge bg-light text-dark">{{ ucfirst((string)($r['housekeeping_status'] ?? 'clean')) }}</span></div><div class="room-no">{{ $r['room_number'] ?? ('#'.($r['id'] ?? '-')) }}</div><strong>Property {{ $r['property_id'] ?? '-' }}</strong></div><small class="text-muted">Company {{ $r['company_id'] ?? '-' }} - Type {{ $r['room_type_id'] ?? '-' }}</small></article>
+                            @php
+                                $r=$rowArray($row);
+                                $state=(string)($r['operational_status'] ?? 'available');
+                                $roomNo = $r['room_number'] ?? ('#'.($r['id'] ?? '-'));
+                                $previewImage = $r['panorama_image'] ?? $r['room_image'] ?? null;
+                                $previewUrl = $previewImage ? asset('storage/'.$previewImage) : null;
+                                $modalId = 'saRoomPreview'.($r['id'] ?? $loop->iteration);
+                            @endphp
+                            <button type="button" class="sa-room-tile {{ $state }} text-start" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}">
+                                <div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="fw-semibold">{{ ucfirst(str_replace('_',' ', $state)) }}</span>
+                                        <span class="badge bg-light text-dark">{{ ucfirst((string)($r['housekeeping_status'] ?? 'clean')) }}</span>
+                                    </div>
+                                    <div class="room-no">{{ $roomNo }}</div>
+                                    <strong>Property {{ $r['property_id'] ?? '-' }}</strong>
+                                </div>
+                                <small class="text-muted">Company {{ $r['company_id'] ?? '-' }} - Type {{ $r['room_type_id'] ?? '-' }}</small>
+                                <span class="sa-room-preview-chip">{{ $previewUrl ? 'View room' : 'No photo yet' }}</span>
+                            </button>
+                            <div class="modal fade sa-room-preview-modal" id="{{ $modalId }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered modal-xl">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <div>
+                                                <h5 class="modal-title">Room {{ $roomNo }} Preview</h5>
+                                                <small class="text-muted">Property {{ $r['property_id'] ?? '-' }} - Company {{ $r['company_id'] ?? '-' }} - {{ ucfirst(str_replace('_',' ', $state)) }}</small>
+                                            </div>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="sa-room-preview-stage {{ $previewUrl ? 'has-image' : '' }}">
+                                                @if($previewUrl)
+                                                    <img src="{{ $previewUrl }}" alt="Room {{ $roomNo }} preview">
+                                                @else
+                                                    <div class="sa-room-preview-empty">
+                                                        <i class="fas fa-bed fa-3x mb-3"></i>
+                                                        <h4>No room image uploaded yet</h4>
+                                                        <p>Upload a room photo or panorama from the tenant hotel room form so customers can inspect the room before arrival.</p>
+                                                    </div>
+                                                @endif
+                                                <div class="sa-room-preview-note">
+                                                    <strong>Room {{ $roomNo }}</strong>
+                                                    <span>{{ $r['notes'] ?? 'Panorama preview for customer-facing room inspection.' }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         @empty
                             @foreach(['101','102','103','104','201','202','203','204'] as $roomNo)
                                 <article class="sa-room-tile {{ $loop->iteration % 4 === 0 ? 'reserved' : ($loop->iteration % 3 === 0 ? 'occupied' : 'available') }}"><div><span class="fw-semibold">Preview Room</span><div class="room-no">{{ $roomNo }}</div><strong>{{ $loop->odd ? 'Deluxe King' : 'Executive Suite' }}</strong></div><small class="text-muted">Tenant adds photos and panorama under Hotel > Rooms.</small></article>
