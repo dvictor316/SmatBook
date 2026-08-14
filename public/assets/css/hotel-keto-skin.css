@@ -26,7 +26,7 @@ body.hotel-workspace .hotel-hero {
     padding: 28px;
     background:
         linear-gradient(90deg, rgba(12, 29, 46, .9), rgba(12, 29, 46, .7), rgba(15, 118, 110, .42)),
-        url("../img/hotel-keto/banner2.jpg") center / cover;
+        url("../img/hotel-keto/gallery2.jpg") center / cover;
     box-shadow: 0 18px 44px rgba(16, 32, 50, .18);
 }
 
@@ -46,7 +46,7 @@ body.hotel-workspace .sa-hero {
     border-radius: 8px;
     background:
         linear-gradient(90deg, rgba(12, 29, 46, .92), rgba(12, 29, 46, .72), rgba(15, 118, 110, .45)),
-        url("../img/hotel-keto/banner3.jpg") center / cover;
+        url("../img/hotel-keto/gallery3.jpg") center / cover;
     box-shadow: 0 18px 44px rgba(16, 32, 50, .2);
 }
 
@@ -726,7 +726,7 @@ body.hotel-workspace .sa-report {
     justify-content: space-between;
     background:
         linear-gradient(rgba(8, 47, 85, .9), rgba(8, 47, 85, .88)),
-        url("../img/hotel-keto/banner1.jpg") center / cover;
+        url("../img/hotel-keto/room4.jpg") center / cover;
     color: #ffffff;
 }
 
@@ -1085,20 +1085,20 @@ body.hotel-workspace .hotel-service-card:nth-child(2),
 body.hotel-workspace .hotel-service-card:nth-child(6) {
     background-image:
         linear-gradient(rgba(255, 255, 255, .9), rgba(255, 255, 255, .96)),
-        url("../img/hotel-keto/blog_bg.jpg");
+        url("../img/hotel-keto/gallery7.jpg");
 }
 
 body.hotel-workspace .hotel-service-card:nth-child(3),
 body.hotel-workspace .hotel-service-card:nth-child(7) {
     background-image:
         linear-gradient(rgba(255, 255, 255, .9), rgba(255, 255, 255, .96)),
-        url("../img/hotel-keto/about.png");
+        url("../img/hotel-keto/gallery6.jpg");
 }
 
 body.hotel-workspace .ew-frontdesk {
     background:
         linear-gradient(rgba(244, 247, 248, .95), rgba(244, 247, 248, .97)),
-        url("../img/hotel-keto/banner1.jpg") center / cover fixed;
+        url("../img/hotel-keto/room4.jpg") center / cover fixed;
 }
 
 body.hotel-workspace .ew-room {
@@ -1176,7 +1176,7 @@ body.hotel-workspace .hotel-type-page {
 body.hotel-workspace .hotel-ledger-page {
     background:
         linear-gradient(rgba(245, 248, 250, .94), rgba(245, 248, 250, .98)),
-        url("../img/hotel-keto/blog_bg.jpg") center / cover;
+        url("../img/hotel-keto/gallery7.jpg") center / cover;
 }
 
 body.hotel-workspace .hotel-service-workflow {
@@ -1188,7 +1188,7 @@ body.hotel-workspace .hotel-service-workflow {
 body.hotel-workspace .hotel-report-page {
     background:
         linear-gradient(rgba(12, 29, 46, .9), rgba(12, 29, 46, .82)),
-        url("../img/hotel-keto/banner3.jpg") center / cover;
+        url("../img/hotel-keto/gallery3.jpg") center / cover;
 }
 
 body.hotel-workspace .hotel-report-tile {

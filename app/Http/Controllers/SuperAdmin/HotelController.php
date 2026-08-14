@@ -73,16 +73,20 @@ class HotelController extends Controller
         };
 
         $totalProperties = $hotelScope(HotelProperty::query())->count();
-        $roomHasActiveColumn = Schema::hasColumn('hotel_rooms', 'is_active');
+        $roomHasActiveColumn = $this->hasColumn('hotel_rooms', 'is_active');
         $roomScope = fn() => $hotelScope(HotelRoom::query())
             ->when($roomHasActiveColumn, fn($q) => $q->where('is_active', 1));
-        $totalRooms = $roomScope()->count();
-        $availableRooms = $roomScope()->where('operational_status', 'available')->count();
-        $occupiedRooms = $roomScope()->where('operational_status', 'occupied')->count();
-        $reservedRooms = $roomScope()->where('operational_status', 'reserved')->count();
+        $roomStatusCounts = $roomScope()
+            ->selectRaw('COALESCE(operational_status, "available") as status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+        $totalRooms = (int) $roomStatusCounts->sum();
+        $availableRooms = (int) ($roomStatusCounts['available'] ?? 0);
+        $occupiedRooms = (int) ($roomStatusCounts['occupied'] ?? 0);
+        $reservedRooms = (int) ($roomStatusCounts['reserved'] ?? 0);
 
         $todayReservations = 0;
-        if (Schema::hasTable('reservations')) {
+        if ($this->hasTable('reservations')) {
             $today = now()->toDateString();
             $todayReservations = \DB::table('reservations')
                 ->when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))
@@ -92,7 +96,7 @@ class HotelController extends Controller
         }
 
         $currentInHouseGuests = 0;
-        if (Schema::hasTable('stays')) {
+        if ($this->hasTable('stays')) {
             $currentInHouseGuests = \DB::table('stays')
                 ->when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))
                 ->where('status', 'checked_in')
@@ -100,12 +104,12 @@ class HotelController extends Controller
         }
 
         $hotelRevenueToday = 0;
-        if (Schema::hasTable('hotel_transactions')) {
+        if ($this->hasTable('hotel_transactions')) {
             $hotelRevenueToday = \DB::table('hotel_transactions')
             ->when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))
                 ->whereDate('created_at', now()->toDateString())
                 ->sum('amount');
-        } elseif (Schema::hasTable('folio_items')) {
+        } elseif ($this->hasTable('folio_items')) {
             $hotelRevenueToday = \DB::table('folio_items')
             ->when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))
             ->where('type', 'charge')
@@ -114,12 +118,12 @@ class HotelController extends Controller
         }
 
         $hotelRevenueThisMonth = 0;
-        if (Schema::hasTable('hotel_transactions')) {
+        if ($this->hasTable('hotel_transactions')) {
             $hotelRevenueThisMonth = \DB::table('hotel_transactions')
             ->when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))
                 ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
                 ->sum('amount');
-        } elseif (Schema::hasTable('folio_items')) {
+        } elseif ($this->hasTable('folio_items')) {
             $hotelRevenueThisMonth = \DB::table('folio_items')
             ->when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))
             ->where('type', 'charge')
@@ -128,7 +132,7 @@ class HotelController extends Controller
         }
 
         $outstandingReceivables = 0;
-        if (Schema::hasTable('guest_folios')) {
+        if ($this->hasTable('guest_folios')) {
             $outstandingReceivables = \DB::table('guest_folios')
                 ->when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))
                 ->where('balance', '>', 0)
@@ -147,8 +151,8 @@ class HotelController extends Controller
         $selectedServiceCenter = $servicePanelMap[$panel] ?? (string) $request->query('service', 'all');
         $panelData = $this->panelData($panel, $selectedCompanyId, $hotelCompanyIds, $selectedServiceCenter);
 
-        $hotelDemoSeedPresent = Schema::hasTable('hotel_properties')
-            && Schema::hasColumn('hotel_properties', 'code')
+        $hotelDemoSeedPresent = $this->hasTable('hotel_properties')
+            && $this->hasColumn('hotel_properties', 'code')
             && \DB::table('hotel_properties')->where('code', 'like', 'SPB-DEMO-%')->exists();
 
         $serviceCenters = [
@@ -170,7 +174,7 @@ class HotelController extends Controller
 
     private function panelData(string $panel, ?int $companyId, array $hotelCompanyIds, string $selectedServiceCenter = 'all')
     {
-        if (in_array($panel, ['reservations', 'room_calendar', 'availability', 'check_in'], true) && Schema::hasTable('reservations')) {
+        if (in_array($panel, ['reservations', 'room_calendar', 'availability', 'check_in'], true) && $this->hasTable('reservations')) {
             return \DB::table('reservations')
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
@@ -179,7 +183,7 @@ class HotelController extends Controller
                 ->withQueryString();
         }
 
-        if (in_array($panel, ['stays', 'checkout'], true) && Schema::hasTable('stays')) {
+        if (in_array($panel, ['stays', 'checkout'], true) && $this->hasTable('stays')) {
             return \DB::table('stays')
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
@@ -188,7 +192,7 @@ class HotelController extends Controller
                 ->withQueryString();
         }
 
-        if ($panel === 'folios' && Schema::hasTable('guest_folios')) {
+        if ($panel === 'folios' && $this->hasTable('guest_folios')) {
             return \DB::table('guest_folios')
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
@@ -197,7 +201,7 @@ class HotelController extends Controller
                 ->withQueryString();
         }
 
-        if ($panel === 'deposits' && Schema::hasTable('reservations')) {
+        if ($panel === 'deposits' && $this->hasTable('reservations')) {
             return \DB::table('reservations')
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
@@ -206,7 +210,7 @@ class HotelController extends Controller
                 ->withQueryString();
         }
 
-        if ($panel === 'tenants' && Schema::hasTable('companies')) {
+        if ($panel === 'tenants' && $this->hasTable('companies')) {
             return Company::query()
                 ->when(!empty($hotelCompanyIds), fn($q) => $q->whereIn('id', $hotelCompanyIds))
                 ->orderBy('name')
@@ -214,7 +218,7 @@ class HotelController extends Controller
                 ->withQueryString();
         }
 
-        if ($panel === 'properties' && Schema::hasTable('hotel_properties')) {
+        if ($panel === 'properties' && $this->hasTable('hotel_properties')) {
             return \DB::table('hotel_properties')
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
@@ -223,17 +227,17 @@ class HotelController extends Controller
                 ->withQueryString();
         }
 
-        if ($panel === 'rooms' && Schema::hasTable('hotel_rooms')) {
+        if ($panel === 'rooms' && $this->hasTable('hotel_rooms')) {
             return \DB::table('hotel_rooms')
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
-                ->when(Schema::hasColumn('hotel_rooms', 'is_active'), fn($q) => $q->where('is_active', 1))
+                ->when($this->hasColumn('hotel_rooms', 'is_active'), fn($q) => $q->where('is_active', 1))
                 ->orderByDesc('id')
                 ->paginate(20)
                 ->withQueryString();
         }
 
-        if ($panel === 'room_types' && Schema::hasTable('hotel_room_types')) {
+        if ($panel === 'room_types' && $this->hasTable('hotel_room_types')) {
             return \DB::table('hotel_room_types')
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
@@ -242,15 +246,15 @@ class HotelController extends Controller
                 ->withQueryString();
         }
 
-        if ($panel === 'guests' && Schema::hasTable('customers')) {
+        if ($panel === 'guests' && $this->hasTable('customers')) {
             $ids = collect();
-            if (Schema::hasTable('reservations')) {
+            if ($this->hasTable('reservations')) {
                 $ids = $ids->merge(\DB::table('reservations')
                     ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                     ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
                     ->whereNotNull('customer_id')->pluck('customer_id'));
             }
-            if (Schema::hasTable('stays')) {
+            if ($this->hasTable('stays')) {
                 $ids = $ids->merge(\DB::table('stays')
                     ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                     ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
@@ -277,7 +281,7 @@ class HotelController extends Controller
                 'conference' => ['CONFERENCE', 'EVENTS', 'BANQUET'],
             ];
 
-            if (Schema::hasTable('folio_items')) {
+            if ($this->hasTable('folio_items')) {
                 return \DB::table('folio_items')
                     ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                     ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
@@ -288,7 +292,7 @@ class HotelController extends Controller
                     ->withQueryString();
             }
 
-            if (Schema::hasTable('hotel_transactions')) {
+            if ($this->hasTable('hotel_transactions')) {
                 return \DB::table('hotel_transactions')
                     ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                     ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
@@ -300,7 +304,7 @@ class HotelController extends Controller
             return collect();
         }
 
-        if ($panel === 'housekeeping' && Schema::hasTable('hotel_housekeeping_tasks')) {
+        if ($panel === 'housekeeping' && $this->hasTable('hotel_housekeeping_tasks')) {
             return \DB::table('hotel_housekeeping_tasks')
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
@@ -310,9 +314,9 @@ class HotelController extends Controller
         }
 
         if ($panel === 'maintenance') {
-            $maintenanceTable = Schema::hasTable('hotel_maintenance_tickets')
+            $maintenanceTable = $this->hasTable('hotel_maintenance_tickets')
                 ? 'hotel_maintenance_tickets'
-                : (Schema::hasTable('hotel_maintenance_requests') ? 'hotel_maintenance_requests' : null);
+                : ($this->hasTable('hotel_maintenance_requests') ? 'hotel_maintenance_requests' : null);
 
             if ($maintenanceTable) {
                 return \DB::table($maintenanceTable)
@@ -324,7 +328,7 @@ class HotelController extends Controller
             }
         }
 
-        if ($panel === 'night_audits' && Schema::hasTable('hotel_night_audits')) {
+        if ($panel === 'night_audits' && $this->hasTable('hotel_night_audits')) {
             return \DB::table('hotel_night_audits')
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
@@ -334,7 +338,7 @@ class HotelController extends Controller
         }
 
         if ($panel === 'reports') {
-            if (Schema::hasTable('hotel_transactions')) {
+            if ($this->hasTable('hotel_transactions')) {
                 return \DB::table('hotel_transactions')
                     ->selectRaw('company_id, DATE(created_at) as business_date, SUM(amount) as total_amount, COUNT(*) as tx_count')
                     ->when($companyId, fn($q) => $q->where('company_id', $companyId))
@@ -345,7 +349,7 @@ class HotelController extends Controller
                     ->withQueryString();
             }
 
-            if (Schema::hasTable('folio_items')) {
+            if ($this->hasTable('folio_items')) {
                 return \DB::table('folio_items')
                     ->selectRaw('company_id, DATE(service_date) as business_date, SUM(amount) as total_amount, COUNT(*) as tx_count')
                     ->when($companyId, fn($q) => $q->where('company_id', $companyId))
@@ -360,17 +364,40 @@ class HotelController extends Controller
 
         if ($panel === 'settings') {
             $rows = collect([
-                (object) ['setting' => 'hotel_properties_table', 'status' => Schema::hasTable('hotel_properties') ? 'available' : 'missing'],
-                (object) ['setting' => 'hotel_rooms_table', 'status' => Schema::hasTable('hotel_rooms') ? 'available' : 'missing'],
-                (object) ['setting' => 'hotel_room_types_table', 'status' => Schema::hasTable('hotel_room_types') ? 'available' : 'missing'],
-                (object) ['setting' => 'reservations_table', 'status' => Schema::hasTable('reservations') ? 'available' : 'missing'],
-                (object) ['setting' => 'stays_table', 'status' => Schema::hasTable('stays') ? 'available' : 'missing'],
-                (object) ['setting' => 'guest_folios_table', 'status' => Schema::hasTable('guest_folios') ? 'available' : 'missing'],
+                (object) ['setting' => 'hotel_properties_table', 'status' => $this->hasTable('hotel_properties') ? 'available' : 'missing'],
+                (object) ['setting' => 'hotel_rooms_table', 'status' => $this->hasTable('hotel_rooms') ? 'available' : 'missing'],
+                (object) ['setting' => 'hotel_room_types_table', 'status' => $this->hasTable('hotel_room_types') ? 'available' : 'missing'],
+                (object) ['setting' => 'reservations_table', 'status' => $this->hasTable('reservations') ? 'available' : 'missing'],
+                (object) ['setting' => 'stays_table', 'status' => $this->hasTable('stays') ? 'available' : 'missing'],
+                (object) ['setting' => 'guest_folios_table', 'status' => $this->hasTable('guest_folios') ? 'available' : 'missing'],
             ]);
 
             return $rows;
         }
 
         return collect();
+    }
+
+    private function hasTable(string $table): bool
+    {
+        static $tables = [];
+
+        if (!array_key_exists($table, $tables)) {
+            $tables[$table] = Schema::hasTable($table);
+        }
+
+        return $tables[$table];
+    }
+
+    private function hasColumn(string $table, string $column): bool
+    {
+        static $columns = [];
+        $key = $table.'.'.$column;
+
+        if (!array_key_exists($key, $columns)) {
+            $columns[$key] = Schema::hasColumn($table, $column);
+        }
+
+        return $columns[$key];
     }
 }
