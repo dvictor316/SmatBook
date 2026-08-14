@@ -4,22 +4,23 @@
 <style>
     .folio-cashier { background:#fbfbfa; color:#20242a; }
     .cashier-top { background:#24333a; color:#fff; padding:10px 14px; display:flex; justify-content:space-between; gap:10px; align-items:center; border-radius:4px 4px 0 0; }
-    .cashier-shell { display:grid; grid-template-columns:280px minmax(0,1fr) 330px; gap:12px; }
-    .cashier-card { background:#fff; border:1px solid #d7dde5; box-shadow:0 5px 16px rgba(15,23,42,.04); }
+    .cashier-shell { display:grid; grid-template-columns:260px minmax(0,1fr) 310px; gap:12px; }
+    .cashier-card { background:#fff; border:1px solid #d7dde5; border-radius:6px; box-shadow:0 5px 16px rgba(15,23,42,.04); }
     .cashier-side { padding:12px; }
-    .cashier-room { font-size:42px; font-weight:700; color:#123456; line-height:1; }
+    .cashier-room { font-size:36px; font-weight:800; color:#123456; line-height:1; }
     .cashier-chip { display:inline-flex; align-items:center; padding:5px 9px; border-radius:4px; background:#eef2f7; color:#334155; font-weight:600; font-size:12px; }
     .cashier-tabs { display:flex; border-bottom:3px solid #8a174f; background:#f7f7f7; }
-    .cashier-tab { padding:12px 18px; border-right:1px solid #d7dde5; font-weight:600; }
+    .cashier-tab { padding:10px 14px; border-right:1px solid #d7dde5; font-weight:700; font-size:13px; }
     .cashier-tab.active { background:#8a174f; color:#fff; }
     .folio-ledger th { background:#f5f5f5; color:#1f2937; border-bottom:1px solid #cfd6df; font-size:12px; text-transform:uppercase; }
     .folio-ledger td { font-size:13px; vertical-align:middle; }
-    .payment-pad { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; padding:12px; }
-    .payment-pad button, .payment-pad a, .payment-pad .pad-label { min-height:68px; border:1px solid #d7dde5; background:#fff; border-radius:5px; display:flex; align-items:center; justify-content:center; text-align:center; color:#27313f; font-weight:600; padding:8px; }
+    .payment-pad { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; padding:12px; }
+    .payment-pad button, .payment-pad a, .payment-pad .pad-label { min-height:42px; border:1px solid #d7dde5; background:#fff; border-radius:6px; display:flex; align-items:center; justify-content:center; text-align:center; color:#27313f; font-weight:800; font-size:12px; padding:7px; line-height:1.15; text-decoration:none; }
     .payment-pad .active { background:#8a174f; color:#fff; border-color:#8a174f; }
     .post-form { padding:12px; border-top:1px solid #e6ebf0; }
     .balance-strip { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
     .balance-box { background:#fff; border:1px solid #d7dde5; border-radius:5px; padding:10px; }
+    .post-form .btn { min-height:34px; padding:6px 12px; border-radius:8px; font-size:13px; font-weight:800; }
     @media(max-width:1199px){.cashier-shell{grid-template-columns:1fr}.payment-pad{grid-template-columns:repeat(2,1fr)}}
 </style>
 @endsection
