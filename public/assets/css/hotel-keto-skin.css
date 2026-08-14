@@ -79,6 +79,28 @@ body.hotel-workspace .sa-hero small {
     font-weight: 700;
 }
 
+body.hotel-workspace .sa-panel-switcher {
+    min-width: 250px;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, .34);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .92);
+    box-shadow: 0 10px 24px rgba(6, 27, 51, .18);
+}
+
+body.hotel-workspace .sa-panel-switcher .form-label {
+    margin-bottom: 6px;
+    color: #143756;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+body.hotel-workspace .sa-inline-select {
+    min-width: 248px;
+}
+
 body.hotel-workspace .sa-panel,
 body.hotel-workspace .sa-card,
 body.hotel-workspace .sa-filter,
@@ -374,7 +396,10 @@ body.hotel-workspace .sa-dashboard-service:hover,
 body.hotel-workspace .sa-service:hover,
 body.hotel-workspace .sa-card:hover {
     border-color: var(--hotel-blue);
-    color: var(--hotel-blue);
+    background:
+        linear-gradient(rgba(255, 255, 255, .98), rgba(255, 255, 255, .99)),
+        url("../img/hotel-keto/gallery6.jpg") center / cover;
+    color: #143756;
     transform: translateY(-1px);
 }
 
@@ -394,6 +419,14 @@ body.hotel-workspace .sa-dashboard-service strong,
 body.hotel-workspace .sa-card strong,
 body.hotel-workspace .sa-ops-row strong {
     color: #061b33;
+}
+
+body.hotel-workspace .sa-dashboard-service.active {
+    border-color: var(--hotel-gold);
+    background:
+        linear-gradient(rgba(255, 255, 255, .97), rgba(255, 255, 255, .99)),
+        url("../img/hotel-keto/gallery6.jpg") center / cover;
+    color: #143756;
 }
 
 body.hotel-workspace .sa-workspace,
@@ -595,6 +628,24 @@ body.hotel-workspace .sa-report:hover {
     color: #ffffff;
 }
 
+body.hotel-workspace .sa-directory-card.feature {
+    background:
+        linear-gradient(rgba(8, 47, 85, .88), rgba(8, 47, 85, .82)),
+        url("../img/hotel-keto/gallery6.jpg") center / cover;
+    color: #ffffff;
+}
+
+body.hotel-workspace .sa-directory-card.feature h5,
+body.hotel-workspace .sa-directory-card.feature p,
+body.hotel-workspace .sa-directory-card.feature span,
+body.hotel-workspace .sa-directory-card.feature strong {
+    color: #ffffff !important;
+}
+
+body.hotel-workspace .sa-directory-card.feature .eyebrow {
+    color: #f7d777 !important;
+}
+
 body.hotel-workspace .sa-empty {
     grid-column: 1 / -1;
     padding: 22px;
@@ -666,9 +717,27 @@ body.hotel-workspace .btn-light:focus {
     color: #143756;
 }
 
+body.hotel-workspace .sa-hero .btn-light,
+body.hotel-workspace .room-form-hero .btn-light {
+    background: #ffffff;
+    border-color: #ffffff;
+    color: #143756;
+}
+
+body.hotel-workspace .sa-hero .btn-light:hover,
+body.hotel-workspace .sa-hero .btn-light:focus,
+body.hotel-workspace .room-form-hero .btn-light:hover,
+body.hotel-workspace .room-form-hero .btn-light:focus {
+    background: #ffffff;
+    border-color: #f7d777;
+    color: #143756;
+    box-shadow: 0 0 0 .2rem rgba(247, 215, 119, .28);
+}
+
 body.hotel-workspace .btn-outline-light {
     color: #ffffff;
     border-color: rgba(255, 255, 255, .72);
+    background: rgba(255, 255, 255, .08);
 }
 
 body.hotel-workspace .btn-outline-light:hover,
@@ -1023,6 +1092,23 @@ body.hotel-workspace input,
 body.hotel-workspace textarea {
     border-radius: 8px;
     border-color: #cfd9e3;
+    background-color: #ffffff;
+    color: #102032;
+}
+
+body.hotel-workspace .form-control:focus,
+body.hotel-workspace .form-select:focus,
+body.hotel-workspace select:focus,
+body.hotel-workspace input:focus,
+body.hotel-workspace textarea:focus {
+    border-color: var(--hotel-blue);
+    box-shadow: 0 0 0 .2rem rgba(23, 69, 111, .16);
+    color: #102032;
+}
+
+body.hotel-workspace select option {
+    background: #ffffff;
+    color: #102032;
 }
 
 body.hotel-workspace .sticky-top.card {
@@ -1087,6 +1173,12 @@ body.hotel-workspace .sticky-top.card {
 
     body.hotel-workspace .sa-hero h2 {
         font-size: 26px;
+    }
+
+    body.hotel-workspace .sa-panel-switcher,
+    body.hotel-workspace .sa-inline-select {
+        width: 100%;
+        min-width: 0;
     }
 
     body.hotel-workspace .sa-tabs {

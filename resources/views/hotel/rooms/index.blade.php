@@ -40,7 +40,7 @@
     <div class="content container-fluid">
         <div class="room-admin-top">
             <div><h3>Room Inventory Board</h3><p class="text-muted mb-0">Add available rooms, show room photos, preview panorama views, and control room status.</p></div>
-            <div class="d-flex gap-2 flex-wrap"><a href="{{ route('hotel.rooms.index', ['view' => 'grid', 'status' => $status]) }}" class="btn btn-sm {{ $viewMode === 'grid' ? 'btn-primary' : 'btn-outline-primary' }}">Grid</a><a href="{{ route('hotel.rooms.index', ['view' => 'table', 'status' => $status]) }}" class="btn btn-sm {{ $viewMode === 'table' ? 'btn-primary' : 'btn-outline-primary' }}">Table</a><a href="{{ route('hotel.room_types.index') }}" class="btn btn-outline-dark">Room Types & Prices</a><a href="{{ route('hotel.rate_plans.index') }}" class="btn btn-outline-warning">Rate Plans</a><a href="{{ route('hotel.rooms.create') }}" class="btn btn-primary">Add Room</a></div>
+            <div class="d-flex gap-2 flex-wrap"><a href="{{ route('hotel.rooms.index', ['view' => 'grid', 'status' => $status]) }}" class="btn btn-sm {{ $viewMode === 'grid' ? 'btn-primary' : 'btn-outline-primary' }}">Grid</a><a href="{{ route('hotel.rooms.index', ['view' => 'table', 'status' => $status]) }}" class="btn btn-sm {{ $viewMode === 'table' ? 'btn-primary' : 'btn-outline-primary' }}">Table</a><a href="{{ route('hotel.rooms.create') }}" class="btn btn-primary">Add Room</a></div>
         </div>
 
         <div class="room-admin-stats">
@@ -52,20 +52,16 @@
 
         <div class="room-admin-shell">
             <aside class="room-admin-rail">
-                <h5>Room Setup</h5>
-                <p>Rooms are added here. Prices are configured from Room Types and Rate Plans.</p>
+                <h5>Room Inventory</h5>
+                <p>Rooms are added here with photos, panorama previews, status and housekeeping condition.</p>
                 <a href="{{ route('hotel.rooms.create') }}">Add Available Room</a>
-                <a href="{{ route('hotel.room_types.index') }}">Set Room Type Prices</a>
-                <a href="{{ route('hotel.rate_plans.index') }}">Create Rate Plans</a>
-                <a href="{{ route('hotel.rooms.calendar') }}">Reservation Calendar</a>
-                <a href="{{ route('hotel.housekeeping.index') }}">Housekeeping</a>
             </aside>
 
             <main class="room-board-panel">
                 @if($rooms->count() === 0)
                     <div class="row g-3 align-items-center">
                         <div class="col-lg-7"><div class="alert alert-info mb-0"><strong>No rooms configured yet.</strong><br>Add rooms from here, then upload room photos/panoramas so clients can preview before booking.</div></div>
-                        <div class="col-lg-5 d-grid gap-2"><a href="{{ route('hotel.rooms.create') }}" class="btn btn-primary">Add First Room</a><a href="{{ route('hotel.room_types.create') }}" class="btn btn-outline-dark">Create Room Type & Price</a></div>
+                        <div class="col-lg-5 d-grid gap-2"><a href="{{ route('hotel.rooms.create') }}" class="btn btn-primary">Add First Room</a></div>
                     </div>
                 @elseif($viewMode === 'grid')
                     <div class="room-card-grid">

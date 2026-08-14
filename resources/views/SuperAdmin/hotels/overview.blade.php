@@ -207,22 +207,21 @@
                     <div class="mt-2 small" style="color:#fff">Demo hotel data is active. Remove after review with <code style="color:#f7d777">php artisan hotel:demo-data --cleanup</code>.</div>
                 @endif
             </div>
-            <div class="d-flex flex-wrap gap-2 align-self-start">
-                <a href="{{ route('super_admin.hotels.index') }}" class="btn btn-light">Dashboard</a>
-                @if(Route::has('hotel.rooms.create'))<a href="{{ route('hotel.rooms.create') }}" class="btn btn-outline-light">Add Rooms</a>@endif
-                @if(Route::has('hotel.rate_plans.index'))<a href="{{ route('hotel.rate_plans.index') }}" class="btn btn-outline-light">Set Rates</a>@endif
-                <span class="btn btn-warning disabled text-dark">{{ strtoupper(str_replace('_',' ', $panel)) }}</span>
-            </div>
+            <form method="GET" action="{{ route('super_admin.hotels.index') }}" class="sa-panel-switcher align-self-start">
+                @if($selectedCompanyId)<input type="hidden" name="company_id" value="{{ $selectedCompanyId }}">@endif
+                @if($selectedServiceCenter !== 'all')<input type="hidden" name="service" value="{{ $selectedServiceCenter }}">@endif
+                <label class="form-label">Hotel View</label>
+                <select name="panel" class="form-select" onchange="this.form.submit()">
+                    @foreach($panels as $panelKey => $panelLabel)
+                        <option value="{{ $panelKey }}" {{ $panel === $panelKey ? 'selected' : '' }}>{{ $panelLabel }}</option>
+                    @endforeach
+                </select>
+            </form>
         </section>
-
-        <nav class="sa-panel sa-tabs">
-            @foreach($panels as $panelKey => $panelLabel)
-                <a class="{{ $panel === $panelKey ? 'active' : '' }}" href="{{ route('super_admin.hotels.index', $panelKey === 'overview' ? [] : ['panel' => $panelKey]) }}">{{ $panelLabel }}</a>
-            @endforeach
-        </nav>
 
         <form method="GET" action="{{ route('super_admin.hotels.index') }}" class="sa-filter d-flex flex-wrap gap-2 align-items-end">
             <input type="hidden" name="panel" value="{{ $panel }}">
+            @if($selectedServiceCenter !== 'all')<input type="hidden" name="service" value="{{ $selectedServiceCenter }}">@endif
             <div style="min-width:260px"><label class="form-label">Hotel Tenant</label><select name="company_id" class="form-control"><option value="">All Hotel Tenants</option>@foreach($hotelCompanies as $company)<option value="{{ $company->id }}" {{ (int) $selectedCompanyId === (int) $company->id ? 'selected' : '' }}>{{ $company->name }}</option>@endforeach</select></div>
             <button class="btn btn-primary">Apply Filter</button>
         </form>
@@ -273,7 +272,7 @@
 
             <div class="sa-dash-bottom">
                 <section class="sa-dash-panel">
-                    <div class="d-flex justify-content-between align-items-center gap-2"><h4>Today's Arrivals</h4><a href="{{ route('super_admin.hotels.index', ['panel' => 'check_in', 'company_id' => $selectedCompanyId]) }}" class="btn btn-sm btn-outline-primary">View all</a></div>
+                    <div class="d-flex justify-content-between align-items-center gap-2"><h4>Today's Arrivals</h4><span class="badge bg-light text-dark">Front office</span></div>
                     <div class="sa-ops-list">
                         @foreach($arrivalRows as $i)
                             <div class="sa-ops-row"><div><strong>{{ $todayReservations ? 'Reservation queue' : 'No live arrival yet' }}</strong><div class="small text-muted">{{ $todayReservations ? 'Guest arrival awaiting room flow' : 'Tenant arrivals will appear here' }}</div></div><span class="badge bg-primary">{{ $todayReservations ? 'Due' : 'Preview' }}</span></div>
@@ -282,7 +281,7 @@
                 </section>
 
                 <section class="sa-dash-panel">
-                    <div class="d-flex justify-content-between align-items-center gap-2"><h4>Departures</h4><a href="{{ route('super_admin.hotels.index', ['panel' => 'checkout', 'company_id' => $selectedCompanyId]) }}" class="btn btn-sm btn-outline-primary">Checkout</a></div>
+                    <div class="d-flex justify-content-between align-items-center gap-2"><h4>Departures</h4><span class="badge bg-light text-dark">Settlement</span></div>
                     <div class="sa-ops-list">
                         <div class="sa-ops-row"><div><strong>Checkout queue</strong><div class="small text-muted">Open stays ready for settlement</div></div><span class="badge bg-success">{{ $currentInHouseGuests }}</span></div>
                         <div class="sa-ops-row"><div><strong>Outstanding receivables</strong><div class="small text-muted">Guest balances needing follow-up</div></div><span class="badge bg-warning text-dark">{{ $money($outstandingReceivables) }}</span></div>
@@ -300,16 +299,16 @@
 
             <section class="sa-dash-panel">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                    <div><h4>Service Centre Monitor</h4><p>Quick access to hotel revenue centres without turning the dashboard into a directory.</p></div>
-                    <a href="{{ route('super_admin.hotels.index', ['panel' => 'services', 'company_id' => $selectedCompanyId]) }}" class="btn btn-outline-primary">Open all services</a>
+                    <div><h4>Service Centre Monitor</h4><p>Hotel revenue centres summarized for this dashboard.</p></div>
+                    <span class="badge bg-light text-dark">Service summary</span>
                 </div>
                 <div class="sa-dashboard-services">
                     @foreach($serviceCenters as $serviceKey => $serviceMeta)
                         @continue($serviceKey === 'all')
-                        <a class="sa-dashboard-service" href="{{ route('super_admin.hotels.index', ['panel' => 'services', 'service' => $serviceKey, 'company_id' => $selectedCompanyId]) }}">
+                        <div class="sa-dashboard-service">
                             <div><small>{{ strtoupper(str_replace('_',' ', $serviceKey)) }}</small><br><strong>{{ $serviceMeta['label'] }}</strong></div>
-                            <i class="fas fa-arrow-right"></i>
-                        </a>
+                            <span class="badge bg-light text-dark">Monitor</span>
+                        </div>
                     @endforeach
                 </div>
             </section>
@@ -342,7 +341,7 @@
             <div class="sa-pms-board">
                 <aside class="sa-pms-sidebar">
                     <small>ROOM BOARD</small><h4>Front Desk Mirror</h4><p>Room availability, occupancy, reserved rooms and housekeeping condition.</p>
-                    <div class="metric"><strong>{{ $availableRooms }}</strong><br>Available</div><div class="metric"><strong>{{ $occupiedRooms }}</strong><br>Occupied</div><div class="metric"><strong>{{ $reservedRooms }}</strong><br>Reserved</div><a href="{{ route('super_admin.hotels.index', ['panel'=>'room_calendar', 'company_id'=>$selectedCompanyId]) }}"><strong>Open Calendar</strong><br>Timeline view</a>
+                    <div class="metric"><strong>{{ $availableRooms }}</strong><br>Available</div><div class="metric"><strong>{{ $occupiedRooms }}</strong><br>Occupied</div><div class="metric"><strong>{{ $reservedRooms }}</strong><br>Reserved</div>
                 </aside>
                 <section class="sa-dash-panel">
                     <div class="sa-section-head"><div><h4>Room State Grid</h4><p>PMS room-rack style view across hotel tenants.</p></div><span class="badge bg-light text-dark">{{ $panelRows->count() }} rooms loaded</span></div>
@@ -362,7 +361,7 @@
             <section class="sa-dash-panel"><div class="sa-section-head"><div><small class="text-warning fw-semibold">ROOM CATALOGUE</small><h4>Room Types & Rate Classes</h4><p>Capacity, base rates and tenant room-type setup.</p></div><span class="btn btn-outline-primary disabled">{{ $panelRows->count() }} types</span></div><div class="sa-directory-grid">@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<article class="sa-directory-card"><span class="eyebrow">Room Type</span><h5>{{ $r['name'] ?? ('Type #'.($r['id'] ?? '-')) }}</h5><p class="text-muted">Company {{ $r['company_id'] ?? '-' }} - Property {{ $r['property_id'] ?? '-' }}</p><div class="d-flex justify-content-between"><span>Occupancy</span><strong>{{ $r['max_occupancy'] ?? '-' }}</strong></div><div class="d-flex justify-content-between"><span>Base Rate</span><strong>{{ $money($r['base_rate'] ?? 0) }}</strong></div></article>@empty<div class="sa-empty"><strong>No room types found yet.</strong><br>Room types are where admins set base prices, bed setup, capacity and default rates before adding rooms.</div>@endforelse</div></section>
         @elseif(in_array($panel, ['room_calendar','reservations'], true))
             <section class="sa-dash-panel">
-                <div class="sa-section-head"><div><small class="text-warning fw-semibold">{{ $panel === 'room_calendar' ? 'ROOM CALENDAR' : 'RESERVATION REGISTER' }}</small><h4>{{ $panel === 'room_calendar' ? 'Reservation Timeline' : 'Bookings Operations Board' }}</h4><p>Arrival, departure, room assignment, booking status and deposits.</p></div><a class="btn btn-outline-primary" href="{{ route('super_admin.hotels.index', ['panel'=>'check_in', 'company_id'=>$selectedCompanyId]) }}">Check-In Queue</a></div>
+                <div class="sa-section-head"><div><small class="text-warning fw-semibold">{{ $panel === 'room_calendar' ? 'ROOM CALENDAR' : 'RESERVATION REGISTER' }}</small><h4>{{ $panel === 'room_calendar' ? 'Reservation Timeline' : 'Bookings Operations Board' }}</h4><p>Arrival, departure, room assignment, booking status and deposits.</p></div><span class="badge bg-light text-dark">Reservation monitor</span></div>
                 <div class="sa-timeline"><table class="table table-bordered align-middle"><thead><tr><th>Reservation</th><th>Guest</th><th>Room</th><th>Arrival</th><th>Departure</th><th>Nights</th><th>Status</th><th>Deposit</th></tr></thead><tbody>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<tr><td><span class="sa-pill-event {{ ($r['status'] ?? '') === 'confirmed' ? 'green' : 'gold' }}">{{ $r['reservation_number'] ?? ('#'.($r['id'] ?? '-')) }}</span></td><td>Guest #{{ $r['customer_id'] ?? '-' }}</td><td>{{ $r['room_id'] ?? 'Unassigned' }}</td><td>{{ $r['arrival_date'] ?? '-' }}</td><td>{{ $r['departure_date'] ?? '-' }}</td><td>{{ $r['nights'] ?? '-' }}</td><td><span class="badge {{ $statusBadge($r['status'] ?? 'reserved') }}">{{ ucfirst(str_replace('_',' ', (string)($r['status'] ?? 'reserved'))) }}</span></td><td>{{ $money($r['deposit_received'] ?? 0) }}</td></tr>@empty<tr><td colspan="8"><div class="sa-empty"><strong>No reservations found yet.</strong><br>Use tenant Hotel > Availability or New Reservation to create bookings. This register will then show guest, room, arrival, departure, status and deposit.</div></td></tr>@endforelse</tbody></table></div>
             </section>
         @elseif($panel === 'availability')
@@ -371,14 +370,49 @@
             @php $deskTitle = $panel === 'check_in' ? 'Check-In Desk' : ($panel === 'checkout' ? 'Checkout Settlement Desk' : 'In-House Guest Desk'); @endphp
             <div class="sa-desk">
                 <section class="sa-dash-panel"><div class="sa-section-head"><div><small class="text-warning fw-semibold">FRONT OFFICE</small><h4>{{ $deskTitle }}</h4><p>Operational queue for arrivals, in-house guests and departures.</p></div><span class="btn btn-outline-primary disabled">{{ $panelRows->count() }} rows</span></div>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<div class="sa-desk-card {{ in_array(($r['status'] ?? ''), ['cancelled','failed'], true) ? 'danger' : 'good' }}"><div class="d-flex justify-content-between gap-2"><div><strong>{{ $r['reservation_number'] ?? ('Stay #'.($r['id'] ?? '-')) }}</strong><div class="text-muted small">Guest #{{ $r['customer_id'] ?? '-' }} - Room {{ $r['room_id'] ?? 'Unassigned' }}</div></div><span class="badge {{ $statusBadge($r['status'] ?? 'open') }}">{{ ucfirst(str_replace('_',' ', (string)($r['status'] ?? 'open'))) }}</span></div><div class="row mt-2 small"><div class="col">Arrival<br><strong>{{ $r['arrival_date'] ?? $r['checkin_at'] ?? '-' }}</strong></div><div class="col">Departure<br><strong>{{ $r['departure_date'] ?? $r['expected_checkout_at'] ?? '-' }}</strong></div><div class="col">Deposit<br><strong>{{ $money($r['deposit_received'] ?? 0) }}</strong></div></div></div>@empty<div class="sa-empty">No records in this desk yet. Tenant front-office actions will populate here.</div>@endforelse</section>
-                <aside class="sa-pms-sidebar"><small>QUEUE SUMMARY</small><h4>{{ $deskTitle }}</h4><p>Super Admin is read-only. Tenant users complete guest actions inside the hotel workspace.</p><a href="{{ route('super_admin.hotels.index', ['panel'=>'reservations', 'company_id'=>$selectedCompanyId]) }}"><strong>Reservations</strong><br>Booking register</a><a href="{{ route('super_admin.hotels.index', ['panel'=>'folios', 'company_id'=>$selectedCompanyId]) }}"><strong>Folios</strong><br>Guest billing</a></aside>
+                <aside class="sa-pms-sidebar"><small>QUEUE SUMMARY</small><h4>{{ $deskTitle }}</h4><p>Super Admin is read-only. Tenant users complete guest actions inside the hotel workspace.</p><div class="metric"><strong>{{ $panelRows->count() }}</strong><br>Rows loaded</div><div class="metric"><strong>{{ $money($outstandingReceivables) }}</strong><br>Receivables watched</div></aside>
             </div>
         @elseif($panel === 'guests')
             <section class="sa-dash-panel"><div class="sa-section-head"><div><small class="text-warning fw-semibold">GUEST CRM</small><h4>Guest Profiles</h4><p>Guest contact records linked to hotel reservations and stays.</p></div><span class="btn btn-outline-primary disabled">{{ $panelRows->count() }} guests</span></div><div class="sa-directory-grid">@forelse($panelRows as $row)@php $r=$rowArray($row); $name=$r['customer_name'] ?? $r['name'] ?? 'Guest'; @endphp<div class="sa-profile-card"><div class="sa-big-avatar">{{ strtoupper(substr((string)$name,0,1)) }}</div><div><h5 class="mb-1">{{ $name }}</h5><div class="text-muted small">{{ $r['phone'] ?? 'No phone' }} - {{ $r['email'] ?? 'No email' }}</div><span class="badge bg-light text-dark mt-2">Guest #{{ $r['id'] ?? '-' }}</span></div></div>@empty<div class="sa-empty">No guest profiles found yet. Hotel guest CRM will appear here.</div>@endforelse</div></section>
         @elseif($panel === 'services' || str_starts_with($panel, 'service_'))
-            <section class="sa-dash-panel"><div class="sa-section-head"><div><small class="text-warning fw-semibold">SERVICE CENTRES</small><h4>Restaurant, Bar, Spa, Gym & Hotel Extras</h4><p>Revenue-centre monitor for tenant folio/POS postings.</p></div><form method="GET" action="{{ route('super_admin.hotels.index') }}" class="d-flex gap-2"><input type="hidden" name="panel" value="services">@if($selectedCompanyId)<input type="hidden" name="company_id" value="{{ $selectedCompanyId }}">@endif<select name="service" class="form-control" onchange="this.form.submit()">@foreach($serviceCenters as $serviceKey => $serviceMeta)<option value="{{ $serviceKey }}" {{ $selectedServiceCenter === $serviceKey ? 'selected' : '' }}>{{ $serviceMeta['label'] }}</option>@endforeach</select></form></div><div class="sa-dashboard-services mb-3">@foreach($serviceCenters as $serviceKey => $serviceMeta)@continue($serviceKey === 'all')<a class="sa-dashboard-service {{ $selectedServiceCenter === $serviceKey ? 'border-warning' : '' }}" href="{{ route('super_admin.hotels.index', ['panel'=>'services','service'=>$serviceKey,'company_id'=>$selectedCompanyId]) }}"><div><small>{{ strtoupper(str_replace('_',' ', $serviceKey)) }}</small><br><strong>{{ $serviceMeta['label'] }}</strong></div><i class="fas fa-arrow-right"></i></a>@endforeach</div><div class="sa-timeline"><table class="table table-sm align-middle"><thead><tr><th>Posting</th><th>Company</th><th>Service</th><th>Type</th><th>Amount</th><th>Date</th></tr></thead><tbody>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<tr><td>{{ $r['description'] ?? $r['folio_number'] ?? ('#'.($r['id'] ?? '-')) }}</td><td>{{ $r['company_id'] ?? '-' }}</td><td><span class="badge bg-warning text-dark">{{ $r['service_code'] ?? $r['department'] ?? 'SERVICE' }}</span></td><td>{{ $r['type'] ?? $r['payment_method'] ?? '-' }}</td><td>{{ $money($r['amount'] ?? $r['total_amount'] ?? 0) }}</td><td>{{ $r['service_date'] ?? $r['created_at'] ?? $r['business_date'] ?? '-' }}</td></tr>@empty<tr><td colspan="6"><div class="sa-empty">No service centre postings found yet. Tenant restaurant, bar, spa, gym and laundry charges will appear here.</div></td></tr>@endforelse</tbody></table></div></section>
+            @php
+                $servicePanelKey = str_starts_with($panel, 'service_') ? str_replace('service_', '', $panel) : $selectedServiceCenter;
+                $visibleServices = $servicePanelKey === 'all'
+                    ? collect($serviceCenters)->except('all')
+                    : collect($serviceCenters)->only($servicePanelKey);
+                $serviceHeading = $servicePanelKey === 'all'
+                    ? 'Service Centre Register'
+                    : ($serviceCenters[$servicePanelKey]['label'] ?? $panelTitle);
+            @endphp
+            <section class="sa-dash-panel">
+                <div class="sa-section-head">
+                    <div>
+                        <small class="text-warning fw-semibold">SERVICE CENTRES</small>
+                        <h4>{{ $serviceHeading }}</h4>
+                        <p>Revenue-centre monitor for the selected hotel service only.</p>
+                    </div>
+                    <form method="GET" action="{{ route('super_admin.hotels.index') }}" class="sa-inline-select">
+                        <input type="hidden" name="panel" value="services">
+                        @if($selectedCompanyId)<input type="hidden" name="company_id" value="{{ $selectedCompanyId }}">@endif
+                        <select name="service" class="form-select" onchange="this.form.submit()">
+                            @foreach($serviceCenters as $serviceKey => $serviceMeta)
+                                <option value="{{ $serviceKey }}" {{ $selectedServiceCenter === $serviceKey ? 'selected' : '' }}>{{ $serviceMeta['label'] }}</option>
+                            @endforeach
+                        </select>
+                    </form>
+                </div>
+                <div class="sa-dashboard-services mb-3">
+                    @foreach($visibleServices as $serviceKey => $serviceMeta)
+                        <div class="sa-dashboard-service active">
+                            <div><small>{{ strtoupper(str_replace('_',' ', $serviceKey)) }}</small><br><strong>{{ $serviceMeta['label'] }}</strong></div>
+                            <span class="badge bg-warning text-dark">{{ $panelRows->count() }} postings</span>
+                        </div>
+                    @endforeach
+                </div>
+                <div class="sa-timeline"><table class="table table-sm align-middle"><thead><tr><th>Posting</th><th>Company</th><th>Service</th><th>Type</th><th>Amount</th><th>Date</th></tr></thead><tbody>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<tr><td>{{ $r['description'] ?? $r['folio_number'] ?? ('#'.($r['id'] ?? '-')) }}</td><td>{{ $r['company_id'] ?? '-' }}</td><td><span class="badge bg-warning text-dark">{{ $r['service_code'] ?? $r['department'] ?? strtoupper(str_replace('_', ' ', $servicePanelKey)) }}</span></td><td>{{ $r['type'] ?? $r['payment_method'] ?? '-' }}</td><td>{{ $money($r['amount'] ?? $r['total_amount'] ?? 0) }}</td><td>{{ $r['service_date'] ?? $r['created_at'] ?? $r['business_date'] ?? '-' }}</td></tr>@empty<tr><td colspan="6"><div class="sa-empty">No {{ strtolower($serviceHeading) }} postings found yet. Tenant charges for this service will appear here.</div></td></tr>@endforelse</tbody></table></div>
+            </section>
         @elseif(in_array($panel, ['folios','deposits'], true))
-            <div class="sa-cashier-grid"><aside class="sa-pms-sidebar"><small>{{ strtoupper($panelTitle) }}</small><h4>Cashier Register</h4><p>Guest balances, deposits and folio exposure across hotel tenants.</p><div class="metric"><strong>{{ $money($outstandingReceivables) }}</strong><br>Outstanding receivables</div><a href="{{ route('super_admin.hotels.index', ['panel'=>'services','company_id'=>$selectedCompanyId]) }}"><strong>Service charges</strong><br>Audit extras</a></aside><section class="sa-dash-panel"><div class="sa-section-head"><div><h4>Folio & Deposit Ledger</h4><p>Read-only platform cashier activity.</p></div><span class="badge bg-light text-dark">{{ $panelRows->count() }} loaded</span></div><div class="sa-timeline"><table class="table table-sm align-middle"><thead><tr><th>Record</th><th>Company</th><th>Guest/Stay</th><th>Status/Type</th><th>Amount</th><th>Date</th></tr></thead><tbody>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<tr><td><strong>{{ $r['folio_number'] ?? $r['reservation_number'] ?? ('#'.($r['id'] ?? '-')) }}</strong></td><td>{{ $r['company_id'] ?? '-' }}</td><td>{{ $r['customer_id'] ?? $r['stay_id'] ?? '-' }}</td><td><span class="badge {{ $statusBadge($r['status'] ?? $r['type'] ?? 'open') }}">{{ ucfirst(str_replace('_',' ', (string)($r['status'] ?? $r['type'] ?? 'record'))) }}</span></td><td><strong>{{ $money($r['balance'] ?? $r['amount'] ?? $r['deposit_received'] ?? $r['total_amount'] ?? 0) }}</strong></td><td>{{ $r['created_at'] ?? $r['service_date'] ?? $r['business_date'] ?? '-' }}</td></tr>@empty<tr><td colspan="6"><div class="sa-empty">No {{ strtolower($panelTitle) }} found yet.</div></td></tr>@endforelse</tbody></table></div></section><aside class="sa-dash-panel"><h4>Payment Actions</h4><p>Tenant workspace handles live cashier operations.</p><div class="sa-payment-pad"><div>Payment</div><div>Deposit</div><div>Transfer</div><div>Print Folio</div></div></aside></div>
+            <div class="sa-cashier-grid"><aside class="sa-pms-sidebar"><small>{{ strtoupper($panelTitle) }}</small><h4>Cashier Register</h4><p>Guest balances, deposits and folio exposure across hotel tenants.</p><div class="metric"><strong>{{ $money($outstandingReceivables) }}</strong><br>Outstanding receivables</div></aside><section class="sa-dash-panel"><div class="sa-section-head"><div><h4>Folio & Deposit Ledger</h4><p>Read-only platform cashier activity.</p></div><span class="badge bg-light text-dark">{{ $panelRows->count() }} loaded</span></div><div class="sa-timeline"><table class="table table-sm align-middle"><thead><tr><th>Record</th><th>Company</th><th>Guest/Stay</th><th>Status/Type</th><th>Amount</th><th>Date</th></tr></thead><tbody>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<tr><td><strong>{{ $r['folio_number'] ?? $r['reservation_number'] ?? ('#'.($r['id'] ?? '-')) }}</strong></td><td>{{ $r['company_id'] ?? '-' }}</td><td>{{ $r['customer_id'] ?? $r['stay_id'] ?? '-' }}</td><td><span class="badge {{ $statusBadge($r['status'] ?? $r['type'] ?? 'open') }}">{{ ucfirst(str_replace('_',' ', (string)($r['status'] ?? $r['type'] ?? 'record'))) }}</span></td><td><strong>{{ $money($r['balance'] ?? $r['amount'] ?? $r['deposit_received'] ?? $r['total_amount'] ?? 0) }}</strong></td><td>{{ $r['created_at'] ?? $r['service_date'] ?? $r['business_date'] ?? '-' }}</td></tr>@empty<tr><td colspan="6"><div class="sa-empty">No {{ strtolower($panelTitle) }} found yet.</div></td></tr>@endforelse</tbody></table></div></section><aside class="sa-dash-panel"><h4>Payment Actions</h4><p>Tenant workspace handles live cashier operations.</p><div class="sa-payment-pad"><div>Payment</div><div>Deposit</div><div>Transfer</div><div>Print Folio</div></div></aside></div>
         @elseif($panel === 'maintenance')
             <section class="sa-dash-panel"><div class="sa-section-head"><div><small class="text-warning fw-semibold">ENGINEERING</small><h4>Maintenance Desk</h4><p>Room issues, technician queue and unavailable-room risk.</p></div><span class="btn btn-outline-primary disabled">{{ $panelRows->count() }} tickets</span></div>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<div class="sa-desk-card {{ in_array(($r['severity'] ?? $r['status'] ?? ''), ['high','critical','failed'], true) ? 'danger' : 'warn' }}"><div class="d-flex justify-content-between"><div><strong>{{ $r['ticket_no'] ?? ('Ticket #'.($r['id'] ?? '-')) }}</strong><div class="text-muted small">Room {{ $r['room_id'] ?? '-' }} - Company {{ $r['company_id'] ?? '-' }}</div></div><span class="badge {{ $statusBadge($r['severity'] ?? 'open') }}">{{ ucfirst((string)($r['severity'] ?? 'normal')) }}</span></div><div class="mt-2">{{ $r['title'] ?? $r['description'] ?? 'Maintenance record' }}</div></div>@empty<div class="sa-empty">No maintenance tickets found yet.</div>@endforelse</section>
         @elseif($panel === 'night_audits')
@@ -470,7 +504,7 @@
                 </div>
             </section>
         @elseif($panel === 'reports')
-            <section class="sa-report-hub"><div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3"><div><small class="text-warning fw-semibold">HOTEL REPORTS · SUPER ADMIN</small><h4 class="mb-1">Platform PMS Reports Centre</h4><p class="mb-0">Distinct report destinations for reservations, cashier, room readiness, engineering and audit oversight.</p></div><span class="btn btn-warning disabled text-dark">Enterprise Monitor</span></div><div class="sa-report-grid"><a class="sa-report" href="{{ route('super_admin.hotels.index', ['panel'=>'reservations']) }}"><span>Front Office</span><h4>Reservation Register</h4><p>All hotel reservation activity by tenant.</p></a><a class="sa-report" href="{{ route('super_admin.hotels.index', ['panel'=>'folios']) }}"><span>Finance</span><h4>Folio Receivables</h4><p>Guest balances and folio exposure.</p></a><a class="sa-report" href="{{ route('super_admin.hotels.index', ['panel'=>'services']) }}"><span>Services</span><h4>Service Centers</h4><p>Restaurant, bar, spa, gym, room service and events.</p></a><a class="sa-report" href="{{ route('super_admin.hotels.index', ['panel'=>'housekeeping']) }}"><span>Rooms</span><h4>Housekeeping</h4><p>Room readiness workload.</p></a><a class="sa-report" href="{{ route('super_admin.hotels.index', ['panel'=>'maintenance']) }}"><span>Engineering</span><h4>Maintenance</h4><p>Tickets and unavailable rooms.</p></a><a class="sa-report" href="{{ route('super_admin.hotels.index', ['panel'=>'night_audits']) }}"><span>Audit</span><h4>Night Audits</h4><p>Business day close history.</p></a></div></section>
+            <section class="sa-report-hub"><div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3"><div><small class="text-warning fw-semibold">HOTEL REPORTS · SUPER ADMIN</small><h4 class="mb-1">Platform PMS Reports Centre</h4><p class="mb-0">Distinct report summaries for reservations, cashier, room readiness, engineering and audit oversight.</p></div><span class="btn btn-warning disabled text-dark">Enterprise Monitor</span></div><div class="sa-report-grid"><div class="sa-report"><span>Front Office</span><h4>Reservation Register</h4><p>All hotel reservation activity by tenant.</p></div><div class="sa-report"><span>Finance</span><h4>Folio Receivables</h4><p>Guest balances and folio exposure.</p></div><div class="sa-report"><span>Services</span><h4>Service Centers</h4><p>Restaurant, bar, spa, gym, room service and events.</p></div><div class="sa-report"><span>Rooms</span><h4>Housekeeping</h4><p>Room readiness workload.</p></div><div class="sa-report"><span>Engineering</span><h4>Maintenance</h4><p>Tickets and unavailable rooms.</p></div><div class="sa-report"><span>Audit</span><h4>Night Audits</h4><p>Business day close history.</p></div></div></section>
         @elseif($panel === 'settings')
             <section class="sa-health">@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<div class="sa-health-row"><div><strong>{{ str_replace('_',' ', $r['setting'] ?? 'Setting') }}</strong><div class="small text-muted">Tenant PMS dependency</div></div><span class="badge {{ ($r['status'] ?? '') === 'available' ? 'bg-success' : 'bg-danger' }}">{{ ucfirst((string)($r['status'] ?? 'missing')) }}</span></div>@empty<div class="sa-empty">No hotel settings found.</div>@endforelse</section>
         @else
