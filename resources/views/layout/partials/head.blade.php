@@ -18,6 +18,10 @@
 
 <link rel="stylesheet" href="{{ asset('assets/plugins/feather/feather.css') }}">
 
+@if (file_exists(public_path('assets/plugins/material/materialdesignicons.css')))
+    <link rel="stylesheet" href="{{ asset('assets/plugins/material/materialdesignicons.css') }}">
+@endif
+
 <link rel="stylesheet" href="{{ asset('assets/plugins/select2/css/select2.min.css') }}">
 
 @unless(Route::is(['index-two', 'saas-login', 'saas-register', 'forgot-password', 'password.reset']))
@@ -201,6 +205,43 @@
     .feather-arrow-left:before { content: "\f060"; }
     .feather-arrow-left-circle:before { content: "\f0a8"; }
 
+    .bi {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .bi::before {
+        font-family: "Font Awesome 6 Free" !important;
+        font-weight: 900 !important;
+        font-style: normal;
+        line-height: 1;
+    }
+
+    .bi-printer::before { content: "\f02f"; }
+    .bi-envelope::before { content: "\f0e0"; }
+    .bi-envelope-check::before { content: "\f658"; }
+    .bi-x-lg::before { content: "\f00d"; }
+
+    .mdi-account-eye-outline::before,
+    .mdi-account-tie::before,
+    .mdi-cash-check::before,
+    .mdi-circle-medium::before,
+    .mdi-credit-card-outline::before,
+    .mdi-shield-check::before {
+        font-family: "Font Awesome 6 Free" !important;
+        font-weight: 900 !important;
+        font-style: normal;
+        line-height: 1;
+    }
+
+    .mdi-account-eye-outline::before { content: "\f06e"; }
+    .mdi-account-tie::before { content: "\f508"; }
+    .mdi-cash-check::before { content: "\f53d"; }
+    .mdi-circle-medium::before { content: "\f111"; }
+    .mdi-credit-card-outline::before { content: "\f09d"; }
+    .mdi-shield-check::before { content: "\f3ed"; }
+
     .fa,
     .fas,
     .far,
@@ -224,5 +265,99 @@
     .fab {
         font-family: "Font Awesome 6 Brands" !important;
         font-weight: 400;
+    }
+
+    .btn-icon,
+    .btn-icon-text,
+    .btn-action-icon,
+    .action-icon,
+    .table-action-btn,
+    button.btn-action-icon,
+    a.btn-action-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .35rem;
+    }
+
+    .btn-icon i,
+    .btn-icon svg,
+    .btn-icon-text i,
+    .btn-icon-text svg,
+    .btn-action-icon i,
+    .btn-action-icon svg,
+    .action-icon i,
+    .action-icon svg,
+    .table-action-btn i,
+    .table-action-btn svg,
+    .dropdown-toggle.btn i,
+    .dropdown-toggle.btn svg {
+        color: #d7a928 !important;
+        fill: currentColor !important;
+        stroke: currentColor !important;
+        -webkit-text-fill-color: #d7a928 !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
+    .btn-primary i,
+    .btn-primary svg,
+    .btn-success i,
+    .btn-success svg,
+    .btn-danger i,
+    .btn-danger svg,
+    .btn-warning i,
+    .btn-warning svg,
+    .btn-dark i,
+    .btn-dark svg,
+    .btn-info i,
+    .btn-info svg,
+    .btn-inverse-success i,
+    .btn-inverse-success svg,
+    .btn-inverse-danger i,
+    .btn-inverse-danger svg {
+        color: #ffffff !important;
+        fill: currentColor !important;
+        stroke: currentColor !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
+    .btn-action-icon,
+    .action-icon {
+        min-width: 30px;
+        min-height: 30px;
+    }
+
+    .btn-action-icon:empty::before,
+    .action-icon:empty::before,
+    .table-action-btn:empty::before,
+    button.dropdown-toggle:empty::before,
+    a.dropdown-toggle:empty::before {
+        content: "\f142";
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        color: #d7a928;
+        -webkit-text-fill-color: #d7a928;
+        line-height: 1;
+    }
+
+    .dropdown-action .btn.dropdown-toggle:not(:has(i, svg))::before,
+    .btn-action-icon.dropdown-toggle:not(:has(i, svg))::before,
+    .action-icon.dropdown-toggle:not(:has(i, svg))::before {
+        content: "\f142";
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        color: #d7a928;
+        -webkit-text-fill-color: #d7a928;
+        line-height: 1;
+        margin-right: .3rem;
+    }
+
+    .dropdown-action .btn-primary.dropdown-toggle:not(:has(i, svg))::before,
+    .dropdown-action .btn-success.dropdown-toggle:not(:has(i, svg))::before,
+    .dropdown-action .btn-danger.dropdown-toggle:not(:has(i, svg))::before,
+    .dropdown-action .btn-dark.dropdown-toggle:not(:has(i, svg))::before {
+        color: #ffffff;
+        -webkit-text-fill-color: #ffffff;
     }
 </style>

@@ -2184,7 +2184,7 @@
             'print', 'receipt', 'pay-online', 'mail-pay-invoice', 'checkout',
             'return', 'password', 'subscription', 'saas/checkout'
         ];
-        const hardReloadPrefixes = ['/pos', '/hotel/restaurant-pos'];
+        const hardReloadPrefixes = ['/pos', '/hotel/restaurant-pos', '/users', '/roles'];
         const skipExtensions = /\.(?:pdf|csv|xlsx?|zip|rar|png|jpe?g|gif|webp|svg|mp4|mov|avi|webm)(?:$|[?#])/i;
         const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
         let navigating = false;
@@ -2252,6 +2252,35 @@
             }
         }
 
+        function syncHotelHead(doc) {
+            const hotelSelector = [
+                'body.hotel-workspace',
+                '.sa-hotel',
+                '.spb-hotel-enterprise',
+                '.hotel-hero',
+                '.hotel-kpi-grid',
+                '.hotel-suite',
+                '.hotel-service-centers'
+            ];
+            const isHotelDoc = doc.body && doc.body.classList.contains('hotel-workspace');
+
+            document.head.querySelectorAll('[data-spb-hotel-fast-head="true"]').forEach((node) => node.remove());
+
+            if (!isHotelDoc) return;
+
+            doc.head.querySelectorAll('link[rel="stylesheet"], style').forEach((node) => {
+                const href = node.getAttribute('href') || '';
+                const text = node.textContent || '';
+                const isHotelAsset = href.includes('hotel-keto-skin.css') || hotelSelector.some((selector) => text.includes(selector));
+
+                if (!isHotelAsset) return;
+
+                const clone = node.cloneNode(true);
+                clone.setAttribute('data-spb-hotel-fast-head', 'true');
+                document.head.appendChild(clone);
+            });
+        }
+
         function setLoading(active) {
             document.documentElement.classList.toggle('spb-fast-loading', active);
         }
@@ -2281,6 +2310,7 @@
 
                 document.title = doc.title || document.title;
                 document.body.className = doc.body.className;
+                syncHotelHead(doc);
                 current.replaceWith(incoming);
                 syncSidebar(doc);
                 runInlineScripts(document.querySelector('#spb-page-content'));

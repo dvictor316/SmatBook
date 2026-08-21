@@ -1058,6 +1058,249 @@ body.hotel-workspace .hotel-service-card {
     min-height: 132px;
 }
 
+body.hotel-workspace .spb-hotel-enterprise {
+    background:
+        linear-gradient(rgba(237, 243, 249, .96), rgba(237, 243, 249, .98)),
+        url("../img/hotel-keto/gallery2.jpg") center top / cover fixed;
+    color: var(--hotel-ink);
+}
+
+body.hotel-workspace .hotel-hero-grid {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(320px, .8fr);
+    gap: 18px;
+    align-items: end;
+}
+
+body.hotel-workspace .hotel-hero h2 {
+    margin: 4px 0 8px;
+    color: #ffffff;
+    font-size: clamp(25px, 2.6vw, 34px);
+    font-weight: 900;
+    line-height: 1.1;
+}
+
+body.hotel-workspace .hotel-hero p {
+    color: #d9eaff;
+}
+
+body.hotel-workspace .hotel-command-actions,
+body.hotel-workspace .hotel-kpi-grid,
+body.hotel-workspace .hotel-service-centers,
+body.hotel-workspace .hotel-bottom {
+    display: grid;
+    gap: 14px;
+}
+
+body.hotel-workspace .hotel-command-actions {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+body.hotel-workspace .hotel-kpi-grid,
+body.hotel-workspace .hotel-service-centers {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-bottom: 18px;
+}
+
+body.hotel-workspace .hotel-bottom {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+body.hotel-workspace .hotel-suite {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr) 350px;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+body.hotel-workspace .hotel-board {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(340px, .75fr);
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+body.hotel-workspace .hotel-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 14px;
+    margin-bottom: 18px;
+}
+
+body.hotel-workspace .hotel-kpi {
+    position: relative;
+    overflow: hidden;
+    padding: 17px;
+    color: var(--hotel-ink);
+    text-decoration: none;
+}
+
+body.hotel-workspace .hotel-kpi span,
+body.hotel-workspace .hotel-kpi small {
+    color: var(--hotel-muted);
+}
+
+body.hotel-workspace .hotel-kpi span {
+    display: block;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+body.hotel-workspace .hotel-kpi strong {
+    display: block;
+    margin: 10px 0 8px;
+    color: var(--hotel-ink);
+    font-size: clamp(25px, 2.7vw, 34px);
+    line-height: 1;
+}
+
+body.hotel-workspace .hotel-left-nav h5,
+body.hotel-workspace .hotel-left-nav a,
+body.hotel-workspace .hotel-left-nav strong {
+    color: #ffffff;
+}
+
+body.hotel-workspace .hotel-left-nav a {
+    display: block;
+    margin-bottom: 8px;
+    padding: 12px 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 8px;
+    color: #dbeafe;
+    text-decoration: none;
+}
+
+body.hotel-workspace .hotel-desk-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 16px;
+    border-bottom: 1px solid #e6edf5;
+}
+
+body.hotel-workspace .hotel-desk-list {
+    padding: 0 16px 12px;
+}
+
+body.hotel-workspace .hotel-res-row {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr) 120px 120px 110px;
+    gap: 12px;
+    align-items: center;
+    padding: 13px 0;
+    border-bottom: 1px solid #edf2f7;
+}
+
+body.hotel-workspace .hotel-res-row:last-child {
+    border-bottom: 0;
+}
+
+body.hotel-workspace .hotel-res-type,
+body.hotel-workspace .hotel-room-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    font-weight: 800;
+}
+
+body.hotel-workspace .hotel-res-type {
+    padding: 7px 10px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 12px;
+}
+
+body.hotel-workspace .hotel-res-type.departure {
+    background: #fff7ed;
+    color: #9a4b06;
+}
+
+body.hotel-workspace .hotel-room-pill {
+    gap: 6px;
+    padding: 6px 10px;
+    border: 1px solid #e3ebf3;
+    background: #f8fafc;
+}
+
+body.hotel-workspace .hotel-alert,
+body.hotel-workspace .hotel-status-row,
+body.hotel-workspace .hotel-finance-row,
+body.hotel-workspace .hotel-source-chip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+body.hotel-workspace .hotel-alert {
+    margin-bottom: 10px;
+    padding: 12px;
+    border: 1px solid #d9e2ee;
+    border-radius: 8px;
+    background: #f8fafc;
+    color: var(--hotel-ink);
+    text-decoration: none;
+}
+
+body.hotel-workspace .hotel-alert[data-tone="danger"] {
+    background: #fff1f2;
+    border-color: #fecaca;
+    color: #8a1010;
+}
+
+body.hotel-workspace .hotel-alert[data-tone="warning"] {
+    background: #fff7ed;
+    border-color: #fed7aa;
+    color: #8a4b08;
+}
+
+body.hotel-workspace .hotel-alert[data-tone="info"] {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+}
+
+body.hotel-workspace .hotel-chart-card,
+body.hotel-workspace .hotel-room-state,
+body.hotel-workspace .hotel-bottom .hotel-panel {
+    padding: 16px;
+}
+
+body.hotel-workspace .hotel-status-row,
+body.hotel-workspace .hotel-finance-row,
+body.hotel-workspace .hotel-source-chip {
+    padding: 10px 0;
+    border-bottom: 1px solid #edf2f7;
+    color: var(--hotel-ink);
+    text-decoration: none;
+}
+
+body.hotel-workspace .hotel-status-row:last-child,
+body.hotel-workspace .hotel-finance-row:last-child,
+body.hotel-workspace .hotel-source-chip:last-child {
+    border-bottom: 0;
+}
+
+body.hotel-workspace .hotel-status-dot {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background: var(--hotel-blue);
+}
+
 body.hotel-workspace .hotel-kpi:before {
     background: var(--hotel-gold);
 }
@@ -1279,6 +1522,43 @@ body.hotel-workspace .sticky-top.card {
     body.hotel-workspace .sa-report-hub {
         min-height: auto;
     }
+
+    body.hotel-workspace .hotel-suite,
+    body.hotel-workspace .hotel-board {
+        grid-template-columns: 1fr;
+    }
+
+    body.hotel-workspace .hotel-left-nav {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    body.hotel-workspace .hotel-left-nav h5 {
+        grid-column: 1 / -1;
+    }
+
+    body.hotel-workspace .hotel-left-nav a {
+        margin-bottom: 0;
+    }
+}
+
+@media (max-width: 1199.98px) {
+    body.hotel-workspace .hotel-hero-grid,
+    body.hotel-workspace .hotel-kpi-grid,
+    body.hotel-workspace .hotel-service-centers,
+    body.hotel-workspace .hotel-bottom {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body.hotel-workspace .hotel-command-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body.hotel-workspace .hotel-res-row {
+        grid-template-columns: 1fr;
+        gap: 7px;
+    }
 }
 
 @media (max-width: 767.98px) {
@@ -1380,5 +1660,28 @@ body.hotel-workspace .sticky-top.card {
 
     body.hotel-workspace .ew-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body.hotel-workspace .hotel-hero-grid,
+    body.hotel-workspace .hotel-kpi-grid,
+    body.hotel-workspace .hotel-service-centers,
+    body.hotel-workspace .hotel-bottom,
+    body.hotel-workspace .hotel-command-actions,
+    body.hotel-workspace .hotel-left-nav {
+        grid-template-columns: 1fr;
+    }
+
+    body.hotel-workspace .hotel-filter {
+        display: grid;
+        grid-template-columns: 1fr;
+        justify-content: stretch;
+        align-items: stretch;
+    }
+
+    body.hotel-workspace .hotel-filter .form-select,
+    body.hotel-workspace .hotel-filter .form-control,
+    body.hotel-workspace .hotel-filter .btn {
+        max-width: none !important;
+        width: 100%;
     }
 }

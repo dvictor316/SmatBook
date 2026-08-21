@@ -732,7 +732,7 @@ class UserController extends Controller
 
     private function usersIndexRoute(): string
     {
-        if (app('router')->has('super_admin.users.index')) {
+        if (request()->routeIs('super_admin.*') && app('router')->has('super_admin.users.index')) {
             return 'super_admin.users.index';
         }
 

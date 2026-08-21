@@ -792,7 +792,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     });
 
     // User Management
-    Route::middleware('role:super_admin,administrator')->group(function () {
+    Route::middleware(['plan.access:basic,professional,enterprise', 'role:super_admin,administrator'])->group(function () {
         Route::resource('users', UserController::class);
         Route::post('/users/{id}/activate', [UserController::class, 'activate'])->name('users.activate');
         Route::post('/users/{id}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
@@ -801,7 +801,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     });
 
     // Roles & Permissions (available to all subscribed plans)
-    Route::middleware('role:super_admin,administrator')->controller(RoleController::class)->prefix('roles')->name('roles.')->group(function () {
+    Route::middleware(['plan.access:basic,professional,enterprise', 'role:super_admin,administrator'])->controller(RoleController::class)->prefix('roles')->name('roles.')->group(function () {
         Route::get('/permission', 'index')->name('index');
         Route::post('/store', 'store')->name('store');
         Route::put('/update/{id}', 'update')->name('update');

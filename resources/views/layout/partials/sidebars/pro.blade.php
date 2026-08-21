@@ -157,9 +157,12 @@
                     </ul>
                 </li>
 
-                <li class="submenu {{ request()->routeIs('branches.index') || Request::is('settings*', 'roles*', 'activity-log*', 'audit*', 'profile*') ? 'active subdrop' : '' }}">
+                <li class="submenu {{ request()->routeIs('branches.index') || Request::is('users*', 'settings*', 'roles*', 'activity-log*', 'audit*', 'profile*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-settings"></i><span>Settings</span><span class="menu-arrow"></span></a>
                     <ul>
+                        @if(Route::has('users.index'))
+                            <li><a href="{{ route('users.index') }}">Users</a></li>
+                        @endif
                         <li><a href="{{ route('branches.index') }}">Branches</a></li>
                         <li><a href="{{ route('settings.index') }}">Settings</a></li>
                         <li><a href="{{ route('roles.index') }}">Roles & Permission</a></li>
