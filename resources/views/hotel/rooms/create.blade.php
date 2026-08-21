@@ -49,8 +49,40 @@
             <section class="room-form-section">
                 <div class="room-form-section-title"><div><h6>Photos & Guest Preview</h6><span>Upload clean room visuals for room cards and client-facing previews.</span></div></div>
                 <div class="row g-4">
-                    <div class="col-md-6"><div class="room-upload-box"><label class="form-label">Room Photo</label><input type="file" name="room_image" class="form-control" accept="image/*"><small class="text-muted d-block mt-2">Used on room cards and booking previews.</small></div></div>
-                    <div class="col-md-6"><div class="room-upload-box"><label class="form-label">Panorama / Wide Preview Image</label><input type="file" name="panorama_image" class="form-control" accept="image/*"><small class="text-muted d-block mt-2">Use a wide room image so clients can preview the room without entering.</small></div></div>
+                    <div class="col-md-6">
+                        <div class="room-media-uploader">
+                            <div class="room-media-uploader__preview" data-room-image-preview="room_image">
+                                <span class="room-media-uploader__tag">Room card image</span>
+                                <div class="room-media-uploader__empty">
+                                    <i class="fas fa-image"></i>
+                                    <strong>Upload room photo</strong>
+                                    <span class="d-block mt-1">This appears on the room card and can be used as preview fallback.</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="form-label">Room Photo</label>
+                                <input type="file" name="room_image" class="form-control" accept="image/*" data-room-image-input="room_image">
+                                <small class="d-block mt-2">Best for normal room thumbnails, booking cards and room list previews.</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="room-media-uploader">
+                            <div class="room-media-uploader__preview is-wide" data-room-image-preview="panorama_image">
+                                <span class="room-media-uploader__tag">Panorama viewer image</span>
+                                <div class="room-media-uploader__empty">
+                                    <i class="fas fa-vr-cardboard"></i>
+                                    <strong>Upload wide panorama</strong>
+                                    <span class="d-block mt-1">This is what customers see in the large preview display.</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="form-label">Panorama / Wide Preview Image</label>
+                                <input type="file" name="panorama_image" class="form-control" accept="image/*" data-room-image-input="panorama_image">
+                                <small class="d-block mt-2">Use a wide landscape image so clients can inspect the room without entering.</small>
+                            </div>
+                        </div>
+                    </div>
                     <div class="col-12"><label class="form-label">Room Notes</label><textarea name="notes" class="form-control" rows="3" placeholder="Amenities, view, policy notes, special features"></textarea></div>
                     <div class="col-12"><div class="room-media-hint"><strong>Where prices are set:</strong> base room prices are configured under Room Types. Date/season/service pricing is configured under Rate Plans. This room override is optional for special rooms.</div></div>
                 </div>
@@ -60,4 +92,20 @@
         </div></div>
     </form>
 </div></div></div>
+@endsection
+
+@section('script')
+<script>
+document.querySelectorAll('[data-room-image-input]').forEach((input) => {
+    input.addEventListener('change', () => {
+        const key = input.dataset.roomImageInput;
+        const preview = document.querySelector(`[data-room-image-preview="${key}"]`);
+        const file = input.files && input.files[0];
+        if (!preview || !file || !file.type.startsWith('image/')) return;
+
+        const url = URL.createObjectURL(file);
+        preview.innerHTML = `<span class="room-media-uploader__tag">${key === 'panorama_image' ? 'Panorama viewer image' : 'Room card image'}</span><img src="${url}" alt="Selected room image preview">`;
+    });
+});
+</script>
 @endsection

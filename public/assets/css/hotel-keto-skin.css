@@ -605,35 +605,45 @@ body.hotel-workspace .hotel-preview-modal .modal-content {
     box-shadow: 0 34px 90px rgba(3, 10, 24, .44);
 }
 
-body.hotel-workspace .hotel-preview-header {
+body.hotel-workspace .hotel-preview-header,
+.hotel-preview-modal .hotel-preview-header {
     align-items: center;
     gap: 14px;
     padding: 16px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, .12);
+    border-bottom: 1px solid rgba(255, 255, 255, .12) !important;
     background:
         linear-gradient(90deg, rgba(7, 29, 53, .98), rgba(20, 55, 86, .94)),
-        url("../img/hotel-keto/room4.jpg") center / cover;
+        url("../img/hotel-keto/room4.jpg") center / cover !important;
 }
 
 body.hotel-workspace .hotel-preview-header h5,
 body.hotel-workspace .hotel-preview-header span,
-body.hotel-workspace .hotel-preview-header small {
+.hotel-preview-modal .hotel-preview-header h5,
+.hotel-preview-modal .hotel-preview-header span,
+.hotel-preview-modal .hotel-preview-header small {
     color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    opacity: 1 !important;
 }
 
-body.hotel-workspace .hotel-preview-header h5 {
+body.hotel-workspace .hotel-preview-header h5,
+.hotel-preview-modal .hotel-preview-header h5 {
     margin: 2px 0 3px;
     font-size: clamp(20px, 2vw, 28px);
     font-weight: 900;
 }
 
-body.hotel-workspace .hotel-preview-header span {
+body.hotel-workspace .hotel-preview-header span,
+.hotel-preview-modal .hotel-preview-header span {
     display: block;
-    color: #c8d7e8 !important;
+    color: #dbeafe !important;
+    -webkit-text-fill-color: #dbeafe !important;
     font-size: 13px;
+    font-weight: 700;
 }
 
-body.hotel-workspace .hotel-preview-eyebrow {
+body.hotel-workspace .hotel-preview-eyebrow,
+.hotel-preview-modal .hotel-preview-eyebrow {
     display: inline-flex;
     width: max-content;
     padding: 5px 9px;
@@ -645,6 +655,24 @@ body.hotel-workspace .hotel-preview-eyebrow {
     font-weight: 900;
     letter-spacing: .12em;
     text-transform: uppercase;
+}
+
+body.hotel-workspace .hotel-preview-header .btn-outline-light,
+.hotel-preview-modal .hotel-preview-header .btn-outline-light {
+    background: #ffffff !important;
+    border-color: #ffffff !important;
+    color: #102032 !important;
+    -webkit-text-fill-color: #102032 !important;
+    font-weight: 900;
+}
+
+body.hotel-workspace .hotel-preview-header .btn-close,
+.hotel-preview-modal .hotel-preview-header .btn-close {
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, .18) !important;
+    opacity: 1;
 }
 
 body.hotel-workspace .hotel-preview-modal .modal-body {
@@ -771,6 +799,83 @@ body.hotel-workspace .hotel-preview-viewer.is-empty .sa-room-preview-empty {
     border-radius: 12px;
     background: rgba(255, 255, 255, .08);
     backdrop-filter: blur(10px);
+}
+
+body.hotel-workspace .room-media-uploader {
+    display: grid;
+    gap: 12px;
+    height: 100%;
+    padding: 14px;
+    border: 1px solid #d8e2ee;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 10px 24px rgba(16, 32, 50, .06);
+}
+
+body.hotel-workspace .room-media-uploader__preview {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 210px;
+    overflow: hidden;
+    border: 1px dashed #d6a238;
+    border-radius: 8px;
+    background:
+        linear-gradient(rgba(255, 255, 255, .82), rgba(255, 255, 255, .92)),
+        url("../img/hotel-keto/room5.jpg") center / cover;
+    color: #102032;
+}
+
+body.hotel-workspace .room-media-uploader__preview.is-wide {
+    aspect-ratio: 16 / 9;
+}
+
+body.hotel-workspace .room-media-uploader__preview img {
+    width: 100%;
+    height: 100%;
+    min-height: 210px;
+    object-fit: cover;
+    display: block;
+}
+
+body.hotel-workspace .room-media-uploader__empty {
+    padding: 22px;
+    text-align: center;
+    color: #102032;
+}
+
+body.hotel-workspace .room-media-uploader__empty i {
+    display: block;
+    margin-bottom: 10px;
+    color: #17456f !important;
+    -webkit-text-fill-color: #17456f !important;
+    font-size: 30px;
+}
+
+body.hotel-workspace .room-media-uploader__empty strong,
+body.hotel-workspace .room-media-uploader__empty span,
+body.hotel-workspace .room-media-uploader small,
+body.hotel-workspace .room-media-uploader label {
+    color: #102032 !important;
+    -webkit-text-fill-color: #102032 !important;
+}
+
+body.hotel-workspace .room-media-uploader__empty span,
+body.hotel-workspace .room-media-uploader small {
+    color: #475569 !important;
+    -webkit-text-fill-color: #475569 !important;
+}
+
+body.hotel-workspace .room-media-uploader__tag {
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    padding: 6px 9px;
+    border-radius: 999px;
+    background: rgba(7, 29, 53, .9);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 900;
 }
 
 body.hotel-workspace .sa-table th,

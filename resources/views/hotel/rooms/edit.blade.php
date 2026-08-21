@@ -34,12 +34,68 @@
                 <div class="col-md-3"><label class="form-label">Operational Status</label><select name="operational_status" class="form-select">@foreach(['available','occupied','reserved','maintenance','out_of_order'] as $state)<option value="{{ $state }}" @selected(old('operational_status', $room->operational_status) === $state)>{{ ucfirst(str_replace('_',' ', $state)) }}</option>@endforeach</select></div>
                 <div class="col-md-3"><label class="form-label">Housekeeping</label><select name="housekeeping_status" class="form-select">@foreach(['clean','dirty','inspection','cleaning'] as $state)<option value="{{ $state }}" @selected(old('housekeeping_status', $room->housekeeping_status) === $state)>{{ ucfirst($state) }}</option>@endforeach</select></div>
                 <div class="col-md-3"><label class="form-label">Active</label><select name="is_active" class="form-select"><option value="1" @selected($room->is_active)>Active</option><option value="0" @selected(!$room->is_active)>Inactive</option></select></div>
-                <div class="col-md-6"><label class="form-label">Room Photo</label>@if($room->room_image)<img src="{{ asset('storage/'.$room->room_image) }}" class="room-thumb mb-2" alt="Room photo">@endif<input type="file" name="room_image" class="form-control" accept="image/*"></div>
-                <div class="col-md-6"><label class="form-label">Panorama / Wide Preview Image</label>@if($room->panorama_image)<img src="{{ asset('storage/'.$room->panorama_image) }}" class="room-thumb mb-2" alt="Room panorama">@endif<input type="file" name="panorama_image" class="form-control" accept="image/*"></div>
+                <div class="col-md-6">
+                    <div class="room-media-uploader">
+                        <div class="room-media-uploader__preview" data-room-image-preview="room_image">
+                            <span class="room-media-uploader__tag">Room card image</span>
+                            @if($room->room_image)
+                                <img src="{{ asset('storage/'.$room->room_image) }}" alt="Room {{ $room->room_number }} photo">
+                            @else
+                                <div class="room-media-uploader__empty">
+                                    <i class="fas fa-image"></i>
+                                    <strong>No room photo yet</strong>
+                                    <span class="d-block mt-1">Add a clear room photo for cards and previews.</span>
+                                </div>
+                            @endif
+                        </div>
+                        <div>
+                            <label class="form-label">Room Photo</label>
+                            <input type="file" name="room_image" class="form-control" accept="image/*" data-room-image-input="room_image">
+                            <small class="d-block mt-2">Used on room cards and as a fallback when no panorama is uploaded.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="room-media-uploader">
+                        <div class="room-media-uploader__preview is-wide" data-room-image-preview="panorama_image">
+                            <span class="room-media-uploader__tag">Panorama viewer image</span>
+                            @if($room->panorama_image)
+                                <img src="{{ asset('storage/'.$room->panorama_image) }}" alt="Room {{ $room->room_number }} panorama">
+                            @else
+                                <div class="room-media-uploader__empty">
+                                    <i class="fas fa-vr-cardboard"></i>
+                                    <strong>No panorama yet</strong>
+                                    <span class="d-block mt-1">Upload a wide image for the large customer preview display.</span>
+                                </div>
+                            @endif
+                        </div>
+                        <div>
+                            <label class="form-label">Panorama / Wide Preview Image</label>
+                            <input type="file" name="panorama_image" class="form-control" accept="image/*" data-room-image-input="panorama_image">
+                            <small class="d-block mt-2">This image opens in the panorama preview modal.</small>
+                        </div>
+                    </div>
+                </div>
                 <div class="col-12"><label class="form-label">Room Notes</label><textarea name="notes" class="form-control" rows="3">{{ old('notes', $room->notes) }}</textarea></div>
             </div>
             <div class="room-form-actions"><a href="{{ route('hotel.rooms.index') }}" class="btn btn-outline-secondary">Cancel</a><button class="btn btn-primary">Save Room</button></div>
         </div></div>
     </form>
 </div></div></div>
+@endsection
+
+@section('script')
+<script>
+document.querySelectorAll('[data-room-image-input]').forEach((input) => {
+    input.addEventListener('change', () => {
+        const key = input.dataset.roomImageInput;
+        const preview = document.querySelector(`[data-room-image-preview="${key}"]`);
+        const file = input.files && input.files[0];
+        if (!preview || !file || !file.type.startsWith('image/')) return;
+
+        const url = URL.createObjectURL(file);
+        preview.innerHTML = `<span class="room-media-uploader__tag">${key === 'panorama_image' ? 'Panorama viewer image' : 'Room card image'}</span><img src="${url}" alt="Selected room image preview">`;
+    });
+});
+</script>
 @endsection
