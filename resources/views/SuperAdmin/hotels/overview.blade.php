@@ -367,20 +367,28 @@
                                 <small class="text-muted">Company {{ $r['company_id'] ?? '-' }} - Type {{ $r['room_type_id'] ?? '-' }}</small>
                                 <span class="sa-room-preview-chip">{{ $previewUrl ? 'View room' : 'No photo yet' }}</span>
                             </button>
-                            <div class="modal fade sa-room-preview-modal" id="{{ $modalId }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal fade sa-room-preview-modal hotel-preview-modal" id="{{ $modalId }}" tabindex="-1" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered modal-xl">
                                     <div class="modal-content">
-                                        <div class="modal-header">
+                                        <div class="modal-header hotel-preview-header">
                                             <div>
-                                                <h5 class="modal-title">Room {{ $roomNo }} Preview</h5>
-                                                <small class="text-muted">Property {{ $r['property_id'] ?? '-' }} - Company {{ $r['company_id'] ?? '-' }} - {{ ucfirst(str_replace('_',' ', $state)) }}</small>
+                                                <small class="hotel-preview-eyebrow">Customer room preview</small>
+                                                <h5 class="modal-title">Room {{ $roomNo }}</h5>
+                                                <span>Property {{ $r['property_id'] ?? '-' }} - Company {{ $r['company_id'] ?? '-' }} - {{ ucfirst(str_replace('_',' ', $state)) }}</span>
                                             </div>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            <div class="d-flex gap-2 align-items-center">
+                                                @if($previewUrl)
+                                                    <a href="{{ $previewUrl }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-light">Open full image</a>
+                                                @endif
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
                                         </div>
                                         <div class="modal-body">
-                                            <div class="sa-room-preview-stage {{ $previewUrl ? 'has-image' : '' }}">
+                                            <div class="hotel-preview-viewer {{ $previewUrl ? 'has-image' : 'is-empty' }}" @if($previewUrl) style="--hotel-preview-image:url('{{ $previewUrl }}')" @endif>
                                                 @if($previewUrl)
-                                                    <img src="{{ $previewUrl }}" alt="Room {{ $roomNo }} preview">
+                                                    <div class="hotel-preview-media">
+                                                        <img src="{{ $previewUrl }}" alt="Room {{ $roomNo }} preview">
+                                                    </div>
                                                 @else
                                                     <div class="sa-room-preview-empty">
                                                         <i class="fas fa-bed fa-3x mb-3"></i>
@@ -388,9 +396,15 @@
                                                         <p>Upload a room photo or panorama from the tenant hotel room form so customers can inspect the room before arrival.</p>
                                                     </div>
                                                 @endif
-                                                <div class="sa-room-preview-note">
-                                                    <strong>Room {{ $roomNo }}</strong>
-                                                    <span>{{ $r['notes'] ?? 'Panorama preview for customer-facing room inspection.' }}</span>
+                                                <div class="hotel-preview-controls">
+                                                    <div>
+                                                        <strong>Room {{ $roomNo }}</strong>
+                                                        <span>{{ $r['notes'] ?? 'Panorama preview for customer-facing room inspection.' }}</span>
+                                                    </div>
+                                                    <div class="hotel-preview-status">
+                                                        <span>{{ ucfirst(str_replace('_',' ', $state)) }}</span>
+                                                        <i class="fas fa-circle-play"></i>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

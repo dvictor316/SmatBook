@@ -87,8 +87,49 @@
                                     <div class="d-flex gap-1 flex-wrap mt-auto pt-3"><a href="{{ route('hotel.rooms.edit', $room) }}" class="btn btn-sm btn-outline-primary">Edit</a><form method="POST" action="{{ route('hotel.rooms.destroy', $room) }}">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger">Deactivate</button></form></div>
                                 </div>
                             </article>
-                            <div class="modal fade room-preview-modal" id="roomPreview{{ $room->id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered modal-xl"><div class="modal-content"><div class="modal-header"><div><h5 class="modal-title">Room {{ $room->room_number }} - {{ $room->type?->name ?? 'Hotel Room' }}</h5><small class="text-muted">Client preview / panorama display</small></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body"><div class="room-panorama-stage {{ $room->panorama_image ? 'panorama' : '' }}">@if($panoramaImage)<img src="{{ $panoramaImage }}" alt="Room {{ $room->room_number }} preview">@else<div class="text-white text-center"><i class="fas fa-bed fa-3x mb-3"></i><h4 class="text-white">No room image uploaded yet</h4></div>@endif<div class="room-panorama-note"><strong>{{ $room->type?->name ?? 'Room' }} - {{ number_format((float)($room->base_rate_override ?: ($room->type?->base_rate ?? 0)), 2) }}</strong><br>{{ $room->notes ?: 'Upload a panorama image so clients can inspect the room before walking in.' }}</div></div></div></div></div>
+                            <div class="modal fade room-preview-modal hotel-preview-modal" id="roomPreview{{ $room->id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered modal-xl">
+                                    <div class="modal-content">
+                                        <div class="modal-header hotel-preview-header">
+                                            <div>
+                                                <small class="hotel-preview-eyebrow">Guest room preview</small>
+                                                <h5 class="modal-title">Room {{ $room->room_number }} - {{ $room->type?->name ?? 'Hotel Room' }}</h5>
+                                                <span>{{ $room->wing ?: 'Main Wing' }} - Floor {{ $room->floor ?: 'N/A' }} - {{ ucfirst(str_replace('_',' ', (string) $tileState)) }}</span>
+                                            </div>
+                                            <div class="d-flex gap-2 align-items-center">
+                                                @if($panoramaImage)
+                                                    <a href="{{ $panoramaImage }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-light">Open full image</a>
+                                                @endif
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="hotel-preview-viewer {{ $panoramaImage ? 'has-image' : 'is-empty' }}" @if($panoramaImage) style="--hotel-preview-image:url('{{ $panoramaImage }}')" @endif>
+                                                @if($panoramaImage)
+                                                    <div class="hotel-preview-media">
+                                                        <img src="{{ $panoramaImage }}" alt="Room {{ $room->room_number }} preview">
+                                                    </div>
+                                                @else
+                                                    <div class="sa-room-preview-empty">
+                                                        <i class="fas fa-bed fa-3x mb-3"></i>
+                                                        <h4>No room image uploaded yet</h4>
+                                                        <p>Upload a room photo or panorama so clients can inspect this room before walking in.</p>
+                                                    </div>
+                                                @endif
+                                                <div class="hotel-preview-controls">
+                                                    <div>
+                                                        <strong>{{ $room->type?->name ?? 'Room' }} - {{ number_format((float)($room->base_rate_override ?: ($room->type?->base_rate ?? 0)), 2) }}</strong>
+                                                        <span>{{ $room->notes ?: 'Wide room preview for customer-facing inspection.' }}</span>
+                                                    </div>
+                                                    <div class="hotel-preview-status">
+                                                        <span>{{ $room->panorama_image ? 'Panorama' : 'Photo' }}</span>
+                                                        <i class="fas fa-circle-play"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         @endforeach
                     </div>

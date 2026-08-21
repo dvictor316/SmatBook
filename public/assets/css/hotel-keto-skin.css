@@ -586,6 +586,193 @@ body.hotel-workspace .sa-room-preview-note span {
     color: #ffffff;
 }
 
+body.hotel-workspace .hotel-preview-modal {
+    --hotel-preview-radius: 14px;
+}
+
+body.hotel-workspace .hotel-preview-modal .modal-dialog,
+body.hotel-workspace .room-preview-modal .modal-dialog {
+    max-width: min(96vw, 1320px);
+    margin-right: auto;
+    margin-left: auto;
+}
+
+body.hotel-workspace .hotel-preview-modal .modal-content {
+    overflow: hidden;
+    border: 1px solid rgba(247, 215, 119, .28);
+    border-radius: var(--hotel-preview-radius);
+    background: #071d35;
+    box-shadow: 0 34px 90px rgba(3, 10, 24, .44);
+}
+
+body.hotel-workspace .hotel-preview-header {
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, .12);
+    background:
+        linear-gradient(90deg, rgba(7, 29, 53, .98), rgba(20, 55, 86, .94)),
+        url("../img/hotel-keto/room4.jpg") center / cover;
+}
+
+body.hotel-workspace .hotel-preview-header h5,
+body.hotel-workspace .hotel-preview-header span,
+body.hotel-workspace .hotel-preview-header small {
+    color: #ffffff !important;
+}
+
+body.hotel-workspace .hotel-preview-header h5 {
+    margin: 2px 0 3px;
+    font-size: clamp(20px, 2vw, 28px);
+    font-weight: 900;
+}
+
+body.hotel-workspace .hotel-preview-header span {
+    display: block;
+    color: #c8d7e8 !important;
+    font-size: 13px;
+}
+
+body.hotel-workspace .hotel-preview-eyebrow {
+    display: inline-flex;
+    width: max-content;
+    padding: 5px 9px;
+    border: 1px solid rgba(247, 215, 119, .32);
+    border-radius: 999px;
+    background: rgba(247, 215, 119, .12);
+    color: #f7d777 !important;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+body.hotel-workspace .hotel-preview-modal .modal-body {
+    padding: 0;
+    background: #061526;
+}
+
+body.hotel-workspace .hotel-preview-viewer {
+    position: relative;
+    min-height: min(72vh, 720px);
+    padding: clamp(12px, 2vw, 22px);
+    background:
+        radial-gradient(circle at 12% 10%, rgba(247, 215, 119, .18), transparent 26%),
+        linear-gradient(135deg, #061526, #0d2c49);
+    overflow: hidden;
+}
+
+body.hotel-workspace .hotel-preview-viewer.has-image::before {
+    content: "";
+    position: absolute;
+    inset: -30px;
+    background-image: linear-gradient(rgba(6, 21, 38, .5), rgba(6, 21, 38, .75)), var(--hotel-preview-image);
+    background-position: center;
+    background-size: cover;
+    filter: blur(22px) saturate(1.08);
+    opacity: .72;
+    transform: scale(1.08);
+}
+
+body.hotel-workspace .hotel-preview-viewer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, .08), transparent 16%, transparent 78%, rgba(0, 0, 0, .24)),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, .035) 0 1px, transparent 1px 80px);
+}
+
+body.hotel-workspace .hotel-preview-media {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    min-height: min(60vh, 620px);
+    aspect-ratio: 16 / 9;
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: 12px;
+    background: #030b14;
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, .06),
+        0 24px 60px rgba(0, 0, 0, .36);
+    overflow: hidden;
+}
+
+body.hotel-workspace .hotel-preview-media img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-height: min(60vh, 620px);
+    object-fit: contain;
+    object-position: center;
+    background: #030b14;
+}
+
+body.hotel-workspace .hotel-preview-controls {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 12px;
+    padding: 13px 16px;
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 12px;
+    background: rgba(6, 21, 38, .86);
+    color: #ffffff;
+    backdrop-filter: blur(10px);
+}
+
+body.hotel-workspace .hotel-preview-controls strong,
+body.hotel-workspace .hotel-preview-controls span {
+    display: block;
+    color: #ffffff;
+}
+
+body.hotel-workspace .hotel-preview-controls strong {
+    font-size: 16px;
+    font-weight: 900;
+}
+
+body.hotel-workspace .hotel-preview-controls span {
+    color: #cbd8e8;
+}
+
+body.hotel-workspace .hotel-preview-status {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 999px;
+    background: rgba(247, 215, 119, .14);
+    color: #f7d777;
+    font-weight: 900;
+}
+
+body.hotel-workspace .hotel-preview-status span,
+body.hotel-workspace .hotel-preview-status i {
+    color: #f7d777 !important;
+}
+
+body.hotel-workspace .hotel-preview-viewer.is-empty {
+    display: grid;
+    place-items: center;
+}
+
+body.hotel-workspace .hotel-preview-viewer.is-empty .sa-room-preview-empty {
+    position: relative;
+    z-index: 1;
+    border: 1px solid rgba(247, 215, 119, .28);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .08);
+    backdrop-filter: blur(10px);
+}
+
 body.hotel-workspace .sa-table th,
 body.hotel-workspace .sa-calendar th,
 body.hotel-workspace .sa-timeline th {
@@ -1683,5 +1870,43 @@ body.hotel-workspace .sticky-top.card {
     body.hotel-workspace .hotel-filter .btn {
         max-width: none !important;
         width: 100%;
+    }
+
+    body.hotel-workspace .hotel-preview-modal .modal-dialog,
+    body.hotel-workspace .room-preview-modal .modal-dialog {
+        max-width: calc(100vw - 14px);
+        margin: 7px auto;
+    }
+
+    body.hotel-workspace .hotel-preview-header {
+        padding: 12px;
+    }
+
+    body.hotel-workspace .hotel-preview-header .btn {
+        display: none;
+    }
+
+    body.hotel-workspace .hotel-preview-viewer {
+        min-height: auto;
+        padding: 9px;
+    }
+
+    body.hotel-workspace .hotel-preview-media {
+        min-height: 280px;
+        aspect-ratio: 4 / 3;
+    }
+
+    body.hotel-workspace .hotel-preview-media img {
+        max-height: 62vh;
+    }
+
+    body.hotel-workspace .hotel-preview-controls {
+        display: grid;
+        gap: 10px;
+        padding: 11px;
+    }
+
+    body.hotel-workspace .hotel-preview-status {
+        justify-content: center;
     }
 }
