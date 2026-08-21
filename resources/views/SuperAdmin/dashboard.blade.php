@@ -215,11 +215,25 @@
     .visit-mini-card .visit-icon {
         align-items: center;
         border-radius: 12px;
-        color: #fff;
+        color: #fff !important;
         display: inline-flex;
         height: 34px;
         justify-content: center;
         width: 34px;
+        border: 1px solid rgba(255, 255, 255, 0.32);
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+        position: relative;
+        z-index: 1;
+    }
+    .visit-mini-card .visit-icon i,
+    .visit-mini-card .visit-icon svg {
+        color: #ffffff !important;
+        fill: currentColor !important;
+        stroke: currentColor !important;
+        -webkit-text-fill-color: #ffffff !important;
+        font-size: 0.96rem;
+        opacity: 1 !important;
+        visibility: visible !important;
     }
     .visit-mini-card.visit-blue .visit-icon { background: linear-gradient(135deg, #1d4ed8, #38bdf8); }
     .visit-mini-card.visit-green .visit-icon { background: linear-gradient(135deg, #047857, #34d399); }
@@ -262,8 +276,10 @@
         z-index: 1;
     }
     .visit-mini-card .visitor-count-badge i {
-        color: #2563eb;
+        color: #1d4ed8 !important;
+        -webkit-text-fill-color: #1d4ed8 !important;
         font-size: 0.86rem;
+        opacity: 1 !important;
     }
     .visit-chart-card .card-body {
         display: flex;
@@ -811,10 +827,10 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: rgba(255,255,255,0.14);
-        border: 1px solid rgba(255,255,255,0.16);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
-        color: #fff;
+        background: rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.34);
+        box-shadow: 0 10px 22px rgba(15,23,42,0.18), inset 0 1px 0 rgba(255,255,255,0.24);
+        color: #fff !important;
     }
     .executive-kpi .kpi-icon-shell svg,
     .executive-kpi .kpi-icon-shell i {
@@ -825,6 +841,9 @@
         stroke-width: 2;
         stroke-linecap: round;
         stroke-linejoin: round;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+        opacity: 1 !important;
     }
     .executive-kpi .kpi-icon-shell i {
         display: inline-flex;
@@ -832,9 +851,23 @@
         justify-content: center;
         width: auto;
         height: auto;
-        font-size: 0.78rem;
+        font-size: 0.9rem;
         stroke: none;
         fill: currentColor;
+    }
+    .executive-kpi.kpi-revenue .kpi-icon-shell i,
+    .executive-kpi.kpi-revenue .kpi-icon-shell svg,
+    .executive-kpi.kpi-subscriptions .kpi-icon-shell i,
+    .executive-kpi.kpi-subscriptions .kpi-icon-shell svg,
+    .executive-kpi.kpi-companies .kpi-icon-shell i,
+    .executive-kpi.kpi-companies .kpi-icon-shell svg {
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+    .executive-kpi.kpi-users .kpi-icon-shell i,
+    .executive-kpi.kpi-users .kpi-icon-shell svg {
+        color: #061b33 !important;
+        -webkit-text-fill-color: #061b33 !important;
     }
     .executive-kpi .kpi-kicker {
         font-family: var(--kpi-ui-font);
@@ -984,8 +1017,28 @@
     .dashboard-tight .card.tone-card .mdi {
         font-size: 1.25rem !important;
         margin-right: 0 !important;
-        opacity: 0.82;
+        opacity: 1 !important;
+        color: #0f3b66 !important;
+        -webkit-text-fill-color: #0f3b66 !important;
     }
+
+    .dashboard-tight .mdi-account-eye-outline::before,
+    .dashboard-tight .mdi-account-tie::before,
+    .dashboard-tight .mdi-cash-check::before,
+    .dashboard-tight .mdi-circle-medium::before,
+    .dashboard-tight .mdi-credit-card-outline::before,
+    .dashboard-tight .mdi-shield-check::before {
+        font-family: "Font Awesome 6 Free" !important;
+        font-weight: 900 !important;
+        font-style: normal;
+        line-height: 1;
+    }
+    .dashboard-tight .mdi-account-eye-outline::before { content: "\f06e"; }
+    .dashboard-tight .mdi-account-tie::before { content: "\f508"; }
+    .dashboard-tight .mdi-cash-check::before { content: "\f53d"; }
+    .dashboard-tight .mdi-circle-medium::before { content: "\f111"; }
+    .dashboard-tight .mdi-credit-card-outline::before { content: "\f09d"; }
+    .dashboard-tight .mdi-shield-check::before { content: "\f3ed"; }
     .dashboard-tight .compact-money-panel {
         height: auto !important;
         max-height: none !important;
