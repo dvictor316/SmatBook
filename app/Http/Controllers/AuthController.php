@@ -515,7 +515,7 @@ class AuthController extends Controller
         $remember = $request->filled('remember');
 
         if ($loginInput === '') {
-            return back()->withErrors(['login' => 'Email or phone is required.'])->withInput();
+            return back()->withErrors(['login' => 'Username, email, or phone is required.'])->withInput();
         }
 
         $throttleKey = Str::lower($loginInput) . '|' . $request->ip();
@@ -529,11 +529,21 @@ class AuthController extends Controller
 
         $attemptOk = false;
         if (filter_var($loginInput, FILTER_VALIDATE_EMAIL)) {
-            $attemptOk = Auth::attempt(['email' => $loginInput, 'password' => $password], $remember);
+            $attemptOk = Auth::attempt(['email' => $this->normalizeEmailForAuth($loginInput), 'password' => $password], $remember);
         } else {
             $normalizedPhone = $this->normalizePhoneForAuth($loginInput);
             if ($normalizedPhone && Schema::hasColumn('users', 'phone')) {
                 $user = User::query()->where('phone', $normalizedPhone)->first();
+                if ($user) {
+                    $attemptOk = Auth::attempt(['email' => $user->email, 'password' => $password], $remember);
+                }
+            }
+
+            if (!$attemptOk && Schema::hasColumn('users', 'username')) {
+                $user = User::query()
+                    ->whereRaw('LOWER(username) = ?', [Str::lower($loginInput)])
+                    ->first();
+
                 if ($user) {
                     $attemptOk = Auth::attempt(['email' => $user->email, 'password' => $password], $remember);
                 }

@@ -363,6 +363,24 @@ class HomeController extends Controller
 
         // No subscription at all
         if (!$subscription) {
+            $company = !empty($user->company_id) ? Company::find($user->company_id) : null;
+
+            if ($company) {
+                Log::info('→ Company user without own subscription, redirecting to tenant dashboard', [
+                    'user_id' => $user->id,
+                    'company_id' => $company->id,
+                ]);
+
+                session([
+                    'user_plan' => strtolower((string) ($company->plan ?? 'basic')),
+                    'current_tenant_id' => $company->id,
+                    'current_tenant_name' => $company->name ?? $company->company_name ?? 'Workspace',
+                    'workspace_context' => 'business',
+                ]);
+
+                return redirect()->route('user.dashboard');
+            }
+
             Log::info('→ No subscription, redirecting to plans');
             return redirect()->route('membership-plans')
                 ->with('info', 'Please select a plan to get started.');

@@ -705,7 +705,7 @@
                         <i class="fas fa-lock"></i>
                         <div>
                             <strong>Protected session access</strong>
-                            <span>Sign in with your admin email or phone and continue exactly where your workspace left off.</span>
+                            <span>Sign in with your username, email, or phone and continue exactly where your workspace left off.</span>
                         </div>
                     </div>
                     <div class="aside-point">
@@ -761,9 +761,9 @@
                 @endif
 
                 <div class="mb-3">
-                    <label class="label-caps">Email or Phone</label>
+                    <label class="label-caps">Username, Email or Phone</label>
                     <input type="text" name="login" class="form-control input-smat w-100" 
-                           placeholder="name@institution.com or +2348012345678" value="{{ old('login', old('email')) }}" required autofocus>
+                           placeholder="username, name@institution.com or +2348012345678" value="{{ old('login', old('email')) }}" required autofocus>
                 </div>
 
                 <div class="mb-4">
