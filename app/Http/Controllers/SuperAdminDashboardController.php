@@ -1193,9 +1193,9 @@ class SuperAdminDashboardController extends Controller
             $visitorAnalytics = [
                 'cards' => [
                     ['label' => 'Daily Visits', 'value' => 0, 'visitors' => 0, 'note' => 'Today', 'tone' => 'visit-blue', 'icon' => 'mdi-eye-outline'],
-                    ['label' => 'Weekly Visits', 'value' => 0, 'visitors' => 0, 'note' => 'Last 7 days', 'tone' => 'visit-green', 'icon' => 'mdi-calendar-week'],
-                    ['label' => 'Monthly Visits', 'value' => 0, 'visitors' => 0, 'note' => 'Current month', 'tone' => 'visit-violet', 'icon' => 'mdi-chart-timeline-variant'],
-                    ['label' => 'Yearly Visits', 'value' => 0, 'visitors' => 0, 'note' => 'Current year', 'tone' => 'visit-amber', 'icon' => 'mdi-calendar-star'],
+                    ['label' => 'Weekly Visits', 'value' => 0, 'visitors' => 0, 'note' => 'Last 7 days', 'tone' => 'visit-green', 'icon' => 'fas fa-calendar-week'],
+                    ['label' => 'Monthly Visits', 'value' => 0, 'visitors' => 0, 'note' => 'Current month', 'tone' => 'visit-violet', 'icon' => 'fas fa-chart-line'],
+                    ['label' => 'Yearly Visits', 'value' => 0, 'visitors' => 0, 'note' => 'Current year', 'tone' => 'visit-amber', 'icon' => 'fas fa-calendar-check'],
                 ],
                 'dailyLabels' => [],
                 'dailyVisits' => [],

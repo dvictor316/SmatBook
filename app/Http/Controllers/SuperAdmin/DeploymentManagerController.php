@@ -1719,7 +1719,8 @@ private function formatDeploymentAmount(float $amount): string
             ->findOrFail((int) $validated['subscription_id']);
 
         $subscription = $this->decorateSeatUpgradeSubscription($subscription);
-        $currentLimit = (int) $subscription->seat_current_limit;
+        $seatUpgrade = $subscription->getRelation('seatUpgrade');
+        $currentLimit = (int) $seatUpgrade->current_limit;
         $newLimit = (int) $validated['new_user_limit'];
 
         if ($newLimit <= $currentLimit) {
@@ -1729,7 +1730,7 @@ private function formatDeploymentAmount(float $amount): string
         }
 
         $extraUsers = $newLimit - $currentLimit;
-        $unitAmount = (float) $subscription->seat_unit_amount;
+        $unitAmount = (float) $seatUpgrade->unit_amount;
         $upgradeAmount = round($unitAmount * $extraUsers, 2);
 
         if ($upgradeAmount <= 0) {
@@ -1825,10 +1826,12 @@ private function formatDeploymentAmount(float $amount): string
         $currentLimit = max($resolvedLimit, $currentUsers);
         $unitAmount = $this->resolveSeatUnitAmount($subscription);
 
-        $subscription->seat_current_users = $currentUsers;
-        $subscription->seat_current_limit = $currentLimit;
-        $subscription->seat_unit_amount = $unitAmount;
-        $subscription->seat_unit_amount_label = $this->formatDeploymentAmount($unitAmount);
+        $subscription->setRelation('seatUpgrade', (object) [
+            'current_users' => $currentUsers,
+            'current_limit' => $currentLimit,
+            'unit_amount' => $unitAmount,
+            'unit_amount_label' => $this->formatDeploymentAmount($unitAmount),
+        ]);
 
         return $subscription;
     }

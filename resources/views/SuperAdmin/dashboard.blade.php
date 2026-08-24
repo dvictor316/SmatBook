@@ -221,7 +221,7 @@
         justify-content: center;
         width: 34px;
         border: 1px solid rgba(255, 255, 255, 0.32);
-        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.38);
         position: relative;
         z-index: 1;
     }
@@ -235,10 +235,10 @@
         opacity: 1 !important;
         visibility: visible !important;
     }
-    .visit-mini-card.visit-blue .visit-icon { background: linear-gradient(135deg, #1d4ed8, #38bdf8); }
-    .visit-mini-card.visit-green .visit-icon { background: linear-gradient(135deg, #047857, #34d399); }
-    .visit-mini-card.visit-violet .visit-icon { background: linear-gradient(135deg, #6d28d9, #a78bfa); }
-    .visit-mini-card.visit-amber .visit-icon { background: linear-gradient(135deg, #b45309, #fbbf24); }
+    .visit-mini-card.visit-blue .visit-icon { background: linear-gradient(135deg, #2563eb, #22d3ee); }
+    .visit-mini-card.visit-green .visit-icon { background: linear-gradient(135deg, #059669, #2dd4bf); }
+    .visit-mini-card.visit-violet .visit-icon { background: linear-gradient(135deg, #7c3aed, #c084fc); }
+    .visit-mini-card.visit-amber .visit-icon { background: linear-gradient(135deg, #d97706, #facc15); }
     .visit-mini-card .visit-label {
         color: #64748b;
         font-size: 0.66rem;
@@ -1543,7 +1543,8 @@
                                                     </div>
                                                 </div>
                                                 <div class="visit-icon">
-                                                    <i class="mdi {{ $visitCard['icon'] ?? 'mdi-eye-outline' }}"></i>
+                                                    @php($visitIcon = (string) ($visitCard['icon'] ?? 'mdi-eye-outline'))
+                                                    <i class="{{ str_starts_with($visitIcon, 'fa') ? $visitIcon : 'mdi ' . $visitIcon }}"></i>
                                                 </div>
                                             </div>
                                         </div>

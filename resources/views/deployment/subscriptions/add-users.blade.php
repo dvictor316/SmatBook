@@ -57,11 +57,11 @@
                                         $selected = (int) old('subscription_id', $selectedSubscription?->id) === (int) $subscription->id;
                                     @endphp
                                     <option value="{{ $subscription->id }}"
-                                        data-limit="{{ (int) $subscription->seat_current_limit }}"
-                                        data-users="{{ (int) $subscription->seat_current_users }}"
-                                        data-unit="{{ (float) $subscription->seat_unit_amount }}"
+                                        data-limit="{{ (int) $subscription->seatUpgrade->current_limit }}"
+                                        data-users="{{ (int) $subscription->seatUpgrade->current_users }}"
+                                        data-unit="{{ (float) $subscription->seatUpgrade->unit_amount }}"
                                         {{ $selected ? 'selected' : '' }}>
-                                        {{ $companyName }} - {{ $subscription->plan_name ?? $subscription->plan }} - {{ (int) $subscription->seat_current_limit }} users
+                                        {{ $companyName }} - {{ $subscription->plan_name ?? $subscription->plan }} - {{ (int) $subscription->seatUpgrade->current_limit }} users
                                     </option>
                                 @endforeach
                             </select>
@@ -71,13 +71,13 @@
                             <div class="col-6">
                                 <div class="p-3 rounded border bg-light">
                                     <div class="small text-muted">Current Limit</div>
-                                    <div class="fw-bold" id="currentLimit">{{ $selectedSubscription?->seat_current_limit ?? '-' }}</div>
+                                    <div class="fw-bold" id="currentLimit">{{ $selectedSubscription?->seatUpgrade?->current_limit ?? '-' }}</div>
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="p-3 rounded border bg-light">
                                     <div class="small text-muted">Users Created</div>
-                                    <div class="fw-bold" id="currentUsers">{{ $selectedSubscription?->seat_current_users ?? '-' }}</div>
+                                    <div class="fw-bold" id="currentUsers">{{ $selectedSubscription?->seatUpgrade?->current_users ?? '-' }}</div>
                                 </div>
                             </div>
                         </div>
@@ -85,8 +85,8 @@
                         <div class="mb-3">
                             <label class="form-label fw-semibold">New Total User Limit</label>
                             <input type="number" name="new_user_limit" id="newUserLimit" class="form-control"
-                                min="{{ (int) (($selectedSubscription?->seat_current_limit ?? 0) + 1) }}"
-                                value="{{ old('new_user_limit', $selectedSubscription ? ((int) $selectedSubscription->seat_current_limit + 1) : '') }}"
+                                min="{{ (int) (($selectedSubscription?->seatUpgrade?->current_limit ?? 0) + 1) }}"
+                                value="{{ old('new_user_limit', $selectedSubscription ? ((int) $selectedSubscription->seatUpgrade->current_limit + 1) : '') }}"
                                 placeholder="Example: 10" required>
                             <small class="text-muted">This must be higher than the current limit.</small>
                         </div>
@@ -94,7 +94,7 @@
                         <div class="p-3 rounded border mb-3" style="background:#f8fbff;">
                             <div class="d-flex justify-content-between small mb-2">
                                 <span class="text-muted">Equivalent price per added user</span>
-                                <strong>₦<span id="unitPrice">{{ $selectedSubscription ? $selectedSubscription->seat_unit_amount_label : '0.00' }}</span></strong>
+                                <strong>₦<span id="unitPrice">{{ $selectedSubscription ? $selectedSubscription->seatUpgrade->unit_amount_label : '0.00' }}</span></strong>
                             </div>
                             <div class="d-flex justify-content-between small mb-2">
                                 <span class="text-muted">Additional users</span>
@@ -147,10 +147,10 @@
                                             <div class="small text-muted">{{ ucfirst((string) $subscription->billing_cycle) }}</div>
                                         </td>
                                         <td class="text-center">
-                                            <strong>{{ (int) $subscription->seat_current_users }}</strong>
-                                            <span class="text-muted">/ {{ (int) $subscription->seat_current_limit }}</span>
+                                            <strong>{{ (int) $subscription->seatUpgrade->current_users }}</strong>
+                                            <span class="text-muted">/ {{ (int) $subscription->seatUpgrade->current_limit }}</span>
                                         </td>
-                                        <td class="text-end">₦{{ $subscription->seat_unit_amount_label }}</td>
+                                        <td class="text-end">₦{{ $subscription->seatUpgrade->unit_amount_label }}</td>
                                         <td class="text-end">
                                             <a class="btn btn-sm btn-outline-primary" href="{{ request()->fullUrlWithQuery(['subscription_id' => $subscription->id]) }}">
                                                 Select
