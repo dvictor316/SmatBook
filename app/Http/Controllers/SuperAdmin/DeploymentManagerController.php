@@ -1824,6 +1824,18 @@ private function formatDeploymentAmount(float $amount): string
 
     private function resolveSeatUnitAmount(Subscription $subscription): float
     {
+        $tier = Plan::normalizeTier((string) ($subscription->plan_name ?: $subscription->plan));
+
+        $fixedAdditionalUserPrices = [
+            'enterprise' => 7000.0,
+            'professional' => 5000.0,
+            'basic' => 3000.0,
+        ];
+
+        if (isset($fixedAdditionalUserPrices[$tier])) {
+            return $fixedAdditionalUserPrices[$tier];
+        }
+
         $billingCycle = strtolower((string) ($subscription->billing_cycle ?? 'monthly'));
         $plan = $subscription->plan_id ? Plan::find((int) $subscription->plan_id) : null;
         $plan ??= Plan::findByCatalogName((string) ($subscription->plan_name ?: $subscription->plan), $billingCycle);

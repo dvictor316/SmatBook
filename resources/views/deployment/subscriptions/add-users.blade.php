@@ -93,7 +93,7 @@
 
                         <div class="p-3 rounded border mb-3" style="background:#f8fbff;">
                             <div class="d-flex justify-content-between small mb-2">
-                                <span class="text-muted">Equivalent price per added user</span>
+                                <span class="text-muted">Price per added user</span>
                                 <strong>₦<span id="unitPrice">{{ $selectedSubscription ? $selectedSubscription->seatUpgrade->unit_amount_label : '0.00' }}</span></strong>
                             </div>
                             <div class="d-flex justify-content-between small mb-2">
