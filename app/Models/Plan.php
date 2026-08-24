@@ -30,6 +30,12 @@ class Plan extends Model
         'enterprise' => 8,
     ];
 
+    public const ADDITIONAL_USER_PRICES = [
+        'basic' => 3000,
+        'professional' => 5000,
+        'enterprise' => 7000,
+    ];
+
     protected $table = 'plans';
 
     protected $fillable = [
@@ -102,6 +108,18 @@ class Plan extends Model
         return $limit === 1 ? '1 User' : $limit . ' Users';
     }
 
+    public static function additionalUserPriceForName(?string $planName, ?string $billingCycle = 'monthly'): ?float
+    {
+        $monthlyPrice = static::ADDITIONAL_USER_PRICES[static::normalizeTier($planName)] ?? null;
+        if ($monthlyPrice === null) {
+            return null;
+        }
+
+        return strtolower((string) $billingCycle) === 'yearly'
+            ? $monthlyPrice * 10
+            : $monthlyPrice;
+    }
+
     public static function marketingBenefitsForTier(string $tier, ?int $userLimit = null): array
     {
         $normalizedTier = strtolower($tier) === 'pro' ? 'professional' : strtolower($tier);
@@ -159,6 +177,7 @@ class Plan extends Model
                 'featured' => false,
                 'from_price' => 3000,
                 'team_price' => 5500,
+                'additional_user_price' => static::ADDITIONAL_USER_PRICES['basic'],
                 'solo_users' => 1,
                 'team_users' => 3,
                 'benefits' => static::marketingBenefitsForTier('basic', 3),
@@ -169,6 +188,7 @@ class Plan extends Model
                 'featured' => true,
                 'from_price' => 7000,
                 'team_price' => 19500,
+                'additional_user_price' => static::ADDITIONAL_USER_PRICES['professional'],
                 'solo_users' => 2,
                 'team_users' => 5,
                 'benefits' => static::marketingBenefitsForTier('professional', 5),
@@ -179,6 +199,7 @@ class Plan extends Model
                 'featured' => false,
                 'from_price' => 15000,
                 'team_price' => 28500,
+                'additional_user_price' => static::ADDITIONAL_USER_PRICES['enterprise'],
                 'solo_users' => 3,
                 'team_users' => 8,
                 'benefits' => static::marketingBenefitsForTier('enterprise', 8),

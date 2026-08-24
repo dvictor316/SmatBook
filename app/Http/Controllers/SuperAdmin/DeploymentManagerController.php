@@ -1036,6 +1036,10 @@ public function store(Request $request)
     $customUserLimit = $isFreeUnlimited && empty($validated['custom_user_limit'])
         ? self::UNLIMITED_USER_LIMIT
         : $this->resolveCustomUserLimit($validated);
+    $deploymentAmount = $isFreeUnlimited
+        ? 0.0
+        : $this->resolveDeploymentAmountForSeats($validated, $customUserLimit);
+    $validated['plan_price'] = $deploymentAmount;
     $licenseUnitAmount = $this->resolveLicenseUnitAmount((float) $validated['plan_price'], $customUserLimit);
 
     // ── Run DB work inside transaction ──────────────────────
@@ -1255,6 +1259,28 @@ private function resolveLicenseUnitAmount(float $planPrice, ?int $userLimit): fl
     }
 
     return round($planPrice / $userLimit, 2);
+}
+
+private function resolveDeploymentAmountForSeats(array $validated, int $userLimit): float
+{
+    $baseAmount = (float) ($validated['plan_price'] ?? 0);
+    $baseLimit = (int) (Plan::defaultUserLimitForName($validated['plan_name'] ?? null) ?? 1);
+    $extraUsers = max(0, $userLimit - $baseLimit);
+
+    if ($extraUsers <= 0) {
+        return round($baseAmount, 2);
+    }
+
+    $additionalUserPrice = Plan::additionalUserPriceForName(
+        (string) ($validated['plan_name'] ?? ''),
+        (string) ($validated['billing_cycle'] ?? 'monthly')
+    );
+
+    if ($additionalUserPrice === null) {
+        return round($baseAmount, 2);
+    }
+
+    return round($baseAmount + ($extraUsers * $additionalUserPrice), 2);
 }
 
 private function activateFreeDeploymentWorkspace(Subscription $subscription): void
@@ -1824,16 +1850,13 @@ private function formatDeploymentAmount(float $amount): string
 
     private function resolveSeatUnitAmount(Subscription $subscription): float
     {
-        $tier = Plan::normalizeTier((string) ($subscription->plan_name ?: $subscription->plan));
+        $additionalUserPrice = Plan::additionalUserPriceForName(
+            (string) ($subscription->plan_name ?: $subscription->plan),
+            (string) ($subscription->billing_cycle ?? 'monthly')
+        );
 
-        $fixedAdditionalUserPrices = [
-            'enterprise' => 7000.0,
-            'professional' => 5000.0,
-            'basic' => 3000.0,
-        ];
-
-        if (isset($fixedAdditionalUserPrices[$tier])) {
-            return $fixedAdditionalUserPrices[$tier];
+        if ($additionalUserPrice !== null) {
+            return $additionalUserPrice;
         }
 
         $billingCycle = strtolower((string) ($subscription->billing_cycle ?? 'monthly'));

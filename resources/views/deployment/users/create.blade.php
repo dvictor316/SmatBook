@@ -55,6 +55,10 @@
             default => 'Plan',
         };
     };
+    $baseSeatLimits = \App\Models\Plan::DEFAULT_USER_LIMITS + \App\Models\Plan::SOLO_USER_LIMITS;
+    $additionalUserPrices = collect(\App\Models\Plan::ADDITIONAL_USER_PRICES)
+        ->map(fn ($price) => ['monthly' => (float) $price, 'yearly' => (float) $price * 10])
+        ->all();
 @endphp
 <style>
     :root {
@@ -794,12 +798,15 @@
                                     <div>
                                         <div class="fw-bold text-dark small mb-1">{{ $isSuperAdminDeployment ? 'License per user basis' : 'Your commission (35%)' }}</div>
                                         <div class="big-num">₦<span id="commPreview">0</span></div>
+                                        @unless($isSuperAdminDeployment)
+                                            <div class="text-muted small mt-1">Checkout total: ₦<span id="checkoutPreview">0</span></div>
+                                        @endunless
                                     </div>
                                     <div class="text-muted small">
                                         @if($isSuperAdminDeployment)
                                             Plan price divided by<br>custom seat count
                                         @else
-                                            Credited automatically<br>after successful payment
+                                            Extra seats are added<br>before checkout
                                         @endif
                                     </div>
                                 </div>
@@ -815,7 +822,7 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                                 <small class="text-muted">
-                                    {{ $isSuperAdminDeployment ? 'Leave empty to create the subscription as unlimited. If entered, this becomes the seat limit.' : 'If the customer asks for more users, enter the requested number and the license basis will be divided by seats.' }}
+                                    {{ $isSuperAdminDeployment ? 'Leave empty to create the subscription as unlimited. If entered, this becomes the seat limit.' : 'If the customer asks for more users, enter the requested number. Extra seats are charged before checkout.' }}
                                 </small>
                             </div>
 
@@ -1018,6 +1025,8 @@ let plan = { id: null, name: null, price: 0, cycle: 'monthly' };
 
 /* ── Helpers ─────────────────────────────── */
 const fmt = n => Number(n).toLocaleString('en-NG');
+const baseSeatLimits = @js($baseSeatLimits);
+const additionalUserPrices = @js($additionalUserPrices);
 const getSelectedPlanState = () => ({
     id: document.getElementById('planId').value.trim(),
     name: document.getElementById('planName').value.trim(),
@@ -1084,16 +1093,42 @@ window.pickPlan = function(id, name, price, cycle) {
 
 function refreshPlanPreview() {
     const preview = document.getElementById('commPreview');
+    const checkoutPreview = document.getElementById('checkoutPreview');
     const seatsInput = document.getElementById('customUserLimit');
     if (!preview) return;
 
+    const total = deploymentAmountForSeats(plan, seatsInput);
     if (@js($previewMode) === 'license') {
         const seats = Math.max(1, parseInt(seatsInput?.value || '1', 10));
-        preview.textContent = fmt((plan.price || 0) / seats);
+        preview.textContent = fmt(total / seats);
         return;
     }
 
-    preview.textContent = fmt((plan.price || 0) * 0.35);
+    preview.textContent = fmt(total * 0.35);
+    if (checkoutPreview) {
+        checkoutPreview.textContent = fmt(total);
+    }
+}
+
+function deploymentAmountForSeats(selectedPlan, seatsInput) {
+    const baseAmount = Number(selectedPlan.price || 0);
+    const requestedSeats = Math.max(1, parseInt(seatsInput?.value || '0', 10) || 0);
+    const tier = normalizePlanTier(selectedPlan.name || '');
+    const baseLimit = selectedPlan.name?.toLowerCase().includes('solo')
+        ? (tier === 'professional' ? 2 : (tier === 'enterprise' ? 3 : 1))
+        : (baseSeatLimits[tier] || 1);
+    const extraUsers = Math.max(0, requestedSeats - baseLimit);
+    const extraPrice = additionalUserPrices[tier]?.[selectedPlan.cycle || 'monthly'] || 0;
+
+    return baseAmount + (extraUsers * extraPrice);
+}
+
+function normalizePlanTier(name) {
+    const value = String(name).toLowerCase();
+    if (value.includes('enterprise')) return 'enterprise';
+    if (value.includes('professional') || value === 'pro' || value.includes('pro ')) return 'professional';
+    if (value.includes('starter')) return 'starter';
+    return 'basic';
 }
 
 document.getElementById('customUserLimit')?.addEventListener('input', refreshPlanPreview);

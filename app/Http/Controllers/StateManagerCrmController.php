@@ -236,6 +236,11 @@ class StateManagerCrmController extends Controller
             $attributes['local_council'] = $manager->local_council ?? null;
         }
 
+        $existingAgent = User::query()->where('email', $data['email'])->first();
+        if ($existingAgent) {
+            $this->abortUnlessManagedAgent($existingAgent);
+        }
+
         $agent = User::updateOrCreate(['email' => $data['email']], $attributes);
         $this->assignAgentZone($agent->id, $data['zone_id'] ?? null);
 
@@ -244,6 +249,7 @@ class StateManagerCrmController extends Controller
 
     public function assignZone(Request $request, User $agent): RedirectResponse
     {
+        $this->abortUnlessManagedAgent($agent);
         $request->validate(['zone_id' => ['nullable', 'integer']]);
         $this->assignAgentZone($agent->id, $request->integer('zone_id') ?: null);
 
@@ -252,6 +258,7 @@ class StateManagerCrmController extends Controller
 
     public function addViolation(Request $request, User $agent): RedirectResponse
     {
+        $this->abortUnlessManagedAgent($agent);
         $data = $request->validate([
             'title' => ['required', 'string', 'max:190'],
             'severity' => ['required', 'in:low,medium,high,critical'],
@@ -278,7 +285,7 @@ class StateManagerCrmController extends Controller
 
     public function suspendAgent(User $agent): RedirectResponse
     {
-        abort_unless(strtolower((string) $agent->role) === 'agent', 403);
+        $this->abortUnlessManagedAgent($agent);
 
         if (Schema::hasColumn('users', 'status')) {
             $agent->forceFill(['status' => 'suspended'])->save();
@@ -289,7 +296,7 @@ class StateManagerCrmController extends Controller
 
     public function activateAgent(User $agent): RedirectResponse
     {
-        abort_unless(strtolower((string) $agent->role) === 'agent', 403);
+        $this->abortUnlessManagedAgent($agent);
 
         if (Schema::hasColumn('users', 'status')) {
             $agent->forceFill(['status' => 'active'])->save();
@@ -335,23 +342,32 @@ class StateManagerCrmController extends Controller
         if (!empty($agentIds)) {
             $query->whereIn('id', $agentIds);
         } else {
-            $manager = Auth::user();
-            if (Schema::hasColumn('users', 'country') && Schema::hasColumn('users', 'state_region')) {
-                $country = strtolower(trim((string) ($manager->country ?? '')));
-                $state = strtolower(trim((string) ($manager->state_region ?? '')));
-
-                if ($country !== '' && $state !== '') {
-                    $query->whereRaw('LOWER(COALESCE(country, "")) = ?', [$country])
-                        ->whereRaw('LOWER(COALESCE(state_region, "")) = ?', [$state]);
-                } else {
-                    $query->whereRaw('1 = 0');
-                }
-            } else {
-                $query->whereRaw('1 = 0');
-            }
+            $query->whereRaw('1 = 0');
         }
 
         return $query;
+    }
+
+    private function abortUnlessManagedAgent(User $agent): void
+    {
+        abort_unless(strtolower((string) $agent->role) === 'agent', 403);
+
+        if (Schema::hasColumn('users', 'state_manager_id') && (int) ($agent->state_manager_id ?? 0) === (int) Auth::id()) {
+            return;
+        }
+
+        if (Schema::hasTable('agent_zone_assignments')) {
+            $isAssigned = DB::table('agent_zone_assignments')
+                ->where('state_manager_id', Auth::id())
+                ->where('agent_id', $agent->id)
+                ->exists();
+
+            if ($isAssigned) {
+                return;
+            }
+        }
+
+        abort(403);
     }
 
     private function managerStats(array $agentIds): array

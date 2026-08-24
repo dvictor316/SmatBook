@@ -480,6 +480,7 @@
                         </div>
                     </div>
                     <p class="price-secondary">3 users: <strong id="price-basic">₦5,500</strong><span id="period-basic">/mo</span></p>
+                    <p class="price-secondary">Extra user: <strong id="extra-basic">₦{{ number_format($planCards['basic']['additional_user_price']) }}</strong><span id="extra-period-basic">/mo</span></p>
                     <ul class="feature-list">
                         @foreach($tierBenefits['basic'] as $benefit)
                             <li><i class="fas fa-check-circle"></i> {{ $benefit }}</li>
@@ -503,6 +504,7 @@
                         </div>
                     </div>
                     <p class="price-secondary">5 users: <strong id="price-pro">₦19,500</strong><span id="period-pro">/mo</span></p>
+                    <p class="price-secondary">Extra user: <strong id="extra-pro">₦{{ number_format($planCards['pro']['additional_user_price']) }}</strong><span id="extra-period-pro">/mo</span></p>
                     <ul class="feature-list">
                         @foreach($tierBenefits['pro'] as $benefit)
                             <li><i class="fas fa-check-circle"></i> {{ $benefit }}</li>
@@ -525,6 +527,7 @@
                         </div>
                     </div>
                     <p class="price-secondary">8 users: <strong id="price-enterprise">₦28,500</strong><span id="period-enterprise">/mo</span></p>
+                    <p class="price-secondary">Extra user: <strong id="extra-enterprise">₦{{ number_format($planCards['enterprise']['additional_user_price']) }}</strong><span id="extra-period-enterprise">/mo</span></p>
                     <ul class="feature-list">
                         @foreach($tierBenefits['enterprise'] as $benefit)
                             <li><i class="fas fa-check-circle"></i> {{ $benefit }}</li>
@@ -642,7 +645,10 @@
             pro: '₦19,500',
             proSolo: '₦7,000',
             enterprise: '₦28,500',
-            enterpriseSolo: '₦15,000'
+            enterpriseSolo: '₦15,000',
+            extraBasic: '₦3,000',
+            extraPro: '₦5,000',
+            extraEnterprise: '₦7,000'
         },
         annual: {
             starter: '₦10,000',
@@ -652,7 +658,10 @@
             pro: '₦195,000',
             proSolo: '₦70,000',
             enterprise: '₦285,000',
-            enterpriseSolo: '₦150,000'
+            enterpriseSolo: '₦150,000',
+            extraBasic: '₦30,000',
+            extraPro: '₦50,000',
+            extraEnterprise: '₦70,000'
         }
     };
 
@@ -674,6 +683,9 @@
         document.getElementById('price-pro-solo').innerText = prices[period].proSolo;
         document.getElementById('price-enterprise').innerText = prices[period].enterprise;
         document.getElementById('price-enterprise-solo').innerText = prices[period].enterpriseSolo;
+        document.getElementById('extra-basic').innerText = prices[period].extraBasic;
+        document.getElementById('extra-pro').innerText = prices[period].extraPro;
+        document.getElementById('extra-enterprise').innerText = prices[period].extraEnterprise;
 
         document.getElementById('period-starter').innerText = smallText;
         document.getElementById('period-starter-solo').innerText = smallText;
@@ -683,6 +695,9 @@
         document.getElementById('period-pro-solo').innerText = smallText;
         document.getElementById('period-enterprise').innerText = smallText;
         document.getElementById('period-enterprise-solo').innerText = smallText;
+        document.getElementById('extra-period-basic').innerText = smallText;
+        document.getElementById('extra-period-pro').innerText = smallText;
+        document.getElementById('extra-period-enterprise').innerText = smallText;
     }
 
     let isNavigatingToPlan = false;
