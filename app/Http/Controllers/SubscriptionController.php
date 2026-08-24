@@ -27,6 +27,10 @@ class SubscriptionController extends Controller
     */
     public function plans(Request $request)
     {
+        if (Auth::check() && $this->shouldRedirectAuthenticatedPlansVisitor($request)) {
+            return redirect()->route('home');
+        }
+
         $plansQuery = Plan::query();
 
         if (Schema::hasColumn('plans', 'status')) {
@@ -60,6 +64,28 @@ class SubscriptionController extends Controller
             'currentPlanTier' => $currentPlanTier,
             'suggestedUpgradePlan' => $suggestedUpgradePlan,
         ]);
+    }
+
+    private function shouldRedirectAuthenticatedPlansVisitor(Request $request): bool
+    {
+        if ($request->boolean('stay')) {
+            return false;
+        }
+
+        $user = Auth::user();
+        $role = strtolower((string) ($user?->role ?? ''));
+
+        if (in_array($role, ['super_admin', 'superadmin', 'state_manager', 'deployment_manager', 'agent'], true)) {
+            return true;
+        }
+
+        if ((int) ($user?->company_id ?? 0) > 0) {
+            return true;
+        }
+
+        $subscription = $user ? Subscription::resolveCurrentForUser($user) : null;
+
+        return (bool) $subscription;
     }
 
     public function redirectToUpgradeCheckout(Request $request)

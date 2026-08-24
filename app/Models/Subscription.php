@@ -325,7 +325,7 @@ class Subscription extends Model
             return null;
         }
 
-        $subscription = static::query()
+        $subscription = static::withoutGlobalScope('tenant')
             ->with('plan_relationship')
             ->where(function ($query) use ($user) {
                 if (!empty($user->company_id)) {

@@ -363,7 +363,9 @@ class HomeController extends Controller
 
         // No subscription at all
         if (!$subscription) {
-            $company = !empty($user->company_id) ? Company::find($user->company_id) : null;
+            $company = !empty($user->company_id)
+                ? Company::withoutGlobalScope('tenant')->find($user->company_id)
+                : null;
 
             if ($company) {
                 Log::info('→ Company user without own subscription, redirecting to tenant dashboard', [
@@ -388,7 +390,7 @@ class HomeController extends Controller
 
         $isDemoWorkspace = $user->isDemoUser()
             || (bool) optional($subscription->company)->is_demo
-            || (bool) optional(Company::find($subscription->company_id))->is_demo;
+            || (bool) optional(Company::withoutGlobalScope('tenant')->find($subscription->company_id))->is_demo;
 
         if ($isDemoWorkspace) {
             Log::info('→ Demo subscription detected, bypassing checkout/setup gating', [
@@ -433,8 +435,8 @@ class HomeController extends Controller
 
         // Active subscription — check company/domain exists
         $company = $subscription->company_id
-            ? Company::find($subscription->company_id)
-            : Company::where(function ($q) use ($user) {
+            ? Company::withoutGlobalScope('tenant')->find($subscription->company_id)
+            : Company::withoutGlobalScope('tenant')->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id)
                   ->orWhere('owner_id', $user->id);
             })->first();
