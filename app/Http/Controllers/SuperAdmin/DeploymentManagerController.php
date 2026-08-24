@@ -1739,29 +1739,8 @@ private function formatDeploymentAmount(float $amount): string
                 ->withInput();
         }
 
-        if (request()->routeIs('super_admin.*')) {
-            $subscription->forceFill($this->filterPayloadForTable('subscriptions', [
-                'user_limit' => $newLimit,
-                'employee_size' => $newLimit,
-            ]))->save();
-
-            ActivityLog::record('subscriptions', 'add_business_users', 'Super admin increased business user limit', [
-                'user_id' => Auth::id(),
-                'properties' => [
-                    'subscription_id' => $subscription->id,
-                    'company_id' => $subscription->company_id,
-                    'from_users' => $currentLimit,
-                    'to_users' => $newLimit,
-                    'calculated_amount' => $upgradeAmount,
-                ],
-            ]);
-
-            return redirect()
-                ->route('super_admin.business-users.add', ['subscription_id' => $subscription->id])
-                ->with('success', "User limit increased to {$newLimit}. Equivalent upgrade value: ₦" . $this->formatDeploymentAmount($upgradeAmount) . '.');
-        }
-
         $actor = Auth::user();
+        $isSuperAdminUpgrade = request()->routeIs('super_admin.*');
         $pendingUpgrade = Subscription::create($this->filterPayloadForTable('subscriptions', [
             'user_id' => $subscription->user_id,
             'company_id' => $subscription->company_id,
@@ -1776,25 +1755,32 @@ private function formatDeploymentAmount(float $amount): string
             'payment_status' => 'unpaid',
             'user_limit' => $newLimit,
             'employee_size' => $newLimit,
-            'deployed_by' => $actor?->id,
+            'deployed_by' => $isSuperAdminUpgrade ? null : $actor?->id,
         ]));
 
-        session([
-            'checkout_from_deployment' => true,
-            'deployment_customer_id' => $pendingUpgrade->user_id,
-            'deployment_company_id' => $pendingUpgrade->company_id,
-            'deployment_manager_id' => $actor?->id,
-            'deployment_return_manager_id' => $actor?->id,
-            'deployment_manager_email' => $actor?->email,
-            'deployment_commission_rate' => self::COMMISSION_RATE,
-            'deployment_plan_name' => $pendingUpgrade->plan_name,
-            'deployment_subscription_id' => $pendingUpgrade->id,
-        ]);
+        if ($isSuperAdminUpgrade) {
+            session([
+                'platform_admin_checkout' => true,
+                'platform_admin_upgrade_subscription_id' => $pendingUpgrade->id,
+            ]);
+        } else {
+            session([
+                'checkout_from_deployment' => true,
+                'deployment_customer_id' => $pendingUpgrade->user_id,
+                'deployment_company_id' => $pendingUpgrade->company_id,
+                'deployment_manager_id' => $actor?->id,
+                'deployment_return_manager_id' => $actor?->id,
+                'deployment_manager_email' => $actor?->email,
+                'deployment_commission_rate' => self::COMMISSION_RATE,
+                'deployment_plan_name' => $pendingUpgrade->plan_name,
+                'deployment_subscription_id' => $pendingUpgrade->id,
+            ]);
+        }
         session()->save();
 
         return redirect()
             ->route('saas.checkout', ['id' => $pendingUpgrade->id])
-            ->with('success', "{$extraUsers} additional user seat(s) added to checkout.");
+            ->with('success', "{$extraUsers} additional user seat(s) queued for checkout. The user limit will increase only after payment.");
     }
 
     private function businessSeatUpgradeSubscriptionsQuery(): \Illuminate\Database\Eloquent\Builder

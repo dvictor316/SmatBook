@@ -42,7 +42,7 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white border-0 pb-0">
                     <h5 class="fw-bold mb-1">Seat Upgrade</h5>
-                    <p class="text-muted small mb-0">Choose the business and enter the new total user limit.</p>
+                    <p class="text-muted small mb-0">Choose the business and enter the new total user limit. Seats are activated after checkout payment.</p>
                 </div>
                 <div class="card-body">
                     <form action="{{ route($formActionRoute ?? 'deployment.subscription.add-users.store') }}" method="POST">
@@ -107,7 +107,7 @@
                         </div>
 
                         <button type="submit" class="btn btn-primary w-100 fw-bold">
-                            <i class="fas fa-user-plus me-1"></i> Continue
+                            <i class="fas fa-credit-card me-1"></i> Continue to Checkout
                         </button>
                     </form>
                 </div>

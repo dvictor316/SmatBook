@@ -534,6 +534,8 @@ class SubscriptionController extends Controller
             $currentUser          = auth()->user();
             $isDeploymentCheckout = $this->isDeploymentCheckout($subscription);
             $resolvedManagerId    = $this->resolveDeploymentManagerId($subscription);
+            $isSuperAdminCheckout = $currentUser
+                && in_array(strtolower((string) ($currentUser->role ?? '')), ['super_admin', 'superadmin'], true);
             $isManagerRecord      = DeploymentManager::where('user_id', $currentUser->id)->exists();
             $isResolvedManager    = $resolvedManagerId > 0 && (int) $currentUser->id === (int) $resolvedManagerId;
             $isSessionManager     = $isDeploymentCheckout
@@ -563,7 +565,7 @@ class SubscriptionController extends Controller
             }
 
             // Auth check: own subscription OR a deployment manager
-            if ($subscription->user_id !== $currentUser->id && !$isManager) {
+            if ($subscription->user_id !== $currentUser->id && !$isManager && !$isSuperAdminCheckout) {
                 Log::warning('Unauthorized checkout attempt', [
                     'subscription_owner' => $subscription->user_id,
                     'current_user'       => $currentUser->id,
@@ -580,6 +582,7 @@ class SubscriptionController extends Controller
                 'is_manager_record'     => $isManagerRecord,
                 'is_resolved_manager'   => $isResolvedManager,
                 'is_session_manager'    => $isSessionManager,
+                'is_super_admin'        => $isSuperAdminCheckout,
                 'is_deployment_checkout'=> $isDeploymentCheckout,
             ]);
 
