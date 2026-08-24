@@ -4,6 +4,7 @@
         ['label' => 'Leads', 'route' => 'agent.leads', 'icon' => 'fa-solid fa-user-plus'],
         ['label' => 'Free Trials', 'route' => 'agent.leads', 'icon' => 'fa-solid fa-clock', 'query' => ['status' => 'interested']],
         ['label' => 'Businesses', 'route' => 'agent.leads', 'icon' => 'fa-solid fa-store', 'query' => ['type' => 'company']],
+        ['label' => 'Add Users', 'route' => 'agent.business-users.add', 'icon' => 'fa-solid fa-users-gear'],
         ['label' => 'Find Nearby', 'route' => 'agent.nearby-businesses', 'icon' => 'fa-solid fa-location-dot', 'active' => ['agent.find-nearby', 'agent.nearby-businesses']],
         ['label' => 'Performance', 'route' => 'agent.performance', 'icon' => 'fa-solid fa-chart-line'],
         ['label' => 'Earnings', 'route' => 'agent.earnings', 'icon' => 'fa-solid fa-wallet'],

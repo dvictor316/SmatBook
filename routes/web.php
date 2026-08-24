@@ -355,6 +355,8 @@ Route::middleware(['auth', 'manager.verified'])
         Route::get('/overview',      [DeploymentManagerController::class, 'subscriptionOverview'])   ->name('overview');
         Route::get('/renewals',      [DeploymentManagerController::class, 'subscriptionRenewals'])   ->name('renewals');
         Route::get('/expiring',      [DeploymentManagerController::class, 'expiringSubscriptions'])  ->name('expiring');
+        Route::get('/add-users',     [DeploymentManagerController::class, 'addUsersToBusiness'])      ->name('add-users');
+        Route::post('/add-users',    [DeploymentManagerController::class, 'storeAddedBusinessUsers']) ->name('add-users.store');
         Route::get('/{id}/history',  [DeploymentManagerController::class, 'subscriptionHistory'])    ->name('history');  // ← WAS MISSING - caused crash
         Route::post('/{id}/renew',   [DeploymentManagerController::class, 'renewSubscription'])      ->name('renew');
     });
@@ -467,6 +469,8 @@ Route::middleware(['auth', 'role:agent,state_manager,super_admin'])
         Route::get('/nearby-businesses', [AgentPortalController::class, 'findNearby'])->name('nearby-businesses');
         Route::get('/register-business', [DeploymentManagerController::class, 'create'])->name('registration.create');
         Route::post('/register-business', [DeploymentManagerController::class, 'store'])->name('registration.store');
+        Route::get('/add-business-users', [DeploymentManagerController::class, 'addUsersToBusiness'])->name('business-users.add');
+        Route::post('/add-business-users', [DeploymentManagerController::class, 'storeAddedBusinessUsers'])->name('business-users.store');
         Route::post('/leads', [AgentPortalController::class, 'storeLead'])->name('leads.store');
         Route::patch('/leads/{lead}', [AgentPortalController::class, 'updateLead'])->name('leads.update');
         Route::delete('/leads/{lead}', [AgentPortalController::class, 'destroyLead'])->name('leads.destroy');
@@ -623,6 +627,8 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     Route::get('/custom-deployments', [DeploymentManagerController::class, 'customDeploymentsIndex'])->name('custom_deployments.index');
     Route::get('/custom-deployments/create', [DeploymentManagerController::class, 'create'])->name('custom_deployments.create');
     Route::post('/custom-deployments', [DeploymentManagerController::class, 'store'])->name('custom_deployments.store');
+    Route::get('/registered-businesses/add-users', [DeploymentManagerController::class, 'addUsersToBusiness'])->name('business-users.add');
+    Route::post('/registered-businesses/add-users', [DeploymentManagerController::class, 'storeAddedBusinessUsers'])->name('business-users.store');
     Route::get('/custom-deployments/{subscription}/edit', [DeploymentManagerController::class, 'customDeploymentEdit'])->name('custom_deployments.edit');
     Route::put('/custom-deployments/{subscription}', [DeploymentManagerController::class, 'customDeploymentUpdate'])->name('custom_deployments.update');
     Route::post('/custom-deployments/{subscription}/suspend', [DeploymentManagerController::class, 'customDeploymentSuspend'])->name('custom_deployments.suspend');

@@ -1673,6 +1673,204 @@ private function formatDeploymentAmount(float $amount): string
         return back()->with('success', 'Renewed by 1 month.');
     }
 
+    public function addUsersToBusiness(Request $request)
+    {
+        $query = $this->businessSeatUpgradeSubscriptionsQuery()
+            ->with(['company' => fn ($q) => $q->withoutGlobalScope('tenant'), 'user'])
+            ->latest('updated_at');
+
+        $subscriptions = $query->paginate(12)->withQueryString();
+        $subscriptions->getCollection()->transform(fn (Subscription $subscription) => $this->decorateSeatUpgradeSubscription($subscription));
+
+        $selectedSubscription = null;
+        $selectedId = (int) $request->query('subscription_id', 0);
+        if ($selectedId > 0) {
+            $selectedSubscription = $this->decorateSeatUpgradeSubscription(
+                $this->businessSeatUpgradeSubscriptionsQuery()
+                    ->with(['company' => fn ($q) => $q->withoutGlobalScope('tenant'), 'user'])
+                    ->findOrFail($selectedId)
+            );
+        }
+
+        $dashboardRoute = $this->seatUpgradeDashboardRoute();
+        $formActionRoute = $this->seatUpgradeStoreRoute();
+        $pageTitle = request()->routeIs('super_admin.*') ? 'Add Users to Registered Business' : 'Add Users to Client Business';
+        $pageSubtitle = 'Increase a business seat limit using the same plan pricing basis used during registration.';
+
+        return view('deployment.subscriptions.add-users', compact(
+            'subscriptions',
+            'selectedSubscription',
+            'dashboardRoute',
+            'formActionRoute',
+            'pageTitle',
+            'pageSubtitle'
+        ));
+    }
+
+    public function storeAddedBusinessUsers(Request $request)
+    {
+        $validated = $request->validate([
+            'subscription_id' => 'required|integer',
+            'new_user_limit' => 'required|integer|min:1|max:100000',
+        ]);
+
+        $subscription = $this->businessSeatUpgradeSubscriptionsQuery()
+            ->with(['company' => fn ($q) => $q->withoutGlobalScope('tenant'), 'user'])
+            ->findOrFail((int) $validated['subscription_id']);
+
+        $subscription = $this->decorateSeatUpgradeSubscription($subscription);
+        $currentLimit = (int) $subscription->seat_current_limit;
+        $newLimit = (int) $validated['new_user_limit'];
+
+        if ($newLimit <= $currentLimit) {
+            return back()
+                ->withErrors(['new_user_limit' => "Enter a user limit above the current limit of {$currentLimit}."])
+                ->withInput();
+        }
+
+        $extraUsers = $newLimit - $currentLimit;
+        $unitAmount = (float) $subscription->seat_unit_amount;
+        $upgradeAmount = round($unitAmount * $extraUsers, 2);
+
+        if ($upgradeAmount <= 0) {
+            return back()
+                ->withErrors(['new_user_limit' => 'Unable to calculate the seat upgrade price for this plan.'])
+                ->withInput();
+        }
+
+        if (request()->routeIs('super_admin.*')) {
+            $subscription->forceFill($this->filterPayloadForTable('subscriptions', [
+                'user_limit' => $newLimit,
+                'employee_size' => $newLimit,
+            ]))->save();
+
+            ActivityLog::record('subscriptions', 'add_business_users', 'Super admin increased business user limit', [
+                'user_id' => Auth::id(),
+                'properties' => [
+                    'subscription_id' => $subscription->id,
+                    'company_id' => $subscription->company_id,
+                    'from_users' => $currentLimit,
+                    'to_users' => $newLimit,
+                    'calculated_amount' => $upgradeAmount,
+                ],
+            ]);
+
+            return redirect()
+                ->route('super_admin.business-users.add', ['subscription_id' => $subscription->id])
+                ->with('success', "User limit increased to {$newLimit}. Equivalent upgrade value: ₦" . $this->formatDeploymentAmount($upgradeAmount) . '.');
+        }
+
+        $actor = Auth::user();
+        $pendingUpgrade = Subscription::create($this->filterPayloadForTable('subscriptions', [
+            'user_id' => $subscription->user_id,
+            'company_id' => $subscription->company_id,
+            'domain_prefix' => $subscription->domain_prefix ?? $subscription->company?->domain_prefix,
+            'plan' => $subscription->plan,
+            'plan_id' => $subscription->plan_id,
+            'plan_name' => $subscription->plan_name ?: $subscription->plan,
+            'subscriber_name' => $subscription->subscriber_name ?: ($subscription->user?->name ?? $subscription->company?->name),
+            'amount' => $upgradeAmount,
+            'billing_cycle' => strtolower((string) ($subscription->billing_cycle ?? 'monthly')),
+            'status' => 'Pending',
+            'payment_status' => 'unpaid',
+            'user_limit' => $newLimit,
+            'employee_size' => $newLimit,
+            'deployed_by' => $actor?->id,
+        ]));
+
+        session([
+            'checkout_from_deployment' => true,
+            'deployment_customer_id' => $pendingUpgrade->user_id,
+            'deployment_company_id' => $pendingUpgrade->company_id,
+            'deployment_manager_id' => $actor?->id,
+            'deployment_return_manager_id' => $actor?->id,
+            'deployment_manager_email' => $actor?->email,
+            'deployment_commission_rate' => self::COMMISSION_RATE,
+            'deployment_plan_name' => $pendingUpgrade->plan_name,
+            'deployment_subscription_id' => $pendingUpgrade->id,
+        ]);
+        session()->save();
+
+        return redirect()
+            ->route('saas.checkout', ['id' => $pendingUpgrade->id])
+            ->with('success', "{$extraUsers} additional user seat(s) added to checkout.");
+    }
+
+    private function businessSeatUpgradeSubscriptionsQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = request()->routeIs('super_admin.*')
+            ? Subscription::withoutGlobalScope('tenant')
+            : $this->managedSubscriptions();
+
+        return $query
+            ->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['active', 'trial'])
+            ->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), ['paid', 'free'])
+            ->whereNotNull('company_id')
+            ->whereIn('subscriptions.id', function ($subquery) {
+                $subquery->selectRaw('MAX(id)')
+                    ->from('subscriptions')
+                    ->whereNotNull('company_id')
+                    ->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['active', 'trial'])
+                    ->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), ['paid', 'free'])
+                    ->groupBy('company_id');
+            });
+    }
+
+    private function decorateSeatUpgradeSubscription(Subscription $subscription): Subscription
+    {
+        $currentUsers = (int) User::query()
+            ->where('company_id', (int) $subscription->company_id)
+            ->count();
+        $resolvedLimit = (int) ($subscription->resolvedUserLimit() ?? 1);
+        $currentLimit = max($resolvedLimit, $currentUsers);
+        $unitAmount = $this->resolveSeatUnitAmount($subscription);
+
+        $subscription->seat_current_users = $currentUsers;
+        $subscription->seat_current_limit = $currentLimit;
+        $subscription->seat_unit_amount = $unitAmount;
+        $subscription->seat_unit_amount_label = $this->formatDeploymentAmount($unitAmount);
+
+        return $subscription;
+    }
+
+    private function resolveSeatUnitAmount(Subscription $subscription): float
+    {
+        $billingCycle = strtolower((string) ($subscription->billing_cycle ?? 'monthly'));
+        $plan = $subscription->plan_id ? Plan::find((int) $subscription->plan_id) : null;
+        $plan ??= Plan::findByCatalogName((string) ($subscription->plan_name ?: $subscription->plan), $billingCycle);
+
+        $basePrice = (float) ($plan?->price ?? $subscription->amount ?? 0);
+        $baseLimit = (int) ($plan?->resolvedUserLimit() ?? Plan::defaultUserLimitForName($subscription->plan_name ?: $subscription->plan) ?? $subscription->resolvedUserLimit() ?? 1);
+
+        return round($basePrice / max(1, $baseLimit), 2);
+    }
+
+    private function seatUpgradeDashboardRoute(): string
+    {
+        if (request()->routeIs('super_admin.*')) {
+            return 'super_admin.dashboard';
+        }
+
+        if (request()->routeIs('agent.*')) {
+            return 'agent.dashboard';
+        }
+
+        return 'deployment.dashboard';
+    }
+
+    private function seatUpgradeStoreRoute(): string
+    {
+        if (request()->routeIs('super_admin.*')) {
+            return 'super_admin.business-users.store';
+        }
+
+        if (request()->routeIs('agent.*')) {
+            return 'agent.business-users.store';
+        }
+
+        return 'deployment.subscription.add-users.store';
+    }
+
     public function expiringSubscriptions() 
     {
         $renewals = $this->managedSubscriptions()

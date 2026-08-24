@@ -781,6 +781,13 @@
                 </a>
             </li>
 
+            <li class="dm-menu-item">
+                <a href="{{ route('deployment.subscription.add-users') }}" class="dm-menu-link {{ request()->routeIs('deployment.subscription.add-users') ? 'active' : '' }}">
+                    <span class="dm-menu-icon"><i class="fas fa-users-gear"></i></span>
+                    <span class="dm-menu-text">Add Business Users</span>
+                </a>
+            </li>
+
             
             <li class="dm-menu-item has-submenu {{ request()->routeIs('deployment.companies.*') ? 'open' : '' }}">
                 <a href="#" class="dm-menu-link {{ request()->routeIs('deployment.companies.*') ? 'active' : '' }}" onclick="toggleSubmenu(event, this)">
