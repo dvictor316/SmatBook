@@ -1744,7 +1744,7 @@ private function formatDeploymentAmount(float $amount): string
         $pendingUpgrade = Subscription::create($this->filterPayloadForTable('subscriptions', [
             'user_id' => $subscription->user_id,
             'company_id' => $subscription->company_id,
-            'domain_prefix' => $subscription->domain_prefix ?? $subscription->company?->domain_prefix,
+            'domain_prefix' => null,
             'plan' => $subscription->plan,
             'plan_id' => $subscription->plan_id,
             'plan_name' => $subscription->plan_name ?: $subscription->plan,

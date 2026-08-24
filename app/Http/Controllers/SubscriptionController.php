@@ -1121,15 +1121,19 @@ class SubscriptionController extends Controller
                 $subscription->user->update($userUpdateData);
             }
 
-            // Payment success should not be rolled back by retryable provisioning issues.
-            try {
-                $this->deployWorkspace($subscription);
-            } catch (\Throwable $workspaceError) {
-                $provisioningWarning = true;
-                Log::warning('Workspace provisioning failed after regular payment activation', [
-                    'subscription_id' => $subscription->id,
-                    'error' => $workspaceError->getMessage(),
-                ]);
+            if ($this->isSeatUpgradeSubscription($subscription)) {
+                $this->applyPaidSeatUpgrade($subscription);
+            } else {
+                // Payment success should not be rolled back by retryable provisioning issues.
+                try {
+                    $this->deployWorkspace($subscription);
+                } catch (\Throwable $workspaceError) {
+                    $provisioningWarning = true;
+                    Log::warning('Workspace provisioning failed after regular payment activation', [
+                        'subscription_id' => $subscription->id,
+                        'error' => $workspaceError->getMessage(),
+                    ]);
+                }
             }
 
             DB::commit();
@@ -1241,15 +1245,19 @@ class SubscriptionController extends Controller
                 $customer->update($customerUpdateData);
             }
 
-            // Payment success should not be rolled back by retryable provisioning issues.
-            try {
-                $this->deployWorkspace($subscription);
-            } catch (\Throwable $workspaceError) {
-                $provisioningWarning = true;
-                Log::warning('Workspace provisioning failed after deployment payment activation', [
-                    'subscription_id' => $subscription->id,
-                    'error' => $workspaceError->getMessage(),
-                ]);
+            if ($this->isSeatUpgradeSubscription($subscription)) {
+                $this->applyPaidSeatUpgrade($subscription);
+            } else {
+                // Payment success should not be rolled back by retryable provisioning issues.
+                try {
+                    $this->deployWorkspace($subscription);
+                } catch (\Throwable $workspaceError) {
+                    $provisioningWarning = true;
+                    Log::warning('Workspace provisioning failed after deployment payment activation', [
+                        'subscription_id' => $subscription->id,
+                        'error' => $workspaceError->getMessage(),
+                    ]);
+                }
             }
 
             // 4. Record commission across configured commission tables.
@@ -2295,6 +2303,76 @@ class SubscriptionController extends Controller
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    private function isSeatUpgradeSubscription(Subscription $subscription): bool
+    {
+        if ((int) ($subscription->company_id ?? 0) <= 0) {
+            return false;
+        }
+
+        if (filled($subscription->domain_prefix)) {
+            return false;
+        }
+
+        return Subscription::withoutGlobalScope('tenant')
+            ->where('company_id', (int) $subscription->company_id)
+            ->where('id', '!=', (int) $subscription->id)
+            ->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['active', 'trial'])
+            ->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), ['paid', 'free'])
+            ->exists();
+    }
+
+    private function applyPaidSeatUpgrade(Subscription $subscription): void
+    {
+        $newLimit = (int) ($subscription->user_limit ?? $subscription->employee_size ?? 0);
+        if ($newLimit <= 0) {
+            return;
+        }
+
+        $activeSubscription = Subscription::withoutGlobalScope('tenant')
+            ->where('company_id', (int) $subscription->company_id)
+            ->where('id', '!=', (int) $subscription->id)
+            ->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['active', 'trial'])
+            ->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), ['paid', 'free'])
+            ->orderByDesc('id')
+            ->first();
+
+        if (!$activeSubscription) {
+            return;
+        }
+
+        $currentLimit = (int) ($activeSubscription->resolvedUserLimit() ?? 0);
+        $finalLimit = max($currentLimit, $newLimit);
+
+        $activeSubscription->forceFill($this->filterSubscriptionPayload([
+            'user_limit' => $finalLimit,
+            'employee_size' => $finalLimit,
+        ]))->save();
+
+        $subscription->forceFill($this->filterSubscriptionPayload([
+            'user_limit' => $finalLimit,
+            'employee_size' => $finalLimit,
+        ]))->save();
+
+        Log::info('Paid seat upgrade applied', [
+            'upgrade_subscription_id' => $subscription->id,
+            'active_subscription_id' => $activeSubscription->id,
+            'company_id' => $subscription->company_id,
+            'from_limit' => $currentLimit,
+            'to_limit' => $finalLimit,
+        ]);
+    }
+
+    private function filterSubscriptionPayload(array $payload): array
+    {
+        if (!Schema::hasTable('subscriptions')) {
+            return [];
+        }
+
+        return collect($payload)
+            ->filter(fn ($value, $column) => Schema::hasColumn('subscriptions', $column))
+            ->all();
     }
 
     /**
