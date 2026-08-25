@@ -200,7 +200,9 @@ class AuthController extends Controller
                     )
                     : null;
 
-                $requiresSuperAdminApproval = !$this->isManagerRoleName($role) && strtolower((string) $role) !== 'agent';
+                $normalizedRole = strtolower((string) $role);
+                $isAgentRegistration = $normalizedRole === 'agent';
+                $requiresSuperAdminApproval = !$this->isManagerRoleName($role) && !$isAgentRegistration;
 
                 $userPayload = $this->filterPayloadForTable('users', [
                     'name' => $validated['name'],
@@ -208,8 +210,8 @@ class AuthController extends Controller
                     'phone' => $normalizedPhone,
                     'password' => Hash::make($validated['password']),
                     'role' => $role,
-                    'is_verified' => 0,
-                    'status' => ($requiresSuperAdminApproval || strtolower((string) $role) === 'agent') ? 'pending' : 'active',
+                    'is_verified' => $isAgentRegistration ? 1 : 0,
+                    'status' => $requiresSuperAdminApproval ? 'pending' : 'active',
                     'country' => $validated['country'] ?? null,
                     'state_region' => $validated['state_region'] ?? null,
                     'local_council' => $validated['local_council'] ?? null,
@@ -350,8 +352,8 @@ class AuthController extends Controller
             }
 
             if (strtolower((string) $registrationResult['role']) === 'agent') {
-                return redirect()->route('manager.pending.notice')
-                    ->with('success', 'Partner registration submitted. Once approved, your profile will appear under your state manager.');
+                return redirect()->route('agent.dashboard')
+                    ->with('success', 'Agent registration successful. You can start using your agent dashboard.');
             }
 
             return redirect()->route('registration.pending.notice')

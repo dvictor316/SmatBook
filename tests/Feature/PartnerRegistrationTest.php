@@ -91,11 +91,15 @@ class PartnerRegistrationTest extends TestCase
             'password_confirmation' => 'Secure123',
         ]);
 
-        $response->assertRedirect(route('manager.pending.notice'));
+        $response->assertRedirect(route('agent.dashboard'));
         $response->assertSessionDoesntHaveErrors(['country', 'state_region', 'local_council']);
 
         $this->assertAuthenticated();
-        $this->assertSame('Nigeria', User::firstOrFail()->country);
+        $user = User::firstOrFail();
+        $this->assertSame('Nigeria', $user->country);
+        $this->assertSame('agent', $user->role);
+        $this->assertSame('active', $user->status);
+        $this->assertSame(1, (int) $user->is_verified);
     }
 
     public function test_partner_registration_allows_phone_without_email(): void
@@ -111,11 +115,15 @@ class PartnerRegistrationTest extends TestCase
             'password_confirmation' => 'Secure123',
         ]);
 
-        $response->assertRedirect(route('manager.pending.notice'));
+        $response->assertRedirect(route('agent.dashboard'));
         $response->assertSessionDoesntHaveErrors(['email', 'phone', 'country']);
 
         $this->assertAuthenticated();
-        $this->assertStringContainsString('@phone.smartprobook.local', User::firstOrFail()->email);
+        $user = User::firstOrFail();
+        $this->assertStringContainsString('@phone.smartprobook.local', $user->email);
+        $this->assertSame('agent', $user->role);
+        $this->assertSame('active', $user->status);
+        $this->assertSame(1, (int) $user->is_verified);
     }
 
     public function test_regular_registration_waits_for_super_admin_approval(): void
@@ -141,8 +149,8 @@ class PartnerRegistrationTest extends TestCase
         $this->assertSame(0, (int) $user->is_verified);
         $this->assertDatabaseHas('subscriptions', [
             'user_id' => $user->id,
-            'status' => 'Pending',
-            'payment_status' => 'unpaid',
+            'status' => 'Trial',
+            'payment_status' => 'free',
         ]);
     }
 }
