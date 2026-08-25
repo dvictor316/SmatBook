@@ -20,6 +20,8 @@
     ];
 @endphp
 
+{{-- Super admin dashboard: keep this file deployed from source control, not edited directly on production. --}}
+
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
 
