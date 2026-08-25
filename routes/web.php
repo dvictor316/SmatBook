@@ -741,6 +741,8 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
     Route::get('/housekeeping', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'index'])->name('housekeeping.index');
     Route::post('/housekeeping/rooms/{room}/dirty', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'markDirty'])->name('housekeeping.rooms.dirty');
     Route::post('/housekeeping/rooms/{room}/clean', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'markClean'])->name('housekeeping.rooms.clean');
+    Route::post('/housekeeping/tasks', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'storeTask'])->name('housekeeping.tasks.store');
+    Route::post('/housekeeping/tasks/{task}/status', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'updateTaskStatus'])->name('housekeeping.tasks.status');
     Route::post('/housekeeping/tasks/{task}/complete', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'completeTask'])->name('housekeeping.tasks.complete');
 
     Route::get('/maintenance', [\App\Http\Controllers\Hotel\MaintenanceController::class, 'index'])->name('maintenance.index');

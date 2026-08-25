@@ -21,6 +21,7 @@
     .hk-filter h4 { font-weight:700; color:#061b33; margin-bottom:12px; }
     .hk-filter label { color:#475569; font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.08em; }
     .hk-filter .form-control, .hk-filter .form-select { border-radius:12px; border-color:#d8e2ee; min-height:44px; }
+    .hk-alert { border-radius:14px; border:0; box-shadow:0 10px 24px rgba(15,23,42,.06); }
     .hk-room-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:14px; }
     .hk-room-card { min-height:205px; border-radius:18px; border:2px solid #2563eb; background:#eff6ff; padding:18px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 12px 28px rgba(15,23,42,.06); }
     .hk-room-card.clean { border-color:#16a34a; background:#ecfdf3; }
@@ -39,8 +40,10 @@
     .hk-tag.arriving { background:#ede9fe; color:#6d28d9; }
     .hk-guest { color:#334155; font-weight:700; font-size:18px; margin-top:12px; }
     .hk-meta { color:#64748b; line-height:1.45; }
-    .hk-card-actions { display:flex; gap:8px; margin-top:14px; }
-    .hk-card-actions .btn { border-radius:11px; font-weight:700; flex:1; }
+    .hk-card-actions { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+    .hk-card-actions .btn { border-radius:11px; font-weight:700; }
+    .hk-quick-actions { display:flex; flex-wrap:wrap; gap:6px; }
+    .hk-quick-actions form { display:inline-block; }
     .hk-workbench { margin-top:18px; display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:16px; }
     .hk-table-wrap { overflow:auto; }
     .hk-table { min-width:850px; margin:0; }
@@ -59,9 +62,10 @@
 @section('content')
 @php
     $rooms = collect($rooms ?? []);
-    $taskRows = collect($tasks ?? [])->flatten(1);
+    $taskRows = collect($tasks ?? [])->flatten(1)->sortByDesc('id')->values();
+    $activeTaskRows = $taskRows->filter(fn($task) => !in_array((string) $task->status, ['completed', 'cancelled'], true))->values();
     $arrivalByRoom = collect($arrivalsWaitingForRoom ?? [])->filter(fn($reservation) => !empty($reservation->room_id))->keyBy('room_id');
-    $taskByRoom = $taskRows->filter(fn($task) => !empty($task->room_id))->keyBy('room_id');
+    $taskByRoom = $activeTaskRows->filter(fn($task) => !empty($task->room_id))->keyBy('room_id');
     $roomClass = function ($room, $task = null) {
         $operational = (string) ($room->operational_status ?? 'available');
         $housekeeping = (string) ($room->housekeeping_status ?? 'clean');
@@ -91,10 +95,17 @@
                 <p>Real-time room readiness, dirty rooms, arrivals and cleaner workload for {{ now()->format('l d M Y') }}.</p>
             </div>
             <div class="hk-actions">
-                <a href="{{ route('hotel.frontdesk') }}" class="btn btn-outline-primary">Front Desk</a>
-                <a href="{{ route('hotel.room-calendar') }}" class="btn btn-outline-dark">Room Calendar</a>
+                <a href="{{ route('hotel.frontdesk') }}" class="btn btn-outline-primary"><i class="fas fa-concierge-bell me-1"></i> Front Desk</a>
+                <a href="{{ route('hotel.rooms.calendar') }}" class="btn btn-outline-dark"><i class="fas fa-calendar-alt me-1"></i> Room Calendar</a>
             </div>
         </div>
+
+        @if(session('success'))
+            <div class="alert alert-success hk-alert"><i class="fas fa-check-circle me-2"></i>{{ session('success') }}</div>
+        @endif
+        @if($errors->any())
+            <div class="alert alert-danger hk-alert"><i class="fas fa-exclamation-circle me-2"></i>{{ $errors->first() }}</div>
+        @endif
 
         <div class="hk-chip-row">
             <span class="hk-chip clean">Vacant Clean: {{ $summary['vacant_clean'] ?? 0 }}</span>
@@ -108,13 +119,51 @@
             <aside class="hk-panel hk-filter">
                 <h4>Housekeeping</h4>
                 <form method="GET" action="{{ route('hotel.housekeeping.index') }}" class="mb-3">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select mb-3" onchange="this.form.submit()">
+                        <option value="">All statuses</option>
+                        @foreach(['open' => 'Open', 'assigned' => 'Assigned', 'cleaning' => 'Cleaning', 'inspection' => 'Inspection', 'completed' => 'Completed'] as $value => $label)
+                            <option value="{{ $value }}" {{ request('status') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
                     <label class="form-label">Priority</label>
                     <select name="priority" class="form-select" onchange="this.form.submit()">
                         <option value="">All priorities</option>
+                        <option value="urgent" {{ request('priority') === 'urgent' ? 'selected' : '' }}>Urgent priority</option>
                         <option value="high" {{ request('priority') === 'high' ? 'selected' : '' }}>High priority</option>
                         <option value="normal" {{ request('priority') === 'normal' ? 'selected' : '' }}>Normal priority</option>
+                        <option value="low" {{ request('priority') === 'low' ? 'selected' : '' }}>Low priority</option>
                     </select>
                 </form>
+
+                <form method="POST" action="{{ route('hotel.housekeeping.tasks.store') }}" class="mb-3">
+                    @csrf
+                    <label class="form-label">Open Task</label>
+                    <select name="room_id" class="form-select mb-2" required>
+                        <option value="">Choose room</option>
+                        @foreach($rooms as $room)
+                            <option value="{{ $room->id }}">Room {{ $room->room_number }} - {{ $room->type?->name ?? 'Standard' }}</option>
+                        @endforeach
+                    </select>
+                    <select name="task_type" class="form-select mb-2" required>
+                        <option value="standard_clean">Standard clean</option>
+                        <option value="deep_clean">Deep clean</option>
+                        <option value="linen_change">Linen change</option>
+                        <option value="turn_down">Turn down</option>
+                        <option value="inspection">Inspection</option>
+                        <option value="lost_and_found">Lost and found</option>
+                        <option value="ad_hoc_clean">Ad-hoc clean</option>
+                    </select>
+                    <select name="priority" class="form-select mb-2" required>
+                        <option value="normal">Normal priority</option>
+                        <option value="urgent">Urgent priority</option>
+                        <option value="high">High priority</option>
+                        <option value="low">Low priority</option>
+                    </select>
+                    <textarea name="note" class="form-control mb-2" rows="3" placeholder="Task note"></textarea>
+                    <button class="btn btn-primary w-100"><i class="fas fa-plus-circle me-1"></i> Open Task</button>
+                </form>
+
                 <label class="form-label">Workload</label>
                 <div class="d-grid gap-2">
                     <span class="btn btn-light text-start">Assigned: {{ $summary['assigned'] ?? 0 }}</span>
@@ -123,7 +172,7 @@
                     <span class="btn btn-light text-start">Clean rooms: {{ $summary['clean'] ?? 0 }}</span>
                 </div>
                 <hr>
-                <p class="text-muted mb-0">Use the room cards to mark dirty rooms clean or open an ad-hoc clean task. Super Admin sees the same operational state as a read-only mirror.</p>
+                <p class="text-muted mb-0">Use the room cards to assign, start cleaning, inspect and close room tasks.</p>
             </aside>
 
             <main>
@@ -158,10 +207,16 @@
                                 </div>
                             </div>
                             <div class="hk-card-actions">
-                                @if($class === 'dirty' || $class === 'inspection')
-                                    <form method="POST" action="{{ route('hotel.housekeeping.rooms.clean', $room) }}" class="flex-fill">@csrf<button class="btn btn-success w-100">Mark as Clean</button></form>
+                                @if($task && $task->status === 'open')
+                                    <form method="POST" action="{{ route('hotel.housekeeping.tasks.status', $task) }}">@csrf<input type="hidden" name="status" value="assigned"><button class="btn btn-outline-primary btn-sm"><i class="fas fa-user-check me-1"></i> Assign</button></form>
+                                    <form method="POST" action="{{ route('hotel.housekeeping.tasks.status', $task) }}">@csrf<input type="hidden" name="status" value="cleaning"><button class="btn btn-primary btn-sm"><i class="fas fa-broom me-1"></i> Start</button></form>
+                                @elseif($task && in_array((string) $task->status, ['assigned', 'cleaning'], true))
+                                    <form method="POST" action="{{ route('hotel.housekeeping.tasks.status', $task) }}">@csrf<input type="hidden" name="status" value="inspection"><button class="btn btn-warning btn-sm"><i class="fas fa-clipboard-check me-1"></i> Inspect</button></form>
+                                    <form method="POST" action="{{ route('hotel.housekeeping.tasks.complete', $task) }}">@csrf<button class="btn btn-success btn-sm"><i class="fas fa-check me-1"></i> Finish</button></form>
+                                @elseif($class === 'dirty' || $class === 'inspection')
+                                    <form method="POST" action="{{ route('hotel.housekeeping.rooms.clean', $room) }}" class="flex-fill">@csrf<button class="btn btn-success w-100"><i class="fas fa-check-circle me-1"></i> Mark Clean</button></form>
                                 @else
-                                    <form method="POST" action="{{ route('hotel.housekeeping.rooms.dirty', $room) }}" class="flex-fill">@csrf<button class="btn btn-outline-warning w-100">Mark Dirty</button></form>
+                                    <form method="POST" action="{{ route('hotel.housekeeping.rooms.dirty', $room) }}" class="flex-fill">@csrf<button class="btn btn-outline-warning w-100"><i class="fas fa-exclamation-triangle me-1"></i> Mark Dirty</button></form>
                                 @endif
                             </div>
                         </article>
@@ -180,8 +235,25 @@
                                         <td><strong>{{ $task->room?->room_number ?? 'N/A' }}</strong></td>
                                         <td>{{ $task->room?->type?->name ?? 'Room' }}</td>
                                         <td>{{ ucfirst(str_replace('_', ' ', (string) ($task->task_type ?? 'Cleaning'))) }}</td>
-                                        <td><span class="hk-tag {{ $task->priority === 'high' ? 'dirty' : 'occupied' }}">{{ ucfirst(str_replace('_', ' ', (string) $task->status)) }}</span></td>
-                                        <td><form method="POST" action="{{ route('hotel.housekeeping.tasks.complete', $task) }}">@csrf<button class="btn btn-sm btn-primary">Finish Cleaning</button></form></td>
+                                        <td><span class="hk-tag {{ in_array($task->priority, ['high', 'urgent'], true) ? 'dirty' : 'occupied' }}">{{ ucfirst(str_replace('_', ' ', (string) $task->status)) }}</span></td>
+                                        <td>
+                                            <div class="hk-quick-actions">
+                                                @if($task->status === 'open')
+                                                    <form method="POST" action="{{ route('hotel.housekeeping.tasks.status', $task) }}">@csrf<input type="hidden" name="status" value="assigned"><button class="btn btn-sm btn-outline-primary"><i class="fas fa-user-check"></i> Assign</button></form>
+                                                    <form method="POST" action="{{ route('hotel.housekeeping.tasks.status', $task) }}">@csrf<input type="hidden" name="status" value="cleaning"><button class="btn btn-sm btn-primary"><i class="fas fa-broom"></i> Start</button></form>
+                                                @elseif($task->status === 'assigned')
+                                                    <form method="POST" action="{{ route('hotel.housekeeping.tasks.status', $task) }}">@csrf<input type="hidden" name="status" value="cleaning"><button class="btn btn-sm btn-primary"><i class="fas fa-broom"></i> Start</button></form>
+                                                @elseif($task->status === 'cleaning')
+                                                    <form method="POST" action="{{ route('hotel.housekeeping.tasks.status', $task) }}">@csrf<input type="hidden" name="status" value="inspection"><button class="btn btn-sm btn-warning"><i class="fas fa-clipboard-check"></i> Inspect</button></form>
+                                                    <form method="POST" action="{{ route('hotel.housekeeping.tasks.complete', $task) }}">@csrf<button class="btn btn-sm btn-success"><i class="fas fa-check"></i> Finish</button></form>
+                                                @elseif($task->status === 'inspection')
+                                                    <form method="POST" action="{{ route('hotel.housekeeping.tasks.status', $task) }}">@csrf<input type="hidden" name="status" value="cleaning"><button class="btn btn-sm btn-outline-warning"><i class="fas fa-undo"></i> Reopen</button></form>
+                                                    <form method="POST" action="{{ route('hotel.housekeeping.tasks.complete', $task) }}">@csrf<button class="btn btn-sm btn-success"><i class="fas fa-check"></i> Finish</button></form>
+                                                @else
+                                                    <form method="POST" action="{{ route('hotel.housekeeping.tasks.status', $task) }}">@csrf<input type="hidden" name="status" value="open"><button class="btn btn-sm btn-outline-secondary"><i class="fas fa-redo"></i> Reopen</button></form>
+                                                @endif
+                                            </div>
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr><td colspan="5" class="text-muted">No housekeeping tasks require attention.</td></tr>
