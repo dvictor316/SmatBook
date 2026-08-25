@@ -103,6 +103,7 @@ class AuthController extends Controller
         } else {
             $rules['plan'] = 'required|string';
             $rules['billing_cycle'] = 'required|string';
+            $rules['field_of_operation'] = 'nullable|string|max:120';
         }
 
         $validated = $request->validate($rules, [
@@ -131,6 +132,19 @@ class AuthController extends Controller
                 $validated['local_council']
             )) {
                 return back()->withErrors(['local_council' => 'Select a valid local government or council from the list.'])->withInput();
+            }
+        }
+
+        if (!$isPartnerAgent && !$this->isManagerRoleName($requestedRole)) {
+            $operation = strtolower(trim((string) ($validated['field_of_operation'] ?? '')));
+            $postedPlan = strtolower(trim((string) ($validated['plan'] ?? '')));
+            $isHotelOperation = str_contains($operation, 'hotel') || str_contains($operation, 'hospitality');
+            $isHotelPlan = str_contains($postedPlan, 'hotel') || str_contains($postedPlan, 'hospitality');
+
+            if ($isHotelPlan && !$isHotelOperation) {
+                return back()
+                    ->withErrors(['field_of_operation' => 'Select Hotel / Hospitality as the field of operation before using the Hotel plan.'])
+                    ->withInput();
             }
         }
 
@@ -294,11 +308,23 @@ class AuthController extends Controller
                     ];
                 }
 
+                $fieldOfOperation = strtolower(trim((string) ($validated['field_of_operation'] ?? '')));
                 $requestedPlan = strtolower((string) ($request->plan ?? session('selected_plan', 'pro')));
                 $requestedCycle = strtolower((string) ($request->billing_cycle ?? session('selected_cycle', 'monthly')));
+                if (str_contains($fieldOfOperation, 'hotel') || str_contains($fieldOfOperation, 'hospitality')) {
+                    $requestedPlan = 'hotel';
+                }
+
+                if (!in_array($requestedCycle, ['monthly', 'yearly'], true)) {
+                    $requestedCycle = 'monthly';
+                }
+
                 $catalog = $this->registrationPlanCatalog();
                 $catalogEntry = $catalog[$requestedPlan] ?? null;
                 $planId = $request->plan_id ?? session('selected_plan_id');
+                if ($requestedPlan === 'hotel') {
+                    $planId = null;
+                }
                 $plan = $planId ? Plan::find((int) $planId) : null;
 
                 if (!$plan && $catalogEntry) {
@@ -310,9 +336,9 @@ class AuthController extends Controller
                 }
 
                 $planName = $catalogEntry['label'] ?? $plan?->name ?? ucfirst($requestedPlan ?: 'pro');
-                $planAmount = (float) ($request->amount ?? $plan?->price ?? session('selected_amount', 19500));
+                $planAmount = (float) ($plan?->price ?? ($catalogEntry['prices'][$requestedCycle] ?? session('selected_amount', 19500)));
                 $planId = $plan?->id ?? $planId;
-                $billingCycle = ucfirst($request->billing_cycle ?? session('selected_cycle', 'Monthly'));
+                $billingCycle = ucfirst($requestedCycle);
 
                 $subscription = Subscription::create($this->filterPayloadForTable('subscriptions', array_merge([
                     'user_id' => $user->id,
@@ -1584,6 +1610,10 @@ class AuthController extends Controller
                 'label' => 'Enterprise',
                 'prices' => ['monthly' => 28500, 'yearly' => 285000],
             ],
+            'hotel' => [
+                'label' => 'Hotel',
+                'prices' => ['monthly' => 20000, 'yearly' => 200000],
+            ],
         ];
     }
 
@@ -1626,6 +1656,10 @@ class AuthController extends Controller
             'enterprise solo' => 'enterprise-solo',
             'enterprise-solo-monthly' => 'enterprise-solo',
             'enterprise-solo-yearly' => 'enterprise-solo',
+            'hotel management' => 'hotel',
+            'hotel-monthly' => 'hotel',
+            'hotel-yearly' => 'hotel',
+            'hospitality' => 'hotel',
             'partner' => null,
         ];
 

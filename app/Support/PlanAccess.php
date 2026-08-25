@@ -49,6 +49,10 @@ class PlanAccess
             return 'starter';
         }
 
+        if (str_contains($value, 'hotel') || str_contains($value, 'hospitality')) {
+            return 'hotel';
+        }
+
         if (str_contains($value, 'enterprise')) {
             return 'enterprise';
         }

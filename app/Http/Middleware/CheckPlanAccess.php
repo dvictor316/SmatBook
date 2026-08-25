@@ -58,6 +58,7 @@ class CheckPlanAccess
             'starter' => 'starter',
             'pro' => 'pro',
             'enterprise' => 'enterprise',
+            'hotel' => 'hotel',
             'basic' => 'basic',
             'full' => 'full',
             default => strtolower(trim($plan)),

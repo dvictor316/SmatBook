@@ -1027,6 +1027,23 @@ public function store(Request $request)
     // Server-side guard: never trust client-submitted plan values.
     // Canonicalize plan fields from allowed map / DB, and reject tampered payloads.
     $validated = $this->normalizeDeploymentPlanPayload($validated);
+    $industryValue = strtolower(trim((string) ($validated['industry'] ?? '')));
+    $isHotelIndustry = str_contains($industryValue, 'hotel') || str_contains($industryValue, 'hospitality');
+    $isHotelPlan = str_contains(strtolower((string) $validated['plan_name']), 'hotel')
+        || str_contains(strtolower((string) $validated['plan_name']), 'hospitality');
+
+    if ($isHotelIndustry && !$isHotelPlan) {
+        throw \Illuminate\Validation\ValidationException::withMessages([
+            'plan_id' => ['Hotel and hospitality customers must use the Hotel Management plan.'],
+        ]);
+    }
+
+    if (!$isHotelIndustry && $isHotelPlan) {
+        throw \Illuminate\Validation\ValidationException::withMessages([
+            'industry' => ['Select Hotel & Hospitality before choosing the Hotel Management plan.'],
+        ]);
+    }
+
     $validated['company_email'] = $validated['company_email'] ?? $validated['email'];
 
     $manager = auth()->user();
@@ -1499,6 +1516,7 @@ private function deploymentPlanDefinitions(): array
         'professional-monthly' => ['name' => 'Professional', 'price' => 19500.0, 'billing_cycle' => 'monthly'],
         'enterprise-solo-monthly' => ['name' => 'Enterprise Solo', 'price' => 15000.0, 'billing_cycle' => 'monthly'],
         'enterprise-monthly' => ['name' => 'Enterprise', 'price' => 28500.0, 'billing_cycle' => 'monthly'],
+        'hotel-monthly' => ['name' => 'Hotel', 'price' => 20000.0, 'billing_cycle' => 'monthly'],
         'starter-yearly' => ['name' => 'Starter', 'price' => 10000.0, 'billing_cycle' => 'yearly'],
         'basic-solo-yearly' => ['name' => 'Basic Solo', 'price' => 30000.0, 'billing_cycle' => 'yearly'],
         'basic-yearly' => ['name' => 'Basic', 'price' => 55000.0, 'billing_cycle' => 'yearly'],
@@ -1506,6 +1524,7 @@ private function deploymentPlanDefinitions(): array
         'professional-yearly' => ['name' => 'Professional', 'price' => 195000.0, 'billing_cycle' => 'yearly'],
         'enterprise-solo-yearly' => ['name' => 'Enterprise Solo', 'price' => 150000.0, 'billing_cycle' => 'yearly'],
         'enterprise-yearly' => ['name' => 'Enterprise', 'price' => 285000.0, 'billing_cycle' => 'yearly'],
+        'hotel-yearly' => ['name' => 'Hotel', 'price' => 200000.0, 'billing_cycle' => 'yearly'],
     ];
 }
 

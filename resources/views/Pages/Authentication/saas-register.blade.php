@@ -700,12 +700,12 @@
                 </div>
                 <div class="info-row">
                     <span class="info-label">Access Level</span>
-                    <span class="info-value text-capitalize">{{ $isManager ? 'Agent / Partner' : $lookupPlan }}</span>
+                    <span class="info-value text-capitalize" id="selectedAccessLevel">{{ $isManager ? 'Agent / Partner' : $lookupPlan }}</span>
                 </div>
 
                 <div class="amount-display text-center">
                     <span class="info-label" style="display: block; margin-bottom: 5px;">{{ $isManager ? 'Setup Status' : 'After Free Trial' }}</span>
-                    <div class="amount-value">
+                    <div class="amount-value" id="selectedAmountValue">
                         @if($isManager)
                             FREE <span style="font-size: 0.8rem; color: #94a3b8;">(Partner)</span>
                         @else
@@ -781,9 +781,9 @@
             <form action="{{ route('saas-register.post') }}" method="POST" enctype="multipart/form-data" class="form-shell">
                 @csrf
                 <input type="hidden" name="role" value="{{ $isManager ? 'agent' : 'admin' }}">
-                <input type="hidden" name="plan" value="{{ strtolower($lookupPlan) }}">
-                <input type="hidden" name="billing_cycle" value="{{ strtolower($finalCycle) }}">
-                <input type="hidden" name="amount" value="{{ $displayPrice }}">
+                <input type="hidden" name="plan" id="registrationPlan" value="{{ strtolower($lookupPlan) }}">
+                <input type="hidden" name="billing_cycle" id="registrationCycle" value="{{ strtolower($finalCycle) }}">
+                <input type="hidden" name="amount" id="registrationAmount" value="{{ $displayPrice }}">
 
                 <div class="info-banner">
                     <i class="fas fa-sparkles"></i>
@@ -826,6 +826,31 @@
                         @enderror
                     </div>
                 </div>
+
+                @unless($isManager)
+                    <div class="field-grid mb-3">
+                        <div>
+                            <label class="label-caps">Field of Operation</label>
+                            <select name="field_of_operation" id="fieldOfOperation" class="form-control input-smat w-100 @error('field_of_operation') is-invalid @enderror">
+                                <option value="general" @selected(old('field_of_operation', 'general') === 'general')>General Business</option>
+                                <option value="retail" @selected(old('field_of_operation') === 'retail')>Retail / POS</option>
+                                <option value="services" @selected(old('field_of_operation') === 'services')>Professional Services</option>
+                                <option value="manufacturing" @selected(old('field_of_operation') === 'manufacturing')>Manufacturing</option>
+                                <option value="hotel" @selected(old('field_of_operation') === 'hotel')>Hotel / Hospitality</option>
+                            </select>
+                            @error('field_of_operation')
+                                <span class="field-error">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <div>
+                            <label class="label-caps">Selected Business Plan</label>
+                            <div class="info-banner mb-0">
+                                <i class="fas fa-hotel"></i>
+                                <span id="operationPlanHint">Hotel businesses use the dedicated Hotel Management plan.</span>
+                            </div>
+                        </div>
+                    </div>
+                @endunless
 
                 @if($isManager)
                     <div class="field-grid mb-3">
@@ -943,6 +968,56 @@
         el.classList.toggle('fa-eye', isPass);
         el.classList.toggle('fa-eye-slash', !isPass);
     }
+
+    (function setupOperationPlanSync() {
+        const operation = document.getElementById('fieldOfOperation');
+        const plan = document.getElementById('registrationPlan');
+        const cycle = document.getElementById('registrationCycle');
+        const amount = document.getElementById('registrationAmount');
+        const amountValue = document.getElementById('selectedAmountValue');
+        const accessLevel = document.getElementById('selectedAccessLevel');
+        const hint = document.getElementById('operationPlanHint');
+        if (!operation || !plan || !cycle || !amount) return;
+
+        const original = {
+            plan: plan.value || 'pro',
+            amount: Number(amount.value || 0),
+            access: accessLevel ? accessLevel.textContent : '',
+        };
+        const hotelPrices = { monthly: 20000, yearly: 200000 };
+
+        function formatAmount(value) {
+            return '₦' + Number(value || 0).toLocaleString('en-NG', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+        }
+
+        function sync() {
+            const isHotel = ['hotel', 'hospitality'].includes(String(operation.value || '').toLowerCase());
+            const selectedCycle = String(cycle.value || 'monthly').toLowerCase() === 'yearly' ? 'yearly' : 'monthly';
+
+            if (isHotel) {
+                plan.value = 'hotel';
+                amount.value = hotelPrices[selectedCycle];
+                if (accessLevel) accessLevel.textContent = 'Hotel';
+                if (amountValue) amountValue.textContent = formatAmount(hotelPrices[selectedCycle]);
+                if (hint) hint.textContent = selectedCycle === 'yearly'
+                    ? 'Hotel Management plan selected at ₦200,000 yearly.'
+                    : 'Hotel Management plan selected at ₦20,000 monthly.';
+                return;
+            }
+
+            plan.value = original.plan;
+            amount.value = original.amount;
+            if (accessLevel) accessLevel.textContent = original.access;
+            if (amountValue) amountValue.textContent = formatAmount(original.amount);
+            if (hint) hint.textContent = 'Choose Hotel / Hospitality only when this workspace needs the hotel module.';
+        }
+
+        operation.addEventListener('change', sync);
+        sync();
+    })();
 
     (function setupPartnerLocations() {
         const country = document.getElementById('partnerCountry');

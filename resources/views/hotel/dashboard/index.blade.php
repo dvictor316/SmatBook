@@ -10,7 +10,8 @@
     .hotel-hero h2 { color:#fff; font-size:34px; font-weight:950; margin:4px 0 8px; }
     .hotel-hero p { color:#d9eaff; margin:0; }
     .hotel-command-actions { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
-    .hotel-command-actions a { min-height:78px; display:flex; align-items:center; justify-content:center; text-align:center; color:#fff; text-decoration:none; font-weight:700; border-radius:14px; border:1px solid rgba(255,255,255,.26); background:rgba(255,255,255,.12); }
+    .hotel-command-actions a { min-height:78px; display:flex; flex-direction:column; gap:6px; align-items:center; justify-content:center; text-align:center; color:#fff; text-decoration:none; font-weight:700; border-radius:14px; border:1px solid rgba(255,255,255,.26); background:rgba(255,255,255,.12); }
+    .hotel-command-actions i { font-size:20px; }
     .hotel-command-actions a:hover { color:#fff; background:rgba(255,255,255,.22); }
     .hotel-panel { background:#fff; border:1px solid #d6e1ee; border-radius:18px; box-shadow:0 12px 32px rgba(15,23,42,.06); }
     .hotel-filter { display:flex; flex-wrap:wrap; gap:10px; justify-content:flex-end; padding:14px; margin-bottom:18px; }
@@ -71,10 +72,14 @@
                     <p>{{ $property?->name ?? 'All Properties' }} · Business Date {{ now()->format('d M Y') }} · {{ ucfirst(str_replace('_',' ', $rangeKey)) }} performance view.</p>
                 </div>
                 <div class="hotel-command-actions">
-                    <a href="{{ route('hotel.reservations.create') }}">New Reservation</a>
-                    <a href="{{ route('hotel.walkin.create') }}">Walk-In</a>
-                    <a href="{{ route('hotel.rooms.calendar') }}">Room Calendar</a>
-                    <a href="{{ route('hotel.checkout.index') }}">Cashier Desk</a>
+                    <a href="{{ route('hotel.reservations.create') }}"><i class="fe fe-calendar"></i><span>New Reservation</span></a>
+                    <a href="{{ route('hotel.walkin.create') }}"><i class="fe fe-user-plus"></i><span>Walk-In</span></a>
+                    <a href="{{ route('hotel.rooms.calendar') }}"><i class="fe fe-grid"></i><span>Room Calendar</span></a>
+                    <a href="{{ route('hotel.checkout.index') }}"><i class="fe fe-credit-card"></i><span>Cashier Desk</span></a>
+                    <a href="{{ route('hotel.rate_plans.index') }}"><i class="fe fe-tag"></i><span>Rate Plans</span></a>
+                    <a href="{{ route('hotel.maintenance.index') }}"><i class="fe fe-tool"></i><span>Maintenance</span></a>
+                    <a href="{{ route('hotel.setup.step1') }}"><i class="fe fe-settings"></i><span>Hotel Setup</span></a>
+                    <a href="{{ route('hotel.reports.index') }}"><i class="fe fe-bar-chart-2"></i><span>Reports</span></a>
                 </div>
             </div>
         </section>

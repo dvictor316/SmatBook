@@ -14,6 +14,7 @@ class Plan extends Model
         'basic' => 3,
         'professional' => 5,
         'enterprise' => 8,
+        'hotel' => 8,
     ];
 
     public const SOLO_USER_LIMITS = [
@@ -21,6 +22,7 @@ class Plan extends Model
         'basic' => 1,
         'professional' => 2,
         'enterprise' => 3,
+        'hotel' => 8,
     ];
 
     public const DEFAULT_BRANCH_LIMITS = [
@@ -28,6 +30,7 @@ class Plan extends Model
         'basic' => 2,
         'professional' => 5,
         'enterprise' => 8,
+        'hotel' => 8,
     ];
 
     public const ADDITIONAL_USER_PRICES = [
@@ -70,6 +73,10 @@ class Plan extends Model
 
         if (str_contains($value, 'starter')) {
             return 'starter';
+        }
+
+        if (str_contains($value, 'hotel') || str_contains($value, 'hospitality')) {
+            return 'hotel';
         }
 
         if (str_contains($value, 'enterprise')) {
@@ -140,6 +147,13 @@ class Plan extends Model
                 'Expiry-date tracking and sell-time expiry alerts',
                 'Starter workspace for fast retail operations',
             ],
+            'hotel' => [
+                $seatLabel,
+                'Front desk, reservations, walk-ins, check-in, and checkout',
+                'Room rack, availability calendar, housekeeping, and maintenance',
+                'Guest folios, deposits, service charges, and night audit',
+                'Rate plans, room types, service centers, and hotel reports',
+            ],
             'professional' => [
                 $seatLabel,
                 'Everything in Basic plus advanced inventory tools',
@@ -203,6 +217,16 @@ class Plan extends Model
                 'solo_users' => 3,
                 'team_users' => 8,
                 'benefits' => static::marketingBenefitsForTier('enterprise', 8),
+            ],
+            'hotel' => [
+                'label' => 'Hotel Management',
+                'description' => 'For hotels, guest houses, serviced apartments, and hospitality teams running front desk, rooms, folios, housekeeping, and night audit.',
+                'featured' => false,
+                'from_price' => 20000,
+                'team_price' => 20000,
+                'solo_users' => 8,
+                'team_users' => 8,
+                'benefits' => static::marketingBenefitsForTier('hotel', 8),
             ],
         ];
     }

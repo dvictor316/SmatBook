@@ -19,6 +19,7 @@ class PlanSeeder extends Seeder
             ['name' => 'Pro Monthly', 'price' => 19500, 'billing_cycle' => 'monthly', 'recommended' => 1, 'user_limit' => 5],
             ['name' => 'Enterprise Solo Monthly', 'price' => 15000, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 3],
             ['name' => 'Enterprise Monthly', 'price' => 28500, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 8],
+            ['name' => 'Hotel Monthly', 'price' => 20000, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 8],
             
             // Yearly Plans
             ['name' => 'Starter Solo Yearly', 'price' => 10000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 1],
@@ -29,6 +30,7 @@ class PlanSeeder extends Seeder
             ['name' => 'Pro Yearly', 'price' => 195000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 5],
             ['name' => 'Enterprise Solo Yearly', 'price' => 150000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 3],
             ['name' => 'Enterprise Yearly', 'price' => 285000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 8],
+            ['name' => 'Hotel Yearly', 'price' => 200000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 8],
         ];
 
         foreach ($plans as $plan) {

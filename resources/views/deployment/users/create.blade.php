@@ -34,6 +34,7 @@
     $proMonthly = $planMeta('professional-monthly', 'Professional', 19500, 'monthly');
     $enterpriseSoloMonthly = $planMeta('enterprise-solo-monthly', 'Enterprise Solo', 15000, 'monthly');
     $enterpriseMonthly = $planMeta('enterprise-monthly', 'Enterprise', 28500, 'monthly');
+    $hotelMonthly = $planMeta('hotel-monthly', 'Hotel', 20000, 'monthly');
 
     $starterYearly = $planMeta('starter-yearly', 'Starter', 10000, 'yearly', '2,000');
     $basicSoloYearly = $planMeta('basic-solo-yearly', 'Basic Solo', 30000, 'yearly', '6,000');
@@ -42,6 +43,7 @@
     $proYearly = $planMeta('professional-yearly', 'Professional', 195000, 'yearly', '39,000');
     $enterpriseSoloYearly = $planMeta('enterprise-solo-yearly', 'Enterprise Solo', 150000, 'yearly', '30,000');
     $enterpriseYearly = $planMeta('enterprise-yearly', 'Enterprise', 285000, 'yearly', '57,000');
+    $hotelYearly = $planMeta('hotel-yearly', 'Hotel', 200000, 'yearly', '40,000');
 
     $seatLabel = function (string $key): string {
         return match ($key) {
@@ -52,6 +54,7 @@
             'basic-monthly', 'basic-yearly' => '3 Users',
             'professional-monthly', 'professional-yearly' => '5 Users',
             'enterprise-monthly', 'enterprise-yearly' => '8 Users',
+            'hotel-monthly', 'hotel-yearly' => '8 Users',
             default => 'Plan',
         };
     };
@@ -482,7 +485,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Industry</label>
-                                    <select name="industry" class="form-select">
+                                    <select name="industry" id="industrySelect" class="form-select">
                                         <option value="">Select industry…</option>
                                         @foreach([
                                             'retail'        => 'Retail & E-commerce',
@@ -491,6 +494,7 @@
                                             'technology'    => 'Technology & IT',
                                             'healthcare'    => 'Healthcare',
                                             'education'     => 'Education',
+                                            'hotel'         => 'Hotel & Hospitality',
                                             'other'         => 'Other',
                                         ] as $val => $label)
                                         <option value="{{ $val }}" {{ old('industry') == $val ? 'selected' : '' }}>
@@ -664,6 +668,24 @@
                                             </ul>
                                         </div>
                                     </div>
+                                    <div class="col-lg-4 col-md-6 hotel-plan-option d-none">
+                                        <div class="plan-card" data-pid="{{ $hotelMonthly['plan_id'] }}"
+                                             onclick="pickPlan(@js((string) $hotelMonthly['plan_id']), @js($hotelMonthly['name']), {{ $hotelMonthly['price'] }}, 'monthly')">
+                                            <div class="plan-tick"><i class="fas fa-check"></i></div>
+                                            <span class="plan-pill pill-recommended">Hotel Only</span>
+                                            <div class="plan-tier">Hotel Management</div>
+                                            <div class="plan-seat">{{ $seatLabel('hotel-monthly') }}</div>
+                                            <div class="plan-amount">₦{{ $hotelMonthly['price_label'] }} <small>/mo</small></div>
+                                            <div class="plan-cycle">Billed monthly · Earn ₦{{ $hotelMonthly['commission_label'] }}</div>
+                                            <ul class="plan-features">
+                                                <li><i class="fas fa-check-circle"></i> Front desk and reservations</li>
+                                                <li><i class="fas fa-check-circle"></i> Room rack and availability</li>
+                                                <li><i class="fas fa-check-circle"></i> Housekeeping and maintenance</li>
+                                                <li><i class="fas fa-check-circle"></i> Guest folios and checkout</li>
+                                                <li><i class="fas fa-check-circle"></i> Night audit and hotel reports</li>
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -787,6 +809,24 @@
                                                 <li><i class="fas fa-check-circle"></i> Full ERP suite</li>
                                                 <li><i class="fas fa-check-circle"></i> P&L & balance sheet</li>
                                                 <li><i class="fas fa-check-circle"></i> Dedicated support</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-6 hotel-plan-option d-none">
+                                        <div class="plan-card" data-pid="{{ $hotelYearly['plan_id'] }}"
+                                             onclick="pickPlan(@js((string) $hotelYearly['plan_id']), @js($hotelYearly['name']), {{ $hotelYearly['price'] }}, 'yearly')">
+                                            <div class="plan-tick"><i class="fas fa-check"></i></div>
+                                            <span class="plan-pill pill-recommended">Hotel Only</span>
+                                            <div class="plan-tier">Hotel Management</div>
+                                            <div class="plan-seat">{{ $seatLabel('hotel-yearly') }}</div>
+                                            <div class="plan-amount">₦{{ $hotelYearly['price_label'] }} <small>/yr</small></div>
+                                            <div class="plan-cycle">Save ₦{{ $hotelYearly['save_label'] }} · Earn ₦{{ $hotelYearly['commission_label'] }}</div>
+                                            <ul class="plan-features">
+                                                <li><i class="fas fa-check-circle"></i> Front desk and reservations</li>
+                                                <li><i class="fas fa-check-circle"></i> Room rack and availability</li>
+                                                <li><i class="fas fa-check-circle"></i> Housekeeping and maintenance</li>
+                                                <li><i class="fas fa-check-circle"></i> Guest folios and checkout</li>
+                                                <li><i class="fas fa-check-circle"></i> Night audit and hotel reports</li>
                                             </ul>
                                         </div>
                                     </div>
@@ -1027,6 +1067,10 @@ let plan = { id: null, name: null, price: 0, cycle: 'monthly' };
 const fmt = n => Number(n).toLocaleString('en-NG');
 const baseSeatLimits = @js($baseSeatLimits);
 const additionalUserPrices = @js($additionalUserPrices);
+const hotelPlans = {
+    monthly: { id: @js((string) $hotelMonthly['plan_id']), name: @js($hotelMonthly['name']), price: {{ $hotelMonthly['price'] }} },
+    yearly: { id: @js((string) $hotelYearly['plan_id']), name: @js($hotelYearly['name']), price: {{ $hotelYearly['price'] }} },
+};
 const getSelectedPlanState = () => ({
     id: document.getElementById('planId').value.trim(),
     name: document.getElementById('planName').value.trim(),
@@ -1057,6 +1101,44 @@ document.getElementById('custEmail').addEventListener('input', function () {
     this.dataset.userEdited = this.value.trim() !== '' ? '1' : '';
 });
 
+function isHotelIndustrySelected() {
+    const industry = document.getElementById('industrySelect');
+    const value = String(industry?.value || '').toLowerCase();
+    return value.includes('hotel') || value.includes('hospitality');
+}
+
+function syncHotelPlanCards() {
+    const showHotel = isHotelIndustrySelected();
+    document.querySelectorAll('.plan-card').forEach((card) => {
+        const wrapper = card.closest('.col-lg-4, .col-md-6');
+        if (!wrapper) return;
+
+        const isHotelCard = wrapper.classList.contains('hotel-plan-option');
+        wrapper.classList.toggle('d-none', showHotel ? !isHotelCard : isHotelCard);
+    });
+}
+
+function autoPickHotelPlan(cycle) {
+    const hotelPlan = hotelPlans[cycle === 'yearly' ? 'yearly' : 'monthly'];
+    if (hotelPlan) {
+        pickPlan(hotelPlan.id, hotelPlan.name, hotelPlan.price, cycle === 'yearly' ? 'yearly' : 'monthly');
+    }
+}
+
+document.getElementById('industrySelect')?.addEventListener('change', function () {
+    const selectedCycle = document.getElementById('planCycle')?.value || plan.cycle || 'monthly';
+    syncHotelPlanCards();
+
+    if (isHotelIndustrySelected()) {
+        autoPickHotelPlan(selectedCycle);
+        return;
+    }
+
+    if (normalizePlanTier(plan.name || '') === 'hotel') {
+        setCycle(selectedCycle);
+    }
+});
+
 /* ── Billing cycle ───────────────────────── */
 window.setCycle = function(cycle) {
     plan.cycle = cycle;
@@ -1073,6 +1155,10 @@ window.setCycle = function(cycle) {
     document.getElementById('planPrice').value = '';
     document.getElementById('commPreview').textContent = '0';
     document.getElementById('btnToCreds').disabled = true;
+    syncHotelPlanCards();
+    if (isHotelIndustrySelected()) {
+        autoPickHotelPlan(cycle);
+    }
 };
 
 /* ── Pick plan ───────────────────────────── */
@@ -1125,6 +1211,7 @@ function deploymentAmountForSeats(selectedPlan, seatsInput) {
 
 function normalizePlanTier(name) {
     const value = String(name).toLowerCase();
+    if (value.includes('hotel') || value.includes('hospitality')) return 'hotel';
     if (value.includes('enterprise')) return 'enterprise';
     if (value.includes('professional') || value === 'pro' || value.includes('pro ')) return 'professional';
     if (value.includes('starter')) return 'starter';
@@ -1245,10 +1332,12 @@ document.getElementById('regForm').addEventListener('submit', function(e) {
 
 /* ── Restore state after validation error ── */
 @if($errors->any())
+    syncHotelPlanCards();
     updateSummary();
     toStep('{{ old('email') || old('name') || old('password') ? 3 : (old('plan_id') ? 2 : 1) }}');
 @endif
 @if(old('plan_id'))
+    syncHotelPlanCards();
     document.getElementById('planId').value = '{{ old("plan_id") }}';
     document.getElementById('planName').value = '{{ old("plan_name") }}';
     document.getElementById('planPrice').value = '{{ old("plan_price",0) }}';
@@ -1256,5 +1345,6 @@ document.getElementById('regForm').addEventListener('submit', function(e) {
     setCycle('{{ old("billing_cycle","monthly") }}');
     pickPlan('{{ old("plan_id") }}','{{ old("plan_name") }}',{{ (int)old("plan_price",0) }},'{{ old("billing_cycle","monthly") }}');
 @endif
+syncHotelPlanCards();
 </script>
 @endsection

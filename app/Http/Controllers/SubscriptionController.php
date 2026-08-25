@@ -419,6 +419,9 @@ class SubscriptionController extends Controller
             ]);
 
             $isTrialSubscription = $subscription->isTrial();
+            $subscriptionPlanName = (string) ($subscription->plan_name ?? $subscription->plan ?? 'Basic');
+            $isHotelPlan = str_contains(strtolower($subscriptionPlanName), 'hotel')
+                || str_contains(strtolower($subscriptionPlanName), 'hospitality');
 
             $company = Company::updateOrCreate(
                 ['user_id' => $user->id],
@@ -430,6 +433,8 @@ class SubscriptionController extends Controller
                     'name'          => (string) $request->customer_name,
                     'status'        => $isTrialSubscription ? 'active' : 'pending',
                     'owner_id'      => $user->id,
+                    'plan'          => $subscriptionPlanName,
+                    'industry'      => $isHotelPlan ? 'hotel' : null,
                 ])
             );
 
@@ -468,6 +473,11 @@ class SubscriptionController extends Controller
                 ]);
 
                 DB::commit();
+
+                if (\App\Support\HotelAccess::userIsHotelTenant($user->fresh())) {
+                    return redirect()->route('hotel.dashboard')
+                        ->with('success', 'Your one-month hotel trial is active. Payment will be due after the trial ends.');
+                }
 
                 return redirect()->route('user.dashboard')
                     ->with('success', 'Your one-month free trial is active. Payment will be due after the trial ends.');

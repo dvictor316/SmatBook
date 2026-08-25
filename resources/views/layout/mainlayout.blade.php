@@ -2010,7 +2010,7 @@
                             <a href="{{ route('demo.workspace.plan', ['plan' => 'basic']) }}" class="btn btn-sm btn-outline-primary">Basic</a>
                             <a href="{{ route('demo.workspace.plan', ['plan' => 'pro']) }}" class="btn btn-sm btn-outline-primary">Pro</a>
                             <a href="{{ route('demo.workspace.plan', ['plan' => 'enterprise']) }}" class="btn btn-sm btn-outline-primary">Enterprise</a>
-                            @if(Route::has('hotel.dashboard'))
+                            @if(Route::has('hotel.dashboard') && \App\Support\HotelAccess::userIsHotelTenant(auth()->user()))
                                 <a href="{{ route('hotel.dashboard') }}" class="btn btn-sm btn-outline-secondary">Hotel</a>
                             @endif
                             <a href="{{ route('customers.index') }}" class="btn btn-sm btn-outline-secondary">Customers</a>
@@ -2024,7 +2024,7 @@
                             <a href="{{ route('add-invoice', ['customer_id' => $demoPreviewCustomer->id]) }}" class="btn btn-sm btn-outline-secondary">New Invoice</a>
                             <a href="{{ route('sales.create', ['customer_id' => $demoPreviewCustomer->id]) }}" class="btn btn-sm btn-outline-secondary">New Sale</a>
                             <a href="{{ route('reports.customer-statement', $demoPreviewCustomer->id) }}" class="btn btn-sm btn-outline-secondary">Statement</a>
-                            @if(Route::has('hotel.dashboard'))
+                            @if(Route::has('hotel.dashboard') && \App\Support\HotelAccess::userIsHotelTenant(auth()->user()))
                                 <a href="{{ route('hotel.dashboard') }}" class="btn btn-sm btn-outline-secondary">Hotel</a>
                             @endif
                             <a href="{{ route('reports.hub') }}" class="btn btn-sm btn-outline-secondary">Reports</a>
