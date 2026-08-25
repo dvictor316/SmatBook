@@ -1545,7 +1545,9 @@
                                                     </div>
                                                 </div>
                                                 <div class="visit-icon">
-                                                    @php($visitIcon = (string) ($visitCard['icon'] ?? 'mdi-eye-outline'))
+                                                    @php
+                                                        $visitIcon = (string) ($visitCard['icon'] ?? 'mdi-eye-outline');
+                                                    @endphp
                                                     <i class="{{ str_starts_with($visitIcon, 'fa') ? $visitIcon : 'mdi ' . $visitIcon }}"></i>
                                                 </div>
                                             </div>
