@@ -615,6 +615,16 @@ class AuthController extends Controller
             }
         }
 
+        if ($this->shouldBlockLoginWithoutWorkspace($user)) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('saas-login')->withErrors([
+                'login' => 'No workspace is attached to this user account. Please contact your workspace administrator.',
+            ]);
+        }
+
         $deviceSession = app(DeviceSessionManager::class)->ensureCurrentSession($request, $user);
         if (($deviceSession['allowed'] ?? true) !== true) {
             Auth::logout();
@@ -869,6 +879,16 @@ class AuthController extends Controller
         }
 
         app(ActiveBranchResolver::class)->ensureSession($user);
+
+        if ($this->shouldBlockLoginWithoutWorkspace($user)) {
+            Auth::logout();
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+
+            return redirect()->route('saas-login')->withErrors([
+                'login' => 'No workspace is attached to this user account. Please contact your workspace administrator.',
+            ]);
+        }
 
         if ($this->isAssignedWorkspaceStaff($user)) {
             $this->forceAssignedWorkspaceSession(request(), $user);
@@ -1456,6 +1476,11 @@ class AuthController extends Controller
         return in_array(strtolower($user->role), ['state_manager', 'deployment_manager'], true);
     }
 
+    private function isAgent($user): bool
+    {
+        return in_array(strtolower(trim((string) ($user->role ?? ''))), ['agent', 'sales_agent', 'sales agent'], true);
+    }
+
     private function isManagerRoleName(?string $role): bool
     {
         return in_array(strtolower((string) $role), ['state_manager', 'deployment_manager'], true);
@@ -1580,6 +1605,21 @@ class AuthController extends Controller
         if ($companyName) {
             $request->session()->put('current_tenant_name', $companyName);
         }
+    }
+
+    private function shouldBlockLoginWithoutWorkspace(?User $user): bool
+    {
+        if (!$user || (int) ($user->company_id ?? 0) > 0) {
+            return false;
+        }
+
+        if ($user->isDemoUser() || $this->isSuperAdmin($user) || $this->isDeploymentManager($user) || $this->isAgent($user)) {
+            return false;
+        }
+
+        return !Subscription::withoutGlobalScope('tenant')
+            ->where('user_id', $user->id)
+            ->exists();
     }
 
     private function isAssignedWorkspaceStaff(?User $user): bool
