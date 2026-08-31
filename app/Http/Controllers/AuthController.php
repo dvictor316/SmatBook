@@ -481,7 +481,7 @@ class AuthController extends Controller
             && (
                 strtolower((string) $currentUser->email) === 'demo@smartprobook.local'
                 || $currentUser->isDemoUser()
-                || $request->session()->boolean('is_demo_workspace')
+                || (bool) $request->session()->get('is_demo_workspace', false)
             );
 
         if (($request->boolean('portal') || $request->boolean('demo') || $isDemoSession) && Auth::check()) {
