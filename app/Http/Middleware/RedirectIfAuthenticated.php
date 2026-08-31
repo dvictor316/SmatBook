@@ -26,6 +26,10 @@ class RedirectIfAuthenticated
 
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
+                if ($request->boolean('portal') || $request->boolean('demo') || $request->boolean('flush') || $request->boolean('expired')) {
+                    return $next($request);
+                }
+
                 // User is authenticated trying to access guest routes
                 // Simply redirect to /home
                 // HomeController@index will handle all role-based routing
