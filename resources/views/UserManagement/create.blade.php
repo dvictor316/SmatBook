@@ -53,6 +53,10 @@
 .btn-inline-add-role { border:1px solid #d4a017; background:#fffaf0; color:#8a6200; border-radius:7px; padding:4px 9px; font-size:.72rem; font-weight:800; display:inline-flex; align-items:center; gap:5px; line-height:1.1; }
 .btn-inline-add-role:hover { background:#d4a017; color:#fff; }
 .role-create-feedback { display:none; font-size:.78rem; margin-top:8px; }
+.password-field-wrap { position:relative; }
+.password-field-wrap .form-control { padding-right:38px; }
+.password-toggle-btn { position:absolute; right:6px; top:50%; transform:translateY(-50%); width:28px; height:28px; border:0; background:transparent; color:#64748b; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer; }
+.password-toggle-btn:hover { background:#f1f5f9; color:#1a2236; }
 
 /* Toolbar */
 .perm-toolbar { background:#fff; border-radius:12px; padding:14px 20px; margin-bottom:22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; box-shadow:0 2px 8px rgba(0,0,0,.05); border:1px solid #e8edf5; }
@@ -579,11 +583,21 @@
                             </div>
                             <div class="{{ $isPartnerRole ? 'col-md-6' : 'col-12' }}">
                                 <label class="form-label fw-semibold" style="font-size:.82rem;">Password <span class="text-danger">*</span></label>
-                                <input type="password" name="password" class="form-control form-control-sm" placeholder="Password" required autocomplete="new-password">
+                                <div class="password-field-wrap">
+                                    <input type="password" name="password" id="passwordInput" class="form-control form-control-sm" placeholder="Password" required autocomplete="new-password">
+                                    <button type="button" class="password-toggle-btn" data-toggle-password="passwordInput" aria-label="Show password" title="Show password">
+                                        <i class="fa fa-eye"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="{{ $isPartnerRole ? 'col-md-6' : 'col-12' }}">
                                 <label class="form-label fw-semibold" style="font-size:.82rem;">Confirm Password <span class="text-danger">*</span></label>
-                                <input type="password" name="confirm_password" class="form-control form-control-sm" placeholder="Confirm Password" required autocomplete="new-password">
+                                <div class="password-field-wrap">
+                                    <input type="password" name="confirm_password" id="confirmPasswordInput" class="form-control form-control-sm" placeholder="Confirm Password" required autocomplete="new-password">
+                                    <button type="button" class="password-toggle-btn" data-toggle-password="confirmPasswordInput" aria-label="Show password confirmation" title="Show password confirmation">
+                                        <i class="fa fa-eye"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="col-12 d-flex align-items-center gap-2 pt-1">
                                 <label class="toggle-switch-c">
@@ -773,6 +787,24 @@
     var addRoleForm = document.getElementById('addRoleForm');
     var roleCreateFeedback = document.getElementById('roleCreateFeedback');
     var saveRoleButton = document.getElementById('saveRoleButton');
+
+    document.querySelectorAll('[data-toggle-password]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            var input = document.getElementById(button.dataset.togglePassword);
+            var icon = button.querySelector('i');
+            if (!input) return;
+
+            var shouldShow = input.type === 'password';
+            input.type = shouldShow ? 'text' : 'password';
+            button.setAttribute('aria-label', shouldShow ? 'Hide password' : 'Show password');
+            button.setAttribute('title', shouldShow ? 'Hide password' : 'Show password');
+
+            if (icon) {
+                icon.classList.toggle('fa-eye', !shouldShow);
+                icon.classList.toggle('fa-eye-slash', shouldShow);
+            }
+        });
+    });
 
     /* ── Count helpers ──────────────────────────────────── */
     function updateCardCount(section) {
