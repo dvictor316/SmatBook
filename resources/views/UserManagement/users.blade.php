@@ -76,9 +76,24 @@
     .badge-active   { background: #dcfce7; color: #16a34a; border-radius: 20px; padding: 3px 10px; font-size: 0.72rem; font-weight: 700; }
     .badge-inactive { background: #fee2e2; color: #dc2626; border-radius: 20px; padding: 3px 10px; font-size: 0.72rem; font-weight: 700; }
 
-    /* ── Action icons ── */
-    .action-icon { color: #7a869a; font-size: 1rem; padding: 4px 6px; transition: color 0.15s; }
-    .action-icon:hover { color: #1a2236; }
+    /* ── Manage dropdown ── */
+    .btn-manage-user {
+        border: 1px solid #d7dcea;
+        background: #fff;
+        color: #1a2236;
+        border-radius: 8px;
+        padding: 6px 11px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .btn-manage-user:hover,
+    .btn-manage-user:focus { background: #f8fafc; border-color: #c4ccda; color: #1a2236; }
+    .user-action-menu { min-width: 150px; border: 1px solid #e4e8f0; border-radius: 8px; box-shadow: 0 12px 28px rgba(15,23,42,.12); padding: 6px; }
+    .user-action-menu .dropdown-item { border-radius: 6px; font-size: 0.82rem; display: flex; align-items: center; gap: 8px; padding: 7px 9px; }
+    .user-action-menu .dropdown-item.text-danger:hover { background: #fff1f2; color: #b91c1c !important; }
 
     /* ── Modal collapsible sections ── */
     .section-toggle {
@@ -270,23 +285,30 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <a href="{{ route($showRouteName, $user->id) }}" class="action-icon" title="View">
-                                        <i class="far fa-eye"></i>
-                                    </a>
-                                    @if(!in_array($user->role, ['super_admin']))
-                                    <a href="{{ route($editRouteName, $user->id) }}" class="action-icon" title="Edit">
-                                        <i class="far fa-edit"></i>
-                                    </a>
-                                    @endif
-                                    @if($canDeleteUser)
-                                    <form action="{{ route($deleteRouteName, $user->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this user?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="action-icon border-0 bg-transparent p-0" title="Delete">
-                                            <i class="far fa-trash-alt"></i>
+                                    <div class="dropdown">
+                                        <button class="btn-manage-user dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Manage
                                         </button>
-                                    </form>
-                                    @endif
+                                        <div class="dropdown-menu dropdown-menu-end user-action-menu">
+                                            <a href="{{ route($showRouteName, $user->id) }}" class="dropdown-item">
+                                                <i class="far fa-eye"></i> View
+                                            </a>
+                                            @if(!in_array($user->role, ['super_admin']))
+                                            <a href="{{ route($editRouteName, $user->id) }}" class="dropdown-item">
+                                                <i class="far fa-edit"></i> Edit
+                                            </a>
+                                            @endif
+                                            @if($canDeleteUser)
+                                            <form action="{{ route($deleteRouteName, $user->id) }}" method="POST" onsubmit="return confirm('Delete this user?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="far fa-trash-alt"></i> Delete
+                                                </button>
+                                            </form>
+                                            @endif
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                             @empty
