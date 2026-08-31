@@ -234,8 +234,12 @@ class SubscriptionController extends Controller
     {
         $user = auth()->user();
 
-        // Super admin has no subscription — send straight to platform dashboard.
-        if ($user && in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)) {
+        $activeWorkspaceId = (int) session('current_tenant_id', 0);
+        $isBusinessWorkspace = session('workspace_context') === 'business' && $activeWorkspaceId > 0;
+
+        // Super admin may also own a business workspace; only send to platform
+        // when no business workspace context is active.
+        if ($user && !$isBusinessWorkspace && in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)) {
             return redirect()->route('super_admin.dashboard');
         }
 

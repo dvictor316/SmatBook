@@ -237,7 +237,7 @@ class HomeController extends Controller
         // ── PRIORITY 2: Super Admin ──
         if ($this->isSuperAdmin($user)) {
             Log::info('User is SUPER ADMIN', ['user_id' => $user->id]);
-            if (session('workspace_context') === 'business') {
+            if (session('workspace_context') === 'business' && (int) session('current_tenant_id', 0) > 0) {
                 Log::info('Super admin requested BUSINESS WORKSPACE context', ['user_id' => $user->id]);
                 return redirect()->route('workspace.business.dashboard');
             }
