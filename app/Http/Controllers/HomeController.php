@@ -347,6 +347,48 @@ class HomeController extends Controller
             return redirect()->route('registration.pending.notice');
         }
 
+        $assignedCompany = !empty($user->company_id)
+            ? Company::withoutGlobalScope('tenant')->find((int) $user->company_id)
+            : null;
+        $ownsAssignedWorkspace = $assignedCompany && in_array((int) $user->id, array_filter([
+            (int) ($assignedCompany->user_id ?? 0),
+            (int) ($assignedCompany->owner_id ?? 0),
+        ]), true);
+
+        if ($assignedCompany && !$ownsAssignedWorkspace) {
+            $companySubscription = Subscription::withoutGlobalScope('tenant')
+                ->where('company_id', $assignedCompany->id)
+                ->orderByRaw("
+                    CASE
+                        WHEN LOWER(COALESCE(status, '')) IN ('active', 'trial') THEN 0
+                        WHEN LOWER(COALESCE(status, '')) = 'expired' THEN 1
+                        ELSE 2
+                    END
+                ")
+                ->orderByDesc('end_date')
+                ->orderByDesc('id')
+                ->first();
+
+            if ($companySubscription && $companySubscription->isExpired()) {
+                return redirect()->route('subscription.expired');
+            }
+
+            session([
+                'user_plan' => strtolower((string) ($companySubscription?->plan ?? $companySubscription?->plan_name ?? $assignedCompany->plan ?? 'basic')),
+                'current_tenant_id' => $assignedCompany->id,
+                'current_tenant_name' => $assignedCompany->name ?? $assignedCompany->company_name ?? 'Workspace',
+                'workspace_context' => 'business',
+            ]);
+
+            Log::info('→ Assigned workspace user, redirecting to tenant dashboard', [
+                'user_id' => $user->id,
+                'company_id' => $assignedCompany->id,
+                'subscription_id' => $companySubscription?->id,
+            ]);
+
+            return redirect()->route('user.dashboard');
+        }
+
         // Use the same resolver the rest of the app relies on so demo and live
         // users do not get bounced to an older pending checkout subscription.
         $subscription = Subscription::resolveCurrentForUser($user)
