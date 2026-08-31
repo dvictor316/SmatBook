@@ -235,6 +235,20 @@
                                 $roleName   = $user->roleModel->name ?? ucwords(str_replace('_', ' ', $user->role ?? ''));
                                 $isActive   = ($user->is_active ?? $user->status ?? true);
                                 $initials   = strtoupper(substr($user->name ?? $user->first_name ?? '?', 0, 1));
+                                $actor = auth()->user();
+                                $actorRole = strtolower(str_replace([' ', '-'], '_', (string) ($actor->role ?? '')));
+                                $targetRole = strtolower(str_replace([' ', '-'], '_', (string) ($user->role ?? '')));
+                                $canDeleteUser = $actor
+                                    && (int) $actor->id !== (int) $user->id
+                                    && !($targetRole === 'super_admin' && (bool) ($user->is_protected_super_admin ?? false))
+                                    && (
+                                        in_array($actorRole, ['super_admin', 'superadmin'], true)
+                                        || (
+                                            in_array($actorRole, ['administrator', 'admin'], true)
+                                            && (int) ($actor->company_id ?? session('current_tenant_id') ?? 0) > 0
+                                            && (int) ($actor->company_id ?? session('current_tenant_id') ?? 0) === (int) ($user->company_id ?? 0)
+                                        )
+                                    );
                             @endphp
                             <tr>
                                 <td class="td-avatar">
@@ -263,6 +277,15 @@
                                     <a href="{{ route($editRouteName, $user->id) }}" class="action-icon" title="Edit">
                                         <i class="far fa-edit"></i>
                                     </a>
+                                    @endif
+                                    @if($canDeleteUser)
+                                    <form action="{{ route($deleteRouteName, $user->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this user?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="action-icon border-0 bg-transparent p-0" title="Delete">
+                                            <i class="far fa-trash-alt"></i>
+                                        </button>
+                                    </form>
                                     @endif
                                 </td>
                             </tr>

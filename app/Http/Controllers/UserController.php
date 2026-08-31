@@ -418,6 +418,12 @@ class UserController extends Controller
     public function destroy($id)
     {
         $user = $this->findScopedUser($id);
+        $actor = Auth::user();
+
+        if (!$this->canDeleteUser($actor, $user)) {
+            return redirect()->back()
+                ->with('error', 'You do not have permission to delete this user.');
+        }
 
         if ($user->profile_photo) {
             Storage::disk('public')->delete($user->profile_photo);
@@ -810,6 +816,29 @@ class UserController extends Controller
 
         return in_array(strtolower((string) $user->role), ['super_admin', 'superadmin'], true)
             || strtolower((string) $user->email) === 'donvictorlive@gmail.com';
+    }
+
+    private function canDeleteUser(?User $actor, User $target): bool
+    {
+        if (!$actor || (int) $actor->id === (int) $target->id) {
+            return false;
+        }
+
+        if (method_exists($target, 'isProtectedSuperAdmin') && $target->isProtectedSuperAdmin()) {
+            return false;
+        }
+
+        $actorRole = $this->legacyRoleKey($actor->role);
+        if (!in_array($actorRole, ['super_admin', 'administrator'], true) && !$this->isCentralAdmin($actor)) {
+            return false;
+        }
+
+        if ($this->isCentralAdmin($actor)) {
+            return true;
+        }
+
+        return (int) ($actor->company_id ?? session('current_tenant_id') ?? 0) > 0
+            && (int) ($actor->company_id ?? session('current_tenant_id') ?? 0) === (int) ($target->company_id ?? 0);
     }
 
     private function syncStateManagerProfile(User $user): void
