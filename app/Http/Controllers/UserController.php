@@ -650,7 +650,12 @@ class UserController extends Controller
                 ->all();
 
             if (!empty($rolesFromTable)) {
-                return $rolesFromTable;
+                return collect($this->defaultRoleOptions())
+                    ->merge($rolesFromTable)
+                    ->unique(fn ($role) => strtolower(str_replace([' ', '-'], '_', (string) $role)))
+                    ->sort()
+                    ->values()
+                    ->all();
             }
         }
 
@@ -668,10 +673,24 @@ class UserController extends Controller
         }
         
         if(empty($roles)) {
-            $roles = ['super_admin', 'administrator', 'state_manager', 'agent', 'store_manager', 'accountant', 'cashier'];
+            $roles = $this->defaultRoleOptions();
         }
 
         return $roles;
+    }
+
+    private function defaultRoleOptions(): array
+    {
+        return [
+            'Administrator',
+            'State Manager',
+            'Agent',
+            'Finance Manager',
+            'Store Manager',
+            'Sales Manager',
+            'Account Officer',
+            'Cashier',
+        ];
     }
 
     private function resolveRoleId(?string $roleName): ?int

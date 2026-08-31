@@ -49,6 +49,10 @@
 .username-input-group input { border:none!important; border-radius:0!important; flex:1; box-shadow:none!important; }
 .username-suffix { background:#f4f6fb; border-left:1px solid #d0d5e0; padding:8px 14px; font-size:.88rem; color:#7a869a; white-space:nowrap; display:flex; align-items:center; }
 .username-preview { font-size:.82rem; color:#5b5b8b; margin-top:4px; }
+.role-label-row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:.5rem; }
+.btn-inline-add-role { border:1px solid #d4a017; background:#fffaf0; color:#8a6200; border-radius:7px; padding:4px 9px; font-size:.72rem; font-weight:800; display:inline-flex; align-items:center; gap:5px; line-height:1.1; }
+.btn-inline-add-role:hover { background:#d4a017; color:#fff; }
+.role-create-feedback { display:none; font-size:.78rem; margin-top:8px; }
 
 /* Toolbar */
 .perm-toolbar { background:#fff; border-radius:12px; padding:14px 20px; margin-bottom:22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; box-shadow:0 2px 8px rgba(0,0,0,.05); border:1px solid #e8edf5; }
@@ -538,7 +542,14 @@
                         <div class="create-section-label"><i class="fa fa-lock text-muted me-1"></i> Account Settings</div>
                         <div class="row g-3">
                             <div class="{{ $isPartnerRole ? 'col-md-6' : 'col-12' }}">
-                                <label class="form-label fw-semibold" style="font-size:.82rem;">Role <span class="text-danger">*</span></label>
+                                <div class="role-label-row">
+                                    <label class="form-label fw-semibold mb-0" style="font-size:.82rem;">Role <span class="text-danger">*</span></label>
+                                    @if(app('router')->has('roles.store'))
+                                    <button type="button" class="btn-inline-add-role" data-bs-toggle="modal" data-bs-target="#addRoleModal">
+                                        <i class="fa fa-plus-circle"></i> Add Role
+                                    </button>
+                                    @endif
+                                </div>
                                 <select name="role" id="roleSelect" class="form-select form-select-sm" required>
                                     <option value="" disabled {{ $selectedRoleValue ? '' : 'selected' }}>Select a role</option>
                                     @foreach(($roles ?? []) as $role)
@@ -706,6 +717,43 @@
 
     </form>
 
+    @if(app('router')->has('roles.store'))
+    <div class="modal fade" id="addRoleModal" tabindex="-1" aria-labelledby="addRoleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius:12px;border:0;box-shadow:0 22px 60px rgba(15,23,42,.18);">
+                <form method="POST" action="{{ route('roles.store') }}" id="addRoleForm">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addRoleModalLabel" style="font-size:1rem;font-weight:800;">Add Role</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold" style="font-size:.82rem;">Role Name <span class="text-danger">*</span></label>
+                            <input type="text" name="name" id="newRoleName" class="form-control form-control-sm" placeholder="e.g. Procurement Officer" required maxlength="255">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold" style="font-size:.82rem;">Group</label>
+                            <input type="text" name="role_group" class="form-control form-control-sm" placeholder="Staff" maxlength="191">
+                        </div>
+                        <div>
+                            <label class="form-label fw-semibold" style="font-size:.82rem;">Description</label>
+                            <textarea name="description" class="form-control form-control-sm" rows="3" maxlength="1000" placeholder="Optional"></textarea>
+                        </div>
+                        <div class="role-create-feedback alert mb-0" id="roleCreateFeedback"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-sm btn-primary" id="saveRoleButton">
+                            <i class="fa fa-save me-1"></i> Save Role
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
+
 </div>
 </div>
 
@@ -722,6 +770,9 @@
     var oldCouncil = @json(old('local_council'));
     var statesUrl = '{{ route('locations.states') }}';
     var councilsUrl = '{{ route('locations.councils') }}';
+    var addRoleForm = document.getElementById('addRoleForm');
+    var roleCreateFeedback = document.getElementById('roleCreateFeedback');
+    var saveRoleButton = document.getElementById('saveRoleButton');
 
     /* ── Count helpers ──────────────────────────────────── */
     function updateCardCount(section) {
@@ -841,6 +892,92 @@
 
     function normalizeRole(role) {
         return (role || '').toLowerCase().replace(/[\s-]+/g, '_');
+    }
+
+    function showRoleFeedback(type, message) {
+        if (!roleCreateFeedback) return;
+        roleCreateFeedback.className = 'role-create-feedback alert alert-' + type + ' mb-0';
+        roleCreateFeedback.textContent = message;
+        roleCreateFeedback.style.display = 'block';
+    }
+
+    function addRoleOption(roleName) {
+        if (!roleSelect || !roleName) return;
+
+        var existing = Array.prototype.find.call(roleSelect.options, function (option) {
+            return normalizeRole(option.value) === normalizeRole(roleName);
+        });
+
+        if (existing) {
+            existing.selected = true;
+            roleSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            return;
+        }
+
+        var option = document.createElement('option');
+        option.value = roleName;
+        option.textContent = roleName.replace(/_/g, ' ').replace(/\b\w/g, function (letter) {
+            return letter.toUpperCase();
+        });
+        option.selected = true;
+        roleSelect.appendChild(option);
+        roleSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    if (addRoleForm) {
+        addRoleForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            if (saveRoleButton) {
+                saveRoleButton.disabled = true;
+                saveRoleButton.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i> Saving';
+            }
+            if (roleCreateFeedback) roleCreateFeedback.style.display = 'none';
+
+            fetch(addRoleForm.action, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: new FormData(addRoleForm),
+            })
+                .then(function (response) {
+                    return response.json().then(function (payload) {
+                        if (!response.ok) {
+                            throw payload;
+                        }
+                        return payload;
+                    });
+                })
+                .then(function (payload) {
+                    var roleName = payload.role && payload.role.name ? payload.role.name : document.getElementById('newRoleName').value;
+                    addRoleOption(roleName);
+                    addRoleForm.reset();
+                    showRoleFeedback('success', payload.message || 'Role added successfully.');
+
+                    var modalEl = document.getElementById('addRoleModal');
+                    var modal = modalEl && window.bootstrap ? window.bootstrap.Modal.getInstance(modalEl) : null;
+                    window.setTimeout(function () {
+                        if (modal) modal.hide();
+                    }, 450);
+                })
+                .catch(function (payload) {
+                    var message = payload && payload.message ? payload.message : 'Role could not be added.';
+                    if (payload && payload.errors) {
+                        var firstKey = Object.keys(payload.errors)[0];
+                        if (firstKey && payload.errors[firstKey] && payload.errors[firstKey][0]) {
+                            message = payload.errors[firstKey][0];
+                        }
+                    }
+                    showRoleFeedback('danger', message);
+                })
+                .finally(function () {
+                    if (saveRoleButton) {
+                        saveRoleButton.disabled = false;
+                        saveRoleButton.innerHTML = '<i class="fa fa-save me-1"></i> Save Role';
+                    }
+                });
+        });
     }
 
     function fillSelect(select, values, placeholder, selected) {

@@ -39,12 +39,22 @@ class RoleController extends Controller
 
         $roleName = Str::title($request->name);
 
-        Role::create([
+        $role = Role::create([
             'name' => $roleName,
             'description' => $request->description,
             'role_group' => $request->role_group ?: 'Staff',
             'is_system_role' => false,
         ]);
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'message' => "Role '{$roleName}' has been established.",
+                'role' => [
+                    'id' => $role->id,
+                    'name' => $role->name,
+                ],
+            ], 201);
+        }
 
         return redirect()->back()->with('success', "Role '$roleName' has been established.");
     }
