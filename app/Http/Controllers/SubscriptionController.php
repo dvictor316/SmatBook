@@ -262,6 +262,10 @@ class SubscriptionController extends Controller
             }
         }
 
+        if ($user && $this->shouldShowMissingWorkspaceError($user)) {
+            return $this->missingWorkspaceLoginError();
+        }
+
         $subscription = $id
             ? Subscription::where('id', $id)->where('user_id', $user->id)->first()
             : Subscription::where('user_id', $user->id)
@@ -347,6 +351,71 @@ class SubscriptionController extends Controller
             in_array($value, ['enterprise', 'institutional'], true) => 'enterprise',
             default => null,
         };
+    }
+
+    private function shouldShowMissingWorkspaceError(?User $user): bool
+    {
+        if (!$user || (int) ($user->company_id ?? 0) > 0) {
+            return false;
+        }
+
+        $role = strtolower(trim((string) ($user->role ?? '')));
+        if (in_array($role, ['super_admin', 'superadmin', 'state_manager', 'deployment_manager', 'agent'], true)) {
+            return false;
+        }
+
+        return !Subscription::withoutGlobalScope('tenant')
+            ->where('user_id', $user->id)
+            ->exists();
+    }
+
+    private function missingWorkspaceLoginError()
+    {
+        Auth::logout();
+        session()->invalidate();
+        session()->regenerateToken();
+
+        return redirect()->route('saas-login')->withErrors([
+            'login' => 'No workspace is attached to this user account. Please contact your workspace administrator.',
+        ]);
+    }
+
+    private function isAssignedWorkspaceStaff(?User $user): bool
+    {
+        if (!$user || (int) ($user->company_id ?? 0) <= 0) {
+            return false;
+        }
+
+        $role = strtolower(trim((string) ($user->role ?? '')));
+        if (in_array($role, ['super_admin', 'superadmin', 'state_manager', 'deployment_manager'], true)) {
+            return false;
+        }
+
+        $company = Company::withoutGlobalScope('tenant')->find((int) $user->company_id);
+        if (!$company) {
+            return false;
+        }
+
+        return !in_array((int) $user->id, array_filter([
+            (int) ($company->user_id ?? 0),
+            (int) ($company->owner_id ?? 0),
+        ]), true);
+    }
+
+    private function forceAssignedWorkspaceSession(User $user): void
+    {
+        $company = Company::withoutGlobalScope('tenant')->find((int) $user->company_id);
+        if (!$company) {
+            return;
+        }
+
+        session()->forget(['url.intended']);
+        session([
+            'user_plan' => strtolower((string) ($company->plan ?? 'basic')),
+            'current_tenant_id' => $company->id,
+            'current_tenant_name' => $company->name ?? $company->company_name ?? 'Workspace',
+            'workspace_context' => 'business',
+        ]);
     }
 
     private function planTierWeight(?string $tier): int
@@ -561,6 +630,17 @@ class SubscriptionController extends Controller
 
             $isDemoCheckout = (bool) optional($subscription->company)->is_demo
                 || (bool) optional($subscription->user)->isDemoUser();
+            $currentUser = auth()->user();
+
+            if ($this->isAssignedWorkspaceStaff($currentUser)) {
+                $this->forceAssignedWorkspaceSession($currentUser);
+
+                return redirect()->route('user.dashboard');
+            }
+
+            if ($currentUser && $subscription->user_id !== $currentUser->id && $this->shouldShowMissingWorkspaceError($currentUser)) {
+                return $this->missingWorkspaceLoginError();
+            }
 
             if ($isDemoCheckout) {
                 if (strtolower((string) $subscription->status) !== 'active') {
@@ -590,7 +670,6 @@ class SubscriptionController extends Controller
                     ->with('info', 'Your subscription is already active.');
             }
 
-            $currentUser          = auth()->user();
             $isDeploymentCheckout = $this->isDeploymentCheckout($subscription);
             $resolvedManagerId    = $this->resolveDeploymentManagerId($subscription);
             $isSuperAdminCheckout = $currentUser
