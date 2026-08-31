@@ -239,6 +239,25 @@ class SubscriptionController extends Controller
             return redirect()->route('super_admin.dashboard');
         }
 
+        if ($user && (int) ($user->company_id ?? 0) > 0) {
+            $company = Company::withoutGlobalScope('tenant')->find((int) $user->company_id);
+            $ownsWorkspace = $company && in_array((int) $user->id, array_filter([
+                (int) ($company->user_id ?? 0),
+                (int) ($company->owner_id ?? 0),
+            ]), true);
+
+            if ($company && !$ownsWorkspace) {
+                session([
+                    'user_plan' => strtolower((string) ($company->plan ?? 'basic')),
+                    'current_tenant_id' => $company->id,
+                    'current_tenant_name' => $company->name ?? $company->company_name ?? 'Workspace',
+                    'workspace_context' => 'business',
+                ]);
+
+                return redirect()->route('user.dashboard');
+            }
+        }
+
         $subscription = $id
             ? Subscription::where('id', $id)->where('user_id', $user->id)->first()
             : Subscription::where('user_id', $user->id)

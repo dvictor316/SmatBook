@@ -11,9 +11,35 @@ class RequireTenantAndBranch
 {
     public function handle(Request $request, Closure $next)
     {
-        // Allow onboarding, branch setup, and logout routes
+        // Allow onboarding/auth/subscription routes to resolve their own state.
         $allowed = [
-            'onboarding', 'branch.setup', 'logout', 'saas-setup', 'saas-logout',
+            'onboarding',
+            'branch.setup',
+            'login',
+            'login-account',
+            'login-account.post',
+            'saas-login',
+            'saas-login.post',
+            'logout',
+            'emergency.logout',
+            'membership-plans',
+            'pricing',
+            'subscription.expired',
+            'subscription.upgrade.redirect',
+            'saas.select_plan',
+            'saas.select_plan.save',
+            'saas.setup',
+            'saas.setup.legacy',
+            'saas.store',
+            'saas.checkout',
+            'saas.success',
+            'saas.payment.success',
+            'saas.payment.cancel',
+            'registration.pending.notice',
+            'manager.pending.notice',
+            'manager.verification.form',
+            'manager.submit.verification',
+            'submit.verification',
         ];
         $route = $request->route()?->getName();
         if (in_array($route, $allowed, true)) {
