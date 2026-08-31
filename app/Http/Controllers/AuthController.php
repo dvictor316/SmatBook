@@ -653,6 +653,13 @@ class AuthController extends Controller
             Log::warning('Login alert email failed', ['error' => $mailError->getMessage()]);
         }
 
+        if ($this->isAssignedWorkspaceStaff($user)) {
+            $this->forceAssignedWorkspaceSession($request, $user);
+            app(ActiveBranchResolver::class)->ensureSession($user);
+
+            return redirect()->route('user.dashboard');
+        }
+
         $intended = (string) $request->session()->pull('url.intended', '');
         if ($this->isAllowedPostLoginRedirect($intended)) {
             return redirect()->to($intended);
@@ -862,6 +869,12 @@ class AuthController extends Controller
         }
 
         app(ActiveBranchResolver::class)->ensureSession($user);
+
+        if ($this->isAssignedWorkspaceStaff($user)) {
+            $this->forceAssignedWorkspaceSession(request(), $user);
+
+            return redirect()->route('user.dashboard');
+        }
 
         // Super Admin
         if ($this->isSuperAdmin($user)) {
@@ -1567,6 +1580,41 @@ class AuthController extends Controller
         if ($companyName) {
             $request->session()->put('current_tenant_name', $companyName);
         }
+    }
+
+    private function isAssignedWorkspaceStaff(?User $user): bool
+    {
+        if (!$user || (int) ($user->company_id ?? 0) <= 0) {
+            return false;
+        }
+
+        if ($this->isSuperAdmin($user) || $this->isDeploymentManager($user)) {
+            return false;
+        }
+
+        $company = Company::withoutGlobalScope('tenant')->find((int) $user->company_id);
+        if (!$company) {
+            return false;
+        }
+
+        return !in_array((int) $user->id, array_filter([
+            (int) ($company->user_id ?? 0),
+            (int) ($company->owner_id ?? 0),
+        ]), true);
+    }
+
+    private function forceAssignedWorkspaceSession(Request $request, User $user): void
+    {
+        $company = Company::withoutGlobalScope('tenant')->find((int) $user->company_id);
+        if (!$company) {
+            return;
+        }
+
+        $request->session()->forget(['url.intended']);
+        $request->session()->put('workspace_context', 'business');
+        $request->session()->put('current_tenant_id', (int) $company->id);
+        $request->session()->put('current_tenant_name', $company->name ?? $company->company_name ?? 'Workspace');
+        $request->session()->put('user_plan', strtolower((string) ($company->plan ?? 'basic')));
     }
 
     public function registrationStates(Request $request)
