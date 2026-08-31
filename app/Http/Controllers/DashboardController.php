@@ -64,6 +64,16 @@ class DashboardController extends Controller
             ->values()
             ->all();
 
+        $assignedStaffCompany = $this->assignedStaffCompany($user);
+        if ($assignedStaffCompany) {
+            session([
+                'user_plan' => strtolower((string) ($assignedStaffCompany->plan ?? 'basic')),
+                'current_tenant_id' => $assignedStaffCompany->id,
+                'current_tenant_name' => $assignedStaffCompany->name ?? $assignedStaffCompany->company_name ?? 'Workspace',
+                'workspace_context' => 'business',
+            ]);
+        }
+
         $tenantId = $this->resolvedDashboardCompanyId();
         $userCompany = $tenantId > 0 ? Company::query()->find($tenantId) : null;
         if ($userCompany && !empty($userCompany->domain_prefix)) {
@@ -958,6 +968,30 @@ class DashboardController extends Controller
         }
 
         return true;
+    }
+
+    private function assignedStaffCompany($user): ?Company
+    {
+        if (!$user || (int) ($user->company_id ?? 0) <= 0) {
+            return null;
+        }
+
+        $role = strtolower(trim((string) ($user->role ?? '')));
+        if (in_array($role, ['super_admin', 'superadmin', 'state_manager', 'deployment_manager'], true)) {
+            return null;
+        }
+
+        $company = Company::withoutGlobalScope('tenant')->find((int) $user->company_id);
+        if (!$company) {
+            return null;
+        }
+
+        $ownsWorkspace = in_array((int) $user->id, array_filter([
+            (int) ($company->user_id ?? 0),
+            (int) ($company->owner_id ?? 0),
+        ]), true);
+
+        return $ownsWorkspace ? null : $company;
     }
 
     private function missingWorkspaceLoginError()
