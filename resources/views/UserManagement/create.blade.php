@@ -98,6 +98,7 @@
 .perm-card-body { padding:10px 12px 12px; flex:1; }
 .perm-item { display:flex; align-items:center; gap:7px; font-size:.79rem; color:#374151; cursor:pointer; padding:4px 5px; border-radius:6px; line-height:1.25; margin-bottom:1px; transition:background .15s; -webkit-user-select:none; user-select:none; }
 .perm-item:hover { background:#f4f6fb; }
+.perm-item.perm-item--granted { background:#fff7df; color:#1a2236; font-weight:600; }
 .perm-item input[type=checkbox], .perm-item input[type=radio] { width:14px; height:14px; accent-color:#2d2a6e; flex-shrink:0; cursor:pointer; margin:0; }
 .perm-item input:checked+span { color:#1a2236; font-weight:600; }
 .perm-sep { border:none; border-top:1px dashed #e8edf5; margin:6px 0; }
@@ -836,6 +837,10 @@
     function refreshAll() {
         document.querySelectorAll('.perm-card').forEach(function (card) {
             updateCardCount(card.dataset.section);
+        });
+        document.querySelectorAll('.perm-input').forEach(function (inp) {
+            var row = inp.closest('.perm-item');
+            if (row) row.classList.toggle('perm-item--granted', inp.checked);
         });
         updateGrantedBadge();
     }

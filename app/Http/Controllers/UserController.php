@@ -280,6 +280,10 @@ class UserController extends Controller
         $role = \App\Models\Role::whereRaw('LOWER(name) = ?', [strtolower($roleName)])->first();
         $perms = $role ? $role->permissions()->pluck('name')->map('strtolower')->toArray() : [];
 
+        if ($perms === []) {
+            $perms = $this->defaultPermissionsForRole($roleName);
+        }
+
         return response()->json(['permissions' => $perms]);
     }
 
@@ -703,6 +707,94 @@ class UserController extends Controller
             'Sales Manager',
             'Account Officer',
             'Cashier',
+        ];
+    }
+
+    private function defaultPermissionsForRole(string $roleName): array
+    {
+        $allPerms = $this->createFormPermissionNames();
+
+        return array_values(match (strtolower(trim($roleName))) {
+            'administrator', 'admin' => $allPerms,
+            'finance manager' => array_filter($allPerms, fn ($p) => str_starts_with($p, 'finance.')
+                || str_starts_with($p, 'accounting.')
+                || str_starts_with($p, 'payment_summary.')
+                || str_starts_with($p, 'reports.')
+                || str_starts_with($p, 'tax.')
+                || str_starts_with($p, 'budgets.')
+                || str_starts_with($p, 'expense_claims.')
+                || $p === 'dashboard.overview.view'),
+            'store manager' => array_filter($allPerms, fn ($p) => str_starts_with($p, 'inventory.')
+                || str_starts_with($p, 'vendors.')
+                || str_starts_with($p, 'purchases.')
+                || str_starts_with($p, 'purchase_orders.')
+                || str_starts_with($p, 'reports.')
+                || str_starts_with($p, 'branches.')
+                || $p === 'dashboard.overview.view'),
+            'sales manager' => array_filter($allPerms, fn ($p) => str_starts_with($p, 'sales.')
+                || str_starts_with($p, 'customers.')
+                || str_starts_with($p, 'estimates.')
+                || str_starts_with($p, 'recurring_invoices.')
+                || str_starts_with($p, 'collections_hub.')
+                || str_starts_with($p, 'follow_ups.')
+                || str_starts_with($p, 'reports.')
+                || $p === 'dashboard.overview.view'),
+            'account officer', 'accountant' => array_filter($allPerms, fn ($p) => str_starts_with($p, 'finance.')
+                || str_starts_with($p, 'accounting.')
+                || str_starts_with($p, 'payment_summary.')
+                || str_starts_with($p, 'reports.')
+                || $p === 'dashboard.overview.view'),
+            'cashier' => array_filter($allPerms, fn ($p) => in_array($p, [
+                'dashboard.overview.view',
+                'sales.pos.view',
+                'sales.pos.create',
+                'sales.invoices.view_own',
+                'customers.customers.view_own',
+                'customers.customers.create',
+                'finance.payments.view',
+                'finance.payments.create',
+            ], true)),
+            default => [],
+        });
+    }
+
+    private function createFormPermissionNames(): array
+    {
+        return [
+            'dashboard.overview.view',
+            'user_management.users.view', 'user_management.users.create', 'user_management.users.edit', 'user_management.users.delete',
+            'roles.roles.view', 'roles.roles.create', 'roles.roles.edit', 'roles.roles.delete',
+            'customers.customers.view_all', 'customers.customers.view_own', 'customers.customers.view_no_sell_1month', 'customers.customers.view_no_sell_3months', 'customers.customers.view_no_sell_6months', 'customers.customers.view_no_sell_1year', 'customers.customers.view_irrespective', 'customers.customers.create', 'customers.customers.edit', 'customers.customers.delete',
+            'sales.invoices.view_all', 'sales.invoices.view_own', 'sales.invoices.create', 'sales.invoices.edit', 'sales.invoices.delete',
+            'sales.pos.view', 'sales.pos.create',
+            'sales.quotations.view_all', 'sales.quotations.view_own', 'sales.quotations.create', 'sales.quotations.edit', 'sales.quotations.delete',
+            'estimates.estimates.view', 'estimates.estimates.create', 'estimates.estimates.edit', 'estimates.estimates.delete',
+            'recurring_invoices.recurring_invoices.view', 'recurring_invoices.recurring_invoices.create', 'recurring_invoices.recurring_invoices.edit', 'recurring_invoices.recurring_invoices.delete',
+            'follow_ups.follow_ups.view', 'follow_ups.follow_ups.create', 'follow_ups.follow_ups.edit', 'follow_ups.follow_ups.delete',
+            'collections_hub.collections_hub.view', 'collections_hub.collections_hub.create', 'collections_hub.collections_hub.edit',
+            'vendors.vendors.view_all', 'vendors.vendors.view_own', 'vendors.vendors.create', 'vendors.vendors.edit', 'vendors.vendors.delete',
+            'purchases.purchases.view_all', 'purchases.purchases.view_own', 'purchases.purchases.create', 'purchases.purchases.edit', 'purchases.purchases.delete', 'purchases.purchases.add_payment', 'purchases.purchases.edit_payment', 'purchases.purchases.delete_payment',
+            'purchase_orders.purchase_orders.view', 'purchase_orders.purchase_orders.create', 'purchase_orders.purchase_orders.edit', 'purchase_orders.purchase_orders.delete',
+            'inventory.products.view', 'inventory.products.create', 'inventory.products.edit', 'inventory.products.delete', 'inventory.products.add_opening_stock', 'inventory.products.view_purchase_price',
+            'inventory.stock.view', 'inventory.stock.edit', 'inventory.categories.view', 'inventory.categories.create', 'inventory.categories.edit', 'inventory.categories.delete',
+            'finance.expenses.view', 'finance.expenses.create', 'finance.expenses.edit', 'finance.expenses.delete',
+            'finance.payments.view', 'finance.payments.create', 'finance.payments.edit',
+            'accounting.chart_of_accounts.view', 'accounting.chart_of_accounts.create', 'accounting.chart_of_accounts.edit', 'accounting.chart_of_accounts.delete', 'accounting.bank_reconciliation.view', 'accounting.bank_reconciliation.edit', 'accounting.manual_journal.view', 'accounting.manual_journal.create', 'accounting.manual_journal.edit', 'accounting.manual_journal.delete',
+            'recurring_transactions.recurring_transactions.view', 'recurring_transactions.recurring_transactions.create', 'recurring_transactions.recurring_transactions.edit', 'recurring_transactions.recurring_transactions.delete',
+            'payment_summary.payment_summary.view',
+            'budgets.budgets.view', 'budgets.budgets.create', 'budgets.budgets.edit', 'budgets.budgets.delete',
+            'fixed_assets.fixed_assets.view', 'fixed_assets.fixed_assets.create', 'fixed_assets.fixed_assets.edit', 'fixed_assets.fixed_assets.delete',
+            'expense_claims.expense_claims.view', 'expense_claims.expense_claims.create', 'expense_claims.expense_claims.edit', 'expense_claims.expense_claims.delete',
+            'payroll.payroll.view', 'payroll.payroll.create', 'payroll.payroll.edit',
+            'projects.projects.view', 'projects.projects.create', 'projects.projects.edit', 'projects.projects.delete',
+            'tax.filings.view', 'tax.filings.create', 'tax.filings.edit',
+            'approval_queue.approval_queue.view', 'approval_queue.approval_queue.edit',
+            'period_close.period_close.view', 'period_close.period_close.execute',
+            'activity_log.activity_log.view',
+            'reports.reports.view',
+            'branches.branches.view', 'branches.branches.create', 'branches.branches.edit', 'branches.branches.delete',
+            'settings.settings.view', 'settings.settings.edit',
+            'applications.chat.view', 'applications.calendar.view', 'applications.messages.view',
         ];
     }
 
