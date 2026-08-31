@@ -75,7 +75,7 @@ class DashboardController extends Controller
         }
 
         $tenantId = $this->resolvedDashboardCompanyId();
-        $userCompany = $tenantId > 0 ? Company::query()->find($tenantId) : null;
+        $userCompany = $tenantId > 0 ? Company::withoutGlobalScope('tenant')->find($tenantId) : null;
         if ($userCompany && !empty($userCompany->domain_prefix)) {
             $expectedSubdomain = Str::lower($userCompany->domain_prefix);
             $currentSubdomain = null;
@@ -123,7 +123,7 @@ class DashboardController extends Controller
         }
 
         if (!$company && !empty($currentSubscription?->company_id)) {
-            $company = Company::query()->find((int) $currentSubscription->company_id);
+            $company = Company::withoutGlobalScope('tenant')->find((int) $currentSubscription->company_id);
         }
 
         if ($subdomain && $company) {
@@ -1010,11 +1010,11 @@ class DashboardController extends Controller
         $tenantId = $this->resolvedDashboardCompanyId();
 
         if ($tenantId > 0) {
-            return Company::query()->find($tenantId);
+            return Company::withoutGlobalScope('tenant')->find($tenantId);
         }
 
         if (!empty($subscription?->company_id)) {
-            $company = Company::query()->find((int) $subscription->company_id);
+            $company = Company::withoutGlobalScope('tenant')->find((int) $subscription->company_id);
             if ($company) {
                 return $company;
             }
