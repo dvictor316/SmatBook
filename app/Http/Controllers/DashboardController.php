@@ -127,9 +127,17 @@ class DashboardController extends Controller
         // Super admin is exempt — they have no company but should access all pages freely.
         if (!$isSuperAdmin) {
             if ($subdomain && !$company) {
+                if ($this->shouldShowMissingWorkspaceError($user, $currentSubscription)) {
+                    return $this->missingWorkspaceLoginError();
+                }
+
                 return redirect()->route('saas.setup')->with('info', 'Handshake incomplete. Please set your URL.');
             }
             if (!$company && !in_array(strtolower((string) $user->role), ['superadmin', 'super_admin', 'admin', 'administrator'], true)) {
+                if ($this->shouldShowMissingWorkspaceError($user, $currentSubscription)) {
+                    return $this->missingWorkspaceLoginError();
+                }
+
                 return redirect()->route('saas.setup')->with('info', 'Handshake incomplete. Please set your URL.');
             }
         }
@@ -937,6 +945,30 @@ class DashboardController extends Controller
         }
 
         return (int) (Auth::user()?->company_id ?? 0);
+    }
+
+    private function shouldShowMissingWorkspaceError($user, ?Subscription $subscription): bool
+    {
+        if (!$user || (int) ($user->company_id ?? 0) > 0) {
+            return false;
+        }
+
+        if ($subscription && (int) ($subscription->user_id ?? 0) === (int) $user->id) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function missingWorkspaceLoginError()
+    {
+        Auth::logout();
+        session()->invalidate();
+        session()->regenerateToken();
+
+        return redirect()->route('saas-login')->withErrors([
+            'login' => 'No workspace is attached to this user account. Please contact your workspace administrator.',
+        ]);
     }
 
     private function resolveDashboardCompany($user, ?string $subdomain = null, ?Subscription $subscription = null): ?Company
