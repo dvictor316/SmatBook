@@ -68,11 +68,11 @@ class UserController extends Controller
 
         // Tenant-based username suffix = company_id of the logged-in user
         $actor = Auth::user();
-        $companySuffix = $actor?->company_id ?? '';
+        $companySuffix = $this->workspaceCompanyIdForActor($actor);
 
         // Branches for access locations checkboxes
         // Keys are scoped as "branches_json_company_{id}" (same pattern as SettingController)
-        $companyId = (int) ($actor?->company_id ?? 0);
+        $companyId = $this->workspaceCompanyIdForActor($actor);
         $settingKey = $companyId > 0 ? "branches_json_company_{$companyId}" : 'branches_json';
         $branches = collect(json_decode(
             \App\Models\Setting::where('key', $settingKey)->value('value') ?? '[]',
@@ -97,9 +97,9 @@ class UserController extends Controller
     {
         $roles  = $this->getRoles();
         $actor  = Auth::user();
-        $suffix = $actor?->company_id ?? '';
+        $suffix = $this->workspaceCompanyIdForActor($actor);
 
-        $companyId  = (int) ($actor?->company_id ?? 0);
+        $companyId  = $this->workspaceCompanyIdForActor($actor);
         $settingKey = $companyId > 0 ? "branches_json_company_{$companyId}" : 'branches_json';
         $branches   = collect(json_decode(
             \App\Models\Setting::where('key', $settingKey)->value('value') ?? '[]', true
@@ -133,7 +133,7 @@ class UserController extends Controller
         ]);
 
         $actor = Auth::user();
-        $companyId = $actor?->company_id;
+        $companyId = $this->workspaceCompanyIdForActor($actor);
 
         if ($companyId && !$this->isCentralAdmin($actor)) {
             $subscription = Subscription::resolveCurrentForUser($actor);
@@ -191,10 +191,24 @@ class UserController extends Controller
         $user->role = $legacyRole;
         $user->role_id = $selectedRole['id'];
         $user->password = Hash::make($request->password);
-        $user->status = $request->boolean('is_active', true) ? 'active' : 'inactive';
-        $user->is_verified = 1;
-        $user->allow_login = $request->boolean('allow_login', true) ? 1 : 0;
-        $user->company_id = $this->isCentralAdmin($actor) ? null : $companyId;
+        if (Schema::hasColumn('users', 'status')) {
+            $user->status = $request->boolean('is_active', true) ? 'active' : 'inactive';
+        }
+        if (Schema::hasColumn('users', 'is_verified')) {
+            $user->is_verified = 1;
+        }
+        if (Schema::hasColumn('users', 'email_verified_at')) {
+            $user->email_verified_at = now();
+        }
+        if (Schema::hasColumn('users', 'verified_at')) {
+            $user->verified_at = now();
+        }
+        if (Schema::hasColumn('users', 'allow_login')) {
+            $user->allow_login = $request->boolean('allow_login', true) ? 1 : 0;
+        }
+        if (Schema::hasColumn('users', 'company_id')) {
+            $user->company_id = $this->shouldCreatePlatformUser($actor, $legacyRole) ? null : $companyId;
+        }
         $this->applyUserLocationFields($user, $request);
 
         if ($legacyRole === 'agent') {
@@ -737,6 +751,33 @@ class UserController extends Controller
         }
 
         return 'users.index';
+    }
+
+    private function workspaceCompanyIdForActor(?User $actor): int
+    {
+        return (int) (
+            session('current_tenant_id')
+            ?? $actor?->company_id
+            ?? 0
+        );
+    }
+
+    private function shouldCreatePlatformUser(?User $actor, ?string $legacyRole): bool
+    {
+        if (!$this->isCentralAdmin($actor)) {
+            return false;
+        }
+
+        if (session('workspace_context') === 'business' && $this->workspaceCompanyIdForActor($actor) > 0) {
+            return false;
+        }
+
+        if (request()->routeIs('super_admin.*')) {
+            return true;
+        }
+
+        return in_array($legacyRole, ['super_admin', 'state_manager', 'agent'], true)
+            && session('workspace_context') !== 'business';
     }
 
     private function isCentralAdmin(?User $user): bool

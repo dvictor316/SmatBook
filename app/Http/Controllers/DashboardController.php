@@ -129,7 +129,7 @@ class DashboardController extends Controller
             if ($subdomain && !$company) {
                 return redirect()->route('saas.setup')->with('info', 'Handshake incomplete. Please set your URL.');
             }
-            if (!$company && !in_array($user->role, ['superadmin', 'admin'])) {
+            if (!$company && !in_array(strtolower((string) $user->role), ['superadmin', 'super_admin', 'admin', 'administrator'], true)) {
                 return redirect()->route('saas.setup')->with('info', 'Handshake incomplete. Please set your URL.');
             }
         }

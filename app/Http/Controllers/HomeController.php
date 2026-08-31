@@ -457,8 +457,7 @@ class HomeController extends Controller
 
             return $this->redirectToCentralBusinessWorkspace(
                 $company,
-                $subscription,
-                'Your workspace is available, but the secure custom subdomain is still being finalized. You can continue safely from the central dashboard for now.'
+                $subscription
             );
         }
 

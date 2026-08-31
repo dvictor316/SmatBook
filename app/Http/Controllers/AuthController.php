@@ -588,6 +588,17 @@ class AuthController extends Controller
         $request->session()->regenerate();
         
         $user = Auth::user();
+
+        if (Schema::hasColumn('users', 'allow_login') && (int) ($user->allow_login ?? 1) !== 1) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('saas-login')->withErrors([
+                'login' => 'This user account is not allowed to login. Please contact your workspace administrator.',
+            ]);
+        }
+
         $this->resetWorkspaceSessionState($request);
 
         if ($user?->isDemoUser()) {
