@@ -153,6 +153,13 @@ class UserController extends Controller
 
         $selectedRole = $this->resolveSelectedRole($request->role);
         $legacyRole = $selectedRole['legacy'];
+        $creatingPlatformUser = $this->shouldCreatePlatformUser($actor, $legacyRole);
+
+        if (!$creatingPlatformUser && $companyId <= 0) {
+            return back()
+                ->withInput()
+                ->with('error', 'Select or enter the business workspace before creating a workspace user.');
+        }
 
         if ($legacyRole === 'state_manager') {
             if (!$this->isCentralAdmin($actor)) {
@@ -207,7 +214,7 @@ class UserController extends Controller
             $user->allow_login = $request->boolean('allow_login', true) ? 1 : 0;
         }
         if (Schema::hasColumn('users', 'company_id')) {
-            $user->company_id = $this->shouldCreatePlatformUser($actor, $legacyRole) ? null : $companyId;
+            $user->company_id = $creatingPlatformUser ? null : $companyId;
         }
         $this->applyUserLocationFields($user, $request);
 
@@ -789,10 +796,6 @@ class UserController extends Controller
 
         if (session('workspace_context') === 'business' && $this->workspaceCompanyIdForActor($actor) > 0) {
             return false;
-        }
-
-        if (request()->routeIs('super_admin.*')) {
-            return true;
         }
 
         return in_array($legacyRole, ['super_admin', 'state_manager', 'agent'], true)

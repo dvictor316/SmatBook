@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Company;
 use App\Models\Subscription;
 use App\Support\InternalTestAccess;
 use Closure;
@@ -59,6 +60,29 @@ class SubscriptionActive
         }
 
         $subscription = Subscription::resolveCurrentForUser($user);
+
+        if (!$subscription && (int) ($user->company_id ?? 0) > 0) {
+            $subscription = Subscription::withoutGlobalScope('tenant')
+                ->where('company_id', (int) $user->company_id)
+                ->orderByRaw("
+                    CASE
+                        WHEN LOWER(COALESCE(status, '')) IN ('active', 'trial') THEN 0
+                        WHEN LOWER(COALESCE(status, '')) = 'expired' THEN 1
+                        ELSE 2
+                    END
+                ")
+                ->orderByDesc('end_date')
+                ->orderByDesc('id')
+                ->first();
+        }
+
+        if (!$subscription && (int) ($user->company_id ?? 0) > 0) {
+            $company = Company::withoutGlobalScope('tenant')->find((int) $user->company_id);
+
+            if ($company && strtolower((string) ($company->status ?? 'active')) === 'active') {
+                return $next($request);
+            }
+        }
 
         if (!$subscription) {
             if ($this->shouldReturnJson($request)) {

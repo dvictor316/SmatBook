@@ -368,13 +368,30 @@ class HomeController extends Controller
                 : null;
 
             if ($company) {
+                $companySubscription = Subscription::withoutGlobalScope('tenant')
+                    ->where('company_id', $company->id)
+                    ->orderByRaw("
+                        CASE
+                            WHEN LOWER(COALESCE(status, '')) IN ('active', 'trial') THEN 0
+                            WHEN LOWER(COALESCE(status, '')) = 'expired' THEN 1
+                            ELSE 2
+                        END
+                    ")
+                    ->orderByDesc('end_date')
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($companySubscription && $companySubscription->isExpired()) {
+                    return redirect()->route('subscription.expired');
+                }
+
                 Log::info('→ Company user without own subscription, redirecting to tenant dashboard', [
                     'user_id' => $user->id,
                     'company_id' => $company->id,
                 ]);
 
                 session([
-                    'user_plan' => strtolower((string) ($company->plan ?? 'basic')),
+                    'user_plan' => strtolower((string) ($companySubscription?->plan ?? $companySubscription?->plan_name ?? $company->plan ?? 'basic')),
                     'current_tenant_id' => $company->id,
                     'current_tenant_name' => $company->name ?? $company->company_name ?? 'Workspace',
                     'workspace_context' => 'business',

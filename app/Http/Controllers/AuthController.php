@@ -605,6 +605,16 @@ class AuthController extends Controller
             $this->forceDemoWorkspaceSession($request, $user);
         }
 
+        if ((int) ($user?->company_id ?? 0) > 0) {
+            $request->session()->put('current_tenant_id', (int) $user->company_id);
+            $request->session()->put('workspace_context', 'business');
+
+            $companyName = $user->company?->company_name ?? $user->company?->name ?? null;
+            if ($companyName) {
+                $request->session()->put('current_tenant_name', $companyName);
+            }
+        }
+
         $deviceSession = app(DeviceSessionManager::class)->ensureCurrentSession($request, $user);
         if (($deviceSession['allowed'] ?? true) !== true) {
             Auth::logout();
