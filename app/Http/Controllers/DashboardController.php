@@ -926,14 +926,17 @@ class DashboardController extends Controller
 
     private function resolvedDashboardCompanyId(): int
     {
-        $subscriptionCompanyId = (int) (Subscription::resolveCurrentForUser(Auth::user())?->company_id ?? 0);
+        $sessionCompanyId = (int) session('current_tenant_id', 0);
+        if ($sessionCompanyId > 0) {
+            return $sessionCompanyId;
+        }
 
-        return (int) (
-            session('current_tenant_id')
-            ?? $subscriptionCompanyId
-            ?? Auth::user()?->company_id
-            ?? 0
-        );
+        $subscriptionCompanyId = (int) (Subscription::resolveCurrentForUser(Auth::user())?->company_id ?? 0);
+        if ($subscriptionCompanyId > 0) {
+            return $subscriptionCompanyId;
+        }
+
+        return (int) (Auth::user()?->company_id ?? 0);
     }
 
     private function resolveDashboardCompany($user, ?string $subdomain = null, ?Subscription $subscription = null): ?Company
