@@ -93,10 +93,6 @@
 
     <link rel="shortcut icon" href="{{ $faviconPath }}">
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css" 
-          integrity="sha512-Avb2QiuDEEvB4bZJYdft2mNjVShBftLdPG8FJ0V7irTLQ8Uo0qcPxh4Plq7G5tGm0rU+1SPhVotteLpBERwTkw==" 
-          crossorigin="anonymous" referrerpolicy="no-referrer" />
-
     @include('layout.partials.head')
     @include('layout.partials.design-system')
     @yield('style')
@@ -2462,15 +2458,11 @@
         function warmLikelyLinks() {
             const run = function () {
                 Array.from(document.querySelectorAll('#sidebar a[href], .sidebar a[href], #spb-page-content a[href]'))
-                    .slice(0, 14)
+                    .slice(0, 32)
                     .forEach(prefetch);
             };
 
-            if ('requestIdleCallback' in window) {
-                window.requestIdleCallback(run, { timeout: 1500 });
-            } else {
-                window.setTimeout(run, 450);
-            }
+            window.setTimeout(run, 80);
         }
 
         rememberCurrentPage();
@@ -3662,6 +3654,12 @@
                     if (!href || href === '#' || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) {
                         return false;
                     }
+                    try {
+                        const url = new URL(href, window.location.href);
+                        if (url.origin === window.location.origin && !url.pathname.includes('logout')) {
+                            return false;
+                        }
+                    } catch (e) {}
                     if (element.hasAttribute('download') || element.target === '_blank' || element.dataset.noLoader !== undefined) {
                         return false;
                     }

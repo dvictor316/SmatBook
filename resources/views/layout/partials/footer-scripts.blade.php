@@ -2,9 +2,12 @@
 <script src="{{ URL::asset('/assets/js/jquery-3.7.1.min.js') }}"></script>
 <script src="{{ URL::asset('/assets/js/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ URL::asset('/assets/js/feather.min.js') }}"></script>
-<script src="{{ URL::asset('/assets/js/jspdf.min.js') }}"></script>
 <script src="{{ URL::asset('/assets/plugins/slimscroll/jquery.slimscroll.min.js') }}"></script>
 <script src="{{ URL::asset('/assets/js/jquery-ui.min.js') }}"></script>
+
+@if (request()->is('reports*', '*report*', 'inventory-history*', 'sales*', 'invoices*') || Route::is(['invoice-*', 'template-invoice']))
+    <script src="{{ URL::asset('/assets/js/jspdf.min.js') }}"></script>
+@endif
 
 @if (!Route::is(['saas-login', 'saas-register', 'forgot-password', 'password.reset']))
     <script src="{{ URL::asset('/assets/plugins/select2/js/select2.min.js') }}"></script>
