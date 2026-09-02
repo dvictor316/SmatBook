@@ -2138,6 +2138,8 @@
                 'deployment.dashboard',
                 'workspace.business',
                 'workspace.business.dashboard',
+                'sales.showPos',
+                'pos.return.show',
                 'login',
                 'register',
                 'saas-login',
@@ -2155,8 +2157,9 @@
                 'saas.success',
             ], true)
             && !str_starts_with((string) $route, 'saas.')
+            && !str_starts_with((string) $route, 'pos.')
             && !str_starts_with((string) $route, 'landing.')
-            && !request()->is('saas/*');
+            && !request()->is('saas/*', 'pos', 'pos/*');
         @endphp
         @if($showDesktopBackButton)
             <div class="spb-desktop-backbar is-visible" id="spbDesktopBackbar">
@@ -3686,87 +3689,10 @@
     </script>
 
     <script>
-        (function () {
-            const originalTitle = document.title || 'SmartProbook';
-            let loadingTitleTimer = null;
-
-            const showLoadingTitle = () => {
-                if (loadingTitleTimer) {
-                    clearTimeout(loadingTitleTimer);
-                }
-
-                loadingTitleTimer = window.setTimeout(function () {
-                    document.title = 'Loading SmartProbook...';
-                }, 90);
-            };
-
-            const restoreTitle = () => {
-                if (loadingTitleTimer) {
-                    clearTimeout(loadingTitleTimer);
-                    loadingTitleTimer = null;
-                }
-                document.title = originalTitle;
-            };
-
-            const isRealNavigation = (element) => {
-                if (!element) return false;
-
-                if (element.closest('[data-bs-toggle], [data-toggle], [data-bs-dismiss], [data-dismiss], .dropdown-toggle, .popup-toggle, .mobile_btn, #toggle_btn, #mobile_btn')) {
-                    return false;
-                }
-
-                if (element.tagName === 'A') {
-                    const href = (element.getAttribute('href') || '').trim();
-                    if (!href || href === '#' || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) {
-                        return false;
-                    }
-                    try {
-                        const url = new URL(href, window.location.href);
-                        if (url.origin === window.location.origin && !url.pathname.includes('logout')) {
-                            return false;
-                        }
-                    } catch (e) {}
-                    if (element.hasAttribute('download') || element.target === '_blank' || element.dataset.noLoader !== undefined) {
-                        return false;
-                    }
-                    return true;
-                }
-
-                if (element.tagName === 'BUTTON') {
-                    const form = element.form;
-                    if (!form || element.type === 'button' || element.dataset.noLoader !== undefined) {
-                        return false;
-                    }
-                    return !element.closest('.modal, .offcanvas');
-                }
-
-                return false;
-            };
-
-            window.SPBPageLoader = {
-                show: showLoadingTitle,
-                hide: restoreTitle,
-            };
-
-            document.addEventListener('DOMContentLoaded', restoreTitle, { once: true });
-            window.addEventListener('load', restoreTitle, { once: true });
-            window.addEventListener('pageshow', restoreTitle);
-            window.addEventListener('beforeunload', showLoadingTitle);
-
-            document.addEventListener('click', function (event) {
-                const target = event.target.closest('a, button');
-                if (!isRealNavigation(target)) return;
-                showLoadingTitle();
-            }, true);
-
-            document.addEventListener('submit', function (event) {
-                const form = event.target;
-                if (!(form instanceof HTMLFormElement) || form.dataset.noLoader !== undefined) return;
-                showLoadingTitle();
-            }, true);
-
-            setTimeout(restoreTitle, 1600);
-        })();
+        window.SPBPageLoader = window.SPBPageLoader || {
+            show: function () {},
+            hide: function () {},
+        };
     </script>
 
 </body>
