@@ -518,6 +518,10 @@
                                         <input type="number" step="0.01" name="stock_units" class="form-control @error('stock_units') is-invalid @enderror" value="{{ old('stock_units', 0) }}">
                                         @error('stock_units')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Total Opening Stock</label>
+                                        <input type="text" id="quick_total_opening_stock_display" class="form-control bg-light fw-semibold" value="0 pcs" readonly>
+                                    </div>
                                     <div class="col-12">
                                         <div class="quick-summary-pills">
                                             <div class="quick-summary-pill">
@@ -882,6 +886,7 @@ $(document).ready(function () {
 
         var stockValue = total * purchasePrice;
         $('#quick_stock_preview_text').text(formatQuickQty(total) + ' ' + unitLabel);
+        $('#quick_total_opening_stock_display').val(formatQuickQty(total) + ' ' + unitLabel);
         $('#quick_stock_mix_preview_text').text(formatQuickQty(cartons) + ' ctn + ' + formatQuickQty(rolls) + ' roll + ' + formatQuickQty(pieces) + ' ' + unitLabel);
         $('#quick_stock_value_preview').text(stockValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
         $('#quick_final_stock_input').val(Math.round(total));
@@ -1153,6 +1158,7 @@ $(document).ready(function () {
         var unitTypeInput = document.getElementById('quick_unit_type_input');
         var pcsPerCtnPreview = document.getElementById('quick_units_per_carton_preview_text');
         var stockPreview = document.getElementById('quick_stock_preview_text');
+        var stockDisplay = document.getElementById('quick_total_opening_stock_display');
         var mixPreview = document.getElementById('quick_stock_mix_preview_text');
         var valuePreview = document.getElementById('quick_stock_value_preview');
         var finalStockInput = document.getElementById('quick_final_stock_input');
@@ -1162,6 +1168,7 @@ $(document).ready(function () {
         if (unitTypeInput) unitTypeInput.value = rollsPerCtn > 0 ? 'carton' : (pcsPerRoll > 0 ? 'roll' : 'unit');
         if (pcsPerCtnPreview) pcsPerCtnPreview.textContent = formatQty(pcsPerCtn) + ' ' + unitLabel;
         if (stockPreview) stockPreview.textContent = formatQty(total) + ' ' + unitLabel;
+        if (stockDisplay) stockDisplay.value = formatQty(total) + ' ' + unitLabel;
         if (mixPreview) mixPreview.textContent = formatQty(cartons) + ' ctn + ' + formatQty(rolls) + ' roll + ' + formatQty(pieces) + ' ' + unitLabel;
         if (valuePreview) valuePreview.textContent = (total * purchasePrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         if (finalStockInput) finalStockInput.value = Math.round(total);
