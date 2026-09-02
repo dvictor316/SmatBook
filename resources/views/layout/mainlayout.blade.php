@@ -1,12 +1,18 @@
 @php
     use Illuminate\Support\Facades\Route;
+    use Illuminate\Support\Facades\Cache;
+    use App\Models\Setting;
+
     $route = Route::currentRouteName();
-    $siteTitle = \App\Models\Setting::where('key', 'company_name')->value('value') ?: 'SmartProbook';
+    $layoutSettings = Cache::remember('ui:layout:settings', now()->addMinutes(5), function () {
+        return Setting::whereIn('key', ['company_name', 'favicon'])->pluck('value', 'key')->all();
+    });
+    $siteTitle = $layoutSettings['company_name'] ?? 'SmartProbook';
     $defaultFavicon = 'assets/img/log-favicon.png';
     $defaultFaviconUrl = asset($defaultFavicon);
     $defaultFaviconVersion = file_exists(public_path($defaultFavicon)) ? filemtime(public_path($defaultFavicon)) : null;
-    $faviconPath = \App\Models\Setting::mediaUrl(
-        \App\Models\Setting::where('key', 'favicon')->value('value'),
+    $faviconPath = Setting::mediaUrl(
+        $layoutSettings['favicon'] ?? null,
         $defaultFaviconUrl
     );
     if ($faviconPath === $defaultFaviconUrl && $defaultFaviconVersion) {
@@ -140,7 +146,12 @@
         .spb-desktop-backbar {
             display: none;
             align-items: center;
-            margin: 0 0 12px;
+            position: fixed;
+            top: calc(var(--sb-header-h, 76px) + 14px);
+            left: calc(var(--sb-sidebar-w, 270px) + 16px);
+            z-index: 1045;
+            margin: 0;
+            pointer-events: none;
         }
 
         .spb-desktop-backbar.is-visible {
@@ -148,8 +159,8 @@
         }
 
         .spb-desktop-backbar__btn {
-            width: 38px;
-            height: 38px;
+            width: 42px;
+            height: 42px;
             border: 1px solid #d8e0ef;
             border-radius: 8px;
             background: #fff;
@@ -158,6 +169,7 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0 8px 18px rgba(15, 23, 42, .06);
+            pointer-events: auto;
         }
 
         .spb-desktop-backbar__btn:hover {
@@ -166,13 +178,28 @@
             border-color: #b8c7e3;
         }
 
+        body.sidebar-collapsed .spb-desktop-backbar,
+        body.mini-sidebar .spb-desktop-backbar,
+        body.sidebar-icon-only .spb-desktop-backbar {
+            left: calc(var(--sb-sidebar-collapsed, 80px) + 16px);
+        }
+
+        body.pos-terminal-workspace .spb-desktop-backbar {
+            left: 16px;
+        }
+
         @media (max-width: 991.98px) {
             .spb-desktop-backbar {
-                display: none !important;
+                top: calc(var(--sb-header-h, 64px) + 10px);
+                left: 12px;
             }
         }
 
         @media print {
+            .spb-desktop-backbar {
+                display: none !important;
+            }
+
             @page { size: auto; margin: 10mm; }
             .header,
             .sidebar,
@@ -2575,7 +2602,6 @@
             if (!backbar || !backButton) return;
 
             function hasUsefulPreviousPage() {
-                if (window.innerWidth < 992) return false;
                 if (window.history.length > 1) return true;
 
                 try {

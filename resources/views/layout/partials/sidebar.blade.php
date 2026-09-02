@@ -8,7 +8,11 @@
 
     // PRIORITY 1: Check deployment_managers table FIRST
     // This is CRITICAL - must check database, not just role
-    $isDeploymentManager = \App\Models\DeploymentManager::where('user_id', $user->id)->exists();
+    $isDeploymentManager = \Illuminate\Support\Facades\Cache::remember(
+        'ui:sidebar:is_deployment_manager:' . $user->id,
+        now()->addMinute(),
+        fn () => \App\Models\DeploymentManager::where('user_id', $user->id)->exists()
+    );
 
     // PRIORITY 2: Check if TRUE super admin (only specific emails/roles)
     $isSuperAdmin = false;
@@ -47,47 +51,55 @@
     if ($shouldResolveBusinessPlan) {
         $companyId = $user->company_id ?? optional($user->company)->id;
 
-        // Get active paid subscription, preferring company-scoped records.
-        $subscription = \App\Models\Subscription::query()
-            ->where(function ($q) use ($companyId, $user) {
-                if (!empty($companyId) && \Illuminate\Support\Facades\Schema::hasColumn('subscriptions', 'company_id')) {
-                    $q->where('company_id', $companyId);
+        $plan = \Illuminate\Support\Facades\Cache::remember(
+            'ui:sidebar:plan:' . $user->id . ':' . ($companyId ?: 'none'),
+            now()->addMinute(),
+            function () use ($companyId, $user) {
+                $resolvedPlan = 'basic';
+
+                // Get active paid subscription, preferring company-scoped records.
+                $subscription = \App\Models\Subscription::query()
+                    ->where(function ($q) use ($companyId, $user) {
+                        if (!empty($companyId) && \Illuminate\Support\Facades\Schema::hasColumn('subscriptions', 'company_id')) {
+                            $q->where('company_id', $companyId);
+                        }
+                        $q->orWhere('user_id', $user->id);
+                    })
+                    ->whereRaw('LOWER(payment_status) = ?', ['paid'])
+                    ->whereRaw('LOWER(status) = ?', ['active'])
+                    ->latest('paid_at')
+                    ->latest('id')
+                    ->first();
+
+                if ($subscription) {
+                    $planName = strtolower(
+                        $subscription->plan
+                        ?? $subscription->plan_name
+                        ?? (optional($user->company)->plan ?? '')
+                    );
+
+                    if (str_contains($planName, 'starter')) {
+                        $resolvedPlan = 'starter';
+                    } elseif (str_contains($planName, 'enterprise')) {
+                        $resolvedPlan = 'enterprise';
+                    } elseif (str_contains($planName, 'prof') || str_contains($planName, 'pro')) {
+                        $resolvedPlan = 'pro';
+                    }
+                } elseif (!empty(optional($user->company)->plan)) {
+                    // Fallback when subscription row is missing but company plan exists.
+                    $companyPlan = strtolower((string) optional($user->company)->plan);
+                    if (str_contains($companyPlan, 'starter')) {
+                        $resolvedPlan = 'starter';
+                    } elseif (str_contains($companyPlan, 'enterprise')) {
+                        $resolvedPlan = 'enterprise';
+                    } elseif (str_contains($companyPlan, 'prof') || str_contains($companyPlan, 'pro') || str_contains($companyPlan, 'premium')) {
+                        $resolvedPlan = 'pro';
+                    }
                 }
-                $q->orWhere('user_id', $user->id);
-            })
-            ->whereRaw('LOWER(payment_status) = ?', ['paid'])
-            ->whereRaw('LOWER(status) = ?', ['active'])
-            ->latest('paid_at')
-            ->latest('id')
-            ->first();
 
-        if ($subscription) {
-            $planName = strtolower(
-                $subscription->plan
-                ?? $subscription->plan_name
-                ?? (optional($user->company)->plan ?? '')
-            );
-
-            if (str_contains($planName, 'starter')) {
-                $plan = 'starter';
-            } elseif (str_contains($planName, 'enterprise')) {
-                $plan = 'enterprise';
-            } elseif (str_contains($planName, 'prof') || str_contains($planName, 'pro')) {
-                $plan = 'pro';
-            } else {
-                $plan = 'basic';
+                return $resolvedPlan;
             }
-        } elseif (!empty(optional($user->company)->plan)) {
-            // Fallback when subscription row is missing but company plan exists.
-            $companyPlan = strtolower((string) optional($user->company)->plan);
-            if (str_contains($companyPlan, 'starter')) {
-                $plan = 'starter';
-            } elseif (str_contains($companyPlan, 'enterprise')) {
-                $plan = 'enterprise';
-            } elseif (str_contains($companyPlan, 'prof') || str_contains($companyPlan, 'pro') || str_contains($companyPlan, 'premium')) {
-                $plan = 'pro';
-            }
-        }
+        );
     }
 @endphp
 
