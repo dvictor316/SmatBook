@@ -3,7 +3,6 @@
 <script src="{{ URL::asset('/assets/js/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ URL::asset('/assets/js/feather.min.js') }}"></script>
 <script src="{{ URL::asset('/assets/plugins/slimscroll/jquery.slimscroll.min.js') }}"></script>
-<script src="{{ URL::asset('/assets/js/jquery-ui.min.js') }}"></script>
 
 @if (request()->is('reports*', '*report*', 'inventory-history*', 'sales*', 'invoices*') || Route::is(['invoice-*', 'template-invoice']))
     <script src="{{ URL::asset('/assets/js/jspdf.min.js') }}"></script>
