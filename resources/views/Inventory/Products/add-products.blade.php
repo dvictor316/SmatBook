@@ -1112,4 +1112,96 @@ $(document).ready(function () {
     }).catch(function () {});
 });
 </script>
+<script>
+(function () {
+    function numberValue(id) {
+        var input = document.getElementById(id);
+        return input ? (parseFloat(input.value) || 0) : 0;
+    }
+
+    function setNumberValue(id, value) {
+        var input = document.getElementById(id);
+        if (!input) return;
+        input.value = value > 0 ? Number(value.toFixed(2)).toString() : '0';
+    }
+
+    function textValue(selector, fallback) {
+        var input = document.querySelector(selector);
+        var value = input ? String(input.value || '').trim() : '';
+        return value || fallback;
+    }
+
+    function formatQty(value) {
+        return (parseFloat(value) || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+    }
+
+    function refreshPackagingFallback() {
+        var rollsPerCtn = numberValue('quick_rolls_per_carton_helper');
+        var pcsPerRoll = numberValue('quick_pcs_per_roll_helper');
+        var pcsPerCtn = rollsPerCtn > 0 && pcsPerRoll > 0 ? rollsPerCtn * pcsPerRoll : 0;
+        var unitLabel = textValue('input[name="base_unit_name"]', 'pcs');
+        var cartons = parseFloat((document.querySelector('input[name="stock_cartons"]') || {}).value) || 0;
+        var rolls = parseFloat((document.querySelector('input[name="stock_rolls"]') || {}).value) || 0;
+        var pieces = parseFloat((document.querySelector('input[name="stock_units"]') || {}).value) || 0;
+        var purchasePrice = parseFloat((document.querySelector('input[name="purchase_price"]') || {}).value) || 0;
+        var total = (cartons * pcsPerCtn) + (rolls * pcsPerRoll) + pieces;
+
+        setNumberValue('quick_pcs_per_carton_helper', pcsPerCtn);
+
+        var unitsPerRollInput = document.getElementById('quick_units_per_roll_input');
+        var unitsPerCartonInput = document.getElementById('quick_units_per_carton_input');
+        var unitTypeInput = document.getElementById('quick_unit_type_input');
+        var pcsPerCtnPreview = document.getElementById('quick_units_per_carton_preview_text');
+        var stockPreview = document.getElementById('quick_stock_preview_text');
+        var mixPreview = document.getElementById('quick_stock_mix_preview_text');
+        var valuePreview = document.getElementById('quick_stock_value_preview');
+        var finalStockInput = document.getElementById('quick_final_stock_input');
+
+        if (unitsPerRollInput) unitsPerRollInput.value = pcsPerRoll > 0 ? pcsPerRoll : 0;
+        if (unitsPerCartonInput) unitsPerCartonInput.value = rollsPerCtn > 0 ? rollsPerCtn : pcsPerCtn;
+        if (unitTypeInput) unitTypeInput.value = rollsPerCtn > 0 ? 'carton' : (pcsPerRoll > 0 ? 'roll' : 'unit');
+        if (pcsPerCtnPreview) pcsPerCtnPreview.textContent = formatQty(pcsPerCtn) + ' ' + unitLabel;
+        if (stockPreview) stockPreview.textContent = formatQty(total) + ' ' + unitLabel;
+        if (mixPreview) mixPreview.textContent = formatQty(cartons) + ' ctn + ' + formatQty(rolls) + ' roll + ' + formatQty(pieces) + ' ' + unitLabel;
+        if (valuePreview) valuePreview.textContent = (total * purchasePrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (finalStockInput) finalStockInput.value = Math.round(total);
+    }
+
+    function bindPackagingFallback() {
+        [
+            'quick_rolls_per_carton_helper',
+            'quick_pcs_per_roll_helper',
+            'quick_pcs_per_carton_helper'
+        ].forEach(function (id) {
+            var input = document.getElementById(id);
+            if (!input || input.dataset.packagingFallbackBound === 'true') return;
+            input.dataset.packagingFallbackBound = 'true';
+            input.addEventListener('input', refreshPackagingFallback);
+            input.addEventListener('change', refreshPackagingFallback);
+            input.addEventListener('keyup', refreshPackagingFallback);
+        });
+
+        [
+            'input[name="stock_cartons"]',
+            'input[name="stock_rolls"]',
+            'input[name="stock_units"]',
+            'input[name="purchase_price"]',
+            'input[name="base_unit_name"]'
+        ].forEach(function (selector) {
+            var input = document.querySelector(selector);
+            if (!input || input.dataset.packagingFallbackBound === 'true') return;
+            input.dataset.packagingFallbackBound = 'true';
+            input.addEventListener('input', refreshPackagingFallback);
+            input.addEventListener('change', refreshPackagingFallback);
+            input.addEventListener('keyup', refreshPackagingFallback);
+        });
+
+        refreshPackagingFallback();
+    }
+
+    bindPackagingFallback();
+    document.addEventListener('DOMContentLoaded', bindPackagingFallback);
+    document.addEventListener('smartprobook:page-loaded', bindPackagingFallback);
+})();
+</script>
 @endpush

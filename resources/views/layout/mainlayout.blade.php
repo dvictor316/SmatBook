@@ -2132,8 +2132,8 @@
             && !request()->is('saas/*');
         @endphp
         @if($showDesktopBackButton)
-            <div class="spb-desktop-backbar" id="spbDesktopBackbar">
-                <button type="button" class="spb-desktop-backbar__btn" id="spbDesktopBackButton" aria-label="Go back" title="Go back">
+            <div class="spb-desktop-backbar is-visible" id="spbDesktopBackbar">
+                <button type="button" class="spb-desktop-backbar__btn" id="spbDesktopBackButton" aria-label="Go back" title="Go back" data-fallback-url="{{ route('home') }}">
                     <i class="fa fa-arrow-left"></i>
                 </button>
             </div>
@@ -2531,14 +2531,17 @@
                 }
             }
 
-            backbar.classList.toggle('is-visible', hasUsefulPreviousPage());
+            backbar.classList.add('is-visible');
 
             if (backButton.dataset.bound === 'true') return;
             backButton.dataset.bound = 'true';
             backButton.addEventListener('click', function () {
                 if (hasUsefulPreviousPage()) {
                     window.history.back();
+                    return;
                 }
+
+                window.location.href = backButton.dataset.fallbackUrl || '{{ route('home') }}';
             });
         }
 
