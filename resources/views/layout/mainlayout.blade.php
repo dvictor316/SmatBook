@@ -2251,6 +2251,9 @@
     <script>
     (function () {
         const prefetched = new Map();
+        const pageCache = new Map();
+        const cacheTtl = 180000;
+        const cacheLimit = 24;
         const blockedPathWords = [
             'logout', 'delete', 'destroy', 'remove', 'download', 'export',
             'print', 'receipt', 'pay-online', 'mail-pay-invoice', 'checkout',
@@ -2289,19 +2292,53 @@
             return url;
         }
 
-        function prefetch(anchor) {
-            const url = eligible(anchor, false);
-            if (!url || prefetched.has(url.href) || prefetched.size > 80) return;
+        function cacheSet(href, html) {
+            if (!href || !html) return;
+            pageCache.delete(href);
+            pageCache.set(href, { html, time: Date.now() });
+            while (pageCache.size > cacheLimit) {
+                pageCache.delete(pageCache.keys().next().value);
+            }
+        }
 
-            const request = fetch(url.href, {
+        function cacheGet(href) {
+            const entry = pageCache.get(href);
+            if (!entry) return null;
+            if (Date.now() - entry.time > cacheTtl) {
+                pageCache.delete(href);
+                return null;
+            }
+            pageCache.delete(href);
+            pageCache.set(href, entry);
+            return entry.html;
+        }
+
+        function rememberCurrentPage() {
+            const content = document.querySelector('#spb-page-content');
+            if (content) cacheSet(window.location.href, document.documentElement.outerHTML);
+        }
+
+        function fetchHtml(url, headers) {
+            return fetch(url.href || url, {
                 method: 'GET',
                 credentials: 'same-origin',
-                headers: { 'X-SmartProbook-Prefetch': '1' }
+                headers
             }).then((response) => {
                 const type = response.headers.get('content-type') || '';
                 if (!response.ok || !type.includes('text/html')) return null;
                 return response.text();
+            }).then((html) => {
+                if (html) cacheSet(url.href || url, html);
+                return html;
             }).catch(() => null);
+        }
+
+        function prefetch(anchor) {
+            const url = eligible(anchor, false);
+            if (!url || cacheGet(url.href) || prefetched.has(url.href) || prefetched.size > 24) return;
+
+            const request = fetchHtml(url, { 'X-SmartProbook-Prefetch': '1' })
+                .finally(() => prefetched.delete(url.href));
 
             prefetched.set(url.href, request);
         }
@@ -2353,6 +2390,28 @@
             });
         }
 
+        function renderHtml(html, url, pushState) {
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const incoming = doc.querySelector('#spb-page-content');
+            const current = document.querySelector('#spb-page-content');
+            if (!incoming || !current) return false;
+
+            document.title = doc.title || document.title;
+            document.body.className = doc.body.className;
+            syncHotelHead(doc);
+            current.replaceWith(incoming);
+            syncSidebar(doc);
+            runInlineScripts(document.querySelector('#spb-page-content'));
+
+            if (pushState) {
+                window.history.pushState({ spbFastNav: true }, '', url.href);
+            }
+
+            window.scrollTo({ top: 0, left: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+            document.dispatchEvent(new CustomEvent('smartprobook:page-loaded', { detail: { url: url.href } }));
+            return true;
+        }
+
         function setLoading(active) {
             document.documentElement.classList.toggle('spb-fast-loading', active);
         }
@@ -2363,33 +2422,12 @@
             navigating = true;
 
             try {
-                const html = (await (prefetched.get(url.href) || fetch(url.href, {
-                    method: 'GET',
-                    credentials: 'same-origin',
-                    headers: { 'X-SmartProbook-Navigate': '1' }
-                }).then((response) => {
-                    const type = response.headers.get('content-type') || '';
-                    if (!response.ok || !type.includes('text/html')) return null;
-                    return response.text();
-                }))) || null;
+                rememberCurrentPage();
+                const html = cacheGet(url.href) || (await (prefetched.get(url.href) || fetchHtml(url, { 'X-SmartProbook-Navigate': '1' }))) || null;
 
                 if (!html) return false;
 
-                const doc = new DOMParser().parseFromString(html, 'text/html');
-                const incoming = doc.querySelector('#spb-page-content');
-                const current = document.querySelector('#spb-page-content');
-                if (!incoming || !current) return false;
-
-                document.title = doc.title || document.title;
-                document.body.className = doc.body.className;
-                syncHotelHead(doc);
-                current.replaceWith(incoming);
-                syncSidebar(doc);
-                runInlineScripts(document.querySelector('#spb-page-content'));
-                window.history.pushState({ spbFastNav: true }, '', url.href);
-                window.scrollTo({ top: 0, left: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
-                document.dispatchEvent(new CustomEvent('smartprobook:page-loaded', { detail: { url: url.href } }));
-                return true;
+                return renderHtml(html, url, true);
             } catch (e) {
                 return false;
             } finally {
@@ -2421,8 +2459,34 @@
             if (!handled) window.location.href = anchor.href;
         });
 
+        function warmLikelyLinks() {
+            const run = function () {
+                Array.from(document.querySelectorAll('#sidebar a[href], .sidebar a[href], #spb-page-content a[href]'))
+                    .slice(0, 14)
+                    .forEach(prefetch);
+            };
+
+            if ('requestIdleCallback' in window) {
+                window.requestIdleCallback(run, { timeout: 1500 });
+            } else {
+                window.setTimeout(run, 450);
+            }
+        }
+
+        rememberCurrentPage();
+        warmLikelyLinks();
+        document.addEventListener('smartprobook:page-loaded', warmLikelyLinks);
+
         window.addEventListener('popstate', function () {
-            window.location.reload();
+            const html = cacheGet(window.location.href);
+            if (!html) {
+                window.location.reload();
+                return;
+            }
+
+            setLoading(true);
+            renderHtml(html, new URL(window.location.href), false);
+            setLoading(false);
         });
     })();
     </script>
