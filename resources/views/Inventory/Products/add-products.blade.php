@@ -490,8 +490,8 @@
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label">Pcs Per Ctn</label>
-                                        <input type="number" id="quick_pcs_per_carton_helper" min="0" step="0.01" class="form-control" value="{{ $oldPiecesPerCarton }}">
-                                        <small class="text-muted">Enter any two fields and this last one will calculate.</small>
+                                        <input type="number" id="quick_pcs_per_carton_helper" min="0" step="0.01" class="form-control" value="{{ $oldPiecesPerCarton }}" readonly>
+                                        <small class="text-muted">Calculated from rolls per carton and pcs per roll.</small>
                                     </div>
                                     <input type="hidden" name="units_per_roll" id="quick_units_per_roll_input" value="{{ old('units_per_roll', 0) }}">
                                     <input type="hidden" name="units_per_carton" id="quick_units_per_carton_input" value="{{ old('units_per_carton', 0) }}">
@@ -828,12 +828,22 @@ $(document).ready(function () {
         var pcsPerRoll  = packagingValue('#quick_pcs_per_roll_helper');
         var pcsPerCtn   = packagingValue('#quick_pcs_per_carton_helper');
 
+        if (rollsPerCtn > 0 && pcsPerRoll > 0) {
+            pcsPerCtn = rollsPerCtn * pcsPerRoll;
+            setPackagingValue('#quick_pcs_per_carton_helper', pcsPerCtn);
+            syncPackagingHiddenFields();
+            syncQuickUnitType();
+            return;
+        }
+
+        if (rollsPerCtn <= 0 || pcsPerRoll <= 0) {
+            pcsPerCtn = 0;
+            setPackagingValue('#quick_pcs_per_carton_helper', pcsPerCtn);
+        }
+
         var filled = [rollsPerCtn, pcsPerRoll, pcsPerCtn].filter(function (v) { return v > 0; }).length;
         if (filled >= 2) {
-            if ((lastPackagingFieldEdited === 'rolls' || lastPackagingFieldEdited === 'pcs_per_roll') && rollsPerCtn > 0 && pcsPerRoll > 0) {
-                pcsPerCtn = rollsPerCtn * pcsPerRoll;
-                setPackagingValue('#quick_pcs_per_carton_helper', pcsPerCtn);
-            } else if (lastPackagingFieldEdited === 'pcs_per_ctn' && rollsPerCtn > 0 && pcsPerCtn > 0) {
+            if (lastPackagingFieldEdited === 'pcs_per_ctn' && rollsPerCtn > 0 && pcsPerCtn > 0) {
                 pcsPerRoll = pcsPerCtn / rollsPerCtn;
                 setPackagingValue('#quick_pcs_per_roll_helper', pcsPerRoll);
             } else if (lastPackagingFieldEdited === 'pcs_per_ctn' && pcsPerRoll > 0 && pcsPerCtn > 0) {
@@ -884,7 +894,7 @@ $(document).ready(function () {
     }
 
     // Event bindings
-    $('#quick_rolls_per_carton_helper, #quick_pcs_per_roll_helper, #quick_pcs_per_carton_helper').on('input', function () {
+    $('#quick_rolls_per_carton_helper, #quick_pcs_per_roll_helper, #quick_pcs_per_carton_helper').on('input change keyup', function () {
         lastPackagingFieldEdited = $(this).attr('id') === 'quick_rolls_per_carton_helper'
             ? 'rolls'
             : ($(this).attr('id') === 'quick_pcs_per_roll_helper' ? 'pcs_per_roll' : 'pcs_per_ctn');
