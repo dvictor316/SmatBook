@@ -147,7 +147,8 @@
             display: none;
             align-items: center;
             position: fixed;
-            top: calc(var(--sb-header-h, 76px) + 14px);
+            top: auto;
+            bottom: 24px;
             left: calc(var(--sb-sidebar-w, 270px) + 16px);
             z-index: 1045;
             margin: 0;
@@ -190,8 +191,8 @@
 
         @media (max-width: 991.98px) {
             .spb-desktop-backbar {
-                top: calc(var(--sb-header-h, 64px) + 10px);
-                left: 12px;
+                bottom: 74px;
+                left: 14px;
             }
         }
 
