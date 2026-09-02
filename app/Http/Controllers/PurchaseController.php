@@ -208,7 +208,23 @@ private function applyBranchScope($query, string $table = 'purchases')
         } else {
             $this->applyBranchScope($productsQuery, 'products');
         }
-        $products = $productsQuery->get();
+        if (Schema::hasTable('units')) {
+            $productsQuery->with(['unit', 'baseUnit', 'purchaseUnit']);
+        }
+
+        $products = $productsQuery->get()->map(function (Product $product) {
+            $purchaseUnitLabel = $product->purchaseUnit?->symbol
+                ?? $product->baseUnit?->symbol
+                ?? $product->unit?->symbol
+                ?? $product->base_unit_name
+                ?? $product->unit_type
+                ?? 'pcs';
+
+            $product->setAttribute('purchase_unit_label', $purchaseUnitLabel);
+            $product->setAttribute('purchase_rate', (float) ($product->purchase_price ?? $product->price ?? 0));
+
+            return $product;
+        });
         $taxOptions = collect();
         if (class_exists(TaxCode::class) && Schema::hasTable('tax_codes')) {
             $orderColumn = Schema::hasColumn('tax_codes', 'name')

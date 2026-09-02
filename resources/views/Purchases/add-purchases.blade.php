@@ -321,10 +321,10 @@
             function buildProductOptions() {
                 const options = ['<option value="">Select Product</option>'];
                 products.forEach((product) => {
-                    const unit = product.base_unit_name || product.unit || product.unit_type || '';
-                    const price = product.purchase_price ?? product.price ?? 0;
+                    const unit = product.purchase_unit_label || product.base_unit_name || (product.unit && product.unit.symbol) || (product.purchase_unit && product.purchase_unit.symbol) || product.unit_type || '';
+                    const price = product.purchase_rate ?? product.purchase_price ?? product.price ?? 0;
                     options.push(
-                        `<option value="${product.id}" data-name="${escapeHtml(product.name)}" data-unit="${escapeHtml(unit)}" data-price="${price}">${escapeHtml(product.name)} - ₦${Number(price).toFixed(2)}</option>`
+                        `<option value="${product.id}" data-name="${escapeHtml(product.name)}" data-unit="${escapeHtml(unit)}" data-price="${escapeHtml(price)}">${escapeHtml(product.name)} - ₦${Number(price || 0).toFixed(2)}</option>`
                     );
                 });
                 return options.join('');
@@ -404,16 +404,16 @@
                     return;
                 }
 
-                productSelect.addEventListener('change', function() {
-                    const selectedOption = this.options[this.selectedIndex];
-                    const rowIndex = this.getAttribute('data-row');
+                const applySelectedProduct = function() {
+                    const selectedOption = productSelect.options[productSelect.selectedIndex];
+                    const rowIndex = productSelect.getAttribute('data-row');
                     const nameField = document.querySelector(`input[name="products[${rowIndex}][product_name]"]`);
                     const unitInput = row.querySelector('.unit-input');
                     const rateInput = row.querySelector('.rate-input');
 
-                    const unit = selectedOption.getAttribute('data-unit') || '';
-                    const price = selectedOption.getAttribute('data-price') || 0;
-                    const productName = selectedOption.getAttribute('data-name') || '';
+                    const unit = selectedOption ? (selectedOption.getAttribute('data-unit') || '') : '';
+                    const price = selectedOption ? (parseFloat(selectedOption.getAttribute('data-price')) || 0) : 0;
+                    const productName = selectedOption ? (selectedOption.getAttribute('data-name') || '') : '';
 
                     if (!nameField && productName) {
                         const hiddenName = document.createElement('input');
@@ -428,8 +428,8 @@
                     if (unitInput) {
                         unitInput.value = unit;
                     }
-                    if (rateInput && Number(rateInput.value || 0) <= 0) {
-                        rateInput.value = price;
+                    if (rateInput) {
+                        rateInput.value = price > 0 ? price.toFixed(2) : '0';
                     }
 
                     updateProductAmount(rowIndex);
@@ -437,7 +437,13 @@
                     if (isLastRowFilled()) {
                         createEmptyRow();
                     }
-                });
+                };
+
+                if (window.jQuery) {
+                    jQuery(productSelect).on('change select2:select', applySelectedProduct);
+                } else {
+                    productSelect.addEventListener('change', applySelectedProduct);
+                }
             }
 
             function isLastRowFilled() {
