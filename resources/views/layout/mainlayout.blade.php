@@ -2259,7 +2259,7 @@
             'print', 'receipt', 'pay-online', 'mail-pay-invoice', 'checkout',
             'return', 'password', 'subscription', 'saas/checkout'
         ];
-        const hardReloadPrefixes = ['/pos', '/hotel/restaurant-pos', '/users', '/roles'];
+        const hardReloadPrefixes = ['/pos', '/hotel/restaurant-pos', '/users', '/roles', '/add-products', '/edit-products', '/inventory/products/create'];
         const skipExtensions = /\.(?:pdf|csv|xlsx?|zip|rar|png|jpe?g|gif|webp|svg|mp4|mov|avi|webm)(?:$|[?#])/i;
         const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
         let navigating = false;
@@ -2287,7 +2287,7 @@
             if (url.href === window.location.href) return null;
             if (skipExtensions.test(url.pathname)) return null;
             if (blockedPathWords.some((word) => url.pathname.toLowerCase().includes(word))) return null;
-            if (forSwap && hardReloadPrefixes.some((prefix) => url.pathname === prefix || url.pathname.startsWith(prefix + '/'))) return null;
+            if (hardReloadPrefixes.some((prefix) => url.pathname === prefix || url.pathname.startsWith(prefix + '/'))) return null;
             if (forSwap && hardReloadPrefixes.some((prefix) => window.location.pathname === prefix || window.location.pathname.startsWith(prefix + '/'))) return null;
             return url;
         }

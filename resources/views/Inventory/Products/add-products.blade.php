@@ -810,7 +810,7 @@ $(document).ready(function () {
         var pcsPerCtn   = packagingValue('#quick_pcs_per_carton_helper');
         var unitLabel   = quickBaseUnitLabel();
         $('#quick_units_per_roll_input').val(pcsPerRoll > 0 ? pcsPerRoll : 0);
-        $('#quick_units_per_carton_input').val(rollsPerCtn > 0 ? rollsPerCtn : pcsPerCtn);
+        $('#quick_units_per_carton_input').val(pcsPerCtn > 0 ? pcsPerCtn : 0);
         $('#quick_units_per_carton_preview_text').text(formatQuickQty(pcsPerCtn > 0 ? pcsPerCtn : 0) + ' ' + unitLabel);
     }
 
@@ -1158,7 +1158,7 @@ $(document).ready(function () {
         var finalStockInput = document.getElementById('quick_final_stock_input');
 
         if (unitsPerRollInput) unitsPerRollInput.value = pcsPerRoll > 0 ? pcsPerRoll : 0;
-        if (unitsPerCartonInput) unitsPerCartonInput.value = rollsPerCtn > 0 ? rollsPerCtn : pcsPerCtn;
+        if (unitsPerCartonInput) unitsPerCartonInput.value = pcsPerCtn > 0 ? pcsPerCtn : 0;
         if (unitTypeInput) unitTypeInput.value = rollsPerCtn > 0 ? 'carton' : (pcsPerRoll > 0 ? 'roll' : 'unit');
         if (pcsPerCtnPreview) pcsPerCtnPreview.textContent = formatQty(pcsPerCtn) + ' ' + unitLabel;
         if (stockPreview) stockPreview.textContent = formatQty(total) + ' ' + unitLabel;
