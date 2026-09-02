@@ -17,6 +17,10 @@ class DashboardController extends Controller
     {
         $request->session()->put('workspace_context', 'business');
 
+        if ($this->isSuperAdminUser(Auth::user())) {
+            $request->session()->put('user_plan', 'enterprise');
+        }
+
         return $this->index($request);
     }
 
@@ -31,6 +35,10 @@ class DashboardController extends Controller
     public function businessDashboard(Request $request)
     {
         $request->session()->put('workspace_context', 'business');
+
+        if ($this->isSuperAdminUser(Auth::user())) {
+            $request->session()->put('user_plan', 'enterprise');
+        }
 
         return $this->index($request);
     }
@@ -98,8 +106,7 @@ class DashboardController extends Controller
         $hasBusinessWorkspace = (int) ($user->company_id ?? 0) > 0
             || (int) ($currentSubscription?->company_id ?? 0) > 0
             || (int) session('current_tenant_id', 0) > 0;
-        $isSuperAdmin = in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)
-            || strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com';
+        $isSuperAdmin = $this->isSuperAdminUser($user);
         $canUsePlatformWorkspace = $isSuperAdmin;
         $defaultWorkspaceContext = ($hasBusinessWorkspace || $isSuperAdmin) ? 'business' : 'platform';
         $workspaceContext = (string) $request->session()->get('workspace_context', $defaultWorkspaceContext);
@@ -110,6 +117,9 @@ class DashboardController extends Controller
         }
 
         $isBusinessWorkspace = $workspaceContext === 'business';
+        if ($isSuperAdmin && $isBusinessWorkspace) {
+            $request->session()->put('user_plan', 'enterprise');
+        }
         $activeBranch = $isBusinessWorkspace ? $this->activeBranchContext() : ['id' => null, 'name' => null];
         // 1. TENANT IDENTIFICATION VIA SUBDOMAIN
         $subdomain = in_array(Str::lower($currentHost), $centralHosts, true) ? null : explode('.', $currentHost)[0];
@@ -164,11 +174,13 @@ class DashboardController extends Controller
                 ->toArray();
         });
 
-        $plan = $demoPreviewPlan ?: Plan::normalizeTier(
-            $currentSubscription?->plan_name
-            ?? $currentSubscription?->plan
-            ?? ($company?->plan ?? ($isSuperAdmin ? 'enterprise' : 'basic'))
-        );
+        $plan = ($isSuperAdmin && $isBusinessWorkspace)
+            ? 'enterprise'
+            : ($demoPreviewPlan ?: Plan::normalizeTier(
+                $currentSubscription?->plan_name
+                ?? $currentSubscription?->plan
+                ?? ($company?->plan ?? 'basic')
+            ));
         $dashboardBranchLabel = ($activeBranch['scope'] ?? 'branch') === 'all'
             ? 'All Branches'
             : ($activeBranch['name'] ?? null);
@@ -305,6 +317,14 @@ class DashboardController extends Controller
         return Customer::query()
             ->where('company_id', $user->company_id)
             ->find($customerId);
+    }
+
+    private function isSuperAdminUser(?User $user): bool
+    {
+        return $user && (
+            in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)
+            || strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com'
+        );
     }
 
     /**
