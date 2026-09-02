@@ -143,6 +143,53 @@
             pointer-events: auto;
         }
 
+        .spb-page-loading-overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(248, 250, 252, .68);
+            backdrop-filter: blur(3px);
+            z-index: 3000;
+        }
+
+        .spb-page-loading-overlay.is-active {
+            display: flex;
+        }
+
+        .spb-page-loading-box {
+            min-width: 180px;
+            border: 1px solid #dbe4f0;
+            border-radius: 8px;
+            background: #fff;
+            color: #09215a;
+            box-shadow: 0 18px 48px rgba(15, 23, 42, .16);
+            padding: 22px 26px;
+            text-align: center;
+        }
+
+        .spb-page-loading-spinner {
+            width: 38px;
+            height: 38px;
+            border: 4px solid #dbe7fb;
+            border-top-color: #0f4db8;
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            animation: spbPageSpin .75s linear infinite;
+        }
+
+        .spb-page-loading-text {
+            display: block;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        @keyframes spbPageSpin {
+            to { transform: rotate(360deg); }
+        }
+
         .spb-desktop-backbar {
             display: none;
             align-items: center;
@@ -1800,6 +1847,11 @@
 </head>
 
 <body @if(!empty($bodyClasses)) class="{{ implode(' ', $bodyClasses) }}" @endif>
+    <div class="spb-page-loading-overlay" id="spbPageLoadingOverlay" aria-live="polite" aria-hidden="true">
+        <div class="spb-page-loading-box" role="status">
+            <div class="spb-page-loading-spinner" aria-hidden="true"></div>
+            <span class="spb-page-loading-text">Loading...</span>
+        </div>
     </div>
 
     {{-- MAIN WRAPPER --}}
@@ -3414,10 +3466,53 @@
     </script>
 
     <script>
-        window.SPBPageLoader = window.SPBPageLoader || {
-            show: function () {},
-            hide: function () {},
-        };
+        (function () {
+            const overlay = document.getElementById('spbPageLoadingOverlay');
+            let timer = null;
+
+            function show() {
+                if (!overlay) return;
+                clearTimeout(timer);
+                timer = window.setTimeout(function () {
+                    overlay.classList.add('is-active');
+                    overlay.setAttribute('aria-hidden', 'false');
+                }, 120);
+            }
+
+            function hide() {
+                clearTimeout(timer);
+                timer = null;
+                if (!overlay) return;
+                overlay.classList.remove('is-active');
+                overlay.setAttribute('aria-hidden', 'true');
+            }
+
+            function isNavigationLink(link) {
+                if (!link || link.dataset.noLoader !== undefined) return false;
+                if (link.closest('[data-bs-toggle], [data-toggle], [data-bs-dismiss], [data-dismiss], .dropdown-toggle, .modal, .offcanvas')) return false;
+                const href = (link.getAttribute('href') || '').trim();
+                if (!href || href === '#' || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) return false;
+                if (link.hasAttribute('download') || (link.target && link.target !== '_self')) return false;
+                return true;
+            }
+
+            window.SPBPageLoader = { show, hide };
+            window.addEventListener('pageshow', hide);
+            window.addEventListener('load', hide, { once: true });
+
+            document.addEventListener('click', function (event) {
+                if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                const link = event.target.closest && event.target.closest('a[href]');
+                if (isNavigationLink(link)) show();
+            }, true);
+
+            document.addEventListener('submit', function (event) {
+                const form = event.target;
+                if (!(form instanceof HTMLFormElement) || form.dataset.noLoader !== undefined) return;
+                if (form.closest('.modal, .offcanvas')) return;
+                show();
+            }, true);
+        })();
     </script>
 
 </body>
