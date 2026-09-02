@@ -149,7 +149,8 @@
             position: fixed;
             top: calc(var(--sb-header-h, 76px) + 16px);
             bottom: auto;
-            left: 18px;
+            left: calc(var(--sb-sidebar-w, 270px) / 2);
+            transform: translateX(-50%);
             z-index: 1045;
             margin: 0;
             pointer-events: none;
@@ -182,11 +183,12 @@
         body.sidebar-collapsed .spb-desktop-backbar,
         body.mini-sidebar .spb-desktop-backbar,
         body.sidebar-icon-only .spb-desktop-backbar {
-            left: 18px;
+            left: calc(var(--sb-sidebar-collapsed, 80px) / 2);
         }
 
         body.pos-terminal-workspace .spb-desktop-backbar {
             left: 18px;
+            transform: none;
         }
 
         @media (max-width: 991.98px) {
