@@ -147,9 +147,9 @@
             display: none;
             align-items: center;
             position: fixed;
-            top: auto;
-            bottom: 24px;
-            left: calc(var(--sb-sidebar-w, 270px) + 16px);
+            top: calc(var(--sb-header-h, 76px) + 16px);
+            bottom: auto;
+            left: 18px;
             z-index: 1045;
             margin: 0;
             pointer-events: none;
@@ -182,17 +182,18 @@
         body.sidebar-collapsed .spb-desktop-backbar,
         body.mini-sidebar .spb-desktop-backbar,
         body.sidebar-icon-only .spb-desktop-backbar {
-            left: calc(var(--sb-sidebar-collapsed, 80px) + 16px);
+            left: 18px;
         }
 
         body.pos-terminal-workspace .spb-desktop-backbar {
-            left: 16px;
+            left: 18px;
         }
 
         @media (max-width: 991.98px) {
             .spb-desktop-backbar {
-                bottom: 74px;
-                left: 14px;
+                top: calc(var(--sb-header-h, 64px) + 10px);
+                left: 50%;
+                transform: translateX(-50%);
             }
         }
 
@@ -2287,6 +2288,9 @@
         const skipExtensions = /\.(?:pdf|csv|xlsx?|zip|rar|png|jpe?g|gif|webp|svg|mp4|mov|avi|webm)(?:$|[?#])/i;
         const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
         let navigating = false;
+        let activePrefetches = 0;
+        const prefetchQueue = [];
+        const prefetchLimit = 2;
 
         if (connection && (connection.saveData || /2g/.test(connection.effectiveType || ''))) {
             return;
@@ -2357,14 +2361,39 @@
             }).catch(() => null);
         }
 
-        function prefetch(anchor) {
-            const url = eligible(anchor, false);
-            if (!url || cacheGet(url.href) || prefetched.has(url.href) || prefetched.size > 24) return;
+        function runNextPrefetch() {
+            if (activePrefetches >= prefetchLimit || prefetchQueue.length === 0) return;
+            prefetchQueue.shift()();
+        }
 
-            const request = fetchHtml(url, { 'X-SmartProbook-Prefetch': '1' })
-                .finally(() => prefetched.delete(url.href));
+        function queuePrefetch(url) {
+            if (!url || cacheGet(url.href) || prefetched.has(url.href) || prefetched.size > 12) return;
+
+            let startRequest;
+            const request = new Promise((resolve) => {
+                startRequest = function () {
+                    activePrefetches += 1;
+                    fetchHtml(url, { 'X-SmartProbook-Prefetch': '1' })
+                        .then(resolve)
+                        .finally(function () {
+                            activePrefetches = Math.max(0, activePrefetches - 1);
+                            prefetched.delete(url.href);
+                            runNextPrefetch();
+                        });
+                };
+            });
 
             prefetched.set(url.href, request);
+
+            if (activePrefetches < prefetchLimit) {
+                startRequest();
+            } else {
+                prefetchQueue.push(startRequest);
+            }
+        }
+
+        function prefetch(anchor) {
+            queuePrefetch(eligible(anchor, false));
         }
 
         function runInlineScripts(container) {
@@ -2464,6 +2493,10 @@
             const anchor = event.target.closest && event.target.closest('a[href]');
             prefetch(anchor);
         }, true);
+        document.addEventListener('mousedown', function (event) {
+            const anchor = event.target.closest && event.target.closest('a[href]');
+            prefetch(anchor);
+        }, true);
         document.addEventListener('focusin', function (event) {
             const anchor = event.target.closest && event.target.closest('a[href]');
             prefetch(anchor);
@@ -2486,11 +2519,15 @@
         function warmLikelyLinks() {
             const run = function () {
                 Array.from(document.querySelectorAll('#sidebar a[href], .sidebar a[href], #spb-page-content a[href]'))
-                    .slice(0, 32)
+                    .slice(0, 12)
                     .forEach(prefetch);
             };
 
-            window.setTimeout(run, 80);
+            if ('requestIdleCallback' in window) {
+                window.requestIdleCallback(run, { timeout: 800 });
+            } else {
+                window.setTimeout(run, 350);
+            }
         }
 
         rememberCurrentPage();
