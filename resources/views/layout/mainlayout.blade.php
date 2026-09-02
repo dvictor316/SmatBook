@@ -141,6 +141,41 @@
             pointer-events: auto;
         }
 
+        .spb-desktop-backbar {
+            display: none;
+            align-items: center;
+            margin: 0 0 12px;
+        }
+
+        .spb-desktop-backbar.is-visible {
+            display: flex;
+        }
+
+        .spb-desktop-backbar__btn {
+            width: 38px;
+            height: 38px;
+            border: 1px solid #d8e0ef;
+            border-radius: 8px;
+            background: #fff;
+            color: #172b4d;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, .06);
+        }
+
+        .spb-desktop-backbar__btn:hover {
+            background: #f8fafc;
+            color: #0f3f91;
+            border-color: #b8c7e3;
+        }
+
+        @media (max-width: 991.98px) {
+            .spb-desktop-backbar {
+                display: none !important;
+            }
+        }
+
         @media print {
             @page { size: auto; margin: 10mm; }
             .header,
@@ -2066,6 +2101,43 @@
             Please complete setup and select a branch to begin using your workspace.
         </div>
     @else
+        @php
+            $showDesktopBackButton = !in_array($route, [
+                'landing.index',
+                'index-five',
+                'home',
+                'user.dashboard',
+                'tenant.dashboard',
+                'deployment.dashboard',
+                'workspace.business',
+                'workspace.business.dashboard',
+                'login',
+                'register',
+                'saas-login',
+                'saas-register',
+                'saas-register-initial',
+                'forgot-password',
+                'reset-password',
+                'password.request',
+                'password.email',
+                'password.reset',
+                'password.update',
+                'lock-screen',
+                'saas.checkout',
+                'saas.setup',
+                'saas.success',
+            ], true)
+            && !str_starts_with((string) $route, 'saas.')
+            && !str_starts_with((string) $route, 'landing.')
+            && !request()->is('saas/*');
+        @endphp
+        @if($showDesktopBackButton)
+            <div class="spb-desktop-backbar" id="spbDesktopBackbar">
+                <button type="button" class="spb-desktop-backbar__btn" id="spbDesktopBackButton" aria-label="Go back" title="Go back">
+                    <i class="fa fa-arrow-left"></i>
+                </button>
+            </div>
+        @endif
         @yield('content')
     @endif
     </div>
@@ -2436,6 +2508,43 @@
                 }
             }
         });
+    })();
+    </script>
+
+    <script>
+    (function () {
+        function setupDesktopBackButton() {
+            var backbar = document.getElementById('spbDesktopBackbar');
+            var backButton = document.getElementById('spbDesktopBackButton');
+            if (!backbar || !backButton) return;
+
+            function hasUsefulPreviousPage() {
+                if (window.innerWidth < 992) return false;
+                if (window.history.length > 1) return true;
+
+                try {
+                    if (!document.referrer) return false;
+                    var referrer = new URL(document.referrer);
+                    return referrer.origin === window.location.origin && referrer.href !== window.location.href;
+                } catch (error) {
+                    return false;
+                }
+            }
+
+            backbar.classList.toggle('is-visible', hasUsefulPreviousPage());
+
+            if (backButton.dataset.bound === 'true') return;
+            backButton.dataset.bound = 'true';
+            backButton.addEventListener('click', function () {
+                if (hasUsefulPreviousPage()) {
+                    window.history.back();
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', setupDesktopBackButton);
+        document.addEventListener('smartprobook:page-loaded', setupDesktopBackButton);
+        window.addEventListener('resize', setupDesktopBackButton);
     })();
     </script>
 
