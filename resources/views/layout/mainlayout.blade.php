@@ -149,8 +149,8 @@
             display: none;
             align-items: center;
             justify-content: center;
-            background: rgba(248, 250, 252, .68);
-            backdrop-filter: blur(3px);
+            background: rgba(15, 23, 42, .28);
+            backdrop-filter: blur(1px);
             z-index: 3000;
         }
 
@@ -3476,7 +3476,7 @@
                 timer = window.setTimeout(function () {
                     overlay.classList.add('is-active');
                     overlay.setAttribute('aria-hidden', 'false');
-                }, 120);
+                }, 60);
             }
 
             function hide() {
