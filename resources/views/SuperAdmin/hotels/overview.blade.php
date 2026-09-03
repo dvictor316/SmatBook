@@ -183,12 +183,15 @@
     .sa-pms-sidebar div.metric strong { display:block; font-size:24px; line-height:1; margin-bottom:6px; }
     .sa-pms-sidebar strong { color:#fff; }
     .sa-room-wall { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:stretch; }
+    .sa-room-wall > form { display:none !important; }
+    .sa-room-wall > .sa-room-manager-card { min-width:0; }
     body.hotel-workspace .page-wrapper.sa-hotel .sa-pms-board { display:block !important; grid-template-columns:none !important; width:100% !important; max-width:none !important; }
     body.hotel-workspace .page-wrapper.sa-hotel .sa-dash-panel { width:100% !important; max-width:none !important; }
     body.hotel-workspace .page-wrapper.sa-hotel .sa-pms-sidebar { display:block !important; width:100% !important; max-width:none !important; min-height:auto !important; margin:0 0 16px !important; }
     body.hotel-workspace .page-wrapper.sa-hotel .sa-pms-sidebar .sa-pms-intro { display:flex !important; justify-content:space-between !important; align-items:flex-end !important; gap:16px !important; flex-wrap:wrap !important; margin-bottom:14px !important; }
     body.hotel-workspace .page-wrapper.sa-hotel .sa-pms-metrics { display:grid !important; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)) !important; gap:10px !important; }
     body.hotel-workspace .page-wrapper.sa-hotel .sa-room-wall { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:16px !important; width:100% !important; }
+    body.hotel-workspace .page-wrapper.sa-hotel .sa-room-wall > form { display:none !important; }
     .sa-room-tile { min-height:160px; border-radius:14px; padding:12px; border:2px solid #d8e2ee; background:#fff; display:flex; flex-direction:column; justify-content:space-between; }
     .sa-room-tile.available { border-color:#16a34a; background:#ecfdf3; } .sa-room-tile.occupied { border-color:#2563eb; background:#eff6ff; } .sa-room-tile.reserved { border-color:#d4a23a; background:#fff8e1; } .sa-room-tile.maintenance, .sa-room-tile.out_of_order { border-color:#dc2626; background:#fff1f2; }
     .sa-room-tile .room-no { font-size:38px; font-weight:700; color:#061b33; line-height:1; }

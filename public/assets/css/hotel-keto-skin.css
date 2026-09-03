@@ -476,6 +476,14 @@ body.hotel-workspace .sa-room-wall {
     gap: 16px;
 }
 
+body.hotel-workspace .sa-room-wall > form {
+    display: none !important;
+}
+
+body.hotel-workspace .sa-room-wall > .sa-room-manager-card {
+    min-width: 0;
+}
+
 @media (min-width: 1700px) {
     body.hotel-workspace .sa-room-wall {
         grid-template-columns: repeat(3, minmax(0, 1fr));
