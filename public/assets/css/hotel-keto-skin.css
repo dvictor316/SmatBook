@@ -739,6 +739,59 @@ body.hotel-workspace .hotel-preview-media img {
     background: #030b14;
 }
 
+body.hotel-workspace .hotel-preview-media .hotel-panorama-stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #030b14;
+}
+
+body.hotel-workspace .hotel-preview-media .hotel-panorama-image {
+    width: 118%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    object-fit: cover;
+    object-position: center;
+    animation: hotelPanoramaTour 18s ease-in-out infinite alternate;
+    transform-origin: center;
+}
+
+body.hotel-workspace .hotel-panorama-badge {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 11px;
+    border-radius: 999px;
+    background: rgba(6, 21, 38, .82);
+    color: #ffffff;
+    font-weight: 900;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, .28);
+}
+
+body.hotel-workspace .hotel-panorama-badge i {
+    color: #f7d777;
+}
+
+@keyframes hotelPanoramaTour {
+    0% {
+        transform: scale(1.08) translateX(-4%);
+    }
+
+    45% {
+        transform: scale(1.18) translateX(4%);
+    }
+
+    100% {
+        transform: scale(1.1) translateX(-2%);
+    }
+}
+
 body.hotel-workspace .hotel-preview-controls {
     position: relative;
     z-index: 2;

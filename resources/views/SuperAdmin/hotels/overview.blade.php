@@ -139,17 +139,24 @@
     .sa-management-console { background:#fff; border:1px solid #d8e2ee; border-radius:14px; padding:14px; margin-bottom:14px; box-shadow:0 10px 24px rgba(15,23,42,.05); }
     .sa-management-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
     .sa-room-manager-card { border:1px solid #d8e2ee; border-radius:14px; background:#fff; overflow:hidden; box-shadow:0 10px 24px rgba(15,23,42,.05); }
-    .sa-room-manager-media { height:148px; background:#eef5ff; display:grid; place-items:center; overflow:hidden; }
+    .sa-room-manager-media { height:250px; background:#eef5ff; display:grid; place-items:center; overflow:hidden; }
     .sa-room-manager-media img { width:100%; height:100%; object-fit:cover; display:block; }
     .sa-room-manager-media.empty { color:#64748b; }
-    .sa-room-manager-body { padding:15px; }
+    .sa-room-manager-body { padding:13px 15px 15px; }
     .sa-room-manager-body h5 { color:#061b33; font-weight:900; margin:0; font-size:23px; }
     .sa-room-manager-body .rate { color:#0b5fb8; font-weight:900; }
-    .sa-room-manager-actions { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:12px; }
+    .sa-room-manager-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
     .sa-room-manager-actions .btn { min-height:38px; display:flex; align-items:center; justify-content:center; gap:5px; white-space:nowrap; }
     .sa-room-manager-card .badge { white-space:normal; text-align:center; line-height:1.2; }
-    .sa-room-meta-line { color:#64748b; min-height:42px; line-height:1.35; overflow-wrap:anywhere; }
-    .sa-room-location-line { color:#64748b; min-height:40px; line-height:1.35; overflow-wrap:anywhere; }
+    .sa-room-meta-line { color:#64748b; line-height:1.35; overflow-wrap:anywhere; }
+    .sa-room-location-line { color:#64748b; line-height:1.35; overflow-wrap:anywhere; }
+    .sa-room-writeup { margin:8px 0 0; color:#40536b; font-size:13px; line-height:1.35; min-height:35px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .sa-room-rate-row { align-items:center; margin-top:8px; }
+    .sa-room-rate-row span:first-child { color:#061b33; }
+    .hotel-panorama-stage { position:relative; width:100%; height:100%; overflow:hidden; background:#030b14; }
+    .hotel-panorama-image { width:118%; height:100%; max-width:none; object-fit:cover !important; object-position:center; animation:saPanoramaDrift 18s ease-in-out infinite alternate; transform-origin:center; }
+    .hotel-panorama-badge { position:absolute; top:14px; left:14px; z-index:2; display:inline-flex; align-items:center; gap:8px; padding:8px 11px; border-radius:999px; background:rgba(6,21,38,.82); color:#fff; font-weight:900; box-shadow:0 10px 26px rgba(0,0,0,.28); }
+    @keyframes saPanoramaDrift { 0% { transform:scale(1.08) translateX(-4%); } 45% { transform:scale(1.18) translateX(4%); } 100% { transform:scale(1.1) translateX(-2%); } }
     .sa-room-gallery-strip { display:grid; grid-template-columns:repeat(auto-fill,minmax(92px,1fr)); gap:8px; }
     .sa-room-gallery-strip article { border:1px solid #d8e2ee; border-radius:8px; overflow:hidden; background:#f8fbff; }
     .sa-room-gallery-strip img { width:100%; height:68px; object-fit:cover; display:block; }
@@ -175,13 +182,13 @@
     .sa-pms-sidebar a, .sa-pms-sidebar div.metric { display:block; color:#dbeafe; text-decoration:none; border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:12px; background:rgba(255,255,255,.06); min-height:82px; }
     .sa-pms-sidebar div.metric strong { display:block; font-size:24px; line-height:1; margin-bottom:6px; }
     .sa-pms-sidebar strong { color:#fff; }
-    .sa-room-wall { display:grid; grid-template-columns:repeat(auto-fill,minmax(420px,1fr)); gap:18px; align-items:stretch; }
+    .sa-room-wall { display:grid; grid-template-columns:repeat(auto-fill,minmax(520px,1fr)); gap:18px; align-items:stretch; }
     body.hotel-workspace .page-wrapper.sa-hotel .sa-pms-board { display:block !important; grid-template-columns:none !important; width:100% !important; max-width:none !important; }
     body.hotel-workspace .page-wrapper.sa-hotel .sa-dash-panel { width:100% !important; max-width:none !important; }
     body.hotel-workspace .page-wrapper.sa-hotel .sa-pms-sidebar { display:block !important; width:100% !important; max-width:none !important; min-height:auto !important; margin:0 0 16px !important; }
     body.hotel-workspace .page-wrapper.sa-hotel .sa-pms-sidebar .sa-pms-intro { display:flex !important; justify-content:space-between !important; align-items:flex-end !important; gap:16px !important; flex-wrap:wrap !important; margin-bottom:14px !important; }
     body.hotel-workspace .page-wrapper.sa-hotel .sa-pms-metrics { display:grid !important; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)) !important; gap:10px !important; }
-    body.hotel-workspace .page-wrapper.sa-hotel .sa-room-wall { display:grid !important; grid-template-columns:repeat(auto-fill,minmax(420px,1fr)) !important; gap:18px !important; width:100% !important; }
+    body.hotel-workspace .page-wrapper.sa-hotel .sa-room-wall { display:grid !important; grid-template-columns:repeat(auto-fill,minmax(520px,1fr)) !important; gap:18px !important; width:100% !important; }
     .sa-room-tile { min-height:160px; border-radius:14px; padding:12px; border:2px solid #d8e2ee; background:#fff; display:flex; flex-direction:column; justify-content:space-between; }
     .sa-room-tile.available { border-color:#16a34a; background:#ecfdf3; } .sa-room-tile.occupied { border-color:#2563eb; background:#eff6ff; } .sa-room-tile.reserved { border-color:#d4a23a; background:#fff8e1; } .sa-room-tile.maintenance, .sa-room-tile.out_of_order { border-color:#dc2626; background:#fff1f2; }
     .sa-room-tile .room-no { font-size:38px; font-weight:700; color:#061b33; line-height:1; }
@@ -220,7 +227,7 @@
     .sa-hk-room-no { font-size:34px; line-height:1; font-weight:700; color:#061b33; }
     .sa-hk-status { display:inline-flex; width:max-content; border-radius:8px; padding:5px 8px; font-size:12px; font-weight:700; background:#fff; color:#0f172a; margin-top:7px; }
     .sa-hk-table { margin-top:14px; overflow:auto; }
-    @media(max-width:1199px){.sa-room-wall,body.hotel-workspace .page-wrapper.sa-hotel .sa-room-wall{grid-template-columns:repeat(auto-fill,minmax(360px,1fr)) !important}.sa-upgrade-actions{grid-template-columns:repeat(3,1fr)}.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:repeat(2,1fr)}.sa-workspace,.sa-cashier,.sa-room-admin,.sa-folio-register,.sa-maint-desk,.sa-desk,.sa-guest-ledger,.sa-cashier-grid{grid-template-columns:1fr}.sa-board-row,.sa-maint-ticket{grid-template-columns:1fr}}
+    @media(max-width:1199px){.sa-room-wall,body.hotel-workspace .page-wrapper.sa-hotel .sa-room-wall{grid-template-columns:repeat(auto-fill,minmax(420px,1fr)) !important}.sa-upgrade-actions{grid-template-columns:repeat(3,1fr)}.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:repeat(2,1fr)}.sa-workspace,.sa-cashier,.sa-room-admin,.sa-folio-register,.sa-maint-desk,.sa-desk,.sa-guest-ledger,.sa-cashier-grid{grid-template-columns:1fr}.sa-board-row,.sa-maint-ticket{grid-template-columns:1fr}}
     @media(max-width:767px){.sa-room-wall,body.hotel-workspace .page-wrapper.sa-hotel .sa-room-wall,.sa-form-grid,.sa-upgrade-actions,.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:1fr !important}.page-wrapper.sa-hotel .sa-hero h2{font-size:23px}}
 </style>
 @endsection
@@ -510,19 +517,22 @@
                             @php
                                 $state=(string)($room->operational_status ?? 'available');
                                 $roomNo = $room->room_number ?? ('#'.$room->id);
-                                $previewImage = $room->panorama_image ?: $room->room_image;
-                                $previewUrl = $previewImage ? asset('storage/'.$previewImage) : null;
+                                $cardImage = $room->room_image ?: $room->panorama_image;
+                                $panoramaImage = $room->panorama_image ?: $room->room_image;
+                                $cardUrl = $cardImage ? asset('storage/'.$cardImage) : null;
+                                $previewUrl = $panoramaImage ? asset('storage/'.$panoramaImage) : null;
                                 $modalId = 'saRoomPreview'.$room->id;
                                 $editModalId = 'saRoomEdit'.$room->id;
                                 $mediaModalId = 'saRoomMedia'.$room->id;
                                 $roomRate = $room->base_rate_override ?? $room->type?->base_rate;
                                 $roomImages = $room->relationLoaded('images') ? $room->images : collect();
                                 $roomProperties = $managedProperties->where('company_id', $room->company_id);
+                                $roomWriteUp = trim((string) ($room->notes ?? ''));
                             @endphp
                             <article class="sa-room-manager-card">
-                                <div class="sa-room-manager-media {{ $previewUrl ? '' : 'empty' }}">
-                                    @if($previewUrl)
-                                        <img src="{{ $previewUrl }}" alt="Room {{ $roomNo }} preview">
+                                <div class="sa-room-manager-media {{ $cardUrl ? '' : 'empty' }}">
+                                    @if($cardUrl)
+                                        <img src="{{ $cardUrl }}" alt="Room {{ $roomNo }} preview" loading="lazy" decoding="async">
                                     @else
                                         <div class="text-center"><i class="fas fa-image fa-2x mb-2"></i><div>No image uploaded</div></div>
                                     @endif
@@ -534,7 +544,8 @@
                                     </div>
                                     <h5 class="mt-2">Room {{ $roomNo }}</h5>
                                     <div class="small sa-room-meta-line">{{ $room->property?->name ?? ('Property '.$room->property_id) }} - {{ $room->type?->name ?? 'No room type' }}</div>
-                                    <div class="d-flex justify-content-between mt-2"><span>Rate</span><span class="rate">{{ $money($roomRate ?? 0) }}</span></div>
+                                    <p class="sa-room-writeup">{{ $roomWriteUp !== '' ? \Illuminate\Support\Str::limit($roomWriteUp, 135) : 'Add a room write-up, amenities, view details or guest-facing selling points.' }}</p>
+                                    <div class="d-flex justify-content-between sa-room-rate-row"><span>Rate</span><span class="rate">{{ $money($roomRate ?? 0) }}</span></div>
                                     <div class="small sa-room-location-line">Company {{ $room->company_id }} - Floor {{ $room->floor ?: '-' }} - Wing {{ $room->wing ?: '-' }}</div>
                                     <div class="sa-room-manager-actions">
                                         <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#{{ $editModalId }}"><i class="fas fa-pen me-1"></i> Edit</button>
@@ -628,7 +639,10 @@
                                             <div class="hotel-preview-viewer {{ $previewUrl ? 'has-image' : 'is-empty' }}" @if($previewUrl) style="--hotel-preview-image:url('{{ $previewUrl }}')" @endif>
                                                 @if($previewUrl)
                                                     <div class="hotel-preview-media">
-                                                        <img src="{{ $previewUrl }}" alt="Room {{ $roomNo }} preview">
+                                                        <div class="hotel-panorama-stage">
+                                                            <span class="hotel-panorama-badge"><i class="fas fa-vr-cardboard"></i> Panorama tour</span>
+                                                            <img class="hotel-panorama-image" src="{{ $previewUrl }}" alt="Room {{ $roomNo }} panorama preview" loading="eager" decoding="async">
+                                                        </div>
                                                     </div>
                                                 @else
                                                     <div class="sa-room-preview-empty">
