@@ -537,6 +537,10 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
 
     // Hotel Management (Super Admin)
     Route::get('/hotels', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'index'])->name('hotels.index');
+    Route::post('/hotels/rooms', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'storeRoom'])->name('hotels.rooms.store');
+    Route::put('/hotels/rooms/{room}', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'updateRoom'])->name('hotels.rooms.update');
+    Route::post('/hotels/rooms/{room}/images', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'storeRoomImages'])->name('hotels.rooms.images.store');
+    Route::delete('/hotels/rooms/{room}/images/{image}', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'destroyRoomImage'])->name('hotels.rooms.images.destroy');
 
 
 

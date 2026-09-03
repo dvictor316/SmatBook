@@ -136,6 +136,22 @@
     .sa-upgrade-actions a:hover, .sa-upgrade-actions a.active { background:#0b5fb8; color:#fff; border-color:#0b5fb8; }
     .sa-upgrade-actions a i { color:#d7a928; font-size:16px; }
     .sa-upgrade-actions a:hover i, .sa-upgrade-actions a.active i { color:#ffe8a3; }
+    .sa-management-console { background:#fff; border:1px solid #d8e2ee; border-radius:14px; padding:14px; margin-bottom:14px; box-shadow:0 10px 24px rgba(15,23,42,.05); }
+    .sa-management-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .sa-room-manager-card { border:1px solid #d8e2ee; border-radius:14px; background:#fff; overflow:hidden; box-shadow:0 10px 24px rgba(15,23,42,.05); }
+    .sa-room-manager-media { height:148px; background:#eef5ff; display:grid; place-items:center; overflow:hidden; }
+    .sa-room-manager-media img { width:100%; height:100%; object-fit:cover; display:block; }
+    .sa-room-manager-media.empty { color:#64748b; }
+    .sa-room-manager-body { padding:13px; }
+    .sa-room-manager-body h5 { color:#061b33; font-weight:900; margin:0; font-size:23px; }
+    .sa-room-manager-body .rate { color:#0b5fb8; font-weight:900; }
+    .sa-room-manager-actions { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:12px; }
+    .sa-room-gallery-strip { display:grid; grid-template-columns:repeat(auto-fill,minmax(92px,1fr)); gap:8px; }
+    .sa-room-gallery-strip article { border:1px solid #d8e2ee; border-radius:8px; overflow:hidden; background:#f8fbff; }
+    .sa-room-gallery-strip img { width:100%; height:68px; object-fit:cover; display:block; }
+    .sa-room-gallery-strip form { padding:6px; }
+    .sa-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .sa-form-grid .full { grid-column:1 / -1; }
 
 
     .sa-section-head { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
@@ -191,7 +207,7 @@
     .sa-hk-status { display:inline-flex; width:max-content; border-radius:8px; padding:5px 8px; font-size:12px; font-weight:700; background:#fff; color:#0f172a; margin-top:7px; }
     .sa-hk-table { margin-top:14px; overflow:auto; }
     @media(max-width:1199px){.sa-upgrade-actions{grid-template-columns:repeat(3,1fr)}.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:repeat(2,1fr)}.sa-workspace,.sa-cashier,.sa-room-admin,.sa-folio-register,.sa-maint-desk,.sa-pms-board,.sa-desk,.sa-guest-ledger,.sa-cashier-grid{grid-template-columns:1fr}.sa-board-row,.sa-maint-ticket{grid-template-columns:1fr}}
-    @media(max-width:767px){.sa-upgrade-actions,.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:1fr}.page-wrapper.sa-hotel .sa-hero h2{font-size:23px}}
+    @media(max-width:767px){.sa-form-grid,.sa-upgrade-actions,.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:1fr}.page-wrapper.sa-hotel .sa-hero h2{font-size:23px}}
 </style>
 @endsection
 
@@ -268,6 +284,16 @@
                 @endforeach
             </div>
         </section>
+
+        @if(session('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
+        @if($errors->any())
+            <div class="alert alert-danger">
+                <strong>Please check the hotel form.</strong>
+                <div>{{ $errors->first() }}</div>
+            </div>
+        @endif
 
         <form method="GET" action="{{ route('super_admin.hotels.index') }}" class="sa-filter d-flex flex-wrap gap-2 align-items-end">
             <input type="hidden" name="panel" value="{{ $panel }}">
@@ -426,35 +452,135 @@
                 </div>
             </section>
         @elseif(in_array($panel, ['rooms', 'room_gallery'], true))
+            @php
+                $managedRooms = collect($roomManagement['rooms'] ?? []);
+                $managedProperties = collect($roomManagement['properties'] ?? []);
+                $managedRoomTypes = collect($roomManagement['roomTypes'] ?? []);
+                $managedCompanies = collect($roomManagement['companies'] ?? []);
+                $roomTotalLabel = $isPaginator ? $panelData->total() : $managedRooms->count();
+            @endphp
             <div class="sa-pms-board">
                 <aside class="sa-pms-sidebar">
-                    <small>{{ $panel === 'room_gallery' ? 'ROOM GALLERY' : 'ROOM BOARD' }}</small><h4>{{ $panel === 'room_gallery' ? 'Uploaded Room Media' : 'Front Desk Mirror' }}</h4><p>{{ $panel === 'room_gallery' ? 'Cover image, panorama and uploaded room-photo visibility across hotel tenants.' : 'Room availability, occupancy, reserved rooms and housekeeping condition.' }}</p>
-                    <div class="metric"><strong>{{ $availableRooms }}</strong><br>Available</div><div class="metric"><strong>{{ $occupiedRooms }}</strong><br>Occupied</div><div class="metric"><strong>{{ $reservedRooms }}</strong><br>Reserved</div>
+                    <small>{{ $panel === 'room_gallery' ? 'ROOM GALLERY' : 'ROOM BOARD' }}</small><h4>{{ $panel === 'room_gallery' ? 'Room Media & Pricing' : 'Room Inventory Manager' }}</h4><p>Create rooms, set rate overrides, edit status, and upload room photos without leaving Super Admin.</p>
+                    <div class="metric"><strong>{{ $totalRooms }}</strong><br>Total active rooms</div><div class="metric"><strong>{{ $availableRooms }}</strong><br>Available</div><div class="metric"><strong>{{ $occupiedRooms }}</strong><br>Occupied</div><div class="metric"><strong>{{ $reservedRooms }}</strong><br>Reserved</div><div class="metric"><strong>{{ $maintenanceRooms + $outOfOrderRooms }}</strong><br>Maintenance / out of order</div><div class="metric"><strong>{{ $dirtyRooms }}</strong><br>Dirty rooms</div><div class="metric"><strong>{{ $roomManagement['mediaCount'] ?? 0 }}</strong><br>Uploaded media files</div>
                 </aside>
                 <section class="sa-dash-panel">
-                    <div class="sa-section-head"><div><h4>{{ $panel === 'room_gallery' ? 'Room Media Gallery' : 'Room State Grid' }}</h4><p>{{ $panel === 'room_gallery' ? 'Click any room with uploaded media to preview its customer-facing room display.' : 'PMS room-rack style view across hotel tenants.' }}</p></div><span class="badge bg-light text-dark">{{ $panelRows->count() }} rooms loaded</span></div>
+                    <div class="sa-management-console">
+                        <div class="sa-section-head mb-0">
+                            <div>
+                                <small class="text-warning fw-semibold">LIVE ROOM MANAGEMENT</small>
+                                <h4>{{ $panel === 'room_gallery' ? 'Room Media Gallery' : 'Room State Grid' }}</h4>
+                                <p>{{ $roomTotalLabel }} rooms found. Add rooms, update prices/status, upload cover images, panoramas and gallery photos from here.</p>
+                            </div>
+                            <div class="sa-management-actions">
+                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#saAddRoomModal"><i class="fas fa-square-plus me-1"></i> Add Room</button>
+                                <a href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'room_types'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}" class="btn btn-outline-secondary"><i class="fas fa-tags me-1"></i> Room Types & Prices</a>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="sa-room-wall">
-                        @forelse($panelRows as $row)
+                        @forelse($managedRooms as $room)
                             @php
-                                $r=$rowArray($row);
-                                $state=(string)($r['operational_status'] ?? 'available');
-                                $roomNo = $r['room_number'] ?? ('#'.($r['id'] ?? '-'));
-                                $previewImage = $r['panorama_image'] ?? $r['room_image'] ?? null;
+                                $state=(string)($room->operational_status ?? 'available');
+                                $roomNo = $room->room_number ?? ('#'.$room->id);
+                                $previewImage = $room->panorama_image ?: $room->room_image;
                                 $previewUrl = $previewImage ? asset('storage/'.$previewImage) : null;
-                                $modalId = 'saRoomPreview'.($r['id'] ?? $loop->iteration);
+                                $modalId = 'saRoomPreview'.$room->id;
+                                $editModalId = 'saRoomEdit'.$room->id;
+                                $mediaModalId = 'saRoomMedia'.$room->id;
+                                $roomRate = $room->base_rate_override ?? $room->type?->base_rate;
+                                $roomImages = $room->relationLoaded('images') ? $room->images : collect();
                             @endphp
-                            <button type="button" class="sa-room-tile {{ $state }} text-start" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}">
-                                <div>
-                                    <div class="d-flex justify-content-between">
-                                        <span class="fw-semibold">{{ ucfirst(str_replace('_',' ', $state)) }}</span>
-                                        <span class="badge bg-light text-dark">{{ ucfirst((string)($r['housekeeping_status'] ?? 'clean')) }}</span>
-                                    </div>
-                                    <div class="room-no">{{ $roomNo }}</div>
-                                    <strong>Property {{ $r['property_id'] ?? '-' }}</strong>
+                            <article class="sa-room-manager-card">
+                                <div class="sa-room-manager-media {{ $previewUrl ? '' : 'empty' }}">
+                                    @if($previewUrl)
+                                        <img src="{{ $previewUrl }}" alt="Room {{ $roomNo }} preview">
+                                    @else
+                                        <div class="text-center"><i class="fas fa-image fa-2x mb-2"></i><div>No image uploaded</div></div>
+                                    @endif
                                 </div>
-                                <small class="text-muted">Company {{ $r['company_id'] ?? '-' }} - Type {{ $r['room_type_id'] ?? '-' }}</small>
-                                <span class="sa-room-preview-chip">{{ $previewUrl ? 'View room' : 'No photo yet' }}</span>
-                            </button>
+                                <div class="sa-room-manager-body">
+                                    <div class="d-flex justify-content-between gap-2">
+                                        <span class="badge {{ $statusBadge($state) }}">{{ ucfirst(str_replace('_',' ', $state)) }}</span>
+                                        <span class="badge bg-light text-dark">{{ ucfirst((string)($room->housekeeping_status ?? 'clean')) }}</span>
+                                    </div>
+                                    <h5 class="mt-2">Room {{ $roomNo }}</h5>
+                                    <div class="small text-muted">{{ $room->property?->name ?? ('Property '.$room->property_id) }} - {{ $room->type?->name ?? 'No room type' }}</div>
+                                    <div class="d-flex justify-content-between mt-2"><span>Rate</span><span class="rate">{{ $money($roomRate ?? 0) }}</span></div>
+                                    <div class="small text-muted">Company {{ $room->company_id }} - Floor {{ $room->floor ?: '-' }} - Wing {{ $room->wing ?: '-' }}</div>
+                                    <div class="sa-room-manager-actions">
+                                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#{{ $editModalId }}"><i class="fas fa-pen me-1"></i> Edit</button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#{{ $mediaModalId }}"><i class="fas fa-upload me-1"></i> Upload</button>
+                                        <button type="button" class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}"><i class="fas fa-eye me-1"></i> Preview</button>
+                                        <a class="btn btn-sm btn-outline-secondary" href="{{ route('super_admin.hotels.index', ['panel' => 'room_gallery', 'company_id' => $room->company_id]) }}"><i class="fas fa-building me-1"></i> Tenant</a>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <div class="modal fade" id="{{ $editModalId }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-lg modal-dialog-centered">
+                                    <form method="POST" action="{{ route('super_admin.hotels.rooms.update', $room) }}" enctype="multipart/form-data" class="modal-content">
+                                        @csrf
+                                        @method('PUT')
+                                        <div class="modal-header"><h5 class="modal-title">Edit Room {{ $roomNo }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                                        <div class="modal-body">
+                                            <div class="sa-form-grid">
+                                                <input type="hidden" name="company_id" value="{{ $room->company_id }}">
+                                                <div><label class="form-label">Property</label><select name="property_id" class="form-select" required>@foreach($managedProperties->where('company_id', $room->company_id) as $property)<option value="{{ $property->id }}" @selected((int)$room->property_id === (int)$property->id)>{{ $property->name }}</option>@endforeach</select></div>
+                                                <div><label class="form-label">Room Number</label><input name="room_number" class="form-control" value="{{ $room->room_number }}" required></div>
+                                                <div><label class="form-label">Room Type / Rate Class</label><select name="room_type_id" class="form-select"><option value="">No type</option>@foreach($managedRoomTypes->where('company_id', $room->company_id) as $type)<option value="{{ $type->id }}" @selected((int)$room->room_type_id === (int)$type->id)>{{ $type->name }} - {{ $money($type->base_rate ?? 0) }}</option>@endforeach</select></div>
+                                                <div><label class="form-label">Update Type Base Price</label><input name="new_room_type_base_rate" type="number" step="0.01" class="form-control" value="{{ $room->type?->base_rate }}"></div>
+                                                <div><label class="form-label">Floor</label><input name="floor" class="form-control" value="{{ $room->floor }}"></div>
+                                                <div><label class="form-label">Wing</label><input name="wing" class="form-control" value="{{ $room->wing }}"></div>
+                                                <div><label class="form-label">Room Rate Override</label><input name="base_rate_override" type="number" step="0.01" class="form-control" value="{{ $room->base_rate_override }}"></div>
+                                                <div><label class="form-label">Operational Status</label><select name="operational_status" class="form-select">@foreach(['available','occupied','reserved','maintenance','out_of_order'] as $option)<option value="{{ $option }}" @selected($state === $option)>{{ ucfirst(str_replace('_',' ', $option)) }}</option>@endforeach</select></div>
+                                                <div><label class="form-label">Housekeeping</label><select name="housekeeping_status" class="form-select">@foreach(['clean','dirty','inspection','cleaning'] as $option)<option value="{{ $option }}" @selected((string)$room->housekeeping_status === $option)>{{ ucfirst($option) }}</option>@endforeach</select></div>
+                                                <div><label class="form-label">Active</label><select name="is_active" class="form-select"><option value="1" @selected($room->is_active)>Active</option><option value="0" @selected(!$room->is_active)>Inactive</option></select></div>
+                                                <div><label class="form-label">Cover Image</label><input type="file" name="room_image" class="form-control" accept="image/*"></div>
+                                                <div><label class="form-label">Panorama Image</label><input type="file" name="panorama_image" class="form-control" accept="image/*"></div>
+                                                <div class="full"><label class="form-label">Gallery Photos</label><input type="file" name="gallery_images[]" class="form-control" accept="image/*" multiple></div>
+                                                <div class="full"><label class="form-label">Room Information / Notes</label><textarea name="notes" class="form-control" rows="3">{{ $room->notes }}</textarea></div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button><button class="btn btn-primary">Save Room</button></div>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <div class="modal fade" id="{{ $mediaModalId }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-lg modal-dialog-centered">
+                                    <form method="POST" action="{{ route('super_admin.hotels.rooms.images.store', $room) }}" enctype="multipart/form-data" class="modal-content">
+                                        @csrf
+                                        <div class="modal-header"><h5 class="modal-title">Upload Media For Room {{ $roomNo }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                                        <div class="modal-body">
+                                            <div class="sa-form-grid mb-3">
+                                                <div><label class="form-label">Cover Image</label><input type="file" name="room_image" class="form-control" accept="image/*"></div>
+                                                <div><label class="form-label">Panorama Image</label><input type="file" name="panorama_image" class="form-control" accept="image/*"></div>
+                                                <div class="full"><label class="form-label">Gallery Photos</label><input type="file" name="gallery_images[]" class="form-control" accept="image/*" multiple></div>
+                                            </div>
+                                            <div class="sa-room-gallery-strip">
+                                                @forelse($roomImages as $image)
+                                                    <article>
+                                                        <img src="{{ asset('storage/'.$image->path) }}" alt="Room {{ $roomNo }} gallery image">
+                                                        <div class="p-1"><button type="submit" form="saDeleteRoomImage{{ $image->id }}" class="btn btn-sm btn-outline-danger w-100">Delete</button></div>
+                                                    </article>
+                                                @empty
+                                                    <div class="sa-empty">No gallery images yet. Upload cover, panorama or gallery photos above.</div>
+                                                @endforelse
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button><button class="btn btn-primary">Upload Media</button></div>
+                                    </form>
+                                </div>
+                            </div>
+                            @foreach($roomImages as $image)
+                                <form id="saDeleteRoomImage{{ $image->id }}" method="POST" action="{{ route('super_admin.hotels.rooms.images.destroy', [$room, $image]) }}" onsubmit="return confirm('Delete this room image?')">
+                                    @csrf
+                                    @method('DELETE')
+                                </form>
+                            @endforeach
+
                             <div class="modal fade sa-room-preview-modal hotel-preview-modal" id="{{ $modalId }}" tabindex="-1" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered modal-xl">
                                     <div class="modal-content">
@@ -462,7 +588,7 @@
                                             <div>
                                                 <small class="hotel-preview-eyebrow">Customer room preview</small>
                                                 <h5 class="modal-title">Room {{ $roomNo }}</h5>
-                                                <span>Property {{ $r['property_id'] ?? '-' }} - Company {{ $r['company_id'] ?? '-' }} - {{ ucfirst(str_replace('_',' ', $state)) }}</span>
+                                                <span>{{ $room->property?->name ?? ('Property '.$room->property_id) }} - Company {{ $room->company_id }} - {{ ucfirst(str_replace('_',' ', $state)) }}</span>
                                             </div>
                                             <div class="d-flex gap-2 align-items-center">
                                                 @if($previewUrl)
@@ -487,7 +613,7 @@
                                                 <div class="hotel-preview-controls">
                                                     <div>
                                                         <strong>Room {{ $roomNo }}</strong>
-                                                        <span>{{ $r['notes'] ?? 'Panorama preview for customer-facing room inspection.' }}</span>
+                                                        <span>{{ $room->notes ?: 'Panorama preview for customer-facing room inspection.' }}</span>
                                                     </div>
                                                     <div class="hotel-preview-status">
                                                         <span>{{ ucfirst(str_replace('_',' ', $state)) }}</span>
@@ -500,12 +626,39 @@
                                 </div>
                             </div>
                         @empty
-                            @foreach(['101','102','103','104','201','202','203','204'] as $roomNo)
-                                <article class="sa-room-tile {{ $loop->iteration % 4 === 0 ? 'reserved' : ($loop->iteration % 3 === 0 ? 'occupied' : 'available') }}"><div><span class="fw-semibold">Preview Room</span><div class="room-no">{{ $roomNo }}</div><strong>{{ $loop->odd ? 'Deluxe King' : 'Executive Suite' }}</strong></div><small class="text-muted">Tenant adds photos and panorama under Hotel > Rooms.</small></article>
-                            @endforeach
+                            <div class="sa-empty"><strong>No hotel rooms found yet.</strong><br>Click Add Room to create the room number, price, status and images for the selected hotel tenant.</div>
                         @endforelse
                     </div>
                 </section>
+            </div>
+            <div class="modal fade" id="saAddRoomModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <form method="POST" action="{{ route('super_admin.hotels.rooms.store') }}" enctype="multipart/form-data" class="modal-content">
+                        @csrf
+                        <div class="modal-header"><h5 class="modal-title">Add Hotel Room</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                        <div class="modal-body">
+                            <div class="sa-form-grid">
+                                <div><label class="form-label">Hotel Tenant</label><select name="company_id" class="form-select" required><option value="">Select tenant</option>@foreach($managedCompanies as $company)<option value="{{ $company->id }}" @selected((int)$selectedCompanyId === (int)$company->id)>{{ $company->name }}</option>@endforeach</select></div>
+                                <div><label class="form-label">Property</label><select name="property_id" class="form-select" required><option value="">Select property</option>@foreach($managedProperties as $property)<option value="{{ $property->id }}">{{ $property->name }} - Company {{ $property->company_id }}</option>@endforeach</select></div>
+                                <div><label class="form-label">Room Number</label><input name="room_number" class="form-control" required placeholder="101"></div>
+                                <div><label class="form-label">Existing Room Type</label><select name="room_type_id" class="form-select"><option value="">Create/use no type</option>@foreach($managedRoomTypes as $type)<option value="{{ $type->id }}">{{ $type->name }} - {{ $money($type->base_rate ?? 0) }} - Company {{ $type->company_id }}</option>@endforeach</select></div>
+                                <div><label class="form-label">New Room Type Name</label><input name="new_room_type_name" class="form-control" placeholder="Deluxe King"></div>
+                                <div><label class="form-label">Type Base Price</label><input name="new_room_type_base_rate" type="number" step="0.01" class="form-control" placeholder="25000"></div>
+                                <div><label class="form-label">Floor</label><input name="floor" class="form-control" placeholder="2"></div>
+                                <div><label class="form-label">Wing</label><input name="wing" class="form-control" placeholder="East"></div>
+                                <div><label class="form-label">Room Rate Override</label><input name="base_rate_override" type="number" step="0.01" class="form-control" placeholder="Optional room-specific price"></div>
+                                <div><label class="form-label">Operational Status</label><select name="operational_status" class="form-select">@foreach(['available','occupied','reserved','maintenance','out_of_order'] as $option)<option value="{{ $option }}">{{ ucfirst(str_replace('_',' ', $option)) }}</option>@endforeach</select></div>
+                                <div><label class="form-label">Housekeeping</label><select name="housekeeping_status" class="form-select">@foreach(['clean','dirty','inspection','cleaning'] as $option)<option value="{{ $option }}">{{ ucfirst($option) }}</option>@endforeach</select></div>
+                                <div><label class="form-label">Active</label><select name="is_active" class="form-select"><option value="1">Active</option><option value="0">Inactive</option></select></div>
+                                <div><label class="form-label">Cover Image</label><input type="file" name="room_image" class="form-control" accept="image/*"></div>
+                                <div><label class="form-label">Panorama Image</label><input type="file" name="panorama_image" class="form-control" accept="image/*"></div>
+                                <div class="full"><label class="form-label">Gallery Photos</label><input type="file" name="gallery_images[]" class="form-control" accept="image/*" multiple></div>
+                                <div class="full"><label class="form-label">Room Information / Notes</label><textarea name="notes" class="form-control" rows="3" placeholder="Amenities, bed setup, view, smoking policy, accessibility, minibar, cancellation note"></textarea></div>
+                            </div>
+                        </div>
+                        <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button><button class="btn btn-primary">Create Room</button></div>
+                    </form>
+                </div>
             </div>
         @elseif($panel === 'room_types')
             <section class="sa-dash-panel"><div class="sa-section-head"><div><small class="text-warning fw-semibold">ROOM CATALOGUE</small><h4>Room Types & Rate Classes</h4><p>Capacity, base rates and tenant room-type setup.</p></div><span class="btn btn-outline-primary disabled">{{ $panelRows->count() }} types</span></div><div class="sa-directory-grid">@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<article class="sa-directory-card"><span class="eyebrow">Room Type</span><h5>{{ $r['name'] ?? ('Type #'.($r['id'] ?? '-')) }}</h5><p class="text-muted">Company {{ $r['company_id'] ?? '-' }} - Property {{ $r['property_id'] ?? '-' }}</p><div class="d-flex justify-content-between"><span>Occupancy</span><strong>{{ $r['max_occupancy'] ?? '-' }}</strong></div><div class="d-flex justify-content-between"><span>Base Rate</span><strong>{{ $money($r['base_rate'] ?? 0) }}</strong></div></article>@empty<div class="sa-empty"><strong>No room types found yet.</strong><br>Room types are where admins set base prices, bed setup, capacity and default rates before adding rooms.</div>@endforelse</div></section>
