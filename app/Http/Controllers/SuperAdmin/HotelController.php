@@ -234,10 +234,10 @@ class HotelController extends Controller
             ->with('success', 'Room '.$room->room_number.' created with pricing and media.');
     }
 
-    public function updateRoom(Request $request, HotelRoom $room)
+    public function updateRoom(Request $request, $room)
     {
         $hotelCompanyIds = HotelAccess::hotelCompanyIds();
-        abort_unless(in_array((int) $room->company_id, $hotelCompanyIds, true), 404);
+        $room = $this->findSuperAdminHotelRoom((int) $room, $hotelCompanyIds);
 
         $data = $this->validateRoomPayload($request, $hotelCompanyIds, $room);
         $data['room_type_id'] = $this->resolveRoomType($request, $data, $room);
@@ -271,10 +271,10 @@ class HotelController extends Controller
             ->with('success', 'Room '.$room->room_number.' updated.');
     }
 
-    public function storeRoomImages(Request $request, HotelRoom $room)
+    public function storeRoomImages(Request $request, $room)
     {
         $hotelCompanyIds = HotelAccess::hotelCompanyIds();
-        abort_unless(in_array((int) $room->company_id, $hotelCompanyIds, true), 404);
+        $room = $this->findSuperAdminHotelRoom((int) $room, $hotelCompanyIds);
 
         $request->validate([
             'room_image' => 'nullable|image|max:5120',
@@ -308,18 +308,29 @@ class HotelController extends Controller
             ->with('success', 'Room media uploaded.');
     }
 
-    public function roomImages(HotelRoom $room)
+    public function room($room)
     {
         $hotelCompanyIds = HotelAccess::hotelCompanyIds();
-        abort_unless(in_array((int) $room->company_id, $hotelCompanyIds, true), 404);
+        $room = $this->findSuperAdminHotelRoom((int) $room, $hotelCompanyIds);
 
         return redirect()->route('super_admin.hotels.index', ['panel' => 'room_gallery', 'company_id' => $room->company_id]);
     }
 
-    public function destroyRoomImage(HotelRoom $room, HotelRoomImage $image)
+    public function roomImages($room)
     {
         $hotelCompanyIds = HotelAccess::hotelCompanyIds();
-        abort_unless(in_array((int) $room->company_id, $hotelCompanyIds, true) && (int) $image->room_id === (int) $room->id, 404);
+        $room = $this->findSuperAdminHotelRoom((int) $room, $hotelCompanyIds);
+
+        return redirect()->route('super_admin.hotels.index', ['panel' => 'room_gallery', 'company_id' => $room->company_id]);
+    }
+
+    public function destroyRoomImage($room, $image)
+    {
+        $hotelCompanyIds = HotelAccess::hotelCompanyIds();
+        $room = $this->findSuperAdminHotelRoom((int) $room, $hotelCompanyIds);
+        $image = HotelRoomImage::withoutGlobalScopes()
+            ->where('room_id', $room->id)
+            ->findOrFail((int) $image);
 
         Storage::disk('public')->delete($image->path);
         if ($room->room_image === $image->path) {
@@ -597,6 +608,15 @@ class HotelController extends Controller
                 ? $companyScope(HotelRoomImage::withoutGlobalScopes())->count()
                 : 0,
         ];
+    }
+
+    private function findSuperAdminHotelRoom(int $roomId, array $hotelCompanyIds): HotelRoom
+    {
+        abort_if(empty($hotelCompanyIds), 404);
+
+        return HotelRoom::withoutGlobalScopes()
+            ->whereIn('company_id', $hotelCompanyIds)
+            ->findOrFail($roomId);
     }
 
     private function validateRoomPayload(Request $request, array $hotelCompanyIds, ?HotelRoom $room = null): array
