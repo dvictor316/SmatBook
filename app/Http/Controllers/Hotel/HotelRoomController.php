@@ -9,8 +9,11 @@ use App\Models\HotelRoomType;
 use App\Models\HotelProperty;
 use App\Models\Reservation;
 use App\Models\Stay;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class HotelRoomController extends Controller
 {
@@ -109,8 +112,8 @@ class HotelRoomController extends Controller
         ]);
 
         $data['company_id'] = $companyId;
-        $data['room_image'] = $request->hasFile('room_image') ? $request->file('room_image')->store('hotel/rooms', 'public') : null;
-        $data['panorama_image'] = $request->hasFile('panorama_image') ? $request->file('panorama_image')->store('hotel/rooms/panoramas', 'public') : null;
+        $data['room_image'] = $request->hasFile('room_image') ? $this->storeHotelMedia($request->file('room_image'), 'hotel/rooms') : null;
+        $data['panorama_image'] = $request->hasFile('panorama_image') ? $this->storeHotelMedia($request->file('panorama_image'), 'hotel/rooms/panoramas') : null;
 
         // enforce uniqueness per property
         if (HotelRoom::where('property_id', $data['property_id'])->where('room_number', $data['room_number'])->exists()) {
@@ -186,7 +189,7 @@ class HotelRoomController extends Controller
             if ($room->room_image) {
                 Storage::disk('public')->delete($room->room_image);
             }
-            $data['room_image'] = $request->file('room_image')->store('hotel/rooms', 'public');
+            $data['room_image'] = $this->storeHotelMedia($request->file('room_image'), 'hotel/rooms');
         } else {
             unset($data['room_image']);
         }
@@ -195,7 +198,7 @@ class HotelRoomController extends Controller
             if ($room->panorama_image) {
                 Storage::disk('public')->delete($room->panorama_image);
             }
-            $data['panorama_image'] = $request->file('panorama_image')->store('hotel/rooms/panoramas', 'public');
+            $data['panorama_image'] = $this->storeHotelMedia($request->file('panorama_image'), 'hotel/rooms/panoramas');
         } else {
             unset($data['panorama_image']);
         }
@@ -296,7 +299,7 @@ class HotelRoomController extends Controller
                 continue;
             }
 
-            $path = $file->store('hotel/rooms/gallery', 'public');
+            $path = $this->storeHotelMedia($file, 'hotel/rooms/gallery');
             $nextSort++;
 
             HotelRoomImage::create([
@@ -338,6 +341,40 @@ class HotelRoomController extends Controller
                     'uploaded_by' => Auth::id(),
                 ]
             );
+        }
+    }
+
+    private function storeHotelMedia(UploadedFile $file, string $directory): string
+    {
+        $this->ensureHotelMediaDirectory($directory);
+
+        $path = $file->store($directory, 'public');
+        if (!$path) {
+            throw ValidationException::withMessages([
+                'room_image' => 'Hotel media upload failed. Confirm storage/app/public is writable by the web server.',
+            ]);
+        }
+
+        return $path;
+    }
+
+    private function ensureHotelMediaDirectory(string $directory): void
+    {
+        $directory = trim($directory, '/');
+        $path = storage_path('app/public/'.$directory);
+
+        try {
+            if (!File::isDirectory($path)) {
+                File::makeDirectory($path, 0775, true, true);
+            }
+
+            if (!File::isWritable($path)) {
+                throw new \RuntimeException('Directory is not writable.');
+            }
+        } catch (\Throwable $exception) {
+            throw ValidationException::withMessages([
+                'room_image' => 'Hotel media folder is not writable: storage/app/public/'.$directory.'. Run the server storage permission commands, then try again.',
+            ]);
         }
     }
 }
