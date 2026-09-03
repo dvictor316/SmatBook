@@ -139,8 +139,8 @@
     .sa-management-console { background:#fff; border:1px solid #d8e2ee; border-radius:14px; padding:14px; margin-bottom:14px; box-shadow:0 10px 24px rgba(15,23,42,.05); }
     .sa-management-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
     .sa-room-manager-card { border:1px solid #d8e2ee; border-radius:14px; background:#fff; overflow:hidden; box-shadow:0 10px 24px rgba(15,23,42,.05); }
-    .sa-room-manager-media { height:180px; background:#eef5ff; display:grid; place-items:center; overflow:hidden; }
-    .sa-room-manager-media img { width:100%; height:100%; object-fit:cover; display:block; }
+    .sa-room-manager-media { height:168px; background:#eef5ff; display:grid; place-items:center; overflow:hidden; }
+    .sa-room-manager-media img { width:100%; height:100%; object-fit:cover; object-position:center 48%; display:block; }
     .sa-room-manager-media.empty { color:#64748b; }
     .sa-room-manager-body { padding:11px 13px 13px; }
     .sa-room-manager-body h5 { color:#061b33; font-weight:900; margin:0; font-size:20px; }
@@ -153,6 +153,9 @@
     .sa-room-writeup { margin:6px 0 0; color:#40536b; font-size:13px; line-height:1.3; min-height:34px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
     .sa-room-rate-row { align-items:center; margin-top:7px; }
     .sa-room-rate-row span:first-child { color:#061b33; }
+    .sa-room-lock-note { margin-top:7px; padding:7px 9px; border-radius:8px; background:#fff1f2; color:#9f1239; font-size:12px; font-weight:800; }
+    .sa-ops-action-strip { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin-bottom:14px; }
+    .sa-ops-action-strip a, .sa-ops-action-strip button { min-height:54px; display:flex; align-items:center; justify-content:center; gap:8px; border-radius:10px; font-weight:900; text-decoration:none; }
     .hotel-panorama-stage { position:relative; width:100%; height:100%; overflow:hidden; background:#030b14; }
     .hotel-panorama-image { width:150%; height:112%; max-width:none; object-fit:cover !important; object-position:center; animation:saPanoramaDrift 28s ease-in-out infinite; transform-origin:center; }
     .hotel-panorama-badge { position:absolute; top:14px; left:14px; z-index:2; display:inline-flex; align-items:center; gap:8px; padding:8px 11px; border-radius:999px; background:rgba(6,21,38,.82); color:#fff; font-weight:900; box-shadow:0 10px 26px rgba(0,0,0,.28); }
@@ -249,7 +252,7 @@
         return match((string) $status) {
             'active', 'available', 'completed', 'resolved', 'checked_in' => 'bg-success',
             'reserved', 'confirmed', 'paid' => 'bg-primary',
-            'dirty', 'high', 'critical', 'failed', 'cancelled' => 'bg-danger',
+            'dirty', 'high', 'critical', 'failed', 'cancelled', 'out_of_order' => 'bg-danger',
             'pending', 'maintenance', 'open' => 'bg-warning text-dark',
             default => 'bg-secondary',
         };
@@ -326,6 +329,46 @@
             <div style="min-width:260px"><label class="form-label">Hotel Tenant</label><select name="company_id" class="form-control"><option value="">All Hotel Tenants</option>@foreach($hotelCompanies as $company)<option value="{{ $company->id }}" {{ (int) $selectedCompanyId === (int) $company->id ? 'selected' : '' }}>{{ $company->name }}</option>@endforeach</select></div>
             <button class="btn btn-primary">Apply Filter</button>
         </form>
+
+        @php
+            $opsRooms = collect($roomManagement['rooms'] ?? []);
+            $opsLockRoom = $opsRooms->first();
+            $opsLockModalId = $opsLockRoom ? 'saOpsLockRoom'.$opsLockRoom->id : null;
+        @endphp
+        @if($panel !== 'overview')
+            <div class="sa-ops-action-strip">
+                <a class="btn btn-outline-primary" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'rooms'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}"><i class="fas fa-bed"></i> Room Board</a>
+                <a class="btn btn-outline-primary" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'room_gallery'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}"><i class="fas fa-images"></i> Room Gallery</a>
+                <a class="btn btn-outline-warning" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'maintenance'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}"><i class="fas fa-screwdriver-wrench"></i> Maintenance</a>
+                <a class="btn btn-outline-secondary" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'service_room_service'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}"><i class="fas fa-bell-concierge"></i> Room Service</a>
+                @if($opsLockRoom)
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#{{ $opsLockModalId }}"><i class="fas fa-lock"></i> Lock Room</button>
+                @else
+                    <button type="button" class="btn btn-outline-secondary disabled"><i class="fas fa-lock"></i> Lock Room</button>
+                @endif
+                <a class="btn btn-outline-dark" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'reports'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}"><i class="fas fa-chart-line"></i> Reports</a>
+            </div>
+            @if($opsLockRoom)
+                <div class="modal fade" id="{{ $opsLockModalId }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <form method="POST" action="{{ route('super_admin.hotels.rooms.blocks.store', $opsLockRoom) }}" class="modal-content">
+                            @csrf
+                            <div class="modal-header"><h5 class="modal-title">Lock Room {{ $opsLockRoom->room_number }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                            <div class="modal-body">
+                                <div class="sa-form-grid">
+                                    <div><label class="form-label">Room</label><select class="form-select" onchange="if(this.value){this.form.action=this.value;}">@foreach($opsRooms as $opsRoom)<option value="{{ route('super_admin.hotels.rooms.blocks.store', $opsRoom) }}">{{ $opsRoom->property?->name ?? ('Property '.$opsRoom->property_id) }} - Room {{ $opsRoom->room_number }}</option>@endforeach</select></div>
+                                    <div><label class="form-label">Lock Reason</label><select name="block_type" class="form-select" required><option value="room_service_hold">Room service hold</option><option value="maintenance">Maintenance</option><option value="out_of_order">Out of order</option><option value="housekeeping_hold">Housekeeping hold</option><option value="vip_hold">VIP hold</option><option value="admin_hold">Admin hold</option></select></div>
+                                    <div><label class="form-label">Start Date</label><input type="date" name="start_date" class="form-control" value="{{ now()->toDateString() }}" required></div>
+                                    <div><label class="form-label">End Date</label><input type="date" name="end_date" class="form-control" value="{{ now()->addDay()->toDateString() }}" required></div>
+                                    <div class="full"><label class="form-label">Internal Reason</label><input name="reason" class="form-control" placeholder="Reason for locking this room from sale or operations"></div>
+                                </div>
+                            </div>
+                            <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button><button class="btn btn-warning">Save Room Lock</button></div>
+                        </form>
+                    </div>
+                </div>
+            @endif
+        @endif
 
         @if($panel === 'progress')
             <section class="sa-dash-panel">
@@ -528,10 +571,12 @@
                                 $modalId = 'saRoomPreview'.$room->id;
                                 $editModalId = 'saRoomEdit'.$room->id;
                                 $mediaModalId = 'saRoomMedia'.$room->id;
+                                $lockModalId = 'saRoomLock'.$room->id;
                                 $roomRate = $room->base_rate_override ?? $room->type?->base_rate;
                                 $roomImages = $room->relationLoaded('images') ? $room->images : collect();
                                 $roomProperties = $managedProperties->where('company_id', $room->company_id);
                                 $roomWriteUp = trim((string) ($room->notes ?? ''));
+                                $activeBlock = collect($roomManagement['activeBlocks'] ?? [])->get($room->id);
                             @endphp
                             <article class="sa-room-manager-card">
                                 <div class="sa-room-manager-media {{ $cardUrl ? '' : 'empty' }}">
@@ -546,6 +591,9 @@
                                         <span class="badge {{ $statusBadge($state) }}">{{ ucfirst(str_replace('_',' ', $state)) }}</span>
                                         <span class="badge bg-light text-dark">{{ ucfirst((string)($room->housekeeping_status ?? 'clean')) }}</span>
                                     </div>
+                                    @if($activeBlock)
+                                        <div class="sa-room-lock-note"><i class="fas fa-lock me-1"></i>{{ ucfirst(str_replace('_', ' ', $activeBlock->block_type)) }} until {{ optional($activeBlock->end_date)->format('M d, Y') }}</div>
+                                    @endif
                                     <h5 class="mt-2">Room {{ $roomNo }}</h5>
                                     <div class="small sa-room-meta-line">{{ $room->property?->name ?? ('Property '.$room->property_id) }} - {{ $room->type?->name ?? 'No room type' }}</div>
                                     <p class="sa-room-writeup">{{ $roomWriteUp !== '' ? \Illuminate\Support\Str::limit($roomWriteUp, 135) : 'Add a room write-up, amenities, view details or guest-facing selling points.' }}</p>
@@ -555,10 +603,41 @@
                                         <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#{{ $editModalId }}"><i class="fas fa-pen me-1"></i> Edit</button>
                                         <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#{{ $mediaModalId }}"><i class="fas fa-upload me-1"></i> Upload</button>
                                         <button type="button" class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}"><i class="fas fa-eye me-1"></i> Preview</button>
-                                        <a class="btn btn-sm btn-outline-secondary" href="{{ route('super_admin.hotels.index', ['panel' => 'room_gallery', 'company_id' => $room->company_id]) }}"><i class="fas fa-building me-1"></i> Tenant</a>
+                                        <button type="button" class="btn btn-sm {{ $activeBlock ? 'btn-warning' : 'btn-outline-secondary' }}" data-bs-toggle="modal" data-bs-target="#{{ $lockModalId }}"><i class="fas fa-lock me-1"></i> {{ $activeBlock ? 'Locked' : 'Lock' }}</button>
                                     </div>
                                 </div>
                             </article>
+
+                            <div class="modal fade" id="{{ $lockModalId }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-lg modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header"><h5 class="modal-title">Lock Room {{ $roomNo }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                                        <div class="modal-body">
+                                            @if($activeBlock)
+                                                <div class="alert alert-warning d-flex justify-content-between gap-3 align-items-center flex-wrap">
+                                                    <div><strong>Active lock:</strong> {{ ucfirst(str_replace('_', ' ', $activeBlock->block_type)) }} from {{ optional($activeBlock->start_date)->format('M d, Y') }} to {{ optional($activeBlock->end_date)->format('M d, Y') }}<br><span>{{ $activeBlock->reason }}</span></div>
+                                                    <form method="POST" action="{{ route('super_admin.hotels.rooms.blocks.release', $activeBlock) }}">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button class="btn btn-outline-danger">Release Lock</button>
+                                                    </form>
+                                                </div>
+                                            @endif
+                                            <form method="POST" action="{{ route('super_admin.hotels.rooms.blocks.store', $room) }}" id="saRoomLockForm{{ $room->id }}">
+                                                @csrf
+                                                <div class="sa-form-grid">
+                                                    <div><label class="form-label">Lock Reason</label><select name="block_type" class="form-select" required><option value="maintenance">Maintenance</option><option value="out_of_order">Out of order</option><option value="housekeeping_hold">Housekeeping hold</option><option value="room_service_hold">Room service hold</option><option value="vip_hold">VIP hold</option><option value="admin_hold">Admin hold</option></select></div>
+                                                    <div><label class="form-label">Start Date</label><input type="date" name="start_date" class="form-control" value="{{ now()->toDateString() }}" required></div>
+                                                    <div><label class="form-label">End Date</label><input type="date" name="end_date" class="form-control" value="{{ now()->addDay()->toDateString() }}" required></div>
+                                                    <div><label class="form-label">Room</label><input class="form-control" value="{{ $room->property?->name ?? ('Property '.$room->property_id) }} - Room {{ $roomNo }}" disabled></div>
+                                                    <div class="full"><label class="form-label">Internal Reason</label><input name="reason" class="form-control" placeholder="Example: AC repair, deep cleaning, VIP preparation, room service incident"></div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                        <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button><button form="saRoomLockForm{{ $room->id }}" class="btn btn-warning">Save Room Lock</button></div>
+                                    </div>
+                                </div>
+                            </div>
 
                             <div class="modal fade" id="{{ $editModalId }}" tabindex="-1" aria-hidden="true">
                                 <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -787,7 +866,52 @@
         @elseif(in_array($panel, ['folios','deposits'], true))
             <div class="sa-cashier-grid"><aside class="sa-pms-sidebar"><small>{{ strtoupper($panelTitle) }}</small><h4>Cashier Register</h4><p>Guest balances, deposits and folio exposure across hotel tenants.</p><div class="metric"><strong>{{ $money($outstandingReceivables) }}</strong><br>Outstanding receivables</div></aside><section class="sa-dash-panel"><div class="sa-section-head"><div><h4>Folio & Deposit Ledger</h4><p>Read-only platform cashier activity.</p></div><span class="badge bg-light text-dark">{{ $panelRows->count() }} loaded</span></div><div class="sa-timeline"><table class="table table-sm align-middle"><thead><tr><th>Record</th><th>Company</th><th>Guest/Stay</th><th>Status/Type</th><th>Amount</th><th>Date</th></tr></thead><tbody>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<tr><td><strong>{{ $r['folio_number'] ?? $r['reservation_number'] ?? ('#'.($r['id'] ?? '-')) }}</strong></td><td>{{ $r['company_id'] ?? '-' }}</td><td>{{ $r['customer_id'] ?? $r['stay_id'] ?? '-' }}</td><td><span class="badge {{ $statusBadge($r['status'] ?? $r['type'] ?? 'open') }}">{{ ucfirst(str_replace('_',' ', (string)($r['status'] ?? $r['type'] ?? 'record'))) }}</span></td><td><strong>{{ $money($r['balance'] ?? $r['amount'] ?? $r['deposit_received'] ?? $r['total_amount'] ?? 0) }}</strong></td><td>{{ $r['created_at'] ?? $r['service_date'] ?? $r['business_date'] ?? '-' }}</td></tr>@empty<tr><td colspan="6"><div class="sa-empty">No {{ strtolower($panelTitle) }} found yet.</div></td></tr>@endforelse</tbody></table></div></section><aside class="sa-dash-panel"><h4>Payment Actions</h4><p>Tenant workspace handles live cashier operations.</p><div class="sa-payment-pad"><div>Payment</div><div>Deposit</div><div>Transfer</div><div>Print Folio</div></div></aside></div>
         @elseif($panel === 'maintenance')
-            <section class="sa-dash-panel"><div class="sa-section-head"><div><small class="text-warning fw-semibold">ENGINEERING</small><h4>Maintenance Desk</h4><p>Room issues, technician queue and unavailable-room risk.</p></div><span class="btn btn-outline-primary disabled">{{ $panelRows->count() }} tickets</span></div>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<div class="sa-desk-card {{ in_array(($r['severity'] ?? $r['status'] ?? ''), ['high','critical','failed'], true) ? 'danger' : 'warn' }}"><div class="d-flex justify-content-between"><div><strong>{{ $r['ticket_no'] ?? ('Ticket #'.($r['id'] ?? '-')) }}</strong><div class="text-muted small">Room {{ $r['room_id'] ?? '-' }} - Company {{ $r['company_id'] ?? '-' }}</div></div><span class="badge {{ $statusBadge($r['severity'] ?? 'open') }}">{{ ucfirst((string)($r['severity'] ?? 'normal')) }}</span></div><div class="mt-2">{{ $r['title'] ?? $r['description'] ?? 'Maintenance record' }}</div></div>@empty<div class="sa-empty">No maintenance tickets found yet.</div>@endforelse</section>
+            @php
+                $activeRoomBlocks = collect($roomManagement['activeBlocks'] ?? []);
+            @endphp
+            <section class="sa-dash-panel">
+                <div class="sa-section-head">
+                    <div>
+                        <small class="text-warning fw-semibold">ENGINEERING</small>
+                        <h4>Maintenance & Room Locks</h4>
+                        <p>Room issues, lock reasons, unavailable-room risk and internal service holds.</p>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <span class="btn btn-outline-primary disabled">{{ $panelRows->count() }} tickets</span>
+                        <span class="btn btn-warning disabled text-dark">{{ $activeRoomBlocks->count() }} active locks</span>
+                    </div>
+                </div>
+                <div class="sa-directory-grid mb-3">
+                    @forelse($activeRoomBlocks as $block)
+                        @php $lockedRoom = $opsRooms->firstWhere('id', $block->room_id); @endphp
+                        <article class="sa-directory-card">
+                            <span class="eyebrow">Locked Room</span>
+                            <h5 class="mt-2 mb-2">Room {{ $lockedRoom?->room_number ?? $block->room_id }}</h5>
+                            <p class="text-muted mb-2">{{ ucfirst(str_replace('_', ' ', $block->block_type)) }} - {{ $block->reason ?: 'No reason entered' }}</p>
+                            <div class="d-flex justify-content-between gap-2"><span>Until</span><strong>{{ optional($block->end_date)->format('M d, Y') }}</strong></div>
+                            <form method="POST" action="{{ route('super_admin.hotels.rooms.blocks.release', $block) }}" class="mt-3">
+                                @csrf
+                                @method('DELETE')
+                                <button class="btn btn-sm btn-outline-danger w-100">Release Lock</button>
+                            </form>
+                        </article>
+                    @empty
+                        <div class="sa-empty">No active room locks. Use Lock Room above to block a room for maintenance, room service, housekeeping or VIP preparation.</div>
+                    @endforelse
+                </div>
+                @forelse($panelRows as $row)
+                    @php $r=$rowArray($row); @endphp
+                    <div class="sa-desk-card {{ in_array(($r['severity'] ?? $r['status'] ?? ''), ['high','critical','failed'], true) ? 'danger' : 'warn' }}">
+                        <div class="d-flex justify-content-between">
+                            <div><strong>{{ $r['ticket_no'] ?? ('Ticket #'.($r['id'] ?? '-')) }}</strong><div class="text-muted small">Room {{ $r['room_id'] ?? '-' }} - Company {{ $r['company_id'] ?? '-' }}</div></div>
+                            <span class="badge {{ $statusBadge($r['severity'] ?? 'open') }}">{{ ucfirst((string)($r['severity'] ?? 'normal')) }}</span>
+                        </div>
+                        <div class="mt-2">{{ $r['title'] ?? $r['description'] ?? 'Maintenance record' }}</div>
+                    </div>
+                @empty
+                    <div class="sa-empty">No maintenance tickets found yet. Active room locks above still protect rooms from sale and operations.</div>
+                @endforelse
+            </section>
         @elseif($panel === 'night_audits')
             <section class="sa-audit-command"><div class="d-flex justify-content-between align-items-center flex-wrap gap-2"><div><h4 class="mb-1">Night Audit Command Center</h4><p class="mb-0">Close-day history and audit health across hotel tenants.</p></div><span class="btn btn-warning disabled text-dark">{{ $panelRows->count() }} audit rows</span></div><div class="sa-audit-grid">@forelse($panelRows->take(8) as $row)@php $r=$rowArray($row); @endphp<div class="sa-audit-check {{ in_array(($r['status'] ?? ''), ['failed','pending'], true) ? 'danger' : '' }}"><span class="text-muted small">Business Date</span><h5>{{ $r['audit_date'] ?? $r['business_date'] ?? ('#'.($r['id'] ?? '-')) }}</h5><div class="d-flex justify-content-between"><span>Status</span><strong>{{ ucfirst((string)($r['status'] ?? 'completed')) }}</strong></div><div class="d-flex justify-content-between"><span>Total</span><strong>{{ $money($r['total_amount'] ?? 0) }}</strong></div><small class="text-muted">Company {{ $r['company_id'] ?? '-' }}</small></div>@empty<div class="sa-empty">No night audits have been run yet.</div>@endforelse</div></section>
         @elseif($panel === 'housekeeping')

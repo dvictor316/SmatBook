@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\Subscription;
 use App\Models\HotelProperty;
 use App\Models\HotelRoom;
+use App\Models\HotelRoomBlock;
 use App\Models\HotelRoomImage;
 use App\Models\HotelRoomType;
 use App\Support\HotelAccess;
@@ -348,6 +349,60 @@ class HotelController extends Controller
         return back()->with('success', 'Room image deleted.');
     }
 
+    public function storeRoomBlock(Request $request, $room)
+    {
+        $hotelCompanyIds = $this->superAdminHotelCompanyIds();
+        $room = $this->findSuperAdminHotelRoom((int) $room, $hotelCompanyIds);
+
+        if (!$this->hasTable('hotel_room_blocks')) {
+            return back()->withErrors(['room_block' => 'Hotel room block table is not available yet.']);
+        }
+
+        $data = $request->validate([
+            'block_type' => ['required', Rule::in(['maintenance', 'out_of_order', 'housekeeping_hold', 'room_service_hold', 'vip_hold', 'admin_hold'])],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'reason' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        HotelRoomBlock::withoutGlobalScopes()->where('room_id', $room->id)->where('status', 'active')->update(['status' => 'released']);
+
+        HotelRoomBlock::withoutGlobalScopes()->create([
+            'company_id' => $room->company_id,
+            'property_id' => $room->property_id,
+            'room_id' => $room->id,
+            'start_date' => $data['start_date'],
+            'end_date' => $data['end_date'],
+            'block_type' => $data['block_type'],
+            'reason' => $data['reason'] ?: ucfirst(str_replace('_', ' ', $data['block_type'])),
+            'status' => 'active',
+            'created_by' => auth()->id(),
+        ]);
+
+        $room->update([
+            'operational_status' => in_array($data['block_type'], ['maintenance', 'out_of_order'], true) ? $data['block_type'] : 'maintenance',
+        ]);
+
+        return back()->with('success', 'Room '.$room->room_number.' has been locked for '.str_replace('_', ' ', $data['block_type']).'.');
+    }
+
+    public function releaseRoomBlock($block)
+    {
+        $hotelCompanyIds = $this->superAdminHotelCompanyIds();
+        $block = HotelRoomBlock::withoutGlobalScopes()
+            ->when(!empty($hotelCompanyIds), fn($query) => $query->whereIn('company_id', $hotelCompanyIds))
+            ->findOrFail((int) $block);
+
+        $block->update(['status' => 'released']);
+
+        $room = HotelRoom::withoutGlobalScopes()->find($block->room_id);
+        if ($room && in_array((string) $room->operational_status, ['maintenance', 'out_of_order'], true)) {
+            $room->update(['operational_status' => 'available']);
+        }
+
+        return back()->with('success', 'Room lock released.');
+    }
+
     private function panelData(string $panel, ?int $companyId, array $hotelCompanyIds, string $selectedServiceCenter = 'all')
     {
         if ($panel === 'progress') {
@@ -592,6 +647,17 @@ class HotelController extends Controller
 
         $statusCounts = $rooms->groupBy(fn($room) => (string) ($room->operational_status ?: 'available'))->map->count();
         $housekeepingCounts = $rooms->groupBy(fn($room) => (string) ($room->housekeeping_status ?: 'clean'))->map->count();
+        $activeBlocks = collect();
+        if ($this->hasTable('hotel_room_blocks') && $rooms->isNotEmpty()) {
+            $activeBlocks = HotelRoomBlock::withoutGlobalScopes()
+                ->whereIn('room_id', $rooms->pluck('id'))
+                ->where('status', 'active')
+                ->whereDate('start_date', '<=', now()->toDateString())
+                ->whereDate('end_date', '>=', now()->toDateString())
+                ->orderByDesc('id')
+                ->get()
+                ->keyBy('room_id');
+        }
 
         return [
             'companies' => Company::query()
@@ -607,6 +673,7 @@ class HotelController extends Controller
             'rooms' => $rooms,
             'statusCounts' => $statusCounts,
             'housekeepingCounts' => $housekeepingCounts,
+            'activeBlocks' => $activeBlocks,
             'mediaCount' => $this->hasTable('hotel_room_images')
                 ? $companyScope(HotelRoomImage::withoutGlobalScopes())->count()
                 : 0,
@@ -626,6 +693,7 @@ class HotelController extends Controller
             'guest_folios',
             'hotel_housekeeping_tasks',
             'hotel_maintenance_tickets',
+            'hotel_room_blocks',
         ] as $table) {
             if ($this->hasTable($table) && $this->hasColumn($table, 'company_id')) {
                 $ids = $ids->merge(\DB::table($table)->whereNotNull('company_id')->pluck('company_id'));
