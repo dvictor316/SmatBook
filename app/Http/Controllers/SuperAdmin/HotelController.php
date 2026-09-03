@@ -79,9 +79,9 @@ class HotelController extends Controller
                 ->when(!$selectedCompanyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds));
         };
 
-        $totalProperties = $hotelScope(HotelProperty::query())->count();
+        $totalProperties = $hotelScope(HotelProperty::withoutGlobalScopes())->count();
         $roomHasActiveColumn = $this->hasColumn('hotel_rooms', 'is_active');
-        $roomScope = fn() => $hotelScope(HotelRoom::query())
+        $roomScope = fn() => $hotelScope(HotelRoom::withoutGlobalScopes())
             ->when($roomHasActiveColumn, fn($q) => $q->where('is_active', 1));
         $roomStatusCounts = $roomScope()
             ->selectRaw('COALESCE(operational_status, "available") as status, COUNT(*) as total')
@@ -185,12 +185,38 @@ class HotelController extends Controller
         ));
     }
 
+    public function storeProperty(Request $request)
+    {
+        $hotelCompanyIds = HotelAccess::hotelCompanyIds();
+        $data = $request->validate([
+            'company_id' => ['required', 'integer', Rule::in($hotelCompanyIds)],
+            'name' => 'required|string|max:160',
+            'code' => 'nullable|string|max:40',
+            'address' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
+            'phone' => 'nullable|string|max:60',
+            'email' => 'nullable|email|max:160',
+        ]);
+
+        $data['code'] = $data['code'] ?: strtoupper(substr(preg_replace('/[^A-Za-z0-9]+/', '', $data['name']), 0, 14));
+        $data['currency_code'] = 'NGN';
+        $data['timezone'] = 'Africa/Lagos';
+        $data['is_active'] = true;
+
+        $property = HotelProperty::withoutGlobalScopes()->create($data);
+
+        return redirect()->route('super_admin.hotels.index', ['panel' => 'room_gallery', 'company_id' => $property->company_id])
+            ->with('success', 'Hotel property '.$property->name.' created. You can now assign rooms to it.');
+    }
+
     public function storeRoom(Request $request)
     {
         $hotelCompanyIds = HotelAccess::hotelCompanyIds();
         $data = $this->validateRoomPayload($request, $hotelCompanyIds);
 
-        if (HotelRoom::query()->where('property_id', $data['property_id'])->where('room_number', $data['room_number'])->exists()) {
+        if (HotelRoom::withoutGlobalScopes()->where('property_id', $data['property_id'])->where('room_number', $data['room_number'])->exists()) {
             return back()->withErrors(['room_number' => 'Room number already exists for this property.'])->withInput();
         }
 
@@ -200,7 +226,7 @@ class HotelController extends Controller
         $data['panorama_image'] = $request->hasFile('panorama_image') ? $request->file('panorama_image')->store('hotel/rooms/panoramas', 'public') : null;
         $data['is_active'] = $request->boolean('is_active', true);
 
-        $room = HotelRoom::create($data);
+        $room = HotelRoom::withoutGlobalScopes()->create($data);
         $this->syncLegacyMediaIntoGallery($room);
         $this->storeUploadedGalleryImages($request, $room);
 
@@ -540,9 +566,12 @@ class HotelController extends Controller
 
         $rooms = collect();
         if ($this->hasTable('hotel_rooms')) {
-            $roomQuery = $companyScope(HotelRoom::query())->with(['type', 'property']);
+            $roomQuery = $companyScope(HotelRoom::withoutGlobalScopes())->with([
+                'type' => fn($query) => $query->withoutGlobalScopes(),
+                'property' => fn($query) => $query->withoutGlobalScopes(),
+            ]);
             if ($this->hasTable('hotel_room_images')) {
-                $roomQuery->with('images');
+                $roomQuery->with(['images' => fn($query) => $query->withoutGlobalScopes()]);
             }
             $rooms = $roomQuery->orderByDesc('id')->limit(40)->get();
         }
@@ -556,16 +585,16 @@ class HotelController extends Controller
                 ->orderBy('name')
                 ->get(['id', 'name']),
             'properties' => $this->hasTable('hotel_properties')
-                ? $companyScope(HotelProperty::query())->orderBy('name')->get()
+                ? $companyScope(HotelProperty::withoutGlobalScopes())->orderBy('name')->get()
                 : collect(),
             'roomTypes' => $this->hasTable('hotel_room_types')
-                ? $companyScope(HotelRoomType::query())->orderBy('name')->get()
+                ? $companyScope(HotelRoomType::withoutGlobalScopes())->orderBy('name')->get()
                 : collect(),
             'rooms' => $rooms,
             'statusCounts' => $statusCounts,
             'housekeepingCounts' => $housekeepingCounts,
             'mediaCount' => $this->hasTable('hotel_room_images')
-                ? $companyScope(HotelRoomImage::query())->count()
+                ? $companyScope(HotelRoomImage::withoutGlobalScopes())->count()
                 : 0,
         ];
     }
@@ -609,7 +638,7 @@ class HotelController extends Controller
     private function resolveRoomType(Request $request, array $data, ?HotelRoom $room = null): ?int
     {
         if (!empty($data['room_type_id'])) {
-            $roomType = HotelRoomType::query()->find((int) $data['room_type_id']);
+            $roomType = HotelRoomType::withoutGlobalScopes()->find((int) $data['room_type_id']);
             if ($roomType && $request->filled('new_room_type_base_rate')) {
                 $roomType->update(['base_rate' => $request->input('new_room_type_base_rate')]);
             }
@@ -620,7 +649,7 @@ class HotelController extends Controller
             return $room?->room_type_id;
         }
 
-        $roomType = HotelRoomType::create([
+        $roomType = HotelRoomType::withoutGlobalScopes()->create([
             'company_id' => $data['company_id'],
             'property_id' => $data['property_id'],
             'name' => $request->input('new_room_type_name'),
@@ -641,7 +670,7 @@ class HotelController extends Controller
             return;
         }
 
-        $nextSort = (int) HotelRoomImage::query()->where('room_id', $room->id)->max('sort_order');
+        $nextSort = (int) HotelRoomImage::withoutGlobalScopes()->where('room_id', $room->id)->max('sort_order');
         foreach ($request->file('gallery_images', []) as $file) {
             if (!$file || !$file->isValid()) {
                 continue;
@@ -649,7 +678,7 @@ class HotelController extends Controller
 
             $nextSort++;
             $path = $file->store('hotel/rooms/gallery', 'public');
-            HotelRoomImage::create([
+            HotelRoomImage::withoutGlobalScopes()->create([
                 'company_id' => $room->company_id,
                 'property_id' => $room->property_id,
                 'room_id' => $room->id,
@@ -661,7 +690,7 @@ class HotelController extends Controller
             ]);
         }
 
-        $firstImage = HotelRoomImage::query()->where('room_id', $room->id)->orderBy('sort_order')->first();
+        $firstImage = HotelRoomImage::withoutGlobalScopes()->where('room_id', $room->id)->orderBy('sort_order')->first();
         if (!$room->room_image && $firstImage) {
             $room->update(['room_image' => $firstImage->path]);
         }
@@ -681,7 +710,7 @@ class HotelController extends Controller
                 continue;
             }
 
-            HotelRoomImage::query()->firstOrCreate(
+            HotelRoomImage::withoutGlobalScopes()->firstOrCreate(
                 ['room_id' => $room->id, 'path' => $media['path']],
                 [
                     'company_id' => $room->company_id,
@@ -689,7 +718,7 @@ class HotelController extends Controller
                     'caption' => $media['caption'],
                     'is_cover' => $media['is_cover'],
                     'is_panorama' => $media['is_panorama'],
-                    'sort_order' => (int) HotelRoomImage::query()->where('room_id', $room->id)->max('sort_order') + 1,
+                    'sort_order' => (int) HotelRoomImage::withoutGlobalScopes()->where('room_id', $room->id)->max('sort_order') + 1,
                     'uploaded_by' => auth()->id(),
                 ]
             );

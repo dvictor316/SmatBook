@@ -499,6 +499,7 @@
                             </div>
                             <div class="sa-management-actions">
                                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#saAddRoomModal"><i class="fas fa-square-plus me-1"></i> Add Room</button>
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#saAddPropertyModal"><i class="fas fa-hotel me-1"></i> Add Property</button>
                                 <a href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'room_types'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}" class="btn btn-outline-secondary"><i class="fas fa-tags me-1"></i> Room Types & Prices</a>
                             </div>
                         </div>
@@ -516,6 +517,7 @@
                                 $mediaModalId = 'saRoomMedia'.$room->id;
                                 $roomRate = $room->base_rate_override ?? $room->type?->base_rate;
                                 $roomImages = $room->relationLoaded('images') ? $room->images : collect();
+                                $roomProperties = $managedProperties->where('company_id', $room->company_id);
                             @endphp
                             <article class="sa-room-manager-card">
                                 <div class="sa-room-manager-media {{ $previewUrl ? '' : 'empty' }}">
@@ -552,7 +554,7 @@
                                         <div class="modal-body">
                                             <div class="sa-form-grid">
                                                 <input type="hidden" name="company_id" value="{{ $room->company_id }}">
-                                                <div><label class="form-label">Property</label><select name="property_id" class="form-select" required>@foreach($managedProperties->where('company_id', $room->company_id) as $property)<option value="{{ $property->id }}" @selected((int)$room->property_id === (int)$property->id)>{{ $property->name }}</option>@endforeach</select></div>
+                                                <div><label class="form-label">Property</label><select name="property_id" class="form-select" required>@forelse($roomProperties as $property)<option value="{{ $property->id }}" @selected((int)$room->property_id === (int)$property->id)>{{ $property->name }}</option>@empty<option value="{{ $room->property_id }}">{{ $room->property?->name ?? ('Property '.$room->property_id) }}</option>@endforelse</select></div>
                                                 <div><label class="form-label">Room Number</label><input name="room_number" class="form-control" value="{{ $room->room_number }}" required></div>
                                                 <div><label class="form-label">Room Type / Rate Class</label><select name="room_type_id" class="form-select"><option value="">No type</option>@foreach($managedRoomTypes->where('company_id', $room->company_id) as $type)<option value="{{ $type->id }}" @selected((int)$room->room_type_id === (int)$type->id)>{{ $type->name }} - {{ $money($type->base_rate ?? 0) }}</option>@endforeach</select></div>
                                                 <div><label class="form-label">Update Type Base Price</label><input name="new_room_type_base_rate" type="number" step="0.01" class="form-control" value="{{ $room->type?->base_rate }}"></div>
@@ -662,6 +664,9 @@
                         @csrf
                         <div class="modal-header"><h5 class="modal-title">Add Hotel Room</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                         <div class="modal-body">
+                            @if($managedProperties->isEmpty())
+                                <div class="alert alert-warning">No hotel property is available yet. Create a property first, then add rooms under that property.</div>
+                            @endif
                             <div class="sa-form-grid">
                                 <div><label class="form-label">Hotel Tenant</label><select name="company_id" class="form-select" required><option value="">Select tenant</option>@foreach($managedCompanies as $company)<option value="{{ $company->id }}" @selected((int)$selectedCompanyId === (int)$company->id)>{{ $company->name }}</option>@endforeach</select></div>
                                 <div><label class="form-label">Property</label><select name="property_id" class="form-select" required><option value="">Select property</option>@foreach($managedProperties as $property)<option value="{{ $property->id }}">{{ $property->name }} - Company {{ $property->company_id }}</option>@endforeach</select></div>
@@ -682,6 +687,28 @@
                             </div>
                         </div>
                         <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button><button class="btn btn-primary">Create Room</button></div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal fade" id="saAddPropertyModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <form method="POST" action="{{ route('super_admin.hotels.properties.store') }}" class="modal-content">
+                        @csrf
+                        <div class="modal-header"><h5 class="modal-title">Add Hotel Property</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                        <div class="modal-body">
+                            <div class="sa-form-grid">
+                                <div><label class="form-label">Hotel Tenant</label><select name="company_id" class="form-select" required><option value="">Select tenant</option>@foreach($managedCompanies as $company)<option value="{{ $company->id }}" @selected((int)$selectedCompanyId === (int)$company->id)>{{ $company->name }}</option>@endforeach</select></div>
+                                <div><label class="form-label">Property Name</label><input name="name" class="form-control" required placeholder="SmartPro Hotel"></div>
+                                <div><label class="form-label">Code</label><input name="code" class="form-control" placeholder="SPH"></div>
+                                <div><label class="form-label">Phone</label><input name="phone" class="form-control" placeholder="+234..."></div>
+                                <div><label class="form-label">Email</label><input name="email" type="email" class="form-control" placeholder="hotel@example.com"></div>
+                                <div><label class="form-label">City</label><input name="city" class="form-control" placeholder="Lagos"></div>
+                                <div><label class="form-label">State</label><input name="state" class="form-control" placeholder="Lagos"></div>
+                                <div><label class="form-label">Country</label><input name="country" class="form-control" placeholder="Nigeria"></div>
+                                <div class="full"><label class="form-label">Address</label><input name="address" class="form-control" placeholder="Street address"></div>
+                            </div>
+                        </div>
+                        <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button><button class="btn btn-primary">Create Property</button></div>
                     </form>
                 </div>
             </div>
