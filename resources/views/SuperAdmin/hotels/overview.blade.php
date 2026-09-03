@@ -817,7 +817,56 @@
                 <div class="sa-timeline"><table class="table table-bordered align-middle"><thead><tr><th>Reservation</th><th>Guest</th><th>Room</th><th>Arrival</th><th>Departure</th><th>Nights</th><th>Status</th><th>Deposit</th></tr></thead><tbody>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<tr><td><span class="sa-pill-event {{ ($r['status'] ?? '') === 'confirmed' ? 'green' : 'gold' }}">{{ $r['reservation_number'] ?? ('#'.($r['id'] ?? '-')) }}</span></td><td>Guest #{{ $r['customer_id'] ?? '-' }}</td><td>{{ $r['room_id'] ?? 'Unassigned' }}</td><td>{{ $r['arrival_date'] ?? '-' }}</td><td>{{ $r['departure_date'] ?? '-' }}</td><td>{{ $r['nights'] ?? '-' }}</td><td><span class="badge {{ $statusBadge($r['status'] ?? 'reserved') }}">{{ ucfirst(str_replace('_',' ', (string)($r['status'] ?? 'reserved'))) }}</span></td><td>{{ $money($r['deposit_received'] ?? 0) }}</td></tr>@empty<tr><td colspan="8"><div class="sa-empty"><strong>No reservations found yet.</strong><br>Use tenant Hotel > Availability or New Reservation to create bookings. This register will then show guest, room, arrival, departure, status and deposit.</div></td></tr>@endforelse</tbody></table></div>
             </section>
         @elseif($panel === 'availability')
-            <section class="sa-dash-panel"><div class="sa-section-head"><div><small class="text-warning fw-semibold">AVAILABILITY SEARCH</small><h4>Rooms Available For Sale</h4><p>Read-only platform availability signals for selected tenant scope.</p></div><span class="btn btn-success disabled">{{ $availableRooms }} available</span></div><div class="sa-directory-grid">@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<article class="sa-directory-card"><span class="eyebrow">Demand Signal</span><h5>{{ $r['reservation_number'] ?? ('Reservation #'.($r['id'] ?? '-')) }}</h5><p class="text-muted">Room {{ $r['room_id'] ?? 'Unassigned' }} - Type {{ $r['room_type_id'] ?? '-' }}</p><div class="d-flex justify-content-between"><span>Arrival</span><strong>{{ $r['arrival_date'] ?? '-' }}</strong></div><div class="d-flex justify-content-between"><span>Departure</span><strong>{{ $r['departure_date'] ?? '-' }}</strong></div></article>@empty<div class="sa-empty"><strong>No active availability demand found.</strong><br>Admins should first add room types, add rooms with photos, then set rate plans so availability search can sell rooms properly.</div>@endforelse</div></section>
+            <section class="sa-dash-panel">
+                <div class="sa-section-head">
+                    <div>
+                        <small class="text-warning fw-semibold">AVAILABILITY SEARCH</small>
+                        <h4>Rooms Available For Sale</h4>
+                        <p>Live saleable rooms for the selected hotel tenant scope, excluding maintenance and locked rooms.</p>
+                    </div>
+                    <span class="btn btn-success disabled">{{ $availableRooms }} available</span>
+                </div>
+                <div class="sa-directory-grid">
+                    @forelse($panelRows as $row)
+                        @php
+                            $room = $row;
+                            $roomRate = $room->base_rate_override ?? $room->type?->base_rate;
+                            $roomBlock = collect($roomManagement['activeBlocks'] ?? [])->get($room->id);
+                        @endphp
+                        <article class="sa-directory-card">
+                            <span class="eyebrow">Available Room</span>
+                            <h5 class="mt-2 mb-2">Room {{ $room->room_number }}</h5>
+                            <p class="text-muted">{{ $room->property?->name ?? ('Property '.$room->property_id) }} - {{ $room->type?->name ?? 'No room type' }}</p>
+                            <div class="d-flex justify-content-between"><span>Rate</span><strong>{{ $money($roomRate ?? 0) }}</strong></div>
+                            <div class="d-flex justify-content-between"><span>Housekeeping</span><strong>{{ ucfirst((string)($room->housekeeping_status ?? 'clean')) }}</strong></div>
+                            <div class="d-flex gap-2 mt-3 flex-wrap">
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('super_admin.hotels.index', ['panel' => 'room_gallery', 'company_id' => $room->company_id]) }}">Open Gallery</a>
+                                <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#saAvailLock{{ $room->id }}">Lock Room</button>
+                            </div>
+                        </article>
+                        <div class="modal fade" id="saAvailLock{{ $room->id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                                <form method="POST" action="{{ route('super_admin.hotels.rooms.blocks.store', $room) }}" class="modal-content">
+                                    @csrf
+                                    <div class="modal-header"><h5 class="modal-title">Lock Room {{ $room->room_number }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                                    <div class="modal-body">
+                                        @if($roomBlock)<div class="alert alert-warning">This room already has an active lock: {{ $roomBlock->reason }}</div>@endif
+                                        <div class="sa-form-grid">
+                                            <div><label class="form-label">Lock Reason</label><select name="block_type" class="form-select" required><option value="room_service_hold">Room service hold</option><option value="maintenance">Maintenance</option><option value="out_of_order">Out of order</option><option value="housekeeping_hold">Housekeeping hold</option><option value="vip_hold">VIP hold</option><option value="admin_hold">Admin hold</option></select></div>
+                                            <div><label class="form-label">Start Date</label><input type="date" name="start_date" class="form-control" value="{{ now()->toDateString() }}" required></div>
+                                            <div><label class="form-label">End Date</label><input type="date" name="end_date" class="form-control" value="{{ now()->addDay()->toDateString() }}" required></div>
+                                            <div class="full"><label class="form-label">Internal Reason</label><input name="reason" class="form-control" placeholder="Why this room should be removed from sale"></div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button><button class="btn btn-warning">Save Room Lock</button></div>
+                                </form>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="sa-empty"><strong>No available rooms found.</strong><br>Open Room Gallery to add rooms, update room status, upload images or release maintenance locks.</div>
+                    @endforelse
+                </div>
+            </section>
         @elseif(in_array($panel, ['check_in','stays','checkout'], true))
             @php $deskTitle = $panel === 'check_in' ? 'Check-In Desk' : ($panel === 'checkout' ? 'Checkout Settlement Desk' : 'In-House Guest Desk'); @endphp
             <div class="sa-desk">

@@ -421,7 +421,22 @@ class HotelController extends Controller
             ]);
         }
 
-        if (in_array($panel, ['reservations', 'room_calendar', 'availability', 'check_in'], true) && $this->hasTable('reservations')) {
+        if ($panel === 'availability' && $this->hasTable('hotel_rooms')) {
+            return HotelRoom::withoutGlobalScopes()
+                ->with([
+                    'type' => fn($query) => $query->withoutGlobalScopes(),
+                    'property' => fn($query) => $query->withoutGlobalScopes(),
+                ])
+                ->when($companyId, fn($q) => $q->where('company_id', $companyId))
+                ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
+                ->when($this->hasColumn('hotel_rooms', 'is_active'), fn($q) => $q->where('is_active', 1))
+                ->where('operational_status', 'available')
+                ->orderByRaw('CAST(room_number AS UNSIGNED), room_number')
+                ->paginate(20)
+                ->withQueryString();
+        }
+
+        if (in_array($panel, ['reservations', 'room_calendar', 'check_in'], true) && $this->hasTable('reservations')) {
             return \DB::table('reservations')
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
