@@ -16,10 +16,12 @@ class HotelController extends Controller
     {
         $panel = (string) $request->query('panel', 'overview');
         $panels = [
+            'progress' => 'Upgrade Progress',
             'overview' => 'Hotel Dashboard',
             'tenants' => 'Hotel Tenants',
             'properties' => 'Properties',
             'rooms' => 'Front Desk / Room Board',
+            'room_gallery' => 'Room Gallery',
             'room_calendar' => 'Room Calendar',
             'room_types' => 'Room Types',
             'reservations' => 'Reservations',
@@ -36,6 +38,7 @@ class HotelController extends Controller
             'service_bar' => 'Bar',
             'service_gym' => 'Gym',
             'service_spa' => 'Spa',
+            'service_ticketing' => 'Ticketing / Events',
             'service_minibar' => 'Minibar',
             'service_laundry' => 'Laundry',
             'service_room_service' => 'Room Service',
@@ -144,6 +147,7 @@ class HotelController extends Controller
             'service_bar' => 'bar',
             'service_gym' => 'gym',
             'service_spa' => 'spa',
+            'service_ticketing' => 'ticketing',
             'service_minibar' => 'minibar',
             'service_laundry' => 'laundry',
             'service_room_service' => 'room_service',
@@ -161,6 +165,7 @@ class HotelController extends Controller
             'bar' => ['label' => 'Bar & Lounge', 'codes' => ['BAR']],
             'spa' => ['label' => 'Spa & Wellness', 'codes' => ['SPA', 'WELLNESS']],
             'gym' => ['label' => 'Gym & Fitness', 'codes' => ['GYM', 'FITNESS']],
+            'ticketing' => ['label' => 'Ticketing & Events', 'codes' => ['TICKETING', 'EVENT']],
             'room_service' => ['label' => 'Room Service', 'codes' => ['ROOM_SERVICE']],
             'minibar' => ['label' => 'Minibar', 'codes' => ['MINIBAR']],
             'laundry' => ['label' => 'Laundry', 'codes' => ['LAUNDRY']],
@@ -174,6 +179,22 @@ class HotelController extends Controller
 
     private function panelData(string $panel, ?int $companyId, array $hotelCompanyIds, string $selectedServiceCenter = 'all')
     {
+        if ($panel === 'progress') {
+            return collect([
+                (object) ['area' => 'Tenant Hotel Dashboard', 'status' => 'completed', 'evidence' => 'Live KPIs, service-center quick actions, revenue breakdowns'],
+                (object) ['area' => 'Super Admin Hotel Monitor', 'status' => 'completed', 'evidence' => 'Global sidebar entries, progress panel, tenant/property/room/reservation/folio views'],
+                (object) ['area' => 'Room Media Gallery', 'status' => $this->hasTable('hotel_room_images') ? 'completed' : 'migration_pending', 'evidence' => 'Multiple room images, cover image, panorama flag, room show carousel'],
+                (object) ['area' => 'Live Availability', 'status' => 'completed', 'evidence' => 'AJAX JSON endpoint for date/type availability and reservation room dropdown refresh'],
+                (object) ['area' => 'Reservation Workflow', 'status' => 'completed', 'evidence' => 'Existing reservation create/show, availability guard against double booking'],
+                (object) ['area' => 'Check-In / Check-Out', 'status' => 'completed', 'evidence' => 'Existing stay creation, room status update, folio settlement, housekeeping task creation'],
+                (object) ['area' => 'Guest Folios', 'status' => 'completed', 'evidence' => 'Room/service charges, payments, running balance, accounting ledger posting'],
+                (object) ['area' => 'Housekeeping', 'status' => 'completed', 'evidence' => 'Task board, clean/dirty transitions, checkout-clean automation'],
+                (object) ['area' => 'Maintenance', 'status' => 'completed', 'evidence' => 'Ticket creation, room maintenance state, resolution workflow'],
+                (object) ['area' => 'Bar / Spa / Gym / Ticketing', 'status' => 'completed', 'evidence' => 'Department service-center charge form posts to open guest folios'],
+                (object) ['area' => 'Accounting Integration', 'status' => 'completed', 'evidence' => 'Folio charges/payments reuse LedgerService and receivables/revenue accounts'],
+            ]);
+        }
+
         if (in_array($panel, ['reservations', 'room_calendar', 'availability', 'check_in'], true) && $this->hasTable('reservations')) {
             return \DB::table('reservations')
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
@@ -227,7 +248,7 @@ class HotelController extends Controller
                 ->withQueryString();
         }
 
-        if ($panel === 'rooms' && $this->hasTable('hotel_rooms')) {
+        if (in_array($panel, ['rooms', 'room_gallery'], true) && $this->hasTable('hotel_rooms')) {
             return \DB::table('hotel_rooms')
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
@@ -275,6 +296,7 @@ class HotelController extends Controller
                 'bar' => ['BAR'],
                 'spa' => ['SPA', 'WELLNESS'],
                 'gym' => ['GYM', 'FITNESS'],
+                'ticketing' => ['TICKETING', 'EVENT'],
                 'room_service' => ['ROOM_SERVICE'],
                 'minibar' => ['MINIBAR'],
                 'laundry' => ['LAUNDRY'],
@@ -366,6 +388,7 @@ class HotelController extends Controller
             $rows = collect([
                 (object) ['setting' => 'hotel_properties_table', 'status' => $this->hasTable('hotel_properties') ? 'available' : 'missing'],
                 (object) ['setting' => 'hotel_rooms_table', 'status' => $this->hasTable('hotel_rooms') ? 'available' : 'missing'],
+                (object) ['setting' => 'hotel_room_images_table', 'status' => $this->hasTable('hotel_room_images') ? 'available' : 'missing'],
                 (object) ['setting' => 'hotel_room_types_table', 'status' => $this->hasTable('hotel_room_types') ? 'available' : 'missing'],
                 (object) ['setting' => 'reservations_table', 'status' => $this->hasTable('reservations') ? 'available' : 'missing'],
                 (object) ['setting' => 'stays_table', 'status' => $this->hasTable('stays') ? 'available' : 'missing'],

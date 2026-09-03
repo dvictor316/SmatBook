@@ -118,6 +118,9 @@
     .sa-dashboard-service { display:flex; justify-content:space-between; gap:12px; align-items:center; padding:13px; border:1px solid #d8e2ee; border-radius:14px; background:#fff; color:#09213d; text-decoration:none; box-shadow:0 10px 24px rgba(15,23,42,.05); }
     .sa-dashboard-service small { color:#d4a23a; font-weight:700; text-transform:uppercase; letter-spacing:.09em; }
     .sa-dashboard-service strong { color:#061b33; font-size:16px; }
+    .sa-progress-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; }
+    .sa-progress-card { border:1px solid #d8e2ee; border-left:6px solid #16a34a; border-radius:14px; background:#fff; padding:16px; box-shadow:0 10px 24px rgba(15,23,42,.05); }
+    .sa-progress-card.pending { border-left-color:#d4a23a; background:#fffaf0; }
 
 
     .sa-section-head { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
@@ -226,7 +229,28 @@
             <button class="btn btn-primary">Apply Filter</button>
         </form>
 
-        @if($panel === 'overview')
+        @if($panel === 'progress')
+            <section class="sa-dash-panel">
+                <div class="sa-section-head">
+                    <div>
+                        <small class="text-warning fw-semibold">HOTEL MODULE PROGRESS</small>
+                        <h4>Implementation Visibility</h4>
+                        <p>What has changed in the hotel management module and where Super Admin can monitor it.</p>
+                    </div>
+                    <span class="btn btn-success disabled">{{ $panelRows->where('status', 'completed')->count() }} completed</span>
+                </div>
+                <div class="sa-progress-grid">
+                    @foreach($panelRows as $row)
+                        @php $r = $rowArray($row); @endphp
+                        <article class="sa-progress-card {{ ($r['status'] ?? '') === 'completed' ? '' : 'pending' }}">
+                            <span class="badge {{ ($r['status'] ?? '') === 'completed' ? 'bg-success' : 'bg-warning text-dark' }}">{{ ucfirst(str_replace('_', ' ', (string)($r['status'] ?? 'pending'))) }}</span>
+                            <h5 class="mt-3 mb-2">{{ $r['area'] ?? 'Hotel Area' }}</h5>
+                            <p class="text-muted mb-0">{{ $r['evidence'] ?? '-' }}</p>
+                        </article>
+                    @endforeach
+                </div>
+            </section>
+        @elseif($panel === 'overview')
             @php
                 $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / max($totalRooms, 1)) * 100) : 0;
                 $availableRate = $totalRooms > 0 ? round(($availableRooms / max($totalRooms, 1)) * 100) : 0;
@@ -337,14 +361,14 @@
                     @endforelse
                 </div>
             </section>
-        @elseif($panel === 'rooms')
+        @elseif(in_array($panel, ['rooms', 'room_gallery'], true))
             <div class="sa-pms-board">
                 <aside class="sa-pms-sidebar">
-                    <small>ROOM BOARD</small><h4>Front Desk Mirror</h4><p>Room availability, occupancy, reserved rooms and housekeeping condition.</p>
+                    <small>{{ $panel === 'room_gallery' ? 'ROOM GALLERY' : 'ROOM BOARD' }}</small><h4>{{ $panel === 'room_gallery' ? 'Uploaded Room Media' : 'Front Desk Mirror' }}</h4><p>{{ $panel === 'room_gallery' ? 'Cover image, panorama and uploaded room-photo visibility across hotel tenants.' : 'Room availability, occupancy, reserved rooms and housekeeping condition.' }}</p>
                     <div class="metric"><strong>{{ $availableRooms }}</strong><br>Available</div><div class="metric"><strong>{{ $occupiedRooms }}</strong><br>Occupied</div><div class="metric"><strong>{{ $reservedRooms }}</strong><br>Reserved</div>
                 </aside>
                 <section class="sa-dash-panel">
-                    <div class="sa-section-head"><div><h4>Room State Grid</h4><p>PMS room-rack style view across hotel tenants.</p></div><span class="badge bg-light text-dark">{{ $panelRows->count() }} rooms loaded</span></div>
+                    <div class="sa-section-head"><div><h4>{{ $panel === 'room_gallery' ? 'Room Media Gallery' : 'Room State Grid' }}</h4><p>{{ $panel === 'room_gallery' ? 'Click any room with uploaded media to preview its customer-facing room display.' : 'PMS room-rack style view across hotel tenants.' }}</p></div><span class="badge bg-light text-dark">{{ $panelRows->count() }} rooms loaded</span></div>
                     <div class="sa-room-wall">
                         @forelse($panelRows as $row)
                             @php

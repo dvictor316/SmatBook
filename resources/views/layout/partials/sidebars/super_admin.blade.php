@@ -583,7 +583,7 @@
 
                 <li class="menu-title"><span>Platform Control</span></li>
 
-                <li class="submenu {{ Request::is('superadmin*') ? 'active subdrop' : '' }}">
+                <li class="submenu {{ Request::is('superadmin*') && !Request::is('superadmin/hotels*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fas fa-screwdriver-wrench"></i><span>Platform Admin</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('super_admin.dashboard', $routeParams) }}" class="{{ Request::is('superadmin/dashboard') ? 'active' : '' }}">Dashboard</a></li>
