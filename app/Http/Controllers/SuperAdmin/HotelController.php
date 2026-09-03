@@ -54,7 +54,7 @@ class HotelController extends Controller
         if (!array_key_exists($panel, $panels)) {
             $panel = 'overview';
         }
-        $hotelCompanyIds = HotelAccess::hotelCompanyIds();
+        $hotelCompanyIds = $this->superAdminHotelCompanyIds();
         $selectedCompanyId = $request->filled('company_id') ? (int) $request->query('company_id') : null;
 
         $companiesQuery = Company::query();
@@ -187,7 +187,7 @@ class HotelController extends Controller
 
     public function storeProperty(Request $request)
     {
-        $hotelCompanyIds = HotelAccess::hotelCompanyIds();
+        $hotelCompanyIds = $this->superAdminHotelCompanyIds();
         $data = $request->validate([
             'company_id' => ['required', 'integer', Rule::in($hotelCompanyIds)],
             'name' => 'required|string|max:160',
@@ -213,7 +213,7 @@ class HotelController extends Controller
 
     public function storeRoom(Request $request)
     {
-        $hotelCompanyIds = HotelAccess::hotelCompanyIds();
+        $hotelCompanyIds = $this->superAdminHotelCompanyIds();
         $data = $this->validateRoomPayload($request, $hotelCompanyIds);
 
         if (HotelRoom::withoutGlobalScopes()->where('property_id', $data['property_id'])->where('room_number', $data['room_number'])->exists()) {
@@ -236,7 +236,7 @@ class HotelController extends Controller
 
     public function updateRoom(Request $request, $room)
     {
-        $hotelCompanyIds = HotelAccess::hotelCompanyIds();
+        $hotelCompanyIds = $this->superAdminHotelCompanyIds();
         $room = $this->findSuperAdminHotelRoom((int) $room, $hotelCompanyIds);
 
         $data = $this->validateRoomPayload($request, $hotelCompanyIds, $room);
@@ -273,7 +273,7 @@ class HotelController extends Controller
 
     public function storeRoomImages(Request $request, $room)
     {
-        $hotelCompanyIds = HotelAccess::hotelCompanyIds();
+        $hotelCompanyIds = $this->superAdminHotelCompanyIds();
         $room = $this->findSuperAdminHotelRoom((int) $room, $hotelCompanyIds);
 
         $request->validate([
@@ -310,7 +310,7 @@ class HotelController extends Controller
 
     public function room($room)
     {
-        $hotelCompanyIds = HotelAccess::hotelCompanyIds();
+        $hotelCompanyIds = $this->superAdminHotelCompanyIds();
         $room = $this->findSuperAdminHotelRoom((int) $room, $hotelCompanyIds);
 
         return redirect()->route('super_admin.hotels.index', ['panel' => 'room_gallery', 'company_id' => $room->company_id]);
@@ -318,7 +318,7 @@ class HotelController extends Controller
 
     public function roomImages($room)
     {
-        $hotelCompanyIds = HotelAccess::hotelCompanyIds();
+        $hotelCompanyIds = $this->superAdminHotelCompanyIds();
         $room = $this->findSuperAdminHotelRoom((int) $room, $hotelCompanyIds);
 
         return redirect()->route('super_admin.hotels.index', ['panel' => 'room_gallery', 'company_id' => $room->company_id]);
@@ -326,7 +326,7 @@ class HotelController extends Controller
 
     public function destroyRoomImage($room, $image)
     {
-        $hotelCompanyIds = HotelAccess::hotelCompanyIds();
+        $hotelCompanyIds = $this->superAdminHotelCompanyIds();
         $room = $this->findSuperAdminHotelRoom((int) $room, $hotelCompanyIds);
         $image = HotelRoomImage::withoutGlobalScopes()
             ->where('room_id', $room->id)
@@ -610,12 +610,42 @@ class HotelController extends Controller
         ];
     }
 
+    private function superAdminHotelCompanyIds(): array
+    {
+        $ids = collect(HotelAccess::hotelCompanyIds());
+
+        foreach ([
+            'hotel_properties',
+            'hotel_room_types',
+            'hotel_rooms',
+            'reservations',
+            'stays',
+            'guest_folios',
+            'hotel_housekeeping_tasks',
+            'hotel_maintenance_tickets',
+        ] as $table) {
+            if ($this->hasTable($table) && $this->hasColumn($table, 'company_id')) {
+                $ids = $ids->merge(\DB::table($table)->whereNotNull('company_id')->pluck('company_id'));
+            }
+        }
+
+        return $ids
+            ->map(fn($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
     private function findSuperAdminHotelRoom(int $roomId, array $hotelCompanyIds): HotelRoom
     {
-        abort_if(empty($hotelCompanyIds), 404);
+        $query = HotelRoom::withoutGlobalScopes();
 
-        return HotelRoom::withoutGlobalScopes()
-            ->whereIn('company_id', $hotelCompanyIds)
+        if (!empty($hotelCompanyIds)) {
+            $query->whereIn('company_id', $hotelCompanyIds);
+        }
+
+        return $query
             ->findOrFail($roomId);
     }
 
