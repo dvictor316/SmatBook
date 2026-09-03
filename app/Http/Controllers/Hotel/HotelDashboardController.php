@@ -110,6 +110,9 @@ class HotelDashboardController extends Controller
             'ROOM_NIGHT' => 0.0,
             'RESTAURANT' => 0.0,
             'BAR' => 0.0,
+            'SPA' => 0.0,
+            'GYM' => 0.0,
+            'TICKETING' => 0.0,
             'LAUNDRY' => 0.0,
             'MINIBAR' => 0.0,
             'OTHER' => 0.0,
@@ -121,6 +124,21 @@ class HotelDashboardController extends Controller
 
             if (array_key_exists($code, $revenueByDepartment)) {
                 $revenueByDepartment[$code] += $amount;
+                continue;
+            }
+
+            if ($code === 'WELLNESS') {
+                $revenueByDepartment['SPA'] += $amount;
+                continue;
+            }
+
+            if ($code === 'FITNESS') {
+                $revenueByDepartment['GYM'] += $amount;
+                continue;
+            }
+
+            if ($code === 'EVENT') {
+                $revenueByDepartment['TICKETING'] += $amount;
                 continue;
             }
 

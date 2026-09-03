@@ -70,7 +70,8 @@
                                 $activeStay = $activeStays->get((int) $room->id);
                                 $nextReservation = $nextReservations->get((int) $room->id);
                                 $tileState = $room->housekeeping_status === 'dirty' ? 'dirty' : (string) $room->operational_status;
-                                $roomImage = $room->room_image ? asset('storage/'.$room->room_image) : null;
+                                $coverPath = $room->coverImage?->path ?: $room->room_image;
+                                $roomImage = $coverPath ? asset('storage/'.$coverPath) : null;
                                 $panoramaImage = $room->panorama_image ? asset('storage/'.$room->panorama_image) : $roomImage;
                             @endphp
                             <article class="room-admin-card">
@@ -84,7 +85,7 @@
                                     <div class="small text-muted mt-2">Floor {{ $room->floor ?: 'N/A' }} - {{ $room->wing ?: 'Main Wing' }}</div>
                                     <div class="small mt-2">Guest: {{ $activeStay?->customer?->customer_name ?? $activeStay?->customer?->name ?? 'Vacant' }}</div>
                                     <div class="small">Next: {{ $nextReservation?->customer?->customer_name ?? $nextReservation?->customer?->name ?? 'None' }}</div>
-                                    <div class="d-flex gap-1 flex-wrap mt-auto pt-3"><a href="{{ route('hotel.rooms.edit', $room) }}" class="btn btn-sm btn-outline-primary">Edit</a><form method="POST" action="{{ route('hotel.rooms.destroy', $room) }}">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger">Deactivate</button></form></div>
+                                    <div class="d-flex gap-1 flex-wrap mt-auto pt-3"><a href="{{ route('hotel.rooms.show', $room) }}" class="btn btn-sm btn-primary">Show</a><a href="{{ route('hotel.rooms.edit', $room) }}" class="btn btn-sm btn-outline-primary">Edit</a><form method="POST" action="{{ route('hotel.rooms.destroy', $room) }}" onsubmit="return confirm('Deactivate this room?')">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger">Deactivate</button></form></div>
                                 </div>
                             </article>
                             <div class="modal fade room-preview-modal hotel-preview-modal" id="roomPreview{{ $room->id }}" tabindex="-1" aria-hidden="true">
@@ -136,7 +137,7 @@
                 @else
                     <div class="table-responsive"><table class="table table-sm room-table align-middle mb-0"><thead><tr><th>Room #</th><th>Photo</th><th>Type</th><th>Floor</th><th>Status</th><th>Housekeeping</th><th>Current Guest</th><th>Next Reservation</th><th>Actions</th></tr></thead><tbody>
                     @foreach($rooms as $room)
-                        <tr><td><strong>{{ $room->room_number }}</strong></td><td>@if($room->room_image)<img src="{{ asset('storage/'.$room->room_image) }}" alt="" style="width:54px;height:38px;object-fit:cover;border-radius:8px">@else-@endif</td><td>{{ $room->type?->name }}</td><td>{{ $room->floor }}</td><td>{{ ucfirst((string) $room->operational_status) }}</td><td>{{ ucfirst((string) $room->housekeeping_status) }}</td><td>{{ $activeStays->get((int) $room->id)?->customer?->customer_name ?? $activeStays->get((int) $room->id)?->customer?->name ?? 'Vacant' }}</td><td>{{ $nextReservations->get((int) $room->id)?->customer?->customer_name ?? $nextReservations->get((int) $room->id)?->customer?->name ?? 'None' }}</td><td><a href="{{ route('hotel.rooms.edit', $room) }}" class="btn btn-sm btn-info">Edit</a></td></tr>
+                        <tr><td><strong>{{ $room->room_number }}</strong></td><td>@if($room->room_image)<img src="{{ asset('storage/'.$room->room_image) }}" alt="" style="width:54px;height:38px;object-fit:cover;border-radius:8px">@else-@endif</td><td>{{ $room->type?->name }}</td><td>{{ $room->floor }}</td><td>{{ ucfirst((string) $room->operational_status) }}</td><td>{{ ucfirst((string) $room->housekeeping_status) }}</td><td>{{ $activeStays->get((int) $room->id)?->customer?->customer_name ?? $activeStays->get((int) $room->id)?->customer?->name ?? 'Vacant' }}</td><td>{{ $nextReservations->get((int) $room->id)?->customer?->customer_name ?? $nextReservations->get((int) $room->id)?->customer?->name ?? 'None' }}</td><td><a href="{{ route('hotel.rooms.show', $room) }}" class="btn btn-sm btn-primary">Show</a> <a href="{{ route('hotel.rooms.edit', $room) }}" class="btn btn-sm btn-info">Edit</a></td></tr>
                     @endforeach
                     </tbody></table></div>
                 @endif

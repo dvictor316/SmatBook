@@ -29,4 +29,14 @@ class HotelRoom extends Model
     {
         return $this->belongsTo(HotelRoomType::class, 'room_type_id');
     }
+
+    public function images()
+    {
+        return $this->hasMany(HotelRoomImage::class, 'room_id')->orderBy('sort_order')->orderBy('id');
+    }
+
+    public function coverImage()
+    {
+        return $this->hasOne(HotelRoomImage::class, 'room_id')->where('is_cover', true)->orderBy('sort_order');
+    }
 }

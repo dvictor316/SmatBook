@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Hotel;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\HotelRoom;
+use App\Models\HotelRoomImage;
 use App\Models\HotelRoomType;
 use App\Models\HotelProperty;
 use App\Models\Reservation;
@@ -29,6 +30,7 @@ class HotelRoomController extends Controller
         $viewMode = (string) $request->query('view', 'grid');
 
         $rooms = HotelRoom::with('type')
+            ->with(['images', 'coverImage'])
             ->where('company_id', $companyId)
             ->when($propertyId, fn($q) => $q->where('property_id', $propertyId))
             ->when($status !== '', fn ($q) => $q->where(function ($sub) use ($status) {
@@ -99,6 +101,8 @@ class HotelRoomController extends Controller
             'base_rate_override' => 'nullable|numeric|min:0',
             'room_image' => 'nullable|image|max:5120',
             'panorama_image' => 'nullable|image|max:8192',
+            'gallery_images' => 'nullable|array',
+            'gallery_images.*' => 'nullable|image|max:8192',
             'operational_status' => 'nullable|string|max:50',
             'housekeeping_status' => 'nullable|string|max:50',
             'notes' => 'nullable|string',
@@ -113,8 +117,42 @@ class HotelRoomController extends Controller
             return back()->withErrors(['room_number' => 'Room number already exists for this property'])->withInput();
         }
 
-        HotelRoom::create($data);
-        return redirect()->route('hotel.rooms.index')->with('success', 'Room created.');
+        $room = HotelRoom::create($data);
+
+        $this->syncLegacyMediaIntoGallery($room);
+        $this->storeUploadedGalleryImages($request, $room);
+
+        return redirect()->route('hotel.rooms.show', $room)->with('success', 'Room created.');
+    }
+
+    public function show(HotelRoom $room)
+    {
+        abort_unless($room->company_id === Auth::user()->company_id, 404);
+
+        $room->load(['type', 'property', 'images']);
+
+        $activeStay = Stay::query()
+            ->with('customer')
+            ->where('company_id', $room->company_id)
+            ->where('room_id', $room->id)
+            ->where('status', 'checked_in')
+            ->latest('id')
+            ->first();
+
+        $upcomingReservations = Reservation::query()
+            ->with('customer')
+            ->where('company_id', $room->company_id)
+            ->where('room_id', $room->id)
+            ->whereIn('status', ['reserved', 'confirmed'])
+            ->whereDate('departure_date', '>=', now()->toDateString())
+            ->orderBy('arrival_date')
+            ->limit(8)
+            ->get();
+
+        $this->syncLegacyMediaIntoGallery($room);
+        $room->refresh()->load(['type', 'property', 'images']);
+
+        return view('hotel.rooms.show', compact('room', 'activeStay', 'upcomingReservations'));
     }
 
     public function edit(HotelRoom $room)
@@ -122,6 +160,7 @@ class HotelRoomController extends Controller
         abort_unless($room->company_id === Auth::user()->company_id, 404);
         $companyId = Auth::user()->company_id;
         $roomTypes = HotelRoomType::where('company_id', $companyId)->where('is_active', true)->get();
+        $room->load('images');
         return view('hotel.rooms.edit', compact('room', 'roomTypes'));
     }
 
@@ -135,6 +174,8 @@ class HotelRoomController extends Controller
             'base_rate_override' => 'nullable|numeric|min:0',
             'room_image' => 'nullable|image|max:5120',
             'panorama_image' => 'nullable|image|max:8192',
+            'gallery_images' => 'nullable|array',
+            'gallery_images.*' => 'nullable|image|max:8192',
             'operational_status' => 'nullable|string|max:50',
             'housekeeping_status' => 'nullable|string|max:50',
             'notes' => 'nullable|string',
@@ -160,7 +201,10 @@ class HotelRoomController extends Controller
         }
 
         $room->update($data);
-        return redirect()->route('hotel.rooms.index')->with('success', 'Room updated.');
+        $this->syncLegacyMediaIntoGallery($room->fresh());
+        $this->storeUploadedGalleryImages($request, $room->fresh());
+
+        return redirect()->route('hotel.rooms.show', $room)->with('success', 'Room updated.');
     }
 
     public function destroy(HotelRoom $room)
@@ -169,5 +213,131 @@ class HotelRoomController extends Controller
         $room->is_active = false;
         $room->save();
         return redirect()->route('hotel.rooms.index')->with('success', 'Room deactivated.');
+    }
+
+    public function storeImages(Request $request, HotelRoom $room)
+    {
+        abort_unless($room->company_id === Auth::user()->company_id, 404);
+
+        $request->validate([
+            'gallery_images' => 'required|array|min:1',
+            'gallery_images.*' => 'image|max:8192',
+        ]);
+
+        $this->storeUploadedGalleryImages($request, $room);
+
+        return back()->with('success', 'Room images uploaded.');
+    }
+
+    public function reorderImages(Request $request, HotelRoom $room)
+    {
+        abort_unless($room->company_id === Auth::user()->company_id, 404);
+
+        $data = $request->validate([
+            'image_order' => 'required|array|min:1',
+            'image_order.*' => 'integer',
+            'cover_image_id' => 'nullable|integer',
+            'panorama_image_id' => 'nullable|integer',
+        ]);
+
+        foreach ($data['image_order'] as $index => $imageId) {
+            HotelRoomImage::query()
+                ->where('company_id', $room->company_id)
+                ->where('room_id', $room->id)
+                ->where('id', (int) $imageId)
+                ->update([
+                    'sort_order' => $index + 1,
+                    'is_cover' => (int) ($data['cover_image_id'] ?? 0) === (int) $imageId,
+                    'is_panorama' => (int) ($data['panorama_image_id'] ?? 0) === (int) $imageId,
+                ]);
+        }
+
+        $cover = HotelRoomImage::query()->where('room_id', $room->id)->where('is_cover', true)->first();
+        $panorama = HotelRoomImage::query()->where('room_id', $room->id)->where('is_panorama', true)->first();
+
+        $room->update([
+            'room_image' => $cover?->path ?: $room->room_image,
+            'panorama_image' => $panorama?->path ?: $room->panorama_image,
+        ]);
+
+        return back()->with('success', 'Room gallery order saved.');
+    }
+
+    public function destroyImage(HotelRoom $room, HotelRoomImage $image)
+    {
+        abort_unless($room->company_id === Auth::user()->company_id && (int) $image->room_id === (int) $room->id, 404);
+
+        Storage::disk('public')->delete($image->path);
+
+        if ($room->room_image === $image->path) {
+            $room->room_image = null;
+        }
+        if ($room->panorama_image === $image->path) {
+            $room->panorama_image = null;
+        }
+        $room->save();
+        $image->delete();
+
+        return back()->with('success', 'Room image deleted.');
+    }
+
+    private function storeUploadedGalleryImages(Request $request, HotelRoom $room): void
+    {
+        if (!$request->hasFile('gallery_images')) {
+            return;
+        }
+
+        $nextSort = (int) HotelRoomImage::query()
+            ->where('room_id', $room->id)
+            ->max('sort_order');
+
+        foreach ($request->file('gallery_images', []) as $file) {
+            if (!$file || !$file->isValid()) {
+                continue;
+            }
+
+            $path = $file->store('hotel/rooms/gallery', 'public');
+            $nextSort++;
+
+            HotelRoomImage::create([
+                'company_id' => $room->company_id,
+                'property_id' => $room->property_id,
+                'room_id' => $room->id,
+                'path' => $path,
+                'sort_order' => $nextSort,
+                'is_cover' => !$room->room_image && $nextSort === 1,
+                'uploaded_by' => Auth::id(),
+            ]);
+        }
+
+        $firstImage = HotelRoomImage::query()->where('room_id', $room->id)->orderBy('sort_order')->first();
+        if (!$room->room_image && $firstImage) {
+            $room->update(['room_image' => $firstImage->path]);
+        }
+    }
+
+    private function syncLegacyMediaIntoGallery(HotelRoom $room): void
+    {
+        foreach ([
+            ['path' => $room->room_image, 'is_cover' => true, 'is_panorama' => false],
+            ['path' => $room->panorama_image, 'is_cover' => false, 'is_panorama' => true],
+        ] as $media) {
+            if (!$media['path']) {
+                continue;
+            }
+
+            HotelRoomImage::query()->firstOrCreate(
+                ['room_id' => $room->id, 'path' => $media['path']],
+                [
+                    'company_id' => $room->company_id,
+                    'property_id' => $room->property_id,
+                    'caption' => $media['is_panorama'] ? 'Panorama preview' : 'Cover image',
+                    'is_cover' => $media['is_cover'],
+                    'is_panorama' => $media['is_panorama'],
+                    'sort_order' => (int) HotelRoomImage::query()->where('room_id', $room->id)->max('sort_order') + 1,
+                    'uploaded_by' => Auth::id(),
+                ]
+            );
+        }
     }
 }

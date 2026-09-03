@@ -44,6 +44,10 @@
                                 </select>
                                 <small class="text-muted">Reservation can remain unassigned and be allocated later by front desk.</small>
                             </div>
+                            <div class="col-12">
+                                <div class="alert alert-light mb-0" id="availability_status">Change dates or room type to refresh availability.</div>
+                                <div class="row g-2 mt-1" id="availability_cards"></div>
+                            </div>
                         </div>
                     </div>
 
@@ -120,6 +124,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const deposit = document.getElementById('deposit_received');
     const roomType = document.getElementById('room_type_id');
     const roomSelect = document.getElementById('room_id');
+    const availabilityStatus = document.getElementById('availability_status');
+    const availabilityCards = document.getElementById('availability_cards');
+    const propertyId = @json($property?->id);
 
     const outputs = {
         nights: document.getElementById('sum_nights'),
@@ -142,6 +149,50 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             option.hidden = selectedType !== '' && option.dataset.roomType !== selectedType;
         });
+    }
+
+    function loadAvailability() {
+        if (!arrival.value || !departure.value || !propertyId) return;
+        const params = new URLSearchParams({
+            property_id: propertyId,
+            arrival_date: arrival.value,
+            departure_date: departure.value
+        });
+        if (roomType.value) params.set('room_type_id', roomType.value);
+
+        availabilityStatus.className = 'alert alert-info mb-0';
+        availabilityStatus.textContent = 'Checking live room availability...';
+
+        fetch(`{{ route('hotel.availability.rooms_json') }}?${params.toString()}`, {
+            headers: {'Accept': 'application/json'}
+        })
+            .then((response) => response.ok ? response.json() : Promise.reject(response))
+            .then((payload) => {
+                availabilityStatus.className = 'alert alert-light mb-0';
+                availabilityStatus.textContent = `${payload.available_count} available, ${payload.unavailable_count} unavailable for selected dates.`;
+                roomSelect.innerHTML = '<option value="">Unassigned</option>';
+                availabilityCards.innerHTML = '';
+
+                payload.rooms.forEach((room) => {
+                    if (room.available) {
+                        const option = document.createElement('option');
+                        option.value = room.id;
+                        option.dataset.roomType = room.room_type_id || '';
+                        option.dataset.rate = room.rate || 0;
+                        option.textContent = `${room.room_number} - ${room.room_type || 'Room'} - ${Number(room.rate || 0).toFixed(2)}`;
+                        roomSelect.appendChild(option);
+                    }
+
+                    const card = document.createElement('div');
+                    card.className = 'col-md-6';
+                    card.innerHTML = `<div class="border rounded p-2 ${room.available ? 'bg-white' : 'bg-light text-muted'}"><div class="d-flex justify-content-between"><strong>Room ${room.room_number}</strong><span class="badge ${room.available ? 'bg-success' : 'bg-secondary'}">${room.available ? 'Available' : 'Unavailable'}</span></div><small>${room.room_type || 'Room'} - ${room.operational_status} / ${room.housekeeping_status}</small></div>`;
+                    availabilityCards.appendChild(card);
+                });
+            })
+            .catch(() => {
+                availabilityStatus.className = 'alert alert-warning mb-0';
+                availabilityStatus.textContent = 'Availability could not be refreshed right now.';
+            });
     }
 
     function parseFloatSafe(value) {
@@ -185,9 +236,19 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    roomSelect.addEventListener('change', () => {
+        const selected = roomSelect.selectedOptions[0];
+        if (selected && selected.dataset.rate && parseFloatSafe(nightlyRate.value) === 0) {
+            nightlyRate.value = selected.dataset.rate;
+            calculate();
+        }
+    });
+
+    [arrival, departure, roomType].forEach((el) => el.addEventListener('change', loadAvailability));
     roomType.addEventListener('change', updateRoomOptions);
     updateRoomOptions();
     calculate();
+    loadAvailability();
 });
 </script>
 @endsection

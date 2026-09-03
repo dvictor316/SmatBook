@@ -15,12 +15,19 @@ use App\Models\HotelRoomType;
 use App\Models\Reservation;
 use App\Models\Stay;
 use App\Services\RoomAvailabilityService;
+use App\Services\Hotel\HotelFolioService;
+use App\Support\LedgerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class HotelWorkspaceController extends Controller
 {
+    public function __construct(
+        private readonly HotelFolioService $folioService
+    ) {
+    }
+
     public function roomStatus(Request $request)
     {
         $companyId = (int) auth()->user()->company_id;
@@ -775,6 +782,7 @@ class HotelWorkspaceController extends Controller
             'bar' => ['title' => 'Bar Sales', 'codes' => ['BAR'], 'description' => 'Bar orders, drinks, lounge bills and guest-room postings.'],
             'gym' => ['title' => 'Gym & Fitness', 'codes' => ['GYM', 'FITNESS'], 'description' => 'Gym day passes, membership charges and in-house guest postings.'],
             'spa' => ['title' => 'Spa & Wellness', 'codes' => ['SPA', 'WELLNESS'], 'description' => 'Spa treatments, wellness packages and guest folio charges.'],
+            'ticketing' => ['title' => 'Ticketing & Events', 'codes' => ['TICKETING', 'EVENT'], 'description' => 'Event tickets, pool parties, dinners, tours and guest-room postings.'],
         ];
 
         abort_unless(array_key_exists($center, $centers), 404);
@@ -795,7 +803,106 @@ class HotelWorkspaceController extends Controller
             ->whereIn('service_code', $meta['codes'])
             ->sum('amount');
 
-        return view('hotel.operations.service_center', compact('items', 'meta', 'center', 'total'));
+        $activeFolios = GuestFolio::query()
+            ->with(['customer', 'stay.room'])
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->where('status', 'open')
+            ->latest('id')
+            ->limit(60)
+            ->get();
+
+        return view('hotel.operations.service_center', compact('items', 'meta', 'center', 'total', 'activeFolios'));
+    }
+
+    public function postServiceCenterCharge(Request $request, string $center)
+    {
+        $centers = [
+            'bar' => ['code' => 'BAR', 'label' => 'Bar order'],
+            'gym' => ['code' => 'GYM', 'label' => 'Gym charge'],
+            'spa' => ['code' => 'SPA', 'label' => 'Spa service'],
+            'ticketing' => ['code' => 'TICKETING', 'label' => 'Ticket sale'],
+        ];
+
+        abort_unless(array_key_exists($center, $centers), 404);
+
+        $validated = $request->validate([
+            'folio_id' => 'required|integer|exists:guest_folios,id',
+            'description' => 'required|string|max:255',
+            'quantity' => 'nullable|numeric|min:0.001',
+            'unit_price' => 'required|numeric|min:0.01',
+            'discount' => 'nullable|numeric|min:0',
+            'tax' => 'nullable|numeric|min:0',
+            'payment_mode' => 'required|in:charge_to_room,cash,card,transfer,other',
+            'service_date' => 'nullable|date',
+            'note' => 'nullable|string|max:1000',
+        ]);
+
+        $folio = GuestFolio::query()
+            ->with('stay')
+            ->where('company_id', auth()->user()->company_id)
+            ->where('status', 'open')
+            ->findOrFail((int) $validated['folio_id']);
+
+        $quantity = (float) ($validated['quantity'] ?? 1);
+        $unitPrice = (float) $validated['unit_price'];
+        $discount = (float) ($validated['discount'] ?? 0);
+        $tax = (float) ($validated['tax'] ?? 0);
+        $amount = max(0.01, ($quantity * $unitPrice) + $tax - $discount);
+        $code = $centers[$center]['code'];
+
+        DB::transaction(function () use ($folio, $validated, $quantity, $unitPrice, $discount, $tax, $amount, $code, $center) {
+            $item = $this->folioService->postCharge($folio, [
+                'description' => $validated['description'],
+                'amount' => $amount,
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'type' => 'service',
+                'service_code' => $code,
+                'service_date' => $validated['service_date'] ?? now()->toDateString(),
+                'source_type' => self::class,
+                'source_id' => $folio->id,
+                'posted_by' => auth()->id(),
+                'meta' => [
+                    'center' => $center,
+                    'payment_mode' => $validated['payment_mode'],
+                    'discount' => $discount,
+                    'tax' => $tax,
+                    'note' => $validated['note'] ?? null,
+                ],
+            ]);
+
+            LedgerService::postHotelFolioCharge(
+                $item,
+                $folio,
+                $folio->stay?->branch_id,
+                $folio->stay?->branch_name
+            );
+
+            if ($validated['payment_mode'] !== 'charge_to_room') {
+                $payment = $this->folioService->postPayment($folio, [
+                    'description' => ucfirst(str_replace('_', ' ', $validated['payment_mode'])) . ' payment for ' . strtolower($validated['description']),
+                    'amount' => $amount,
+                    'type' => 'payment',
+                    'service_code' => strtoupper($validated['payment_mode']),
+                    'service_date' => $validated['service_date'] ?? now()->toDateString(),
+                    'source_type' => self::class,
+                    'source_id' => $folio->id,
+                    'posted_by' => auth()->id(),
+                    'meta' => ['center' => $center, 'settles_folio_item_id' => $item->id],
+                ]);
+
+                LedgerService::postHotelFolioPayment(
+                    $payment,
+                    $folio,
+                    0,
+                    $folio->stay?->branch_id,
+                    $folio->stay?->branch_name
+                );
+            }
+        });
+
+        return back()->with('success', $centers[$center]['label'] . ' posted to folio.');
     }
 
     public function corporateAccounts(Request $request)

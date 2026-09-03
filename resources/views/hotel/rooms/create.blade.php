@@ -83,6 +83,12 @@
                             </div>
                         </div>
                     </div>
+                    <div class="col-12">
+                        <label class="form-label">Gallery Photos</label>
+                        <input type="file" name="gallery_images[]" class="form-control" accept="image/*" multiple data-room-gallery-input>
+                        <small class="d-block mt-2">Upload multiple photos for the room show page carousel and thumbnails.</small>
+                        <div class="room-gallery-preview mt-3" data-room-gallery-preview></div>
+                    </div>
                     <div class="col-12"><label class="form-label">Room Notes</label><textarea name="notes" class="form-control" rows="3" placeholder="Amenities, view, policy notes, special features"></textarea></div>
                     <div class="col-12"><div class="room-media-hint"><strong>Where prices are set:</strong> base room prices are configured under Room Types. Date/season/service pricing is configured under Rate Plans. This room override is optional for special rooms.</div></div>
                 </div>
@@ -105,6 +111,22 @@ document.querySelectorAll('[data-room-image-input]').forEach((input) => {
 
         const url = URL.createObjectURL(file);
         preview.innerHTML = `<span class="room-media-uploader__tag">${key === 'panorama_image' ? 'Panorama viewer image' : 'Room card image'}</span><img src="${url}" alt="Selected room image preview">`;
+    });
+});
+
+document.querySelectorAll('[data-room-gallery-input]').forEach((input) => {
+    input.addEventListener('change', () => {
+        const preview = document.querySelector('[data-room-gallery-preview]');
+        if (!preview) return;
+        preview.innerHTML = '';
+        Array.from(input.files || []).slice(0, 8).forEach((file) => {
+            if (!file.type.startsWith('image/')) return;
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            img.alt = file.name;
+            img.style.cssText = 'width:96px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #d8e2ee;margin-right:8px;margin-bottom:8px';
+            preview.appendChild(img);
+        });
     });
 });
 </script>

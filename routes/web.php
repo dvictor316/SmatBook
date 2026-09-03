@@ -683,9 +683,13 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
     Route::get('/rooms', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'index'])->name('rooms.index');
     Route::get('/rooms/create', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'create'])->name('rooms.create');
     Route::post('/rooms', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'store'])->name('rooms.store');
+    Route::get('/rooms/{room}', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'show'])->name('rooms.show');
     Route::get('/rooms/{room}/edit', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'edit'])->name('rooms.edit');
     Route::put('/rooms/{room}', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'update'])->name('rooms.update');
     Route::delete('/rooms/{room}', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'destroy'])->name('rooms.destroy');
+    Route::post('/rooms/{room}/images', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'storeImages'])->name('rooms.images.store');
+    Route::put('/rooms/{room}/images/order', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'reorderImages'])->name('rooms.images.order');
+    Route::delete('/rooms/{room}/images/{image}', [\App\Http\Controllers\Hotel\HotelRoomController::class, 'destroyImage'])->name('rooms.images.destroy');
     Route::get('/rooms-status', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'roomStatus'])->name('rooms.status');
     Route::get('/rooms-calendar', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'roomCalendar'])->name('rooms.calendar');
     Route::post('/rooms-calendar/quick-create', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'quickCreateFromCalendar'])->name('rooms.calendar.quick_create');
@@ -701,6 +705,7 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
 
     Route::get('/availability', [\App\Http\Controllers\Hotel\AvailabilityController::class, 'index'])->name('availability.index');
     Route::post('/availability/search', [\App\Http\Controllers\Hotel\AvailabilityController::class, 'search'])->name('availability.search');
+    Route::get('/availability/rooms.json', [\App\Http\Controllers\Hotel\AvailabilityController::class, 'roomsJson'])->name('availability.rooms_json');
 
     Route::get('/reservations', [\App\Http\Controllers\Hotel\ReservationController::class, 'index'])->name('reservations.index');
     Route::get('/reservations/create', [\App\Http\Controllers\Hotel\ReservationController::class, 'create'])->name('reservations.create');
@@ -730,7 +735,8 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
     Route::get('/laundry', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'laundry'])->name('laundry.index');
     Route::get('/minibar', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'minibar'])->name('minibar.index');
     Route::get('/conference-events', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'conference'])->name('conference.index');
-    Route::get('/service-centers/{center}', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'serviceCenter'])->whereIn('center', ['bar', 'gym', 'spa'])->name('service_centers.show');
+    Route::get('/service-centers/{center}', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'serviceCenter'])->whereIn('center', ['bar', 'gym', 'spa', 'ticketing'])->name('service_centers.show');
+    Route::post('/service-centers/{center}/charges', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'postServiceCenterCharge'])->whereIn('center', ['bar', 'gym', 'spa', 'ticketing'])->name('service_centers.charges.store');
 
     Route::get('/corporate-accounts', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'corporateAccounts'])->name('corporate_accounts.index');
     Route::get('/group-bookings', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'groupBookings'])->name('group_bookings.index');

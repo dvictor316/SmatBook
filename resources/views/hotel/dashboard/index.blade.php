@@ -74,8 +74,15 @@
                 <div class="hotel-command-actions">
                     <a href="{{ route('hotel.reservations.create') }}"><i class="fe fe-calendar"></i><span>New Reservation</span></a>
                     <a href="{{ route('hotel.walkin.create') }}"><i class="fe fe-user-plus"></i><span>Walk-In</span></a>
+                    <a href="{{ route('hotel.rooms.create') }}"><i class="fe fe-plus-square"></i><span>Add Room</span></a>
+                    <a href="{{ route('customers.add') }}"><i class="fe fe-user"></i><span>Add Guest</span></a>
+                    <a href="{{ route('hotel.checkin.index') }}"><i class="fe fe-log-in"></i><span>Check In</span></a>
                     <a href="{{ route('hotel.rooms.calendar') }}"><i class="fe fe-grid"></i><span>Room Calendar</span></a>
                     <a href="{{ route('hotel.checkout.index') }}"><i class="fe fe-credit-card"></i><span>Cashier Desk</span></a>
+                    <a href="{{ route('hotel.service_centers.show', 'bar') }}"><i class="fe fe-shopping-cart"></i><span>Bar Order</span></a>
+                    <a href="{{ route('hotel.service_centers.show', 'spa') }}"><i class="fe fe-heart"></i><span>Spa Booking</span></a>
+                    <a href="{{ route('hotel.service_centers.show', 'gym') }}"><i class="fe fe-activity"></i><span>Gym Access</span></a>
+                    <a href="{{ route('hotel.service_centers.show', 'ticketing') }}"><i class="fe fe-ticket"></i><span>Ticket/Event</span></a>
                     <a href="{{ route('hotel.rate_plans.index') }}"><i class="fe fe-tag"></i><span>Rate Plans</span></a>
                     <a href="{{ route('hotel.maintenance.index') }}"><i class="fe fe-tool"></i><span>Maintenance</span></a>
                     <a href="{{ route('hotel.setup.step1') }}"><i class="fe fe-settings"></i><span>Hotel Setup</span></a>
@@ -157,6 +164,7 @@
                 <a class="hotel-panel hotel-service-card" href="{{ route('hotel.service_centers.show', 'bar') }}"><span>Bar</span><h5>Bar & Lounge</h5><p>Drinks, lounge bills, guest folio postings and revenue tracking.</p></a>
                 <a class="hotel-panel hotel-service-card" href="{{ route('hotel.service_centers.show', 'spa') }}"><span>Spa</span><h5>Spa & Wellness</h5><p>Treatments, packages and wellness services tied to folios.</p></a>
                 <a class="hotel-panel hotel-service-card" href="{{ route('hotel.service_centers.show', 'gym') }}"><span>Gym</span><h5>Gym & Fitness</h5><p>Day passes, memberships and fitness service charges.</p></a>
+                <a class="hotel-panel hotel-service-card" href="{{ route('hotel.service_centers.show', 'ticketing') }}"><span>Ticketing</span><h5>Events & Tickets</h5><p>Ticket sales, event access and guest room charge postings.</p></a>
                 <a class="hotel-panel hotel-service-card" href="{{ route('hotel.room_service.index') }}"><span>Room Service</span><h5>In-Room Dining</h5><p>Kitchen orders posted directly to guest rooms.</p></a>
                 <a class="hotel-panel hotel-service-card" href="{{ route('hotel.minibar.index') }}"><span>Minibar</span><h5>Minibar Control</h5><p>Room minibar usage and stock-linked charges.</p></a>
                 <a class="hotel-panel hotel-service-card" href="{{ route('hotel.laundry.index') }}"><span>Laundry</span><h5>Laundry Desk</h5><p>Laundry orders, returns and guest billing activity.</p></a>
