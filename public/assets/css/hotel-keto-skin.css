@@ -472,8 +472,14 @@ body.hotel-workspace .sa-hk-grid {
 
 body.hotel-workspace .sa-room-wall {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-    gap: 18px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+@media (min-width: 1700px) {
+    body.hotel-workspace .sa-room-wall {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 
 body.hotel-workspace .sa-room,
@@ -1998,6 +2004,10 @@ body.hotel-workspace .sticky-top.card {
     body.hotel-workspace .sa-directory-grid,
     body.hotel-workspace .sa-profile-grid,
     body.hotel-workspace .sa-dash-bottom {
+        grid-template-columns: 1fr;
+    }
+
+    body.hotel-workspace .sa-room-wall {
         grid-template-columns: 1fr;
     }
 

@@ -139,19 +139,19 @@
     .sa-management-console { background:#fff; border:1px solid #d8e2ee; border-radius:14px; padding:14px; margin-bottom:14px; box-shadow:0 10px 24px rgba(15,23,42,.05); }
     .sa-management-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
     .sa-room-manager-card { border:1px solid #d8e2ee; border-radius:14px; background:#fff; overflow:hidden; box-shadow:0 10px 24px rgba(15,23,42,.05); }
-    .sa-room-manager-media { height:220px; background:#eef5ff; display:grid; place-items:center; overflow:hidden; }
+    .sa-room-manager-media { height:180px; background:#eef5ff; display:grid; place-items:center; overflow:hidden; }
     .sa-room-manager-media img { width:100%; height:100%; object-fit:cover; display:block; }
     .sa-room-manager-media.empty { color:#64748b; }
-    .sa-room-manager-body { padding:12px 14px 14px; }
-    .sa-room-manager-body h5 { color:#061b33; font-weight:900; margin:0; font-size:21px; }
+    .sa-room-manager-body { padding:11px 13px 13px; }
+    .sa-room-manager-body h5 { color:#061b33; font-weight:900; margin:0; font-size:20px; }
     .sa-room-manager-body .rate { color:#0b5fb8; font-weight:900; }
-    .sa-room-manager-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
-    .sa-room-manager-actions .btn { min-height:38px; display:flex; align-items:center; justify-content:center; gap:5px; white-space:nowrap; padding-right:8px; padding-left:8px; }
+    .sa-room-manager-actions { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; margin-top:9px; }
+    .sa-room-manager-actions .btn { min-height:36px; display:flex; align-items:center; justify-content:center; gap:5px; white-space:nowrap; padding-right:7px; padding-left:7px; font-size:13px; }
     .sa-room-manager-card .badge { white-space:normal; text-align:center; line-height:1.2; }
     .sa-room-meta-line { color:#64748b; line-height:1.35; overflow-wrap:anywhere; }
     .sa-room-location-line { color:#64748b; line-height:1.35; overflow-wrap:anywhere; }
-    .sa-room-writeup { margin:7px 0 0; color:#40536b; font-size:13px; line-height:1.35; min-height:35px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-    .sa-room-rate-row { align-items:center; margin-top:8px; }
+    .sa-room-writeup { margin:6px 0 0; color:#40536b; font-size:13px; line-height:1.3; min-height:34px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .sa-room-rate-row { align-items:center; margin-top:7px; }
     .sa-room-rate-row span:first-child { color:#061b33; }
     .hotel-panorama-stage { position:relative; width:100%; height:100%; overflow:hidden; background:#030b14; }
     .hotel-panorama-image { width:150%; height:112%; max-width:none; object-fit:cover !important; object-position:center; animation:saPanoramaDrift 28s ease-in-out infinite; transform-origin:center; }
@@ -182,13 +182,13 @@
     .sa-pms-sidebar a, .sa-pms-sidebar div.metric { display:block; color:#dbeafe; text-decoration:none; border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:12px; background:rgba(255,255,255,.06); min-height:82px; }
     .sa-pms-sidebar div.metric strong { display:block; font-size:24px; line-height:1; margin-bottom:6px; }
     .sa-pms-sidebar strong { color:#fff; }
-    .sa-room-wall { display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:18px; align-items:stretch; }
+    .sa-room-wall { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:stretch; }
     body.hotel-workspace .page-wrapper.sa-hotel .sa-pms-board { display:block !important; grid-template-columns:none !important; width:100% !important; max-width:none !important; }
     body.hotel-workspace .page-wrapper.sa-hotel .sa-dash-panel { width:100% !important; max-width:none !important; }
     body.hotel-workspace .page-wrapper.sa-hotel .sa-pms-sidebar { display:block !important; width:100% !important; max-width:none !important; min-height:auto !important; margin:0 0 16px !important; }
     body.hotel-workspace .page-wrapper.sa-hotel .sa-pms-sidebar .sa-pms-intro { display:flex !important; justify-content:space-between !important; align-items:flex-end !important; gap:16px !important; flex-wrap:wrap !important; margin-bottom:14px !important; }
     body.hotel-workspace .page-wrapper.sa-hotel .sa-pms-metrics { display:grid !important; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)) !important; gap:10px !important; }
-    body.hotel-workspace .page-wrapper.sa-hotel .sa-room-wall { display:grid !important; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)) !important; gap:18px !important; width:100% !important; }
+    body.hotel-workspace .page-wrapper.sa-hotel .sa-room-wall { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:16px !important; width:100% !important; }
     .sa-room-tile { min-height:160px; border-radius:14px; padding:12px; border:2px solid #d8e2ee; background:#fff; display:flex; flex-direction:column; justify-content:space-between; }
     .sa-room-tile.available { border-color:#16a34a; background:#ecfdf3; } .sa-room-tile.occupied { border-color:#2563eb; background:#eff6ff; } .sa-room-tile.reserved { border-color:#d4a23a; background:#fff8e1; } .sa-room-tile.maintenance, .sa-room-tile.out_of_order { border-color:#dc2626; background:#fff1f2; }
     .sa-room-tile .room-no { font-size:38px; font-weight:700; color:#061b33; line-height:1; }
@@ -227,7 +227,8 @@
     .sa-hk-room-no { font-size:34px; line-height:1; font-weight:700; color:#061b33; }
     .sa-hk-status { display:inline-flex; width:max-content; border-radius:8px; padding:5px 8px; font-size:12px; font-weight:700; background:#fff; color:#0f172a; margin-top:7px; }
     .sa-hk-table { margin-top:14px; overflow:auto; }
-    @media(max-width:1199px){.sa-room-wall,body.hotel-workspace .page-wrapper.sa-hotel .sa-room-wall{grid-template-columns:repeat(auto-fill,minmax(320px,1fr)) !important}.sa-upgrade-actions{grid-template-columns:repeat(3,1fr)}.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:repeat(2,1fr)}.sa-workspace,.sa-cashier,.sa-room-admin,.sa-folio-register,.sa-maint-desk,.sa-desk,.sa-guest-ledger,.sa-cashier-grid{grid-template-columns:1fr}.sa-board-row,.sa-maint-ticket{grid-template-columns:1fr}}
+    @media(min-width:1700px){.sa-room-wall,body.hotel-workspace .page-wrapper.sa-hotel .sa-room-wall{grid-template-columns:repeat(3,minmax(0,1fr)) !important}}
+    @media(max-width:1199px){.sa-room-wall,body.hotel-workspace .page-wrapper.sa-hotel .sa-room-wall{grid-template-columns:repeat(2,minmax(0,1fr)) !important}.sa-room-manager-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.sa-upgrade-actions{grid-template-columns:repeat(3,1fr)}.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:repeat(2,1fr)}.sa-workspace,.sa-cashier,.sa-room-admin,.sa-folio-register,.sa-maint-desk,.sa-desk,.sa-guest-ledger,.sa-cashier-grid{grid-template-columns:1fr}.sa-board-row,.sa-maint-ticket{grid-template-columns:1fr}}
     @media(max-width:767px){.sa-room-wall,body.hotel-workspace .page-wrapper.sa-hotel .sa-room-wall,.sa-form-grid,.sa-upgrade-actions,.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:1fr !important}.page-wrapper.sa-hotel .sa-hero h2{font-size:23px}}
 </style>
 @endsection
