@@ -91,6 +91,12 @@
             </div>
         </section>
 
+        @include('hotel.partials.operations-action-deck', [
+            'context' => 'dashboard',
+            'title' => 'Today’s Hotel Command Deck',
+            'subtitle' => 'Move from booking to check-in, service charges, payment, checkout, housekeeping and reports without hunting through menus.'
+        ])
+
         <form method="GET" class="hotel-panel hotel-filter">
             <select name="property_id" class="form-select form-select-sm" style="max-width:220px">
                 <option value="all" {{ !$propertyId ? 'selected' : '' }}>All Properties</option>

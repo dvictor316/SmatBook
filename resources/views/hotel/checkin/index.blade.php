@@ -30,6 +30,12 @@
             <div class="journey-steps"><span>1 Guest</span><span>2 Room</span><span>3 Payment</span><span>4 Keys</span></div>
         </section>
 
+        @include('hotel.partials.operations-action-deck', [
+            'context' => 'check-in',
+            'title' => 'Arrival Desk Actions',
+            'subtitle' => 'Assign rooms, verify readiness, open folios and hand guests into the hotel service flow.'
+        ])
+
         <form method="GET" class="ci-panel ci-filter row g-2 align-items-end">
             <div class="col-lg-5 col-md-6"><label class="form-label">Search</label><input type="text" name="q" value="{{ request('q') }}" class="form-control" placeholder="Guest or reservation number"></div>
             <div class="col-lg-3 col-md-6"><label class="form-label">Arrival Date</label><input type="date" name="arrival" value="{{ request('arrival', now()->toDateString()) }}" class="form-control"></div>

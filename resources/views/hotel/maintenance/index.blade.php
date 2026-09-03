@@ -48,6 +48,12 @@
             <div class="maint-stat"><span>Completed Today</span><strong class="text-success">{{ $summary['completed_today'] }}</strong></div>
         </div>
 
+        @include('hotel.partials.operations-action-deck', [
+            'context' => 'maintenance',
+            'title' => 'Engineering Actions',
+            'subtitle' => 'Coordinate blocked rooms, front-desk impact, housekeeping handoff and guest folio follow-up.'
+        ])
+
         <div class="maint-console">
             <aside class="maint-panel">
                 <div class="maint-panel-head"><strong>Open Ticket</strong><span class="badge bg-dark">Engineering</span></div>

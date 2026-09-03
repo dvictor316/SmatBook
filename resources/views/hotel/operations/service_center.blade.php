@@ -43,6 +43,12 @@
             <div class="service-center-card service-metric"><span>Posting Codes</span><strong>{{ implode(', ', $meta['codes']) }}</strong></div>
         </div>
 
+        @include('hotel.partials.operations-action-deck', [
+            'context' => $center,
+            'title' => $meta['title'] . ' Operating Actions',
+            'subtitle' => 'Post guest charges, review folios, settle checkout and keep the department tied to hotel revenue.'
+        ])
+
         <div class="service-flow">
             <aside class="service-rail"><h5>Service Workflow</h5><div><strong>1 Order</strong><br>Guest requests service from {{ strtolower($meta['title']) }}.</div><div><strong>2 Post</strong><br>Charge is posted to folio or POS.</div><div><strong>3 Review</strong><br>Cashier verifies service center revenue.</div><div><strong>4 Settle</strong><br>Balance clears at checkout/accounting.</div></aside>
             <main class="service-workspace">

@@ -22,6 +22,13 @@
             <h3>Availability Search</h3>
             <p class="mb-0">Find sellable rooms, calculate stay nights, and move directly into reservation or walk-in booking.</p>
         </section>
+
+        @include('hotel.partials.operations-action-deck', [
+            'context' => 'availability',
+            'title' => 'Sellable Room Actions',
+            'subtitle' => 'Search available rooms, create reservations, process walk-ins and keep the calendar aligned.'
+        ])
+
         <div class="av-card p-4">
             <form method="POST" action="{{ route('hotel.availability.search') }}" class="av-form align-items-end">
                 @csrf

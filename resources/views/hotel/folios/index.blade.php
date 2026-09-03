@@ -44,6 +44,12 @@
             <div class="folio-stat"><span>Balance Loaded</span><strong class="{{ $balances > 0 ? 'text-danger' : 'text-success' }}">{{ number_format($balances, 2) }}</strong></div>
         </div>
 
+        @include('hotel.partials.operations-action-deck', [
+            'context' => 'cashier',
+            'title' => 'Cashier & Folio Actions',
+            'subtitle' => 'Post service charges, collect payments, prepare checkout and review guest balances from one place.'
+        ])
+
         <div class="folio-shell">
             <aside class="folio-side">
                 <h5>Cashier Actions</h5>

@@ -121,6 +121,12 @@
     .sa-progress-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; }
     .sa-progress-card { border:1px solid #d8e2ee; border-left:6px solid #16a34a; border-radius:14px; background:#fff; padding:16px; box-shadow:0 10px 24px rgba(15,23,42,.05); }
     .sa-progress-card.pending { border-left-color:#d4a23a; background:#fffaf0; }
+    .sa-command-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
+    .sa-command-link { min-height:92px; display:flex; gap:12px; align-items:center; color:#09213d; text-decoration:none; background:#fff; border:1px solid #d8e2ee; border-radius:14px; padding:13px; box-shadow:0 10px 24px rgba(15,23,42,.05); }
+    .sa-command-link:hover { color:#09213d; border-color:#0b5fb8; }
+    .sa-command-link i { width:38px; height:38px; display:grid; place-items:center; border-radius:10px; background:#0b5fb8; color:#fff; flex:0 0 auto; }
+    .sa-command-link strong { display:block; color:#061b33; line-height:1.15; }
+    .sa-command-link span { color:#64748b; font-size:12px; line-height:1.25; display:block; margin-top:3px; }
 
 
     .sa-section-head { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
@@ -175,8 +181,8 @@
     .sa-hk-room-no { font-size:34px; line-height:1; font-weight:700; color:#061b33; }
     .sa-hk-status { display:inline-flex; width:max-content; border-radius:8px; padding:5px 8px; font-size:12px; font-weight:700; background:#fff; color:#0f172a; margin-top:7px; }
     .sa-hk-table { margin-top:14px; overflow:auto; }
-    @media(max-width:1199px){.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:repeat(2,1fr)}.sa-workspace,.sa-cashier,.sa-room-admin,.sa-folio-register,.sa-maint-desk,.sa-pms-board,.sa-desk,.sa-guest-ledger,.sa-cashier-grid{grid-template-columns:1fr}.sa-board-row,.sa-maint-ticket{grid-template-columns:1fr}}
-    @media(max-width:767px){.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:1fr}.page-wrapper.sa-hotel .sa-hero h2{font-size:23px}}
+    @media(max-width:1199px){.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:repeat(2,1fr)}.sa-workspace,.sa-cashier,.sa-room-admin,.sa-folio-register,.sa-maint-desk,.sa-pms-board,.sa-desk,.sa-guest-ledger,.sa-cashier-grid{grid-template-columns:1fr}.sa-board-row,.sa-maint-ticket{grid-template-columns:1fr}}
+    @media(max-width:767px){.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:1fr}.page-wrapper.sa-hotel .sa-hero h2{font-size:23px}}
 </style>
 @endsection
 
@@ -238,6 +244,23 @@
                         <p>What has changed in the hotel management module and where Super Admin can monitor it.</p>
                     </div>
                     <span class="btn btn-success disabled">{{ $panelRows->where('status', 'completed')->count() }} completed</span>
+                </div>
+                <div class="sa-command-grid">
+                    @foreach([
+                        ['panel' => 'overview', 'icon' => 'fa-gauge-high', 'label' => 'Hotel Dashboard', 'hint' => 'Portfolio KPIs, revenue, occupancy'],
+                        ['panel' => 'rooms', 'icon' => 'fa-bed', 'label' => 'Room Board', 'hint' => 'Room status and readiness'],
+                        ['panel' => 'room_gallery', 'icon' => 'fa-images', 'label' => 'Room Gallery', 'hint' => 'Uploaded cover and panorama media'],
+                        ['panel' => 'reservations', 'icon' => 'fa-calendar-check', 'label' => 'Reservations', 'hint' => 'Booking pipeline and deposits'],
+                        ['panel' => 'folios', 'icon' => 'fa-file-invoice-dollar', 'label' => 'Guest Folios', 'hint' => 'Charges, payments, balances'],
+                        ['panel' => 'housekeeping', 'icon' => 'fa-broom', 'label' => 'Housekeeping', 'hint' => 'Dirty, assigned, cleaning, inspected'],
+                        ['panel' => 'maintenance', 'icon' => 'fa-screwdriver-wrench', 'label' => 'Maintenance', 'hint' => 'Room tickets and conflicts'],
+                        ['panel' => 'service_ticketing', 'icon' => 'fa-ticket', 'label' => 'Ticketing / Events', 'hint' => 'Event revenue monitor'],
+                    ] as $action)
+                        <a class="sa-command-link" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => $action['panel']] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">
+                            <i class="fas {{ $action['icon'] }}"></i>
+                            <span><strong>{{ $action['label'] }}</strong><span>{{ $action['hint'] }}</span></span>
+                        </a>
+                    @endforeach
                 </div>
                 <div class="sa-progress-grid">
                     @foreach($panelRows as $row)

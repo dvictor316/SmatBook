@@ -8,6 +8,12 @@
             <a href="{{ route('hotel.rooms.calendar') }}" class="btn btn-outline-secondary">Calendar</a>
         </div>
 
+        @include('hotel.partials.operations-action-deck', [
+            'context' => 'reservation',
+            'title' => 'Booking Action Centre',
+            'subtitle' => 'Assign a room, check the guest in, post service charges, settle folio or hand off to housekeeping.'
+        ])
+
         <div class="row g-3">
             <div class="col-xl-7">
                 <div class="card mb-3">

@@ -50,6 +50,12 @@
             <div class="room-admin-stat"><small>Maintenance</small><strong class="text-danger">{{ $summary['maintenance'] }}</strong></div>
         </div>
 
+        @include('hotel.partials.operations-action-deck', [
+            'context' => 'rooms',
+            'title' => 'Room Operations',
+            'subtitle' => 'Add rooms and photos, inspect live status, reserve available rooms and hand rooms to housekeeping.'
+        ])
+
         <div class="room-admin-shell">
             <aside class="room-admin-rail">
                 <h5>Room Inventory</h5>

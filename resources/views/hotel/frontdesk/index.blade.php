@@ -68,6 +68,12 @@
             </div>
         </div>
 
+        @include('hotel.partials.operations-action-deck', [
+            'context' => 'front-desk',
+            'title' => 'Front Desk Command Actions',
+            'subtitle' => 'Operate arrivals, room moves, guest folios, department charges, housekeeping and night audit from one place.'
+        ])
+
         <div class="ew-shell">
             <aside class="ew-rail">
                 <form method="GET" action="{{ route('hotel.frontdesk') }}">

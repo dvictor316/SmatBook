@@ -34,6 +34,12 @@
             <a href="{{ route('hotel.in_house') }}" class="btn btn-outline-secondary">In-House Guests</a>
         </div>
 
+        @include('hotel.partials.operations-action-deck', [
+            'context' => 'checkout',
+            'title' => 'Departure & Settlement Actions',
+            'subtitle' => 'Review folios, post final service charges, collect payment, complete checkout and trigger housekeeping.'
+        ])
+
         <div class="settlement-shell">
             <aside class="settle-card">
                 <div class="p-3 border-bottom"><strong>Open Stays</strong><div class="small text-muted">{{ $stays->count() }} guests currently checked in</div></div>

@@ -115,6 +115,12 @@
             <span class="hk-chip arriving">Arriving: {{ $summary['arriving'] ?? 0 }}</span>
         </div>
 
+        @include('hotel.partials.operations-action-deck', [
+            'context' => 'housekeeping',
+            'title' => 'Housekeeping Shift Actions',
+            'subtitle' => 'Jump from room readiness to arrivals, maintenance issues, room calendar and checkout turnover.'
+        ])
+
         <div class="hk-layout">
             <aside class="hk-panel hk-filter">
                 <h4>Housekeeping</h4>

@@ -40,6 +40,12 @@
             </div>
         </div>
 
+        @include('hotel.partials.operations-action-deck', [
+            'context' => 'reservations',
+            'title' => 'Reservation Next Actions',
+            'subtitle' => 'Create bookings, assign rooms, check in arrivals and move guest charges into folios.'
+        ])
+
         <div class="res-shell">
             <aside class="res-filter">
                 <h5>Filters</h5>

@@ -79,6 +79,12 @@
             </aside>
         </section>
 
+        @include('hotel.partials.operations-action-deck', [
+            'context' => 'room-profile',
+            'title' => 'Room Profile Actions',
+            'subtitle' => 'Reserve this room, review live status, post guest activity and coordinate housekeeping or maintenance.'
+        ])
+
         <div class="room-show-grid">
             <main class="room-show-panel">
                 <h5>Upcoming Reservations</h5>
