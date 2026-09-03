@@ -531,6 +531,74 @@ class HotelController extends Controller
         return back()->with('success', 'Maintenance ticket updated.');
     }
 
+    public function storeRoomType(Request $request)
+    {
+        if (!$this->hasTable('hotel_room_types')) {
+            return back()->withErrors(['room_type' => 'Hotel room type table is not available yet.']);
+        }
+
+        $hotelCompanyIds = $this->superAdminHotelCompanyIds();
+        $data = $request->validate([
+            'company_id' => ['required', 'integer', Rule::in($hotelCompanyIds)],
+            'property_id' => ['nullable', 'integer'],
+            'name' => ['required', 'string', 'max:120'],
+            'code' => ['nullable', 'string', 'max:40'],
+            'base_rate' => ['required', 'numeric', 'min:0'],
+            'max_adults' => ['nullable', 'integer', 'min:1', 'max:20'],
+            'max_children' => ['nullable', 'integer', 'min:0', 'max:20'],
+            'max_occupancy' => ['nullable', 'integer', 'min:1', 'max:40'],
+            'description' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        if (!empty($data['property_id'])) {
+            $property = HotelProperty::withoutGlobalScopes()
+                ->where('company_id', $data['company_id'])
+                ->findOrFail((int) $data['property_id']);
+            $data['property_id'] = $property->id;
+        } else {
+            $data['property_id'] = HotelProperty::withoutGlobalScopes()->where('company_id', $data['company_id'])->value('id');
+        }
+
+        $data['code'] = $data['code'] ?: strtoupper(substr(preg_replace('/[^A-Za-z0-9]+/', '', $data['name']), 0, 12));
+        $data['max_adults'] = $data['max_adults'] ?? 2;
+        $data['max_children'] = $data['max_children'] ?? 0;
+        $data['max_occupancy'] = $data['max_occupancy'] ?? max(1, (int) $data['max_adults'] + (int) $data['max_children']);
+        $data['is_active'] = true;
+
+        HotelRoomType::withoutGlobalScopes()->create($data);
+
+        return back()->with('success', 'Room type '.$data['name'].' created.');
+    }
+
+    public function updateRoomType(Request $request, $type)
+    {
+        $hotelCompanyIds = $this->superAdminHotelCompanyIds();
+        $type = HotelRoomType::withoutGlobalScopes()
+            ->when(!empty($hotelCompanyIds), fn($query) => $query->whereIn('company_id', $hotelCompanyIds))
+            ->findOrFail((int) $type);
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'code' => ['nullable', 'string', 'max:40'],
+            'base_rate' => ['required', 'numeric', 'min:0'],
+            'max_adults' => ['nullable', 'integer', 'min:1', 'max:20'],
+            'max_children' => ['nullable', 'integer', 'min:0', 'max:20'],
+            'max_occupancy' => ['nullable', 'integer', 'min:1', 'max:40'],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+
+        $data['code'] = $data['code'] ?: strtoupper(substr(preg_replace('/[^A-Za-z0-9]+/', '', $data['name']), 0, 12));
+        $data['max_adults'] = $data['max_adults'] ?? 2;
+        $data['max_children'] = $data['max_children'] ?? 0;
+        $data['max_occupancy'] = $data['max_occupancy'] ?? max(1, (int) $data['max_adults'] + (int) $data['max_children']);
+        $data['is_active'] = $request->boolean('is_active');
+
+        $type->update($data);
+
+        return back()->with('success', 'Room type '.$type->name.' updated.');
+    }
+
     private function panelData(string $panel, ?int $companyId, array $hotelCompanyIds, string $selectedServiceCenter = 'all')
     {
         if ($panel === 'progress') {

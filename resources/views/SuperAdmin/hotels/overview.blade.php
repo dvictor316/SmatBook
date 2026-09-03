@@ -534,6 +534,9 @@
                 </div>
             </section>
         @elseif(in_array($panel, ['tenants','properties'], true))
+            @php
+                $directoryRoomCounts = collect($roomManagement['rooms'] ?? [])->groupBy($panel === 'tenants' ? 'company_id' : 'property_id')->map->count();
+            @endphp
             <section class="sa-dash-panel">
                 <div class="sa-section-head">
                     <div>
@@ -542,6 +545,12 @@
                         <p>{{ $panel === 'tenants' ? 'Hotel-enabled companies, plan readiness and operating footprint.' : 'Branches and hotel properties connected to tenant operations.' }}</p>
                     </div>
                     <span class="btn btn-outline-primary disabled">{{ $panelRows->count() }} records</span>
+                </div>
+                <div class="sa-mini-kpis">
+                    <div class="sa-mini-kpi"><span>{{ $panel === 'tenants' ? 'Tenants' : 'Properties' }}</span><strong>{{ $panelRows->count() }}</strong><small>Visible records</small></div>
+                    <div class="sa-mini-kpi"><span>Rooms</span><strong>{{ $totalRooms }}</strong><small>Inventory in scope</small></div>
+                    <div class="sa-mini-kpi"><span>Available</span><strong>{{ $availableRooms }}</strong><small>Ready for sale</small></div>
+                    <div class="sa-mini-kpi"><span>Revenue</span><strong>{{ $money($hotelRevenueThisMonth) }}</strong><small>This month</small></div>
                 </div>
                 <div class="sa-directory-grid">
                     @forelse($panelRows as $row)
@@ -552,6 +561,12 @@
                             <p class="mb-3 {{ $loop->first ? '' : 'text-muted' }}">Company {{ $r['company_id'] ?? $r['id'] ?? '-' }} - Branch {{ $r['branch_id'] ?? 'All' }}</p>
                             <div class="d-flex justify-content-between gap-2"><span>Status</span><strong>{{ ucfirst((string)($r['status'] ?? 'active')) }}</strong></div>
                             <div class="d-flex justify-content-between gap-2"><span>Record</span><strong>#{{ $r['id'] ?? '-' }}</strong></div>
+                            <div class="d-flex justify-content-between gap-2"><span>Rooms</span><strong>{{ $directoryRoomCounts[$r['id'] ?? 0] ?? 0 }}</strong></div>
+                            <div class="d-flex gap-2 mt-3 flex-wrap">
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('super_admin.hotels.index', ['panel' => 'room_gallery', 'company_id' => $r['company_id'] ?? $r['id'] ?? null]) }}">Rooms</a>
+                                <a class="btn btn-sm btn-outline-secondary" href="{{ route('super_admin.hotels.index', ['panel' => 'room_types', 'company_id' => $r['company_id'] ?? $r['id'] ?? null]) }}">Rates</a>
+                                <a class="btn btn-sm btn-outline-dark" href="{{ route('super_admin.hotels.index', ['panel' => 'reports', 'company_id' => $r['company_id'] ?? $r['id'] ?? null]) }}">Reports</a>
+                            </div>
                         </article>
                     @empty
                         <div class="sa-empty">No {{ strtolower($panelTitle) }} found yet. Once a tenant enables hotel setup, this becomes a rich operations directory.</div>
@@ -849,10 +864,98 @@
                 </div>
             </div>
         @elseif($panel === 'room_types')
-            <section class="sa-dash-panel"><div class="sa-section-head"><div><small class="text-warning fw-semibold">ROOM CATALOGUE</small><h4>Room Types & Rate Classes</h4><p>Capacity, base rates and tenant room-type setup.</p></div><span class="btn btn-outline-primary disabled">{{ $panelRows->count() }} types</span></div><div class="sa-directory-grid">@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<article class="sa-directory-card"><span class="eyebrow">Room Type</span><h5>{{ $r['name'] ?? ('Type #'.($r['id'] ?? '-')) }}</h5><p class="text-muted">Company {{ $r['company_id'] ?? '-' }} - Property {{ $r['property_id'] ?? '-' }}</p><div class="d-flex justify-content-between"><span>Occupancy</span><strong>{{ $r['max_occupancy'] ?? '-' }}</strong></div><div class="d-flex justify-content-between"><span>Base Rate</span><strong>{{ $money($r['base_rate'] ?? 0) }}</strong></div></article>@empty<div class="sa-empty"><strong>No room types found yet.</strong><br>Room types are where admins set base prices, bed setup, capacity and default rates before adding rooms.</div>@endforelse</div></section>
+            @php
+                $typeCompanies = collect($roomManagement['companies'] ?? []);
+                $typeProperties = collect($roomManagement['properties'] ?? []);
+            @endphp
+            <section class="sa-dash-panel">
+                <div class="sa-section-head">
+                    <div><small class="text-warning fw-semibold">ROOM CATALOGUE</small><h4>Room Types & Rate Classes</h4><p>Capacity, base rates and tenant room-type setup.</p></div>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#saAddRoomTypeModal"><i class="fas fa-tags me-1"></i> Add Room Type</button>
+                </div>
+                <div class="sa-mini-kpis">
+                    <div class="sa-mini-kpi"><span>Rate Classes</span><strong>{{ $panelRows->count() }}</strong><small>Visible room types</small></div>
+                    <div class="sa-mini-kpi"><span>Lowest Rate</span><strong>{{ $money($panelRows->min(fn($row) => (float)($rowArray($row)['base_rate'] ?? 0)) ?? 0) }}</strong><small>Current page</small></div>
+                    <div class="sa-mini-kpi"><span>Highest Rate</span><strong>{{ $money($panelRows->max(fn($row) => (float)($rowArray($row)['base_rate'] ?? 0)) ?? 0) }}</strong><small>Current page</small></div>
+                    <div class="sa-mini-kpi"><span>Rooms</span><strong>{{ $totalRooms }}</strong><small>Attached inventory</small></div>
+                </div>
+                <div class="sa-directory-grid">
+                    @forelse($panelRows as $row)
+                        @php $r=$rowArray($row); $editTypeModal = 'saEditRoomType'.($r['id'] ?? ''); @endphp
+                        <article class="sa-directory-card">
+                            <span class="eyebrow">Room Type</span>
+                            <h5>{{ $r['name'] ?? ('Type #'.($r['id'] ?? '-')) }}</h5>
+                            <p class="text-muted">Company {{ $r['company_id'] ?? '-' }} - Property {{ $r['property_id'] ?? '-' }}</p>
+                            <div class="d-flex justify-content-between"><span>Occupancy</span><strong>{{ $r['max_occupancy'] ?? '-' }}</strong></div>
+                            <div class="d-flex justify-content-between"><span>Base Rate</span><strong>{{ $money($r['base_rate'] ?? 0) }}</strong></div>
+                            <button type="button" class="btn btn-sm btn-outline-primary w-100 mt-3" data-bs-toggle="modal" data-bs-target="#{{ $editTypeModal }}">Edit Type & Price</button>
+                        </article>
+                        <div class="modal fade" id="{{ $editTypeModal }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                                <form method="POST" action="{{ route('super_admin.hotels.room_types.update', $r['id']) }}" class="modal-content">
+                                    @csrf
+                                    @method('PUT')
+                                    <div class="modal-header"><h5 class="modal-title">Edit {{ $r['name'] ?? 'Room Type' }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                                    <div class="modal-body"><div class="sa-form-grid">
+                                        <div><label class="form-label">Name</label><input name="name" class="form-control" value="{{ $r['name'] ?? '' }}" required></div>
+                                        <div><label class="form-label">Code</label><input name="code" class="form-control" value="{{ $r['code'] ?? '' }}"></div>
+                                        <div><label class="form-label">Base Rate</label><input name="base_rate" type="number" step="0.01" class="form-control" value="{{ $r['base_rate'] ?? 0 }}" required></div>
+                                        <div><label class="form-label">Max Occupancy</label><input name="max_occupancy" type="number" class="form-control" value="{{ $r['max_occupancy'] ?? 2 }}"></div>
+                                        <div><label class="form-label">Adults</label><input name="max_adults" type="number" class="form-control" value="{{ $r['max_adults'] ?? 2 }}"></div>
+                                        <div><label class="form-label">Children</label><input name="max_children" type="number" class="form-control" value="{{ $r['max_children'] ?? 0 }}"></div>
+                                        <div><label class="form-label">Active</label><select name="is_active" class="form-select"><option value="1" @selected((bool)($r['is_active'] ?? true))>Active</option><option value="0" @selected(!(bool)($r['is_active'] ?? true))>Inactive</option></select></div>
+                                        <div class="full"><label class="form-label">Description</label><textarea name="description" class="form-control" rows="3">{{ $r['description'] ?? '' }}</textarea></div>
+                                    </div></div>
+                                    <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button><button class="btn btn-primary">Save Room Type</button></div>
+                                </form>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="sa-empty"><strong>No room types found yet.</strong><br>Use Add Room Type to set prices, bed setup and capacity before adding rooms.</div>
+                    @endforelse
+                </div>
+            </section>
+            <div class="modal fade" id="saAddRoomTypeModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <form method="POST" action="{{ route('super_admin.hotels.room_types.store') }}" class="modal-content">
+                        @csrf
+                        <div class="modal-header"><h5 class="modal-title">Add Room Type</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                        <div class="modal-body"><div class="sa-form-grid">
+                            <div><label class="form-label">Hotel Tenant</label><select name="company_id" class="form-select" required><option value="">Select tenant</option>@foreach($typeCompanies as $company)<option value="{{ $company->id }}" @selected((int)$selectedCompanyId === (int)$company->id)>{{ $company->name }}</option>@endforeach</select></div>
+                            <div><label class="form-label">Property</label><select name="property_id" class="form-select"><option value="">Auto assign first property</option>@foreach($typeProperties as $property)<option value="{{ $property->id }}">{{ $property->name }} - Company {{ $property->company_id }}</option>@endforeach</select></div>
+                            <div><label class="form-label">Name</label><input name="name" class="form-control" required placeholder="Deluxe Suite"></div>
+                            <div><label class="form-label">Code</label><input name="code" class="form-control" placeholder="DLX"></div>
+                            <div><label class="form-label">Base Rate</label><input name="base_rate" type="number" step="0.01" class="form-control" required placeholder="75000"></div>
+                            <div><label class="form-label">Max Occupancy</label><input name="max_occupancy" type="number" class="form-control" value="2"></div>
+                            <div><label class="form-label">Adults</label><input name="max_adults" type="number" class="form-control" value="2"></div>
+                            <div><label class="form-label">Children</label><input name="max_children" type="number" class="form-control" value="0"></div>
+                            <div class="full"><label class="form-label">Description</label><textarea name="description" class="form-control" rows="3" placeholder="Bed setup, amenities, view, cancellation or sale notes"></textarea></div>
+                        </div></div>
+                        <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button><button class="btn btn-primary">Create Room Type</button></div>
+                    </form>
+                </div>
+            </div>
         @elseif(in_array($panel, ['room_calendar','reservations'], true))
+            @php
+                $reservationTotals = [
+                    'confirmed' => $panelRows->filter(fn($row) => in_array((string)($rowArray($row)['status'] ?? ''), ['confirmed', 'reserved'], true))->count(),
+                    'checked_in' => $panelRows->filter(fn($row) => (string)($rowArray($row)['status'] ?? '') === 'checked_in')->count(),
+                    'cancelled' => $panelRows->filter(fn($row) => (string)($rowArray($row)['status'] ?? '') === 'cancelled')->count(),
+                    'deposit' => $panelRows->sum(fn($row) => (float)($rowArray($row)['deposit_received'] ?? 0)),
+                ];
+            @endphp
             <section class="sa-dash-panel">
                 <div class="sa-section-head"><div><small class="text-warning fw-semibold">{{ $panel === 'room_calendar' ? 'ROOM CALENDAR' : 'RESERVATION REGISTER' }}</small><h4>{{ $panel === 'room_calendar' ? 'Reservation Timeline' : 'Bookings Operations Board' }}</h4><p>Arrival, departure, room assignment, booking status and deposits.</p></div><span class="badge bg-light text-dark">Reservation monitor</span></div>
+                <div class="sa-mini-kpis">
+                    <div class="sa-mini-kpi"><span>Bookings</span><strong>{{ $panelRows->count() }}</strong><small>Visible rows</small></div>
+                    <div class="sa-mini-kpi"><span>Confirmed</span><strong>{{ $reservationTotals['confirmed'] }}</strong><small>Reserved pipeline</small></div>
+                    <div class="sa-mini-kpi"><span>Checked In</span><strong>{{ $reservationTotals['checked_in'] }}</strong><small>Active arrivals</small></div>
+                    <div class="sa-mini-kpi"><span>Deposits</span><strong>{{ $money($reservationTotals['deposit']) }}</strong><small>Collected</small></div>
+                </div>
+                <div class="sa-ops-list mb-3">
+                    <div class="sa-ops-row"><div><strong>Room assignment</strong><div class="small text-muted">Open Room Board to update room availability and resolve assignment pressure.</div></div><a class="btn btn-sm btn-outline-primary" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'rooms'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">Room Board</a></div>
+                    <div class="sa-ops-row"><div><strong>Deposit follow-up</strong><div class="small text-muted">Review cashier rows and folios linked to reservation payments.</div></div><a class="btn btn-sm btn-outline-secondary" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'deposits'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">Deposits</a></div>
+                </div>
                 <div class="sa-timeline"><table class="table table-bordered align-middle"><thead><tr><th>Reservation</th><th>Guest</th><th>Room</th><th>Arrival</th><th>Departure</th><th>Nights</th><th>Status</th><th>Deposit</th></tr></thead><tbody>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<tr><td><span class="sa-pill-event {{ ($r['status'] ?? '') === 'confirmed' ? 'green' : 'gold' }}">{{ $r['reservation_number'] ?? ('#'.($r['id'] ?? '-')) }}</span></td><td>Guest #{{ $r['customer_id'] ?? '-' }}</td><td>{{ $r['room_id'] ?? 'Unassigned' }}</td><td>{{ $r['arrival_date'] ?? '-' }}</td><td>{{ $r['departure_date'] ?? '-' }}</td><td>{{ $r['nights'] ?? '-' }}</td><td><span class="badge {{ $statusBadge($r['status'] ?? 'reserved') }}">{{ ucfirst(str_replace('_',' ', (string)($r['status'] ?? 'reserved'))) }}</span></td><td>{{ $money($r['deposit_received'] ?? 0) }}</td></tr>@empty<tr><td colspan="8"><div class="sa-empty"><strong>No reservations found yet.</strong><br>Use tenant Hotel > Availability or New Reservation to create bookings. This register will then show guest, room, arrival, departure, status and deposit.</div></td></tr>@endforelse</tbody></table></div>
             </section>
         @elseif($panel === 'availability')
@@ -907,13 +1010,31 @@
                 </div>
             </section>
         @elseif(in_array($panel, ['check_in','stays','checkout'], true))
-            @php $deskTitle = $panel === 'check_in' ? 'Check-In Desk' : ($panel === 'checkout' ? 'Checkout Settlement Desk' : 'In-House Guest Desk'); @endphp
+            @php
+                $deskTitle = $panel === 'check_in' ? 'Check-In Desk' : ($panel === 'checkout' ? 'Checkout Settlement Desk' : 'In-House Guest Desk');
+                $deskAmount = $panelRows->sum(fn($row) => (float)($rowArray($row)['balance'] ?? $rowArray($row)['deposit_received'] ?? $rowArray($row)['total_amount'] ?? 0));
+            @endphp
+            <div class="sa-mini-kpis">
+                <div class="sa-mini-kpi"><span>Queue Rows</span><strong>{{ $panelRows->count() }}</strong><small>{{ $deskTitle }}</small></div>
+                <div class="sa-mini-kpi"><span>In-House</span><strong>{{ $currentInHouseGuests }}</strong><small>Checked-in stays</small></div>
+                <div class="sa-mini-kpi"><span>Balance Watch</span><strong>{{ $money($deskAmount) }}</strong><small>Current page</small></div>
+                <div class="sa-mini-kpi"><span>Dirty Rooms</span><strong>{{ $dirtyRooms }}</strong><small>Housekeeping dependency</small></div>
+            </div>
             <div class="sa-desk">
                 <section class="sa-dash-panel"><div class="sa-section-head"><div><small class="text-warning fw-semibold">FRONT OFFICE</small><h4>{{ $deskTitle }}</h4><p>Operational queue for arrivals, in-house guests and departures.</p></div><span class="btn btn-outline-primary disabled">{{ $panelRows->count() }} rows</span></div>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<div class="sa-desk-card {{ in_array(($r['status'] ?? ''), ['cancelled','failed'], true) ? 'danger' : 'good' }}"><div class="d-flex justify-content-between gap-2"><div><strong>{{ $r['reservation_number'] ?? ('Stay #'.($r['id'] ?? '-')) }}</strong><div class="text-muted small">Guest #{{ $r['customer_id'] ?? '-' }} - Room {{ $r['room_id'] ?? 'Unassigned' }}</div></div><span class="badge {{ $statusBadge($r['status'] ?? 'open') }}">{{ ucfirst(str_replace('_',' ', (string)($r['status'] ?? 'open'))) }}</span></div><div class="row mt-2 small"><div class="col">Arrival<br><strong>{{ $r['arrival_date'] ?? $r['checkin_at'] ?? '-' }}</strong></div><div class="col">Departure<br><strong>{{ $r['departure_date'] ?? $r['expected_checkout_at'] ?? '-' }}</strong></div><div class="col">Deposit<br><strong>{{ $money($r['deposit_received'] ?? 0) }}</strong></div></div></div>@empty<div class="sa-empty">No records in this desk yet. Tenant front-office actions will populate here.</div>@endforelse</section>
-                <aside class="sa-pms-sidebar"><small>QUEUE SUMMARY</small><h4>{{ $deskTitle }}</h4><p>Super Admin is read-only. Tenant users complete guest actions inside the hotel workspace.</p><div class="metric"><strong>{{ $panelRows->count() }}</strong><br>Rows loaded</div><div class="metric"><strong>{{ $money($outstandingReceivables) }}</strong><br>Receivables watched</div></aside>
+                <aside class="sa-pms-sidebar"><small>QUEUE SUMMARY</small><h4>{{ $deskTitle }}</h4><p>Monitor arrivals, stays, checkout balances and room-readiness dependencies across tenants.</p><div class="metric"><strong>{{ $panelRows->count() }}</strong><br>Rows loaded</div><div class="metric"><strong>{{ $money($outstandingReceivables) }}</strong><br>Receivables watched</div><a href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'housekeeping'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">Housekeeping readiness</a><a href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'folios'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">Guest folios</a></aside>
             </div>
         @elseif($panel === 'guests')
-            <section class="sa-dash-panel"><div class="sa-section-head"><div><small class="text-warning fw-semibold">GUEST CRM</small><h4>Guest Profiles</h4><p>Guest contact records linked to hotel reservations and stays.</p></div><span class="btn btn-outline-primary disabled">{{ $panelRows->count() }} guests</span></div><div class="sa-directory-grid">@forelse($panelRows as $row)@php $r=$rowArray($row); $name=$r['customer_name'] ?? $r['name'] ?? 'Guest'; @endphp<div class="sa-profile-card"><div class="sa-big-avatar">{{ strtoupper(substr((string)$name,0,1)) }}</div><div><h5 class="mb-1">{{ $name }}</h5><div class="text-muted small">{{ $r['phone'] ?? 'No phone' }} - {{ $r['email'] ?? 'No email' }}</div><span class="badge bg-light text-dark mt-2">Guest #{{ $r['id'] ?? '-' }}</span></div></div>@empty<div class="sa-empty">No guest profiles found yet. Hotel guest CRM will appear here.</div>@endforelse</div></section>
+            <section class="sa-dash-panel">
+                <div class="sa-section-head"><div><small class="text-warning fw-semibold">GUEST CRM</small><h4>Guest Profiles</h4><p>Guest contact records linked to hotel reservations, stays and folios.</p></div><span class="btn btn-outline-primary disabled">{{ $panelRows->count() }} guests</span></div>
+                <div class="sa-mini-kpis">
+                    <div class="sa-mini-kpi"><span>Guests</span><strong>{{ $panelRows->count() }}</strong><small>Visible profiles</small></div>
+                    <div class="sa-mini-kpi"><span>In-House</span><strong>{{ $currentInHouseGuests }}</strong><small>Active stays</small></div>
+                    <div class="sa-mini-kpi"><span>Reservations</span><strong>{{ $todayReservations }}</strong><small>Today window</small></div>
+                    <div class="sa-mini-kpi"><span>Receivables</span><strong>{{ $money($outstandingReceivables) }}</strong><small>Guest balances</small></div>
+                </div>
+                <div class="sa-directory-grid">@forelse($panelRows as $row)@php $r=$rowArray($row); $name=$r['customer_name'] ?? $r['name'] ?? 'Guest'; @endphp<div class="sa-profile-card"><div class="sa-big-avatar">{{ strtoupper(substr((string)$name,0,1)) }}</div><div><h5 class="mb-1">{{ $name }}</h5><div class="text-muted small">{{ $r['phone'] ?? 'No phone' }} - {{ $r['email'] ?? 'No email' }}</div><div class="d-flex gap-2 flex-wrap mt-2"><span class="badge bg-light text-dark">Guest #{{ $r['id'] ?? '-' }}</span><a class="btn btn-sm btn-outline-primary" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'folios'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">Folios</a><a class="btn btn-sm btn-outline-secondary" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'reservations'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">Bookings</a></div></div></div>@empty<div class="sa-empty">No guest profiles found yet. Hotel guest CRM will appear here after tenant bookings, walk-ins or stays are created.</div>@endforelse</div>
+            </section>
         @elseif($panel === 'services' || str_starts_with($panel, 'service_'))
             @php
                 $servicePanelKey = str_starts_with($panel, 'service_') ? str_replace('service_', '', $panel) : $selectedServiceCenter;
@@ -1034,7 +1155,8 @@
                 @endforelse
             </section>
         @elseif($panel === 'night_audits')
-            <section class="sa-audit-command"><div class="d-flex justify-content-between align-items-center flex-wrap gap-2"><div><h4 class="mb-1">Night Audit Command Center</h4><p class="mb-0">Close-day history and audit health across hotel tenants.</p></div><span class="btn btn-warning disabled text-dark">{{ $panelRows->count() }} audit rows</span></div><div class="sa-audit-grid">@forelse($panelRows->take(8) as $row)@php $r=$rowArray($row); @endphp<div class="sa-audit-check {{ in_array(($r['status'] ?? ''), ['failed','pending'], true) ? 'danger' : '' }}"><span class="text-muted small">Business Date</span><h5>{{ $r['audit_date'] ?? $r['business_date'] ?? ('#'.($r['id'] ?? '-')) }}</h5><div class="d-flex justify-content-between"><span>Status</span><strong>{{ ucfirst((string)($r['status'] ?? 'completed')) }}</strong></div><div class="d-flex justify-content-between"><span>Total</span><strong>{{ $money($r['total_amount'] ?? 0) }}</strong></div><small class="text-muted">Company {{ $r['company_id'] ?? '-' }}</small></div>@empty<div class="sa-empty">No night audits have been run yet.</div>@endforelse</div></section>
+            @php $auditTotal = $panelRows->sum(fn($row) => (float)($rowArray($row)['total_amount'] ?? 0)); @endphp
+            <section class="sa-audit-command"><div class="d-flex justify-content-between align-items-center flex-wrap gap-2"><div><h4 class="mb-1">Night Audit Command Center</h4><p class="mb-0">Close-day history, room-status health and financial audit watch across hotel tenants.</p></div><span class="btn btn-warning disabled text-dark">{{ $panelRows->count() }} audit rows</span></div><div class="sa-mini-kpis mt-3"><div class="sa-mini-kpi"><span>Audits</span><strong>{{ $panelRows->count() }}</strong><small>Close-day rows</small></div><div class="sa-mini-kpi"><span>Posted</span><strong>{{ $money($auditTotal) }}</strong><small>Audit amount</small></div><div class="sa-mini-kpi"><span>Receivables</span><strong>{{ $money($outstandingReceivables) }}</strong><small>Before close watch</small></div><div class="sa-mini-kpi"><span>Exceptions</span><strong>{{ $maintenanceRooms + $outOfOrderRooms + $dirtyRooms }}</strong><small>Rooms to review</small></div></div><div class="sa-audit-grid">@forelse($panelRows->take(8) as $row)@php $r=$rowArray($row); @endphp<div class="sa-audit-check {{ in_array(($r['status'] ?? ''), ['failed','pending'], true) ? 'danger' : '' }}"><span class="text-muted small">Business Date</span><h5>{{ $r['audit_date'] ?? $r['business_date'] ?? ('#'.($r['id'] ?? '-')) }}</h5><div class="d-flex justify-content-between"><span>Status</span><strong>{{ ucfirst((string)($r['status'] ?? 'completed')) }}</strong></div><div class="d-flex justify-content-between"><span>Total</span><strong>{{ $money($r['total_amount'] ?? 0) }}</strong></div><small class="text-muted">Company {{ $r['company_id'] ?? '-' }}</small></div>@empty<div class="sa-empty">No night audits have been run yet. Tenant night audit runs will appear here with totals, skipped charges and status.</div>@endforelse</div></section>
         @elseif($panel === 'housekeeping')
             @php
                 $sampleHousekeeping = collect([
@@ -1135,9 +1257,10 @@
                 </div>
             </section>
         @elseif($panel === 'reports')
-            <section class="sa-report-hub"><div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3"><div><small class="text-warning fw-semibold">HOTEL REPORTS · SUPER ADMIN</small><h4 class="mb-1">Platform PMS Reports Centre</h4><p class="mb-0">Distinct report summaries for reservations, cashier, room readiness, engineering and audit oversight.</p></div><span class="btn btn-warning disabled text-dark">Enterprise Monitor</span></div><div class="sa-report-grid"><div class="sa-report"><span>Front Office</span><h4>Reservation Register</h4><p>All hotel reservation activity by tenant.</p></div><div class="sa-report"><span>Finance</span><h4>Folio Receivables</h4><p>Guest balances and folio exposure.</p></div><div class="sa-report"><span>Services</span><h4>Service Centers</h4><p>Restaurant, bar, spa, gym, room service and events.</p></div><div class="sa-report"><span>Rooms</span><h4>Housekeeping</h4><p>Room readiness workload.</p></div><div class="sa-report"><span>Engineering</span><h4>Maintenance</h4><p>Tickets and unavailable rooms.</p></div><div class="sa-report"><span>Audit</span><h4>Night Audits</h4><p>Business day close history.</p></div></div></section>
+            @php $reportTotal = $panelRows->sum(fn($row) => (float)($rowArray($row)['total_amount'] ?? 0)); @endphp
+            <section class="sa-report-hub"><div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3"><div><small class="text-warning fw-semibold">HOTEL REPORTS · SUPER ADMIN</small><h4 class="mb-1">Platform PMS Reports Centre</h4><p class="mb-0">Dynamic report summaries for reservations, cashier, room readiness, engineering and audit oversight.</p></div><span class="btn btn-warning disabled text-dark">{{ $money($reportTotal) }} reported</span></div><div class="sa-report-grid"><a class="sa-report" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'reservations'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}"><span>Front Office</span><h4>Reservation Register</h4><p>{{ $todayReservations }} current reservation signals.</p></a><a class="sa-report" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'folios'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}"><span>Finance</span><h4>Folio Receivables</h4><p>{{ $money($outstandingReceivables) }} guest balances watched.</p></a><a class="sa-report" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'services'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}"><span>Services</span><h4>Service Centers</h4><p>Restaurant, bar, spa, gym, room service and events.</p></a><a class="sa-report" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'housekeeping'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}"><span>Rooms</span><h4>Housekeeping</h4><p>{{ $dirtyRooms }} dirty rooms in scope.</p></a><a class="sa-report" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'maintenance'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}"><span>Engineering</span><h4>Maintenance</h4><p>{{ $maintenanceRooms + $outOfOrderRooms }} unavailable rooms.</p></a><a class="sa-report" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'night_audits'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}"><span>Audit</span><h4>Night Audits</h4><p>Business day close history.</p></a></div></section>
         @elseif($panel === 'settings')
-            <section class="sa-health">@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<div class="sa-health-row"><div><strong>{{ str_replace('_',' ', $r['setting'] ?? 'Setting') }}</strong><div class="small text-muted">Tenant PMS dependency</div></div><span class="badge {{ ($r['status'] ?? '') === 'available' ? 'bg-success' : 'bg-danger' }}">{{ ucfirst((string)($r['status'] ?? 'missing')) }}</span></div>@empty<div class="sa-empty">No hotel settings found.</div>@endforelse</section>
+            <section class="sa-dash-panel"><div class="sa-section-head"><div><small class="text-warning fw-semibold">SYSTEM HEALTH</small><h4>Hotel Feature Status</h4><p>Database dependencies and operational readiness for the platform hotel module.</p></div><span class="btn btn-outline-primary disabled">{{ $panelRows->where('status', 'available')->count() }} available</span></div><div class="sa-health">@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<div class="sa-health-row"><div><strong>{{ str_replace('_',' ', $r['setting'] ?? 'Setting') }}</strong><div class="small text-muted">Tenant PMS dependency</div></div><span class="badge {{ ($r['status'] ?? '') === 'available' ? 'bg-success' : 'bg-danger' }}">{{ ucfirst((string)($r['status'] ?? 'missing')) }}</span></div>@empty<div class="sa-empty">No hotel settings found.</div>@endforelse</div></section>
         @else
             <section class="sa-panel p-3"><h4>{{ $panelTitle }}</h4>@if($panelRows->isEmpty())<div class="sa-empty">No {{ strtolower($panelTitle) }} found.</div>@else<div class="table-responsive"><table class="table table-sm sa-table align-middle"><thead><tr>@foreach(array_keys($rowArray($panelRows->first())) as $col)<th>{{ str_replace('_',' ', $col) }}</th>@endforeach</tr></thead><tbody>@foreach($panelRows as $row)@php $r=$rowArray($row); @endphp<tr>@foreach($rowArray($panelRows->first()) as $col => $_)<td>{{ is_scalar($r[$col] ?? null) || is_null($r[$col] ?? null) ? ($r[$col] ?? '') : json_encode($r[$col]) }}</td>@endforeach</tr>@endforeach</tbody></table></div>@endif</section>
         @endif
