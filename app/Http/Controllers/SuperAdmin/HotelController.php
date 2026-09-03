@@ -278,7 +278,16 @@ class HotelController extends Controller
         }
         $this->storeUploadedGalleryImages($request, $room);
 
-        return back()->with('success', 'Room media uploaded.');
+        return redirect()->route('super_admin.hotels.index', ['panel' => 'room_gallery', 'company_id' => $room->company_id])
+            ->with('success', 'Room media uploaded.');
+    }
+
+    public function roomImages(HotelRoom $room)
+    {
+        $hotelCompanyIds = HotelAccess::hotelCompanyIds();
+        abort_unless(in_array((int) $room->company_id, $hotelCompanyIds, true), 404);
+
+        return redirect()->route('super_admin.hotels.index', ['panel' => 'room_gallery', 'company_id' => $room->company_id]);
     }
 
     public function destroyRoomImage(HotelRoom $room, HotelRoomImage $image)
