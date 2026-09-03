@@ -212,7 +212,8 @@
     .sa-big-avatar { width:64px; height:64px; border-radius:50%; background:#0b2f54; color:#fff; display:grid; place-items:center; font-size:25px; font-weight:700; }
     .sa-cashier-grid { display:grid; grid-template-columns:285px minmax(0,1fr) 270px; gap:16px; }
     .sa-payment-pad { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-    .sa-payment-pad div { min-height:82px; border:1px solid #d8e2ee; border-radius:14px; background:#fff; display:grid; place-items:center; text-align:center; font-weight:700; }
+    .sa-payment-pad div, .sa-payment-pad a { min-height:82px; border:1px solid #d8e2ee; border-radius:14px; background:#fff; display:grid; place-items:center; text-align:center; font-weight:700; color:#09213d; text-decoration:none; }
+    .sa-payment-pad a:hover { border-color:#0b5fb8; color:#0b5fb8; }
 
     .sa-hk-command { background:#f8fbff; border:1px solid #d8e2ee; border-radius:18px; padding:16px; box-shadow:0 12px 28px rgba(15,23,42,.06); }
     .sa-hk-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom:14px; }
@@ -342,13 +343,51 @@
                 <a class="btn btn-outline-warning" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'maintenance'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}"><i class="fas fa-screwdriver-wrench"></i> Maintenance</a>
                 <a class="btn btn-outline-secondary" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'service_room_service'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}"><i class="fas fa-bell-concierge"></i> Room Service</a>
                 @if($opsLockRoom)
+                    <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#saOpsHousekeepingTask"><i class="fas fa-broom"></i> Open HK Task</button>
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#saOpsMaintenanceTicket"><i class="fas fa-toolbox"></i> Maintenance Ticket</button>
                     <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#{{ $opsLockModalId }}"><i class="fas fa-lock"></i> Lock Room</button>
                 @else
+                    <button type="button" class="btn btn-outline-secondary disabled"><i class="fas fa-broom"></i> Open HK Task</button>
+                    <button type="button" class="btn btn-outline-secondary disabled"><i class="fas fa-toolbox"></i> Maintenance Ticket</button>
                     <button type="button" class="btn btn-outline-secondary disabled"><i class="fas fa-lock"></i> Lock Room</button>
                 @endif
                 <a class="btn btn-outline-dark" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'reports'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}"><i class="fas fa-chart-line"></i> Reports</a>
             </div>
             @if($opsLockRoom)
+                <div class="modal fade" id="saOpsHousekeepingTask" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <form method="POST" action="{{ route('super_admin.hotels.housekeeping.tasks.store') }}" class="modal-content">
+                            @csrf
+                            <div class="modal-header"><h5 class="modal-title">Open Housekeeping Task</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                            <div class="modal-body">
+                                <div class="sa-form-grid">
+                                    <div><label class="form-label">Room</label><select name="room_id" class="form-select" required>@foreach($opsRooms as $opsRoom)<option value="{{ $opsRoom->id }}">{{ $opsRoom->property?->name ?? ('Property '.$opsRoom->property_id) }} - Room {{ $opsRoom->room_number }}</option>@endforeach</select></div>
+                                    <div><label class="form-label">Task Type</label><select name="task_type" class="form-select" required><option value="departure_clean">Departure clean</option><option value="stayover">Stayover</option><option value="deep_clean">Deep clean</option><option value="inspection">Inspection</option><option value="rush_clean">Rush clean</option><option value="room_service_cleanup">Room service cleanup</option></select></div>
+                                    <div><label class="form-label">Priority</label><select name="priority" class="form-select" required><option value="normal">Normal</option><option value="high">High</option><option value="urgent">Urgent</option><option value="low">Low</option></select></div>
+                                    <div class="full"><label class="form-label">Task Note</label><input name="note" class="form-control" placeholder="Cleaning instruction, guest request, room service cleanup note"></div>
+                                </div>
+                            </div>
+                            <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button><button class="btn btn-primary">Create Task</button></div>
+                        </form>
+                    </div>
+                </div>
+                <div class="modal fade" id="saOpsMaintenanceTicket" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <form method="POST" action="{{ route('super_admin.hotels.maintenance.tickets.store') }}" class="modal-content">
+                            @csrf
+                            <div class="modal-header"><h5 class="modal-title">Open Maintenance Ticket</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                            <div class="modal-body">
+                                <div class="sa-form-grid">
+                                    <div><label class="form-label">Room</label><select name="room_id" class="form-select" required>@foreach($opsRooms as $opsRoom)<option value="{{ $opsRoom->id }}">{{ $opsRoom->property?->name ?? ('Property '.$opsRoom->property_id) }} - Room {{ $opsRoom->room_number }}</option>@endforeach</select></div>
+                                    <div><label class="form-label">Severity</label><select name="severity" class="form-select" required><option value="medium">Medium</option><option value="high">High</option><option value="critical">Critical</option><option value="low">Low</option></select></div>
+                                    <div class="full"><label class="form-label">Issue Title</label><input name="title" class="form-control" required placeholder="AC fault, water leak, door lock issue"></div>
+                                    <div class="full"><label class="form-label">Description</label><textarea name="description" class="form-control" rows="3" placeholder="Internal maintenance details"></textarea></div>
+                                </div>
+                            </div>
+                            <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button><button class="btn btn-danger">Create Ticket</button></div>
+                        </form>
+                    </div>
+                </div>
                 <div class="modal fade" id="{{ $opsLockModalId }}" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-lg modal-dialog-centered">
                         <form method="POST" action="{{ route('super_admin.hotels.rooms.blocks.store', $opsLockRoom) }}" class="modal-content">
@@ -884,6 +923,8 @@
                 $serviceHeading = $servicePanelKey === 'all'
                     ? 'Service Centre Register'
                     : ($serviceCenters[$servicePanelKey]['label'] ?? $panelTitle);
+                $serviceTotal = $panelRows->sum(fn($row) => (float) (($rowArray($row)['amount'] ?? $rowArray($row)['total_amount'] ?? 0)));
+                $serviceLockCount = collect($roomManagement['activeBlocks'] ?? [])->filter(fn($block) => $servicePanelKey === 'room_service' ? $block->block_type === 'room_service_hold' : false)->count();
             @endphp
             <section class="sa-dash-panel">
                 <div class="sa-section-head">
@@ -902,6 +943,12 @@
                         </select>
                     </form>
                 </div>
+                <div class="sa-mini-kpis">
+                    <div class="sa-mini-kpi"><span>Postings</span><strong>{{ $panelRows->count() }}</strong><small>{{ $serviceHeading }}</small></div>
+                    <div class="sa-mini-kpi"><span>Service Revenue</span><strong>{{ $money($serviceTotal) }}</strong><small>Visible tenant charges</small></div>
+                    <div class="sa-mini-kpi"><span>Room Holds</span><strong>{{ $serviceLockCount }}</strong><small>{{ $servicePanelKey === 'room_service' ? 'Room service holds' : 'Service watch' }}</small></div>
+                    <div class="sa-mini-kpi"><span>Active Rooms</span><strong>{{ $totalRooms }}</strong><small>{{ $availableRooms }} available</small></div>
+                </div>
                 <div class="sa-dashboard-services mb-3">
                     @foreach($visibleServices as $serviceKey => $serviceMeta)
                         <div class="sa-dashboard-service active">
@@ -910,10 +957,25 @@
                         </div>
                     @endforeach
                 </div>
+                <div class="sa-directory-grid mb-3">
+                    <article class="sa-directory-card feature"><span class="eyebrow">Operations</span><h5 class="mt-2">Live Service Monitor</h5><p>Track charges by tenant, amount and service date. Room Service can also lock rooms from the action strip above.</p></article>
+                    <article class="sa-directory-card"><span class="eyebrow">Action</span><h5 class="mt-2">Post Charges</h5><p class="text-muted">Tenant hotel users post restaurant, bar, spa, gym, ticketing, minibar, laundry and room-service charges into guest folios.</p><a class="btn btn-sm btn-outline-primary mt-2" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'folios'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">Open Folios</a></article>
+                    <article class="sa-directory-card"><span class="eyebrow">Control</span><h5 class="mt-2">Exceptions</h5><p class="text-muted">Use room locks for spills, safety issues, room-service cleanup, VIP preparation or temporary sales blocks.</p><a class="btn btn-sm btn-outline-warning mt-2" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'maintenance'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">Open Locks</a></article>
+                </div>
                 <div class="sa-timeline"><table class="table table-sm align-middle"><thead><tr><th>Posting</th><th>Company</th><th>Service</th><th>Type</th><th>Amount</th><th>Date</th></tr></thead><tbody>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<tr><td>{{ $r['description'] ?? $r['folio_number'] ?? ('#'.($r['id'] ?? '-')) }}</td><td>{{ $r['company_id'] ?? '-' }}</td><td><span class="badge bg-warning text-dark">{{ $r['service_code'] ?? $r['department'] ?? strtoupper(str_replace('_', ' ', $servicePanelKey)) }}</span></td><td>{{ $r['type'] ?? $r['payment_method'] ?? '-' }}</td><td>{{ $money($r['amount'] ?? $r['total_amount'] ?? 0) }}</td><td>{{ $r['service_date'] ?? $r['created_at'] ?? $r['business_date'] ?? '-' }}</td></tr>@empty<tr><td colspan="6"><div class="sa-empty">No {{ strtolower($serviceHeading) }} postings found yet. Tenant charges for this service will appear here.</div></td></tr>@endforelse</tbody></table></div>
             </section>
         @elseif(in_array($panel, ['folios','deposits'], true))
-            <div class="sa-cashier-grid"><aside class="sa-pms-sidebar"><small>{{ strtoupper($panelTitle) }}</small><h4>Cashier Register</h4><p>Guest balances, deposits and folio exposure across hotel tenants.</p><div class="metric"><strong>{{ $money($outstandingReceivables) }}</strong><br>Outstanding receivables</div></aside><section class="sa-dash-panel"><div class="sa-section-head"><div><h4>Folio & Deposit Ledger</h4><p>Read-only platform cashier activity.</p></div><span class="badge bg-light text-dark">{{ $panelRows->count() }} loaded</span></div><div class="sa-timeline"><table class="table table-sm align-middle"><thead><tr><th>Record</th><th>Company</th><th>Guest/Stay</th><th>Status/Type</th><th>Amount</th><th>Date</th></tr></thead><tbody>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<tr><td><strong>{{ $r['folio_number'] ?? $r['reservation_number'] ?? ('#'.($r['id'] ?? '-')) }}</strong></td><td>{{ $r['company_id'] ?? '-' }}</td><td>{{ $r['customer_id'] ?? $r['stay_id'] ?? '-' }}</td><td><span class="badge {{ $statusBadge($r['status'] ?? $r['type'] ?? 'open') }}">{{ ucfirst(str_replace('_',' ', (string)($r['status'] ?? $r['type'] ?? 'record'))) }}</span></td><td><strong>{{ $money($r['balance'] ?? $r['amount'] ?? $r['deposit_received'] ?? $r['total_amount'] ?? 0) }}</strong></td><td>{{ $r['created_at'] ?? $r['service_date'] ?? $r['business_date'] ?? '-' }}</td></tr>@empty<tr><td colspan="6"><div class="sa-empty">No {{ strtolower($panelTitle) }} found yet.</div></td></tr>@endforelse</tbody></table></div></section><aside class="sa-dash-panel"><h4>Payment Actions</h4><p>Tenant workspace handles live cashier operations.</p><div class="sa-payment-pad"><div>Payment</div><div>Deposit</div><div>Transfer</div><div>Print Folio</div></div></aside></div>
+            @php
+                $cashierTotal = $panelRows->sum(fn($row) => (float) (($rowArray($row)['balance'] ?? $rowArray($row)['amount'] ?? $rowArray($row)['deposit_received'] ?? $rowArray($row)['total_amount'] ?? 0)));
+                $openCashierRows = $panelRows->filter(fn($row) => in_array((string)($rowArray($row)['status'] ?? 'open'), ['open', 'active', 'pending'], true))->count();
+            @endphp
+            <div class="sa-mini-kpis">
+                <div class="sa-mini-kpi"><span>Rows Loaded</span><strong>{{ $panelRows->count() }}</strong><small>{{ $panelTitle }}</small></div>
+                <div class="sa-mini-kpi"><span>Amount Watched</span><strong>{{ $money($cashierTotal) }}</strong><small>Current page total</small></div>
+                <div class="sa-mini-kpi"><span>Open Records</span><strong>{{ $openCashierRows }}</strong><small>Pending cashier attention</small></div>
+                <div class="sa-mini-kpi"><span>Receivables</span><strong>{{ $money($outstandingReceivables) }}</strong><small>Guest folio exposure</small></div>
+            </div>
+            <div class="sa-cashier-grid"><aside class="sa-pms-sidebar"><small>{{ strtoupper($panelTitle) }}</small><h4>Cashier Register</h4><p>Guest balances, deposits and folio exposure across hotel tenants.</p><div class="metric"><strong>{{ $money($outstandingReceivables) }}</strong><br>Outstanding receivables</div></aside><section class="sa-dash-panel"><div class="sa-section-head"><div><h4>Folio & Deposit Ledger</h4><p>Platform cashier activity by tenant, guest, stay and settlement status.</p></div><span class="badge bg-light text-dark">{{ $panelRows->count() }} loaded</span></div><div class="sa-timeline"><table class="table table-sm align-middle"><thead><tr><th>Record</th><th>Company</th><th>Guest/Stay</th><th>Status/Type</th><th>Amount</th><th>Date</th></tr></thead><tbody>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<tr><td><strong>{{ $r['folio_number'] ?? $r['reservation_number'] ?? ('#'.($r['id'] ?? '-')) }}</strong></td><td>{{ $r['company_id'] ?? '-' }}</td><td>{{ $r['customer_id'] ?? $r['stay_id'] ?? '-' }}</td><td><span class="badge {{ $statusBadge($r['status'] ?? $r['type'] ?? 'open') }}">{{ ucfirst(str_replace('_',' ', (string)($r['status'] ?? $r['type'] ?? 'record'))) }}</span></td><td><strong>{{ $money($r['balance'] ?? $r['amount'] ?? $r['deposit_received'] ?? $r['total_amount'] ?? 0) }}</strong></td><td>{{ $r['created_at'] ?? $r['service_date'] ?? $r['business_date'] ?? '-' }}</td></tr>@empty<tr><td colspan="6"><div class="sa-empty">No {{ strtolower($panelTitle) }} found yet. Deposits, payments and folio charges will appear once tenant front-office users post them.</div></td></tr>@endforelse</tbody></table></div></section><aside class="sa-dash-panel"><h4>Cashier Actions</h4><p>Use the related monitors to trace the guest journey behind each cashier item.</p><div class="sa-payment-pad"><a href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'reservations'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">Reservations</a><a href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'stays'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">In-House</a><a href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'service_room_service'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">Services</a><a href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'reports'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">Reports</a></div></aside></div>
         @elseif($panel === 'maintenance')
             @php
                 $activeRoomBlocks = collect($roomManagement['activeBlocks'] ?? []);
@@ -956,6 +1018,16 @@
                             <span class="badge {{ $statusBadge($r['severity'] ?? 'open') }}">{{ ucfirst((string)($r['severity'] ?? 'normal')) }}</span>
                         </div>
                         <div class="mt-2">{{ $r['title'] ?? $r['description'] ?? 'Maintenance record' }}</div>
+                        @if(!in_array((string)($r['status'] ?? ''), ['resolved', 'closed'], true))
+                            <form method="POST" action="{{ route('super_admin.hotels.maintenance.tickets.status', $r['id']) }}" class="sa-form-grid mt-3">
+                                @csrf
+                                <div><label class="form-label">Ticket Status</label><select name="status" class="form-select"><option value="in_progress">In progress</option><option value="resolved">Resolved</option><option value="closed">Closed</option></select></div>
+                                <div><label class="form-label">Resolution Note</label><input name="resolution_note" class="form-control" placeholder="Work done or next action"></div>
+                                <div class="full"><button class="btn btn-sm btn-primary">Update Ticket</button></div>
+                            </form>
+                        @else
+                            <div class="mt-2 small text-muted">Resolved: {{ $r['resolution_note'] ?? 'No note entered' }}</div>
+                        @endif
                     </div>
                 @empty
                     <div class="sa-empty">No maintenance tickets found yet. Active room locks above still protect rooms from sale and operations.</div>
@@ -1032,7 +1104,7 @@
                 </div>
                 <div class="sa-hk-table">
                     <table class="table table-sm sa-table align-middle mb-0">
-                        <thead><tr><th>Task</th><th>Room</th><th>Status</th><th>Priority</th><th>Company</th><th>Note</th></tr></thead>
+                        <thead><tr><th>Task</th><th>Room</th><th>Status</th><th>Priority</th><th>Company</th><th>Note</th><th>Action</th></tr></thead>
                         <tbody>
                             @foreach($hkRows->take(10) as $row)
                                 @php $r = $rowArray($row); @endphp
@@ -1043,6 +1115,19 @@
                                     <td>{{ ucfirst((string)($r['priority'] ?? 'normal')) }}</td>
                                     <td>{{ $r['company_id'] ?? '-' }}</td>
                                     <td>{{ $r['note'] ?? $r['description'] ?? '-' }}</td>
+                                    <td>
+                                        @if(!$hkIsPreview && !in_array((string)($r['status'] ?? ''), ['completed', 'resolved'], true))
+                                            <form method="POST" action="{{ route('super_admin.hotels.housekeeping.tasks.status', $r['id']) }}" class="d-flex gap-1">
+                                                @csrf
+                                                <select name="status" class="form-select form-select-sm" style="min-width:120px">
+                                                    @foreach(['assigned','cleaning','inspection','completed'] as $option)<option value="{{ $option }}">{{ ucfirst($option) }}</option>@endforeach
+                                                </select>
+                                                <button class="btn btn-sm btn-primary">Save</button>
+                                            </form>
+                                        @else
+                                            <span class="text-muted small">No action</span>
+                                        @endif
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>

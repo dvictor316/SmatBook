@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Schema;
 use App\Models\Company;
 use App\Models\Subscription;
 use App\Models\HotelProperty;
+use App\Models\HotelHousekeepingTask;
+use App\Models\HotelMaintenanceTicket;
 use App\Models\HotelRoom;
 use App\Models\HotelRoomBlock;
 use App\Models\HotelRoomImage;
@@ -401,6 +403,132 @@ class HotelController extends Controller
         }
 
         return back()->with('success', 'Room lock released.');
+    }
+
+    public function storeHousekeepingTask(Request $request)
+    {
+        if (!$this->hasTable('hotel_housekeeping_tasks')) {
+            return back()->withErrors(['housekeeping' => 'Hotel housekeeping task table is not available yet.']);
+        }
+
+        $hotelCompanyIds = $this->superAdminHotelCompanyIds();
+        $data = $request->validate([
+            'room_id' => ['required', 'integer'],
+            'task_type' => ['required', Rule::in(['departure_clean', 'stayover', 'deep_clean', 'inspection', 'rush_clean', 'room_service_cleanup'])],
+            'priority' => ['required', Rule::in(['low', 'normal', 'high', 'urgent'])],
+            'note' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $room = $this->findSuperAdminHotelRoom((int) $data['room_id'], $hotelCompanyIds);
+
+        HotelHousekeepingTask::withoutGlobalScopes()->create([
+            'company_id' => $room->company_id,
+            'property_id' => $room->property_id,
+            'room_id' => $room->id,
+            'task_type' => $data['task_type'],
+            'status' => 'open',
+            'priority' => $data['priority'],
+            'note' => $data['note'],
+            'created_by' => auth()->id(),
+        ]);
+
+        $room->update(['housekeeping_status' => in_array($data['task_type'], ['inspection'], true) ? 'inspection' : 'dirty']);
+
+        return back()->with('success', 'Housekeeping task opened for Room '.$room->room_number.'.');
+    }
+
+    public function updateHousekeepingTaskStatus(Request $request, $task)
+    {
+        $hotelCompanyIds = $this->superAdminHotelCompanyIds();
+        $task = HotelHousekeepingTask::withoutGlobalScopes()
+            ->when(!empty($hotelCompanyIds), fn($query) => $query->whereIn('company_id', $hotelCompanyIds))
+            ->findOrFail((int) $task);
+
+        $data = $request->validate([
+            'status' => ['required', Rule::in(['open', 'assigned', 'cleaning', 'inspection', 'completed'])],
+        ]);
+
+        $updates = ['status' => $data['status']];
+        if ($data['status'] === 'completed') {
+            $updates['completed_by'] = auth()->id();
+            $updates['completed_at'] = now();
+        }
+        $task->update($updates);
+
+        $room = HotelRoom::withoutGlobalScopes()->find($task->room_id);
+        if ($room) {
+            $room->update(['housekeeping_status' => $data['status'] === 'completed' ? 'clean' : ($data['status'] === 'assigned' ? 'dirty' : $data['status'])]);
+        }
+
+        return back()->with('success', 'Housekeeping task updated.');
+    }
+
+    public function storeMaintenanceTicket(Request $request)
+    {
+        if (!$this->hasTable('hotel_maintenance_tickets')) {
+            return back()->withErrors(['maintenance' => 'Hotel maintenance ticket table is not available yet.']);
+        }
+
+        $hotelCompanyIds = $this->superAdminHotelCompanyIds();
+        $data = $request->validate([
+            'room_id' => ['required', 'integer'],
+            'severity' => ['required', Rule::in(['low', 'medium', 'high', 'critical'])],
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $room = $this->findSuperAdminHotelRoom((int) $data['room_id'], $hotelCompanyIds);
+        $ticketNo = 'MT-'.$room->company_id.'-'.now()->format('ymdHis');
+
+        HotelMaintenanceTicket::withoutGlobalScopes()->create([
+            'company_id' => $room->company_id,
+            'property_id' => $room->property_id,
+            'room_id' => $room->id,
+            'ticket_no' => $ticketNo,
+            'status' => 'open',
+            'severity' => $data['severity'],
+            'title' => $data['title'],
+            'description' => $data['description'],
+            'reported_by' => auth()->id(),
+        ]);
+
+        $room->update(['operational_status' => in_array($data['severity'], ['high', 'critical'], true) ? 'out_of_order' : 'maintenance']);
+
+        return back()->with('success', 'Maintenance ticket '.$ticketNo.' opened for Room '.$room->room_number.'.');
+    }
+
+    public function updateMaintenanceTicketStatus(Request $request, $ticket)
+    {
+        $hotelCompanyIds = $this->superAdminHotelCompanyIds();
+        $ticket = HotelMaintenanceTicket::withoutGlobalScopes()
+            ->when(!empty($hotelCompanyIds), fn($query) => $query->whereIn('company_id', $hotelCompanyIds))
+            ->findOrFail((int) $ticket);
+
+        $data = $request->validate([
+            'status' => ['required', Rule::in(['open', 'in_progress', 'resolved', 'closed'])],
+            'resolution_note' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $updates = ['status' => $data['status']];
+        if (in_array($data['status'], ['resolved', 'closed'], true)) {
+            $updates['resolved_by'] = auth()->id();
+            $updates['resolved_at'] = now();
+            $updates['resolution_note'] = $data['resolution_note'];
+        }
+        $ticket->update($updates);
+
+        $room = HotelRoom::withoutGlobalScopes()->find($ticket->room_id);
+        if ($room && in_array($data['status'], ['resolved', 'closed'], true)) {
+            $hasOpenTicket = HotelMaintenanceTicket::withoutGlobalScopes()
+                ->where('room_id', $room->id)
+                ->whereIn('status', ['open', 'in_progress'])
+                ->exists();
+            if (!$hasOpenTicket) {
+                $room->update(['operational_status' => 'available']);
+            }
+        }
+
+        return back()->with('success', 'Maintenance ticket updated.');
     }
 
     private function panelData(string $panel, ?int $companyId, array $hotelCompanyIds, string $selectedServiceCenter = 'all')

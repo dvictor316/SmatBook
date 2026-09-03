@@ -546,6 +546,10 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     Route::delete('/hotels/rooms/{room}/images/{image}', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'destroyRoomImage'])->name('hotels.rooms.images.destroy');
     Route::post('/hotels/rooms/{room}/blocks', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'storeRoomBlock'])->name('hotels.rooms.blocks.store');
     Route::delete('/hotels/room-blocks/{block}', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'releaseRoomBlock'])->name('hotels.rooms.blocks.release');
+    Route::post('/hotels/housekeeping/tasks', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'storeHousekeepingTask'])->name('hotels.housekeeping.tasks.store');
+    Route::post('/hotels/housekeeping/tasks/{task}/status', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'updateHousekeepingTaskStatus'])->name('hotels.housekeeping.tasks.status');
+    Route::post('/hotels/maintenance/tickets', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'storeMaintenanceTicket'])->name('hotels.maintenance.tickets.store');
+    Route::post('/hotels/maintenance/tickets/{ticket}/status', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'updateMaintenanceTicketStatus'])->name('hotels.maintenance.tickets.status');
 
 
 
