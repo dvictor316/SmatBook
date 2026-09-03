@@ -6,7 +6,7 @@
 
 @section('content')
 @php
-    $currentCompany = $company ?? \App\Models\Company::first();
+    $currentCompany = $company ?? null;
     $clientLogo = asset('/assets/img/saas-login-smat15.png');
 
     if ($currentCompany && !empty($currentCompany->logo)) {
@@ -37,7 +37,6 @@
 @endphp
 
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
     :root {
         --spa-bg: #fbfcff;
         --spa-surface: rgba(255, 255, 255, 0.99);
@@ -77,7 +76,7 @@
         overflow: visible;
         transform: translateX(-50%);
         -webkit-overflow-scrolling: touch;
-        font-family: 'Manrope', sans-serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         font-optical-sizing: auto;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
@@ -641,6 +640,13 @@
                     return;
                 }
 
+                const renderedAt = parseInt(form.dataset.renderedAt || '0', 10) || 0;
+                const tokenAgeSeconds = renderedAt ? ((Date.now() / 1000) - renderedAt) : 0;
+
+                if (tokenAgeSeconds > 0 && tokenAgeSeconds < 600) {
+                    return;
+                }
+
                 event.preventDefault();
                 isRefreshingToken = true;
 
@@ -729,7 +735,7 @@
                 <x-auth-brand-lockup :logo="$clientLogo" :brand-name="$clientBrandName" size="md" />
             </div>
             <span class="panel-kicker">Protected access</span>
-            <form action="{{ route('saas-login.post') }}" method="POST" class="form-shell">
+            <form action="{{ route('saas-login.post') }}" method="POST" class="form-shell" data-rendered-at="{{ now()->timestamp }}">
                 @csrf
                 <div class="login-instruction-box">
                     <strong>Get Started:</strong> Sign in or create account.
@@ -787,7 +793,7 @@
                     <div class="col-6">
                         <a href="{{ $googleAuthUrl }}" class="btn-social">
                             <span class="social-mark">
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google">
+                                <i class="fab fa-google"></i>
                             </span>
                             <span>Google</span>
                         </a>
