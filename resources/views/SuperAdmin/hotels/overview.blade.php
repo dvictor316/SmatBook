@@ -166,14 +166,16 @@
     .sa-directory-card.feature { background:linear-gradient(135deg,#082f55,#0b5fb8); color:#fff; }
     .sa-directory-card.feature h5, .sa-directory-card.feature p, .sa-directory-card.feature small { color:#fff !important; }
     .sa-directory-card .eyebrow { color:#d4a23a; text-transform:uppercase; letter-spacing:.12em; font-size:12px; font-weight:700; }
-    .sa-pms-board { display:grid; grid-template-columns:1fr; gap:16px; }
-    .sa-pms-sidebar { background:#082f55; color:#fff; border-radius:18px; padding:16px; box-shadow:0 14px 32px rgba(15,23,42,.12); display:flex; gap:12px; align-items:stretch; flex-wrap:wrap; margin-bottom:0; }
+    .sa-pms-board { display:block; }
+    .sa-pms-sidebar { background:#082f55; color:#fff; border-radius:18px; padding:16px; box-shadow:0 14px 32px rgba(15,23,42,.12); margin-bottom:16px; }
     .sa-pms-sidebar h4, .sa-pms-sidebar p, .sa-pms-sidebar small { color:#fff !important; }
-    .sa-pms-sidebar .sa-pms-intro { flex:1 1 300px; min-width:280px; max-width:430px; }
-    .sa-pms-sidebar a, .sa-pms-sidebar div.metric { flex:1 1 135px; min-width:130px; display:block; color:#dbeafe; text-decoration:none; border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:12px; background:rgba(255,255,255,.06); }
+    .sa-pms-sidebar .sa-pms-intro { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; margin-bottom:14px; }
+    .sa-pms-sidebar .sa-pms-intro p { max-width:720px; }
+    .sa-pms-metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:10px; }
+    .sa-pms-sidebar a, .sa-pms-sidebar div.metric { display:block; color:#dbeafe; text-decoration:none; border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:12px; background:rgba(255,255,255,.06); min-height:82px; }
     .sa-pms-sidebar div.metric strong { display:block; font-size:24px; line-height:1; margin-bottom:6px; }
     .sa-pms-sidebar strong { color:#fff; }
-    .sa-room-wall { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:18px; align-items:stretch; }
+    .sa-room-wall { display:grid; grid-template-columns:repeat(auto-fill,minmax(420px,1fr)); gap:18px; align-items:stretch; }
     .sa-room-tile { min-height:160px; border-radius:14px; padding:12px; border:2px solid #d8e2ee; background:#fff; display:flex; flex-direction:column; justify-content:space-between; }
     .sa-room-tile.available { border-color:#16a34a; background:#ecfdf3; } .sa-room-tile.occupied { border-color:#2563eb; background:#eff6ff; } .sa-room-tile.reserved { border-color:#d4a23a; background:#fff8e1; } .sa-room-tile.maintenance, .sa-room-tile.out_of_order { border-color:#dc2626; background:#fff1f2; }
     .sa-room-tile .room-no { font-size:38px; font-weight:700; color:#061b33; line-height:1; }
@@ -212,8 +214,8 @@
     .sa-hk-room-no { font-size:34px; line-height:1; font-weight:700; color:#061b33; }
     .sa-hk-status { display:inline-flex; width:max-content; border-radius:8px; padding:5px 8px; font-size:12px; font-weight:700; background:#fff; color:#0f172a; margin-top:7px; }
     .sa-hk-table { margin-top:14px; overflow:auto; }
-    @media(max-width:1199px){.sa-room-wall{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}.sa-upgrade-actions{grid-template-columns:repeat(3,1fr)}.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:repeat(2,1fr)}.sa-workspace,.sa-cashier,.sa-room-admin,.sa-folio-register,.sa-maint-desk,.sa-pms-board,.sa-desk,.sa-guest-ledger,.sa-cashier-grid{grid-template-columns:1fr}.sa-board-row,.sa-maint-ticket{grid-template-columns:1fr}}
-    @media(max-width:767px){.sa-room-wall,.sa-form-grid,.sa-upgrade-actions,.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:1fr}.sa-pms-sidebar .sa-pms-intro,.sa-pms-sidebar a,.sa-pms-sidebar div.metric{flex-basis:100%;max-width:none}.page-wrapper.sa-hotel .sa-hero h2{font-size:23px}}
+    @media(max-width:1199px){.sa-room-wall{grid-template-columns:repeat(auto-fill,minmax(360px,1fr))}.sa-upgrade-actions{grid-template-columns:repeat(3,1fr)}.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:repeat(2,1fr)}.sa-workspace,.sa-cashier,.sa-room-admin,.sa-folio-register,.sa-maint-desk,.sa-desk,.sa-guest-ledger,.sa-cashier-grid{grid-template-columns:1fr}.sa-board-row,.sa-maint-ticket{grid-template-columns:1fr}}
+    @media(max-width:767px){.sa-room-wall,.sa-form-grid,.sa-upgrade-actions,.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:1fr}.page-wrapper.sa-hotel .sa-hero h2{font-size:23px}}
 </style>
 @endsection
 
@@ -466,11 +468,22 @@
                 $roomTotalLabel = $isPaginator ? $panelData->total() : $managedRooms->count();
             @endphp
             <div class="sa-pms-board">
-                <aside class="sa-pms-sidebar">
-                    <div class="sa-pms-intro"><small>{{ $panel === 'room_gallery' ? 'ROOM GALLERY' : 'ROOM BOARD' }}</small><h4>{{ $panel === 'room_gallery' ? 'Room Media & Pricing' : 'Room Inventory Manager' }}</h4><p>Create rooms, set rate overrides, edit status, and upload room photos without leaving Super Admin.</p></div>
-                    <div class="metric"><strong>{{ $totalRooms }}</strong><br>Total active rooms</div><div class="metric"><strong>{{ $availableRooms }}</strong><br>Available</div><div class="metric"><strong>{{ $occupiedRooms }}</strong><br>Occupied</div><div class="metric"><strong>{{ $reservedRooms }}</strong><br>Reserved</div><div class="metric"><strong>{{ $maintenanceRooms + $outOfOrderRooms }}</strong><br>Maintenance / out of order</div><div class="metric"><strong>{{ $dirtyRooms }}</strong><br>Dirty rooms</div><div class="metric"><strong>{{ $roomManagement['mediaCount'] ?? 0 }}</strong><br>Uploaded media files</div>
-                </aside>
                 <section class="sa-dash-panel">
+                    <div class="sa-pms-sidebar">
+                        <div class="sa-pms-intro">
+                            <div><small>{{ $panel === 'room_gallery' ? 'ROOM GALLERY' : 'ROOM BOARD' }}</small><h4>{{ $panel === 'room_gallery' ? 'Room Media & Pricing' : 'Room Inventory Manager' }}</h4></div>
+                            <p class="mb-0">Create rooms, set rate overrides, edit status, and upload room photos without leaving Super Admin.</p>
+                        </div>
+                        <div class="sa-pms-metrics">
+                            <div class="metric"><strong>{{ $totalRooms }}</strong><br>Total active rooms</div>
+                            <div class="metric"><strong>{{ $availableRooms }}</strong><br>Available</div>
+                            <div class="metric"><strong>{{ $occupiedRooms }}</strong><br>Occupied</div>
+                            <div class="metric"><strong>{{ $reservedRooms }}</strong><br>Reserved</div>
+                            <div class="metric"><strong>{{ $maintenanceRooms + $outOfOrderRooms }}</strong><br>Maintenance / out of order</div>
+                            <div class="metric"><strong>{{ $dirtyRooms }}</strong><br>Dirty rooms</div>
+                            <div class="metric"><strong>{{ $roomManagement['mediaCount'] ?? 0 }}</strong><br>Uploaded media files</div>
+                        </div>
+                    </div>
                     <div class="sa-management-console">
                         <div class="sa-section-head mb-0">
                             <div>
