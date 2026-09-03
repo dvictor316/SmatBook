@@ -127,6 +127,15 @@
     .sa-command-link i { width:38px; height:38px; display:grid; place-items:center; border-radius:10px; background:#0b5fb8; color:#fff; flex:0 0 auto; }
     .sa-command-link strong { display:block; color:#061b33; line-height:1.15; }
     .sa-command-link span { color:#64748b; font-size:12px; line-height:1.25; display:block; margin-top:3px; }
+    .sa-upgrade-banner { background:#fff; border:2px solid #d7a928; border-radius:14px; padding:14px; margin-bottom:16px; box-shadow:0 12px 28px rgba(6,26,68,.08); }
+    .sa-upgrade-banner-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+    .sa-upgrade-banner h4 { margin:0; color:#061b33; font-weight:900; }
+    .sa-upgrade-banner p { margin:3px 0 0; color:#64748b; }
+    .sa-upgrade-actions { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:8px; }
+    .sa-upgrade-actions a { min-height:58px; display:flex; align-items:center; gap:8px; text-decoration:none; color:#061b33; background:#f8fbff; border:1px solid #d8e2ee; border-radius:10px; padding:9px; font-weight:800; font-size:12px; }
+    .sa-upgrade-actions a:hover, .sa-upgrade-actions a.active { background:#0b5fb8; color:#fff; border-color:#0b5fb8; }
+    .sa-upgrade-actions a i { color:#d7a928; font-size:16px; }
+    .sa-upgrade-actions a:hover i, .sa-upgrade-actions a.active i { color:#ffe8a3; }
 
 
     .sa-section-head { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
@@ -181,8 +190,8 @@
     .sa-hk-room-no { font-size:34px; line-height:1; font-weight:700; color:#061b33; }
     .sa-hk-status { display:inline-flex; width:max-content; border-radius:8px; padding:5px 8px; font-size:12px; font-weight:700; background:#fff; color:#0f172a; margin-top:7px; }
     .sa-hk-table { margin-top:14px; overflow:auto; }
-    @media(max-width:1199px){.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:repeat(2,1fr)}.sa-workspace,.sa-cashier,.sa-room-admin,.sa-folio-register,.sa-maint-desk,.sa-pms-board,.sa-desk,.sa-guest-ledger,.sa-cashier-grid{grid-template-columns:1fr}.sa-board-row,.sa-maint-ticket{grid-template-columns:1fr}}
-    @media(max-width:767px){.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:1fr}.page-wrapper.sa-hotel .sa-hero h2{font-size:23px}}
+    @media(max-width:1199px){.sa-upgrade-actions{grid-template-columns:repeat(3,1fr)}.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:repeat(2,1fr)}.sa-workspace,.sa-cashier,.sa-room-admin,.sa-folio-register,.sa-maint-desk,.sa-pms-board,.sa-desk,.sa-guest-ledger,.sa-cashier-grid{grid-template-columns:1fr}.sa-board-row,.sa-maint-ticket{grid-template-columns:1fr}}
+    @media(max-width:767px){.sa-upgrade-actions,.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:1fr}.page-wrapper.sa-hotel .sa-hero h2{font-size:23px}}
 </style>
 @endsection
 
@@ -226,6 +235,38 @@
                     @endforeach
                 </select>
             </form>
+        </section>
+
+        <section class="sa-upgrade-banner">
+            <div class="sa-upgrade-banner-head">
+                <div>
+                    <span class="badge bg-warning text-dark">Hotel Operations Upgrade Live</span>
+                    <h4 class="mt-2">Super Admin can now monitor the upgraded hotel workflow.</h4>
+                    <p>Use these shortcuts to inspect rooms, galleries, reservations, folios, housekeeping, maintenance and service-center progress.</p>
+                </div>
+                <a href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'progress'])) }}" class="btn btn-primary">Open Progress Board</a>
+            </div>
+            <div class="sa-upgrade-actions">
+                @foreach([
+                    'progress' => ['Upgrade Progress', 'fa-list-check'],
+                    'rooms' => ['Room Board', 'fa-bed'],
+                    'room_gallery' => ['Room Gallery', 'fa-images'],
+                    'reservations' => ['Reservations', 'fa-calendar-check'],
+                    'folios' => ['Guest Folios', 'fa-file-invoice-dollar'],
+                    'housekeeping' => ['Housekeeping', 'fa-broom'],
+                    'maintenance' => ['Maintenance', 'fa-screwdriver-wrench'],
+                    'service_bar' => ['Bar', 'fa-martini-glass-citrus'],
+                    'service_spa' => ['Spa', 'fa-spa'],
+                    'service_gym' => ['Gym', 'fa-dumbbell'],
+                    'service_ticketing' => ['Ticketing', 'fa-ticket'],
+                    'reports' => ['Reports', 'fa-chart-line'],
+                ] as $quickPanel => $quick)
+                    <a href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => $quickPanel] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}" class="{{ $panel === $quickPanel ? 'active' : '' }}">
+                        <i class="fas {{ $quick[1] }}"></i>
+                        <span>{{ $quick[0] }}</span>
+                    </a>
+                @endforeach
+            </div>
         </section>
 
         <form method="GET" action="{{ route('super_admin.hotels.index') }}" class="sa-filter d-flex flex-wrap gap-2 align-items-end">
