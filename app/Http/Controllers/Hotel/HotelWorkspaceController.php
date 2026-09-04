@@ -787,10 +787,10 @@ class HotelWorkspaceController extends Controller
         $propertyId = $this->resolvePropertyId($request);
 
         $centers = [
-            'bar' => ['title' => 'Bar Sales', 'codes' => ['BAR'], 'description' => 'Bar orders, drinks, lounge bills and guest-room postings.'],
-            'gym' => ['title' => 'Gym & Fitness', 'codes' => ['GYM', 'FITNESS'], 'description' => 'Gym day passes, membership charges and in-house guest postings.'],
-            'spa' => ['title' => 'Spa & Wellness', 'codes' => ['SPA', 'WELLNESS'], 'description' => 'Spa treatments, wellness packages and guest folio charges.'],
-            'ticketing' => ['title' => 'Ticketing & Events', 'codes' => ['TICKETING', 'EVENT'], 'description' => 'Event tickets, pool parties, dinners, tours and guest-room postings.'],
+            'bar' => ['title' => 'Bar Sales', 'codes' => ['BAR'], 'description' => 'Bar orders, drinks, lounge bills and guest-room postings.', 'theme' => 'bar', 'mode' => 'Bar tab control', 'actions' => ['Open tab', 'Post drink sale', 'Print receipt']],
+            'gym' => ['title' => 'Gym & Fitness', 'codes' => ['GYM', 'FITNESS'], 'description' => 'Gym day passes, membership charges and in-house guest postings.', 'theme' => 'gym', 'mode' => 'Access pass desk', 'actions' => ['Sell day pass', 'Trainer session', 'Membership add-on']],
+            'spa' => ['title' => 'Spa & Wellness', 'codes' => ['SPA', 'WELLNESS'], 'description' => 'Spa treatments, wellness packages and guest folio charges.', 'theme' => 'spa', 'mode' => 'Treatment desk', 'actions' => ['Book treatment', 'Post therapy charge', 'Wellness package']],
+            'ticketing' => ['title' => 'Ticketing & Events', 'codes' => ['TICKETING', 'EVENT'], 'description' => 'Event tickets, pool parties, dinners, tours and guest-room postings.', 'theme' => 'ticketing', 'mode' => 'Ticket counter', 'actions' => ['Sell ticket', 'Batch receipt', 'Event access list']],
         ];
 
         abort_unless(array_key_exists($center, $centers), 404);

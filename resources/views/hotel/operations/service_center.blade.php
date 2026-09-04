@@ -36,11 +36,11 @@
             </div>
         </section>
 
-        <div class="service-metrics">
-            <div class="service-center-card service-metric"><span>Total Posted</span><strong>{{ number_format((float) $total, 2) }}</strong></div>
-            <div class="service-center-card service-metric"><span>Transactions</span><strong>{{ $items->total() }}</strong></div>
-            <div class="service-center-card service-metric"><span>Department</span><strong>{{ strtoupper($center) }}</strong></div>
-            <div class="service-center-card service-metric"><span>Posting Codes</span><strong>{{ implode(', ', $meta['codes']) }}</strong></div>
+        <div class="hotel-op-kpis">
+            <div class="hotel-op-kpi"><span>Total Posted</span><strong>{{ number_format((float) $total, 2) }}</strong></div>
+            <div class="hotel-op-kpi"><span>Transactions</span><strong>{{ $items->total() }}</strong></div>
+            <div class="hotel-op-kpi"><span>Open Folios</span><strong>{{ $activeFolios->count() }}</strong></div>
+            <div class="hotel-op-kpi"><span>Posting Codes</span><strong>{{ implode(', ', $meta['codes']) }}</strong></div>
         </div>
 
         @include('hotel.partials.operations-action-deck', [
@@ -50,7 +50,7 @@
         ])
 
         <div class="service-flow">
-            <aside class="service-rail"><h5>Service Workflow</h5><div><strong>1 Order</strong><br>Guest requests service from {{ strtolower($meta['title']) }}.</div><div><strong>2 Post</strong><br>Charge is posted to folio or POS.</div><div><strong>3 Review</strong><br>Cashier verifies service center revenue.</div><div><strong>4 Settle</strong><br>Balance clears at checkout/accounting.</div></aside>
+            <aside class="service-rail hotel-service-theme-{{ $meta['theme'] ?? $center }}"><h5>{{ $meta['mode'] ?? 'Service Workflow' }}</h5>@foreach(($meta['actions'] ?? ['Take order', 'Post sale', 'Print receipt']) as $i => $action)<div><strong>{{ $i + 1 }} {{ $action }}</strong><br>{{ $meta['description'] }}</div>@endforeach</aside>
             <main class="service-workspace">
                 <section class="service-center-card p-3">
                     <h5 class="mb-3">{{ $meta['title'] }} Activity</h5>

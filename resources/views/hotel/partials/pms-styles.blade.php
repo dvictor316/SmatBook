@@ -48,6 +48,34 @@
     .hotel-service-rail { border-left: 5px solid #d9a441; }
     .hotel-service-step { display: flex; gap: 12px; padding: 12px; border-radius: 8px; background: #fff; border: 1px solid #edf2f8; margin-bottom: 10px; }
     .hotel-service-step span { width: 32px; height: 32px; border-radius: 50%; background: #052247; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; flex: 0 0 auto; }
+    .hotel-op-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .hotel-op-kpi { background: #fff; border: 1px solid #e2ebf6; border-radius: 8px; padding: 14px; box-shadow: 0 8px 20px rgba(10,45,83,.05); }
+    .hotel-op-kpi span { display: block; color: #667085; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .hotel-op-kpi strong { display: block; color: #06264b; font-size: 25px; line-height: 1; margin-top: 8px; }
+    .hotel-op-board { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr); gap: 18px; align-items: start; }
+    .hotel-op-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .hotel-op-card { background: #fff; border: 1px solid #e2ebf6; border-radius: 8px; padding: 14px; box-shadow: 0 8px 20px rgba(10,45,83,.05); }
+    .hotel-op-card h5 { color: #06264b; font-weight: 800; margin: 0 0 6px; }
+    .hotel-op-card p { color: #667085; margin: 0; line-height: 1.35; }
+    .hotel-op-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .hotel-op-lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+    .hotel-op-lane { min-height: 150px; border-radius: 8px; border: 1px solid #e2ebf6; background: #fff; padding: 13px; box-shadow: 0 8px 20px rgba(10,45,83,.05); }
+    .hotel-op-lane strong { display: block; color: #06264b; margin-bottom: 8px; }
+    .hotel-op-lane .lane-count { display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 34px; border-radius: 8px; background: #052247; color: #fff; font-weight: 900; }
+    .hotel-op-split { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; }
+    .hotel-op-room-card { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 12px; align-items: center; border: 1px solid #e2ebf6; border-radius: 8px; background: #fff; padding: 12px; box-shadow: 0 8px 20px rgba(10,45,83,.05); }
+    .hotel-op-room-no { width: 74px; height: 74px; border-radius: 8px; background: #052247; color: #fff; display: grid; place-items: center; font-size: 24px; font-weight: 900; }
+    .hotel-op-alert { border-left: 5px solid #d9a441; background: #fff8e5; border-radius: 8px; padding: 12px; color: #533600; }
+    .hotel-op-alert.green { border-left-color: #15803d; background: #ecfdf3; color: #14532d; }
+    .hotel-op-alert.blue { border-left-color: #0b5fb8; background: #eef6ff; color: #0b3767; }
+    .hotel-service-theme-bar { background: linear-gradient(135deg, #312e81 0%, #6d28d9 100%); color: #fff; }
+    .hotel-service-theme-gym { background: linear-gradient(135deg, #111827 0%, #2563eb 100%); color: #fff; }
+    .hotel-service-theme-spa { background: linear-gradient(135deg, #14532d 0%, #0f766e 100%); color: #fff; }
+    .hotel-service-theme-ticketing { background: linear-gradient(135deg, #713f12 0%, #ca8a04 100%); color: #fff; }
+    .hotel-service-theme-bar h5, .hotel-service-theme-bar p,
+    .hotel-service-theme-gym h5, .hotel-service-theme-gym p,
+    .hotel-service-theme-spa h5, .hotel-service-theme-spa p,
+    .hotel-service-theme-ticketing h5, .hotel-service-theme-ticketing p { color: #fff !important; }
     .hotel-ledger-page { background: linear-gradient(135deg, #f8fbff 0%, #eef7f1 100%); }
     .hotel-ledger-strip { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
     .hotel-ledger-strip span { background: #fff; border: 1px solid #dbe8f5; border-radius: 999px; padding: 8px 12px; font-weight: 600; color: #06264b; }
@@ -67,7 +95,7 @@
     .hotel-config-list { display: grid; gap: 10px; }
     .hotel-config-list div { padding: 14px; border-radius: 8px; background: #fff; border: 1px solid #e7eef7; }
     @media (max-width: 991.98px) {
-        .hotel-service-layout, .hotel-active-layout, .hotel-config-layout { grid-template-columns: 1fr; }
+        .hotel-service-layout, .hotel-active-layout, .hotel-config-layout, .hotel-op-board, .hotel-op-split { grid-template-columns: 1fr; }
     }
 </style>
 @endonce
