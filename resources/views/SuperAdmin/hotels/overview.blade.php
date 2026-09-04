@@ -179,11 +179,17 @@
     .page-wrapper.sa-hotel .modal-dialog,
     .page-wrapper.sa-hotel .modal-content,
     .page-wrapper.sa-hotel .modal-body { overflow:visible; }
+    .page-wrapper.sa-hotel #saServiceChargeModal .modal-dialog { max-height:calc(100vh - 28px); margin-top:14px; margin-bottom:14px; align-items:flex-start; }
+    .page-wrapper.sa-hotel #saServiceChargeModal .modal-content { max-height:calc(100vh - 28px); display:flex; flex-direction:column; overflow:hidden; }
+    .page-wrapper.sa-hotel #saServiceChargeModal .modal-body { overflow-y:auto; overflow-x:visible; padding-bottom:22px; }
+    .page-wrapper.sa-hotel #saServiceChargeModal .modal-footer { flex:0 0 auto; background:#fff; position:sticky; bottom:0; z-index:12; box-shadow:0 -8px 18px rgba(15,23,42,.08); }
+    .page-wrapper.sa-hotel #saServiceChargeModal select.sa-native-picker { min-height:52px; transition:box-shadow .15s ease; }
+    .page-wrapper.sa-hotel #saServiceChargeModal select.sa-native-picker[size]:not([size="1"]) { height:auto; min-height:152px; box-shadow:0 16px 32px rgba(15,23,42,.18); position:relative; z-index:80; }
     .sa-form-grid > div { position:relative; }
     .sa-form-grid > div:focus-within { z-index:50; }
     .sa-dropdown-stack { grid-column:1 / -1; z-index:25; }
     .page-wrapper.sa-hotel select.form-select { position:relative; z-index:2; background-color:#fff; color:#061b33; }
-    .page-wrapper.sa-hotel select.form-select:focus { z-index:60; }
+    .page-wrapper.sa-hotel select.form-select:focus { z-index:90; }
     .page-wrapper.sa-hotel select.form-select option { background:#fff; color:#061b33; padding:10px; }
 
 
@@ -1134,15 +1140,15 @@
                                 <div class="alert alert-warning mb-0">No open guest folios are available. Create/check in a guest first, then post service sales here.</div>
                             @else
                                 <div class="sa-form-grid">
-                                    <div class="sa-dropdown-stack"><label class="form-label">Hotel Tenant</label><select name="company_id" class="form-select" required>@foreach($hotelCompanies as $company)<option value="{{ $company->id }}" @selected((int)$selectedCompanyId === (int)$company->id)>{{ $company->name }}</option>@endforeach</select></div>
-                                    <div class="sa-dropdown-stack"><label class="form-label">Guest / Room Folio</label><select name="folio_id" class="form-select" required>@foreach($serviceFolios as $folio)<option value="{{ $folio->id }}">{{ $folio->customer?->customer_name ?? $folio->customer?->name ?? 'Guest' }} - Room {{ $folio->stay?->room?->room_number ?? 'N/A' }} - {{ $folio->folio_number }} - Company {{ $folio->company_id }}</option>@endforeach</select></div>
-                                    <div class="sa-dropdown-stack"><label class="form-label">Service Center</label><select name="service_center" class="form-select" required>@foreach(collect($serviceCenters)->except('all') as $serviceKey => $serviceMeta)<option value="{{ $serviceKey }}" @selected($servicePanelKey === $serviceKey)>{{ $serviceMeta['label'] }}</option>@endforeach</select></div>
+                                    <div class="sa-dropdown-stack"><label class="form-label">Hotel Tenant</label><select name="company_id" class="form-select sa-native-picker" required>@foreach($hotelCompanies as $company)<option value="{{ $company->id }}" @selected((int)$selectedCompanyId === (int)$company->id)>{{ $company->name }}</option>@endforeach</select></div>
+                                    <div class="sa-dropdown-stack"><label class="form-label">Guest / Room Folio</label><select name="folio_id" class="form-select sa-native-picker" required>@foreach($serviceFolios as $folio)<option value="{{ $folio->id }}">{{ $folio->customer?->customer_name ?? $folio->customer?->name ?? 'Guest' }} - Room {{ $folio->stay?->room?->room_number ?? 'N/A' }} - {{ $folio->folio_number }} - Company {{ $folio->company_id }}</option>@endforeach</select></div>
+                                    <div class="sa-dropdown-stack"><label class="form-label">Service Center</label><select name="service_center" class="form-select sa-native-picker" required>@foreach(collect($serviceCenters)->except('all') as $serviceKey => $serviceMeta)<option value="{{ $serviceKey }}" @selected($servicePanelKey === $serviceKey)>{{ $serviceMeta['label'] }}</option>@endforeach</select></div>
                                     <div><label class="form-label">Item / Ticket / Service</label><input name="description" class="form-control" placeholder="Dinner ticket, spa session, laundry order, minibar item" required></div>
                                     <div><label class="form-label">Quantity</label><input name="quantity" type="number" min="0.001" step="0.001" value="1" class="form-control"></div>
                                     <div><label class="form-label">Unit Price</label><input name="unit_price" type="number" min="0.01" step="0.01" class="form-control" required></div>
                                     <div><label class="form-label">Discount</label><input name="discount" type="number" min="0" step="0.01" value="0" class="form-control"></div>
                                     <div><label class="form-label">Tax</label><input name="tax" type="number" min="0" step="0.01" value="0" class="form-control"></div>
-                                    <div><label class="form-label">Payment</label><select name="payment_mode" class="form-select"><option value="charge_to_room">Charge to Room</option><option value="cash">Cash Paid</option><option value="card">Card / POS Paid</option><option value="transfer">Transfer Paid</option><option value="other">Other Paid</option></select></div>
+                                    <div><label class="form-label">Payment</label><select name="payment_mode" class="form-select sa-native-picker"><option value="charge_to_room">Charge to Room</option><option value="cash">Cash Paid</option><option value="card">Card / POS Paid</option><option value="transfer">Transfer Paid</option><option value="other">Other Paid</option></select></div>
                                     <div><label class="form-label">Date</label><input name="service_date" type="date" value="{{ now()->toDateString() }}" class="form-control"></div>
                                     <div class="full"><label class="form-label">Internal Note</label><textarea name="note" class="form-control" rows="2" placeholder="Server, ticket batch, guest request, package note"></textarea></div>
                                 </div>
@@ -1373,4 +1379,44 @@
         @if($isPaginator && $panel !== 'overview')<div class="mt-3">{{ $panelData->links() }}</div>@endif
     </div>
 </div>
+@endsection
+
+@section('script')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const serviceModal = document.getElementById('saServiceChargeModal');
+    if (!serviceModal) {
+        return;
+    }
+
+    const collapsePicker = (select) => {
+        select.removeAttribute('size');
+        select.classList.remove('is-open');
+    };
+
+    serviceModal.querySelectorAll('select.sa-native-picker').forEach((select) => {
+        const openPicker = () => {
+            const optionCount = Math.max(2, select.options.length);
+            select.setAttribute('size', Math.min(8, optionCount));
+            select.classList.add('is-open');
+            select.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        };
+
+        select.addEventListener('focus', openPicker);
+        select.addEventListener('mousedown', function (event) {
+            if (!select.hasAttribute('size')) {
+                event.preventDefault();
+                openPicker();
+                select.focus();
+            }
+        });
+        select.addEventListener('change', () => collapsePicker(select));
+        select.addEventListener('blur', () => setTimeout(() => collapsePicker(select), 120));
+    });
+
+    serviceModal.addEventListener('hidden.bs.modal', function () {
+        serviceModal.querySelectorAll('select.sa-native-picker').forEach(collapsePicker);
+    });
+});
+</script>
 @endsection
