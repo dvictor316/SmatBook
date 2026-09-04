@@ -27,7 +27,12 @@
     .hotel-type-label { display: inline-flex; gap: 8px; align-items: center; color: #9a6700; font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; margin-bottom: 10px; }
     .hotel-type-panel { background: #fff; border: 1px solid #e7eef7; border-radius: 8px; box-shadow: 0 10px 24px rgba(10,45,83,.06); }
     .hotel-type-panel-header { padding: 14px 16px; border-bottom: 1px solid #edf2f8; }
-    .hotel-type-panel-body { padding: 16px; }
+    .hotel-type-panel-body { padding: 16px; overflow: visible; }
+    .hotel-type-page select.form-select { position: relative; z-index: 2; background: #fff; color: #061b33; }
+    .hotel-type-page select.form-select:focus { z-index: 60; }
+    .hotel-type-page select.form-select option { background: #fff; color: #061b33; padding: 10px; }
+    .hotel-dropdown-field { position: relative; z-index: 25; }
+    .hotel-dropdown-field:focus-within { z-index: 60; }
     .hotel-type-table { border-collapse: separate; border-spacing: 0 8px; }
     .hotel-type-table thead th { border: 0; color: #77859a; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
     .hotel-type-table tbody tr { background: #fff; box-shadow: 0 8px 22px rgba(10,45,83,.05); }

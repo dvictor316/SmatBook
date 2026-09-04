@@ -175,6 +175,16 @@
     .sa-room-gallery-strip form { padding:6px; }
     .sa-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
     .sa-form-grid .full { grid-column:1 / -1; }
+    .page-wrapper.sa-hotel .modal,
+    .page-wrapper.sa-hotel .modal-dialog,
+    .page-wrapper.sa-hotel .modal-content,
+    .page-wrapper.sa-hotel .modal-body { overflow:visible; }
+    .sa-form-grid > div { position:relative; }
+    .sa-form-grid > div:focus-within { z-index:50; }
+    .sa-dropdown-stack { grid-column:1 / -1; z-index:25; }
+    .page-wrapper.sa-hotel select.form-select { position:relative; z-index:2; background-color:#fff; color:#061b33; }
+    .page-wrapper.sa-hotel select.form-select:focus { z-index:60; }
+    .page-wrapper.sa-hotel select.form-select option { background:#fff; color:#061b33; padding:10px; }
 
 
     .sa-section-head { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
@@ -1124,9 +1134,9 @@
                                 <div class="alert alert-warning mb-0">No open guest folios are available. Create/check in a guest first, then post service sales here.</div>
                             @else
                                 <div class="sa-form-grid">
-                                    <div><label class="form-label">Hotel Tenant</label><select name="company_id" class="form-select" required>@foreach($hotelCompanies as $company)<option value="{{ $company->id }}" @selected((int)$selectedCompanyId === (int)$company->id)>{{ $company->name }}</option>@endforeach</select></div>
-                                    <div><label class="form-label">Guest / Room Folio</label><select name="folio_id" class="form-select" required>@foreach($serviceFolios as $folio)<option value="{{ $folio->id }}">{{ $folio->customer?->customer_name ?? $folio->customer?->name ?? 'Guest' }} - Room {{ $folio->stay?->room?->room_number ?? 'N/A' }} - {{ $folio->folio_number }} - Company {{ $folio->company_id }}</option>@endforeach</select></div>
-                                    <div><label class="form-label">Service Center</label><select name="service_center" class="form-select" required>@foreach(collect($serviceCenters)->except('all') as $serviceKey => $serviceMeta)<option value="{{ $serviceKey }}" @selected($servicePanelKey === $serviceKey)>{{ $serviceMeta['label'] }}</option>@endforeach</select></div>
+                                    <div class="sa-dropdown-stack"><label class="form-label">Hotel Tenant</label><select name="company_id" class="form-select" required>@foreach($hotelCompanies as $company)<option value="{{ $company->id }}" @selected((int)$selectedCompanyId === (int)$company->id)>{{ $company->name }}</option>@endforeach</select></div>
+                                    <div class="sa-dropdown-stack"><label class="form-label">Guest / Room Folio</label><select name="folio_id" class="form-select" required>@foreach($serviceFolios as $folio)<option value="{{ $folio->id }}">{{ $folio->customer?->customer_name ?? $folio->customer?->name ?? 'Guest' }} - Room {{ $folio->stay?->room?->room_number ?? 'N/A' }} - {{ $folio->folio_number }} - Company {{ $folio->company_id }}</option>@endforeach</select></div>
+                                    <div class="sa-dropdown-stack"><label class="form-label">Service Center</label><select name="service_center" class="form-select" required>@foreach(collect($serviceCenters)->except('all') as $serviceKey => $serviceMeta)<option value="{{ $serviceKey }}" @selected($servicePanelKey === $serviceKey)>{{ $serviceMeta['label'] }}</option>@endforeach</select></div>
                                     <div><label class="form-label">Item / Ticket / Service</label><input name="description" class="form-control" placeholder="Dinner ticket, spa session, laundry order, minibar item" required></div>
                                     <div><label class="form-label">Quantity</label><input name="quantity" type="number" min="0.001" step="0.001" value="1" class="form-control"></div>
                                     <div><label class="form-label">Unit Price</label><input name="unit_price" type="number" min="0.01" step="0.01" class="form-control" required></div>
