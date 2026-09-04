@@ -99,6 +99,7 @@
     .sa-mini-kpi small { color:#64748b; }
     .sa-chart-bars { display:flex; align-items:end; gap:12px; min-height:188px; padding-top:18px; }
     .sa-chart-bar { flex:1; min-width:34px; border-radius:12px 12px 4px 4px; background:linear-gradient(180deg,#3b82f6,#0b5fb8); position:relative; box-shadow:inset 0 -14px 20px rgba(255,255,255,.18); }
+    .sa-chart-bar span { position:absolute; left:50%; top:-22px; transform:translateX(-50%); color:#061b33; font-size:11px; font-weight:800; white-space:nowrap; }
     .sa-chart-bar:after { content:attr(data-label); position:absolute; left:50%; bottom:-24px; transform:translateX(-50%); color:#64748b; font-size:11px; font-weight:600; }
     .sa-chart-bar.gold { background:linear-gradient(180deg,#f5c451,#d4a23a); }
     .sa-room-status { display:grid; grid-template-columns:150px minmax(0,1fr); gap:16px; align-items:center; }
@@ -116,8 +117,16 @@
     .sa-alert-line.danger { border-left-color:#dc2626; background:#fff1f2; }
     .sa-dashboard-services { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
     .sa-dashboard-service { display:flex; justify-content:space-between; gap:12px; align-items:center; padding:13px; border:1px solid #d8e2ee; border-radius:14px; background:#fff; color:#09213d; text-decoration:none; box-shadow:0 10px 24px rgba(15,23,42,.05); }
+    .sa-dashboard-service:hover { color:#09213d; border-color:#0b5fb8; transform:translateY(-1px); }
     .sa-dashboard-service small { color:#d4a23a; font-weight:700; text-transform:uppercase; letter-spacing:.09em; }
     .sa-dashboard-service strong { color:#061b33; font-size:16px; }
+    .sa-dashboard-service b { display:block; color:#0b5fb8; font-size:14px; margin-top:4px; }
+    .sa-calendar-pulse { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+    .sa-calendar-day { border:1px solid #d8e2ee; border-radius:14px; background:#f8fbff; padding:12px; min-height:132px; }
+    .sa-calendar-day.today { border-color:#0b5fb8; box-shadow:0 0 0 3px rgba(11,95,184,.12); }
+    .sa-calendar-day strong { display:block; color:#061b33; margin-bottom:9px; }
+    .sa-calendar-day div { display:flex; justify-content:space-between; gap:8px; color:#64748b; font-size:12px; margin-top:5px; }
+    .sa-calendar-day span { color:#061b33; font-weight:900; }
     .sa-progress-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; }
     .sa-progress-card { border:1px solid #d8e2ee; border-left:6px solid #16a34a; border-radius:14px; background:#fff; padding:16px; box-shadow:0 10px 24px rgba(15,23,42,.05); }
     .sa-progress-card.pending { border-left-color:#d4a23a; background:#fffaf0; }
@@ -235,8 +244,8 @@
     .sa-hk-status { display:inline-flex; width:max-content; border-radius:8px; padding:5px 8px; font-size:12px; font-weight:700; background:#fff; color:#0f172a; margin-top:7px; }
     .sa-hk-table { margin-top:14px; overflow:auto; }
     @media(min-width:1700px){.sa-room-wall,body.hotel-workspace .page-wrapper.sa-hotel .sa-room-wall{grid-template-columns:repeat(3,minmax(0,1fr)) !important}}
-    @media(max-width:1199px){.sa-room-wall,body.hotel-workspace .page-wrapper.sa-hotel .sa-room-wall{grid-template-columns:repeat(2,minmax(0,1fr)) !important}.sa-room-manager-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.sa-upgrade-actions{grid-template-columns:repeat(3,1fr)}.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:repeat(2,1fr)}.sa-workspace,.sa-cashier,.sa-room-admin,.sa-folio-register,.sa-maint-desk,.sa-desk,.sa-guest-ledger,.sa-cashier-grid{grid-template-columns:1fr}.sa-board-row,.sa-maint-ticket{grid-template-columns:1fr}}
-    @media(max-width:767px){.sa-room-wall,body.hotel-workspace .page-wrapper.sa-hotel .sa-room-wall,.sa-form-grid,.sa-upgrade-actions,.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services{grid-template-columns:1fr !important}.page-wrapper.sa-hotel .sa-hero h2{font-size:23px}}
+    @media(max-width:1199px){.sa-room-wall,body.hotel-workspace .page-wrapper.sa-hotel .sa-room-wall{grid-template-columns:repeat(2,minmax(0,1fr)) !important}.sa-room-manager-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.sa-upgrade-actions{grid-template-columns:repeat(3,1fr)}.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services,.sa-calendar-pulse{grid-template-columns:repeat(2,1fr)}.sa-workspace,.sa-cashier,.sa-room-admin,.sa-folio-register,.sa-maint-desk,.sa-desk,.sa-guest-ledger,.sa-cashier-grid{grid-template-columns:1fr}.sa-board-row,.sa-maint-ticket{grid-template-columns:1fr}}
+    @media(max-width:767px){.sa-room-wall,body.hotel-workspace .page-wrapper.sa-hotel .sa-room-wall,.sa-form-grid,.sa-upgrade-actions,.sa-command-grid,.sa-kpis,.sa-grid,.sa-kanban,.sa-report-grid,.sa-service-grid,.sa-profile-grid,.sa-health,.sa-audit-grid,.sa-directory-grid,.sa-dashboard-services,.sa-calendar-pulse{grid-template-columns:1fr !important}.page-wrapper.sa-hotel .sa-hero h2{font-size:23px}}
 </style>
 @endsection
 
@@ -452,7 +461,8 @@
                 $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / max($totalRooms, 1)) * 100) : 0;
                 $availableRate = $totalRooms > 0 ? round(($availableRooms / max($totalRooms, 1)) * 100) : 0;
                 $reservedRate = $totalRooms > 0 ? round(($reservedRooms / max($totalRooms, 1)) * 100) : 0;
-                $sampleBars = [42, 55, 48, 71, 66, 82, 76];
+                $trendRows = collect($revenueTrend ?? []);
+                $trendMax = max((float) $trendRows->max('amount'), 1);
                 $arrivalRows = $todayReservations > 0 ? collect(range(1, min($todayReservations, 4))) : collect([1, 2, 3]);
             @endphp
 
@@ -470,8 +480,12 @@
                         <span class="badge bg-light text-dark">7 days</span>
                     </div>
                     <div class="sa-chart-bars">
-                        @foreach($sampleBars as $index => $height)
-                            <div class="sa-chart-bar {{ $index % 3 === 1 ? 'gold' : '' }}" style="height:{{ $height + 45 }}px" data-label="{{ now()->subDays(6 - $index)->format('D') }}"></div>
+                        @foreach($trendRows as $index => $trend)
+                            @php
+                                $trendAmount = (float) ($trend['amount'] ?? 0);
+                                $trendHeight = 45 + round(($trendAmount / $trendMax) * 125);
+                            @endphp
+                            <div class="sa-chart-bar {{ $index % 3 === 1 ? 'gold' : '' }}" style="height:{{ $trendHeight }}px" data-label="{{ $trend['label'] ?? '-' }}"><span>{{ $money($trendAmount) }}</span></div>
                         @endforeach
                     </div>
                 </section>
@@ -526,10 +540,11 @@
                 <div class="sa-dashboard-services">
                     @foreach($serviceCenters as $serviceKey => $serviceMeta)
                         @continue($serviceKey === 'all')
-                        <div class="sa-dashboard-service">
-                            <div><small>{{ strtoupper(str_replace('_',' ', $serviceKey)) }}</small><br><strong>{{ $serviceMeta['label'] }}</strong></div>
-                            <span class="badge bg-light text-dark">Monitor</span>
-                        </div>
+                        @php $serviceStats = $serviceSummary[$serviceKey] ?? ['count' => 0, 'total' => 0]; @endphp
+                        <a class="sa-dashboard-service" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'service_'.$serviceKey] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">
+                            <div><small>{{ strtoupper(str_replace('_',' ', $serviceKey)) }}</small><br><strong>{{ $serviceMeta['label'] }}</strong><b>{{ $money($serviceStats['total'] ?? 0) }}</b></div>
+                            <span class="badge bg-light text-dark">{{ $serviceStats['count'] ?? 0 }} lines</span>
+                        </a>
                     @endforeach
                 </div>
             </section>
@@ -956,6 +971,19 @@
                     <div class="sa-ops-row"><div><strong>Room assignment</strong><div class="small text-muted">Open Room Board to update room availability and resolve assignment pressure.</div></div><a class="btn btn-sm btn-outline-primary" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'rooms'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">Room Board</a></div>
                     <div class="sa-ops-row"><div><strong>Deposit follow-up</strong><div class="small text-muted">Review cashier rows and folios linked to reservation payments.</div></div><a class="btn btn-sm btn-outline-secondary" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'deposits'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">Deposits</a></div>
                 </div>
+                @if($panel === 'room_calendar')
+                    <div class="sa-calendar-pulse">
+                        @foreach($roomCalendarPulse ?? [] as $day)
+                            <article class="sa-calendar-day {{ ($day['date'] ?? '') === now()->toDateString() ? 'today' : '' }}">
+                                <strong>{{ $day['label'] ?? '-' }}</strong>
+                                <div>Arrivals <span>{{ $day['arrivals'] ?? 0 }}</span></div>
+                                <div>Departures <span>{{ $day['departures'] ?? 0 }}</span></div>
+                                <div>In stay <span>{{ $day['stays'] ?? 0 }}</span></div>
+                                <div>Locked <span>{{ $day['locks'] ?? 0 }}</span></div>
+                            </article>
+                        @endforeach
+                    </div>
+                @endif
                 <div class="sa-timeline"><table class="table table-bordered align-middle"><thead><tr><th>Reservation</th><th>Guest</th><th>Room</th><th>Arrival</th><th>Departure</th><th>Nights</th><th>Status</th><th>Deposit</th></tr></thead><tbody>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<tr><td><span class="sa-pill-event {{ ($r['status'] ?? '') === 'confirmed' ? 'green' : 'gold' }}">{{ $r['reservation_number'] ?? ('#'.($r['id'] ?? '-')) }}</span></td><td>Guest #{{ $r['customer_id'] ?? '-' }}</td><td>{{ $r['room_id'] ?? 'Unassigned' }}</td><td>{{ $r['arrival_date'] ?? '-' }}</td><td>{{ $r['departure_date'] ?? '-' }}</td><td>{{ $r['nights'] ?? '-' }}</td><td><span class="badge {{ $statusBadge($r['status'] ?? 'reserved') }}">{{ ucfirst(str_replace('_',' ', (string)($r['status'] ?? 'reserved'))) }}</span></td><td>{{ $money($r['deposit_received'] ?? 0) }}</td></tr>@empty<tr><td colspan="8"><div class="sa-empty"><strong>No reservations found yet.</strong><br>Use tenant Hotel > Availability or New Reservation to create bookings. This register will then show guest, room, arrival, departure, status and deposit.</div></td></tr>@endforelse</tbody></table></div>
             </section>
         @elseif($panel === 'availability')

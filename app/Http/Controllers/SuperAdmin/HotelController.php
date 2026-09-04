@@ -52,6 +52,7 @@ class HotelController extends Controller
             'service_minibar' => 'Minibar',
             'service_laundry' => 'Laundry',
             'service_room_service' => 'Room Service',
+            'service_conference' => 'Conference & Events',
             'services' => 'Service Centers',
             'night_audits' => 'Night Audits',
             'reports' => 'Hotel Reports',
@@ -164,6 +165,7 @@ class HotelController extends Controller
             'service_minibar' => 'minibar',
             'service_laundry' => 'laundry',
             'service_room_service' => 'room_service',
+            'service_conference' => 'conference',
         ];
         $selectedServiceCenter = $servicePanelMap[$panel] ?? (string) $request->query('service', 'all');
         $panelData = $this->panelData($panel, $selectedCompanyId, $hotelCompanyIds, $selectedServiceCenter);
@@ -186,8 +188,12 @@ class HotelController extends Controller
             'conference' => ['label' => 'Conference & Events', 'codes' => ['CONFERENCE', 'EVENTS', 'BANQUET']],
         ];
 
+        $revenueTrend = $this->hotelRevenueTrend($selectedCompanyId, $hotelCompanyIds);
+        $serviceSummary = $this->hotelServiceSummary($selectedCompanyId, $hotelCompanyIds, $serviceCenters);
+        $roomCalendarPulse = $this->hotelCalendarPulse($selectedCompanyId, $hotelCompanyIds);
+
         return view('SuperAdmin.hotels.overview', compact(
-            'totalHotelTenants', 'activeHotelSubscriptions', 'totalProperties', 'totalRooms', 'availableRooms', 'occupiedRooms', 'reservedRooms', 'maintenanceRooms', 'outOfOrderRooms', 'dirtyRooms', 'todayReservations', 'currentInHouseGuests', 'hotelRevenueToday', 'hotelRevenueThisMonth', 'outstandingReceivables', 'panel', 'panels', 'panelData', 'hotelCompanies', 'selectedCompanyId', 'serviceCenters', 'selectedServiceCenter', 'hotelDemoSeedPresent', 'roomManagement'
+            'totalHotelTenants', 'activeHotelSubscriptions', 'totalProperties', 'totalRooms', 'availableRooms', 'occupiedRooms', 'reservedRooms', 'maintenanceRooms', 'outOfOrderRooms', 'dirtyRooms', 'todayReservations', 'currentInHouseGuests', 'hotelRevenueToday', 'hotelRevenueThisMonth', 'outstandingReceivables', 'panel', 'panels', 'panelData', 'hotelCompanies', 'selectedCompanyId', 'serviceCenters', 'selectedServiceCenter', 'hotelDemoSeedPresent', 'roomManagement', 'revenueTrend', 'serviceSummary', 'roomCalendarPulse'
         ));
     }
 
@@ -597,6 +603,123 @@ class HotelController extends Controller
         $type->update($data);
 
         return back()->with('success', 'Room type '.$type->name.' updated.');
+    }
+
+    private function hotelRevenueTrend(?int $companyId, array $hotelCompanyIds): array
+    {
+        $days = collect(range(6, 0))->mapWithKeys(function ($offset) {
+            $date = now()->subDays($offset)->toDateString();
+            return [$date => ['date' => $date, 'label' => now()->subDays($offset)->format('D'), 'amount' => 0.0]];
+        });
+        $today = now()->toDateString();
+        $days[$today] = ['date' => $today, 'label' => now()->format('D'), 'amount' => 0.0];
+
+        $source = null;
+        if ($this->hasTable('hotel_transactions') && $this->hasColumn('hotel_transactions', 'amount')) {
+            $source = \DB::table('hotel_transactions');
+        } elseif ($this->hasTable('folio_items') && $this->hasColumn('folio_items', 'amount')) {
+            $source = \DB::table('folio_items')
+                ->when($this->hasColumn('folio_items', 'type'), fn($q) => $q->whereIn('type', ['charge', 'room_night', 'service', 'pos_charge']));
+        }
+
+        if (!$source) {
+            return $days->values()->all();
+        }
+
+        $rows = $source
+            ->when($companyId, fn($q) => $q->where('company_id', $companyId))
+            ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
+            ->whereBetween('created_at', [now()->subDays(6)->startOfDay(), now()->endOfDay()])
+            ->selectRaw('DATE(created_at) as revenue_date, SUM(amount) as total')
+            ->groupBy('revenue_date')
+            ->pluck('total', 'revenue_date');
+
+        foreach ($rows as $date => $amount) {
+            if (isset($days[$date])) {
+                $days[$date]['amount'] = (float) $amount;
+            }
+        }
+
+        return $days->values()->all();
+    }
+
+    private function hotelServiceSummary(?int $companyId, array $hotelCompanyIds, array $serviceCenters): array
+    {
+        $summary = collect($serviceCenters)
+            ->reject(fn($meta, $key) => $key === 'all')
+            ->map(fn($meta) => ['label' => $meta['label'], 'count' => 0, 'total' => 0.0])
+            ->all();
+
+        if (!$this->hasTable('folio_items') || !$this->hasColumn('folio_items', 'service_code') || !$this->hasColumn('folio_items', 'amount')) {
+            return $summary;
+        }
+
+        $rows = \DB::table('folio_items')
+            ->when($companyId, fn($q) => $q->where('company_id', $companyId))
+            ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
+            ->when($this->hasColumn('folio_items', 'type'), fn($q) => $q->whereIn('type', ['charge', 'room_night', 'service', 'pos_charge']))
+            ->selectRaw('UPPER(COALESCE(service_code, "")) as service_code, COUNT(*) as line_count, SUM(amount) as total')
+            ->groupBy('service_code')
+            ->get();
+
+        foreach ($rows as $row) {
+            foreach ($serviceCenters as $key => $meta) {
+                if ($key === 'all') {
+                    continue;
+                }
+
+                if (in_array((string) $row->service_code, $meta['codes'] ?? [], true)) {
+                    $summary[$key]['count'] += (int) $row->line_count;
+                    $summary[$key]['total'] += (float) $row->total;
+                    break;
+                }
+            }
+        }
+
+        return $summary;
+    }
+
+    private function hotelCalendarPulse(?int $companyId, array $hotelCompanyIds): array
+    {
+        return collect(range(0, 6))->map(function ($offset) use ($companyId, $hotelCompanyIds) {
+            $date = now()->addDays($offset)->toDateString();
+            $arrivals = 0;
+            $departures = 0;
+            $stays = 0;
+            $locks = 0;
+
+            if ($this->hasTable('reservations') && $this->hasColumn('reservations', 'arrival_date') && $this->hasColumn('reservations', 'departure_date')) {
+                $reservationScope = fn($q) => $q
+                    ->when($companyId, fn($query) => $query->where('company_id', $companyId))
+                    ->when(!$companyId && !empty($hotelCompanyIds), fn($query) => $query->whereIn('company_id', $hotelCompanyIds));
+
+                $arrivals = (clone $reservationScope(\DB::table('reservations')))->whereDate('arrival_date', $date)->count();
+                $departures = (clone $reservationScope(\DB::table('reservations')))->whereDate('departure_date', $date)->count();
+                $stays = (clone $reservationScope(\DB::table('reservations')))
+                    ->whereDate('arrival_date', '<=', $date)
+                    ->whereDate('departure_date', '>=', $date)
+                    ->count();
+            }
+
+            if ($this->hasTable('hotel_room_blocks')) {
+                $locks = \DB::table('hotel_room_blocks')
+                    ->when($companyId, fn($q) => $q->where('company_id', $companyId))
+                    ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
+                    ->where('status', 'active')
+                    ->whereDate('start_date', '<=', $date)
+                    ->whereDate('end_date', '>=', $date)
+                    ->count();
+            }
+
+            return [
+                'date' => $date,
+                'label' => now()->addDays($offset)->format('D, M j'),
+                'arrivals' => $arrivals,
+                'departures' => $departures,
+                'stays' => $stays,
+                'locks' => $locks,
+            ];
+        })->all();
     }
 
     private function panelData(string $panel, ?int $companyId, array $hotelCompanyIds, string $selectedServiceCenter = 'all')
