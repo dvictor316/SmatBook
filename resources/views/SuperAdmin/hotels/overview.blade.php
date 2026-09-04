@@ -209,6 +209,27 @@
     .sa-directory-card.feature { background:linear-gradient(135deg,#082f55,#0b5fb8); color:#fff; }
     .sa-directory-card.feature h5, .sa-directory-card.feature p, .sa-directory-card.feature small { color:#fff !important; }
     .sa-directory-card .eyebrow { color:#d4a23a; text-transform:uppercase; letter-spacing:.12em; font-size:12px; font-weight:700; }
+    .sa-service-cockpit { display:grid; grid-template-columns:1.12fr .88fr; gap:14px; margin-bottom:16px; }
+    .sa-service-command-panel { min-height:230px; border-radius:18px; padding:18px; color:#fff; background:#082f55; box-shadow:0 18px 36px rgba(8,47,73,.15); display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; position:relative; }
+    .sa-service-command-panel:before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,0)); pointer-events:none; }
+    .sa-service-command-panel h4, .sa-service-command-panel p, .sa-service-command-panel span, .sa-service-command-panel strong { color:#fff !important; position:relative; }
+    .sa-service-command-panel .eyebrow { color:#f5c451 !important; text-transform:uppercase; letter-spacing:.14em; font-size:12px; font-weight:900; }
+    .sa-service-command-panel.restaurant { background:linear-gradient(135deg,#7c2d12,#ea580c); }
+    .sa-service-command-panel.bar { background:linear-gradient(135deg,#312e81,#7c3aed); }
+    .sa-service-command-panel.spa { background:linear-gradient(135deg,#14532d,#0f766e); }
+    .sa-service-command-panel.gym { background:linear-gradient(135deg,#111827,#2563eb); }
+    .sa-service-command-panel.ticketing { background:linear-gradient(135deg,#713f12,#ca8a04); }
+    .sa-service-command-panel.minibar { background:linear-gradient(135deg,#164e63,#0891b2); }
+    .sa-service-command-panel.laundry { background:linear-gradient(135deg,#075985,#38bdf8); }
+    .sa-service-command-panel.room_service { background:linear-gradient(135deg,#581c87,#be185d); }
+    .sa-service-command-panel.conference { background:linear-gradient(135deg,#172554,#0f766e); }
+    .sa-service-command-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .sa-service-command { min-height:110px; border:1px solid #d8e2ee; border-radius:16px; background:#fff; padding:14px; box-shadow:0 12px 28px rgba(15,23,42,.05); color:#09213d; }
+    .sa-service-command h5 { color:#061b33; margin:6px 0 5px; font-weight:900; }
+    .sa-service-command p { color:#64748b; margin:0 0 10px; line-height:1.35; }
+    .sa-service-command .badge { white-space:normal; text-align:left; }
+    @media(max-width:1199px){.sa-service-cockpit{grid-template-columns:1fr}.sa-service-command-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:767px){.sa-service-command-grid{grid-template-columns:1fr}}
     .sa-pms-board { display:block; }
     .sa-pms-sidebar { background:#082f55; color:#fff; border-radius:18px; padding:16px; box-shadow:0 14px 32px rgba(15,23,42,.12); margin-bottom:16px; }
     .sa-pms-sidebar h4, .sa-pms-sidebar p, .sa-pms-sidebar small { color:#fff !important; }
@@ -1099,6 +1120,19 @@
                 $serviceTotal = $panelRows->sum(fn($row) => (float) (($rowArray($row)['amount'] ?? $rowArray($row)['total_amount'] ?? 0)));
                 $serviceLockCount = collect($roomManagement['activeBlocks'] ?? [])->filter(fn($block) => $servicePanelKey === 'room_service' ? $block->block_type === 'room_service_hold' : false)->count();
                 $serviceFolios = collect($roomManagement['openFolios'] ?? []);
+                $serviceBlueprints = [
+                    'restaurant' => ['verb' => 'Restaurant POS desk', 'focus' => 'Dining orders, table covers, kitchen slips and guest-folio charges.', 'primary' => 'Post Food Sale', 'ops' => ['Kitchen queue', 'Table settlement', 'Room charge handoff']],
+                    'bar' => ['verb' => 'Bar revenue desk', 'focus' => 'Lounge orders, bottle service, happy-hour sales and cashier settlement.', 'primary' => 'Post Bar Sale', 'ops' => ['Open tab', 'Cash/POS settlement', 'Night bar report']],
+                    'spa' => ['verb' => 'Spa booking desk', 'focus' => 'Treatments, wellness packages, therapist notes and guest folio posting.', 'primary' => 'Post Spa Service', 'ops' => ['Therapist assignment', 'Treatment package', 'Guest wellness note']],
+                    'gym' => ['verb' => 'Fitness access desk', 'focus' => 'Day passes, trainer sessions, memberships and in-house guest access.', 'primary' => 'Post Gym Pass', 'ops' => ['Access pass', 'Trainer session', 'Membership add-on']],
+                    'ticketing' => ['verb' => 'Events ticket desk', 'focus' => 'Dinner tickets, venue access, events, batch references and receipt control.', 'primary' => 'Sell Ticket', 'ops' => ['Ticket batch', 'Event manifest', 'Receipt reprint']],
+                    'minibar' => ['verb' => 'Minibar audit desk', 'focus' => 'Room consumption, restock exceptions, late checkout checks and folio charges.', 'primary' => 'Post Minibar Item', 'ops' => ['Restock room', 'Consumption audit', 'Variance check']],
+                    'laundry' => ['verb' => 'Laundry production desk', 'focus' => 'Received garments, express service, delivery status and room posting.', 'primary' => 'Post Laundry Order', 'ops' => ['Receive bundle', 'Mark ready', 'Delivery note']],
+                    'room_service' => ['verb' => 'In-room dining desk', 'focus' => 'Tray orders, delivery timing, spill holds, cleanup and temporary room locks.', 'primary' => 'Post Room Service', 'ops' => ['Dispatch tray', 'Cleanup hold', 'Lock room']],
+                    'conference' => ['verb' => 'Banquet and conference desk', 'focus' => 'Hall hire, catering packages, AV charges, group bills and event receipts.', 'primary' => 'Post Event Charge', 'ops' => ['Event package', 'AV setup', 'Group settlement']],
+                    'all' => ['verb' => 'All service revenue desk', 'focus' => 'Cross-department hotel charges, receipts and tenant revenue monitoring.', 'primary' => 'Post Service Sale', 'ops' => ['Department filter', 'Receipt audit', 'Revenue summary']],
+                ];
+                $serviceDesign = $serviceBlueprints[$servicePanelKey] ?? $serviceBlueprints['all'];
             @endphp
             <section class="sa-dash-panel">
                 <div class="sa-section-head">
@@ -1131,10 +1165,45 @@
                         </div>
                     @endforeach
                 </div>
-                <div class="sa-directory-grid mb-3">
-                    <article class="sa-directory-card feature"><span class="eyebrow">Operations</span><h5 class="mt-2">Live Service Monitor</h5><p>Track charges by tenant, amount and service date. Room Service can also lock rooms from the action strip above.</p></article>
-                    <article class="sa-directory-card"><span class="eyebrow">Action</span><h5 class="mt-2">Post Service Sale</h5><p class="text-muted">Post restaurant, bar, spa, gym, ticketing, minibar, laundry, room-service or conference sales into an open guest folio and print receipt.</p><button type="button" class="btn btn-sm btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#saServiceChargeModal"><i class="fas fa-cash-register me-1"></i> Post Sale</button></article>
-                    <article class="sa-directory-card"><span class="eyebrow">Control</span><h5 class="mt-2">Exceptions</h5><p class="text-muted">Use room locks for spills, safety issues, room-service cleanup, VIP preparation or temporary sales blocks.</p><a class="btn btn-sm btn-outline-warning mt-2" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'maintenance'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">Open Locks</a></article>
+                <div class="sa-service-cockpit">
+                    <article class="sa-service-command-panel {{ $servicePanelKey }}">
+                        <div>
+                            <span class="eyebrow">{{ strtoupper($serviceHeading) }}</span>
+                            <h4 class="mt-2">{{ $serviceDesign['verb'] }}</h4>
+                            <p class="mb-0">{{ $serviceDesign['focus'] }}</p>
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap mt-3">
+                            @foreach($serviceDesign['ops'] as $opsLabel)
+                                <span class="badge bg-light text-dark">{{ $opsLabel }}</span>
+                            @endforeach
+                        </div>
+                    </article>
+                    <div class="sa-service-command-grid">
+                        <article class="sa-service-command">
+                            <span class="badge bg-primary">Sale</span>
+                            <h5>{{ $serviceDesign['primary'] }}</h5>
+                            <p>Post this department’s item into an open guest folio and continue to a receipt.</p>
+                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#saServiceChargeModal"><i class="fas fa-cash-register me-1"></i> {{ $serviceDesign['primary'] }}</button>
+                        </article>
+                        <article class="sa-service-command">
+                            <span class="badge bg-warning text-dark">Control</span>
+                            <h5>{{ $servicePanelKey === 'room_service' ? 'Room Holds' : 'Exception Desk' }}</h5>
+                            <p>{{ $servicePanelKey === 'room_service' ? 'Send spill cleanup or tray-delay holds into maintenance and room lock control.' : 'Review holds, maintenance blocks and exceptions that affect this service desk.' }}</p>
+                            <a class="btn btn-sm btn-outline-warning" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'maintenance'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">{{ $servicePanelKey === 'room_service' ? 'Open Room Holds' : 'Open Exceptions' }}</a>
+                        </article>
+                        <article class="sa-service-command">
+                            <span class="badge bg-success">Cashier</span>
+                            <h5>Receipt Register</h5>
+                            <p>{{ $panelRows->count() }} posting{{ $panelRows->count() === 1 ? '' : 's' }} loaded with {{ $money($serviceTotal) }} in visible revenue.</p>
+                            <a class="btn btn-sm btn-outline-success" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'folios'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">Open Folios</a>
+                        </article>
+                        <article class="sa-service-command">
+                            <span class="badge bg-dark">Report</span>
+                            <h5>Financial Trace</h5>
+                            <p>Follow department revenue into hotel reports and general financial review.</p>
+                            <a class="btn btn-sm btn-outline-dark" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'reports'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">Open Reports</a>
+                        </article>
+                    </div>
                 </div>
                 <div class="sa-timeline"><table class="table table-sm align-middle"><thead><tr><th>Posting</th><th>Company</th><th>Service</th><th>Type</th><th>Amount</th><th>Date</th><th>Action</th></tr></thead><tbody>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<tr><td>{{ $r['description'] ?? $r['folio_number'] ?? ('#'.($r['id'] ?? '-')) }}</td><td>{{ $r['company_id'] ?? '-' }}</td><td><span class="badge bg-warning text-dark">{{ $r['service_code'] ?? $r['department'] ?? strtoupper(str_replace('_', ' ', $servicePanelKey)) }}</span></td><td>{{ $r['type'] ?? $r['payment_method'] ?? '-' }}</td><td>{{ $money($r['amount'] ?? $r['total_amount'] ?? 0) }}</td><td>{{ $r['service_date'] ?? $r['created_at'] ?? $r['business_date'] ?? '-' }}</td><td>@if(!empty($r['id']) && !empty($r['folio_id']))<a class="btn btn-sm btn-outline-dark" target="_blank" rel="noopener" href="{{ route('super_admin.hotels.receipts.show', $r['id']) }}"><i class="fas fa-print me-1"></i> Receipt</a>@else<span class="text-muted">Report row</span>@endif</td></tr>@empty<tr><td colspan="7"><div class="sa-empty">No {{ strtolower($serviceHeading) }} postings found yet. Tenant charges for this service will appear here.</div></td></tr>@endforelse</tbody></table></div>
             </section>
