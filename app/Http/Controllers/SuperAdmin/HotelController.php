@@ -762,7 +762,9 @@ class HotelController extends Controller
 
         foreach ($rows as $date => $amount) {
             if (isset($days[$date])) {
-                $days[$date]['amount'] = (float) $amount;
+                $day = $days[$date];
+                $day['amount'] = (float) $amount;
+                $days[$date] = $day;
             }
         }
 
