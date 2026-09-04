@@ -214,6 +214,8 @@
     .sa-service-command-panel:before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,0)); pointer-events:none; }
     .sa-service-command-panel h4, .sa-service-command-panel p, .sa-service-command-panel span, .sa-service-command-panel strong { color:#fff !important; -webkit-text-fill-color:#fff !important; text-shadow:0 2px 10px rgba(0,0,0,.45); position:relative; }
     .sa-service-command-panel .eyebrow { color:#f5c451 !important; text-transform:uppercase; letter-spacing:.14em; font-size:12px; font-weight:900; }
+    .sa-service-command-panel .badge.bg-light,
+    .sa-service-command-panel .badge.text-dark { color:#061b33 !important; -webkit-text-fill-color:#061b33 !important; text-shadow:none !important; background:#fff !important; }
     .sa-service-command-panel.restaurant { background-image:linear-gradient(90deg,rgba(4,16,31,.86),rgba(65,28,11,.42)),url('/assets/img/hotel-keto/gallery5.jpg') !important; }
     .sa-service-command-panel.bar { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(28,22,79,.42)),url('/assets/img/hotel-keto/gallery8.jpg') !important; }
     .sa-service-command-panel.spa { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(9,71,59,.42)),url('/assets/img/hotel-keto/gallery7.jpg') !important; }
