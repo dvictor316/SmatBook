@@ -15,11 +15,14 @@
     .crm-shell { display:grid; grid-template-columns:260px minmax(0,1fr); gap:18px; }
     .crm-side { padding:18px; }
     .crm-side .field { display:flex; justify-content:space-between; border-bottom:1px solid #edf1f5; padding:11px 0; color:#6b7280; }
-    .guest-row { display:grid; grid-template-columns:70px 1.1fr 1fr .7fr 1fr 1.2fr auto; gap:12px; align-items:center; padding:13px; border-bottom:1px solid #edf1f5; }
+    .guest-row { display:grid; grid-template-columns:70px 1.1fr 1fr .7fr 1fr 1.2fr 1.2fr; gap:12px; align-items:center; padding:13px; border-bottom:1px solid #edf1f5; }
     .guest-row.header { background:#fbfbfb; color:#6b7280; text-transform:uppercase; font-size:12px; font-weight:700; }
     .guest-photo { width:48px; height:48px; border-radius:8px; background:#e5e7eb; display:flex; align-items:center; justify-content:center; font-weight:700; color:#334155; }
     .guest-tag { display:inline-flex; border-radius:999px; padding:5px 8px; background:#eef2ff; color:#3742a0; font-size:12px; font-weight:600; }
     .guest-alert { border:1px solid #e6dcc5; background:#fffdf5; border-radius:4px; padding:8px; font-size:12px; color:#5b4636; }
+    .guest-actions { display:grid; gap:6px; }
+    .guest-note-form { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; margin-top:7px; }
+    .guest-note-form textarea { min-height:38px; resize:vertical; font-size:12px; }
     @media(max-width:1199px){.crm-top,.crm-shell{grid-template-columns:1fr}.guest-row{grid-template-columns:60px 1fr}.guest-row.header{display:none}.guest-row > div{min-width:0}}
 </style>
 @endsection
@@ -37,7 +40,11 @@
     <div class="content container-fluid">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
             <div><h3 class="mb-1">Guest CRM</h3><p class="text-muted mb-0">Hotel guest profiles, stay history, loyalty and recommendations.</p></div>
-            <a href="{{ route('hotel.search') }}" class="btn btn-outline-primary">Search Guests</a>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{{ route('hotel.search') }}" class="btn btn-outline-primary">Search Guests</a>
+                <a href="{{ route('hotel.walkin.create') }}" class="btn btn-primary">Walk-In</a>
+                <button type="button" onclick="window.print()" class="btn btn-outline-dark">Print CRM</button>
+            </div>
         </div>
 
         <div class="crm-top">
@@ -57,11 +64,11 @@
                 <div class="field"><span>Loyalty</span><strong>All</strong></div>
                 <div class="field"><span>Balance</span><strong>{{ $outstanding > 0 ? 'Has Due' : 'Clear' }}</strong></div>
                 <div class="field"><span>Source</span><strong>Hotel PMS</strong></div>
-                <div class="mt-3 d-grid gap-2"><a href="{{ route('hotel.reservations.create') }}" class="btn btn-primary btn-sm">Book Reservation</a><a href="{{ route('hotel.frontdesk') }}" class="btn btn-outline-dark btn-sm">Front Desk</a></div>
+                <div class="mt-3 d-grid gap-2"><a href="{{ route('hotel.reservations.create') }}" class="btn btn-primary btn-sm">Book Reservation</a><a href="{{ route('hotel.walkin.create') }}" class="btn btn-outline-primary btn-sm">Walk-In Check-In</a><a href="{{ route('hotel.frontdesk') }}" class="btn btn-outline-dark btn-sm">Front Desk</a></div>
             </aside>
 
             <main class="crm-panel">
-                <div class="guest-row header"><div>Image</div><div>Last Name</div><div>First Name</div><div>Stays</div><div>Spend</div><div>Recommendation</div><div>Note</div></div>
+                <div class="guest-row header"><div>Image</div><div>Last Name</div><div>First Name</div><div>Stays</div><div>Spend</div><div>Recommendation / Notes</div><div>Actions</div></div>
                 @forelse($guests as $guest)
                     @php
                         $fullName = (string) ($guest->customer_name ?? $guest->name ?? 'Guest');
@@ -75,8 +82,25 @@
                         <div>{{ $first }}<div class="small text-muted">{{ $guest->email ?: 'No email' }}</div></div>
                         <div><span class="guest-tag">{{ $guest->total_stays ?? 0 }} stays</span></div>
                         <div>{{ number_format((float) ($guest->total_spend ?? 0), 2) }}<div class="small text-muted">Due {{ number_format((float) ($guest->outstanding_balance ?? 0), 2) }}</div></div>
-                        <div><div class="guest-alert">{{ (float)($guest->outstanding_balance ?? 0) > 0 ? 'Settle balance before next departure.' : 'Good profile for repeat booking and loyalty follow-up.' }}</div></div>
-                        <div><button type="button" class="btn btn-sm btn-outline-secondary">Add Note</button></div>
+                        <div>
+                            <div class="guest-alert">{{ (float)($guest->outstanding_balance ?? 0) > 0 ? 'Settle balance before next departure.' : (($guest->notes ?? null) ?: 'Good profile for repeat booking and loyalty follow-up.') }}</div>
+                            <form method="POST" action="{{ route('hotel.guests.note', $guest) }}" class="guest-note-form">
+                                @csrf
+                                <textarea name="notes" class="form-control" placeholder="Guest preference, alert, loyalty note">{{ $guest->notes }}</textarea>
+                                <button class="btn btn-sm btn-outline-primary">Save</button>
+                            </form>
+                        </div>
+                        <div class="guest-actions">
+                            <a href="{{ route('hotel.reservations.create', ['customer_id' => $guest->id]) }}" class="btn btn-sm btn-primary">Book</a>
+                            @if($guest->open_folio_id)
+                                <a href="{{ route('hotel.folios.show', $guest->open_folio_id) }}" class="btn btn-sm btn-outline-primary">Folio</a>
+                            @else
+                                <a href="{{ route('hotel.walkin.create', ['customer_id' => $guest->id]) }}" class="btn btn-sm btn-outline-secondary">Check In</a>
+                            @endif
+                            @if($guest->latest_stay_id)
+                                <a href="{{ route('hotel.checkout.index', ['stay_id' => $guest->latest_stay_id]) }}" class="btn btn-sm btn-outline-dark">Checkout</a>
+                            @endif
+                        </div>
                     </div>
                 @empty
                     <div class="p-4 text-muted">No hotel guests found.</div>

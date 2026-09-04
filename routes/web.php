@@ -683,6 +683,7 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
     Route::get('/checkout', [\App\Http\Controllers\Hotel\CheckInController::class, 'checkoutDesk'])->name('checkout.index');
     Route::get('/in-house', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'inHouse'])->name('in_house');
     Route::get('/guests', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'guests'])->name('guests');
+    Route::post('/guests/{customer}/note', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'updateGuestNote'])->name('guests.note');
     Route::get('/deposits', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'deposits'])->name('deposits');
     Route::get('/settings', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'settings'])->name('settings');
 

@@ -707,11 +707,43 @@ class HotelDashboardController extends Controller
                     ->where('customer_id', $guest->id)
                     ->sum('balance');
 
+                $guest->latest_stay_id = Stay::query()
+                    ->where('company_id', $companyId)
+                    ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+                    ->where('customer_id', $guest->id)
+                    ->latest('id')
+                    ->value('id');
+
+                $guest->open_folio_id = GuestFolio::query()
+                    ->where('company_id', $companyId)
+                    ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+                    ->where('customer_id', $guest->id)
+                    ->whereIn('status', ['open', 'city_ledger'])
+                    ->latest('id')
+                    ->value('id');
+
                 return $guest;
             });
         }
 
         return view('hotel.guests.index', compact('guests'));
+    }
+
+    public function updateGuestNote(Request $request, Customer $customer)
+    {
+        abort_unless((int) $customer->company_id === (int) auth()->user()->company_id, 404);
+
+        if (!Schema::hasColumn('customers', 'notes')) {
+            return back()->withErrors(['error' => 'Guest notes column is not available in this installation.']);
+        }
+
+        $data = $request->validate([
+            'notes' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        $customer->forceFill(['notes' => $data['notes'] ?? null])->save();
+
+        return back()->with('success', 'Guest note updated.');
     }
 
     public function deposits(Request $request)
