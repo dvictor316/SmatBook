@@ -3,8 +3,15 @@
 @section('style')
 <style>
     .service-center-page { background:#f4f7fb; color:#10233f; }
-    .service-center-hero { background:linear-gradient(135deg,#082f55,#0b5fb8 58%,#0f766e); color:#fff; border-radius:8px; padding:18px 20px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:flex-end; gap:14px; flex-wrap:wrap; }
+    .service-center-hero { position:relative; overflow:hidden; background-color:#082f55; background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(4,16,31,.46)),url('/assets/img/hotel-keto/banner2.jpg'); background-size:cover; background-position:center; color:#fff; border-radius:8px; padding:18px 20px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:flex-end; gap:14px; flex-wrap:wrap; }
+    .service-center-hero[data-center="bar"] { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(4,16,31,.46)),url('/assets/img/hotel-keto/gallery8.jpg'); }
+    .service-center-hero[data-center="spa"] { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(4,16,31,.46)),url('/assets/img/hotel-keto/gallery7.jpg'); }
+    .service-center-hero[data-center="gym"] { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(4,16,31,.46)),url('/assets/img/hotel-keto/gallery6.jpg'); }
+    .service-center-hero[data-center="ticketing"] { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(4,16,31,.46)),url('/assets/img/hotel-keto/banner1.jpg'); }
+    .service-center-hero[data-center="conference"] { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(4,16,31,.46)),url('/assets/img/hotel-keto/banner3.jpg'); }
+    .service-center-hero > * { position:relative; z-index:1; }
     .service-center-hero h3 { color:#fff; margin:0; font-size:28px; font-weight:800; }
+    .service-center-hero p { color:#fff; text-shadow:0 2px 10px rgba(0,0,0,.4); }
     .service-center-hero .btn { min-height:34px; padding:6px 12px; border-radius:8px; font-size:13px; font-weight:800; line-height:1.2; }
     .service-center-hero .btn-light:hover { background:#fff; color:#10233f; border-color:#fff; }
     .service-center-card { background:#fff; border:1px solid #d6e1ee; border-radius:8px; box-shadow:0 8px 22px rgba(15,23,42,.05); }
@@ -27,7 +34,7 @@
 @section('content')
 <div class="page-wrapper service-center-page">
     <div class="content container-fluid">
-        <section class="service-center-hero">
+        <section class="service-center-hero" data-center="{{ $center }}">
             <div><small class="text-warning fw-semibold">HOTEL SERVICE CENTER</small><h3>{{ $meta['title'] }}</h3><p class="mb-0">{{ $meta['description'] }}</p></div>
             <div class="d-flex flex-wrap gap-2">
                 <a href="{{ route('hotel.restaurant.pos') }}" class="btn btn-light">Open POS</a>

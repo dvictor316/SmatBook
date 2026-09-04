@@ -46,11 +46,21 @@
     .hotel-status-dot { width:11px; height:11px; border-radius:50%; display:inline-block; margin-right:8px; background:#0b5fb8; }
     .hotel-status-dot.available { background:#16a34a; } .hotel-status-dot.reserved { background:#d4a23a; } .hotel-status-dot.dirty { background:#dc2626; } .hotel-status-dot.cleaning { background:#0ea5e9; } .hotel-status-dot.maintenance { background:#f97316; } .hotel-status-dot.out_of_order { background:#334155; }
     .hotel-service-centers { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-bottom:18px; }
-    .hotel-service-card { position:relative; min-height:150px; overflow:hidden; padding:17px; color:#10233f; text-decoration:none; }
-    .hotel-service-card:after { content:''; position:absolute; right:-34px; bottom:-44px; width:118px; height:118px; border-radius:50%; background:rgba(11,95,184,.1); }
-    .hotel-service-card span { color:#d4a23a; text-transform:uppercase; letter-spacing:.12em; font-size:12px; font-weight:700; }
-    .hotel-service-card h5 { margin:10px 0 8px; font-weight:700; }
-    .hotel-service-card p { color:#64748b; margin:0; }
+    .hotel-service-card { position:relative; min-height:170px; overflow:hidden; padding:17px; color:#fff; text-decoration:none; background-color:#082f55; background-image:linear-gradient(180deg,rgba(4,16,31,.28),rgba(4,16,31,.86)),url('/assets/img/hotel-keto/room1.jpg'); background-size:cover; background-position:center; display:flex; flex-direction:column; justify-content:flex-end; }
+    .hotel-service-card:after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,rgba(0,0,0,.28),rgba(0,0,0,0)); pointer-events:none; }
+    .hotel-service-card span, .hotel-service-card h5, .hotel-service-card p { position:relative; z-index:1; text-shadow:0 2px 10px rgba(0,0,0,.45); }
+    .hotel-service-card span { color:#f5c451 !important; text-transform:uppercase; letter-spacing:.12em; font-size:12px; font-weight:800; }
+    .hotel-service-card h5 { margin:10px 0 8px; font-weight:900; color:#fff !important; }
+    .hotel-service-card p { color:#fff !important; margin:0; }
+    .hotel-service-card.restaurant-card { background-image:linear-gradient(180deg,rgba(4,16,31,.18),rgba(4,16,31,.88)),url('/assets/img/hotel-keto/gallery5.jpg'); }
+    .hotel-service-card.bar-card { background-image:linear-gradient(180deg,rgba(4,16,31,.18),rgba(4,16,31,.88)),url('/assets/img/hotel-keto/gallery8.jpg'); }
+    .hotel-service-card.spa-card { background-image:linear-gradient(180deg,rgba(4,16,31,.18),rgba(4,16,31,.88)),url('/assets/img/hotel-keto/gallery7.jpg'); }
+    .hotel-service-card.gym-card { background-image:linear-gradient(180deg,rgba(4,16,31,.18),rgba(4,16,31,.88)),url('/assets/img/hotel-keto/gallery6.jpg'); }
+    .hotel-service-card.ticketing-card { background-image:linear-gradient(180deg,rgba(4,16,31,.18),rgba(4,16,31,.88)),url('/assets/img/hotel-keto/banner1.jpg'); }
+    .hotel-service-card.room-service-card { background-image:linear-gradient(180deg,rgba(4,16,31,.18),rgba(4,16,31,.88)),url('/assets/img/hotel-keto/room2.jpg'); }
+    .hotel-service-card.minibar-card { background-image:linear-gradient(180deg,rgba(4,16,31,.18),rgba(4,16,31,.88)),url('/assets/img/hotel-keto/room3.jpg'); }
+    .hotel-service-card.laundry-card { background-image:linear-gradient(180deg,rgba(4,16,31,.18),rgba(4,16,31,.88)),url('/assets/img/hotel-keto/room4.jpg'); }
+    .hotel-service-card.conference-card { background-image:linear-gradient(180deg,rgba(4,16,31,.18),rgba(4,16,31,.88)),url('/assets/img/hotel-keto/banner3.jpg'); }
     .hotel-bottom { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
     .hotel-bottom .hotel-panel { padding:16px; }
     .hotel-source-chip { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #edf2f7; }
@@ -166,15 +176,15 @@
         <section class="mb-3">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2"><div><h5 class="mb-0">Hotel Service Centers</h5><small class="text-muted">Restaurant, bar, gym/spa, room service and other chargeable hotel departments.</small></div><a href="{{ route('hotel.restaurant.pos') }}" class="btn btn-sm btn-outline-primary">Open Restaurant POS</a></div>
             <div class="hotel-service-centers">
-                <a class="hotel-panel hotel-service-card" href="{{ route('hotel.restaurant.pos') }}"><span>Restaurant</span><h5>Restaurant POS</h5><p>Food sales, table service, room-posted meals and walk-in payments.</p></a>
-                <a class="hotel-panel hotel-service-card" href="{{ route('hotel.service_centers.show', 'bar') }}"><span>Bar</span><h5>Bar & Lounge</h5><p>Drinks, lounge bills, guest folio postings and revenue tracking.</p></a>
-                <a class="hotel-panel hotel-service-card" href="{{ route('hotel.service_centers.show', 'spa') }}"><span>Spa</span><h5>Spa & Wellness</h5><p>Treatments, packages and wellness services tied to folios.</p></a>
-                <a class="hotel-panel hotel-service-card" href="{{ route('hotel.service_centers.show', 'gym') }}"><span>Gym</span><h5>Gym & Fitness</h5><p>Day passes, memberships and fitness service charges.</p></a>
-                <a class="hotel-panel hotel-service-card" href="{{ route('hotel.service_centers.show', 'ticketing') }}"><span>Ticketing</span><h5>Events & Tickets</h5><p>Ticket sales, event access and guest room charge postings.</p></a>
-                <a class="hotel-panel hotel-service-card" href="{{ route('hotel.room_service.index') }}"><span>Room Service</span><h5>In-Room Dining</h5><p>Kitchen orders posted directly to guest rooms.</p></a>
-                <a class="hotel-panel hotel-service-card" href="{{ route('hotel.minibar.index') }}"><span>Minibar</span><h5>Minibar Control</h5><p>Room minibar usage and stock-linked charges.</p></a>
-                <a class="hotel-panel hotel-service-card" href="{{ route('hotel.laundry.index') }}"><span>Laundry</span><h5>Laundry Desk</h5><p>Laundry orders, returns and guest billing activity.</p></a>
-                <a class="hotel-panel hotel-service-card" href="{{ route('hotel.conference.index') }}"><span>Events</span><h5>Conference & Events</h5><p>Event bookings, meeting rooms and banquet-linked revenue.</p></a>
+                <a class="hotel-panel hotel-service-card restaurant-card" href="{{ route('hotel.restaurant.pos') }}"><span>Restaurant</span><h5>Restaurant POS</h5><p>Food sales, table service, room-posted meals and walk-in payments.</p></a>
+                <a class="hotel-panel hotel-service-card bar-card" href="{{ route('hotel.service_centers.show', 'bar') }}"><span>Bar</span><h5>Bar & Lounge</h5><p>Drinks, lounge bills, guest folio postings and revenue tracking.</p></a>
+                <a class="hotel-panel hotel-service-card spa-card" href="{{ route('hotel.service_centers.show', 'spa') }}"><span>Spa</span><h5>Spa & Wellness</h5><p>Treatments, packages and wellness services tied to folios.</p></a>
+                <a class="hotel-panel hotel-service-card gym-card" href="{{ route('hotel.service_centers.show', 'gym') }}"><span>Gym</span><h5>Gym & Fitness</h5><p>Day passes, memberships and fitness service charges.</p></a>
+                <a class="hotel-panel hotel-service-card ticketing-card" href="{{ route('hotel.service_centers.show', 'ticketing') }}"><span>Ticketing</span><h5>Events & Tickets</h5><p>Ticket sales, event access and guest room charge postings.</p></a>
+                <a class="hotel-panel hotel-service-card room-service-card" href="{{ route('hotel.room_service.index') }}"><span>Room Service</span><h5>In-Room Dining</h5><p>Kitchen orders posted directly to guest rooms.</p></a>
+                <a class="hotel-panel hotel-service-card minibar-card" href="{{ route('hotel.minibar.index') }}"><span>Minibar</span><h5>Minibar Control</h5><p>Room minibar usage and stock-linked charges.</p></a>
+                <a class="hotel-panel hotel-service-card laundry-card" href="{{ route('hotel.laundry.index') }}"><span>Laundry</span><h5>Laundry Desk</h5><p>Laundry orders, returns and guest billing activity.</p></a>
+                <a class="hotel-panel hotel-service-card conference-card" href="{{ route('hotel.conference.index') }}"><span>Events</span><h5>Conference & Events</h5><p>Event bookings, meeting rooms and banquet-linked revenue.</p></a>
             </div>
         </section>
 

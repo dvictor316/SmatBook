@@ -68,14 +68,24 @@
     .hotel-op-alert { border-left: 5px solid #d9a441; background: #fff8e5; border-radius: 8px; padding: 12px; color: #533600; }
     .hotel-op-alert.green { border-left-color: #15803d; background: #ecfdf3; color: #14532d; }
     .hotel-op-alert.blue { border-left-color: #0b5fb8; background: #eef6ff; color: #0b3767; }
-    .hotel-service-theme-bar { background: linear-gradient(135deg, #312e81 0%, #6d28d9 100%); color: #fff; }
-    .hotel-service-theme-gym { background: linear-gradient(135deg, #111827 0%, #2563eb 100%); color: #fff; }
-    .hotel-service-theme-spa { background: linear-gradient(135deg, #14532d 0%, #0f766e 100%); color: #fff; }
-    .hotel-service-theme-ticketing { background: linear-gradient(135deg, #713f12 0%, #ca8a04 100%); color: #fff; }
+    [class*="hotel-service-theme-"] { position: relative; overflow: hidden; background-color: #082f55; background-image: linear-gradient(90deg, rgba(4,16,31,.88), rgba(4,16,31,.48)), url('/assets/img/hotel-keto/banner2.jpg'); background-size: cover; background-position: center; color: #fff; }
+    [class*="hotel-service-theme-"] > * { position: relative; z-index: 1; }
+    .hotel-service-theme-bar { background-image: linear-gradient(90deg, rgba(4,16,31,.88), rgba(4,16,31,.48)), url('/assets/img/hotel-keto/gallery8.jpg'); color: #fff; }
+    .hotel-service-theme-gym { background-image: linear-gradient(90deg, rgba(4,16,31,.88), rgba(4,16,31,.48)), url('/assets/img/hotel-keto/gallery6.jpg'); color: #fff; }
+    .hotel-service-theme-spa { background-image: linear-gradient(90deg, rgba(4,16,31,.88), rgba(4,16,31,.48)), url('/assets/img/hotel-keto/gallery7.jpg'); color: #fff; }
+    .hotel-service-theme-ticketing { background-image: linear-gradient(90deg, rgba(4,16,31,.88), rgba(4,16,31,.48)), url('/assets/img/hotel-keto/banner1.jpg'); color: #fff; }
+    .hotel-service-theme-room_service { background-image: linear-gradient(90deg, rgba(4,16,31,.88), rgba(4,16,31,.48)), url('/assets/img/hotel-keto/room2.jpg'); color: #fff; }
+    .hotel-service-theme-minibar { background-image: linear-gradient(90deg, rgba(4,16,31,.88), rgba(4,16,31,.48)), url('/assets/img/hotel-keto/room3.jpg'); color: #fff; }
+    .hotel-service-theme-laundry { background-image: linear-gradient(90deg, rgba(4,16,31,.88), rgba(4,16,31,.48)), url('/assets/img/hotel-keto/room4.jpg'); color: #fff; }
+    .hotel-service-theme-conference { background-image: linear-gradient(90deg, rgba(4,16,31,.88), rgba(4,16,31,.48)), url('/assets/img/hotel-keto/banner3.jpg'); color: #fff; }
     .hotel-service-theme-bar h5, .hotel-service-theme-bar p,
     .hotel-service-theme-gym h5, .hotel-service-theme-gym p,
     .hotel-service-theme-spa h5, .hotel-service-theme-spa p,
-    .hotel-service-theme-ticketing h5, .hotel-service-theme-ticketing p { color: #fff !important; }
+    .hotel-service-theme-ticketing h5, .hotel-service-theme-ticketing p,
+    .hotel-service-theme-room_service h5, .hotel-service-theme-room_service p,
+    .hotel-service-theme-minibar h5, .hotel-service-theme-minibar p,
+    .hotel-service-theme-laundry h5, .hotel-service-theme-laundry p,
+    .hotel-service-theme-conference h5, .hotel-service-theme-conference p { color: #fff !important; text-shadow: 0 2px 10px rgba(0,0,0,.45); }
     .hotel-ledger-page { background: linear-gradient(135deg, #f8fbff 0%, #eef7f1 100%); }
     .hotel-ledger-strip { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
     .hotel-ledger-strip span { background: #fff; border: 1px solid #dbe8f5; border-radius: 999px; padding: 8px 12px; font-weight: 600; color: #06264b; }

@@ -47,8 +47,12 @@
     .hotel-action-deck-head h4 { margin:0; color:#061b33; font-weight:800; font-size:18px; }
     .hotel-action-deck-head p { margin:3px 0 0; color:#64748b; }
     .hotel-action-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
-    .hotel-action-group { border:1px solid #e2eaf4; border-radius:8px; padding:10px; background:#f8fbff; }
-    .hotel-action-group-title { display:block; color:#475569; text-transform:uppercase; letter-spacing:.08em; font-size:11px; font-weight:800; margin-bottom:8px; }
+    .hotel-action-group { position:relative; overflow:hidden; border:1px solid #e2eaf4; border-radius:8px; padding:10px; background-color:#f8fbff; background-image:linear-gradient(90deg,rgba(255,255,255,.94),rgba(255,255,255,.8)),url('/assets/img/hotel-keto/banner2.jpg'); background-size:cover; background-position:center; }
+    .hotel-action-group.front-office { background-image:linear-gradient(90deg,rgba(255,255,255,.94),rgba(255,255,255,.8)),url('/assets/img/hotel-keto/banner2.jpg'); }
+    .hotel-action-group.rooms { background-image:linear-gradient(90deg,rgba(255,255,255,.94),rgba(255,255,255,.8)),url('/assets/img/hotel-keto/room1.jpg'); }
+    .hotel-action-group.guest-revenue { background-image:linear-gradient(90deg,rgba(255,255,255,.94),rgba(255,255,255,.8)),url('/assets/img/hotel-keto/gallery5.jpg'); }
+    .hotel-action-group.controls { background-image:linear-gradient(90deg,rgba(255,255,255,.94),rgba(255,255,255,.8)),url('/assets/img/hotel-keto/room6.jpg'); }
+    .hotel-action-group-title { display:block; color:#334155; text-transform:uppercase; letter-spacing:.08em; font-size:11px; font-weight:800; margin-bottom:8px; position:relative; }
     .hotel-action-list { display:grid; gap:7px; }
     .hotel-action-btn { min-height:58px; display:grid; grid-template-columns:34px minmax(0,1fr); gap:9px; align-items:center; text-decoration:none; color:#10233f; background:#fff; border:1px solid #d9e3ee; border-radius:8px; padding:8px 10px; transition:transform .16s ease, border-color .16s ease, box-shadow .16s ease; }
     .hotel-action-btn:hover { color:#10233f; border-color:#0b5fb8; transform:translateY(-1px); box-shadow:0 10px 20px rgba(11,95,184,.12); }
@@ -69,7 +73,7 @@
     </div>
     <div class="hotel-action-grid">
         @foreach($hotelActionGroups as $group)
-            <div class="hotel-action-group">
+            <div class="hotel-action-group {{ \Illuminate\Support\Str::slug($group['label']) }}">
                 <span class="hotel-action-group-title">{{ $group['label'] }}</span>
                 <div class="hotel-action-list">
                     @foreach($group['items'] as $item)

@@ -210,23 +210,28 @@
     .sa-directory-card.feature h5, .sa-directory-card.feature p, .sa-directory-card.feature small { color:#fff !important; }
     .sa-directory-card .eyebrow { color:#d4a23a; text-transform:uppercase; letter-spacing:.12em; font-size:12px; font-weight:700; }
     .sa-service-cockpit { display:grid; grid-template-columns:1.12fr .88fr; gap:14px; margin-bottom:16px; }
-    .sa-service-command-panel { min-height:230px; border-radius:18px; padding:18px; color:#fff; background-color:#082f55; background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(4,16,31,.48)),url('https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1400&q=80'); background-size:cover; background-position:center; box-shadow:0 18px 36px rgba(8,47,73,.15); display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; position:relative; }
+    .sa-service-command-panel { min-height:230px; border-radius:18px; padding:18px; color:#fff; background-color:#082f55 !important; background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(4,16,31,.48)),url('/assets/img/hotel-keto/banner2.jpg') !important; background-size:cover !important; background-position:center !important; box-shadow:0 18px 36px rgba(8,47,73,.15); display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; position:relative; }
     .sa-service-command-panel:before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,0)); pointer-events:none; }
     .sa-service-command-panel h4, .sa-service-command-panel p, .sa-service-command-panel span, .sa-service-command-panel strong { color:#fff !important; -webkit-text-fill-color:#fff !important; text-shadow:0 2px 10px rgba(0,0,0,.45); position:relative; }
     .sa-service-command-panel .eyebrow { color:#f5c451 !important; text-transform:uppercase; letter-spacing:.14em; font-size:12px; font-weight:900; }
-    .sa-service-command-panel.restaurant { background-image:linear-gradient(90deg,rgba(4,16,31,.86),rgba(65,28,11,.42)),url('https://images.unsplash.com/photo-1551218808-94e220e084d2?auto=format&fit=crop&w=1400&q=80'); }
-    .sa-service-command-panel.bar { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(28,22,79,.42)),url('https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=1400&q=80'); }
-    .sa-service-command-panel.spa { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(9,71,59,.42)),url('https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=1400&q=80'); }
-    .sa-service-command-panel.gym { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(14,50,92,.42)),url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1400&q=80'); }
-    .sa-service-command-panel.ticketing { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(86,58,9,.44)),url('https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1400&q=80'); }
-    .sa-service-command-panel.minibar { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(16,74,96,.42)),url('https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1400&q=80'); }
-    .sa-service-command-panel.laundry { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(8,80,118,.42)),url('https://images.unsplash.com/photo-1582735689369-4fe89db7114c?auto=format&fit=crop&w=1400&q=80'); }
-    .sa-service-command-panel.room_service { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(91,33,77,.42)),url('https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1400&q=80'); }
-    .sa-service-command-panel.conference { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(12,74,110,.42)),url('https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1400&q=80'); }
+    .sa-service-command-panel.restaurant { background-image:linear-gradient(90deg,rgba(4,16,31,.86),rgba(65,28,11,.42)),url('/assets/img/hotel-keto/gallery5.jpg') !important; }
+    .sa-service-command-panel.bar { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(28,22,79,.42)),url('/assets/img/hotel-keto/gallery8.jpg') !important; }
+    .sa-service-command-panel.spa { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(9,71,59,.42)),url('/assets/img/hotel-keto/gallery7.jpg') !important; }
+    .sa-service-command-panel.gym { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(14,50,92,.42)),url('/assets/img/hotel-keto/gallery6.jpg') !important; }
+    .sa-service-command-panel.ticketing { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(86,58,9,.44)),url('/assets/img/hotel-keto/banner1.jpg') !important; }
+    .sa-service-command-panel.minibar { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(16,74,96,.42)),url('/assets/img/hotel-keto/room3.jpg') !important; }
+    .sa-service-command-panel.laundry { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(8,80,118,.42)),url('/assets/img/hotel-keto/room4.jpg') !important; }
+    .sa-service-command-panel.room_service, .sa-service-command-panel.room-service { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(91,33,77,.42)),url('/assets/img/hotel-keto/room2.jpg') !important; }
+    .sa-service-command-panel.conference { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(12,74,110,.42)),url('/assets/img/hotel-keto/banner3.jpg') !important; }
     .sa-service-command-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-    .sa-service-command { min-height:110px; border:1px solid #d8e2ee; border-radius:16px; background:#fff; padding:14px; box-shadow:0 12px 28px rgba(15,23,42,.05); color:#09213d; }
-    .sa-service-command h5 { color:#061b33; margin:6px 0 5px; font-weight:900; }
-    .sa-service-command p { color:#64748b; margin:0 0 10px; line-height:1.35; }
+    .sa-service-command { min-height:132px; border:1px solid #d8e2ee; border-radius:16px; background-color:#fff; background-image:linear-gradient(90deg,rgba(255,255,255,.95),rgba(255,255,255,.78)),url('/assets/img/hotel-keto/room1.jpg'); background-size:cover; background-position:center; padding:14px; box-shadow:0 12px 28px rgba(15,23,42,.05); color:#09213d; overflow:hidden; position:relative; }
+    .sa-service-command.sale-card { background-image:linear-gradient(90deg,rgba(255,255,255,.95),rgba(255,255,255,.72)),url('/assets/img/hotel-keto/gallery5.jpg'); }
+    .sa-service-command.control-card { background-image:linear-gradient(90deg,rgba(255,255,255,.94),rgba(255,255,255,.72)),url('/assets/img/hotel-keto/room6.jpg'); }
+    .sa-service-command.cashier-card { background-image:linear-gradient(90deg,rgba(255,255,255,.95),rgba(255,255,255,.72)),url('/assets/img/invoices/recepit-one.jpg'); }
+    .sa-service-command.report-card { background-image:linear-gradient(90deg,rgba(255,255,255,.95),rgba(255,255,255,.76)),url('/assets/img/report-3.jpg'); }
+    .sa-service-command h5 { color:#061b33 !important; margin:6px 0 5px; font-weight:900; position:relative; }
+    .sa-service-command p { color:#334155 !important; margin:0 0 10px; line-height:1.35; position:relative; }
+    .sa-service-command .btn, .sa-service-command .badge { position:relative; }
     .sa-service-command .badge { white-space:normal; text-align:left; }
     @media(max-width:1199px){.sa-service-cockpit{grid-template-columns:1fr}.sa-service-command-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:767px){.sa-service-command-grid{grid-template-columns:1fr}}
@@ -1181,25 +1186,25 @@
                         </div>
                     </article>
                     <div class="sa-service-command-grid">
-                        <article class="sa-service-command">
+                        <article class="sa-service-command sale-card">
                             <span class="badge bg-primary">Sale</span>
                             <h5>{{ $serviceDesign['primary'] }}</h5>
                             <p>Post this department’s item into an open guest folio and continue to a receipt.</p>
                             <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#saServiceChargeModal"><i class="fas fa-cash-register me-1"></i> {{ $serviceDesign['primary'] }}</button>
                         </article>
-                        <article class="sa-service-command">
+                        <article class="sa-service-command control-card">
                             <span class="badge bg-warning text-dark">Control</span>
                             <h5>{{ $servicePanelKey === 'room_service' ? 'Room Holds' : 'Exception Desk' }}</h5>
                             <p>{{ $servicePanelKey === 'room_service' ? 'Send spill cleanup or tray-delay holds into maintenance and room lock control.' : 'Review holds, maintenance blocks and exceptions that affect this service desk.' }}</p>
                             <a class="btn btn-sm btn-outline-warning" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'maintenance'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">{{ $servicePanelKey === 'room_service' ? 'Open Room Holds' : 'Open Exceptions' }}</a>
                         </article>
-                        <article class="sa-service-command">
+                        <article class="sa-service-command cashier-card">
                             <span class="badge bg-success">Cashier</span>
                             <h5>Receipt Register</h5>
                             <p>{{ $panelRows->count() }} posting{{ $panelRows->count() === 1 ? '' : 's' }} loaded with {{ $money($serviceTotal) }} in visible revenue.</p>
                             <a class="btn btn-sm btn-outline-success" href="{{ route('super_admin.hotels.index', array_merge($routeParams ?? [], ['panel' => 'folios'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : []))) }}">Open Folios</a>
                         </article>
-                        <article class="sa-service-command">
+                        <article class="sa-service-command report-card">
                             <span class="badge bg-dark">Report</span>
                             <h5>Financial Trace</h5>
                             <p>Follow department revenue into hotel reports and general financial review.</p>
