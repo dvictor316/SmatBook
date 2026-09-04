@@ -143,6 +143,35 @@
             pointer-events: auto;
         }
 
+        .modal-dialog:not(.modal-fullscreen) {
+            max-height: calc(100vh - 28px);
+            margin-top: 14px;
+            margin-bottom: 14px;
+        }
+
+        .modal-dialog:not(.modal-fullscreen) .modal-content {
+            max-height: calc(100vh - 28px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .modal-dialog:not(.modal-fullscreen) .modal-header,
+        .modal-dialog:not(.modal-fullscreen) .modal-footer {
+            flex: 0 0 auto;
+        }
+
+        .modal-dialog:not(.modal-fullscreen) .modal-body {
+            flex: 1 1 auto;
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .modal-dialog-centered {
+            min-height: calc(100% - 28px);
+        }
+
         .spb-page-loading-overlay {
             position: fixed;
             inset: 0;
