@@ -16,6 +16,7 @@ use App\Models\HotelRoom;
 use App\Models\HotelRoomBlock;
 use App\Models\HotelRoomImage;
 use App\Models\HotelRoomType;
+use App\Models\Transaction;
 use App\Services\Hotel\HotelFolioService;
 use App\Support\HotelAccess;
 use App\Support\LedgerService;
@@ -684,7 +685,12 @@ class HotelController extends Controller
                     'source_type' => self::class,
                     'source_id' => $folio->id,
                     'posted_by' => auth()->id(),
-                    'meta' => ['center' => $data['service_center'], 'settles_folio_item_id' => $createdItem->id, 'posted_from' => 'super_admin_hotel_monitor'],
+                    'meta' => [
+                        'center' => $data['service_center'],
+                        'payment_mode' => $data['payment_mode'],
+                        'settles_folio_item_id' => $createdItem->id,
+                        'posted_from' => 'super_admin_hotel_monitor',
+                    ],
                 ]);
 
                 LedgerService::postHotelFolioPayment(
@@ -714,6 +720,158 @@ class HotelController extends Controller
         $item->setRelation('folio', $folio);
 
         return view('SuperAdmin.hotels.receipt', ['item' => $item, 'folio' => $folio, 'isSuperAdminReceipt' => true]);
+    }
+
+    public function updateServiceCharge(Request $request, $item)
+    {
+        $hotelCompanyIds = $this->superAdminHotelCompanyIds();
+        $centers = $this->hotelServiceCenterMap();
+
+        $folioItem = FolioItem::withoutGlobalScopes()
+            ->when(!empty($hotelCompanyIds), fn($query) => $query->whereIn('company_id', $hotelCompanyIds))
+            ->findOrFail((int) $item);
+
+        if (!$this->isManageableHotelServiceSale($folioItem)) {
+            return back()->with('error', 'Only posted hotel service sales can be edited here. Room charges remain controlled by stays and room-rate workflows.');
+        }
+
+        $data = $request->validate([
+            'service_center' => ['required', 'string', Rule::in(array_keys($centers))],
+            'description' => ['required', 'string', 'max:255'],
+            'quantity' => ['nullable', 'numeric', 'min:0.001'],
+            'unit_price' => ['required', 'numeric', 'min:0.01'],
+            'discount' => ['nullable', 'numeric', 'min:0'],
+            'tax' => ['nullable', 'numeric', 'min:0'],
+            'service_date' => ['nullable', 'date'],
+            'note' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $folio = GuestFolio::withoutGlobalScopes()
+            ->with('stay')
+            ->findOrFail((int) $folioItem->folio_id);
+
+        $quantity = (float) ($data['quantity'] ?? 1);
+        $unitPrice = (float) $data['unit_price'];
+        $discount = (float) ($data['discount'] ?? 0);
+        $tax = (float) ($data['tax'] ?? 0);
+        $amount = max(0.01, ($quantity * $unitPrice) + $tax - $discount);
+        $center = $centers[$data['service_center']];
+        $meta = is_array($folioItem->meta) ? $folioItem->meta : [];
+
+        DB::transaction(function () use ($folioItem, $folio, $data, $quantity, $unitPrice, $discount, $tax, $amount, $center, $meta) {
+            $folioItem->forceFill([
+                'description' => $data['description'],
+                'amount' => $amount,
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'type' => 'service',
+                'service_code' => $center['code'],
+                'service_date' => $data['service_date'] ?? now()->toDateString(),
+                'meta' => array_merge($meta, [
+                    'center' => $data['service_center'],
+                    'discount' => $discount,
+                    'tax' => $tax,
+                    'note' => $data['note'] ?? null,
+                    'edited_from' => 'super_admin_hotel_monitor',
+                    'edited_at' => now()->toDateTimeString(),
+                ]),
+            ])->save();
+
+            LedgerService::postHotelFolioCharge(
+                $folioItem->fresh(),
+                $folio,
+                $folio->stay?->branch_id,
+                $folio->stay?->branch_name
+            );
+
+            foreach ($this->linkedServicePayments($folioItem) as $payment) {
+                $paymentMeta = is_array($payment->meta) ? $payment->meta : [];
+                $paymentMode = (string) ($paymentMeta['payment_mode'] ?? $paymentMeta['center'] ?? $payment->service_code ?? 'payment');
+                $payment->forceFill([
+                    'description' => ucfirst(str_replace('_', ' ', $paymentMode)) . ' payment for ' . strtolower($data['description']),
+                    'amount' => $amount,
+                    'quantity' => 1,
+                    'unit_price' => $amount,
+                    'service_date' => $data['service_date'] ?? now()->toDateString(),
+                    'meta' => array_merge($paymentMeta, [
+                        'center' => $data['service_center'],
+                        'settles_folio_item_id' => $folioItem->id,
+                        'edited_from' => 'super_admin_hotel_monitor',
+                        'edited_at' => now()->toDateTimeString(),
+                    ]),
+                ])->save();
+
+                LedgerService::postHotelFolioPayment(
+                    $payment->fresh(),
+                    $folio,
+                    0,
+                    $folio->stay?->branch_id,
+                    $folio->stay?->branch_name
+                );
+            }
+
+            app(HotelFolioService::class)->recalculate($folio->fresh());
+        });
+
+        return back()->with('success', $center['label'].' updated.');
+    }
+
+    public function destroyServiceCharge($item)
+    {
+        $hotelCompanyIds = $this->superAdminHotelCompanyIds();
+        $folioItem = FolioItem::withoutGlobalScopes()
+            ->when(!empty($hotelCompanyIds), fn($query) => $query->whereIn('company_id', $hotelCompanyIds))
+            ->findOrFail((int) $item);
+
+        if (!$this->isManageableHotelServiceSale($folioItem)) {
+            return back()->with('error', 'Only posted hotel service sales can be deleted here. Room charges remain controlled by stays and room-rate workflows.');
+        }
+
+        $folio = GuestFolio::withoutGlobalScopes()->find($folioItem->folio_id);
+
+        DB::transaction(function () use ($folioItem, $folio) {
+            foreach ($this->linkedServicePayments($folioItem) as $payment) {
+                Transaction::query()
+                    ->where('related_id', $payment->id)
+                    ->where('related_type', FolioItem::class)
+                    ->delete();
+                $payment->delete();
+            }
+
+            Transaction::query()
+                ->where('related_id', $folioItem->id)
+                ->where('related_type', FolioItem::class)
+                ->delete();
+            $folioItem->delete();
+
+            if ($folio) {
+                app(HotelFolioService::class)->recalculate($folio->fresh());
+            }
+        });
+
+        return back()->with('success', 'Hotel service sale deleted and folio totals refreshed.');
+    }
+
+    private function isManageableHotelServiceSale(FolioItem $item): bool
+    {
+        $serviceCode = strtoupper((string) ($item->service_code ?? ''));
+
+        return !empty($item->folio_id)
+            && in_array((string) ($item->type ?? ''), ['service', 'pos_charge', 'charge'], true)
+            && !in_array($serviceCode, ['ROOM', 'ROOM_NIGHT'], true);
+    }
+
+    private function linkedServicePayments(FolioItem $charge)
+    {
+        return FolioItem::withoutGlobalScopes()
+            ->where('folio_id', $charge->folio_id)
+            ->whereIn('type', ['payment', 'deposit_applied'])
+            ->get()
+            ->filter(function (FolioItem $payment) use ($charge) {
+                $meta = is_array($payment->meta) ? $payment->meta : [];
+                return (int) ($meta['settles_folio_item_id'] ?? 0) === (int) $charge->id;
+            })
+            ->values();
     }
 
     private function hotelServiceCenterMap(): array

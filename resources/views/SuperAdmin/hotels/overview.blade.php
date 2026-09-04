@@ -210,19 +210,19 @@
     .sa-directory-card.feature h5, .sa-directory-card.feature p, .sa-directory-card.feature small { color:#fff !important; }
     .sa-directory-card .eyebrow { color:#d4a23a; text-transform:uppercase; letter-spacing:.12em; font-size:12px; font-weight:700; }
     .sa-service-cockpit { display:grid; grid-template-columns:1.12fr .88fr; gap:14px; margin-bottom:16px; }
-    .sa-service-command-panel { min-height:230px; border-radius:18px; padding:18px; color:#fff; background:#082f55; box-shadow:0 18px 36px rgba(8,47,73,.15); display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; position:relative; }
+    .sa-service-command-panel { min-height:230px; border-radius:18px; padding:18px; color:#fff; background-color:#082f55; background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(4,16,31,.48)),url('https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1400&q=80'); background-size:cover; background-position:center; box-shadow:0 18px 36px rgba(8,47,73,.15); display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; position:relative; }
     .sa-service-command-panel:before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,0)); pointer-events:none; }
-    .sa-service-command-panel h4, .sa-service-command-panel p, .sa-service-command-panel span, .sa-service-command-panel strong { color:#fff !important; position:relative; }
+    .sa-service-command-panel h4, .sa-service-command-panel p, .sa-service-command-panel span, .sa-service-command-panel strong { color:#fff !important; -webkit-text-fill-color:#fff !important; text-shadow:0 2px 10px rgba(0,0,0,.45); position:relative; }
     .sa-service-command-panel .eyebrow { color:#f5c451 !important; text-transform:uppercase; letter-spacing:.14em; font-size:12px; font-weight:900; }
-    .sa-service-command-panel.restaurant { background:linear-gradient(135deg,#7c2d12,#ea580c); }
-    .sa-service-command-panel.bar { background:linear-gradient(135deg,#312e81,#7c3aed); }
-    .sa-service-command-panel.spa { background:linear-gradient(135deg,#14532d,#0f766e); }
-    .sa-service-command-panel.gym { background:linear-gradient(135deg,#111827,#2563eb); }
-    .sa-service-command-panel.ticketing { background:linear-gradient(135deg,#713f12,#ca8a04); }
-    .sa-service-command-panel.minibar { background:linear-gradient(135deg,#164e63,#0891b2); }
-    .sa-service-command-panel.laundry { background:linear-gradient(135deg,#075985,#38bdf8); }
-    .sa-service-command-panel.room_service { background:linear-gradient(135deg,#581c87,#be185d); }
-    .sa-service-command-panel.conference { background:linear-gradient(135deg,#172554,#0f766e); }
+    .sa-service-command-panel.restaurant { background-image:linear-gradient(90deg,rgba(4,16,31,.86),rgba(65,28,11,.42)),url('https://images.unsplash.com/photo-1551218808-94e220e084d2?auto=format&fit=crop&w=1400&q=80'); }
+    .sa-service-command-panel.bar { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(28,22,79,.42)),url('https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=1400&q=80'); }
+    .sa-service-command-panel.spa { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(9,71,59,.42)),url('https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=1400&q=80'); }
+    .sa-service-command-panel.gym { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(14,50,92,.42)),url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1400&q=80'); }
+    .sa-service-command-panel.ticketing { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(86,58,9,.44)),url('https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1400&q=80'); }
+    .sa-service-command-panel.minibar { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(16,74,96,.42)),url('https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1400&q=80'); }
+    .sa-service-command-panel.laundry { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(8,80,118,.42)),url('https://images.unsplash.com/photo-1582735689369-4fe89db7114c?auto=format&fit=crop&w=1400&q=80'); }
+    .sa-service-command-panel.room_service { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(91,33,77,.42)),url('https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1400&q=80'); }
+    .sa-service-command-panel.conference { background-image:linear-gradient(90deg,rgba(4,16,31,.88),rgba(12,74,110,.42)),url('https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1400&q=80'); }
     .sa-service-command-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
     .sa-service-command { min-height:110px; border:1px solid #d8e2ee; border-radius:16px; background:#fff; padding:14px; box-shadow:0 12px 28px rgba(15,23,42,.05); color:#09213d; }
     .sa-service-command h5 { color:#061b33; margin:6px 0 5px; font-weight:900; }
@@ -256,6 +256,8 @@
     .sa-timeline table { min-width:1050px; margin:0; }
     .sa-timeline th { background:#061b33; color:#fff; border:0; text-transform:uppercase; font-size:12px; }
     .sa-timeline td { height:64px; vertical-align:middle; border-color:#e5edf6; }
+    .sa-row-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:260px; }
+    .sa-row-actions .btn, .sa-row-actions form { flex:0 0 auto; }
     .sa-pill-event { display:inline-flex; align-items:center; border-radius:999px; padding:7px 11px; color:#fff; background:#2563eb; font-weight:700; font-size:12px; }
     .sa-pill-event.green { background:#16a34a; } .sa-pill-event.gold { background:#d4a23a; color:#111827; } .sa-pill-event.red { background:#dc2626; }
     .sa-desk { display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:16px; }
@@ -1205,7 +1207,123 @@
                         </article>
                     </div>
                 </div>
-                <div class="sa-timeline"><table class="table table-sm align-middle"><thead><tr><th>Posting</th><th>Company</th><th>Service</th><th>Type</th><th>Amount</th><th>Date</th><th>Action</th></tr></thead><tbody>@forelse($panelRows as $row)@php $r=$rowArray($row); @endphp<tr><td>{{ $r['description'] ?? $r['folio_number'] ?? ('#'.($r['id'] ?? '-')) }}</td><td>{{ $r['company_id'] ?? '-' }}</td><td><span class="badge bg-warning text-dark">{{ $r['service_code'] ?? $r['department'] ?? strtoupper(str_replace('_', ' ', $servicePanelKey)) }}</span></td><td>{{ $r['type'] ?? $r['payment_method'] ?? '-' }}</td><td>{{ $money($r['amount'] ?? $r['total_amount'] ?? 0) }}</td><td>{{ $r['service_date'] ?? $r['created_at'] ?? $r['business_date'] ?? '-' }}</td><td>@if(!empty($r['id']) && !empty($r['folio_id']))<a class="btn btn-sm btn-outline-dark" target="_blank" rel="noopener" href="{{ route('super_admin.hotels.receipts.show', $r['id']) }}"><i class="fas fa-print me-1"></i> Receipt</a>@else<span class="text-muted">Report row</span>@endif</td></tr>@empty<tr><td colspan="7"><div class="sa-empty">No {{ strtolower($serviceHeading) }} postings found yet. Tenant charges for this service will appear here.</div></td></tr>@endforelse</tbody></table></div>
+                <div class="sa-timeline">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>Posting</th>
+                                <th>Company</th>
+                                <th>Service</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($panelRows as $row)
+                                @php
+                                    $r = $rowArray($row);
+                                    $rowMeta = is_array($r['meta'] ?? null) ? $r['meta'] : [];
+                                    $rowServiceCode = strtoupper((string)($r['service_code'] ?? $r['department'] ?? strtoupper(str_replace('_', ' ', $servicePanelKey))));
+                                    $rowType = (string)($r['type'] ?? $r['payment_method'] ?? '-');
+                                    $rowQuantity = (float)($r['quantity'] ?? 1);
+                                    $rowAmount = (float)($r['amount'] ?? $r['total_amount'] ?? 0);
+                                    $rowUnitPrice = (float)($r['unit_price'] ?? ($rowQuantity > 0 ? ($rowAmount / $rowQuantity) : $rowAmount));
+                                    $rowDiscount = (float)($rowMeta['discount'] ?? 0);
+                                    $rowTax = (float)($rowMeta['tax'] ?? 0);
+                                    $rowCenter = (string)($rowMeta['center'] ?? strtolower($rowServiceCode));
+                                    $rowDateRaw = $r['service_date'] ?? $r['created_at'] ?? $r['business_date'] ?? null;
+                                    $rowDate = $rowDateRaw ? \Illuminate\Support\Carbon::parse($rowDateRaw)->toDateString() : now()->toDateString();
+                                    $canManageSale = !empty($r['id']) && !empty($r['folio_id']) && !in_array($rowServiceCode, ['ROOM', 'ROOM_NIGHT'], true);
+                                @endphp
+                                <tr>
+                                    <td>{{ $r['description'] ?? $r['folio_number'] ?? ('#'.($r['id'] ?? '-')) }}</td>
+                                    <td>{{ $r['company_id'] ?? '-' }}</td>
+                                    <td><span class="badge bg-warning text-dark">{{ $rowServiceCode }}</span></td>
+                                    <td>{{ $rowType }}</td>
+                                    <td>{{ $money($rowAmount) }}</td>
+                                    <td>{{ $rowDateRaw ?? '-' }}</td>
+                                    <td>
+                                        @if(!empty($r['id']) && !empty($r['folio_id']))
+                                            <div class="sa-row-actions">
+                                                <a class="btn btn-sm btn-outline-dark" target="_blank" rel="noopener" href="{{ route('super_admin.hotels.receipts.show', $r['id']) }}"><i class="fas fa-print me-1"></i> Receipt</a>
+                                                @if($canManageSale)
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#saEditServiceSale{{ $r['id'] }}"><i class="fas fa-pen me-1"></i> Edit</button>
+                                                    <form method="POST" action="{{ route('super_admin.hotels.service_charges.destroy', $r['id']) }}" onsubmit="return confirm('Delete this posted hotel service sale and refresh the folio totals?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash me-1"></i> Delete</button>
+                                                    </form>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <span class="text-muted">Report row</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="7"><div class="sa-empty">No {{ strtolower($serviceHeading) }} postings found yet. Tenant charges for this service will appear here.</div></td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                @foreach($panelRows as $row)
+                    @php
+                        $r = $rowArray($row);
+                        $rowMeta = is_array($r['meta'] ?? null) ? $r['meta'] : [];
+                        $rowServiceCode = strtoupper((string)($r['service_code'] ?? $r['department'] ?? strtoupper(str_replace('_', ' ', $servicePanelKey))));
+                        $rowQuantity = (float)($r['quantity'] ?? 1);
+                        $rowAmount = (float)($r['amount'] ?? $r['total_amount'] ?? 0);
+                        $rowUnitPrice = (float)($r['unit_price'] ?? ($rowQuantity > 0 ? ($rowAmount / $rowQuantity) : $rowAmount));
+                        $rowDiscount = (float)($rowMeta['discount'] ?? 0);
+                        $rowTax = (float)($rowMeta['tax'] ?? 0);
+                        $rowCenter = (string)($rowMeta['center'] ?? strtolower($rowServiceCode));
+                        $rowDateRaw = $r['service_date'] ?? $r['created_at'] ?? $r['business_date'] ?? null;
+                        $rowDate = $rowDateRaw ? \Illuminate\Support\Carbon::parse($rowDateRaw)->toDateString() : now()->toDateString();
+                        $canManageSale = !empty($r['id']) && !empty($r['folio_id']) && !in_array($rowServiceCode, ['ROOM', 'ROOM_NIGHT'], true);
+                    @endphp
+                    @if($canManageSale)
+                        <div class="modal fade" id="saEditServiceSale{{ $r['id'] }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                                <form method="POST" action="{{ route('super_admin.hotels.service_charges.update', $r['id']) }}" class="modal-content">
+                                    @csrf
+                                    @method('PUT')
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Edit Hotel Service Sale</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="sa-form-grid">
+                                            <div class="full">
+                                                <label class="form-label">Service Center</label>
+                                                <div class="sa-choice-grid">
+                                                    @foreach(collect($serviceCenters)->except('all') as $serviceKey => $serviceMeta)
+                                                        <label class="sa-choice">
+                                                            <input type="radio" name="service_center" value="{{ $serviceKey }}" required @checked($rowCenter === $serviceKey || strtolower($rowServiceCode) === $serviceKey || $rowServiceCode === strtoupper($serviceKey))>
+                                                            <span>{{ $serviceMeta['label'] }}</span>
+                                                        </label>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                            <div><label class="form-label">Item / Ticket / Service</label><input name="description" class="form-control" value="{{ $r['description'] ?? '' }}" required></div>
+                                            <div><label class="form-label">Quantity</label><input name="quantity" type="number" min="0.001" step="0.001" value="{{ $rowQuantity }}" class="form-control"></div>
+                                            <div><label class="form-label">Unit Price</label><input name="unit_price" type="number" min="0.01" step="0.01" value="{{ $rowUnitPrice }}" class="form-control" required></div>
+                                            <div><label class="form-label">Discount</label><input name="discount" type="number" min="0" step="0.01" value="{{ $rowDiscount }}" class="form-control"></div>
+                                            <div><label class="form-label">Tax</label><input name="tax" type="number" min="0" step="0.01" value="{{ $rowTax }}" class="form-control"></div>
+                                            <div><label class="form-label">Date</label><input name="service_date" type="date" value="{{ $rowDate }}" class="form-control"></div>
+                                            <div class="full"><label class="form-label">Internal Note</label><textarea name="note" class="form-control" rows="2">{{ $rowMeta['note'] ?? '' }}</textarea></div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                                        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Save Sale</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    @endif
+                @endforeach
             </section>
             <div class="modal fade" id="saServiceChargeModal" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-lg modal-dialog-centered">

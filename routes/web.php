@@ -553,6 +553,8 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     Route::post('/hotels/room-types', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'storeRoomType'])->name('hotels.room_types.store');
     Route::put('/hotels/room-types/{type}', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'updateRoomType'])->name('hotels.room_types.update');
     Route::post('/hotels/service-charges', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'storeServiceCharge'])->name('hotels.service_charges.store');
+    Route::put('/hotels/folio-items/{item}', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'updateServiceCharge'])->name('hotels.service_charges.update');
+    Route::delete('/hotels/folio-items/{item}', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'destroyServiceCharge'])->name('hotels.service_charges.destroy');
     Route::get('/hotels/folio-items/{item}/receipt', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'serviceReceipt'])->name('hotels.receipts.show');
 
 
