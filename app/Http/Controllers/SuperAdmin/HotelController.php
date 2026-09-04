@@ -698,7 +698,7 @@ class HotelController extends Controller
         });
 
         return redirect()
-            ->route('super_admin.hotels.receipts.show', $createdItem)
+            ->route('super_admin.hotels.receipts.show', ['item' => $createdItem->id, 'print' => 1])
             ->with('success', $center['label'].' posted and receipt opened.');
     }
 

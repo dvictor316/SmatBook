@@ -1138,8 +1138,9 @@
             </section>
             <div class="modal fade" id="saServiceChargeModal" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-lg modal-dialog-centered">
-                    <form method="POST" action="{{ route('super_admin.hotels.service_charges.store') }}" class="modal-content">
+                    <form method="POST" action="{{ route('super_admin.hotels.service_charges.store') }}" class="modal-content" id="saServiceChargeForm">
                         @csrf
+                        <input type="hidden" name="print_receipt" value="1">
                         <div class="modal-header"><h5 class="modal-title">Post Hotel Service Sale</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                         <div class="modal-body">
                             @if($serviceFolios->isEmpty())
@@ -1198,7 +1199,7 @@
                                 </div>
                             @endif
                         </div>
-                        <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button><button class="btn btn-primary" @disabled($serviceFolios->isEmpty())>Post & Print Receipt</button></div>
+                        <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button><button type="submit" class="btn btn-primary" form="saServiceChargeForm" @disabled($serviceFolios->isEmpty())><i class="fas fa-receipt me-1"></i> Post Sale & Print Receipt</button></div>
                     </form>
                 </div>
             </div>

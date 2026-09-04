@@ -917,7 +917,7 @@ class HotelWorkspaceController extends Controller
         });
 
         return redirect()
-            ->route('hotel.folios.items.receipt', $createdItem)
+            ->route('hotel.folios.items.receipt', ['item' => $createdItem->id, 'print' => 1])
             ->with('success', $centers[$center]['label'] . ' posted to folio.');
     }
 

@@ -18,6 +18,7 @@
     .hotel-receipt-total { display:flex; justify-content:space-between; align-items:center; border-top:2px solid #061b33; padding-top:14px; margin-top:14px; font-size:22px; font-weight:900; }
     .hotel-receipt-foot { padding:16px 22px 22px; color:#64748b; }
     @media print {
+        @page { size:A4; margin:12mm; }
         .header, .sidebar, .hotel-receipt-actions, .page-wrapper:before { display:none !important; }
         .page-wrapper, .content, .hotel-receipt-page { margin:0 !important; padding:0 !important; background:#fff !important; }
         .hotel-receipt-shell { max-width:none; }
@@ -88,3 +89,15 @@
     </div>
 </div>
 @endsection
+
+@if(request()->boolean('print'))
+@section('script')
+<script>
+window.addEventListener('load', function () {
+    setTimeout(function () {
+        window.print();
+    }, 350);
+});
+</script>
+@endsection
+@endif

@@ -89,7 +89,7 @@ class FolioController extends Controller
         );
 
         return redirect()
-            ->route('hotel.folios.items.receipt', $item)
+            ->route('hotel.folios.items.receipt', ['item' => $item->id, 'print' => 1])
             ->with('success', 'Item posted.');
     }
 
@@ -129,7 +129,7 @@ class FolioController extends Controller
         );
 
         return redirect()
-            ->route('hotel.folios.items.receipt', $item)
+            ->route('hotel.folios.items.receipt', ['item' => $item->id, 'print' => 1])
             ->with('success', 'Service charge posted to folio.');
     }
 
