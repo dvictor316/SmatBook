@@ -191,6 +191,8 @@
     .sa-choice small { display:block; color:#64748b; font-weight:600; margin-top:3px; }
     .sa-choice input:checked + span { border-color:#0b5fb8; background:#e8f2ff; box-shadow:inset 0 0 0 2px rgba(11,95,184,.2); }
     .sa-tenant-lock { border:1px dashed #cbd8e8; border-radius:10px; background:#f8fbff; padding:11px 12px; color:#09213d; }
+    .sa-tenant-lock strong { display:block; color:#061b33; font-size:16px; }
+    .sa-tenant-lock small { color:#64748b; font-weight:700; }
     .sa-form-grid > div { position:relative; }
     .sa-form-grid > div:focus-within { z-index:50; }
     .sa-dropdown-stack { grid-column:1 / -1; z-index:25; }
@@ -1146,14 +1148,13 @@
                             @if($serviceFolios->isEmpty())
                                 <div class="alert alert-warning mb-0">No open guest folios are available. Create/check in a guest first, then post service sales here.</div>
                             @else
+                                @php $companyNames = collect($hotelCompanies ?? [])->pluck('name', 'id'); @endphp
                                 <div class="sa-form-grid">
                                     <div class="full">
                                         <label class="form-label">Hotel Tenant</label>
-                                        <div class="sa-tenant-lock">
-                                            Tenant is selected automatically from the guest folio below.
-                                            @if($selectedCompanyId)
-                                                <input type="hidden" name="company_id" value="{{ $selectedCompanyId }}">
-                                            @endif
+                                        <div class="sa-tenant-lock" data-sa-tenant-display>
+                                            <strong>Choose a guest folio below</strong>
+                                            <small>The tenant follows the selected open folio.</small>
                                         </div>
                                     </div>
                                     <div class="full">
@@ -1161,8 +1162,8 @@
                                         <div class="sa-choice-list">
                                             @foreach($serviceFolios as $folio)
                                                 <label class="sa-choice">
-                                                    <input type="radio" name="folio_id" value="{{ $folio->id }}" required @checked($loop->first)>
-                                                    <span>{{ $folio->customer?->customer_name ?? $folio->customer?->name ?? 'Guest' }} - Room {{ $folio->stay?->room?->room_number ?? 'N/A' }}<small>{{ $folio->folio_number }} - Company {{ $folio->company_id }}</small></span>
+                                                    <input type="radio" name="folio_id" value="{{ $folio->id }}" required @checked($loop->first) data-company-name="{{ $companyNames[(int) $folio->company_id] ?? ('Company '.$folio->company_id) }}" data-company-id="{{ $folio->company_id }}">
+                                                    <span>{{ $folio->customer?->customer_name ?? $folio->customer?->name ?? 'Guest' }} - Room {{ $folio->stay?->room?->room_number ?? 'N/A' }}<small>{{ $folio->folio_number }} - {{ $companyNames[(int) $folio->company_id] ?? ('Company '.$folio->company_id) }}</small></span>
                                                 </label>
                                             @endforeach
                                         </div>
@@ -1199,7 +1200,7 @@
                                 </div>
                             @endif
                         </div>
-                        <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button><button type="submit" class="btn btn-primary" form="saServiceChargeForm" @disabled($serviceFolios->isEmpty())><i class="fas fa-receipt me-1"></i> Post Sale & Print Receipt</button></div>
+                        <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button><button type="submit" class="btn btn-primary" form="saServiceChargeForm" data-sa-submit-sale @disabled($serviceFolios->isEmpty())><i class="fas fa-receipt me-1"></i> Post Sale & Open Receipt</button></div>
                     </form>
                 </div>
             </div>
@@ -1424,4 +1425,33 @@
         @if($isPaginator && $panel !== 'overview')<div class="mt-3">{{ $panelData->links() }}</div>@endif
     </div>
 </div>
+@endsection
+
+@section('script')
+<script>
+(function () {
+    const form = document.getElementById('saServiceChargeForm');
+    if (!form) return;
+
+    const tenantDisplay = form.querySelector('[data-sa-tenant-display]');
+    const submitButton = form.querySelector('[data-sa-submit-sale]');
+
+    function updateTenantDisplay() {
+        const selected = form.querySelector('input[name="folio_id"]:checked');
+        if (!selected || !tenantDisplay) return;
+        tenantDisplay.innerHTML = '<strong>' + selected.dataset.companyName + '</strong><small>Company ID ' + selected.dataset.companyId + ' selected from this guest folio.</small>';
+    }
+
+    form.querySelectorAll('input[name="folio_id"]').forEach((input) => {
+        input.addEventListener('change', updateTenantDisplay);
+    });
+    updateTenantDisplay();
+
+    form.addEventListener('submit', function () {
+        if (!submitButton || !form.checkValidity()) return;
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Posting Sale...';
+    });
+})();
+</script>
 @endsection

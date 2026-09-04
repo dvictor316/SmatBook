@@ -47,7 +47,7 @@
                 <a href="{{ $backRoute }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i> Back</a>
                 <button type="button" class="btn btn-primary" onclick="window.print()"><i class="fas fa-print me-1"></i> Print Receipt</button>
             </div>
-            <article class="hotel-receipt">
+            <article class="hotel-receipt" data-print-scope data-hotel-receipt-print>
                 <div class="hotel-receipt-head">
                     <div>
                         <small>SmartProbook Hotel PMS</small>
@@ -95,6 +95,10 @@
 <script>
 window.addEventListener('load', function () {
     setTimeout(function () {
+        if (window.smartProbookTriggerPrint) {
+            window.smartProbookTriggerPrint('[data-hotel-receipt-print]');
+            return;
+        }
         window.print();
     }, 350);
 });

@@ -3412,6 +3412,10 @@
                 const link = event.target.closest('a,button');
                 if (!link) return;
 
+                if (link.matches('button[type="submit"], input[type="submit"]')) {
+                    return;
+                }
+
                 const downloadItem = event.target.closest('.download-item');
                 if (downloadItem) {
                     event.preventDefault();
