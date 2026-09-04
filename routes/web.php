@@ -552,6 +552,8 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     Route::post('/hotels/maintenance/tickets/{ticket}/status', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'updateMaintenanceTicketStatus'])->name('hotels.maintenance.tickets.status');
     Route::post('/hotels/room-types', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'storeRoomType'])->name('hotels.room_types.store');
     Route::put('/hotels/room-types/{type}', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'updateRoomType'])->name('hotels.room_types.update');
+    Route::post('/hotels/service-charges', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'storeServiceCharge'])->name('hotels.service_charges.store');
+    Route::get('/hotels/folio-items/{item}/receipt', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'serviceReceipt'])->name('hotels.receipts.show');
 
 
 
@@ -735,6 +737,7 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
 
     Route::get('/folios', [\App\Http\Controllers\Hotel\FolioController::class, 'index'])->name('folios.index');
     Route::get('/folios/{folio}', [\App\Http\Controllers\Hotel\FolioController::class, 'show'])->name('folios.show');
+    Route::get('/folios/items/{item}/receipt', [\App\Http\Controllers\Hotel\FolioController::class, 'receipt'])->name('folios.items.receipt');
     Route::post('/folios/{folio}/items', [\App\Http\Controllers\Hotel\FolioController::class, 'storeItem'])->name('folios.items.store');
     Route::post('/folios/{folio}/services', [\App\Http\Controllers\Hotel\FolioController::class, 'postService'])->name('folios.services.store');
 
@@ -751,7 +754,7 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
     Route::get('/minibar', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'minibar'])->name('minibar.index');
     Route::get('/conference-events', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'conference'])->name('conference.index');
     Route::get('/service-centers/{center}', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'serviceCenter'])->whereIn('center', ['bar', 'gym', 'spa', 'ticketing'])->name('service_centers.show');
-    Route::post('/service-centers/{center}/charges', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'postServiceCenterCharge'])->whereIn('center', ['bar', 'gym', 'spa', 'ticketing'])->name('service_centers.charges.store');
+    Route::post('/service-centers/{center}/charges', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'postServiceCenterCharge'])->whereIn('center', ['restaurant', 'bar', 'gym', 'spa', 'ticketing', 'room_service', 'laundry', 'minibar', 'conference'])->name('service_centers.charges.store');
 
     Route::get('/corporate-accounts', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'corporateAccounts'])->name('corporate_accounts.index');
     Route::get('/group-bookings', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'groupBookings'])->name('group_bookings.index');

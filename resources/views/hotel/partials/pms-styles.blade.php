@@ -39,7 +39,7 @@
     .hotel-status-chip.gold { background: #fef3c7; color: #92400e; }
     .hotel-status-chip.red { background: #fee2e2; color: #991b1b; }
     .hotel-service-workflow { background: linear-gradient(135deg, #fffaf0 0%, #f5fbff 100%); }
-    .hotel-service-layout { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.6fr); gap: 18px; align-items: start; }
+    .hotel-service-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; align-items: start; }
     .hotel-service-rail { border-left: 5px solid #d9a441; }
     .hotel-service-step { display: flex; gap: 12px; padding: 12px; border-radius: 8px; background: #fff; border: 1px solid #edf2f8; margin-bottom: 10px; }
     .hotel-service-step span { width: 32px; height: 32px; border-radius: 50%; background: #052247; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; flex: 0 0 auto; }

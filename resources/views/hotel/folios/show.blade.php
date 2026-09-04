@@ -30,7 +30,7 @@
     <div class="content container-fluid">
         <div class="cashier-top mb-0">
             <div><strong>PMS Cashier</strong> · Folio Settlement Desk</div>
-            <div class="d-flex flex-wrap gap-2"><a href="{{ route('hotel.folios.index') }}" class="btn btn-sm btn-light">Folios</a><a href="{{ route('hotel.checkout.index', ['stay_id' => $folio->stay_id]) }}" class="btn btn-sm btn-warning">Checkout</a></div>
+            <div class="d-flex flex-wrap gap-2"><button type="button" onclick="window.print()" class="btn btn-sm btn-outline-light"><i class="fas fa-print me-1"></i> Print Folio</button><a href="{{ route('hotel.folios.index') }}" class="btn btn-sm btn-light">Folios</a><a href="{{ route('hotel.checkout.index', ['stay_id' => $folio->stay_id]) }}" class="btn btn-sm btn-warning">Checkout</a></div>
         </div>
 
         <div class="cashier-shell">
@@ -52,7 +52,7 @@
                 <div class="cashier-tabs"><div class="cashier-tab active">Master Folio</div><div class="cashier-tab">Extra Folio</div><div class="cashier-tab">Package</div></div>
                 <div class="p-3 table-responsive">
                     <table class="table table-sm folio-ledger align-middle mb-0">
-                        <thead><tr><th>No.</th><th>Posted</th><th>Ref No.</th><th>Transaction</th><th>Charge</th><th>Payment</th><th>Balance</th></tr></thead>
+                        <thead><tr><th>No.</th><th>Posted</th><th>Ref No.</th><th>Transaction</th><th>Charge</th><th>Payment</th><th>Balance</th><th>Action</th></tr></thead>
                         <tbody>
                         @forelse($items as $item)
                             <tr>
@@ -63,9 +63,10 @@
                                 <td>{{ $item->ledger_charge > 0 ? number_format((float)$item->ledger_charge,2) : '-' }}</td>
                                 <td>{{ $item->ledger_payment > 0 ? number_format((float)$item->ledger_payment,2) : '-' }}</td>
                                 <td>{{ number_format((float)$item->ledger_running_balance,2) }}</td>
+                                <td><a class="btn btn-sm btn-outline-dark" target="_blank" rel="noopener" href="{{ route('hotel.folios.items.receipt', $item) }}"><i class="fas fa-print me-1"></i> Receipt</a></td>
                             </tr>
                         @empty
-                            <tr><td colspan="7" class="text-muted py-4 text-center">No folio transactions posted yet.</td></tr>
+                            <tr><td colspan="8" class="text-muted py-4 text-center">No folio transactions posted yet.</td></tr>
                         @endforelse
                         </tbody>
                     </table>
@@ -100,7 +101,7 @@
                 <form method="POST" action="{{ route('hotel.folios.services.store', $folio) }}" class="post-form row g-2">
                     @csrf
                     <div class="col-12"><strong>Post Service</strong></div>
-                    <div class="col-12"><select name="service_type" class="form-control"><option value="restaurant">Restaurant</option><option value="room_service">Room Service</option><option value="laundry">Laundry</option><option value="minibar">Minibar</option><option value="other">Other</option></select></div>
+                    <div class="col-12"><select name="service_type" class="form-control"><option value="restaurant">Restaurant</option><option value="bar">Bar</option><option value="gym">Gym</option><option value="spa">Spa</option><option value="ticketing">Ticketing / Events</option><option value="room_service">Room Service</option><option value="laundry">Laundry</option><option value="minibar">Minibar</option><option value="conference">Conference</option><option value="other">Other</option></select></div>
                     <div class="col-7"><input type="number" step="0.01" name="amount" class="form-control" placeholder="Amount" required></div>
                     <div class="col-5"><input type="number" step="0.001" name="quantity" class="form-control" placeholder="Qty"></div>
                     <div class="col-12"><input type="text" name="description" class="form-control" placeholder="Optional note"></div>

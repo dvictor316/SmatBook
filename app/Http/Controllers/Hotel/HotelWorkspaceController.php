@@ -709,7 +709,9 @@ class HotelWorkspaceController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('hotel.operations.laundry', compact('orders'));
+        $activeFolios = $this->activeServiceFolios($companyId, $propertyId);
+
+        return view('hotel.operations.laundry', compact('orders', 'activeFolios'));
     }
 
     public function minibar(Request $request)
@@ -735,7 +737,9 @@ class HotelWorkspaceController extends Controller
             ->limit(40)
             ->get();
 
-        return view('hotel.operations.minibar', compact('entries', 'activeStays'));
+        $activeFolios = $this->activeServiceFolios($companyId, $propertyId);
+
+        return view('hotel.operations.minibar', compact('entries', 'activeStays', 'activeFolios'));
     }
 
     public function roomService(Request $request)
@@ -752,7 +756,9 @@ class HotelWorkspaceController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('hotel.operations.room_service', compact('items'));
+        $activeFolios = $this->activeServiceFolios($companyId, $propertyId);
+
+        return view('hotel.operations.room_service', compact('items', 'activeFolios'));
     }
 
     public function conference(Request $request)
@@ -769,7 +775,9 @@ class HotelWorkspaceController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('hotel.operations.conference', compact('bookings'));
+        $activeFolios = $this->activeServiceFolios($companyId, $propertyId);
+
+        return view('hotel.operations.conference', compact('bookings', 'activeFolios'));
     }
 
 
@@ -818,10 +826,15 @@ class HotelWorkspaceController extends Controller
     public function postServiceCenterCharge(Request $request, string $center)
     {
         $centers = [
+            'restaurant' => ['code' => 'RESTAURANT', 'label' => 'Restaurant sale'],
             'bar' => ['code' => 'BAR', 'label' => 'Bar order'],
             'gym' => ['code' => 'GYM', 'label' => 'Gym charge'],
             'spa' => ['code' => 'SPA', 'label' => 'Spa service'],
             'ticketing' => ['code' => 'TICKETING', 'label' => 'Ticket sale'],
+            'room_service' => ['code' => 'ROOM_SERVICE', 'label' => 'Room service sale'],
+            'laundry' => ['code' => 'LAUNDRY', 'label' => 'Laundry sale'],
+            'minibar' => ['code' => 'MINIBAR', 'label' => 'Minibar sale'],
+            'conference' => ['code' => 'CONFERENCE', 'label' => 'Conference sale'],
         ];
 
         abort_unless(array_key_exists($center, $centers), 404);
@@ -850,9 +863,10 @@ class HotelWorkspaceController extends Controller
         $tax = (float) ($validated['tax'] ?? 0);
         $amount = max(0.01, ($quantity * $unitPrice) + $tax - $discount);
         $code = $centers[$center]['code'];
+        $createdItem = null;
 
-        DB::transaction(function () use ($folio, $validated, $quantity, $unitPrice, $discount, $tax, $amount, $code, $center) {
-            $item = $this->folioService->postCharge($folio, [
+        DB::transaction(function () use ($folio, $validated, $quantity, $unitPrice, $discount, $tax, $amount, $code, $center, &$createdItem) {
+            $createdItem = $this->folioService->postCharge($folio, [
                 'description' => $validated['description'],
                 'amount' => $amount,
                 'quantity' => $quantity,
@@ -873,7 +887,7 @@ class HotelWorkspaceController extends Controller
             ]);
 
             LedgerService::postHotelFolioCharge(
-                $item,
+                $createdItem,
                 $folio,
                 $folio->stay?->branch_id,
                 $folio->stay?->branch_name
@@ -889,7 +903,7 @@ class HotelWorkspaceController extends Controller
                     'source_type' => self::class,
                     'source_id' => $folio->id,
                     'posted_by' => auth()->id(),
-                    'meta' => ['center' => $center, 'settles_folio_item_id' => $item->id],
+                    'meta' => ['center' => $center, 'settles_folio_item_id' => $createdItem->id],
                 ]);
 
                 LedgerService::postHotelFolioPayment(
@@ -902,7 +916,21 @@ class HotelWorkspaceController extends Controller
             }
         });
 
-        return back()->with('success', $centers[$center]['label'] . ' posted to folio.');
+        return redirect()
+            ->route('hotel.folios.items.receipt', $createdItem)
+            ->with('success', $centers[$center]['label'] . ' posted to folio.');
+    }
+
+    private function activeServiceFolios(int $companyId, ?int $propertyId)
+    {
+        return GuestFolio::query()
+            ->with(['customer', 'stay.room'])
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->where('status', 'open')
+            ->latest('id')
+            ->limit(60)
+            ->get();
     }
 
     public function corporateAccounts(Request $request)

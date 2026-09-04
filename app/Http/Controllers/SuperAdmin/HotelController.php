@@ -3,8 +3,11 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use App\Models\Company;
+use App\Models\FolioItem;
+use App\Models\GuestFolio;
 use App\Models\Subscription;
 use App\Models\HotelProperty;
 use App\Models\HotelHousekeepingTask;
@@ -13,7 +16,9 @@ use App\Models\HotelRoom;
 use App\Models\HotelRoomBlock;
 use App\Models\HotelRoomImage;
 use App\Models\HotelRoomType;
+use App\Services\Hotel\HotelFolioService;
 use App\Support\HotelAccess;
+use App\Support\LedgerService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
@@ -605,6 +610,127 @@ class HotelController extends Controller
         return back()->with('success', 'Room type '.$type->name.' updated.');
     }
 
+    public function storeServiceCharge(Request $request)
+    {
+        $hotelCompanyIds = $this->superAdminHotelCompanyIds();
+        $centers = $this->hotelServiceCenterMap();
+
+        $data = $request->validate([
+            'company_id' => ['nullable', 'integer', Rule::in($hotelCompanyIds)],
+            'folio_id' => ['required', 'integer'],
+            'service_center' => ['required', 'string', Rule::in(array_keys($centers))],
+            'description' => ['required', 'string', 'max:255'],
+            'quantity' => ['nullable', 'numeric', 'min:0.001'],
+            'unit_price' => ['required', 'numeric', 'min:0.01'],
+            'discount' => ['nullable', 'numeric', 'min:0'],
+            'tax' => ['nullable', 'numeric', 'min:0'],
+            'payment_mode' => ['required', 'string', Rule::in(['charge_to_room', 'cash', 'card', 'transfer', 'other'])],
+            'service_date' => ['nullable', 'date'],
+            'note' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $folio = GuestFolio::withoutGlobalScopes()
+            ->with('stay')
+            ->when(!empty($hotelCompanyIds), fn($query) => $query->whereIn('company_id', $hotelCompanyIds))
+            ->where('status', 'open')
+            ->findOrFail((int) $data['folio_id']);
+
+        $data['company_id'] = (int) $folio->company_id;
+
+        $quantity = (float) ($data['quantity'] ?? 1);
+        $unitPrice = (float) $data['unit_price'];
+        $discount = (float) ($data['discount'] ?? 0);
+        $tax = (float) ($data['tax'] ?? 0);
+        $amount = max(0.01, ($quantity * $unitPrice) + $tax - $discount);
+        $center = $centers[$data['service_center']];
+        $createdItem = null;
+
+        DB::transaction(function () use ($folio, $data, $quantity, $unitPrice, $discount, $tax, $amount, $center, &$createdItem) {
+            $createdItem = app(HotelFolioService::class)->postCharge($folio, [
+                'description' => $data['description'],
+                'amount' => $amount,
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'type' => 'service',
+                'service_code' => $center['code'],
+                'service_date' => $data['service_date'] ?? now()->toDateString(),
+                'source_type' => self::class,
+                'source_id' => $folio->id,
+                'posted_by' => auth()->id(),
+                'meta' => [
+                    'center' => $data['service_center'],
+                    'payment_mode' => $data['payment_mode'],
+                    'discount' => $discount,
+                    'tax' => $tax,
+                    'note' => $data['note'] ?? null,
+                    'posted_from' => 'super_admin_hotel_monitor',
+                ],
+            ]);
+
+            LedgerService::postHotelFolioCharge(
+                $createdItem,
+                $folio,
+                $folio->stay?->branch_id,
+                $folio->stay?->branch_name
+            );
+
+            if ($data['payment_mode'] !== 'charge_to_room') {
+                $payment = app(HotelFolioService::class)->postPayment($folio, [
+                    'description' => ucfirst(str_replace('_', ' ', $data['payment_mode'])) . ' payment for ' . strtolower($data['description']),
+                    'amount' => $amount,
+                    'type' => 'payment',
+                    'service_code' => strtoupper($data['payment_mode']),
+                    'service_date' => $data['service_date'] ?? now()->toDateString(),
+                    'source_type' => self::class,
+                    'source_id' => $folio->id,
+                    'posted_by' => auth()->id(),
+                    'meta' => ['center' => $data['service_center'], 'settles_folio_item_id' => $createdItem->id, 'posted_from' => 'super_admin_hotel_monitor'],
+                ]);
+
+                LedgerService::postHotelFolioPayment(
+                    $payment,
+                    $folio,
+                    0,
+                    $folio->stay?->branch_id,
+                    $folio->stay?->branch_name
+                );
+            }
+        });
+
+        return redirect()
+            ->route('super_admin.hotels.receipts.show', $createdItem)
+            ->with('success', $center['label'].' posted and receipt opened.');
+    }
+
+    public function serviceReceipt($item)
+    {
+        $hotelCompanyIds = $this->superAdminHotelCompanyIds();
+        $item = FolioItem::withoutGlobalScopes()
+            ->when(!empty($hotelCompanyIds), fn($query) => $query->whereIn('company_id', $hotelCompanyIds))
+            ->findOrFail((int) $item);
+        $folio = GuestFolio::withoutGlobalScopes()
+            ->with(['customer', 'stay.room'])
+            ->find($item->folio_id);
+        $item->setRelation('folio', $folio);
+
+        return view('SuperAdmin.hotels.receipt', ['item' => $item, 'folio' => $folio, 'isSuperAdminReceipt' => true]);
+    }
+
+    private function hotelServiceCenterMap(): array
+    {
+        return [
+            'restaurant' => ['code' => 'RESTAURANT', 'label' => 'Restaurant sale'],
+            'bar' => ['code' => 'BAR', 'label' => 'Bar sale'],
+            'gym' => ['code' => 'GYM', 'label' => 'Gym sale'],
+            'spa' => ['code' => 'SPA', 'label' => 'Spa sale'],
+            'ticketing' => ['code' => 'TICKETING', 'label' => 'Ticket sale'],
+            'room_service' => ['code' => 'ROOM_SERVICE', 'label' => 'Room service sale'],
+            'minibar' => ['code' => 'MINIBAR', 'label' => 'Minibar sale'],
+            'laundry' => ['code' => 'LAUNDRY', 'label' => 'Laundry sale'],
+            'conference' => ['code' => 'CONFERENCE', 'label' => 'Conference sale'],
+        ];
+    }
+
     private function hotelRevenueTrend(?int $companyId, array $hotelCompanyIds): array
     {
         $days = collect(range(6, 0))->mapWithKeys(function ($offset) {
@@ -1008,6 +1134,14 @@ class HotelController extends Controller
             'statusCounts' => $statusCounts,
             'housekeepingCounts' => $housekeepingCounts,
             'activeBlocks' => $activeBlocks,
+            'openFolios' => $this->hasTable('guest_folios')
+                ? $companyScope(GuestFolio::withoutGlobalScopes())
+                    ->with(['customer', 'stay.room'])
+                    ->where('status', 'open')
+                    ->latest('id')
+                    ->limit(80)
+                    ->get()
+                : collect(),
             'mediaCount' => $this->hasTable('hotel_room_images')
                 ? $companyScope(HotelRoomImage::withoutGlobalScopes())->count()
                 : 0,

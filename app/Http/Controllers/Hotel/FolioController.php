@@ -88,7 +88,9 @@ class FolioController extends Controller
             $stay?->branch_name
         );
 
-        return back()->with('success','Item posted');
+        return redirect()
+            ->route('hotel.folios.items.receipt', $item)
+            ->with('success', 'Item posted.');
     }
 
     public function postService(Request $request, GuestFolio $folio)
@@ -96,7 +98,7 @@ class FolioController extends Controller
         abort_unless($folio->company_id == auth()->user()->company_id, 404);
 
         $data = $request->validate([
-            'service_type' => 'required|string|in:restaurant,room_service,laundry,minibar,other',
+            'service_type' => 'required|string|in:restaurant,bar,gym,spa,ticketing,room_service,laundry,minibar,conference,other',
             'description' => 'nullable|string|max:255',
             'amount' => 'required|numeric|min:0.01',
             'quantity' => 'nullable|numeric|gt:0',
@@ -126,6 +128,18 @@ class FolioController extends Controller
             $stay?->branch_name
         );
 
-        return back()->with('success', 'Service charge posted to folio.');
+        return redirect()
+            ->route('hotel.folios.items.receipt', $item)
+            ->with('success', 'Service charge posted to folio.');
+    }
+
+    public function receipt($item)
+    {
+        $item = FolioItem::query()
+            ->with(['folio.customer', 'folio.stay.room'])
+            ->where('company_id', auth()->user()->company_id)
+            ->findOrFail((int) $item);
+
+        return view('SuperAdmin.hotels.receipt', ['item' => $item, 'folio' => $item->folio, 'isSuperAdminReceipt' => false]);
     }
 }

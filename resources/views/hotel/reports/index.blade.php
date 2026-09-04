@@ -41,6 +41,7 @@
                 <p>Hotel front office, sales, cashier and accounting reports in one place.</p>
             </div>
             <div class="report-actions">
+                <button type="button" onclick="window.print()" class="btn btn-outline-dark"><i class="fas fa-print me-1"></i> Print</button>
                 <a href="{{ route('hotel.night_audit.index') }}" class="btn btn-warning">Night Audit</a>
                 @if(Route::has('general-ledger'))<a href="{{ route('general-ledger') }}" class="btn btn-outline-primary">General Ledger</a>@endif
             </div>
