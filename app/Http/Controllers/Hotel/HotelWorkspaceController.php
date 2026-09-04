@@ -1161,6 +1161,11 @@ class HotelWorkspaceController extends Controller
         $today = now()->toDateString();
         $monthStart = now()->startOfMonth()->toDateString();
         $monthEnd = now()->endOfMonth()->toDateString();
+        $reportFrom = $request->date('from')?->toDateString() ?? $monthStart;
+        $reportTo = $request->date('to')?->toDateString() ?? $monthEnd;
+        if ($reportFrom > $reportTo) {
+            [$reportFrom, $reportTo] = [$reportTo, $reportFrom];
+        }
 
         $folioScope = fn () => FolioItem::query()
             ->where('company_id', $companyId)
@@ -1171,8 +1176,8 @@ class HotelWorkspaceController extends Controller
             'departures_today' => Reservation::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->whereDate('departure_date', $today)->count(),
             'occupancy' => Stay::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->where('status', 'checked_in')->count(),
             'room_revenue_today' => (float) $folioScope()->whereDate('service_date', $today)->where('service_code', 'ROOM_NIGHT')->sum('amount'),
-            'room_revenue_month' => (float) $folioScope()->whereBetween('service_date', [$monthStart, $monthEnd])->where('service_code', 'ROOM_NIGHT')->sum('amount'),
-            'service_revenue_month' => (float) $folioScope()->whereBetween('service_date', [$monthStart, $monthEnd])->whereNotIn('service_code', ['ROOM_NIGHT'])->sum('amount'),
+            'room_revenue_month' => (float) $folioScope()->whereBetween('service_date', [$reportFrom, $reportTo])->where('service_code', 'ROOM_NIGHT')->sum('amount'),
+            'service_revenue_month' => (float) $folioScope()->whereBetween('service_date', [$reportFrom, $reportTo])->whereNotIn('service_code', ['ROOM_NIGHT'])->whereIn('type', ['charge', 'room_night', 'service', 'pos_charge', 'adjustment'])->sum('amount'),
             'payments_today' => (float) $folioScope()->whereDate('service_date', $today)->whereIn('type', ['payment', 'deposit_applied'])->sum('amount'),
             'open_folios' => GuestFolio::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->where('status', 'open')->count(),
             'folio_balance' => (float) GuestFolio::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->sum('balance'),
@@ -1180,13 +1185,56 @@ class HotelWorkspaceController extends Controller
 
         $serviceRevenue = $folioScope()
             ->selectRaw('COALESCE(service_code, "OTHER") as service_code, SUM(COALESCE(amount,0)) as total_amount, COUNT(*) as tx_count')
-            ->whereBetween('service_date', [$monthStart, $monthEnd])
+            ->whereBetween('service_date', [$reportFrom, $reportTo])
+            ->whereIn('type', ['charge', 'room_night', 'service', 'pos_charge', 'adjustment'])
             ->groupBy('service_code')
             ->orderByDesc('total_amount')
             ->limit(8)
             ->get();
 
-        return view('hotel.reports.index', compact('kpis', 'serviceRevenue'));
+        $dailyRevenue = $folioScope()
+            ->selectRaw('DATE(service_date) as report_date, SUM(CASE WHEN service_code = "ROOM_NIGHT" THEN COALESCE(amount,0) ELSE 0 END) as room_total, SUM(CASE WHEN service_code <> "ROOM_NIGHT" THEN COALESCE(amount,0) ELSE 0 END) as service_total')
+            ->whereBetween('service_date', [$reportFrom, $reportTo])
+            ->whereIn('type', ['charge', 'room_night', 'service', 'pos_charge', 'adjustment'])
+            ->groupBy('report_date')
+            ->orderBy('report_date')
+            ->get();
+
+        $paymentRevenue = $folioScope()
+            ->selectRaw('COALESCE(service_code, "PAYMENT") as payment_code, SUM(COALESCE(amount,0)) as total_amount, COUNT(*) as tx_count')
+            ->whereBetween('service_date', [$reportFrom, $reportTo])
+            ->whereIn('type', ['payment', 'deposit_applied'])
+            ->groupBy('payment_code')
+            ->orderByDesc('total_amount')
+            ->get();
+
+        $recentPostings = FolioItem::query()
+            ->with(['folio.customer', 'folio.stay.room'])
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->whereBetween('service_date', [$reportFrom, $reportTo])
+            ->latest('id')
+            ->limit(12)
+            ->get();
+
+        $folioExposure = GuestFolio::query()
+            ->with(['customer', 'stay.room'])
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->where('balance', '>', 0)
+            ->orderByDesc('balance')
+            ->limit(8)
+            ->get();
+
+        $roomState = HotelRoom::query()
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->selectRaw('COALESCE(operational_status, "unknown") as status_name, COUNT(*) as total_count')
+            ->groupBy('status_name')
+            ->orderByDesc('total_count')
+            ->get();
+
+        return view('hotel.reports.index', compact('kpis', 'serviceRevenue', 'paymentRevenue', 'dailyRevenue', 'recentPostings', 'folioExposure', 'roomState', 'reportFrom', 'reportTo'));
     }
 
     private function resolvePropertyId(Request $request): ?int
