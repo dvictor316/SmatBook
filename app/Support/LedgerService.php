@@ -7,6 +7,7 @@ use App\Models\Bank;
 use App\Models\Expense;
 use App\Models\FolioItem;
 use App\Models\GuestFolio;
+use App\Models\HotelProperty;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Purchase;
@@ -1303,6 +1304,7 @@ class LedgerService
         $serviceCode = strtoupper(trim((string) ($item->service_code ?? 'OTHER_SERVICE')));
         $date = self::resolveDate($item->service_date ?? $item->created_at ?? now());
         $userId = $item->posted_by ?? auth()->id();
+        [$branchId, $branchName] = self::resolveHotelFolioBranchContext($folio, $branchId, $branchName);
 
         $receivableAccount = self::resolveAccount('Accounts Receivable', 'Asset', ['receivable', 'debtor'], 'AUTO-AST-AR');
 
@@ -1360,6 +1362,7 @@ class LedgerService
         $description = (string) ($item->description ?: 'Hotel folio payment');
         $date = self::resolveDate($item->service_date ?? $item->created_at ?? now());
         $userId = $item->posted_by ?? auth()->id();
+        [$branchId, $branchName] = self::resolveHotelFolioBranchContext($folio, $branchId, $branchName);
 
         $receivableAccount = self::resolveAccount('Accounts Receivable', 'Asset', ['receivable', 'debtor'], 'AUTO-AST-AR');
         $cashAccount = $depositAccountId
@@ -1472,6 +1475,48 @@ class LedgerService
             $resolvedId !== '' ? $resolvedId : null,
             $resolvedName !== '' ? $resolvedName : null,
         ];
+    }
+
+    private static function resolveHotelFolioBranchContext(
+        GuestFolio $folio,
+        ?string $branchId = null,
+        ?string $branchName = null
+    ): array {
+        $resolvedId = trim((string) $branchId);
+        $resolvedName = trim((string) $branchName);
+
+        if ($resolvedId !== '' || $resolvedName !== '') {
+            return [$resolvedId !== '' ? $resolvedId : null, $resolvedName !== '' ? $resolvedName : null];
+        }
+
+        $folio->loadMissing('stay');
+        $stay = $folio->stay;
+        $resolvedId = trim((string) ($stay?->branch_id ?? ''));
+        $resolvedName = trim((string) ($stay?->branch_name ?? ''));
+
+        if ($resolvedId === '' && (int) ($folio->property_id ?? 0) > 0 && Schema::hasTable('hotel_properties')) {
+            $property = HotelProperty::withoutGlobalScopes()->find((int) $folio->property_id);
+            $resolvedId = trim((string) ($property?->branch_id ?? ''));
+            $resolvedName = trim((string) ($property?->name ?? ''));
+        }
+
+        if ($resolvedId === '') {
+            $resolvedId = trim((string) (session('active_branch_id') ?: Auth::user()?->branch_id ?: ''));
+        }
+
+        if ($resolvedName === '') {
+            $resolvedName = trim((string) (session('active_branch_name') ?: Auth::user()?->branch_name ?: ''));
+        }
+
+        if ($resolvedId === '' && (int) ($folio->company_id ?? 0) > 0) {
+            $resolvedId = 'hotel-company-' . (int) $folio->company_id;
+        }
+
+        if ($resolvedName === '' && $resolvedId !== '') {
+            $resolvedName = 'Hotel Branch ' . $resolvedId;
+        }
+
+        return [$resolvedId !== '' ? $resolvedId : null, $resolvedName !== '' ? $resolvedName : null];
     }
 
     private static function resolveRelatedBranchContext(int $relatedId, string $relatedType): array
