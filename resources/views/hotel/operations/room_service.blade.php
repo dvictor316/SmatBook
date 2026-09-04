@@ -34,7 +34,7 @@
                     <div class="hotel-type-panel-header"><h5 class="mb-0">Live Room Service Orders</h5></div>
                     <div class="hotel-type-panel-body table-responsive">
                         <table class="table hotel-type-table align-middle mb-0">
-                            <thead><tr><th>Time</th><th>Room</th><th>Guest</th><th>Order</th><th>Qty</th><th>Amount</th><th>Receipt</th></tr></thead>
+                            <thead><tr><th>Time</th><th>Room</th><th>Guest</th><th>Order</th><th>Qty</th><th>Amount</th><th>Action</th></tr></thead>
                             <tbody>
                                 @forelse($items as $item)
                                     <tr>
@@ -44,7 +44,7 @@
                                         <td>{{ $item->description }}</td>
                                         <td>{{ $item->quantity }}</td>
                                         <td>{{ number_format((float) ($item->line_total ?? $item->amount ?? 0), 2) }}</td>
-                                        <td><a class="btn btn-sm btn-outline-dark" target="_blank" rel="noopener" href="{{ route('hotel.folios.items.receipt', $item) }}">Receipt</a></td>
+                                        <td>@include('hotel.partials.service-sale-actions', ['item' => $item])</td>
                                     </tr>
                                 @empty
                                     <tr><td colspan="7" class="text-muted">No room service entries found.</td></tr>

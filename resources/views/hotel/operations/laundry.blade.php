@@ -47,10 +47,10 @@
                         <div class="hotel-type-panel-header"><h5 class="mb-0">Laundry Charge Register</h5></div>
                         <div class="hotel-type-panel-body table-responsive">
                             <table class="table hotel-type-table align-middle mb-0">
-                                <thead><tr><th>Room</th><th>Guest</th><th>Item</th><th>Qty</th><th>Amount</th><th>Date</th><th>Receipt</th></tr></thead>
+                                <thead><tr><th>Room</th><th>Guest</th><th>Item</th><th>Qty</th><th>Amount</th><th>Date</th><th>Action</th></tr></thead>
                                 <tbody>
                                     @forelse($orders as $item)
-                                        <tr><td><span class="hotel-status-chip">Room {{ $item->folio?->stay?->room?->room_number ?? 'N/A' }}</span></td><td>{{ $item->folio?->customer?->customer_name ?? $item->folio?->customer?->name ?? 'N/A' }}</td><td>{{ $item->description }}</td><td>{{ $item->quantity }}</td><td>{{ number_format((float) ($item->line_total ?? $item->amount ?? 0), 2) }}</td><td>{{ optional($item->created_at)->format('d M Y H:i') }}</td><td><a class="btn btn-sm btn-outline-dark" target="_blank" rel="noopener" href="{{ route('hotel.folios.items.receipt', $item) }}">Receipt</a></td></tr>
+                                        <tr><td><span class="hotel-status-chip">Room {{ $item->folio?->stay?->room?->room_number ?? 'N/A' }}</span></td><td>{{ $item->folio?->customer?->customer_name ?? $item->folio?->customer?->name ?? 'N/A' }}</td><td>{{ $item->description }}</td><td>{{ $item->quantity }}</td><td>{{ number_format((float) ($item->line_total ?? $item->amount ?? 0), 2) }}</td><td>{{ optional($item->created_at)->format('d M Y H:i') }}</td><td>@include('hotel.partials.service-sale-actions', ['item' => $item])</td></tr>
                                     @empty
                                         <tr><td colspan="7" class="text-muted">No laundry charges found.</td></tr>
                                     @endforelse

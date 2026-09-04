@@ -47,6 +47,29 @@
                         @endforelse
                     </div>
                     <div class="mt-3">{{ $bookings->links() }}</div>
+                    <section class="hotel-type-panel mt-3">
+                        <div class="hotel-type-panel-header"><h5 class="mb-0">Conference Charge Register</h5></div>
+                        <div class="hotel-type-panel-body table-responsive">
+                            <table class="table hotel-type-table align-middle mb-0">
+                                <thead><tr><th>Guest</th><th>Room</th><th>Charge</th><th>Qty</th><th>Amount</th><th>Date</th><th>Action</th></tr></thead>
+                                <tbody>
+                                    @forelse(($charges ?? collect()) as $item)
+                                        <tr>
+                                            <td>{{ $item->folio?->customer?->customer_name ?? $item->folio?->customer?->name ?? 'N/A' }}</td>
+                                            <td><span class="hotel-status-chip gold">Room {{ $item->folio?->stay?->room?->room_number ?? 'N/A' }}</span></td>
+                                            <td>{{ $item->description }}</td>
+                                            <td>{{ $item->quantity }}</td>
+                                            <td>{{ number_format((float) ($item->line_total ?? $item->amount ?? 0), 2) }}</td>
+                                            <td>{{ optional($item->service_date ?? $item->created_at)->format('d M Y') }}</td>
+                                            <td>@include('hotel.partials.service-sale-actions', ['item' => $item])</td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="7" class="text-muted">No conference charges posted yet.</td></tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
                 </section>
                 @include('hotel.partials.service-charge-form', ['center' => 'conference', 'title' => 'Conference / Event Sale', 'placeholder' => 'Hall rental, dinner ticket, event package'])
             </div>

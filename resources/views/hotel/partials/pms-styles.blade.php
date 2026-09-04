@@ -65,6 +65,9 @@
     .hotel-op-split { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; }
     .hotel-op-room-card { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 12px; align-items: center; border: 1px solid #e2ebf6; border-radius: 8px; background: #fff; padding: 12px; box-shadow: 0 8px 20px rgba(10,45,83,.05); }
     .hotel-op-room-no { width: 74px; height: 74px; border-radius: 8px; background: #052247; color: #fff; display: grid; place-items: center; font-size: 24px; font-weight: 900; }
+    .hotel-sale-actions { display: flex; gap: 7px; flex-wrap: wrap; min-width: 230px; }
+    .hotel-sale-actions form { margin: 0; }
+    .hotel-sale-actions .btn { white-space: nowrap; }
     .hotel-op-alert { border-left: 5px solid #d9a441; background: #fff8e5; border-radius: 8px; padding: 12px; color: #533600; }
     .hotel-op-alert.green { border-left-color: #15803d; background: #ecfdf3; color: #14532d; }
     .hotel-op-alert.blue { border-left-color: #0b5fb8; background: #eef6ff; color: #0b3767; }

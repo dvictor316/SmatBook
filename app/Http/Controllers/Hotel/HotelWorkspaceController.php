@@ -14,6 +14,7 @@ use App\Models\HotelRoomBlock;
 use App\Models\HotelRoomType;
 use App\Models\Reservation;
 use App\Models\Stay;
+use App\Models\Transaction;
 use App\Services\RoomAvailabilityService;
 use App\Services\Hotel\HotelFolioService;
 use App\Support\LedgerService;
@@ -775,9 +776,18 @@ class HotelWorkspaceController extends Controller
             ->paginate(20)
             ->withQueryString();
 
+        $charges = FolioItem::query()
+            ->with(['folio.customer', 'folio.stay.room'])
+            ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
+            ->where('service_code', 'CONFERENCE')
+            ->latest('service_date')
+            ->limit(20)
+            ->get();
+
         $activeFolios = $this->activeServiceFolios($companyId, $propertyId);
 
-        return view('hotel.operations.conference', compact('bookings', 'activeFolios'));
+        return view('hotel.operations.conference', compact('bookings', 'charges', 'activeFolios'));
     }
 
 
@@ -825,17 +835,7 @@ class HotelWorkspaceController extends Controller
 
     public function postServiceCenterCharge(Request $request, string $center)
     {
-        $centers = [
-            'restaurant' => ['code' => 'RESTAURANT', 'label' => 'Restaurant sale'],
-            'bar' => ['code' => 'BAR', 'label' => 'Bar order'],
-            'gym' => ['code' => 'GYM', 'label' => 'Gym charge'],
-            'spa' => ['code' => 'SPA', 'label' => 'Spa service'],
-            'ticketing' => ['code' => 'TICKETING', 'label' => 'Ticket sale'],
-            'room_service' => ['code' => 'ROOM_SERVICE', 'label' => 'Room service sale'],
-            'laundry' => ['code' => 'LAUNDRY', 'label' => 'Laundry sale'],
-            'minibar' => ['code' => 'MINIBAR', 'label' => 'Minibar sale'],
-            'conference' => ['code' => 'CONFERENCE', 'label' => 'Conference sale'],
-        ];
+        $centers = $this->hotelServiceCenters();
 
         abort_unless(array_key_exists($center, $centers), 404);
 
@@ -903,7 +903,11 @@ class HotelWorkspaceController extends Controller
                     'source_type' => self::class,
                     'source_id' => $folio->id,
                     'posted_by' => auth()->id(),
-                    'meta' => ['center' => $center, 'settles_folio_item_id' => $createdItem->id],
+                    'meta' => [
+                        'center' => $center,
+                        'payment_mode' => $validated['payment_mode'],
+                        'settles_folio_item_id' => $createdItem->id,
+                    ],
                 ]);
 
                 LedgerService::postHotelFolioPayment(
@@ -919,6 +923,173 @@ class HotelWorkspaceController extends Controller
         return redirect()
             ->route('hotel.folios.items.receipt', ['item' => $createdItem->id, 'print' => 1])
             ->with('success', $centers[$center]['label'] . ' posted to folio.');
+    }
+
+    public function updateServiceCenterCharge(Request $request, FolioItem $item)
+    {
+        $centers = $this->hotelServiceCenters();
+        $companyId = (int) auth()->user()->company_id;
+
+        abort_unless((int) $item->company_id === $companyId, 403);
+        if (!$this->isManageableServiceSale($item)) {
+            return back()->with('error', 'Only service-center sales can be edited here. Room charges stay controlled by stay billing.');
+        }
+
+        $validated = $request->validate([
+            'service_center' => 'required|string|in:' . implode(',', array_keys($centers)),
+            'description' => 'required|string|max:255',
+            'quantity' => 'nullable|numeric|min:0.001',
+            'unit_price' => 'required|numeric|min:0.01',
+            'discount' => 'nullable|numeric|min:0',
+            'tax' => 'nullable|numeric|min:0',
+            'service_date' => 'nullable|date',
+            'note' => 'nullable|string|max:1000',
+        ]);
+
+        $folio = GuestFolio::query()
+            ->with('stay')
+            ->where('company_id', $companyId)
+            ->findOrFail((int) $item->folio_id);
+
+        $quantity = (float) ($validated['quantity'] ?? 1);
+        $unitPrice = (float) $validated['unit_price'];
+        $discount = (float) ($validated['discount'] ?? 0);
+        $tax = (float) ($validated['tax'] ?? 0);
+        $amount = max(0.01, ($quantity * $unitPrice) + $tax - $discount);
+        $center = $validated['service_center'];
+        $centerMeta = $centers[$center];
+        $itemMeta = is_array($item->meta) ? $item->meta : [];
+
+        DB::transaction(function () use ($item, $folio, $validated, $quantity, $unitPrice, $discount, $tax, $amount, $center, $centerMeta, $itemMeta) {
+            $item->forceFill([
+                'description' => $validated['description'],
+                'amount' => $amount,
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'type' => 'service',
+                'service_code' => $centerMeta['code'],
+                'service_date' => $validated['service_date'] ?? now()->toDateString(),
+                'meta' => array_merge($itemMeta, [
+                    'center' => $center,
+                    'discount' => $discount,
+                    'tax' => $tax,
+                    'note' => $validated['note'] ?? null,
+                    'edited_from' => 'hotel_workspace',
+                    'edited_at' => now()->toDateTimeString(),
+                ]),
+            ])->save();
+
+            LedgerService::postHotelFolioCharge(
+                $item->fresh(),
+                $folio,
+                $folio->stay?->branch_id,
+                $folio->stay?->branch_name
+            );
+
+            foreach ($this->linkedServicePayments($item) as $payment) {
+                $paymentMeta = is_array($payment->meta) ? $payment->meta : [];
+                $paymentMode = (string) ($paymentMeta['payment_mode'] ?? $payment->service_code ?? 'payment');
+                $payment->forceFill([
+                    'description' => ucfirst(str_replace('_', ' ', $paymentMode)) . ' payment for ' . strtolower($validated['description']),
+                    'amount' => $amount,
+                    'quantity' => 1,
+                    'unit_price' => $amount,
+                    'service_date' => $validated['service_date'] ?? now()->toDateString(),
+                    'meta' => array_merge($paymentMeta, [
+                        'center' => $center,
+                        'settles_folio_item_id' => $item->id,
+                        'edited_from' => 'hotel_workspace',
+                        'edited_at' => now()->toDateTimeString(),
+                    ]),
+                ])->save();
+
+                LedgerService::postHotelFolioPayment(
+                    $payment->fresh(),
+                    $folio,
+                    0,
+                    $folio->stay?->branch_id,
+                    $folio->stay?->branch_name
+                );
+            }
+
+            $this->folioService->recalculate($folio->fresh());
+        });
+
+        return back()->with('success', $centers[$center]['label'] . ' updated.');
+    }
+
+    public function destroyServiceCenterCharge(FolioItem $item)
+    {
+        $companyId = (int) auth()->user()->company_id;
+
+        abort_unless((int) $item->company_id === $companyId, 403);
+        if (!$this->isManageableServiceSale($item)) {
+            return back()->with('error', 'Only service-center sales can be deleted here. Room charges stay controlled by stay billing.');
+        }
+
+        $folio = GuestFolio::query()
+            ->where('company_id', $companyId)
+            ->find($item->folio_id);
+
+        DB::transaction(function () use ($item, $folio) {
+            foreach ($this->linkedServicePayments($item) as $payment) {
+                Transaction::query()
+                    ->where('related_id', $payment->id)
+                    ->where('related_type', FolioItem::class)
+                    ->delete();
+                $payment->delete();
+            }
+
+            Transaction::query()
+                ->where('related_id', $item->id)
+                ->where('related_type', FolioItem::class)
+                ->delete();
+            $item->delete();
+
+            if ($folio) {
+                $this->folioService->recalculate($folio->fresh());
+            }
+        });
+
+        return back()->with('success', 'Service sale deleted and folio totals refreshed.');
+    }
+
+    private function hotelServiceCenters(): array
+    {
+        return [
+            'restaurant' => ['code' => 'RESTAURANT', 'label' => 'Restaurant sale'],
+            'bar' => ['code' => 'BAR', 'label' => 'Bar order'],
+            'gym' => ['code' => 'GYM', 'label' => 'Gym charge'],
+            'spa' => ['code' => 'SPA', 'label' => 'Spa service'],
+            'ticketing' => ['code' => 'TICKETING', 'label' => 'Ticket sale'],
+            'room_service' => ['code' => 'ROOM_SERVICE', 'label' => 'Room service sale'],
+            'laundry' => ['code' => 'LAUNDRY', 'label' => 'Laundry sale'],
+            'minibar' => ['code' => 'MINIBAR', 'label' => 'Minibar sale'],
+            'conference' => ['code' => 'CONFERENCE', 'label' => 'Conference sale'],
+        ];
+    }
+
+    private function isManageableServiceSale(FolioItem $item): bool
+    {
+        $serviceCode = strtoupper((string) ($item->service_code ?? ''));
+
+        return !empty($item->folio_id)
+            && in_array((string) ($item->type ?? ''), ['service', 'pos_charge', 'charge'], true)
+            && !in_array($serviceCode, ['ROOM', 'ROOM_NIGHT'], true);
+    }
+
+    private function linkedServicePayments(FolioItem $charge)
+    {
+        return FolioItem::query()
+            ->where('company_id', $charge->company_id)
+            ->where('folio_id', $charge->folio_id)
+            ->whereIn('type', ['payment', 'deposit_applied'])
+            ->get()
+            ->filter(function (FolioItem $payment) use ($charge) {
+                $meta = is_array($payment->meta) ? $payment->meta : [];
+                return (int) ($meta['settles_folio_item_id'] ?? 0) === (int) $charge->id;
+            })
+            ->values();
     }
 
     private function activeServiceFolios(int $companyId, ?int $propertyId)

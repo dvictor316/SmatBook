@@ -26,6 +26,9 @@
     .service-rail div { padding:12px 0; border-bottom:1px solid rgba(255,255,255,.14); }
     .service-table th { background:#0c3f70; color:#fff; border:0; text-transform:uppercase; font-size:12px; }
     .service-table td { vertical-align:middle; }
+    .hotel-sale-actions { display:flex; gap:7px; flex-wrap:wrap; min-width:230px; }
+    .hotel-sale-actions form { margin:0; }
+    .hotel-sale-actions .btn { white-space:nowrap; }
     @media(max-width:1199px){.service-workspace{grid-template-columns:1fr}}
     @media(max-width:991px){.service-metrics,.service-flow{grid-template-columns:1fr}}
 </style>
@@ -61,7 +64,7 @@
             <main class="service-workspace">
                 <section class="service-center-card p-3">
                     <h5 class="mb-3">{{ $meta['title'] }} Activity</h5>
-                    <div class="table-responsive"><table class="table table-sm service-table align-middle mb-0"><thead><tr><th>Guest</th><th>Room</th><th>Description</th><th>Qty</th><th>Amount</th><th>Date</th><th>Action</th></tr></thead><tbody>@forelse($items as $item)<tr><td>{{ $item->folio?->customer?->customer_name ?? $item->folio?->customer?->name ?? 'N/A' }}</td><td>Room {{ $item->folio?->stay?->room?->room_number ?? 'N/A' }}</td><td>{{ $item->description }}</td><td>{{ $item->quantity }}</td><td>{{ number_format((float) ($item->line_total ?? $item->amount ?? 0), 2) }}</td><td>{{ optional($item->service_date)->format('d M Y') }}</td><td><a class="btn btn-sm btn-outline-dark" target="_blank" rel="noopener" href="{{ route('hotel.folios.items.receipt', $item) }}"><i class="fas fa-print me-1"></i> Receipt</a></td></tr>@empty<tr><td colspan="7" class="text-muted">No {{ strtolower($meta['title']) }} postings found yet.</td></tr>@endforelse</tbody></table></div><div class="mt-3">{{ $items->links() }}</div>
+                    <div class="table-responsive"><table class="table table-sm service-table align-middle mb-0"><thead><tr><th>Guest</th><th>Room</th><th>Description</th><th>Qty</th><th>Amount</th><th>Date</th><th>Action</th></tr></thead><tbody>@forelse($items as $item)<tr><td>{{ $item->folio?->customer?->customer_name ?? $item->folio?->customer?->name ?? 'N/A' }}</td><td>Room {{ $item->folio?->stay?->room?->room_number ?? 'N/A' }}</td><td>{{ $item->description }}</td><td>{{ $item->quantity }}</td><td>{{ number_format((float) ($item->line_total ?? $item->amount ?? 0), 2) }}</td><td>{{ optional($item->service_date)->format('d M Y') }}</td><td>@include('hotel.partials.service-sale-actions', ['item' => $item])</td></tr>@empty<tr><td colspan="7" class="text-muted">No {{ strtolower($meta['title']) }} postings found yet.</td></tr>@endforelse</tbody></table></div><div class="mt-3">{{ $items->links() }}</div>
                 </section>
                 <aside class="service-center-card p-3">
                     <h5 class="mb-3">Post {{ $meta['title'] }} Charge</h5>

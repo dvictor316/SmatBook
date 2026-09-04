@@ -758,6 +758,8 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
     Route::get('/conference-events', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'conference'])->name('conference.index');
     Route::get('/service-centers/{center}', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'serviceCenter'])->whereIn('center', ['bar', 'gym', 'spa', 'ticketing'])->name('service_centers.show');
     Route::post('/service-centers/{center}/charges', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'postServiceCenterCharge'])->whereIn('center', ['restaurant', 'bar', 'gym', 'spa', 'ticketing', 'room_service', 'laundry', 'minibar', 'conference'])->name('service_centers.charges.store');
+    Route::put('/service-center-charges/{item}', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'updateServiceCenterCharge'])->name('service_centers.charges.update');
+    Route::delete('/service-center-charges/{item}', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'destroyServiceCenterCharge'])->name('service_centers.charges.destroy');
 
     Route::get('/corporate-accounts', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'corporateAccounts'])->name('corporate_accounts.index');
     Route::get('/group-bookings', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'groupBookings'])->name('group_bookings.index');
