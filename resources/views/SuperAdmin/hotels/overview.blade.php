@@ -181,10 +181,16 @@
     .page-wrapper.sa-hotel .modal-body { overflow:visible; }
     .page-wrapper.sa-hotel #saServiceChargeModal .modal-dialog { max-height:calc(100vh - 28px); margin-top:14px; margin-bottom:14px; align-items:flex-start; }
     .page-wrapper.sa-hotel #saServiceChargeModal .modal-content { max-height:calc(100vh - 28px); display:flex; flex-direction:column; overflow:hidden; }
-    .page-wrapper.sa-hotel #saServiceChargeModal .modal-body { overflow-y:auto; overflow-x:visible; padding-bottom:22px; }
-    .page-wrapper.sa-hotel #saServiceChargeModal .modal-footer { flex:0 0 auto; background:#fff; position:sticky; bottom:0; z-index:12; box-shadow:0 -8px 18px rgba(15,23,42,.08); }
-    .page-wrapper.sa-hotel #saServiceChargeModal select.sa-native-picker { min-height:52px; transition:box-shadow .15s ease; }
-    .page-wrapper.sa-hotel #saServiceChargeModal select.sa-native-picker[size]:not([size="1"]) { height:auto; min-height:152px; box-shadow:0 16px 32px rgba(15,23,42,.18); position:relative; z-index:80; }
+    .page-wrapper.sa-hotel #saServiceChargeModal .modal-body { overflow-y:auto; overflow-x:hidden; padding-bottom:24px; }
+    .page-wrapper.sa-hotel #saServiceChargeModal .modal-footer { flex:0 0 auto; background:#fff; box-shadow:0 -8px 18px rgba(15,23,42,.08); }
+    .sa-choice-list { display:grid; gap:8px; max-height:210px; overflow:auto; padding-right:4px; }
+    .sa-choice-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:8px; }
+    .sa-choice { position:relative; margin:0; }
+    .sa-choice input { position:absolute; opacity:0; pointer-events:none; }
+    .sa-choice span { display:block; border:1px solid #cbd8e8; border-radius:10px; background:#fff; color:#09213d; padding:11px 12px; font-weight:700; line-height:1.28; cursor:pointer; }
+    .sa-choice small { display:block; color:#64748b; font-weight:600; margin-top:3px; }
+    .sa-choice input:checked + span { border-color:#0b5fb8; background:#e8f2ff; box-shadow:inset 0 0 0 2px rgba(11,95,184,.2); }
+    .sa-tenant-lock { border:1px dashed #cbd8e8; border-radius:10px; background:#f8fbff; padding:11px 12px; color:#09213d; }
     .sa-form-grid > div { position:relative; }
     .sa-form-grid > div:focus-within { z-index:50; }
     .sa-dropdown-stack { grid-column:1 / -1; z-index:25; }
@@ -1140,15 +1146,53 @@
                                 <div class="alert alert-warning mb-0">No open guest folios are available. Create/check in a guest first, then post service sales here.</div>
                             @else
                                 <div class="sa-form-grid">
-                                    <div class="sa-dropdown-stack"><label class="form-label">Hotel Tenant</label><select name="company_id" class="form-select sa-native-picker" required>@foreach($hotelCompanies as $company)<option value="{{ $company->id }}" @selected((int)$selectedCompanyId === (int)$company->id)>{{ $company->name }}</option>@endforeach</select></div>
-                                    <div class="sa-dropdown-stack"><label class="form-label">Guest / Room Folio</label><select name="folio_id" class="form-select sa-native-picker" required>@foreach($serviceFolios as $folio)<option value="{{ $folio->id }}">{{ $folio->customer?->customer_name ?? $folio->customer?->name ?? 'Guest' }} - Room {{ $folio->stay?->room?->room_number ?? 'N/A' }} - {{ $folio->folio_number }} - Company {{ $folio->company_id }}</option>@endforeach</select></div>
-                                    <div class="sa-dropdown-stack"><label class="form-label">Service Center</label><select name="service_center" class="form-select sa-native-picker" required>@foreach(collect($serviceCenters)->except('all') as $serviceKey => $serviceMeta)<option value="{{ $serviceKey }}" @selected($servicePanelKey === $serviceKey)>{{ $serviceMeta['label'] }}</option>@endforeach</select></div>
+                                    <div class="full">
+                                        <label class="form-label">Hotel Tenant</label>
+                                        <div class="sa-tenant-lock">
+                                            Tenant is selected automatically from the guest folio below.
+                                            @if($selectedCompanyId)
+                                                <input type="hidden" name="company_id" value="{{ $selectedCompanyId }}">
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="full">
+                                        <label class="form-label">Guest / Room Folio</label>
+                                        <div class="sa-choice-list">
+                                            @foreach($serviceFolios as $folio)
+                                                <label class="sa-choice">
+                                                    <input type="radio" name="folio_id" value="{{ $folio->id }}" required @checked($loop->first)>
+                                                    <span>{{ $folio->customer?->customer_name ?? $folio->customer?->name ?? 'Guest' }} - Room {{ $folio->stay?->room?->room_number ?? 'N/A' }}<small>{{ $folio->folio_number }} - Company {{ $folio->company_id }}</small></span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    <div class="full">
+                                        <label class="form-label">Service Center</label>
+                                        <div class="sa-choice-grid">
+                                            @foreach(collect($serviceCenters)->except('all') as $serviceKey => $serviceMeta)
+                                                <label class="sa-choice">
+                                                    <input type="radio" name="service_center" value="{{ $serviceKey }}" required @checked($servicePanelKey === $serviceKey || ($servicePanelKey === 'all' && $loop->first))>
+                                                    <span>{{ $serviceMeta['label'] }}</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
                                     <div><label class="form-label">Item / Ticket / Service</label><input name="description" class="form-control" placeholder="Dinner ticket, spa session, laundry order, minibar item" required></div>
                                     <div><label class="form-label">Quantity</label><input name="quantity" type="number" min="0.001" step="0.001" value="1" class="form-control"></div>
                                     <div><label class="form-label">Unit Price</label><input name="unit_price" type="number" min="0.01" step="0.01" class="form-control" required></div>
                                     <div><label class="form-label">Discount</label><input name="discount" type="number" min="0" step="0.01" value="0" class="form-control"></div>
                                     <div><label class="form-label">Tax</label><input name="tax" type="number" min="0" step="0.01" value="0" class="form-control"></div>
-                                    <div><label class="form-label">Payment</label><select name="payment_mode" class="form-select sa-native-picker"><option value="charge_to_room">Charge to Room</option><option value="cash">Cash Paid</option><option value="card">Card / POS Paid</option><option value="transfer">Transfer Paid</option><option value="other">Other Paid</option></select></div>
+                                    <div class="full">
+                                        <label class="form-label">Payment</label>
+                                        <div class="sa-choice-grid">
+                                            @foreach(['charge_to_room' => 'Charge to Room', 'cash' => 'Cash Paid', 'card' => 'Card / POS Paid', 'transfer' => 'Transfer Paid', 'other' => 'Other Paid'] as $paymentKey => $paymentLabel)
+                                                <label class="sa-choice">
+                                                    <input type="radio" name="payment_mode" value="{{ $paymentKey }}" required @checked($loop->first)>
+                                                    <span>{{ $paymentLabel }}</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
                                     <div><label class="form-label">Date</label><input name="service_date" type="date" value="{{ now()->toDateString() }}" class="form-control"></div>
                                     <div class="full"><label class="form-label">Internal Note</label><textarea name="note" class="form-control" rows="2" placeholder="Server, ticket batch, guest request, package note"></textarea></div>
                                 </div>
@@ -1379,44 +1423,4 @@
         @if($isPaginator && $panel !== 'overview')<div class="mt-3">{{ $panelData->links() }}</div>@endif
     </div>
 </div>
-@endsection
-
-@section('script')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const serviceModal = document.getElementById('saServiceChargeModal');
-    if (!serviceModal) {
-        return;
-    }
-
-    const collapsePicker = (select) => {
-        select.removeAttribute('size');
-        select.classList.remove('is-open');
-    };
-
-    serviceModal.querySelectorAll('select.sa-native-picker').forEach((select) => {
-        const openPicker = () => {
-            const optionCount = Math.max(2, select.options.length);
-            select.setAttribute('size', Math.min(8, optionCount));
-            select.classList.add('is-open');
-            select.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        };
-
-        select.addEventListener('focus', openPicker);
-        select.addEventListener('mousedown', function (event) {
-            if (!select.hasAttribute('size')) {
-                event.preventDefault();
-                openPicker();
-                select.focus();
-            }
-        });
-        select.addEventListener('change', () => collapsePicker(select));
-        select.addEventListener('blur', () => setTimeout(() => collapsePicker(select), 120));
-    });
-
-    serviceModal.addEventListener('hidden.bs.modal', function () {
-        serviceModal.querySelectorAll('select.sa-native-picker').forEach(collapsePicker);
-    });
-});
-</script>
 @endsection
