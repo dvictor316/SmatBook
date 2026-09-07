@@ -354,7 +354,7 @@
         display: flex;
         align-items: center;
         justify-content: flex-start;
-        padding: 0 20px;
+        padding: 0 14px;
         background: #fff;
         border-bottom: 1px solid #e2e8f0;
         height: 76px;
@@ -369,12 +369,12 @@
         display: flex;
         align-items: center;
         justify-content: flex-start;
-        width: 270px;
+        width: 238px;
         flex-shrink: 0;
         order: 1;
         gap: 8px;
         min-width: 0;
-        flex: 0 0 270px;
+        flex: 0 0 238px;
     }
     .header-logo a {
         display: inline-flex;
@@ -384,9 +384,9 @@
         flex-shrink: 0;
     }
 
-    .header-logo img { height: 56px; width: auto; }
+    .header-logo img { height: 52px; width: auto; }
     .spb-wordmark {
-        font-size: 1.2rem;
+        font-size: 1.12rem;
         font-weight: 800;
         letter-spacing: -0.3px;
         line-height: 1;
@@ -447,7 +447,7 @@
         margin: 0 !important;
         font-size: inherit !important;
         position: absolute !important;
-        left: 282px !important;
+        left: 250px !important;
         top: calc(50% + 8px) !important;
         transform: translate(-50%, -50%) !important;
         z-index: 1041;
@@ -486,19 +486,19 @@
 
     /* ── Search ── */
     .header-search-container {
-        flex: 1 1 560px;
+        flex: 1 1 520px;
         display: flex;
         justify-content: flex-start;
-        max-width: 760px;
+        max-width: 700px;
         min-width: 280px;
-        margin: 0 14px 0 42px;
+        margin: 0 10px 0 18px;
         order: 3;
     }
 
     .header-search {
         position: relative;
         width: 100%;
-        max-width: 620px;
+        max-width: 600px;
     }
 
     .header-search input {
@@ -596,9 +596,9 @@
     .header-actions {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         flex-shrink: 0;
-        margin-left: 20px;
+        margin-left: 8px;
         order: 4;
     }
     .header-actions > * {
@@ -608,7 +608,7 @@
     .workspace-switcher {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
         padding: 4px;
         border-radius: 999px;
         background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%);
@@ -620,7 +620,7 @@
         align-items: center;
         justify-content: center;
         min-height: 34px;
-        padding: 0 12px;
+        padding: 0 10px;
         border-radius: 999px;
         font-size: 11px;
         font-weight: 800;
@@ -639,9 +639,9 @@
     .branch-pill {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         min-height: 40px;
-        padding: 0 12px;
+        padding: 0 10px;
         border-radius: 999px;
         text-decoration: none;
         border: 1px solid #dbe7ff;
@@ -669,7 +669,7 @@
         align-items: center;
         justify-content: center;
         gap: 8px;
-        padding: 8px 12px;
+        padding: 8px 8px;
         border-radius: 8px;
         color: #64748b;
         font-size: 13px;
@@ -688,7 +688,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 40px;
+        width: 36px;
         height: 40px;
         border-radius: 8px;
         color: #64748b;
@@ -699,7 +699,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 40px;
+        width: 36px;
         height: 40px;
         border-radius: 8px;
         color: #64748b;
@@ -761,7 +761,7 @@
         align-items: center;
         justify-content: center;
         gap: 10px;
-        padding: 6px 12px 6px 6px;
+        padding: 6px 8px 6px 6px;
         border-radius: 8px;
         color: inherit;
         text-decoration: none;
