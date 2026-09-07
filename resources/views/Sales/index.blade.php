@@ -27,7 +27,7 @@
 
     .header-search-container {
         position: relative;
-        width: 300px;
+        width: clamp(340px, 24vw, 420px);
     }
 
     .header-search-input {
