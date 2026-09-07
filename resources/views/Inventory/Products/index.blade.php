@@ -428,25 +428,25 @@
 <div class="page-wrapper" id="main-content-wrapper">
     <div class="content container-fluid">
 
-        {{-- INLINE HEADER & CONTROLS --}}
+        <!-- Inline header and controls -->
         <div class="inventory-page-title no-print">
             <h4 class="mb-0 text-primary"><i class="fas fa-boxes me-2"></i>Inventory Management</h4>
         </div>
         <div class="card shadow-sm mb-3 no-print">
             <div class="card-body">
                 <div class="inventory-toolbar">
-                    <form method="GET" action="{{ route('product-list') }}" class="d-flex inventory-search-form inventory-toolbar-primary" id="inventory-toolbar-search-form">
+                    <form method="GET" action="<?php echo e(route('product-list')); ?>" class="d-flex inventory-search-form inventory-toolbar-primary" id="inventory-toolbar-search-form">
                         <div class="input-group">
-                            <input type="text" name="search" value="{{ $search ?? '' }}" class="form-control" id="inventory-toolbar-search-input" placeholder="Search SKU or Name...">
+                            <input type="text" name="search" value="<?php echo e($search ?? ''); ?>" class="form-control" id="inventory-toolbar-search-input" placeholder="Search SKU or Name...">
                             <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i><span class="visually-hidden">Filter</span></button>
                         </div>
                     </form>
 
-                    @if(!empty($search))
-                        <a href="{{ route('product-list') }}" class="btn btn-outline-secondary inventory-tool-btn inventory-toolbar-clear">
+                    <?php if (!empty($search)) { ?>
+                        <a href="<?php echo e(route('product-list')); ?>" class="btn btn-outline-secondary inventory-tool-btn inventory-toolbar-clear">
                             <i class="fas fa-filter-circle-xmark me-1"></i> Clear Filter
                         </a>
-                    @endif
+                    <?php } ?>
 
                     <button type="button" class="btn btn-outline-secondary inventory-tool-btn inventory-toolbar-print" id="inventory_print_btn">
                         <i class="fas fa-print me-1"></i> Print
@@ -457,8 +457,8 @@
                             <i class="fas fa-upload me-1"></i> Stock Export
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ route('inventory.Products.export', ['format' => 'xls', 'search' => $search ?? null]) }}"><i class="far fa-file-excel me-2 text-success"></i>Export Stock Excel</a></li>
-                            <li><a class="dropdown-item" href="{{ route('inventory.Products.export', ['format' => 'csv', 'search' => $search ?? null]) }}"><i class="fas fa-file-csv me-2 text-primary"></i>Export Stock CSV</a></li>
+                            <li><a class="dropdown-item" href="<?php echo e(route('inventory.Products.export', ['format' => 'xls', 'search' => $search ?? null])); ?>"><i class="far fa-file-excel me-2 text-success"></i>Export Stock Excel</a></li>
+                            <li><a class="dropdown-item" href="<?php echo e(route('inventory.Products.export', ['format' => 'csv', 'search' => $search ?? null])); ?>"><i class="fas fa-file-csv me-2 text-primary"></i>Export Stock CSV</a></li>
                             <li><a class="dropdown-item" href="#" id="export_pdf"><i class="far fa-file-pdf me-2 text-danger"></i>Export Stock PDF</a></li>
                         </ul>
                     </div>
@@ -468,39 +468,39 @@
                             <i class="fas fa-download me-1"></i> Bulk Stock Import
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{{ route('inventory.Products.import.template') }}"><i class="far fa-file-lines me-2 text-primary"></i>Download Stock Template</a></li>
+                            <li><a class="dropdown-item" href="<?php echo e(route('inventory.Products.import.template')); ?>"><i class="far fa-file-lines me-2 text-primary"></i>Download Stock Template</a></li>
                             <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importGuideModal"><i class="fas fa-file-upload me-2 text-success"></i>Upload Stock Spreadsheet</button></li>
                             @php($lastImportKey = 'product_import_last_' . (auth()->id() ?? 'guest'))
-                            @if (\Illuminate\Support\Facades\Cache::has($lastImportKey))
+                            <?php if (\Illuminate\Support\Facades\Cache::has($lastImportKey)) { ?>
                                 <li>
-                                    <form action="{{ route('inventory.Products.import.undo') }}" method="POST" onsubmit="return confirm('Undo the last product import? This will delete the imported items and reset their stock.');">
-                                        @csrf
+                                    <form action="<?php echo e(route('inventory.Products.import.undo')); ?>" method="POST" onsubmit="return confirm('Undo the last product import? This will delete the imported items and reset their stock.');">
+                                        <?php echo csrf_field(); ?>
                                           <button type="submit" class="dropdown-item text-danger">
                                               <i class="fa-solid fa-rotate me-2"></i>Undo Last Import
                                           </button>
                                     </form>
                                 </li>
-                            @endif
+                            <?php } ?>
                         </ul>
                     </div>
 
-                    <a href="{{ route('add-products') }}" class="btn btn-success desktop-add-product-trigger inventory-tool-btn inventory-toolbar-add">
+                    <a href="<?php echo e(route('add-products')); ?>" class="btn btn-success desktop-add-product-trigger inventory-tool-btn inventory-toolbar-add">
                         <i class="fa fa-plus"></i> Add Product
                     </a>
-                    @if($showStockTransferModal)
+                    <?php if ($showStockTransferModal) { ?>
                         <button type="button" class="btn btn-outline-dark inventory-tool-btn inventory-toolbar-transfer" data-bs-toggle="modal" data-bs-target="#transferStockModal">
                             <i class="fas fa-right-left"></i> Transfer Stock
                         </button>
-                    @endif
+                    <?php } ?>
                 </div>
             </div>
         </div>
 
         <div class="card shadow-sm">
             <div class="card-body inventory-table-card-body">
-                <form id="bulk-delete-products-form" method="POST" action="{{ route('inventory.Products.bulk-destroy') }}" class="inventory-bulk-bar no-print">
-                    @csrf
-                    @method('DELETE')
+                <form id="bulk-delete-products-form" method="POST" action="<?php echo e(route('inventory.Products.bulk-destroy')); ?>" class="inventory-bulk-bar no-print">
+                    <?php echo csrf_field(); ?>
+                    <?php echo method_field('DELETE'); ?>
                     <strong><span id="bulk-selected-count">0</span> selected</strong>
                     <span class="text-muted">Delete selected stock items from inventory.</span>
                     <button type="submit" class="btn btn-danger btn-sm ms-auto">
@@ -532,60 +532,60 @@
                             ?>
                                     <tr>
                                         <td class="inventory-select-cell no-print">
-                                            <input type="checkbox" class="form-check-input product-select-checkbox" value="{{ $product->id }}" aria-label="Select {{ $product->name }}">
+                                            <input type="checkbox" class="form-check-input product-select-checkbox" value="<?php echo e($product->id); ?>" aria-label="Select <?php echo e($product->name); ?>">
                                         </td>
-                                        <td>{{ $productIndex }}</td>
+                                        <td><?php echo e($productIndex); ?></td>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                @if($product->image_url)
-                                                    <img src="{{ $product->image_url }}" class="rounded me-2 product-thumb-img" alt="{{ $product->name }}" loading="lazy" onerror="this.classList.add('d-none'); if (this.nextElementSibling) this.nextElementSibling.classList.remove('d-none');">
+                                                <?php if (!empty($product->image_url)) { ?>
+                                                    <img src="<?php echo e($product->image_url); ?>" class="rounded me-2 product-thumb-img" alt="<?php echo e($product->name); ?>" loading="lazy" onerror="this.classList.add('d-none'); if (this.nextElementSibling) this.nextElementSibling.classList.remove('d-none');">
                                                     <span class="product-thumb-empty d-none"><i class="fas fa-box-open"></i></span>
-                                                @else
+                                                <?php } else { ?>
                                                     <span class="product-thumb-empty"><i class="fas fa-box-open"></i></span>
-                                                @endif
+                                                <?php } ?>
                                                 <div>
-                                                    <div class="fw-bold text-dark">{{ $product->name }}</div>
-                                                    <small class="text-muted">{{ $product->sku }}</small>
+                                                    <div class="fw-bold text-dark"><?php echo e($product->name); ?></div>
+                                                    <small class="text-muted"><?php echo e($product->sku); ?></small>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>{{ $product->category_name ?? 'N/A' }}</td>
-                                        <td><span class="badge bg-soft-info text-info">{{ $product->base_unit_name }}</span></td>
+                                        <td><?php echo e($product->category_name ?? 'N/A'); ?></td>
+                                        <td><span class="badge bg-soft-info text-info"><?php echo e($product->base_unit_name); ?></span></td>
                                         <td>
-                                                @php
+                                                <?php
                                                     $piecesPerCarton = max((int) ($product->units_per_carton ?? 0), 0);
                                                     $piecesPerRoll = max((int) ($product->units_per_roll ?? 0), 0);
                                                     $rollsPerCarton = $piecesPerRoll > 0 && $piecesPerCarton > 0 ? (int) floor($piecesPerCarton / $piecesPerRoll) : 0;
-                                                @endphp
-                                                @if((int) ($product->units_per_roll ?? 0) > 0)
-                                                    <small class="d-block text-nowrap">Pieces / Carton: <strong>{{ $piecesPerCarton }}</strong></small>
-                                                    <small class="d-block text-nowrap">Pieces / Roll: <strong>{{ $piecesPerRoll }}</strong></small>
-                                                    <small class="d-block text-nowrap">Rolls / Carton: <strong>{{ $rollsPerCarton }}</strong></small>
-                                                @else
-                                                    <small class="d-block text-nowrap">Pieces / Carton: <strong>{{ $piecesPerCarton }}</strong></small>
+                                                ?>
+                                                <?php if ((int) ($product->units_per_roll ?? 0) > 0) { ?>
+                                                    <small class="d-block text-nowrap">Pieces / Carton: <strong><?php echo e($piecesPerCarton); ?></strong></small>
+                                                    <small class="d-block text-nowrap">Pieces / Roll: <strong><?php echo e($piecesPerRoll); ?></strong></small>
+                                                    <small class="d-block text-nowrap">Rolls / Carton: <strong><?php echo e($rollsPerCarton); ?></strong></small>
+                                                <?php } else { ?>
+                                                    <small class="d-block text-nowrap">Pieces / Carton: <strong><?php echo e($piecesPerCarton); ?></strong></small>
                                                     <small class="d-block text-nowrap">Roll Layer: <strong>Not used</strong></small>
-                                                @endif
+                                                <?php } ?>
                                         </td>
                                         <td>
-                                            @php
+                                            <?php
                                                 $displayStock = (float) ($product->active_branch_stock ?? $product->stock);
                                                 $hasActiveBranch = !empty($activeBranch['name'] ?? null);
-                                            @endphp
-                                            <span class="badge {{ $displayStock <= 5 ? 'bg-danger' : 'bg-success' }}">
-                                                {{ rtrim(rtrim(number_format((float) $displayStock, 2), '0'), '.') }}
+                                            ?>
+                                            <span class="badge <?php echo e($displayStock <= 5 ? 'bg-danger' : 'bg-success'); ?>">
+                                                <?php echo e(rtrim(rtrim(number_format((float) $displayStock, 2), '0'), '.')); ?>
                                             </span>
-                                            @if($hasActiveBranch)
-                                                <div class="small text-muted mt-1">{{ $activeBranch['name'] }}</div>
-                                            @endif
+                                            <?php if ($hasActiveBranch) { ?>
+                                                <div class="small text-muted mt-1"><?php echo e($activeBranch['name']); ?></div>
+                                            <?php } ?>
                                         </td>
                                         <td>
-                                            <div>{{ number_format((float) $product->price, 2) }}</div>
-                                            @if(!is_null($product->wholesale_price) || !is_null($product->special_price))
-                                                <small class="d-block text-muted">Wholesale: {{ !is_null($product->wholesale_price) ? number_format((float) $product->wholesale_price, 2) : '—' }}</small>
-                                                <small class="d-block text-muted">Special: {{ !is_null($product->special_price) ? number_format((float) $product->special_price, 2) : '—' }}</small>
-                                            @endif
+                                            <div><?php echo e(number_format((float) $product->price, 2)); ?></div>
+                                            <?php if (!is_null($product->wholesale_price) || !is_null($product->special_price)) { ?>
+                                                <small class="d-block text-muted">Wholesale: <?php echo e(!is_null($product->wholesale_price) ? number_format((float) $product->wholesale_price, 2) : '-'); ?></small>
+                                                <small class="d-block text-muted">Special: <?php echo e(!is_null($product->special_price) ? number_format((float) $product->special_price, 2) : '-'); ?></small>
+                                            <?php } ?>
                                         </td>
-                                        <td>{{ number_format((float) $product->purchase_price, 2) }}</td>
+                                        <td><?php echo e(number_format((float) $product->purchase_price, 2)); ?></td>
                                         <td class="text-center no-print">
                                             <div class="dropdown">
                                                 <a href="#" class="product-action-trigger dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
@@ -593,10 +593,10 @@
                                                     <span>Manage</span>
                                                 </a>
                                                 <div class="dropdown-menu dropdown-menu-end product-action-menu">
-                                                    <a class="dropdown-item" href="{{ route('inventory.history', $product->id) }}"><i class="fas fa-chart-line me-2"></i>Run Report</a>
-                                                    <a class="dropdown-item" href="{{ route('inventory.Products.edit', $product->id) }}"><i class="far fa-edit me-2"></i>Edit</a>
-                                                    <form action="{{ route('inventory.Products.destroy', $product->id) }}" method="POST" onsubmit="return confirm('Delete this product?');">
-                                                        @csrf @method('DELETE')
+                                                    <a class="dropdown-item" href="<?php echo e(route('inventory.history', $product->id)); ?>"><i class="fas fa-chart-line me-2"></i>Run Report</a>
+                                                    <a class="dropdown-item" href="<?php echo e(route('inventory.Products.edit', $product->id)); ?>"><i class="far fa-edit me-2"></i>Edit</a>
+                                                    <form action="<?php echo e(route('inventory.Products.destroy', $product->id)); ?>" method="POST" onsubmit="return confirm('Delete this product?');">
+                                                        <?php echo csrf_field(); ?><?php echo method_field('DELETE'); ?>
                                                         <button type="submit" class="dropdown-item text-danger"><i class="far fa-trash-alt me-2"></i>Delete</button>
                                                     </form>
                                                 </div>
@@ -620,17 +620,17 @@
     </div>
 </div>
 
-<a href="{{ route('add-products') }}" class="mobile-add-product-trigger no-print" aria-label="Add product">
+<a href="<?php echo e(route('add-products')); ?>" class="mobile-add-product-trigger no-print" aria-label="Add product">
     <i class="fas fa-plus"></i>
     <span>Add Product</span>
 </a>
 
-@if($showStockTransferModal)
+<?php if ($showStockTransferModal) { ?>
 <div class="modal fade" id="transferStockModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form method="POST" action="{{ route('inventory.transfer') }}">
-                @csrf
+            <form method="POST" action="<?php echo e(route('inventory.transfer')); ?>">
+                <?php echo csrf_field(); ?>
                 <div class="modal-header">
                     <h5 class="modal-title">Transfer Stock Between Branches</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -642,7 +642,7 @@
                         <select name="product_id" class="form-select" required>
                             <option value="">Select product</option>
                             <?php foreach ($transferProductsForView as $product) { ?>
-                                <option value="{{ $product->id }}">{{ $product->name }} ({{ $product->sku }})</option>
+                                <option value="<?php echo e($product->id); ?>"><?php echo e($product->name); ?> (<?php echo e($product->sku); ?>)</option>
                             <?php } ?>
                         </select>
                     </div>
@@ -652,7 +652,7 @@
                             <select name="from_branch_id" class="form-select" required>
                                 <option value="">Select source</option>
                                 <?php foreach ($branchOptionsForView as $branch) { ?>
-                                    <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
+                                    <option value="<?php echo e($branch['id']); ?>"><?php echo e($branch['name']); ?></option>
                                 <?php } ?>
                             </select>
                         </div>
@@ -661,7 +661,7 @@
                             <select name="to_branch_id" class="form-select" required>
                                 <option value="">Select destination</option>
                                 <?php foreach ($branchOptionsForView as $branch) { ?>
-                                    <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
+                                    <option value="<?php echo e($branch['id']); ?>"><?php echo e($branch['name']); ?></option>
                                 <?php } ?>
                             </select>
                         </div>
@@ -679,7 +679,7 @@
         </div>
     </div>
 </div>
-@endif
+<?php } ?>
 
 <div class="modal fade import-guide-modal" id="importGuideModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -756,7 +756,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <a href="{{ route('inventory.Products.import.template') }}" class="btn btn-light border">
+                <a href="<?php echo e(route('inventory.Products.import.template')); ?>" class="btn btn-light border">
                     <i class="far fa-file-lines me-2"></i>Template
                 </a>
                 <button type="button" class="btn btn-primary" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#importProductsModal">
@@ -770,8 +770,8 @@
 <div class="modal fade" id="importProductsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form method="POST" action="{{ route('inventory.Products.import') }}" enctype="multipart/form-data">
-                @csrf
+            <form method="POST" action="<?php echo e(route('inventory.Products.import')); ?>" enctype="multipart/form-data">
+                <?php echo csrf_field(); ?>
                 <div class="modal-header">
                     <h5 class="modal-title">Bulk Stock Import</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -789,7 +789,7 @@
                         </ul>
                     </div>
                     <div class="mb-3">
-                        <a href="{{ route('inventory.Products.import.template') }}" class="btn btn-light border w-100">
+                        <a href="<?php echo e(route('inventory.Products.import.template')); ?>" class="btn btn-light border w-100">
                             <i class="far fa-file-lines me-2"></i>Download Stock CSV Template
                         </a>
                     </div>
@@ -809,7 +809,7 @@
                         <select name="branch_id" class="form-select">
                             <option value="">Use Active Branch</option>
                             <?php foreach ($branchOptionsForView as $branch) { ?>
-                                <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
+                                <option value="<?php echo e($branch['id']); ?>"><?php echo e($branch['name']); ?></option>
                             <?php } ?>
                         </select>
                     </div>
@@ -824,7 +824,7 @@
 </div>
 
 @push('scripts')
-{{-- Required DataTables Buttons Assets --}}
+<!-- Required DataTables Buttons Assets -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
