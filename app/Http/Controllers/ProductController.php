@@ -48,12 +48,26 @@ class ProductController extends Controller
     {
         session()->flash('error', $message);
 
+        $availableBranches = [];
+        $stockTransferEnabled = false;
+
+        try {
+            $availableBranches = $this->getAvailableBranches();
+            $stockTransferEnabled = $this->planSupportsStockTransfer();
+        } catch (\Throwable $e) {
+            Log::warning('Product index fallback metadata failed', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+            ]);
+        }
+
         return view('Inventory.Products.index', [
             'products' => collect(),
             'productRows' => collect(),
+            'transferProducts' => collect(),
             'categories' => collect(),
-            'availableBranches' => [],
-            'stockTransferEnabled' => $this->planSupportsStockTransfer(),
+            'availableBranches' => $availableBranches,
+            'stockTransferEnabled' => $stockTransferEnabled,
             'search' => trim((string) $request->input('search', '')),
             'activeBranch' => [
                 'id' => session('active_branch_id'),
@@ -597,8 +611,21 @@ class ProductController extends Controller
 
     private function getAvailableBranches(): array
     {
-        $raw = Setting::where('key', $this->companyScopedSettingKey('branches_json'))->value('value');
-        $decoded = json_decode((string) $raw, true);
+        try {
+            if (!Schema::hasTable('settings')) {
+                return [];
+            }
+
+            $raw = Setting::where('key', $this->companyScopedSettingKey('branches_json'))->value('value');
+            $decoded = json_decode((string) $raw, true);
+        } catch (\Throwable $e) {
+            Log::warning('Product branch options failed to load', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+            ]);
+
+            return [];
+        }
 
         return collect(is_array($decoded) ? $decoded : [])
             ->filter(fn ($branch) => !empty($branch['id']) && !empty($branch['name']))
@@ -637,11 +664,18 @@ class ProductController extends Controller
     {
         $currentPlan = strtolower((string) session('user_plan'));
 
-        if ($currentPlan === '' && auth()->check() && Schema::hasTable('subscriptions')) {
-            $subscription = Subscription::resolveCurrentForUser(auth()->user())
-                ?? Subscription::where('user_id', auth()->id())->latest()->first();
+        try {
+            if ($currentPlan === '' && auth()->check() && Schema::hasTable('subscriptions')) {
+                $subscription = Subscription::resolveCurrentForUser(auth()->user())
+                    ?? Subscription::where('user_id', auth()->id())->latest()->first();
 
-            $currentPlan = strtolower((string) ($subscription?->plan ?? $subscription?->plan_name ?? ''));
+                $currentPlan = strtolower((string) ($subscription?->plan ?? $subscription?->plan_name ?? ''));
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Product plan lookup failed', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+            ]);
         }
 
         return $currentPlan;
