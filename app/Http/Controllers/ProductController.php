@@ -1027,6 +1027,11 @@ class ProductController extends Controller
             $productRows = $products instanceof \Illuminate\Pagination\AbstractPaginator
                 ? $products->getCollection()
                 : $products;
+            $transferProductsQuery = Product::query()->select('id', 'name', 'sku');
+            $this->applyTenantScope($transferProductsQuery, 'products');
+            $transferProducts = $transferProductsQuery
+                ->orderBy(Schema::hasColumn('products', 'name') ? 'name' : 'id')
+                ->get();
             $categories = Schema::hasTable('categories')
                 ? Category::orderBy(Schema::hasColumn('categories', 'name') ? 'name' : 'id')->get()
                 : collect();
@@ -1034,6 +1039,7 @@ class ProductController extends Controller
             return view('Inventory.Products.index', [
                 'products' => $products,
                 'productRows' => $productRows,
+                'transferProducts' => $transferProducts,
                 'categories' => $categories,
                 'availableBranches' => $this->getAvailableBranches(),
                 'stockTransferEnabled' => $this->planSupportsStockTransfer(),
@@ -1920,7 +1926,7 @@ public function inventory(Request $request)
 
                 $companyId = (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
                 $this->branchInventory->adjustBranchStock($product, -1 * $quantity, $sourceContext, $companyId);
-                $this->branchInventory->adjustBranchStock($product, $quantity, $destinationContext, $companyId);
+                $this->branchInventory->adjustBranchStock($product, $quantity, $destinationContext, $companyId, false);
 
                 if (Schema::hasTable('inventory_history')) {
                     $basePayload = [

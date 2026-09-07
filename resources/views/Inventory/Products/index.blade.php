@@ -5,6 +5,7 @@
 @php
     $products = $products ?? collect();
     $productRows = $productRows ?? collect();
+    $transferProducts = $transferProducts ?? $productRows;
     $hasProductRows = isset($hasProductRows) ? (bool) $hasProductRows : ($productRows->count() > 0);
     $categories = $categories ?? collect();
     $availableBranches = $availableBranches ?? [];
@@ -616,12 +617,12 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted mb-3">Use this on higher plans to move stock from one branch to another without changing total company stock.</p>
+                    <p class="text-muted mb-3">Move an existing company product to another branch without importing or creating the product again. Only branch stock changes; total company stock stays the same.</p>
                     <div class="mb-3">
                         <label class="form-label">Product</label>
                         <select name="product_id" class="form-select" required>
                             <option value="">Select product</option>
-                            <?php foreach ($products as $product): ?>
+                            <?php foreach ($transferProducts as $product): ?>
                                 <option value="{{ $product->id }}">{{ $product->name }} ({{ $product->sku }})</option>
                             <?php endforeach; ?>
                         </select>

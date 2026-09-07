@@ -420,6 +420,7 @@
                                                 </option>
                                             @endforeach
                                         </select>
+                                        <small class="text-muted">Optional. This does not change the base stock unit; it only tells purchases how bulk buying converts to stock.</small>
                                         @error('purchase_unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-6">
@@ -1022,7 +1023,6 @@ $(document).ready(function () {
         $('input[name="base_unit_name"]').val(symbol);
         selectUnitBySuggestion('select[name="unit_id"]', symbol);
         selectUnitBySuggestion('select[name="base_unit_id"]', symbol);
-        selectUnitBySuggestion('select[name="purchase_unit_id"]', symbol);
         unitSyncing = false;
         refreshQuickPackagingLabels();
         calculateQuickCartonContent();
@@ -1039,7 +1039,13 @@ $(document).ready(function () {
     });
 
     $('select[name="purchase_unit_id"]').on('change', function () {
-        applyUnitSymbol(selectedUnitKey('select[name="purchase_unit_id"]'));
+        var purchaseUnit = selectedUnitKey('select[name="purchase_unit_id"]');
+        var baseUnit = selectedUnitKey('select[name="base_unit_id"]') || selectedUnitKey('select[name="unit_id"]') || quickBaseUnitLabel();
+        var conversionField = $('input[name="conversion_rate"]');
+
+        if (purchaseUnit && normalizeUnitKey(purchaseUnit) !== normalizeUnitKey(baseUnit) && !conversionField.val()) {
+            conversionField.focus();
+        }
     });
 
     $('.unit-suggestion-chip').on('click', function () {

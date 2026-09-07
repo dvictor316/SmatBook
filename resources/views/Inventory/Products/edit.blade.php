@@ -301,6 +301,7 @@
                                             </option>
                                         @endforeach
                                     </select>
+                                    <small class="field-note">Optional. Does not change the base stock unit; it only controls purchase conversion.</small>
                                 </div>
                             </div>
                             <div class="col-md-3">

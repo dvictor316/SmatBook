@@ -337,7 +337,7 @@ class BranchInventoryService
         });
     }
 
-    public function adjustBranchStock(Product|int $product, float $delta, ?array $branch = null, ?int $companyId = null): ?ProductBranchStock
+    public function adjustBranchStock(Product|int $product, float $delta, ?array $branch = null, ?int $companyId = null, bool $seedFromProductStock = true): ?ProductBranchStock
     {
         $branch = $branch ?: $this->getActiveBranchContext();
 
@@ -354,13 +354,13 @@ class BranchInventoryService
         ]);
         $seededFromCurrentProductStock = false;
 
-        if (!$branchStock->exists) {
+        if (!$branchStock->exists && $seedFromProductStock) {
             // Callers update product stock first, then sync the branch row.
             // Seed a brand-new branch row from the already-updated product stock
             // so we do not apply the same delta twice.
             $branchStock->quantity = round(max(0, (float) ($productModel->stock ?? $productModel->stock_quantity ?? 0)), 2);
             $seededFromCurrentProductStock = true;
-        } elseif (((float) ($branchStock->quantity ?? 0)) === 0.0) {
+        } elseif ($seedFromProductStock && ((float) ($branchStock->quantity ?? 0)) === 0.0) {
             $productStock = (float) ($productModel->stock ?? $productModel->stock_quantity ?? 0);
             if ($productStock !== 0.0) {
                 // Same rule here: quantity zero plus a non-zero product stock usually
