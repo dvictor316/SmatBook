@@ -13,6 +13,9 @@
     $stockTransferEnabled = $stockTransferEnabled ?? false;
     $branchOptions = $availableBranches;
     $showStockTransferModal = $stockTransferEnabled && count($branchOptions) > 1;
+    $piecesPerCarton = 0;
+    $piecesPerRoll = 0;
+    $rollsPerCarton = 0;
 @endphp
 <style>
     /* Hide default DataTables buttons as we trigger them via our custom dropdown */

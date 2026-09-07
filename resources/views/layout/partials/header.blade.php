@@ -146,10 +146,13 @@
         || str_contains($normalizedHeaderPlan, 'pro')
         || str_contains($normalizedHeaderPlan, 'enterprise');
     $headerHasEnterprise = $headerIsSuperAdmin || str_contains($normalizedHeaderPlan, 'enterprise');
+    $headerIsHotelTenant = $user && !$headerIsSuperAdmin && \App\Support\HotelAccess::userIsHotelTenant($user);
 
     $headerSearchPlaceholder = 'Search customers, invoices, products...';
 
-    if (request()->routeIs('customers.*') || request()->is('customers*', 'suppliers*')) {
+    if ($headerIsHotelTenant || request()->routeIs('hotel.*')) {
+        $headerSearchPlaceholder = 'Search rooms, guests, folios, bookings...';
+    } elseif (request()->routeIs('customers.*') || request()->is('customers*', 'suppliers*')) {
         $headerSearchPlaceholder = 'Search customers, suppliers, ledgers...';
     } elseif (request()->routeIs('invoices.*') || request()->routeIs('sales.*') || request()->is('pos*')) {
         $headerSearchPlaceholder = 'Search invoices, POS, receipts, customers...';
@@ -340,6 +343,67 @@
             'keywords' => ['settings', 'configuration', 'company', 'profile'],
         ],
     ]));
+
+    if ($headerIsHotelTenant) {
+        $headerSearchItems = array_values(array_filter([
+            Route::has('hotel.dashboard') ? [
+                'title' => 'Hotel Dashboard',
+                'subtitle' => 'Tenant PMS overview and occupancy KPIs',
+                'url' => route('hotel.dashboard'),
+                'icon' => 'fa-hotel',
+                'keywords' => ['hotel dashboard', 'pms', 'overview', 'occupancy'],
+            ] : null,
+            Route::has('hotel.frontdesk') ? [
+                'title' => 'Front Desk',
+                'subtitle' => 'Room board, guest movement, and front office actions',
+                'url' => route('hotel.frontdesk'),
+                'icon' => 'fa-concierge-bell',
+                'keywords' => ['front desk', 'room board', 'rooms', 'desk'],
+            ] : null,
+            Route::has('hotel.reservations.index') ? [
+                'title' => 'Reservations',
+                'subtitle' => 'Bookings, arrivals, stays, and reservation register',
+                'url' => route('hotel.reservations.index'),
+                'icon' => 'fa-calendar-check',
+                'keywords' => ['reservations', 'bookings', 'arrival', 'guest booking'],
+            ] : null,
+            Route::has('hotel.rooms.index') ? [
+                'title' => 'Rooms',
+                'subtitle' => 'Rooms, rates, media, housekeeping and room status',
+                'url' => route('hotel.rooms.index'),
+                'icon' => 'fa-bed',
+                'keywords' => ['rooms', 'room gallery', 'rates', 'housekeeping'],
+            ] : null,
+            Route::has('hotel.folios.index') ? [
+                'title' => 'Guest Folios',
+                'subtitle' => 'Hotel charges, payments, receipts and balances',
+                'url' => route('hotel.folios.index'),
+                'icon' => 'fa-file-invoice-dollar',
+                'keywords' => ['folios', 'charges', 'payments', 'receipts', 'guest balance'],
+            ] : null,
+            Route::has('hotel.room_service.index') ? [
+                'title' => 'Room Service',
+                'subtitle' => 'In-room dining charges and service holds',
+                'url' => route('hotel.room_service.index'),
+                'icon' => 'fa-concierge-bell',
+                'keywords' => ['room service', 'dining', 'tray', 'service sale'],
+            ] : null,
+            Route::has('hotel.reports.index') ? [
+                'title' => 'Hotel Reports',
+                'subtitle' => 'Hotel-only revenue, occupancy and cashier reports',
+                'url' => route('hotel.reports.index'),
+                'icon' => 'fa-chart-line',
+                'keywords' => ['hotel reports', 'revenue', 'occupancy', 'cashier'],
+            ] : null,
+            Route::has('hotel.settings') ? [
+                'title' => 'Hotel Settings',
+                'subtitle' => 'Hotel tenant settings and PMS configuration',
+                'url' => route('hotel.settings'),
+                'icon' => 'fa-cog',
+                'keywords' => ['hotel settings', 'pms setup', 'configuration'],
+            ] : null,
+        ]));
+    }
 @endphp
 
 <style>
@@ -422,13 +486,15 @@
 
     /* ── Desktop Sidebar Toggle ── */
     .header-toggle {
-        display: flex;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
         width: 40px;
         height: 40px;
         border-radius: 8px;
         color: #64748b;
+        background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 100%);
+        border: 1px solid #dbe7ff;
         flex-shrink: 0;
         cursor: pointer;
         text-decoration: none;
@@ -448,7 +514,7 @@
         font-size: inherit !important;
         position: relative !important;
         left: auto !important;
-        top: 3px !important;
+        top: 0 !important;
         transform: none !important;
         z-index: 1041;
     }
@@ -456,14 +522,23 @@
     body.mini-sidebar #toggle_btn.header-toggle {
         left: auto !important;
     }
-    .header-toggle:hover { background: #f1f5f9; color: #1e293b; }
+    .header-toggle:hover { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); color: #1e293b; }
+    body.sidebar-collapsed #toggle_btn,
+    body.mini-sidebar #toggle_btn {
+        background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+        border-color: #2563eb;
+        color: #fff;
+        box-shadow: 0 10px 22px rgba(37, 99, 235, 0.2);
+    }
 
     .toggle-bars {
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        align-items: center;
         width: 22px;
         height: 18px;
+        pointer-events: none;
     }
 
     .bar-icon {
@@ -996,7 +1071,11 @@
     .mobile-search-overlay.active { display: block; }
 
     /* Desktop collapsed state */
-    body.sidebar-collapsed .header-logo { width: 80px; }
+    body.sidebar-collapsed .header-logo,
+    body.mini-sidebar .header-logo {
+        width: 80px;
+        flex: 0 0 80px;
+    }
     body.sidebar-collapsed .spb-wordmark,
     body.mini-sidebar .spb-wordmark { display: none; }
 
