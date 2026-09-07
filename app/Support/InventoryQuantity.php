@@ -60,8 +60,6 @@ class InventoryQuantity
     public static function productUnitsPerCartonExpression(string $productsTable = 'products'): string
     {
         return "CASE
-            WHEN COALESCE({$productsTable}.units_per_roll, 0) > 0 AND COALESCE({$productsTable}.units_per_carton, 0) > 0
-                THEN COALESCE({$productsTable}.units_per_carton, 0) * COALESCE({$productsTable}.units_per_roll, 0)
             WHEN COALESCE({$productsTable}.units_per_carton, 0) > 0
                 THEN COALESCE({$productsTable}.units_per_carton, 0)
             ELSE 1

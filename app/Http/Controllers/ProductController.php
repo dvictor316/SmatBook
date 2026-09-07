@@ -662,9 +662,7 @@ class ProductController extends Controller
         $stockRolls = (float) ($validated['stock_rolls'] ?? 0);
         $stockUnits = (float) ($validated['stock_units'] ?? 0);
 
-        $cartonUnits = $unitsPerRoll > 0
-            ? ($stockCartons * $unitsPerCarton * $unitsPerRoll)
-            : ($stockCartons * $unitsPerCarton);
+        $cartonUnits = $stockCartons * $unitsPerCarton;
 
         $rollUnits = $unitsPerRoll > 0
             ? ($stockRolls * $unitsPerRoll)

@@ -314,7 +314,7 @@
                             <div class="col-md-3">
                                 <div class="form-group">
                                     <label class="field-label">Unit Total <small class="d-block text-muted" id="edit_unit_total_hint">Total units inside one carton</small></label>
-                                    <input type="number" id="edit_unit_total_per_carton" min="0" step="0.01" class="form-control" value="{{ old('unit_total_per_carton', ((float) old('units_per_roll', $product->units_per_roll ?? 0) > 0) ? (float) old('units_per_carton', $product->units_per_carton ?? 0) * (float) old('units_per_roll', $product->units_per_roll ?? 0) : old('units_per_carton', $product->units_per_carton ?? 0)) }}">
+                                    <input type="number" id="edit_unit_total_per_carton" min="0" step="0.01" class="form-control" value="{{ old('unit_total_per_carton', old('units_per_carton', $product->units_per_carton ?? 0)) }}">
                                     <small class="field-note" id="edit_unit_total_help">Type the full number of sellable units inside one carton first.</small>
                                 </div>
                             </div>
@@ -477,16 +477,16 @@
 
             const unitTotal = parseFloat($('#edit_unit_total_per_carton').val()) || 0;
             const unitsPerRoll = parseFloat($('input[name="units_per_roll"]').val()) || 0;
-            const cartonContent = unitsPerRoll > 0 ? (unitTotal / unitsPerRoll) : unitTotal;
+            const rollsPerCarton = unitsPerRoll > 0 ? (unitTotal / unitsPerRoll) : 0;
             $('#edit_roll_content_hint').text(unitLabel + 's per roll');
             $('#edit_roll_content_help').text('Leave 0 when the item is sold in cartons and ' + unitLabel + 's only.');
             const titleUnit = unitLabel.charAt(0).toUpperCase() + unitLabel.slice(1);
 
-            $('input[name="units_per_carton"]').val(Number.isFinite(cartonContent) ? cartonContent : 0);
+            $('input[name="units_per_carton"]').val(Number.isFinite(unitTotal) ? unitTotal : 0);
             $('#edit_unit_total_hint').text('Total ' + unitLabel + 's inside one carton');
             $('#edit_unit_total_help').text('Type the full number of sellable ' + unitLabel + 's inside one carton first.');
             $('#edit_carton_content_hint').text('Auto-calculated rolls per carton');
-            $('#edit_carton_content_help').text('This is calculated from total ' + unitLabel + 's and ' + unitLabel + 's per roll. If rolls are not used, it matches the unit total.');
+            $('#edit_carton_content_help').text(unitsPerRoll > 0 && Number.isFinite(rollsPerCarton) ? rollsPerCarton.toLocaleString() + ' rolls per carton for reference. Saved value remains total ' + unitLabel + 's per carton.' : 'Saved value remains total ' + unitLabel + 's per carton.');
             $('#edit_units_per_carton_label').text(titleUnit + 's Per Carton');
             $('#edit_units_per_carton_preview').val(unitTotal.toLocaleString() + ' Units');
         }

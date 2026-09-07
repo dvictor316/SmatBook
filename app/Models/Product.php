@@ -72,7 +72,12 @@ class Product extends Model
 
     public function rollsPerCarton(): int
     {
-        return max((int) ($this->units_per_carton ?? 0), 0);
+        $unitsPerCarton = $this->unitsPerCarton();
+        $unitsPerRoll = $this->unitsPerRoll();
+
+        return $unitsPerRoll > 0 && $unitsPerCarton > 0
+            ? (int) floor($unitsPerCarton / $unitsPerRoll)
+            : $unitsPerCarton;
     }
 
     public function unitsPerRoll(): int
@@ -82,11 +87,7 @@ class Product extends Model
 
     public function unitsPerCarton(): int
     {
-        $unitsPerRoll = $this->unitsPerRoll();
-
-        return $unitsPerRoll > 0
-            ? $this->rollsPerCarton() * $unitsPerRoll
-            : $this->rollsPerCarton();
+        return max((int) ($this->units_per_carton ?? 0), 0);
     }
 
     public function stockBreakdown(?float $quantity = null): array

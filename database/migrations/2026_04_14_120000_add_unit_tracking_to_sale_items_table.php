@@ -50,7 +50,7 @@ return new class extends Migration
                     $unitsPerCarton = max((float) ($row->units_per_carton ?? 0), 0);
 
                     $multiplier = match ($resolvedType) {
-                        'carton' => $unitsPerRoll > 0 && $unitsPerCarton > 0 ? ($unitsPerRoll * $unitsPerCarton) : max($unitsPerCarton, 1),
+                        'carton' => max($unitsPerCarton, 1),
                         'roll' => max($unitsPerRoll, 1),
                         default => 1,
                     };

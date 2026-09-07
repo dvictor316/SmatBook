@@ -118,12 +118,7 @@ return new class extends Migration
                         }
 
                         $unitsPerRoll = max((float) ($product->units_per_roll ?? 0), 0);
-                        $cartonFactor = 0;
-                        if ((float) ($product->units_per_carton ?? 0) > 0) {
-                            $cartonFactor = $unitsPerRoll > 0
-                                ? (float) $product->units_per_carton * $unitsPerRoll
-                                : (float) $product->units_per_carton;
-                        }
+                        $cartonFactor = max((float) ($product->units_per_carton ?? 0), 0);
 
                         foreach (['roll' => $unitsPerRoll, 'carton' => $cartonFactor] as $unitName => $factor) {
                             if ($factor <= 1) {

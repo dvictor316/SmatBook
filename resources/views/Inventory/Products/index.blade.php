@@ -544,11 +544,17 @@
                                         <td>{{ $product->category_name ?? 'N/A' }}</td>
                                         <td><span class="badge bg-soft-info text-info">{{ $product->base_unit_name }}</span></td>
                                         <td>
+                                                @php
+                                                    $piecesPerCarton = max((int) ($product->units_per_carton ?? 0), 0);
+                                                    $piecesPerRoll = max((int) ($product->units_per_roll ?? 0), 0);
+                                                    $rollsPerCarton = $piecesPerRoll > 0 && $piecesPerCarton > 0 ? (int) floor($piecesPerCarton / $piecesPerRoll) : 0;
+                                                @endphp
                                                 @if((int) ($product->units_per_roll ?? 0) > 0)
-                                                    <small class="d-block text-nowrap">Rolls / Carton: <strong>{{ $product->units_per_carton }}</strong></small>
-                                                    <small class="d-block text-nowrap">Sachets / Roll: <strong>{{ $product->units_per_roll }}</strong></small>
+                                                    <small class="d-block text-nowrap">Pieces / Carton: <strong>{{ $piecesPerCarton }}</strong></small>
+                                                    <small class="d-block text-nowrap">Pieces / Roll: <strong>{{ $piecesPerRoll }}</strong></small>
+                                                    <small class="d-block text-nowrap">Rolls / Carton: <strong>{{ $rollsPerCarton }}</strong></small>
                                                 @else
-                                                    <small class="d-block text-nowrap">Pieces / Carton: <strong>{{ $product->units_per_carton }}</strong></small>
+                                                    <small class="d-block text-nowrap">Pieces / Carton: <strong>{{ $piecesPerCarton }}</strong></small>
                                                     <small class="d-block text-nowrap">Roll Layer: <strong>Not used</strong></small>
                                                 @endif
                                         </td>

@@ -4232,11 +4232,12 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
                 $retailPrice = (float) ($p->retail_price ?? $p->price ?? 0);
                 $wholesalePrice = (float) ($p->wholesale_price ?? 0);
                 $specialPrice = (float) ($p->special_price ?? 0);
-                $rollsPerCarton = max((int) ($p->units_per_carton ?? 0), 0);
+                $unitsPerCarton = max((int) ($p->units_per_carton ?? 0), 0);
                 $unitsPerRoll = max((int) ($p->units_per_roll ?? 0), 0);
+                $rollsPerCarton = $unitsPerRoll > 0 && $unitsPerCarton > 0 ? (int) floor($unitsPerCarton / $unitsPerRoll) : 0;
                 $baseUnitName = strtolower(trim((string) (method_exists($p, 'stockUnitSymbol') ? $p->stockUnitSymbol() : ($p->base_unit_name ?? 'unit')))) ?: 'unit';
                 $unitType = strtolower(trim((string) ($p->unit_type ?? 'unit'))) ?: 'unit';
-                $cartonUnitCount = $rollsPerCarton > 0 ? ($unitsPerRoll > 0 ? $rollsPerCarton * $unitsPerRoll : $rollsPerCarton) : 0;
+                $cartonUnitCount = $unitsPerCarton;
                 $measurementParts = ['1 ' . $baseUnitName];
                 if ($unitsPerRoll > 0) {
                     $measurementParts[] = $unitsPerRoll . ' ' . $baseUnitName . ($unitsPerRoll === 1 ? '' : 's') . ' / roll';
@@ -4364,11 +4365,12 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
                         $retailPrice = (float) ($p->retail_price ?? $p->price ?? 0);
                         $wholesalePrice = (float) ($p->wholesale_price ?? 0);
                         $specialPrice = (float) ($p->special_price ?? 0);
-                        $rollsPerCarton = max((int) ($p->units_per_carton ?? 0), 0);
+                        $unitsPerCarton = max((int) ($p->units_per_carton ?? 0), 0);
                         $unitsPerRoll = max((int) ($p->units_per_roll ?? 0), 0);
+                        $rollsPerCarton = $unitsPerRoll > 0 && $unitsPerCarton > 0 ? (int) floor($unitsPerCarton / $unitsPerRoll) : 0;
                         $baseUnitName = strtolower(trim((string) (method_exists($p, 'stockUnitSymbol') ? $p->stockUnitSymbol() : ($p->base_unit_name ?? 'unit')))) ?: 'unit';
                         $unitType = strtolower(trim((string) ($p->unit_type ?? 'unit'))) ?: 'unit';
-                        $cartonUnitCount = $rollsPerCarton > 0 ? ($unitsPerRoll > 0 ? $rollsPerCarton * $unitsPerRoll : $rollsPerCarton) : 0;
+                        $cartonUnitCount = $unitsPerCarton;
                         $measurementParts = ['1 ' . $baseUnitName];
                         if ($unitsPerRoll > 0) {
                             $measurementParts[] = $unitsPerRoll . ' ' . $baseUnitName . ($unitsPerRoll === 1 ? '' : 's') . ' / roll';
@@ -4932,7 +4934,7 @@ $(document).ready(function() {
             return;
         }
 
-        const unitsPerCarton = hasProduct ? (parseInt(selectedOption.data('upc')) || 0) : 0;
+        const rollsPerCarton = hasProduct ? (parseInt(selectedOption.data('upc')) || 0) : 0;
         const unitsPerRoll = hasProduct ? (parseInt(selectedOption.data('upr')) || 0) : 0;
 
         const cartonInput = $('#unit-type-carton');
@@ -4942,6 +4944,8 @@ $(document).ready(function() {
         const unitLabel = $('label[for="unit-type-unit"]');
 
         const baseUnit = hasProduct ? String(selectedOption.data('base-unit') || 'unit') : 'unit';
+        const cartonUnits = Math.max(parseFloat((readUnitOptions(selectedOption).find((unit) => String(unit.name).toLowerCase() === 'carton') || {}).conversion_factor || 0) || 0, 0);
+        const unitsPerCarton = cartonUnits > 0 ? cartonUnits : (rollsPerCarton > 0 && unitsPerRoll > 0 ? rollsPerCarton * unitsPerRoll : rollsPerCarton);
         const cartonEnabled = !hasProduct || unitsPerCarton > 0;
         const rollEnabled = !hasProduct || unitsPerRoll > 0;
 
@@ -4954,9 +4958,7 @@ $(document).ready(function() {
         $('#unit-meta-roll').text(rollEnabled ? `${unitsPerRoll} ${baseUnit}${unitsPerRoll === 1 ? '' : 's'} / roll` : 'Unavailable');
         $('#unit-meta-carton').text(
             cartonEnabled
-                ? (unitsPerRoll > 0
-                    ? `${unitsPerCarton * unitsPerRoll} ${baseUnit}${(unitsPerCarton * unitsPerRoll) === 1 ? '' : 's'} / carton`
-                    : `${unitsPerCarton} ${baseUnit}${unitsPerCarton === 1 ? '' : 's'} / carton`)
+                ? `${unitsPerCarton} ${baseUnit}${unitsPerCarton === 1 ? '' : 's'} / carton`
                 : 'Unavailable'
         );
         unitLabel.toggleClass('disabled', false);
@@ -4975,9 +4977,10 @@ $(document).ready(function() {
         const unitsPerRoll = Math.max(parseInt(selectedOption.data('upr')) || 0, 0);
         const baseUnit = String(selectedOption.data('base-unit') || 'unit');
         const configuredFactor = Math.max(parseFloat(activeUnit.data('factor')) || 0, 0);
-        const cartonUnits = rollsPerCarton > 0
+        const dynamicCarton = readUnitOptions(selectedOption).find((unit) => String(unit.name).toLowerCase() === 'carton');
+        const cartonUnits = Math.max(parseFloat(dynamicCarton?.conversion_factor || 0) || 0, 0) || (rollsPerCarton > 0
             ? (unitsPerRoll > 0 ? (rollsPerCarton * unitsPerRoll) : rollsPerCarton)
-            : 0;
+            : 0);
 
         let multiplier = 1;
         let unitName = `${baseUnit}s`;
@@ -6863,9 +6866,11 @@ window.POS_ENABLE_FALLBACK = function () {
         const rollsPerCarton = Math.max(parseFloat(data.upc || '0') || 0, 0);
         const unitsPerRoll = Math.max(parseFloat(data.upr || '0') || 0, 0);
         const baseUnit = String(data.baseUnit || 'unit');
-        const cartonUnits = rollsPerCarton > 0
+        const configuredUnits = Array.isArray(data.unitOptions) ? data.unitOptions : [];
+        const cartonOption = configuredUnits.find((unit) => String(unit.name || '').toLowerCase() === 'carton');
+        const cartonUnits = Math.max(parseFloat(cartonOption?.conversion_factor || 0) || 0, 0) || (rollsPerCarton > 0
             ? (unitsPerRoll > 0 ? (rollsPerCarton * unitsPerRoll) : rollsPerCarton)
-            : 0;
+            : 0);
 
         let multiplier = 1;
         let unitLabel = baseUnit;
