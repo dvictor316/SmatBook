@@ -4894,7 +4894,7 @@ $(document).ready(function() {
         }
     }
 
-    function renderUnitButtons(selectedOption) {
+    function renderUnitButtons(selectedOption, selectedUnitValue = null) {
         const hasProduct = !!selectedOption && !!selectedOption.val();
         const baseUnit = hasProduct ? String(selectedOption.data('base-unit') || 'unit') : 'unit';
         const dynamicUnits = readUnitOptions(selectedOption).filter((unit) => {
@@ -4903,12 +4903,19 @@ $(document).ready(function() {
         });
         const units = dynamicUnits.length ? dynamicUnits : [{ name: 'unit', symbol: baseUnit, conversion_factor: 1, is_default_sales_unit: true }];
         const grid = $('.unit-grid');
+        const selectedKey = selectedUnitValue ? String(selectedUnitValue).toLowerCase() : null;
+        const selectedExists = selectedKey
+            ? units.some((unit) => String(unit.name || unit.symbol || 'unit').toLowerCase() === selectedKey)
+            : false;
 
         grid.html(units.map((unit, index) => {
             const value = String(unit.name || unit.symbol || 'unit').toLowerCase();
             const label = String(unit.symbol || unit.name || baseUnit);
             const factor = Math.max(parseFloat(unit.conversion_factor) || 1, 1);
-            const checked = unit.is_default_sales_unit || index === 0 ? 'checked' : '';
+            const shouldCheck = selectedExists
+                ? value === selectedKey
+                : (unit.is_default_sales_unit || index === 0);
+            const checked = shouldCheck ? 'checked' : '';
             const meta = factor > 1 ? `${factor.toLocaleString()} ${baseUnit}` : `1 ${baseUnit}`;
             return `
                 <input type="radio" class="btn-check" name="unit_type" id="unit-type-${value.replace(/[^a-z0-9_-]+/g, '-')}" value="${value}" data-factor="${factor}" data-selling-price="${unit.selling_price ?? ''}" ${checked}>
@@ -4919,7 +4926,8 @@ $(document).ready(function() {
 
     function setUnitTypeAvailability(selectedOption) {
         const hasProduct = !!selectedOption && !!selectedOption.val();
-        renderUnitButtons(selectedOption);
+        const previouslySelectedUnit = $('input[name="unit_type"]:checked').val() || null;
+        renderUnitButtons(selectedOption, previouslySelectedUnit);
         if (readUnitOptions(selectedOption).length > 0) {
             return;
         }

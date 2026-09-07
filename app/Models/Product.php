@@ -199,12 +199,16 @@ class Product extends Model
     public function resolveUnitConversion(?string $unitName = null): array
     {
         $requestedUnit = strtolower(trim((string) $unitName));
-        $baseUnit = $this->productUnits()
-            ->where('is_base_unit', true)
-            ->where('status', 'active')
-            ->first();
+        $baseUnit = null;
 
-        if ($requestedUnit !== '') {
+        if (Schema::hasTable('product_units')) {
+            $baseUnit = $this->productUnits()
+                ->where('is_base_unit', true)
+                ->where('status', 'active')
+                ->first();
+        }
+
+        if ($requestedUnit !== '' && Schema::hasTable('product_units')) {
             $matchedUnit = $this->productUnits()
                 ->where('status', 'active')
                 ->where(function ($query) use ($requestedUnit) {
