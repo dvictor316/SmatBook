@@ -444,17 +444,17 @@
     #toggle_btn.header-toggle {
         width: 40px !important;
         height: 40px !important;
-        margin: 0 14px 0 8px !important;
+        margin: 0 !important;
         font-size: inherit !important;
-        position: relative !important;
-        left: auto !important;
-        top: auto !important;
-        transform: none !important;
+        position: absolute !important;
+        left: 320px !important;
+        top: calc(50% + 12px) !important;
+        transform: translate(-50%, -50%) !important;
         z-index: 1041;
     }
     body.sidebar-collapsed #toggle_btn.header-toggle,
     body.mini-sidebar #toggle_btn.header-toggle {
-        left: auto !important;
+        left: 118px !important;
     }
     .header-toggle:hover { background: #f1f5f9; color: #1e293b; }
 
@@ -491,7 +491,7 @@
         justify-content: flex-start;
         max-width: 310px;
         min-width: 210px;
-        margin: 0 18px 0 0;
+        margin: 0 18px 0 58px;
         order: 3;
     }
 
@@ -795,7 +795,7 @@
             flex-basis: 240px;
             max-width: 280px;
             min-width: 200px;
-            margin-left: 0;
+            margin-left: 52px;
         }
         .workspace-switcher a {
             padding: 0 9px;
@@ -820,7 +820,7 @@
             flex-basis: 220px;
             max-width: 240px;
             min-width: 190px;
-            margin-left: 0;
+            margin-left: 44px;
         }
         .country-name,
         .country-currency {
