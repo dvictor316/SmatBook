@@ -4047,7 +4047,7 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
 
 body.pos-terminal-workspace .pos-main-stage > .header-stage {
     position: sticky !important;
-    top: var(--sb-header-h, 76px) !important;
+    top: 0 !important;
     z-index: 40 !important;
 }
 
@@ -4067,7 +4067,7 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
 
 @media (max-width: 575.98px) {
     body.pos-terminal-workspace .pos-main-stage > .header-stage {
-        top: var(--spb-header-offset, 66px) !important;
+        top: 0 !important;
     }
 
     body.pos-terminal-workspace .pos-action-rail,

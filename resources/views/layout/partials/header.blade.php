@@ -374,7 +374,7 @@
         order: 1;
         gap: 8px;
         min-width: 0;
-        flex: 1 1 auto;
+        flex: 0 0 270px;
     }
     .header-logo a {
         display: inline-flex;
@@ -486,18 +486,19 @@
 
     /* ── Search ── */
     .header-search-container {
-        flex: 1;
+        flex: 1 1 560px;
         display: flex;
-        justify-content: center;
-        max-width: 600px;
-        margin: 0 auto;
+        justify-content: flex-start;
+        max-width: 760px;
+        min-width: 280px;
+        margin: 0 14px 0 42px;
         order: 3;
     }
 
     .header-search {
         position: relative;
         width: 100%;
-        max-width: 450px;
+        max-width: 620px;
     }
 
     .header-search input {
