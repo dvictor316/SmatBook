@@ -486,12 +486,12 @@
 
     /* ── Search ── */
     .header-search-container {
-        flex: 1 1 480px;
+        flex: 0 1 430px;
         display: flex;
         justify-content: flex-start;
-        max-width: 640px;
+        max-width: 540px;
         min-width: 280px;
-        margin: 0 8px 0 12px;
+        margin: 0 8px 0 44px;
         order: 3;
     }
 
@@ -791,9 +791,10 @@
             font-size: 1.05rem;
         }
         .header-search-container {
-            flex-basis: 430px;
-            max-width: 560px;
+            flex-basis: 380px;
+            max-width: 460px;
             min-width: 250px;
+            margin-left: 44px;
         }
         .workspace-switcher a {
             padding: 0 9px;
@@ -815,10 +816,10 @@
             flex-basis: 188px;
         }
         .header-search-container {
-            flex-basis: 360px;
-            max-width: 460px;
+            flex-basis: 320px;
+            max-width: 380px;
             min-width: 220px;
-            margin-left: 8px;
+            margin-left: 38px;
         }
         .country-name,
         .country-currency {
