@@ -444,17 +444,17 @@
     #toggle_btn.header-toggle {
         width: 40px !important;
         height: 40px !important;
-        margin: 0 !important;
+        margin: 0 18px 0 10px !important;
         font-size: inherit !important;
-        position: absolute !important;
-        left: 320px !important;
-        top: calc(50% + 12px) !important;
-        transform: translate(-50%, -50%) !important;
+        position: relative !important;
+        left: auto !important;
+        top: 3px !important;
+        transform: none !important;
         z-index: 1041;
     }
     body.sidebar-collapsed #toggle_btn.header-toggle,
     body.mini-sidebar #toggle_btn.header-toggle {
-        left: 118px !important;
+        left: auto !important;
     }
     .header-toggle:hover { background: #f1f5f9; color: #1e293b; }
 
@@ -486,12 +486,12 @@
 
     /* ── Search ── */
     .header-search-container {
-        flex: 0 1 270px;
+        flex: 0 1 250px;
         display: flex;
         justify-content: flex-start;
-        max-width: 310px;
+        max-width: 285px;
         min-width: 210px;
-        margin: 0 18px 0 58px;
+        margin: 0 18px 0 0;
         order: 3;
     }
 
@@ -598,7 +598,7 @@
         align-items: center;
         gap: 7px;
         flex-shrink: 0;
-        margin-left: 4px;
+        margin-left: auto;
         order: 4;
     }
     .header-actions > * {
@@ -792,10 +792,10 @@
             font-size: 1.05rem;
         }
         .header-search-container {
-            flex-basis: 240px;
-            max-width: 280px;
+            flex-basis: 220px;
+            max-width: 250px;
             min-width: 200px;
-            margin-left: 52px;
+            margin-left: 0;
         }
         .workspace-switcher a {
             padding: 0 9px;
@@ -817,10 +817,10 @@
             flex-basis: 228px;
         }
         .header-search-container {
-            flex-basis: 220px;
-            max-width: 240px;
+            flex-basis: 200px;
+            max-width: 220px;
             min-width: 190px;
-            margin-left: 44px;
+            margin-left: 0;
         }
         .country-name,
         .country-currency {
