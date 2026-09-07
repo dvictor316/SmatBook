@@ -369,12 +369,12 @@
         display: flex;
         align-items: center;
         justify-content: flex-start;
-        width: 222px;
+        width: 286px;
         flex-shrink: 0;
         order: 1;
         gap: 8px;
         min-width: 0;
-        flex: 0 0 222px;
+        flex: 0 0 286px;
     }
     .header-logo a {
         display: inline-flex;
@@ -444,7 +444,7 @@
     #toggle_btn.header-toggle {
         width: 40px !important;
         height: 40px !important;
-        margin: 0 12px 0 2px !important;
+        margin: 0 14px 0 8px !important;
         font-size: inherit !important;
         position: relative !important;
         left: auto !important;
@@ -486,12 +486,12 @@
 
     /* ── Search ── */
     .header-search-container {
-        flex: 0 1 300px;
+        flex: 0 1 270px;
         display: flex;
         justify-content: flex-start;
-        max-width: 350px;
-        min-width: 220px;
-        margin: 0 20px 0 22px;
+        max-width: 310px;
+        min-width: 210px;
+        margin: 0 18px 0 0;
         order: 3;
     }
 
@@ -785,17 +785,17 @@
 
     @media (max-width: 1440px) {
         .header-logo {
-            width: 206px;
-            flex-basis: 206px;
+            width: 256px;
+            flex-basis: 256px;
         }
         .spb-wordmark {
             font-size: 1.05rem;
         }
         .header-search-container {
-            flex-basis: 270px;
-            max-width: 310px;
-            min-width: 215px;
-            margin-left: 18px;
+            flex-basis: 240px;
+            max-width: 280px;
+            min-width: 200px;
+            margin-left: 0;
         }
         .workspace-switcher a {
             padding: 0 9px;
@@ -813,14 +813,14 @@
 
     @media (max-width: 1280px) {
         .header-logo {
-            width: 188px;
-            flex-basis: 188px;
+            width: 228px;
+            flex-basis: 228px;
         }
         .header-search-container {
-            flex-basis: 240px;
-            max-width: 270px;
-            min-width: 200px;
-            margin-left: 14px;
+            flex-basis: 220px;
+            max-width: 240px;
+            min-width: 190px;
+            margin-left: 0;
         }
         .country-name,
         .country-currency {
