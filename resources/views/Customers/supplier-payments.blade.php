@@ -6,6 +6,7 @@
     $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
     $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
     $currencySymbol = $geoCurrencySymbol ?? \App\Support\GeoCurrency::currentSymbol();
+    $paymentSources = collect($paymentSources ?? []);
 @endphp
 <style>
     .supplier-open-count-card .supplier-open-count-value {

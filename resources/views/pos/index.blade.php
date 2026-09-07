@@ -4247,6 +4247,26 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
                 if (!empty($p->purchaseUnit?->symbol) && (float) ($p->conversion_rate ?? 0) > 0) {
                     $measurementParts[] = 'Buy ' . $p->purchaseUnit->symbol . ' = ' . rtrim(rtrim(number_format((float) $p->conversion_rate, 2), '0'), '.') . ' ' . $baseUnitName;
                 }
+                $unitOptions = collect($p->activeProductUnits ?? [])
+                    ->map(fn ($unit) => [
+                        'name' => (string) ($unit->unit_name ?: $unit->unit_symbol),
+                        'symbol' => (string) ($unit->unit_symbol ?: $unit->unit_name),
+                        'conversion_factor' => max(1, (float) $unit->conversion_factor),
+                        'selling_price' => $unit->selling_price,
+                        'is_default_sales_unit' => (bool) $unit->is_default_sales_unit,
+                    ])
+                    ->values();
+                if ($unitOptions->isEmpty()) {
+                    $unitOptions = collect([
+                        ['name' => $baseUnitName, 'symbol' => $baseUnitName, 'conversion_factor' => 1, 'selling_price' => $retailPrice, 'is_default_sales_unit' => $unitType === 'unit'],
+                    ]);
+                    if ($unitsPerRoll > 1) {
+                        $unitOptions->push(['name' => 'roll', 'symbol' => 'roll', 'conversion_factor' => $unitsPerRoll, 'selling_price' => null, 'is_default_sales_unit' => $unitType === 'roll']);
+                    }
+                    if ($cartonUnitCount > 1) {
+                        $unitOptions->push(['name' => 'carton', 'symbol' => 'ctn', 'conversion_factor' => $cartonUnitCount, 'selling_price' => null, 'is_default_sales_unit' => $unitType === 'carton']);
+                    }
+                }
                 $measurementLabel = implode(' | ', $measurementParts);
                 $categoryName = $p->category->name ?? 'Uncategorized';
                 $minStockLevel = (int) ($p->min_stock_level ?? 15);
@@ -4281,6 +4301,7 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
                 data-unit-type="{{ $unitType }}"
                 data-purchase-unit="{{ $p->purchaseUnit->symbol ?? '' }}"
                 data-conversion-rate="{{ (float) ($p->conversion_rate ?? 0) }}"
+                data-units='@json($unitOptions)'
                 data-measurement="{{ $measurementLabel }}"
                 data-min-stock="{{ $minStockLevel }}"
                 data-img="{{ $p->image_url }}"
@@ -4358,6 +4379,26 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
                         if (!empty($p->purchaseUnit?->symbol) && (float) ($p->conversion_rate ?? 0) > 0) {
                             $measurementParts[] = 'Buy ' . $p->purchaseUnit->symbol . ' = ' . rtrim(rtrim(number_format((float) $p->conversion_rate, 2), '0'), '.') . ' ' . $baseUnitName;
                         }
+                        $unitOptions = collect($p->activeProductUnits ?? [])
+                            ->map(fn ($unit) => [
+                                'name' => (string) ($unit->unit_name ?: $unit->unit_symbol),
+                                'symbol' => (string) ($unit->unit_symbol ?: $unit->unit_name),
+                                'conversion_factor' => max(1, (float) $unit->conversion_factor),
+                                'selling_price' => $unit->selling_price,
+                                'is_default_sales_unit' => (bool) $unit->is_default_sales_unit,
+                            ])
+                            ->values();
+                        if ($unitOptions->isEmpty()) {
+                            $unitOptions = collect([
+                                ['name' => $baseUnitName, 'symbol' => $baseUnitName, 'conversion_factor' => 1, 'selling_price' => $retailPrice, 'is_default_sales_unit' => $unitType === 'unit'],
+                            ]);
+                            if ($unitsPerRoll > 1) {
+                                $unitOptions->push(['name' => 'roll', 'symbol' => 'roll', 'conversion_factor' => $unitsPerRoll, 'selling_price' => null, 'is_default_sales_unit' => $unitType === 'roll']);
+                            }
+                            if ($cartonUnitCount > 1) {
+                                $unitOptions->push(['name' => 'carton', 'symbol' => 'ctn', 'conversion_factor' => $cartonUnitCount, 'selling_price' => null, 'is_default_sales_unit' => $unitType === 'carton']);
+                            }
+                        }
                         $measurementLabel = implode(' | ', $measurementParts);
                         $categoryName = $p->category->name ?? 'Uncategorized';
                         $minStockLevel = (int) ($p->min_stock_level ?? 15);
@@ -4385,6 +4426,7 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
                         data-unit-type="{{ $unitType }}"
                         data-purchase-unit="{{ $p->purchaseUnit->symbol ?? '' }}"
                         data-conversion-rate="{{ (float) ($p->conversion_rate ?? 0) }}"
+                        data-units='@json($unitOptions)'
                         data-measurement="{{ $measurementLabel }}"
                         data-category="{{ strtolower($categoryName) }}"
                         data-category-name="{{ $categoryName }}"
@@ -4831,8 +4873,57 @@ $(document).ready(function() {
         $('#hdr-shelf-count').text(visibleCount);
     }
 
+    function readUnitOptions(selectedOption) {
+        if (!selectedOption || !selectedOption.length || !selectedOption.val()) {
+            return [];
+        }
+
+        const raw = selectedOption.attr('data-units') || selectedOption.data('units') || [];
+        if (Array.isArray(raw)) {
+            return raw;
+        }
+
+        if (typeof raw === 'object') {
+            return Object.values(raw);
+        }
+
+        try {
+            return JSON.parse(String(raw || '[]'));
+        } catch (error) {
+            return [];
+        }
+    }
+
+    function renderUnitButtons(selectedOption) {
+        const hasProduct = !!selectedOption && !!selectedOption.val();
+        const baseUnit = hasProduct ? String(selectedOption.data('base-unit') || 'unit') : 'unit';
+        const dynamicUnits = readUnitOptions(selectedOption).filter((unit) => {
+            const name = String(unit.name || unit.symbol || '').trim();
+            return name !== '' && (parseFloat(unit.conversion_factor) || 0) > 0;
+        });
+        const units = dynamicUnits.length ? dynamicUnits : [{ name: 'unit', symbol: baseUnit, conversion_factor: 1, is_default_sales_unit: true }];
+        const grid = $('.unit-grid');
+
+        grid.html(units.map((unit, index) => {
+            const value = String(unit.name || unit.symbol || 'unit').toLowerCase();
+            const label = String(unit.symbol || unit.name || baseUnit);
+            const factor = Math.max(parseFloat(unit.conversion_factor) || 1, 1);
+            const checked = unit.is_default_sales_unit || index === 0 ? 'checked' : '';
+            const meta = factor > 1 ? `${factor.toLocaleString()} ${baseUnit}` : `1 ${baseUnit}`;
+            return `
+                <input type="radio" class="btn-check" name="unit_type" id="unit-type-${value.replace(/[^a-z0-9_-]+/g, '-')}" value="${value}" data-factor="${factor}" data-selling-price="${unit.selling_price ?? ''}" ${checked}>
+                <label class="btn unit-btn" for="unit-type-${value.replace(/[^a-z0-9_-]+/g, '-')}">${label}<small>${meta}</small></label>
+            `;
+        }).join(''));
+    }
+
     function setUnitTypeAvailability(selectedOption) {
         const hasProduct = !!selectedOption && !!selectedOption.val();
+        renderUnitButtons(selectedOption);
+        if (readUnitOptions(selectedOption).length > 0) {
+            return;
+        }
+
         const unitsPerCarton = hasProduct ? (parseInt(selectedOption.data('upc')) || 0) : 0;
         const unitsPerRoll = hasProduct ? (parseInt(selectedOption.data('upr')) || 0) : 0;
 
@@ -4869,11 +4960,13 @@ $(document).ready(function() {
     }
 
     function resolveUnitMetrics(selectedOption) {
-        const type = $('input[name="unit_type"]:checked').val() || 'unit';
+        const activeUnit = $('input[name="unit_type"]:checked');
+        const type = activeUnit.val() || 'unit';
         const stock = parseInt(selectedOption.data('stock')) || 0;
         const rollsPerCarton = Math.max(parseInt(selectedOption.data('upc')) || 0, 0);
         const unitsPerRoll = Math.max(parseInt(selectedOption.data('upr')) || 0, 0);
         const baseUnit = String(selectedOption.data('base-unit') || 'unit');
+        const configuredFactor = Math.max(parseFloat(activeUnit.data('factor')) || 0, 0);
         const cartonUnits = rollsPerCarton > 0
             ? (unitsPerRoll > 0 ? (rollsPerCarton * unitsPerRoll) : rollsPerCarton)
             : 0;
@@ -4881,7 +4974,10 @@ $(document).ready(function() {
         let multiplier = 1;
         let unitName = `${baseUnit}s`;
 
-        if (type === 'carton' && cartonUnits > 0) {
+        if (configuredFactor > 0) {
+            multiplier = configuredFactor;
+            unitName = type;
+        } else if (type === 'carton' && cartonUnits > 0) {
             multiplier = cartonUnits;
             unitName = 'cartons';
         } else if (type === 'roll' && unitsPerRoll > 0) {
@@ -4979,7 +5075,10 @@ $(document).ready(function() {
 
         const unitMeta = resolveUnitMetrics(selectedOption);
         const basePrice = getSelectedBasePrice(selectedOption);
-        const computedPrice = unitMeta.multiplier > 1 ? (basePrice.value * unitMeta.multiplier) : basePrice.value;
+        const configuredPrice = parseFloat($('input[name="unit_type"]:checked').data('selling-price')) || 0;
+        const computedPrice = configuredPrice > 0
+            ? configuredPrice
+            : (unitMeta.multiplier > 1 ? (basePrice.value * unitMeta.multiplier) : basePrice.value);
         $('#unit-price-input').val(computedPrice.toFixed(2));
 
         return { unitMeta, basePrice, computedPrice };
@@ -5454,7 +5553,7 @@ $(document).ready(function() {
         applyProductSelection($(this).find(':selected'));
     });
 
-    $('input[name="unit_type"]').on('change', () => $('#product-select').trigger('change'));
+    $(document).on('change', 'input[name="unit_type"]', () => $('#product-select').trigger('change'));
     $('#price-tier').on('change', () => $('#product-select').trigger('change'));
     $('#price-list-select').on('change', function () {
         if ($(this).val()) {

@@ -104,6 +104,101 @@ private function applyBranchScope($query, string $table = 'purchases')
         return $purchase ?: $baseQuery->find($purchaseId);
     }
 
+    private function productUnitChoices(Product $product): array
+    {
+        $choices = collect();
+
+        if ($product->relationLoaded('activeProductUnits')) {
+            $choices = $product->activeProductUnits
+                ->map(function ($unit) {
+                    return [
+                        'name' => (string) ($unit->unit_name ?: $unit->unit_symbol),
+                        'symbol' => (string) ($unit->unit_symbol ?: $unit->unit_name),
+                        'conversion_factor' => max(1, (float) $unit->conversion_factor),
+                        'purchase_price' => $unit->purchase_price,
+                        'selling_price' => $unit->selling_price,
+                        'is_purchase_unit' => (bool) $unit->is_purchase_unit,
+                        'is_default_sales_unit' => (bool) $unit->is_default_sales_unit,
+                    ];
+                });
+        }
+
+        if ($choices->isEmpty()) {
+            $baseUnit = $product->stockUnitSymbol();
+            $choices->push([
+                'name' => $baseUnit,
+                'symbol' => $baseUnit,
+                'conversion_factor' => 1,
+                'purchase_price' => $product->purchase_price ?? $product->price ?? 0,
+                'selling_price' => $product->price ?? 0,
+                'is_purchase_unit' => empty($product->purchase_unit_id),
+                'is_default_sales_unit' => true,
+            ]);
+
+            $legacyUnits = [
+                'roll' => $product->unitsPerRoll(),
+                'carton' => $product->unitsPerCarton(),
+            ];
+
+            foreach ($legacyUnits as $unitName => $factor) {
+                if ($factor > 1) {
+                    $choices->push([
+                        'name' => $unitName,
+                        'symbol' => $unitName === 'carton' ? 'ctn' : $unitName,
+                        'conversion_factor' => $factor,
+                        'purchase_price' => null,
+                        'selling_price' => $product->price ? round((float) $product->price * $factor, 2) : null,
+                        'is_purchase_unit' => $product->unit_type === $unitName,
+                        'is_default_sales_unit' => $product->unit_type === $unitName,
+                    ]);
+                }
+            }
+        }
+
+        return $choices
+            ->unique(fn ($unit) => strtolower($unit['name'] ?: $unit['symbol']))
+            ->values()
+            ->all();
+    }
+
+    private function resolvePurchaseLineUnit(Product $product, array $item): array
+    {
+        $requestedUnit = trim((string) ($item['unit'] ?? ''));
+        if ($requestedUnit === '') {
+            $requestedUnit = $product->purchaseUnit?->symbol
+                ?? $product->baseUnit?->symbol
+                ?? $product->unit?->symbol
+                ?? $product->base_unit_name
+                ?? $product->unit_type
+                ?? 'pcs';
+        }
+
+        $conversion = method_exists($product, 'resolveUnitConversion')
+            ? $product->resolveUnitConversion($requestedUnit)
+            : ['unit_name' => $requestedUnit, 'conversion_factor' => 1];
+
+        $factor = max(1, (float) ($conversion['conversion_factor'] ?? 1));
+        $quantity = max(0, (float) ($item['quantity'] ?? $item['qty'] ?? 0));
+
+        return [
+            'unit' => (string) (($conversion['unit_name'] ?? null) ?: $requestedUnit),
+            'conversion_factor' => $factor,
+            'stock_units' => round($quantity * $factor, 6),
+        ];
+    }
+
+    private function purchaseItemStockUnits(PurchaseItem $item): float
+    {
+        if (Schema::hasColumn('purchase_items', 'stock_units') && (float) ($item->stock_units ?? 0) > 0) {
+            return round((float) $item->stock_units, 6);
+        }
+
+        $qty = (float) ($item->qty ?? $item->quantity ?? 0);
+        $factor = (float) ($item->conversion_factor ?? 0);
+
+        return round($qty * max(1, $factor ?: 1), 6);
+    }
+
     public function index()
     {
         $activeBranch = $this->getActiveBranchContext();
@@ -211,17 +306,30 @@ private function applyBranchScope($query, string $table = 'purchases')
         if (Schema::hasTable('units')) {
             $productsQuery->with(['unit', 'baseUnit', 'purchaseUnit']);
         }
+        if (Schema::hasTable('product_units')) {
+            $productsQuery->with('activeProductUnits');
+        }
 
         $products = $productsQuery->get()->map(function (Product $product) {
-            $purchaseUnitLabel = $product->purchaseUnit?->symbol
+            $unitChoices = $this->productUnitChoices($product);
+            $purchaseUnitChoice = collect($unitChoices)->firstWhere('is_purchase_unit', true)
+                ?: collect($unitChoices)->first();
+            $purchaseUnitLabel = $purchaseUnitChoice['name']
+                ?? $purchaseUnitChoice['symbol']
+                ?? $product->purchaseUnit?->symbol
                 ?? $product->baseUnit?->symbol
                 ?? $product->unit?->symbol
                 ?? $product->base_unit_name
                 ?? $product->unit_type
                 ?? 'pcs';
+            $purchaseRate = $purchaseUnitChoice['purchase_price']
+                ?? $product->purchase_price
+                ?? $product->price
+                ?? 0;
 
+            $product->setAttribute('available_units', $unitChoices);
             $product->setAttribute('purchase_unit_label', $purchaseUnitLabel);
-            $product->setAttribute('purchase_rate', (float) ($product->purchase_price ?? $product->price ?? 0));
+            $product->setAttribute('purchase_rate', (float) $purchaseRate);
 
             return $product;
         });
@@ -291,7 +399,7 @@ private function applyBranchScope($query, string $table = 'purchases')
             'products.*.product_id' => 'required|exists:products,id',
             'products.*.quantity' => 'required|numeric|min:0.01',
             'products.*.rate' => 'required|numeric|min:0',
-            'products.*.unit' => 'nullable|string|max:20',
+            'products.*.unit' => 'nullable|string|max:80',
             'products.*.discount' => 'nullable|numeric|min:0',
             'products.*.tax_id' => 'nullable|exists:tax_codes,id',
             'discount_type' => 'in:percentage,fixed',
@@ -364,8 +472,10 @@ private function applyBranchScope($query, string $table = 'purchases')
             // Create purchase items
             foreach ($request->products as $item) {
                 $itemAmount = ($item['quantity'] * $item['rate']) - ($item['discount'] ?? 0);
-                $product = Product::query()->lockForUpdate()->findOrFail($item['product_id']);
+                $product = Product::with(['unit', 'baseUnit', 'purchaseUnit'])->lockForUpdate()->findOrFail($item['product_id']);
                 $quantity = (float) $item['quantity'];
+                $lineUnit = $this->resolvePurchaseLineUnit($product, $item);
+                $stockQuantity = $lineUnit['stock_units'];
 
                 $itemPayload = [
                     'purchase_id' => $purchase->id,
@@ -391,7 +501,19 @@ private function applyBranchScope($query, string $table = 'purchases')
                     $itemPayload['amount'] = $itemAmount;
                 }
                 if (Schema::hasColumn('purchase_items', 'unit')) {
-                    $itemPayload['unit'] = $product->base_unit_name ?: ($item['unit'] ?? null);
+                    $itemPayload['unit'] = $lineUnit['unit'];
+                }
+                if (Schema::hasColumn('purchase_items', 'unit_type')) {
+                    $itemPayload['unit_type'] = $lineUnit['unit'];
+                }
+                if (Schema::hasColumn('purchase_items', 'conversion_factor')) {
+                    $itemPayload['conversion_factor'] = $lineUnit['conversion_factor'];
+                }
+                if (Schema::hasColumn('purchase_items', 'stock_units')) {
+                    $itemPayload['stock_units'] = $stockQuantity;
+                }
+                if (Schema::hasColumn('purchase_items', 'line_total')) {
+                    $itemPayload['line_total'] = $itemAmount;
                 }
                 if (Schema::hasColumn('purchase_items', 'company_id')) {
                     $itemPayload['company_id'] = $purchase->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
@@ -404,13 +526,13 @@ private function applyBranchScope($query, string $table = 'purchases')
                 }
 
                 PurchaseItem::create($itemPayload);
-                $product->increment('stock', $quantity);
+                $product->increment('stock', $stockQuantity);
                 if (Schema::hasColumn('products', 'stock_quantity')) {
-                    $product->increment('stock_quantity', $quantity);
+                    $product->increment('stock_quantity', $stockQuantity);
                 }
                 $this->branchInventory->adjustBranchStock(
                     $product,
-                    $quantity,
+                    $stockQuantity,
                     $activeBranch,
                     (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
                 );
@@ -528,18 +650,83 @@ public function show($id)
         $this->applyTenantScope($purchaseQuery, 'purchases');
         $this->applyBranchScope($purchaseQuery, 'purchases');
         $purchase = $purchaseQuery->findOrFail($id);
+
         $vendorsQuery = Vendor::orderBy('name');
         $this->applyTenantScope($vendorsQuery, 'vendors');
         $vendors = $vendorsQuery->get();
+
+        $suppliers = collect();
+        if (Schema::hasTable('suppliers')) {
+            $suppliersQuery = Supplier::orderBy('name');
+            $this->applyTenantScope($suppliersQuery, 'suppliers');
+            $this->applyBranchScope($suppliersQuery, 'suppliers');
+            $suppliers = $suppliersQuery->get();
+        }
+
         $productsQuery = Product::orderBy('name');
         $this->applyTenantScope($productsQuery, 'products');
-        $products = $productsQuery->get();
-        $taxOptions = Tax::orderBy('name')->get();
+        if (Schema::hasTable('units')) {
+            $productsQuery->with(['unit', 'baseUnit', 'purchaseUnit']);
+        }
+        if (Schema::hasTable('product_units')) {
+            $productsQuery->with('activeProductUnits');
+        }
+        $products = $productsQuery->get()->map(function (Product $product) {
+            $unitChoices = $this->productUnitChoices($product);
+            $purchaseUnitChoice = collect($unitChoices)->firstWhere('is_purchase_unit', true)
+                ?: collect($unitChoices)->first();
+            $purchaseUnitLabel = $purchaseUnitChoice['name']
+                ?? $purchaseUnitChoice['symbol']
+                ?? $product->purchaseUnit?->symbol
+                ?? $product->baseUnit?->symbol
+                ?? $product->unit?->symbol
+                ?? $product->base_unit_name
+                ?? $product->unit_type
+                ?? 'pcs';
+            $purchaseRate = $purchaseUnitChoice['purchase_price']
+                ?? $product->purchase_price
+                ?? $product->price
+                ?? 0;
+
+            $product->setAttribute('available_units', $unitChoices);
+            $product->setAttribute('purchase_unit_label', $purchaseUnitLabel);
+            $product->setAttribute('purchase_rate', (float) $purchaseRate);
+
+            return $product;
+        });
+
+        $taxOptions = collect();
+        if (class_exists(TaxCode::class) && Schema::hasTable('tax_codes')) {
+            $orderColumn = Schema::hasColumn('tax_codes', 'name')
+                ? 'name'
+                : (Schema::hasColumn('tax_codes', 'description') ? 'description' : 'code');
+            $taxQuery = TaxCode::query();
+            if (Schema::hasColumn('tax_codes', 'is_active')) {
+                $taxQuery->where('is_active', true);
+            }
+            $taxOptions = $taxQuery->orderBy($orderColumn)->get();
+        }
+
         $banksQuery = Bank::orderBy('name');
         $this->applyTenantScope($banksQuery, 'banks');
         $banks = $banksQuery->get();
-        
-        return view('Purchases.edit-purchases', compact('purchase', 'vendors', 'products', 'taxOptions', 'banks', 'activeBranch'));
+
+        $purchaseId = $purchase->purchase_no ?? $purchase->id;
+        $referenceNo = $purchase->reference_no ?? '';
+        $invoiceSerialNo = $purchase->invoice_serial_no ?? '';
+
+        return view('Purchases.add-purchases', compact(
+            'purchase',
+            'vendors',
+            'suppliers',
+            'products',
+            'taxOptions',
+            'banks',
+            'purchaseId',
+            'referenceNo',
+            'invoiceSerialNo',
+            'activeBranch'
+        ));
     }
 
     /**
@@ -567,7 +754,7 @@ public function show($id)
             'products.*.product_id' => 'required|exists:products,id',
             'products.*.quantity' => 'required|numeric|min:0.01',
             'products.*.rate' => 'required|numeric|min:0',
-            'products.*.unit' => 'nullable|string|max:20',
+            'products.*.unit' => 'nullable|string|max:80',
             'products.*.discount' => 'nullable|numeric|min:0',
             'products.*.tax_id' => 'nullable|exists:taxes,id',
             'discount_type' => 'in:percentage,fixed',
@@ -621,7 +808,7 @@ public function show($id)
                     continue;
                 }
 
-                $previousQty = (float) ($previousItem->qty ?? $previousItem->quantity ?? 0);
+                $previousQty = $this->purchaseItemStockUnits($previousItem);
                 if ($previousQty <= 0) {
                     continue;
                 }
@@ -643,8 +830,10 @@ public function show($id)
             
             foreach ($request->products as $item) {
                 $itemAmount = ($item['quantity'] * $item['rate']) - ($item['discount'] ?? 0);
-                $product = Product::query()->lockForUpdate()->findOrFail($item['product_id']);
+                $product = Product::with(['unit', 'baseUnit', 'purchaseUnit'])->lockForUpdate()->findOrFail($item['product_id']);
                 $quantity = (float) $item['quantity'];
+                $lineUnit = $this->resolvePurchaseLineUnit($product, $item);
+                $stockQuantity = $lineUnit['stock_units'];
 
                 $itemPayload = [
                     'purchase_id' => $purchase->id,
@@ -668,7 +857,19 @@ public function show($id)
                     $itemPayload['amount'] = $itemAmount;
                 }
                 if (Schema::hasColumn('purchase_items', 'unit')) {
-                    $itemPayload['unit'] = $product->base_unit_name ?: ($item['unit'] ?? null);
+                    $itemPayload['unit'] = $lineUnit['unit'];
+                }
+                if (Schema::hasColumn('purchase_items', 'unit_type')) {
+                    $itemPayload['unit_type'] = $lineUnit['unit'];
+                }
+                if (Schema::hasColumn('purchase_items', 'conversion_factor')) {
+                    $itemPayload['conversion_factor'] = $lineUnit['conversion_factor'];
+                }
+                if (Schema::hasColumn('purchase_items', 'stock_units')) {
+                    $itemPayload['stock_units'] = $stockQuantity;
+                }
+                if (Schema::hasColumn('purchase_items', 'line_total')) {
+                    $itemPayload['line_total'] = $itemAmount;
                 }
                 if (Schema::hasColumn('purchase_items', 'company_id')) {
                     $itemPayload['company_id'] = $purchase->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
@@ -681,13 +882,13 @@ public function show($id)
                 }
 
                 PurchaseItem::create($itemPayload);
-                $product->increment('stock', $quantity);
+                $product->increment('stock', $stockQuantity);
                 if (Schema::hasColumn('products', 'stock_quantity')) {
-                    $product->increment('stock_quantity', $quantity);
+                    $product->increment('stock_quantity', $stockQuantity);
                 }
                 $this->branchInventory->adjustBranchStock(
                     $product,
-                    $quantity,
+                    $stockQuantity,
                     $activeBranch,
                     (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
                 );

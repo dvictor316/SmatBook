@@ -186,6 +186,76 @@ class Product extends Model
         return $this->hasMany(ProductBarcode::class);
     }
 
+    public function productUnits(): HasMany
+    {
+        return $this->hasMany(ProductUnit::class);
+    }
+
+    public function activeProductUnits(): HasMany
+    {
+        return $this->productUnits()->where('status', 'active')->orderByDesc('is_base_unit')->orderBy('unit_name');
+    }
+
+    public function resolveUnitConversion(?string $unitName = null): array
+    {
+        $requestedUnit = strtolower(trim((string) $unitName));
+        $baseUnit = $this->productUnits()
+            ->where('is_base_unit', true)
+            ->where('status', 'active')
+            ->first();
+
+        if ($requestedUnit !== '') {
+            $matchedUnit = $this->productUnits()
+                ->where('status', 'active')
+                ->where(function ($query) use ($requestedUnit) {
+                    $query->whereRaw('LOWER(unit_name) = ?', [$requestedUnit])
+                        ->orWhereRaw('LOWER(unit_symbol) = ?', [$requestedUnit]);
+                })
+                ->first();
+
+            if ($matchedUnit) {
+                return [
+                    'unit_name' => (string) ($matchedUnit->unit_symbol ?: $matchedUnit->unit_name),
+                    'conversion_factor' => max(1, (float) $matchedUnit->conversion_factor),
+                    'purchase_price' => $matchedUnit->purchase_price,
+                    'selling_price' => $matchedUnit->selling_price,
+                    'wholesale_price' => $matchedUnit->wholesale_price,
+                ];
+            }
+        }
+
+        if ($requestedUnit !== '') {
+            $legacyFactor = match ($requestedUnit) {
+                'carton', 'ctn' => max(1, $this->unitsPerCarton()),
+                'roll' => max(1, $this->unitsPerRoll()),
+                default => 1,
+            };
+
+            return [
+                'unit_name' => $unitName,
+                'conversion_factor' => $legacyFactor,
+                'purchase_price' => null,
+                'selling_price' => null,
+                'wholesale_price' => null,
+            ];
+        }
+
+        return [
+            'unit_name' => (string) ($baseUnit?->unit_symbol ?: $baseUnit?->unit_name ?: $this->stockUnitSymbol()),
+            'conversion_factor' => max(1, (float) ($baseUnit?->conversion_factor ?? 1)),
+            'purchase_price' => $baseUnit?->purchase_price,
+            'selling_price' => $baseUnit?->selling_price,
+            'wholesale_price' => $baseUnit?->wholesale_price,
+        ];
+    }
+
+    public function quantityToBase(float|int $quantity, ?string $unitName = null): float
+    {
+        $conversion = $this->resolveUnitConversion($unitName);
+
+        return round(max(0, (float) $quantity) * max(1, (float) $conversion['conversion_factor']), 6);
+    }
+
     /**
      * Automated Stock History Tracking
      */

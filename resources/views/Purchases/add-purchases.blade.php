@@ -1,11 +1,31 @@
 @extends('layout.mainlayout')
 
 @section('content')
+@php
+    $isEditingPurchase = isset($purchase);
+    $purchaseDateValue = old('purchase_date', $isEditingPurchase && !empty($purchase->purchase_date)
+        ? \Illuminate\Support\Carbon::parse($purchase->purchase_date)->format('Y-m-d')
+        : date('Y-m-d'));
+    $dueDateValue = old('due_date', $isEditingPurchase && !empty($purchase->due_date)
+        ? \Illuminate\Support\Carbon::parse($purchase->due_date)->format('Y-m-d')
+        : '');
+    $selectedSupplierId = old('supplier_id', $purchase->supplier_id ?? $purchase->vendor_id ?? '');
+    $initialPurchaseRows = $isEditingPurchase
+        ? $purchase->items->map(fn ($item) => [
+            'product_id' => (string) $item->product_id,
+            'quantity' => (float) ($item->qty ?? $item->quantity ?? 1),
+            'unit' => (string) ($item->unit_type ?? $item->unit ?? ''),
+            'rate' => (float) ($item->unit_price ?? $item->rate ?? 0),
+            'discount' => (float) ($item->discount ?? 0),
+            'tax_id' => (string) ($item->tax_id ?? ''),
+        ])->values()
+        : collect();
+@endphp
 <div class="page-wrapper">
     <div class="content container-fluid">
     <div class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>Create Purchase</h1>
+            <h1>{{ $isEditingPurchase ? 'Edit Purchase' : 'Create Purchase' }}</h1>
             <a href="{{ route('purchases.index') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Back to List
             </a>
@@ -37,8 +57,11 @@
             </div>
         @endif
 
-        <form action="{{ route('purchases.store') }}" method="POST" enctype="multipart/form-data" id="purchaseForm" novalidate>
+        <form action="{{ $isEditingPurchase ? route('purchases.update', $purchase->id) : route('purchases.store') }}" method="POST" enctype="multipart/form-data" id="purchaseForm" novalidate>
             @csrf
+            @if($isEditingPurchase)
+                @method('PUT')
+            @endif
             
             <!-- Purchase Details Section -->
             <div class="row mb-4">
@@ -67,7 +90,7 @@
                                         <option value="">Choose Supplier</option>
                                         @foreach($partyOptions as $supplier)
                                             <option value="{{ $supplier->id }}" 
-                                                {{ old('supplier_id') == $supplier->id ? 'selected' : '' }}>
+                                                {{ (string) $selectedSupplierId === (string) $supplier->id ? 'selected' : '' }}>
                                                 {{ $supplier->name ?? $supplier->supplier_name ?? $supplier->company_name ?? 'Supplier' }}
                                             </option>
                                         @endforeach
@@ -85,7 +108,7 @@
                             <div class="col-md-4">
                                 <label for="purchase_date" class="form-label">Purchase Date *</label>
                                 <input type="date" id="purchase_date" name="purchase_date" 
-                                       value="{{ old('purchase_date', date('Y-m-d')) }}" 
+                                       value="{{ $purchaseDateValue }}"
                                        class="form-control @error('purchase_date') is-invalid @enderror" required>
                                 @error('purchase_date')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -96,7 +119,7 @@
                             <div class="col-md-4">
                                 <label for="due_date" class="form-label">Due Date</label>
                                 <input type="date" id="due_date" name="due_date" 
-                                       value="{{ old('due_date') }}" 
+                                       value="{{ $dueDateValue }}"
                                        class="form-control @error('due_date') is-invalid @enderror">
                                 @error('due_date')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -302,7 +325,7 @@
             <div class="row">
                 <div class="col-12 d-flex justify-content-end gap-2">
                     <button type="reset" class="btn btn-secondary">Reset</button>
-                    <button type="submit" class="btn btn-primary">Save Purchase</button>
+                    <button type="submit" class="btn btn-primary">{{ $isEditingPurchase ? 'Update Purchase' : 'Save Purchase' }}</button>
                 </div>
             </div>
         </form>
@@ -313,6 +336,8 @@
 <script>
         document.addEventListener('DOMContentLoaded', function() {
             const products = @json($products);
+            const initialRows = @json($initialPurchaseRows);
+            const productsById = new Map(products.map((product) => [String(product.id), product]));
             let productCounter = 0;
 
             const tableBody = document.getElementById('productsTableBody');
@@ -351,9 +376,46 @@
                     .replace(/'/g, '&#39;');
             }
 
-            function createEmptyRow() {
+            function productUnits(product) {
+                const configuredUnits = Array.isArray(product?.available_units) ? product.available_units : [];
+                if (configuredUnits.length > 0) {
+                    return configuredUnits;
+                }
+
+                const unit = product?.purchase_unit_label || product?.base_unit_name || product?.unit_type || 'pcs';
+                return [{
+                    name: unit,
+                    symbol: unit,
+                    conversion_factor: 1,
+                    purchase_price: product?.purchase_rate ?? product?.purchase_price ?? product?.price ?? 0,
+                    is_purchase_unit: true
+                }];
+            }
+
+            function populateUnitSelect(unitSelect, product) {
+                const units = productUnits(product);
+                unitSelect.innerHTML = units.map((unit, index) => {
+                    const label = unit.name || unit.symbol || 'pcs';
+                    const factor = Number(unit.conversion_factor || 1);
+                    const suffix = factor > 1 ? ` (${factor.toLocaleString()} base)` : '';
+                    return `<option value="${escapeHtml(label)}" data-price="${escapeHtml(unit.purchase_price ?? '')}" data-factor="${escapeHtml(factor)}" ${unit.is_purchase_unit || index === 0 ? 'selected' : ''}>${escapeHtml(label + suffix)}</option>`;
+                }).join('');
+            }
+
+            function selectedUnitPrice(unitSelect, fallbackPrice) {
+                const selected = unitSelect.options[unitSelect.selectedIndex];
+                const price = selected ? parseFloat(selected.getAttribute('data-price')) : NaN;
+
+                return Number.isFinite(price) && price > 0 ? price : fallbackPrice;
+            }
+
+            function createEmptyRow(initialData = {}) {
                 const rowId = `productRow_${productCounter}`;
                 const rowIndex = productCounter;
+                const productId = initialData.product_id ? String(initialData.product_id) : '';
+                const quantity = Number(initialData.quantity || 1);
+                const rate = Number(initialData.rate || 0);
+                const discount = Number(initialData.discount || 0);
                 const row = document.createElement('tr');
                 row.id = rowId;
                 row.innerHTML = `
@@ -363,18 +425,20 @@
                         </select>
                     </td>
                     <td>
-                        <input type="number" name="products[${rowIndex}][quantity]" value="1" class="form-control quantity-input" min="1"
+                        <input type="number" name="products[${rowIndex}][quantity]" value="${escapeHtml(quantity)}" class="form-control quantity-input" min="1"
                                data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
                     </td>
                     <td>
-                        <input type="text" name="products[${rowIndex}][unit]" value="" class="form-control unit-input" data-row="${rowIndex}">
+                        <select name="products[${rowIndex}][unit]" class="form-select unit-select" data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
+                            <option value="">Unit</option>
+                        </select>
                     </td>
                     <td>
-                        <input type="number" name="products[${rowIndex}][rate]" value="0" class="form-control rate-input" step="0.01" min="0"
+                        <input type="number" name="products[${rowIndex}][rate]" value="${escapeHtml(rate)}" class="form-control rate-input" step="0.01" min="0"
                                data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
                     </td>
                     <td>
-                        <input type="number" name="products[${rowIndex}][discount]" value="0" class="form-control discount-input" step="0.01" min="0"
+                        <input type="number" name="products[${rowIndex}][discount]" value="${escapeHtml(discount)}" class="form-control discount-input" step="0.01" min="0"
                                data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
                     </td>
                     <td>
@@ -395,6 +459,31 @@
                 productCounter += 1;
                 bindRowEvents(row);
                 initProductSearch(row.querySelector('.product-select'));
+                if (productId) {
+                    const productSelect = row.querySelector('.product-select');
+                    productSelect.value = productId;
+                    const product = productsById.get(productId);
+                    const unitSelect = row.querySelector('.unit-select');
+                    if (unitSelect && product) {
+                        populateUnitSelect(unitSelect, product);
+                        if (initialData.unit) {
+                            const normalizedUnit = String(initialData.unit).toLowerCase();
+                            Array.from(unitSelect.options).forEach((option) => {
+                                option.selected = String(option.value).toLowerCase() === normalizedUnit;
+                            });
+                        }
+                    }
+                    const selectedOption = productSelect.options[productSelect.selectedIndex];
+                    const productName = selectedOption ? (selectedOption.getAttribute('data-name') || '') : '';
+                    if (productName) {
+                        const hiddenName = document.createElement('input');
+                        hiddenName.type = 'hidden';
+                        hiddenName.name = `products[${rowIndex}][product_name]`;
+                        hiddenName.value = productName;
+                        row.querySelector('td').appendChild(hiddenName);
+                    }
+                    updateProductAmount(rowIndex);
+                }
                 return row;
             }
 
@@ -408,12 +497,12 @@
                     const selectedOption = productSelect.options[productSelect.selectedIndex];
                     const rowIndex = productSelect.getAttribute('data-row');
                     const nameField = document.querySelector(`input[name="products[${rowIndex}][product_name]"]`);
-                    const unitInput = row.querySelector('.unit-input');
+                    const unitSelect = row.querySelector('.unit-select');
                     const rateInput = row.querySelector('.rate-input');
 
-                    const unit = selectedOption ? (selectedOption.getAttribute('data-unit') || '') : '';
                     const price = selectedOption ? (parseFloat(selectedOption.getAttribute('data-price')) || 0) : 0;
                     const productName = selectedOption ? (selectedOption.getAttribute('data-name') || '') : '';
+                    const product = productsById.get(String(productSelect.value));
 
                     if (!nameField && productName) {
                         const hiddenName = document.createElement('input');
@@ -425,11 +514,12 @@
                         nameField.value = productName;
                     }
 
-                    if (unitInput) {
-                        unitInput.value = unit;
+                    if (unitSelect) {
+                        populateUnitSelect(unitSelect, product);
                     }
                     if (rateInput) {
-                        rateInput.value = price > 0 ? price.toFixed(2) : '0';
+                        const unitPrice = unitSelect ? selectedUnitPrice(unitSelect, price) : price;
+                        rateInput.value = unitPrice > 0 ? unitPrice.toFixed(2) : '0';
                     }
 
                     updateProductAmount(rowIndex);
@@ -445,6 +535,25 @@
                     productSelect.addEventListener('change', applySelectedProduct);
                 }
             }
+
+            tableBody.addEventListener('change', function(event) {
+                if (!event.target.classList.contains('unit-select')) {
+                    return;
+                }
+
+                const row = event.target.closest('tr');
+                const productSelect = row?.querySelector('.product-select');
+                const rateInput = row?.querySelector('.rate-input');
+                const product = productsById.get(String(productSelect?.value || ''));
+                const fallbackPrice = product ? Number(product.purchase_rate ?? product.purchase_price ?? product.price ?? 0) : 0;
+                const unitPrice = selectedUnitPrice(event.target, fallbackPrice);
+
+                if (rateInput && unitPrice > 0) {
+                    rateInput.value = unitPrice.toFixed(2);
+                }
+
+                window.updateProductAmount(event.target.getAttribute('data-row'));
+            });
 
             function isLastRowFilled() {
                 const rows = Array.from(tableBody.querySelectorAll('tr'));
@@ -471,6 +580,9 @@
                 createEmptyRow();
             });
 
+            if (initialRows.length > 0) {
+                initialRows.forEach((row) => createEmptyRow(row));
+            }
             createEmptyRow();
             
             // Global functions for inline event handlers

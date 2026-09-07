@@ -13,7 +13,11 @@ class InventoryQuantity
         $stockUnits = $stockUnits !== null ? (float) $stockUnits : 0.0;
 
         if ($stockUnits > 0) {
-            return round($stockUnits, 2);
+            return round($stockUnits, 6);
+        }
+
+        if (method_exists($product, 'quantityToBase')) {
+            return $product->quantityToBase($qty, $unitType);
         }
 
         $type = strtolower(trim((string) ($unitType ?: $product->unit_type ?: 'unit')));
@@ -23,7 +27,16 @@ class InventoryQuantity
             default => 1,
         };
 
-        return round(max($qty, $qty * $multiplier), 2);
+        return round(max($qty, $qty * $multiplier), 6);
+    }
+
+    public static function resolvePurchaseStockUnits(Product $product, float $qty, ?string $unitType = null): float
+    {
+        if (method_exists($product, 'quantityToBase')) {
+            return $product->quantityToBase($qty, $unitType);
+        }
+
+        return static::resolveSaleStockUnits($product, $qty, $unitType);
     }
 
     public static function saleItemQuantityColumn(string $saleItemsTable = 'sale_items'): string

@@ -19,6 +19,16 @@ class PurchaseItem extends Model
         'qty', 
         'unit_price',
         'unit',
+        'unit_type',
+        'conversion_factor',
+        'stock_units',
+    ];
+
+    protected $casts = [
+        'qty' => 'float',
+        'unit_price' => 'float',
+        'conversion_factor' => 'float',
+        'stock_units' => 'float',
     ];
 
     // Link back to the main Purchase

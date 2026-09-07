@@ -720,6 +720,9 @@ public function customerDetails($id = null)
                 if (Schema::hasTable('product_barcodes')) {
                     $productsQuery->with('barcodes');
                 }
+                if (Schema::hasTable('product_units')) {
+                    $productsQuery->with('activeProductUnits');
+                }
 
                 $salesRankingQuery = $this->posProductShelfRankingQuery($activeBranch);
                 if ($salesRankingQuery) {

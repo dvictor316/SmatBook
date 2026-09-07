@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\ProductUnit;
 use App\Models\Category;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
@@ -393,6 +394,120 @@ class ProductController extends Controller
         }
 
         return $validated;
+    }
+
+    private function unitDescriptor(?int $unitId, ?string $fallback = null): array
+    {
+        $fallback = trim((string) $fallback);
+        $descriptor = ['id' => $unitId, 'name' => $fallback ?: 'Piece', 'symbol' => $fallback ?: 'pcs'];
+
+        if ($unitId && Schema::hasTable('units')) {
+            $unit = DB::table('units')->where('id', $unitId)->first();
+            if ($unit) {
+                $descriptor['name'] = trim((string) ($unit->name ?? $descriptor['name'])) ?: $descriptor['name'];
+                $descriptor['symbol'] = trim((string) ($unit->symbol ?? $descriptor['symbol'])) ?: $descriptor['symbol'];
+            }
+        }
+
+        $definition = $this->canonicalUnitDefinition($descriptor['name'], $descriptor['symbol']);
+        if ($definition) {
+            $descriptor['name'] = $definition['name'];
+            $descriptor['symbol'] = $definition['symbol'];
+        }
+
+        return $descriptor;
+    }
+
+    private function syncProductUnitRows(Product $product): void
+    {
+        if (!Schema::hasTable('product_units')) {
+            return;
+        }
+
+        $companyId = $product->company_id ?? ($this->tenantCompanyId() ?: null);
+        $baseUnit = $this->unitDescriptor(
+            $product->base_unit_id ?: $product->unit_id,
+            $product->base_unit_name ?: $product->unit_type ?: 'pcs'
+        );
+        $purchaseUnit = $this->unitDescriptor($product->purchase_unit_id, $baseUnit['symbol']);
+        $price = (float) ($product->price ?? $product->retail_price ?? 0);
+        $purchasePrice = (float) ($product->purchase_price ?? 0);
+
+        $basePayload = [
+            'company_id' => $companyId,
+            'user_id' => $product->user_id ?? auth()->id(),
+            'unit_id' => $baseUnit['id'],
+            'unit_symbol' => $baseUnit['symbol'],
+            'conversion_factor' => 1,
+            'is_base_unit' => true,
+            'is_purchase_unit' => empty($product->purchase_unit_id),
+            'is_default_sales_unit' => true,
+            'purchase_price' => $purchasePrice,
+            'selling_price' => $price,
+            'wholesale_price' => $product->wholesale_price,
+            'barcode' => $product->barcode,
+            'status' => 'active',
+        ];
+
+        ProductUnit::updateOrCreate(
+            ['product_id' => $product->id, 'unit_name' => $baseUnit['symbol']],
+            $basePayload + ['unit_name' => $baseUnit['symbol']]
+        );
+
+        if (
+            !empty($product->purchase_unit_id)
+            && (float) ($product->conversion_rate ?? 0) > 0
+            && Str::lower($purchaseUnit['symbol']) !== Str::lower($baseUnit['symbol'])
+        ) {
+            ProductUnit::updateOrCreate(
+                ['product_id' => $product->id, 'unit_name' => $purchaseUnit['symbol']],
+                [
+                    'company_id' => $companyId,
+                    'user_id' => $product->user_id ?? auth()->id(),
+                    'unit_id' => $purchaseUnit['id'],
+                    'unit_symbol' => $purchaseUnit['symbol'],
+                    'conversion_factor' => (float) $product->conversion_rate,
+                    'is_base_unit' => false,
+                    'is_purchase_unit' => true,
+                    'is_default_sales_unit' => false,
+                    'purchase_price' => $purchasePrice,
+                    'selling_price' => null,
+                    'wholesale_price' => null,
+                    'barcode' => null,
+                    'status' => 'active',
+                ]
+            );
+        }
+
+        $legacyUnits = [
+            'roll' => (float) $product->unitsPerRoll(),
+            'carton' => (float) $product->unitsPerCarton(),
+        ];
+
+        foreach ($legacyUnits as $unitName => $factor) {
+            if ($factor <= 1) {
+                continue;
+            }
+
+            ProductUnit::updateOrCreate(
+                ['product_id' => $product->id, 'unit_name' => $unitName],
+                [
+                    'company_id' => $companyId,
+                    'user_id' => $product->user_id ?? auth()->id(),
+                    'unit_id' => null,
+                    'unit_symbol' => $unitName === 'carton' ? 'ctn' : $unitName,
+                    'conversion_factor' => $factor,
+                    'is_base_unit' => false,
+                    'is_purchase_unit' => $product->unit_type === $unitName && empty($product->purchase_unit_id),
+                    'is_default_sales_unit' => $product->unit_type === $unitName,
+                    'purchase_price' => null,
+                    'selling_price' => $price > 0 ? round($price * $factor, 2) : null,
+                    'wholesale_price' => $product->wholesale_price ? round((float) $product->wholesale_price * $factor, 2) : null,
+                    'barcode' => null,
+                    'status' => 'active',
+                ]
+            );
+        }
     }
     private function clearDashboardMetricsCache(?string $branchId = null): void
     {
@@ -1241,6 +1356,7 @@ class ProductController extends Controller
                 $selectedBranch,
                 $product->company_id ?: ($resolvedCompanyId ?: null)
             );
+            $this->syncProductUnitRows($product->fresh(['unit', 'baseUnit', 'purchaseUnit']));
             $this->clearDashboardMetricsCache($selectedBranch['id'] ?? null);
 
             return redirect()->route('product-list')
@@ -1664,6 +1780,7 @@ public function inventory(Request $request)
 
         $validated['stock_quantity'] = $validated['stock']; 
         $product->update($validated);
+        $this->syncProductUnitRows($product->fresh(['unit', 'baseUnit', 'purchaseUnit']));
         $this->clearDashboardMetricsCache();
 
         return redirect()->route('product-list')->with('success', 'Update pushed to ' . env('SESSION_DOMAIN'));
