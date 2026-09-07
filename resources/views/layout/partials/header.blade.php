@@ -508,9 +508,14 @@
     }
     /* Override theme #toggle_btn spacing so the icon sits near sidebar edge line */
     #toggle_btn.header-toggle {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
         width: 40px !important;
         height: 40px !important;
         margin: 0 18px 0 10px !important;
+        padding: 0 !important;
+        line-height: 0 !important;
         font-size: inherit !important;
         position: relative !important;
         left: auto !important;
@@ -542,6 +547,12 @@
         position: static !important;
         top: auto !important;
         pointer-events: none;
+    }
+
+    #toggle_btn .toggle-bars,
+    #mobile_btn .toggle-bars {
+        margin: 0 !important;
+        transform: none !important;
     }
 
     .bar-icon {
