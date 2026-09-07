@@ -13,6 +13,9 @@
     $stockTransferEnabled = $stockTransferEnabled ?? false;
     $branchOptions = $availableBranches;
     $showStockTransferModal = $stockTransferEnabled && count($branchOptions) > 1;
+    $productRowsForView = collect($productRows)->values();
+    $transferProductsForView = collect($transferProducts)->values();
+    $branchOptionsForView = array_values($branchOptions);
     $piecesPerCarton = 0;
     $piecesPerRoll = 0;
     $rollsPerCarton = 0;
@@ -525,7 +528,8 @@
                         <tbody>
                             @if($hasProductRows)
                                 @php($productIndex = method_exists($products, 'firstItem') ? ($products->firstItem() ?? 1) : 1)
-                                @foreach($productRows as $product)
+                                @for($rowIndex = 0; $rowIndex < $productRowsForView->count(); $rowIndex++)
+                                    @php($product = $productRowsForView->get($rowIndex))
                                     <tr>
                                         <td class="inventory-select-cell no-print">
                                             <input type="checkbox" class="form-check-input product-select-checkbox" value="{{ $product->id }}" aria-label="Select {{ $product->name }}">
@@ -600,7 +604,7 @@
                                         </td>
                                     </tr>
                                     @php($productIndex++)
-                                @endforeach
+                                @endfor
                             @else
                                 <tr>
                                     <td colspan="10" class="text-center text-muted py-4">No products found.</td>
@@ -635,9 +639,10 @@
                         <label class="form-label">Product</label>
                         <select name="product_id" class="form-select" required>
                             <option value="">Select product</option>
-                            @foreach($transferProducts as $product)
+                            @for($productOptionIndex = 0; $productOptionIndex < $transferProductsForView->count(); $productOptionIndex++)
+                                @php($product = $transferProductsForView->get($productOptionIndex))
                                 <option value="{{ $product->id }}">{{ $product->name }} ({{ $product->sku }})</option>
-                            @endforeach
+                            @endfor
                         </select>
                     </div>
                     <div class="row">
@@ -645,18 +650,20 @@
                             <label class="form-label">From Branch</label>
                             <select name="from_branch_id" class="form-select" required>
                                 <option value="">Select source</option>
-                                @foreach($branchOptions as $branch)
+                                @for($branchOptionIndex = 0; $branchOptionIndex < count($branchOptionsForView); $branchOptionIndex++)
+                                    @php($branch = $branchOptionsForView[$branchOptionIndex])
                                     <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
-                                @endforeach
+                                @endfor
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">To Branch</label>
                             <select name="to_branch_id" class="form-select" required>
                                 <option value="">Select destination</option>
-                                @foreach($branchOptions as $branch)
+                                @for($branchOptionIndex = 0; $branchOptionIndex < count($branchOptionsForView); $branchOptionIndex++)
+                                    @php($branch = $branchOptionsForView[$branchOptionIndex])
                                     <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
-                                @endforeach
+                                @endfor
                             </select>
                         </div>
                     </div>
@@ -802,9 +809,10 @@
                         <label class="form-label">Apply Opening Stock To Branch</label>
                         <select name="branch_id" class="form-select">
                             <option value="">Use Active Branch</option>
-                            @foreach($branchOptions as $branch)
+                            @for($branchOptionIndex = 0; $branchOptionIndex < count($branchOptionsForView); $branchOptionIndex++)
+                                @php($branch = $branchOptionsForView[$branchOptionIndex])
                                 <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
-                            @endforeach
+                            @endfor
                         </select>
                     </div>
                 </div>

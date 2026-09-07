@@ -534,10 +534,13 @@
     .toggle-bars {
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        justify-content: center;
         align-items: center;
+        gap: 5px;
         width: 22px;
-        height: 18px;
+        height: 22px;
+        position: static !important;
+        top: auto !important;
         pointer-events: none;
     }
 
