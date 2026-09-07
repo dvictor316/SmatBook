@@ -21,7 +21,7 @@
                 <div class="d-flex flex-wrap gap-2">
                     <button type="button" class="btn btn-outline-dark" onclick="window.print()"><i class="fas fa-print me-1"></i> Print Ledger</button>
                     <a href="{{ route('hotel.folios.index') }}" class="btn btn-primary"><i class="fas fa-file-invoice me-1"></i> Guest Folios</a>
-                    <a href="{{ route('general-ledger') }}" class="btn btn-outline-primary"><i class="fas fa-chart-line me-1"></i> Financial Report</a>
+                    <a href="{{ route('general-ledger', ['module' => 'hotel']) }}" class="btn btn-outline-primary"><i class="fas fa-chart-line me-1"></i> Financial Report</a>
                 </div>
             </div>
 

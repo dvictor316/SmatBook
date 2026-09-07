@@ -1573,11 +1573,11 @@
             @php
                 $reportTotal = $panelRows->sum(fn($row) => (float)($rowArray($row)['total_amount'] ?? 0));
                 $financialLinks = [
-                    ['route' => 'general-ledger', 'label' => 'General Ledger', 'hint' => 'Hotel folio charges and payments post here through LedgerService.'],
-                    ['route' => 'reports.profit-loss', 'label' => 'Profit & Loss', 'hint' => 'Room, service, ticketing and POS revenue report into income.'],
-                    ['route' => 'trial-balance', 'label' => 'Trial Balance', 'hint' => 'Receivables, cash receipts and revenue balances.'],
-                    ['route' => 'balance-sheet', 'label' => 'Balance Sheet', 'hint' => 'Guest receivables and cash impact after posting.'],
-                    ['route' => 'reports.sales', 'label' => 'Sales Report', 'hint' => 'POS hotel sales and receipt-based sales review.'],
+                    ['route' => 'general-ledger', 'params' => ['module' => 'hotel'], 'label' => 'General Ledger', 'hint' => 'Hotel folio charges and payments post here through LedgerService.'],
+                    ['route' => 'reports.profit-loss', 'params' => ['module' => 'hotel'], 'label' => 'Profit & Loss', 'hint' => 'Room, service, ticketing and POS revenue report into income.'],
+                    ['route' => 'trial-balance', 'params' => ['module' => 'hotel'], 'label' => 'Trial Balance', 'hint' => 'Receivables, cash receipts and revenue balances.'],
+                    ['route' => 'balance-sheet', 'params' => ['module' => 'hotel'], 'label' => 'Balance Sheet', 'hint' => 'Guest receivables and cash impact after posting.'],
+                    ['route' => 'super_admin.hotels.index', 'params' => array_merge($routeParams ?? [], ['panel' => 'reports'] + ($selectedCompanyId ? ['company_id' => $selectedCompanyId] : [])), 'label' => 'Hotel Sales Report', 'hint' => 'Hotel-only folio and service sales review.'],
                 ];
             @endphp
             <section class="sa-report-hub">
@@ -1602,7 +1602,7 @@
                 <div class="sa-dashboard-services">
                     @foreach($financialLinks as $financialLink)
                         @if(\Illuminate\Support\Facades\Route::has($financialLink['route']))
-                            <a class="sa-dashboard-service" href="{{ route($financialLink['route']) }}">
+                            <a class="sa-dashboard-service" href="{{ route($financialLink['route'], $financialLink['params'] ?? []) }}">
                                 <div><small>FINANCE</small><br><strong>{{ $financialLink['label'] }}</strong><b>{{ $financialLink['hint'] }}</b></div>
                                 <span class="badge bg-light text-dark">Open</span>
                             </a>

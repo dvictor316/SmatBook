@@ -62,12 +62,37 @@ class HotelAccess
             $ids = $ids->merge($subscriptionQuery->pluck('company_id'));
         }
 
+        foreach (self::hotelDataTables() as $table) {
+            if (Schema::hasTable($table) && Schema::hasColumn($table, 'company_id')) {
+                $ids = $ids->merge(DB::table($table)->whereNotNull('company_id')->pluck('company_id'));
+            }
+        }
+
         return $ids
             ->map(fn($id) => (int) $id)
             ->filter()
             ->unique()
             ->values()
             ->all();
+    }
+
+    private static function hotelDataTables(): array
+    {
+        return [
+            'hotel_properties',
+            'hotel_room_types',
+            'hotel_rooms',
+            'hotel_room_images',
+            'reservations',
+            'stays',
+            'guest_folios',
+            'folio_items',
+            'hotel_transactions',
+            'hotel_housekeeping_tasks',
+            'hotel_maintenance_tickets',
+            'hotel_room_blocks',
+            'hotel_night_audits',
+        ];
     }
 
     private static function hotelSignalsForUser($user, int $companyId): array

@@ -179,14 +179,14 @@
                 <section class="report-card">
                     <div class="report-card__head"><h5>Accounting Reports</h5><span class="metric-pill">Finance</span></div>
                     <div class="report-card__body accounting-links">
-                        @if(Route::has('reports.profit-loss'))<a href="{{ route('reports.profit-loss') }}"><span>Profit & Loss</span><i class="fe fe-arrow-right"></i></a>@endif
-                        @if(Route::has('reports.income'))<a href="{{ route('reports.income') }}"><span>Income Report</span><i class="fe fe-arrow-right"></i></a>@endif
-                        @if(Route::has('reports.sales'))<a href="{{ route('reports.sales') }}"><span>Sales Report</span><i class="fe fe-arrow-right"></i></a>@endif
-                        @if(Route::has('reports.payment'))<a href="{{ route('reports.payment') }}"><span>Payment Report</span><i class="fe fe-arrow-right"></i></a>@endif
-                        @if(Route::has('reports.accounts-receivable'))<a href="{{ route('reports.accounts-receivable') }}"><span>Receivables</span><i class="fe fe-arrow-right"></i></a>@endif
-                        @if(Route::has('balance-sheet'))<a href="{{ route('balance-sheet') }}"><span>Balance Sheet</span><i class="fe fe-arrow-right"></i></a>@endif
-                        @if(Route::has('reports.cash-flow'))<a href="{{ route('reports.cash-flow') }}"><span>Cash Flow</span><i class="fe fe-arrow-right"></i></a>@endif
-                        @if(Route::has('general-ledger'))<a href="{{ route('general-ledger') }}"><span>General Ledger</span><i class="fe fe-arrow-right"></i></a>@endif
+                        @if(Route::has('reports.profit-loss'))<a href="{{ route('reports.profit-loss', ['module' => 'hotel']) }}"><span>Profit & Loss</span><i class="fe fe-arrow-right"></i></a>@endif
+                        @if(Route::has('reports.income'))<a href="{{ route('reports.income', ['module' => 'hotel']) }}"><span>Income Report</span><i class="fe fe-arrow-right"></i></a>@endif
+                        @if(Route::has('hotel.reports.index'))<a href="{{ route('hotel.reports.index') }}"><span>Hotel Sales Report</span><i class="fe fe-arrow-right"></i></a>@endif
+                        @if(Route::has('reports.payment'))<a href="{{ route('reports.payment', ['module' => 'hotel']) }}"><span>Payment Report</span><i class="fe fe-arrow-right"></i></a>@endif
+                        @if(Route::has('reports.accounts-receivable'))<a href="{{ route('reports.accounts-receivable', ['module' => 'hotel']) }}"><span>Receivables</span><i class="fe fe-arrow-right"></i></a>@endif
+                        @if(Route::has('balance-sheet'))<a href="{{ route('balance-sheet', ['module' => 'hotel']) }}"><span>Balance Sheet</span><i class="fe fe-arrow-right"></i></a>@endif
+                        @if(Route::has('reports.cash-flow'))<a href="{{ route('reports.cash-flow', ['module' => 'hotel']) }}"><span>Cash Flow</span><i class="fe fe-arrow-right"></i></a>@endif
+                        @if(Route::has('general-ledger'))<a href="{{ route('general-ledger', ['module' => 'hotel']) }}"><span>General Ledger</span><i class="fe fe-arrow-right"></i></a>@endif
                     </div>
                 </section>
             </aside>

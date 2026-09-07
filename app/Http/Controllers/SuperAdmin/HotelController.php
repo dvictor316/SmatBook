@@ -68,7 +68,7 @@ class HotelController extends Controller
             $panel = 'overview';
         }
         $hotelCompanyIds = $this->superAdminHotelCompanyIds();
-        $selectedCompanyId = $request->filled('company_id') ? (int) $request->query('company_id') : null;
+        $selectedCompanyId = $this->selectedHotelCompanyId($request, $hotelCompanyIds);
 
         $companiesQuery = Company::query();
         if (!empty($hotelCompanyIds)) {
@@ -80,16 +80,14 @@ class HotelController extends Controller
 
         $totalHotelTenants = $hotelCompanies->count();
 
-        $activeHotelSubscriptions = Subscription::whereNotNull('company_id')
+        $activeSubscriptionQuery = Subscription::whereNotNull('company_id')
             ->whereRaw('LOWER(COALESCE(payment_status, "")) = ?', ['paid'])
-            ->whereRaw('LOWER(COALESCE(status, "")) = ?', ['active'])
-            ->when(!empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
-            ->count();
+            ->whereRaw('LOWER(COALESCE(status, "")) = ?', ['active']);
+        $this->applyHotelCompanyScope($activeSubscriptionQuery, $selectedCompanyId, $hotelCompanyIds);
+        $activeHotelSubscriptions = $activeSubscriptionQuery->count();
 
         $hotelScope = function ($query) use ($selectedCompanyId, $hotelCompanyIds) {
-            return $query
-                ->when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))
-                ->when(!$selectedCompanyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds));
+            return $this->applyHotelCompanyScope($query, $selectedCompanyId, $hotelCompanyIds);
         };
 
         $totalProperties = $hotelScope(HotelProperty::withoutGlobalScopes())->count();
@@ -111,8 +109,9 @@ class HotelController extends Controller
         $todayReservations = 0;
         if ($this->hasTable('reservations')) {
             $today = now()->toDateString();
-            $todayReservations = \DB::table('reservations')
-                ->when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))
+            $todayReservationsQuery = \DB::table('reservations');
+            $this->applyHotelCompanyScope($todayReservationsQuery, $selectedCompanyId, $hotelCompanyIds);
+            $todayReservations = $todayReservationsQuery
                 ->whereDate('arrival_date', '<=', $today)
                 ->whereDate('departure_date', '>=', $today)
                 ->count();
@@ -120,44 +119,50 @@ class HotelController extends Controller
 
         $currentInHouseGuests = 0;
         if ($this->hasTable('stays')) {
-            $currentInHouseGuests = \DB::table('stays')
-                ->when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))
+            $currentInHouseGuestsQuery = \DB::table('stays');
+            $this->applyHotelCompanyScope($currentInHouseGuestsQuery, $selectedCompanyId, $hotelCompanyIds);
+            $currentInHouseGuests = $currentInHouseGuestsQuery
                 ->where('status', 'checked_in')
                 ->count();
         }
 
         $hotelRevenueToday = 0;
         if ($this->hasTable('hotel_transactions')) {
-            $hotelRevenueToday = \DB::table('hotel_transactions')
-            ->when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))
+            $hotelRevenueTodayQuery = \DB::table('hotel_transactions');
+            $this->applyHotelCompanyScope($hotelRevenueTodayQuery, $selectedCompanyId, $hotelCompanyIds);
+            $hotelRevenueToday = $hotelRevenueTodayQuery
                 ->whereDate('created_at', now()->toDateString())
                 ->sum('amount');
         } elseif ($this->hasTable('folio_items')) {
-            $hotelRevenueToday = \DB::table('folio_items')
-            ->when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))
-            ->where('type', 'charge')
-            ->whereDate('created_at', now()->toDateString())
-            ->sum('amount');
+            $hotelRevenueTodayQuery = \DB::table('folio_items');
+            $this->applyHotelCompanyScope($hotelRevenueTodayQuery, $selectedCompanyId, $hotelCompanyIds);
+            $hotelRevenueToday = $hotelRevenueTodayQuery
+                ->whereIn('type', ['charge', 'room_night', 'service', 'pos_charge'])
+                ->whereDate('created_at', now()->toDateString())
+                ->sum('amount');
         }
 
         $hotelRevenueThisMonth = 0;
         if ($this->hasTable('hotel_transactions')) {
-            $hotelRevenueThisMonth = \DB::table('hotel_transactions')
-            ->when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))
+            $hotelRevenueThisMonthQuery = \DB::table('hotel_transactions');
+            $this->applyHotelCompanyScope($hotelRevenueThisMonthQuery, $selectedCompanyId, $hotelCompanyIds);
+            $hotelRevenueThisMonth = $hotelRevenueThisMonthQuery
                 ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
                 ->sum('amount');
         } elseif ($this->hasTable('folio_items')) {
-            $hotelRevenueThisMonth = \DB::table('folio_items')
-            ->when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))
-            ->where('type', 'charge')
-            ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
-            ->sum('amount');
+            $hotelRevenueThisMonthQuery = \DB::table('folio_items');
+            $this->applyHotelCompanyScope($hotelRevenueThisMonthQuery, $selectedCompanyId, $hotelCompanyIds);
+            $hotelRevenueThisMonth = $hotelRevenueThisMonthQuery
+                ->whereIn('type', ['charge', 'room_night', 'service', 'pos_charge'])
+                ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
+                ->sum('amount');
         }
 
         $outstandingReceivables = 0;
         if ($this->hasTable('guest_folios')) {
-            $outstandingReceivables = \DB::table('guest_folios')
-                ->when($selectedCompanyId, fn($q) => $q->where('company_id', $selectedCompanyId))
+            $outstandingReceivablesQuery = \DB::table('guest_folios');
+            $this->applyHotelCompanyScope($outstandingReceivablesQuery, $selectedCompanyId, $hotelCompanyIds);
+            $outstandingReceivables = $outstandingReceivablesQuery
                 ->where('balance', '>', 0)
                 ->sum('balance');
         }
@@ -910,9 +915,9 @@ class HotelController extends Controller
             return $days->values()->all();
         }
 
+        $this->applyHotelCompanyScope($source, $companyId, $hotelCompanyIds);
+
         $rows = $source
-            ->when($companyId, fn($q) => $q->where('company_id', $companyId))
-            ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
             ->whereBetween('created_at', [now()->subDays(6)->startOfDay(), now()->endOfDay()])
             ->selectRaw('DATE(created_at) as revenue_date, SUM(amount) as total')
             ->groupBy('revenue_date')
@@ -940,9 +945,10 @@ class HotelController extends Controller
             return $summary;
         }
 
-        $rows = \DB::table('folio_items')
-            ->when($companyId, fn($q) => $q->where('company_id', $companyId))
-            ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
+        $query = \DB::table('folio_items');
+        $this->applyHotelCompanyScope($query, $companyId, $hotelCompanyIds);
+
+        $rows = $query
             ->when($this->hasColumn('folio_items', 'type'), fn($q) => $q->whereIn('type', ['charge', 'room_night', 'service', 'pos_charge']))
             ->selectRaw('UPPER(COALESCE(service_code, "")) as service_code, COUNT(*) as line_count, SUM(amount) as total')
             ->groupBy('service_code')
@@ -967,6 +973,21 @@ class HotelController extends Controller
 
     private function hotelCalendarPulse(?int $companyId, array $hotelCompanyIds): array
     {
+        if ($companyId === null && empty($hotelCompanyIds)) {
+            return collect(range(0, 6))->map(function ($offset) {
+                $date = now()->addDays($offset)->toDateString();
+
+                return [
+                    'date' => $date,
+                    'label' => now()->addDays($offset)->format('D, M j'),
+                    'arrivals' => 0,
+                    'departures' => 0,
+                    'stays' => 0,
+                    'locks' => 0,
+                ];
+            })->all();
+        }
+
         return collect(range(0, 6))->map(function ($offset) use ($companyId, $hotelCompanyIds) {
             $date = now()->addDays($offset)->toDateString();
             $arrivals = 0;
@@ -1024,6 +1045,10 @@ class HotelController extends Controller
                 (object) ['area' => 'Bar / Spa / Gym / Ticketing', 'status' => 'completed', 'evidence' => 'Department service-center charge form posts to open guest folios'],
                 (object) ['area' => 'Accounting Integration', 'status' => 'completed', 'evidence' => 'Folio charges/payments reuse LedgerService and receivables/revenue accounts'],
             ]);
+        }
+
+        if ($companyId === null && empty($hotelCompanyIds) && $panel !== 'settings') {
+            return collect();
         }
 
         if ($panel === 'availability' && $this->hasTable('hotel_rooms')) {
@@ -1249,9 +1274,7 @@ class HotelController extends Controller
 
     private function roomManagementData(?int $companyId, array $hotelCompanyIds): array
     {
-        $companyScope = fn($query) => $query
-            ->when($companyId, fn($q) => $q->where('company_id', $companyId))
-            ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds));
+        $companyScope = fn($query) => $this->applyHotelCompanyScope($query, $companyId, $hotelCompanyIds);
 
         $rooms = collect();
         if ($this->hasTable('hotel_rooms')) {
@@ -1316,12 +1339,16 @@ class HotelController extends Controller
             'hotel_properties',
             'hotel_room_types',
             'hotel_rooms',
+            'hotel_room_images',
             'reservations',
             'stays',
             'guest_folios',
+            'folio_items',
+            'hotel_transactions',
             'hotel_housekeeping_tasks',
             'hotel_maintenance_tickets',
             'hotel_room_blocks',
+            'hotel_night_audits',
         ] as $table) {
             if ($this->hasTable($table) && $this->hasColumn($table, 'company_id')) {
                 $ids = $ids->merge(\DB::table($table)->whereNotNull('company_id')->pluck('company_id'));
@@ -1334,6 +1361,30 @@ class HotelController extends Controller
             ->unique()
             ->values()
             ->all();
+    }
+
+    private function selectedHotelCompanyId(Request $request, array $hotelCompanyIds): ?int
+    {
+        if (!$request->filled('company_id')) {
+            return null;
+        }
+
+        $companyId = (int) $request->query('company_id');
+
+        return in_array($companyId, $hotelCompanyIds, true) ? $companyId : null;
+    }
+
+    private function applyHotelCompanyScope($query, ?int $companyId, array $hotelCompanyIds, string $column = 'company_id')
+    {
+        if ($companyId !== null) {
+            return $query->where($column, $companyId);
+        }
+
+        if (!empty($hotelCompanyIds)) {
+            return $query->whereIn($column, $hotelCompanyIds);
+        }
+
+        return $query->whereRaw('1 = 0');
     }
 
     private function findSuperAdminHotelRoom(int $roomId, array $hotelCompanyIds): HotelRoom
