@@ -434,8 +434,9 @@
                                         @error('price')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label">Purchase Price <span class="text-danger">*</span></label>
+                                        <label class="form-label">Unit Purchase Cost <span class="text-danger">*</span></label>
                                         <input type="number" step="0.01" name="purchase_price" class="form-control @error('purchase_price') is-invalid @enderror" placeholder="0.00" value="{{ old('purchase_price') }}" required>
+                                        <small class="text-muted">Cost for one selected purchase unit. This value is saved exactly as entered.</small>
                                         @error('purchase_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-6">
@@ -537,8 +538,9 @@
                                                 <strong id="quick_stock_mix_preview_text">0 ctn + 0 roll + 0 pcs</strong>
                                             </div>
                                             <div class="quick-summary-pill">
-                                                <span>Estimated Opening Value</span>
+                                                <span>Opening Value Preview</span>
                                                 <strong id="quick_stock_value_preview">0.00</strong>
+                                                <small class="d-block text-muted mt-1">Preview only: stock quantity × unit purchase cost.</small>
                                             </div>
                                         </div>
                                         <input type="hidden" name="stock" id="quick_final_stock_input" value="{{ old('stock', '') }}">
