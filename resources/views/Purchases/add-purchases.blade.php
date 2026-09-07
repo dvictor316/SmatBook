@@ -405,8 +405,9 @@
             function selectedUnitPrice(unitSelect, fallbackPrice) {
                 const selected = unitSelect.options[unitSelect.selectedIndex];
                 const price = selected ? parseFloat(selected.getAttribute('data-price')) : NaN;
+                const factor = selected ? Math.max(parseFloat(selected.getAttribute('data-factor')) || 1, 1) : 1;
 
-                return Number.isFinite(price) && price > 0 ? price : fallbackPrice;
+                return Number.isFinite(price) && price > 0 ? price : (fallbackPrice * factor);
             }
 
             function createEmptyRow(initialData = {}) {

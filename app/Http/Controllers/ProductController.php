@@ -500,7 +500,7 @@ class ProductController extends Controller
                     'is_base_unit' => false,
                     'is_purchase_unit' => $product->unit_type === $unitName && empty($product->purchase_unit_id),
                     'is_default_sales_unit' => $product->unit_type === $unitName,
-                    'purchase_price' => null,
+                    'purchase_price' => $purchasePrice > 0 ? round($purchasePrice * $factor, 2) : null,
                     'selling_price' => $price > 0 ? round($price * $factor, 2) : null,
                     'wholesale_price' => $product->wholesale_price ? round((float) $product->wholesale_price * $factor, 2) : null,
                     'barcode' => null,

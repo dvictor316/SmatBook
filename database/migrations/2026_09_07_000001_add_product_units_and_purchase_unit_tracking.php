@@ -141,7 +141,7 @@ return new class extends Migration
                                     'is_base_unit' => false,
                                     'is_purchase_unit' => ($product->unit_type ?? '') === $unitName && empty($product->purchase_unit_id),
                                     'is_default_sales_unit' => ($product->unit_type ?? '') === $unitName,
-                                    'purchase_price' => null,
+                                    'purchase_price' => !empty($product->purchase_price) ? round((float) $product->purchase_price * $factor, 2) : null,
                                     'selling_price' => !empty($product->price) ? round((float) $product->price * $factor, 2) : null,
                                     'wholesale_price' => !empty($product->wholesale_price) ? round((float) $product->wholesale_price * $factor, 2) : null,
                                     'barcode' => null,

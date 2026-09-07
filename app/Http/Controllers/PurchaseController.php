@@ -146,7 +146,7 @@ private function applyBranchScope($query, string $table = 'purchases')
                         'name' => $unitName,
                         'symbol' => $unitName === 'carton' ? 'ctn' : $unitName,
                         'conversion_factor' => $factor,
-                        'purchase_price' => null,
+                        'purchase_price' => $product->purchase_price ? round((float) $product->purchase_price * $factor, 2) : null,
                         'selling_price' => $product->price ? round((float) $product->price * $factor, 2) : null,
                         'is_purchase_unit' => $product->unit_type === $unitName,
                         'is_default_sales_unit' => $product->unit_type === $unitName,
