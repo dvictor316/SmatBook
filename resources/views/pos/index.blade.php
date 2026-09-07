@@ -876,7 +876,9 @@ body.pos-terminal-workspace #toggle_btn:focus-visible {
 .pos-product-combo__icon {
     position: absolute; right: 14px;
     color: #7a90b3; font-size: .85rem; pointer-events: none; z-index: 2;
+    transition: opacity .16s ease, visibility .16s ease;
 }
+.pos-product-combo.has-value .pos-product-combo__icon { opacity: 0; visibility: hidden; }
 .pos-product-combo__caret {
     position: absolute; right: 38px;
     color: #7a90b3; font-size: .72rem; pointer-events: none; z-index: 2;
@@ -900,7 +902,8 @@ body.pos-terminal-workspace #toggle_btn:focus-visible {
 .pos-product-combo__clear {
     position: absolute; right: 11px;
     background: none; border: none; color: #9db1ce;
-    cursor: pointer; padding: 4px; line-height: 1; font-size: .8rem; z-index: 2;
+    cursor: pointer; padding: 4px; line-height: 1; font-size: .8rem; z-index: 3;
+    width: 24px; height: 24px; align-items: center; justify-content: center;
 }
 .pos-product-combo__clear:hover { color: #0f3a8a; }
 /* Dropdown is appended to body and positioned via JS */
@@ -5183,6 +5186,7 @@ $(document).ready(function() {
         const $input = $('#product-search-input');
         const $clear = $('#product-search-clear');
         const $caret = $('#product-combo-caret');
+        const $combo = $('#product-combo-wrapper');
 
         // Append dropdown portal directly to body so it is never clipped
         const $portal = $('<div id="pos-product-dropdown-portal"></div>');
@@ -5192,6 +5196,10 @@ $(document).ready(function() {
 
         let selId  = null;
         let isOpen = false;
+
+        function setComboHasValue(hasValue) {
+            $combo.toggleClass('has-value', Boolean(hasValue));
+        }
 
         function buildCache() {
             return $('#product-select option[value!=""]').map(function () {
@@ -5290,6 +5298,7 @@ $(document).ready(function() {
             selId = String(productId);
             $input.val(($opt.data('name') || $opt.text() || '').trim());
             $clear.show();
+            setComboHasValue(true);
             $('#product-select').val(selId);
             close();
             applyProductSelection($opt);
@@ -5300,6 +5309,7 @@ $(document).ready(function() {
             selId = null;
             $input.val('');
             $clear.hide();
+            setComboHasValue(false);
             $('#product-select').val('');
             close();
         }
@@ -5312,12 +5322,14 @@ $(document).ready(function() {
                 selId = String(productId);
                 $input.val(($opt.data('name') || $opt.text() || '').trim());
                 $clear.show();
+                setComboHasValue(true);
                 close();
             }
         };
         window._posComboOpen = function (keyword = '') {
             $input.val(keyword);
             $clear.toggle(Boolean(keyword) || !!selId);
+            setComboHasValue(Boolean(keyword) || !!selId);
             $input.trigger('focus');
             openWith(keyword);
         };
@@ -5326,6 +5338,7 @@ $(document).ready(function() {
         $input.on('input', function () {
             const kw = $(this).val().trim();
             $clear.toggle(kw.length > 0 || !!selId);
+            setComboHasValue(kw.length > 0 || !!selId);
             openWith(kw);
         });
 
@@ -7912,6 +7925,7 @@ window.POS_ENABLE_FALLBACK = function () {
         const clear  = document.getElementById('product-search-clear');
         const caret  = document.getElementById('product-combo-caret');
         const sel    = document.getElementById('product-select');
+        const combo  = document.getElementById('product-combo-wrapper');
         if (!input || !sel) return;
 
         // Re-use existing portal or create it
@@ -7926,6 +7940,10 @@ window.POS_ENABLE_FALLBACK = function () {
 
         let selId  = '';
         let isOpen = false;
+
+        function setComboHasValue(hasValue) {
+            if (combo) combo.classList.toggle('has-value', Boolean(hasValue));
+        }
 
         function buildCache() {
             return Array.from(sel.options)
@@ -8031,6 +8049,7 @@ window.POS_ENABLE_FALLBACK = function () {
             selId = String(productId);
             input.value = (opt.dataset.name || opt.text || '').trim();
             if (clear) clear.style.display = '';
+            setComboHasValue(true);
             sel.value = selId;
             close();
             applyVanillaSelection({ dataset: Object.assign({}, opt.dataset, { id: opt.value }) });
@@ -8040,6 +8059,7 @@ window.POS_ENABLE_FALLBACK = function () {
             selId = '';
             input.value = '';
             if (clear) clear.style.display = 'none';
+            setComboHasValue(false);
             sel.value = '';
             close();
         }
@@ -8052,12 +8072,14 @@ window.POS_ENABLE_FALLBACK = function () {
                 selId = String(productId);
                 input.value = (opt.dataset.name || opt.text || '').trim();
                 if (clear) clear.style.display = '';
+                setComboHasValue(true);
                 close();
             }
         };
         window._posComboOpen = function(keyword = '') {
             input.value = keyword;
             if (clear) clear.style.display = (keyword || selId) ? '' : 'none';
+            setComboHasValue(Boolean(keyword || selId));
             input.focus();
             openWith(keyword);
         };
@@ -8065,6 +8087,7 @@ window.POS_ENABLE_FALLBACK = function () {
         input.addEventListener('input', function() {
             const kw = this.value.trim();
             if (clear) clear.style.display = (kw.length > 0 || !!selId) ? '' : 'none';
+            setComboHasValue(kw.length > 0 || !!selId);
             openWith(kw);
         });
         input.addEventListener('focus', function() { openWith(this.value.trim()); });
