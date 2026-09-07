@@ -444,17 +444,17 @@
     #toggle_btn.header-toggle {
         width: 40px !important;
         height: 40px !important;
-        margin: 0 !important;
+        margin: 0 12px 0 2px !important;
         font-size: inherit !important;
-        position: absolute !important;
-        left: 236px !important;
-        top: calc(50% + 8px) !important;
-        transform: translate(-50%, -50%) !important;
+        position: relative !important;
+        left: auto !important;
+        top: auto !important;
+        transform: none !important;
         z-index: 1041;
     }
     body.sidebar-collapsed #toggle_btn.header-toggle,
     body.mini-sidebar #toggle_btn.header-toggle {
-        left: 96px !important;
+        left: auto !important;
     }
     .header-toggle:hover { background: #f1f5f9; color: #1e293b; }
 
@@ -486,12 +486,12 @@
 
     /* ── Search ── */
     .header-search-container {
-        flex: 0 1 430px;
+        flex: 0 1 410px;
         display: flex;
         justify-content: flex-start;
-        max-width: 540px;
+        max-width: 500px;
         min-width: 280px;
-        margin: 0 8px 0 44px;
+        margin: 0 8px 0 0;
         order: 3;
     }
 
@@ -607,6 +607,7 @@
     .header-actions > .dropdown:last-child {
         min-width: 0;
         flex-shrink: 1;
+        margin-left: 8px;
     }
 
     .workspace-switcher {
@@ -791,10 +792,9 @@
             font-size: 1.05rem;
         }
         .header-search-container {
-            flex-basis: 380px;
-            max-width: 460px;
+            flex-basis: 360px;
+            max-width: 430px;
             min-width: 250px;
-            margin-left: 44px;
         }
         .workspace-switcher a {
             padding: 0 9px;
@@ -816,10 +816,9 @@
             flex-basis: 188px;
         }
         .header-search-container {
-            flex-basis: 320px;
-            max-width: 380px;
+            flex-basis: 300px;
+            max-width: 350px;
             min-width: 220px;
-            margin-left: 38px;
         }
         .country-name,
         .country-currency {
