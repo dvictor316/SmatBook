@@ -1662,7 +1662,7 @@ public function inventory(Request $request)
                     DB::raw('0 as val_in'),
                     DB::raw('SUM(COALESCE(inventory_history.quantity, 0) * COALESCE(products.price, products.purchase_price, 0)) as val_out'),
                 ])
-                ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) = 'out'")
+                ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) IN ('out', 'stock out', 'damage', 'damaged', 'waste', 'spoilage', 'write_off')")
                 ->whereBetween('inventory_history.created_at', [$fromStart, $toEnd])
                 ->when(!empty($productId), fn ($q) => $q->where('inventory_history.product_id', $productId))
                 ->when(
@@ -2059,6 +2059,154 @@ public function inventory(Request $request)
         return view('Inventory.transfer-audit', compact('audits', 'search', 'month', 'fromDate', 'toDate'));
     }
 
+    public function damageReport(Request $request)
+    {
+        $search = trim((string) $request->string('q'));
+        $fromDate = trim((string) $request->string('from_date'));
+        $toDate = trim((string) $request->string('to_date'));
+        $activeBranch = $this->getActiveBranchContext();
+
+        if (!Schema::hasTable('inventory_history')) {
+            $damages = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 25, 1, [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]);
+            $totalDamagedQty = 0;
+            $totalDamageValue = 0;
+
+            return view('Inventory.damage-report', compact('damages', 'search', 'fromDate', 'toDate', 'activeBranch', 'totalDamagedQty', 'totalDamageValue'))
+                ->with('warning', 'Inventory history table is not available yet.');
+        }
+
+        $damagesQuery = DB::table('inventory_history')
+            ->join('products', 'inventory_history.product_id', '=', 'products.id')
+            ->select(
+                'inventory_history.id',
+                'inventory_history.created_at',
+                'inventory_history.quantity',
+                'inventory_history.reference',
+                'inventory_history.remarks',
+                'inventory_history.branch_name',
+                'products.name as product_name',
+                'products.sku',
+                'products.purchase_price'
+            )
+            ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) IN ('damage', 'damaged', 'waste', 'spoilage', 'write_off')")
+            ->tap(fn ($q) => $this->applyTenantScope($q, 'inventory_history'))
+            ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
+            ->tap(fn ($q) => $this->applyBranchScope($q, 'inventory_history', $activeBranch));
+
+        if ($search !== '') {
+            $damagesQuery->where(function ($query) use ($search) {
+                $query->where('products.name', 'like', '%' . $search . '%')
+                    ->orWhere('products.sku', 'like', '%' . $search . '%')
+                    ->orWhere('inventory_history.reference', 'like', '%' . $search . '%')
+                    ->orWhere('inventory_history.remarks', 'like', '%' . $search . '%');
+            });
+        }
+        if ($fromDate !== '') {
+            $damagesQuery->whereDate('inventory_history.created_at', '>=', $fromDate);
+        }
+        if ($toDate !== '') {
+            $damagesQuery->whereDate('inventory_history.created_at', '<=', $toDate);
+        }
+
+        $summaryQuery = clone $damagesQuery;
+        $totalDamagedQty = (float) (clone $summaryQuery)->sum('inventory_history.quantity');
+        $totalDamageValue = (float) (clone $summaryQuery)->sum(DB::raw('COALESCE(inventory_history.quantity, 0) * COALESCE(products.purchase_price, products.price, 0)'));
+
+        $damages = $damagesQuery
+            ->orderByDesc('inventory_history.created_at')
+            ->paginate(25)
+            ->appends($request->query());
+
+        return view('Inventory.damage-report', compact(
+            'damages',
+            'search',
+            'fromDate',
+            'toDate',
+            'activeBranch',
+            'totalDamagedQty',
+            'totalDamageValue'
+        ));
+    }
+
+    public function storeDamageStock(Request $request)
+    {
+        $validated = $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'quantity' => 'required|numeric|min:0.01',
+            'reason' => 'required|string|max:120',
+            'remarks' => 'nullable|string|max:1000',
+        ]);
+
+        if (!Schema::hasTable('inventory_history')) {
+            return redirect()->back()->with('error', 'Inventory history table is not available yet.');
+        }
+
+        try {
+            DB::transaction(function () use ($validated) {
+                $activeBranch = $this->getActiveBranchContext();
+                if (($activeBranch['scope'] ?? 'branch') === 'all') {
+                    throw new \RuntimeException('Select a specific branch before recording damaged stock.');
+                }
+
+                $product = Product::query()
+                    ->lockForUpdate()
+                    ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
+                    ->findOrFail((int) $validated['product_id']);
+                $quantity = (float) $validated['quantity'];
+                $quantitySql = rtrim(rtrim(number_format($quantity, 4, '.', ''), '0'), '.');
+                $availableStock = $this->branchInventory->getAvailableStock($product, $activeBranch);
+
+                if ($availableStock < $quantity) {
+                    throw new \RuntimeException("Insufficient stock for {$product->name} in " . ($activeBranch['name'] ?? 'the active branch') . '.');
+                }
+
+                $productPayload = ['updated_at' => now()];
+                if (Schema::hasColumn('products', 'stock')) {
+                    $productPayload['stock'] = DB::raw('GREATEST(COALESCE(stock, 0) - ' . $quantitySql . ', 0)');
+                }
+                if (Schema::hasColumn('products', 'stock_quantity')) {
+                    $productPayload['stock_quantity'] = DB::raw('GREATEST(COALESCE(stock_quantity, 0) - ' . $quantitySql . ', 0)');
+                }
+                DB::table('products')->where('id', $product->id)->update($productPayload);
+
+                $companyId = (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+                $this->branchInventory->adjustBranchStock($product, -1 * $quantity, $activeBranch, $companyId);
+
+                $payload = [
+                    'product_id' => $product->id,
+                    'quantity' => $quantity,
+                    'type' => 'damage',
+                    'reference' => 'Damaged Stock - ' . $validated['reason'],
+                    'remarks' => $validated['remarks'] ?? null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                if (Schema::hasColumn('inventory_history', 'user_id')) {
+                    $payload['user_id'] = auth()->id() ?? (int) DB::table('users')->min('id');
+                }
+                if (Schema::hasColumn('inventory_history', 'company_id')) {
+                    $payload['company_id'] = $companyId > 0 ? $companyId : null;
+                }
+                if (Schema::hasColumn('inventory_history', 'branch_id')) {
+                    $payload['branch_id'] = $activeBranch['id'] ?? null;
+                }
+                if (Schema::hasColumn('inventory_history', 'branch_name')) {
+                    $payload['branch_name'] = $activeBranch['name'] ?? null;
+                }
+                DB::table('inventory_history')->insert($payload);
+            });
+        } catch (\Throwable $exception) {
+            return redirect()->back()->withInput()->with('error', $exception->getMessage());
+        }
+
+        $this->clearDashboardMetricsCache();
+
+        return redirect()->back()->with('success', 'Damaged stock recorded and removed from available inventory.');
+    }
+
     /**
      * Breakdown Logic (Carton to Units)
      */
@@ -2416,8 +2564,13 @@ public function inventory(Request $request)
         $totalIn = (float) $inventoryHistories
             ->filter(fn ($row) => in_array(strtolower((string) ($row->type ?? '')), ['in', 'stock in'], true))
             ->sum(fn ($row) => (float) ($row->quantity ?? 0));
+        $outMovementTypes = ['out', 'stock out', 'damage', 'damaged', 'waste', 'spoilage', 'write_off'];
+        $damageMovementTypes = ['damage', 'damaged', 'waste', 'spoilage', 'write_off'];
         $totalOut = (float) $inventoryHistories
-            ->filter(fn ($row) => in_array(strtolower((string) ($row->type ?? '')), ['out', 'stock out'], true))
+            ->filter(fn ($row) => in_array(strtolower((string) ($row->type ?? '')), $outMovementTypes, true))
+            ->sum(fn ($row) => (float) ($row->quantity ?? 0));
+        $totalDamaged = (float) $inventoryHistories
+            ->filter(fn ($row) => in_array(strtolower((string) ($row->type ?? '')), $damageMovementTypes, true))
             ->sum(fn ($row) => (float) ($row->quantity ?? 0));
         $currentStock = round($totalIn - $totalOut, 2);
 
@@ -2444,6 +2597,7 @@ public function inventory(Request $request)
             'currentStock',
             'totalIn',
             'totalOut',
+            'totalDamaged',
             'stockUnitLabel'
         ));
     }

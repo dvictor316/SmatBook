@@ -182,7 +182,12 @@
     }
 
     .inventory-toolbar-import {
-        grid-column: 3 / 4;
+        grid-column: 1 / 2;
+        grid-row: 3;
+    }
+
+    .inventory-toolbar-damages {
+        grid-column: 1 / 2;
         grid-row: 2;
     }
 
@@ -198,7 +203,7 @@
 
     .inventory-toolbar-clear {
         grid-column: 1 / -1;
-        grid-row: 3;
+        grid-row: 4;
     }
 
     .inventory-bulk-bar {
@@ -386,7 +391,8 @@
         .inventory-toolbar-import,
         .inventory-toolbar-add,
         .inventory-toolbar-clear,
-        .inventory-toolbar-transfer {
+        .inventory-toolbar-transfer,
+        .inventory-toolbar-damages {
             grid-column: auto;
             grid-row: auto;
         }
@@ -487,6 +493,11 @@
                     <a href="<?php echo e(route('add-products')); ?>" class="btn btn-success desktop-add-product-trigger inventory-tool-btn inventory-toolbar-add">
                         <i class="fa fa-plus"></i> Add Product
                     </a>
+                    <?php if (\Illuminate\Support\Facades\Route::has('inventory.damages')) { ?>
+                        <a href="<?php echo e(route('inventory.damages')); ?>" class="btn btn-outline-danger inventory-tool-btn inventory-toolbar-damages">
+                            <i class="fas fa-triangle-exclamation"></i> Stock Damages
+                        </a>
+                    <?php } ?>
                     <?php if ($showStockTransferModal) { ?>
                         <button type="button" class="btn btn-outline-dark inventory-tool-btn inventory-toolbar-transfer" data-bs-toggle="modal" data-bs-target="#transferStockModal">
                             <i class="fas fa-right-left"></i> Transfer Stock
@@ -595,6 +606,16 @@
                                                 <div class="dropdown-menu dropdown-menu-end product-action-menu">
                                                     <a class="dropdown-item" href="<?php echo e(route('inventory.history', $product->id)); ?>"><i class="fas fa-chart-line me-2"></i>Run Report</a>
                                                     <a class="dropdown-item" href="<?php echo e(route('inventory.Products.edit', $product->id)); ?>"><i class="far fa-edit me-2"></i>Edit</a>
+                                                    <?php if (\Illuminate\Support\Facades\Route::has('inventory.damage.store')) { ?>
+                                                        <button type="button" class="dropdown-item text-warning product-damage-btn"
+                                                            data-product-id="<?php echo e($product->id); ?>"
+                                                            data-product-name="<?php echo e($product->name); ?>"
+                                                            data-available-stock="<?php echo e($displayStock); ?>"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#recordDamageModal">
+                                                            <i class="fas fa-triangle-exclamation me-2"></i>Record Damage
+                                                        </button>
+                                                    <?php } ?>
                                                     <form action="<?php echo e(route('inventory.Products.destroy', $product->id)); ?>" method="POST" onsubmit="return confirm('Delete this product?');">
                                                         <?php echo csrf_field(); ?><?php echo method_field('DELETE'); ?>
                                                         <button type="submit" class="dropdown-item text-danger"><i class="far fa-trash-alt me-2"></i>Delete</button>
@@ -674,6 +695,59 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="submit" class="btn btn-primary">Transfer Stock</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php } ?>
+
+<?php if (\Illuminate\Support\Facades\Route::has('inventory.damage.store')) { ?>
+<div class="modal fade" id="recordDamageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="<?php echo e(route('inventory.damage.store')); ?>">
+                <?php echo csrf_field(); ?>
+                <div class="modal-header">
+                    <h5 class="modal-title">Record Damaged Stock</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Product</label>
+                        <select name="product_id" class="form-select" id="damage-product-select" required>
+                            <option value="">Select product</option>
+                            <?php foreach ($transferProductsForView as $product) { ?>
+                                <option value="<?php echo e($product->id); ?>"><?php echo e($product->name); ?> (<?php echo e($product->sku); ?>)</option>
+                            <?php } ?>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Damaged Quantity</label>
+                            <input type="number" step="0.01" min="0.01" name="quantity" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Reason</label>
+                            <select name="reason" class="form-select" required>
+                                <option value="Expired">Expired</option>
+                                <option value="Spoiled">Spoiled</option>
+                                <option value="Broken">Broken</option>
+                                <option value="Leaking">Leaking</option>
+                                <option value="Contaminated">Contaminated</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label">Notes</label>
+                        <textarea name="remarks" class="form-control" rows="3" placeholder="Batch, expiry date, staff note, or disposal detail"></textarea>
+                    </div>
+                    <div class="small text-muted mt-2" id="damage-stock-note"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-danger">Record Damage</button>
                 </div>
             </form>
         </div>
@@ -1027,6 +1101,15 @@
         $('#inventory_print_btn').on('click', function(e) {
             e.preventDefault();
             printInventoryTable();
+        });
+
+        $(document).on('click', '.product-damage-btn', function() {
+            var productId = String($(this).data('product-id') || '');
+            var productName = String($(this).data('product-name') || 'Selected product');
+            var availableStock = String($(this).data('available-stock') || '0');
+
+            $('#damage-product-select').val(productId);
+            $('#damage-stock-note').text(productName + ' has ' + availableStock + ' available in the active branch.');
         });
 
         table.page.len(500).draw(false);

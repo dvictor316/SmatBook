@@ -670,6 +670,9 @@
                     <li><a href="{{ route('inventory.transfer-audit') }}"><i class="fas fa-right-left"></i><span>Transfer Audit</span></a></li>
                 @endif
                 <li><a href="{{ route('inventory.stock-valuation') }}"><i class="fas fa-chart-column"></i><span>Stock Valuation</span></a></li>
+                @if(Route::has('inventory.damages'))
+                    <li><a href="{{ route('inventory.damages') }}"><i class="fas fa-triangle-exclamation"></i><span>Stock Damages</span></a></li>
+                @endif
 
                 <li class="submenu {{ Request::is('inventory/lots*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fas fa-layer-group"></i><span>Lot Tracking</span><span class="menu-arrow"></span></a>
@@ -773,7 +776,7 @@
 
                 <li class="menu-title"><span>Inventory &amp; Operations</span></li>
 
-                <li class="submenu {{ Request::is('product-list*', 'categories*', 'units*') ? 'active subdrop' : '' }}">
+                <li class="submenu {{ Request::is('product-list*', 'categories*', 'units*', 'inventory-damages*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fas fa-box-open"></i><span>Products</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('product-list') }}">Product List</a></li>
@@ -788,6 +791,9 @@
                     <li><a href="{{ route('inventory.transfer-audit') }}"><i class="fas fa-right-left"></i><span>Transfer Audit</span></a></li>
                 @endif
                 <li><a href="{{ route('inventory.stock-valuation') }}"><i class="fas fa-chart-column"></i><span>Stock Valuation</span></a></li>
+                @if(Route::has('inventory.damages'))
+                    <li><a href="{{ route('inventory.damages') }}"><i class="fas fa-triangle-exclamation"></i><span>Stock Damages</span></a></li>
+                @endif
 
                 <li class="submenu {{ Request::is('inventory/lots*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fas fa-layer-group"></i><span>Lot Tracking</span><span class="menu-arrow"></span></a>
@@ -1170,7 +1176,7 @@
 
                 <li class="menu-title"><span>Inventory</span></li>
 
-                <li class="submenu {{ Request::is('product-list*', 'categories*', 'units*') ? 'active subdrop' : '' }}">
+                <li class="submenu {{ Request::is('product-list*', 'categories*', 'units*', 'inventory-damages*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-package"></i><span>Products</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('product-list') }}">Product List</a></li>
@@ -1312,7 +1318,7 @@
 
                 <li class="menu-title"><span>Inventory</span></li>
 
-                <li class="submenu {{ Request::is('product-list*', 'categories*', 'units*') ? 'active subdrop' : '' }}">
+                <li class="submenu {{ Request::is('product-list*', 'categories*', 'units*', 'inventory-damages*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-package"></i><span>Products</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('product-list') }}">Product List</a></li>
@@ -1323,6 +1329,9 @@
                 </li>
 
                 <li><a href="{{ route('inventory.Products') }}"><i class="fe fe-archive"></i><span>Inventory</span></a></li>
+                @if(Route::has('inventory.damages'))
+                    <li><a href="{{ route('inventory.damages') }}"><i class="fe fe-alert-triangle"></i><span>Stock Damages</span></a></li>
+                @endif
 
                 <li class="menu-title"><span>Sales</span></li>
 

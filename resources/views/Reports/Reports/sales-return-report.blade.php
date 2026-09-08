@@ -36,6 +36,10 @@
 @endsection
 
 @section('content')
+    @php
+        $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
+        $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
+    @endphp
     <div class="page-wrapper">
         <div class="content container-fluid">
 
@@ -70,7 +74,7 @@
                                 </div>
                                 <div class="ms-3">
                                     <p class="text-muted mb-1 small fw-bold text-uppercase">{{ __('Total Refunded Amount') }}</p>
-                                    <h3 class="mb-0 fw-bold">₦{{ number_format($totalRefunded ?? 0, 2) }}</h3>
+                                    <h3 class="mb-0 fw-bold">{{ \App\Support\GeoCurrency::format($totalRefunded ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</h3>
                                 </div>
                             </div>
                         </div>
@@ -82,7 +86,7 @@
                 <form method="GET" action="{{ route('reports.sales-return') }}" class="row g-2 align-items-end">
                     <div class="col-md-3">
                         <label class="form-label small fw-semibold">{{ __('Search') }}</label>
-                        <input type="text" name="search" class="form-control form-control-sm" placeholder="Product, SKU..." value="{{ request('search') }}">
+                        <input type="text" name="search" class="form-control form-control-sm" placeholder="Reference, customer, product or SKU..." value="{{ request('search') }}">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label small fw-semibold">{{ __('From Date') }}</label>
@@ -106,9 +110,10 @@
                             <thead class="bg-light">
                                 <tr>
                                     <th>#</th>
+                                    <th>{{ __('Reference') }}</th>
+                                    <th>{{ __('Customer') }}</th>
                                     <th>{{ __('Product') }}</th>
                                     <th>{{ __('SKU') }}</th>
-                                    <th>{{ __('Category') }}</th>
                                     <th>{{ __('Refund Amount') }}</th>
                                     <th>{{ __('Qty') }}</th>
                                     <th>{{ __('Stock Status') }}</th>
@@ -119,6 +124,8 @@
                                 @forelse ($salesreturnreports as $report)
                                     <tr>
                                         <td>{{ $report->Id }}</td>
+                                        <td><code class="text-primary fw-bold">{{ $report->ReferenceNo ?? 'N/A' }}</code></td>
+                                        <td class="fw-semibold text-dark">{{ $report->CustomerName ?? 'Walk-in Customer' }}</td>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <img class="rounded me-2" width="38" 
@@ -128,8 +135,7 @@
                                             </div>
                                         </td>
                                         <td><code class="text-primary fw-bold">{{ $report->SKU }}</code></td>
-                                        <td><span class="text-muted">{{ $report->Category ?? 'N/A' }}</span></td>
-                                        <td class="text-danger fw-bold">₦{{ number_format($report->SoldAmount, 2) }}</td>
+                                        <td class="text-danger fw-bold">{{ \App\Support\GeoCurrency::format($report->SoldAmount, 'NGN', $currencyCode, $currencyLocale) }}</td>
                                         <td><span class="badge bg-light text-dark border">{{ number_format($report->SoldQty) }}</span></td>
                                         <td>
                                             @if($report->InstockQty <= 5)
@@ -146,7 +152,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="text-center py-5">
+                                        <td colspan="9" class="text-center py-5">
                                             <div class="text-muted">
                                                 <i class="feather-inbox display-4 mb-2"></i>
                                                 <p>{{ __('No sales returns found for the selected criteria.') }}</p>

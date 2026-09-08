@@ -619,6 +619,8 @@ Route::get('/purchases/{id}/excel', [PurchaseController::class, 'exportExcel'])-
         Route::post('/inventory-history/delete', [ProductController::class, 'delete_history'])->name('inventory.history.delete');
         Route::get('/test-history-seed/{id}', [ProductController::class, 'seed_test_history']);
         Route::post('/inventory/adjust', [ProductController::class, 'adjust_stock'])->name('inventory.adjust');
+        Route::get('/inventory-damages', [ProductController::class, 'damageReport'])->name('inventory.damages');
+        Route::post('/inventory/damage', [ProductController::class, 'storeDamageStock'])->name('inventory.damage.store');
             
         Route::prefix('reports')->group(function () {
             // The existing route for the view
@@ -647,6 +649,8 @@ Route::get('/purchases/{id}/excel', [PurchaseController::class, 'exportExcel'])-
         // Delete Product
         Route::delete('/products/delete-selected', 'bulkDestroy')->name('inventory.Products.bulk-destroy');
         Route::delete('/products/delete/{id}', 'destroy')->name('inventory.Products.destroy');
+        Route::get('/inventory-damages', 'damageReport')->name('inventory.damages');
+        Route::post('/inventory/damage', 'storeDamageStock')->name('inventory.damage.store');
 
         // These can remain generic or be moved to ProductController if they handle data
         Route::get('/units', 'units')->name('units');

@@ -190,7 +190,7 @@ class BranchInventoryService
 
         return (float) $query->sum(DB::raw("
             CASE
-                WHEN LOWER(COALESCE(type, '')) IN ('out', 'stock out') THEN -1 * COALESCE(quantity, 0)
+                WHEN LOWER(COALESCE(type, '')) IN ('out', 'stock out', 'damage', 'damaged', 'waste', 'spoilage', 'write_off') THEN -1 * COALESCE(quantity, 0)
                 ELSE COALESCE(quantity, 0)
             END
         "));

@@ -72,6 +72,9 @@
                         <li><a href="{{ route('units') }}">Units</a></li>
                         <li><a href="{{ route('inventory.Products') }}">Stock Overview</a></li>
                         <li><a href="{{ route('inventory.stock-valuation') }}">Stock Valuation</a></li>
+                        @if(Route::has('inventory.damages'))
+                            <li><a href="{{ route('inventory.damages') }}">Stock Damages</a></li>
+                        @endif
                         @if(Route::has('inventory.transfer-audit'))
                             <li><a href="{{ route('inventory.transfer-audit') }}">Transfer Audit</a></li>
                         @endif

@@ -3133,40 +3133,78 @@ public function destroy($id)
         | 2. CREDIT NOTES (Sales Returns)
         |--------------------------------------------------------------------------
         */
-        public function credit_notes(Request $request) 
+        public function credit_notes(Request $request)
         {
             if (!Schema::hasTable('credit_notes') || !Schema::hasTable('credit_note_items')) {
-                $purchasereturns = new LengthAwarePaginator([], 0, 10, 1, [
+                $salesreturnreports = new LengthAwarePaginator([], 0, 10, 1, [
                     'path' => $request->url(),
                     'query' => $request->query(),
                 ]);
 
-                return view('Sales.credit-notes', [
-                    'purchasereturns' => $purchasereturns,
+                return $this->renderReportView('sales-return', [
+                    'salesreturnreports' => $salesreturnreports,
                     'totalRefunded' => 0,
                 ])->with('warning', 'Sales return item records are not available on this workspace yet.');
             }
 
-            $query = $this->scopedTable('credit_note_items')
+            $customerNameExpression = Schema::hasColumn('customers', 'customer_name')
+                ? "COALESCE(customers.customer_name, customers.name, 'Walk-in Customer')"
+                : "COALESCE(customers.name, 'Walk-in Customer')";
+
+            $query = DB::table('credit_note_items')
                 ->join('credit_notes', 'credit_note_items.credit_note_id', '=', 'credit_notes.id')
-                ->join('products', 'credit_note_items.product_id', '=', 'products.id')
-                ->join('customers', 'credit_notes.customer_id', '=', 'customers.id')
+                ->leftJoin('products', 'credit_note_items.product_id', '=', 'products.id')
+                ->leftJoin('customers', 'credit_notes.customer_id', '=', 'customers.id')
                 ->select([
                     'credit_notes.id as Id',
-                    'credit_notes.credit_note_no as PurchaseNo',
-                    'products.name as Product',
-                    'customers.name as VendorName',
-                    'credit_note_items.unit_price as ReturnAmount',
-                    'credit_note_items.qty as ReturnQty',
-                    'credit_notes.credit_date as ReturnDate'
+                    'credit_notes.credit_note_no as ReferenceNo',
+                    DB::raw("COALESCE(products.name, 'Returned item') as Product"),
+                    DB::raw("COALESCE(products.sku, '') as SKU"),
+                    DB::raw("COALESCE(products.image, 'default.png') as Image"),
+                    DB::raw("'N/A' as Category"),
+                    DB::raw("COALESCE(products.stock, products.stock_quantity, 0) as InstockQty"),
+                    DB::raw("COALESCE({$customerNameExpression}, 'Walk-in Customer') as CustomerName"),
+                    DB::raw('COALESCE(credit_note_items.subtotal, credit_note_items.qty * credit_note_items.unit_price, 0) as SoldAmount'),
+                    DB::raw('COALESCE(credit_note_items.qty, 0) as SoldQty'),
+                    'credit_notes.credit_date as DueDate',
                 ]);
 
-            $purchasereturns = $this->process_report($query, $request, 'credit_notes.credit_date', ['products.name', 'customers.name'])
-                                    ->withQueryString();
+            if (Schema::hasColumn('credit_notes', 'deleted_at')) {
+                $query->whereNull('credit_notes.deleted_at');
+            }
 
-            $totalRefunded = (clone $query)->sum(DB::raw('credit_note_items.qty * credit_note_items.unit_price'));
+            $this->applyTenantScope($query, 'credit_notes');
+            $this->applyTenantScope($query, 'credit_note_items');
 
-            return view('Sales.credit-notes', compact('purchasereturns', 'totalRefunded'));
+            $activeBranch = $this->getActiveBranchContext();
+            $branchId = trim((string) ($activeBranch['id'] ?? ''));
+            $branchName = trim((string) ($activeBranch['name'] ?? ''));
+            if (($activeBranch['scope'] ?? 'branch') !== 'all' && ($branchId !== '' || $branchName !== '')) {
+                $query->where(function ($sub) use ($branchId, $branchName) {
+                    if ($branchId !== '' && Schema::hasColumn('credit_notes', 'branch_id')) {
+                        $sub->where('credit_notes.branch_id', $branchId);
+                    }
+                    if ($branchName !== '' && Schema::hasColumn('credit_notes', 'branch_name')) {
+                        $sub->orWhere('credit_notes.branch_name', $branchName);
+                    }
+                });
+            }
+
+            $salesReturnSearchColumns = [
+                'credit_notes.credit_note_no',
+                'products.name',
+                'products.sku',
+                'customers.name',
+            ];
+            if (Schema::hasColumn('customers', 'customer_name')) {
+                $salesReturnSearchColumns[] = 'customers.customer_name';
+            }
+
+            $salesreturnreports = $this->process_report($query, $request, 'credit_notes.credit_date', $salesReturnSearchColumns)->withQueryString();
+
+            $totalRefunded = (clone $query)->sum(DB::raw('COALESCE(credit_note_items.subtotal, credit_note_items.qty * credit_note_items.unit_price, 0)'));
+
+            return $this->renderReportView('sales-return', compact('salesreturnreports', 'totalRefunded', 'activeBranch'));
         }
 
     /**

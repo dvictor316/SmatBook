@@ -8,6 +8,7 @@
         $currentStock = (float) ($currentStock ?? 0);
         $totalIn = (float) ($totalIn ?? 0);
         $totalOut = (float) ($totalOut ?? 0);
+        $totalDamaged = (float) ($totalDamaged ?? 0);
     @endphp
     <div class="page-wrapper">
         <div class="content container-fluid">
@@ -47,7 +48,7 @@
             </div>
 
             <div class="row g-3 mb-4">
-                <div class="col-xl-4 col-md-6">
+                <div class="col-xl-3 col-md-6">
                     <div class="card border shadow-sm h-100">
                         <div class="card-body py-3 px-4 d-flex align-items-center justify-content-between">
                             <div>
@@ -58,7 +59,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-4 col-md-6">
+                <div class="col-xl-3 col-md-6">
                     <div class="card border shadow-sm h-100">
                         <div class="card-body py-3 px-4 d-flex align-items-center justify-content-between">
                             <div>
@@ -69,7 +70,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-4 col-md-6">
+                <div class="col-xl-3 col-md-6">
                     <div class="card border shadow-sm h-100">
                         <div class="card-body py-3 px-4 d-flex align-items-center justify-content-between">
                             <div>
@@ -77,6 +78,17 @@
                                 <h5 class="mb-0">{{ number_format($totalOut, 2) }}</h5>
                             </div>
                             <span class="badge bg-danger px-3 py-2">Out</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card border shadow-sm h-100">
+                        <div class="card-body py-3 px-4 d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="mb-1 text-muted small text-uppercase">Damaged Stock</p>
+                                <h5 class="mb-0">{{ number_format($totalDamaged, 2) }}</h5>
+                            </div>
+                            <span class="badge bg-warning px-3 py-2">Damage</span>
                         </div>
                     </div>
                 </div>
@@ -214,9 +226,13 @@
                                         <td class="fw-bold text-dark">{{ $history->name }}</td>
                                         <td class="text-muted">{{ $history->sku }}</td>
                                         <td class="text-center">
-                                            @php $isStockIn = in_array(strtolower($history->type), ['in', 'stock in']); @endphp
-                                            <span class="badge {{ $isStockIn ? 'bg-light-success text-success' : 'bg-light-danger text-danger' }} px-2">
-                                                {{ $isStockIn ? 'Stock In' : 'Stock Out' }}
+                                            @php
+                                                $movementType = strtolower((string) $history->type);
+                                                $isStockIn = in_array($movementType, ['in', 'stock in']);
+                                                $isDamage = in_array($movementType, ['damage', 'damaged', 'waste', 'spoilage', 'write_off']);
+                                            @endphp
+                                            <span class="badge {{ $isStockIn ? 'bg-light-success text-success' : ($isDamage ? 'bg-light-warning text-warning' : 'bg-light-danger text-danger') }} px-2">
+                                                {{ $isStockIn ? 'Stock In' : ($isDamage ? 'Damaged' : 'Stock Out') }}
                                             </span>
                                         </td>
                                         <td>{{ $history->reference ?? 'System Movement' }}</td>
