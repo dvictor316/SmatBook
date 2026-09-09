@@ -624,6 +624,9 @@ Route::get('/purchases/{id}/excel', [PurchaseController::class, 'exportExcel'])-
         Route::get('/test-history-seed/{id}', [ProductController::class, 'seed_test_history']);
         Route::post('/inventory/adjust', [ProductController::class, 'adjust_stock'])->name('inventory.adjust');
         Route::get('/inventory-damages', [ProductController::class, 'damageReport'])->name('inventory.damages');
+        Route::get('/inventory-damages/export/{format}', [ProductController::class, 'exportDamageReport'])
+            ->whereIn('format', ['pdf', 'xlsx'])
+            ->name('inventory.damages.export');
         Route::post('/inventory/damage', [ProductController::class, 'storeDamageStock'])->name('inventory.damage.store');
             
         Route::prefix('reports')->group(function () {

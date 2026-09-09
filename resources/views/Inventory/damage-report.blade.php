@@ -23,6 +23,12 @@
                     <button onclick="window.print()" class="btn btn-white border report-action-btn">
                         <i class="feather-printer me-1"></i> Print
                     </button>
+                    <a href="{{ route('inventory.damages.export', array_merge(['format' => 'pdf'], request()->query())) }}" class="btn btn-outline-danger report-action-btn">
+                        <i class="fas fa-file-pdf me-1"></i> PDF
+                    </a>
+                    <a href="{{ route('inventory.damages.export', array_merge(['format' => 'xlsx'], request()->query())) }}" class="btn btn-outline-success report-action-btn">
+                        <i class="fas fa-file-excel me-1"></i> Excel
+                    </a>
                 </div>
             </div>
         </div>

@@ -21,6 +21,9 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use App\Support\BranchInventoryService;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ProductController extends Controller
 {
@@ -2191,6 +2194,114 @@ public function inventory(Request $request)
             'damageProducts',
             'stockStatusRows'
         ));
+    }
+
+    public function exportDamageReport(Request $request, string $format)
+    {
+        abort_unless(in_array($format, ['pdf', 'xlsx'], true), 404);
+
+        $search = trim((string) $request->string('q'));
+        $fromDate = trim((string) $request->string('from_date'));
+        $toDate = trim((string) $request->string('to_date'));
+        $activeBranch = $this->getActiveBranchContext();
+
+        $query = DB::table('inventory_history')
+            ->join('products', 'inventory_history.product_id', '=', 'products.id')
+            ->select(
+                'inventory_history.created_at', 'inventory_history.quantity',
+                'inventory_history.reference', 'inventory_history.remarks',
+                'inventory_history.branch_name', 'products.name as product_name',
+                'products.sku', 'products.purchase_price'
+            )
+            ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) IN ('damage', 'damaged', 'waste', 'spoilage', 'write_off')")
+            ->tap(fn ($q) => $this->applyTenantScope($q, 'inventory_history'))
+            ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
+            ->tap(fn ($q) => $this->applyBranchScope($q, 'inventory_history', $activeBranch));
+
+        if ($search !== '') {
+            $query->where(function ($subQuery) use ($search) {
+                $subQuery->where('products.name', 'like', '%' . $search . '%')
+                    ->orWhere('products.sku', 'like', '%' . $search . '%')
+                    ->orWhere('inventory_history.reference', 'like', '%' . $search . '%')
+                    ->orWhere('inventory_history.remarks', 'like', '%' . $search . '%');
+            });
+        }
+        if ($fromDate !== '') {
+            $query->whereDate('inventory_history.created_at', '>=', $fromDate);
+        }
+        if ($toDate !== '') {
+            $query->whereDate('inventory_history.created_at', '<=', $toDate);
+        }
+
+        $damages = $query->orderByDesc('inventory_history.created_at')->get()->map(function ($damage) {
+            $damage->reason = trim(str_replace('Damaged Stock -', '', (string) ($damage->reference ?? 'Damage'))) ?: 'Damage';
+            $damage->line_value = (float) ($damage->quantity ?? 0) * (float) ($damage->purchase_price ?? 0);
+
+            return $damage;
+        });
+
+        $damageProducts = Product::query()
+            ->select(['id', 'name', 'sku', 'stock', 'stock_quantity', 'purchase_price', 'price'])
+            ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($product) => tap($product, fn ($item) => $item->active_branch_stock = $this->branchInventory->getAvailableStock($item, $activeBranch)));
+
+        $damagedByProduct = DB::table('inventory_history')
+            ->select('product_id', DB::raw('SUM(COALESCE(quantity, 0)) as damaged_qty'))
+            ->whereRaw("LOWER(COALESCE(type, '')) IN ('damage', 'damaged', 'waste', 'spoilage', 'write_off')")
+            ->tap(fn ($q) => $this->applyTenantScope($q, 'inventory_history'))
+            ->tap(fn ($q) => $this->applyBranchScope($q, 'inventory_history', $activeBranch))
+            ->when($fromDate !== '', fn ($q) => $q->whereDate('created_at', '>=', $fromDate))
+            ->when($toDate !== '', fn ($q) => $q->whereDate('created_at', '<=', $toDate))
+            ->groupBy('product_id')
+            ->pluck('damaged_qty', 'product_id');
+
+        $stockStatusRows = $damageProducts->filter(function ($product) use ($search) {
+            return $search === '' || str_contains(strtolower((string) $product->name), strtolower($search)) || str_contains(strtolower((string) $product->sku), strtolower($search));
+        })->map(function ($product) use ($damagedByProduct) {
+            $damagedQty = (float) ($damagedByProduct[$product->id] ?? 0);
+            $currentStock = (float) ($product->active_branch_stock ?? $product->stock ?? $product->stock_quantity ?? 0);
+            $unitCost = (float) ($product->purchase_price ?? $product->price ?? 0);
+
+            return (object) [
+                'product_name' => $product->name,
+                'sku' => $product->sku,
+                'damaged_qty' => $damagedQty,
+                'current_stock' => $currentStock,
+                'stock_before_damage' => $currentStock + $damagedQty,
+                'damage_value' => $damagedQty * $unitCost,
+            ];
+        })->values();
+
+        $payload = compact('damages', 'stockStatusRows', 'activeBranch', 'fromDate', 'toDate', 'search');
+        if ($format === 'pdf') {
+            return Pdf::loadView('Inventory.damage-report-pdf', $payload)
+                ->setPaper('a4', 'landscape')
+                ->download('stock-damage-report-' . now()->format('Y-m-d') . '.pdf');
+        }
+
+        $spreadsheet = new Spreadsheet();
+        $damageSheet = $spreadsheet->getActiveSheet()->setTitle('Damage History');
+        $damageSheet->fromArray([['Date', 'Product', 'SKU', 'Branch', 'Reason', 'Notes', 'Quantity', 'Cost Value']]);
+        foreach ($damages as $damage) {
+            $damageSheet->fromArray([[
+                \Carbon\Carbon::parse($damage->created_at)->format('d M Y, H:i'), $damage->product_name,
+                $damage->sku ?: 'N/A', $damage->branch_name ?: ($activeBranch['name'] ?? ''),
+                $damage->reason, $damage->remarks ?: '-', (float) $damage->quantity, (float) $damage->line_value,
+            ]], null, 'A' . ($damageSheet->getHighestRow() + 1));
+        }
+        $statusSheet = $spreadsheet->createSheet()->setTitle('Stock Status');
+        $statusSheet->fromArray([['Product', 'SKU', 'Stock Before Damage', 'Damaged Quantity', 'Balance In Store', 'Damage Value']]);
+        foreach ($stockStatusRows as $row) {
+            $statusSheet->fromArray([[$row->product_name, $row->sku ?: 'N/A', (float) $row->stock_before_damage, (float) $row->damaged_qty, (float) $row->current_stock, (float) $row->damage_value]], null, 'A' . ($statusSheet->getHighestRow() + 1));
+        }
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            (new Xlsx($spreadsheet))->save('php://output');
+        }, 'stock-damage-report-' . now()->format('Y-m-d') . '.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
     }
 
     public function storeDamageStock(Request $request)

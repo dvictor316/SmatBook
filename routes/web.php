@@ -925,6 +925,9 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::post('/inventory-history/delete', 'delete_history')->name('inventory.history.delete');
         Route::post('/inventory/adjust', 'adjust_stock')->name('inventory.adjust');
         Route::get('/inventory-damages', 'damageReport')->name('inventory.damages');
+        Route::get('/inventory-damages/export/{format}', 'exportDamageReport')
+            ->whereIn('format', ['pdf', 'xlsx'])
+            ->name('inventory.damages.export');
         Route::post('/inventory/damage', 'storeDamageStock')->name('inventory.damage.store');
         Route::post('/inventory/transfer', 'transferStock')->name('inventory.transfer');
         Route::get('/inventory-transfer-audit', 'transferAudit')->name('inventory.transfer-audit');
