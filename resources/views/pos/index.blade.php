@@ -4584,8 +4584,8 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                     <div class="pos-payment-tabs" aria-label="Payment method">
                         <button type="button" class="pos-pay-tab active" data-payment-method="Cash">Cash</button>
                         <button type="button" class="pos-pay-tab" data-payment-method="Split">Split</button>
-                        <button type="button" class="pos-pay-tab" data-payment-method="Split" id="pos-pay-card-shortcut">POS</button>
-                        <button type="button" class="pos-pay-tab" data-payment-method="Split" id="pos-pay-transfer-shortcut">Transfer</button>
+                        <button type="button" class="pos-pay-tab" data-payment-method="Split" id="pos-pay-card-shortcut">Bank / POS</button>
+                        <button type="button" class="pos-pay-tab" data-payment-method="Split" id="pos-pay-transfer-shortcut">Bank Transfer</button>
                     </div>
                     <small id="customer-wallet-hint" class="receipt-wallet-hint">Select a customer to apply wallet credit automatically.</small>
                 </div>
@@ -4640,13 +4640,18 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
 
                     
                     <div class="row g-3 border-top pt-3">
+                        <div class="col-12">
+                            <div class="small fw-bold text-uppercase" style="color: var(--primary-600); letter-spacing: 0.08em;">Amount</div>
+                            <div class="small text-muted">Enter the amount received for each payment method.</div>
+                        </div>
                         <select id="payment-method" class="form-select fw-bold d-none" aria-hidden="true">
                             <option value="Cash">Cash</option>
                             <option value="Split">Split (Cash + Transfer + POS)</option>
                         </select>
                         @unless($isStarterPos ?? false)
                             <div class="col-md-6">
-                                <label class="fw-semibold">Cash / Deposit Account <span class="text-danger">*</span></label>
+                                <label class="fw-semibold">Payment Method: Cash Account <span class="text-danger">*</span></label>
+                                <small class="text-muted d-block mb-1">Options come from your active Chart of Accounts payment accounts.</small>
                                 <select id="deposit-account" class="form-select">
                                     <option value="">-- Select Account --</option>
                                     @foreach(($depositAccounts ?? []) as $acct)
@@ -4664,12 +4669,13 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                             </div>
                         @endunless
                         <div class="col-md-6">
-                            <label>Cash Amount</label>
+                            <label>Amount Paid: Cash</label>
                             <input type="number" min="0" step="0.01" id="amount-paid" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--success-500);">
                         </div>
                         @unless($isStarterPos ?? false)
                             <div class="col-md-6 d-none" id="split-transfer-account-wrap">
-                                <label>Bank Account (COA)</label>
+                                <label>Payment Method: Bank Account (Transfer)</label>
+                                <small class="text-muted d-block mb-1">Select a bank account created in Chart of Accounts.</small>
                                 <select id="transfer-account" class="form-select">
                                     <option value="">-- Select Account --</option>
                                     @foreach(($depositAccounts ?? []) as $acct)
@@ -4685,12 +4691,12 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                             </div>
                         @endunless
                         <div class="col-md-6 d-none" id="split-transfer-wrap">
-                            <label>Bank Amount</label>
+                            <label>Amount Paid: Bank Transfer</label>
                             <input type="number" min="0" step="0.01" id="transfer-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
                         </div>
                         @unless($isStarterPos ?? false)
 	                        <div class="col-md-6 d-none" id="split-card-account-wrap">
-                                <label>POS Account (COA)</label>
+                                <label>Payment Method: Bank Account (POS Settlement)</label>
                                 <select id="card-account" class="form-select">
                                     <option value="">-- Select Account --</option>
                                     @foreach(($depositAccounts ?? []) as $acct)
@@ -4702,11 +4708,13 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                                         No asset accounts yet.
                                         <a href="{{ $posChartAccountsUrl ?? url('/settings/chart-of-accounts') }}" class="fw-bold text-primary">Add in Chart of Accounts</a>
                                     </small>
+	                                @else
+	                                    <small class="text-muted d-block mt-2">Select where the POS funds settle, e.g. Opay or Moniepoint.</small>
 	                            @endif
 	                        </div>
                         @endunless
                         <div class="col-md-6 d-none" id="split-card-wrap">
-                            <label>POS Amount</label>
+                            <label>Amount Paid: POS</label>
                             <input type="number" min="0" step="0.01" id="card-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
                         </div>
 	                        <div class="col-md-6 d-none" id="wallet-payment-wrap">
@@ -7825,7 +7833,7 @@ window.POS_ENABLE_FALLBACK = function () {
                 return;
             }
             if (!isStarterPos && cardValue > 0 && !cardAccount?.value) {
-                alertFallback('Choose the POS account.');
+                alertFallback('Choose the bank account where the POS funds will settle, such as Opay or Moniepoint.');
                 return;
             }
         }

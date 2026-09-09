@@ -322,10 +322,14 @@ class SaleController extends Controller
             $query->where(function ($sub) {
                 $sub->whereNull('accounts.sub_type')
                     ->orWhere('accounts.sub_type', '')
-                    ->orWhereIn('accounts.sub_type', [
-                        'Cash & Bank',
-                        Account::SUBTYPE_CURRENT_ASSET,
-                        'Other Asset',
+                    ->orWhereIn(DB::raw('LOWER(accounts.sub_type)'), [
+                        'cash & bank',
+                        'cash',
+                        'cash account',
+                        'bank',
+                        'bank account',
+                        strtolower(Account::SUBTYPE_CURRENT_ASSET),
+                        'other asset',
                     ]);
             });
         }
