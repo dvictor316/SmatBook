@@ -429,6 +429,8 @@
         z-index: 1040;
         gap: var(--header-item-gap);
         margin-bottom: 14px;
+        min-width: 0;
+        overflow-x: clip;
     }
 
     .header-logo {
@@ -440,6 +442,7 @@
         gap: 8px;
         min-width: 0;
         flex: 0 0 auto;
+        min-width: 0;
     }
     .header-logo a {
         display: inline-flex;
@@ -688,6 +691,7 @@
         align-items: center;
         gap: var(--header-action-gap);
         flex-shrink: 0;
+        min-width: 0;
         margin-left: auto;
         order: 4;
     }
@@ -1154,7 +1158,11 @@
         .header-actions {
             gap: 5px;
             margin-left: 3px;
+            flex: 0 1 auto;
+            min-width: 0;
+            overflow: hidden;
         }
+        .header-actions .country-selector { display: none; }
         .country-selector {
             padding: 3px 5px;
         }

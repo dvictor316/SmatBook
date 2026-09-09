@@ -212,7 +212,7 @@
                                     <th>Reference</th>
                                     <th class="text-end">Quantity</th>
                                     <th class="text-center no-print">Action</th>
-                                    <th class="text-end">Stock Status</th>
+                                    <th class="text-end">Ledger Balance</th>
                                     <th class="text-end">Stock Value</th>
                                     <th class="text-end">Purchase Price</th>
                                 </tr>
@@ -238,17 +238,10 @@
                                         <td>{{ $history->reference ?? 'System Movement' }}</td>
                                         <td class="text-end fw-bold {{ $isStockIn ? 'text-success' : 'text-danger' }}">
                                             @php
-                                                $movementUnitType = strtolower(trim((string) ($history->unit_type ?? 'unit')));
-                                                $movementUnitLabel = match ($movementUnitType) {
-                                                    'carton' => 'ctn',
-                                                    'roll' => 'roll',
-                                                    'unit', 'pcs', 'piece', 'pieces', 'sachet' => 'pcs',
-                                                    default => $movementUnitType !== '' ? $movementUnitType : 'pcs',
-                                                };
                                                 $movementQuantity = rtrim(rtrim(number_format((float) ($history->quantity ?? 0), 2), '0'), '.');
                                             @endphp
                                             {{ $isStockIn ? '+' : '-' }}{{ $movementQuantity }}
-                                            <span class="text-muted text-uppercase ms-1">{{ $movementUnitLabel }}</span>
+                                            <span class="text-muted text-uppercase ms-1">{{ $stockUnitLabel }}</span>
                                         </td>
                                         <td class="text-center no-print inventory-action-cell">
                                             @if($isEditableHistoryRow)
@@ -275,7 +268,7 @@
                                             @endif
                                         </td>
                                         <td class="text-end fw-semibold {{ (float) ($history->running_balance ?? 0) >= 0 ? 'text-primary' : 'text-danger' }}">
-                                            {{ number_format((float) ($history->running_balance ?? 0), 2) }}
+                                            {{ number_format((float) ($history->running_balance ?? 0), 2) }} {{ $stockUnitLabel }}
                                         </td>
                                         <td class="text-end">
                                             {{ \App\Support\GeoCurrency::format((float) ($history->stock_value ?? 0), 'NGN', $currencyCode, $currencyLocale) }}
