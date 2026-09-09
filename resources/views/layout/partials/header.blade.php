@@ -415,17 +415,19 @@
        HEADER
        ============================================ */
     .header {
+        --header-item-gap: 16px;
+        --header-action-gap: 12px;
         display: flex;
         align-items: center;
         justify-content: flex-start;
-        padding: 0 10px 0 8px;
+        padding: 0 16px;
         background: #fff;
         border-bottom: 1px solid #e2e8f0;
         height: 76px;
         position: sticky;
         top: 0;
         z-index: 1040;
-        gap: 0;
+        gap: var(--header-item-gap);
         margin-bottom: 14px;
     }
 
@@ -433,12 +435,11 @@
         display: flex;
         align-items: center;
         justify-content: flex-start;
-        width: 286px;
         flex-shrink: 0;
         order: 1;
         gap: 8px;
         min-width: 0;
-        flex: 0 0 286px;
+        flex: 0 0 auto;
     }
     .header-logo a {
         display: inline-flex;
@@ -462,7 +463,7 @@
 
     /* ── Mobile Hamburger ── */
     #mobile_btn {
-        display: none;
+        display: none !important;
         align-items: center;
         justify-content: center;
         width: 40px;
@@ -470,7 +471,7 @@
         color: #64748b;
         font-size: 22px;
         cursor: pointer;
-        margin-right: 12px;
+        margin: 0;
         background: none;
         border: none;
         padding: 0;
@@ -481,6 +482,7 @@
         z-index: 1042;
         align-self: center;
         top: 0;
+        order: 2;
     }
     #mobile_btn:hover { background: #f1f5f9; }
 
@@ -498,8 +500,7 @@
         flex-shrink: 0;
         cursor: pointer;
         text-decoration: none;
-        margin-left: 0;
-        margin-right: 14px;
+        margin: 0;
         transform: none;
         transition: all 0.2s;
         order: 2;
@@ -513,7 +514,7 @@
         justify-content: center !important;
         width: 40px !important;
         height: 40px !important;
-        margin: 0 18px 0 10px !important;
+        margin: 0 !important;
         padding: 0 !important;
         line-height: 0 !important;
         font-size: inherit !important;
@@ -575,12 +576,12 @@
 
     /* ── Search ── */
     .header-search-container {
-        flex: 0 1 250px;
+        flex: 1 1 280px;
         display: flex;
         justify-content: flex-start;
-        max-width: 285px;
+        max-width: 300px;
         min-width: 210px;
-        margin: 0 18px 0 0;
+        margin: 0;
         order: 3;
     }
 
@@ -685,7 +686,7 @@
     .header-actions {
         display: flex;
         align-items: center;
-        gap: 7px;
+        gap: var(--header-action-gap);
         flex-shrink: 0;
         margin-left: auto;
         order: 4;
@@ -696,7 +697,7 @@
     .header-actions > .dropdown:last-child {
         min-width: 0;
         flex-shrink: 1;
-        margin-left: 8px;
+        margin-left: 0;
     }
 
     .workspace-switcher {
@@ -873,9 +874,13 @@
     .user-name  { font-size: 13px; font-weight: 600; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 132px; }
 
     @media (max-width: 1440px) {
+        .header {
+            --header-item-gap: 14px;
+            --header-action-gap: 10px;
+            padding: 0 14px;
+        }
         .header-logo {
-            width: 256px;
-            flex-basis: 256px;
+            flex-basis: auto;
         }
         .spb-wordmark {
             font-size: 1.05rem;
@@ -901,9 +906,12 @@
     }
 
     @media (max-width: 1280px) {
+        .header {
+            --header-item-gap: 12px;
+            --header-action-gap: 8px;
+        }
         .header-logo {
-            width: 228px;
-            flex-basis: 228px;
+            flex-basis: auto;
         }
         .header-search-container {
             flex-basis: 200px;
@@ -955,14 +963,20 @@
     @media (max-width: 991.98px) {
 
         /* ── Header layout ── */
-        .header-logo    { width: auto; margin-right: auto; max-width: 196px; }
-        .header-toggle  { display: none; }
-        #mobile_btn     { display: flex; }
+        .header {
+            --header-item-gap: 10px;
+            --header-action-gap: 6px;
+        }
+        .header-logo    { width: auto; margin-right: 0; max-width: 196px; order: 1; }
+        .header-toggle,
+        #toggle_btn.header-toggle,
+        #toggle_btn     { display: none !important; }
+        #mobile_btn     { display: inline-flex !important; order: 2; }
         .header-search-container { display: none; }
         .mobile-search-btn       { display: flex; }
         .user-info, .country-name { display: none; }
         .country-currency { display: none; }
-        .header-actions { margin-left: auto; gap: 4px; }
+        .header-actions { margin-left: auto; gap: var(--header-action-gap); order: 4; }
         .workspace-switcher { display: none; }
         .branch-pill { display: none; }
         .branch-pill-mobile {
@@ -1115,7 +1129,7 @@
             line-height: 1;
         }
         #mobile_btn {
-            top: 7px;
+            top: 0;
         }
     }
 
@@ -1138,7 +1152,7 @@
             letter-spacing: -0.22px;
         }
         .header-actions {
-            gap: 3px;
+            gap: 5px;
             margin-left: 3px;
         }
         .country-selector {
@@ -1184,8 +1198,8 @@
         #mobile_btn {
             width: 34px;
             height: 34px;
-            margin-right: 4px;
-            top: 7px;
+            margin: 0;
+            top: 0;
         }
         .country-selector {
             padding: 3px 4px;
@@ -1229,14 +1243,14 @@
             letter-spacing: -0.16px;
         }
         .header-actions {
-            gap: 1px;
+            gap: 4px;
             margin-left: 2px;
         }
         #mobile_btn {
             width: 32px;
             height: 32px;
-            margin-right: 3px;
-            top: 6px;
+            margin: 0;
+            top: 0;
         }
         .notification-bell,
         .mobile-search-btn,
@@ -1289,11 +1303,11 @@
             letter-spacing: -0.1px;
         }
         .header-actions {
-            gap: 1px;
+            gap: 3px;
             margin-left: 2px;
         }
         #mobile_btn {
-            top: 5px;
+            top: 0;
         }
         .country-selector {
             padding: 3px 4px;
