@@ -64,7 +64,7 @@
                         <div class="card-body py-3 px-4 d-flex align-items-center justify-content-between">
                             <div>
                                 <p class="mb-1 text-muted small text-uppercase">Total Received</p>
-                                <h5 class="mb-0">{{ number_format($totalIn, 2) }}</h5>
+                                <h5 class="mb-0">{{ number_format($totalIn, 2) }} {{ $stockUnitLabel }}</h5>
                             </div>
                             <span class="badge bg-success px-3 py-2">In</span>
                         </div>
@@ -75,7 +75,7 @@
                         <div class="card-body py-3 px-4 d-flex align-items-center justify-content-between">
                             <div>
                                 <p class="mb-1 text-muted small text-uppercase">Total Issued</p>
-                                <h5 class="mb-0">{{ number_format($totalOut, 2) }}</h5>
+                                <h5 class="mb-0">{{ number_format($totalOut, 2) }} {{ $stockUnitLabel }}</h5>
                             </div>
                             <span class="badge bg-danger px-3 py-2">Out</span>
                         </div>
@@ -86,7 +86,7 @@
                         <div class="card-body py-3 px-4 d-flex align-items-center justify-content-between">
                             <div>
                                 <p class="mb-1 text-muted small text-uppercase">Damaged Stock</p>
-                                <h5 class="mb-0">{{ number_format($totalDamaged, 2) }}</h5>
+                                <h5 class="mb-0">{{ number_format($totalDamaged, 2) }} {{ $stockUnitLabel }}</h5>
                             </div>
                             <span class="badge bg-warning px-3 py-2">Damage</span>
                         </div>

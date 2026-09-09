@@ -71,6 +71,7 @@
                 return [
                     'Product' => (string) ($row['Product'] ?? $row['product'] ?? $row['name'] ?? 'Unnamed Product'),
                     'Sku' => (string) ($row['Sku'] ?? $row['sku'] ?? ''),
+                    'Unit' => trim((string) ($row['Unit'] ?? $row['unit'] ?? 'pcs')),
                     'QtyOnHand' => (float) ($row['QtyOnHand'] ?? $row['qty_on_hand'] ?? $row['quantity'] ?? 0),
                     'PurchasePrice' => (float) ($row['PurchasePrice'] ?? $row['purchase_price'] ?? 0),
                     'SalesPrice' => (float) ($row['SalesPrice'] ?? $row['sales_price'] ?? 0),
@@ -96,7 +97,7 @@
             </div>
             <div class="col-md-4">
                 <div class="card border shadow-none mb-0 report-metric-card"><div class="card-body p-3">
-                    <p class="text-muted mb-1 fw-bold uppercase report-metric-label">Units On Hand</p>
+                    <p class="text-muted mb-1 fw-bold uppercase report-metric-label">Base Units On Hand</p>
                     <h4 class="text-danger fw-bold mb-0 report-metric-value">{{ number_format($totalUnits, 2) }}</h4>
                 </div></div>
             </div>
@@ -129,6 +130,7 @@
                         <tr>
                             <th class="ps-3 py-2 text-muted">Product</th>
                             <th class="py-2 text-muted">SKU</th>
+                            <th class="py-2 text-muted">Unit</th>
                             <th class="py-2 text-end text-muted">Qty On Hand</th>
                             <th class="py-2 text-end text-muted">Purchase Price</th>
                             <th class="py-2 text-end text-muted">Selling Price</th>
@@ -143,7 +145,8 @@
                         <tr class="accounting-row">
                             <td class="ps-3 py-2 fw-bold text-dark">{{ $report['Product'] }}</td>
                             <td class="py-2 text-muted">{{ $report['Sku'] ?: 'N/A' }}</td>
-                            <td class="py-2 text-end fw-bold {{ $report['QtyOnHand'] <= 0 ? 'text-danger' : 'text-dark' }}">{{ number_format($report['QtyOnHand'], 2) }}</td>
+                            <td class="py-2 text-muted">{{ $report['Unit'] }}</td>
+                            <td class="py-2 text-end fw-bold {{ $report['QtyOnHand'] <= 0 ? 'text-danger' : 'text-dark' }}">{{ number_format($report['QtyOnHand'], 2) }} {{ $report['Unit'] }}</td>
                             <td class="py-2 text-end text-success">{{ \App\Support\GeoCurrency::format($report['PurchasePrice'], 'NGN', $currencyCode, $currencyLocale) }}</td>
                             <td class="py-2 text-end text-primary">{{ \App\Support\GeoCurrency::format($report['SalesPrice'], 'NGN', $currencyCode, $currencyLocale) }}</td>
                             <td class="py-2 text-end text-success">{{ \App\Support\GeoCurrency::format($report['CostValue'], 'NGN', $currencyCode, $currencyLocale) }}</td>

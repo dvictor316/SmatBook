@@ -2741,6 +2741,8 @@ public function destroy($id)
         $reorderColumn = Schema::hasColumn('products', 'reorder_level')
             ? 'reorder_level'
             : (Schema::hasColumn('products', 'min_stock_level') ? 'min_stock_level' : null);
+        $baseUnitColumn = Schema::hasColumn('products', 'base_unit_name') ? 'base_unit_name' : null;
+        $unitTypeColumn = Schema::hasColumn('products', 'unit_type') ? 'unit_type' : null;
         $hasBranchStocks = Schema::hasTable('product_branch_stocks');
         $hasBranchId = $hasBranchStocks && Schema::hasColumn('product_branch_stocks', 'branch_id');
         $hasBranchName = $hasBranchStocks && Schema::hasColumn('product_branch_stocks', 'branch_name');
@@ -2757,6 +2759,8 @@ public function destroy($id)
                 'products.id',
                 'products.name',
                 'products.sku',
+                DB::raw($baseUnitColumn ? "NULLIF(products.{$baseUnitColumn}, '') as base_unit_name" : "'' as base_unit_name"),
+                DB::raw($unitTypeColumn ? "NULLIF(products.{$unitTypeColumn}, '') as unit_type" : "'' as unit_type"),
                 DB::raw("COALESCE({$purchaseExpr}, 0) as purchase_price"),
                 DB::raw("COALESCE({$salesExpr}, 0) as sales_price"),
                 DB::raw("COALESCE({$reorderExpr}, 0) as reorder_level"),
@@ -2794,6 +2798,7 @@ public function destroy($id)
                 return [
                     'Product' => (string) ($product->name ?? 'Unnamed Product'),
                     'Sku' => (string) ($product->sku ?? ''),
+                    'Unit' => trim((string) ($product->base_unit_name ?: $product->unit_type ?: 'pcs')),
                     'QtyOnHand' => $qty,
                     'PurchasePrice' => $purchasePrice,
                     'SalesPrice' => $salesPrice,

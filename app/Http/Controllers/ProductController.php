@@ -2638,7 +2638,6 @@ public function inventory(Request $request)
         $totalDamaged = (float) $inventoryHistories
             ->filter(fn ($row) => in_array(strtolower((string) ($row->type ?? '')), $damageMovementTypes, true))
             ->sum(fn ($row) => (float) ($row->quantity ?? 0));
-        $currentStock = round($totalIn - $totalOut, 2);
 
         $runningBalance = 0.0;
         $inventoryHistories = $inventoryHistories
