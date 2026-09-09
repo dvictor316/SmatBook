@@ -3152,9 +3152,13 @@ public function destroy($id)
                 ])->with('warning', 'Sales return item records are not available on this workspace yet.');
             }
 
-            $customerNameExpression = Schema::hasColumn('customers', 'customer_name')
-                ? "COALESCE(customers.customer_name, customers.name, 'Walk-in Customer')"
-                : "COALESCE(customers.name, 'Walk-in Customer')";
+            $customerNameColumns = array_values(array_filter([
+                Schema::hasColumn('customers', 'customer_name') ? 'customers.customer_name' : null,
+                Schema::hasColumn('customers', 'name') ? 'customers.name' : null,
+            ]));
+            $customerNameExpression = $customerNameColumns
+                ? 'COALESCE(' . implode(', ', array_merge($customerNameColumns, ["'Walk-in Customer'"])) . ')'
+                : "'Walk-in Customer'";
 
             $query = DB::table('credit_note_items')
                 ->join('credit_notes', 'credit_note_items.credit_note_id', '=', 'credit_notes.id')
@@ -3202,11 +3206,8 @@ public function destroy($id)
                 'credit_notes.credit_note_no',
                 'products.name',
                 'products.sku',
-                'customers.name',
             ];
-            if (Schema::hasColumn('customers', 'customer_name')) {
-                $salesReturnSearchColumns[] = 'customers.customer_name';
-            }
+            $salesReturnSearchColumns = array_merge($salesReturnSearchColumns, $customerNameColumns);
 
             $salesreturnreports = $this->process_report($query, $request, 'credit_notes.credit_date', $salesReturnSearchColumns)->withQueryString();
 
