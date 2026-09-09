@@ -3535,6 +3535,46 @@
             document.addEventListener('DOMContentLoaded', hide, { once: true });
             window.setTimeout(hide, 8000);
 
+            const prefetchedUrls = new Set();
+            let prefetchTimer = null;
+
+            function isPrefetchable(link) {
+                if (!link || link.dataset.noPrefetch !== undefined || link.dataset.noLoader !== undefined) return false;
+                if (link.closest('[data-bs-toggle], [data-toggle], [data-bs-dismiss], [data-dismiss], .dropdown-toggle, .modal, .offcanvas')) return false;
+                if (link.hasAttribute('download') || (link.target && link.target !== '_self')) return false;
+
+                const href = (link.href || '').trim();
+                if (!href || !href.startsWith(window.location.origin + '/')) return false;
+                if (link.getAttribute('href').startsWith('#')) return false;
+                if (link.closest('nav') && /logout|delete|destroy/i.test(link.textContent || '')) return false;
+                return true;
+            }
+
+            function prefetch(link) {
+                if (!isPrefetchable(link)) return;
+                const url = link.href;
+                if (prefetchedUrls.has(url)) return;
+                prefetchedUrls.add(url);
+
+                const hint = document.createElement('link');
+                hint.rel = 'prefetch';
+                hint.as = 'document';
+                hint.href = url;
+                document.head.appendChild(hint);
+            }
+
+            document.addEventListener('pointerover', function (event) {
+                const link = event.target.closest && event.target.closest('a[href]');
+                if (!isPrefetchable(link)) return;
+                clearTimeout(prefetchTimer);
+                prefetchTimer = window.setTimeout(function () { prefetch(link); }, 120);
+            }, { passive: true });
+
+            document.addEventListener('focusin', function (event) {
+                const link = event.target.closest && event.target.closest('a[href]');
+                prefetch(link);
+            });
+
             document.addEventListener('click', function (event) {
                 if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
                 const link = event.target.closest && event.target.closest('a[href]');
