@@ -20,6 +20,7 @@ class StockValuationController extends Controller
         $companyId = (int) ($user?->company_id ?? session('current_tenant_id') ?? 0);
         $method = $request->input('method', 'weighted_avg'); // fifo|weighted_avg
         $asOf = $request->input('as_of', now()->toDateString());
+        $search = trim((string) $request->input('q', ''));
         $branchId = (string) ($request->input('branch_id') ?: session('active_branch_id') ?: '');
         $branchName = (string) session('active_branch_name', '');
 
@@ -33,12 +34,18 @@ class StockValuationController extends Controller
         $hasBranchId = $hasBranchStocks && Schema::hasColumn('product_branch_stocks', 'branch_id');
         $hasBranchName = $hasBranchStocks && Schema::hasColumn('product_branch_stocks', 'branch_name');
 
-        $rows = collect();
+        $rows = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 25, 1, [
+            'path' => $request->url(),
+            'query' => $request->query(),
+        ]);
+        $productCount = 0;
+        $totalQuantity = 0;
         $grandTotal = 0;
 
         if ($stockColumn || $hasBranchStocks) {
             $stockExpr = $stockColumn ? "products.{$stockColumn}" : '0';
             $costExpr = Schema::hasColumn('products', $unitCostColumn) ? "products.{$unitCostColumn}" : '0';
+            $quantityExpr = "COALESCE({$stockExpr}, 0)";
 
             $query = Product::query()
                 ->select([
@@ -70,15 +77,33 @@ class StockValuationController extends Controller
                     }
                 });
 
-                $query->addSelect(DB::raw("COALESCE(product_branch_stocks.quantity, {$stockExpr}, 0) as valuation_quantity"));
-            } else {
-                $query->addSelect(DB::raw("COALESCE({$stockExpr}, 0) as valuation_quantity"));
+                $quantityExpr = "COALESCE(product_branch_stocks.quantity, {$stockExpr}, 0)";
             }
+            $query->addSelect(DB::raw("{$quantityExpr} as valuation_quantity"));
+
+            $query->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($subQuery) use ($search) {
+                    $subQuery->where('products.name', 'like', '%' . $search . '%')
+                        ->orWhere('products.sku', 'like', '%' . $search . '%');
+                });
+            })
+                ->whereRaw("{$quantityExpr} > 0");
+
+            $summary = (clone $query)
+                ->select([])
+                ->selectRaw("COUNT(DISTINCT products.id) as product_count, COALESCE(SUM({$quantityExpr}), 0) as total_quantity, COALESCE(SUM({$quantityExpr} * COALESCE({$costExpr}, 0)), 0) as grand_total")
+                ->first();
+
+            $productCount = (int) ($summary->product_count ?? 0);
+            $totalQuantity = (float) ($summary->total_quantity ?? 0);
+            $grandTotal = (float) ($summary->grand_total ?? 0);
 
             $rows = $query
                 ->orderBy('products.name')
-                ->get()
-                ->map(function ($product) {
+                ->paginate(25)
+                ->appends($request->query());
+
+            $rows->setCollection($rows->getCollection()->map(function ($product) {
                     $quantity = max(0, (float) ($product->valuation_quantity ?? 0));
                     $unitCost = max(0, (float) ($product->valuation_unit_cost ?? 0));
 
@@ -88,11 +113,11 @@ class StockValuationController extends Controller
                         'unit_cost' => $unitCost,
                         'total' => $quantity * $unitCost,
                     ];
-                })->filter(fn ($row) => $row['quantity'] > 0)->values();
-
-            $grandTotal = (float) $rows->sum('total');
+                }));
         }
 
-        return view('Inventory.stock-valuation', compact('rows', 'grandTotal', 'method', 'asOf'));
+        return view('Inventory.stock-valuation', compact(
+            'rows', 'grandTotal', 'productCount', 'totalQuantity', 'method', 'asOf', 'search'
+        ));
     }
 }

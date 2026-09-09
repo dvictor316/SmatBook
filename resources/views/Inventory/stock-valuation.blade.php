@@ -16,17 +16,21 @@
             <div class="card-body">
                 <form method="GET" action="{{ route('inventory.stock-valuation') }}" class="row g-3 align-items-end">
                     <div class="col-lg-4 col-md-6">
+                        <label class="form-label">Search Stock</label>
+                        <input type="search" name="q" class="form-control" value="{{ $search }}" placeholder="Product name or SKU">
+                    </div>
+                    <div class="col-lg-3 col-md-6">
                         <label class="form-label">Valuation Method</label>
                         <select name="method" class="form-select">
                             <option value="weighted_avg" @selected($method === 'weighted_avg')>Weighted Average</option>
                             <option value="fifo" @selected($method === 'fifo')>FIFO</option>
                         </select>
                     </div>
-                    <div class="col-lg-4 col-md-6">
+                    <div class="col-lg-3 col-md-6">
                         <label class="form-label">As Of Date</label>
                         <input type="date" name="as_of" class="form-control" value="{{ $asOf }}">
                     </div>
-                    <div class="col-lg-4 col-md-6">
+                    <div class="col-lg-2 col-md-6">
                         <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
                     </div>
                 </form>
@@ -38,7 +42,7 @@
                 <div class="card h-100">
                     <div class="card-body">
                         <p class="text-muted mb-1">Products With Stock</p>
-                        <h4 class="mb-0">{{ $rows->count() }}</h4>
+                        <h4 class="mb-0">{{ number_format($productCount) }}</h4>
                     </div>
                 </div>
             </div>
@@ -46,7 +50,7 @@
                 <div class="card h-100">
                     <div class="card-body">
                         <p class="text-muted mb-1">Units On Hand</p>
-                        <h4 class="mb-0">{{ number_format((float) $rows->sum('quantity'), 2) }}</h4>
+                        <h4 class="mb-0">{{ number_format($totalQuantity, 2) }}</h4>
                     </div>
                 </div>
             </div>
@@ -58,6 +62,11 @@
                     </div>
                 </div>
             </div>
+            @if($rows->hasPages())
+                <div class="card-footer bg-white">
+                    {{ $rows->links('pagination::bootstrap-5') }}
+                </div>
+            @endif
         </div>
 
         <div class="card">
