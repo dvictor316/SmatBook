@@ -176,6 +176,7 @@
             position: fixed;
             inset: 0;
             display: none;
+            pointer-events: none;
             align-items: center;
             justify-content: center;
             background: rgba(15, 23, 42, .28);
@@ -3509,7 +3510,7 @@
                 timer = window.setTimeout(function () {
                     overlay.classList.add('is-active');
                     overlay.setAttribute('aria-hidden', 'false');
-                }, 60);
+                }, 250);
             }
 
             function hide() {
