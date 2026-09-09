@@ -1123,6 +1123,8 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     Route::get('/admin/purchase-orders', [PurchaseOrderViewController::class, 'showOrdersTable'])->name('admin.purchase.orders');
 
     // Expenses
+    Route::get('/expenses/import-template', [ExpenseController::class, 'downloadImportTemplate'])->middleware('plan.access:basic,professional,enterprise')->name('expenses.import-template');
+    Route::post('/expenses/import', [ExpenseController::class, 'import'])->middleware('plan.access:basic,professional,enterprise')->name('expenses.import');
     Route::resource('expenses', ExpenseController::class)->middleware('plan.access:basic,professional,enterprise');
     Route::post('/expenses/{id}/mark-paid', [ExpenseController::class, 'markPaid'])->middleware('plan.access:basic,professional,enterprise')->name('expenses.mark-paid');
     Route::get('/expenses/download/{filename}', [ExpenseController::class, 'download'])->middleware('plan.access:basic,professional,enterprise')->name('expenses.download');

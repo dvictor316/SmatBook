@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Carbon;
 use RuntimeException;
 
 class ExpenseController extends Controller
@@ -369,6 +370,149 @@ class ExpenseController extends Controller
         }
     }
 
+    public function downloadImportTemplate()
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="expense-import-template.csv"',
+        ];
+
+        return response()->streamDownload(function () {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['date', 'supplier', 'amount', 'category', 'payment_source', 'status', 'reference', 'email', 'notes']);
+            fputcsv($handle, [now()->toDateString(), 'ABC Supplies Ltd', '25000', 'Transport', 'Cash', 'Paid', 'INV-1001', 'accounts@example.com', 'Delivery expense']);
+            fputcsv($handle, [now()->toDateString(), 'Office Vendor', '12500', 'Office Supplies', '', 'Pending', 'BILL-88', '', 'Awaiting approval']);
+            fclose($handle);
+        }, 'expense-import-template.csv', $headers);
+    }
+
+    public function import(Request $request)
+    {
+        $sessionBranch = $this->getSessionBranchContext();
+        if (empty($sessionBranch['id']) && empty($sessionBranch['name'])) {
+            return back()->withInput()->with('error', 'Please select a branch before importing expenses.');
+        }
+
+        $validated = $request->validate([
+            'expense_file' => 'required|file|mimes:csv,txt|max:5120',
+        ]);
+
+        $path = $validated['expense_file']->getRealPath();
+        if (!$path || !is_readable($path)) {
+            return back()->with('error', 'Expense import file could not be read.');
+        }
+
+        $rows = $this->readExpenseImportCsv($path);
+        if (empty($rows)) {
+            return back()->with('error', 'Expense import file is empty.');
+        }
+
+        $imported = 0;
+        $skipped = [];
+
+        try {
+            DB::transaction(function () use ($rows, $sessionBranch, &$imported, &$skipped) {
+                foreach ($rows as $index => $row) {
+                    $line = $index + 2;
+                    $supplier = trim((string) ($row['supplier'] ?? $row['company_name'] ?? $row['vendor'] ?? ''));
+                    $amount = $this->parseImportAmount($row['amount'] ?? null);
+                    $categoryName = trim((string) ($row['category'] ?? ''));
+                    $status = $this->normalizeImportStatus($row['status'] ?? 'Pending');
+                    $paymentSource = trim((string) ($row['payment_source'] ?? $row['paid_from'] ?? $row['payment_mode'] ?? ''));
+                    $expenseDate = $this->parseImportDate($row['date'] ?? $row['expense_date'] ?? null);
+
+                    if ($supplier === '') {
+                        $skipped[] = "Line {$line}: supplier is required.";
+                        continue;
+                    }
+                    if ($amount <= 0) {
+                        $skipped[] = "Line {$line}: amount must be greater than zero.";
+                        continue;
+                    }
+                    if ($categoryName === '') {
+                        $skipped[] = "Line {$line}: category is required.";
+                        continue;
+                    }
+                    if (!$expenseDate) {
+                        $skipped[] = "Line {$line}: date is invalid.";
+                        continue;
+                    }
+
+                    $expenseAccount = $this->findOrCreateImportedExpenseAccount($categoryName);
+                    $categoryId = $this->findOrCreateImportedExpenseCategory($categoryName);
+                    $paymentAccount = $paymentSource !== ''
+                        ? $this->findPaymentSourceAccount($paymentSource)
+                        : null;
+
+                    if ($status === 'Paid' && !$paymentAccount) {
+                        $skipped[] = "Line {$line}: paid expenses need a matching payment_source bank/cash account.";
+                        continue;
+                    }
+
+                    $nextId = (int) Expense::max('id') + 1;
+                    $expensePayload = [
+                        'expense_id' => 'EXP-' . date('Y') . '-' . str_pad((string) $nextId, 5, '0', STR_PAD_LEFT),
+                        'company_name' => $supplier,
+                        'reference' => trim((string) ($row['reference'] ?? '')) ?: null,
+                        'email' => trim((string) ($row['email'] ?? '')) ?: null,
+                        'amount' => $amount,
+                        'payment_mode' => $paymentAccount?->name ?? ($paymentSource ?: null),
+                        'payment_status' => $status === 'Paid' ? 'paid' : 'pending',
+                        'category' => $expenseAccount->name,
+                        'notes' => trim((string) ($row['notes'] ?? $row['description'] ?? '')) ?: null,
+                        'status' => $status,
+                        'created_by' => Auth::id(),
+                    ];
+                    if (Schema::hasColumn('expenses', 'category_id')) {
+                        $expensePayload['category_id'] = $categoryId;
+                    }
+                    if (Schema::hasColumn('expenses', 'company_id')) {
+                        $expensePayload['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
+                    }
+                    if (Schema::hasColumn('expenses', 'user_id')) {
+                        $expensePayload['user_id'] = Auth::id();
+                    }
+                    if (Schema::hasColumn('expenses', 'branch_id')) {
+                        $expensePayload['branch_id'] = $sessionBranch['id'];
+                    }
+                    if (Schema::hasColumn('expenses', 'branch_name')) {
+                        $expensePayload['branch_name'] = $sessionBranch['name'];
+                    }
+
+                    $expense = new Expense();
+                    $expense->forceFill($expensePayload);
+                    $expense->created_at = $expenseDate;
+                    $expense->updated_at = now();
+                    $expense->save();
+
+                    if ($status === 'Paid') {
+                        \App\Support\LedgerService::postExpense($expense->fresh());
+                    }
+
+                    $imported++;
+                }
+
+                if ($imported === 0) {
+                    throw new RuntimeException('No valid expenses were imported. ' . implode(' ', array_slice($skipped, 0, 5)));
+                }
+            });
+        } catch (\Throwable $e) {
+            Log::error('Expense import failed', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+            ]);
+
+            return back()->with('error', 'Expense import failed. ' . $e->getMessage());
+        }
+
+        $message = "{$imported} expense" . ($imported === 1 ? '' : 's') . ' imported successfully.';
+        if (!empty($skipped)) {
+            $message .= ' Skipped ' . count($skipped) . ' row' . (count($skipped) === 1 ? '' : 's') . ': ' . implode(' ', array_slice($skipped, 0, 3));
+        }
+
+        return redirect()->route('expenses.index')->with('success', $message);
+    }
+
     private function handleFileUpload($request)
     {
         if (!$request->hasFile('image')) {
@@ -391,6 +535,169 @@ class ExpenseController extends Controller
 
         // Don't block expense creation if the attachment fails.
         return null;
+    }
+
+    private function readExpenseImportCsv(string $path): array
+    {
+        $file = new \SplFileObject($path);
+        $file->setFlags(\SplFileObject::READ_CSV | \SplFileObject::SKIP_EMPTY);
+
+        $headers = [];
+        $rows = [];
+        foreach ($file as $line => $data) {
+            if (!is_array($data) || $data === [null]) {
+                continue;
+            }
+
+            $data = array_map(fn ($value) => trim((string) $value), $data);
+            if ($line === 0) {
+                $headers = array_map(function ($header) {
+                    $header = ltrim((string) $header, "\xEF\xBB\xBF");
+                    return strtolower(trim(preg_replace('/[^a-z0-9]+/i', '_', (string) $header), '_'));
+                }, $data);
+                continue;
+            }
+
+            if (count(array_filter($data, fn ($value) => $value !== '')) === 0) {
+                continue;
+            }
+
+            $row = [];
+            foreach ($headers as $index => $header) {
+                if ($header !== '') {
+                    $row[$header] = $data[$index] ?? null;
+                }
+            }
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+
+    private function parseImportAmount($value): float
+    {
+        $normalized = preg_replace('/[^0-9.\-]/', '', (string) $value);
+
+        return round((float) $normalized, 2);
+    }
+
+    private function parseImportDate($value): ?Carbon
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return now();
+        }
+
+        try {
+            return Carbon::parse($value)->startOfDay();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function normalizeImportStatus($value): string
+    {
+        $status = strtolower(trim((string) $value));
+
+        return match ($status) {
+            'paid', 'pay', 'settled', 'completed' => 'Paid',
+            'overdue', 'late' => 'Overdue',
+            default => 'Pending',
+        };
+    }
+
+    private function findPaymentSourceAccount(string $value): ?Account
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+
+        $query = $this->paymentSourceAccountsQuery();
+        $query->where(function ($sub) use ($value) {
+            if (is_numeric($value)) {
+                $sub->where('id', (int) $value);
+            }
+            $sub->orWhereRaw('LOWER(name) = ?', [strtolower($value)]);
+            if (Schema::hasColumn('accounts', 'code')) {
+                $sub->orWhereRaw('LOWER(code) = ?', [strtolower($value)]);
+            }
+        });
+
+        return $query->first();
+    }
+
+    private function findOrCreateImportedExpenseCategory(string $name): ?int
+    {
+        if (!Schema::hasTable('categories')) {
+            return null;
+        }
+
+        $category = $this->applyTenantScope(Category::query(), 'categories')
+            ->whereRaw('LOWER(name) = ?', [strtolower($name)])
+            ->first();
+        if ($category) {
+            return (int) $category->id;
+        }
+
+        $payload = [
+            'name' => $name,
+            'description' => 'Created from expense import',
+            'image' => null,
+            'status' => 1,
+        ];
+        if (Schema::hasColumn('categories', 'type')) {
+            $payload['type'] = 'expense';
+        }
+        if (Schema::hasColumn('categories', 'company_id')) {
+            $payload['company_id'] = Auth::user()?->company_id ?: null;
+        }
+        if (Schema::hasColumn('categories', 'user_id')) {
+            $payload['user_id'] = Auth::id();
+        }
+        if (Schema::hasColumn('categories', 'branch_id')) {
+            $payload['branch_id'] = session('active_branch_id');
+        }
+        if (Schema::hasColumn('categories', 'branch_name')) {
+            $payload['branch_name'] = session('active_branch_name');
+        }
+
+        return (int) Category::create($payload)->id;
+    }
+
+    private function findOrCreateImportedExpenseAccount(string $name): Account
+    {
+        $account = $this->applyTenantScope(Account::where('type', 'Expense'), 'accounts')
+            ->whereRaw('LOWER(name) = ?', [strtolower($name)])
+            ->first();
+        if ($account) {
+            return $account;
+        }
+
+        $payload = [
+            'code' => $this->generateExpenseAccountCode(),
+            'name' => $name,
+            'type' => 'Expense',
+            'sub_type' => null,
+            'description' => 'Created from expense import',
+            'opening_balance' => 0,
+            'current_balance' => 0,
+            'is_active' => true,
+        ];
+        if (Schema::hasColumn('accounts', 'company_id')) {
+            $payload['company_id'] = Auth::user()?->company_id ?: null;
+        }
+        if (Schema::hasColumn('accounts', 'user_id')) {
+            $payload['user_id'] = Auth::id();
+        }
+        if (Schema::hasColumn('accounts', 'branch_id')) {
+            $payload['branch_id'] = session('active_branch_id');
+        }
+        if (Schema::hasColumn('accounts', 'branch_name')) {
+            $payload['branch_name'] = session('active_branch_name');
+        }
+
+        return Account::create($payload);
     }
 
     public function update(Request $request, $id)

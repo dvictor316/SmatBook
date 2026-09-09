@@ -20,6 +20,14 @@
         background: #fee2e2;
         color: #991b1b;
     }
+    .expense-import-hint {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px 14px;
+        color: #475569;
+        font-size: 0.86rem;
+    }
 </style>
 <div class="page-wrapper">
     <div class="content container-fluid">
@@ -51,10 +59,17 @@
                 </ul>
             </div>
         @endif
-        <div class="mb-4 d-flex justify-content-between align-items-center">
-            <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#add_expenses">
-                <i class="fas fa-plus-circle me-1"></i> Add Expense
-            </button>
+        <div class="mb-4 d-flex flex-wrap gap-2 justify-content-between align-items-center">
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#add_expenses">
+                    <i class="fas fa-plus-circle me-1"></i> Add Expense
+                </button>
+                @if(Route::has('expenses.import'))
+                    <button type="button" class="btn btn-outline-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#import_expenses">
+                        <i class="fas fa-file-import me-1"></i> Import Expenses
+                    </button>
+                @endif
+            </div>
             <div class="text-muted small">
                 <i class="fas fa-info-circle"></i> Entries marked as "Paid" automatically update your Trial Balance.
             </div>
@@ -170,6 +185,41 @@
         </div>
     </div>
 </div>
+
+@if(Route::has('expenses.import'))
+<div class="modal fade" id="import_expenses" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title"><i class="fas fa-file-import me-2"></i>Import Expenses</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('expenses.import') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body p-4">
+                    <div class="expense-import-hint mb-3">
+                        CSV columns: date, supplier, amount, category, payment_source, status, reference, email, notes.
+                        Paid rows must use an existing bank/cash payment source.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">CSV File *</label>
+                        <input type="file" class="form-control" name="expense_file" accept=".csv,text/csv,text/plain" required>
+                    </div>
+                    @if(Route::has('expenses.import-template'))
+                        <a href="{{ route('expenses.import-template') }}" class="btn btn-sm btn-white border">
+                            <i class="fas fa-download me-1"></i> Download Template
+                        </a>
+                    @endif
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4 shadow-sm">Import Expenses</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 
 <div class="modal fade" id="add_expenses" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">

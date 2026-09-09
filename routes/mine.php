@@ -548,6 +548,10 @@ Route::post('/settings', [SettingController::class, 'update'])->name('settings.u
             // Purchase/Expenses
         // routes/web.php
         Route::middleware(['auth'])->group(function () {
+        Route::get('expenses/import-template', [\App\Http\Controllers\ExpenseController::class, 'downloadImportTemplate'])
+            ->name('expenses.import-template');
+        Route::post('expenses/import', [\App\Http\Controllers\ExpenseController::class, 'import'])
+            ->name('expenses.import');
         Route::resource('expenses', \App\Http\Controllers\ExpenseController::class);
         Route::get('expenses/download/{filename}', [\App\Http\Controllers\ExpenseController::class, 'download'])
             ->name('expenses.download');
