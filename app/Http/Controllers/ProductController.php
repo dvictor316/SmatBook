@@ -2115,6 +2115,25 @@ public function inventory(Request $request)
         $totalDamagedQty = (float) (clone $summaryQuery)->sum('inventory_history.quantity');
         $totalDamageValue = (float) (clone $summaryQuery)->sum(DB::raw('COALESCE(inventory_history.quantity, 0) * COALESCE(products.purchase_price, products.price, 0)'));
 
+        $damageProductSelect = ['id', 'name'];
+        foreach (['sku', 'stock', 'stock_quantity'] as $column) {
+            if (Schema::hasColumn('products', $column)) {
+                $damageProductSelect[] = $column;
+            }
+        }
+
+        $damageProductsQuery = Product::query()
+            ->select($damageProductSelect)
+            ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
+            ->orderBy(Schema::hasColumn('products', 'name') ? 'name' : 'id');
+        $damageProducts = $damageProductsQuery
+            ->get()
+            ->map(function ($product) use ($activeBranch) {
+                $product->setAttribute('active_branch_stock', $this->branchInventory->getAvailableStock($product, $activeBranch));
+
+                return $product;
+            });
+
         $damages = $damagesQuery
             ->orderByDesc('inventory_history.created_at')
             ->paginate(25)
@@ -2127,7 +2146,8 @@ public function inventory(Request $request)
             'toDate',
             'activeBranch',
             'totalDamagedQty',
-            'totalDamageValue'
+            'totalDamageValue',
+            'damageProducts'
         ));
     }
 

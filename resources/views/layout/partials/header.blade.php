@@ -960,7 +960,7 @@
     #sidebar-overlay.active { display: block; }
 
     /* On mobile: sidebar starts off-screen left, slides in when .mobile-open */
-    @media (max-width: 991.98px) {
+    @media (max-width: 1199.98px) {
 
         /* ── Header layout ── */
         .header {
@@ -971,7 +971,7 @@
         .header-toggle,
         #toggle_btn.header-toggle,
         #toggle_btn     { display: none !important; }
-        #mobile_btn     { display: inline-flex !important; order: 2; }
+        #mobile_btn     { display: inline-flex !important; order: 0; }
         .header-search-container { display: none; }
         .mobile-search-btn       { display: flex; }
         .user-info, .country-name { display: none; }
