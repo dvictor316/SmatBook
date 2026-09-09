@@ -3187,6 +3187,9 @@ public function destroy($id)
                     if ($branchName !== '' && Schema::hasColumn('credit_notes', 'branch_name')) {
                         $sub->orWhere('credit_notes.branch_name', $branchName);
                     }
+                    if (Schema::hasColumn('credit_notes', 'branch_id')) {
+                        $sub->orWhereNull('credit_notes.branch_id');
+                    }
                 });
             }
 
@@ -3269,6 +3272,18 @@ public function destroy($id)
             if ($userId > 0 && Schema::hasColumn('credit_notes', 'user_id')) {
                 $cnInsert['user_id'] = $userId;
             }
+            $creditBranchId = ($activeBranch['scope'] ?? 'branch') === 'all'
+                ? ($invoice->branch_id ?? null)
+                : ($activeBranch['id'] ?? ($invoice->branch_id ?? null));
+            $creditBranchName = ($activeBranch['scope'] ?? 'branch') === 'all'
+                ? ($invoice->branch_name ?? null)
+                : ($activeBranch['name'] ?? ($invoice->branch_name ?? null));
+            if (Schema::hasColumn('credit_notes', 'branch_id')) {
+                $cnInsert['branch_id'] = $creditBranchId;
+            }
+            if (Schema::hasColumn('credit_notes', 'branch_name')) {
+                $cnInsert['branch_name'] = $creditBranchName;
+            }
             $creditNoteId = DB::table('credit_notes')->insertGetId($cnInsert);
 
             $totalAmount = 0;
@@ -3292,6 +3307,12 @@ public function destroy($id)
                     }
                     if ($userId > 0 && Schema::hasColumn('credit_note_items', 'user_id')) {
                         $ciInsert['user_id'] = $userId;
+                    }
+                    if (Schema::hasColumn('credit_note_items', 'unit_type')) {
+                        $ciInsert['unit_type'] = $data['unit_type'] ?? null;
+                    }
+                    if (Schema::hasColumn('credit_note_items', 'stock_units')) {
+                        $ciInsert['stock_units'] = $data['stock_units'] ?? null;
                     }
                     DB::table('credit_note_items')->insert($ciInsert);
 
@@ -3539,7 +3560,13 @@ public function destroy($id)
         if ($salesHasOrderStatus) {
             $salesQuery->where(function ($query) {
                 $query->whereNull('sales.order_status')
-                    ->orWhereRaw('LOWER(sales.order_status) <> ?', ['draft']);
+                    ->orWhereRaw("LOWER(sales.order_status) NOT IN ('draft', 'cancelled', 'canceled', 'void')");
+            });
+        }
+        if (Schema::hasColumn('sales', 'status')) {
+            $salesQuery->where(function ($query) {
+                $query->whereNull('sales.status')
+                    ->orWhereRaw("LOWER(sales.status) NOT IN ('draft', 'cancelled', 'canceled', 'void')");
             });
         }
         $applyBranch($salesQuery, 'sales');
@@ -3548,6 +3575,40 @@ public function destroy($id)
             ->selectRaw("{$salesDateExpr} as txn_date, SUM({$salesAmountExpr}) as total")
             ->groupByRaw($salesDateExpr)
             ->get()->keyBy('txn_date');
+
+        // ── Sales Returns: credit notes reduce revenue for the return period ──
+        $salesReturnsByDate = collect();
+        if (Schema::hasTable('credit_notes') && Schema::hasTable('credit_note_items')) {
+            $creditDateExpr = Schema::hasColumn('credit_notes', 'credit_date')
+                ? 'DATE(credit_notes.credit_date)'
+                : 'DATE(credit_notes.created_at)';
+
+            $salesReturnQuery = DB::table('credit_note_items')
+                ->join('credit_notes', 'credit_note_items.credit_note_id', '=', 'credit_notes.id')
+                ->when($companyId > 0 && Schema::hasColumn('credit_notes', 'company_id'),
+                    fn ($q) => $q->where('credit_notes.company_id', $companyId))
+                ->whereBetween(DB::raw($creditDateExpr), [$startDate, $endDate]);
+
+            if (Schema::hasColumn('credit_notes', 'deleted_at')) {
+                $salesReturnQuery->whereNull('credit_notes.deleted_at');
+            }
+            if (Schema::hasColumn('credit_note_items', 'deleted_at')) {
+                $salesReturnQuery->whereNull('credit_note_items.deleted_at');
+            }
+            if (Schema::hasColumn('credit_notes', 'status')) {
+                $salesReturnQuery->where(function ($query) {
+                    $query->whereNull('credit_notes.status')
+                        ->orWhereRaw('LOWER(credit_notes.status) <> ?', ['void']);
+                });
+            }
+            $applyBranch($salesReturnQuery, 'credit_notes');
+
+            $salesReturnsByDate = $salesReturnQuery
+                ->selectRaw("{$creditDateExpr} as txn_date, SUM(COALESCE(credit_note_items.subtotal, credit_note_items.qty * credit_note_items.unit_price, 0)) as total")
+                ->groupByRaw($creditDateExpr)
+                ->get()
+                ->keyBy('txn_date');
+        }
 
         // ── Cost of Goods Sold: cost only the inventory units actually sold ───
         $cogsByDate = collect();
@@ -3576,7 +3637,13 @@ public function destroy($id)
             if ($salesHasOrderStatus) {
                 $cogsQuery->where(function ($query) {
                     $query->whereNull('sales.order_status')
-                        ->orWhereRaw('LOWER(sales.order_status) <> ?', ['draft']);
+                        ->orWhereRaw("LOWER(sales.order_status) NOT IN ('draft', 'cancelled', 'canceled', 'void')");
+                });
+            }
+            if (Schema::hasColumn('sales', 'status')) {
+                $cogsQuery->where(function ($query) {
+                    $query->whereNull('sales.status')
+                        ->orWhereRaw("LOWER(sales.status) NOT IN ('draft', 'cancelled', 'canceled', 'void')");
                 });
             }
             $applyBranch($cogsQuery, 'sales');
@@ -3584,6 +3651,50 @@ public function destroy($id)
             $cogsByDate = $cogsQuery
                 ->selectRaw("{$salesDateExpr} as txn_date, SUM(({$soldUnitsExpr}) * COALESCE(products.purchase_price, 0)) as total")
                 ->groupByRaw($salesDateExpr)
+                ->get()
+                ->keyBy('txn_date');
+        }
+
+        // Returned goods come back into stock, so reverse their original item cost.
+        $returnedCogsByDate = collect();
+        if (
+            Schema::hasTable('credit_notes')
+            && Schema::hasTable('credit_note_items')
+            && Schema::hasTable('products')
+            && Schema::hasColumn('credit_note_items', 'product_id')
+            && Schema::hasColumn('products', 'purchase_price')
+        ) {
+            $creditDateExpr = Schema::hasColumn('credit_notes', 'credit_date')
+                ? 'DATE(credit_notes.credit_date)'
+                : 'DATE(credit_notes.created_at)';
+            $returnedQtyExpression = Schema::hasColumn('credit_note_items', 'stock_units')
+                ? 'COALESCE(NULLIF(credit_note_items.stock_units, 0), credit_note_items.qty, 0)'
+                : 'COALESCE(credit_note_items.qty, 0)';
+
+            $returnedCogsQuery = DB::table('credit_note_items')
+                ->join('credit_notes', 'credit_note_items.credit_note_id', '=', 'credit_notes.id')
+                ->join('products', 'credit_note_items.product_id', '=', 'products.id')
+                ->when($companyId > 0 && Schema::hasColumn('credit_notes', 'company_id'),
+                    fn ($q) => $q->where('credit_notes.company_id', $companyId))
+                ->whereBetween(DB::raw($creditDateExpr), [$startDate, $endDate]);
+
+            if (Schema::hasColumn('credit_notes', 'deleted_at')) {
+                $returnedCogsQuery->whereNull('credit_notes.deleted_at');
+            }
+            if (Schema::hasColumn('credit_note_items', 'deleted_at')) {
+                $returnedCogsQuery->whereNull('credit_note_items.deleted_at');
+            }
+            if (Schema::hasColumn('credit_notes', 'status')) {
+                $returnedCogsQuery->where(function ($query) {
+                    $query->whereNull('credit_notes.status')
+                        ->orWhereRaw('LOWER(credit_notes.status) <> ?', ['void']);
+                });
+            }
+            $applyBranch($returnedCogsQuery, 'credit_notes');
+
+            $returnedCogsByDate = $returnedCogsQuery
+                ->selectRaw("{$creditDateExpr} as txn_date, SUM(({$returnedQtyExpression}) * COALESCE(products.purchase_price, 0)) as total")
+                ->groupByRaw($creditDateExpr)
                 ->get()
                 ->keyBy('txn_date');
         }
@@ -3657,6 +3768,31 @@ public function destroy($id)
                 ->keyBy('txn_date');
         }
 
+        // Damaged/spoiled stock is an operating loss, especially for perishables.
+        $stockDamageByDate = collect();
+        $stockDamageTotal = 0.0;
+        if (
+            Schema::hasTable('inventory_history')
+            && Schema::hasTable('products')
+            && Schema::hasColumn('inventory_history', 'product_id')
+            && Schema::hasColumn('inventory_history', 'quantity')
+        ) {
+            $damageQuery = DB::table('inventory_history')
+                ->join('products', 'inventory_history.product_id', '=', 'products.id')
+                ->when($companyId > 0 && Schema::hasColumn('inventory_history', 'company_id'),
+                    fn ($q) => $q->where('inventory_history.company_id', $companyId))
+                ->whereBetween(DB::raw('DATE(inventory_history.created_at)'), [$startDate, $endDate])
+                ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) IN ('damage', 'damaged', 'waste', 'spoilage', 'write_off')");
+            $applyBranch($damageQuery, 'inventory_history');
+
+            $stockDamageByDate = $damageQuery
+                ->selectRaw('DATE(inventory_history.created_at) as txn_date, SUM(COALESCE(inventory_history.quantity, 0) * COALESCE(products.purchase_price, products.price, 0)) as total')
+                ->groupByRaw('DATE(inventory_history.created_at)')
+                ->get()
+                ->keyBy('txn_date');
+            $stockDamageTotal = (float) $stockDamageByDate->sum(fn ($row) => (float) ($row->total ?? 0));
+        }
+
         // ── Manual Journal Adjustments: include revenue/expense journals ─────
         $journalIncomeByDate = collect();
         $journalExpenseByDate = collect();
@@ -3718,22 +3854,41 @@ public function destroy($id)
                 ->sortBy('name')
                 ->values();
         }
+        if ($stockDamageTotal > 0.0001) {
+            $operatingExpenseBreakdown = $operatingExpenseBreakdown
+                ->push((object) ['name' => 'Stock Damage / Spoilage Loss', 'total' => $stockDamageTotal])
+                ->groupBy('name')
+                ->map(function ($group, $name) {
+                    return (object) [
+                        'name' => $name,
+                        'total' => (float) collect($group)->sum(fn ($row) => (float) ($row->total ?? 0)),
+                    ];
+                })
+                ->sortBy('name')
+                ->values();
+        }
 
         // ── Merge all dates and build daily rows ──────────────────────────────
         $allDates = collect($salesByDate->keys())
+            ->merge($salesReturnsByDate->keys())
             ->merge($cogsByDate->keys())
+            ->merge($returnedCogsByDate->keys())
             ->merge($expensesByDate->keys())
             ->merge($depreciationByDate->keys())
+            ->merge($stockDamageByDate->keys())
             ->merge($journalIncomeByDate->keys())
             ->merge($journalExpenseByDate->keys())
             ->unique()->sort()->values();
 
-        $dailyRows = $allDates->map(function ($date) use ($salesByDate, $cogsByDate, $expensesByDate, $depreciationByDate, $journalIncomeByDate, $journalExpenseByDate) {
+        $dailyRows = $allDates->map(function ($date) use ($salesByDate, $salesReturnsByDate, $cogsByDate, $returnedCogsByDate, $expensesByDate, $depreciationByDate, $stockDamageByDate, $journalIncomeByDate, $journalExpenseByDate) {
             $income    = (float) ($salesByDate[$date]->total     ?? 0)
+                - (float) ($salesReturnsByDate[$date]->total ?? 0)
                 + (float) ($journalIncomeByDate[$date]->total ?? 0);
-            $purchases = (float) ($cogsByDate[$date]->total ?? 0);
+            $purchases = max(0, (float) ($cogsByDate[$date]->total ?? 0)
+                - (float) ($returnedCogsByDate[$date]->total ?? 0));
             $opex      = (float) ($expensesByDate[$date]->total  ?? 0)
                 + (float) ($depreciationByDate[$date]->total ?? 0)
+                + (float) ($stockDamageByDate[$date]->total ?? 0)
                 + (float) ($journalExpenseByDate[$date]->total ?? 0);
             return (object) [
                 'report_date'       => $date,
