@@ -212,7 +212,7 @@
                                     <th>Reference</th>
                                     <th class="text-end">Quantity</th>
                                     <th class="text-center no-print">Action</th>
-                                    <th class="text-end">Ledger Balance</th>
+                                    <th class="text-end">Current Stock Balance</th>
                                     <th class="text-end">Stock Value</th>
                                     <th class="text-end">Purchase Price</th>
                                 </tr>
@@ -267,8 +267,8 @@
                                                 <span class="text-muted small">System-generated entry</span>
                                             @endif
                                         </td>
-                                        <td class="text-end fw-semibold {{ (float) ($history->running_balance ?? 0) >= 0 ? 'text-primary' : 'text-danger' }}">
-                                            {{ number_format((float) ($history->running_balance ?? 0), 2) }} {{ $stockUnitLabel }}
+                                        <td class="text-end fw-semibold {{ $currentStock >= 0 ? 'text-primary' : 'text-danger' }}">
+                                            {{ number_format($currentStock, 2) }} {{ $stockUnitLabel }}
                                         </td>
                                         <td class="text-end">
                                             {{ \App\Support\GeoCurrency::format((float) ($history->stock_value ?? 0), 'NGN', $currencyCode, $currencyLocale) }}
