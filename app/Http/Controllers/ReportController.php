@@ -2691,7 +2691,7 @@ public function destroy($id)
         // Calculate Total Refunded Amount specifically for the filtered results
         $totalRefunded = (clone $query)->sum('sales.total');
 
-        return $this->renderReportView('sales-return', compact('salesreturnreports', 'totalRefunded'));
+        return $this->renderReportView('sales-return-report', compact('salesreturnreports', 'totalRefunded'));
     }
 
     public function stock_report(Request $request)
@@ -3141,7 +3141,7 @@ public function destroy($id)
                     'query' => $request->query(),
                 ]);
 
-                return $this->renderReportView('sales-return', [
+                return $this->renderReportView('sales-return-report', [
                     'salesreturnreports' => $salesreturnreports,
                     'totalRefunded' => 0,
                 ])->with('warning', 'Sales return item records are not available on this workspace yet.');
@@ -3207,7 +3207,7 @@ public function destroy($id)
 
             $totalRefunded = (clone $query)->sum(DB::raw('COALESCE(credit_note_items.subtotal, credit_note_items.qty * credit_note_items.unit_price, 0)'));
 
-            return $this->renderReportView('sales-return', compact('salesreturnreports', 'totalRefunded', 'activeBranch'));
+            return $this->renderReportView('sales-return-report', compact('salesreturnreports', 'totalRefunded', 'activeBranch'));
         }
 
     /**
