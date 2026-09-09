@@ -2119,7 +2119,7 @@ public function inventory(Request $request)
         $totalDamageValue = (float) (clone $summaryQuery)->sum(DB::raw('COALESCE(inventory_history.quantity, 0) * COALESCE(products.purchase_price, products.price, 0)'));
 
         $damageProductSelect = ['id', 'name'];
-        foreach (['sku', 'stock', 'stock_quantity', 'purchase_price', 'price'] as $column) {
+        foreach (['sku', 'stock', 'stock_quantity', 'purchase_price', 'price', 'units_per_carton', 'units_per_roll', 'base_unit_name', 'unit_type'] as $column) {
             if (Schema::hasColumn('products', $column)) {
                 $damageProductSelect[] = $column;
             }
@@ -2309,6 +2309,7 @@ public function inventory(Request $request)
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|numeric|min:0.01',
+            'damage_unit' => 'nullable|string|in:base,carton,roll',
             'damage_date' => 'nullable|date',
             'reason' => 'required|string|max:120',
             'remarks' => 'nullable|string|max:1000',
@@ -2329,7 +2330,19 @@ public function inventory(Request $request)
                     ->lockForUpdate()
                     ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
                     ->findOrFail((int) $validated['product_id']);
-                $quantity = (float) $validated['quantity'];
+                $enteredQuantity = (float) $validated['quantity'];
+                $damageUnit = $validated['damage_unit'] ?? 'base';
+                $conversionFactor = match ($damageUnit) {
+                    'carton' => (float) $product->units_per_carton,
+                    'roll' => (float) $product->units_per_roll,
+                    default => 1.0,
+                };
+
+                if ($conversionFactor <= 0) {
+                    throw new \RuntimeException("The selected {$damageUnit} unit is not configured for {$product->name}.");
+                }
+
+                $quantity = round($enteredQuantity * $conversionFactor, 6);
                 $quantitySql = rtrim(rtrim(number_format($quantity, 4, '.', ''), '0'), '.');
                 $availableStock = $this->branchInventory->getAvailableStock($product, $activeBranch);
 

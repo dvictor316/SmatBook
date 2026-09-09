@@ -205,8 +205,11 @@
                                 @php $availableStock = (float) ($product->active_branch_stock ?? $product->stock ?? $product->stock_quantity ?? 0); @endphp
                                 <option value="{{ $product->id }}"
                                     data-search="{{ strtolower(trim(($product->name ?? '') . ' ' . ($product->sku ?? ''))) }}"
-                                    data-stock="{{ $availableStock }}">
-                                    {{ $product->name }}{{ $product->sku ? ' (' . $product->sku . ')' : '' }} - Stock: {{ number_format($availableStock, 2) }}
+                                    data-stock="{{ $availableStock }}"
+                                    data-base-unit="{{ $product->stockUnitSymbol() }}"
+                                    data-carton-factor="{{ (float) ($product->units_per_carton ?? 0) }}"
+                                    data-roll-factor="{{ (float) ($product->units_per_roll ?? 0) }}">
+                                    {{ $product->name }}{{ $product->sku ? ' (' . $product->sku . ')' : '' }} - Stock: {{ number_format($availableStock, 2) }} {{ $product->stockUnitSymbol() }}
                                 </option>
                             @endforeach
                         </select>
@@ -218,8 +221,14 @@
                             <input type="date" name="damage_date" class="form-control" value="{{ now()->toDateString() }}" required>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label fw-bold">Damaged Quantity *</label>
-                            <input type="number" step="0.01" min="0.01" name="quantity" class="form-control" required>
+                            <label class="form-label fw-bold" for="damage-quantity-report">Damaged Quantity *</label>
+                            <input type="number" step="0.01" min="0.01" name="quantity" id="damage-quantity-report" class="form-control" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold" for="damage-unit-report">Unit *</label>
+                            <select name="damage_unit" id="damage-unit-report" class="form-select" required disabled>
+                                <option value="base">Base unit</option>
+                            </select>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label fw-bold">Reason *</label>
@@ -232,6 +241,9 @@
                                 <option value="Other">Other</option>
                             </select>
                         </div>
+                    </div>
+                    <div class="small text-muted mb-3" id="damage-conversion-note-report" aria-live="polite">
+                        Select a product to choose cartons, rolls, or its base unit.
                     </div>
                     <div class="mb-0">
                         <label class="form-label fw-bold">Notes</label>
@@ -284,8 +296,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('damage-product-search');
     const productSelect = document.getElementById('damage-product-select-report');
     const stockNote = document.getElementById('damage-stock-note-report');
+    const quantityInput = document.getElementById('damage-quantity-report');
+    const unitSelect = document.getElementById('damage-unit-report');
+    const conversionNote = document.getElementById('damage-conversion-note-report');
 
-    if (!searchInput || !productSelect) {
+    if (!searchInput || !productSelect || !quantityInput || !unitSelect) {
         return;
     }
 
@@ -297,17 +312,72 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    function updateDamageUnitOptions(selected) {
+        unitSelect.innerHTML = '';
+        if (!selected || !selected.value) {
+            unitSelect.disabled = true;
+            conversionNote.textContent = 'Select a product to choose cartons, rolls, or its base unit.';
+            return;
+        }
+
+        const baseUnit = String(selected.dataset.baseUnit || 'pcs');
+        const units = [{ value: 'base', label: baseUnit }];
+        const cartonFactor = Number(selected.dataset.cartonFactor || 0);
+        const rollFactor = Number(selected.dataset.rollFactor || 0);
+        if (cartonFactor > 0) {
+            units.push({ value: 'carton', label: 'carton' });
+        }
+        if (rollFactor > 0) {
+            units.push({ value: 'roll', label: 'roll' });
+        }
+        units.forEach(function (unit) {
+            const option = document.createElement('option');
+            option.value = unit.value;
+            option.textContent = unit.label;
+            unitSelect.appendChild(option);
+        });
+        unitSelect.disabled = false;
+        updateDamageConversion(selected);
+    }
+
+    function updateDamageConversion(selected) {
+        if (!selected || !selected.value) {
+            return;
+        }
+        const quantity = Number(quantityInput.value || 0);
+        const unit = unitSelect.value || 'base';
+        const factor = unit === 'carton'
+            ? Number(selected.dataset.cartonFactor || 0)
+            : unit === 'roll' ? Number(selected.dataset.rollFactor || 0) : 1;
+        const baseUnit = String(selected.dataset.baseUnit || 'pcs');
+        const deducted = quantity * factor;
+        const available = Number(selected.dataset.stock || 0);
+        const balance = available - deducted;
+        conversionNote.textContent = quantity > 0
+            ? `This will deduct ${deducted.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${baseUnit}. Balance after damage: ${balance.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${baseUnit}.`
+            : `Stock is recorded in ${baseUnit}. Choose the unit you are damaging.`;
+        conversionNote.classList.toggle('text-danger', balance < 0);
+    }
+
     productSelect.addEventListener('change', function () {
         const selected = productSelect.options[productSelect.selectedIndex];
         if (!selected || !selected.value) {
             stockNote.textContent = 'Choose an item from inventory to record its damaged quantity.';
+            updateDamageUnitOptions(null);
             return;
         }
 
         stockNote.textContent = 'Available stock in active branch: ' + Number(selected.dataset.stock || 0).toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
-        });
+        }) + ' ' + String(selected.dataset.baseUnit || 'pcs');
+        updateDamageUnitOptions(selected);
+    });
+    unitSelect.addEventListener('change', function () {
+        updateDamageConversion(productSelect.options[productSelect.selectedIndex]);
+    });
+    quantityInput.addEventListener('input', function () {
+        updateDamageConversion(productSelect.options[productSelect.selectedIndex]);
     });
 });
 </script>
