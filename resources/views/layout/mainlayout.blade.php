@@ -3532,6 +3532,8 @@
             window.SPBPageLoader = { show, hide };
             window.addEventListener('pageshow', hide);
             window.addEventListener('load', hide, { once: true });
+            document.addEventListener('DOMContentLoaded', hide, { once: true });
+            window.setTimeout(hide, 8000);
 
             document.addEventListener('click', function (event) {
                 if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;

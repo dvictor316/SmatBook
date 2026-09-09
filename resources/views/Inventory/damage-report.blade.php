@@ -83,6 +83,10 @@
         </div>
 
         <div class="card border shadow-none overflow-hidden">
+            <div class="px-3 py-3 border-bottom bg-white">
+                <h5 class="mb-1 fw-bold text-dark">Damage History</h5>
+                <div class="text-muted small">Recorded damage entries for the selected criteria.</div>
+            </div>
             <div class="table-responsive">
                 <table class="table table-sm mb-0 damage-table">
                     <thead>
@@ -127,6 +131,43 @@
                 </div>
             @endif
         </div>
+
+        <div class="card border shadow-none overflow-hidden mt-3">
+            <div class="px-3 py-3 border-bottom bg-white">
+                <h5 class="mb-1 fw-bold text-dark">Stock Status After Damages</h5>
+                <div class="text-muted small">Shows each inventory item, damaged quantity, and balance currently left in store.</div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 damage-table">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">Product</th>
+                            <th>SKU</th>
+                            <th class="text-end">Stock Before Damage</th>
+                            <th class="text-end">Damaged Qty</th>
+                            <th class="text-end">Balance In Store</th>
+                            <th class="pe-3 text-end">Damage Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse(($stockStatusRows ?? collect()) as $row)
+                            <tr>
+                                <td class="ps-3 fw-bold text-dark">{{ $row->product_name }}</td>
+                                <td class="text-muted">{{ $row->sku ?: 'N/A' }}</td>
+                                <td class="text-end">{{ number_format((float) $row->stock_before_damage, 2) }}</td>
+                                <td class="text-end fw-bold text-warning">{{ number_format((float) $row->damaged_qty, 2) }}</td>
+                                <td class="text-end fw-bold text-success">{{ number_format((float) $row->current_stock, 2) }}</td>
+                                <td class="pe-3 text-end fw-bold text-danger">{{ \App\Support\GeoCurrency::format((float) $row->damage_value, 'NGN', $currencyCode, $currencyLocale) }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">No inventory stock status is available for the selected criteria.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -166,11 +207,15 @@
                         <div class="small text-muted mt-2" id="damage-stock-note-report">Choose an item from inventory to record its damaged quantity.</div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Damage Date *</label>
+                            <input type="date" name="damage_date" class="form-control" value="{{ now()->toDateString() }}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
                             <label class="form-label fw-bold">Damaged Quantity *</label>
                             <input type="number" step="0.01" min="0.01" name="quantity" class="form-control" required>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label fw-bold">Reason *</label>
                             <select name="reason" class="form-select" required>
                                 <option value="Expired">Expired</option>

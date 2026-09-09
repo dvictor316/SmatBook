@@ -2116,7 +2116,7 @@ public function inventory(Request $request)
         $totalDamageValue = (float) (clone $summaryQuery)->sum(DB::raw('COALESCE(inventory_history.quantity, 0) * COALESCE(products.purchase_price, products.price, 0)'));
 
         $damageProductSelect = ['id', 'name'];
-        foreach (['sku', 'stock', 'stock_quantity'] as $column) {
+        foreach (['sku', 'stock', 'stock_quantity', 'purchase_price', 'price'] as $column) {
             if (Schema::hasColumn('products', $column)) {
                 $damageProductSelect[] = $column;
             }
@@ -2134,6 +2134,47 @@ public function inventory(Request $request)
                 return $product;
             });
 
+        $statusDamageQuery = DB::table('inventory_history')
+            ->select('inventory_history.product_id', DB::raw('SUM(COALESCE(inventory_history.quantity, 0)) as damaged_qty'))
+            ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) IN ('damage', 'damaged', 'waste', 'spoilage', 'write_off')")
+            ->tap(fn ($q) => $this->applyTenantScope($q, 'inventory_history'))
+            ->tap(fn ($q) => $this->applyBranchScope($q, 'inventory_history', $activeBranch));
+        if ($fromDate !== '') {
+            $statusDamageQuery->whereDate('inventory_history.created_at', '>=', $fromDate);
+        }
+        if ($toDate !== '') {
+            $statusDamageQuery->whereDate('inventory_history.created_at', '<=', $toDate);
+        }
+        $damagedByProduct = $statusDamageQuery
+            ->groupBy('inventory_history.product_id')
+            ->pluck('damaged_qty', 'inventory_history.product_id');
+        $stockStatusRows = $damageProducts
+            ->filter(function ($product) use ($search) {
+                if ($search === '') {
+                    return true;
+                }
+
+                return str_contains(strtolower((string) ($product->name ?? '')), strtolower($search))
+                    || str_contains(strtolower((string) ($product->sku ?? '')), strtolower($search));
+            })
+            ->map(function ($product) use ($damagedByProduct) {
+                $damagedQty = (float) ($damagedByProduct[$product->id] ?? 0);
+                $currentStock = (float) ($product->active_branch_stock ?? $product->stock ?? $product->stock_quantity ?? 0);
+                $unitCost = (float) ($product->purchase_price ?? $product->price ?? 0);
+
+                return (object) [
+                    'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'sku' => $product->sku ?? null,
+                    'damaged_qty' => $damagedQty,
+                    'current_stock' => $currentStock,
+                    'stock_before_damage' => $currentStock + $damagedQty,
+                    'damage_value' => $damagedQty * $unitCost,
+                ];
+            })
+            ->sortBy(fn ($row) => strtolower((string) $row->product_name))
+            ->values();
+
         $damages = $damagesQuery
             ->orderByDesc('inventory_history.created_at')
             ->paginate(25)
@@ -2147,7 +2188,8 @@ public function inventory(Request $request)
             'activeBranch',
             'totalDamagedQty',
             'totalDamageValue',
-            'damageProducts'
+            'damageProducts',
+            'stockStatusRows'
         ));
     }
 
@@ -2156,6 +2198,7 @@ public function inventory(Request $request)
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|numeric|min:0.01',
+            'damage_date' => 'nullable|date',
             'reason' => 'required|string|max:120',
             'remarks' => 'nullable|string|max:1000',
         ]);
@@ -2194,6 +2237,9 @@ public function inventory(Request $request)
 
                 $companyId = (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
                 $this->branchInventory->adjustBranchStock($product, -1 * $quantity, $activeBranch, $companyId);
+                $damageDate = !empty($validated['damage_date'])
+                    ? \Carbon\Carbon::parse($validated['damage_date'])->setTimeFrom(now())
+                    : now();
 
                 $payload = [
                     'product_id' => $product->id,
@@ -2201,7 +2247,7 @@ public function inventory(Request $request)
                     'type' => 'damage',
                     'reference' => 'Damaged Stock - ' . $validated['reason'],
                     'remarks' => $validated['remarks'] ?? null,
-                    'created_at' => now(),
+                    'created_at' => $damageDate,
                     'updated_at' => now(),
                 ];
                 if (Schema::hasColumn('inventory_history', 'user_id')) {

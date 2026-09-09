@@ -247,6 +247,55 @@
         box-shadow: inset 0 -1px 0 #e5e7eb;
     }
 
+    #products-table {
+        width: 100% !important;
+        table-layout: fixed;
+        font-size: 0.82rem;
+    }
+
+    #products-table th,
+    #products-table td {
+        padding-left: 0.45rem;
+        padding-right: 0.45rem;
+        vertical-align: middle;
+        overflow-wrap: anywhere;
+    }
+
+    #products-table th:nth-child(1),
+    #products-table td:nth-child(1) { width: 4%; }
+    #products-table th:nth-child(2),
+    #products-table td:nth-child(2) { width: 4%; }
+    #products-table th:nth-child(3),
+    #products-table td:nth-child(3) { width: 20%; }
+    #products-table th:nth-child(4),
+    #products-table td:nth-child(4) { width: 9%; }
+    #products-table th:nth-child(5),
+    #products-table td:nth-child(5) { width: 8%; }
+    #products-table th:nth-child(6),
+    #products-table td:nth-child(6) { width: 16%; }
+    #products-table th:nth-child(7),
+    #products-table td:nth-child(7) { width: 9%; }
+    #products-table th:nth-child(8),
+    #products-table td:nth-child(8) { width: 10%; }
+    #products-table th:nth-child(9),
+    #products-table td:nth-child(9) { width: 9%; }
+    #products-table th:nth-child(10),
+    #products-table td:nth-child(10) { width: 11%; }
+
+    #products-table .product-action-trigger {
+        width: 100%;
+        justify-content: center;
+        padding: 0.45rem 0.35rem;
+        font-size: 0.76rem;
+    }
+
+    @media (max-width: 991.98px) {
+        #products-table {
+            table-layout: auto;
+            min-width: 900px;
+        }
+    }
+
     #products-table_wrapper .dataTables_scrollBody {
         border: 0;
         max-height: calc(100vh - 95px) !important;
@@ -495,7 +544,7 @@
                     </a>
                     <?php if (\Illuminate\Support\Facades\Route::has('inventory.damages')) { ?>
                         <a href="<?php echo e(route('inventory.damages')); ?>" class="btn btn-outline-danger inventory-tool-btn inventory-toolbar-damages">
-                            <i class="fas fa-triangle-exclamation"></i> Stock Damages
+                            <i class="fas fa-triangle-exclamation"></i> Damage &amp; Stock Status
                         </a>
                     <?php } ?>
                     <?php if ($showStockTransferModal) { ?>
