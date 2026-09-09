@@ -27,9 +27,30 @@ class Controller extends BaseController
     {
         $table ??= $query->getModel()->getTable();
         $scope = $this->scopeContext();
+        $user = Auth::user();
+        $role = strtolower((string) ($user?->role ?? ''));
+        $isSuperAdmin = in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true);
+        $userId = (int) ($user?->id ?? 0);
+        $hasCompany = Schema::hasColumn($table, 'company_id');
+        $hasUser = Schema::hasColumn($table, 'user_id');
 
-        if ($scope['company_id'] > 0 && Schema::hasColumn($table, 'company_id')) {
-            $query->where("{$table}.company_id", $scope['company_id']);
+        if (!($isSuperAdmin && request()->is('superadmin*') && $scope['company_id'] === 0)) {
+            if ($hasCompany && $scope['company_id'] > 0) {
+                $query->where(function ($tenantQuery) use ($table, $scope, $hasUser, $userId) {
+                    $tenantQuery->where("{$table}.company_id", $scope['company_id']);
+
+                    if ($hasUser && $userId > 0) {
+                        $tenantQuery->orWhere(function ($legacy) use ($table, $userId) {
+                            $legacy->whereNull("{$table}.company_id")
+                                ->where("{$table}.user_id", $userId);
+                        });
+                    }
+                });
+            } elseif ($hasUser && $userId > 0) {
+                $query->where("{$table}.user_id", $userId);
+            } elseif ($hasCompany || $hasUser) {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         if ($scope['branch_id'] !== '' || $scope['branch_name'] !== '') {
@@ -57,9 +78,25 @@ class Controller extends BaseController
     {
         $scope = $this->scopeContext();
         $table = $model->getTable();
+        $user = Auth::user();
+        $role = strtolower((string) ($user?->role ?? ''));
+        $isSuperAdmin = in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true);
+        $userId = (int) ($user?->id ?? 0);
+        $hasCompany = Schema::hasColumn($table, 'company_id');
+        $hasUser = Schema::hasColumn($table, 'user_id');
 
-        if ($scope['company_id'] > 0 && Schema::hasColumn($table, 'company_id')) {
-            abort_unless((int) $model->getAttribute('company_id') === $scope['company_id'], 403);
+        if (!($isSuperAdmin && request()->is('superadmin*') && $scope['company_id'] === 0)) {
+            if ($hasCompany && $scope['company_id'] > 0) {
+                $sameCompany = (int) $model->getAttribute('company_id') === $scope['company_id'];
+                $legacyOwner = $hasUser
+                    && (int) ($model->getAttribute('company_id') ?? 0) === 0
+                    && (int) $model->getAttribute('user_id') === $userId;
+                abort_unless($sameCompany || $legacyOwner, 403);
+            } elseif ($hasUser) {
+                abort_unless((int) $model->getAttribute('user_id') === $userId, 403);
+            } elseif ($hasCompany) {
+                abort(403);
+            }
         }
 
         if ($scope['branch_id'] !== '' && Schema::hasColumn($table, 'branch_id')) {

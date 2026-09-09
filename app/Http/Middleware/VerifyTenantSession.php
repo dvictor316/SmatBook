@@ -14,6 +14,15 @@ class VerifyTenantSession
             $user = Auth::user();
             $userCompanyId = (int) ($user->company_id ?? 0);
             $sessionTenantId = (int) session('current_tenant_id', 0);
+            $role = strtolower((string) ($user->role ?? ''));
+            $isSuperAdmin = in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true);
+
+            // A regular user without a company must never inherit a tenant
+            // selected by a previous session or another account.
+            if ($userCompanyId === 0 && !$isSuperAdmin && $sessionTenantId !== 0) {
+                session()->forget(['current_tenant_id', 'current_tenant_name', 'active_branch_id', 'active_branch_name']);
+                $sessionTenantId = 0;
+            }
 
             // If session tenant does not match the authenticated user's company,
             // correct it immediately to prevent cross-tenant data access via

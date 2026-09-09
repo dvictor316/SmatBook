@@ -58,6 +58,8 @@ trait TenantScoped
                 });
             } elseif ($hasUser && $userId > 0) {
                 $builder->where("{$table}.user_id", $userId);
+            } elseif ($hasCompany || $hasUser) {
+                $builder->whereRaw('1 = 0');
             }
 
             $requestBranchScope = (string) request()->get('branch_scope', '');

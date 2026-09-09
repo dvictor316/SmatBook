@@ -16,12 +16,41 @@ trait Multitenantable {
                 return;
             }
 
-            $companyId = Auth::user()?->company_id;
-            if (!empty($companyId)) {
-                $builder->where($builder->getModel()->getTable() . '.company_id', $companyId);
+            if (!Auth::check()) {
+                return;
+            }
+
+            $user = Auth::user();
+            $role = strtolower((string) ($user->role ?? ''));
+            $isSuperAdmin = in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true);
+            $companyId = (int) ($user->company_id ?? session('current_tenant_id') ?? 0);
+
+            if ($isSuperAdmin && request()->is('superadmin*') && $companyId === 0) {
+                return;
             }
 
             $table = $builder->getModel()->getTable();
+            $userId = (int) ($user->id ?? 0);
+            $hasCompany = Schema::hasColumn($table, 'company_id');
+            $hasUser = Schema::hasColumn($table, 'user_id');
+
+            if ($hasCompany && $companyId > 0) {
+                $builder->where(function ($query) use ($table, $companyId, $hasUser, $userId) {
+                    $query->where($table . '.company_id', $companyId);
+
+                    if ($hasUser && $userId > 0) {
+                        $query->orWhere(function ($legacy) use ($table, $userId) {
+                            $legacy->whereNull($table . '.company_id')
+                                ->where($table . '.user_id', $userId);
+                        });
+                    }
+                });
+            } elseif ($hasUser && $userId > 0) {
+                $builder->where($table . '.user_id', $userId);
+            } elseif ($hasCompany || $hasUser) {
+                $builder->whereRaw('1 = 0');
+            }
+
             $requestBranchScope = strtolower(trim((string) request()->get('branch_scope', '')));
             $requestBranchId = trim((string) request()->get('branch_id', ''));
             $requestAllBranches = request()->boolean('all_branches')
