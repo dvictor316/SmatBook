@@ -4086,6 +4086,137 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
     }
 }
 
+/* Visual-only console skin. POS behavior and layout hooks remain unchanged. */
+.pos-full-page-wrapper {
+    --console-ink: #111827;
+    --console-panel: #ffffff;
+    --console-line: #d7e0ea;
+    --console-blue: #1464f4;
+    --console-cyan: #28c7e8;
+    background:
+        radial-gradient(900px 280px at 15% -5%, rgba(20, 100, 244, 0.14), transparent 64%),
+        radial-gradient(800px 260px at 95% 8%, rgba(40, 199, 232, 0.12), transparent 62%),
+        linear-gradient(180deg, #eef3f8 0%, #f8fafc 48%, #e9eff5 100%);
+}
+
+.pos-full-page-wrapper .pos-shell {
+    position: relative;
+}
+
+.pos-full-page-wrapper .pos-shell::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--console-cyan), var(--console-blue), transparent);
+    opacity: 0.8;
+    pointer-events: none;
+}
+
+.pos-full-page-wrapper .header-util-bar,
+.pos-full-page-wrapper .header-stage,
+.pos-full-page-wrapper .controls-card,
+.pos-full-page-wrapper .cart-card,
+.pos-full-page-wrapper .shelf-card {
+    border-color: var(--console-line) !important;
+    box-shadow: 0 12px 28px rgba(23, 43, 77, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+.pos-full-page-wrapper .header-util-bar {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-radius: 8px !important;
+}
+
+.pos-full-page-wrapper .header-stage {
+    background:
+        linear-gradient(135deg, rgba(10, 25, 52, 0.98), rgba(21, 56, 112, 0.98) 70%, rgba(20, 100, 244, 0.95)) !important;
+    border-radius: 12px !important;
+}
+
+.pos-full-page-wrapper .header-stage::after {
+    box-shadow: inset 0 0 0 1px rgba(40, 199, 232, 0.36), inset 0 -20px 40px rgba(0, 0, 0, 0.08) !important;
+}
+
+.pos-full-page-wrapper .controls-card,
+.pos-full-page-wrapper .cart-card,
+.pos-full-page-wrapper .shelf-card {
+    background: rgba(255, 255, 255, 0.96) !important;
+    border-radius: 10px !important;
+}
+
+.pos-full-page-wrapper .controls-card > .card-header,
+.pos-full-page-wrapper .cart-card > .card-header,
+.pos-full-page-wrapper .shelf-card > .card-header {
+    background: linear-gradient(180deg, #ffffff, #f3f7fb) !important;
+    border-bottom-color: var(--console-line) !important;
+}
+
+.pos-full-page-wrapper .form-control,
+.pos-full-page-wrapper .form-select,
+.pos-full-page-wrapper .select2-container--default .select2-selection--single {
+    border-color: #cbd7e5 !important;
+    border-radius: 7px !important;
+    color: var(--console-ink) !important;
+    background-color: #fbfdff !important;
+}
+
+.pos-full-page-wrapper .form-control:focus,
+.pos-full-page-wrapper .form-select:focus,
+.pos-full-page-wrapper .select2-container--default.select2-container--focus .select2-selection--single {
+    border-color: var(--console-blue) !important;
+    box-shadow: 0 0 0 3px rgba(20, 100, 244, 0.14), 0 0 16px rgba(40, 199, 232, 0.08) !important;
+}
+
+.pos-full-page-wrapper .product-card {
+    border-color: #cbd7e5 !important;
+    border-radius: 8px !important;
+    background: linear-gradient(180deg, #ffffff 0%, #f2f6fa 100%) !important;
+    transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease !important;
+}
+
+.pos-full-page-wrapper .product-card:hover {
+    border-color: var(--console-blue) !important;
+    box-shadow: 0 8px 20px rgba(20, 100, 244, 0.14), 0 0 0 1px rgba(40, 199, 232, 0.18) !important;
+    transform: translateY(-2px);
+}
+
+.pos-full-page-wrapper .btn-add-cart,
+.pos-full-page-wrapper .btn-process,
+.pos-full-page-wrapper .btn-check:checked + .unit-btn {
+    background: linear-gradient(135deg, #1158d8, #1685f7) !important;
+    border-color: #0d4bb9 !important;
+    box-shadow: 0 8px 18px rgba(20, 100, 244, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
+}
+
+.pos-full-page-wrapper .unit-btn {
+    border-color: #cbd7e5 !important;
+    border-radius: 7px !important;
+    background: #f8fbfe !important;
+}
+
+.pos-full-page-wrapper .unit-btn:hover {
+    border-color: var(--console-cyan) !important;
+    color: #0d4bb9 !important;
+    box-shadow: 0 0 0 2px rgba(40, 199, 232, 0.12) !important;
+}
+
+.pos-full-page-wrapper .scanner-section,
+.pos-full-page-wrapper .image-frame,
+.pos-full-page-wrapper .quick-fill-panel,
+.pos-full-page-wrapper .subtotal-box {
+    border-color: var(--console-line) !important;
+    border-radius: 8px !important;
+}
+
+@media (max-width: 767.98px) {
+    .pos-full-page-wrapper .header-stage,
+    .pos-full-page-wrapper .controls-card,
+    .pos-full-page-wrapper .cart-card,
+    .pos-full-page-wrapper .shelf-card {
+        border-radius: 8px !important;
+    }
+}
+
 </style>
 
 <div class="pos-full-page-wrapper">
