@@ -9,6 +9,179 @@
 @endphp
 
 <style>
+    .add-product-page {
+        min-height: 100vh;
+        background:
+            radial-gradient(900px 360px at 8% -8%, rgba(20, 184, 166, 0.12), transparent 64%),
+            radial-gradient(760px 340px at 96% 0%, rgba(37, 99, 235, 0.10), transparent 62%),
+            #f6f8fc;
+        padding-bottom: 2rem;
+    }
+
+    .add-product-heading {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.7rem 0 1rem;
+    }
+
+    .add-product-kicker {
+        color: #0f766e;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.35rem;
+    }
+
+    .add-product-heading h4 {
+        color: #102a56 !important;
+        letter-spacing: -0.02em;
+    }
+
+    .add-product-heading p {
+        max-width: 620px;
+    }
+
+    .page-add-product-card {
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.94);
+        backdrop-filter: blur(8px);
+    }
+
+    .page-add-product-card .card-header {
+        position: relative;
+        padding: 1.35rem 1.5rem;
+    }
+
+    .page-add-product-card .card-header::after {
+        content: '';
+        position: absolute;
+        left: 1.5rem;
+        bottom: 0;
+        width: 72px;
+        height: 4px;
+        border-radius: 999px;
+        background: #f59e0b;
+    }
+
+    .product-flow-banner {
+        position: relative;
+        gap: 0;
+        overflow: hidden;
+        background: #102a56;
+        border: 0;
+        box-shadow: 0 14px 30px rgba(16, 42, 86, 0.14);
+    }
+
+    .product-flow-banner::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, rgba(20, 184, 166, 0.18), transparent 42%, rgba(245, 158, 11, 0.16));
+        pointer-events: none;
+    }
+
+    .product-flow-step {
+        position: relative;
+        padding: 0.35rem 1rem;
+        border-right: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .product-flow-step:last-child {
+        border-right: 0;
+    }
+
+    .product-flow-step strong {
+        color: #fcd34d;
+        font-size: 0.76rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    .product-flow-step span {
+        color: #dbeafe;
+    }
+
+    .product-form-sheet {
+        border-radius: 16px;
+        border-color: #dfe7f2;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.055);
+    }
+
+    .product-form-grid > div:first-child .product-form-sheet {
+        border-top: 4px solid #f59e0b;
+    }
+
+    .product-form-grid > div:last-child .product-form-sheet {
+        border-top: 4px solid #14b8a6;
+    }
+
+    .product-form-sheet .form-label {
+        color: #334155;
+        font-size: 0.82rem;
+        font-weight: 800;
+        letter-spacing: 0.01em;
+    }
+
+    .product-form-sheet .form-control,
+    .product-form-sheet .form-select {
+        min-height: 44px;
+        border-radius: 10px;
+    }
+
+    .product-form-sheet .form-control:hover,
+    .product-form-sheet .form-select:hover {
+        border-color: #93c5fd;
+    }
+
+    .quick-summary-pills {
+        gap: 0.6rem;
+    }
+
+    .quick-summary-pill {
+        border-radius: 10px;
+        background: #f8fafc;
+        border-color: #e2e8f0;
+    }
+
+    .quick-summary-pill strong {
+        color: #102a56;
+    }
+
+    .product-form-sheet .form-control:focus,
+    .product-form-sheet .form-select:focus {
+        transform: translateY(-1px);
+        transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    }
+
+    @media (max-width: 767.98px) {
+        .add-product-heading {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .add-product-heading .btn {
+            width: 100%;
+        }
+
+        .product-flow-banner {
+            gap: 0.7rem;
+        }
+
+        .product-flow-step {
+            flex-basis: 100%;
+            border-right: 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+            padding: 0.2rem 0;
+        }
+
+        .product-flow-step:last-child {
+            border-bottom: 0;
+        }
+    }
+
     .product-form-muted {
         color: #6b7280;
         font-size: 0.9rem;
@@ -251,12 +424,13 @@
     }
 </style>
 
-<div class="page-wrapper">
+<div class="page-wrapper add-product-page">
     <div class="content container-fluid" style="max-width:1100px; margin:0 auto;">
 
         {{-- Page header --}}
-        <div class="d-flex align-items-center justify-content-between mb-3 no-print">
+        <div class="add-product-heading no-print">
             <div>
+                <div class="add-product-kicker">Inventory setup</div>
                 <h4 class="mb-0 fw-bold text-dark"><i class="feather-package me-2 text-primary"></i>Add New Product</h4>
                 <p class="mb-0 text-muted small mt-1">Create a product with stock, pricing, and packaging in one step.</p>
             </div>
