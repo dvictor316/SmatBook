@@ -4737,9 +4737,9 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                     <span id="btn-loading" style="display:none;"><i class="fas fa-sync fa-spin me-2"></i> PROCESSING...</span>
                 </button>
                 <div class="pos-secondary-actions">
-                    <button type="button" id="save-invoice-btn" class="btn pos-secondary-action">
-                        <i class="fas fa-save me-1"></i> Save Invoice
-                    </button>
+                    <a href="{{ $posSalesLogUrl ?? url('/pos/sales') }}" class="btn pos-secondary-action">
+                        <i class="fas fa-chart-line me-1"></i> Sales Register
+                    </a>
                     <a href="{{ ($posSalesLogUrl ?? url('/pos/sales')) . '?reprint=1' }}" class="btn pos-secondary-action">
                         <i class="fas fa-list me-1"></i> Receipt Lookup
                     </a>
@@ -6116,7 +6116,6 @@ window.POS_ENABLE_FALLBACK = function () {
     const railCheckoutBtn = document.getElementById('rail-checkout-btn');
     const railMessagesBtn = document.getElementById('rail-messages-btn');
     let processBtn = document.getElementById('process-btn');
-    const saveInvoiceBtn = document.getElementById('save-invoice-btn');
     const newSaleBtn = document.getElementById('new-sale-btn');
     let btnText = document.getElementById('btn-text');
     let btnLoading = document.getElementById('btn-loading');
@@ -6125,7 +6124,6 @@ window.POS_ENABLE_FALLBACK = function () {
     const cart = [];
     let currentProductId = '';
     let activePaymentTab = 'Cash';
-    let saveOnlyMode = false;
 
     const alertFallback = (message) => window.alert(message);
     const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (char) => ({
@@ -7839,7 +7837,6 @@ window.POS_ENABLE_FALLBACK = function () {
         }
 
         processBtn.disabled = true;
-        if (saveInvoiceBtn) saveInvoiceBtn.disabled = true;
         processBtn.classList.add('processing');
         if (btnText) btnText.style.display = 'none';
         if (btnLoading) btnLoading.style.display = '';
@@ -7882,39 +7879,20 @@ window.POS_ENABLE_FALLBACK = function () {
                 throw new Error(result.message || 'Failed to process sale.');
             }
 
-            if (result.sale_id && !saveOnlyMode) {
+            if (result.sale_id) {
                 const invoiceUrl = `${invoicePrintBaseUrl}/${result.sale_id}/print?autoprint=1`;
                 window.open(invoiceUrl, '_blank');
-            }
-
-            if (saveOnlyMode) {
-                showAlert({
-                    icon: 'success',
-                    title: 'Invoice saved',
-                    text: 'Sale has been saved without opening the print receipt.',
-                    timer: 2200,
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                });
             }
 
             resetVanillaPosWorkspace();
         } catch (error) {
             alertFallback(error.message || 'Failed to process sale.');
         } finally {
-            saveOnlyMode = false;
             processBtn.disabled = false;
-            if (saveInvoiceBtn) saveInvoiceBtn.disabled = false;
             processBtn.classList.remove('processing');
             if (btnText) btnText.style.display = '';
             if (btnLoading) btnLoading.style.display = 'none';
         }
-    });
-
-    saveInvoiceBtn?.addEventListener('click', function () {
-        saveOnlyMode = true;
-        processBtn?.click();
     });
 
     newSaleBtn?.addEventListener('click', function () {

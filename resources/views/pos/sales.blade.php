@@ -288,8 +288,8 @@
 <div class="pos-content-area">
     <div class="report-header">
         <div>
-                <h3 class="fw-bold mb-0" style="color: #0f172a;">POS Sales</h3>
-                <p class="text-muted small mb-0">All POS sales listed in purchase order sequence.</p>
+                <h3 class="fw-bold mb-0" style="color: #0f172a;">Sales Register</h3>
+                <p class="text-muted small mb-0">Review sales totals, transactions, receipts, and payment status.</p>
                 <div class="mt-2">
                     <span class="badge badge-soft-branch px-3 py-2">
                         <i class="fas fa-code-branch me-2 text-primary"></i>
