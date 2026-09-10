@@ -4377,6 +4377,7 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                 data-purchase-unit="{{ $p->purchaseUnit->symbol ?? '' }}"
                 data-conversion-rate="{{ (float) ($p->conversion_rate ?? 0) }}"
                 data-units='@json($unitOptions)'
+                data-unit-options='@json($unitOptions)'
                 data-measurement="{{ $measurementLabel }}"
                 data-min-stock="{{ $minStockLevel }}"
                 data-img="{{ $p->image_url }}"
@@ -7005,7 +7006,15 @@ window.POS_ENABLE_FALLBACK = function () {
         const rollsPerCarton = Math.max(parseFloat(data.upc || '0') || 0, 0);
         const unitsPerRoll = Math.max(parseFloat(data.upr || '0') || 0, 0);
         const baseUnit = String(data.baseUnit || 'unit');
-        const configuredUnits = Array.isArray(data.unitOptions) ? data.unitOptions : [];
+        let configuredUnits = Array.isArray(data.unitOptions) ? data.unitOptions : data.units;
+        if (typeof configuredUnits === 'string') {
+            try {
+                configuredUnits = JSON.parse(configuredUnits);
+            } catch (error) {
+                configuredUnits = [];
+            }
+        }
+        configuredUnits = Array.isArray(configuredUnits) ? configuredUnits : [];
         const cartonOption = configuredUnits.find((unit) => String(unit.name || '').toLowerCase() === 'carton');
         const cartonUnits = Math.max(parseFloat(cartonOption?.conversion_factor || 0) || 0, 0) || (rollsPerCarton > 0
             ? (unitsPerRoll > 0 ? (rollsPerCarton * unitsPerRoll) : rollsPerCarton)
@@ -7034,6 +7043,48 @@ window.POS_ENABLE_FALLBACK = function () {
             cartonUnits,
             unitsPerRoll,
         };
+    }
+
+    function renderVanillaUnitButtons(data) {
+        const grid = document.querySelector('.unit-grid');
+        if (!grid) return;
+
+        let units = data.unitOptions || data.units || [];
+        if (typeof units === 'string') {
+            try {
+                units = JSON.parse(units);
+            } catch (error) {
+                units = [];
+            }
+        }
+
+        const baseUnit = String(data.baseUnit || 'unit').toLowerCase();
+        units = (Array.isArray(units) ? units : []).map((unit) => {
+            const name = String(unit.name || unit.symbol || '').toLowerCase();
+            return ['unit', 'units'].includes(name) && !['unit', 'units'].includes(baseUnit)
+                ? { ...unit, name: baseUnit, symbol: baseUnit }
+                : unit;
+        }).filter((unit) => String(unit.name || unit.symbol || '').trim() !== '');
+
+        if (!units.some((unit) => String(unit.name || unit.symbol || '').toLowerCase() === baseUnit)) {
+            units.unshift({ name: baseUnit, symbol: baseUnit, conversion_factor: 1, selling_price: data.retail || data.price || 0, is_default_sales_unit: true });
+        }
+
+        grid.innerHTML = units.map((unit, index) => {
+            const value = String(unit.name || unit.symbol || baseUnit).toLowerCase();
+            const label = String(unit.symbol || unit.name || value);
+            const factor = Math.max(parseFloat(unit.conversion_factor) || 1, 1);
+            const inputId = `unit-type-${value.replace(/[^a-z0-9_-]+/g, '-')}`;
+            const checked = unit.is_default_sales_unit || index === 0 ? ' checked' : '';
+            return `<input type="radio" class="btn-check" name="unit_type" id="${inputId}" value="${value}" data-factor="${factor}" data-selling-price="${unit.selling_price ?? ''}"${checked}><label class="btn unit-btn" for="${inputId}">${label}<small>${factor > 1 ? `${factor} ${baseUnit}` : `1 ${baseUnit}`}</small></label>`;
+        }).join('');
+
+        grid.querySelectorAll('input[name="unit_type"]').forEach((input) => {
+            input.addEventListener('change', function () {
+                const option = findOptionById(currentProductId);
+                if (option) applyVanillaSelection({ dataset: { ...option.dataset, id: option.value }});
+            });
+        });
     }
 
     function findOptionById(id) {
@@ -7125,6 +7176,8 @@ window.POS_ENABLE_FALLBACK = function () {
             productSelect.value = productId;
         }
 	        syncProductSearchDropdown(productId);
+
+        renderVanillaUnitButtons(data);
 
         if (isNewProductSelection) {
             const preferredUnitType = String(data.unitType || 'unit').toLowerCase();
