@@ -570,11 +570,13 @@ class InvoiceController extends Controller
         $customerBalances = collect();
         if ($customers->isNotEmpty() && Schema::hasColumn('sales', 'balance')) {
             $balanceQuery = Sale::query()
-                ->whereIn('customer_id', $customers->pluck('id'))
-                ->where(function ($query) {
+                ->whereIn('customer_id', $customers->pluck('id'));
+            if (Schema::hasColumn('sales', 'order_status')) {
+                $balanceQuery->where(function ($query) {
                     $query->whereNull('order_status')
                         ->orWhere('order_status', '!=', 'draft');
                 });
+            }
             $this->applyTenantScope($balanceQuery, 'sales');
             $customerBalances = $balanceQuery
                 ->select('customer_id')
