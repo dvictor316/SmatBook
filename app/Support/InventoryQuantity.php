@@ -27,7 +27,7 @@ class InventoryQuantity
             default => 1,
         };
 
-        return round(max($qty, $qty * $multiplier), 6);
+        return round($qty * $multiplier, 6);
     }
 
     public static function resolvePurchaseStockUnits(Product $product, float $qty, ?string $unitType = null): float
