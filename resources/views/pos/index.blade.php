@@ -4314,30 +4314,104 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
     pointer-events: none;
 }
 
+.pos-rail-ribbon {
+    position: absolute;
+    width: 170px;
+    height: 88px;
+    border: 3px solid transparent;
+    border-top-color: #f5c84b;
+    border-right-color: #d79d1b;
+    border-radius: 50%;
+    opacity: 0.82;
+    filter: drop-shadow(0 2px 2px rgba(136, 96, 0, 0.2));
+    transform-origin: center;
+    animation: posRibbonSweep 4.8s ease-in-out infinite;
+}
+
+.pos-rail-ribbon::after {
+    content: '';
+    position: absolute;
+    inset: 8px -4px -8px 7px;
+    border: 2px solid transparent;
+    border-top-color: #ffe79a;
+    border-radius: 50%;
+}
+
+.pos-rail-ribbon:nth-child(1) {
+    top: 1px;
+    left: -84px;
+    transform: rotate(28deg);
+}
+
+.pos-rail-ribbon:nth-child(2) {
+    top: 22px;
+    right: -83px;
+    transform: rotate(-31deg) scale(0.86);
+    animation-delay: -1.7s;
+}
+
+.pos-rail-ribbon:nth-child(3) {
+    top: 62px;
+    left: -53px;
+    transform: rotate(-12deg) scale(0.58);
+    animation-delay: -3.1s;
+}
+
 .pos-rail-money-notes img {
     position: absolute;
     width: 118px;
     height: auto;
+    z-index: 2;
     filter: drop-shadow(0 8px 7px rgba(23, 43, 77, 0.22));
 }
 
-.pos-rail-money-notes img:nth-child(1) {
+.pos-rail-money-notes img:nth-of-type(1) {
     left: -17px;
     bottom: 13px;
     transform: rotate(-15deg);
+    animation: posNoteFloatLeft 5.8s ease-in-out infinite;
 }
 
-.pos-rail-money-notes img:nth-child(2) {
+.pos-rail-money-notes img:nth-of-type(2) {
     left: 50%;
     bottom: 3px;
     transform: translateX(-50%) rotate(4deg);
     z-index: 1;
+    animation: posNoteFloatCenter 5.1s ease-in-out -1.4s infinite;
 }
 
-.pos-rail-money-notes img:nth-child(3) {
+.pos-rail-money-notes img:nth-of-type(3) {
     right: -17px;
     bottom: 13px;
     transform: rotate(15deg);
+    animation: posNoteFloatRight 6.2s ease-in-out -2.2s infinite;
+}
+
+@keyframes posNoteFloatLeft {
+    0%, 100% { transform: translate(0, 4px) rotate(-15deg); }
+    50% { transform: translate(4px, -10px) rotate(-9deg); }
+}
+
+@keyframes posNoteFloatCenter {
+    0%, 100% { transform: translate(-50%, 2px) rotate(4deg); }
+    50% { transform: translate(-50%, -13px) rotate(9deg); }
+}
+
+@keyframes posNoteFloatRight {
+    0%, 100% { transform: translate(0, 4px) rotate(15deg); }
+    50% { transform: translate(-4px, -9px) rotate(9deg); }
+}
+
+@keyframes posRibbonSweep {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 0.95; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pos-rail-money-notes img,
+    .pos-rail-ribbon {
+        animation: none;
+    }
 }
 
 .pos-rail-visual::before,
@@ -4503,6 +4577,9 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                     </span>
                 @endif
                 <div class="pos-rail-money-notes" aria-hidden="true">
+                    <span class="pos-rail-ribbon"></span>
+                    <span class="pos-rail-ribbon"></span>
+                    <span class="pos-rail-ribbon"></span>
                     <img src="{{ asset('assets/img/pos-money-note.svg') }}" alt="">
                     <img src="{{ asset('assets/img/pos-money-note.svg') }}" alt="">
                     <img src="{{ asset('assets/img/pos-money-note.svg') }}" alt="">
