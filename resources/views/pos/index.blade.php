@@ -4208,6 +4208,75 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
     border-radius: 8px !important;
 }
 
+.pos-rail-visual {
+    position: relative;
+    min-height: 190px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 14px;
+    border: 1px solid #cbd7e5;
+    border-radius: 10px;
+    background:
+        radial-gradient(circle at 82% 18%, rgba(40, 199, 232, 0.28) 0 2px, transparent 3px),
+        radial-gradient(circle at 20% 32%, rgba(20, 100, 244, 0.20) 0 1px, transparent 2px),
+        linear-gradient(145deg, #f8fbff 0%, #e3ebf4 56%, #cbd8e6 100%);
+    box-shadow: 0 12px 28px rgba(23, 43, 77, 0.10), inset 0 1px 0 #ffffff;
+}
+
+.pos-rail-visual::before {
+    content: '';
+    position: absolute;
+    width: 150px;
+    height: 86px;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) perspective(240px) rotateX(8deg);
+    border: 5px solid #172b4d;
+    border-radius: 10px 10px 6px 6px;
+    background: linear-gradient(145deg, #284e82, #0c2348);
+    box-shadow: inset 0 0 0 3px rgba(40, 199, 232, 0.24), 0 12px 18px rgba(15, 38, 75, 0.24);
+}
+
+.pos-rail-visual::after {
+    content: '₦';
+    position: absolute;
+    top: 37px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #d9fbff;
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1;
+    text-shadow: 0 0 12px rgba(40, 199, 232, 0.72);
+}
+
+.pos-rail-visual .pos-rail-visual-label {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: #102a56;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.pos-rail-visual .pos-rail-visual-label span:last-child {
+    color: #0f766e;
+    font-size: 0.58rem;
+}
+
+@media (max-width: 991.98px) {
+    .pos-rail-visual {
+        display: none;
+    }
+}
+
 @media (max-width: 767.98px) {
     .pos-full-page-wrapper .header-stage,
     .pos-full-page-wrapper .controls-card,
@@ -4331,6 +4400,12 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                         <span>Show Messages</span>
                     </span>
                 @endif
+            </div>
+            <div class="pos-rail-visual" aria-hidden="true">
+                <div class="pos-rail-visual-label">
+                    <span>Sales ready</span>
+                    <span><i class="fas fa-circle me-1"></i>Online</span>
+                </div>
             </div>
         </aside>
 
