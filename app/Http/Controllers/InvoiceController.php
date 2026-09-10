@@ -567,7 +567,11 @@ class InvoiceController extends Controller
             }
         }
         $customers = $customersQuery->get();
-        $products = $this->applyTenantScope(Product::query(), 'products')->get();
+        $productsQuery = $this->applyTenantScope(Product::query(), 'products');
+        if (Schema::hasTable('product_units')) {
+            $productsQuery->with('activeProductUnits');
+        }
+        $products = $productsQuery->get();
         $quotationPrefill = session('quotation_prefill');
         $selected_customer = (string) request()->input('customer_id', session('demo_customer_preview_id', ''));
         $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
@@ -597,6 +601,7 @@ class InvoiceController extends Controller
             'price_list_id' => 'nullable|exists:price_lists,id',
             'items.*.price_list_id' => 'nullable|exists:price_lists,id',
             'items.*.price_level' => 'nullable|in:list,retail,wholesale,special',
+            'items.*.unit_type' => 'nullable|string|max:50',
             'total_amount' => 'required|numeric|min:0',
         ]);
 
@@ -866,7 +871,11 @@ class InvoiceController extends Controller
         )->findOrFail($id);
         $invoice = $this->applyComputedInvoiceState($invoice);
         $customers = $this->applyTenantScope(Customer::query(), 'customers')->get();
-        $products = $this->applyTenantScope(Product::query(), 'products')->get();
+        $productsQuery = $this->applyTenantScope(Product::query(), 'products');
+        if (Schema::hasTable('product_units')) {
+            $productsQuery->with('activeProductUnits');
+        }
+        $products = $productsQuery->get();
         $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
         $priceLists = $this->priceListUsage->activeForCurrentContext($companyId);
         $priceListData = $this->priceListUsage->toFrontend($priceLists);

@@ -180,6 +180,7 @@
                                                     <th style="min-width: 170px;">Catalog Product</th>
                                                     <th>Product / Service</th>
                                                     <th style="min-width: 150px;">Price Level</th>
+                                                    <th style="min-width: 120px;">Unit</th>
                                                     <th>Quantity</th>
                                                     <th>Rate (₦)</th>
                                                     <th>Discount (₦)</th>
@@ -195,11 +196,33 @@
                                                             <select name="items[{{ $index }}][product_id]" class="form-control product-select select2" onchange="syncInvoiceProduct(this)">
                                                                 <option value="">Custom item</option>
                                                                 @foreach($products as $product)
+                                                                    @php
+                                                                        $invoiceUnitOptions = collect($product->activeProductUnits ?? [])->map(fn ($unit) => [
+                                                                            'name' => (string) ($unit->unit_name ?: $unit->unit_symbol),
+                                                                            'symbol' => (string) ($unit->unit_symbol ?: $unit->unit_name),
+                                                                            'conversion_factor' => max(1, (float) $unit->conversion_factor),
+                                                                            'selling_price' => $unit->selling_price,
+                                                                            'wholesale_price' => $unit->wholesale_price,
+                                                                        ])->values();
+                                                                        if ($invoiceUnitOptions->isEmpty()) {
+                                                                            $invoiceUnitOptions = collect([[
+                                                                                'name' => (string) ($product->base_unit_name ?: 'pcs'),
+                                                                                'symbol' => (string) ($product->base_unit_name ?: 'pcs'),
+                                                                                'conversion_factor' => 1,
+                                                                                'selling_price' => $product->retail_price ?? $product->price ?? 0,
+                                                                                'wholesale_price' => $product->wholesale_price ?? 0,
+                                                                            ]]);
+                                                                            if ((int) ($product->units_per_carton ?? 0) > 1) {
+                                                                                $invoiceUnitOptions->push(['name' => 'carton', 'symbol' => 'ctn', 'conversion_factor' => (float) $product->units_per_carton, 'selling_price' => null, 'wholesale_price' => null]);
+                                                                            }
+                                                                        }
+                                                                    @endphp
                                                                     <option value="{{ $product->id }}"
                                                                         data-name="{{ $product->name }}"
                                                                         data-retail="{{ $product->retail_price ?? $product->price ?? 0 }}"
                                                                         data-wholesale="{{ $product->wholesale_price ?? 0 }}"
                                                                         data-special="{{ $product->special_price ?? 0 }}"
+                                                                        data-units='@json($invoiceUnitOptions)'
                                                                         {{ (string) ($item['product_id'] ?? '') === (string) $product->id ? 'selected' : '' }}>
                                                                         {{ $product->name }}
                                                                     </option>
@@ -216,6 +239,11 @@
                                                                 <option value="special" {{ $priceLevel === 'special' ? 'selected' : '' }}>Special Discount</option>
                                                             </select>
                                                             <input type="hidden" name="items[{{ $index }}][price_list_id]" class="invoice-row-price-list-id" value="{{ $item['price_list_id'] ?? $selectedPriceListId }}">
+                                                        </td>
+                                                        <td>
+                                                            <select name="items[{{ $index }}][unit_type]" class="form-control invoice-unit-select" onchange="syncInvoiceProduct(this)">
+                                                                <option value="{{ $item['unit_type'] ?? 'unit' }}">{{ $item['unit_type'] ?? 'pcs' }}</option>
+                                                            </select>
                                                         </td>
                                                         <td><input type="number" name="items[{{ $index }}][qty]" class="form-control qty-input" value="{{ $item['qty'] ?? 1 }}" min="1" oninput="calculateRow(this)"></td>
                                                         <td><input type="number" name="items[{{ $index }}][rate]" class="form-control rate-input" value="{{ $item['rate'] ?? '0.00' }}" step="0.01" oninput="calculateRow(this)"></td>
@@ -384,12 +412,54 @@
 
     function bindCreditLimitContinue() {}
 
+    function getInvoiceUnitOptions(option) {
+        if (!option || !option.value) {
+            return [];
+        }
+
+        try {
+            return JSON.parse(option.getAttribute('data-units') || '[]');
+        } catch (error) {
+            return [];
+        }
+    }
+
+    function syncInvoiceUnits(row, selectedUnit) {
+        const productSelect = row.querySelector('.product-select');
+        const unitSelect = row.querySelector('.invoice-unit-select');
+        if (!productSelect || !unitSelect) {
+            return null;
+        }
+
+        const option = productSelect.options[productSelect.selectedIndex];
+        const units = getInvoiceUnitOptions(option);
+        const selected = String(selectedUnit || unitSelect.value || '').toLowerCase();
+        unitSelect.innerHTML = '';
+
+        units.forEach(function(unit, index) {
+            const value = String(unit.name || unit.symbol || 'unit').toLowerCase();
+            const unitOption = new Option(unit.symbol || unit.name || value, value);
+            unitOption.dataset.factor = unit.conversion_factor || 1;
+            unitOption.dataset.sellingPrice = unit.selling_price ?? '';
+            unitOption.dataset.wholesalePrice = unit.wholesale_price ?? '';
+            unitOption.selected = selected ? value === selected : index === 0;
+            unitSelect.add(unitOption);
+        });
+
+        if (!unitSelect.options.length) {
+            unitSelect.add(new Option('pcs', 'unit'));
+        }
+
+        return unitSelect.options[unitSelect.selectedIndex];
+    }
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
             bindCreditLimitContinue();
             snapshotCustomerOptions();
             initInvoiceSelect2(document);
             document.querySelectorAll('.invoice-row').forEach(function(row) {
+                syncInvoiceUnits(row, row.querySelector('.invoice-unit-select')?.value);
                 const rateInput = row.querySelector('.rate-input');
                 if (rateInput) {
                     calculateRow(rateInput);
@@ -408,6 +478,7 @@
         snapshotCustomerOptions();
         initInvoiceSelect2(document);
         document.querySelectorAll('.invoice-row').forEach(function(row) {
+            syncInvoiceUnits(row, row.querySelector('.invoice-unit-select')?.value);
             const rateInput = row.querySelector('.rate-input');
             if (rateInput) {
                 calculateRow(rateInput);
@@ -435,7 +506,8 @@
                                 data-name="{{ $product->name }}"
                                 data-retail="{{ $product->retail_price ?? $product->price ?? 0 }}"
                                 data-wholesale="{{ $product->wholesale_price ?? 0 }}"
-                                data-special="{{ $product->special_price ?? 0 }}">
+                                data-special="{{ $product->special_price ?? 0 }}"
+                                data-units='@json(collect($product->activeProductUnits ?? [])->map(fn ($unit) => ['name' => (string) ($unit->unit_name ?: $unit->unit_symbol), 'symbol' => (string) ($unit->unit_symbol ?: $unit->unit_name), 'conversion_factor' => max(1, (float) $unit->conversion_factor), 'selling_price' => $unit->selling_price, 'wholesale_price' => $unit->wholesale_price])->values())'>
                                 {{ $product->name }}
                             </option>
                         @endforeach
@@ -450,6 +522,11 @@
                         <option value="special">Special Discount</option>
                     </select>
                     <input type="hidden" name="items[${rowIndex}][price_list_id]" class="invoice-row-price-list-id" value="${document.getElementById('invoice-price-list')?.value || ''}">
+                </td>
+                <td>
+                    <select name="items[${rowIndex}][unit_type]" class="form-control invoice-unit-select" onchange="syncInvoiceProduct(this)">
+                        <option value="unit">pcs</option>
+                    </select>
                 </td>
                 <td><input type="number" name="items[${rowIndex}][qty]" class="form-control qty-input" value="1" min="1" oninput="calculateRow(this)"></td>
                 <td><input type="number" name="items[${rowIndex}][rate]" class="form-control rate-input" value="0.00" step="0.01" oninput="calculateRow(this)"></td>
@@ -493,6 +570,7 @@
         const wholesalePrice = parseFloat(selectedOption.getAttribute('data-wholesale')) || 0;
         const specialPrice = parseFloat(selectedOption.getAttribute('data-special')) || 0;
         const level = priceLevelSelect.value || 'retail';
+        const unitOption = syncInvoiceUnits(row, row.querySelector('.invoice-unit-select')?.value);
         const quantity = parseFloat(row.querySelector('.qty-input')?.value || '1') || 1;
         const selectedPriceListId = document.getElementById('invoice-price-list')?.value || '';
         const rowPriceListInput = row.querySelector('.invoice-row-price-list-id');
@@ -511,6 +589,14 @@
             rate = wholesalePrice;
         } else if (level === 'special' && specialPrice > 0) {
             rate = specialPrice;
+        }
+
+        const unitFactor = toInvoiceNumber(unitOption?.dataset.factor) || 1;
+        const unitPrice = toInvoiceNumber(level === 'wholesale' ? unitOption?.dataset.wholesalePrice : unitOption?.dataset.sellingPrice);
+        if (unitPrice > 0) {
+            rate = unitPrice;
+        } else if (unitFactor > 1) {
+            rate *= unitFactor;
         }
 
         row.querySelector('input[name$="[name]"]').value = productName;

@@ -990,7 +990,7 @@ public function store(Request $request)
 	        'items'          => 'required|array|min:1',
         'items.*.id'     => 'required|integer',
         'items.*.qty'    => 'required|numeric|gt:0',
-        'items.*.unitType' => 'nullable|in:unit,roll,carton',
+        'items.*.unitType' => 'nullable|string|max:50',
         'items.*.stockUnits' => 'nullable|numeric|gt:0',
         'items.*.priceLevel' => 'nullable|in:list,retail,wholesale,special',
         'source' => 'nullable|string|max:40',
