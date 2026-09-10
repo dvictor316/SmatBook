@@ -709,7 +709,7 @@
         flex-shrink: 1;
         margin-left: 0;
         max-width: clamp(132px, 11vw, 190px);
-        overflow: hidden;
+        overflow: visible;
     }
 
     .workspace-switcher {
