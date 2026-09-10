@@ -4283,7 +4283,7 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                 $legacyBaseUnit = strtolower(trim((string) ($p->base_unit_name ?? '')));
                 $baseUnitName = $legacyBaseUnit !== '' && !in_array($legacyBaseUnit, ['unit', 'units'], true)
                     ? $legacyBaseUnit
-                    : strtolower(trim((string) (method_exists($p, 'stockUnitSymbol') ? $p->stockUnitSymbol() : 'unit'))) ?: 'unit';
+                    : (strtolower(trim((string) (method_exists($p, 'stockUnitSymbol') ? $p->stockUnitSymbol() : 'unit'))) ?: 'unit');
                 $unitType = strtolower(trim((string) ($p->unit_type ?? 'unit'))) ?: 'unit';
                 $cartonUnitCount = $unitsPerCarton;
                 $measurementParts = ['1 ' . $baseUnitName];
@@ -4445,7 +4445,7 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                         $legacyBaseUnit = strtolower(trim((string) ($p->base_unit_name ?? '')));
                         $baseUnitName = $legacyBaseUnit !== '' && !in_array($legacyBaseUnit, ['unit', 'units'], true)
                             ? $legacyBaseUnit
-                            : strtolower(trim((string) (method_exists($p, 'stockUnitSymbol') ? $p->stockUnitSymbol() : 'unit'))) ?: 'unit';
+                            : (strtolower(trim((string) (method_exists($p, 'stockUnitSymbol') ? $p->stockUnitSymbol() : 'unit'))) ?: 'unit');
                         $unitType = strtolower(trim((string) ($p->unit_type ?? 'unit'))) ?: 'unit';
                         $cartonUnitCount = $unitsPerCarton;
                         $measurementParts = ['1 ' . $baseUnitName];
