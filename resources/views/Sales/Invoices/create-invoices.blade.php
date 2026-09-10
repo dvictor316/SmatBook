@@ -197,13 +197,21 @@
                                                                 <option value="">Custom item</option>
                                                                 @foreach($products as $product)
                                                                     @php
-                                                                        $invoiceUnitOptions = collect($product->activeProductUnits ?? [])->map(fn ($unit) => [
-                                                                            'name' => (string) ($unit->unit_name ?: $unit->unit_symbol),
-                                                                            'symbol' => (string) ($unit->unit_symbol ?: $unit->unit_name),
-                                                                            'conversion_factor' => max(1, (float) $unit->conversion_factor),
-                                                                            'selling_price' => $unit->selling_price,
-                                                                            'wholesale_price' => $unit->wholesale_price,
-                                                                        ])->values();
+                                                                        $invoiceUnitOptions = collect($product->activeProductUnits ?? [])->map(function ($unit) use ($product) {
+                                                                            $unitName = strtolower(trim((string) ($unit->unit_name ?: $unit->unit_symbol)));
+                                                                            $factor = (float) $unit->conversion_factor;
+                                                                            if ($factor <= 1 && in_array($unitName, ['carton', 'ctn'], true)) {
+                                                                                $factor = (float) ($product->units_per_carton ?? 0);
+                                                                            }
+
+                                                                            return [
+                                                                                'name' => (string) ($unit->unit_name ?: $unit->unit_symbol),
+                                                                                'symbol' => (string) ($unit->unit_symbol ?: $unit->unit_name),
+                                                                                'conversion_factor' => max(1, $factor),
+                                                                                'selling_price' => $unit->selling_price,
+                                                                                'wholesale_price' => $unit->wholesale_price,
+                                                                            ];
+                                                                        })->values();
                                                                         if ($invoiceUnitOptions->isEmpty()) {
                                                                             $invoiceUnitOptions = collect([[
                                                                                 'name' => (string) ($product->base_unit_name ?: 'pcs'),
@@ -502,12 +510,29 @@
                     <select name="items[${rowIndex}][product_id]" class="form-control product-select select2" onchange="syncInvoiceProduct(this)">
                         <option value="">Custom item</option>
                         @foreach($products as $product)
+                            @php
+                                $rowUnitOptions = collect($product->activeProductUnits ?? [])->map(function ($unit) use ($product) {
+                                    $unitName = strtolower(trim((string) ($unit->unit_name ?: $unit->unit_symbol)));
+                                    $factor = (float) $unit->conversion_factor;
+                                    if ($factor <= 1 && in_array($unitName, ['carton', 'ctn'], true)) {
+                                        $factor = (float) ($product->units_per_carton ?? 0);
+                                    }
+
+                                    return [
+                                        'name' => (string) ($unit->unit_name ?: $unit->unit_symbol),
+                                        'symbol' => (string) ($unit->unit_symbol ?: $unit->unit_name),
+                                        'conversion_factor' => max(1, $factor),
+                                        'selling_price' => $unit->selling_price,
+                                        'wholesale_price' => $unit->wholesale_price,
+                                    ];
+                                })->values();
+                            @endphp
                             <option value="{{ $product->id }}"
                                 data-name="{{ $product->name }}"
                                 data-retail="{{ $product->retail_price ?? $product->price ?? 0 }}"
                                 data-wholesale="{{ $product->wholesale_price ?? 0 }}"
                                 data-special="{{ $product->special_price ?? 0 }}"
-                                data-units='@json(collect($product->activeProductUnits ?? [])->map(fn ($unit) => ['name' => (string) ($unit->unit_name ?: $unit->unit_symbol), 'symbol' => (string) ($unit->unit_symbol ?: $unit->unit_name), 'conversion_factor' => max(1, (float) $unit->conversion_factor), 'selling_price' => $unit->selling_price, 'wholesale_price' => $unit->wholesale_price])->values())'>
+                                data-units='@json($rowUnitOptions)'>
                                 {{ $product->name }}
                             </option>
                         @endforeach

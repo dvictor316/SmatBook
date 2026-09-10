@@ -4294,13 +4294,21 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                     $measurementParts[] = 'Buy ' . $p->purchaseUnit->symbol . ' = ' . rtrim(rtrim(number_format((float) $p->conversion_rate, 2), '0'), '.') . ' ' . $baseUnitName;
                 }
                 $unitOptions = collect($p->activeProductUnits ?? [])
-                    ->map(fn ($unit) => [
+                    ->map(function ($unit) use ($p) {
+                        $unitName = strtolower(trim((string) ($unit->unit_name ?: $unit->unit_symbol)));
+                        $factor = (float) $unit->conversion_factor;
+                        if ($factor <= 1 && in_array($unitName, ['carton', 'ctn'], true)) {
+                            $factor = (float) ($p->units_per_carton ?? 0);
+                        }
+
+                        return [
                         'name' => (string) ($unit->unit_name ?: $unit->unit_symbol),
                         'symbol' => (string) ($unit->unit_symbol ?: $unit->unit_name),
-                        'conversion_factor' => max(1, (float) $unit->conversion_factor),
+                        'conversion_factor' => max(1, $factor),
                         'selling_price' => $unit->selling_price,
                         'is_default_sales_unit' => (bool) $unit->is_default_sales_unit,
-                    ])
+                        ];
+                    })
                     ->values();
                 if ($unitOptions->isEmpty()) {
                     $unitOptions = collect([
@@ -4427,13 +4435,21 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                             $measurementParts[] = 'Buy ' . $p->purchaseUnit->symbol . ' = ' . rtrim(rtrim(number_format((float) $p->conversion_rate, 2), '0'), '.') . ' ' . $baseUnitName;
                         }
                         $unitOptions = collect($p->activeProductUnits ?? [])
-                            ->map(fn ($unit) => [
+                            ->map(function ($unit) use ($p) {
+                                $unitName = strtolower(trim((string) ($unit->unit_name ?: $unit->unit_symbol)));
+                                $factor = (float) $unit->conversion_factor;
+                                if ($factor <= 1 && in_array($unitName, ['carton', 'ctn'], true)) {
+                                    $factor = (float) ($p->units_per_carton ?? 0);
+                                }
+
+                                return [
                                 'name' => (string) ($unit->unit_name ?: $unit->unit_symbol),
                                 'symbol' => (string) ($unit->unit_symbol ?: $unit->unit_name),
-                                'conversion_factor' => max(1, (float) $unit->conversion_factor),
+                                'conversion_factor' => max(1, $factor),
                                 'selling_price' => $unit->selling_price,
                                 'is_default_sales_unit' => (bool) $unit->is_default_sales_unit,
-                            ])
+                                ];
+                            })
                             ->values();
                         if ($unitOptions->isEmpty()) {
                             $unitOptions = collect([

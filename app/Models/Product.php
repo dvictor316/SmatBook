@@ -219,9 +219,14 @@ class Product extends Model
                 ->first();
 
             if ($matchedUnit) {
+                $matchedFactor = (float) $matchedUnit->conversion_factor;
+                if ($matchedFactor <= 1 && in_array($requestedUnit, ['carton', 'ctn'], true)) {
+                    $matchedFactor = (float) $this->unitsPerCarton();
+                }
+
                 return [
                     'unit_name' => (string) ($matchedUnit->unit_symbol ?: $matchedUnit->unit_name),
-                    'conversion_factor' => max(1, (float) $matchedUnit->conversion_factor),
+                    'conversion_factor' => max(1, $matchedFactor),
                     'purchase_price' => $matchedUnit->purchase_price,
                     'selling_price' => $matchedUnit->selling_price,
                     'wholesale_price' => $matchedUnit->wholesale_price,
