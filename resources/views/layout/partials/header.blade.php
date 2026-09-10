@@ -949,17 +949,26 @@
         }
 
         .header-search-container {
-            flex: 1 1 auto;
-            max-width: none;
-            min-width: 260px;
+            flex: 0 1 clamp(240px, 18vw, 340px);
+            max-width: 340px;
+            min-width: 220px;
         }
 
         .header-search {
-            max-width: none;
+            max-width: 340px;
         }
 
         .header-actions {
             margin-left: auto;
+            margin-right: clamp(12px, 1.6vw, 30px);
+        }
+
+        .header-actions > .dropdown:last-child {
+            max-width: clamp(170px, 13vw, 220px);
+        }
+
+        .user-profile {
+            max-width: none;
         }
     }
 
