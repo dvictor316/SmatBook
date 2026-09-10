@@ -5010,11 +5010,31 @@ $(document).ready(function() {
     function renderUnitButtons(selectedOption, selectedUnitValue = null) {
         const hasProduct = !!selectedOption && !!selectedOption.val();
         const baseUnit = hasProduct ? String(selectedOption.data('base-unit') || 'unit') : 'unit';
-        const dynamicUnits = readUnitOptions(selectedOption).filter((unit) => {
+        const rawUnits = readUnitOptions(selectedOption);
+        const dynamicUnits = rawUnits.map((unit) => {
+            const name = String(unit.name || unit.symbol || '').trim().toLowerCase();
+            const isGenericBaseUnit = ['unit', 'units'].includes(name) && !['unit', 'units'].includes(baseUnit.toLowerCase());
+            return isGenericBaseUnit
+                ? { ...unit, name: baseUnit, symbol: baseUnit }
+                : unit;
+        }).filter((unit) => {
             const name = String(unit.name || unit.symbol || '').trim();
             return name !== '' && (parseFloat(unit.conversion_factor) || 0) > 0;
         });
-        const units = dynamicUnits.length ? dynamicUnits : [{ name: 'unit', symbol: baseUnit, conversion_factor: 1, is_default_sales_unit: true }];
+        const hasBaseUnit = dynamicUnits.some((unit) => {
+            const value = String(unit.name || unit.symbol || '').trim().toLowerCase();
+            return value === baseUnit.toLowerCase();
+        });
+        if (hasProduct && !hasBaseUnit) {
+            dynamicUnits.unshift({
+                name: baseUnit,
+                symbol: baseUnit,
+                conversion_factor: 1,
+                selling_price: selectedOption.data('retail') || selectedOption.data('price') || 0,
+                is_default_sales_unit: true,
+            });
+        }
+        const units = dynamicUnits.length ? dynamicUnits : [{ name: baseUnit, symbol: baseUnit, conversion_factor: 1, is_default_sales_unit: true }];
         const grid = $('.unit-grid');
         const selectedKey = selectedUnitValue ? String(selectedUnitValue).toLowerCase() : null;
         const selectedExists = selectedKey
