@@ -1,0 +1,68 @@
+{\rtf1\ansi\deff0
+{\fonttbl{\f0 Calibri;}{\f1 Calibri Light;}}
+\viewkind4\uc1
+\pard\sa240\qc\f1\fs36\b Carton Sales from KG Stock\b0\par
+\pard\sa180\qc\f0\fs22 SmartProBook Process Guide\par
+\pard\sa240\qc\fs20 Updated: 10 September 2026\par
+\pard\sa240\brdrb\brdrs\brdrw10\par
+
+\pard\sa180\f1\fs28\b Purpose\b0\par
+\pard\sa180\f0\fs22 This process allows a product to be received and stored in kilograms while still being sold as cartons. The system converts every carton sale into the correct kilogram quantity before reducing inventory.\par
+
+\pard\sa180\f1\fs28\b Example\b0\par
+\pard\sa180\f0\fs22 Product: Rice\par
+Base stock unit: KG\par
+One carton: 25 KG\par
+Opening stock: 100 KG\par
+Sale: 2 cartons\par
+Stock deduction: 2 x 25 KG = 50 KG\par
+Remaining stock: 100 KG - 50 KG = 50 KG\par
+
+\pard\sa180\f1\fs28\b 1. Configure the Product\b0\par
+\pard\sa180\f0\fs22 1. Open Inventory and select Products.\par
+2. Find the product and select Edit.\par
+3. Open the Packaging & Units section.\par
+4. Set the Legacy Unit Label to kg.\par
+5. Set Unit of Measure to kilogram (kg).\par
+6. Set Base Unit to kilogram (kg). The base unit is the smallest unit used for stock tracking.\par
+7. In Unit Total, enter the number of kilograms inside one carton. For example, enter 25 when one carton contains 25 KG.\par
+8. Leave Roll Content as 0 when the product is not sold in rolls.\par
+9. Set Default Unit Type to Unit or Carton according to the normal selling method.\par
+10. Save the product.\par
+
+\pard\sa180\f1\fs28\b 2. Enter Opening Stock\b0\par
+\pard\sa180\f0\fs22 Enter the available quantity in the base unit, KG. Do not enter the same stock again as both cartons and kilograms.\par
+\pard\sa120\f0\fs22 Example: If the warehouse has 100 KG, enter 100 KG as the opening stock. The system can then calculate carton availability using the 25 KG carton conversion.\par
+
+\pard\sa180\f1\fs28\b 3. Sell Cartons in POS\b0\par
+\pard\sa180\f0\fs22 1. Open the POS screen.\par
+2. Search for and select the product.\par
+3. Confirm that the unit buttons show KG and CARTON.\par
+4. Select CARTON.\par
+5. Enter the number of cartons to sell.\par
+6. Confirm the carton selling price.\par
+7. Add the item to the sale and complete the invoice.\par
+\pard\sa120\f0\fs22 The POS sends the carton quantity and conversion to the server. The server calculates: cartons sold x KG per carton. Inventory is reduced using the resulting KG quantity.\par
+
+\pard\sa180\f1\fs28\b 4. Verify the Result\b0\par
+\pard\sa180\f0\fs22 After completing the sale, check the product inventory or inventory history. The stock reduction must be shown in KG.\par
+\pard\sa120\f0\fs22 For a 25 KG carton, the expected results are:\par
+1 carton = 25 KG deducted\par
+2 cartons = 50 KG deducted\par
+4 cartons = 100 KG deducted\par
+
+\pard\sa180\f1\fs28\b 5. Important Rules\b0\par
+\pard\sa180\f0\fs22 \bullet\tab Always store stock in one base unit. For this process, the base unit is KG.\par
+\bullet\tab The carton conversion must describe the contents of one carton in KG.\par
+\bullet\tab Do not enter 100 KG as 100 cartons. Enter 100 KG as the available stock.\par
+\bullet\tab A carton sale must not deduct one carton as one KG unless one carton really contains 1 KG.\par
+\bullet\tab If the product has different carton sizes, create separate configured selling units with their own conversion factors and prices.\par
+\bullet\tab Test one carton first and confirm that the inventory decreases by the expected KG quantity.\par
+
+\pard\sa180\f1\fs28\b Troubleshooting\b0\par
+\pard\sa180\f0\fs22 If CARTON does not appear after selecting the product, edit the product and confirm that Unit Total or Units Per Carton is greater than zero.\par
+\pard\sa120\f0\fs22 If the stock deduction is wrong, confirm that the product base unit is KG and that the carton conversion is the number of kilograms in one carton. Clear the application cache after deployment with php artisan optimize:clear.\par
+
+\pard\sa240\brdrt\brdrs\brdrw10\par
+\pard\sa120\qc\f0\fs18 End of process guide\par
+}
