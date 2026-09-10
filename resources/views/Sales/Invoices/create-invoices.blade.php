@@ -108,6 +108,7 @@
                                                         @foreach($customers as $customer)
                                                         <option value="{{ $customer->id }}"
                                                             data-price-list-id="{{ $customer->price_list_id ?? '' }}"
+                                                            data-outstanding-balance="{{ number_format((float) ($customer->outstanding_balance ?? 0), 2, '.', '') }}"
                                                             {{ (string) $selectedCustomer === (string) $customer->id ? 'selected' : '' }}>
                                                             {{ $customer->customer_name ?? $customer->name }}
                                                         </option>
@@ -120,6 +121,10 @@
                                                     </a>
                                                 </li>
                                             </ul>
+                                            <div id="customer-balance-summary" class="alert alert-warning py-2 px-3 mt-2 mb-0 d-none">
+                                                <span class="fw-semibold">Previous Customer Balance:</span>
+                                                <span id="customer-balance-amount">₦0.00</span>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -378,6 +383,8 @@
             return {
                 value: option.value,
                 label: option.textContent || '',
+                priceListId: option.dataset.priceListId || '',
+                outstandingBalance: option.dataset.outstandingBalance || '0.00',
             };
         });
     }
@@ -403,6 +410,8 @@
             const node = document.createElement('option');
             node.value = option.value;
             node.textContent = option.label;
+            node.dataset.priceListId = option.priceListId;
+            node.dataset.outstandingBalance = option.outstandingBalance;
             if (option.value === selectedValue) {
                 node.selected = true;
             }
@@ -419,6 +428,20 @@
     }
 
     function bindCreditLimitContinue() {}
+
+    function updateCustomerBalanceDisplay() {
+        const customerSelect = document.querySelector('.customer-select');
+        const summary = document.getElementById('customer-balance-summary');
+        const amount = document.getElementById('customer-balance-amount');
+        if (!customerSelect || !summary || !amount) {
+            return;
+        }
+
+        const option = customerSelect.options[customerSelect.selectedIndex];
+        const balance = toInvoiceNumber(option?.dataset?.outstandingBalance);
+        amount.textContent = '₦' + balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        summary.classList.toggle('d-none', !customerSelect.value);
+    }
 
     function getInvoiceUnitOptions(option) {
         if (!option || !option.value) {
@@ -466,6 +489,7 @@
             bindCreditLimitContinue();
             snapshotCustomerOptions();
             initInvoiceSelect2(document);
+            updateCustomerBalanceDisplay();
             document.querySelectorAll('.invoice-row').forEach(function(row) {
                 syncInvoiceUnits(row, row.querySelector('.invoice-unit-select')?.value);
                 const rateInput = row.querySelector('.rate-input');
@@ -485,6 +509,7 @@
         bindCreditLimitContinue();
         snapshotCustomerOptions();
         initInvoiceSelect2(document);
+        updateCustomerBalanceDisplay();
         document.querySelectorAll('.invoice-row').forEach(function(row) {
             syncInvoiceUnits(row, row.querySelector('.invoice-unit-select')?.value);
             const rateInput = row.querySelector('.rate-input');
@@ -710,6 +735,7 @@
     }
 
     document.querySelector('.customer-select')?.addEventListener('change', function() {
+        updateCustomerBalanceDisplay();
         const selected = this.options[this.selectedIndex];
         const customerPriceListId = selected?.dataset?.priceListId || '';
         const priceListSelect = document.getElementById('invoice-price-list');
