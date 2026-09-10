@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 150" role="img" aria-label="Decorative money note">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#dff3bd"/>
+      <stop offset="1" stop-color="#7ebc68"/>
+    </linearGradient>
+  </defs>
+  <rect x="5" y="5" width="310" height="140" rx="10" fill="url(#paper)" stroke="#3f7c4c" stroke-width="6"/>
+  <rect x="18" y="18" width="284" height="114" rx="6" fill="none" stroke="#ffffff" stroke-opacity=".7" stroke-width="2"/>
+  <path d="M30 42h72M218 42h72M30 108h72M218 108h72" stroke="#3f7c4c" stroke-width="3" stroke-linecap="round" opacity=".7"/>
+  <circle cx="160" cy="75" r="38" fill="#b7db86" stroke="#3f7c4c" stroke-width="3"/>
+  <text x="160" y="91" text-anchor="middle" font-family="Georgia, serif" font-size="54" font-weight="700" fill="#32643c">$</text>
+  <text x="31" y="36" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#32643c">CASH</text>
+  <text x="289" y="124" text-anchor="end" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#32643c">100</text>
+</svg>

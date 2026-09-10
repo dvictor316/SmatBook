@@ -4305,6 +4305,41 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
     transform: rotate(17deg);
 }
 
+.pos-rail-money-notes {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 145px;
+    margin: 8px 2px 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.pos-rail-money-notes img {
+    position: absolute;
+    width: 118px;
+    height: auto;
+    filter: drop-shadow(0 8px 7px rgba(23, 43, 77, 0.22));
+}
+
+.pos-rail-money-notes img:nth-child(1) {
+    left: -17px;
+    bottom: 13px;
+    transform: rotate(-15deg);
+}
+
+.pos-rail-money-notes img:nth-child(2) {
+    left: 50%;
+    bottom: 3px;
+    transform: translateX(-50%) rotate(4deg);
+    z-index: 1;
+}
+
+.pos-rail-money-notes img:nth-child(3) {
+    right: -17px;
+    bottom: 13px;
+    transform: rotate(15deg);
+}
+
 .pos-rail-visual::before,
 .pos-rail-visual::after {
     display: none;
@@ -4316,7 +4351,7 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
 }
 
 .pos-rail-panel .pos-rail-visual {
-    margin-top: auto;
+    margin-top: 0;
 }
 
 .pos-rail-visual .pos-rail-visual-label {
@@ -4467,6 +4502,11 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                         <span>Show Messages</span>
                     </span>
                 @endif
+                <div class="pos-rail-money-notes" aria-hidden="true">
+                    <img src="{{ asset('assets/img/pos-money-note.svg') }}" alt="">
+                    <img src="{{ asset('assets/img/pos-money-note.svg') }}" alt="">
+                    <img src="{{ asset('assets/img/pos-money-note.svg') }}" alt="">
+                </div>
                 <div class="pos-rail-visual" aria-hidden="true">
                     <div class="pos-rail-currency-cloud">
                         <span>$</span>
