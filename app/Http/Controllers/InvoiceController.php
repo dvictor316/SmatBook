@@ -1311,9 +1311,11 @@ class InvoiceController extends Controller
             'sales'
         )->findOrFail($id);
         $sale = $this->applyComputedInvoiceState($sale);
+        $previousCustomerBalance = $this->customerOutstandingBalance((int) $sale->customer_id, (int) $sale->id);
 
         return view('Sales.Invoices.print', [
             'sale' => $sale,
+            'previousCustomerBalance' => $previousCustomerBalance,
             'backUrl' => route('invoice-details-admin', $sale->id),
         ]);
     }
@@ -1347,9 +1349,11 @@ class InvoiceController extends Controller
             'sales'
         )->findOrFail($id);
         $sale = $this->applyComputedInvoiceState($sale);
+        $previousCustomerBalance = $this->customerOutstandingBalance((int) $sale->customer_id, (int) $sale->id);
 
         return view('Sales.Invoices.print', [
             'sale' => $sale,
+            'previousCustomerBalance' => $previousCustomerBalance,
             'backUrl' => route('invoice-details', $sale->id),
         ]);
     }

@@ -418,6 +418,8 @@
         $changeAmount = (float) ($sale->change_amount ?? 0);
         $tenderedAmount = $appliedAmount + max(0, $changeAmount);
         $balanceDue = (float) ($sale->effective_balance ?? max(0, (float) ($sale->total ?? 0) - $appliedAmount));
+        $previousCustomerBalance = max(0, (float) ($previousCustomerBalance ?? 0));
+        $customerBalanceDue = $previousCustomerBalance + $balanceDue;
         $cashierName = $sale->cashier_name ?? $sale->user?->name ?? 'System';
         $amountInWords = $sale->amount_in_words_display ?? 'Zero Naira Only';
         $customerEmail = trim((string) ($sale->customer?->email ?? ''));
@@ -588,6 +590,18 @@
                             <tr class="total-row">
                                 <td>Total</td>
                                 <td class="text-end">₦{{ number_format((float) ($sale->total ?? 0), 2) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Previous Customer Balance</td>
+                                <td class="text-end fw-bold">₦{{ number_format($previousCustomerBalance, 2) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Current Invoice Balance</td>
+                                <td class="text-end fw-bold">₦{{ number_format($balanceDue, 2) }}</td>
+                            </tr>
+                            <tr class="total-row">
+                                <td>Customer Balance Due</td>
+                                <td class="text-end text-danger">₦{{ number_format($customerBalanceDue, 2) }}</td>
                             </tr>
                         </table>
                     </div>

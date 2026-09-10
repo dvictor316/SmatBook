@@ -1485,9 +1485,24 @@ $sale = Sale::create([
     public function printInvoice($id)
     {
         $sale = Sale::with(['items.product', 'customer', 'user'])->findOrFail($id);
+        $previousCustomerBalance = 0.0;
+        if ($sale->customer_id && Schema::hasColumn('sales', 'balance')) {
+            $balanceQuery = Sale::query()
+                ->where('customer_id', $sale->customer_id)
+                ->where('id', '!=', $sale->id);
+            $this->applyTenantScope($balanceQuery, 'sales');
+            if (Schema::hasColumn('sales', 'order_status')) {
+                $balanceQuery->where(function ($query) {
+                    $query->whereNull('order_status')
+                        ->orWhere('order_status', '!=', 'draft');
+                });
+            }
+            $previousCustomerBalance = (float) $balanceQuery->sum(DB::raw('GREATEST(COALESCE(balance, 0), 0)'));
+        }
 
         return view('Sales.Invoices.print', [
             'sale' => $sale,
+            'previousCustomerBalance' => $previousCustomerBalance,
             'backUrl' => route('sales.invoice.show', $sale->id),
         ]);
     }
