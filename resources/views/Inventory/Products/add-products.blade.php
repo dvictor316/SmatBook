@@ -1163,7 +1163,9 @@ $(document).ready(function () {
     function refreshPackagingFallback() {
         var rollsPerCtn = numberValue('quick_rolls_per_carton_helper');
         var pcsPerRoll = numberValue('quick_pcs_per_roll_helper');
-        var pcsPerCtn = rollsPerCtn > 0 && pcsPerRoll > 0 ? rollsPerCtn * pcsPerRoll : 0;
+        var cartonInput = document.getElementById('quick_pcs_per_carton_helper');
+        var directCartonUnits = cartonInput ? (parseFloat(cartonInput.value) || 0) : 0;
+        var pcsPerCtn = rollsPerCtn > 0 && pcsPerRoll > 0 ? rollsPerCtn * pcsPerRoll : directCartonUnits;
         var unitLabel = textValue('input[name="base_unit_name"]', 'pcs');
         var cartons = parseFloat((document.querySelector('input[name="stock_cartons"]') || {}).value) || 0;
         var rolls = parseFloat((document.querySelector('input[name="stock_rolls"]') || {}).value) || 0;
@@ -1171,7 +1173,9 @@ $(document).ready(function () {
         var purchasePrice = parseFloat((document.querySelector('input[name="purchase_price"]') || {}).value) || 0;
         var total = (cartons * pcsPerCtn) + (rolls * pcsPerRoll) + pieces;
 
-        setNumberValue('quick_pcs_per_carton_helper', pcsPerCtn);
+        if (rollsPerCtn > 0 && pcsPerRoll > 0) {
+            setNumberValue('quick_pcs_per_carton_helper', pcsPerCtn);
+        }
 
         var unitsPerRollInput = document.getElementById('quick_units_per_roll_input');
         var unitsPerCartonInput = document.getElementById('quick_units_per_carton_input');
