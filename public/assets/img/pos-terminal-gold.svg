@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 320" role="img" aria-labelledby="title desc">
+  <title id="title">Point of sale terminal</title>
+  <desc id="desc">A modern point of sale terminal with a gold currency symbol.</desc>
+  <defs>
+    <linearGradient id="shell" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b3359"/>
+      <stop offset="1" stop-color="#071a38"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3c77a5"/>
+      <stop offset="1" stop-color="#102b56"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="14" stdDeviation="12" flood-color="#071a38" flood-opacity=".28"/>
+    </filter>
+  </defs>
+  <ellipse cx="260" cy="286" rx="178" ry="18" fill="#0b2345" opacity=".16"/>
+  <g filter="url(#shadow)">
+    <path d="M112 82c0-13 11-24 24-24h238c13 0 24 11 24 24v118c0 13-11 24-24 24H136c-13 0-24-11-24-24V82Z" fill="url(#shell)" stroke="#d5a928" stroke-width="5"/>
+    <rect x="140" y="86" width="230" height="90" rx="10" fill="url(#screen)" stroke="#6ce5f0" stroke-opacity=".6" stroke-width="3"/>
+    <text x="255" y="150" fill="#ffd75a" font-family="Arial, sans-serif" font-size="66" font-weight="700" text-anchor="middle">₦</text>
+    <path d="M172 224h174l-18 42H190l-18-42Z" fill="#244a78" stroke="#d5a928" stroke-width="4"/>
+    <g fill="#d9e9f4">
+      <rect x="207" y="231" width="20" height="8" rx="4"/><rect x="237" y="231" width="20" height="8" rx="4"/><rect x="267" y="231" width="20" height="8" rx="4"/><rect x="297" y="231" width="20" height="8" rx="4"/>
+      <rect x="222" y="247" width="20" height="8" rx="4"/><rect x="252" y="247" width="20" height="8" rx="4"/><rect x="282" y="247" width="20" height="8" rx="4"/>
+    </g>
+  </g>
+</svg>

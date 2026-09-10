@@ -4252,6 +4252,32 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
     text-shadow: 0 0 12px rgba(40, 199, 232, 0.72);
 }
 
+.pos-rail-visual img {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 172px;
+    height: 112px;
+    object-fit: contain;
+    transform: translateX(-50%);
+    z-index: 1;
+    filter: drop-shadow(0 10px 10px rgba(15, 38, 75, 0.16));
+}
+
+.pos-rail-visual::before,
+.pos-rail-visual::after {
+    display: none;
+}
+
+.pos-rail-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.pos-rail-panel .pos-rail-visual {
+    margin-top: auto;
+}
+
 .pos-rail-visual .pos-rail-visual-label {
     position: relative;
     z-index: 1;
@@ -4400,11 +4426,12 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                         <span>Show Messages</span>
                     </span>
                 @endif
-            </div>
-            <div class="pos-rail-visual" aria-hidden="true">
-                <div class="pos-rail-visual-label">
-                    <span>Sales ready</span>
-                    <span><i class="fas fa-circle me-1"></i>Online</span>
+                <div class="pos-rail-visual" aria-hidden="true">
+                    <img src="{{ asset('assets/img/pos-terminal-gold.svg') }}" alt="">
+                    <div class="pos-rail-visual-label">
+                        <span>Sales ready</span>
+                        <span><i class="fas fa-circle me-1"></i>Online</span>
+                    </div>
                 </div>
             </div>
         </aside>
