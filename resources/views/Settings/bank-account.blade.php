@@ -198,6 +198,20 @@
             display: inline-flex;
             align-items: center;
         }
+
+        .bank-page .modal-dialog {
+            max-height: calc(100vh - 2rem);
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .bank-page .modal-content {
+            max-height: calc(100vh - 2rem);
+        }
+
+        .bank-page .modal-body {
+            overflow-y: auto;
+        }
     </style>
 
     @foreach (($bankAccounts ?? collect()) as $account)

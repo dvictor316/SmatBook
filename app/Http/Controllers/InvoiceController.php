@@ -10,6 +10,8 @@ use App\Models\Invoice;
 use App\Models\Signature;
 use App\Models\Product;
 use App\Models\Payment;
+use App\Models\User;
+use App\Notifications\CustomerCreditLimitExceededNotification;
 use App\Services\JournalService;
 use App\Support\BranchInventoryService;
 use App\Support\GeoCurrency;
@@ -65,7 +67,7 @@ class InvoiceController extends Controller
         $currentOutstanding = $this->customerOutstandingBalance((int) $customer->id, $excludeSaleId);
         $projectedOutstanding = round($currentOutstanding + $newCreditAmount, 2);
 
-        if ($projectedOutstanding <= $creditLimit) {
+        if ($projectedOutstanding < $creditLimit) {
             return null;
         }
 
@@ -78,6 +80,23 @@ class InvoiceController extends Controller
             'excess' => round($projectedOutstanding - $creditLimit, 2),
             'blocked' => true,
         ]);
+    }
+
+    private function notifyCreditLimitExceeded(Customer $customer, array $creditWarning): void
+    {
+        $owners = User::query()
+            ->where(function ($query) {
+                $query->whereIn('role', ['owner', 'admin', 'administrator', 'super_admin'])
+                    ->orWhereHas('role', fn ($roleQuery) => $roleQuery->whereIn('name', ['owner', 'admin', 'administrator', 'super_admin']));
+            });
+
+        if (Schema::hasColumn('users', 'company_id') && !empty($customer->company_id)) {
+            $owners->where('company_id', $customer->company_id);
+        }
+
+        foreach ($owners->get() as $owner) {
+            $owner->notify(new CustomerCreditLimitExceededNotification($customer, $creditWarning));
+        }
     }
 
     private function syncGlobalStockFromBranches(Product $product): void
@@ -571,7 +590,7 @@ class InvoiceController extends Controller
         $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'invoice_date' => 'required',
-            'due_date' => 'required',
+            'due_date' => 'nullable|date',
             'items' => 'required|array|min:1',
             'items.*.qty' => 'required|numeric|min:1',
             'items.*.rate' => 'required|numeric|min:0',
@@ -585,7 +604,7 @@ class InvoiceController extends Controller
             DB::beginTransaction();
 
             $invoiceDate = $request->invoice_date ? Carbon::parse($request->invoice_date)->toDateString() : now()->toDateString();
-            $dueDate = Carbon::parse($request->due_date)->toDateString();
+            $dueDate = $request->filled('due_date') ? Carbon::parse($request->due_date)->toDateString() : null;
 
             $items = collect($request->input('items', []))
                 ->filter(fn ($item) => filled($item['name'] ?? null) || filled($item['product_id'] ?? null))
@@ -595,7 +614,9 @@ class InvoiceController extends Controller
                 return back()->withInput()->with('error', 'Add at least one invoice item before saving.');
             }
 
-            $customer = $this->applyTenantScope(Customer::query(), 'customers')->findOrFail((int) $request->customer_id);
+            $customer = $this->applyTenantScope(Customer::query(), 'customers')
+                ->lockForUpdate()
+                ->findOrFail((int) $request->customer_id);
             $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
             $activeBranch = $this->getActiveBranchContext();
             $branchId = $activeBranch['id'];
@@ -669,6 +690,10 @@ class InvoiceController extends Controller
 
             if (!$isDraft && $creditLimitResponse = $this->creditLimitWarningResponse($request, $customer, $balanceAmount)) {
                 DB::rollBack();
+                $creditWarning = session('credit_limit_warning');
+                if (is_array($creditWarning)) {
+                    $this->notifyCreditLimitExceeded($customer, $creditWarning);
+                }
                 return $creditLimitResponse;
             }
 
@@ -960,7 +985,7 @@ class InvoiceController extends Controller
         $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'invoice_date' => 'required',
-            'due_date' => 'required',
+            'due_date' => 'nullable|date',
             'items' => 'required|array|min:1',
             'items.*.qty' => 'required|numeric|min:1',
             'items.*.rate' => 'required|numeric|min:0',
@@ -974,7 +999,7 @@ class InvoiceController extends Controller
             DB::beginTransaction();
 
             $invoiceDate = $request->invoice_date ? Carbon::parse($request->invoice_date)->toDateString() : now()->toDateString();
-            $dueDate = Carbon::parse($request->due_date)->toDateString();
+            $dueDate = $request->filled('due_date') ? Carbon::parse($request->due_date)->toDateString() : null;
 
             $items = collect($request->input('items', []))
                 ->filter(fn ($item) => filled($item['name'] ?? null) || filled($item['product_id'] ?? null))
@@ -984,7 +1009,9 @@ class InvoiceController extends Controller
                 return back()->withInput()->with('error', 'Add at least one invoice item before saving.');
             }
 
-            $customer = $this->applyTenantScope(Customer::query(), 'customers')->findOrFail((int) $request->customer_id);
+            $customer = $this->applyTenantScope(Customer::query(), 'customers')
+                ->lockForUpdate()
+                ->findOrFail((int) $request->customer_id);
             $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
             $activeBranch = $this->getActiveBranchContext();
             $branchId = $activeBranch['id'];
@@ -1092,6 +1119,10 @@ class InvoiceController extends Controller
 
             if (!$isDraft && $creditLimitResponse = $this->creditLimitWarningResponse($request, $customer, $balanceAmount, (int) $sale->id)) {
                 DB::rollBack();
+                $creditWarning = session('credit_limit_warning');
+                if (is_array($creditWarning)) {
+                    $this->notifyCreditLimitExceeded($customer, $creditWarning);
+                }
                 return $creditLimitResponse;
             }
 
