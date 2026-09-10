@@ -943,7 +943,7 @@
     @media (min-width: 1200px) {
         .header {
             padding-left: clamp(24px, 3vw, 56px);
-            padding-right: clamp(24px, 3vw, 56px);
+            padding-right: clamp(48px, 4.5vw, 88px);
             --header-item-gap: clamp(18px, 1.8vw, 32px);
             --header-action-gap: clamp(12px, 1.2vw, 22px);
         }
