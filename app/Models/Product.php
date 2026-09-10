@@ -141,6 +141,11 @@ class Product extends Model
 
     public function stockUnitSymbol(): string
     {
+        $legacyLabel = strtolower(trim((string) ($this->base_unit_name ?? '')));
+        if ($legacyLabel !== '' && !in_array($legacyLabel, ['unit', 'units'], true)) {
+            return $legacyLabel;
+        }
+
         return (string) (
             $this->baseUnit?->symbol
             ?? $this->unit?->symbol

@@ -4280,7 +4280,10 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                 $unitsPerCarton = max((int) ($p->units_per_carton ?? 0), 0);
                 $unitsPerRoll = max((int) ($p->units_per_roll ?? 0), 0);
                 $rollsPerCarton = $unitsPerRoll > 0 && $unitsPerCarton > 0 ? (int) floor($unitsPerCarton / $unitsPerRoll) : 0;
-                $baseUnitName = strtolower(trim((string) (method_exists($p, 'stockUnitSymbol') ? $p->stockUnitSymbol() : ($p->base_unit_name ?? 'unit')))) ?: 'unit';
+                $legacyBaseUnit = strtolower(trim((string) ($p->base_unit_name ?? '')));
+                $baseUnitName = $legacyBaseUnit !== '' && !in_array($legacyBaseUnit, ['unit', 'units'], true)
+                    ? $legacyBaseUnit
+                    : strtolower(trim((string) (method_exists($p, 'stockUnitSymbol') ? $p->stockUnitSymbol() : 'unit'))) ?: 'unit';
                 $unitType = strtolower(trim((string) ($p->unit_type ?? 'unit'))) ?: 'unit';
                 $cartonUnitCount = $unitsPerCarton;
                 $measurementParts = ['1 ' . $baseUnitName];
@@ -4439,7 +4442,10 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                         $unitsPerCarton = max((int) ($p->units_per_carton ?? 0), 0);
                         $unitsPerRoll = max((int) ($p->units_per_roll ?? 0), 0);
                         $rollsPerCarton = $unitsPerRoll > 0 && $unitsPerCarton > 0 ? (int) floor($unitsPerCarton / $unitsPerRoll) : 0;
-                        $baseUnitName = strtolower(trim((string) (method_exists($p, 'stockUnitSymbol') ? $p->stockUnitSymbol() : ($p->base_unit_name ?? 'unit')))) ?: 'unit';
+                        $legacyBaseUnit = strtolower(trim((string) ($p->base_unit_name ?? '')));
+                        $baseUnitName = $legacyBaseUnit !== '' && !in_array($legacyBaseUnit, ['unit', 'units'], true)
+                            ? $legacyBaseUnit
+                            : strtolower(trim((string) (method_exists($p, 'stockUnitSymbol') ? $p->stockUnitSymbol() : 'unit'))) ?: 'unit';
                         $unitType = strtolower(trim((string) ($p->unit_type ?? 'unit'))) ?: 'unit';
                         $cartonUnitCount = $unitsPerCarton;
                         $measurementParts = ['1 ' . $baseUnitName];
