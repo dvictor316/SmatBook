@@ -534,10 +534,16 @@
     .header-toggle:hover { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); color: #1e293b; }
     body.sidebar-collapsed #toggle_btn,
     body.mini-sidebar #toggle_btn {
-        background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
-        border-color: #2563eb;
+        background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+        border-color: #b91c1c;
         color: #fff;
-        box-shadow: 0 10px 22px rgba(37, 99, 235, 0.2);
+        box-shadow: 0 10px 22px rgba(220, 38, 38, 0.22);
+    }
+
+    #mobile_btn.is-open {
+        background: #fff1f2;
+        border-color: #fecaca;
+        color: #dc2626;
     }
 
     .toggle-bars {
