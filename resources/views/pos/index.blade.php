@@ -4264,6 +4264,47 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
     filter: drop-shadow(0 10px 10px rgba(15, 38, 75, 0.16));
 }
 
+.pos-rail-currency-cloud {
+    position: absolute;
+    inset: 8px 18px auto;
+    height: 54px;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.pos-rail-currency-cloud span {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 2px solid #d5a928;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #fff3ad, #d5a928);
+    color: #513b00;
+    font-size: 1.05rem;
+    font-weight: 900;
+    box-shadow: 0 5px 12px rgba(136, 96, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.pos-rail-currency-cloud span:nth-child(1) {
+    left: 5%;
+    transform: rotate(-16deg);
+}
+
+.pos-rail-currency-cloud span:nth-child(2) {
+    top: -5px;
+    left: 50%;
+    transform: translateX(-50%) rotate(8deg);
+    border-color: #f2c94c;
+}
+
+.pos-rail-currency-cloud span:nth-child(3) {
+    right: 5%;
+    transform: rotate(17deg);
+}
+
 .pos-rail-visual::before,
 .pos-rail-visual::after {
     display: none;
@@ -4427,6 +4468,11 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                     </span>
                 @endif
                 <div class="pos-rail-visual" aria-hidden="true">
+                    <div class="pos-rail-currency-cloud">
+                        <span>$</span>
+                        <span>₦</span>
+                        <span>£</span>
+                    </div>
                     <img src="{{ asset('assets/img/pos-terminal-gold.svg') }}" alt="">
                     <div class="pos-rail-visual-label">
                         <span>Sales ready</span>
