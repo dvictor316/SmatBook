@@ -7049,6 +7049,8 @@ window.POS_ENABLE_FALLBACK = function () {
         const grid = document.querySelector('.unit-grid');
         if (!grid) return;
 
+        const selectedUnit = getSelectedUnitType();
+
         let units = data.unitOptions || data.units || [];
         if (typeof units === 'string') {
             try {
@@ -7075,7 +7077,7 @@ window.POS_ENABLE_FALLBACK = function () {
             const label = String(unit.symbol || unit.name || value);
             const factor = Math.max(parseFloat(unit.conversion_factor) || 1, 1);
             const inputId = `unit-type-${value.replace(/[^a-z0-9_-]+/g, '-')}`;
-            const checked = unit.is_default_sales_unit || index === 0 ? ' checked' : '';
+            const checked = selectedUnit === value || (!units.some((candidate) => String(candidate.name || candidate.symbol || baseUnit).toLowerCase() === selectedUnit) && (unit.is_default_sales_unit || index === 0)) ? ' checked' : '';
             return `<input type="radio" class="btn-check" name="unit_type" id="${inputId}" value="${value}" data-factor="${factor}" data-selling-price="${unit.selling_price ?? ''}"${checked}><label class="btn unit-btn" for="${inputId}">${label}<small>${factor > 1 ? `${factor} ${baseUnit}` : `1 ${baseUnit}`}</small></label>`;
         }).join('');
 
