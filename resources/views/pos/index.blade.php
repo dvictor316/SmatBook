@@ -4310,6 +4310,24 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                         ];
                     })
                     ->values();
+                if ($baseUnitName !== 'unit') {
+                    $unitOptions = $unitOptions->reject(fn ($unit) => strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))) === 'unit');
+                }
+                if (!$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), [$baseUnitName, strtolower((string) ($p->baseUnit?->symbol ?? ''))], true))) {
+                    $unitOptions->prepend([
+                        'name' => $baseUnitName,
+                        'symbol' => $baseUnitName,
+                        'conversion_factor' => 1,
+                        'selling_price' => $retailPrice,
+                        'is_default_sales_unit' => true,
+                    ]);
+                }
+                if ($unitsPerRoll > 1 && !$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), ['roll'], true))) {
+                    $unitOptions->push(['name' => 'roll', 'symbol' => 'roll', 'conversion_factor' => $unitsPerRoll, 'selling_price' => null, 'is_default_sales_unit' => $unitType === 'roll']);
+                }
+                if ($cartonUnitCount > 1 && !$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), ['carton', 'ctn'], true))) {
+                    $unitOptions->push(['name' => 'carton', 'symbol' => 'ctn', 'conversion_factor' => $cartonUnitCount, 'selling_price' => null, 'is_default_sales_unit' => $unitType === 'carton']);
+                }
                 if ($unitOptions->isEmpty()) {
                     $unitOptions = collect([
                         ['name' => $baseUnitName, 'symbol' => $baseUnitName, 'conversion_factor' => 1, 'selling_price' => $retailPrice, 'is_default_sales_unit' => $unitType === 'unit'],
@@ -4451,6 +4469,24 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                                 ];
                             })
                             ->values();
+                        if ($baseUnitName !== 'unit') {
+                            $unitOptions = $unitOptions->reject(fn ($unit) => strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))) === 'unit');
+                        }
+                        if (!$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), [$baseUnitName, strtolower((string) ($p->baseUnit?->symbol ?? ''))], true))) {
+                            $unitOptions->prepend([
+                                'name' => $baseUnitName,
+                                'symbol' => $baseUnitName,
+                                'conversion_factor' => 1,
+                                'selling_price' => $retailPrice,
+                                'is_default_sales_unit' => true,
+                            ]);
+                        }
+                        if ($unitsPerRoll > 1 && !$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), ['roll'], true))) {
+                            $unitOptions->push(['name' => 'roll', 'symbol' => 'roll', 'conversion_factor' => $unitsPerRoll, 'selling_price' => null, 'is_default_sales_unit' => $unitType === 'roll']);
+                        }
+                        if ($cartonUnitCount > 1 && !$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), ['carton', 'ctn'], true))) {
+                            $unitOptions->push(['name' => 'carton', 'symbol' => 'ctn', 'conversion_factor' => $cartonUnitCount, 'selling_price' => null, 'is_default_sales_unit' => $unitType === 'carton']);
+                        }
                         if ($unitOptions->isEmpty()) {
                             $unitOptions = collect([
                                 ['name' => $baseUnitName, 'symbol' => $baseUnitName, 'conversion_factor' => 1, 'selling_price' => $retailPrice, 'is_default_sales_unit' => $unitType === 'unit'],
