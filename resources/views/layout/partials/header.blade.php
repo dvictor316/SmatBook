@@ -1090,6 +1090,55 @@
         }
     }
 
+    @media (min-width: 768px) and (max-width: 1199.98px) {
+        .header {
+            --header-item-gap: 14px;
+            --header-action-gap: 10px;
+            padding: 0 clamp(14px, 2.5vw, 28px);
+        }
+
+        #mobile_btn {
+            width: 40px;
+            height: 40px;
+        }
+
+        .header-logo {
+            max-width: 220px;
+            gap: 10px;
+        }
+
+        .header-logo img {
+            height: 46px;
+        }
+
+        .spb-wordmark {
+            font-size: clamp(1rem, 1.8vw, 1.18rem);
+            letter-spacing: -0.25px;
+        }
+
+        .header-actions {
+            gap: 10px;
+        }
+
+        .header-indicator,
+        .notification-bell,
+        .mobile-search-btn {
+            width: 40px;
+            height: 40px;
+            font-size: 17px;
+        }
+
+        .user-profile {
+            min-width: 40px;
+            padding: 2px;
+        }
+
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+        }
+    }
+
     /* Mobile search overlay */
     .mobile-search-overlay {
         position: fixed;
