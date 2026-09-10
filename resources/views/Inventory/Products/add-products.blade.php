@@ -478,22 +478,22 @@
                                     <span class="product-form-card-icon icon-tone-green"><i class="fas fa-balance-scale"></i></span>
                                 </div>
                                 <h6 class="mb-1">Packaging Setup</h6>
-                                <p class="product-form-muted">Enter any two values below and the third one fills automatically.</p>
+                                <p class="product-form-muted">Choose how one carton is measured. For direct sales, enter the base-unit quantity in one carton, such as <strong>25 kg per carton</strong>. If cartons contain rolls, enter rolls per carton and units per roll.</p>
                                 <div class="row g-3">
                                     <div class="col-md-4">
-                                        <label class="form-label">Rolls Per Ctn</label>
+                                        <label class="form-label" id="quick_rolls_per_carton_label">Rolls Per Ctn</label>
                                         <input type="number" id="quick_rolls_per_carton_helper" min="0" step="0.01" class="form-control" value="{{ $oldRollsPerCarton }}">
                                         <small class="text-muted">How many rolls are inside one carton.</small>
                                     </div>
                                     <div class="col-md-4">
-                                        <label class="form-label">Pcs Per Roll</label>
+                                        <label class="form-label" id="quick_pcs_per_roll_label">Base Units Per Roll</label>
                                         <input type="number" id="quick_pcs_per_roll_helper" min="0" step="0.01" class="form-control" value="{{ $oldUnitsPerRoll }}">
-                                        <small class="text-muted">How many pcs are inside one roll.</small>
+                                        <small class="text-muted" id="quick_pcs_per_roll_help">How many base units are inside one roll.</small>
                                     </div>
                                     <div class="col-md-4">
-                                        <label class="form-label">Pcs Per Ctn</label>
-                                        <input type="number" id="quick_pcs_per_carton_helper" min="0" step="0.01" class="form-control" value="{{ $oldPiecesPerCarton }}" readonly>
-                                        <small class="text-muted">Calculated from rolls per carton and pcs per roll.</small>
+                                        <label class="form-label" id="quick_pcs_per_carton_label">Base Units Per Carton</label>
+                                        <input type="number" id="quick_pcs_per_carton_helper" min="0" step="0.01" class="form-control" value="{{ $oldPiecesPerCarton }}">
+                                        <small class="text-muted" id="quick_pcs_per_carton_help">Enter the total base units in one carton. This is the value to use for KG products sold by carton.</small>
                                     </div>
                                     <input type="hidden" name="units_per_roll" id="quick_units_per_roll_input" value="{{ old('units_per_roll', 0) }}">
                                     <input type="hidden" name="units_per_carton" id="quick_units_per_carton_input" value="{{ old('units_per_carton', 0) }}">
@@ -527,7 +527,7 @@
                                     <div class="col-12">
                                         <div class="quick-summary-pills">
                                             <div class="quick-summary-pill">
-                                                <span>Pcs Per Ctn</span>
+                                                <span id="quick_units_per_carton_summary_label">Base Units Per Ctn</span>
                                                 <strong id="quick_units_per_carton_preview_text">0 pcs</strong>
                                             </div>
                                             <div class="quick-summary-pill">
@@ -843,6 +843,12 @@ $(document).ready(function () {
             return;
         }
 
+        if (rollsPerCtn <= 0 && pcsPerRoll <= 0) {
+            syncPackagingHiddenFields();
+            syncQuickUnitType();
+            return;
+        }
+
         if (rollsPerCtn <= 0 || pcsPerRoll <= 0) {
             pcsPerCtn = 0;
             setPackagingValue('#quick_pcs_per_carton_helper', pcsPerCtn);
@@ -898,6 +904,12 @@ $(document).ready(function () {
     function refreshQuickPackagingLabels() {
         var baseUnitName = ($('input[name="base_unit_name"]').val() || 'pcs').trim();
         var unitLabel = baseUnitName.length ? baseUnitName : 'pcs';
+        var titleUnit = unitLabel.charAt(0).toUpperCase() + unitLabel.slice(1);
+        $('#quick_pcs_per_roll_label').text(titleUnit + ' Per Roll');
+        $('#quick_pcs_per_roll_help').text('How many ' + unitLabel + ' are inside one roll.');
+        $('#quick_pcs_per_carton_label').text(titleUnit + ' Per Carton');
+        $('#quick_pcs_per_carton_help').text('Enter the total ' + unitLabel + ' in one carton. Use this directly when selling ' + unitLabel + ' by carton.');
+        $('#quick_units_per_carton_summary_label').text(titleUnit + ' Per Ctn');
         $('#quick_opening_unit_label').text('Opening ' + unitLabel.charAt(0).toUpperCase() + unitLabel.slice(1));
     }
 
