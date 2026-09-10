@@ -702,6 +702,8 @@
         min-width: 0;
         flex-shrink: 1;
         margin-left: 0;
+        max-width: clamp(132px, 11vw, 190px);
+        overflow: hidden;
     }
 
     .workspace-switcher {
@@ -866,6 +868,8 @@
         text-decoration: none;
         min-width: 0;
         max-width: 190px;
+        width: 100%;
+        overflow: hidden;
     }
     .user-avatar {
         width: 36px; height: 36px;
@@ -873,7 +877,7 @@
         border: 2px solid #e2e8f0;
         object-fit: cover;
     }
-    .user-info  { display: flex; flex-direction: column; min-width: 0; }
+    .user-info  { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; max-width: 100%; overflow: hidden; }
     .user-role  { font-size: 9px; color: #94a3b8; font-weight: 700; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .user-name  { font-size: 13px; font-weight: 600; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 132px; }
 
