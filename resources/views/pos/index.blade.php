@@ -3284,8 +3284,8 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-card-img img {
 
     body.pos-terminal-workspace .pos-main-stage > .pos-product-shelf-card {
         grid-area: shelf;
-        width: 156px;
-        max-width: 156px;
+        width: 188px;
+        max-width: 188px;
         min-height: 0;
         height: 100%;
         padding: 5px !important;
@@ -3763,9 +3763,9 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
 
 @media (min-width: 768px) and (max-width: 1199.98px) {
     body.pos-terminal-workspace .pos-product-shelf-card {
-        height: clamp(300px, calc(100vh - 360px), 460px) !important;
+        height: clamp(520px, calc(100vh - 135px), 700px) !important;
         min-height: 0 !important;
-        max-height: clamp(300px, calc(100vh - 360px), 460px) !important;
+        max-height: clamp(520px, calc(100vh - 135px), 700px) !important;
         overflow: hidden !important;
     }
 
@@ -3776,6 +3776,30 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
         max-height: none !important;
         overflow-y: auto !important;
         overscroll-behavior: contain;
+    }
+}
+
+@media (min-width: 900px) and (max-width: 1199.98px) {
+    body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
+        grid-auto-rows: minmax(50px, auto) !important;
+        gap: 4px !important;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card .product-card {
+        min-height: 50px !important;
+        max-height: 58px !important;
+        padding: 4px !important;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card .product-card-img {
+        height: 22px !important;
+        min-height: 22px !important;
+        max-height: 22px !important;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card .product-card-name {
+        font-size: 0.56rem !important;
+        line-height: 1.05 !important;
     }
 }
 
