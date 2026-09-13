@@ -3904,6 +3904,34 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
     }
 }
 
+@media (min-width: 768px) and (max-width: 1199.98px) and (orientation: portrait) {
+    body.pos-terminal-workspace .pos-product-shelf-card {
+        height: 246px !important;
+        max-height: 246px !important;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)) !important;
+        grid-auto-rows: minmax(52px, 52px) !important;
+        gap: 5px !important;
+        height: 174px !important;
+        max-height: 174px !important;
+        overflow-y: auto !important;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card .product-card {
+        min-height: 52px !important;
+        max-height: 52px !important;
+        padding: 3px !important;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card .product-card-img {
+        height: 28px !important;
+        min-height: 28px !important;
+        max-height: 28px !important;
+    }
+}
+
 @media (max-width: 767.98px) {
     html,
     body.pos-terminal-workspace {
