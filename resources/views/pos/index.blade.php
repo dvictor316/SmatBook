@@ -764,6 +764,86 @@ body.pos-terminal-workspace #toggle_btn:focus-visible {
     align-content: start;
 }
 
+.pos-shelf-calculator {
+    display: none;
+    margin-top: 8px;
+    padding: 8px;
+    border: 1px solid rgba(15, 58, 138, 0.16);
+    border-radius: 8px;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(234,242,255,0.94) 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+    flex: 0 0 auto;
+}
+
+.pos-shelf-calculator__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.pos-shelf-calculator__title {
+    font-size: 0.62rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #0f3a8a;
+}
+
+.pos-shelf-calculator__result {
+    min-height: 30px;
+    padding: 5px 7px;
+    border: 1px solid rgba(168, 184, 201, 0.9);
+    border-radius: 5px;
+    background: #ffffff;
+    color: #061a44;
+    font-size: 0.82rem;
+    font-weight: 900;
+    line-height: 1.15;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pos-shelf-calculator__keys {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.pos-shelf-calculator__key {
+    min-height: 28px;
+    border: 1px solid rgba(126, 140, 158, 0.42);
+    border-radius: 4px;
+    background: linear-gradient(180deg, #ffffff 0%, #e6edf6 100%);
+    color: #1c2430;
+    font-size: 0.72rem;
+    font-weight: 900;
+    line-height: 1;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.92);
+}
+
+.pos-shelf-calculator__key:hover,
+.pos-shelf-calculator__key:focus-visible {
+    border-color: rgba(15, 58, 138, 0.48);
+    color: #0f3a8a;
+}
+
+.pos-shelf-calculator__key.is-op {
+    color: #0f3a8a;
+    background: linear-gradient(180deg, #eef4ff 0%, #d9e7fb 100%);
+}
+
+.pos-shelf-calculator__key.is-equals {
+    color: #ffffff;
+    background: linear-gradient(135deg, #0f3a8a 0%, #2563eb 100%);
+    border-color: rgba(37, 99, 235, 0.66);
+}
+
 .product-card {
     border: 1px solid var(--border);
     border-radius: 16px;
@@ -3747,6 +3827,12 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
     overscroll-behavior: contain;
 }
 
+@media (min-width: 768px) {
+    body.pos-terminal-workspace .pos-shelf-calculator {
+        display: block !important;
+    }
+}
+
 @media (min-width: 1200px) {
     body.pos-terminal-workspace .pos-product-shelf-card {
         height: var(--pos-shelf-target-height, clamp(420px, calc(100vh - 255px), 680px)) !important;
@@ -3800,6 +3886,21 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
     body.pos-terminal-workspace .pos-product-shelf-card .product-card-name {
         font-size: 0.56rem !important;
         line-height: 1.05 !important;
+    }
+
+    body.pos-terminal-workspace .pos-shelf-calculator {
+        margin-top: 6px;
+        padding: 6px;
+    }
+
+    body.pos-terminal-workspace .pos-shelf-calculator__result {
+        min-height: 28px;
+        font-size: 0.76rem;
+    }
+
+    body.pos-terminal-workspace .pos-shelf-calculator__key {
+        min-height: 25px;
+        font-size: 0.66rem;
     }
 }
 
@@ -4838,6 +4939,35 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                 <div class="product-card-measure">{{ $measurementLabel }}</div>
             </div>
             @endforeach
+        </div>
+        <div class="pos-shelf-calculator" aria-label="Cashier calculator">
+            <div class="pos-shelf-calculator__head">
+                <span class="pos-shelf-calculator__title"><i class="fas fa-calculator me-1"></i> Cashier Calc</span>
+                <span class="small text-muted">Quick math</span>
+            </div>
+            <div class="pos-shelf-calculator__result" id="shelf-calculator-display">0</div>
+            <div class="pos-shelf-calculator__keys" id="shelf-calculator-keys">
+                <button type="button" class="pos-shelf-calculator__key is-op" data-calc-key="clear">C</button>
+                <button type="button" class="pos-shelf-calculator__key is-op" data-calc-key="backspace">⌫</button>
+                <button type="button" class="pos-shelf-calculator__key is-op" data-calc-key="/">÷</button>
+                <button type="button" class="pos-shelf-calculator__key is-op" data-calc-key="*">×</button>
+                <button type="button" class="pos-shelf-calculator__key" data-calc-key="7">7</button>
+                <button type="button" class="pos-shelf-calculator__key" data-calc-key="8">8</button>
+                <button type="button" class="pos-shelf-calculator__key" data-calc-key="9">9</button>
+                <button type="button" class="pos-shelf-calculator__key is-op" data-calc-key="-">−</button>
+                <button type="button" class="pos-shelf-calculator__key" data-calc-key="4">4</button>
+                <button type="button" class="pos-shelf-calculator__key" data-calc-key="5">5</button>
+                <button type="button" class="pos-shelf-calculator__key" data-calc-key="6">6</button>
+                <button type="button" class="pos-shelf-calculator__key is-op" data-calc-key="+">+</button>
+                <button type="button" class="pos-shelf-calculator__key" data-calc-key="1">1</button>
+                <button type="button" class="pos-shelf-calculator__key" data-calc-key="2">2</button>
+                <button type="button" class="pos-shelf-calculator__key" data-calc-key="3">3</button>
+                <button type="button" class="pos-shelf-calculator__key is-equals" data-calc-key="equals">=</button>
+                <button type="button" class="pos-shelf-calculator__key" data-calc-key="0">0</button>
+                <button type="button" class="pos-shelf-calculator__key" data-calc-key="00">00</button>
+                <button type="button" class="pos-shelf-calculator__key" data-calc-key=".">.</button>
+                <button type="button" class="pos-shelf-calculator__key is-op" data-calc-key="%">%</button>
+            </div>
         </div>
     </div>
 
@@ -7136,6 +7266,66 @@ window.POS_ENABLE_FALLBACK = function () {
             },
         });
     }
+
+    (function initShelfCalculator() {
+        const display = document.getElementById('shelf-calculator-display');
+        const keys = document.getElementById('shelf-calculator-keys');
+        if (!display || !keys) return;
+
+        let expression = '';
+        const formatter = new Intl.NumberFormat('en-NG', { maximumFractionDigits: 2 });
+
+        const renderExpression = () => {
+            display.textContent = expression || '0';
+        };
+
+        const evaluateExpression = () => {
+            if (!expression) {
+                renderExpression();
+                return;
+            }
+
+            const normalized = expression.replace(/%/g, '/100');
+            if (!/^[0-9+\-*/().\s]+$/.test(normalized)) {
+                display.textContent = 'Invalid';
+                return;
+            }
+
+            try {
+                const value = Function(`"use strict"; return (${normalized});`)();
+                display.textContent = Number.isFinite(value) ? formatter.format(value) : 'Invalid';
+                expression = Number.isFinite(value) ? String(value) : '';
+            } catch (error) {
+                display.textContent = 'Invalid';
+            }
+        };
+
+        keys.addEventListener('click', function (event) {
+            const button = event.target.closest('[data-calc-key]');
+            if (!button) return;
+
+            const key = button.dataset.calcKey || '';
+            if (key === 'clear') {
+                expression = '';
+                renderExpression();
+                return;
+            }
+
+            if (key === 'backspace') {
+                expression = expression.slice(0, -1);
+                renderExpression();
+                return;
+            }
+
+            if (key === 'equals') {
+                evaluateExpression();
+                return;
+            }
+
+            expression = `${expression}${key}`;
+            renderExpression();
+        });
+    })();
 
     function openReprintLookup() {
         if (!requirePosPermission('sell', 'You do not have permission to reprint POS receipts.')) {
