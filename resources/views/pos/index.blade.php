@@ -3928,6 +3928,70 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
     }
 }
 
+@media (min-width: 900px) and (max-width: 1199.98px) and (orientation: landscape) {
+    body.pos-terminal-workspace .pos-main-stage {
+        grid-template-rows: auto minmax(0, 1fr) auto !important;
+        grid-template-areas:
+            "header header"
+            "work shelf"
+            "work calculator" !important;
+        gap: 0 !important;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage > .pos-shelf-calculator {
+        grid-area: calculator;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card {
+        height: clamp(360px, calc(100vh - 300px), 460px) !important;
+        max-height: clamp(360px, calc(100vh - 300px), 460px) !important;
+        margin-bottom: 0 !important;
+    }
+
+    body.pos-terminal-workspace .pos-shelf-calculator {
+        display: block !important;
+        width: 220px !important;
+        max-width: 220px !important;
+        height: 132px !important;
+        max-height: 132px !important;
+        margin: 5px 0 0 !important;
+        padding: 5px !important;
+        overflow: hidden !important;
+        border-radius: 0 !important;
+        border-color: #a8b8c9 !important;
+        box-shadow: none !important;
+    }
+
+    body.pos-terminal-workspace .pos-shelf-calculator__head {
+        margin-bottom: 4px !important;
+    }
+
+    body.pos-terminal-workspace .pos-shelf-calculator__head .small {
+        display: none !important;
+    }
+
+    body.pos-terminal-workspace .pos-shelf-calculator__title {
+        font-size: 0.56rem !important;
+    }
+
+    body.pos-terminal-workspace .pos-shelf-calculator__result {
+        min-height: 24px !important;
+        padding: 3px 6px !important;
+        font-size: 0.72rem !important;
+    }
+
+    body.pos-terminal-workspace .pos-shelf-calculator__keys {
+        gap: 3px !important;
+        margin-top: 4px !important;
+    }
+
+    body.pos-terminal-workspace .pos-shelf-calculator__key {
+        min-height: 18px !important;
+        padding: 0 !important;
+        font-size: 0.56rem !important;
+    }
+}
+
 @media (min-width: 768px) and (max-width: 1199.98px) and (orientation: portrait) {
     body.pos-terminal-workspace .pos-main-stage {
         grid-template-columns: minmax(0, 1fr) clamp(230px, 32vw, 280px) !important;
