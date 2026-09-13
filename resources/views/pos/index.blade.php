@@ -844,6 +844,19 @@ body.pos-terminal-workspace #toggle_btn:focus-visible {
     border-color: rgba(37, 99, 235, 0.66);
 }
 
+.pos-shelf-calculator__key.is-clear {
+    color: #dc2626;
+    background: #ffffff;
+    border-color: rgba(220, 38, 38, 0.34);
+}
+
+.pos-shelf-calculator__key.is-clear:hover,
+.pos-shelf-calculator__key.is-clear:focus-visible {
+    color: #b91c1c;
+    border-color: rgba(185, 28, 28, 0.56);
+    background: #fff;
+}
+
 .product-card {
     border: 1px solid var(--border);
     border-radius: 16px;
@@ -2793,6 +2806,7 @@ body.pos-terminal-workspace .quick-fill-row {
         grid-template-areas:
             "header"
             "shelf"
+            "calculator"
             "controls"
             "receipt";
         gap: 8px;
@@ -2810,6 +2824,10 @@ body.pos-terminal-workspace .quick-fill-row {
     body.pos-terminal-workspace .pos-main-stage > .pos-product-shelf-card {
         grid-area: shelf;
         border: 1px solid #a8b8c9 !important;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage > .pos-shelf-calculator {
+        grid-area: calculator;
     }
 
     body.pos-terminal-workspace .pos-main-stage > .row.g-4 {
@@ -3830,6 +3848,12 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
 @media (min-width: 768px) {
     body.pos-terminal-workspace .pos-shelf-calculator {
         display: block !important;
+    }
+}
+
+@media (min-width: 1200px) {
+    body.pos-terminal-workspace .pos-shelf-calculator {
+        display: none !important;
     }
 }
 
@@ -4968,34 +4992,35 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
             </div>
             @endforeach
         </div>
-        <div class="pos-shelf-calculator" aria-label="Cashier calculator">
-            <div class="pos-shelf-calculator__head">
-                <span class="pos-shelf-calculator__title"><i class="fas fa-calculator me-1"></i> Cashier Calc</span>
-                <span class="small text-muted">Quick math</span>
-            </div>
-            <div class="pos-shelf-calculator__result" id="shelf-calculator-display">0</div>
-            <div class="pos-shelf-calculator__keys" id="shelf-calculator-keys">
-                <button type="button" class="pos-shelf-calculator__key is-op" data-calc-key="clear">C</button>
-                <button type="button" class="pos-shelf-calculator__key is-op" data-calc-key="backspace">⌫</button>
-                <button type="button" class="pos-shelf-calculator__key is-op" data-calc-key="/">÷</button>
-                <button type="button" class="pos-shelf-calculator__key is-op" data-calc-key="*">×</button>
-                <button type="button" class="pos-shelf-calculator__key" data-calc-key="7">7</button>
-                <button type="button" class="pos-shelf-calculator__key" data-calc-key="8">8</button>
-                <button type="button" class="pos-shelf-calculator__key" data-calc-key="9">9</button>
-                <button type="button" class="pos-shelf-calculator__key is-op" data-calc-key="-">−</button>
-                <button type="button" class="pos-shelf-calculator__key" data-calc-key="4">4</button>
-                <button type="button" class="pos-shelf-calculator__key" data-calc-key="5">5</button>
-                <button type="button" class="pos-shelf-calculator__key" data-calc-key="6">6</button>
-                <button type="button" class="pos-shelf-calculator__key is-op" data-calc-key="+">+</button>
-                <button type="button" class="pos-shelf-calculator__key" data-calc-key="1">1</button>
-                <button type="button" class="pos-shelf-calculator__key" data-calc-key="2">2</button>
-                <button type="button" class="pos-shelf-calculator__key" data-calc-key="3">3</button>
-                <button type="button" class="pos-shelf-calculator__key is-equals" data-calc-key="equals">=</button>
-                <button type="button" class="pos-shelf-calculator__key" data-calc-key="0">0</button>
-                <button type="button" class="pos-shelf-calculator__key" data-calc-key="00">00</button>
-                <button type="button" class="pos-shelf-calculator__key" data-calc-key=".">.</button>
-                <button type="button" class="pos-shelf-calculator__key is-op" data-calc-key="%">%</button>
-            </div>
+    </div>
+
+    <div class="pos-shelf-calculator" aria-label="Cashier calculator">
+        <div class="pos-shelf-calculator__head">
+            <span class="pos-shelf-calculator__title"><i class="fas fa-calculator me-1"></i> Cashier Calc</span>
+            <span class="small text-muted">Quick math</span>
+        </div>
+        <div class="pos-shelf-calculator__result" id="shelf-calculator-display">0</div>
+        <div class="pos-shelf-calculator__keys" id="shelf-calculator-keys">
+            <button type="button" class="pos-shelf-calculator__key is-clear" data-calc-key="clear">×</button>
+            <button type="button" class="pos-shelf-calculator__key is-op" data-calc-key="backspace">⌫</button>
+            <button type="button" class="pos-shelf-calculator__key is-op" data-calc-key="/">÷</button>
+            <button type="button" class="pos-shelf-calculator__key is-op" data-calc-key="*">×</button>
+            <button type="button" class="pos-shelf-calculator__key" data-calc-key="7">7</button>
+            <button type="button" class="pos-shelf-calculator__key" data-calc-key="8">8</button>
+            <button type="button" class="pos-shelf-calculator__key" data-calc-key="9">9</button>
+            <button type="button" class="pos-shelf-calculator__key is-op" data-calc-key="-">−</button>
+            <button type="button" class="pos-shelf-calculator__key" data-calc-key="4">4</button>
+            <button type="button" class="pos-shelf-calculator__key" data-calc-key="5">5</button>
+            <button type="button" class="pos-shelf-calculator__key" data-calc-key="6">6</button>
+            <button type="button" class="pos-shelf-calculator__key is-op" data-calc-key="+">+</button>
+            <button type="button" class="pos-shelf-calculator__key" data-calc-key="1">1</button>
+            <button type="button" class="pos-shelf-calculator__key" data-calc-key="2">2</button>
+            <button type="button" class="pos-shelf-calculator__key" data-calc-key="3">3</button>
+            <button type="button" class="pos-shelf-calculator__key is-equals" data-calc-key="equals">=</button>
+            <button type="button" class="pos-shelf-calculator__key" data-calc-key="0">0</button>
+            <button type="button" class="pos-shelf-calculator__key" data-calc-key="00">00</button>
+            <button type="button" class="pos-shelf-calculator__key" data-calc-key=".">.</button>
+            <button type="button" class="pos-shelf-calculator__key is-op" data-calc-key="%">%</button>
         </div>
     </div>
 
