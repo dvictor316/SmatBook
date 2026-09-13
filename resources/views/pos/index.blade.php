@@ -3929,9 +3929,21 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
 }
 
 @media (min-width: 768px) and (max-width: 1199.98px) and (orientation: portrait) {
+    body.pos-terminal-workspace .pos-main-stage {
+        grid-template-columns: minmax(0, 1fr) clamp(230px, 32vw, 280px) !important;
+        grid-template-areas:
+            "header header"
+            "shelf calculator"
+            "controls controls"
+            "receipt receipt" !important;
+        align-items: start !important;
+        gap: 8px !important;
+    }
+
     body.pos-terminal-workspace .pos-product-shelf-card {
         height: 292px !important;
         max-height: 292px !important;
+        margin-bottom: 0 !important;
     }
 
     body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
@@ -3961,11 +3973,20 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
 
     body.pos-terminal-workspace .pos-shelf-calculator {
         padding: 7px !important;
+        height: 292px !important;
+        max-height: 292px !important;
+        margin: 0 !important;
+        overflow: hidden !important;
     }
 
     body.pos-terminal-workspace .pos-shelf-calculator__key {
         min-height: 30px !important;
         font-size: 0.74rem !important;
+    }
+
+    body.pos-terminal-workspace .pos-shelf-calculator__result {
+        min-height: 34px !important;
+        font-size: 0.9rem !important;
     }
 }
 
