@@ -3761,6 +3761,24 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
     }
 }
 
+@media (min-width: 768px) and (max-width: 1199.98px) {
+    body.pos-terminal-workspace .pos-product-shelf-card {
+        height: clamp(300px, calc(100vh - 360px), 460px) !important;
+        min-height: 0 !important;
+        max-height: clamp(300px, calc(100vh - 360px), 460px) !important;
+        overflow: hidden !important;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
+        flex: 1 1 auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow-y: auto !important;
+        overscroll-behavior: contain;
+    }
+}
+
 @media (max-width: 767.98px) {
     html,
     body.pos-terminal-workspace {
