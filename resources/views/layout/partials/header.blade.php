@@ -415,12 +415,12 @@
        HEADER
        ============================================ */
     .header {
-        --header-item-gap: 16px;
-        --header-action-gap: 12px;
+        --header-item-gap: 12px;
+        --header-action-gap: 10px;
         display: flex;
         align-items: center;
         justify-content: flex-start;
-        padding: 0 16px;
+        padding: 0 12px;
         background: #fff;
         border-bottom: 1px solid #e2e8f0;
         height: 76px;
@@ -452,7 +452,7 @@
         flex-shrink: 0;
     }
 
-    .header-logo img { height: 52px; width: auto; }
+    .header-logo img { height: 52px; width: auto; aspect-ratio: 76 / 52; }
     .spb-wordmark {
         font-size: 1.12rem;
         font-weight: 800;
@@ -696,7 +696,8 @@
         display: flex;
         align-items: center;
         gap: var(--header-action-gap);
-        flex-shrink: 0;
+        flex: 1 1 0;
+        justify-content: flex-end;
         min-width: 0;
         margin-left: auto;
         order: 4;
@@ -706,9 +707,9 @@
     }
     .header-actions > .dropdown:last-child {
         min-width: 0;
-        flex-shrink: 1;
+        flex: 0 0 clamp(138px, 11vw, 180px);
         margin-left: 0;
-        max-width: clamp(132px, 11vw, 190px);
+        max-width: clamp(138px, 11vw, 180px);
         overflow: visible;
     }
 
@@ -756,6 +757,14 @@
         color: #1e293b;
         font-size: 12px;
         font-weight: 700;
+        max-width: 190px;
+    }
+
+    .branch-pill span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .branch-pill small {
@@ -874,7 +883,7 @@
         text-decoration: none;
         min-width: 0;
         max-width: 190px;
-        width: auto;
+        width: 100%;
         overflow: hidden;
     }
     .user-avatar {
@@ -889,9 +898,9 @@
 
     @media (max-width: 1440px) {
         .header {
-            --header-item-gap: 14px;
-            --header-action-gap: 10px;
-            padding: 0 14px;
+            --header-item-gap: 10px;
+            --header-action-gap: 8px;
+            padding: 0 10px;
         }
         .header-logo {
             flex-basis: auto;
@@ -900,22 +909,23 @@
             font-size: 1.05rem;
         }
         .header-search-container {
-            flex-basis: 220px;
-            max-width: 250px;
-            min-width: 200px;
+            flex-basis: 190px;
+            max-width: 230px;
+            min-width: 160px;
             margin-left: 0;
         }
         .workspace-switcher a {
-            padding: 0 9px;
+            padding: 0 8px;
         }
         .branch-pill {
-            padding: 0 9px;
+            padding: 0 8px;
+            max-width: 172px;
         }
         .user-profile {
-            max-width: 168px;
+            max-width: 100%;
         }
         .user-name {
-            max-width: 112px;
+            max-width: 100%;
         }
     }
 
@@ -928,9 +938,9 @@
             flex-basis: auto;
         }
         .header-search-container {
-            flex-basis: 200px;
-            max-width: 220px;
-            min-width: 190px;
+            flex-basis: 160px;
+            max-width: 190px;
+            min-width: 120px;
             margin-left: 0;
         }
         .country-name,
@@ -938,20 +948,20 @@
             display: none;
         }
         .user-profile {
-            max-width: 140px;
+            max-width: 100%;
             padding-right: 4px;
         }
         .user-name {
-            max-width: 86px;
+            max-width: 100%;
         }
     }
 
     @media (min-width: 1200px) {
         .header {
-            padding-left: clamp(24px, 3vw, 56px);
-            padding-right: clamp(48px, 4.5vw, 88px);
-            --header-item-gap: clamp(18px, 1.8vw, 32px);
-            --header-action-gap: clamp(12px, 1.2vw, 22px);
+            padding-left: clamp(8px, 1.2vw, 20px);
+            padding-right: clamp(8px, 1.2vw, 20px);
+            --header-item-gap: clamp(10px, 1vw, 18px);
+            --header-action-gap: clamp(8px, 0.8vw, 14px);
         }
 
         .header-search-container {
@@ -965,13 +975,15 @@
         }
 
         .header-actions {
+            flex: 1 1 0;
             margin-left: auto;
-            margin-right: clamp(12px, 1.6vw, 30px);
+            margin-right: 0;
         }
 
         .header-actions > .dropdown:last-child {
             min-width: 0;
-            max-width: clamp(170px, 13vw, 220px);
+            flex: 0 0 clamp(138px, 11vw, 180px);
+            max-width: clamp(138px, 11vw, 180px);
         }
 
         .user-profile {
@@ -983,9 +995,9 @@
     @media (min-width: 992px) and (max-width: 1440px) {
         .header-search-container {
             display: flex !important;
-            flex: 1 1 clamp(320px, 34vw, 560px);
-            max-width: 560px;
-            min-width: 280px;
+            flex: 0 1 clamp(170px, 20vw, 280px);
+            max-width: 280px;
+            min-width: 120px;
         }
 
         .header-search {
@@ -1216,7 +1228,8 @@
 
         .header-actions > .dropdown:last-child {
             min-width: 0;
-            max-width: clamp(112px, 14vw, 168px);
+            flex: 0 1 clamp(104px, 13vw, 150px);
+            max-width: clamp(104px, 13vw, 150px);
         }
 
         .user-profile {
@@ -1556,7 +1569,7 @@
 
     <div class="header-logo">
         <a href="{{ $headerHomeUrl }}">
-            <img src="{{ $headerLogoUrl }}" alt="Logo">
+            <img src="{{ $headerLogoUrl }}" alt="Logo" width="76" height="52" decoding="async" fetchpriority="high">
         </a>
         <span class="spb-wordmark">SmartPro<span class="book">book</span></span>
     </div>
@@ -1641,22 +1654,22 @@
 
         <div class="dropdown">
             <a href="#" class="country-selector" data-bs-toggle="dropdown" id="geoCountryToggle">
-                <img id="geoCountryFlag" src="{{ asset('assets/img/flags/ng.png') }}" alt="NG" width="20" height="14">
+                <img id="geoCountryFlag" src="{{ asset('assets/img/flags/ng.png') }}" alt="NG" width="20" height="14" decoding="async">
                 <span class="country-name" id="geoCountryCode">NG</span>
                 <span class="country-currency" id="geoCurrencyCode">{{ $geoCurrency ?? 'NGN' }}</span>
             </a>
             <div class="dropdown-menu dropdown-menu-end" id="geoCountryMenu">
-                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="NG"><img class="me-2" src="{{ asset('assets/img/flags/ng.png') }}" alt="NG" width="18" height="12">Nigeria (NGN)</a>
-                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="US"><img class="me-2" src="{{ asset('assets/img/flags/us.png') }}" alt="US" width="18" height="12">United States (USD)</a>
-                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="CN"><img class="me-2" src="{{ asset('assets/img/flags/cn.png') }}" alt="CN" width="18" height="12">China (CNY)</a>
-                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="GB"><img class="me-2" src="{{ asset('assets/img/flags/gb.png') }}" alt="GB" width="18" height="12">United Kingdom (GBP)</a>
-                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="EU"><img class="me-2" src="{{ asset('assets/img/flags/eu.svg') }}" alt="EU" width="18" height="12">Europe (EUR)</a>
-                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="CA"><img class="me-2" src="{{ asset('assets/img/flags/ca.png') }}" alt="CA" width="18" height="12">Canada (CAD)</a>
-                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="IN"><img class="me-2" src="{{ asset('assets/img/flags/in.png') }}" alt="IN" width="18" height="12">India (INR)</a>
-                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="AE"><img class="me-2" src="{{ asset('assets/img/flags/ae.png') }}" alt="AE" width="18" height="12">UAE (AED)</a>
-                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="ZA"><img class="me-2" src="{{ asset('assets/img/flags/za.png') }}" alt="ZA" width="18" height="12">South Africa (ZAR)</a>
-                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="KE"><img class="me-2" src="{{ asset('assets/img/flags/ke.png') }}" alt="KE" width="18" height="12">Kenya (KES)</a>
-                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="GH"><img class="me-2" src="{{ asset('assets/img/flags/gh.png') }}" alt="GH" width="18" height="12">Ghana (GHS)</a>
+                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="NG"><img class="me-2" src="{{ asset('assets/img/flags/ng.png') }}" alt="NG" width="18" height="12" loading="lazy" decoding="async">Nigeria (NGN)</a>
+                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="US"><img class="me-2" src="{{ asset('assets/img/flags/us.png') }}" alt="US" width="18" height="12" loading="lazy" decoding="async">United States (USD)</a>
+                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="CN"><img class="me-2" src="{{ asset('assets/img/flags/cn.png') }}" alt="CN" width="18" height="12" loading="lazy" decoding="async">China (CNY)</a>
+                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="GB"><img class="me-2" src="{{ asset('assets/img/flags/gb.png') }}" alt="GB" width="18" height="12" loading="lazy" decoding="async">United Kingdom (GBP)</a>
+                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="EU"><img class="me-2" src="{{ asset('assets/img/flags/eu.svg') }}" alt="EU" width="18" height="12" loading="lazy" decoding="async">Europe (EUR)</a>
+                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="CA"><img class="me-2" src="{{ asset('assets/img/flags/ca.png') }}" alt="CA" width="18" height="12" loading="lazy" decoding="async">Canada (CAD)</a>
+                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="IN"><img class="me-2" src="{{ asset('assets/img/flags/in.png') }}" alt="IN" width="18" height="12" loading="lazy" decoding="async">India (INR)</a>
+                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="AE"><img class="me-2" src="{{ asset('assets/img/flags/ae.png') }}" alt="AE" width="18" height="12" loading="lazy" decoding="async">UAE (AED)</a>
+                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="ZA"><img class="me-2" src="{{ asset('assets/img/flags/za.png') }}" alt="ZA" width="18" height="12" loading="lazy" decoding="async">South Africa (ZAR)</a>
+                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="KE"><img class="me-2" src="{{ asset('assets/img/flags/ke.png') }}" alt="KE" width="18" height="12" loading="lazy" decoding="async">Kenya (KES)</a>
+                <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="GH"><img class="me-2" src="{{ asset('assets/img/flags/gh.png') }}" alt="GH" width="18" height="12" loading="lazy" decoding="async">Ghana (GHS)</a>
             </div>
         </div>
 
@@ -1731,7 +1744,7 @@
         @auth
         <div class="dropdown">
             <a href="#" class="user-profile" data-bs-toggle="dropdown">
-                <img src="{{ $profileImagePath }}" alt="{{ $user->name }}" class="user-avatar" onerror="this.onerror=null;this.src='{{ $defaultAvatar }}';">
+                <img src="{{ $profileImagePath }}" alt="{{ $user->name }}" class="user-avatar" width="36" height="36" decoding="async" onerror="this.onerror=null;this.src='{{ $defaultAvatar }}';">
                 <div class="user-info">
                     <div class="user-role">{{ $user->role ?? 'Staff' }}</div>
                     <div class="user-name">{{ $user->name }}</div>
