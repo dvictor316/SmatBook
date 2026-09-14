@@ -57,6 +57,7 @@ return [
     'public_key' => env('PAYSTACK_TEST_PUBLIC_KEY', env('PAYSTACK_PUBLIC_KEY')),
     'secret_key' => env('PAYSTACK_TEST_SECRET_KEY', env('PAYSTACK_SECRET_KEY')),
     'paymentUrl' => env('PAYSTACK_PAYMENT_URL'),
+    'business_account_number' => env('PAYSTACK_BUSINESS_ACCOUNT_NUMBER', '9601300606'),
 ],
 
 'flutterwave' => [

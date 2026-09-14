@@ -997,21 +997,37 @@ class SubscriptionController extends Controller
         }
 
         $amountKobo = max(1, (int) round(((float) $subscription->amount) * 100));
+        $reference = 'SPB-PSK-' . $subscription->id . '-' . Str::upper(Str::random(12));
         $callbackUrl = route('saas.payment.callback', [
             'sub_id' => $subscription->id,
             'gateway' => 'paystack',
         ]);
 
         try {
+            $pendingUpdate = [
+                'payment_gateway' => 'paystack',
+                'transaction_reference' => $reference,
+            ];
+
+            if (Schema::hasColumn('subscriptions', 'payment_reference')) {
+                $pendingUpdate['payment_reference'] = $reference;
+            }
+
+            $subscription->update($this->filterPayloadForTable('subscriptions', $pendingUpdate));
+
             $response = Http::withToken($secret)
                 ->acceptJson()
                 ->post('https://api.paystack.co/transaction/initialize', [
                     'email' => $this->checkoutCustomerEmail($subscription),
                     'amount' => $amountKobo,
+                    'reference' => $reference,
                     'callback_url' => $callbackUrl,
                     'metadata' => [
+                        'product' => 'smartprobook',
                         'subscription_id' => (string) $subscription->id,
                         'user_id' => (string) $subscription->user_id,
+                        'expected_amount' => (string) $subscription->amount,
+                        'expected_currency' => 'NGN',
                     ],
                 ]);
 
@@ -1177,12 +1193,23 @@ class SubscriptionController extends Controller
             ->with(['user', 'company' => fn ($q) => $q->withoutGlobalScope('tenant')])
             ->findOrFail($subId);
 
-        $verification = $this->verifyPayment($reference, $gateway, $request);
+        $verification = $this->verifyPayment($reference, $gateway, $request, $subscription);
         if (!(bool) ($verification['ok'] ?? false)) {
             return redirect()->route('saas.checkout', $subscription->id)
                 ->with('error', 'Payment verification failed. Please try again.');
         }
         $reference = (string) ($verification['reference'] ?? $reference);
+
+        if ($this->paymentReferenceBelongsToAnotherSubscription($reference, $subscription)) {
+            Log::warning('Payment callback rejected because reference is already tied to another subscription.', [
+                'subscription_id' => $subscription->id,
+                'gateway' => $gateway,
+                'reference' => $reference,
+            ]);
+
+            return redirect()->route('saas.checkout', $subscription->id)
+                ->with('error', 'Payment reference could not be matched to this subscription. Please contact support.');
+        }
 
         // ── DEPLOYMENT DETECTION: session OR database ──
         $isDeploymentBySession = session()->has('checkout_from_deployment');
@@ -1213,6 +1240,20 @@ class SubscriptionController extends Controller
         $provisioningWarning = false;
         $notificationWarning = false;
         try {
+            $subscription = Subscription::withoutGlobalScope('tenant')
+                ->with(['user', 'company' => fn ($q) => $q->withoutGlobalScope('tenant')])
+                ->whereKey($subscription->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($this->subscriptionIsAlreadyPaid($subscription)) {
+                DB::commit();
+                session(['last_paid_subscription_id' => $subscription->id]);
+
+                return redirect()->route('saas.success', ['id' => $subscription->id])
+                    ->with('info', 'Payment was already confirmed for this subscription.');
+            }
+
             $startDate = now();
             $endDate   = strtolower($subscription->billing_cycle) === 'yearly'
                 ? $startDate->copy()->addYear()
@@ -1317,7 +1358,24 @@ class SubscriptionController extends Controller
         $provisioningWarning = false;
         $notificationWarning = false;
         try {
+            $subscription = Subscription::withoutGlobalScope('tenant')
+                ->with(['user', 'company' => fn ($q) => $q->withoutGlobalScope('tenant')])
+                ->whereKey($subscription->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
             $managerId = $this->resolveDeploymentManagerId($subscription);
+
+            if ($this->subscriptionIsAlreadyPaid($subscription)) {
+                DB::commit();
+                session([
+                    'last_paid_subscription_id' => $subscription->id,
+                    'deployment_return_manager_id' => $managerId,
+                ]);
+
+                return redirect()->route('deployment.dashboard')
+                    ->with('info', 'Payment was already confirmed for this customer.');
+            }
 
             $startDate = now();
             $endDate   = strtolower($subscription->billing_cycle) === 'yearly'
@@ -1911,7 +1969,7 @@ class SubscriptionController extends Controller
         );
     }
 
-    private function verifyPayment(string $reference, string $gateway, ?Request $request = null): array
+    private function verifyPayment(string $reference, string $gateway, ?Request $request = null, ?Subscription $subscription = null): array
     {
         $gateway = strtolower((string) $gateway);
         $reference = trim((string) $reference);
@@ -1927,7 +1985,7 @@ class SubscriptionController extends Controller
             if ($reference === '') {
                 return ['ok' => false, 'reference' => ''];
             }
-            return ['ok' => $this->verifyPaystackPayment($reference), 'reference' => $reference];
+            return $this->verifyPaystackPayment($reference, $subscription);
         }
 
         if ($gateway === 'flutterwave') {
@@ -1961,11 +2019,11 @@ class SubscriptionController extends Controller
         }
     }
 
-    private function verifyPaystackPayment(string $reference): bool
+    private function verifyPaystackPayment(string $reference, ?Subscription $subscription = null): array
     {
         $secret = $this->resolvePaystackSecret();
         if ($secret === '') {
-            return $this->shouldSimulateGatewayInLocal();
+            return ['ok' => $this->shouldSimulateGatewayInLocal(), 'reference' => $reference];
         }
 
         try {
@@ -1974,14 +2032,95 @@ class SubscriptionController extends Controller
                 ->get('https://api.paystack.co/transaction/verify/' . urlencode($reference));
 
             if (!$response->successful() || !(bool) $response->json('status')) {
-                return false;
+                return ['ok' => false, 'reference' => $reference];
             }
 
-            return strtolower((string) data_get($response->json(), 'data.status', '')) === 'success';
+            $payload = $response->json();
+            $data = (array) data_get($payload, 'data', []);
+            $verifiedReference = (string) data_get($data, 'reference', $reference);
+            $status = strtolower((string) data_get($data, 'status', ''));
+            $currency = strtoupper((string) data_get($data, 'currency', ''));
+            $paidAmount = (int) data_get($data, 'amount', 0);
+            $expectedAmount = $subscription ? max(1, (int) round(((float) $subscription->amount) * 100)) : 0;
+            $metadataSubscriptionId = (string) data_get($data, 'metadata.subscription_id', '');
+            $metadataProduct = strtolower((string) data_get($data, 'metadata.product', ''));
+
+            if ($status !== 'success') {
+                return ['ok' => false, 'reference' => $verifiedReference];
+            }
+
+            if ($subscription && $paidAmount !== $expectedAmount) {
+                Log::warning('Paystack verification amount mismatch.', [
+                    'subscription_id' => $subscription->id,
+                    'reference' => $verifiedReference,
+                    'expected_amount_kobo' => $expectedAmount,
+                    'paid_amount_kobo' => $paidAmount,
+                ]);
+
+                return ['ok' => false, 'reference' => $verifiedReference];
+            }
+
+            if ($currency !== 'NGN') {
+                Log::warning('Paystack verification currency mismatch.', [
+                    'subscription_id' => $subscription?->id,
+                    'reference' => $verifiedReference,
+                    'currency' => $currency,
+                ]);
+
+                return ['ok' => false, 'reference' => $verifiedReference];
+            }
+
+            if ($subscription && $metadataSubscriptionId !== '' && $metadataSubscriptionId !== (string) $subscription->id) {
+                Log::warning('Paystack verification subscription metadata mismatch.', [
+                    'subscription_id' => $subscription->id,
+                    'reference' => $verifiedReference,
+                    'metadata_subscription_id' => $metadataSubscriptionId,
+                ]);
+
+                return ['ok' => false, 'reference' => $verifiedReference];
+            }
+
+            if ($metadataProduct !== '' && !in_array($metadataProduct, ['smartprobook', 'medic_labo'], true)) {
+                Log::warning('Paystack verification product metadata mismatch.', [
+                    'subscription_id' => $subscription?->id,
+                    'reference' => $verifiedReference,
+                    'metadata_product' => $metadataProduct,
+                ]);
+
+                return ['ok' => false, 'reference' => $verifiedReference];
+            }
+
+            return ['ok' => true, 'reference' => $verifiedReference];
         } catch (\Throwable $e) {
             Log::error('Paystack verify exception', ['error' => $e->getMessage()]);
+            return ['ok' => false, 'reference' => $reference];
+        }
+    }
+
+    private function subscriptionIsAlreadyPaid(Subscription $subscription): bool
+    {
+        return in_array(strtolower((string) $subscription->payment_status), ['paid', 'free'], true)
+            || strtolower((string) $subscription->status) === 'active';
+    }
+
+    private function paymentReferenceBelongsToAnotherSubscription(string $reference, Subscription $subscription): bool
+    {
+        $reference = trim($reference);
+        if ($reference === '') {
             return false;
         }
+
+        return Subscription::withoutGlobalScope('tenant')
+            ->where('id', '!=', $subscription->id)
+            ->where(function ($query) use ($reference) {
+                $query->where('transaction_reference', $reference);
+
+                if (Schema::hasColumn('subscriptions', 'payment_reference')) {
+                    $query->orWhere('payment_reference', $reference);
+                }
+            })
+            ->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), ['paid', 'free'])
+            ->exists();
     }
 
     private function verifyFlutterwavePayment(string $reference, ?Request $request = null): array
