@@ -204,6 +204,7 @@ class DeploymentCommissionPayoutService
                     $query->where('payout_id', $lockedPayout->id)
                         ->orWhereNull('payout_id');
                 })
+                ->lockForUpdate()
                 ->get();
 
             if ($commissionRows->isEmpty()) {
@@ -288,11 +289,13 @@ class DeploymentCommissionPayoutService
             return $this->createManualReviewPayout($manager, $summary['available'], $automatic, 'Payout submitted. Bank routing will be completed during processing.', $approvedBy);
         }
 
-        return DB::transaction(function () use ($manager, $summary, $automatic, $approvedBy) {
+        return DB::transaction(function () use ($manager, $automatic, $approvedBy) {
+            $lockedManager = DeploymentManager::query()->whereKey($manager->id)->lockForUpdate()->firstOrFail();
             $commissionRows = DB::table('deployment_commissions')
-                ->where('manager_id', $manager->user_id)
+                ->where('manager_id', $lockedManager->user_id)
                 ->where('status', 'pending')
                 ->whereNull('payout_id')
+                ->lockForUpdate()
                 ->get();
 
             if ($commissionRows->isEmpty()) {
@@ -304,19 +307,19 @@ class DeploymentCommissionPayoutService
                 return null;
             }
 
-            $gateway = $this->resolveGateway($manager);
+            $gateway = $this->resolveGateway($lockedManager);
             $payout = DeploymentManagerPayout::query()->create([
-                'manager_id' => $manager->user_id,
+                'manager_id' => $lockedManager->user_id,
                 'payout_reference' => 'DMP-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(6)),
                 'gateway' => $gateway,
                 'status' => 'pending',
                 'amount' => $amount,
                 'currency' => 'NGN',
-                'bank_name' => $manager->payout_bank_name,
-                'bank_code' => $manager->payout_bank_code,
-                'account_name' => $manager->payout_account_name,
-                'account_number' => $manager->payout_account_number,
-                'recipient_reference' => $manager->payout_recipient_code,
+                'bank_name' => $lockedManager->payout_bank_name,
+                'bank_code' => $lockedManager->payout_bank_code,
+                'account_name' => $lockedManager->payout_account_name,
+                'account_number' => $lockedManager->payout_account_number,
+                'recipient_reference' => $lockedManager->payout_recipient_code,
                 'approved_by' => $approvedBy,
                 'approved_at' => $approvedBy ? now() : null,
                 'is_automatic' => $automatic,
@@ -333,33 +336,35 @@ class DeploymentCommissionPayoutService
                     'updated_at' => now(),
                 ]);
 
-            return $this->dispatchTransfer($payout, $manager);
+            return $this->dispatchTransfer($payout, $lockedManager);
         });
     }
 
     private function createManualReviewPayout(DeploymentManager $manager, float $amount, bool $automatic, string $reason, ?int $approvedBy = null): DeploymentManagerPayout
     {
         return DB::transaction(function () use ($manager, $amount, $automatic, $reason, $approvedBy) {
+            $lockedManager = DeploymentManager::query()->whereKey($manager->id)->lockForUpdate()->firstOrFail();
             $commissionRows = DB::table('deployment_commissions')
-                ->where('manager_id', $manager->user_id)
+                ->where('manager_id', $lockedManager->user_id)
                 ->where('status', 'pending')
                 ->whereNull('payout_id')
+                ->lockForUpdate()
                 ->get();
 
             $commissionAmount = round((float) $commissionRows->sum(fn ($row) => (float) ($row->commission_amount ?? $row->amount ?? 0)), 2);
             $payoutAmount = $commissionAmount > 0 ? $commissionAmount : round($amount, 2);
 
             $payout = DeploymentManagerPayout::query()->create([
-                'manager_id' => $manager->user_id,
+                'manager_id' => $lockedManager->user_id,
                 'payout_reference' => 'DMP-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(6)),
-                'gateway' => $this->resolveGateway($manager),
+                'gateway' => $this->resolveGateway($lockedManager),
                 'status' => 'manual_review',
                 'amount' => $payoutAmount,
                 'currency' => 'NGN',
-                'bank_name' => $manager->payout_bank_name,
-                'bank_code' => $manager->payout_bank_code,
-                'account_name' => $manager->payout_account_name,
-                'account_number' => $manager->payout_account_number,
+                'bank_name' => $lockedManager->payout_bank_name,
+                'bank_code' => $lockedManager->payout_bank_code,
+                'account_name' => $lockedManager->payout_account_name,
+                'account_number' => $lockedManager->payout_account_number,
                 'failure_reason' => $reason,
                 'approved_by' => $approvedBy,
                 'approved_at' => $approvedBy ? now() : null,

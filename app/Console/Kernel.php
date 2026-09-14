@@ -90,6 +90,7 @@ class Kernel extends ConsoleKernel
 
         // Expire demo accounts whose 30-day window has passed
         $schedule->command('demo:expire-accounts')->dailyAt('00:30')->withoutOverlapping();
+        $schedule->command('agents:process-payouts')->hourly()->withoutOverlapping();
     }
 
     protected function commands(): void

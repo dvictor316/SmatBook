@@ -476,6 +476,8 @@ Route::middleware(['auth', 'role:agent,state_manager,super_admin'])
         Route::delete('/leads/{lead}', [AgentPortalController::class, 'destroyLead'])->name('leads.destroy');
         Route::get('/performance', [AgentPortalController::class, 'performance'])->name('performance');
         Route::get('/earnings', [AgentPortalController::class, 'earnings'])->name('earnings');
+        Route::post('/earnings/payout-profile', [AgentPortalController::class, 'updatePayoutProfile'])->name('earnings.payout-profile');
+        Route::post('/earnings/request-payout', [AgentPortalController::class, 'requestPayout'])->name('earnings.request-payout');
         Route::get('/knowledge-base', [AgentPortalController::class, 'knowledgeBase'])->name('knowledge-base');
         Route::get('/content-hub', [AgentPortalController::class, 'contentHub'])->name('content-hub');
         Route::get('/upsell-center', [AgentPortalController::class, 'upsellCenter'])->name('upsell-center');

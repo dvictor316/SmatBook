@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\AgentActivity;
 use App\Models\AgentLead;
 use App\Models\Company;
+use App\Models\DeploymentManager;
+use App\Models\DeploymentManagerPayout;
 use App\Models\Plan;
+use App\Support\DeploymentCommissionPayoutService;
 use App\Support\PartnerLocationRepository;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,11 +17,18 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class AgentPortalController extends Controller
 {
+    public function __construct(
+        private readonly DeploymentCommissionPayoutService $deploymentCommissionPayouts
+    ) {
+    }
+
     public function dashboard(): View
     {
         $user = Auth::user();
@@ -178,11 +188,124 @@ class AgentPortalController extends Controller
     {
         $user = Auth::user();
         $stats = $this->agentStats($user->id);
+        $manager = DeploymentManager::where('user_id', $user->id)->first();
         $commissions = Schema::hasTable('deployment_commissions')
             ? DB::table('deployment_commissions')->where('manager_id', $user->id)->latest()->paginate(12)
             : collect();
+        $payoutSummary = $this->deploymentCommissionPayouts->summaryForManager($user->id);
+        $paystackBanks = $this->deploymentCommissionPayouts->paystackBanks();
+        $recentPayouts = Schema::hasTable('deployment_manager_payouts')
+            ? DeploymentManagerPayout::query()->where('manager_id', $user->id)->latest()->limit(8)->get()
+            : collect();
 
-        return view('agent.earnings', compact('user', 'stats', 'commissions'));
+        $stats = array_merge($stats, [
+            'available_commissions' => (float) ($payoutSummary['available'] ?? 0),
+            'processing_commissions' => (float) ($payoutSummary['processing'] ?? 0),
+            'failed_payouts' => (float) ($payoutSummary['failed'] ?? 0),
+        ]);
+        $retryablePayout = $payoutSummary['retryable_payout'] ?? null;
+
+        return view('agent.earnings', compact(
+            'user',
+            'stats',
+            'commissions',
+            'manager',
+            'paystackBanks',
+            'recentPayouts',
+            'retryablePayout'
+        ));
+    }
+
+    public function updatePayoutProfile(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'payout_bank_name' => 'required|string|max:191',
+            'payout_bank_code' => 'nullable|string|max:50',
+            'payout_account_name' => 'required|string|max:191',
+            'payout_account_number' => 'required|string|max:100',
+            'payout_provider' => 'required|in:paystack,flutterwave',
+            'minimum_payout_amount' => 'nullable|numeric|min:0',
+            'auto_payout_enabled' => 'nullable|boolean',
+        ]);
+
+        $manager = DeploymentManager::query()->firstOrCreate(
+            ['user_id' => Auth::id()],
+            ['status' => 'active', 'deployment_limit' => 100, 'commission_rate' => 35]
+        );
+        $bank = $this->deploymentCommissionPayouts->resolvePaystackBank(
+            $validated['payout_bank_code'] ?? null,
+            $validated['payout_bank_name'] ?? null
+        );
+
+        if (!$bank || empty($bank['code'])) {
+            throw ValidationException::withMessages([
+                'payout_bank_code' => 'Select a supported Paystack bank before requesting payouts.',
+            ]);
+        }
+
+        $providerChanged = strtolower((string) ($manager->payout_provider ?? '')) !== strtolower((string) $validated['payout_provider']);
+        $bankChanged = (string) ($manager->payout_account_number ?? '') !== (string) $validated['payout_account_number']
+            || (string) ($manager->payout_bank_code ?? '') !== (string) ($bank['code'] ?? '');
+
+        $manager->update([
+            'payout_bank_name' => $bank['name'],
+            'payout_bank_code' => $bank['code'],
+            'payout_account_name' => $validated['payout_account_name'],
+            'payout_account_number' => $validated['payout_account_number'],
+            'payout_provider' => $validated['payout_provider'],
+            'minimum_payout_amount' => $validated['minimum_payout_amount'] ?? ($manager->minimum_payout_amount ?? 5000),
+            'auto_payout_enabled' => $request->boolean('auto_payout_enabled'),
+            'payout_status' => 'configured',
+            'payout_recipient_code' => ($providerChanged || $bankChanged) ? null : $manager->payout_recipient_code,
+        ]);
+
+        try {
+            $resumedPayout = $this->deploymentCommissionPayouts->retryManualReviewPayoutForManager($manager->user_id, Auth::id());
+            if ($resumedPayout) {
+                return back()->with(
+                    $resumedPayout->status === 'failed' ? 'error' : 'success',
+                    $resumedPayout->status === 'failed'
+                        ? ($resumedPayout->failure_reason ?: 'Payout could not be sent. Confirm the bank details and try again.')
+                        : 'Payout profile updated and the existing payout request has resumed.'
+                );
+            }
+
+            if ($manager->auto_payout_enabled) {
+                $this->deploymentCommissionPayouts->attemptAutoPayout($manager->user_id);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Agent auto payout did not run after payout profile update.', [
+                'agent_id' => $manager->user_id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return back()->with('success', 'Payout profile updated successfully.');
+    }
+
+    public function requestPayout(): RedirectResponse
+    {
+        $payout = $this->deploymentCommissionPayouts->retryManualReviewPayoutForManager(Auth::id(), Auth::id())
+            ?: $this->deploymentCommissionPayouts->createPayoutForManager(Auth::id(), false, Auth::id());
+
+        if (!$payout) {
+            $summary = $this->deploymentCommissionPayouts->summaryForManager(Auth::id());
+            if (!empty($summary['retryable_payout'])) {
+                return back()->with('error', 'Save a valid bank and account number to resume this payout request.');
+            }
+
+            return back()->with('error', 'No eligible commission is currently available for payout.');
+        }
+
+        if ($payout->status === 'manual_review') {
+            return back()->with('info', 'Save a supported bank and valid account number to resume this payout.');
+        }
+
+        if ($payout->status === 'failed') {
+            return back()->with('error', $payout->failure_reason ?: 'Paystack could not process this payout. Confirm the bank details and try again.');
+        }
+
+        return back()->with('success', 'Payout request sent to Paystack successfully.');
     }
 
     public function knowledgeBase(): View
@@ -355,10 +478,11 @@ class AgentPortalController extends Controller
         }
 
         $rows = DB::table('deployment_commissions')->where('manager_id', $agentId)->get();
+        $amountFor = fn ($row) => (float) ($row->commission_amount ?? $row->amount ?? 0);
 
         return [
-            'paid' => (float) $rows->where('status', 'paid')->sum('amount'),
-            'pending' => (float) $rows->where('status', 'pending')->sum('amount'),
+            'paid' => (float) $rows->where('status', 'paid')->sum($amountFor),
+            'pending' => (float) $rows->where('status', 'pending')->sum($amountFor),
         ];
     }
 
