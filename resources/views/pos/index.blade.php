@@ -3374,8 +3374,8 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-card-img img {
     }
 }
 
-/* POS action rail: iPad portrait and smaller use the drawer so the workspace gets more room. */
-@media (min-width: 1024.02px) and (max-width: 1199.98px) {
+/* POS action rail: iPad landscape keeps the desktop-style docked workspace. */
+@media (min-width: 900px) and (max-width: 1199.98px) and (orientation: landscape) {
     body.pos-terminal-workspace .pos-shell {
         display: flex !important;
         gap: 0;
@@ -3419,7 +3419,7 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-card-img img {
     }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 899.98px), (max-width: 1024px) and (orientation: portrait) {
     body.pos-terminal-workspace .header-util-bar,
     body.pos-terminal-workspace .pos-header-bar {
         gap: 12px;
@@ -4142,7 +4142,7 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
     z-index: 40 !important;
 }
 
-@media (max-width: 1199.98px) {
+@media (max-width: 899.98px), (max-width: 1199.98px) and (orientation: portrait) {
     body.pos-terminal-workspace .pos-action-rail,
     body.pos-terminal-workspace .pos-action-rail[style] {
         top: var(--sb-header-h, 76px) !important;
@@ -8760,7 +8760,7 @@ document.addEventListener('DOMContentLoaded', function () {
     ].filter(Boolean);
     const posRailBackdrop = document.getElementById('pos-rail-backdrop');
     const posRail = document.getElementById('pos-action-rail');
-    const isPosDrawerMode = () => window.matchMedia('(max-width: 1024px)').matches;
+    const isPosDrawerMode = () => window.matchMedia('(max-width: 899.98px), (max-width: 1024px) and (orientation: portrait)').matches;
 
     headerMenuButtons.forEach((button) => {
         button.setAttribute('aria-controls', 'pos-action-rail');
