@@ -10,6 +10,7 @@
         ?? 'SmartProbook';
     $activeBranchName = trim((string) (session('active_branch_name') ?? ''));
     $fmt = fn ($amount) => \App\Support\GeoCurrency::format((float) $amount, 'NGN', $currencyCode, $currencyLocale);
+    $signedCost = fn ($amount) => ((float) $amount > 0 ? '-' : '') . number_format(abs((float) $amount), 2);
 
     // Subdomain parameter detection for all routes
     $currentSubdomain = request()->route('subdomain') ?? 'admin';
@@ -444,7 +445,7 @@
                                 <th>{{ __('Income (₦)') }}</th>
                                 <th>{{ __('COGS (₦)') }}</th>
                                 <th>{{ __('OpEx (₦)') }}</th>
-                                <th>{{ __('Expenses (₦)') }}</th>
+                                <th>{{ __('Total Costs (₦)') }}</th>
                                 <th>{{ __('Net (₦)') }}</th>
                             </tr>
                         </thead>
@@ -454,9 +455,9 @@
                                 <tr>
                                     <td class="fw-semibold" data-order="{{ $item->report_date }}">{{ \Carbon\Carbon::parse($item->report_date)->format('D, d M Y') }}</td>
                                     <td class="text-success">+{{ number_format($item->income, 2) }}</td>
-                                    <td class="text-muted">-{{ number_format($item->purchase_expense ?? 0, 2) }}</td>
-                                    <td class="text-muted">-{{ number_format($item->operating_expense ?? 0, 2) }}</td>
-                                    <td class="text-danger">-{{ number_format($item->expense, 2) }}</td>
+                                    <td class="text-muted">{{ $signedCost($item->purchase_expense ?? 0) }}</td>
+                                    <td class="text-muted">{{ $signedCost($item->operating_expense ?? 0) }}</td>
+                                    <td class="text-danger">{{ $signedCost($item->expense) }}</td>
                                     <td class="fw-semibold {{ $dailyProfit >= 0 ? 'text-success' : 'text-danger' }}">
                                         {{ number_format($dailyProfit, 2) }}
                                     </td>
