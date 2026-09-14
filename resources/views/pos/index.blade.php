@@ -292,6 +292,30 @@ body.pos-terminal-workspace #toggle_btn:focus-visible {
     transform: translateY(-1px);
 }
 
+body.pos-terminal-workspace #mobile_btn.is-open,
+body.pos-terminal-workspace #toggle_btn.is-open {
+    background: #ffffff !important;
+    border-color: #fecaca !important;
+    color: #dc2626 !important;
+    box-shadow: 0 10px 22px rgba(220, 38, 38, 0.18) !important;
+}
+
+body.pos-terminal-workspace #mobile_btn.is-open .bar-icon:nth-child(1),
+body.pos-terminal-workspace #toggle_btn.is-open .bar-icon:nth-child(1) {
+    transform: translateY(7.5px) rotate(45deg) !important;
+}
+
+body.pos-terminal-workspace #mobile_btn.is-open .bar-icon:nth-child(2),
+body.pos-terminal-workspace #toggle_btn.is-open .bar-icon:nth-child(2) {
+    opacity: 0 !important;
+    transform: scaleX(0) !important;
+}
+
+body.pos-terminal-workspace #mobile_btn.is-open .bar-icon:nth-child(3),
+body.pos-terminal-workspace #toggle_btn.is-open .bar-icon:nth-child(3) {
+    transform: translateY(-7.5px) rotate(-45deg) !important;
+}
+
 /* Clock Badge */
 .clock-badge {
     background: linear-gradient(135deg, #f4d37a 0%, #d4af37 100%);
@@ -3296,7 +3320,7 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-card-img img {
     body.pos-terminal-workspace .pos-main-stage > .row.g-4 {
         grid-area: work;
         display: grid !important;
-        grid-template-columns: minmax(210px, 255px) minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr) minmax(210px, 255px);
         min-height: 0;
         margin: 0;
     }
@@ -3307,6 +3331,14 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-card-img img {
         width: 100%;
         max-width: 100%;
         padding: 0;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage > .row.g-4 > .col-xl-8 {
+        grid-column: 1;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage > .row.g-4 > .col-xl-4 {
+        grid-column: 2;
     }
 
     body.pos-terminal-workspace .pos-product-shelf-card .category-pills-wrap {
@@ -4140,6 +4172,49 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
     position: sticky !important;
     top: 0 !important;
     z-index: 40 !important;
+}
+
+@media (min-width: 900px) and (max-width: 1199.98px) and (orientation: landscape) {
+    body.pos-terminal-workspace .pos-main-stage {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(220px, 255px) 220px !important;
+        grid-template-rows: auto minmax(0, 1fr) !important;
+        grid-template-areas:
+            "header header header"
+            "receipt controls shelf" !important;
+        gap: 0 !important;
+        overflow: hidden !important;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage > .header-stage {
+        grid-area: header !important;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage > .pos-product-shelf-card {
+        grid-area: shelf !important;
+        width: 220px !important;
+        max-width: 220px !important;
+        height: 100% !important;
+        margin-bottom: 0 !important;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage > .row.g-4 {
+        display: contents !important;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage > .row.g-4 > .col-xl-8 {
+        grid-area: receipt !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage > .row.g-4 > .col-xl-4 {
+        grid-area: controls !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
 }
 
 @media (max-width: 899.98px), (max-width: 1199.98px) and (orientation: portrait) {
@@ -8761,10 +8836,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const posRailBackdrop = document.getElementById('pos-rail-backdrop');
     const posRail = document.getElementById('pos-action-rail');
     const isPosDrawerMode = () => window.matchMedia('(max-width: 899.98px), (max-width: 1024px) and (orientation: portrait)').matches;
+    const setMenuIconState = (button, isOpen) => {
+        const icon = button?.querySelector?.('i');
+        if (!icon) return;
+        icon.classList.toggle('fa-bars', !isOpen);
+        icon.classList.toggle('fa-times', isOpen);
+    };
 
     headerMenuButtons.forEach((button) => {
         button.setAttribute('aria-controls', 'pos-action-rail');
         button.setAttribute('aria-label', 'Open POS menu');
+        setMenuIconState(button, false);
     });
 
     const closePosRail = () => {
@@ -8773,6 +8855,7 @@ document.addEventListener('DOMContentLoaded', function () {
             button.setAttribute('aria-expanded', 'false');
             button.classList.remove('is-open');
             button.setAttribute('aria-label', 'Open POS menu');
+            setMenuIconState(button, false);
         });
     };
 
@@ -8782,6 +8865,7 @@ document.addEventListener('DOMContentLoaded', function () {
             menuButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
             menuButton.classList.toggle('is-open', isOpen);
             menuButton.setAttribute('aria-label', isOpen ? 'Close POS menu' : 'Open POS menu');
+            setMenuIconState(menuButton, isOpen);
         });
         button?.focus?.();
     };
