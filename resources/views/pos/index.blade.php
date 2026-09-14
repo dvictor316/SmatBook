@@ -293,7 +293,10 @@ body.pos-terminal-workspace #toggle_btn:focus-visible {
 }
 
 body.pos-terminal-workspace #mobile_btn.is-open,
-body.pos-terminal-workspace #toggle_btn.is-open {
+body.pos-terminal-workspace #toggle_btn.is-open,
+body.pos-terminal-workspace.sidebar-collapsed #toggle_btn,
+body.pos-terminal-workspace.mini-sidebar #toggle_btn,
+body.pos-terminal-workspace.sidebar-mobile-open #mobile_btn {
     background: #ffffff !important;
     border-color: #fecaca !important;
     color: #dc2626 !important;
@@ -301,18 +304,24 @@ body.pos-terminal-workspace #toggle_btn.is-open {
 }
 
 body.pos-terminal-workspace #mobile_btn.is-open .bar-icon:nth-child(1),
-body.pos-terminal-workspace #toggle_btn.is-open .bar-icon:nth-child(1) {
+body.pos-terminal-workspace #toggle_btn.is-open .bar-icon:nth-child(1),
+body.pos-terminal-workspace.sidebar-collapsed #toggle_btn .bar-icon:nth-child(1),
+body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(1) {
     transform: translateY(7.5px) rotate(45deg) !important;
 }
 
 body.pos-terminal-workspace #mobile_btn.is-open .bar-icon:nth-child(2),
-body.pos-terminal-workspace #toggle_btn.is-open .bar-icon:nth-child(2) {
+body.pos-terminal-workspace #toggle_btn.is-open .bar-icon:nth-child(2),
+body.pos-terminal-workspace.sidebar-collapsed #toggle_btn .bar-icon:nth-child(2),
+body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(2) {
     opacity: 0 !important;
     transform: scaleX(0) !important;
 }
 
 body.pos-terminal-workspace #mobile_btn.is-open .bar-icon:nth-child(3),
-body.pos-terminal-workspace #toggle_btn.is-open .bar-icon:nth-child(3) {
+body.pos-terminal-workspace #toggle_btn.is-open .bar-icon:nth-child(3),
+body.pos-terminal-workspace.sidebar-collapsed #toggle_btn .bar-icon:nth-child(3),
+body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
     transform: translateY(-7.5px) rotate(-45deg) !important;
 }
 
@@ -8842,6 +8851,20 @@ document.addEventListener('DOMContentLoaded', function () {
         icon.classList.toggle('fa-bars', !isOpen);
         icon.classList.toggle('fa-times', isOpen);
     };
+    const syncHeaderMenuButtons = () => {
+        const isDesktopCloseState = document.body.classList.contains('sidebar-collapsed')
+            || document.body.classList.contains('mini-sidebar')
+            || document.body.classList.contains('sidebar-icon-only');
+        const isMobileCloseState = document.body.classList.contains('sidebar-mobile-open')
+            || document.body.classList.contains('pos-rail-open');
+
+        headerMenuButtons.forEach((button) => {
+            const isCloseState = button.id === 'toggle_btn'
+                ? (isDesktopCloseState || button.classList.contains('is-open'))
+                : (isMobileCloseState || button.classList.contains('is-open'));
+            setMenuIconState(button, isCloseState);
+        });
+    };
 
     headerMenuButtons.forEach((button) => {
         button.setAttribute('aria-controls', 'pos-action-rail');
@@ -8857,6 +8880,7 @@ document.addEventListener('DOMContentLoaded', function () {
             button.setAttribute('aria-label', 'Open POS menu');
             setMenuIconState(button, false);
         });
+        syncHeaderMenuButtons();
     };
 
     const togglePosRail = (button) => {
@@ -8867,8 +8891,15 @@ document.addEventListener('DOMContentLoaded', function () {
             menuButton.setAttribute('aria-label', isOpen ? 'Close POS menu' : 'Open POS menu');
             setMenuIconState(menuButton, isOpen);
         });
+        syncHeaderMenuButtons();
         button?.focus?.();
     };
+
+    syncHeaderMenuButtons();
+    new MutationObserver(syncHeaderMenuButtons).observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class']
+    });
 
     headerMenuButtons.forEach((button) => {
         button.addEventListener('click', function (event) {
