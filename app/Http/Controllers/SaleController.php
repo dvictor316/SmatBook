@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Collection;
 use App\Support\BranchInventoryService;
 use App\Support\GeoCurrency;
 use App\Support\InventoryQuantity;
@@ -150,6 +151,87 @@ class SaleController extends Controller
             'posExpiryAlertsEnabled' => (string) $this->getCompanyScopedSettingValue('expiry_notification_enabled', '0') === '1',
             'posExpiryAlertMonths' => in_array($expiryAlertMonths, [1, 2, 6], true) ? $expiryAlertMonths : 1,
         ]);
+    }
+
+    private function userCanEditPosPrices(): bool
+    {
+        $user = auth()->user();
+        $role = strtolower(str_replace(' ', '_', (string) ($user?->role ?? '')));
+
+        if (in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true)) {
+            return true;
+        }
+
+        return $user
+            && method_exists($user, 'hasRole')
+            && (
+                $user->hasRole('super_admin')
+                || $user->hasRole('administrator')
+                || $user->hasRole('admin')
+            );
+    }
+
+    private function resolvePosListPrice(Collection $priceLists, int $priceListId, int $productId, float $quantity, float $retailPrice): ?float
+    {
+        $priceList = $priceLists->firstWhere('id', $priceListId);
+        if (!$priceList) {
+            return null;
+        }
+
+        $productItems = collect($priceList['items'][$productId] ?? []);
+        if ($productItems->isNotEmpty()) {
+            $match = $productItems
+                ->filter(fn ($row) => $quantity >= (float) ($row['min_quantity'] ?? 1))
+                ->last();
+
+            if ($match) {
+                return max(0, (float) ($match['price'] ?? 0));
+            }
+        }
+
+        $discountValue = (float) ($priceList['discount_value'] ?? 0);
+        if ($discountValue > 0 && $retailPrice > 0) {
+            return match ($priceList['discount_type'] ?? null) {
+                'fixed' => max(0, $retailPrice - $discountValue),
+                'percentage' => max(0, $retailPrice - ($retailPrice * $discountValue / 100)),
+                default => null,
+            };
+        }
+
+        return null;
+    }
+
+    private function resolvePosSystemUnitPrice(Product $product, array $itemData, Collection $priceLists): float
+    {
+        $unitType = strtolower(trim((string) ($itemData['unitType'] ?? 'unit')));
+        $unitConversion = $product->resolveUnitConversion($unitType);
+        $multiplier = max(1, (float) ($unitConversion['conversion_factor'] ?? 1));
+        $priceLevel = strtolower(trim((string) ($itemData['priceLevel'] ?? 'retail')));
+        $quantity = max(0.01, (float) ($itemData['qty'] ?? 1));
+
+        $retailPrice = (float) ($product->retail_price ?? $product->price ?? $product->product_price ?? 0);
+        $wholesalePrice = (float) ($product->wholesale_price ?? 0);
+        $specialPrice = (float) ($product->special_price ?? 0);
+
+        $basePrice = $retailPrice;
+        if ($priceLevel === 'list') {
+            $listPrice = $this->resolvePosListPrice(
+                $priceLists,
+                (int) ($itemData['priceListId'] ?? $itemData['price_list_id'] ?? 0),
+                (int) $product->id,
+                $quantity,
+                $retailPrice
+            );
+            if ($listPrice !== null) {
+                $basePrice = $listPrice;
+            }
+        } elseif ($priceLevel === 'wholesale' && $wholesalePrice > 0) {
+            $basePrice = $wholesalePrice;
+        } elseif ($priceLevel === 'special' && $specialPrice > 0) {
+            $basePrice = $specialPrice;
+        }
+
+        return round(max(0, $basePrice * $multiplier), 2);
     }
 
     private function decrementSellableStock(Product $product, float $quantity): void
@@ -1071,6 +1153,10 @@ public function store(Request $request)
 	    $paidAmount = (float) $request->paid;
 	    $totalAmount = (float) $request->total;
         $saleItems = $this->mergeMatchingPosSaleItems($request->input('items', []));
+        $posCanEditPrices = $this->userCanEditPosPrices();
+        $activePriceListsForPos = $this->priceListUsage
+            ->toFrontend($this->priceListUsage->activeForCurrentContext($this->tenantCompanyId()));
+        $activePriceListsForPos = collect($activePriceListsForPos);
 	    $requestedWalletAmount = round(max(0, (float) $request->input('wallet_amount', 0)), 2);
 	    $paymentMethod = strtolower((string) $request->payment_method);
 	    $splitDetails = $this->normalizeSplitDetails($request->input('split_details', []));
@@ -1264,7 +1350,10 @@ $sale = Sale::create([
                 throw new \Exception("Insufficient stock for {$product->name}.");
             }
 
-            $unitPrice   = (float) ($itemData['price'] ?? $product->price);
+            $submittedPrice = round(max(0, (float) ($itemData['price'] ?? 0)), 2);
+            $unitPrice = $posCanEditPrices && $submittedPrice > 0
+                ? $submittedPrice
+                : $this->resolvePosSystemUnitPrice($product, $itemData, $activePriceListsForPos);
             $discountType = strtolower((string) ($itemData['discountType'] ?? $itemData['discount_type'] ?? 'percent'));
             $discountValue = (float) ($itemData['discountValue'] ?? $itemData['discount_value'] ?? ($itemData['discount'] ?? 0));
             $discPercent = (float) ($itemData['discount'] ?? 0);
@@ -1602,6 +1691,7 @@ $sale = Sale::create([
             $unitType = strtolower(trim((string) ($item['unitType'] ?? 'unit')));
             $price = round((float) ($item['price'] ?? 0), 2);
             $priceLevel = strtolower(trim((string) ($item['priceLevel'] ?? 'retail')));
+            $priceListId = (int) ($item['priceListId'] ?? $item['price_list_id'] ?? 0);
             $discountType = strtolower(trim((string) ($item['discountType'] ?? $item['discount_type'] ?? 'percent')));
             $discountValue = round((float) ($item['discountValue'] ?? $item['discount_value'] ?? ($item['discount'] ?? 0)), 2);
             $discountPercent = round((float) ($item['discount'] ?? ($discountType === 'percent' ? $discountValue : 0)), 4);
@@ -1612,6 +1702,7 @@ $sale = Sale::create([
                 $unitType,
                 number_format($price, 2, '.', ''),
                 $priceLevel,
+                $priceListId,
                 $discountType,
                 number_format($discountValue, 2, '.', ''),
                 number_format($discountPercent, 4, '.', ''),
@@ -1624,6 +1715,7 @@ $sale = Sale::create([
                 $item['unitType'] = $unitType;
                 $item['price'] = $price;
                 $item['priceLevel'] = $priceLevel;
+                $item['priceListId'] = $priceListId;
                 $item['discountType'] = $discountType;
                 $item['discountValue'] = $discountValue;
                 $item['discount'] = $discountPercent;

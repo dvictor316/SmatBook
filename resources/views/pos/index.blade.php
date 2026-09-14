@@ -26,9 +26,9 @@
     $posReceiveItemsUrl = $posReceiveItemsUrl ?? (\Illuminate\Support\Facades\Route::has('grn.create') ? route('grn.create') : url('/grn/create'));
     $posReportsUrl = $posReportsUrl ?? (\Illuminate\Support\Facades\Route::has('pos.reports') ? route('pos.reports') : url('/pos/reports'));
     $posUser = auth()->user();
-    $posRole = strtolower((string) ($posUser->role ?? ''));
+    $posRole = strtolower(str_replace(' ', '_', (string) ($posUser->role ?? '')));
     $posIsAdmin = in_array($posRole, ['super_admin', 'superadmin', 'administrator', 'admin'], true)
-        || ($posUser && method_exists($posUser, 'hasRole') && ($posUser->hasRole('super_admin') || $posUser->hasRole('administrator')));
+        || ($posUser && method_exists($posUser, 'hasRole') && ($posUser->hasRole('super_admin') || $posUser->hasRole('administrator') || $posUser->hasRole('admin')));
     $posCan = function (array|string $permissions) use ($posUser, $posIsAdmin): bool {
         if ($posIsAdmin) {
             return true;
@@ -54,6 +54,7 @@
     $posCanSell = $posCan(['sales.sales.create', 'sales.invoices.create', 'pos.sales.create']);
     $posCanDiscount = $posCan(['sales.sales.discount', 'sales.sales.edit', 'sales.invoices.edit']);
     $posCanManageCustomers = $posCan(['customers.customers.view', 'customers.customers.create', 'sales.sales.create']);
+    $posCanEditPrice = $posIsAdmin;
 @endphp
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -5148,7 +5149,7 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                     </div>
                     <div class="col-6">
                         <label>Price</label>
-                        <input type="number" id="unit-price-input" class="form-control bg-light fw-bold tabular-nums" readonly>
+                        <input type="number" id="unit-price-input" class="form-control {{ $posCanEditPrice ? '' : 'bg-light' }} fw-bold tabular-nums" step="0.01" min="0" @readonly(!$posCanEditPrice) title="{{ $posCanEditPrice ? 'Admins can edit POS prices.' : 'Only admins can edit POS prices.' }}">
                     </div>
                     <div class="col-6">
                         <label id="qty-label">Quantity</label>
@@ -6797,6 +6798,7 @@ window.POS_ENABLE_FALLBACK = function () {
         discount: @json((bool) $posCanDiscount),
         customers: @json((bool) $posCanManageCustomers),
         addProduct: @json((bool) $posCanAddProduct),
+        editPrice: @json((bool) $posCanEditPrice),
     };
 
     function requirePosPermission(flag, message) {
@@ -8341,6 +8343,7 @@ window.POS_ENABLE_FALLBACK = function () {
                 baseUnit: unitMeta.baseUnit,
                 priceLevel: priceMeta.key,
                 priceLevelLabel: priceMeta.label,
+                priceListId: priceListInput?.value || '',
                 price,
                 discountType: calc.discountType,
                 discountValue: calc.discount,
@@ -8440,7 +8443,13 @@ window.POS_ENABLE_FALLBACK = function () {
         }
     });
 
-    [qtyInput, discountInput, taxInput].forEach((input) => {
+    if (priceInput && !posPermissions.editPrice) {
+        priceInput.readOnly = true;
+        priceInput.classList.add('bg-light');
+        priceInput.title = 'Only admins can edit POS prices.';
+    }
+
+    [qtyInput, discountInput, taxInput, priceInput].forEach((input) => {
         input?.addEventListener('input', updateItemTotal);
     });
     discountTypeInput?.addEventListener('change', updateItemTotal);
