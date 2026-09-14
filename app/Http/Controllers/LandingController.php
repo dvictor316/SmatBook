@@ -208,7 +208,7 @@ class LandingController extends Controller
                             'subscriber_name' => $demoCompanyName,
                             'domain_prefix' => $demoPrefix,
                             'employee_size' => '25-50',
-                            'amount' => 19500,
+                            'amount' => 7000,
                             'billing_cycle' => 'Monthly',
                             'start_date' => now()->subDays(7),
                             'end_date' => now()->addDays(30),

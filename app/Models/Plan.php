@@ -35,8 +35,13 @@ class Plan extends Model
 
     public const ADDITIONAL_USER_PRICES = [
         'basic' => 3000,
-        'professional' => 5000,
+        'professional' => 3000,
         'enterprise' => 7000,
+    ];
+
+    public const ADDITIONAL_BRANCH_PRICES = [
+        'professional' => 5000,
+        'enterprise' => 5000,
     ];
 
     protected $table = 'plans';
@@ -79,7 +84,7 @@ class Plan extends Model
             return 'hotel';
         }
 
-        if (str_contains($value, 'enterprise')) {
+        if (str_contains($value, 'enterprise') || str_contains($value, 'institutional')) {
             return 'enterprise';
         }
 
@@ -118,6 +123,18 @@ class Plan extends Model
     public static function additionalUserPriceForName(?string $planName, ?string $billingCycle = 'monthly'): ?float
     {
         $monthlyPrice = static::ADDITIONAL_USER_PRICES[static::normalizeTier($planName)] ?? null;
+        if ($monthlyPrice === null) {
+            return null;
+        }
+
+        return strtolower((string) $billingCycle) === 'yearly'
+            ? $monthlyPrice * 10
+            : $monthlyPrice;
+    }
+
+    public static function additionalBranchPriceForName(?string $planName, ?string $billingCycle = 'monthly'): ?float
+    {
+        $monthlyPrice = static::ADDITIONAL_BRANCH_PRICES[static::normalizeTier($planName)] ?? null;
         if ($monthlyPrice === null) {
             return null;
         }
@@ -201,8 +218,9 @@ class Plan extends Model
                 'description' => 'For growing operations that need stronger controls, advanced inventory, and richer reporting.',
                 'featured' => true,
                 'from_price' => 7000,
-                'team_price' => 19500,
+                'team_price' => 7000,
                 'additional_user_price' => static::ADDITIONAL_USER_PRICES['professional'],
+                'additional_branch_price' => static::ADDITIONAL_BRANCH_PRICES['professional'],
                 'solo_users' => 2,
                 'team_users' => 5,
                 'benefits' => static::marketingBenefitsForTier('professional', 5),
@@ -214,6 +232,7 @@ class Plan extends Model
                 'from_price' => 15000,
                 'team_price' => 28500,
                 'additional_user_price' => static::ADDITIONAL_USER_PRICES['enterprise'],
+                'additional_branch_price' => static::ADDITIONAL_BRANCH_PRICES['enterprise'],
                 'solo_users' => 3,
                 'team_users' => 8,
                 'benefits' => static::marketingBenefitsForTier('enterprise', 8),

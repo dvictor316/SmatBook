@@ -31,7 +31,7 @@
     $basicSoloMonthly = $planMeta('basic-solo-monthly', 'Basic Solo', 3000, 'monthly');
     $basicMonthly = $planMeta('basic-monthly', 'Basic', 5500, 'monthly');
     $proSoloMonthly = $planMeta('professional-solo-monthly', 'Professional Solo', 7000, 'monthly');
-    $proMonthly = $planMeta('professional-monthly', 'Professional', 19500, 'monthly');
+    $proMonthly = $planMeta('professional-monthly', 'Professional', 7000, 'monthly');
     $enterpriseSoloMonthly = $planMeta('enterprise-solo-monthly', 'Enterprise Solo', 15000, 'monthly');
     $enterpriseMonthly = $planMeta('enterprise-monthly', 'Enterprise', 28500, 'monthly');
     $hotelMonthly = $planMeta('hotel-monthly', 'Hotel', 20000, 'monthly');
@@ -40,7 +40,7 @@
     $basicSoloYearly = $planMeta('basic-solo-yearly', 'Basic Solo', 30000, 'yearly', '6,000');
     $basicYearly = $planMeta('basic-yearly', 'Basic', 55000, 'yearly', '11,000');
     $proSoloYearly = $planMeta('professional-solo-yearly', 'Professional Solo', 70000, 'yearly', '14,000');
-    $proYearly = $planMeta('professional-yearly', 'Professional', 195000, 'yearly', '39,000');
+    $proYearly = $planMeta('professional-yearly', 'Professional', 70000, 'yearly', '14,000');
     $enterpriseSoloYearly = $planMeta('enterprise-solo-yearly', 'Enterprise Solo', 150000, 'yearly', '30,000');
     $enterpriseYearly = $planMeta('enterprise-yearly', 'Enterprise', 285000, 'yearly', '57,000');
     $hotelYearly = $planMeta('hotel-yearly', 'Hotel', 200000, 'yearly', '40,000');
