@@ -866,7 +866,7 @@
     .user-profile {
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         gap: 8px;
         padding: 6px 8px 6px 6px;
         border-radius: 8px;
@@ -874,7 +874,7 @@
         text-decoration: none;
         min-width: 0;
         max-width: 190px;
-        width: 100%;
+        width: auto;
         overflow: hidden;
     }
     .user-avatar {
@@ -883,9 +883,9 @@
         border: 2px solid #e2e8f0;
         object-fit: cover;
     }
-    .user-info  { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; max-width: 100%; overflow: hidden; }
+    .user-info  { display: flex; flex: 1 1 0; flex-direction: column; min-width: 0; max-width: 100%; overflow: hidden; }
     .user-role  { font-size: 9px; color: #94a3b8; font-weight: 700; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .user-name  { font-size: 13px; font-weight: 600; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 132px; }
+    .user-name  { font-size: 13px; font-weight: 600; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 
     @media (max-width: 1440px) {
         .header {
@@ -970,11 +970,13 @@
         }
 
         .header-actions > .dropdown:last-child {
+            min-width: 0;
             max-width: clamp(170px, 13vw, 220px);
         }
 
         .user-profile {
-            max-width: none;
+            max-width: 100%;
+            min-width: 0;
         }
     }
 
@@ -1209,6 +1211,17 @@
         .header-actions {
             flex: 0 0 auto;
             margin-left: auto;
+            min-width: 0;
+        }
+
+        .header-actions > .dropdown:last-child {
+            min-width: 0;
+            max-width: clamp(112px, 14vw, 168px);
+        }
+
+        .user-profile {
+            max-width: 100%;
+            min-width: 0;
         }
     }
 
