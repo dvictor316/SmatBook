@@ -85,17 +85,17 @@
     }
 
     .summary-card {
-        background: linear-gradient(135deg, #eef9ff 0%, #dff3ff 48%, #cfe8ff 100%);
-        border: 1px solid #bfe3fb;
+        background: linear-gradient(135deg, #d9f0ff 0%, #c5e6fb 48%, #acd7f5 100%);
+        border: 1px solid #82bee7;
         border-radius: 20px;
-        box-shadow: 0 16px 40px rgba(56, 189, 248, 0.14);
-        color: #0f2d4a;
+        box-shadow: 0 16px 40px rgba(14, 116, 144, 0.18);
+        color: #082f49;
     }
 
     .summary-card .summary-label {
-        color: #255f85;
+        color: #073b63;
         font-size: 0.75rem;
-        font-weight: 700;
+        font-weight: 800;
         letter-spacing: 0.08em;
         text-transform: uppercase;
     }
@@ -104,13 +104,14 @@
     font-size: 2rem;
     font-weight: 800;
     line-height: 1.1;
-    color: #0b5cad;
+    color: #064f91;
     text-shadow: none;
 }
 
     .summary-card .summary-subtle {
-        color: #42657d;
+        color: #164e63;
         font-size: 0.88rem;
+        font-weight: 600;
     }
 
     .summary-toolbar {
@@ -132,25 +133,27 @@
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        background: rgba(255, 255, 255, 0.72);
-        color: #0b4f8a;
-        border: 1px solid #a9d7f5;
+        background: #ffffff;
+        color: #063d6b;
+        border: 1px solid #6faed8;
         border-radius: 12px;
         padding: 10px 14px;
         font-size: 0.85rem;
-        font-weight: 700;
+        font-weight: 800;
         text-decoration: none;
+        box-shadow: 0 8px 18px rgba(8, 47, 73, 0.08);
     }
 
     .summary-btn:hover {
-        color: #083d6b;
-        background: #ffffff;
+        color: #022c4a;
+        background: #f3fbff;
+        border-color: #2f8dc7;
     }
 
     .summary-filter-grid .form-label {
-        color: #255f85;
+        color: #073b63;
         font-size: 0.72rem;
-        font-weight: 700;
+        font-weight: 800;
         letter-spacing: 0.06em;
         text-transform: uppercase;
     }
@@ -164,17 +167,39 @@
 
     .summary-filter-grid .input-group-text,
     .summary-filter-grid .form-control {
-        border-color: #b8dcf3;
+        border-color: #75b7df;
     }
 
     .summary-filter-grid .form-control,
     .summary-filter-grid .input-group-text {
-        background: rgba(255, 255, 255, 0.96);
+        background: #ffffff;
+        color: #082f49;
+        font-weight: 600;
+    }
+
+    .summary-filter-grid .form-control::placeholder {
+        color: #64748b;
+        opacity: 1;
     }
 
     .summary-filter-grid .btn-light {
-        color: #0f172a;
-        font-weight: 700;
+        color: #082f49;
+        background: #ffffff;
+        border-color: #6faed8;
+        font-weight: 800;
+    }
+
+    .summary-filter-grid .btn-outline-light {
+        color: #063d6b;
+        border-color: #2f8dc7;
+        background: rgba(255, 255, 255, 0.36);
+        font-weight: 800;
+    }
+
+    .summary-filter-grid .btn-outline-light:hover {
+        color: #022c4a;
+        background: #ffffff;
+        border-color: #1d6fa5;
     }
 
     .payment-total-strip {
@@ -185,14 +210,15 @@
     }
 
     .payment-total-card {
-        background: rgba(255, 255, 255, 0.7);
-        border: 1px solid #b9ddf5;
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid #75b7df;
         border-radius: 14px;
         padding: 12px 14px;
+        box-shadow: 0 8px 18px rgba(8, 47, 73, 0.06);
     }
 
     .payment-total-card .payment-label {
-        color: #326381;
+        color: #073b63;
         font-size: 0.68rem;
         font-weight: 800;
         letter-spacing: 0.06em;
@@ -200,7 +226,7 @@
     }
 
     .payment-total-card .payment-amount {
-        color: #0b5cad;
+        color: #064f91;
         font-size: 1.05rem;
         font-weight: 800;
         margin-top: 4px;
