@@ -210,11 +210,28 @@
     }
 
     .payment-total-card {
+        display: block;
         background: rgba(255, 255, 255, 0.88);
         border: 1px solid #75b7df;
         border-radius: 14px;
         padding: 12px 14px;
         box-shadow: 0 8px 18px rgba(8, 47, 73, 0.06);
+        color: inherit;
+        text-decoration: none;
+        transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    }
+
+    a.payment-total-card:hover {
+        border-color: #1479b8;
+        box-shadow: 0 12px 24px rgba(8, 47, 73, 0.12);
+        color: inherit;
+        transform: translateY(-1px);
+    }
+
+    .payment-total-card.active {
+        background: #ffffff;
+        border-color: #075985;
+        box-shadow: 0 0 0 2px rgba(7, 89, 133, 0.16), 0 12px 24px rgba(8, 47, 73, 0.12);
     }
 
     .payment-total-card .payment-label {
@@ -332,20 +349,14 @@
     $dateFrom = request('date_from');
     $dateTo = request('date_to');
     $filterDateLabel = 'All recorded sales';
-    $paymentMethodOptions = [
-        '' => 'All payment modes',
-        'cash' => 'Cash',
-        'transfer' => 'Bank Transfer',
-        'card' => 'POS/Card',
-        'split' => 'Split',
-        'charge_to_room' => 'Charge to Room',
-    ];
     $paymentStatusOptions = [
         '' => 'All payment statuses',
         'paid' => 'Paid',
         'partial' => 'Partial',
         'unpaid' => 'Unpaid',
     ];
+    $paymentFilterBase = request()->except(['page', 'payment_method', 'export']);
+    $selectedPaymentMethod = (string) request('payment_method');
 
     if ($selectedSaleDate) {
         $filterDateLabel = 'Sales for ' . \Illuminate\Support\Carbon::parse($selectedSaleDate)->format('D, M d, Y');
@@ -466,14 +477,6 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-lg-3 col-md-6">
-                    <label class="form-label">Payment Mode</label>
-                    <select name="payment_method" class="form-control form-control-sm">
-                        @foreach($paymentMethodOptions as $value => $label)
-                            <option value="{{ $value }}" @selected((string) request('payment_method') === (string) $value)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </div>
                 <div class="col-lg-2 col-md-4">
                     <label class="form-label">Specific Date</label>
                     <input type="date" name="sale_date" class="form-control form-control-sm" value="{{ request('sale_date') }}">
@@ -498,12 +501,19 @@
 
             @if(!$posReceiptLookupMode)
                 <div class="payment-total-strip">
-                    @foreach(($paymentBreakdown ?? []) as $paymentTotal)
-                        <div class="payment-total-card">
+                    @foreach(($paymentBreakdown ?? []) as $methodKey => $paymentTotal)
+                        @continue($methodKey === 'charge_to_room' && !($showChargeToRoomSummary ?? false))
+                        @php
+                            $isActivePaymentMode = $selectedPaymentMethod === (string) $methodKey;
+                            $paymentModeUrl = route('pos.sales', $isActivePaymentMode
+                                ? $paymentFilterBase
+                                : array_merge($paymentFilterBase, ['payment_method' => $methodKey]));
+                        @endphp
+                        <a class="payment-total-card {{ $isActivePaymentMode ? 'active' : '' }}" href="{{ $paymentModeUrl }}">
                             <div class="payment-label">{{ $paymentTotal['label'] }}</div>
                             <div class="payment-amount">₦{{ number_format((float) ($paymentTotal['amount'] ?? 0), 2) }}</div>
-                            <div class="summary-subtle">{{ number_format((int) ($paymentTotal['count'] ?? 0)) }} sale(s)</div>
-                        </div>
+                            <div class="summary-subtle">{{ number_format((int) ($paymentTotal['count'] ?? 0)) }} sale(s){{ $isActivePaymentMode ? ' selected' : '' }}</div>
+                        </a>
                     @endforeach
                     <div class="payment-total-card">
                         <div class="payment-label">Balance Due</div>

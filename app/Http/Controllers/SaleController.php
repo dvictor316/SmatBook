@@ -168,6 +168,14 @@ class SaleController extends Controller
             ->all();
     }
 
+    private function posChargeToRoomEnabled(): bool
+    {
+        $company = auth()->user()?->company;
+        $industry = strtolower((string) ($company?->industry ?? ''));
+
+        return str_contains($industry, 'hotel') || str_contains($industry, 'hospitality');
+    }
+
     private function posFallbackView(array $activeBranch, string $message)
     {
         session()->flash('error', $message);
@@ -870,6 +878,9 @@ class SaleController extends Controller
         $totalBalance = max(0, $totalRevenue - $totalAmountPaid);
         $totalSalesCount = $filteredSalesForTotals->count();
         $paymentBreakdown = $this->posSalesPaymentBreakdown($filteredSalesForTotals);
+        $showChargeToRoomSummary = $this->posChargeToRoomEnabled()
+            || (float) ($paymentBreakdown['charge_to_room']['amount'] ?? 0) > 0
+            || $request->input('payment_method') === 'charge_to_room';
         $paymentStatusSummary = $filteredSalesForTotals
             ->groupBy(fn ($sale) => strtolower((string) ($sale->payment_status ?? 'unpaid')))
             ->map(fn ($rows, $status) => [
@@ -891,6 +902,7 @@ class SaleController extends Controller
             'branchOptions',
             'staffOptions',
             'paymentBreakdown',
+            'showChargeToRoomSummary',
             'paymentStatusSummary'
         ));
     }
