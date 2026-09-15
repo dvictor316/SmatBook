@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\ProductUnit;
 use App\Models\Category;
+use App\Models\PriceList;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Setting;
@@ -20,6 +21,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use App\Support\BranchInventoryService;
+use App\Support\PriceListUsage;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -1234,8 +1236,58 @@ class ProductController extends Controller
             : collect();
         $availableBranches = $this->getAvailableBranches();
         $units = $this->unitRows();
+        $priceLists = app(PriceListUsage::class)->activeForCurrentContext($this->tenantCompanyId());
 
-        return view('Inventory.Products.add-products', compact('categories', 'availableBranches', 'units'));
+        return view('Inventory.Products.add-products', compact('categories', 'availableBranches', 'units', 'priceLists'));
+    }
+
+    private function syncProductPriceListItems(Product $product, array $priceListPrices): void
+    {
+        if (!Schema::hasTable('price_list_items') || empty($priceListPrices)) {
+            return;
+        }
+
+        $activePriceListIds = app(PriceListUsage::class)
+            ->activeForCurrentContext((int) ($product->company_id ?? $this->tenantCompanyId()))
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        foreach ($priceListPrices as $priceListId => $price) {
+            if ($price === null || $price === '' || !in_array((int) $priceListId, $activePriceListIds, true)) {
+                continue;
+            }
+
+            $payload = [
+                'updated_at' => now(),
+            ];
+
+            if (Schema::hasColumn('price_list_items', 'price')) {
+                $payload['price'] = (float) $price;
+            }
+            if (Schema::hasColumn('price_list_items', 'unit_price')) {
+                $payload['unit_price'] = (float) $price;
+            }
+            if (Schema::hasColumn('price_list_items', 'currency')) {
+                $payload['currency'] = PriceList::whereKey((int) $priceListId)->value('currency') ?: 'NGN';
+            }
+            if (Schema::hasColumn('price_list_items', 'deleted_at')) {
+                $payload['deleted_at'] = null;
+            }
+
+            $keys = [
+                'price_list_id' => (int) $priceListId,
+                'product_id' => $product->id,
+                'min_quantity' => 1,
+            ];
+            $existingItem = DB::table('price_list_items')->where($keys)->first();
+
+            if ($existingItem) {
+                DB::table('price_list_items')->where('id', $existingItem->id)->update($payload);
+            } else {
+                DB::table('price_list_items')->insert(array_merge($keys, $payload, ['created_at' => now()]));
+            }
+        }
     }
 
     /**
@@ -1270,6 +1322,8 @@ class ProductController extends Controller
                 'reorder_quantity' => 'nullable|integer|min:0',
                 'description'      => 'nullable|string',
                 'barcode'          => 'nullable|string|max:191',
+                'price_list_prices' => 'nullable|array',
+                'price_list_prices.*' => 'nullable|numeric|min:0',
             ];
 
             $validator = Validator::make($request->except('image'), $rules);
@@ -1282,6 +1336,8 @@ class ProductController extends Controller
                 }
             });
             $validated = $validator->validate();
+            $priceListPrices = $validated['price_list_prices'] ?? [];
+            unset($validated['price_list_prices']);
 
             $uploadedImage = $request->file('image');
 
@@ -1371,6 +1427,7 @@ class ProductController extends Controller
                 unset($validated['reorder_quantity']);
             }
             $product = Product::create($validated);
+            $this->syncProductPriceListItems($product, $priceListPrices);
             if (Schema::hasTable('product_branch_stocks')) {
                 $branchId = $selectedBranch['id'] ?? null;
                 if (!empty($branchId)) {

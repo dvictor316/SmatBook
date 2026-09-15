@@ -608,6 +608,35 @@
                                         <input type="number" step="0.01" name="price" class="form-control @error('price') is-invalid @enderror" placeholder="0.00" value="{{ old('price') }}" required>
                                         @error('price')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
+                                    @if(($priceLists ?? collect())->isNotEmpty())
+                                        <div class="col-12">
+                                            <div class="border rounded-3 p-3 bg-light">
+                                                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-2">
+                                                    <div>
+                                                        <label class="form-label mb-1">Price List Prices</label>
+                                                        <small class="text-muted d-block">Optional. Enter a price where this product should use a special selling rate.</small>
+                                                    </div>
+                                                    <a href="{{ route('price-lists.index') }}" class="btn btn-sm btn-outline-primary">Manage Price Lists</a>
+                                                </div>
+                                                <div class="row g-3">
+                                                    @foreach($priceLists as $priceList)
+                                                        <div class="col-md-6">
+                                                            <label class="form-label">{{ $priceList->name }}</label>
+                                                            <input type="number"
+                                                                step="0.01"
+                                                                min="0"
+                                                                name="price_list_prices[{{ $priceList->id }}]"
+                                                                class="form-control @error('price_list_prices.' . $priceList->id) is-invalid @enderror"
+                                                                value="{{ old('price_list_prices.' . $priceList->id) }}"
+                                                                placeholder="Leave empty to use default price">
+                                                            <small class="text-muted">{{ $priceList->currency ?? 'NGN' }}{{ $priceList->is_default ? ' - Default list' : '' }}</small>
+                                                            @error('price_list_prices.' . $priceList->id)<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
                                     <div class="col-md-6">
                                         <label class="form-label">Unit Purchase Cost <span class="text-danger">*</span></label>
                                         <input type="number" step="0.01" name="purchase_price" class="form-control @error('purchase_price') is-invalid @enderror" placeholder="0.00" value="{{ old('purchase_price') }}" required>
