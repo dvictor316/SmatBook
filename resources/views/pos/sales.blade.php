@@ -177,6 +177,42 @@
         font-weight: 700;
     }
 
+    .payment-total-strip {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+    }
+
+    .payment-total-card {
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 14px;
+        padding: 12px 14px;
+    }
+
+    .payment-total-card .payment-label {
+        color: rgba(255, 255, 255, 0.75);
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    .payment-total-card .payment-amount {
+        color: #fff;
+        font-size: 1.05rem;
+        font-weight: 800;
+        margin-top: 4px;
+    }
+
+    .sales-total-row td {
+        background: #e8edf5;
+        color: #0f172a;
+        font-weight: 800;
+        border-top: 1px solid #d3dbe8;
+    }
+
     @media print {
         .no-print {
             display: none !important;
@@ -270,6 +306,20 @@
     $dateFrom = request('date_from');
     $dateTo = request('date_to');
     $filterDateLabel = 'All recorded sales';
+    $paymentMethodOptions = [
+        '' => 'All payment modes',
+        'cash' => 'Cash',
+        'transfer' => 'Bank Transfer',
+        'card' => 'POS/Card',
+        'split' => 'Split',
+        'charge_to_room' => 'Charge to Room',
+    ];
+    $paymentStatusOptions = [
+        '' => 'All payment statuses',
+        'paid' => 'Paid',
+        'partial' => 'Partial',
+        'unpaid' => 'Unpaid',
+    ];
 
     if ($selectedSaleDate) {
         $filterDateLabel = 'Sales for ' . \Illuminate\Support\Carbon::parse($selectedSaleDate)->format('D, M d, Y');
@@ -339,13 +389,26 @@
                     @endif
                 </div>
                 <div class="col-lg-4 text-lg-end">
-                    <div class="summary-label">{{ $posReceiptLookupMode ? 'Matches' : 'Sales Count' }}</div>
+                    <div class="summary-label">{{ $posReceiptLookupMode ? 'Matches' : 'Total Paid' }}</div>
+                    @if($posReceiptLookupMode)
                     <div class="fs-2 fw-bold">{{ number_format((int) ($totalSalesCount ?? 0)) }}</div>
-                    <div class="summary-subtle mt-2">{{ $posReceiptLookupMode ? 'Receipt records found' : 'Filtered POS transactions' }}</div>
+                    @else
+                    <div class="fs-2 fw-bold">₦{{ number_format((float) ($totalAmountPaid ?? 0), 2) }}</div>
+                    @endif
+                    <div class="summary-subtle mt-2">{{ $posReceiptLookupMode ? 'Receipt records found' : number_format((int) ($totalSalesCount ?? 0)) . ' filtered POS transactions' }}</div>
                 </div>
             </div>
 
             <form action="{{ route('pos.sales') }}" method="GET" class="row g-3 align-items-end mt-1 summary-filter-grid no-print">
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label">Business Location</label>
+                    <select name="branch_id" class="form-control form-control-sm">
+                        <option value="">All visible locations</option>
+                        @foreach(($branchOptions ?? []) as $branchId => $branchName)
+                            <option value="{{ $branchId }}" @selected((string) request('branch_id') === (string) $branchId)>{{ $branchName }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="col-lg-3 col-md-6">
                     <label class="form-label">Invoice No</label>
                     <div class="input-group input-group-sm">
@@ -359,6 +422,31 @@
                         <span class="input-group-text"><i class="fas fa-user text-muted"></i></span>
                         <input type="text" name="customer_name" class="form-control" placeholder="Customer name" value="{{ request('customer_name') }}">
                     </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label">Cashier / User</label>
+                    <select name="user_id" class="form-control form-control-sm">
+                        <option value="">All users</option>
+                        @foreach(($staffOptions ?? []) as $staffId => $staffName)
+                            <option value="{{ $staffId }}" @selected((string) request('user_id') === (string) $staffId)>{{ $staffName }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label">Payment Status</label>
+                    <select name="payment_status" class="form-control form-control-sm">
+                        @foreach($paymentStatusOptions as $value => $label)
+                            <option value="{{ $value }}" @selected((string) request('payment_status') === (string) $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label">Payment Mode</label>
+                    <select name="payment_method" class="form-control form-control-sm">
+                        @foreach($paymentMethodOptions as $value => $label)
+                            <option value="{{ $value }}" @selected((string) request('payment_method') === (string) $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
                 </div>
                 <div class="col-lg-2 col-md-4">
                     <label class="form-label">Specific Date</label>
@@ -381,6 +469,23 @@
                     </a>
                 </div>
             </form>
+
+            @if(!$posReceiptLookupMode)
+                <div class="payment-total-strip">
+                    @foreach(($paymentBreakdown ?? []) as $paymentTotal)
+                        <div class="payment-total-card">
+                            <div class="payment-label">{{ $paymentTotal['label'] }}</div>
+                            <div class="payment-amount">₦{{ number_format((float) ($paymentTotal['amount'] ?? 0), 2) }}</div>
+                            <div class="summary-subtle">{{ number_format((int) ($paymentTotal['count'] ?? 0)) }} sale(s)</div>
+                        </div>
+                    @endforeach
+                    <div class="payment-total-card">
+                        <div class="payment-label">Balance Due</div>
+                        <div class="payment-amount">₦{{ number_format((float) ($totalBalance ?? 0), 2) }}</div>
+                        <div class="summary-subtle">After paid amount</div>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -395,6 +500,8 @@
                             <th>Customer</th>
                             <th>Items</th>
                             <th class="text-end">Total Amount</th>
+                            <th class="text-end">Paid</th>
+                            <th>Payment Mode</th>
                             <th class="text-center">Status</th>
                             <th>Date / Time</th>
                             <th class="text-center pe-4">Actions</th>
@@ -445,6 +552,14 @@
                             <td class="text-end fw-bold text-dark" style="font-size: 15px;">
                                 ₦{{ number_format($sale->total, 2) }}
                             </td>
+                            <td class="text-end fw-bold text-dark" style="font-size: 15px;">
+                                ₦{{ number_format((float) ($sale->amount_paid ?? $sale->paid ?? 0), 2) }}
+                            </td>
+                            <td>
+                                <span class="badge bg-white text-dark border">
+                                    {{ strtoupper(str_replace('_', ' ', $sale->payment_method ?? 'cash')) }}
+                                </span>
+                            </td>
                             <td class="text-center">
                                 <span class="badge border status-badge {{ $badgeStyle }}">
                                     {{ strtoupper($sale->payment_status) }}
@@ -488,6 +603,16 @@
                             </td>
                         </tr>
                         @endforeach
+                        <tr class="sales-total-row">
+                            <td class="ps-4" colspan="3">Total</td>
+                            <td class="text-end">₦{{ number_format((float) ($totalRevenue ?? 0), 2) }}</td>
+                            <td class="text-end">₦{{ number_format((float) ($totalAmountPaid ?? 0), 2) }}</td>
+                            <td colspan="4">
+                                @foreach(($paymentStatusSummary ?? []) as $statusTotal)
+                                    <span class="me-3">{{ $statusTotal['label'] }} - {{ number_format((int) $statusTotal['count']) }}</span>
+                                @endforeach
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>

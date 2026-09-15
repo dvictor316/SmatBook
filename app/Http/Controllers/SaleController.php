@@ -100,13 +100,72 @@ class SaleController extends Controller
     private function applyCustomerNameFilter($query, string $term): void
     {
         $customerNameColumn = $this->customerNameColumn();
-        if (!$customerNameColumn) {
-            return;
+
+        $query->where(function ($builder) use ($term, $customerNameColumn) {
+            if (Schema::hasColumn('sales', 'customer_name')) {
+                $builder->where('customer_name', 'like', '%' . $term . '%');
+            }
+
+            if ($customerNameColumn) {
+                $builder->orWhereHas('customer', function ($customerQuery) use ($term, $customerNameColumn) {
+                    $customerQuery->where($customerNameColumn, 'like', '%' . $term . '%');
+                });
+            }
+        });
+    }
+
+    private function posSalesPaymentBreakdown(Collection $sales): array
+    {
+        $summary = [
+            'cash' => ['label' => 'Cash', 'amount' => 0.0, 'count' => 0],
+            'transfer' => ['label' => 'Bank Transfer', 'amount' => 0.0, 'count' => 0],
+            'card' => ['label' => 'POS/Card', 'amount' => 0.0, 'count' => 0],
+            'wallet' => ['label' => 'Customer Wallet', 'amount' => 0.0, 'count' => 0],
+            'charge_to_room' => ['label' => 'Charge to Room', 'amount' => 0.0, 'count' => 0],
+        ];
+
+        foreach ($sales as $sale) {
+            $method = strtolower((string) ($sale->payment_method ?? 'cash'));
+            $details = $sale->payment_details;
+
+            if (is_string($details)) {
+                $details = json_decode($details, true) ?: [];
+            }
+
+            $details = is_array($details) ? $details : [];
+            $split = $this->normalizeSplitDetails($details['split'] ?? []);
+            $wallet = (float) ($details['wallet_applied'] ?? $details['wallet_requested'] ?? 0);
+
+            if ($method === 'split') {
+                foreach (['cash', 'transfer', 'card'] as $key) {
+                    $amount = round((float) ($split[$key] ?? 0), 2);
+                    if ($amount > 0) {
+                        $summary[$key]['amount'] += $amount;
+                        $summary[$key]['count']++;
+                    }
+                }
+            } elseif (in_array($method, ['charge_to_room', 'chargetoroom', 'charge-room'], true)) {
+                $summary['charge_to_room']['amount'] += (float) ($sale->total ?? 0);
+                $summary['charge_to_room']['count']++;
+            } else {
+                $amount = (float) ($sale->amount_paid ?? $sale->paid ?? $sale->total ?? 0);
+                $summary['cash']['amount'] += $amount;
+                $summary['cash']['count']++;
+            }
+
+            if ($wallet > 0) {
+                $summary['wallet']['amount'] += $wallet;
+                $summary['wallet']['count']++;
+            }
         }
 
-        $query->whereHas('customer', function ($customerQuery) use ($term, $customerNameColumn) {
-            $customerQuery->where($customerNameColumn, 'like', '%' . $term . '%');
-        });
+        return collect($summary)
+            ->map(fn ($row) => [
+                'label' => $row['label'],
+                'amount' => round((float) $row['amount'], 2),
+                'count' => (int) $row['count'],
+            ])
+            ->all();
     }
 
     private function posFallbackView(array $activeBranch, string $message)
@@ -673,6 +732,23 @@ class SaleController extends Controller
         $this->applyTenantScope($query, 'sales');
         $this->applyBranchScope($query, 'sales');
         $salesDateColumn = Schema::hasColumn('sales', 'order_date') ? 'order_date' : 'created_at';
+        $branchOptions = collect($this->getAvailableBranches())
+            ->mapWithKeys(fn ($branch) => [(string) $branch['id'] => (string) $branch['name']])
+            ->all();
+        $staffOptions = [];
+
+        if (Schema::hasTable('users')) {
+            $staffQuery = User::query()->select(['id', 'name', 'email']);
+            $this->applyTenantScope($staffQuery, 'users');
+            $staffOptions = $staffQuery->orderBy('name')->get()
+                ->mapWithKeys(function ($user) {
+                    $label = trim((string) ($user->name ?? ''));
+                    $label = $label !== '' ? $label : (string) ($user->email ?? ('User #' . $user->id));
+
+                    return [(string) $user->id => $label];
+                })
+                ->all();
+        }
 
         if (Schema::hasColumn('sales', 'terminal_id')) {
             $query->whereNotNull('terminal_id');
@@ -688,6 +764,44 @@ class SaleController extends Controller
         }
         if ($request->customer_name) {
             $this->applyCustomerNameFilter($query, (string) $request->customer_name);
+        }
+        if ($request->filled('branch_id') && Schema::hasColumn('sales', 'branch_id')) {
+            $query->where('branch_id', (string) $request->branch_id);
+        }
+        if ($request->filled('user_id') && Schema::hasColumn('sales', 'user_id')) {
+            $query->where('user_id', (int) $request->user_id);
+        }
+        if ($request->filled('payment_status')) {
+            $query->where('payment_status', strtolower((string) $request->payment_status));
+        }
+        if ($request->filled('payment_method')) {
+            $paymentMethod = strtolower((string) $request->payment_method);
+            $query->where(function ($builder) use ($paymentMethod) {
+                if ($paymentMethod === 'cash') {
+                    $builder->whereRaw('LOWER(payment_method) = ?', ['cash'])
+                        ->orWhere(function ($splitQuery) {
+                            $splitQuery->whereRaw('LOWER(payment_method) = ?', ['split'])
+                                ->where('payment_details', 'like', '%"cash"%');
+                        });
+                } elseif ($paymentMethod === 'transfer') {
+                    $builder->where(function ($splitQuery) {
+                        $splitQuery->whereRaw('LOWER(payment_method) = ?', ['split'])
+                            ->where('payment_details', 'like', '%"transfer"%');
+                    });
+                } elseif ($paymentMethod === 'card') {
+                    $builder->where(function ($splitQuery) {
+                        $splitQuery->whereRaw('LOWER(payment_method) = ?', ['split'])
+                            ->where(function ($cardQuery) {
+                                $cardQuery->where('payment_details', 'like', '%"card"%')
+                                    ->orWhere('payment_details', 'like', '%"pos"%');
+                            });
+                    });
+                } elseif ($paymentMethod === 'charge_to_room') {
+                    $builder->whereIn(DB::raw('LOWER(payment_method)'), ['charge_to_room', 'chargetoroom', 'charge-room']);
+                } else {
+                    $builder->whereRaw('LOWER(payment_method) = ?', [$paymentMethod]);
+                }
+            });
         }
         if ($request->sale_date) {
             $query->whereDate($salesDateColumn, $request->sale_date);
@@ -723,6 +837,8 @@ class SaleController extends Controller
                             'items_count' => (int) ($sale->items?->count() ?? 0),
                             'quantity' => (float) ($sale->items?->sum('qty') ?? 0),
                             'total_amount' => (float) ($sale->total ?? 0),
+                            'amount_paid' => (float) ($sale->amount_paid ?? $sale->paid ?? 0),
+                            'payment_method' => strtoupper(str_replace('_', ' ', (string) ($sale->payment_method ?? 'cash'))),
                             'payment_status' => strtoupper((string) ($sale->payment_status ?? '')),
                             'sale_date' => $formattedDate,
                         ];
@@ -737,6 +853,8 @@ class SaleController extends Controller
                         'Items Count',
                         'Quantity',
                         'Total Amount',
+                        'Amount Paid',
+                        'Payment Method',
                         'Payment Status',
                         'Sale Date',
                     ];
@@ -744,11 +862,37 @@ class SaleController extends Controller
             }, 'pos-sales-' . now()->format('Y-m-d-His') . '.xlsx');
         }
 
-        $totalRevenue = (clone $query)->sum('total');
-        $totalSalesCount = (clone $query)->count();
+        $filteredSalesForTotals = (clone $query)
+            ->setEagerLoads([])
+            ->get(['id', 'total', 'paid', 'amount_paid', 'payment_method', 'payment_status', 'payment_details']);
+        $totalRevenue = $filteredSalesForTotals->sum(fn ($sale) => (float) ($sale->total ?? 0));
+        $totalAmountPaid = $filteredSalesForTotals->sum(fn ($sale) => (float) ($sale->amount_paid ?? $sale->paid ?? 0));
+        $totalBalance = max(0, $totalRevenue - $totalAmountPaid);
+        $totalSalesCount = $filteredSalesForTotals->count();
+        $paymentBreakdown = $this->posSalesPaymentBreakdown($filteredSalesForTotals);
+        $paymentStatusSummary = $filteredSalesForTotals
+            ->groupBy(fn ($sale) => strtolower((string) ($sale->payment_status ?? 'unpaid')))
+            ->map(fn ($rows, $status) => [
+                'label' => ucfirst($status ?: 'unpaid'),
+                'count' => $rows->count(),
+                'amount' => $rows->sum(fn ($sale) => (float) ($sale->total ?? 0)),
+            ])
+            ->sortKeys()
+            ->all();
         $sales = $query->orderByDesc($salesDateColumn)->orderByDesc('created_at')->paginate(15)->withQueryString();
 
-        return view('pos.sales', compact('sales', 'totalRevenue', 'totalSalesCount', 'activeBranch'));
+        return view('pos.sales', compact(
+            'sales',
+            'totalRevenue',
+            'totalAmountPaid',
+            'totalBalance',
+            'totalSalesCount',
+            'activeBranch',
+            'branchOptions',
+            'staffOptions',
+            'paymentBreakdown',
+            'paymentStatusSummary'
+        ));
     }
 
 
