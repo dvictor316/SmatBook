@@ -85,15 +85,15 @@
     }
 
     .summary-card {
-        background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
-        border: 0;
+        background: linear-gradient(135deg, #eef9ff 0%, #dff3ff 48%, #cfe8ff 100%);
+        border: 1px solid #bfe3fb;
         border-radius: 20px;
-        box-shadow: 0 16px 40px rgba(29, 78, 216, 0.18);
-        color: #fff;
+        box-shadow: 0 16px 40px rgba(56, 189, 248, 0.14);
+        color: #0f2d4a;
     }
 
     .summary-card .summary-label {
-        color: rgba(255, 255, 255, 0.78);
+        color: #255f85;
         font-size: 0.75rem;
         font-weight: 700;
         letter-spacing: 0.08em;
@@ -104,12 +104,12 @@
     font-size: 2rem;
     font-weight: 800;
     line-height: 1.1;
-    color: #fde047;
-    text-shadow: 0 0 16px rgba(253, 224, 71, 0.32);
+    color: #0b5cad;
+    text-shadow: none;
 }
 
     .summary-card .summary-subtle {
-        color: rgba(255, 255, 255, 0.8);
+        color: #42657d;
         font-size: 0.88rem;
     }
 
@@ -132,9 +132,9 @@
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        background: rgba(255, 255, 255, 0.12);
-        color: #fff;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.72);
+        color: #0b4f8a;
+        border: 1px solid #a9d7f5;
         border-radius: 12px;
         padding: 10px 14px;
         font-size: 0.85rem;
@@ -143,12 +143,12 @@
     }
 
     .summary-btn:hover {
-        color: #fff;
-        background: rgba(255, 255, 255, 0.18);
+        color: #083d6b;
+        background: #ffffff;
     }
 
     .summary-filter-grid .form-label {
-        color: rgba(255, 255, 255, 0.8);
+        color: #255f85;
         font-size: 0.72rem;
         font-weight: 700;
         letter-spacing: 0.06em;
@@ -164,7 +164,7 @@
 
     .summary-filter-grid .input-group-text,
     .summary-filter-grid .form-control {
-        border-color: rgba(255, 255, 255, 0.22);
+        border-color: #b8dcf3;
     }
 
     .summary-filter-grid .form-control,
@@ -185,14 +185,14 @@
     }
 
     .payment-total-card {
-        background: rgba(255, 255, 255, 0.12);
-        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid #b9ddf5;
         border-radius: 14px;
         padding: 12px 14px;
     }
 
     .payment-total-card .payment-label {
-        color: rgba(255, 255, 255, 0.75);
+        color: #326381;
         font-size: 0.68rem;
         font-weight: 800;
         letter-spacing: 0.06em;
@@ -200,7 +200,7 @@
     }
 
     .payment-total-card .payment-amount {
-        color: #fff;
+        color: #0b5cad;
         font-size: 1.05rem;
         font-weight: 800;
         margin-top: 4px;
