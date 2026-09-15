@@ -183,9 +183,9 @@
     }
 
     .product-form-muted {
-        color: #6b7280;
-        font-size: 0.9rem;
-        margin-bottom: 0.9rem;
+        color: #64748b;
+        font-size: 0.82rem;
+        margin-bottom: 0.75rem;
     }
 
     .product-flow-banner {
@@ -212,7 +212,7 @@
 
     .product-flow-step span {
         color: #475569;
-        font-size: 0.82rem;
+        font-size: 0.78rem;
         line-height: 1.45;
     }
 
@@ -412,6 +412,66 @@
         color: #1e40af;
     }
 
+    .field-hint {
+        color: #64748b;
+        font-size: 0.76rem;
+        line-height: 1.35;
+        margin-top: 0.28rem;
+        display: block;
+    }
+
+    .required-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        border-radius: 999px;
+        background: #fff7ed;
+        color: #9a3412;
+        border: 1px solid #fed7aa;
+        padding: 0.25rem 0.6rem;
+        font-size: 0.72rem;
+        font-weight: 800;
+    }
+
+    .product-price-list-panel {
+        border: 1px solid #dbeafe;
+        border-radius: 14px;
+        background: #f8fbff;
+        padding: 0.85rem 1rem;
+    }
+
+    .product-price-list-panel summary {
+        cursor: pointer;
+        list-style: none;
+    }
+
+    .product-price-list-panel summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .product-price-list-panel .summary-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        color: #0f3768;
+        font-weight: 800;
+    }
+
+    .product-price-list-panel .summary-title span {
+        font-size: 0.8rem;
+        color: #64748b;
+        font-weight: 700;
+    }
+
+    .product-price-list-panel[open] .price-list-chevron {
+        transform: rotate(180deg);
+    }
+
+    .price-list-chevron {
+        transition: transform 0.18s ease;
+    }
+
     @media (max-width: 1199.98px) {
         .product-form-grid {
             grid-template-columns: 1fr;
@@ -432,7 +492,7 @@
             <div>
                 <div class="add-product-kicker">Inventory setup</div>
                 <h4 class="mb-0 fw-bold text-dark"><i class="feather-package me-2 text-primary"></i>Add New Product</h4>
-                <p class="mb-0 text-muted small mt-1">Create a product with stock, pricing, and packaging in one step.</p>
+                <p class="mb-0 text-muted small mt-1">Set up product, price, and opening stock.</p>
             </div>
             <a href="{{ route('product-list') }}" class="btn btn-outline-secondary btn-sm">
                 <i class="feather-arrow-left me-1"></i> Back to Products
@@ -475,7 +535,10 @@
         {{-- Main card --}}
         <div class="card page-add-product-card border-0 mb-4">
             <div class="card-header">
-                <h5 class="mb-0 fw-bold" style="color:#111827;">Add New Product</h5>
+                <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                    <h5 class="mb-0 fw-bold" style="color:#111827;">Add New Product</h5>
+                    <span class="required-chip"><i class="fas fa-asterisk"></i> Required fields first</span>
+                </div>
             </div>
             <div class="card-body p-4">
                 <form method="POST" action="{{ route('inventory.Products.store') }}" enctype="multipart/form-data" id="add_product_form" novalidate>
@@ -487,15 +550,15 @@
                             <div class="product-flow-banner">
                                 <div class="product-flow-step">
                                     <strong>1. Product Details</strong>
-                                    <span>Name, optional category, branch, prices, and image.</span>
+                                    <span>Name, category, unit, and price.</span>
                                 </div>
                                 <div class="product-flow-step">
                                     <strong>2. Packaging Setup</strong>
-                                    <span>Tell the system how many pcs make one roll and one carton.</span>
+                                    <span>How cartons, rolls, and units convert.</span>
                                 </div>
                                 <div class="product-flow-step">
                                     <strong>3. Opening Stock</strong>
-                                    <span>Type only your current ctn, roll, and pcs. Total stock updates automatically.</span>
+                                    <span>Enter current stock; total updates itself.</span>
                                 </div>
                             </div>
                         </div>
@@ -509,7 +572,7 @@
                                     <div>
                                         <div class="product-form-card-eyebrow">Product setup</div>
                                         <h6>Identity, Pricing & Category</h6>
-                                        <p class="product-form-muted mb-0">Enter the product details customers and your team will recognize.</p>
+                                        <p class="product-form-muted mb-0">Start with the fields marked required.</p>
                                     </div>
                                     <span class="product-form-card-icon icon-tone-amber"><i class="fas fa-box-open"></i></span>
                                 </div>
@@ -594,13 +657,13 @@
                                                 </option>
                                             @endforeach
                                         </select>
-                                        <small class="text-muted">Optional. This does not change the base stock unit; it only tells purchases how bulk buying converts to stock.</small>
+                                        <small class="field-hint">Optional bulk buying unit.</small>
                                         @error('purchase_unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label">Conversion Rate</label>
                                         <input type="number" step="0.000001" min="0" name="conversion_rate" class="form-control @error('conversion_rate') is-invalid @enderror" value="{{ old('conversion_rate') }}" placeholder="e.g. 12">
-                                        <small class="text-muted">Optional when selling directly in the same unit. Use only when one purchase unit contains multiple base units.</small>
+                                        <small class="field-hint">Only needed when purchase unit differs.</small>
                                         @error('conversion_rate')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-6">
@@ -610,15 +673,20 @@
                                     </div>
                                     @if(($priceLists ?? collect())->isNotEmpty())
                                         <div class="col-12">
-                                            <div class="border rounded-3 p-3 bg-light">
-                                                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-2">
-                                                    <div>
-                                                        <label class="form-label mb-1">Price List Prices</label>
-                                                        <small class="text-muted d-block">Optional. Enter a price where this product should use a special selling rate.</small>
+                                            <details class="product-price-list-panel" @if(old('price_list_prices')) open @endif>
+                                                <summary>
+                                                    <div class="summary-title">
+                                                        <div>
+                                                            Price List Prices
+                                                            <span class="d-block">Optional special prices for this product</span>
+                                                        </div>
+                                                        <i class="fas fa-chevron-down price-list-chevron"></i>
                                                     </div>
+                                                </summary>
+                                                <div class="d-flex justify-content-end mt-2 mb-3">
                                                     <a href="{{ route('price-lists.index') }}" class="btn btn-sm btn-outline-primary">Manage Price Lists</a>
                                                 </div>
-                                                <div class="row g-3">
+                                                <div class="row g-3 mt-0">
                                                     @foreach($priceLists as $priceList)
                                                         <div class="col-md-6">
                                                             <label class="form-label">{{ $priceList->name }}</label>
@@ -634,13 +702,13 @@
                                                         </div>
                                                     @endforeach
                                                 </div>
-                                            </div>
+                                            </details>
                                         </div>
                                     @endif
                                     <div class="col-md-6">
                                         <label class="form-label">Unit Purchase Cost <span class="text-danger">*</span></label>
                                         <input type="number" step="0.01" name="purchase_price" class="form-control @error('purchase_price') is-invalid @enderror" placeholder="0.00" value="{{ old('purchase_price') }}" required>
-                                        <small class="text-muted">Cost for one selected purchase unit. This value is saved exactly as entered.</small>
+                                        <small class="field-hint">Cost for one selected purchase unit.</small>
                                         @error('purchase_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-6">
@@ -656,13 +724,12 @@
                                     <div class="col-md-6">
                                         <label class="form-label">Product Image</label>
                                         <input type="file" name="image" id="product_image_input" class="form-control @error('image') is-invalid @enderror">
-                                        <small class="text-muted">Optional.</small>
                                         @error('image')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label">Expiry Date <span class="text-muted small">(optional)</span></label>
                                         <input type="date" name="expiry_date" class="form-control @error('expiry_date') is-invalid @enderror" value="{{ old('expiry_date') }}">
-                                        <small class="text-muted">Use this for perishable or date-sensitive products.</small>
+                                        <small class="field-hint">For perishable items.</small>
                                         @error('expiry_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
@@ -676,27 +743,27 @@
                                     <div>
                                         <div class="product-form-card-eyebrow">Measurement</div>
                                         <h6>Packaging & Opening Stock</h6>
-                                        <p class="product-form-muted mb-0">Set how the product is counted, then enter what is currently on hand.</p>
+                                        <p class="product-form-muted mb-0">Enter packaging only where it applies.</p>
                                     </div>
                                     <span class="product-form-card-icon icon-tone-green"><i class="fas fa-balance-scale"></i></span>
                                 </div>
                                 <h6 class="mb-1">Packaging Setup</h6>
-                                <p class="product-form-muted">Choose how one carton is measured. For direct sales, enter the base-unit quantity in one carton, such as <strong>25 kg per carton</strong>. If cartons contain rolls, enter rolls per carton and units per roll.</p>
+                                <p class="product-form-muted">Use carton/roll fields only when the product is packed that way.</p>
                                 <div class="row g-3">
                                     <div class="col-md-4">
                                         <label class="form-label" id="quick_rolls_per_carton_label">Rolls Per Ctn</label>
                                         <input type="number" id="quick_rolls_per_carton_helper" min="0" step="0.01" class="form-control" value="{{ $oldRollsPerCarton }}">
-                                        <small class="text-muted">How many rolls are inside one carton.</small>
+                                        <small class="field-hint">Leave 0 if not used.</small>
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label" id="quick_pcs_per_roll_label">Base Units Per Roll</label>
                                         <input type="number" id="quick_pcs_per_roll_helper" min="0" step="0.01" class="form-control" value="{{ $oldUnitsPerRoll }}">
-                                        <small class="text-muted" id="quick_pcs_per_roll_help">How many base units are inside one roll.</small>
+                                        <small class="field-hint" id="quick_pcs_per_roll_help">Units inside one roll.</small>
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label" id="quick_pcs_per_carton_label">Base Units Per Carton</label>
                                         <input type="number" id="quick_pcs_per_carton_helper" min="0" step="0.01" class="form-control" value="{{ $oldPiecesPerCarton }}">
-                                        <small class="text-muted" id="quick_pcs_per_carton_help">Enter the total base units in one carton. This is the value to use for KG products sold by carton.</small>
+                                        <small class="field-hint" id="quick_pcs_per_carton_help">Total units in one carton.</small>
                                     </div>
                                     <input type="hidden" name="units_per_roll" id="quick_units_per_roll_input" value="{{ old('units_per_roll', 0) }}">
                                     <input type="hidden" name="units_per_carton" id="quick_units_per_carton_input" value="{{ old('units_per_carton', 0) }}">
@@ -706,7 +773,7 @@
                         {{-- Section 3: Opening Stock --}}
                                 <div class="measurement-divider"></div>
                                 <h6>Opening Stock</h6>
-                                <p class="product-form-muted">Type the quantity you currently have. Total stock appears automatically. If you do not have stock yet, leave all three fields at 0 and save the product first.</p>
+                                <p class="product-form-muted">Leave at 0 if stock will be added later.</p>
                                 <div class="row g-3">
                                     <div class="col-md-4">
                                         <label class="form-label">Opening Ctn</label>
@@ -744,7 +811,6 @@
                                             <div class="quick-summary-pill">
                                                 <span>Opening Value Preview</span>
                                                 <strong id="quick_stock_value_preview">0.00</strong>
-                                                <small class="d-block text-muted mt-1">Preview only: stock quantity × unit purchase cost.</small>
                                             </div>
                                         </div>
                                         <input type="hidden" name="stock" id="quick_final_stock_input" value="{{ old('stock', '') }}">
@@ -766,12 +832,12 @@
                         <div class="col-12 collapse @if($showAdvancedFields) show @endif" id="advancedProductFields">
                             <div class="product-form-sheet">
                                 <h6>Advanced Options</h6>
-                                <p class="product-form-muted">Only open this when the product needs a SKU, barcode, or extra price levels.</p>
+                                <p class="product-form-muted">Use only when needed.</p>
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label class="form-label">SKU</label>
                                         <input type="text" name="sku" class="form-control @error('sku') is-invalid @enderror" placeholder="Leave blank to auto-generate" value="{{ old('sku') }}">
-                                        <small class="text-muted">If there is no product code yet, the system creates one automatically.</small>
+                                        <small class="field-hint">Leave blank to auto-generate.</small>
                                         @error('sku')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-6">
