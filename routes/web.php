@@ -970,6 +970,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/reports', 'report')->middleware('plan.access:basic,professional,enterprise')->name('reports');
     });
     Route::get('/pos', [SaleController::class, 'showPos'])->name('sales.showPos');
+    Route::post('/pos/price-edit-setting', [SaleController::class, 'updatePosPriceEditSetting'])->name('pos.price-edit-setting');
     Route::get('/pos/reports', [SaleController::class, 'report'])->middleware('plan.access:basic,professional,enterprise')->name('pos.reports');
     Route::get('/pos/sales', [SaleController::class, 'posSales'])->name('pos.sales');
     Route::get('/pos/return', [SaleController::class, 'showPosReturn'])->name('pos.return.show');

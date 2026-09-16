@@ -54,7 +54,9 @@
     $posCanSell = $posCan(['sales.sales.create', 'sales.invoices.create', 'pos.sales.create']);
     $posCanDiscount = $posCan(['sales.sales.discount', 'sales.sales.edit', 'sales.invoices.edit']);
     $posCanManageCustomers = $posCan(['customers.customers.view', 'customers.customers.create', 'sales.sales.create']);
-    $posCanEditPrice = $posIsAdmin;
+    $posAllowStaffPriceEdit = (bool) ($posAllowStaffPriceEdit ?? false);
+    $posCanManagePriceEditSetting = (bool) ($posCanManagePriceEditSetting ?? $posIsAdmin);
+    $posCanEditPrice = $posIsAdmin || $posAllowStaffPriceEdit;
 @endphp
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -5151,6 +5153,20 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                         <label>Price</label>
                         <input type="number" id="unit-price-input" class="form-control {{ $posCanEditPrice ? '' : 'bg-light' }} fw-bold tabular-nums" step="0.01" min="0" @readonly(!$posCanEditPrice) title="{{ $posCanEditPrice ? 'Admins can edit POS prices.' : 'Only admins can edit POS prices.' }}">
                     </div>
+                    @if($posCanManagePriceEditSetting && \Illuminate\Support\Facades\Route::has('pos.price-edit-setting'))
+                        <div class="col-12">
+                            <form method="POST" action="{{ route('pos.price-edit-setting') }}" class="d-flex align-items-center justify-content-between gap-2 p-2 rounded border bg-light">
+                                @csrf
+                                <input type="hidden" name="allow_staff_price_edit" value="0">
+                                <label class="form-check-label fw-semibold small mb-0" for="allow-staff-price-edit">
+                                    Allow staff to edit POS price
+                                </label>
+                                <div class="form-check form-switch m-0">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="allow-staff-price-edit" name="allow_staff_price_edit" value="1" onchange="this.form.submit()" @checked($posAllowStaffPriceEdit)>
+                                </div>
+                            </form>
+                        </div>
+                    @endif
                     <div class="col-6">
                         <label id="qty-label">Quantity</label>
                         <input type="number" id="quantity" class="form-control fw-bold tabular-nums" value="1" min="1" step="1" inputmode="numeric">

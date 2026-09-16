@@ -5,6 +5,7 @@
 @php
     $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
     $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
+    $stockUnitView = $stockUnitView ?? request('stock_unit_view', 'base');
 @endphp
 <div class="page-wrapper">
     <div class="content container-fluid">
@@ -39,11 +40,11 @@
             <div class="card-body p-2">
                 <form action="{{ route('reports.stock') }}" method="GET">
                     <div class="row gx-2 align-items-end">
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="report-filter-label">From Date</label>
                             <input type="date" name="from_date" class="form-control form-control-sm border-0 bg-light" value="{{ $fromDate }}">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="report-filter-label">To Date</label>
                             <input type="date" name="to_date" class="form-control form-control-sm border-0 bg-light" value="{{ $toDate }}">
                         </div>
@@ -54,6 +55,14 @@
                                 @foreach($products as $p)
                                     <option value="{{ $p->id }}" {{ $productId == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
                                 @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="report-filter-label">Stock View</label>
+                            <select name="stock_unit_view" class="form-select form-select-sm border-0 bg-light">
+                                <option value="base" @selected($stockUnitView === 'base')>Base Units</option>
+                                <option value="carton" @selected($stockUnitView === 'carton')>Cartons</option>
+                                <option value="both" @selected($stockUnitView === 'both')>Base + Carton</option>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -73,6 +82,10 @@
                     'Sku' => (string) ($row['Sku'] ?? $row['sku'] ?? ''),
                     'Unit' => trim((string) ($row['Unit'] ?? $row['unit'] ?? 'pcs')),
                     'QtyOnHand' => (float) ($row['QtyOnHand'] ?? $row['qty_on_hand'] ?? $row['quantity'] ?? 0),
+                    'UnitsPerCarton' => (float) ($row['UnitsPerCarton'] ?? $row['units_per_carton'] ?? 0),
+                    'CartonsOnHand' => (float) ($row['CartonsOnHand'] ?? $row['cartons_on_hand'] ?? 0),
+                    'LooseUnits' => (float) ($row['LooseUnits'] ?? $row['loose_units'] ?? 0),
+                    'CartonEquivalent' => $row['CartonEquivalent'] ?? $row['carton_equivalent'] ?? null,
                     'PurchasePrice' => (float) ($row['PurchasePrice'] ?? $row['purchase_price'] ?? 0),
                     'SalesPrice' => (float) ($row['SalesPrice'] ?? $row['sales_price'] ?? 0),
                     'CostValue' => (float) ($row['CostValue'] ?? $row['cost_value'] ?? 0),
@@ -83,6 +96,7 @@
             });
 
             $totalUnits = $stockrows->sum('QtyOnHand');
+            $totalCartonEquivalent = $stockrows->sum(fn ($row) => is_numeric($row['CartonEquivalent']) ? (float) $row['CartonEquivalent'] : 0);
             $totalCostValue = $stockrows->sum('CostValue');
             $totalSalesValue = $stockrows->sum('SalesValue');
             $lowStockCount = $stockrows->where('Status', 'Low Stock')->count();
@@ -99,6 +113,12 @@
                 <div class="card border shadow-none mb-0 report-metric-card"><div class="card-body p-3">
                     <p class="text-muted mb-1 fw-bold uppercase report-metric-label">Base Units On Hand</p>
                     <h4 class="text-danger fw-bold mb-0 report-metric-value">{{ number_format($totalUnits, 2) }}</h4>
+                </div></div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border shadow-none mb-0 report-metric-card"><div class="card-body p-3">
+                    <p class="text-muted mb-1 fw-bold uppercase report-metric-label">Carton Equivalent</p>
+                    <h4 class="text-info fw-bold mb-0 report-metric-value">{{ number_format($totalCartonEquivalent, 2) }}</h4>
                 </div></div>
             </div>
             <div class="col-md-4">
@@ -132,6 +152,10 @@
                             <th class="py-2 text-muted">SKU</th>
                             <th class="py-2 text-muted">Unit</th>
                             <th class="py-2 text-end text-muted">Qty On Hand</th>
+                            @if($stockUnitView !== 'base')
+                                <th class="py-2 text-end text-muted">Cartons</th>
+                                <th class="py-2 text-end text-muted">Loose Units</th>
+                            @endif
                             <th class="py-2 text-end text-muted">Purchase Price</th>
                             <th class="py-2 text-end text-muted">Selling Price</th>
                             <th class="py-2 text-end text-muted">Cost Value</th>
@@ -146,7 +170,25 @@
                             <td class="ps-3 py-2 fw-bold text-dark">{{ $report['Product'] }}</td>
                             <td class="py-2 text-muted">{{ $report['Sku'] ?: 'N/A' }}</td>
                             <td class="py-2 text-muted">{{ $report['Unit'] }}</td>
-                            <td class="py-2 text-end fw-bold {{ $report['QtyOnHand'] <= 0 ? 'text-danger' : 'text-dark' }}">{{ number_format($report['QtyOnHand'], 2) }} {{ $report['Unit'] }}</td>
+                            <td class="py-2 text-end fw-bold {{ $report['QtyOnHand'] <= 0 ? 'text-danger' : 'text-dark' }}">
+                                @if($stockUnitView === 'carton')
+                                    @if(is_numeric($report['CartonEquivalent']))
+                                        {{ number_format((float) $report['CartonEquivalent'], 2) }} ctn
+                                    @else
+                                        N/A
+                                    @endif
+                                @else
+                                    {{ number_format($report['QtyOnHand'], 2) }} {{ $report['Unit'] }}
+                                @endif
+                            </td>
+                            @if($stockUnitView !== 'base')
+                                <td class="py-2 text-end text-dark">
+                                    {{ $report['UnitsPerCarton'] > 0 ? number_format($report['CartonsOnHand'], 0) . ' ctn' : 'N/A' }}
+                                </td>
+                                <td class="py-2 text-end text-muted">
+                                    {{ $report['UnitsPerCarton'] > 0 ? number_format($report['LooseUnits'], 2) . ' ' . $report['Unit'] : 'Set pcs/ctn' }}
+                                </td>
+                            @endif
                             <td class="py-2 text-end text-success">{{ \App\Support\GeoCurrency::format($report['PurchasePrice'], 'NGN', $currencyCode, $currencyLocale) }}</td>
                             <td class="py-2 text-end text-primary">{{ \App\Support\GeoCurrency::format($report['SalesPrice'], 'NGN', $currencyCode, $currencyLocale) }}</td>
                             <td class="py-2 text-end text-success">{{ \App\Support\GeoCurrency::format($report['CostValue'], 'NGN', $currencyCode, $currencyLocale) }}</td>
@@ -157,7 +199,7 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="9" class="text-center py-5 text-muted">No stock records found.</td></tr>
+                        <tr><td colspan="{{ $stockUnitView !== 'base' ? 12 : 10 }}" class="text-center py-5 text-muted">No stock records found.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

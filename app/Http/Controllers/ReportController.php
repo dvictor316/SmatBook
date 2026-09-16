@@ -2700,6 +2700,9 @@ public function destroy($id)
         $fromDate = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
         $toDate = $request->input('to_date') ?: now()->toDateString();
         $productId = $request->input('product_id');
+        $stockUnitView = in_array($request->input('stock_unit_view'), ['base', 'carton', 'both'], true)
+            ? $request->input('stock_unit_view')
+            : 'base';
 
         $user = Auth::user();
         $companyId = (int) (optional($user)->company_id ?? 0);
@@ -2743,6 +2746,7 @@ public function destroy($id)
             : (Schema::hasColumn('products', 'min_stock_level') ? 'min_stock_level' : null);
         $baseUnitColumn = Schema::hasColumn('products', 'base_unit_name') ? 'base_unit_name' : null;
         $unitTypeColumn = Schema::hasColumn('products', 'unit_type') ? 'unit_type' : null;
+        $unitsPerCartonColumn = Schema::hasColumn('products', 'units_per_carton') ? 'units_per_carton' : null;
         $hasBranchStocks = Schema::hasTable('product_branch_stocks');
         $hasBranchId = $hasBranchStocks && Schema::hasColumn('product_branch_stocks', 'branch_id');
         $hasBranchName = $hasBranchStocks && Schema::hasColumn('product_branch_stocks', 'branch_name');
@@ -2761,6 +2765,7 @@ public function destroy($id)
                 'products.sku',
                 DB::raw($baseUnitColumn ? "NULLIF(products.{$baseUnitColumn}, '') as base_unit_name" : "'' as base_unit_name"),
                 DB::raw($unitTypeColumn ? "NULLIF(products.{$unitTypeColumn}, '') as unit_type" : "'' as unit_type"),
+                DB::raw($unitsPerCartonColumn ? "COALESCE(products.{$unitsPerCartonColumn}, 0) as units_per_carton" : "0 as units_per_carton"),
                 DB::raw("COALESCE({$purchaseExpr}, 0) as purchase_price"),
                 DB::raw("COALESCE({$salesExpr}, 0) as sales_price"),
                 DB::raw("COALESCE({$reorderExpr}, 0) as reorder_level"),
@@ -2792,6 +2797,10 @@ public function destroy($id)
                 $purchasePrice = max(0, (float) ($product->purchase_price ?? 0));
                 $salesPrice = max(0, (float) ($product->sales_price ?? 0));
                 $reorderLevel = max(0, (float) ($product->reorder_level ?? 0));
+                $unitsPerCarton = max(0, (float) ($product->units_per_carton ?? 0));
+                $cartonsOnHand = $unitsPerCarton > 0 ? floor($qty / $unitsPerCarton) : 0;
+                $looseUnits = $unitsPerCarton > 0 ? fmod($qty, $unitsPerCarton) : $qty;
+                $cartonEquivalent = $unitsPerCarton > 0 ? ($qty / $unitsPerCarton) : null;
                 $costValue = $qty * $purchasePrice;
                 $salesValue = $qty * $salesPrice;
 
@@ -2800,6 +2809,10 @@ public function destroy($id)
                     'Sku' => (string) ($product->sku ?? ''),
                     'Unit' => trim((string) ($product->base_unit_name ?: $product->unit_type ?: 'pcs')),
                     'QtyOnHand' => $qty,
+                    'UnitsPerCarton' => $unitsPerCarton,
+                    'CartonsOnHand' => $cartonsOnHand,
+                    'LooseUnits' => $looseUnits,
+                    'CartonEquivalent' => $cartonEquivalent,
                     'PurchasePrice' => $purchasePrice,
                     'SalesPrice' => $salesPrice,
                     'CostValue' => $costValue,
@@ -2811,7 +2824,7 @@ public function destroy($id)
                 ];
             });
 
-        return view('Reports.Reports.stock-report', compact('stockreports', 'fromDate', 'toDate', 'products', 'productId', 'activeBranch'));
+        return view('Reports.Reports.stock-report', compact('stockreports', 'fromDate', 'toDate', 'products', 'productId', 'activeBranch', 'stockUnitView'));
     }
 
     public function email_low_stock_report(Request $request)

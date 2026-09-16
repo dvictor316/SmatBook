@@ -210,6 +210,7 @@ class SaleController extends Controller
     {
         $defaultAvatar = asset('assets/img/profiles/avatar-07.jpg');
         $expiryAlertMonths = (int) $this->getCompanyScopedSettingValue('expiry_notification_months', '1');
+        $allowStaffPriceEdit = (string) $this->getCompanyScopedSettingValue('pos_allow_staff_price_edit', '0') === '1';
 
         return array_merge($this->posRouteUrls(), [
             'isStarterPos' => PlanAccess::resolveTierForUser(auth()->user()) === 'starter',
@@ -217,10 +218,12 @@ class SaleController extends Controller
             'profileImagePath' => auth()->user()?->avatar_url ?: $defaultAvatar,
             'posExpiryAlertsEnabled' => (string) $this->getCompanyScopedSettingValue('expiry_notification_enabled', '0') === '1',
             'posExpiryAlertMonths' => in_array($expiryAlertMonths, [1, 2, 6], true) ? $expiryAlertMonths : 1,
+            'posAllowStaffPriceEdit' => $allowStaffPriceEdit,
+            'posCanManagePriceEditSetting' => $this->userIsPosAdmin(),
         ]);
     }
 
-    private function userCanEditPosPrices(): bool
+    private function userIsPosAdmin(): bool
     {
         $user = auth()->user();
         $role = strtolower(str_replace(' ', '_', (string) ($user?->role ?? '')));
@@ -236,6 +239,26 @@ class SaleController extends Controller
                 || $user->hasRole('administrator')
                 || $user->hasRole('admin')
             );
+    }
+
+    private function userCanEditPosPrices(): bool
+    {
+        return $this->userIsPosAdmin()
+            || (string) $this->getCompanyScopedSettingValue('pos_allow_staff_price_edit', '0') === '1';
+    }
+
+    public function updatePosPriceEditSetting(Request $request)
+    {
+        if (!$this->userIsPosAdmin()) {
+            abort(403);
+        }
+
+        Setting::updateOrCreate(
+            ['key' => $this->companyScopedSettingKey('pos_allow_staff_price_edit')],
+            ['value' => $request->boolean('allow_staff_price_edit') ? '1' : '0']
+        );
+
+        return back()->with('success', 'POS price edit setting updated.');
     }
 
     private function resolvePosListPrice(Collection $priceLists, int $priceListId, int $productId, float $quantity, float $retailPrice): ?float
@@ -1355,7 +1378,11 @@ public function store(Request $request)
         $orderNumber = $this->generateSaleOrderNo();
         
         $totalAmount = (float) $request->total;
-        $amountPaid = $isChargeToRoom ? 0.0 : (float) $request->paid;
+        $amountPaid = $isChargeToRoom
+            ? 0.0
+            : ($paymentMethod === 'split'
+                ? round(((float) $splitDetails['cash']) + ((float) $splitDetails['transfer']) + ((float) $splitDetails['card']), 2)
+                : (float) $request->paid);
         $changeAmount = $amountPaid > $totalAmount ? $amountPaid - $totalAmount : 0;
         $actualPaymentKept = $amountPaid - $changeAmount;
         $balance = $totalAmount > $actualPaymentKept ? $totalAmount - $actualPaymentKept : 0;
@@ -1576,6 +1603,9 @@ $sale = Sale::create([
 
         // --- 4. UPDATE TOTALS & LOG PAYMENT ---
         $calculatedTotal = max(0, ($runningSubtotal - $runningDiscount) + $runningTax);
+        if (!$isChargeToRoom && ($amountPaid + $walletAmount) < $calculatedTotal) {
+            throw new \RuntimeException('Payment is below the final POS total. Refresh the item price and try again.');
+        }
         $finalChange = $amountPaid > $calculatedTotal ? $amountPaid - $calculatedTotal : 0;
         $finalPaid = max(0, $amountPaid - $finalChange);
         $finalBalance = max(0, $calculatedTotal - $finalPaid);
