@@ -85,7 +85,7 @@
                         <tr>
                             <td class="ps-4">
                                 <span class="badge bg-light text-dark border">
-                                    Annual
+                                    {{ ucfirst(strtolower((string) ($p->billing_cycle ?? 'yearly'))) }}
                                 </span>
                             </td>
                             <td>{{ $p->company->name ?? 'N/A' }}</td>

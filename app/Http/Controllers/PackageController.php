@@ -12,7 +12,10 @@ class PackageController extends Controller
      */
     public function index()
     {
-        $plans = Plan::query()->whereRaw('LOWER(billing_cycle) = ?', ['yearly'])->get();
+        $plans = Plan::query()
+            ->whereRaw('LOWER(billing_cycle) = ?', ['yearly'])
+            ->where('is_active', 1)
+            ->get();
         
         $totalPlans = $plans->count();
         $activePlans = $plans->where('is_active', 1)->count();

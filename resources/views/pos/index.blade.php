@@ -1805,6 +1805,33 @@ body.pos-terminal-workspace .pos-full-page-wrapper {
     box-sizing: border-box;
 }
 
+.pos-offline-status {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 4px 10px;
+    border: 1px solid #9bd3b4;
+    border-radius: 6px;
+    background: #edf9f2;
+    color: #17643b;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.pos-offline-status.is-offline {
+    border-color: #e5b04b;
+    background: #fff8e7;
+    color: #805400;
+}
+
+.pos-offline-status.has-review {
+    border-color: #e29a9a;
+    background: #fff1f1;
+    color: #a12222;
+}
+
 @media (min-width: 1200px) {
     .pos-main-stage {
         display: grid;
@@ -4793,6 +4820,7 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
         <div class="pos-header-bar">
                 <div class="d-flex align-items-center gap-3">
                     <h5 class="pos-header-title">SALES <span class="gradient-text">TERMINAL</span></h5>
+                    <span id="pos-offline-status" class="pos-offline-status" title="POS connection and offline sale queue status">Online</span>
                     <div class="clock-badge">
                         <i class="far fa-clock me-1"></i><span id="live-clock" class="tabular-nums">00:00:00</span>
                     </div>
@@ -5400,6 +5428,13 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
 
 <script src="{{ asset('assets/js/jquery-3.7.1.min.js') }}"></script>
 <script src="{{ asset('assets/js/select2.min.js') }}"></script>
+<script>
+window.POS_OFFLINE_CONFIG = {
+    saleUrl: @json($posSaleStoreUrl ?? url('/sales')),
+    csrfToken: @json(csrf_token()),
+};
+</script>
+<script src="{{ asset('js/pos-offline.js') }}"></script>
 
 <script>
 window.POS_USE_SAFE_TERMINAL = true;
@@ -8568,15 +8603,7 @@ window.POS_ENABLE_FALLBACK = function () {
         if (btnLoading) btnLoading.style.display = '';
 
         try {
-            const response = await fetch(saleStoreUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                body: JSON.stringify({
+            const payload = {
                     customer_id: customerSelect?.value || null,
                     payment_method: paymentMethod?.value || 'Cash',
                     source: posSourceContext?.source || null,
@@ -8597,13 +8624,37 @@ window.POS_ENABLE_FALLBACK = function () {
                         card: moneyValue(cardAmount),
                         card_account_id: isStarterPos ? null : (cardAccount?.value || null),
                     },
-                }),
-            });
+                };
 
-            const result = await response.json().catch(() => ({}));
-            if (!response.ok) {
-                throw new Error(result.message || 'Failed to process sale.');
+            if (!navigator.onLine && (walletApplied > 0 || posSourceContext?.source || paymentMethod?.value === 'ChargeToRoom')) {
+                throw new Error('Wallet, room-charge, and converted-document sales require an internet connection.');
             }
+
+            const submission = window.SmartProBookOffline
+                ? await window.SmartProBookOffline.submit(payload)
+                : { queued: false, result: await (async () => {
+                    const response = await fetch(saleStoreUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: JSON.stringify(payload),
+                    });
+                    const result = await response.json().catch(() => ({}));
+                    if (!response.ok) throw new Error(result.message || 'Failed to process sale.');
+                    return result;
+                })() };
+
+            if (submission.queued) {
+                resetVanillaPosWorkspace();
+                alertFallback('Sale saved offline. It will synchronize automatically when internet returns.');
+                return;
+            }
+
+            const result = submission.result;
 
             if (result.sale_id) {
                 const invoiceUrl = `${invoicePrintBaseUrl}/${result.sale_id}/print?autoprint=1`;

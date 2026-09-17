@@ -234,7 +234,7 @@
                                 @endif
                             </td>
                             <td class="fw-bold text-dark">
-                                ₦{{ number_format($sub->amount, 2) }} <span class="text-muted fw-normal small">/year</span>
+                                ₦{{ number_format($sub->amount, 2) }} <span class="text-muted fw-normal small">/{{ strtolower((string) ($sub->billing_cycle ?? 'yearly')) }}</span>
                             </td>
                             <td>
                                 @if(!empty($sub->end_date))

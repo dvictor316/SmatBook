@@ -1242,6 +1242,25 @@ public function customerDetails($id = null)
 public function store(Request $request)
 {
     $isStarterPlan = PlanAccess::resolveTierForUser(auth()->user()) === 'starter';
+    $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id'));
+    $clientSaleId = trim((string) $request->input('client_sale_id', ''));
+
+    if ($clientSaleId !== '' && mb_strlen($clientSaleId) <= 64) {
+        $existingSale = Sale::query()
+            ->where('company_id', $companyId)
+            ->where('client_sale_id', $clientSaleId)
+            ->first();
+
+        if ($existingSale) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Sale was already synchronized.',
+                'sale_id' => $existingSale->id,
+                'already_synced' => true,
+            ]);
+        }
+    }
+
     $validator = Validator::make($request->all(), [
         'customer_id'    => 'nullable|integer',
         'payment_method' => 'required|string|in:Cash,cash,Split,split,ChargeToRoom,charge_to_room,charge-room',
@@ -1262,6 +1281,8 @@ public function store(Request $request)
         'payment_account_id' => 'nullable|integer',
         'split_details.card_account_id' => 'nullable|integer',
         'split_details.transfer_account_id' => 'nullable|integer',
+        'client_sale_id' => 'nullable|string|max:64',
+        'client_recorded_at' => 'nullable|date',
     ]);
     $validator->after(function ($validator) use ($request) {
         $customerId = (int) ($request->input('customer_id') ?? 0);
@@ -1479,6 +1500,8 @@ $sale = Sale::create([
     'customer_name'  => $resolvedCustomerName,
     'user_id'        => auth()->id() ?? 1,
     'terminal_id'    => 'POS1',
+    'client_sale_id' => $clientSaleId !== '' ? $clientSaleId : null,
+    'client_recorded_at' => $request->input('client_recorded_at'),
     'source_type'    => $sourceQuotation ? 'quotation' : null,
     'source_id'      => $sourceQuotation?->id,
     'source_reference' => $sourceQuotation ? $sourceReference : null,
@@ -1495,6 +1518,11 @@ $sale = Sale::create([
     'payment_status' => $paymentStatus,
         'payment_details' => [
         'source' => 'pos',
+        'offline_sync' => $clientSaleId !== '' ? [
+            'client_sale_id' => $clientSaleId,
+            'recorded_at' => $request->input('client_recorded_at'),
+            'synced_at' => now()->toIso8601String(),
+        ] : null,
         'converted_from' => $sourceQuotation ? [
             'type' => 'quotation',
             'id' => $sourceQuotation->id,
@@ -1625,6 +1653,11 @@ $sale = Sale::create([
             'payment_status' => $finalPaymentStatus,
             'payment_details' => [
                 'source' => 'pos',
+                'offline_sync' => $clientSaleId !== '' ? [
+                    'client_sale_id' => $clientSaleId,
+                    'recorded_at' => $request->input('client_recorded_at'),
+                    'synced_at' => now()->toIso8601String(),
+                ] : null,
                 'converted_from' => $sourceQuotation ? [
                     'type' => 'quotation',
                     'id' => $sourceQuotation->id,

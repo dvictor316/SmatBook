@@ -22,7 +22,8 @@ class Sale extends Model
     protected $fillable = [
         'company_id', 'branch_id', 'branch_name',
         'order_number', 'invoice_no', 'receipt_no', 'order_date', 'delivery_date',
-        'customer_id', 'customer_name', 'user_id', 'terminal_id', 
+        'customer_id', 'customer_name', 'user_id', 'terminal_id',
+        'client_sale_id', 'client_recorded_at',
         'source_type', 'source_id', 'source_reference',
         'price_list_id',
         'subtotal', 'discount', 'tax', 'shipping_cost', 'total', 
@@ -37,6 +38,7 @@ class Sale extends Model
     protected $casts = [
         'order_date'      => 'date',
         'delivery_date'   => 'date',
+        'client_recorded_at' => 'datetime',
         'subtotal'        => 'decimal:2',
         'tax'             => 'decimal:2',
         'discount'        => 'decimal:2',

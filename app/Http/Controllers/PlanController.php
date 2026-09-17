@@ -14,7 +14,10 @@ class PlanController extends Controller
      */
     public function index()
     {
-        $plans = Plan::query()->whereRaw('LOWER(billing_cycle) = ?', ['yearly'])->get();
+        $plans = Plan::query()
+            ->whereRaw('LOWER(billing_cycle) = ?', ['yearly'])
+            ->where('is_active', 1)
+            ->get();
         
         // Calculations for the dashboard statistics cards
         $totalPlans = $plans->count();

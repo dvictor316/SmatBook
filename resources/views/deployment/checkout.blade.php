@@ -482,7 +482,7 @@
 
                 <div class="summary-row">
                     <span class="summary-label">Billing</span>
-                    <span class="summary-value">Annual</span>
+                    <span class="summary-value">{{ ucfirst((string) ($subscription->billing_cycle ?? 'Yearly')) }}</span>
                 </div>
 
                 <div class="summary-row">

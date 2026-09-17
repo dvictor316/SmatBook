@@ -1703,10 +1703,13 @@ private function formatDeploymentAmount(float $amount): string
 
     public function renewSubscription($id) {
         $subscription = $this->managedSubscriptions()->findOrFail($id);
-        $newEnd = Carbon::parse($subscription->end_date)->addYear();
+        $isAnnual = strtolower((string) $subscription->billing_cycle) === 'yearly';
+        $newEnd = $isAnnual
+            ? Carbon::parse($subscription->end_date)->addYear()
+            : Carbon::parse($subscription->end_date)->addMonth();
         $subscription->update(['end_date' => $newEnd, 'status' => 'active']);
         Company::withoutGlobalScope('tenant')->find($subscription->company_id)?->update(['subscription_end' => $newEnd]);
-        return back()->with('success', 'Renewed by 1 year.');
+        return back()->with('success', $isAnnual ? 'Renewed by 1 year.' : 'Legacy subscription renewed by 1 month.');
     }
 
     public function addUsersToBusiness(Request $request)
