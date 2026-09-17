@@ -11,17 +11,17 @@ class Plan extends Model
 
     public const DEFAULT_USER_LIMITS = [
         'starter' => 1,
-        'basic' => 3,
+        'basic' => 2,
         'professional' => 5,
-        'enterprise' => 8,
+        'enterprise' => 10,
         'hotel' => 8,
     ];
 
     public const SOLO_USER_LIMITS = [
         'starter' => 1,
-        'basic' => 1,
-        'professional' => 2,
-        'enterprise' => 3,
+        'basic' => 2,
+        'professional' => 3,
+        'enterprise' => 4,
         'hotel' => 8,
     ];
 
@@ -34,9 +34,10 @@ class Plan extends Model
     ];
 
     public const ADDITIONAL_USER_PRICES = [
+        'starter' => 3000,
         'basic' => 3000,
         'professional' => 3000,
-        'enterprise' => 7000,
+        'enterprise' => 3000,
     ];
 
     public const ADDITIONAL_BRANCH_PRICES = [
@@ -196,8 +197,9 @@ class Plan extends Model
                 'label' => 'Starter POS',
                 'description' => 'For businesses that need a focused sales counter, product shelf, and stock visibility.',
                 'featured' => false,
-                'from_price' => 1000,
-                'team_price' => 1000,
+                'from_price' => 20000,
+                'team_price' => 20000,
+                'additional_user_price' => static::ADDITIONAL_USER_PRICES['starter'],
                 'solo_users' => 1,
                 'team_users' => 1,
                 'benefits' => static::marketingBenefitsForTier('starter', 1),
@@ -206,22 +208,22 @@ class Plan extends Model
                 'label' => 'Basic Core',
                 'description' => 'For small teams running day-to-day sales, invoicing, purchases, and reporting together.',
                 'featured' => false,
-                'from_price' => 3000,
-                'team_price' => 5500,
+                'from_price' => 80000,
+                'team_price' => 80000,
                 'additional_user_price' => static::ADDITIONAL_USER_PRICES['basic'],
-                'solo_users' => 1,
-                'team_users' => 3,
-                'benefits' => static::marketingBenefitsForTier('basic', 3),
+                'solo_users' => 2,
+                'team_users' => 2,
+                'benefits' => static::marketingBenefitsForTier('basic', 2),
             ],
             'pro' => [
                 'label' => 'Pro Engine',
                 'description' => 'For growing operations that need stronger controls, advanced inventory, and richer reporting.',
                 'featured' => true,
-                'from_price' => 7000,
-                'team_price' => 7000,
+                'from_price' => 100000,
+                'team_price' => 150000,
                 'additional_user_price' => static::ADDITIONAL_USER_PRICES['professional'],
                 'additional_branch_price' => static::ADDITIONAL_BRANCH_PRICES['professional'],
-                'solo_users' => 2,
+                'solo_users' => 3,
                 'team_users' => 5,
                 'benefits' => static::marketingBenefitsForTier('professional', 5),
             ],
@@ -229,13 +231,13 @@ class Plan extends Model
                 'label' => 'Institutional',
                 'description' => 'For larger organizations that need enterprise accounting, compliance, and operational governance.',
                 'featured' => false,
-                'from_price' => 15000,
-                'team_price' => 28500,
+                'from_price' => 200000,
+                'team_price' => 300000,
                 'additional_user_price' => static::ADDITIONAL_USER_PRICES['enterprise'],
                 'additional_branch_price' => static::ADDITIONAL_BRANCH_PRICES['enterprise'],
-                'solo_users' => 3,
-                'team_users' => 8,
-                'benefits' => static::marketingBenefitsForTier('enterprise', 8),
+                'solo_users' => 4,
+                'team_users' => 10,
+                'benefits' => static::marketingBenefitsForTier('enterprise', 10),
             ],
             'hotel' => [
                 'label' => 'Hotel Management',
@@ -302,6 +304,7 @@ class Plan extends Model
 
         return static::query()
             ->whereRaw('LOWER(billing_cycle) = ?', [strtolower(trim($billingCycle))])
+            ->where('is_active', 1)
             ->get()
             ->first(function (self $candidate) use ($normalizedName, $requiresSolo, $targetTier) {
                 $candidateName = strtolower(trim((string) $candidate->name));

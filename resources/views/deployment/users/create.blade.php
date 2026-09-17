@@ -36,24 +36,24 @@
     $enterpriseMonthly = $planMeta('enterprise-monthly', 'Enterprise', 28500, 'monthly');
     $hotelMonthly = $planMeta('hotel-monthly', 'Hotel', 20000, 'monthly');
 
-    $starterYearly = $planMeta('starter-yearly', 'Starter', 10000, 'yearly', '2,000');
-    $basicSoloYearly = $planMeta('basic-solo-yearly', 'Basic Solo', 30000, 'yearly', '6,000');
-    $basicYearly = $planMeta('basic-yearly', 'Basic', 55000, 'yearly', '11,000');
-    $proSoloYearly = $planMeta('professional-solo-yearly', 'Professional Solo', 70000, 'yearly', '14,000');
-    $proYearly = $planMeta('professional-yearly', 'Professional', 70000, 'yearly', '14,000');
-    $enterpriseSoloYearly = $planMeta('enterprise-solo-yearly', 'Enterprise Solo', 150000, 'yearly', '30,000');
-    $enterpriseYearly = $planMeta('enterprise-yearly', 'Enterprise', 285000, 'yearly', '57,000');
+    $starterYearly = $planMeta('starter-yearly', 'Starter', 20000, 'yearly');
+    $basicSoloYearly = $planMeta('basic-solo-yearly', 'Basic Solo', 80000, 'yearly');
+    $basicYearly = $planMeta('basic-yearly', 'Basic', 80000, 'yearly');
+    $proSoloYearly = $planMeta('professional-solo-yearly', 'Professional Solo', 100000, 'yearly');
+    $proYearly = $planMeta('professional-yearly', 'Professional', 150000, 'yearly');
+    $enterpriseSoloYearly = $planMeta('enterprise-solo-yearly', 'Enterprise Solo', 200000, 'yearly');
+    $enterpriseYearly = $planMeta('enterprise-yearly', 'Enterprise', 300000, 'yearly');
     $hotelYearly = $planMeta('hotel-yearly', 'Hotel', 200000, 'yearly', '40,000');
 
     $seatLabel = function (string $key): string {
         return match ($key) {
             'starter-monthly', 'starter-yearly' => '1 User',
-            'basic-solo-monthly', 'basic-solo-yearly' => '1 User',
-            'professional-solo-monthly', 'professional-solo-yearly' => '2 Users',
-            'enterprise-solo-monthly', 'enterprise-solo-yearly' => '3 Users',
-            'basic-monthly', 'basic-yearly' => '3 Users',
+            'basic-solo-monthly', 'basic-solo-yearly' => '2 Users',
+            'professional-solo-monthly', 'professional-solo-yearly' => '3 Users',
+            'enterprise-solo-monthly', 'enterprise-solo-yearly' => '4 Users',
+            'basic-monthly', 'basic-yearly' => '2 Users',
             'professional-monthly', 'professional-yearly' => '5 Users',
-            'enterprise-monthly', 'enterprise-yearly' => '8 Users',
+            'enterprise-monthly', 'enterprise-yearly' => '10 Users',
             'hotel-monthly', 'hotel-yearly' => '8 Users',
             default => 'Plan',
         };
@@ -531,21 +531,14 @@
                             <input type="hidden" name="plan_id"       id="planId"    value="{{ old('plan_id') }}">
                             <input type="hidden" name="plan_name"     id="planName"  value="{{ old('plan_name') }}">
                             <input type="hidden" name="plan_price"    id="planPrice" value="{{ old('plan_price') }}">
-                            <input type="hidden" name="billing_cycle" id="planCycle" value="{{ old('billing_cycle', 'monthly') }}">
+                            <input type="hidden" name="billing_cycle" id="planCycle" value="yearly">
                             @if($isSuperAdminDeployment)
                                 <input type="hidden" name="free_unlimited" value="1">
                             @endif
 
-                            <div class="text-center mb-4">
-                                <div class="billing-toggle">
-                                    <button type="button" id="btnMonthly" class="active" onclick="setCycle('monthly')">Monthly</button>
-                                    <button type="button" id="btnYearly"  onclick="setCycle('yearly')">
-                                        Yearly <span class="save-pill">Save 17%</span>
-                                    </button>
-                                </div>
-                            </div>
+                            <div class="text-center mb-4"><strong>Annual subscriptions</strong></div>
 
-                            <div id="wrapMonthly" class="plans-wrap active">
+                            <div id="wrapMonthly" class="plans-wrap d-none">
                                 <div class="row g-4">
                                     <div class="col-lg-4 col-md-6">
                                         <div class="plan-card" data-pid="{{ $starterMonthly['plan_id'] }}"
@@ -689,7 +682,7 @@
                                 </div>
                             </div>
 
-                            <div id="wrapYearly" class="plans-wrap">
+                            <div id="wrapYearly" class="plans-wrap active">
                                 <div class="row g-4">
                                     <div class="col-lg-4 col-md-6">
                                         <div class="plan-card" data-pid="{{ $starterYearly['plan_id'] }}"
@@ -698,7 +691,7 @@
                                             <div class="plan-tier">Starter POS</div>
                                             <div class="plan-seat">{{ $seatLabel('starter-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $starterYearly['price_label'] }} <small>/yr</small></div>
-                                            <div class="plan-cycle">Save ₦{{ $starterYearly['save_label'] }} · Earn ₦{{ $starterYearly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $starterYearly['price_label'] }}/year · Earn ₦{{ $starterYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> 1 user only</li>
                                                 <li><i class="fas fa-check-circle"></i> POS sales</li>
@@ -708,14 +701,14 @@
                                             </ul>
                                         </div>
                                     </div>
-                                    <div class="col-lg-4 col-md-6">
+                                    <div class="col-lg-4 col-md-6 retired-plan-option d-none">
                                         <div class="plan-card" data-pid="{{ $basicSoloYearly['plan_id'] }}"
                                              onclick="pickPlan(@js((string) $basicSoloYearly['plan_id']), @js($basicSoloYearly['name']), {{ $basicSoloYearly['price'] }}, 'yearly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
                                             <div class="plan-tier">Basic Core</div>
                                             <div class="plan-seat">{{ $seatLabel('basic-solo-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $basicSoloYearly['price_label'] }} <small>/yr</small></div>
-                                            <div class="plan-cycle">Save ₦{{ $basicSoloYearly['save_label'] }} · Earn ₦{{ $basicSoloYearly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed annually · Earn ₦{{ $basicSoloYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> 1 user</li>
                                                 <li><i class="fas fa-check-circle"></i> 5 GB storage</li>
@@ -732,9 +725,9 @@
                                             <div class="plan-tier">Basic Core</div>
                                             <div class="plan-seat">{{ $seatLabel('basic-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $basicYearly['price_label'] }} <small>/yr</small></div>
-                                            <div class="plan-cycle">Save ₦{{ $basicYearly['save_label'] }} · Earn ₦{{ $basicYearly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $basicYearly['price_label'] }}/year · Earn ₦{{ $basicYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
-                                                <li><i class="fas fa-check-circle"></i> Up to 3 users</li>
+                                                <li><i class="fas fa-check-circle"></i> 2 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 5 GB storage</li>
                                                 <li><i class="fas fa-check-circle"></i> Invoicing & POS</li>
                                                 <li><i class="fas fa-check-circle"></i> Basic reports</li>
@@ -749,9 +742,9 @@
                                             <div class="plan-tier">Pro Engine</div>
                                             <div class="plan-seat">{{ $seatLabel('professional-solo-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $proSoloYearly['price_label'] }} <small>/yr</small></div>
-                                            <div class="plan-cycle">Save ₦{{ $proSoloYearly['save_label'] }} · Earn ₦{{ $proSoloYearly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $proSoloYearly['price_label'] }}/year · Earn ₦{{ $proSoloYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
-                                                <li><i class="fas fa-check-circle"></i> 2 users</li>
+                                                <li><i class="fas fa-check-circle"></i> 3 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 50 GB storage</li>
                                                 <li><i class="fas fa-check-circle"></i> Full inventory</li>
                                                 <li><i class="fas fa-check-circle"></i> Purchases & orders</li>
@@ -767,7 +760,7 @@
                                             <div class="plan-tier">Pro Engine</div>
                                             <div class="plan-seat">{{ $seatLabel('professional-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $proYearly['price_label'] }} <small>/yr</small></div>
-                                            <div class="plan-cycle">Save ₦{{ $proYearly['save_label'] }} · Earn ₦{{ $proYearly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $proYearly['price_label'] }}/year · Earn ₦{{ $proYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> Up to 5 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 50 GB storage</li>
@@ -784,9 +777,9 @@
                                             <div class="plan-tier">Institutional</div>
                                             <div class="plan-seat">{{ $seatLabel('enterprise-solo-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $enterpriseSoloYearly['price_label'] }} <small>/yr</small></div>
-                                            <div class="plan-cycle">Save ₦{{ $enterpriseSoloYearly['save_label'] }} · Earn ₦{{ $enterpriseSoloYearly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $enterpriseSoloYearly['price_label'] }}/year · Earn ₦{{ $enterpriseSoloYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
-                                                <li><i class="fas fa-check-circle"></i> 3 users</li>
+                                                <li><i class="fas fa-check-circle"></i> 4 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 500 GB storage</li>
                                                 <li><i class="fas fa-check-circle"></i> Full ERP suite</li>
                                                 <li><i class="fas fa-check-circle"></i> P&L & balance sheet</li>
@@ -802,9 +795,9 @@
                                             <div class="plan-tier">Institutional</div>
                                             <div class="plan-seat">{{ $seatLabel('enterprise-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $enterpriseYearly['price_label'] }} <small>/yr</small></div>
-                                            <div class="plan-cycle">Save ₦{{ $enterpriseYearly['save_label'] }} · Earn ₦{{ $enterpriseYearly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $enterpriseYearly['price_label'] }}/year · Earn ₦{{ $enterpriseYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
-                                                <li><i class="fas fa-check-circle"></i> Up to 8 users</li>
+                                                <li><i class="fas fa-check-circle"></i> Up to 10 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 500 GB storage</li>
                                                 <li><i class="fas fa-check-circle"></i> Full ERP suite</li>
                                                 <li><i class="fas fa-check-circle"></i> P&L & balance sheet</li>
@@ -820,7 +813,7 @@
                                             <div class="plan-tier">Hotel Management</div>
                                             <div class="plan-seat">{{ $seatLabel('hotel-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $hotelYearly['price_label'] }} <small>/yr</small></div>
-                                            <div class="plan-cycle">Save ₦{{ $hotelYearly['save_label'] }} · Earn ₦{{ $hotelYearly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $hotelYearly['price_label'] }}/year · Earn ₦{{ $hotelYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> Front desk and reservations</li>
                                                 <li><i class="fas fa-check-circle"></i> Room rack and availability</li>
@@ -832,6 +825,10 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <p class="text-center text-muted small mt-3 mb-0">
+                                Extra users cost ₦30,000 per year. Extra branches cost ₦50,000 per year and are available only on Pro Engine and Institutional. Selected add-ons are included in annual renewal.
+                            </p>
 
                             <div class="commission-banner mt-4">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
@@ -1061,7 +1058,7 @@
 <script>
 /* ── State ───────────────────────────────── */
 const DOMAIN = '{{ ltrim(config("app.domain", "smartprobook.com"), ".") }}';
-let plan = { id: null, name: null, price: 0, cycle: 'monthly' };
+let plan = { id: null, name: null, price: 0, cycle: 'yearly' };
 
 /* ── Helpers ─────────────────────────────── */
 const fmt = n => Number(n).toLocaleString('en-NG');
@@ -1075,7 +1072,7 @@ const getSelectedPlanState = () => ({
     id: document.getElementById('planId').value.trim(),
     name: document.getElementById('planName').value.trim(),
     price: Number(document.getElementById('planPrice').value || 0),
-    cycle: document.getElementById('planCycle').value.trim() || 'monthly',
+    cycle: 'yearly',
 });
 
 const slug = s => s.toLowerCase()
@@ -1112,6 +1109,10 @@ function syncHotelPlanCards() {
     document.querySelectorAll('.plan-card').forEach((card) => {
         const wrapper = card.closest('.col-lg-4, .col-md-6');
         if (!wrapper) return;
+        if (wrapper.classList.contains('retired-plan-option')) {
+            wrapper.classList.add('d-none');
+            return;
+        }
 
         const isHotelCard = wrapper.classList.contains('hotel-plan-option');
         wrapper.classList.toggle('d-none', showHotel ? !isHotelCard : isHotelCard);
@@ -1126,7 +1127,7 @@ function autoPickHotelPlan(cycle) {
 }
 
 document.getElementById('industrySelect')?.addEventListener('change', function () {
-    const selectedCycle = document.getElementById('planCycle')?.value || plan.cycle || 'monthly';
+    const selectedCycle = 'yearly';
     syncHotelPlanCards();
 
     if (isHotelIndustrySelected()) {
@@ -1141,12 +1142,13 @@ document.getElementById('industrySelect')?.addEventListener('change', function (
 
 /* ── Billing cycle ───────────────────────── */
 window.setCycle = function(cycle) {
+    cycle = 'yearly';
     plan.cycle = cycle;
     document.getElementById('planCycle').value = cycle;
-    document.getElementById('btnMonthly').classList.toggle('active', cycle === 'monthly');
-    document.getElementById('btnYearly').classList.toggle('active',  cycle === 'yearly');
-    document.getElementById('wrapMonthly').classList.toggle('active', cycle === 'monthly');
-    document.getElementById('wrapYearly').classList.toggle('active',  cycle === 'yearly');
+    document.getElementById('btnMonthly')?.classList.toggle('active', false);
+    document.getElementById('btnYearly')?.classList.toggle('active', true);
+    document.getElementById('wrapMonthly').classList.remove('active');
+    document.getElementById('wrapYearly').classList.add('active');
     // Reset selected plan
     document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
     plan = { id: null, name: null, price: 0, cycle };
@@ -1201,10 +1203,10 @@ function deploymentAmountForSeats(selectedPlan, seatsInput) {
     const requestedSeats = Math.max(1, parseInt(seatsInput?.value || '0', 10) || 0);
     const tier = normalizePlanTier(selectedPlan.name || '');
     const baseLimit = selectedPlan.name?.toLowerCase().includes('solo')
-        ? (tier === 'professional' ? 2 : (tier === 'enterprise' ? 3 : 1))
+        ? (tier === 'professional' ? 3 : (tier === 'enterprise' ? 4 : (tier === 'basic' ? 2 : 1)))
         : (baseSeatLimits[tier] || 1);
     const extraUsers = Math.max(0, requestedSeats - baseLimit);
-    const extraPrice = additionalUserPrices[tier]?.[selectedPlan.cycle || 'monthly'] || 0;
+    const extraPrice = additionalUserPrices[tier]?.yearly || 0;
 
     return baseAmount + (extraUsers * extraPrice);
 }
@@ -1341,9 +1343,9 @@ document.getElementById('regForm').addEventListener('submit', function(e) {
     document.getElementById('planId').value = '{{ old("plan_id") }}';
     document.getElementById('planName').value = '{{ old("plan_name") }}';
     document.getElementById('planPrice').value = '{{ old("plan_price",0) }}';
-    document.getElementById('planCycle').value = '{{ old("billing_cycle","monthly") }}';
-    setCycle('{{ old("billing_cycle","monthly") }}');
-    pickPlan('{{ old("plan_id") }}','{{ old("plan_name") }}',{{ (int)old("plan_price",0) }},'{{ old("billing_cycle","monthly") }}');
+    document.getElementById('planCycle').value = 'yearly';
+    setCycle('yearly');
+    pickPlan('{{ old("plan_id") }}','{{ old("plan_name") }}',{{ (int)old("plan_price",0) }},'yearly');
 @endif
 syncHotelPlanCards();
 </script>

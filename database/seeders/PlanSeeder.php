@@ -10,28 +10,25 @@ class PlanSeeder extends Seeder
     public function run()
     {
         $plans = [
-            // Monthly Plans
-            ['name' => 'Starter Solo Monthly', 'price' => 1000, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 1],
-            ['name' => 'Starter Monthly', 'price' => 1000, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 1],
-            ['name' => 'Basic Solo Monthly', 'price' => 3000, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 1],
-            ['name' => 'Basic Monthly', 'price' => 5500, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 3],
-            ['name' => 'Pro Solo Monthly', 'price' => 7000, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 2],
-            ['name' => 'Pro Monthly', 'price' => 7000, 'billing_cycle' => 'monthly', 'recommended' => 1, 'user_limit' => 5],
-            ['name' => 'Enterprise Solo Monthly', 'price' => 15000, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 3],
-            ['name' => 'Enterprise Monthly', 'price' => 28500, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 8],
-            ['name' => 'Hotel Monthly', 'price' => 20000, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 8],
-            
-            // Yearly Plans
-            ['name' => 'Starter Solo Yearly', 'price' => 10000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 1],
-            ['name' => 'Starter Yearly', 'price' => 10000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 1],
-            ['name' => 'Basic Solo Yearly', 'price' => 30000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 1],
-            ['name' => 'Basic Yearly', 'price' => 55000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 3],
-            ['name' => 'Pro Solo Yearly', 'price' => 70000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 2],
-            ['name' => 'Pro Yearly', 'price' => 70000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 5],
-            ['name' => 'Enterprise Solo Yearly', 'price' => 150000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 3],
-            ['name' => 'Enterprise Yearly', 'price' => 285000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 8],
+            // Annual plans. Legacy monthly records remain for subscription history but are inactive.
+            ['name' => 'Starter Yearly', 'price' => 20000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 1],
+            ['name' => 'Basic Yearly', 'price' => 80000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 2],
+            ['name' => 'Pro Solo Yearly', 'price' => 100000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 3],
+            ['name' => 'Pro Yearly', 'price' => 150000, 'billing_cycle' => 'yearly', 'recommended' => 1, 'user_limit' => 5],
+            ['name' => 'Enterprise Solo Yearly', 'price' => 200000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 4],
+            ['name' => 'Enterprise Yearly', 'price' => 300000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 10],
             ['name' => 'Hotel Yearly', 'price' => 200000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 8],
         ];
+
+        Plan::query()->whereRaw('LOWER(billing_cycle) = ?', ['monthly'])->update([
+            'is_active' => 0,
+            'status' => 'inactive',
+        ]);
+
+        Plan::query()->whereIn('name', ['Starter Solo Yearly', 'Basic Solo Yearly'])->update([
+            'is_active' => 0,
+            'status' => 'inactive',
+        ]);
 
         foreach ($plans as $plan) {
             Plan::updateOrCreate(

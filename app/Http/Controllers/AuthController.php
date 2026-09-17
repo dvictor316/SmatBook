@@ -34,7 +34,7 @@ class AuthController extends Controller
 
         $isPartner = in_array($request->query('type'), ['partner', 'manager'], true);
         $planParam = strtolower($request->query('plan', 'pro'));
-        $cycleParam = strtolower($request->query('cycle', 'monthly'));
+        $cycleParam = 'yearly';
         $catalog = $this->registrationPlanCatalog();
         $selectedCatalog = $catalog[$planParam] ?? $catalog['pro'];
         $planData = Plan::findByCatalogName($selectedCatalog['label'], $cycleParam);
@@ -310,13 +310,9 @@ class AuthController extends Controller
 
                 $fieldOfOperation = strtolower(trim((string) ($validated['field_of_operation'] ?? '')));
                 $requestedPlan = strtolower((string) ($request->plan ?? session('selected_plan', 'pro')));
-                $requestedCycle = strtolower((string) ($request->billing_cycle ?? session('selected_cycle', 'monthly')));
+                $requestedCycle = 'yearly';
                 if (str_contains($fieldOfOperation, 'hotel') || str_contains($fieldOfOperation, 'hospitality')) {
                     $requestedPlan = 'hotel';
-                }
-
-                if (!in_array($requestedCycle, ['monthly', 'yearly'], true)) {
-                    $requestedCycle = 'monthly';
                 }
 
                 $catalog = $this->registrationPlanCatalog();
@@ -326,6 +322,13 @@ class AuthController extends Controller
                     $planId = null;
                 }
                 $plan = $planId ? Plan::find((int) $planId) : null;
+                if ($plan && (
+                    strtolower((string) $plan->billing_cycle) !== 'yearly'
+                    || (Schema::hasColumn('plans', 'is_active') && ! $plan->is_active)
+                )) {
+                    $plan = null;
+                    $planId = null;
+                }
 
                 if (!$plan && $catalogEntry) {
                     $plan = Plan::findByCatalogName($catalogEntry['label'], $requestedCycle);
@@ -1106,7 +1109,7 @@ class AuthController extends Controller
     private function rememberSocialContext(Request $request, string $provider): void
     {
         $intent = strtolower((string) $request->query('intent', 'login'));
-        $cycle = strtolower((string) $request->query('cycle', session('selected_cycle', session('billing_cycle', 'monthly'))));
+        $cycle = 'yearly';
         $planInput = (string) $request->query('plan', session('selected_plan', ''));
         $catalog = $this->registrationPlanCatalog();
         $planKey = $this->resolveRegistrationPlanKey($planInput, $catalog);
@@ -1114,8 +1117,15 @@ class AuthController extends Controller
         $planId = $request->query('plan_id', session('selected_plan_id'));
         $amount = $request->query('amount', session('selected_amount'));
 
-        if ($entry && in_array($cycle, ['monthly', 'yearly'], true)) {
+        if ($entry) {
             $plan = $planId ? Plan::find((int) $planId) : null;
+            if ($plan && (
+                strtolower((string) $plan->billing_cycle) !== 'yearly'
+                || (Schema::hasColumn('plans', 'is_active') && ! $plan->is_active)
+            )) {
+                $plan = null;
+                $planId = null;
+            }
             if (!$plan) {
                 $plan = Plan::findByCatalogName($entry['label'], $cycle);
                 $planId = $plan?->id;
@@ -1154,7 +1164,7 @@ class AuthController extends Controller
         }
 
         $intent = strtolower((string) ($context['intent'] ?? $request->query('intent', 'login')));
-        $cycle = strtolower((string) ($context['cycle'] ?? $request->query('cycle', session('selected_cycle', 'monthly'))));
+        $cycle = 'yearly';
         $catalog = $this->registrationPlanCatalog();
         $planKey = $this->resolveRegistrationPlanKey(
             (string) ($context['plan'] ?? $request->query('plan', session('selected_plan', ''))),
@@ -1164,7 +1174,7 @@ class AuthController extends Controller
         return [
             'intent' => in_array($intent, ['login', 'register'], true) ? $intent : 'login',
             'plan' => $planKey,
-            'cycle' => in_array($cycle, ['monthly', 'yearly'], true) ? $cycle : 'monthly',
+            'cycle' => 'yearly',
             'plan_id' => isset($context['plan_id']) ? (int) $context['plan_id'] : (session('selected_plan_id') ?: null),
             'amount' => isset($context['amount']) ? (float) $context['amount'] : (session('selected_amount') ?: null),
         ];
@@ -1187,9 +1197,9 @@ class AuthController extends Controller
 
         $catalog = $this->registrationPlanCatalog();
         $planKey = $this->resolveRegistrationPlanKey((string) ($context['plan'] ?? ''), $catalog);
-        $cycle = strtolower((string) ($context['cycle'] ?? 'monthly'));
+        $cycle = 'yearly';
 
-        if (!$planKey || !isset($catalog[$planKey]) || !in_array($cycle, ['monthly', 'yearly'], true)) {
+        if (!$planKey || !isset($catalog[$planKey])) {
             return null;
         }
 
@@ -1197,6 +1207,12 @@ class AuthController extends Controller
         $plan = !empty($context['plan_id'])
             ? Plan::find((int) $context['plan_id'])
             : Plan::findByCatalogName($entry['label'], $cycle);
+        if ($plan && (
+            strtolower((string) $plan->billing_cycle) !== 'yearly'
+            || (Schema::hasColumn('plans', 'is_active') && ! $plan->is_active)
+        )) {
+            $plan = Plan::findByCatalogName($entry['label'], 'yearly');
+        }
 
         $amount = (float) ($plan?->price ?? ($entry['prices'][$cycle] ?? 0));
         $billingCycle = ucfirst($cycle);
@@ -1688,40 +1704,40 @@ class AuthController extends Controller
     {
         return [
             'starter-solo' => [
-                'label' => 'Starter Solo',
-                'prices' => ['monthly' => 1000, 'yearly' => 10000],
+                'label' => 'Starter',
+                'prices' => ['yearly' => 20000],
             ],
             'starter' => [
                 'label' => 'Starter',
-                'prices' => ['monthly' => 1000, 'yearly' => 10000],
+                'prices' => ['yearly' => 20000],
             ],
             'basic-solo' => [
-                'label' => 'Basic Solo',
-                'prices' => ['monthly' => 3000, 'yearly' => 30000],
+                'label' => 'Basic',
+                'prices' => ['yearly' => 80000],
             ],
             'basic' => [
                 'label' => 'Basic',
-                'prices' => ['monthly' => 5500, 'yearly' => 55000],
+                'prices' => ['yearly' => 80000],
             ],
             'pro-solo' => [
                 'label' => 'Professional Solo',
-                'prices' => ['monthly' => 7000, 'yearly' => 70000],
+                'prices' => ['yearly' => 100000],
             ],
             'pro' => [
                 'label' => 'Professional',
-                'prices' => ['monthly' => 7000, 'yearly' => 70000],
+                'prices' => ['yearly' => 150000],
             ],
             'enterprise-solo' => [
                 'label' => 'Enterprise Solo',
-                'prices' => ['monthly' => 15000, 'yearly' => 150000],
+                'prices' => ['yearly' => 200000],
             ],
             'enterprise' => [
                 'label' => 'Enterprise',
-                'prices' => ['monthly' => 28500, 'yearly' => 285000],
+                'prices' => ['yearly' => 300000],
             ],
             'hotel' => [
                 'label' => 'Hotel',
-                'prices' => ['monthly' => 20000, 'yearly' => 200000],
+                'prices' => ['yearly' => 200000],
             ],
         ];
     }

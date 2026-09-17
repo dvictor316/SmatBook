@@ -10,17 +10,17 @@
         $tierBenefits = collect($planCards)->mapWithKeys(fn ($card, $key) => [$key => $card['benefits']])->all();
         $planActions = [
             'starter' => $currentPlanTier === 'starter'
-                ? ['secondary' => 'Current Plan', 'primary' => 'Upgrade to Basic']
-                : ['secondary' => 'Start 1 User', 'primary' => 'Select Starter'],
+                ? ['primary' => 'Current Plan']
+                : ['primary' => 'Select Starter'],
             'basic' => $currentPlanTier === 'basic'
-                ? ['secondary' => 'Current Plan', 'primary' => 'Upgrade to Pro']
-                : ['secondary' => 'Start 1 User', 'primary' => 'Start 3 Users'],
+                ? ['primary' => 'Current Plan']
+                : ['primary' => 'Select Basic'],
             'pro' => $currentPlanTier === 'professional'
                 ? ['secondary' => 'Current Plan', 'primary' => 'Upgrade to Enterprise']
-                : ['secondary' => 'Start 2 Users', 'primary' => 'Start 5 Users'],
+                : ['secondary' => 'Start 3 Users', 'primary' => 'Start 5 Users'],
             'enterprise' => $currentPlanTier === 'enterprise'
-                ? ['secondary' => 'Current Plan', 'primary' => 'Start 8 Users']
-                : ['secondary' => 'Start 3 Users', 'primary' => 'Start 8 Users'],
+                ? ['secondary' => 'Current Plan', 'primary' => 'Start 10 Users']
+                : ['secondary' => 'Start 4 Users', 'primary' => 'Start 10 Users'],
         ];
         $seoNoIndex = $seoNoIndex ?? false;
         $seoType = 'website';
@@ -433,14 +433,7 @@
                 @endif
             </div>
 
-            <div class="billing-toggle">
-                <span id="monthlyLabel" style="color: var(--muji-blue-accent)">Monthly</span>
-                <label class="switch">
-                    <input type="checkbox" id="billingSwitch" onchange="togglePricing()">
-                    <span class="slider"></span>
-                </label>
-                <span id="annualLabel">Annual <span class="save-badge">2 Months Free</span></span>
-            </div>
+            <div class="billing-toggle"><strong>Annual subscriptions</strong></div>
         </div>
     </header>
 
@@ -453,10 +446,11 @@
                     <div class="price-display">
                         <span class="price-seat">1 user:</span>
                         <div class="price-amount">
-                            <span id="price-starter-solo">₦1,000</span><small id="period-starter-solo">/mo</small>
+                            <span id="price-starter-solo">₦20,000</span><small id="period-starter-solo">/year</small>
                         </div>
                     </div>
-                    <p class="price-secondary">1 user: <strong id="price-starter">₦1,000</strong><span id="period-starter">/mo</span></p>
+                    <p class="price-secondary">Renews at <strong>₦20,000/year</strong></p>
+                    <p class="price-secondary">Extra user: <strong>₦30,000/year</strong></p>
                     <ul class="feature-list">
                         @foreach($tierBenefits['starter'] as $benefit)
                             <li><i class="fas fa-check-circle"></i> {{ $benefit }}</li>
@@ -465,8 +459,7 @@
                         <li class="unavailable"><i class="fas fa-times-circle"></i> Payroll, tax, and bank reconciliation</li>
                     </ul>
                     <div style="display:grid; gap:10px;">
-                        <button onclick="{{ $currentPlanTier === 'starter' ? '' : "handleSubscription('starter-solo')" }}" class="btn-uplink btn-outline" {{ $currentPlanTier === 'starter' ? 'disabled' : '' }}>{{ $planActions['starter']['secondary'] }}</button>
-                        <button onclick="handleSubscription('{{ $currentPlanTier === 'starter' ? 'basic' : 'starter' }}')" class="btn-uplink btn-gold">{{ $planActions['starter']['primary'] }}</button>
+                        <button onclick="{{ $currentPlanTier === 'starter' ? '' : "handleSubscription('starter')" }}" class="btn-uplink btn-gold" {{ $currentPlanTier === 'starter' ? 'disabled' : '' }}>{{ $planActions['starter']['primary'] }}</button>
                     </div>
                 </div>
                 
@@ -474,21 +467,20 @@
                     <h3 class="plan-name">{{ $planCards['basic']['label'] }}</h3>
                     <p class="plan-desc">{{ $planCards['basic']['description'] }}</p>
                     <div class="price-display">
-                        <span class="price-seat">1 user:</span>
+                        <span class="price-seat">2 users:</span>
                         <div class="price-amount">
-                            <span id="price-basic-solo">₦3,000</span><small id="period-basic-solo">/mo</small>
+                            <span id="price-basic-solo">₦80,000</span><small id="period-basic-solo">/year</small>
                         </div>
                     </div>
-                    <p class="price-secondary">3 users: <strong id="price-basic">₦5,500</strong><span id="period-basic">/mo</span></p>
-                    <p class="price-secondary">Extra user: <strong id="extra-basic">₦{{ number_format($planCards['basic']['additional_user_price']) }}</strong><span id="extra-period-basic">/mo</span></p>
+                    <p class="price-secondary">Renews at <strong>₦80,000/year</strong></p>
+                    <p class="price-secondary">Extra user: <strong>₦30,000/year</strong></p>
                     <ul class="feature-list">
                         @foreach($tierBenefits['basic'] as $benefit)
                             <li><i class="fas fa-check-circle"></i> {{ $benefit }}</li>
                         @endforeach
                     </ul>
                     <div style="display:grid; gap:10px;">
-                        <button onclick="{{ $currentPlanTier === 'basic' ? '' : "handleSubscription('basic-solo')" }}" class="btn-uplink btn-outline" {{ $currentPlanTier === 'basic' ? 'disabled' : '' }}>{{ $planActions['basic']['secondary'] }}</button>
-                        <button onclick="handleSubscription('{{ $currentPlanTier === 'basic' ? 'pro' : 'basic' }}')" class="btn-uplink btn-gold">{{ $planActions['basic']['primary'] }}</button>
+                        <button onclick="{{ $currentPlanTier === 'basic' ? '' : "handleSubscription('basic')" }}" class="btn-uplink btn-gold" {{ $currentPlanTier === 'basic' ? 'disabled' : '' }}>{{ $planActions['basic']['primary'] }}</button>
                     </div>
                 </div>
 
@@ -498,14 +490,15 @@
                     <h3 class="plan-name">{{ $planCards['pro']['label'] }}</h3>
                     <p class="plan-desc">{{ $planCards['pro']['description'] }}</p>
                     <div class="price-display">
-                        <span class="price-seat">2 users:</span>
+                        <span class="price-seat">3 users:</span>
                         <div class="price-amount">
-                            <span id="price-pro-solo">₦7,000</span><small id="period-pro-solo">/mo</small>
+                            <span id="price-pro-solo">₦100,000</span><small id="period-pro-solo">/year</small>
                         </div>
                     </div>
-                    <p class="price-secondary">5 users: <strong id="price-pro">₦7,000</strong><span id="period-pro">/mo</span></p>
-                    <p class="price-secondary">Extra user: <strong id="extra-pro">₦{{ number_format($planCards['pro']['additional_user_price']) }}</strong><span id="extra-period-pro">/mo</span></p>
-                    <p class="price-secondary">Extra branch: <strong id="extra-branch-pro">₦{{ number_format($planCards['pro']['additional_branch_price']) }}</strong><span id="extra-branch-period-pro">/mo</span></p>
+                    <p class="price-secondary">5 users: <strong id="price-pro">₦150,000</strong><span>/year</span></p>
+                    <p class="price-secondary">Renews at the selected tier price</p>
+                    <p class="price-secondary">Extra user: <strong>₦30,000/year</strong></p>
+                    <p class="price-secondary">Extra branch: <strong>₦50,000/year</strong></p>
                     <ul class="feature-list">
                         @foreach($tierBenefits['pro'] as $benefit)
                             <li><i class="fas fa-check-circle"></i> {{ $benefit }}</li>
@@ -522,14 +515,15 @@
                     <h3 class="plan-name">{{ $planCards['enterprise']['label'] }}</h3>
                     <p class="plan-desc">{{ $planCards['enterprise']['description'] }}</p>
                     <div class="price-display">
-                        <span class="price-seat">3 users:</span>
+                        <span class="price-seat">4 users:</span>
                         <div class="price-amount">
-                            <span id="price-enterprise-solo">₦15,000</span><small id="period-enterprise-solo">/mo</small>
+                            <span id="price-enterprise-solo">₦200,000</span><small id="period-enterprise-solo">/year</small>
                         </div>
                     </div>
-                    <p class="price-secondary">8 users: <strong id="price-enterprise">₦28,500</strong><span id="period-enterprise">/mo</span></p>
-                    <p class="price-secondary">Extra user: <strong id="extra-enterprise">₦{{ number_format($planCards['enterprise']['additional_user_price']) }}</strong><span id="extra-period-enterprise">/mo</span></p>
-                    <p class="price-secondary">Extra branch: <strong id="extra-branch-enterprise">₦{{ number_format($planCards['enterprise']['additional_branch_price']) }}</strong><span id="extra-branch-period-enterprise">/mo</span></p>
+                    <p class="price-secondary">10 users: <strong id="price-enterprise">₦300,000</strong><span>/year</span></p>
+                    <p class="price-secondary">Renews at the selected tier price</p>
+                    <p class="price-secondary">Extra user: <strong>₦30,000/year</strong></p>
+                    <p class="price-secondary">Extra branch: <strong>₦50,000/year</strong></p>
                     <ul class="feature-list">
                         @foreach($tierBenefits['enterprise'] as $benefit)
                             <li><i class="fas fa-check-circle"></i> {{ $benefit }}</li>
@@ -559,6 +553,11 @@
                 </div>
             </div>
         </div>
+    </section>
+
+    <section style="padding: 0 20px 48px; text-align:center; color:var(--muji-blue-deep);">
+        <strong>Add-ons renew annually with your subscription.</strong>
+        Extra branches are available only on Pro Engine and Institutional plans.
     </section>
 
     <footer style="padding: 60px 0; border-top: 1px solid var(--muji-border); text-align: center; background: var(--muji-blue-light);">
@@ -615,7 +614,7 @@
                         <textarea class="custom-textarea" name="message" id="customMessage" required placeholder="Tell us your exact modules, integrations, compliance needs, and timeline."></textarea>
                     </div>
                     <div class="custom-summary" id="customSummary">
-                        Cycle: Monthly | Team: 1-25
+                        Cycle: Annual | Team: 1-25
                     </div>
                     <div class="custom-actions">
                         <button type="button" class="btn-modal btn-cancel" onclick="closeCustomPlanModal()">Cancel</button>
@@ -626,89 +625,13 @@
         </div>
     </div>
 <script>
-    /**
-     * ALIGNED PRICING LOGIC: REWRITTEN FOR SUBSCRIPTIONCONTROLLER
-     * This ensures the 'cycle' parameter is passed exactly as the controller 
-     * expects to prevent the "Monthly Reset" bug.
-     */
+    // Subscription checkout is annual-only.
 
     // The base URL for your registration endpoint
     const registerUrl = "{{ route('saas-register-initial') }}";
     const upgradeUrl = "{{ route('subscription.upgrade.redirect') }}";
     const userIsAuthenticated = @json(auth()->check());
     const suggestedUpgradePlan = @json($suggestedUpgradePlan);
-
-    const prices = {
-        monthly: {
-            starter: '₦1,000',
-            starterSolo: '₦1,000',
-            basic: '₦5,500',
-            basicSolo: '₦3,000',
-            pro: '₦7,000',
-            proSolo: '₦7,000',
-            enterprise: '₦28,500',
-            enterpriseSolo: '₦15,000',
-            extraBasic: '₦3,000',
-            extraPro: '₦3,000',
-            extraEnterprise: '₦7,000',
-            extraBranchPro: '₦5,000',
-            extraBranchEnterprise: '₦5,000'
-        },
-        annual: {
-            starter: '₦10,000',
-            starterSolo: '₦10,000',
-            basic: '₦55,000',
-            basicSolo: '₦30,000',
-            pro: '₦70,000',
-            proSolo: '₦70,000',
-            enterprise: '₦285,000',
-            enterpriseSolo: '₦150,000',
-            extraBasic: '₦30,000',
-            extraPro: '₦30,000',
-            extraEnterprise: '₦70,000',
-            extraBranchPro: '₦50,000',
-            extraBranchEnterprise: '₦50,000'
-        }
-    };
-
-    function togglePricing() {
-        const isAnnual = document.getElementById('billingSwitch').checked;
-        const period = isAnnual ? 'annual' : 'monthly';
-        const smallText = isAnnual ? '/yr' : '/mo';
-
-        // UI Label feedback
-        document.getElementById('monthlyLabel').style.color = isAnnual ? '#64748b' : 'var(--muji-blue-accent)';
-        document.getElementById('annualLabel').style.color = isAnnual ? 'var(--muji-blue-accent)' : '#64748b';
-
-        // Update Text
-        document.getElementById('price-starter').innerText = prices[period].starter;
-        document.getElementById('price-starter-solo').innerText = prices[period].starterSolo;
-        document.getElementById('price-basic').innerText = prices[period].basic;
-        document.getElementById('price-basic-solo').innerText = prices[period].basicSolo;
-        document.getElementById('price-pro').innerText = prices[period].pro;
-        document.getElementById('price-pro-solo').innerText = prices[period].proSolo;
-        document.getElementById('price-enterprise').innerText = prices[period].enterprise;
-        document.getElementById('price-enterprise-solo').innerText = prices[period].enterpriseSolo;
-        document.getElementById('extra-basic').innerText = prices[period].extraBasic;
-        document.getElementById('extra-pro').innerText = prices[period].extraPro;
-        document.getElementById('extra-enterprise').innerText = prices[period].extraEnterprise;
-        document.getElementById('extra-branch-pro').innerText = prices[period].extraBranchPro;
-        document.getElementById('extra-branch-enterprise').innerText = prices[period].extraBranchEnterprise;
-
-        document.getElementById('period-starter').innerText = smallText;
-        document.getElementById('period-starter-solo').innerText = smallText;
-        document.getElementById('period-basic').innerText = smallText;
-        document.getElementById('period-basic-solo').innerText = smallText;
-        document.getElementById('period-pro').innerText = smallText;
-        document.getElementById('period-pro-solo').innerText = smallText;
-        document.getElementById('period-enterprise').innerText = smallText;
-        document.getElementById('period-enterprise-solo').innerText = smallText;
-        document.getElementById('extra-period-basic').innerText = smallText;
-        document.getElementById('extra-period-pro').innerText = smallText;
-        document.getElementById('extra-period-enterprise').innerText = smallText;
-        document.getElementById('extra-branch-period-pro').innerText = smallText;
-        document.getElementById('extra-branch-period-enterprise').innerText = smallText;
-    }
 
     let isNavigatingToPlan = false;
 
@@ -726,8 +649,7 @@
             return;
         }
 
-        const isAnnual = document.getElementById('billingSwitch').checked;
-        const cycleValue = isAnnual ? 'yearly' : 'monthly'; 
+        const cycleValue = 'yearly';
 
         isNavigatingToPlan = true;
 
@@ -767,8 +689,7 @@
     }
 
     function updateCustomSummary() {
-        const isAnnual = document.getElementById('billingSwitch')?.checked;
-        const cycle = isAnnual ? 'Yearly' : 'Monthly';
+        const cycle = 'Annual';
         const team = document.getElementById('customTeamSize')?.value || '1-25';
         const summary = document.getElementById('customSummary');
         if (summary) {

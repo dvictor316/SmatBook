@@ -1006,7 +1006,7 @@ public function store(Request $request)
         'plan_id'         => 'required|string',
         'plan_name'       => 'required|string',
         'plan_price'      => 'required|numeric|min:0',
-        'billing_cycle'   => 'required|in:monthly,yearly',
+        'billing_cycle'   => 'required|in:yearly',
         'custom_user_limit' => 'nullable|integer|min:1|max:100000',
         'free_unlimited'  => 'nullable|boolean',
         'email'           => 'required|email|unique:users,email',
@@ -1509,21 +1509,12 @@ private function resolvePlanIdFromCatalog(string $planName, string $billingCycle
 private function deploymentPlanDefinitions(): array
 {
     return [
-        'starter-monthly' => ['name' => 'Starter', 'price' => 1000.0, 'billing_cycle' => 'monthly'],
-        'basic-solo-monthly' => ['name' => 'Basic Solo', 'price' => 3000.0, 'billing_cycle' => 'monthly'],
-        'basic-monthly' => ['name' => 'Basic', 'price' => 5500.0, 'billing_cycle' => 'monthly'],
-        'professional-solo-monthly' => ['name' => 'Professional Solo', 'price' => 7000.0, 'billing_cycle' => 'monthly'],
-        'professional-monthly' => ['name' => 'Professional', 'price' => 7000.0, 'billing_cycle' => 'monthly'],
-        'enterprise-solo-monthly' => ['name' => 'Enterprise Solo', 'price' => 15000.0, 'billing_cycle' => 'monthly'],
-        'enterprise-monthly' => ['name' => 'Enterprise', 'price' => 28500.0, 'billing_cycle' => 'monthly'],
-        'hotel-monthly' => ['name' => 'Hotel', 'price' => 20000.0, 'billing_cycle' => 'monthly'],
-        'starter-yearly' => ['name' => 'Starter', 'price' => 10000.0, 'billing_cycle' => 'yearly'],
-        'basic-solo-yearly' => ['name' => 'Basic Solo', 'price' => 30000.0, 'billing_cycle' => 'yearly'],
-        'basic-yearly' => ['name' => 'Basic', 'price' => 55000.0, 'billing_cycle' => 'yearly'],
-        'professional-solo-yearly' => ['name' => 'Professional Solo', 'price' => 70000.0, 'billing_cycle' => 'yearly'],
-        'professional-yearly' => ['name' => 'Professional', 'price' => 70000.0, 'billing_cycle' => 'yearly'],
-        'enterprise-solo-yearly' => ['name' => 'Enterprise Solo', 'price' => 150000.0, 'billing_cycle' => 'yearly'],
-        'enterprise-yearly' => ['name' => 'Enterprise', 'price' => 285000.0, 'billing_cycle' => 'yearly'],
+        'starter-yearly' => ['name' => 'Starter', 'price' => 20000.0, 'billing_cycle' => 'yearly'],
+        'basic-yearly' => ['name' => 'Basic', 'price' => 80000.0, 'billing_cycle' => 'yearly'],
+        'professional-solo-yearly' => ['name' => 'Professional Solo', 'price' => 100000.0, 'billing_cycle' => 'yearly'],
+        'professional-yearly' => ['name' => 'Professional', 'price' => 150000.0, 'billing_cycle' => 'yearly'],
+        'enterprise-solo-yearly' => ['name' => 'Enterprise Solo', 'price' => 200000.0, 'billing_cycle' => 'yearly'],
+        'enterprise-yearly' => ['name' => 'Enterprise', 'price' => 300000.0, 'billing_cycle' => 'yearly'],
         'hotel-yearly' => ['name' => 'Hotel', 'price' => 200000.0, 'billing_cycle' => 'yearly'],
     ];
 }
@@ -1712,10 +1703,10 @@ private function formatDeploymentAmount(float $amount): string
 
     public function renewSubscription($id) {
         $subscription = $this->managedSubscriptions()->findOrFail($id);
-        $newEnd = Carbon::parse($subscription->end_date)->addMonths(1);
+        $newEnd = Carbon::parse($subscription->end_date)->addYear();
         $subscription->update(['end_date' => $newEnd, 'status' => 'active']);
         Company::withoutGlobalScope('tenant')->find($subscription->company_id)?->update(['subscription_end' => $newEnd]);
-        return back()->with('success', 'Renewed by 1 month.');
+        return back()->with('success', 'Renewed by 1 year.');
     }
 
     public function addUsersToBusiness(Request $request)

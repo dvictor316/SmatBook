@@ -12,7 +12,7 @@
 
     // Logic Alignment: Managers get 'Partner' plan, others get the passed $selectedPlan or Pro.
     $lookupPlan = $isManager ? 'Partner' : ($selectedPlan ?? session('selected_plan', 'pro'));
-    $finalCycle = $isManager ? 'Lifetime' : ($billing_cycle ?? session('selected_cycle', 'monthly'));
+    $finalCycle = $isManager ? 'Lifetime' : 'yearly';
 
     // Display Price Logic: Ensure the controller's $amount takes precedence.
     $displayPrice = $isManager ? 0 : ($amount ?? session('selected_amount', 0));
@@ -984,7 +984,7 @@
             amount: Number(amount.value || 0),
             access: accessLevel ? accessLevel.textContent : '',
         };
-        const hotelPrices = { monthly: 20000, yearly: 200000 };
+        const hotelAnnualPrice = 200000;
 
         function formatAmount(value) {
             return '₦' + Number(value || 0).toLocaleString('en-NG', {
@@ -995,16 +995,14 @@
 
         function sync() {
             const isHotel = ['hotel', 'hospitality'].includes(String(operation.value || '').toLowerCase());
-            const selectedCycle = String(cycle.value || 'monthly').toLowerCase() === 'yearly' ? 'yearly' : 'monthly';
+            const selectedCycle = 'yearly';
 
             if (isHotel) {
                 plan.value = 'hotel';
-                amount.value = hotelPrices[selectedCycle];
+                amount.value = hotelAnnualPrice;
                 if (accessLevel) accessLevel.textContent = 'Hotel';
-                if (amountValue) amountValue.textContent = formatAmount(hotelPrices[selectedCycle]);
-                if (hint) hint.textContent = selectedCycle === 'yearly'
-                    ? 'Hotel Management plan selected at ₦200,000 yearly.'
-                    : 'Hotel Management plan selected at ₦20,000 monthly.';
+                if (amountValue) amountValue.textContent = formatAmount(hotelAnnualPrice);
+                if (hint) hint.textContent = 'Hotel Management plan selected at ₦200,000 yearly.';
                 return;
             }
 

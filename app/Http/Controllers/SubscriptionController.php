@@ -102,7 +102,7 @@ class SubscriptionController extends Controller
             // Store plan selection in session so the registration flow picks it up automatically.
             // Also store url.intended so after login the user lands directly on the upgrade page.
             $guestPlan  = (string) $request->query('plan', '');
-            $guestCycle = (string) $request->query('cycle', 'monthly');
+            $guestCycle = 'yearly';
             if ($guestPlan !== '') {
                 session([
                     'selected_plan'  => $guestPlan,
@@ -116,11 +116,7 @@ class SubscriptionController extends Controller
 
         $requestedPlan = $this->normalizeCatalogPlanKey((string) $request->query('plan', ''));
         $currentSubscription = Subscription::resolveCurrentForUser($user);
-        $requestedCycle = strtolower((string) $request->query(
-            'cycle',
-            $currentSubscription?->billing_cycle ?: session('selected_cycle', 'monthly')
-        ));
-        $requestedCycle = in_array($requestedCycle, ['monthly', 'yearly'], true) ? $requestedCycle : 'monthly';
+        $requestedCycle = 'yearly';
 
         if (! $requestedPlan) {
             return redirect()->route('membership-plans')
@@ -324,9 +320,9 @@ class SubscriptionController extends Controller
     private function upgradePlanCatalog(): array
     {
         return [
-            'starter-solo' => ['label' => 'Starter Solo'],
+            'starter-solo' => ['label' => 'Starter'],
             'starter' => ['label' => 'Starter'],
-            'basic-solo' => ['label' => 'Basic Solo'],
+            'basic-solo' => ['label' => 'Basic'],
             'basic' => ['label' => 'Basic'],
             'pro-solo' => ['label' => 'Professional Solo'],
             'pro' => ['label' => 'Professional'],
@@ -2610,6 +2606,7 @@ class SubscriptionController extends Controller
         $activeSubscription = Subscription::withoutGlobalScope('tenant')
             ->where('company_id', (int) $subscription->company_id)
             ->where('id', '!=', (int) $subscription->id)
+            ->whereNotNull('domain_prefix')
             ->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['active', 'trial'])
             ->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), ['paid', 'free'])
             ->orderByDesc('id')
@@ -2620,11 +2617,20 @@ class SubscriptionController extends Controller
         }
 
         $currentLimit = (int) ($activeSubscription->resolvedUserLimit() ?? 0);
+        if ($newLimit <= $currentLimit) {
+            return;
+        }
+
         $finalLimit = max($currentLimit, $newLimit);
+        $renewalAmount = round(
+            (float) ($activeSubscription->amount ?? 0) + (float) ($subscription->amount ?? 0),
+            2
+        );
 
         $activeSubscription->forceFill($this->filterSubscriptionPayload([
             'user_limit' => $finalLimit,
             'employee_size' => $finalLimit,
+            'amount' => $renewalAmount,
         ]))->save();
 
         $subscription->forceFill($this->filterSubscriptionPayload([
@@ -2638,6 +2644,7 @@ class SubscriptionController extends Controller
             'company_id' => $subscription->company_id,
             'from_limit' => $currentLimit,
             'to_limit' => $finalLimit,
+            'renewal_amount' => $renewalAmount,
         ]);
     }
 
