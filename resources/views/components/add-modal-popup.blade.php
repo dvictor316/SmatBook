@@ -261,13 +261,13 @@
                     <ul class="nav nav-tabs row" id="myTab" role="tablist">
                         <li class="nav-item col-md-4 text-center" role="presentation">
                             <h6 class="nav-link active" id="month-tab" data-bs-toggle="tab" data-bs-target="#month"
-                                role="tab" aria-controls="month" aria-selected="true">Monthly</h6>
+                                role="tab" aria-controls="month" aria-selected="true">Annual Plans</h6>
                         </li>
-                        <li class="nav-item col-md-4 text-center" role="presentation">
+                        <li class="nav-item col-md-4 text-center d-none" role="presentation">
                             <h6 class="nav-link" id="year-tab" data-bs-toggle="tab" data-bs-target="#year"
                                 role="tab" aria-controls="year" aria-selected="false">Yearly</h6>
                         </li>
-                        <li class="nav-item col-md-4 text-center" role="presentation">
+                        <li class="nav-item col-md-4 text-center d-none" role="presentation">
                             <h6 class="nav-link" id="lifetime-tab" data-bs-toggle="tab" data-bs-target="#lifetime"
                                 role="tab" aria-controls="lifetime" aria-selected="false">Lifetime</h6>
                         </li>
@@ -279,12 +279,12 @@
                                 <label class="form-check-label" for="monthly1">
                                     <input class="form-check-input" type="radio" name="monthly" id="monthly1">
                                     <span class="d-flex justify-content-between text-dark">
-                                        <span class="">Basic</span>
-                                        <span class="">$49.00</span>
+                                        <span class="">Starter POS · 1 user</span>
+                                        <span class="">₦20,000</span>
                                     </span>
                                     <span class="d-flex justify-content-between text-dull">
-                                        <span class="">Lorem Ipsum is simply dummy text</span>
-                                        <span class="">/month</span>
+                                        <span class="">Renews annually at the same price</span>
+                                        <span class="">/year</span>
                                     </span>
                                 </label>
                             </div>
@@ -292,12 +292,12 @@
                                 <label class="form-check-label" for="monthly2">
                                     <input class="form-check-input" type="radio" name="monthly" id="monthly2">
                                     <span class="d-flex justify-content-between text-dark">
-                                        <span class="">Enterprise</span>
-                                        <span class="">$99.00</span>
+                                        <span class="">Basic Core · 2 users</span>
+                                        <span class="">₦80,000</span>
                                     </span>
                                     <span class="d-flex justify-content-between text-dull">
-                                        <span class="">Lorem Ipsum is simply dummy text</span>
-                                        <span class="">/month</span>
+                                        <span class="">Renews annually at the same price</span>
+                                        <span class="">/year</span>
                                     </span>
                                 </label>
                             </div>
@@ -306,12 +306,12 @@
                                     <input class="form-check-input" type="radio" name="monthly" id="monthly3"
                                         checked>
                                     <span class="d-flex justify-content-between text-dark">
-                                        <span class="">Free Trail</span>
-                                        <span class="">$0.00</span>
+                                        <span class="">Pro Engine · from 3 users</span>
+                                        <span class="">From ₦100,000</span>
                                     </span>
                                     <span class="d-flex justify-content-between text-dull">
-                                        <span class="">Lorem Ipsum is simply dummy text</span>
-                                        <span class="">/month</span>
+                                        <span class="">Extra users ₦30,000/year</span>
+                                        <span class="">/year</span>
                                     </span>
                                 </label>
                             </div>
@@ -704,11 +704,9 @@
                         </div>
                         <div class="col-sm-12 col-md-6">
                             <div class="input-block mb-3">
-                                <label>Plan Type</label>
+                                <label>License Term</label>
                                 <select class="select">
-                                    <option>Monthly</option>
-                                    <option>Yearly</option>
-                                    <option>Lifetime</option>
+                                    <option>Annual</option>
                                 </select>
                             </div>
                         </div>
@@ -726,15 +724,14 @@
                             <div class="input-block mb-3">
                                 <label>Plan Currency</label>
                                 <select class="select">
-                                    <option>USD</option>
-                                    <option>$</option>
+                                    <option>NGN (₦)</option>
                                 </select>
                             </div>
                         </div>
                         <div class="col-sm-12 col-md-6">
                             <div class="input-block mb-3">
                                 <label class="d-flex justify-content-between">
-                                    <span>Price</span>
+                                    <span>Annual Price</span>
                                     <span class="text-primary"><i class="fa-solid fa-circle-exclamation me-2"></i>Set 0 for free</span>
                                 </label>
                                 <input type="text" class="form-control" placeholder="Enter Package Price">

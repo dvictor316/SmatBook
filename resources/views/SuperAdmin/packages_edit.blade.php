@@ -26,7 +26,7 @@
         <div class="bg-white rounded-3xl shadow-xl border overflow-hidden" style="border-color: #d8e3f5;">
             <div class="p-6" style="background: linear-gradient(135deg, #061a44, #0f3a8a);">
                 <h3 class="text-xl font-black text-white">Edit Subscription Plan</h3>
-                <p class="text-sm" style="color: #fff1bf;">Update pricing, features, and billing cycles for <b>{{ $plan->name }}</b></p>
+                <p class="text-sm" style="color: #fff1bf;">Update annual pricing and features for <b>{{ $plan->name }}</b></p>
             </div>
 
             <form action="{{ route('super_admin.packages.update', $plan->id) }}" method="POST" class="p-8">
@@ -43,18 +43,15 @@
                     <div class="grid grid-cols-2 gap-4">
 
                         <div>
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Price ($)</label>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Annual Price (₦)</label>
                             <input type="number" step="0.01" name="price" value="{{ old('price', $plan->price) }}" required 
                                 class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none font-semibold">
                         </div>
 
                         <div>
                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Billing Cycle</label>
-                            <select name="duration" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none font-semibold">
-                                <option value="monthly" {{ $plan->billing_cycle == 'monthly' ? 'selected' : '' }}>Monthly</option>
-                                <option value="yearly" {{ $plan->billing_cycle == 'yearly' ? 'selected' : '' }}>Yearly</option>
-                                <option value="lifetime" {{ $plan->billing_cycle == 'lifetime' ? 'selected' : '' }}>Lifetime</option>
-                            </select>
+                            <input type="hidden" name="duration" value="yearly">
+                            <input type="text" value="Annual" readonly class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none font-semibold">
                         </div>
                     </div>
 

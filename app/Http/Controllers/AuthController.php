@@ -339,7 +339,7 @@ class AuthController extends Controller
                 }
 
                 $planName = $catalogEntry['label'] ?? $plan?->name ?? ucfirst($requestedPlan ?: 'pro');
-                $planAmount = (float) ($plan?->price ?? ($catalogEntry['prices'][$requestedCycle] ?? session('selected_amount', 7000)));
+                $planAmount = (float) ($plan?->price ?? ($catalogEntry['prices'][$requestedCycle] ?? session('selected_amount', 150000)));
                 $planId = $plan?->id ?? $planId;
                 $billingCycle = ucfirst($requestedCycle);
 

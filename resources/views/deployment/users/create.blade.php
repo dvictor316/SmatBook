@@ -27,15 +27,6 @@
         ];
     };
 
-    $starterMonthly = $planMeta('starter-monthly', 'Starter', 1000, 'monthly');
-    $basicSoloMonthly = $planMeta('basic-solo-monthly', 'Basic Solo', 3000, 'monthly');
-    $basicMonthly = $planMeta('basic-monthly', 'Basic', 5500, 'monthly');
-    $proSoloMonthly = $planMeta('professional-solo-monthly', 'Professional Solo', 7000, 'monthly');
-    $proMonthly = $planMeta('professional-monthly', 'Professional', 7000, 'monthly');
-    $enterpriseSoloMonthly = $planMeta('enterprise-solo-monthly', 'Enterprise Solo', 15000, 'monthly');
-    $enterpriseMonthly = $planMeta('enterprise-monthly', 'Enterprise', 28500, 'monthly');
-    $hotelMonthly = $planMeta('hotel-monthly', 'Hotel', 20000, 'monthly');
-
     $starterYearly = $planMeta('starter-yearly', 'Starter', 20000, 'yearly');
     $basicSoloYearly = $planMeta('basic-solo-yearly', 'Basic Solo', 80000, 'yearly');
     $basicYearly = $planMeta('basic-yearly', 'Basic', 80000, 'yearly');
@@ -538,6 +529,7 @@
 
                             <div class="text-center mb-4"><strong>Annual subscriptions</strong></div>
 
+                            @if(false)
                             <div id="wrapMonthly" class="plans-wrap d-none">
                                 <div class="row g-4">
                                     <div class="col-lg-4 col-md-6">
@@ -681,6 +673,7 @@
                                     </div>
                                 </div>
                             </div>
+                            @endif
 
                             <div id="wrapYearly" class="plans-wrap active">
                                 <div class="row g-4">
@@ -833,7 +826,7 @@
                             <div class="commission-banner mt-4">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                     <div>
-                                        <div class="fw-bold text-dark small mb-1">{{ $isSuperAdminDeployment ? 'License per user basis' : 'Your commission (35%)' }}</div>
+                                        <div class="fw-bold text-dark small mb-1">{{ $isSuperAdminDeployment ? 'Annual license value per user' : 'Your commission (35%)' }}</div>
                                         <div class="big-num">₦<span id="commPreview">0</span></div>
                                         @unless($isSuperAdminDeployment)
                                             <div class="text-muted small mt-1">Checkout total: ₦<span id="checkoutPreview">0</span></div>
@@ -1065,7 +1058,6 @@ const fmt = n => Number(n).toLocaleString('en-NG');
 const baseSeatLimits = @js($baseSeatLimits);
 const additionalUserPrices = @js($additionalUserPrices);
 const hotelPlans = {
-    monthly: { id: @js((string) $hotelMonthly['plan_id']), name: @js($hotelMonthly['name']), price: {{ $hotelMonthly['price'] }} },
     yearly: { id: @js((string) $hotelYearly['plan_id']), name: @js($hotelYearly['name']), price: {{ $hotelYearly['price'] }} },
 };
 const getSelectedPlanState = () => ({
@@ -1120,9 +1112,9 @@ function syncHotelPlanCards() {
 }
 
 function autoPickHotelPlan(cycle) {
-    const hotelPlan = hotelPlans[cycle === 'yearly' ? 'yearly' : 'monthly'];
+    const hotelPlan = hotelPlans.yearly;
     if (hotelPlan) {
-        pickPlan(hotelPlan.id, hotelPlan.name, hotelPlan.price, cycle === 'yearly' ? 'yearly' : 'monthly');
+        pickPlan(hotelPlan.id, hotelPlan.name, hotelPlan.price, 'yearly');
     }
 }
 

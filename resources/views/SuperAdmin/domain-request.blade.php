@@ -285,7 +285,7 @@
                     <div class="col-md-6">
                         <label class="label-caps">Billing Cycle</label>
                         <input type="text" class="form-control input-smat bg-light" 
-                               value="{{ ucfirst($cycle ?? ($subscription->billing_cycle ?? 'Monthly')) }}" readonly>
+                               value="{{ ucfirst($cycle ?? ($subscription->billing_cycle ?? 'Yearly')) }}" readonly>
                     </div>
                 </div>
 

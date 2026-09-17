@@ -21,7 +21,7 @@
     ));
 
     $persistedPlan = strtolower((string) request('plan', session('selected_plan', '')));
-    $persistedCycle = request('billing_cycle', request('cycle', session('selected_cycle', session('billing_cycle', 'monthly'))));
+    $persistedCycle = 'yearly';
     $googleAuthUrl = route('social.login', [
         'provider' => 'google',
         'intent' => 'login',

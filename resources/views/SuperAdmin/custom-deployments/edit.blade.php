@@ -54,10 +54,8 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label fw-bold">License Duration</label>
-                    <select name="billing_cycle" class="form-select" required>
-                        <option value="monthly" @selected(old('billing_cycle', $deployment->billing_cycle) === 'monthly')>Monthly</option>
-                        <option value="yearly" @selected(old('billing_cycle', $deployment->billing_cycle) === 'yearly')>Yearly</option>
-                    </select>
+                    <input type="hidden" name="billing_cycle" value="yearly">
+                    <input type="text" class="form-control" value="Annual" readonly>
                     @if($isUnlimited)
                         <div class="form-text">This free deployment displays as Unlimited; this value only preserves the selected base license.</div>
                     @endif

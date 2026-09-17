@@ -26,6 +26,7 @@
                         <tr>
                             <th class="ps-4">Company</th>
                             <th>Plan</th>
+                            <th>Annual Renewal</th>
                             <th>Expiry Date</th>
                             <th>Status</th>
                             <th class="text-end pe-4">Action</th>
@@ -55,6 +56,10 @@
                                     <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-10">
                                         {{ $renewal->plan_name ?? $renewal->plan ?? 'Basic' }}
                                     </span>
+                                </td>
+                                <td>
+                                    <strong class="text-dark">₦{{ number_format((float) ($renewal->amount ?? 0), 2) }}</strong>
+                                    <small class="d-block text-muted">Per year, including paid add-ons</small>
                                 </td>
                                 <td>
                                     @if($expiry)
@@ -95,7 +100,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center py-5 text-muted">
+                                <td colspan="6" class="text-center py-5 text-muted">
                                     <i class="fas fa-check-circle fa-2x mb-3 opacity-25"></i>
                                     <p>No pending renewals found.</p>
                                 </td>

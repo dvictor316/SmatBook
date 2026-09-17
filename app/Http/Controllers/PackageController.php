@@ -12,7 +12,7 @@ class PackageController extends Controller
      */
     public function index()
     {
-        $plans = Plan::all();
+        $plans = Plan::query()->whereRaw('LOWER(billing_cycle) = ?', ['yearly'])->get();
         
         $totalPlans = $plans->count();
         $activePlans = $plans->where('is_active', 1)->count();
@@ -36,7 +36,7 @@ class PackageController extends Controller
         $validated = $request->validate([
             'name'     => 'required|string|unique:plans,name',
             'price'    => 'required|numeric',
-            'duration' => 'required|string', // Comes from form as "duration"
+            'duration' => 'required|in:yearly',
             'features' => 'nullable|string',
             'status'   => 'required',
         ]);
@@ -50,7 +50,7 @@ class PackageController extends Controller
         Plan::create([
             'name'          => $validated['name'],
             'price'         => $validated['price'],
-            'billing_cycle' => strtolower($validated['duration']), // maps "Monthly" to "monthly"
+            'billing_cycle' => 'yearly',
             'features'      => $features,
             'status'        => $validated['status'] == 1 ? 'active' : 'inactive',
             'is_active'     => $validated['status'],
@@ -70,7 +70,7 @@ class PackageController extends Controller
         $request->validate([
             'name'     => 'required|string|unique:plans,name,' . $id,
             'price'    => 'required|numeric',
-            'duration' => 'required|string',
+            'duration' => 'required|in:yearly',
             'status'   => 'required',
         ]);
 
@@ -81,7 +81,7 @@ class PackageController extends Controller
         $plan->update([
             'name'          => $request->name,
             'price'         => $request->price,
-            'billing_cycle' => strtolower($request->duration),
+            'billing_cycle' => 'yearly',
             'features'      => $features,
             'status'        => $request->status == 1 ? 'active' : 'inactive',
             'is_active'     => $request->status,

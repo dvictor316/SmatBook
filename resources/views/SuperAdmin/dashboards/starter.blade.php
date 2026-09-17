@@ -503,7 +503,7 @@
                     <div class="starter-row">
                         <div>
                             <div class="starter-row-title">Current plan</div>
-                            <div class="starter-row-sub">{{ $currentSubscription?->planLabel() ?? 'STARTER' }} · {{ ucfirst(strtolower((string) ($currentSubscription?->billing_cycle ?? 'monthly'))) }}</div>
+                            <div class="starter-row-sub">{{ $currentSubscription?->planLabel() ?? 'STARTER' }} · {{ ucfirst(strtolower((string) ($currentSubscription?->billing_cycle ?? 'yearly'))) }}</div>
                         </div>
                         <a href="{{ route('membership-plans') }}" class="starter-pill text-decoration-none">Manage Billing</a>
                     </div>

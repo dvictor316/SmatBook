@@ -73,7 +73,7 @@
                 <table class="table table-hover align-middle mb-0 text-nowrap">
                     <thead class="bg-light text-muted small text-uppercase">
                         <tr>
-                            <th class="ps-4 py-3">Billing Cycle</th>
+                            <th class="ps-4 py-3">License Term</th>
                             <th>Company</th>
                             <th>Amount</th>
                             <th>Status</th>
@@ -85,7 +85,7 @@
                         <tr>
                             <td class="ps-4">
                                 <span class="badge bg-light text-dark border">
-                                    {{ ucfirst(strtolower((string) ($p->billing_cycle ?? 'monthly'))) }}
+                                    Annual
                                 </span>
                             </td>
                             <td>{{ $p->company->name ?? 'N/A' }}</td>

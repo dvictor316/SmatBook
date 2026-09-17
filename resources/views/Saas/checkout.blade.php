@@ -456,7 +456,7 @@
                 </div>
                 <div class="summary-row">
                     <span>Billing</span>
-                    <strong>{{ ucfirst($subscription->billing_cycle ?? 'Monthly') }}</strong>
+                    <strong>Annual</strong>
                 </div>
                 <div class="summary-row">
                     <span>Email</span>

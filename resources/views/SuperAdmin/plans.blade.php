@@ -132,7 +132,7 @@
                     <div class="packages card w-100 {{ $plan->recommended ? 'active-pkg' : '' }}" style="border-radius: 15px; position: relative; overflow: hidden;">
                         <div class="package-header d-flex justify-content-between p-4">
                             <div>
-                                <h6 class="text-primary text-uppercase fw-bold" style="letter-spacing: 1px;">{{ $plan->billing_cycle }}</h6>
+                                <h6 class="text-primary text-uppercase fw-bold" style="letter-spacing: 1px;">Annual</h6>
                                 <h4 class="fw-bold">{{ $plan->name }}</h4>
                             </div>
                             <span class="icon-frame bg-light rounded-circle p-3 d-flex align-items-center justify-content-center">
@@ -145,7 +145,7 @@
                         @endif
 
                         <div class="px-4">
-                            <h2 class="fw-bold">${{ number_format($plan->price, 2) }} <span class="fs-6 text-muted fw-normal">/{{ $plan->billing_cycle == 'monthly' ? 'mo' : 'yr' }}</span></h2>
+                            <h2 class="fw-bold">₦{{ number_format($plan->price, 2) }} <span class="fs-6 text-muted fw-normal">/year</span></h2>
                             <p class="text-muted small mt-2">{{ $plan->description }}</p>
                         </div>
 

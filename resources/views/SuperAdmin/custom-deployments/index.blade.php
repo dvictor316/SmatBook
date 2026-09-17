@@ -91,7 +91,7 @@
                         $planTitle = $isUnlimited ? 'Custom Unlimited' : ($deployment->plan_name ?? $deployment->plan ?? 'Custom');
                         $licenseSummary = $isUnlimited
                             ? 'Unlimited · Free license'
-                            : (ucfirst($deployment->billing_cycle ?? 'monthly') . ' · ₦' . number_format((float) ($deployment->amount ?? 0), 2));
+                            : (ucfirst($deployment->billing_cycle ?? 'yearly') . ' · ₦' . number_format((float) ($deployment->amount ?? 0), 2));
                         $accessLabel = $isUnlimited ? 'Unlimited users' : number_format((int) ($deployment->user_limit ?? 0)) . ' users';
                     @endphp
                     <tr>

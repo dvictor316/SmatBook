@@ -5,7 +5,7 @@
 @php
     $displayPrice = (float) ($subscription->amount ?? session('selected_amount', 0));
     $activeTier = $subscription->plan_name ?? 'Pro';
-    $cycle = $subscription->billing_cycle ?? 'Monthly';
+    $cycle = $subscription->billing_cycle ?? 'Yearly';
     $domainSuffix = ltrim(config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')), '.');
 @endphp
 
@@ -249,7 +249,7 @@
 
             <div>
                 <div class="info-row"><span class="info-label">Selected Tier</span><span class="info-value">{{ strtoupper($activeTier) }}</span></div>
-                <div class="info-row"><span class="info-label">Billing Cycle</span><span class="info-value">{{ strtoupper($cycle) }}</span></div>
+                <div class="info-row"><span class="info-label">License Term</span><span class="info-value">ANNUAL</span></div>
 
                 <div class="amount-display text-center">
                     <span class="info-label" style="display: block; margin-bottom: 5px;">Due After Free Trial</span>

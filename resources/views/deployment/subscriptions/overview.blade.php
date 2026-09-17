@@ -194,7 +194,7 @@
                             <th class="ps-4 py-3">Tenant Profile</th>
                             <th>Plan Type</th>
                             <th>Status</th>
-                            <th>Billing Cycle</th>
+                            <th>License Term</th>
                             <th>Next Renewal</th>
                             <th class="text-end pe-4">Manage</th>
                         </tr>
@@ -234,7 +234,7 @@
                                 @endif
                             </td>
                             <td class="fw-bold text-dark">
-                                ₦{{ number_format($sub->amount, 2) }} <span class="text-muted fw-normal small">/{{ strtolower($sub->billing_cycle ?? 'monthly') }}</span>
+                                ₦{{ number_format($sub->amount, 2) }} <span class="text-muted fw-normal small">/year</span>
                             </td>
                             <td>
                                 @if(!empty($sub->end_date))

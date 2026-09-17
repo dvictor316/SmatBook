@@ -528,7 +528,7 @@ class AgentPortalController extends Controller
                     'tier' => $tier,
                     'suggested_upgrade' => Plan::suggestedUpgradeForTier($tier),
                     'amount' => (float) ($row->amount ?? 0),
-                    'billing_cycle' => strtolower((string) ($row->billing_cycle ?? 'monthly')),
+                    'billing_cycle' => strtolower((string) ($row->billing_cycle ?? 'yearly')),
                     'status' => strtolower((string) ($row->status ?? 'pending')),
                     'payment_status' => strtolower((string) ($row->payment_status ?? 'unpaid')),
                     'end_date' => $row->end_date,

@@ -805,7 +805,7 @@ class DeploymentManagerController extends Controller
             'company_name' => 'required|string|max:255',
             'domain_prefix' => ['required', 'string', 'max:50', 'alpha_dash'],
             'plan_name' => 'required|string|max:120',
-            'billing_cycle' => 'required|in:monthly,yearly',
+            'billing_cycle' => 'required|in:yearly',
             'amount' => 'nullable|numeric|min:0',
             'user_limit' => 'required|integer|min:1|max:100000',
             'status' => 'required|in:Active,Suspended',
@@ -1290,7 +1290,7 @@ private function resolveDeploymentAmountForSeats(array $validated, int $userLimi
 
     $additionalUserPrice = Plan::additionalUserPriceForName(
         (string) ($validated['plan_name'] ?? ''),
-        (string) ($validated['billing_cycle'] ?? 'monthly')
+        (string) ($validated['billing_cycle'] ?? 'yearly')
     );
 
     if ($additionalUserPrice === null) {
@@ -1786,7 +1786,7 @@ private function formatDeploymentAmount(float $amount): string
             'plan_name' => $subscription->plan_name ?: $subscription->plan,
             'subscriber_name' => $subscription->subscriber_name ?: ($subscription->user?->name ?? $subscription->company?->name),
             'amount' => $upgradeAmount,
-            'billing_cycle' => strtolower((string) ($subscription->billing_cycle ?? 'monthly')),
+            'billing_cycle' => strtolower((string) ($subscription->billing_cycle ?? 'yearly')),
             'status' => 'Pending',
             'payment_status' => 'unpaid',
             'user_limit' => $newLimit,
@@ -1862,14 +1862,14 @@ private function formatDeploymentAmount(float $amount): string
     {
         $additionalUserPrice = Plan::additionalUserPriceForName(
             (string) ($subscription->plan_name ?: $subscription->plan),
-            (string) ($subscription->billing_cycle ?? 'monthly')
+            (string) ($subscription->billing_cycle ?? 'yearly')
         );
 
         if ($additionalUserPrice !== null) {
             return $additionalUserPrice;
         }
 
-        $billingCycle = strtolower((string) ($subscription->billing_cycle ?? 'monthly'));
+        $billingCycle = strtolower((string) ($subscription->billing_cycle ?? 'yearly'));
         $plan = $subscription->plan_id ? Plan::find((int) $subscription->plan_id) : null;
         $plan ??= Plan::findByCatalogName((string) ($subscription->plan_name ?: $subscription->plan), $billingCycle);
 

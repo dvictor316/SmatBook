@@ -121,7 +121,7 @@ class Plan extends Model
         return $limit === 1 ? '1 User' : $limit . ' Users';
     }
 
-    public static function additionalUserPriceForName(?string $planName, ?string $billingCycle = 'monthly'): ?float
+    public static function additionalUserPriceForName(?string $planName, ?string $billingCycle = 'yearly'): ?float
     {
         $monthlyPrice = static::ADDITIONAL_USER_PRICES[static::normalizeTier($planName)] ?? null;
         if ($monthlyPrice === null) {
@@ -133,7 +133,7 @@ class Plan extends Model
             : $monthlyPrice;
     }
 
-    public static function additionalBranchPriceForName(?string $planName, ?string $billingCycle = 'monthly'): ?float
+    public static function additionalBranchPriceForName(?string $planName, ?string $billingCycle = 'yearly'): ?float
     {
         $monthlyPrice = static::ADDITIONAL_BRANCH_PRICES[static::normalizeTier($planName)] ?? null;
         if ($monthlyPrice === null) {

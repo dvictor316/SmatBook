@@ -373,7 +373,7 @@
 <div class="summary-section">
     <div class="summary-label">Billing Frequency</div>
     <div class="summary-value">
-        {{ ucfirst(optional(optional($subscription ?? null)->plan)->package_type ?? optional(optional($subscription ?? null)->plan)->billing_cycle ?? 'Monthly') }}
+        {{ ucfirst(optional(optional($subscription ?? null)->plan)->package_type ?? optional(optional($subscription ?? null)->plan)->billing_cycle ?? 'Yearly') }}
     </div>
 </div>
 
@@ -473,7 +473,7 @@
                 <div class="form-group">
                     <label class="form-label">Billing Node</label>
                     <div class="form-text-plain">
-                        {{ ucfirst($subscription->plan->package_type ?? $subscription->plan->billing_cycle ?? 'Monthly') }}
+                        {{ ucfirst($subscription->plan->package_type ?? $subscription->plan->billing_cycle ?? 'Yearly') }}
                     </div>
                 </div>
 

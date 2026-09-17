@@ -190,7 +190,7 @@
                 <div class="metric-value" style="color: #d97706;">{{ $pendingPlans }}</div>
             </div>
             <div class="metric-node" style="border-left-color: var(--inst-blue);">
-                <div class="metric-label">Billing Cycles</div>
+                <div class="metric-label">Annual Billing</div>
                 <div class="metric-value" style="color: var(--inst-blue);">{{ $planTypesCount }}</div>
             </div>
         </div>
@@ -221,12 +221,12 @@
                             @if($isPopular)
                                 <div class="popular-ribbon">Most Popular</div>
                             @endif
-                            <span class="plan-badge {{ $plan->billing_cycle == 'yearly' ? 'badge-yearly' : 'badge-monthly' }}">
-                                {{ strtoupper($plan->billing_cycle ?? 'Monthly') }}
+                            <span class="plan-badge badge-yearly">
+                                ANNUAL
                             </span>
                             <h4 class="plan-name mb-1">{{ $plan->name }}</h4>
                             <div class="plan-price">
-                                ₦{{ number_format($plan->price ?? 0, 0) }}<small>/{{ substr($plan->billing_cycle, 0, 2) }}</small>
+                                ₦{{ number_format($plan->price ?? 0, 0) }}<small>/year</small>
                             </div>
                         </div>
 
@@ -289,14 +289,12 @@
                     <div class="row g-3 mb-3">
                         <div class="col-6">
                             <label class="small fw-bold text-muted text-uppercase mb-1 d-block">Node Price (₦)</label>
-                            <input type="number" name="price" required class="form-control border-2 bg-light py-2 px-3 fw-bold" placeholder="7000">
+                            <input type="number" name="price" required class="form-control border-2 bg-light py-2 px-3 fw-bold" placeholder="150000">
                         </div>
                         <div class="col-6">
                             <label class="small fw-bold text-muted text-uppercase mb-1 d-block">Billing Cycle</label>
-                            <select name="duration" class="form-select border-2 bg-light py-2 px-3 fw-bold">
-                                <option value="monthly">Monthly Cycle</option>
-                                <option value="yearly">Yearly Cycle</option>
-                            </select>
+                            <input type="hidden" name="duration" value="yearly">
+                            <input type="text" class="form-control border-2 bg-light py-2 px-3 fw-bold" value="Annual" readonly>
                         </div>
                     </div>
 

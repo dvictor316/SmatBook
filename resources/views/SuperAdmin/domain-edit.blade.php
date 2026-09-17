@@ -40,10 +40,8 @@
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold">Package Type</label>
-                                    <select name="package_type" class="form-select">
-                                        <option value="Monthly" {{ $domain->package_type == 'Monthly' ? 'selected' : '' }}>Monthly</option>
-                                        <option value="Yearly" {{ $domain->package_type == 'Yearly' ? 'selected' : '' }}>Yearly</option>
-                                    </select>
+                                    <input type="hidden" name="package_type" value="Yearly">
+                                    <input type="text" class="form-control" value="Annual" readonly>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold">Status</label>

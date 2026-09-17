@@ -454,7 +454,7 @@
             <p>Service rates and subscription tiers are established at the time of registration. SmartProbook reserves the right to adjust pricing with <strong>30 days' advance written notice</strong> to affected users. Price changes will not apply retroactively to active subscriptions without consent.</p>
 
             <h3>5.1 Billing and Payment</h3>
-            <p>All fees are billed on the schedule selected (monthly, quarterly, or annually). Invoices will be sent via email. Payment must be received by the due date specified. Late payments may result in service suspension.</p>
+            <p>Subscription fees are billed annually. Selected user and branch add-ons are included in the annual renewal amount. Invoices will be sent via email, and payment must be received by the due date specified. Late payments may result in service suspension.</p>
 
             <h3>5.2 Taxes</h3>
             <p>All quoted fees are exclusive of applicable taxes including but not limited to Value Added Tax (VAT), Withholding Tax, and other government levies. SmartProbook will calculate and collect taxes as required by applicable jurisdiction. You are responsible for any additional taxes or assessments.</p>

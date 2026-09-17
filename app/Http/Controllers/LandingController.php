@@ -190,9 +190,7 @@ class LandingController extends Controller
 
                 $professionalPlanId = null;
                 if (Schema::hasTable('plans')) {
-                    $professionalPlanId = Plan::query()
-                        ->whereRaw('LOWER(name) like ?', ['%professional%'])
-                        ->value('id');
+                    $professionalPlanId = Plan::findByCatalogName('Professional', 'yearly')?->id;
                 }
 
                 $subMatch = $this->onlyExistingColumns('subscriptions', ['user_id' => $user->id]);
@@ -208,10 +206,10 @@ class LandingController extends Controller
                             'subscriber_name' => $demoCompanyName,
                             'domain_prefix' => $demoPrefix,
                             'employee_size' => '25-50',
-                            'amount' => 7000,
-                            'billing_cycle' => 'Monthly',
+                            'amount' => 150000,
+                            'billing_cycle' => 'Yearly',
                             'start_date' => now()->subDays(7),
-                            'end_date' => now()->addDays(30),
+                            'end_date' => now()->addYear(),
                             'status' => 'Active',
                             'payment_status' => 'paid',
                             'payment_gateway' => 'demo',
