@@ -145,7 +145,7 @@
 <style>
     /* ===== ABOUT PAGE STYLES ===== */
     .about-header {
-        padding: 100px 20px;
+        padding: 52px 20px;
         background: linear-gradient(135deg, #f8fafc 0%, #f0f4ff 100%);
     }
 
@@ -188,8 +188,8 @@
     }
 
     .carousel-item {
-        height: 65vh;
-        min-height: 500px;
+        height: 48vh;
+        min-height: 360px;
         background-color: var(--dark);
         position: relative;
         overflow: hidden;
@@ -204,7 +204,7 @@
 
     .carousel-caption {
         position: absolute;
-        bottom: 20%;
+        bottom: 15%;
         left: 10%;
         right: auto;
         top: auto;
@@ -224,7 +224,7 @@
     }
 
     .carousel-caption h1 {
-        font-size: 4.2rem;
+        font-size: 3.35rem;
         font-weight: 900;
         letter-spacing: -1px;
         line-height: 1.1;
@@ -261,7 +261,7 @@
 
     /* ===== ABOUT SECTIONS ===== */
     .about-section {
-        padding: 120px 20px;
+        padding: 72px 20px;
         background: white;
     }
 
@@ -306,7 +306,7 @@
         border-radius: 30px;
         box-shadow: 0 40px 80px rgba(0, 0, 0, 0.12);
         width: 100%;
-        height: 500px;
+        height: 380px;
         object-fit: cover;
         border: 3px solid rgba(0, 98, 255, 0.1);
         transition: 0.4s ease;
@@ -319,7 +319,7 @@
 
     /* ===== VISION CARD ===== */
     .vision-card {
-        padding: 60px 50px;
+        padding: 40px 34px;
         background: white;
         border-radius: 25px;
         box-shadow: 0 40px 80px rgba(0, 0, 0, 0.08);
@@ -458,12 +458,12 @@
 
     @media (max-width: 768px) {
         .about-section {
-            padding: 80px 20px;
+            padding: 48px 20px;
         }
 
         .carousel-item {
             height: 50vh;
-            min-height: 400px;
+            min-height: 320px;
         }
 
         .carousel-caption {
@@ -533,7 +533,7 @@
         }
 
         .about-header {
-            padding: 60px 20px;
+            padding: 44px 16px;
         }
     }
 </style>

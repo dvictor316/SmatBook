@@ -21,7 +21,7 @@
     /* ===== TEAM HEADER ===== */
     .team-header {
         margin-top: 85px;
-        padding: 100px 20px;
+        padding: 52px 20px;
         background: linear-gradient(135deg, #f8fafc 0%, #f0f4ff 100%);
         text-align: center;
     }
@@ -61,14 +61,14 @@
 
     /* ===== CAROUSEL SECTION ===== */
     .carousel-section {
-        padding: 100px 20px;
+        padding: 68px 20px;
         background: linear-gradient(135deg, var(--dark) 0%, #1e3a5f 100%);
         color: white;
     }
 
     .carousel-header {
         text-align: center;
-        margin-bottom: 60px;
+        margin-bottom: 36px;
         max-width: 1400px;
         margin-left: auto;
         margin-right: auto;
@@ -222,7 +222,7 @@
 
     /* ===== TEAM SECTION ===== */
     .team-section {
-        padding: 100px 20px;
+        padding: 68px 20px;
         background: white;
     }
 
@@ -361,7 +361,7 @@
     @media (max-width: 768px) {
         .team-header {
             margin-top: 70px;
-            padding: 80px 20px;
+            padding: 48px 20px;
         }
 
         .team-title {
@@ -373,7 +373,7 @@
         }
 
         .carousel-section {
-            padding: 80px 20px;
+            padding: 48px 20px;
         }
 
         .carousel-header h2 {
@@ -381,7 +381,7 @@
         }
 
         .team-section {
-            padding: 80px 20px;
+            padding: 48px 20px;
         }
 
         .team-grid {
@@ -408,7 +408,7 @@
 
     @media (max-width: 480px) {
         .team-header {
-            padding: 60px 15px;
+            padding: 42px 15px;
         }
 
         .team-title {
@@ -416,7 +416,7 @@
         }
 
         .carousel-section {
-            padding: 60px 15px;
+            padding: 42px 15px;
         }
 
         .carousel-header h2 {

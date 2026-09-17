@@ -43,20 +43,20 @@
 
         /* --- HERO CAROUSEL --- */
         .hero-carousel { margin-top: 68px; }
-        .carousel-item { height: 45vh; min-height: 400px; background-color: var(--dark-navy); }
+        .carousel-item { height: 36vh; min-height: 320px; background-color: var(--dark-navy); }
         .carousel-item img { object-fit: cover; height: 100%; width: 100%; opacity: 0.4; }
         .carousel-caption { bottom: 20%; text-align: left; max-width: 850px; left: 10%; z-index: 10; }
-        .carousel-caption h1 { font-size: 3.5rem; font-weight: 800; letter-spacing: -2px; }
+        .carousel-caption h1 { font-size: 3rem; font-weight: 800; letter-spacing: 0; }
 
         /* --- CONTENT --- */
-        .section-padding { padding: 100px 0; }
+        .section-padding { padding: 68px 0; }
         .premium-card { border-radius: 30px; border: none; box-shadow: 0 20px 50px rgba(0,0,0,0.05); transition: 0.4s; }
         .premium-card:hover { transform: translateY(-10px); box-shadow: 0 40px 80px rgba(0,0,0,0.1); }
         .text-gold { color: var(--gold); }
         .text-red { color: var(--executive-red); }
 
         /* --- FOOTER --- */
-        .landing-footer { background: var(--dark-navy); color: #94a3b8; padding: 100px 0 40px; }
+        .landing-footer { background: var(--dark-navy); color: #94a3b8; padding: 68px 0 32px; }
         .footer-logo { font-size: 2rem; font-weight: 800; color: #fff; margin-bottom: 20px; display: block; text-decoration: none; }
         .footer-logo span { color: var(--executive-red); }
         .footer-link { color: #94a3b8; text-decoration: none; transition: 0.3s; display: block; margin-bottom: 12px; font-weight: 500; }

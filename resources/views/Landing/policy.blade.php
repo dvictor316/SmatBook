@@ -23,7 +23,7 @@
     /* ===== POLICY HEADER ===== */
     .policy-header {
         margin-top: 85px;
-        padding: 100px 20px;
+        padding: 52px 20px;
         background: linear-gradient(135deg, #f8fafc 0%, #f0f4ff 100%);
         text-align: center;
     }
@@ -61,7 +61,7 @@
 
     /* ===== POLICY SECTION ===== */
     .policy-section {
-        padding: 100px 20px;
+        padding: 68px 20px;
         background: white;
     }
 
@@ -76,7 +76,7 @@
         border-radius: 30px;
         border: 1px solid #edf2f7;
         box-shadow: 0 40px 80px rgba(0, 0, 0, 0.08);
-        padding: 80px;
+        padding: 48px;
     }
 
     /* ===== HEADINGS ===== */
@@ -84,7 +84,7 @@
         color: var(--dark);
         font-weight: 900;
         font-size: 1.8rem;
-        margin-top: 60px;
+        margin-top: 38px;
         margin-bottom: 25px;
         line-height: 1.2;
         letter-spacing: -0.5px;
@@ -271,7 +271,7 @@
     /* ===== RESPONSIVE ===== */
     @media (max-width: 1024px) {
         .policy-document {
-            padding: 60px 50px;
+            padding: 42px 34px;
         }
 
         .policy-title {
@@ -290,7 +290,7 @@
     @media (max-width: 768px) {
         .policy-header {
             margin-top: 70px;
-            padding: 80px 20px;
+            padding: 48px 20px;
         }
 
         .policy-title {
@@ -298,7 +298,7 @@
         }
 
         .policy-section {
-            padding: 80px 20px;
+            padding: 48px 20px;
         }
 
         .policy-document {
@@ -334,7 +334,7 @@
 
     @media (max-width: 480px) {
         .policy-header {
-            padding: 60px 15px;
+            padding: 42px 15px;
         }
 
         .policy-title {
@@ -343,7 +343,7 @@
         }
 
         .policy-section {
-            padding: 60px 15px;
+            padding: 42px 15px;
         }
 
         .policy-document {

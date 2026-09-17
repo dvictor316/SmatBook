@@ -175,7 +175,7 @@
 
     /* ===== CONTACT HEADER ===== */
     .contact-header {
-        padding: 100px 20px;
+        padding: 52px 20px;
         background: linear-gradient(135deg, #f8fafc 0%, #f0f4ff 100%);
         margin-top: 85px;
     }
@@ -215,7 +215,7 @@
 
     /* ===== CONTACT SECTION ===== */
     .contact-section {
-        padding: 100px 20px;
+        padding: 68px 20px;
         background: white;
     }
 
@@ -242,7 +242,7 @@
     .contact-info-panel {
         background: linear-gradient(135deg, var(--dark) 0%, #1e3a5f 100%);
         color: white;
-        padding: 60px 50px;
+        padding: 40px 34px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -353,7 +353,7 @@
 
     /* ===== CONTACT FORM ===== */
     .contact-form-panel {
-        padding: 60px 50px;
+        padding: 40px 34px;
         background: white;
         min-width: 0;
     }
@@ -472,7 +472,7 @@
 
     /* ===== ADDITIONAL INFO SECTION ===== */
     .contact-info-section {
-        padding: 100px 20px;
+        padding: 68px 20px;
         background: linear-gradient(135deg, #f8fafc 0%, #f0f4ff 100%);
     }
 
@@ -560,7 +560,7 @@
 
     @media (max-width: 768px) {
         .contact-header {
-            padding: 64px 16px 52px;
+            padding: 44px 16px 38px;
             margin-top: 70px;
         }
 

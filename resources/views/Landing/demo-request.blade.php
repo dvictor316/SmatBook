@@ -179,7 +179,7 @@
 
     /* ===== CONTACT HEADER ===== */
     .contact-header {
-        padding: 100px 20px;
+        padding: 52px 20px;
         background: linear-gradient(135deg, #f8fafc 0%, #f0f4ff 100%);
         margin-top: 85px;
     }
@@ -219,7 +219,7 @@
 
     /* ===== CONTACT SECTION ===== */
     .contact-section {
-        padding: 100px 20px;
+        padding: 68px 20px;
         background: white;
     }
 
@@ -241,7 +241,7 @@
     .contact-info-panel {
         background: linear-gradient(135deg, var(--dark) 0%, #1e3a5f 100%);
         color: white;
-        padding: 60px 50px;
+        padding: 40px 34px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -351,7 +351,7 @@
 
     /* ===== CONTACT FORM ===== */
     .contact-form-panel {
-        padding: 60px 50px;
+        padding: 40px 34px;
         background: white;
         min-width: 0;
     }
@@ -439,7 +439,7 @@
     }
 
     @media (max-width: 768px) {
-        .contact-header { padding: 64px 16px 52px; margin-top: 70px; }
+        .contact-header { padding: 44px 16px 38px; margin-top: 70px; }
         .contact-section { padding: 44px 14px; }
         .contact-wrapper { border-radius: 24px; box-shadow: 0 24px 60px rgba(0,0,0,.10); }
         .contact-info-panel, .contact-form-panel { padding: 32px 22px; }

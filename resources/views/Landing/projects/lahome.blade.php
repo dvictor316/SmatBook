@@ -34,7 +34,7 @@
         font-size: 1rem;
     }
 </style>
-<section style="margin-top: 85px; padding: 90px 20px; background: linear-gradient(135deg,#f8fafc 0%,#eaf2ff 100%);">
+<section style="margin-top: 85px; padding: 52px 20px; background: linear-gradient(135deg,#f8fafc 0%,#eaf2ff 100%);">
     <div class="container" style="max-width: 1200px;">
         <div class="row align-items-center g-5">
             <div class="col-lg-6">
