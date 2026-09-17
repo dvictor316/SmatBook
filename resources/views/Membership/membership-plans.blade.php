@@ -53,7 +53,7 @@
         /* Professional Slim Nav */
         .spa-nav {
             background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(10px);
-            padding: 1rem 0; border-bottom: 1px solid rgba(15, 58, 138, 0.14);
+            padding: 0.65rem 0; border-bottom: 1px solid rgba(15, 58, 138, 0.14);
             box-shadow: 0 16px 38px -32px rgba(6, 26, 68, 0.5);
             position: sticky; top: 0; z-index: 100;
         }
@@ -61,7 +61,7 @@
         .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
         .flex-between { display: flex; justify-content: space-between; align-items: center; }
         .brand-lockup { display: inline-flex; align-items: center; gap: 12px; min-width: 0; text-decoration: none; }
-        .brand-logo { height: 60px; width: auto; display: block; flex-shrink: 0; }
+        .brand-logo { height: 48px; width: auto; display: block; flex-shrink: 0; }
         .spb-nav-wordmark {
             font-weight: 800;
             color: var(--muji-blue-deep);
@@ -85,7 +85,7 @@
                 radial-gradient(circle at 15% 10%, rgba(215, 169, 40, 0.16), transparent 30%),
                 radial-gradient(circle at 85% 0%, rgba(37, 99, 235, 0.13), transparent 32%),
                 linear-gradient(180deg, var(--muji-blue-light) 0%, #fff 100%);
-            padding: 80px 0 100px; text-align: center;
+            padding: 28px 0 44px; text-align: center;
         }
 
         .gold-label { 
@@ -101,9 +101,29 @@
             padding: 4px 12px;
             border-radius: 20px;
         }
-        .hero-title { font-size: clamp(2rem, 5vw, 3rem); font-weight: 800; color: var(--muji-blue-deep); letter-spacing: -1.5px; line-height: 1.1; }
+        .hero-title { font-size: clamp(1.85rem, 4vw, 2.7rem); font-weight: 800; color: var(--muji-blue-deep); letter-spacing: 0; line-height: 1.1; }
         .hero-title span { color: var(--muji-blue-accent); }
-        .hero-subtitle { color: #64748b; margin-top: 15px; font-size: 1.1rem; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .hero-subtitle { color: #52647d; margin-top: 8px; font-size: 1rem; max-width: 820px; margin-left: auto; margin-right: auto; }
+
+        .hero-plan-note {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 14px;
+            padding: 8px 14px;
+            border: 1px solid #a9dfc0;
+            border-radius: 8px;
+            background: #edf9f2;
+            color: #075f42;
+            font-size: 0.84rem;
+            font-weight: 750;
+        }
+        .hero-plan-note .annual-note {
+            padding-left: 10px;
+            border-left: 1px solid #9bd3b4;
+            color: var(--muji-blue-deep);
+        }
 
         /* Modern Toggle */
         .billing-toggle {
@@ -128,17 +148,17 @@
         .save-badge { background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; margin-left: 5px; }
 
         /* Pricing Cards */
-        .pricing-section { margin-top: -60px; padding-bottom: 80px; }
+        .pricing-section { margin-top: -22px; padding-bottom: 64px; }
         .pricing-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 24px;
+            gap: 18px;
             align-items: stretch;
         }
 
         .plan-card {
             background: #fff; border: 1px solid var(--muji-border);
-            padding: 40px 30px; border-radius: 20px;
+            padding: 28px 22px; border-radius: 8px;
             transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
             display: flex; flex-direction: column;
             position: relative;
@@ -159,7 +179,7 @@
         }
 
         .plan-name { font-weight: 700; color: var(--muji-blue-deep); font-size: 1.25rem; margin-bottom: 10px; }
-        .plan-desc { font-size: 0.9rem; color: #64748b; margin-bottom: 22px; line-height: 1.45; min-height: 120px; }
+        .plan-desc { font-size: 0.86rem; color: #64748b; margin-bottom: 16px; line-height: 1.45; min-height: 76px; }
 
         .price-display {
             display: grid;
@@ -190,12 +210,12 @@
             line-height: 1.2;
             margin-bottom: 3px;
         }
-        .price-secondary { font-size: 0.98rem; font-weight: 800; color: var(--muji-gold); margin: 0 0 28px; line-height: 1.45; }
+        .price-secondary { font-size: 0.9rem; font-weight: 800; color: #9a7412; margin: 0 0 12px; line-height: 1.4; }
         .price-secondary strong { color: var(--muji-gold); font-weight: 800; }
         .price-secondary span { color: var(--muji-gold); }
 
-        .feature-list { list-style: none; margin-bottom: 40px; flex-grow: 1; }
-        .feature-list li { padding: 10px 0; font-size: 0.85rem; display: flex; align-items: center; gap: 12px; color: #475569; }
+        .feature-list { list-style: none; margin: 10px 0 24px; flex-grow: 1; }
+        .feature-list li { padding: 7px 0; font-size: 0.82rem; display: flex; align-items: flex-start; gap: 9px; color: #475569; }
         .feature-list i { color: var(--muji-blue-accent); font-size: 0.9rem; }
         .feature-list li.unavailable { color: #94a3b8; text-decoration: line-through; }
         .feature-list li.unavailable i { color: #cbd5e1; }
@@ -261,7 +281,9 @@
         @media (max-width: 1100px) { .pricing-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 650px) {
             .pricing-grid { grid-template-columns: 1fr; }
-            .hero-title { font-size: 2.5rem; }
+            .membership-hero { padding: 22px 0 38px; }
+            .hero-title { font-size: 2rem; }
+            .hero-plan-note { align-items: flex-start; text-align: left; }
             .brand-logo { height: 48px; }
             .spb-nav-wordmark { font-size: 1.55rem; }
         }
@@ -407,13 +429,14 @@
 
     <header class="membership-hero">
         <div class="container">
-            <span class="gold-label">Enterprise Solutions</span>
-            <h1 class="hero-title">Select Your <span>Growth Infrastructure</span></h1>
-            <p class="hero-subtitle">Professional accounting nodes designed for institutional precision and high-volume data management.</p>
-            <div style="display:inline-flex;align-items:center;gap:10px;margin-top:18px;padding:10px 16px;border-radius:999px;background:#ecfdf5;border:1px solid #bbf7d0;color:#065f46;font-weight:800;font-size:.9rem;">
+            <h1 class="hero-title">Choose the Right <span>Plan for Your Business</span></h1>
+            <p class="hero-subtitle">Annual plans for sales, accounting, inventory and growing teams.</p>
+            <div class="hero-plan-note">
                 <i class="fas fa-gift"></i>
-                <span>First month free on every plan. Payment starts after your trial.</span>
+                <span>First month free. Payment starts after your trial.</span>
+                <span class="annual-note">Annual subscriptions</span>
             </div>
+            @if(session('success') || session('error') || session('info') || $errors->any())
             <div class="flash-wrap">
                 @if(session('success'))
                     <div class="flash-msg success">{{ session('success') }}</div>
@@ -432,8 +455,7 @@
                     </div>
                 @endif
             </div>
-
-            <div class="billing-toggle"><strong>Annual subscriptions</strong></div>
+            @endif
         </div>
     </header>
 
