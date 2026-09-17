@@ -178,6 +178,75 @@
             letter-spacing: 1px;
         }
 
+        .coverage-panel {
+            grid-column: span 3;
+            min-height: 520px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #b8cceb;
+            border-radius: 8px;
+            background: #eaf6ff url('{{ asset('assets/img/smartprobook-global-coverage.webp') }}') center / cover no-repeat;
+            box-shadow: 0 22px 48px -34px rgba(6, 26, 68, 0.5);
+        }
+        .coverage-panel::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.97) 0%, rgba(255, 255, 255, 0.9) 35%, rgba(255, 255, 255, 0.15) 68%, rgba(255, 255, 255, 0) 100%);
+        }
+        .coverage-content {
+            position: relative;
+            z-index: 1;
+            width: min(440px, 52%);
+            padding: 42px;
+        }
+        .coverage-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #075f42;
+            font-size: 0.74rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .coverage-kicker::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #14a66f;
+            box-shadow: 0 0 0 4px rgba(20, 166, 111, 0.14);
+        }
+        .coverage-title {
+            margin-top: 18px;
+            color: var(--muji-blue-deep);
+            font-size: clamp(1.75rem, 3vw, 2.65rem);
+            line-height: 1.08;
+            font-weight: 800;
+            letter-spacing: 0;
+        }
+        .coverage-copy {
+            margin-top: 16px;
+            color: #435671;
+            font-size: 0.96rem;
+            line-height: 1.65;
+        }
+        .coverage-points {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 24px;
+        }
+        .coverage-point {
+            padding: 7px 10px;
+            border: 1px solid #bed0e8;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.92);
+            color: #123664;
+            font-size: 0.76rem;
+            font-weight: 750;
+        }
+
         .plan-name { font-weight: 700; color: var(--muji-blue-deep); font-size: 1.25rem; margin-bottom: 10px; }
         .plan-desc { font-size: 0.86rem; color: #64748b; margin-bottom: 16px; line-height: 1.45; min-height: 76px; }
 
@@ -278,9 +347,16 @@
         }
 
         /* Responsive */
-        @media (max-width: 1100px) { .pricing-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 1100px) {
+            .pricing-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .coverage-panel { grid-column: span 1; min-height: 520px; }
+            .coverage-panel::after { background: rgba(255, 255, 255, 0.84); }
+            .coverage-content { width: 100%; padding: 32px; }
+        }
         @media (max-width: 650px) {
             .pricing-grid { grid-template-columns: 1fr; }
+            .coverage-panel { min-height: 470px; background-position: 58% center; }
+            .coverage-content { padding: 28px 24px; }
             .membership-hero { padding: 22px 0 38px; }
             .hero-title { font-size: 2rem; }
             .hero-plan-note { align-items: flex-start; text-align: left; }
@@ -573,6 +649,20 @@
                     </ul>
                     <button onclick="handleSubscription('custom')" class="btn-uplink btn-outline">Request Custom Plan</button>
                 </div>
+
+                <aside class="coverage-panel" aria-label="SmartProbook global coverage outlook">
+                    <div class="coverage-content">
+                        <span class="coverage-kicker">Growing across markets</span>
+                        <h2 class="coverage-title">Built in Africa.<br>Ready for the world.</h2>
+                        <p class="coverage-copy">SmartProbook helps ambitious businesses run sales, finance and operations from one connected platform. Our foundation is local, while our product is designed for teams, branches and customers wherever business takes them.</p>
+                        <div class="coverage-points">
+                            <span class="coverage-point">Nigeria-rooted</span>
+                            <span class="coverage-point">Global-ready</span>
+                            <span class="coverage-point">Multi-branch</span>
+                            <span class="coverage-point">Expanding reach</span>
+                        </div>
+                    </div>
+                </aside>
             </div>
         </div>
     </section>
