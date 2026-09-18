@@ -790,6 +790,10 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
     Route::delete('/reports/custom-templates/{templateId}', [ReportController::class, 'destroyCustomReportTemplate'])->middleware('plan.access:enterprise')->name('reports.custom.destroy');
 });
 
+Route::view('/remote-support', 'Support.remote-support')
+    ->middleware('auth')
+    ->name('remote-support');
+
 /*
 |--------------------------------------------------------------------------
 | TENANT APP ROUTES (ALL COMPLETE ROUTES)

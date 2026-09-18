@@ -1757,6 +1757,11 @@
                 <a class="dropdown-item" href="{{ $settingsUrl }}">
                     <i class="fas fa-cog me-2"></i> Settings
                 </a>
+                @if(Route::has('remote-support'))
+                    <a class="dropdown-item" href="{{ route('remote-support') }}">
+                        <i class="fas fa-headset me-2"></i> Remote Support
+                    </a>
+                @endif
                 <div class="dropdown-divider"></div>
                 <a class="dropdown-item text-danger" href="javascript:void(0);"
                     onclick="document.getElementById('logout-form-header').submit();">
