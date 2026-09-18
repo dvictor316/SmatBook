@@ -33,6 +33,8 @@ class Customer extends Model
         'notes',
         'company_id',
         'user_id',
+        'client_record_id',
+        'client_recorded_at',
         'branch_id',
         'branch_name',
 
@@ -60,6 +62,10 @@ class Customer extends Model
         'account_holder',
         'account_number',
         'ifsc'
+    ];
+
+    protected $casts = [
+        'client_recorded_at' => 'datetime',
     ];
 
     /**

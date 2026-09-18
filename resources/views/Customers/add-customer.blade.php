@@ -22,7 +22,7 @@
 
                 <div class="row">
                     <div class="col-md-12">
-                        <form action="{{ route('customers.store') }}" method="POST" enctype="multipart/form-data">
+                        <form id="offline-customer-form" action="{{ route('customers.store') }}" method="POST" enctype="multipart/form-data" data-index-url="{{ route('customers.index') }}">
                             @csrf
 
                             <div class="form-group-item">
@@ -168,6 +168,7 @@
                             </div>
 
                             <div class="add-customer-btns text-end">
+                                <span id="customer-offline-status" class="badge bg-success me-2">Online</span>
                                 <a href="{{ route('customers.index') }}" class="btn btn-secondary me-2">Cancel</a>
                                 <button type="submit" class="btn btn-primary">Save Customer</button>
                             </div>
@@ -236,4 +237,12 @@ function copyBilling() {
     document.getElementById('s_state').value = document.getElementById('b_state').value;
 }
 </script>
+<script>
+window.CUSTOMER_OFFLINE_CONFIG = {
+    storeUrl: @json(route('customers.store')),
+    indexUrl: @json(route('customers.index')),
+    csrfToken: @json(csrf_token()),
+};
+</script>
+<script src="{{ asset('js/customer-offline.js') }}"></script>
 @endsection

@@ -80,6 +80,25 @@ class CustomerController extends Controller
      */
     public function store(Request $request)
     {
+        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $clientRecordId = trim((string) $request->input('client_record_id', ''));
+
+        if ($clientRecordId !== '' && mb_strlen($clientRecordId) <= 64) {
+            $existingCustomer = Customer::query()
+                ->where('company_id', $companyId)
+                ->where('client_record_id', $clientRecordId)
+                ->first();
+
+            if ($existingCustomer) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Customer was already synchronized.',
+                    'customer_id' => $existingCustomer->id,
+                    'already_synced' => true,
+                ]);
+            }
+        }
+
         $request->validate([
             'customer_name' => 'required|string|max:191',
             'email'         => 'nullable|email|max:191',
@@ -88,6 +107,8 @@ class CustomerController extends Controller
             'opening_balance_date' => 'nullable|date',
             'credit_limit'  => 'nullable|numeric|min:0',
             'image'         => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'client_record_id' => 'nullable|string|max:64',
+            'client_recorded_at' => 'nullable|date',
         ]);
 
         // Capture all possible form fields, then keep only real DB columns.
@@ -125,6 +146,12 @@ class CustomerController extends Controller
         if (Schema::hasColumn('customers', 'user_id')) {
             $data['user_id'] = auth()->id();
         }
+        if (Schema::hasColumn('customers', 'client_record_id')) {
+            $data['client_record_id'] = $clientRecordId !== '' ? $clientRecordId : null;
+        }
+        if (Schema::hasColumn('customers', 'client_recorded_at')) {
+            $data['client_recorded_at'] = $request->input('client_recorded_at');
+        }
         $selectedBranchId = trim((string) $request->input('branch_id', ''));
         $branchMatch = $selectedBranchId !== ''
             ? collect($this->getAvailableBranches())->firstWhere('id', $selectedBranchId)
@@ -143,6 +170,14 @@ class CustomerController extends Controller
         $openingBalance = (float) ($data['balance'] ?? 0);
         if ($openingBalance > 0) {
             $this->postCustomerOpeningBalanceJournal($customer, $openingBalance);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Customer added successfully.',
+                'customer_id' => $customer->id,
+            ], 201);
         }
 
         return redirect()->route('customers.index')->with('success', 'Customer added successfully.');
