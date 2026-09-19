@@ -1332,13 +1332,23 @@
         }
 
         .header {
-            padding: 0 9px;
+            display: grid;
+            grid-template-columns: 44px minmax(0, 1fr) 44px;
+            align-items: center;
+            column-gap: 8px;
+            width: 100%;
+            padding: 0 10px;
             margin-bottom: 0;
             height: 70px;
+            overflow: visible;
         }
         .header-logo {
+            grid-column: 2;
+            justify-self: center;
+            justify-content: center;
             gap: 7px;
             min-width: 0;
+            max-width: 100%;
         }
         .header-logo img { height: 42px; }
         .spb-wordmark {
@@ -1348,7 +1358,44 @@
             line-height: 1;
         }
         #mobile_btn {
+            grid-column: 1;
+            justify-self: start;
             top: 0;
+        }
+
+        .header-actions {
+            grid-column: 3;
+            justify-self: end;
+            display: flex;
+            flex: 0 0 44px;
+            width: 44px;
+            min-width: 44px;
+            margin: 0;
+            overflow: visible;
+        }
+
+        .header-actions > :not(.profile-dropdown) {
+            display: none !important;
+        }
+
+        .header-actions > .profile-dropdown {
+            display: block;
+            width: 40px;
+            min-width: 40px;
+            position: relative;
+        }
+
+        .profile-dropdown .user-profile {
+            display: flex;
+            width: 40px;
+            min-width: 40px;
+            height: 40px;
+            padding: 1px;
+            overflow: visible;
+        }
+
+        .profile-dropdown .dropdown-menu {
+            z-index: 1060;
         }
     }
 
@@ -1371,11 +1418,9 @@
             letter-spacing: -0.22px;
         }
         .header-actions {
-            gap: 5px;
-            margin-left: 3px;
-            flex: 0 1 auto;
-            min-width: 0;
-            overflow: hidden;
+            gap: 0;
+            margin: 0;
+            overflow: visible;
         }
         .header-actions .country-selector { display: none; }
         .country-selector {
@@ -1414,10 +1459,7 @@
             text-overflow: clip;
             max-width: none;
         }
-        .header-actions {
-            gap: 2px;
-            margin-left: 3px;
-        }
+        .header-actions { gap: 0; margin: 0; }
         #mobile_btn {
             width: 34px;
             height: 34px;
@@ -1465,10 +1507,7 @@
             font-size: 0.69rem;
             letter-spacing: -0.16px;
         }
-        .header-actions {
-            gap: 4px;
-            margin-left: 2px;
-        }
+        .header-actions { gap: 0; margin: 0; }
         #mobile_btn {
             width: 32px;
             height: 32px;
@@ -1525,10 +1564,7 @@
             font-size: 0.62rem;
             letter-spacing: -0.1px;
         }
-        .header-actions {
-            gap: 3px;
-            margin-left: 2px;
-        }
+        .header-actions { gap: 0; margin: 0; }
         #mobile_btn {
             top: 0;
         }
@@ -1742,15 +1778,15 @@
         </div>
 
         @auth
-        <div class="dropdown">
-            <a href="#" class="user-profile" data-bs-toggle="dropdown">
+        <div class="dropdown profile-dropdown">
+            <a href="#" class="user-profile" id="headerProfileMenu" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open profile menu">
                 <img src="{{ $profileImagePath }}" alt="{{ $user->name }}" class="user-avatar" width="36" height="36" decoding="async" onerror="this.onerror=null;this.src='{{ $defaultAvatar }}';">
                 <div class="user-info">
                     <div class="user-role">{{ $user->role ?? 'Staff' }}</div>
                     <div class="user-name">{{ $user->name }}</div>
                 </div>
             </a>
-            <div class="dropdown-menu dropdown-menu-end">
+            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="headerProfileMenu">
                 <a class="dropdown-item" href="{{ $profileUrl }}">
                     <i class="fas fa-user me-2"></i> My Profile
                 </a>
