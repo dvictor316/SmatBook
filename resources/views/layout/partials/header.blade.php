@@ -1332,10 +1332,9 @@
         }
 
         .header {
-            display: grid;
-            grid-template-columns: 44px minmax(0, 1fr) 44px;
+            display: flex;
             align-items: center;
-            column-gap: 8px;
+            gap: 6px;
             width: 100%;
             padding: 0 10px;
             margin-bottom: 0;
@@ -1343,35 +1342,38 @@
             overflow: visible;
         }
         .header-logo {
-            grid-column: 2;
-            justify-self: center;
-            justify-content: center;
-            gap: 7px;
+            order: 1;
+            justify-content: flex-start;
+            gap: 0;
             min-width: 0;
-            max-width: 100%;
+            max-width: none;
         }
         .header-logo img { height: 42px; }
         .spb-wordmark {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
             font-size: 0.96rem;
             letter-spacing: -0.24px;
             white-space: nowrap;
             line-height: 1;
+            z-index: 1;
+            pointer-events: none;
         }
         #mobile_btn {
-            grid-column: 1;
-            justify-self: start;
+            order: 0;
             top: 0;
         }
 
         .header-actions {
-            grid-column: 3;
-            justify-self: end;
+            order: 2;
             display: flex;
             flex: 0 0 44px;
             width: 44px;
             min-width: 44px;
-            margin: 0;
+            margin: 0 0 0 auto;
             overflow: visible;
+            justify-content: flex-end;
         }
 
         .header-actions > :not(.profile-dropdown) {
@@ -1459,7 +1461,7 @@
             text-overflow: clip;
             max-width: none;
         }
-        .header-actions { gap: 0; margin: 0; }
+        .header-actions { gap: 0; margin: 0 0 0 auto; }
         #mobile_btn {
             width: 34px;
             height: 34px;
@@ -1507,7 +1509,7 @@
             font-size: 0.69rem;
             letter-spacing: -0.16px;
         }
-        .header-actions { gap: 0; margin: 0; }
+        .header-actions { gap: 0; margin: 0 0 0 auto; }
         #mobile_btn {
             width: 32px;
             height: 32px;
@@ -1564,7 +1566,7 @@
             font-size: 0.62rem;
             letter-spacing: -0.1px;
         }
-        .header-actions { gap: 0; margin: 0; }
+        .header-actions { gap: 0; margin: 0 0 0 auto; }
         #mobile_btn {
             top: 0;
         }
@@ -1585,6 +1587,14 @@
         }
         .user-profile {
             min-width: 28px;
+        }
+    }
+
+    @media (max-width: 991px) {
+        .spb-wordmark {
+            font-size: 0.88rem;
+            font-weight: 800;
+            letter-spacing: 0;
         }
     }
 
