@@ -225,18 +225,40 @@
             grid-template-columns: 1fr;
         }
 
+        .enterprise-header {
+            flex-direction: column;
+            align-items: stretch;
+            padding-left: 12px;
+            margin-bottom: 24px;
+            overflow: visible;
+        }
+
+        .enterprise-header-title {
+            order: 2;
+            min-width: 0;
+        }
+
         .enterprise-dashboard-actions {
+            order: 1;
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             width: 100%;
-            justify-content: flex-start;
-            flex-wrap: wrap;
+            gap: 8px !important;
         }
 
         .enterprise-dashboard-actions .btn,
         .enterprise-dashboard-actions .branch-chip {
             width: 100%;
+            max-width: none;
+            min-height: 46px;
+            margin: 0;
+            padding: 0.45rem 0.6rem !important;
             justify-content: center;
             text-align: center;
+            font-size: 0.7rem;
         }
+
+        .enterprise-dashboard-logo { display: none; }
     }
 
     .branch-chip {
