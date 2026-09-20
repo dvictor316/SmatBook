@@ -1591,11 +1591,31 @@
     }
 
     @media (max-width: 991px) {
+        .header-actions {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            margin: 0;
+            transform: translateY(-50%);
+        }
+
         .spb-wordmark {
             font-size: 0.88rem;
             font-weight: 800;
             letter-spacing: 0;
         }
+    }
+
+    @media (max-width: 767px) {
+        .header-actions { right: 8px; }
+    }
+
+    @media (max-width: 430px) {
+        .header-actions { right: 7px; }
+    }
+
+    @media (max-width: 360px) {
+        .header-actions { right: 6px; }
     }
 
     @media print { .header { display: none !important; } }
