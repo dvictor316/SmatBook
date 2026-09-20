@@ -1382,8 +1382,10 @@
 
         .header-actions > .profile-dropdown {
             display: block;
+            flex: 0 0 40px;
             width: 40px;
             min-width: 40px;
+            max-width: 40px;
             position: relative;
         }
 
