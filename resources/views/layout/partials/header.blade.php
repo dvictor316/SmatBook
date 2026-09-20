@@ -1464,13 +1464,6 @@
         }
     }
 
-    @media (min-width: 768px) and (max-width: 991px) {
-        .header-actions {
-            margin-right: 60px;
-            gap: 12px;
-        }
-    }
-
     @media (max-width: 480px) {
         .header {
             padding: 0 8px;
@@ -1733,6 +1726,35 @@
         .header-actions > .profile-dropdown { right: 8px; }
     }
 
+    @media (min-width: 768px) and (max-width: 991px) {
+        .header-actions {
+            grid-template-columns: repeat(6, 32px);
+            margin-right: 72px;
+            gap: 8px;
+        }
+
+        .header-actions > .mobile-branch-dropdown,
+        .header-actions > .mobile-search-btn,
+        .header-actions > #headerMailIndicator {
+            display: flex !important;
+        }
+
+        .header-actions .branch-pill-mobile,
+        .header-actions .mobile-search-btn,
+        .header-actions .country-selector,
+        .header-actions #headerChatIndicator,
+        .header-actions #headerMailIndicator,
+        .header-actions .notification-bell {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            padding: 0;
+        }
+    }
+
     @media (max-width: 430px) {
         .header { gap: 3px; }
         .header { grid-template-columns: 32px minmax(0, 1fr) auto; }
@@ -1807,7 +1829,7 @@
         @endif
 
         @if($headerBranchOptions->isNotEmpty())
-            <div class="dropdown">
+            <div class="dropdown mobile-branch-dropdown">
                 <a href="#" class="branch-pill" data-bs-toggle="dropdown">
                     <i class="fe fe-git-branch"></i>
                     <span>
