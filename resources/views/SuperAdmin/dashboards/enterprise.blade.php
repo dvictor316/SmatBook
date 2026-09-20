@@ -244,6 +244,7 @@
             grid-template-columns: repeat(2, minmax(0, 1fr));
             width: 100%;
             gap: 8px !important;
+            margin-top: 10px;
         }
 
         .enterprise-dashboard-actions .btn,

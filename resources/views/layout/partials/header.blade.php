@@ -1614,19 +1614,22 @@
             flex: 0 1 auto;
             align-items: center;
             gap: 5px;
-            max-width: none;
+            max-width: calc(100% - 190px);
+            overflow: hidden;
         }
 
         .header-actions {
             display: flex;
-            position: static;
+            position: absolute;
+            top: 50%;
+            right: 10px;
             flex: 0 0 auto;
             width: auto;
             min-width: 0;
             height: auto;
             padding: 0;
-            margin: 0 0 0 auto;
-            transform: none;
+            margin: 0;
+            transform: translateY(-50%);
             align-items: center;
             justify-content: flex-end;
             gap: 3px;
@@ -1678,17 +1681,21 @@
 
         .spb-wordmark {
             position: static;
+            min-width: 0;
             font-size: 0.88rem;
             font-weight: 800;
             letter-spacing: 0;
             transform: none;
             pointer-events: auto;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
     }
 
     @media (max-width: 767px) {
         :root { --spb-header-offset: 68px; }
         .header { height: 68px; }
+        .header-actions { right: 8px; }
     }
 
     @media (max-width: 430px) {
@@ -1696,6 +1703,7 @@
         .header-logo { gap: 3px; }
         .spb-wordmark { font-size: 0.78rem; }
         .header-actions { gap: 1px; }
+        .header-logo { max-width: calc(100% - 170px); }
         .header-actions .country-selector,
         .header-actions .header-indicator,
         .header-actions .notification-bell {
@@ -1707,6 +1715,7 @@
 
     @media (max-width: 360px) {
         .spb-wordmark { font-size: 0.72rem; }
+        .header-actions { right: 6px; }
     }
 
     @media print { .header { display: none !important; } }
