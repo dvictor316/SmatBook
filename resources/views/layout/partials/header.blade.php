@@ -1423,7 +1423,7 @@
         }
         .header-actions {
             gap: 0;
-            margin: 0 40px 0 0;
+            margin: 0;
             overflow: visible;
         }
         .header-actions .country-selector { display: none; }
@@ -1624,7 +1624,8 @@
         }
 
         .header-actions {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(3, 30px);
             grid-column: 3;
             position: static;
             flex: 0 0 auto;
@@ -1632,11 +1633,11 @@
             min-width: 0;
             height: auto;
             padding: 0;
-            margin: 0;
+            margin: 0 44px 0 0;
             transform: none;
             align-items: center;
-            justify-content: flex-end;
-            gap: 3px;
+            justify-content: end;
+            gap: 8px;
             border: 0;
             background: transparent;
         }
@@ -1711,7 +1712,11 @@
         .header { grid-template-columns: 32px minmax(0, 1fr) auto; }
         .header-logo { gap: 3px; }
         .spb-wordmark { font-size: 0.78rem; }
-        .header-actions { gap: 1px; }
+        .header-actions {
+            grid-template-columns: repeat(3, 28px);
+            gap: 5px;
+            margin-right: 42px;
+        }
         .header-actions > .profile-dropdown { right: 7px; }
         .header-actions .country-selector,
         .header-actions #headerChatIndicator,
