@@ -1593,62 +1593,66 @@
     }
 
     @media (max-width: 991px) {
-        :root { --spb-header-offset: 104px; }
+        :root { --spb-header-offset: 70px; }
 
         .header {
-            height: 104px;
-            align-items: flex-start;
+            height: 70px;
+            align-items: center;
+            gap: 5px;
         }
 
         #mobile_btn {
-            position: absolute !important;
-            top: 13px !important;
-            left: 10px !important;
+            position: relative !important;
+            top: 0 !important;
+            left: auto !important;
+            flex: 0 0 36px;
         }
 
         .header-logo {
-            position: absolute;
-            top: 12px;
-            left: 58px;
+            position: static;
+            display: flex;
+            flex: 0 1 auto;
+            align-items: center;
+            gap: 5px;
+            max-width: none;
         }
 
         .header-actions {
             display: flex;
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            width: 100%;
-            height: 38px;
-            padding: 0 10px;
-            margin: 0;
+            position: static;
+            flex: 0 0 auto;
+            width: auto;
+            min-width: 0;
+            height: auto;
+            padding: 0;
+            margin: 0 0 0 auto;
             transform: none;
             align-items: center;
-            justify-content: center;
-            gap: clamp(12px, 5vw, 28px);
-            border-top: 1px solid #eef2f7;
-            background: #fff;
+            justify-content: flex-end;
+            gap: 3px;
+            border: 0;
+            background: transparent;
         }
 
         .header-actions > .profile-dropdown {
-            position: absolute;
-            top: -33px;
-            right: 10px;
+            position: relative;
+            top: auto;
+            right: auto;
             margin: 0;
-            transform: translateY(-50%);
+            transform: none;
         }
 
-        .header-actions > :not(.profile-dropdown):not(.workspace-switcher) {
-            display: flex !important;
-        }
-
-        .header-actions > .workspace-switcher,
-        .header-actions .branch-pill {
+        .header-actions > * {
             display: none !important;
         }
 
-        .header-actions .branch-pill-mobile,
-        .header-actions .mobile-search-btn,
+        .header-actions > .mobile-country-dropdown,
+        .header-actions > #headerChatIndicator,
+        .header-actions > .mobile-notification-dropdown,
+        .header-actions > .profile-dropdown {
+            display: flex !important;
+        }
+
         .header-actions .country-selector,
         .header-actions .header-indicator,
         .header-actions .notification-bell {
@@ -1673,32 +1677,36 @@
         }
 
         .spb-wordmark {
-            top: 33px;
+            position: static;
             font-size: 0.88rem;
             font-weight: 800;
             letter-spacing: 0;
-            transform: translate(-50%, -50%);
+            transform: none;
+            pointer-events: auto;
         }
     }
 
     @media (max-width: 767px) {
-        :root { --spb-header-offset: 100px; }
-        .header { height: 100px; }
-        .header-actions > .profile-dropdown { top: -31px; }
-        .header-actions > .profile-dropdown { right: 8px; }
+        :root { --spb-header-offset: 68px; }
+        .header { height: 68px; }
     }
 
     @media (max-width: 430px) {
-        #mobile_btn { left: 7px !important; }
-        .header-logo { left: 47px; }
-        .header-actions > .profile-dropdown { right: 7px; }
+        .header { gap: 3px; }
+        .header-logo { gap: 3px; }
+        .spb-wordmark { font-size: 0.78rem; }
+        .header-actions { gap: 1px; }
+        .header-actions .country-selector,
+        .header-actions .header-indicator,
+        .header-actions .notification-bell {
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+        }
     }
 
     @media (max-width: 360px) {
-        #mobile_btn { left: 6px !important; }
-        .header-logo { left: 46px; }
-        .header-actions { gap: 11px; padding-inline: 6px; }
-        .header-actions > .profile-dropdown { right: 6px; }
+        .spb-wordmark { font-size: 0.72rem; }
     }
 
     @media print { .header { display: none !important; } }
@@ -1801,7 +1809,7 @@
             <i class="fas fa-search"></i>
         </button>
 
-        <div class="dropdown">
+        <div class="dropdown mobile-country-dropdown">
             <a href="#" class="country-selector" data-bs-toggle="dropdown" id="geoCountryToggle">
                 <img id="geoCountryFlag" src="{{ asset('assets/img/flags/ng.png') }}" alt="NG" width="20" height="14" decoding="async">
                 <span class="country-name" id="geoCountryCode">NG</span>
@@ -1856,7 +1864,7 @@
             </a>
         @endif
 
-        <div class="dropdown">
+        <div class="dropdown mobile-notification-dropdown">
             <a href="#" class="notification-bell {{ $unreadNotificationCount > 0 ? 'has-alert' : '' }}" id="headerNotificationIndicator" data-bs-toggle="dropdown">
                 <i class="fas fa-bell"></i>
                 <span
