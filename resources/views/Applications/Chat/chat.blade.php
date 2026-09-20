@@ -81,6 +81,8 @@
     /* Messages Area */
     .chat-main {
         flex: 1;
+        min-width: 0;
+        min-height: 0;
         display: flex;
         flex-direction: column;
         background: #fff;
@@ -89,6 +91,7 @@
 
     .messages-container {
         flex: 1;
+        min-height: 0;
         padding: 25px;
         overflow-y: auto;
         background-color: #f8fafc;
@@ -104,6 +107,7 @@
         font-size: 14px;
         line-height: 1.5;
         box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        overflow-wrap: anywhere;
     }
 
     .message-wrapper.sent { display: flex; justify-content: flex-end; }
@@ -126,19 +130,90 @@
         background-color: #f8fafc;
         border-radius: 10px;
     }
+
+    .chat-mobile-back { display: none; }
+
+    @media (max-width: 991.98px) {
+        .chat-page-content { padding: 16px !important; }
+        .chat-wrapper {
+            height: calc(100dvh - var(--spb-header-offset, 70px) - 105px);
+            min-height: 520px;
+            border-radius: 12px;
+        }
+        .chat-sidebar { width: min(300px, 42%); }
+        .online-status-wrapper { padding: 14px 12px; }
+        .contact-item { padding: 12px; }
+        .messages-container { padding: 18px; }
+        .message-bubble { max-width: 82%; }
+        .chat-composer { padding: 14px !important; }
+    }
+
+    @media (max-width: 767.98px) {
+        .chat-page-content { padding: 10px !important; }
+        .chat-page-header { margin-bottom: 10px; }
+        .chat-page-header .page-title { font-size: 1.25rem; }
+        .chat-print-label { display: none; }
+        .chat-wrapper {
+            height: calc(100dvh - var(--spb-header-offset, 68px) - 78px);
+            min-height: 440px;
+            border-radius: 8px;
+        }
+        .chat-sidebar {
+            width: 100%;
+            border-right: 0;
+        }
+        .chat-main { display: none; }
+        .chat-wrapper.has-active-chat .chat-sidebar { display: none; }
+        .chat-wrapper.has-active-chat .chat-main { display: flex; width: 100%; }
+        .chat-mobile-back {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            flex: 0 0 36px;
+            border: 0;
+            border-radius: 8px;
+            background: #f1f5f9;
+            color: #0f172a;
+            text-decoration: none;
+        }
+        .chat-contact-header { padding: 10px 12px !important; }
+        .messages-container { padding: 14px 10px; }
+        .message-bubble {
+            max-width: 88%;
+            padding: 10px 13px;
+            margin-bottom: 10px;
+        }
+        .chat-composer { padding: 10px !important; }
+        .chat-composer .form-control { min-width: 0; padding-inline: 14px !important; }
+        .chat-composer .btn { padding-inline: 16px !important; }
+        .online-status-wrapper { padding: 12px 10px; }
+        #onlineUsersBar { gap: 10px; }
+        .contact-item img { width: 42px; height: 42px; object-fit: cover; }
+        .modal-dialog { margin: 12px; }
+        #modalUserList { max-height: 55dvh !important; }
+    }
+
+    @media (max-width: 389px) {
+        .chat-page-content { padding: 8px !important; }
+        .chat-wrapper { min-height: 410px; }
+        .chat-page-header .btn-print { padding-inline: 10px; }
+        .message-bubble { max-width: 92%; }
+    }
 </style>
 
 <div class="page-wrapper">
-    <div class="content container-fluid">
+    <div class="content container-fluid chat-page-content">
 
-        <div class="page-header">
+        <div class="page-header chat-page-header">
             <div class="row align-items-center">
                 <div class="col">
                     <h3 class="page-title">💬 Messages</h3>
                 </div>
                 <div class="col-auto">
                     <button class="btn btn-outline-secondary btn-print me-2 shadow-sm">
-                        <i class="fas fa-print me-1"></i> Print
+                        <i class="fas fa-print me-1"></i> <span class="chat-print-label">Print</span>
                     </button>
                     <span class="badge bg-soft-primary text-primary rounded-pill px-3">
                         <span id="unreadCounter">{{ $totalUnread ?? 0 }}</span> Unread
@@ -147,7 +222,7 @@
             </div>
         </div>
 
-        <div class="chat-wrapper">
+        <div class="chat-wrapper {{ isset($selectedUser) ? 'has-active-chat' : '' }}">
             <div class="chat-sidebar">
                 <div class="p-4 border-bottom d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center">
@@ -203,11 +278,14 @@
 
             <div class="chat-main">
                 @if(isset($selectedUser))
-                    <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-white shadow-sm" style="z-index: 10;">
-                        <div class="d-flex align-items-center">
+                    <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-white shadow-sm chat-contact-header" style="z-index: 10;">
+                        <div class="d-flex align-items-center min-w-0">
+                            <a href="{{ route('chat.index') }}" class="chat-mobile-back me-2" aria-label="Back to conversations">
+                                <i class="fas fa-arrow-left"></i>
+                            </a>
                             <img src="{{ $selectedUser->avatar_url ?? 'https://ui-avatars.com/api/?name='.urlencode($selectedUser->name) }}" class="rounded-circle me-3" width="45">
-                            <div>
-                                <h6 class="mb-0 fw-bold">{{ $selectedUser->name }}</h6>
+                            <div class="min-w-0">
+                                <h6 class="mb-0 fw-bold text-truncate">{{ $selectedUser->name }}</h6>
                                 <small class="text-success">Active Now</small>
                             </div>
                         </div>
@@ -227,7 +305,7 @@
                         @endforeach
                     </div>
 
-                    <div class="p-4 bg-white border-top">
+                    <div class="p-4 bg-white border-top chat-composer">
                         <form action="{{ route('chat.store') }}" method="POST">
                             @csrf
                             <input type="hidden" name="receiver_id" value="{{ $selectedUser->id }}">

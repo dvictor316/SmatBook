@@ -1637,7 +1637,7 @@
             transform: none;
             align-items: center;
             justify-content: end;
-            gap: 8px;
+            gap: 10px;
             border: 0;
             background: transparent;
         }
@@ -1714,7 +1714,7 @@
         .spb-wordmark { font-size: 0.78rem; }
         .header-actions {
             grid-template-columns: repeat(3, 28px);
-            gap: 5px;
+            gap: 7px;
             margin-right: 42px;
         }
         .header-actions > .profile-dropdown { right: 7px; }
