@@ -1593,81 +1593,19 @@
     }
 
     @media (max-width: 991px) {
-        :root {
-            --spb-header-offset: 112px;
-        }
-
-        .header {
-            height: 112px;
-            align-items: flex-start;
-        }
-
-        #mobile_btn {
-            position: absolute !important;
-            top: 15px !important;
-            left: 10px !important;
-        }
-
-        .header-logo {
-            position: absolute;
-            top: 14px;
-            left: 60px;
-        }
-
         .header-actions {
-            display: flex;
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            width: 100%;
-            height: 42px;
-            padding: 0 10px;
+            display: contents;
+            position: static;
             margin: 0;
             transform: none;
-            justify-content: space-evenly;
-            gap: 4px;
-            border-top: 1px solid #eef2f7;
-            background: #fff;
         }
 
         .header-actions > .profile-dropdown {
             position: absolute;
-            top: -35px;
+            top: 50%;
             right: 10px;
             margin: 0;
             transform: translateY(-50%);
-        }
-
-        .header-actions > :not(.profile-dropdown):not(.workspace-switcher) {
-            display: flex !important;
-        }
-
-        .header-actions > .workspace-switcher {
-            display: none !important;
-        }
-
-        .header-actions .branch-pill {
-            display: none !important;
-        }
-
-        .header-actions .branch-pill-mobile,
-        .header-actions .mobile-search-btn,
-        .header-actions .country-selector,
-        .header-actions .header-indicator,
-        .header-actions .notification-bell {
-            display: inline-flex !important;
-            width: 36px;
-            height: 36px;
-            min-width: 36px;
-            padding: 0;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .header-actions .country-selector img {
-            width: 22px;
-            height: 15px;
         }
 
         body.sidebar-collapsed .spb-wordmark,
@@ -1676,29 +1614,21 @@
         }
 
         .spb-wordmark {
-            top: 35px;
             font-size: 0.88rem;
             font-weight: 800;
             letter-spacing: 0;
-            transform: translate(-50%, -50%);
         }
     }
 
     @media (max-width: 767px) {
-        :root { --spb-header-offset: 108px; }
-        .header { height: 108px; }
         .header-actions > .profile-dropdown { right: 8px; }
     }
 
     @media (max-width: 430px) {
-        #mobile_btn { left: 7px !important; }
-        .header-logo { left: 47px; }
         .header-actions > .profile-dropdown { right: 7px; }
     }
 
     @media (max-width: 360px) {
-        #mobile_btn { left: 6px !important; }
-        .header-logo { left: 46px; }
         .header-actions > .profile-dropdown { right: 6px; }
     }
 
