@@ -1596,6 +1596,8 @@
         :root { --spb-header-offset: 70px; }
 
         .header {
+            display: grid;
+            grid-template-columns: 36px minmax(0, 1fr) auto;
             height: 70px;
             align-items: center;
             gap: 5px;
@@ -1605,31 +1607,33 @@
             position: relative !important;
             top: 0 !important;
             left: auto !important;
+            grid-column: 1;
             flex: 0 0 36px;
         }
 
         .header-logo {
             position: static;
             display: flex;
+            grid-column: 2;
             flex: 0 1 auto;
             align-items: center;
             gap: 5px;
-            max-width: calc(100% - 190px);
+            width: 100%;
+            max-width: 100%;
             overflow: hidden;
         }
 
         .header-actions {
             display: flex;
-            position: absolute;
-            top: 50%;
-            right: 10px;
+            grid-column: 3;
+            position: static;
             flex: 0 0 auto;
             width: auto;
             min-width: 0;
             height: auto;
             padding: 0;
             margin: 0;
-            transform: translateY(-50%);
+            transform: none;
             align-items: center;
             justify-content: flex-end;
             gap: 3px;
@@ -1657,7 +1661,7 @@
         }
 
         .header-actions .country-selector,
-        .header-actions .header-indicator,
+        .header-actions #headerChatIndicator,
         .header-actions .notification-bell {
             display: inline-flex !important;
             align-items: center;
@@ -1667,6 +1671,10 @@
             min-width: 30px;
             padding: 0;
             font-size: 14px;
+        }
+
+        .header-actions > #headerMailIndicator {
+            display: none !important;
         }
 
         .header-actions .country-selector img {
@@ -1695,17 +1703,16 @@
     @media (max-width: 767px) {
         :root { --spb-header-offset: 68px; }
         .header { height: 68px; }
-        .header-actions { right: 8px; }
     }
 
     @media (max-width: 430px) {
         .header { gap: 3px; }
+        .header { grid-template-columns: 32px minmax(0, 1fr) auto; }
         .header-logo { gap: 3px; }
         .spb-wordmark { font-size: 0.78rem; }
         .header-actions { gap: 1px; }
-        .header-logo { max-width: calc(100% - 170px); }
         .header-actions .country-selector,
-        .header-actions .header-indicator,
+        .header-actions #headerChatIndicator,
         .header-actions .notification-bell {
             width: 28px;
             height: 28px;
@@ -1715,7 +1722,6 @@
 
     @media (max-width: 360px) {
         .spb-wordmark { font-size: 0.72rem; }
-        .header-actions { right: 6px; }
     }
 
     @media print { .header { display: none !important; } }
