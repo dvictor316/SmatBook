@@ -1423,7 +1423,7 @@
         }
         .header-actions {
             gap: 0;
-            margin: 0;
+            margin: 0 40px 0 0;
             overflow: visible;
         }
         .header-actions .country-selector { display: none; }
@@ -1642,11 +1642,11 @@
         }
 
         .header-actions > .profile-dropdown {
-            position: relative;
-            top: auto;
-            right: auto;
+            position: absolute;
+            top: 50%;
+            right: 10px;
             margin: 0;
-            transform: none;
+            transform: translateY(-50%);
         }
 
         .header-actions > * {
@@ -1703,6 +1703,7 @@
     @media (max-width: 767px) {
         :root { --spb-header-offset: 68px; }
         .header { height: 68px; }
+        .header-actions > .profile-dropdown { right: 8px; }
     }
 
     @media (max-width: 430px) {
@@ -1711,6 +1712,7 @@
         .header-logo { gap: 3px; }
         .spb-wordmark { font-size: 0.78rem; }
         .header-actions { gap: 1px; }
+        .header-actions > .profile-dropdown { right: 7px; }
         .header-actions .country-selector,
         .header-actions #headerChatIndicator,
         .header-actions .notification-bell {
@@ -1722,6 +1724,7 @@
 
     @media (max-width: 360px) {
         .spb-wordmark { font-size: 0.72rem; }
+        .header-actions > .profile-dropdown { right: 6px; }
     }
 
     @media print { .header { display: none !important; } }
