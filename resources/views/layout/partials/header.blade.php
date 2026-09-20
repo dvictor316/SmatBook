@@ -799,6 +799,25 @@
         letter-spacing: 0.2px;
     }
 
+    #geoCountryMenu {
+        width: 300px;
+        min-width: 280px;
+        max-width: calc(100vw - 20px);
+        max-height: min(420px, calc(100dvh - var(--spb-header-offset, 76px) - 20px));
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #geoCountryMenu .geo-country-item {
+        display: flex;
+        align-items: center;
+        min-height: 42px;
+        white-space: normal;
+        line-height: 1.25;
+    }
+
     .notification-bell {
         position: relative;
         display: flex;
@@ -1442,6 +1461,13 @@
         }
         .user-profile {
             min-width: 31px;
+        }
+    }
+
+    @media (min-width: 768px) and (max-width: 991px) {
+        .header-actions {
+            margin-right: 60px;
+            gap: 12px;
         }
     }
 
