@@ -3766,6 +3766,48 @@ body.pos-terminal-workspace .pos-pay-tab.active {
     color: #ffffff !important;
 }
 
+body.pos-terminal-workspace .pos-pay-tab.pos-pay-cash {
+    border-color: #166534 !important;
+    background: linear-gradient(180deg, #22c55e 0%, #15803d 100%) !important;
+}
+
+body.pos-terminal-workspace .pos-pay-tab.pos-pay-split {
+    border-color: #9a3412 !important;
+    background: linear-gradient(180deg, #f97316 0%, #c2410c 100%) !important;
+}
+
+body.pos-terminal-workspace .pos-pay-tab.pos-pay-card {
+    border-color: #1e40af !important;
+    background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%) !important;
+}
+
+body.pos-terminal-workspace .pos-pay-tab.pos-pay-transfer {
+    border-color: #701a75 !important;
+    background: linear-gradient(180deg, #c026d3 0%, #86198f 100%) !important;
+}
+
+body.pos-terminal-workspace .pos-pay-tab:hover {
+    filter: saturate(1.18) brightness(1.06);
+    transform: translateY(-1px);
+}
+
+body.pos-terminal-workspace .pos-pay-tab.active,
+body.pos-terminal-workspace .pos-pay-tab:focus-visible {
+    outline: 3px solid #ffffff !important;
+    outline-offset: -5px;
+    filter: saturate(1.2) brightness(1.08);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.48),
+        0 0 0 2px #0f172a,
+        0 4px 8px rgba(15, 23, 42, 0.28) !important;
+}
+
+body.pos-terminal-workspace .pos-pay-tab span {
+    display: block;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
 @media (min-width: 1200px) {
     body.pos-terminal-workspace .pos-receipt-toolbar {
         grid-template-columns: minmax(285px, 0.78fr) minmax(300px, 1fr) !important;
@@ -5254,10 +5296,10 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
                         </select>
                     </div>
                     <div class="pos-payment-tabs" aria-label="Payment method">
-                        <button type="button" class="pos-pay-tab active" data-payment-method="Cash">Cash</button>
-                        <button type="button" class="pos-pay-tab" data-payment-method="Split">Split</button>
-                        <button type="button" class="pos-pay-tab" data-payment-method="Split" id="pos-pay-card-shortcut">Bank / POS</button>
-                        <button type="button" class="pos-pay-tab" data-payment-method="Split" id="pos-pay-transfer-shortcut">Bank Transfer</button>
+                        <button type="button" class="pos-pay-tab pos-pay-cash active" data-payment-method="Cash"><span>Cash</span></button>
+                        <button type="button" class="pos-pay-tab pos-pay-split" data-payment-method="Split"><span>Split</span></button>
+                        <button type="button" class="pos-pay-tab pos-pay-card" data-payment-method="Split" id="pos-pay-card-shortcut"><span>Bank /<br>POS</span></button>
+                        <button type="button" class="pos-pay-tab pos-pay-transfer" data-payment-method="Split" id="pos-pay-transfer-shortcut"><span>Bank<br>Transfer</span></button>
                     </div>
                     <small id="customer-wallet-hint" class="receipt-wallet-hint">Select a customer to apply wallet credit automatically.</small>
                 </div>
