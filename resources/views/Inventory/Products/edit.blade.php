@@ -1,6 +1,15 @@
 @extends('layout.mainlayout')
 
 @section('content')
+    @php
+        $editMeasurementMode = old(
+            'measurement_mode',
+            strtolower((string) $product->base_unit_name) === 'kg' && (float) $product->units_per_carton > 0 ? 'kg_carton' : 'custom'
+        );
+        $cartonProductUnit = $product->activeProductUnits->first(function ($productUnit) {
+            return in_array(strtolower((string) ($productUnit->unit_name ?: $productUnit->unit_symbol)), ['carton', 'ctn'], true);
+        });
+    @endphp
     <style>
         .product-form-shell {
             max-width: 1320px;
@@ -207,20 +216,20 @@
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label class="field-label">Retail / Default Price *</label>
+                                    <label class="field-label" id="edit_selling_price_label">Retail / Default Price *</label>
                                     <input type="number" step="0.01" name="price" class="form-control" value="{{ old('price', $product->price) }}" required>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label class="field-label">Purchase Price *</label>
+                                    <label class="field-label" id="edit_purchase_price_label">Purchase Price *</label>
                                     <input type="number" step="0.01" name="purchase_price" class="form-control" value="{{ old('purchase_price', $product->purchase_price) }}" required>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label class="field-label">Total Stock Quantity *</label>
-                                    <input type="number" name="stock" class="form-control" value="{{ old('stock', $product->active_branch_stock ?? $product->stock) }}" required>
+                                    <label class="field-label" id="edit_stock_label">Total Stock Quantity *</label>
+                                    <input type="number" step="0.000001" min="0" name="stock" class="form-control" value="{{ old('stock', $product->active_branch_stock ?? $product->stock) }}" required>
                                     <small class="field-note">Updating this value will set the sellable stock for the current active branch{{ !empty($activeBranch['name'] ?? null) ? ' (' . $activeBranch['name'] . ')' : '' }}.</small>
                                 </div>
                             </div>
@@ -256,14 +265,42 @@
                                 <h5 class="product-section-title">Packaging & Units</h5>
                                 <p class="product-section-copy">Keep packaging definitions clean so sales and inventory conversions stay consistent.</p>
                             </div>
+                        <input type="hidden" name="measurement_mode" id="edit_measurement_mode_input" value="{{ $editMeasurementMode }}">
+                        <div class="form-group">
+                            <label class="field-label d-block">How is this product sold?</label>
+                            <div class="btn-group w-100" role="group" aria-label="Measurement setup">
+                                <button type="button" class="btn edit-measurement-mode-button" data-measurement-mode="kg_carton">
+                                    <i class="fas fa-weight-hanging me-1"></i> Kg + Carton
+                                </button>
+                                <button type="button" class="btn edit-measurement-mode-button" data-measurement-mode="custom">Other packaging</button>
+                            </div>
+                            @error('measurement_mode')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                        </div>
+                        <div id="edit_kg_carton_fields" class="row" style="display: none;">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="field-label">Kg Per Carton *</label>
+                                    <input type="number" min="0.000001" step="0.000001" name="kg_per_carton" id="edit_kg_per_carton" class="form-control" value="{{ old('kg_per_carton', $product->units_per_carton) }}">
+                                    <small class="field-note">The weight contained in one full carton.</small>
+                                    @error('kg_per_carton')<div class="text-danger small">{{ $message }}</div>@enderror
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="field-label">Carton Selling Price <span class="text-muted">(optional)</span></label>
+                                    <input type="number" min="0" step="0.01" name="carton_selling_price" id="edit_carton_selling_price" class="form-control" value="{{ old('carton_selling_price', $cartonProductUnit?->selling_price) }}" placeholder="Calculated from price per kg">
+                                    <small class="field-note" id="edit_carton_price_hint">Leave empty to calculate it automatically.</small>
+                                </div>
+                            </div>
+                        </div>
                         <div class="row">
-                            <div class="col-md-3">
+                            <div class="col-md-3 edit-measurement-technical-field">
                                 <div class="form-group">
                                     <label class="field-label">Legacy Unit Label * (e.g., Unit, Tablet, Bottle)</label>
                                     <input type="text" name="base_unit_name" class="form-control" value="{{ old('base_unit_name', $product->base_unit_name) }}" placeholder="e.g. Pcs" required>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3 edit-measurement-technical-field">
                                 <div class="form-group">
                                     <label class="field-label">Unit of Measure *</label>
                                     <select name="unit_id" class="form-control" required>
@@ -276,7 +313,7 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3 edit-measurement-technical-field">
                                 <div class="form-group">
                                     <label class="field-label">Base Unit</label>
                                     <select name="base_unit_id" class="form-control">
@@ -290,7 +327,7 @@
                                     <small class="field-note">Smallest unit used for stock tracking.</small>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3 edit-measurement-technical-field">
                                 <div class="form-group">
                                     <label class="field-label">Purchase Unit</label>
                                     <select name="purchase_unit_id" class="form-control">
@@ -304,35 +341,35 @@
                                     <small class="field-note">Optional. Does not change the base stock unit; it only controls purchase conversion.</small>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3 edit-measurement-technical-field">
                                 <div class="form-group">
                                     <label class="field-label">Conversion Rate</label>
                                     <input type="number" step="0.000001" min="0" name="conversion_rate" class="form-control" value="{{ old('conversion_rate', $product->conversion_rate) }}" placeholder="e.g. 12">
                                     <small class="field-note">Base units inside one purchase unit.</small>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3 edit-custom-packaging-field">
                                 <div class="form-group">
                                     <label class="field-label">Unit Total <small class="d-block text-muted" id="edit_unit_total_hint">Total units inside one carton</small></label>
                                     <input type="number" id="edit_unit_total_per_carton" min="0" step="0.01" class="form-control" value="{{ old('unit_total_per_carton', old('units_per_carton', $product->units_per_carton ?? 0)) }}">
                                     <small class="field-note" id="edit_unit_total_help">Type the full number of sellable units inside one carton first.</small>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3 edit-custom-packaging-field">
                                 <div class="form-group">
                                     <label class="field-label">Roll Content <small class="d-block text-muted" id="edit_roll_content_hint">Units per roll</small></label>
                                     <input type="number" name="units_per_roll" min="0" class="form-control" value="{{ old('units_per_roll', $product->units_per_roll ?? 0) }}">
                                     <small class="field-note" id="edit_roll_content_help">Leave 0 when the item is sold in cartons and units only.</small>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3 edit-custom-packaging-field">
                                 <div class="form-group">
                                     <label class="field-label">Carton Content <small class="d-block text-muted" id="edit_carton_content_hint">Auto-calculated rolls per carton</small></label>
                                     <input type="number" name="units_per_carton" min="0" step="0.01" class="form-control" value="{{ old('units_per_carton', $product->units_per_carton ?? 0) }}">
                                     <small class="field-note" id="edit_carton_content_help">This is calculated from unit total and roll content. If rolls are not used, it matches the unit total.</small>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3 edit-measurement-technical-field">
                                 <div class="form-group">
                                     <label class="field-label">Default Unit Type *</label>
                                     <select name="unit_type" class="form-control" required>
@@ -345,7 +382,7 @@
                             </div>
                         </div>
 
-                        <div class="row">
+                        <div class="row edit-custom-packaging-field">
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label class="field-label" id="edit_units_per_carton_label">Units Per Carton</label>
@@ -491,7 +528,73 @@
             $('#edit_units_per_carton_preview').val(unitTotal.toLocaleString() + ' Units');
         }
 
+        function selectEditKgUnit(selector) {
+            const select = document.querySelector(selector);
+            if (!select) return;
+            const option = Array.from(select.options).find((item) => /\(kg\)\s*$/i.test(String(item.textContent || '').trim()));
+            if (option) select.value = option.value;
+        }
+
+        function refreshEditCartonPriceHint() {
+            const kgPerCarton = parseFloat($('#edit_kg_per_carton').val()) || 0;
+            const pricePerKg = parseFloat($('input[name="price"]').val()) || 0;
+            const calculated = kgPerCarton * pricePerKg;
+            $('#edit_carton_price_hint').text(calculated > 0
+                ? 'Automatic carton price: ' + calculated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                : 'Leave empty to calculate it automatically.');
+        }
+
+        function setEditMeasurementMode(mode) {
+            mode = mode === 'kg_carton' ? 'kg_carton' : 'custom';
+            const isKgCarton = mode === 'kg_carton';
+            $('#edit_measurement_mode_input').val(mode);
+            $('#edit_kg_carton_fields').toggle(isKgCarton);
+            $('.edit-measurement-technical-field, .edit-custom-packaging-field').toggle(!isKgCarton);
+            $('.edit-measurement-mode-button').each(function () {
+                const active = $(this).data('measurement-mode') === mode;
+                const kgButton = $(this).data('measurement-mode') === 'kg_carton';
+                $(this).removeClass('btn-primary btn-secondary btn-outline-primary btn-outline-secondary')
+                    .addClass(active ? (kgButton ? 'btn-primary' : 'btn-secondary') : (kgButton ? 'btn-outline-primary' : 'btn-outline-secondary'));
+            });
+
+            if (isKgCarton) {
+                $('input[name="base_unit_name"]').val('kg');
+                selectEditKgUnit('select[name="unit_id"]');
+                selectEditKgUnit('select[name="base_unit_id"]');
+                $('select[name="purchase_unit_id"]').val('');
+                $('input[name="conversion_rate"], input[name="units_per_roll"]').val(0);
+                const kgPerCarton = $('#edit_kg_per_carton').val() || 0;
+                $('#edit_unit_total_per_carton, input[name="units_per_carton"]').val(kgPerCarton);
+                $('select[name="unit_type"]').val('carton');
+                $('#edit_selling_price_label').text('Selling Price Per Kg *');
+                $('#edit_purchase_price_label').text('Purchase Cost Per Kg *');
+                $('#edit_stock_label').text('Current Stock in Kg *');
+            } else {
+                $('#edit_selling_price_label').text('Retail / Default Price *');
+                $('#edit_purchase_price_label').text('Purchase Price *');
+                $('#edit_stock_label').text('Total Stock Quantity *');
+            }
+
+            refreshEditPackagingLabels();
+            refreshEditCartonPriceHint();
+        }
+
+        $('.edit-measurement-mode-button').on('click', function () {
+            setEditMeasurementMode($(this).data('measurement-mode'));
+        });
+
+        $('#edit_kg_per_carton').on('input change', function () {
+            if ($('#edit_measurement_mode_input').val() === 'kg_carton') {
+                $('#edit_unit_total_per_carton, input[name="units_per_carton"]').val($(this).val() || 0);
+                refreshEditPackagingLabels();
+            }
+            refreshEditCartonPriceHint();
+        });
+
+        $('input[name="price"]').on('input', refreshEditCartonPriceHint);
+
         refreshEditPackagingLabels();
+        setEditMeasurementMode($('#edit_measurement_mode_input').val());
         $('input[name="base_unit_name"], #edit_unit_total_per_carton, input[name="units_per_roll"]').on('input', function () {
             refreshEditPackagingLabels();
         });

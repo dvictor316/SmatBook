@@ -68,6 +68,14 @@ class Product extends Model
         'expiry_date',
     ];
 
+    protected $casts = [
+        'stock' => 'float',
+        'stock_quantity' => 'float',
+        'units_per_carton' => 'float',
+        'units_per_roll' => 'float',
+        'conversion_rate' => 'float',
+    ];
+
 
 
     public function rollsPerCarton(): int
@@ -80,19 +88,19 @@ class Product extends Model
             : $unitsPerCarton;
     }
 
-    public function unitsPerRoll(): int
+    public function unitsPerRoll(): float
     {
-        return max((int) ($this->units_per_roll ?? 0), 0);
+        return max((float) ($this->units_per_roll ?? 0), 0);
     }
 
-    public function unitsPerCarton(): int
+    public function unitsPerCarton(): float
     {
-        return max((int) ($this->units_per_carton ?? 0), 0);
+        return max((float) ($this->units_per_carton ?? 0), 0);
     }
 
     public function stockBreakdown(?float $quantity = null): array
     {
-        $remainingUnits = max(0, (int) floor($quantity ?? ($this->stock ?? $this->stock_quantity ?? 0)));
+        $remainingUnits = max(0, (float) ($quantity ?? ($this->stock ?? $this->stock_quantity ?? 0)));
         $unitsPerRoll = $this->unitsPerRoll();
         $unitsPerCarton = $this->unitsPerCarton();
 
@@ -100,19 +108,19 @@ class Product extends Model
         $rolls = 0;
 
         if ($unitsPerCarton > 0) {
-            $cartons = intdiv($remainingUnits, $unitsPerCarton);
+            $cartons = (int) floor($remainingUnits / $unitsPerCarton);
             $remainingUnits -= $cartons * $unitsPerCarton;
         }
 
         if ($unitsPerRoll > 0) {
-            $rolls = intdiv($remainingUnits, $unitsPerRoll);
+            $rolls = (int) floor($remainingUnits / $unitsPerRoll);
             $remainingUnits -= $rolls * $unitsPerRoll;
         }
 
         return [
             'cartons' => $cartons,
             'rolls' => $rolls,
-            'units' => $remainingUnits,
+            'units' => round($remainingUnits, 6),
         ];
     }
 

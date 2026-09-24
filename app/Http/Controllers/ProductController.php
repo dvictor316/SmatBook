@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use App\Support\BranchInventoryService;
 use App\Support\PriceListUsage;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -693,10 +694,10 @@ class ProductController extends Controller
         return $plan === '' || !str_contains($plan, 'basic');
     }
 
-    private function calculateStockFromPackaging(array $validated): int
+    private function calculateStockFromPackaging(array $validated): float
     {
-        $unitsPerCarton = max((int) ($validated['units_per_carton'] ?? 0), 0);
-        $unitsPerRoll = max((int) ($validated['units_per_roll'] ?? 0), 0);
+        $unitsPerCarton = max((float) ($validated['units_per_carton'] ?? 0), 0);
+        $unitsPerRoll = max((float) ($validated['units_per_roll'] ?? 0), 0);
         $stockCartons = (float) ($validated['stock_cartons'] ?? 0);
         $stockRolls = (float) ($validated['stock_rolls'] ?? 0);
         $stockUnits = (float) ($validated['stock_units'] ?? 0);
@@ -707,7 +708,60 @@ class ProductController extends Controller
             ? ($stockRolls * $unitsPerRoll)
             : $stockRolls;
 
-        return (int) round($cartonUnits + $rollUnits + $stockUnits);
+        return round($cartonUnits + $rollUnits + $stockUnits, 6);
+    }
+
+    private function applyMeasurementPreset(Request $request): void
+    {
+        if ($request->input('measurement_mode') !== 'kg_carton') {
+            return;
+        }
+
+        $kgUnit = $this->unitRows()->first(function ($unit) {
+            $symbol = Str::lower(trim((string) ($unit->symbol ?? '')));
+            $name = Str::lower(trim((string) ($unit->name ?? '')));
+
+            return $symbol === 'kg' || in_array($name, ['kilogram', 'kilograms'], true);
+        });
+
+        if (!$kgUnit) {
+            throw ValidationException::withMessages([
+                'measurement_mode' => 'The Kilogram (kg) unit is unavailable. Add it under Units and try again.',
+            ]);
+        }
+
+        $kgPerCarton = max(0, (float) $request->input('kg_per_carton', 0));
+        $preset = [
+            'base_unit_name' => 'kg',
+            'unit_id' => $kgUnit->id,
+            'base_unit_id' => $kgUnit->id,
+            'purchase_unit_id' => null,
+            'conversion_rate' => null,
+            'units_per_carton' => $kgPerCarton,
+            'units_per_roll' => 0,
+            'stock_rolls' => 0,
+            'unit_type' => 'carton',
+        ];
+
+        if ($request->has('stock_cartons') || $request->has('stock_units')) {
+            $preset['stock'] = null;
+        }
+
+        $request->merge($preset);
+    }
+
+    private function applyCartonSellingPrice(Product $product, mixed $cartonSellingPrice): void
+    {
+        if (!Schema::hasTable('product_units') || $cartonSellingPrice === null || $cartonSellingPrice === '') {
+            return;
+        }
+
+        $product->productUnits()
+            ->where(function ($query) {
+                $query->whereRaw('LOWER(unit_name) = ?', ['carton'])
+                    ->orWhereRaw('LOWER(unit_symbol) = ?', ['ctn']);
+            })
+            ->update(['selling_price' => (float) $cartonSellingPrice]);
     }
 
     private function importNumericValue($value): float
@@ -1296,6 +1350,8 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         try {
+            $this->applyMeasurementPreset($request);
+
             $rules = [
                 'name'             => 'required|string|max:191',
                 'sku'              => 'nullable|string|max:191|unique:products,sku',
@@ -1304,12 +1360,15 @@ class ProductController extends Controller
                 'wholesale_price'  => 'nullable|numeric|min:0',
                 'special_price'    => 'nullable|numeric|min:0',
                 'purchase_price'   => 'nullable|numeric|min:0',
-                'stock'            => 'nullable|integer|min:0', 
+                'stock'            => 'nullable|numeric|min:0',
                 'stock_cartons'    => 'nullable|numeric|min:0',
                 'stock_rolls'      => 'nullable|numeric|min:0',
                 'stock_units'      => 'nullable|numeric|min:0',
-                'units_per_carton' => 'nullable|integer|min:0',
-                'units_per_roll'   => 'nullable|integer|min:0',
+                'units_per_carton' => 'nullable|numeric|min:0',
+                'units_per_roll'   => 'nullable|numeric|min:0',
+                'measurement_mode' => 'nullable|in:custom,kg_carton',
+                'kg_per_carton'    => 'nullable|required_if:measurement_mode,kg_carton|numeric|gt:0',
+                'carton_selling_price' => 'nullable|numeric|min:0',
                 'base_unit_name'   => 'required|string|max:100',
                 'category_id'      => 'nullable|exists:categories,id',
                 'unit_id'          => 'required|integer' . (Schema::hasTable('units') ? '|exists:units,id' : ''),
@@ -1336,13 +1395,14 @@ class ProductController extends Controller
                 }
             });
             $validated = $validator->validate();
+            $cartonSellingPrice = $validated['carton_selling_price'] ?? null;
             $priceListPrices = $validated['price_list_prices'] ?? [];
-            unset($validated['price_list_prices']);
+            unset($validated['price_list_prices'], $validated['measurement_mode'], $validated['kg_per_carton'], $validated['carton_selling_price']);
 
             $uploadedImage = $request->file('image');
 
-            $validated['units_per_carton'] = (int) ($validated['units_per_carton'] ?? 0);
-            $validated['units_per_roll'] = (int) ($validated['units_per_roll'] ?? 0);
+            $validated['units_per_carton'] = (float) ($validated['units_per_carton'] ?? 0);
+            $validated['units_per_roll'] = (float) ($validated['units_per_roll'] ?? 0);
             $validated['stock_cartons'] = (float) ($validated['stock_cartons'] ?? 0);
             $validated['stock_rolls'] = (float) ($validated['stock_rolls'] ?? 0);
             $validated['stock_units'] = (float) ($validated['stock_units'] ?? 0);
@@ -1377,7 +1437,7 @@ class ProductController extends Controller
             if ($calculatedStock === null) {
                 $calculatedStock = $this->calculateStockFromPackaging($validated);
             }
-            $validated['stock'] = (int) ($calculatedStock ?? 0);
+            $validated['stock'] = (float) ($calculatedStock ?? 0);
 
             if ($validated['unit_type'] === 'carton' && $validated['units_per_carton'] < 1) {
                 return back()->withErrors([
@@ -1455,6 +1515,7 @@ class ProductController extends Controller
                 $product->company_id ?: ($resolvedCompanyId ?: null)
             );
             $this->syncProductUnitRows($product->fresh(['unit', 'baseUnit', 'purchaseUnit']));
+            $this->applyCartonSellingPrice($product, $cartonSellingPrice);
             $this->clearDashboardMetricsCache($selectedBranch['id'] ?? null);
 
             return redirect()->route('product-list')
@@ -1487,7 +1548,7 @@ class ProductController extends Controller
      */
     public function edit($id)
     {
-        $product = Product::findOrFail($id);
+        $product = Product::with('activeProductUnits')->findOrFail($id);
         $categories = Category::orderBy('name')->get();
         $units = $this->unitRows();
         
@@ -1780,6 +1841,7 @@ public function inventory(Request $request)
     public function update(Request $request, $id)
     {
         $product = Product::findOrFail($id);
+        $this->applyMeasurementPreset($request);
 
         $validated = $request->validate([
             'name'             => 'required|string|max:191',
@@ -1789,12 +1851,15 @@ public function inventory(Request $request)
             'wholesale_price'  => 'nullable|numeric|min:0',
             'special_price'    => 'nullable|numeric|min:0',
             'purchase_price'   => 'required|numeric|min:0',
-            'stock'            => 'nullable|integer|min:0',
+            'stock'            => 'nullable|numeric|min:0',
             'stock_cartons'    => 'nullable|numeric|min:0',
             'stock_rolls'      => 'nullable|numeric|min:0',
             'stock_units'      => 'nullable|numeric|min:0',
-            'units_per_carton' => 'nullable|integer|min:0',
-            'units_per_roll'   => 'nullable|integer|min:0',
+            'units_per_carton' => 'nullable|numeric|min:0',
+            'units_per_roll'   => 'nullable|numeric|min:0',
+            'measurement_mode' => 'nullable|in:custom,kg_carton',
+            'kg_per_carton'    => 'nullable|required_if:measurement_mode,kg_carton|numeric|gt:0',
+            'carton_selling_price' => 'nullable|numeric|min:0',
             'base_unit_name'   => 'required|string|max:100',
             'category_id'      => 'nullable|exists:categories,id',
             'unit_id'          => 'required|integer' . (Schema::hasTable('units') ? '|exists:units,id' : ''),
@@ -1809,8 +1874,10 @@ public function inventory(Request $request)
             'reorder_quantity' => 'nullable|integer|min:0',
         ]);
 
-        $validated['units_per_carton'] = (int) ($validated['units_per_carton'] ?? 0);
-        $validated['units_per_roll'] = (int) ($validated['units_per_roll'] ?? 0);
+        $cartonSellingPrice = $validated['carton_selling_price'] ?? null;
+        unset($validated['measurement_mode'], $validated['kg_per_carton'], $validated['carton_selling_price']);
+        $validated['units_per_carton'] = (float) ($validated['units_per_carton'] ?? 0);
+        $validated['units_per_roll'] = (float) ($validated['units_per_roll'] ?? 0);
         $validated['stock_cartons'] = (float) ($validated['stock_cartons'] ?? 0);
         $validated['stock_rolls'] = (float) ($validated['stock_rolls'] ?? 0);
         $validated['stock_units'] = (float) ($validated['stock_units'] ?? 0);
@@ -1844,7 +1911,7 @@ public function inventory(Request $request)
         if ($calculatedStock === null) {
             $calculatedStock = $this->calculateStockFromPackaging($validated);
         }
-        $validated['stock'] = (int) ($calculatedStock ?? (int) $product->stock);
+        $validated['stock'] = (float) ($calculatedStock ?? (float) $product->stock);
 
         if ($validated['unit_type'] === 'carton' && $validated['units_per_carton'] < 1) {
             return back()->withErrors([
@@ -1879,6 +1946,7 @@ public function inventory(Request $request)
         $validated['stock_quantity'] = $validated['stock']; 
         $product->update($validated);
         $this->syncProductUnitRows($product->fresh(['unit', 'baseUnit', 'purchaseUnit']));
+        $this->applyCartonSellingPrice($product, $cartonSellingPrice);
         $this->clearDashboardMetricsCache();
 
         return redirect()->route('product-list')->with('success', 'Update pushed to ' . env('SESSION_DOMAIN'));

@@ -595,7 +595,7 @@
                                         </div>
                                         @error('category_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-6 measurement-technical-field">
                                         <label class="form-label">Legacy Unit Label</label>
                                         <input type="text" name="base_unit_name" class="form-control @error('base_unit_name') is-invalid @enderror" value="{{ old('base_unit_name', 'pcs') }}" list="baseUnitSuggestions" required>
                                         <datalist id="baseUnitSuggestions">
@@ -612,7 +612,7 @@
                                         </datalist>
                                         @error('base_unit_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-6 measurement-technical-field">
                                         <label class="form-label">Unit of Measure <span class="text-danger">*</span></label>
                                         <select name="unit_id" class="form-select @error('unit_id') is-invalid @enderror" required>
                                             <option value="">Select unit</option>
@@ -624,7 +624,7 @@
                                         </select>
                                         @error('unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-6 measurement-technical-field">
                                         <div class="d-flex justify-content-between align-items-center gap-2">
                                             <label class="form-label mb-0">Base Unit</label>
                                             <button type="button" class="btn btn-link unit-action-link" data-bs-toggle="modal" data-bs-target="#addUnitModal" title="Add base measurement">
@@ -647,7 +647,7 @@
                                         </div>
                                         @error('base_unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-6 measurement-technical-field">
                                         <label class="form-label">Purchase Unit</label>
                                         <select name="purchase_unit_id" class="form-select @error('purchase_unit_id') is-invalid @enderror">
                                             <option value="">No bulk purchase unit</option>
@@ -660,14 +660,14 @@
                                         <small class="field-hint">Optional bulk buying unit.</small>
                                         @error('purchase_unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-6 measurement-technical-field">
                                         <label class="form-label">Conversion Rate</label>
                                         <input type="number" step="0.000001" min="0" name="conversion_rate" class="form-control @error('conversion_rate') is-invalid @enderror" value="{{ old('conversion_rate') }}" placeholder="e.g. 12">
                                         <small class="field-hint">Only needed when purchase unit differs.</small>
                                         @error('conversion_rate')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label">Retail / Default Price <span class="text-danger">*</span></label>
+                                        <label class="form-label" id="quick_selling_price_label">Retail / Default Price <span class="text-danger">*</span></label>
                                         <input type="number" step="0.01" name="price" class="form-control @error('price') is-invalid @enderror" placeholder="0.00" value="{{ old('price') }}" required>
                                         @error('price')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
@@ -706,7 +706,7 @@
                                         </div>
                                     @endif
                                     <div class="col-md-6">
-                                        <label class="form-label">Unit Purchase Cost <span class="text-danger">*</span></label>
+                                        <label class="form-label" id="quick_purchase_price_label">Unit Purchase Cost <span class="text-danger">*</span></label>
                                         <input type="number" step="0.01" name="purchase_price" class="form-control @error('purchase_price') is-invalid @enderror" placeholder="0.00" value="{{ old('purchase_price') }}" required>
                                         <small class="field-hint">Cost for one selected purchase unit.</small>
                                         @error('purchase_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -747,20 +747,49 @@
                                     </div>
                                     <span class="product-form-card-icon icon-tone-green"><i class="fas fa-balance-scale"></i></span>
                                 </div>
-                                <h6 class="mb-1">Packaging Setup</h6>
-                                <p class="product-form-muted">Use carton/roll fields only when the product is packed that way.</p>
+                                <input type="hidden" name="measurement_mode" id="measurement_mode_input" value="{{ old('measurement_mode', 'custom') }}">
+                                <div class="mb-4">
+                                    <label class="form-label d-block">How is this product sold?</label>
+                                    <div class="btn-group w-100" role="group" aria-label="Measurement setup">
+                                        <button type="button" class="btn btn-outline-primary measurement-mode-button" data-measurement-mode="kg_carton">
+                                            <i class="fas fa-weight-hanging me-1"></i> Kg + Carton
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary measurement-mode-button" data-measurement-mode="custom">
+                                            Other packaging
+                                        </button>
+                                    </div>
+                                    @error('measurement_mode')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                                </div>
+                                <div id="kg_carton_fields" class="row g-3 mb-4" style="display: none;">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Kg Per Carton <span class="text-danger">*</span></label>
+                                        <input type="number" min="0.000001" step="0.000001" name="kg_per_carton" id="kg_per_carton_input" class="form-control @error('kg_per_carton') is-invalid @enderror" value="{{ old('kg_per_carton', old('units_per_carton', '')) }}" placeholder="e.g. 20">
+                                        <small class="field-hint">The weight contained in one full carton.</small>
+                                        @error('kg_per_carton')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Carton Selling Price <span class="text-muted">(optional)</span></label>
+                                        <input type="number" min="0" step="0.01" name="carton_selling_price" id="carton_selling_price_input" class="form-control @error('carton_selling_price') is-invalid @enderror" value="{{ old('carton_selling_price') }}" placeholder="Calculated from price per kg">
+                                        <small class="field-hint" id="carton_price_hint">Leave empty to calculate it automatically.</small>
+                                        @error('carton_selling_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
+                                </div>
+                                <div id="custom_packaging_intro">
+                                    <h6 class="mb-1">Packaging Setup</h6>
+                                    <p class="product-form-muted">Use carton/roll fields only when the product is packed that way.</p>
+                                </div>
                                 <div class="row g-3">
-                                    <div class="col-md-4">
+                                    <div class="col-md-4 custom-packaging-field">
                                         <label class="form-label" id="quick_rolls_per_carton_label">Rolls Per Ctn</label>
                                         <input type="number" id="quick_rolls_per_carton_helper" min="0" step="0.01" class="form-control" value="{{ $oldRollsPerCarton }}">
                                         <small class="field-hint">Leave 0 if not used.</small>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-4 custom-packaging-field">
                                         <label class="form-label" id="quick_pcs_per_roll_label">Base Units Per Roll</label>
                                         <input type="number" id="quick_pcs_per_roll_helper" min="0" step="0.01" class="form-control" value="{{ $oldUnitsPerRoll }}">
                                         <small class="field-hint" id="quick_pcs_per_roll_help">Units inside one roll.</small>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-4 custom-packaging-field">
                                         <label class="form-label" id="quick_pcs_per_carton_label">Base Units Per Carton</label>
                                         <input type="number" id="quick_pcs_per_carton_helper" min="0" step="0.01" class="form-control" value="{{ $oldPiecesPerCarton }}">
                                         <small class="field-hint" id="quick_pcs_per_carton_help">Total units in one carton.</small>
@@ -780,7 +809,7 @@
                                         <input type="number" step="0.01" name="stock_cartons" class="form-control @error('stock_cartons') is-invalid @enderror" value="{{ old('stock_cartons', 0) }}">
                                         @error('stock_cartons')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-4 opening-roll-field">
                                         <label class="form-label">Opening Roll</label>
                                         <input type="number" step="0.01" name="stock_rolls" class="form-control @error('stock_rolls') is-invalid @enderror" value="{{ old('stock_rolls', 0) }}">
                                         @error('stock_rolls')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -1080,6 +1109,61 @@ $(document).ready(function () {
         return (parseFloat(value) || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
     }
 
+    function refreshKgCartonPriceHint() {
+        var kgPerCarton = packagingValue('#kg_per_carton_input');
+        var pricePerKg = parseFloat($('input[name="price"]').val()) || 0;
+        var calculated = kgPerCarton * pricePerKg;
+        $('#carton_price_hint').text(calculated > 0
+            ? 'Automatic carton price: ' + calculated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : 'Leave empty to calculate it automatically.');
+    }
+
+    function setMeasurementMode(mode) {
+        mode = mode === 'kg_carton' ? 'kg_carton' : 'custom';
+        var isKgCarton = mode === 'kg_carton';
+        $('#measurement_mode_input').val(mode);
+        $('#kg_carton_fields').toggle(isKgCarton);
+        $('.measurement-technical-field, .custom-packaging-field, #custom_packaging_intro, .opening-roll-field').toggle(!isKgCarton);
+        $('.measurement-mode-button').each(function () {
+            var active = $(this).data('measurement-mode') === mode;
+            var kgButton = $(this).data('measurement-mode') === 'kg_carton';
+            $(this).removeClass('btn-primary btn-secondary btn-outline-primary btn-outline-secondary')
+                .addClass(active ? (kgButton ? 'btn-primary' : 'btn-secondary') : (kgButton ? 'btn-outline-primary' : 'btn-outline-secondary'));
+        });
+
+        if (isKgCarton) {
+            applyUnitSymbol('kg');
+            $('select[name="purchase_unit_id"]').val('');
+            $('input[name="conversion_rate"]').val('');
+            $('#quick_rolls_per_carton_helper, #quick_pcs_per_roll_helper').val(0);
+            $('#quick_pcs_per_carton_helper').val($('#kg_per_carton_input').val() || 0);
+            $('#quick_selling_price_label').html('Selling Price Per Kg <span class="text-danger">*</span>');
+            $('#quick_purchase_price_label').html('Purchase Cost Per Kg <span class="text-danger">*</span>');
+        } else {
+            $('#quick_selling_price_label').html('Retail / Default Price <span class="text-danger">*</span>');
+            $('#quick_purchase_price_label').html('Unit Purchase Cost <span class="text-danger">*</span>');
+        }
+
+        calculateQuickCartonContent();
+        calculateQuickStock();
+        refreshKgCartonPriceHint();
+    }
+
+    $('.measurement-mode-button').on('click', function () {
+        setMeasurementMode($(this).data('measurement-mode'));
+    });
+
+    $('#kg_per_carton_input').on('input change', function () {
+        if ($('#measurement_mode_input').val() === 'kg_carton') {
+            $('#quick_pcs_per_carton_helper').val($(this).val() || 0);
+            calculateQuickCartonContent();
+            calculateQuickStock();
+        }
+        refreshKgCartonPriceHint();
+    });
+
+    $('input[name="price"]').on('input', refreshKgCartonPriceHint);
+
     function syncPackagingHiddenFields() {
         var rollsPerCtn = packagingValue('#quick_rolls_per_carton_helper');
         var pcsPerRoll  = packagingValue('#quick_pcs_per_roll_helper');
@@ -1165,9 +1249,12 @@ $(document).ready(function () {
         var stockValue = total * purchasePrice;
         $('#quick_stock_preview_text').text(formatQuickQty(total) + ' ' + unitLabel);
         $('#quick_total_opening_stock_display').val(formatQuickQty(total) + ' ' + unitLabel);
-        $('#quick_stock_mix_preview_text').text(formatQuickQty(cartons) + ' ctn + ' + formatQuickQty(rolls) + ' roll + ' + formatQuickQty(pieces) + ' ' + unitLabel);
+        var stockMix = $('#measurement_mode_input').val() === 'kg_carton'
+            ? formatQuickQty(cartons) + ' ctn + ' + formatQuickQty(pieces) + ' kg'
+            : formatQuickQty(cartons) + ' ctn + ' + formatQuickQty(rolls) + ' roll + ' + formatQuickQty(pieces) + ' ' + unitLabel;
+        $('#quick_stock_mix_preview_text').text(stockMix);
         $('#quick_stock_value_preview').text(stockValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-        $('#quick_final_stock_input').val(Math.round(total));
+        $('#quick_final_stock_input').val(Number(total.toFixed(6)));
     }
 
     function refreshQuickPackagingLabels() {
@@ -1399,6 +1486,7 @@ $(document).ready(function () {
 
     // Init
     refreshQuickPackagingLabels();
+    setMeasurementMode($('#measurement_mode_input').val());
     calculateQuickCartonContent();
     calculateQuickStock();
     reloadCategoryOptions($('#product_category_select').val() || '').finally(function () {
@@ -1462,9 +1550,13 @@ $(document).ready(function () {
         if (pcsPerCtnPreview) pcsPerCtnPreview.textContent = formatQty(pcsPerCtn) + ' ' + unitLabel;
         if (stockPreview) stockPreview.textContent = formatQty(total) + ' ' + unitLabel;
         if (stockDisplay) stockDisplay.value = formatQty(total) + ' ' + unitLabel;
-        if (mixPreview) mixPreview.textContent = formatQty(cartons) + ' ctn + ' + formatQty(rolls) + ' roll + ' + formatQty(pieces) + ' ' + unitLabel;
+        if (mixPreview) {
+            mixPreview.textContent = textValue('#measurement_mode_input', 'custom') === 'kg_carton'
+                ? formatQty(cartons) + ' ctn + ' + formatQty(pieces) + ' kg'
+                : formatQty(cartons) + ' ctn + ' + formatQty(rolls) + ' roll + ' + formatQty(pieces) + ' ' + unitLabel;
+        }
         if (valuePreview) valuePreview.textContent = (total * purchasePrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        if (finalStockInput) finalStockInput.value = Math.round(total);
+        if (finalStockInput) finalStockInput.value = Number(total.toFixed(6));
     }
 
     function bindPackagingFallback() {
