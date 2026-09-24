@@ -1009,6 +1009,23 @@
             max-width: 100%;
             min-width: 0;
         }
+
+        body.pos-terminal-workspace .header-actions > .profile-dropdown {
+            flex: 0 0 48px;
+            width: 48px;
+            min-width: 48px;
+            max-width: 48px;
+        }
+
+        body.pos-terminal-workspace .profile-dropdown .user-profile {
+            width: 48px;
+            padding: 6px;
+            justify-content: center;
+        }
+
+        body.pos-terminal-workspace .profile-dropdown .user-info {
+            display: none;
+        }
     }
 
     @media (min-width: 992px) and (max-width: 1440px) {
