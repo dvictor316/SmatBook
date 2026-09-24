@@ -3768,22 +3768,22 @@ body.pos-terminal-workspace .pos-pay-tab.active {
 
 body.pos-terminal-workspace .pos-pay-tab.pos-pay-cash {
     border-color: #166534 !important;
-    background: linear-gradient(180deg, #22c55e 0%, #15803d 100%) !important;
+    background: linear-gradient(180deg, #15803d 0%, #166534 100%) !important;
 }
 
 body.pos-terminal-workspace .pos-pay-tab.pos-pay-split {
     border-color: #9a3412 !important;
-    background: linear-gradient(180deg, #f97316 0%, #c2410c 100%) !important;
+    background: linear-gradient(180deg, #c2410c 0%, #9a3412 100%) !important;
 }
 
 body.pos-terminal-workspace .pos-pay-tab.pos-pay-card {
     border-color: #1e40af !important;
-    background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%) !important;
+    background: linear-gradient(180deg, #2563eb 0%, #1e40af 100%) !important;
 }
 
 body.pos-terminal-workspace .pos-pay-tab.pos-pay-transfer {
     border-color: #701a75 !important;
-    background: linear-gradient(180deg, #c026d3 0%, #86198f 100%) !important;
+    background: linear-gradient(180deg, #a21caf 0%, #701a75 100%) !important;
 }
 
 body.pos-terminal-workspace .pos-pay-tab:hover {
@@ -4704,6 +4704,142 @@ body.pos-terminal-workspace .pos-main-stage > .header-stage {
     .pos-full-page-wrapper .shelf-card {
         border-radius: 8px !important;
     }
+}
+
+/* Vivid action palette: color reinforces each task while white labels stay crisp. */
+body.pos-terminal-workspace .pos-rail-panel {
+    border-color: #94a3b8 !important;
+    background: linear-gradient(180deg, #ffffff 0%, #eef4fb 100%) !important;
+    box-shadow:
+        inset 0 1px 0 #ffffff,
+        0 8px 20px rgba(15, 23, 42, 0.14) !important;
+}
+
+body.pos-terminal-workspace .pos-rail-btn:not(.is-disabled) {
+    border-color: var(--rail-border, #1e40af) !important;
+    background: linear-gradient(
+        180deg,
+        var(--rail-top, #3b82f6) 0%,
+        var(--rail-bottom, #1d4ed8) 100%
+    ) !important;
+    color: var(--rail-text, #ffffff) !important;
+    text-shadow: var(--rail-text-shadow, 0 1px 1px rgba(0, 0, 0, 0.34));
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.42),
+        0 2px 4px rgba(15, 23, 42, 0.24) !important;
+}
+
+body.pos-terminal-workspace .pos-rail-btn i {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 16px;
+    width: 16px;
+    font-size: 0.8rem;
+}
+
+body.pos-terminal-workspace .pos-rail-btn span {
+    min-width: 0;
+    line-height: 1.18;
+}
+
+body.pos-terminal-workspace .pos-rail-btn:not(.is-disabled):hover {
+    filter: saturate(1.2) brightness(1.08);
+    transform: translateY(-1px);
+}
+
+body.pos-terminal-workspace .pos-rail-btn:not(.is-disabled):focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: -5px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.48),
+        0 0 0 2px #0f172a,
+        0 4px 8px rgba(15, 23, 42, 0.3) !important;
+}
+
+body.pos-terminal-workspace #rail-want-btn {
+    --rail-top: #84cc16;
+    --rail-bottom: #4d7c0f;
+    --rail-border: #3f6212;
+    --rail-text: #17320b;
+    --rail-text-shadow: 0 1px 0 rgba(255, 255, 255, 0.38);
+}
+
+body.pos-terminal-workspace #rail-scan-btn {
+    --rail-top: #0369a1;
+    --rail-bottom: #075985;
+    --rail-border: #075985;
+}
+
+body.pos-terminal-workspace #rail-search-btn {
+    --rail-top: #2563eb;
+    --rail-bottom: #1d4ed8;
+    --rail-border: #1e40af;
+}
+
+body.pos-terminal-workspace #rail-misc-btn {
+    --rail-top: #7c3aed;
+    --rail-bottom: #6d28d9;
+    --rail-border: #5b21b6;
+}
+
+body.pos-terminal-workspace #rail-calculator-btn {
+    --rail-top: #0e7490;
+    --rail-bottom: #0e7490;
+    --rail-border: #155e75;
+}
+
+body.pos-terminal-workspace #rail-discount-btn {
+    --rail-top: #c2410c;
+    --rail-bottom: #c2410c;
+    --rail-border: #9a3412;
+}
+
+body.pos-terminal-workspace #rail-customer-btn {
+    --rail-top: #0f766e;
+    --rail-bottom: #0f766e;
+    --rail-border: #115e59;
+}
+
+body.pos-terminal-workspace #rail-reprint-btn {
+    --rail-top: #4f46e5;
+    --rail-bottom: #4338ca;
+    --rail-border: #3730a3;
+}
+
+body.pos-terminal-workspace #rail-price-check-btn {
+    --rail-top: #eab308;
+    --rail-bottom: #a16207;
+    --rail-border: #854d0e;
+    --rail-text: #2c1b03;
+    --rail-text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+body.pos-terminal-workspace #rail-clear-cart-btn {
+    --rail-top: #ef4444;
+    --rail-bottom: #b91c1c;
+    --rail-border: #991b1b;
+}
+
+body.pos-terminal-workspace #rail-checkout-btn {
+    --rail-top: #15803d;
+    --rail-bottom: #166534;
+    --rail-border: #166534;
+}
+
+body.pos-terminal-workspace #rail-messages-btn {
+    --rail-top: #be185d;
+    --rail-bottom: #be185d;
+    --rail-border: #9d174d;
+}
+
+body.pos-terminal-workspace .pos-rail-btn.is-disabled,
+body.pos-terminal-workspace .pos-rail-btn[aria-disabled="true"] {
+    border-color: #94a3b8 !important;
+    background: linear-gradient(180deg, #e2e8f0 0%, #cbd5e1 100%) !important;
+    color: #64748b !important;
+    text-shadow: none;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72) !important;
 }
 
 </style>
