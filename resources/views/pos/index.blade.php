@@ -4861,11 +4861,13 @@ body.pos-terminal-workspace .pos-rail-btn[aria-disabled="true"] {
         box-shadow:
             inset 0 1px 0 rgba(255, 255, 255, 0.84),
             0 5px 14px rgba(15, 58, 138, 0.14);
-        transition: opacity 0.16s ease;
+        transition: min-height 0.18s ease, max-height 0.18s ease;
     }
 
-    body.pos-terminal-workspace .pos-idle-illustration.is-split-hidden {
-        display: none;
+    body.pos-terminal-workspace .pos-idle-illustration.is-split-compact {
+        aspect-ratio: 3.5 / 1;
+        min-height: 140px;
+        max-height: 250px;
     }
 
     body.pos-terminal-workspace .pos-idle-illustration img {
@@ -6748,7 +6750,7 @@ $(document).ready(function() {
         $('#split-transfer-account-wrap').toggleClass('d-none', !isSplit);
         $('#split-card-wrap').toggleClass('d-none', !isSplit);
         $('#split-card-account-wrap').toggleClass('d-none', !isSplit);
-        $('#pos-idle-illustration').toggleClass('is-split-hidden', isSplit);
+        $('#pos-idle-illustration').toggleClass('is-split-compact', isSplit);
         updateChange();
     });
 
@@ -8303,7 +8305,7 @@ window.POS_ENABLE_FALLBACK = function () {
         splitTransferAccountWrap?.classList.toggle('d-none', !isSplit);
         splitCardWrap?.classList.toggle('d-none', !isSplit);
         splitCardAccountWrap?.classList.toggle('d-none', !isSplit);
-        idleIllustration?.classList.toggle('is-split-hidden', isSplit);
+        idleIllustration?.classList.toggle('is-split-compact', isSplit);
 
         if (isSplit && amountPaid) {
             const currentCash = moneyValue(amountPaid);
