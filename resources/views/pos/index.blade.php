@@ -4842,6 +4842,41 @@ body.pos-terminal-workspace .pos-rail-btn[aria-disabled="true"] {
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72) !important;
 }
 
+.pos-idle-illustration {
+    display: none;
+}
+
+@media (min-width: 1200px) {
+    body.pos-terminal-workspace .pos-idle-illustration {
+        display: block;
+        width: 100%;
+        aspect-ratio: 2.2 / 1;
+        min-height: 180px;
+        max-height: 390px;
+        margin-top: 8px;
+        overflow: hidden;
+        border: 1px solid #93b4dc;
+        border-radius: 6px;
+        background: #eaf4ff;
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.84),
+            0 5px 14px rgba(15, 58, 138, 0.14);
+        transition: opacity 0.16s ease;
+    }
+
+    body.pos-terminal-workspace .pos-idle-illustration.is-split-hidden {
+        display: none;
+    }
+
+    body.pos-terminal-workspace .pos-idle-illustration img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+    }
+}
+
 </style>
 
 <div class="pos-full-page-wrapper">
@@ -5596,6 +5631,15 @@ body.pos-terminal-workspace .pos-rail-btn[aria-disabled="true"] {
                     <button type="button" id="new-sale-btn" class="btn pos-secondary-action">
                         <i class="fas fa-plus me-1"></i> New Sale
                     </button>
+                </div>
+                <div id="pos-idle-illustration" class="pos-idle-illustration" aria-hidden="true">
+                    <img
+                        src="{{ asset('assets/img/pos/checkout-seller.webp') }}"
+                        alt=""
+                        width="1400"
+                        height="636"
+                        loading="lazy"
+                        decoding="async">
                 </div>
             </div>
         </div>
@@ -6704,6 +6748,7 @@ $(document).ready(function() {
         $('#split-transfer-account-wrap').toggleClass('d-none', !isSplit);
         $('#split-card-wrap').toggleClass('d-none', !isSplit);
         $('#split-card-account-wrap').toggleClass('d-none', !isSplit);
+        $('#pos-idle-illustration').toggleClass('is-split-hidden', isSplit);
         updateChange();
     });
 
@@ -6964,6 +7009,7 @@ window.POS_ENABLE_FALLBACK = function () {
     const amountPaid = document.getElementById('amount-paid');
     const paymentMethod = document.getElementById('payment-method');
     const paymentTabs = document.querySelectorAll('.pos-pay-tab[data-payment-method]');
+    const idleIllustration = document.getElementById('pos-idle-illustration');
     const depositAccount = document.getElementById('deposit-account');
     const transferAmount = document.getElementById('transfer-amount');
     const transferAccount = document.getElementById('transfer-account');
@@ -8257,6 +8303,7 @@ window.POS_ENABLE_FALLBACK = function () {
         splitTransferAccountWrap?.classList.toggle('d-none', !isSplit);
         splitCardWrap?.classList.toggle('d-none', !isSplit);
         splitCardAccountWrap?.classList.toggle('d-none', !isSplit);
+        idleIllustration?.classList.toggle('is-split-hidden', isSplit);
 
         if (isSplit && amountPaid) {
             const currentCash = moneyValue(amountPaid);
