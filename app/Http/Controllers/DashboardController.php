@@ -373,6 +373,18 @@ class DashboardController extends Controller
             ? "Users in workspace: {$seatCount} (unlimited on current plan)."
             : "Users in workspace: {$seatCount}/{$seatLimit}.";
 
+        if ($subscription->isTrial()) {
+            $days = max(0, $subscription->daysRemaining());
+            $date = optional($subscription->end_date)->format('M d, Y');
+
+            return [
+                'state' => 'trial',
+                'title' => $days === 0 ? 'Your free trial ends today.' : "Free trial: {$days} day" . ($days === 1 ? '' : 's') . ' remaining.',
+                'message' => "Full access to {$subscription->planLabel()} is active until {$date}. No payment is required during the trial.",
+                'usage' => $usage,
+            ];
+        }
+
         if ($subscription->isExpired()) {
             $date = optional($subscription->end_date)->format('M d, Y');
 

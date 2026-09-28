@@ -38,6 +38,11 @@ class SubscriptionActive
         if ($user?->isDemoUser()) {
             return $next($request);
         }
+
+        $role = strtolower(trim((string) ($user?->role ?? '')));
+        if (in_array($role, ['super_admin', 'superadmin', 'state_manager', 'deployment_manager', 'agent'], true)) {
+            return $next($request);
+        }
         
         // Routes that should NOT be blocked by this middleware
         $allowedRoutes = [
@@ -46,9 +51,6 @@ class SubscriptionActive
             'subscription.expired',
             'logout',
             'emergency.logout',
-            'user.dashboard',
-            'tenant.dashboard',
-            'plan-billing',
         ];
 
         if ($request->routeIs($allowedRoutes) || $request->routeIs('payment.*')) {

@@ -134,8 +134,8 @@ Route::get('/workspace-not-found', function () {
 Route::get('/membership-plans/upgrade', [SubscriptionController::class, 'redirectToUpgradeCheckout'])->name('subscription.upgrade.redirect');
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/workspace/business/dashboard', [DashboardController::class, 'businessDashboard'])->name('workspace.business.dashboard');
-    Route::get('/workspace/business', [DashboardController::class, 'switchToBusinessWorkspace'])->name('workspace.business');
+    Route::get('/workspace/business/dashboard', [DashboardController::class, 'businessDashboard'])->middleware('subscription.active')->name('workspace.business.dashboard');
+    Route::get('/workspace/business', [DashboardController::class, 'switchToBusinessWorkspace'])->middleware('subscription.active')->name('workspace.business');
     Route::get('/workspace/platform', [DashboardController::class, 'switchToPlatformWorkspace'])->name('workspace.platform');
     Route::get('/subscription/expired', [HomeController::class, 'subscriptionExpired'])->name('subscription.expired');
 });
@@ -216,7 +216,7 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth'])->group(function () {
 
     Route::get('/home', [HomeController::class, 'index'])->name('home');
-    Route::match(['get', 'post'], '/ai/quick-agent/query', [AiQuickAgentController::class, 'query'])->name('ai.quick-agent.query');
+    Route::match(['get', 'post'], '/ai/quick-agent/query', [AiQuickAgentController::class, 'query'])->middleware('subscription.active')->name('ai.quick-agent.query');
 
     // ── Subscription / SaaS routes ──────────────────────────────
     Route::controller(SubscriptionController::class)->group(function () {
@@ -252,7 +252,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/invoice/download/{id}',        'downloadPDF')         ->name('invoice.download');
     });
 
-    Route::prefix('messages')->group(function () {
+    Route::prefix('messages')->middleware('subscription.active')->group(function () {
         Route::get('/', [MessageController::class, 'index'])->name('messages.index');
         Route::get('/{id}', [MessageController::class, 'show'])->name('messages.show');
         Route::post('/store', [MessageController::class, 'store'])->name('messages.store');
@@ -260,16 +260,16 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/thread/{user}', [MessageController::class, 'thread'])->name('messages.thread');
     });
 
-    Route::get('/chat/{id}', [MessageController::class, 'show'])->name('messages.chat.show');
+    Route::get('/chat/{id}', [MessageController::class, 'show'])->middleware('subscription.active')->name('messages.chat.show');
 
     // Project Management
-    Route::controller(ProjectManagementController::class)->prefix('projects')->name('projects.')->group(function () {
+    Route::controller(ProjectManagementController::class)->prefix('projects')->name('projects.')->middleware('subscription.active')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/', 'storeProject')->name('store');
         Route::patch('/{project}', 'updateProject')->name('update');
         Route::post('/{project}/tasks', 'storeTask')->name('tasks.store');
     });
-    Route::patch('/project-tasks/{task}', [ProjectManagementController::class, 'updateTask'])->name('projects.tasks.update');
+    Route::patch('/project-tasks/{task}', [ProjectManagementController::class, 'updateTask'])->middleware('subscription.active')->name('projects.tasks.update');
 });
 
 // ============================================================
@@ -674,7 +674,7 @@ Route::middleware('auth')->get('/impersonation/leave', [AuthController::class, '
     ->name('impersonation.leave');
 
 // Shared authenticated JSON endpoints for quick category actions across tenant pages.
-Route::middleware(['auth'])->prefix('ajax/inventory')->name('ajax.inventory.')->group(function () {
+Route::middleware(['auth', 'subscription.active'])->prefix('ajax/inventory')->name('ajax.inventory.')->group(function () {
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
 });
@@ -1758,7 +1758,7 @@ Route::fallback(function () {
 });
 
 // ── Payroll Routes ──────────────────────────────────────────
-Route::prefix('payroll')->name('payroll.')->middleware(['auth', 'plan.access:enterprise'])->group(function () {
+Route::prefix('payroll')->name('payroll.')->middleware(['auth', 'subscription.active', 'plan.access:enterprise'])->group(function () {
     Route::get('/',                     [App\Http\Controllers\PayrollController::class, 'index'])->name('index');
     Route::get('/add-employee',         [App\Http\Controllers\PayrollController::class, 'create'])->name('create');
     Route::post('/add-employee',        [App\Http\Controllers\PayrollController::class, 'store'])->name('store');

@@ -304,8 +304,22 @@ class Subscription extends Model
         $startDate = $startDate ?: now();
 
         return strtolower(trim((string) $billingCycle)) === 'yearly'
-            ? $startDate->copy()->addMonths(12 + self::FREE_TRIAL_MONTHS)
+            ? $startDate->copy()->addYear()
             : $startDate->copy()->addMonth();
+    }
+
+    public function renewalPlanKey(): string
+    {
+        $planName = strtolower(trim($this->planLabel()));
+        $isSolo = str_contains($planName, 'solo');
+
+        return match (Plan::normalizeTier($planName)) {
+            'starter' => 'starter',
+            'professional' => $isSolo ? 'pro-solo' : 'pro',
+            'enterprise' => $isSolo ? 'enterprise-solo' : 'enterprise',
+            'hotel' => 'hotel',
+            default => 'basic',
+        };
     }
 
     public function isTrial(): bool

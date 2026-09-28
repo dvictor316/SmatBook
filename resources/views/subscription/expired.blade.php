@@ -2,7 +2,7 @@
 
 @section('content')
 @php
-    $companyName = auth()->user()->company->name ?? auth()->user()->name ?? 'your workspace';
+    $companyName = $company?->name ?? $company?->company_name ?? auth()->user()->name ?? 'your workspace';
     $expiryDate = optional($subscription?->end_date)->format('d M, Y') ?? 'N/A';
     $planLabel = $subscription?->planLabel() ?? 'Current';
 @endphp
@@ -18,7 +18,7 @@
                     <div class="display-1 text-danger mb-3">
                         <i class="fas fa-calendar-times"></i>
                     </div>
-                    <h3 class="account-title">Plan Expired</h3>
+                    <h3 class="account-title">{{ $isExpiredTrial ? 'Free Trial Ended' : 'Plan Expired' }}</h3>
                     <p class="text-muted">
                         Access to <strong>{{ $companyName }}</strong> is currently paused because your
                         <strong>{{ $planLabel }}</strong> plan ended on
@@ -28,17 +28,8 @@
                     </p>
 
                     <div class="renewal-actions mt-4 p-4 bg-light rounded border">
-                        <h5>Ready to restore full access?</h5>
-                        <p class="small text-muted">Your data is safe. Renew your subscription now to reopen reports, operations, dashboards, and workspace tools without losing anything.</p>
-
-                        <div class="d-grid gap-2 d-md-block">
-                            <a href="{{ route('membership-plans') }}" class="btn btn-primary btn-rounded btn-lg px-5 shadow">
-                                <i class="fas fa-rocket"></i> Renew Plan
-                            </a>
-                            <a href="{{ route('plan-billing') }}" class="btn btn-outline-secondary btn-rounded btn-lg px-4">
-                                <i class="fas fa-receipt"></i> View Billing
-                            </a>
-                        </div>
+                        <h5>Workspace subscription required</h5>
+                        <p class="small text-muted mb-0">Please contact the business owner to renew the workspace. Your records remain safely stored while access is paused.</p>
                     </div>
 
                     <div class="mt-4 d-flex justify-content-center gap-3">
@@ -58,20 +49,6 @@
                         @csrf
                     </form>
 
-                    <hr class="my-4">
-
-                    <div class="support-context">
-                        <p class="mb-2">Need a custom quote or help with payment?</p>
-
-                        <div class="btn-group">
-                            <a href="{{ route('messages.index', ['type' => 'chat']) }}" class="btn btn-sm btn-outline-info">
-                                <i class="fas fa-comments"></i> Live Chat
-                            </a>
-                            <a href="{{ route('messages.index', ['type' => 'email']) }}" class="btn btn-sm btn-outline-info">
-                                <i class="fas fa-envelope"></i> Open Ticket
-                            </a>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

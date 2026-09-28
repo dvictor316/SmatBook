@@ -114,6 +114,11 @@ class SubscriptionController extends Controller
             return redirect()->route('saas-register-initial');
         }
 
+        if ($this->isAssignedWorkspaceStaff($user)) {
+            return redirect()->route('subscription.expired')
+                ->with('error', 'Only the business owner can select and pay for a workspace plan.');
+        }
+
         $requestedPlan = $this->normalizeCatalogPlanKey((string) $request->query('plan', ''));
         $currentSubscription = Subscription::resolveCurrentForUser($user);
         $requestedCycle = 'yearly';
@@ -328,6 +333,7 @@ class SubscriptionController extends Controller
             'pro' => ['label' => 'Professional'],
             'enterprise-solo' => ['label' => 'Enterprise Solo'],
             'enterprise' => ['label' => 'Enterprise'],
+            'hotel' => ['label' => 'Hotel'],
         ];
     }
 
@@ -345,6 +351,7 @@ class SubscriptionController extends Controller
             in_array($value, ['pro', 'professional', 'premium'], true) => 'pro',
             in_array($value, ['enterprise-solo', 'institutional-solo'], true) => 'enterprise-solo',
             in_array($value, ['enterprise', 'institutional'], true) => 'enterprise',
+            in_array($value, ['hotel', 'hospitality'], true) => 'hotel',
             default => null,
         };
     }
@@ -419,6 +426,7 @@ class SubscriptionController extends Controller
         return match (strtolower((string) $tier)) {
             'enterprise' => 3,
             'professional' => 2,
+            'hotel' => 1,
             'starter' => 0,
             default => 1,
         };
@@ -799,6 +807,26 @@ class SubscriptionController extends Controller
 
         // withoutGlobalScope('tenant'): allows deployment manager to process payment for client subscriptions.
         $subscription = Subscription::withoutGlobalScope('tenant')->findOrFail($id);
+        $currentUser = auth()->user();
+
+        if ($this->isAssignedWorkspaceStaff($currentUser)) {
+            return redirect()->route('subscription.expired')
+                ->with('error', 'Only the business owner can pay for the workspace subscription.');
+        }
+
+        $isSuperAdminCheckout = $currentUser
+            && in_array(strtolower((string) ($currentUser->role ?? '')), ['super_admin', 'superadmin'], true);
+        $resolvedManagerId = $this->resolveDeploymentManagerId($subscription);
+        $isDeploymentManager = $currentUser && (
+            DeploymentManager::where('user_id', $currentUser->id)->exists()
+            || ($resolvedManagerId > 0 && (int) $currentUser->id === (int) $resolvedManagerId)
+        );
+
+        abort_unless(
+            $currentUser
+            && ((int) $subscription->user_id === (int) $currentUser->id || $isDeploymentManager || $isSuperAdminCheckout),
+            403
+        );
 
         if (
             in_array(strtolower((string) $subscription->payment_status), ['paid', 'free'], true)
@@ -1277,7 +1305,14 @@ class SubscriptionController extends Controller
             $subscription->update($subscriptionUpdateData);
 
             if ($subscription->company) {
-                $subscription->company->update(['status' => 'active']);
+                $companyUpdateData = ['status' => 'active'];
+                if (Schema::hasColumn('companies', 'subscription_start')) {
+                    $companyUpdateData['subscription_start'] = $startDate;
+                }
+                if (Schema::hasColumn('companies', 'subscription_end')) {
+                    $companyUpdateData['subscription_end'] = $endDate;
+                }
+                $subscription->company->update($companyUpdateData);
             }
 
             if ($subscription->user) {
@@ -1408,6 +1443,13 @@ class SubscriptionController extends Controller
                 $companyUpdateData = [
                     'status'      => 'active',
                 ];
+
+                if (Schema::hasColumn('companies', 'subscription_start')) {
+                    $companyUpdateData['subscription_start'] = $startDate;
+                }
+                if (Schema::hasColumn('companies', 'subscription_end')) {
+                    $companyUpdateData['subscription_end'] = $endDate;
+                }
 
                 if ($managerId && Schema::hasColumn('companies', 'deployed_by')) {
                     $companyUpdateData['deployed_by'] = $managerId;
@@ -2372,7 +2414,14 @@ class SubscriptionController extends Controller
             $subscription->update($updates);
 
             if ($subscription->company) {
-                $subscription->company->update(['status' => 'active']);
+                $companyUpdateData = ['status' => 'active'];
+                if (Schema::hasColumn('companies', 'subscription_start')) {
+                    $companyUpdateData['subscription_start'] = $startDate;
+                }
+                if (Schema::hasColumn('companies', 'subscription_end')) {
+                    $companyUpdateData['subscription_end'] = $endDate;
+                }
+                $subscription->company->update($companyUpdateData);
             }
 
             if ($subscription->user) {
@@ -2745,6 +2794,9 @@ class SubscriptionController extends Controller
             }
             if (Schema::hasColumn('domains', 'price')) {
                 $domainPayload['price'] = $subscription->amount;
+            }
+            if (Schema::hasColumn('domains', 'expiry_date')) {
+                $domainPayload['expiry_date'] = $subscription->end_date;
             }
             if (Schema::hasColumn('domains', 'status')) {
                 $domainPayload['status'] = 'Active';

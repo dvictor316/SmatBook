@@ -13,6 +13,11 @@
             border-color: #fcd34d;
             color: #92400e;
         }
+        .subscription-state-banner.trial {
+            background: #ecfdf5;
+            border-color: #6ee7b7;
+            color: #065f46;
+        }
         .subscription-state-banner.expired {
             background: #fef2f2;
             border-color: #fca5a5;
@@ -33,14 +38,16 @@
                     <div class="meta mt-2">{{ $subscriptionStatus['usage'] }}</div>
                 @endif
             </div>
-            <div class="d-flex gap-2 flex-wrap">
-                <a href="{{ route('membership-plans') }}" class="btn {{ $subscriptionStatus['state'] === 'expired' ? 'btn-danger' : 'btn-warning' }} btn-sm px-3">
-                    {{ $subscriptionStatus['state'] === 'expired' ? 'Renew Plan' : 'Review Renewal' }}
-                </a>
-                @if(Route::has('plan-billing'))
-                    <a href="{{ route('plan-billing') }}" class="btn btn-outline-dark btn-sm px-3">Plan Billing</a>
-                @endif
-            </div>
+            @if($subscriptionStatus['state'] !== 'trial')
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ route('membership-plans', ['stay' => 1]) }}" class="btn {{ $subscriptionStatus['state'] === 'expired' ? 'btn-danger' : 'btn-warning' }} btn-sm px-3">
+                        {{ $subscriptionStatus['state'] === 'expired' ? 'Renew Plan' : 'Review Renewal' }}
+                    </a>
+                    @if(Route::has('plan-billing'))
+                        <a href="{{ route('plan-billing') }}" class="btn btn-outline-dark btn-sm px-3">Plan Billing</a>
+                    @endif
+                </div>
+            @endif
         </div>
     </div>
 @endif

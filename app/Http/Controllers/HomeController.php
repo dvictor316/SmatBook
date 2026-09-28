@@ -860,7 +860,31 @@ class HomeController extends Controller
             return redirect()->route('home');
         }
 
-        return view('subscription.expired', compact('subscription'));
+        $company = $subscription->company_id
+            ? Company::withoutGlobalScope('tenant')->find($subscription->company_id)
+            : null;
+        $isWorkspaceOwner = (int) $subscription->user_id === (int) $user->id
+            || ($company && in_array((int) $user->id, array_filter([
+                (int) ($company->user_id ?? 0),
+                (int) ($company->owner_id ?? 0),
+            ]), true));
+        $isExpiredTrial = strtolower((string) $subscription->payment_status) === 'free'
+            && empty($subscription->paid_at)
+            && empty($subscription->payment_date);
+
+        if ($isWorkspaceOwner) {
+            return redirect()->route('subscription.upgrade.redirect', [
+                'plan' => $subscription->renewalPlanKey(),
+            ])->with('info', $isExpiredTrial
+                ? 'Your free trial has ended. Complete payment to continue using your workspace.'
+                : 'Your plan has expired. Complete payment to restore your workspace.');
+        }
+
+        return view('subscription.expired', [
+            'subscription' => $subscription,
+            'company' => $company,
+            'isExpiredTrial' => $isExpiredTrial,
+        ]);
     }
 
     // Quotations / Delivery pages used by sidebar links
