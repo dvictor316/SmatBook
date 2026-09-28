@@ -61,37 +61,37 @@
             'name' => 'Chinedu Okafor',
             'role' => 'CFO, Meridian Trade Group, Lagos',
             'quote' => 'Our Lagos and Port Harcourt branches now submit consistent daily figures, giving management one reliable report before the next morning.',
-            'img' => 'https://images.pexels.com/photos/5490235/pexels-photo-5490235.jpeg?auto=compress&cs=tinysrgb&w=300',
+            'img' => asset('assets/img/testimonials/chinedu-okafor.jpg'),
         ],
         [
             'name' => 'Amina Bello',
             'role' => 'Finance Director, Arewa Distribution, Abuja',
             'quote' => 'Expense approvals and audit trails are finally easy to follow. We close our monthly books with far fewer corrections and calls.',
-            'img' => 'https://images.pexels.com/photos/7789851/pexels-photo-7789851.jpeg?auto=compress&cs=tinysrgb&w=300',
+            'img' => asset('assets/img/testimonials/amina-bello.jpg'),
         ],
         [
             'name' => 'Ama Serwaa Mensah',
             'role' => 'Operations Lead, Akwaaba Retail, Accra',
             'quote' => 'The connection between POS sales and inventory shows us what is moving, what is low, and what each shop should reorder.',
-            'img' => 'https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg?auto=compress&cs=tinysrgb&w=300',
+            'img' => asset('assets/img/testimonials/ama-mensah.jpg'),
         ],
         [
             'name' => 'Wanjiku Njoroge',
             'role' => 'COO, Jirani Merchants, Nairobi',
             'quote' => 'Invoices, customer balances, and payment reminders now sit in one workflow, so our team follows up faster without losing context.',
-            'img' => 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=300&auto=format&fit=crop',
+            'img' => asset('assets/img/testimonials/wanjiku-njoroge.jpg'),
         ],
         [
             'name' => 'Thabo Mokoena',
             'role' => 'Group Accountant, Ubuntu Supply Network, Johannesburg',
             'quote' => 'Role permissions give every branch the tools it needs while our finance office keeps clear control of sensitive accounting records.',
-            'img' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=300&auto=format&fit=crop',
+            'img' => asset('assets/img/testimonials/thabo-mokoena.jpg'),
         ],
         [
             'name' => 'Fatou Ndiaye',
             'role' => 'Finance Controller, Teranga Commerce, Dakar',
             'quote' => 'Multi-currency reporting has simplified reconciliation across our suppliers and made cash positions much clearer for weekly planning.',
-            'img' => 'https://images.unsplash.com/photo-1521119989659-a83eee488004?q=80&w=300&auto=format&fit=crop',
+            'img' => asset('assets/img/testimonials/fatou-ndiaye.jpg'),
         ],
     ];
     $tests = $tests ?? $landingTestimonials;
