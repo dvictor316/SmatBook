@@ -57,12 +57,42 @@
     ];
     $utils = $utils ?? $landingUtilities;
     $landingTestimonials = $landingTestimonials ?? $tests ?? [
-        ['name' => 'Chinedu Okafor', 'role' => 'CFO, Lagos Holdings', 'img' => 'https://images.pexels.com/photos/5490235/pexels-photo-5490235.jpeg?auto=compress&cs=tinysrgb&w=300'],
-        ['name' => 'Amina Bello', 'role' => 'Finance Director, Abuja Group', 'img' => 'https://images.pexels.com/photos/7789851/pexels-photo-7789851.jpeg?auto=compress&cs=tinysrgb&w=300'],
-        ['name' => 'Michael Carter', 'role' => 'VP Finance, New York Capital', 'img' => 'https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg?auto=compress&cs=tinysrgb&w=300'],
-        ['name' => 'Emily Johnson', 'role' => 'Controller, Austin Ventures', 'img' => 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=300&auto=format&fit=crop'],
-        ['name' => 'Li Wei', 'role' => 'Treasury Lead, Shanghai Trade', 'img' => 'https://images.unsplash.com/photo-1521119989659-a83eee488004?q=80&w=300&auto=format&fit=crop'],
-        ['name' => 'Chen Ming', 'role' => 'Payments Director, Beijing Commerce', 'img' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=300&auto=format&fit=crop'],
+        [
+            'name' => 'Chinedu Okafor',
+            'role' => 'CFO, Meridian Trade Group, Lagos',
+            'quote' => 'Our Lagos and Port Harcourt branches now submit consistent daily figures, giving management one reliable report before the next morning.',
+            'img' => 'https://images.pexels.com/photos/5490235/pexels-photo-5490235.jpeg?auto=compress&cs=tinysrgb&w=300',
+        ],
+        [
+            'name' => 'Amina Bello',
+            'role' => 'Finance Director, Arewa Distribution, Abuja',
+            'quote' => 'Expense approvals and audit trails are finally easy to follow. We close our monthly books with far fewer corrections and calls.',
+            'img' => 'https://images.pexels.com/photos/7789851/pexels-photo-7789851.jpeg?auto=compress&cs=tinysrgb&w=300',
+        ],
+        [
+            'name' => 'Ama Serwaa Mensah',
+            'role' => 'Operations Lead, Akwaaba Retail, Accra',
+            'quote' => 'The connection between POS sales and inventory shows us what is moving, what is low, and what each shop should reorder.',
+            'img' => 'https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg?auto=compress&cs=tinysrgb&w=300',
+        ],
+        [
+            'name' => 'Wanjiku Njoroge',
+            'role' => 'COO, Jirani Merchants, Nairobi',
+            'quote' => 'Invoices, customer balances, and payment reminders now sit in one workflow, so our team follows up faster without losing context.',
+            'img' => 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=300&auto=format&fit=crop',
+        ],
+        [
+            'name' => 'Thabo Mokoena',
+            'role' => 'Group Accountant, Ubuntu Supply Network, Johannesburg',
+            'quote' => 'Role permissions give every branch the tools it needs while our finance office keeps clear control of sensitive accounting records.',
+            'img' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=300&auto=format&fit=crop',
+        ],
+        [
+            'name' => 'Fatou Ndiaye',
+            'role' => 'Finance Controller, Teranga Commerce, Dakar',
+            'quote' => 'Multi-currency reporting has simplified reconciliation across our suppliers and made cash positions much clearer for weekly planning.',
+            'img' => 'https://images.unsplash.com/photo-1521119989659-a83eee488004?q=80&w=300&auto=format&fit=crop',
+        ],
     ];
     $tests = $tests ?? $landingTestimonials;
     $landingTestimonialLoop = $landingTestimonialLoop ?? $repeat ?? array_merge($landingTestimonials, $landingTestimonials, $landingTestimonials);
@@ -2955,7 +2985,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         <div class="testi-track">
             @foreach($landingTestimonialLoop as $t)
             <div class="testi-card">
-                <p style="font-size:0.88rem;color:rgba(255,255,255,0.88);font-style:italic;line-height:1.7;margin-bottom:22px;">"SmartProbook's neural-ledgers have fundamentally changed how we manage our global hubs. Unmatched precision."</p>
+                <p style="font-size:0.88rem;color:rgba(255,255,255,0.88);font-style:italic;line-height:1.7;margin-bottom:22px;">"{{ $t['quote'] }}"</p>
                 <div class="d-flex align-items-center gap-3">
                     <img src="{{ $t['img'] }}" class="testi-avatar" alt="{{ $t['name'] }}">
                     <div>
