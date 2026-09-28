@@ -2081,7 +2081,7 @@
                         </div>
                         @if (($isDemoWorkspace ?? false) && empty($demoPreviewCustomer))
                             <div class="demo-top-strip__line demo-top-strip__line--muted">
-                                <strong>Dashboard Preview:</strong> Switch between Basic, Pro, and Enterprise to see how each demo workspace looks.
+                                <strong>Dashboard Preview:</strong> Switch between Starter, Basic, Pro, and Enterprise to see how each demo workspace looks.
                                 @if(!empty($demoPreviewPlan))
                                     <span class="ms-1 badge bg-primary">{{ strtoupper($demoPreviewPlan === 'professional' ? 'PRO' : $demoPreviewPlan) }}</span>
                                 @endif
@@ -2096,6 +2096,7 @@
                     </div>
                     @if (($isDemoWorkspace ?? false) && empty($demoPreviewCustomer))
                         <div class="demo-top-strip__actions">
+                            <a href="{{ route('demo.workspace.plan', ['plan' => 'starter']) }}" class="btn btn-sm btn-outline-primary">Starter</a>
                             <a href="{{ route('demo.workspace.plan', ['plan' => 'basic']) }}" class="btn btn-sm btn-outline-primary">Basic</a>
                             <a href="{{ route('demo.workspace.plan', ['plan' => 'pro']) }}" class="btn btn-sm btn-outline-primary">Pro</a>
                             <a href="{{ route('demo.workspace.plan', ['plan' => 'enterprise']) }}" class="btn btn-sm btn-outline-primary">Enterprise</a>
@@ -2107,6 +2108,7 @@
                         </div>
                     @else
                         <div class="demo-top-strip__actions">
+                            <a href="{{ route('customers.demo-preview', ['id' => $demoPreviewCustomer->id, 'plan' => 'starter']) }}" class="btn btn-sm btn-outline-primary">Starter</a>
                             <a href="{{ route('customers.demo-preview', ['id' => $demoPreviewCustomer->id, 'plan' => 'basic']) }}" class="btn btn-sm btn-outline-primary">Basic</a>
                             <a href="{{ route('customers.demo-preview', ['id' => $demoPreviewCustomer->id, 'plan' => 'pro']) }}" class="btn btn-sm btn-outline-primary">Pro</a>
                             <a href="{{ route('customers.demo-preview', ['id' => $demoPreviewCustomer->id, 'plan' => 'enterprise']) }}" class="btn btn-sm btn-outline-primary">Enterprise</a>

@@ -1251,9 +1251,7 @@ class SubscriptionController extends Controller
             }
 
             $startDate = now();
-            $endDate   = strtolower($subscription->billing_cycle) === 'yearly'
-                ? $startDate->copy()->addYear()
-                : $startDate->copy()->addMonth();
+            $endDate = Subscription::initialPaidTermEndDate($startDate, $subscription->billing_cycle);
 
             $subscriptionUpdateData = [
                 'status'                => 'Active',
@@ -1374,9 +1372,7 @@ class SubscriptionController extends Controller
             }
 
             $startDate = now();
-            $endDate   = strtolower($subscription->billing_cycle) === 'yearly'
-                ? $startDate->copy()->addYear()
-                : $startDate->copy()->addMonth();
+            $endDate = Subscription::initialPaidTermEndDate($startDate, $subscription->billing_cycle);
 
             // 1. Activate subscription
             $subscriptionUpdateData = [
@@ -2349,9 +2345,7 @@ class SubscriptionController extends Controller
         DB::beginTransaction();
         try {
             $startDate = now();
-            $endDate   = strtolower((string) $subscription->billing_cycle) === 'yearly'
-                ? $startDate->copy()->addYear()
-                : $startDate->copy()->addMonth();
+            $endDate = Subscription::initialPaidTermEndDate($startDate, $subscription->billing_cycle);
 
             $managerId = $this->resolveDeploymentManagerId($subscription);
             $reference = (string) ($subscription->transfer_reference ?: $subscription->transaction_reference ?: ('BANK_TRANSFER_' . time()));

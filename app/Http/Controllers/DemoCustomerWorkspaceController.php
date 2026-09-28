@@ -74,6 +74,7 @@ class DemoCustomerWorkspaceController extends Controller
         $value = strtolower(trim((string) $plan));
 
         return match ($value) {
+            'starter' => 'starter',
             'enterprise' => 'enterprise',
             'pro', 'professional' => 'professional',
             default => 'basic',

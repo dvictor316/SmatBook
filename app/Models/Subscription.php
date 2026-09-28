@@ -24,6 +24,8 @@ class Subscription extends Model
 {
     use HasFactory, TenantScoped;
 
+    public const FREE_TRIAL_MONTHS = 1;
+
     /**
      * REWRITTEN: SUBSCRIPTION MODEL
      * Modified to include 'plan_name' and 'plan' in fillable to prevent 
@@ -292,9 +294,18 @@ class Subscription extends Model
             'status' => 'Trial',
             'payment_status' => 'free',
             'start_date' => $startDate,
-            'end_date' => $startDate->copy()->addMonth(),
+            'end_date' => $startDate->copy()->addMonths(self::FREE_TRIAL_MONTHS),
             'initialized_at' => $startDate,
         ];
+    }
+
+    public static function initialPaidTermEndDate(?Carbon $startDate = null, ?string $billingCycle = 'yearly'): Carbon
+    {
+        $startDate = $startDate ?: now();
+
+        return strtolower(trim((string) $billingCycle)) === 'yearly'
+            ? $startDate->copy()->addMonths(12 + self::FREE_TRIAL_MONTHS)
+            : $startDate->copy()->addMonth();
     }
 
     public function isTrial(): bool
