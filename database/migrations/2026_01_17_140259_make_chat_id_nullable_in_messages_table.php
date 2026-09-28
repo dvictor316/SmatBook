@@ -13,28 +13,31 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Disable foreign key checks to prevent the 'Incompatible' error
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        if (! Schema::hasTable('messages')) {
+            return;
+        }
 
-        // 1. Check if column exists before trying to modify it
-        if (!Schema::hasColumn('messages', 'chat_id')) {
+        Schema::disableForeignKeyConstraints();
+
+        if (! Schema::hasColumn('messages', 'chat_id')) {
             Schema::table('messages', function (Blueprint $table) {
-                // Create it if it doesn't exist (Fixes your SQLSTATE[42S22] error)
                 $table->string('chat_id', 191)->nullable()->after('id');
             });
         } else {
-            // 2. If it exists, manually drop the constraint if present
-            try {
-                DB::statement('ALTER TABLE messages DROP FOREIGN KEY messages_chat_id_foreign');
-            } catch (\Exception $e) {
-                // Ignore if constraint doesn't exist
+            if (DB::getDriverName() === 'mysql') {
+                try {
+                    DB::statement('ALTER TABLE messages DROP FOREIGN KEY messages_chat_id_foreign');
+                } catch (\Throwable) {
+                    // The column may never have had a foreign key.
+                }
             }
 
-            // 3. Force change the column to VARCHAR(191) to hold the UUID/String IDs
-            DB::statement('ALTER TABLE messages MODIFY chat_id VARCHAR(191) NULL');
+            Schema::table('messages', function (Blueprint $table) {
+                $table->string('chat_id', 191)->nullable()->change();
+            });
         }
 
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        Schema::enableForeignKeyConstraints();
     }
 
     public function down(): void

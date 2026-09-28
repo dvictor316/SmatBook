@@ -167,9 +167,9 @@ class HotelDashboardController extends Controller
             ->get();
 
         $roomTypePerformanceRows = Reservation::query()
-            ->where('company_id', $companyId)
-            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
-            ->whereBetween('arrival_date', [$fromDate, $toDate])
+            ->where('reservations.company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('reservations.property_id', $propertyId))
+            ->whereBetween('reservations.arrival_date', [$fromDate, $toDate])
             ->leftJoin('hotel_room_types', 'reservations.room_type_id', '=', 'hotel_room_types.id')
             ->selectRaw('COALESCE(hotel_room_types.name, "Unassigned") as room_type_name, COUNT(reservations.id) as total_reservations, SUM(COALESCE(reservations.total,0)) as total_revenue')
             ->groupBy('room_type_name')

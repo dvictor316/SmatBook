@@ -6,18 +6,21 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-public function up()
-{
-    Schema::table('messages', function (Blueprint $table) {
-        // This adds the 'deleted_at' column required for SoftDeletes
-        $table->softDeletes(); 
-    });
-}
+    public function up(): void
+    {
+        if (Schema::hasTable('messages') && ! Schema::hasColumn('messages', 'deleted_at')) {
+            Schema::table('messages', function (Blueprint $table) {
+                $table->softDeletes();
+            });
+        }
+    }
 
-public function down()
-{
-    Schema::table('messages', function (Blueprint $table) {
-        $table->dropSoftDeletes();
-    });
-}
+    public function down(): void
+    {
+        if (Schema::hasTable('messages') && Schema::hasColumn('messages', 'deleted_at')) {
+            Schema::table('messages', function (Blueprint $table) {
+                $table->dropSoftDeletes();
+            });
+        }
+    }
 };

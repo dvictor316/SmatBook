@@ -9,9 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         if (
-            !Schema::hasTable('credit_notes')
-            || !Schema::hasTable('sales')
-            || !Schema::hasColumn('credit_notes', 'sale_id')
+            DB::getDriverName() === 'sqlite'
+            || ! Schema::hasTable('credit_notes')
+            || ! Schema::hasTable('sales')
+            || ! Schema::hasColumn('credit_notes', 'sale_id')
         ) {
             return;
         }

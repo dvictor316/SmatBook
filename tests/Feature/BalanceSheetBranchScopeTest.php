@@ -328,7 +328,7 @@ class BalanceSheetBranchScopeTest extends TestCase
         $this->assertSame(125000.0, round((float) $bankLine->balance, 2));
     }
 
-    public function test_profit_loss_uses_purchase_item_total_when_purchase_header_total_is_zero(): void
+    public function test_profit_loss_does_not_expense_inventory_before_it_is_sold(): void
     {
         $user = User::query()->create([
             'name' => 'Profit User',
@@ -376,7 +376,7 @@ class BalanceSheetBranchScopeTest extends TestCase
         $view = $controller->profit_loss_list($request);
         $totals = $view->getData()['totals'];
 
-        $this->assertSame(10000.0, round((float) $totals->total_purchase_expense, 2));
+        $this->assertSame(0.0, round((float) $totals->total_purchase_expense, 2));
     }
 
     private function invokePrivate(object $target, string $method, array $arguments = [])

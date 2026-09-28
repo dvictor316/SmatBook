@@ -15,14 +15,17 @@ return new class extends Migration
             });
         }
 
-        // Back-fill existing rows from the products table
-        DB::statement("
-            UPDATE sale_items si
-            JOIN products p ON p.id = si.product_id
-            SET si.product_name = p.name
-            WHERE si.product_name IS NULL
-              AND si.product_id IS NOT NULL
-        ");
+        DB::table('sale_items')
+            ->whereNull('product_name')
+            ->whereNotNull('product_id')
+            ->whereExists(function ($query) {
+                $query->selectRaw('1')
+                    ->from('products')
+                    ->whereColumn('products.id', 'sale_items.product_id');
+            })
+            ->update([
+                'product_name' => DB::raw('(SELECT products.name FROM products WHERE products.id = sale_items.product_id)'),
+            ]);
     }
 
     public function down(): void

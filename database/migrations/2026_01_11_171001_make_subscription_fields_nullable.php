@@ -9,16 +9,25 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-  public function up(): void
-{
-    Schema::table('subscriptions', function (Blueprint $table) {
-        // Change these to nullable so the initial 'insert' works without them
-        $table->string('domain_prefix')->nullable()->change();
-        $table->string('subscriber_name')->nullable()->change();
-        $table->string('employee_size')->nullable()->change();
-        $table->unsignedBigInteger('plan_id')->nullable()->change();
-    });
-}
+    public function up(): void
+    {
+        if (! Schema::hasTable('subscriptions')) {
+            return;
+        }
+
+        $nullableColumns = [
+            'domain_prefix' => fn (Blueprint $table) => $table->string('domain_prefix')->nullable()->change(),
+            'subscriber_name' => fn (Blueprint $table) => $table->string('subscriber_name')->nullable()->change(),
+            'employee_size' => fn (Blueprint $table) => $table->integer('employee_size')->nullable()->change(),
+            'plan_id' => fn (Blueprint $table) => $table->unsignedBigInteger('plan_id')->nullable()->change(),
+        ];
+
+        foreach ($nullableColumns as $column => $change) {
+            if (Schema::hasColumn('subscriptions', $column)) {
+                Schema::table('subscriptions', $change);
+            }
+        }
+    }
 
     /**
      * Reverse the migrations.

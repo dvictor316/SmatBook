@@ -36,7 +36,7 @@ class DemoSettingsTest extends TestCase
 
         $this->assertTrue($settings->isEnabled());
         $this->assertTrue($settings->autoResetOnSessionStart());
-        $this->assertSame(48, $settings->lifetimeHours());
+        $this->assertSame(168, $settings->lifetimeHours());
         $this->assertContains('subscription.', $settings->blockedRoutePrefixes());
     }
 

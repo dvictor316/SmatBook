@@ -23,6 +23,6 @@ class HotelSuperAdminOverviewTest extends TestCase
         $response = $this->actingAs($superAdmin)->get(route('super_admin.hotels.index'));
 
         $response->assertStatus(200);
-        $response->assertSee('Hotel Overview');
+        $response->assertSee('Hotel Dashboard');
     }
 }

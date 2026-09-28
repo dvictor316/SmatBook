@@ -6,37 +6,53 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-public function up(): void
-{
-    Schema::table('chats', function (Blueprint $table) {
-        // Remove the old columns causing the error
-        if (Schema::hasColumn('chats', 'sender_id')) {
-            $table->dropColumn('sender_id');
-        }
-        if (Schema::hasColumn('chats', 'message')) {
-            $table->dropColumn('message');
-        }
-        if (Schema::hasColumn('chats', 'sender_name')) {
-            $table->dropColumn('sender_name');
+    public function up(): void
+    {
+        if (! Schema::hasTable('chats')) {
+            return;
         }
 
-        // Add the new columns if they don't exist yet
-        if (!Schema::hasColumn('chats', 'user_id')) {
-            $table->unsignedBigInteger('user_id')->after('id');
+        foreach (['sender_id', 'message', 'sender_name'] as $column) {
+            if (Schema::hasColumn('chats', $column)) {
+                Schema::table('chats', fn (Blueprint $table) => $table->dropColumn($column));
+            }
         }
-        if (!Schema::hasColumn('chats', 'content')) {
-            $table->text('content')->after('receiver_id');
-        }
-    });
-}
+
+        Schema::table('chats', function (Blueprint $table) {
+            if (! Schema::hasColumn('chats', 'user_id')) {
+                $table->unsignedBigInteger('user_id')->after('id');
+            }
+            if (! Schema::hasColumn('chats', 'content')) {
+                $table->text('content')->after('receiver_id');
+            }
+        });
+    }
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
+        if (! Schema::hasTable('chats')) {
+            return;
+        }
+
         Schema::table('chats', function (Blueprint $table) {
-            //
+            if (! Schema::hasColumn('chats', 'sender_id')) {
+                $table->unsignedBigInteger('sender_id')->after('id');
+            }
+            if (! Schema::hasColumn('chats', 'message')) {
+                $table->text('message')->after('receiver_id');
+            }
+            if (! Schema::hasColumn('chats', 'sender_name')) {
+                $table->string('sender_name')->nullable();
+            }
         });
+
+        foreach (['user_id', 'content'] as $column) {
+            if (Schema::hasColumn('chats', $column)) {
+                Schema::table('chats', fn (Blueprint $table) => $table->dropColumn($column));
+            }
+        }
     }
 };

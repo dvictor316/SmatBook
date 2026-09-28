@@ -33,7 +33,8 @@ return new class extends Migration
             });
 
             // Backfill: join to purchases to get company_id
-            if (Schema::hasColumn('purchase_returns', 'company_id')
+            if (DB::getDriverName() !== 'sqlite'
+                && Schema::hasColumn('purchase_returns', 'company_id')
                 && Schema::hasTable('purchases')
                 && Schema::hasColumn('purchases', 'company_id')) {
                 DB::statement(
@@ -45,7 +46,8 @@ return new class extends Migration
             }
 
             // Backfill user_id from purchases if available
-            if (Schema::hasColumn('purchase_returns', 'user_id')
+            if (DB::getDriverName() !== 'sqlite'
+                && Schema::hasColumn('purchase_returns', 'user_id')
                 && Schema::hasTable('purchases')
                 && Schema::hasColumn('purchases', 'user_id')) {
                 DB::statement(
@@ -69,7 +71,8 @@ return new class extends Migration
             });
 
             // Backfill via purchase_returns
-            if (Schema::hasColumn('purchase_return_items', 'company_id')
+            if (DB::getDriverName() !== 'sqlite'
+                && Schema::hasColumn('purchase_return_items', 'company_id')
                 && Schema::hasTable('purchase_returns')
                 && Schema::hasColumn('purchase_returns', 'company_id')) {
                 DB::statement(
@@ -80,7 +83,8 @@ return new class extends Migration
                 );
             }
 
-            if (Schema::hasColumn('purchase_return_items', 'user_id')
+            if (DB::getDriverName() !== 'sqlite'
+                && Schema::hasColumn('purchase_return_items', 'user_id')
                 && Schema::hasTable('purchase_returns')
                 && Schema::hasColumn('purchase_returns', 'user_id')) {
                 DB::statement(
@@ -104,7 +108,8 @@ return new class extends Migration
             });
 
             // Backfill via invoices (preferred)
-            if (Schema::hasColumn('credit_notes', 'company_id')
+            if (DB::getDriverName() !== 'sqlite'
+                && Schema::hasColumn('credit_notes', 'company_id')
                 && Schema::hasTable('invoices')
                 && Schema::hasColumn('invoices', 'company_id')
                 && Schema::hasColumn('credit_notes', 'invoice_id')) {
@@ -117,7 +122,8 @@ return new class extends Migration
             }
 
             // Fallback: backfill via sales table if invoices not available
-            if (Schema::hasColumn('credit_notes', 'company_id')
+            if (DB::getDriverName() !== 'sqlite'
+                && Schema::hasColumn('credit_notes', 'company_id')
                 && Schema::hasTable('sales')
                 && Schema::hasColumn('sales', 'company_id')
                 && Schema::hasColumn('credit_notes', 'invoice_id')) {
@@ -142,7 +148,8 @@ return new class extends Migration
             });
 
             // Backfill via credit_notes
-            if (Schema::hasColumn('credit_note_items', 'company_id')
+            if (DB::getDriverName() !== 'sqlite'
+                && Schema::hasColumn('credit_note_items', 'company_id')
                 && Schema::hasTable('credit_notes')
                 && Schema::hasColumn('credit_notes', 'company_id')) {
                 DB::statement(
@@ -153,7 +160,8 @@ return new class extends Migration
                 );
             }
 
-            if (Schema::hasColumn('credit_note_items', 'user_id')
+            if (DB::getDriverName() !== 'sqlite'
+                && Schema::hasColumn('credit_note_items', 'user_id')
                 && Schema::hasTable('credit_notes')
                 && Schema::hasColumn('credit_notes', 'user_id')) {
                 DB::statement(
@@ -166,7 +174,8 @@ return new class extends Migration
         }
 
         // ── 5. sale_items — backfill company_id from sales ───────────────────
-        if (Schema::hasTable('sale_items')
+        if (DB::getDriverName() !== 'sqlite'
+            && Schema::hasTable('sale_items')
             && Schema::hasColumn('sale_items', 'company_id')
             && Schema::hasTable('sales')
             && Schema::hasColumn('sales', 'company_id')) {
@@ -192,7 +201,8 @@ return new class extends Migration
         }
 
         // ── 6. purchase_items — backfill company_id from purchases ───────────
-        if (Schema::hasTable('purchase_items')
+        if (DB::getDriverName() !== 'sqlite'
+            && Schema::hasTable('purchase_items')
             && Schema::hasColumn('purchase_items', 'company_id')
             && Schema::hasTable('purchases')
             && Schema::hasColumn('purchases', 'company_id')) {

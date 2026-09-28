@@ -12,13 +12,17 @@ return new class extends Migration {
             return;
         }
 
-        Schema::table('products', function (Blueprint $table) {
-            $table->dropForeign(['category_id']);
-        });
+        if (DB::getDriverName() !== 'sqlite') {
+            Schema::table('products', function (Blueprint $table) {
+                $table->dropForeign(['category_id']);
+            });
+        }
 
         Schema::table('products', function (Blueprint $table) {
             $table->unsignedBigInteger('category_id')->nullable()->change();
-            $table->foreign('category_id')->references('id')->on('categories')->nullOnDelete();
+            if (DB::getDriverName() !== 'sqlite') {
+                $table->foreign('category_id')->references('id')->on('categories')->nullOnDelete();
+            }
         });
     }
 
@@ -36,13 +40,17 @@ return new class extends Migration {
                 ->update(['category_id' => $fallbackCategoryId]);
         }
 
-        Schema::table('products', function (Blueprint $table) {
-            $table->dropForeign(['category_id']);
-        });
+        if (DB::getDriverName() !== 'sqlite') {
+            Schema::table('products', function (Blueprint $table) {
+                $table->dropForeign(['category_id']);
+            });
+        }
 
         Schema::table('products', function (Blueprint $table) {
             $table->unsignedBigInteger('category_id')->nullable(false)->change();
-            $table->foreign('category_id')->references('id')->on('categories')->cascadeOnDelete();
+            if (DB::getDriverName() !== 'sqlite') {
+                $table->foreign('category_id')->references('id')->on('categories')->cascadeOnDelete();
+            }
         });
     }
 };

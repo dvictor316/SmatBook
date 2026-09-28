@@ -1,16 +1,3 @@
-// Original Page: database/migrations/xxxx_xx_xx_add_domain_prefix_to_companies_table.php
-// Domain Context: 'domain' => env('SESSION_DOMAIN', null)
-
-<script>
-/**
- * Standard Print Script
- * Useful for documenting database schema changes.
- */
-function printPage() {
-    window.print();
-}
-</script>
-
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -31,11 +18,12 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('companies') || Schema::hasColumn('companies', 'domain_prefix')) {
+            return;
+        }
+
         Schema::table('companies', function (Blueprint $table) {
-            // Adding domain_prefix to match your route query logic
-            if (!Schema::hasColumn('companies', 'domain_prefix')) {
-                $table->string('domain_prefix')->nullable()->after('subdomain')->index();
-            }
+            $table->string('domain_prefix')->nullable()->after('subdomain')->index();
         });
     }
 
@@ -44,6 +32,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('companies') || ! Schema::hasColumn('companies', 'domain_prefix')) {
+            return;
+        }
+
         Schema::table('companies', function (Blueprint $table) {
             $table->dropColumn('domain_prefix');
         });
