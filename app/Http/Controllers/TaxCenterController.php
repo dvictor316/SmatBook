@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\TaxAccountMapping;
+use App\Models\TaxAuditLog;
 use App\Models\TaxCode;
 use App\Models\TaxJurisdiction;
 use App\Models\WithholdingRule;
@@ -23,7 +24,9 @@ class TaxCenterController extends Controller
                 'taxCodes' => collect(),
                 'withholdingRules' => collect(),
                 'accountMappings' => collect(),
+                'auditLogs' => collect(),
                 'supportedCountries' => TaxCountryCatalog::supportedCountries(),
+                'presetCountries' => TaxCountryCatalog::presetCountries(),
                 'taxSetupMissing' => true,
             ]);
         }
@@ -49,26 +52,39 @@ class TaxCenterController extends Controller
                 ->limit(50)
                 ->get()
             : collect();
+        $auditLogs = Schema::hasTable('tax_audit_logs')
+            ? TaxAuditLog::query()
+                ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_audit_logs'))
+                ->latest()
+                ->limit(25)
+                ->get()
+            : collect();
 
         return view('compliance.tax-center.index', [
             'jurisdictions' => $jurisdictions,
             'taxCodes' => $taxCodes,
             'withholdingRules' => $withholdingRules,
             'accountMappings' => $accountMappings,
+            'auditLogs' => $auditLogs,
             'supportedCountries' => TaxCountryCatalog::supportedCountries(),
+            'presetCountries' => TaxCountryCatalog::presetCountries(),
         ]);
     }
 
-    public function bootstrapDefaults(TaxEngineBootstrapService $bootstrapService)
+    public function bootstrapDefaults(Request $request, TaxEngineBootstrapService $bootstrapService)
     {
         if (!$this->taxTablesReady()) {
             return back()->with('error', $this->migrationMessage());
         }
 
-        $created = $bootstrapService->bootstrapDefaults();
+        $validated = $request->validate([
+            'country_code' => ['required', Rule::in(array_keys(TaxCountryCatalog::presetCountries()))],
+        ]);
+        $created = $bootstrapService->bootstrapDefaults($validated['country_code']);
 
         return back()->with('success', sprintf(
-            'Tax defaults bootstrapped. Jurisdictions: %d, Tax codes: %d, WHT rules: %d, Account mappings: %d.',
+            '%s tax pack installed. Jurisdictions: %d, Tax codes: %d, WHT rules: %d, Account mappings: %d.',
+            $created['country_code'] ?? $validated['country_code'],
             $created['jurisdictions'] ?? 0,
             $created['tax_codes'] ?? 0,
             $created['withholding_rules'] ?? 0,

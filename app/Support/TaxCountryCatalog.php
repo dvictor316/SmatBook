@@ -130,6 +130,20 @@ class TaxCountryCatalog
         ];
     }
 
+    public static function presetCountries(): array
+    {
+        return array_intersect_key(self::supportedCountries(), array_flip(['NGA', 'USA']));
+    }
+
+    public static function presetsFor(string $countryCode): ?array
+    {
+        return match (strtoupper($countryCode)) {
+            'NGA' => self::nigeriaPresets(),
+            'USA' => self::unitedStatesPresets(),
+            default => null,
+        };
+    }
+
     public static function nigeriaPresets(): array
     {
         return [
@@ -142,10 +156,19 @@ class TaxCountryCatalog
                 'filing_deadline_days' => 21,
                 'tax_authority_name' => 'Nigeria Revenue Service',
                 'registration_threshold' => 25000000,
-                'portal_url' => 'https://taxpromax.firs.gov.ng/',
+                'portal_url' => 'https://selfservice.nrs.gov.ng/',
                 'metadata' => [
                     'supports_atrs' => true,
                     'default_reverse_charge' => false,
+                    'jurisdiction_level' => 'federal',
+                    'regulatory_status' => 'verified',
+                    'reviewed_on' => '2026-10-02',
+                    'effective_framework_from' => '2026-01-01',
+                    'sources' => [
+                        'https://www.nrs.gov.ng/tax-laws/nrs-act',
+                        'https://www.nrs.gov.ng/tax-information/value-added-tax',
+                        'https://einvoice.nrs.gov.ng/docs/system-integrator/invoice-schema',
+                    ],
                 ],
             ],
             'tax_codes' => [
@@ -251,6 +274,143 @@ class TaxCountryCatalog
                 ['tax_type' => 'corporate_income_tax', 'role' => 'tax_expense', 'account_code' => 'TAX-EXPENSE', 'account_name' => 'Tax Expense'],
                 ['tax_type' => 'deferred_tax', 'role' => 'deferred_tax', 'account_code' => 'DEFERRED-TAX', 'account_name' => 'Deferred Tax'],
                 ['tax_type' => 'stamp_duty', 'role' => 'stamp_duty_payable', 'account_code' => 'STAMP-DUTY-PAYABLE', 'account_name' => 'Stamp Duty Payable'],
+            ],
+        ];
+    }
+
+    public static function unitedStatesPresets(): array
+    {
+        $salesTaxSource = 'https://www.sba.gov/counseling/launch-your-business/department-of-revenue-lookup/';
+
+        return [
+            'jurisdiction' => [
+                'name' => 'United States Tax (Federal, State & Local)',
+                'country_code' => 'USA',
+                'region' => 'Multi-level',
+                'currency_code' => 'USD',
+                'filing_frequency' => 'annual',
+                'filing_deadline_days' => 0,
+                'tax_authority_name' => 'IRS / State Revenue Authority',
+                'registration_threshold' => 0,
+                'portal_url' => 'https://www.irs.gov/businesses',
+                'metadata' => [
+                    'jurisdiction_level' => 'federal_state_local',
+                    'regulatory_status' => 'verified_framework',
+                    'reviewed_on' => '2026-10-02',
+                    'requires_nexus_review' => true,
+                    'due_rule' => 'Federal corporate returns are generally due on the 15th day of the fourth month; state and local deadlines vary.',
+                    'sources' => ['https://www.irs.gov/instructions/i1120', $salesTaxSource],
+                ],
+            ],
+            'tax_codes' => [
+                [
+                    'code' => 'USA-FED-CIT-PROVISION',
+                    'name' => 'US Federal Corporate Income Tax Provision',
+                    'description' => 'Estimated federal C-corporation income tax provision',
+                    'type' => 'corporate_income_tax',
+                    'category' => 'direct',
+                    'rate' => 21,
+                    'calculation_method' => 'exclusive',
+                    'filing_frequency' => 'annual',
+                    'filing_deadline_days' => 0,
+                    'report_template' => 'us-form-1120-workpaper',
+                    'ledger_payable_account_code' => 'US-FED-TAX-PAYABLE',
+                    'ledger_expense_account_code' => 'US-INCOME-TAX-EXPENSE',
+                    'applies_to' => ['manual_journal', 'period_close'],
+                    'metadata' => [
+                        'estimated_only' => true,
+                        'requires_configuration' => true,
+                        'review_reason' => 'Confirm C-corporation status, taxable-income adjustments, and credits before activation.',
+                        'source_url' => 'https://www.irs.gov/instructions/i1120',
+                    ],
+                ],
+                [
+                    'code' => 'USA-STATE-SALES',
+                    'name' => 'US State Sales Tax',
+                    'description' => 'State rate configured for the applicable nexus and destination',
+                    'type' => 'sales_tax',
+                    'category' => 'indirect',
+                    'rate' => 0,
+                    'calculation_method' => 'exclusive',
+                    'filing_frequency' => 'monthly',
+                    'filing_deadline_days' => 0,
+                    'report_template' => 'us-state-sales-tax',
+                    'ledger_output_account_code' => 'US-SALES-TAX-PAYABLE',
+                    'ledger_payable_account_code' => 'US-SALES-TAX-PAYABLE',
+                    'applies_to' => ['sales', 'credit_notes'],
+                    'metadata' => [
+                        'jurisdiction_level' => 'state',
+                        'requires_configuration' => true,
+                        'requires_nexus_review' => true,
+                        'review_reason' => 'Enter the official rate, sourcing method, frequency, and nexus threshold for each registered state.',
+                        'source_url' => $salesTaxSource,
+                    ],
+                ],
+                [
+                    'code' => 'USA-LOCAL-SALES',
+                    'name' => 'US County / City Sales Tax',
+                    'description' => 'County, city, district, or other local sales tax',
+                    'type' => 'sales_tax',
+                    'category' => 'indirect',
+                    'rate' => 0,
+                    'calculation_method' => 'exclusive',
+                    'compound_order' => 20,
+                    'filing_frequency' => 'monthly',
+                    'filing_deadline_days' => 0,
+                    'report_template' => 'us-local-sales-tax',
+                    'ledger_output_account_code' => 'US-SALES-TAX-PAYABLE',
+                    'ledger_payable_account_code' => 'US-SALES-TAX-PAYABLE',
+                    'applies_to' => ['sales', 'credit_notes'],
+                    'metadata' => [
+                        'jurisdiction_level' => 'local',
+                        'requires_configuration' => true,
+                        'review_reason' => 'Enter every applicable local component from the official revenue authority.',
+                        'source_url' => $salesTaxSource,
+                    ],
+                ],
+                [
+                    'code' => 'USA-SALES-EXEMPT',
+                    'name' => 'US Sales Tax Exempt',
+                    'description' => 'Exempt sale supported by an exemption or resale certificate',
+                    'type' => 'sales_tax',
+                    'category' => 'indirect',
+                    'rate' => 0,
+                    'calculation_method' => 'exclusive',
+                    'is_exempt' => true,
+                    'applies_to' => ['sales'],
+                    'metadata' => [
+                        'requires_exemption_certificate' => true,
+                        'requires_configuration' => true,
+                        'review_reason' => 'Verify the customer, product, jurisdiction, certificate number, and expiry.',
+                        'source_url' => $salesTaxSource,
+                    ],
+                ],
+            ],
+            'withholding_rules' => [
+                [
+                    'name' => 'US Backup Withholding',
+                    'service_type' => 'reportable_payments',
+                    'counterparty_type' => 'vendor',
+                    'rate' => 24,
+                    'threshold_amount' => 0,
+                    'account_code' => 'US-WHT-PAYABLE',
+                    'payable_account_code' => 'US-WHT-PAYABLE',
+                    'receivable_account_code' => 'US-WHT-RECEIVABLE',
+                    'certificate_prefix' => 'US-BWH',
+                    'metadata' => [
+                        'conditional' => true,
+                        'review_reason' => 'Apply only when IRS backup-withholding conditions are met; retain W-9 and notice evidence.',
+                        'source_url' => 'https://www.irs.gov/businesses/small-businesses-self-employed/backup-withholding',
+                        'reviewed_on' => '2026-10-02',
+                    ],
+                ],
+            ],
+            'account_mappings' => [
+                ['tax_type' => 'sales_tax', 'role' => 'sales_tax_payable', 'account_code' => 'US-SALES-TAX-PAYABLE', 'account_name' => 'US Sales Tax Payable'],
+                ['tax_type' => 'withholding', 'role' => 'withholding_payable', 'account_code' => 'US-WHT-PAYABLE', 'account_name' => 'US Backup Withholding Payable'],
+                ['tax_type' => 'withholding', 'role' => 'withholding_receivable', 'account_code' => 'US-WHT-RECEIVABLE', 'account_name' => 'US Withholding Receivable'],
+                ['tax_type' => 'corporate_income_tax', 'role' => 'tax_payable', 'account_code' => 'US-FED-TAX-PAYABLE', 'account_name' => 'US Federal Income Tax Payable'],
+                ['tax_type' => 'corporate_income_tax', 'role' => 'tax_expense', 'account_code' => 'US-INCOME-TAX-EXPENSE', 'account_name' => 'US Income Tax Expense'],
             ],
         ];
     }

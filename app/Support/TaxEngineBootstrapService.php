@@ -10,54 +10,37 @@ use Illuminate\Support\Facades\Schema;
 
 class TaxEngineBootstrapService
 {
-    public function bootstrapDefaults(?int $companyId = null, ?int $userId = null, ?array $branch = null): array
+    public function bootstrapDefaults(string $countryCode = 'NGA', ?int $companyId = null, ?int $userId = null, ?array $branch = null): array
     {
+        $countryCode = strtoupper($countryCode);
+        $preset = TaxCountryCatalog::presetsFor($countryCode);
+        if ($preset === null) {
+            throw new \InvalidArgumentException("No verified tax preset is available for {$countryCode}.");
+        }
+
         $companyId = $companyId ?: (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0) ?: null;
         $userId = $userId ?: (int) (auth()->id() ?? 0) ?: null;
         $branchId = trim((string) ($branch['id'] ?? session('active_branch_id', '')));
         $branchName = trim((string) ($branch['name'] ?? session('active_branch_name', '')));
 
-        $supported = TaxCountryCatalog::supportedCountries();
         $created = [
+            'country_code' => $countryCode,
             'jurisdictions' => 0,
             'tax_codes' => 0,
             'withholding_rules' => 0,
             'account_mappings' => 0,
         ];
 
-        foreach ($supported as $countryCode => $definition) {
-            if (!Schema::hasTable('tax_jurisdictions')) {
-                break;
-            }
+        $hasDefaultJurisdiction = TaxJurisdiction::query()
+            ->where('company_id', $companyId)
+            ->where('branch_id', $branchId !== '' ? $branchId : null)
+            ->where('is_default', true)
+            ->exists();
 
-            $jurisdiction = TaxJurisdiction::query()->firstOrCreate(
-                [
-                    'company_id' => $companyId,
-                    'country_code' => $countryCode,
-                    'name' => $definition['name'],
-                    'branch_id' => $branchId !== '' ? $branchId : null,
-                ],
-                [
-                    'user_id' => $userId,
-                    'branch_name' => $branchName !== '' ? $branchName : null,
-                    'currency_code' => $definition['currency'],
-                    'filing_frequency' => $definition['filing_frequency'],
-                    'filing_deadline_days' => $definition['filing_deadline_days'],
-                    'is_active' => true,
-                    'is_default' => $countryCode === 'NGA',
-                ]
-            );
-
-            if ($jurisdiction->wasRecentlyCreated) {
-                $created['jurisdictions']++;
-            }
-        }
-
-        $preset = TaxCountryCatalog::nigeriaPresets();
         $jurisdiction = TaxJurisdiction::query()->firstOrCreate(
             [
                 'company_id' => $companyId,
-                'country_code' => 'NGA',
+                'country_code' => $countryCode,
                 'name' => $preset['jurisdiction']['name'],
                 'branch_id' => $branchId !== '' ? $branchId : null,
             ],
@@ -72,10 +55,14 @@ class TaxEngineBootstrapService
                 'registration_threshold' => $preset['jurisdiction']['registration_threshold'],
                 'portal_url' => $preset['jurisdiction']['portal_url'],
                 'metadata' => $preset['jurisdiction']['metadata'],
-                'is_default' => true,
+                'is_default' => !$hasDefaultJurisdiction,
                 'is_active' => true,
             ]
         );
+
+        if ($jurisdiction->wasRecentlyCreated) {
+            $created['jurisdictions']++;
+        }
 
         foreach ($preset['tax_codes'] as $taxCodePreset) {
             $taxCode = TaxCode::query()->firstOrCreate(
@@ -88,7 +75,7 @@ class TaxEngineBootstrapService
                 array_merge($taxCodePreset, [
                     'user_id' => $userId,
                     'branch_name' => $branchName !== '' ? $branchName : null,
-                    'country_code' => 'NGA',
+                    'country_code' => $countryCode,
                     'is_active' => true,
                 ])
             );
@@ -109,7 +96,7 @@ class TaxEngineBootstrapService
                 array_merge($rulePreset, [
                     'user_id' => $userId,
                     'branch_name' => $branchName !== '' ? $branchName : null,
-                    'country_code' => 'NGA',
+                    'country_code' => $countryCode,
                     'is_active' => true,
                 ])
             );
@@ -132,7 +119,7 @@ class TaxEngineBootstrapService
                     array_merge($mappingPreset, [
                         'user_id' => $userId,
                         'branch_name' => $branchName !== '' ? $branchName : null,
-                        'country_code' => 'NGA',
+                        'country_code' => $countryCode,
                         'is_required' => true,
                     ])
                 );
@@ -145,7 +132,7 @@ class TaxEngineBootstrapService
 
         TaxAuditService::record(null, 'tax.bootstrap_defaults', null, $created, [
             'company_id' => $companyId,
-            'country_code' => 'NGA',
+            'country_code' => $countryCode,
         ]);
 
         return $created;

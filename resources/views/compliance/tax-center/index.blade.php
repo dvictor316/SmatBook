@@ -128,12 +128,17 @@
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
             <h4 class="mb-1">Tax Center</h4>
-            <p class="text-muted mb-0 small">Manage jurisdictions, tax codes, and withholding rules.</p>
+            <p class="text-muted mb-0 small">Manage country rules, jurisdiction rates, filings, and audit evidence.</p>
         </div>
         <div class="d-flex gap-2">
-            <form method="POST" action="{{ route('compliance.tax-center.bootstrap') }}">
+            <form method="POST" action="{{ route('compliance.tax-center.bootstrap') }}" class="d-flex gap-2">
                 @csrf
-                <button class="btn btn-primary btn-sm text-white">Bootstrap Nigeria Defaults</button>
+                <select name="country_code" class="form-select form-select-sm" aria-label="Country tax pack" required>
+                    @foreach($presetCountries as $countryCode => $country)
+                        <option value="{{ $countryCode }}">{{ $country['name'] }}</option>
+                    @endforeach
+                </select>
+                <button class="btn btn-primary btn-sm text-white text-nowrap">Install Tax Pack</button>
             </form>
             <a href="{{ route('compliance.tax-filings.index') }}" class="btn btn-outline-primary btn-sm">Tax Filings</a>
             <a href="{{ route('reports.tax-sales') }}" class="btn btn-outline-secondary btn-sm">Sales Tax Report</a>
@@ -395,6 +400,11 @@
                                     <td>{{ strtoupper($taxCode->type) }}</td>
                                     <td>
                                         <span class="badge {{ $taxCode->is_active ? 'bg-success' : 'bg-secondary' }}">{{ $taxCode->is_active ? 'Active' : 'Inactive' }}</span>
+                                        @if(data_get($taxCode->metadata, 'requires_configuration'))
+                                            <span class="badge bg-warning text-dark" title="{{ data_get($taxCode->metadata, 'review_reason') }}">Review required</span>
+                                        @elseif(data_get($taxCode->metadata, 'regulatory_status') === 'verified')
+                                            <span class="badge bg-primary">Source verified</span>
+                                        @endif
                                     </td>
                                     <td class="text-end">
                                         <button class="btn btn-outline-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#editTaxCode{{ $taxCode->id }}">Edit</button>
@@ -610,7 +620,42 @@
                                     <td>{{ $mapping->account_name ?? '—' }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="5" class="text-muted text-center py-3">No account mappings yet. Use Bootstrap Nigeria Defaults to generate the standard chart mappings.</td></tr>
+                                <tr><td colspan="5" class="text-muted text-center py-3">No account mappings yet. Install a country tax pack to generate standard mappings.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="card tc-card tc-table-card">
+                <div class="card-header bg-white">
+                    <strong>Tax Audit Timeline</strong>
+                    <span class="text-muted small">Latest configuration and filing events</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Action</th>
+                                <th>Record</th>
+                                <th>Branch</th>
+                                <th>User ID</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($auditLogs as $log)
+                                <tr>
+                                    <td class="text-nowrap">{{ $log->created_at?->format('d M Y, H:i') }}</td>
+                                    <td>{{ str_replace(['.', '_'], ' ', ucfirst($log->action)) }}</td>
+                                    <td>{{ class_basename($log->auditable_type) }}{{ $log->auditable_id ? ' #' . $log->auditable_id : '' }}</td>
+                                    <td>{{ $log->branch_name ?: ($log->branch_id ?: 'All') }}</td>
+                                    <td>{{ $log->created_by ?: ($log->user_id ?: 'System') }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="5" class="text-muted text-center py-3">No tax audit activity recorded yet.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
