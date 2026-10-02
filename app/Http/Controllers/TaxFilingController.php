@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\TaxAuthorityConnection;
 use App\Models\TaxFiling;
 use App\Models\TaxFilingLine;
+use App\Models\TaxFilingSubmission;
 use App\Models\TaxJurisdiction;
 use App\Support\TaxAuditService;
+use App\Support\TaxAuthorityFilingService;
 use App\Support\TaxReturnPreparationService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -15,23 +19,24 @@ class TaxFilingController extends Controller
 {
     public function index()
     {
-        if (!$this->taxTablesReady()) {
+        if (! $this->taxTablesReady()) {
             return view('compliance.tax-filings.index', [
                 'filings' => collect(),
                 'taxSetupMissing' => true,
             ]);
         }
 
-        $filings = TaxFiling::with(['jurisdiction', 'lines'])
+        $filings = TaxFiling::with(['jurisdiction', 'lines', 'submissions' => fn ($query) => $query->latest()])
             ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_filings'))
             ->latest()
             ->paginate(20);
+
         return view('compliance.tax-filings.index', compact('filings'));
     }
 
     public function create()
     {
-        if (!$this->taxTablesReady()) {
+        if (! $this->taxTablesReady()) {
             return redirect()->route('compliance.tax-filings.index')->with('error', $this->migrationMessage());
         }
 
@@ -40,16 +45,17 @@ class TaxFilingController extends Controller
             ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_jurisdictions'))
             ->orderBy('name')
             ->get();
+
         return view('compliance.tax-filings.create', compact('jurisdictions'));
     }
 
     public function store(Request $request, TaxReturnPreparationService $returnPreparationService)
     {
-        if (!$this->taxTablesReady()) {
+        if (! $this->taxTablesReady()) {
             return back()->with('error', $this->migrationMessage());
         }
 
-        $validated = $request->validate([
+        $validated = $request->validate(array_merge([
             'tax_jurisdiction_id' => 'required|exists:tax_jurisdictions,id',
             'name' => 'required|string|max:255',
             'filing_type' => 'required|string|max:64',
@@ -65,7 +71,7 @@ class TaxFilingController extends Controller
             'tax_refund' => 'nullable|numeric|min:0',
             'adjustments_total' => 'nullable|numeric|min:0',
             'credits_total' => 'nullable|numeric|min:0',
-        ]);
+        ], $this->citValidationRules()));
 
         $jurisdiction = TaxJurisdiction::query()
             ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_jurisdictions'))
@@ -74,7 +80,7 @@ class TaxFilingController extends Controller
         $preview = $returnPreparationService->prepare(
             $validated['period_start'],
             $validated['period_end'],
-            [
+            array_merge([
                 'filing_type' => $validated['filing_type'],
                 'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
                 'user_id' => auth()->id(),
@@ -82,10 +88,10 @@ class TaxFilingController extends Controller
                 'branch_id' => session('active_branch_id'),
                 'branch_name' => session('active_branch_name'),
                 'currency_code' => $validated['currency_code'] ?? $jurisdiction->currency_code ?? 'NGN',
-            ]
+            ], $this->citContext($validated))
         );
 
-        $payload = array_merge($validated, $this->tenantPayload('tax_filings'), [
+        $payload = array_merge(array_diff_key($validated, $this->citValidationRules()), $this->tenantPayload('tax_filings'), [
             'country_code' => $jurisdiction->country_code,
             'currency_code' => $validated['currency_code'] ?? $jurisdiction->currency_code,
             'filing_frequency' => $validated['filing_frequency'] ?? $jurisdiction->filing_frequency,
@@ -135,27 +141,173 @@ class TaxFilingController extends Controller
 
     public function submit($id)
     {
-        if (!$this->taxTablesReady()) {
+        return $this->approve($id);
+    }
+
+    public function approve($id)
+    {
+        if (! $this->taxTablesReady()) {
             return back()->with('error', $this->migrationMessage());
         }
 
-        $filing = TaxFiling::findOrFail($id);
+        $filing = TaxFiling::query()
+            ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_filings'))
+            ->findOrFail($id);
+
+        if (! in_array($filing->status, ['draft', 'rejected', 'failed', 'check_failed'], true)) {
+            return back()->with('error', 'Only a draft or returned filing can be approved.');
+        }
 
         $before = $filing->toArray();
         $filing->update([
-            'status' => 'submitted',
-            'submitted_by' => auth()->id(),
-            'submitted_at' => now(),
-            'reference_no' => $filing->reference_no ?: ('TXF-' . str_pad((string) $filing->id, 6, '0', STR_PAD_LEFT)),
+            'status' => 'approved',
+            'approved_by' => auth()->id(),
+            'approved_at' => now(),
+            'reference_no' => $filing->reference_no ?: ('TXF-'.str_pad((string) $filing->id, 6, '0', STR_PAD_LEFT)),
         ]);
-        TaxAuditService::record($filing, 'tax_filing.submitted', $before, $filing->fresh()->toArray());
+        TaxAuditService::record($filing, 'tax_filing.approved', $before, $filing->fresh()->toArray());
 
-        return back()->with('success', 'Filing submitted.');
+        return back()->with('success', 'Filing approved and locked for authority submission or manual filing.');
+    }
+
+    public function transmit($id, TaxAuthorityFilingService $filingService)
+    {
+        $filing = TaxFiling::query()->with('lines')
+            ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_filings'))
+            ->findOrFail($id);
+        $connection = TaxAuthorityConnection::query()
+            ->where('provider', 'nrs')->where('country_code', 'NGA')
+            ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_authority_connections'))
+            ->latest()->first();
+        if (! $connection) {
+            return back()->with('error', 'Configure the NRS authority connection in Tax Center first.');
+        }
+
+        try {
+            $submission = $filingService->submit($filing, $connection);
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
+        TaxAuditService::record($filing, 'tax_filing.authority_transmission', null, [
+            'submission_id' => $submission->id,
+            'status' => $submission->status,
+            'authority_reference' => $submission->authority_reference,
+        ]);
+
+        return back()->with(
+            $submission->error_message ? 'error' : 'success',
+            $submission->error_message ?: 'Filing transmitted. Authority status: '.ucfirst($submission->status).'.'
+        );
+    }
+
+    public function syncSubmission($id, $submissionId, TaxAuthorityFilingService $filingService)
+    {
+        $filing = TaxFiling::query()
+            ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_filings'))
+            ->findOrFail($id);
+        $submission = TaxFilingSubmission::query()
+            ->where('tax_filing_id', $filing->id)
+            ->findOrFail($submissionId);
+
+        try {
+            $submission = $filingService->sync($submission);
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Authority status refreshed: '.ucfirst($submission->status).'.');
+    }
+
+    public function recordManual(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'authority_reference' => 'required|string|max:255',
+            'filed_at' => 'required|date',
+        ]);
+        $filing = TaxFiling::query()
+            ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_filings'))
+            ->findOrFail($id);
+        if (! $filing->approved_at) {
+            return back()->with('error', 'Approve the filing before recording an external submission.');
+        }
+        $submission = TaxFilingSubmission::firstOrCreate(
+            ['idempotency_key' => 'manual-'.hash('sha256', $filing->id.'|'.$validated['authority_reference'])],
+            [
+                'tax_filing_id' => $filing->id,
+                'company_id' => $filing->company_id,
+                'created_by' => auth()->id(),
+                'provider' => 'manual',
+                'environment' => 'production',
+                'status' => 'accepted',
+                'authority_reference' => $validated['authority_reference'],
+                'request_payload' => ['recorded_manually' => true],
+                'response_payload' => ['filed_at' => $validated['filed_at']],
+                'submitted_at' => $validated['filed_at'],
+                'acknowledged_at' => now(),
+            ]
+        );
+        $filing->update([
+            'status' => 'accepted',
+            'reference_no' => $validated['authority_reference'],
+            'submitted_by' => auth()->id(),
+            'submitted_at' => $validated['filed_at'],
+        ]);
+        TaxAuditService::record($filing, 'tax_filing.manual_submission_recorded', null, $submission->toArray());
+
+        return back()->with('success', 'External authority filing reference recorded.');
+    }
+
+    public function export($id, string $format)
+    {
+        abort_unless(in_array($format, ['json', 'csv', 'pdf'], true), 404);
+        $filing = TaxFiling::query()->with(['jurisdiction', 'lines', 'submissions'])
+            ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_filings'))
+            ->findOrFail($id);
+        $package = [
+            'generated_at' => now()->toIso8601String(),
+            'filing' => $filing->only([
+                'id', 'name', 'filing_type', 'country_code', 'currency_code', 'filing_frequency',
+                'period_start', 'period_end', 'due_date', 'status', 'total_taxable', 'total_tax',
+                'tax_due', 'tax_credit', 'tax_refund', 'adjustments_total', 'reference_no',
+                'approved_by', 'approved_at', 'submitted_by', 'submitted_at',
+            ]),
+            'jurisdiction' => $filing->jurisdiction?->only(['name', 'country_code', 'region', 'tax_authority_name']),
+            'lines' => $filing->lines->toArray(),
+            'submissions' => $filing->submissions->makeHidden(['request_payload', 'response_payload'])->toArray(),
+        ];
+        $package['integrity_hash'] = hash('sha256', json_encode($package, JSON_UNESCAPED_SLASHES));
+        $filename = 'tax-filing-'.$filing->id.'-'.now()->format('Ymd-His');
+
+        if ($format === 'json') {
+            return response(json_encode($package, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 200, [
+                'Content-Type' => 'application/json',
+                'Content-Disposition' => 'attachment; filename="'.$filename.'.json"',
+            ]);
+        }
+        if ($format === 'csv') {
+            return response()->streamDownload(function () use ($filing, $package) {
+                $handle = fopen('php://output', 'w');
+                fputcsv($handle, ['Filing', $filing->name]);
+                fputcsv($handle, ['Period', $filing->period_start?->format('Y-m-d'), $filing->period_end?->format('Y-m-d')]);
+                fputcsv($handle, ['Status', $filing->status, 'Reference', $filing->reference_no]);
+                fputcsv($handle, []);
+                fputcsv($handle, ['Line', 'Tax Type', 'Taxable Base', 'Tax Amount', 'Credit', 'Net Amount']);
+                foreach ($filing->lines as $line) {
+                    fputcsv($handle, [$line->label, $line->tax_type, $line->taxable_base, $line->tax_amount, $line->credit_amount, $line->net_amount]);
+                }
+                fputcsv($handle, []);
+                fputcsv($handle, ['Integrity Hash', $package['integrity_hash']]);
+                fclose($handle);
+            }, $filename.'.csv', ['Content-Type' => 'text/csv']);
+        }
+
+        return Pdf::loadView('compliance.tax-filings.workpaper', compact('filing', 'package'))
+            ->setPaper('a4')->download($filename.'.pdf');
     }
 
     public function edit($id)
     {
-        if (!$this->taxTablesReady()) {
+        if (! $this->taxTablesReady()) {
             return redirect()->route('compliance.tax-filings.index')->with('error', $this->migrationMessage());
         }
 
@@ -163,6 +315,10 @@ class TaxFilingController extends Controller
             ->with('lines')
             ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_filings'))
             ->findOrFail($id);
+        if (! in_array($filing->status, ['draft', 'rejected', 'failed', 'check_failed'], true)) {
+            return redirect()->route('compliance.tax-filings.index')
+                ->with('error', 'Approved or authority-filed returns are locked and cannot be edited.');
+        }
         $jurisdictions = TaxJurisdiction::query()
             ->where('is_active', true)
             ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_jurisdictions'))
@@ -174,7 +330,7 @@ class TaxFilingController extends Controller
 
     public function update(Request $request, $id, TaxReturnPreparationService $returnPreparationService)
     {
-        if (!$this->taxTablesReady()) {
+        if (! $this->taxTablesReady()) {
             return back()->with('error', $this->migrationMessage());
         }
 
@@ -183,11 +339,11 @@ class TaxFilingController extends Controller
             ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_filings'))
             ->findOrFail($id);
 
-        if ($filing->status === 'submitted') {
-            return back()->with('error', 'Submitted filings cannot be edited.');
+        if (! in_array($filing->status, ['draft', 'rejected', 'failed', 'check_failed'], true)) {
+            return back()->with('error', 'Approved or authority-filed returns are locked and cannot be edited.');
         }
 
-        $validated = $request->validate([
+        $validated = $request->validate(array_merge([
             'tax_jurisdiction_id' => 'required|exists:tax_jurisdictions,id',
             'name' => 'required|string|max:255',
             'filing_type' => 'required|string|max:64',
@@ -203,8 +359,8 @@ class TaxFilingController extends Controller
             'tax_refund' => 'nullable|numeric|min:0',
             'adjustments_total' => 'nullable|numeric|min:0',
             'credits_total' => 'nullable|numeric|min:0',
-            'status' => 'nullable|in:draft,submitted',
-        ]);
+            'status' => 'nullable|in:draft,rejected,failed,check_failed',
+        ], $this->citValidationRules()));
 
         $jurisdiction = TaxJurisdiction::query()
             ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_jurisdictions'))
@@ -213,7 +369,7 @@ class TaxFilingController extends Controller
         $preview = $returnPreparationService->prepare(
             $validated['period_start'],
             $validated['period_end'],
-            [
+            array_merge([
                 'filing_type' => $validated['filing_type'],
                 'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
                 'user_id' => auth()->id(),
@@ -221,7 +377,7 @@ class TaxFilingController extends Controller
                 'branch_id' => session('active_branch_id'),
                 'branch_name' => session('active_branch_name'),
                 'currency_code' => $validated['currency_code'] ?? $jurisdiction->currency_code ?? 'NGN',
-            ]
+            ], $this->citContext($validated))
         );
 
         $before = $filing->toArray();
@@ -230,24 +386,24 @@ class TaxFilingController extends Controller
 
         try {
             $filing->update([
-            'tax_jurisdiction_id' => $validated['tax_jurisdiction_id'],
-            'name' => $validated['name'],
-            'filing_type' => $validated['filing_type'],
-            'filing_frequency' => $validated['filing_frequency'] ?? $jurisdiction->filing_frequency,
-            'currency_code' => $validated['currency_code'] ?? $jurisdiction->currency_code,
-            'country_code' => $jurisdiction->country_code,
-            'period_start' => $validated['period_start'],
-            'period_end' => $validated['period_end'],
-            'due_date' => $validated['due_date'] ?? null,
-            'total_taxable' => $validated['total_taxable'] ?? $preview['total_taxable'],
-            'total_tax' => $validated['total_tax'] ?? $preview['total_tax'],
-            'tax_due' => $validated['tax_due'] ?? $preview['tax_due'],
-            'tax_credit' => $validated['tax_credit'] ?? $preview['tax_credit'],
-            'tax_refund' => $validated['tax_refund'] ?? $preview['tax_refund'],
-            'adjustments_total' => $validated['adjustments_total'] ?? $preview['adjustments_total'],
-            'credits_total' => $validated['credits_total'] ?? $preview['credits_total'],
-            'status' => $validated['status'] ?? 'draft',
-            'metadata' => array_merge($preview, ['prepared_from_transactions' => true]),
+                'tax_jurisdiction_id' => $validated['tax_jurisdiction_id'],
+                'name' => $validated['name'],
+                'filing_type' => $validated['filing_type'],
+                'filing_frequency' => $validated['filing_frequency'] ?? $jurisdiction->filing_frequency,
+                'currency_code' => $validated['currency_code'] ?? $jurisdiction->currency_code,
+                'country_code' => $jurisdiction->country_code,
+                'period_start' => $validated['period_start'],
+                'period_end' => $validated['period_end'],
+                'due_date' => $validated['due_date'] ?? null,
+                'total_taxable' => $validated['total_taxable'] ?? $preview['total_taxable'],
+                'total_tax' => $validated['total_tax'] ?? $preview['total_tax'],
+                'tax_due' => $validated['tax_due'] ?? $preview['tax_due'],
+                'tax_credit' => $validated['tax_credit'] ?? $preview['tax_credit'],
+                'tax_refund' => $validated['tax_refund'] ?? $preview['tax_refund'],
+                'adjustments_total' => $validated['adjustments_total'] ?? $preview['adjustments_total'],
+                'credits_total' => $validated['credits_total'] ?? $preview['credits_total'],
+                'status' => $validated['status'] ?? 'draft',
+                'metadata' => array_merge($preview, ['prepared_from_transactions' => true]),
             ]);
 
             if (Schema::hasTable('tax_filing_lines')) {
@@ -280,13 +436,17 @@ class TaxFilingController extends Controller
 
     public function destroy($id)
     {
-        if (!$this->taxTablesReady()) {
+        if (! $this->taxTablesReady()) {
             return back()->with('error', $this->migrationMessage());
         }
 
         $filing = TaxFiling::query()
+            ->withCount('submissions')
             ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_filings'))
             ->findOrFail($id);
+        if ($filing->status !== 'draft' || $filing->submissions_count > 0) {
+            return back()->with('error', 'Only draft filings without submission history can be deleted.');
+        }
         $filing->delete();
         TaxAuditService::record($filing, 'tax_filing.deleted', $filing->toArray(), null);
 
@@ -295,18 +455,18 @@ class TaxFilingController extends Controller
 
     public function previewTotals(Request $request, TaxReturnPreparationService $returnPreparationService)
     {
-        if (!$this->taxTablesReady()) {
+        if (! $this->taxTablesReady()) {
             return response()->json(['message' => $this->migrationMessage()], 422);
         }
 
-        $validated = $request->validate([
+        $validated = $request->validate(array_merge([
             'tax_jurisdiction_id' => 'nullable|exists:tax_jurisdictions,id',
             'filing_type' => 'nullable|string|max:64',
             'period_start' => 'required|date',
             'period_end' => 'required|date|after_or_equal:period_start',
-        ]);
+        ], $this->citValidationRules()));
 
-        $jurisdiction = !empty($validated['tax_jurisdiction_id'])
+        $jurisdiction = ! empty($validated['tax_jurisdiction_id'])
             ? TaxJurisdiction::query()
                 ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_jurisdictions'))
                 ->find($validated['tax_jurisdiction_id'])
@@ -315,7 +475,7 @@ class TaxFilingController extends Controller
         return response()->json($returnPreparationService->prepare(
             $validated['period_start'],
             $validated['period_end'],
-            [
+            array_merge([
                 'filing_type' => $validated['filing_type'] ?? 'vat',
                 'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
                 'user_id' => auth()->id(),
@@ -323,8 +483,29 @@ class TaxFilingController extends Controller
                 'branch_id' => session('active_branch_id'),
                 'branch_name' => session('active_branch_name'),
                 'currency_code' => $jurisdiction?->currency_code ?? 'NGN',
-            ]
+            ], $this->citContext($validated))
         ));
+    }
+
+    private function citValidationRules(): array
+    {
+        return [
+            'accounting_profit' => 'nullable|numeric|min:0',
+            'disallowable_expenses' => 'nullable|numeric|min:0',
+            'loss_relief' => 'nullable|numeric|min:0',
+            'capital_allowances' => 'nullable|numeric|min:0',
+            'cit_credits' => 'nullable|numeric|min:0',
+            'cit_rate' => 'nullable|numeric|min:0|max:100',
+            'development_levy_rate' => 'nullable|numeric|min:0|max:100',
+        ];
+    }
+
+    private function citContext(array $validated): array
+    {
+        return collect($this->citValidationRules())
+            ->keys()
+            ->mapWithKeys(fn (string $key) => [$key => $validated[$key] ?? null])
+            ->all();
     }
 
     private function taxTablesReady(): bool
@@ -332,7 +513,9 @@ class TaxFilingController extends Controller
         return Schema::hasTable('tax_jurisdictions')
             && Schema::hasTable('tax_codes')
             && Schema::hasTable('withholding_rules')
-            && Schema::hasTable('tax_filings');
+            && Schema::hasTable('tax_filings')
+            && Schema::hasTable('tax_authority_connections')
+            && Schema::hasTable('tax_filing_submissions');
     }
 
     private function migrationMessage(): string

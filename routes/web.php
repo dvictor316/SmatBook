@@ -13,7 +13,7 @@ use App\Http\Controllers\{
     CustomAuthController, AnalyticsDashboardController, DomainController, PlanController,
     SuperAdminDashboardController, MessageController, CalendarController, EventController,
     NotificationController, ActivityLogController, BackupController, AuditController,
-    TaxCenterController, TaxFilingController, PeriodCloseController, ProjectManagementController
+    TaxCenterController, TaxFilingController, TaxAuthorityConnectionController, PeriodCloseController, ProjectManagementController
     , AiQuickAgentController, RecurringTransactionController, FinanceApprovalController, FixedAssetController, BudgetController,
     AdvancePaymentController, AgentPortalController, StateManagerCrmController
 };
@@ -1248,6 +1248,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::post('/tax-center/withholding-rules', [TaxCenterController::class, 'storeWithholdingRule'])->name('tax-center.withholding.store');
         Route::put('/tax-center/withholding-rules/{id}', [TaxCenterController::class, 'updateWithholdingRule'])->name('tax-center.withholding.update');
         Route::delete('/tax-center/withholding-rules/{id}', [TaxCenterController::class, 'destroyWithholdingRule'])->name('tax-center.withholding.destroy');
+        Route::post('/tax-center/authority-connection', [TaxAuthorityConnectionController::class, 'store'])->name('tax-center.authority-connection.store');
 
         Route::get('/tax-filings', [TaxFilingController::class, 'index'])->name('tax-filings.index');
         Route::get('/tax-filings/create', [TaxFilingController::class, 'create'])->name('tax-filings.create');
@@ -1255,6 +1256,11 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/tax-filings/{id}/edit', [TaxFilingController::class, 'edit'])->name('tax-filings.edit');
         Route::put('/tax-filings/{id}', [TaxFilingController::class, 'update'])->name('tax-filings.update');
         Route::post('/tax-filings/{id}/submit', [TaxFilingController::class, 'submit'])->name('tax-filings.submit');
+        Route::post('/tax-filings/{id}/approve', [TaxFilingController::class, 'approve'])->name('tax-filings.approve');
+        Route::post('/tax-filings/{id}/transmit', [TaxFilingController::class, 'transmit'])->name('tax-filings.transmit');
+        Route::post('/tax-filings/{id}/manual', [TaxFilingController::class, 'recordManual'])->name('tax-filings.manual');
+        Route::post('/tax-filings/{id}/submissions/{submissionId}/sync', [TaxFilingController::class, 'syncSubmission'])->name('tax-filings.submissions.sync');
+        Route::get('/tax-filings/{id}/export/{format}', [TaxFilingController::class, 'export'])->whereIn('format', ['json', 'csv', 'pdf'])->name('tax-filings.export');
         Route::delete('/tax-filings/{id}', [TaxFilingController::class, 'destroy'])->name('tax-filings.destroy');
         Route::get('/tax-filings/preview/totals', [TaxFilingController::class, 'previewTotals'])->name('tax-filings.preview');
     });

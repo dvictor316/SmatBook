@@ -204,6 +204,29 @@ class TaxLedgerReportingIntegrityTest extends TestCase
         $this->assertEquals(11250.0, $allBranches['tax_due']);
     }
 
+    public function test_company_income_tax_workpaper_does_not_double_count_disallowable_expenses(): void
+    {
+        $result = app(TaxReturnPreparationService::class)->prepare('2026-01-01', '2026-12-31', [
+            'filing_type' => 'corporate_income_tax',
+            'company_id' => 1,
+            'branch_scope' => 'all',
+            'accounting_profit' => 1000000,
+            'disallowable_expenses' => 200000,
+            'loss_relief' => 100000,
+            'capital_allowances' => 100000,
+            'cit_credits' => 50000,
+            'cit_rate' => 30,
+            'development_levy_rate' => 1,
+        ]);
+
+        $this->assertEquals(1000000.0, $result['cit_workpaper']['taxable_profit']);
+        $this->assertEquals(300000.0, $result['cit_workpaper']['gross_cit']);
+        $this->assertEquals(10000.0, $result['cit_workpaper']['development_levy']);
+        $this->assertEquals(260000.0, $result['tax_due']);
+        $this->assertEquals(1000000.0, $result['total_taxable']);
+        $this->assertEquals(0.0, $result['adjustments_total']);
+    }
+
     private function setUpSchema(): void
     {
         Schema::create('accounts', function (Blueprint $table) {

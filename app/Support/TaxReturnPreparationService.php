@@ -25,6 +25,13 @@ class TaxReturnPreparationService
         $withholdingPayable = 0.0;
         $withholdingReceivable = 0.0;
         $payeAmount = 0.0;
+        $accountingProfit = max(0, (float) ($context['accounting_profit'] ?? 0));
+        $disallowableExpenses = max(0, (float) ($context['disallowable_expenses'] ?? 0));
+        $lossRelief = max(0, (float) ($context['loss_relief'] ?? 0));
+        $capitalAllowances = max(0, (float) ($context['capital_allowances'] ?? 0));
+        $citCredits = max(0, (float) ($context['cit_credits'] ?? 0));
+        $citRate = max(0, min(100, (float) ($context['cit_rate'] ?? 30)));
+        $developmentLevyRate = max(0, min(100, (float) ($context['development_levy_rate'] ?? 0)));
 
         if (Schema::hasTable('sales')) {
             $salesDateColumn = Schema::hasColumn('sales', 'order_date')
@@ -96,6 +103,7 @@ class TaxReturnPreparationService
                 $payrolls = $payrollQuery->get();
                 $payeAmount = (float) $payrolls->sum(function ($payroll) {
                     $deductions = json_decode((string) ($payroll->deductions_json ?? '[]'), true) ?: [];
+
                     return collect($deductions)
                         ->filter(fn ($item) => str_contains(strtolower((string) ($item['name'] ?? '')), 'paye'))
                         ->sum(fn ($item) => (float) ($item['amount'] ?? 0));
@@ -153,6 +161,39 @@ class TaxReturnPreparationService
             ];
         }
 
+        $citWorkpaper = null;
+        if (in_array($filingType, ['corporate_income_tax', 'cit', 'all'], true)) {
+            $adjustedProfit = max(0, $accountingProfit + $disallowableExpenses - $lossRelief);
+            $taxableProfit = max(0, $adjustedProfit - $capitalAllowances);
+            $grossCit = round($taxableProfit * ($citRate / 100), 2);
+            $developmentLevy = round($taxableProfit * ($developmentLevyRate / 100), 2);
+            $netCit = max(0, round($grossCit + $developmentLevy - $citCredits, 2));
+            $citWorkpaper = [
+                'accounting_profit' => round($accountingProfit, 2),
+                'disallowable_expenses' => round($disallowableExpenses, 2),
+                'loss_relief' => round($lossRelief, 2),
+                'capital_allowances' => round($capitalAllowances, 2),
+                'taxable_profit' => round($taxableProfit, 2),
+                'cit_rate' => round($citRate, 4),
+                'gross_cit' => $grossCit,
+                'development_levy_rate' => round($developmentLevyRate, 4),
+                'development_levy' => $developmentLevy,
+                'credits' => round($citCredits, 2),
+                'net_cit_due' => $netCit,
+            ];
+            $lines[] = [
+                'line_key' => 'corporate_income_tax',
+                'label' => 'Corporate Income Tax',
+                'tax_type' => 'corporate_income_tax',
+                'taxable_base' => round($taxableProfit, 2),
+                'tax_amount' => $grossCit + $developmentLevy,
+                'adjustment_amount' => 0.0,
+                'credit_amount' => round($citCredits, 2),
+                'net_amount' => $netCit,
+                'metadata' => $citWorkpaper,
+            ];
+        }
+
         $totalTax = (float) collect($lines)->sum('tax_amount');
         $credits = (float) collect($lines)->sum('credit_amount');
         $adjustments = (float) collect($lines)->sum('adjustment_amount');
@@ -172,13 +213,14 @@ class TaxReturnPreparationService
             'withholding_payable' => round($withholdingPayable, 2),
             'withholding_receivable' => round($withholdingReceivable, 2),
             'paye_tax' => round($payeAmount, 2),
-            'total_taxable' => round($salesTaxable + $purchaseTaxable, 2),
+            'total_taxable' => round((float) collect($lines)->sum('taxable_base'), 2),
             'total_tax' => round($totalTax, 2),
             'tax_due' => round($taxDue, 2),
             'tax_credit' => round($credits, 2),
             'tax_refund' => round(max(0, $credits - $totalTax), 2),
             'adjustments_total' => round($adjustments, 2),
             'credits_total' => round($credits, 2),
+            'cit_workpaper' => $citWorkpaper,
             'lines' => $lines,
         ];
     }

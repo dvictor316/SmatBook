@@ -170,6 +170,62 @@
         </div>
     @endif
 
+    <div class="card tc-card mb-3">
+        <div class="card-header bg-white">
+            <strong>NRS Filing Connection</strong>
+            <span class="badge {{ $authorityConnection?->is_active ? 'bg-success' : 'bg-secondary' }}">
+                {{ $authorityConnection?->is_active ? 'Active' : 'Not active' }}
+            </span>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ route('compliance.tax-center.authority-connection.store') }}" class="row g-2 align-items-end">
+                @csrf
+                <div class="col-md-2">
+                    <label class="form-label small">Environment</label>
+                    <select name="environment" class="form-select" required>
+                        <option value="sandbox" @selected(($authorityConnection?->environment ?? 'sandbox') === 'sandbox')>Sandbox</option>
+                        <option value="production" @selected($authorityConnection?->environment === 'production')>Production</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Taxpayer TIN</label>
+                    <input name="taxpayer_id" class="form-control" value="{{ old('taxpayer_id', $authorityConnection?->taxpayer_id) }}" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">NRS Organisation ID</label>
+                    <input name="organization_id" class="form-control" value="{{ old('organization_id', $authorityConnection?->organization_id) }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">OAuth Client ID</label>
+                    <input name="client_id" class="form-control" value="{{ old('client_id', $authorityConnection?->client_id) }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Access Token</label>
+                    <input type="password" name="access_token" class="form-control" autocomplete="new-password" placeholder="{{ $authorityConnection?->access_token ? 'Saved - enter to replace' : 'Paste approved token' }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Token Expiry</label>
+                    <input type="datetime-local" name="token_expires_at" class="form-control" value="{{ old('token_expires_at', $authorityConnection?->token_expires_at?->format('Y-m-d\TH:i')) }}">
+                </div>
+                <div class="col-md-8">
+                    <p class="text-muted small mb-0">Credentials are encrypted. Begin in sandbox; production also requires NRS certification and server approval.</p>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-check">
+                        <input type="checkbox" name="is_active" value="1" class="form-check-input" id="nrsConnectionActive" @checked($authorityConnection?->is_active)>
+                        <label class="form-check-label" for="nrsConnectionActive">Enable transmission</label>
+                    </div>
+                </div>
+                <div class="col-md-2 text-end">
+                    <button class="btn btn-primary btn-sm text-white">Save Connection</button>
+                </div>
+            </form>
+            @if($authorityConnection?->last_error)
+                <div class="alert alert-danger mt-3 mb-0 py-2">Last connection error: {{ $authorityConnection->last_error }}</div>
+            @endif
+        </div>
+    </div>
+
     <div class="row g-3">
         <div class="col-lg-4">
             <div class="card tc-card h-100">

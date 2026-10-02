@@ -58,7 +58,7 @@
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
             <h4 class="mb-1">Tax Filings</h4>
-            <p class="text-muted mb-0 small">Track draft and submitted tax filings.</p>
+            <p class="text-muted mb-0 small">Prepare, approve, export, transmit, and verify authority filings.</p>
         </div>
         <div class="d-flex gap-2">
             <a href="{{ route('compliance.tax-center.index') }}" class="btn btn-outline-secondary btn-sm">Tax Center</a>
@@ -104,7 +104,13 @@
                             <td>{{ $filing->period_start?->format('Y-m-d') }} to {{ $filing->period_end?->format('Y-m-d') }}</td>
                             <td>{{ $filing->due_date?->format('Y-m-d') ?? '-' }}</td>
                             <td>
-                                <span class="badge {{ $filing->status === 'submitted' ? 'bg-success' : 'bg-secondary' }}">
+                                @php
+                                    $statusClass = in_array($filing->status, ['accepted', 'completed'], true)
+                                        ? 'bg-success'
+                                        : (in_array($filing->status, ['rejected', 'failed', 'check_failed'], true) ? 'bg-danger' : ($filing->status === 'approved' ? 'bg-primary' : 'bg-secondary'));
+                                    $latestSubmission = $filing->submissions->first();
+                                @endphp
+                                <span class="badge {{ $statusClass }}">
                                     {{ ucfirst($filing->status) }}
                                 </span>
                             </td>
@@ -112,20 +118,60 @@
                             <td>{{ number_format((float)$filing->total_tax, 2) }}</td>
                             <td>{{ $filing->reference_no ?? '-' }}</td>
                             <td class="text-end">
-                                @if($filing->status !== 'submitted')
+                                <a href="{{ route('compliance.tax-filings.export', [$filing->id, 'pdf']) }}" class="btn btn-outline-secondary btn-sm" title="PDF workpaper">PDF</a>
+                                <a href="{{ route('compliance.tax-filings.export', [$filing->id, 'csv']) }}" class="btn btn-outline-secondary btn-sm" title="CSV schedule">CSV</a>
+                                <a href="{{ route('compliance.tax-filings.export', [$filing->id, 'json']) }}" class="btn btn-outline-secondary btn-sm" title="JSON evidence package">JSON</a>
+                                @if(in_array($filing->status, ['draft', 'rejected', 'failed', 'check_failed'], true))
                                     <a href="{{ route('compliance.tax-filings.edit', $filing->id) }}" class="btn btn-outline-primary btn-sm">Edit</a>
-                                    <form method="POST" action="{{ route('compliance.tax-filings.submit', $filing->id) }}" class="d-inline">
+                                    <form method="POST" action="{{ route('compliance.tax-filings.approve', $filing->id) }}" class="d-inline">
                                         @csrf
-                                        <button class="btn btn-outline-success btn-sm">Submit</button>
+                                        <button class="btn btn-primary btn-sm text-white">Approve</button>
                                     </form>
                                 @endif
-                                <form method="POST" action="{{ route('compliance.tax-filings.destroy', $filing->id) }}" class="d-inline" onsubmit="return confirm('Delete this filing?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button class="btn btn-outline-danger btn-sm">Delete</button>
-                                </form>
+                                @if($filing->status === 'approved' && $filing->country_code === 'NGA' && in_array(strtolower($filing->filing_type), ['vat', 'withholding', 'wht'], true))
+                                    <form method="POST" action="{{ route('compliance.tax-filings.transmit', $filing->id) }}" class="d-inline" onsubmit="return confirm('Transmit this approved filing to the configured NRS environment?');">
+                                        @csrf
+                                        <button class="btn btn-success btn-sm">Transmit to NRS</button>
+                                    </form>
+                                @endif
+                                @if($latestSubmission?->authority_reference && !in_array($latestSubmission->status, ['accepted', 'completed'], true))
+                                    <form method="POST" action="{{ route('compliance.tax-filings.submissions.sync', [$filing->id, $latestSubmission->id]) }}" class="d-inline">
+                                        @csrf
+                                        <button class="btn btn-outline-info btn-sm">Refresh Status</button>
+                                    </form>
+                                @endif
+                                @if($filing->status === 'approved')
+                                    <button class="btn btn-outline-success btn-sm" data-bs-toggle="collapse" data-bs-target="#manualFiling{{ $filing->id }}">Record Portal Filing</button>
+                                @endif
+                                @if($filing->status === 'draft' && $filing->submissions->isEmpty())
+                                    <form method="POST" action="{{ route('compliance.tax-filings.destroy', $filing->id) }}" class="d-inline" onsubmit="return confirm('Delete this draft filing?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="btn btn-outline-danger btn-sm">Delete</button>
+                                    </form>
+                                @endif
                             </td>
                         </tr>
+                        @if($filing->status === 'approved')
+                            <tr class="collapse" id="manualFiling{{ $filing->id }}">
+                                <td colspan="9" class="bg-light">
+                                    <form method="POST" action="{{ route('compliance.tax-filings.manual', $filing->id) }}" class="row g-2 align-items-end">
+                                        @csrf
+                                        <div class="col-md-5">
+                                            <label class="form-label small">Authority acknowledgement/reference</label>
+                                            <input name="authority_reference" class="form-control form-control-sm" required>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label small">Filed at</label>
+                                            <input type="datetime-local" name="filed_at" class="form-control form-control-sm" value="{{ now()->format('Y-m-d\TH:i') }}" required>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <button class="btn btn-success btn-sm">Record Evidence</button>
+                                        </div>
+                                    </form>
+                                </td>
+                            </tr>
+                        @endif
                     @empty
                         <tr><td colspan="9" class="text-center text-muted py-4">No filings found.</td></tr>
                     @endforelse

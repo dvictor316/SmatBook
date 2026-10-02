@@ -104,6 +104,7 @@
                             <option value="vat" @selected(old('filing_type', $filing->filing_type) === 'vat')>VAT</option>
                             <option value="withholding" @selected(old('filing_type', $filing->filing_type) === 'withholding')>Withholding Tax</option>
                             <option value="paye" @selected(old('filing_type', $filing->filing_type) === 'paye')>PAYE</option>
+                            <option value="corporate_income_tax" @selected(old('filing_type', $filing->filing_type) === 'corporate_income_tax')>Company Income Tax</option>
                             <option value="all" @selected(old('filing_type', $filing->filing_type) === 'all')>Combined Compliance Snapshot</option>
                         </select>
                     </div>
@@ -131,6 +132,26 @@
                     <div class="col-md-4">
                         <label class="form-label">Due Date</label>
                         <input type="date" name="due_date" class="form-control" value="{{ old('due_date', optional($filing->due_date)->format('Y-m-d')) }}">
+                    </div>
+                    <div class="col-12" id="citWorkpaperFields">
+                        <div class="border rounded p-3 bg-light">
+                            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                                <div>
+                                    <h6 class="mb-1">Company Tax Workpaper</h6>
+                                    <p class="small text-muted mb-0">Enter reviewed adjustments and rates for this accounting period.</p>
+                                </div>
+                                <span class="badge bg-warning text-dark">Reviewer input</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-4"><label class="form-label">Accounting Profit</label><input type="number" step="0.01" min="0" name="accounting_profit" class="form-control cit-input" value="{{ old('accounting_profit', data_get($filing->metadata, 'cit_workpaper.accounting_profit', 0)) }}"></div>
+                                <div class="col-md-4"><label class="form-label">Disallowable Expenses</label><input type="number" step="0.01" min="0" name="disallowable_expenses" class="form-control cit-input" value="{{ old('disallowable_expenses', data_get($filing->metadata, 'cit_workpaper.disallowable_expenses', 0)) }}"></div>
+                                <div class="col-md-4"><label class="form-label">Loss Relief</label><input type="number" step="0.01" min="0" name="loss_relief" class="form-control cit-input" value="{{ old('loss_relief', data_get($filing->metadata, 'cit_workpaper.loss_relief', 0)) }}"></div>
+                                <div class="col-md-4"><label class="form-label">Capital Allowances</label><input type="number" step="0.01" min="0" name="capital_allowances" class="form-control cit-input" value="{{ old('capital_allowances', data_get($filing->metadata, 'cit_workpaper.capital_allowances', 0)) }}"></div>
+                                <div class="col-md-4"><label class="form-label">Tax Credits</label><input type="number" step="0.01" min="0" name="cit_credits" class="form-control cit-input" value="{{ old('cit_credits', data_get($filing->metadata, 'cit_workpaper.credits', 0)) }}"></div>
+                                <div class="col-md-4"><label class="form-label">Company Tax Rate (%)</label><input type="number" step="0.0001" min="0" max="100" name="cit_rate" class="form-control cit-input" value="{{ old('cit_rate', data_get($filing->metadata, 'cit_workpaper.cit_rate', 30)) }}"></div>
+                                <div class="col-md-4"><label class="form-label">Development Levy Rate (%)</label><input type="number" step="0.0001" min="0" max="100" name="development_levy_rate" class="form-control cit-input" value="{{ old('development_levy_rate', data_get($filing->metadata, 'cit_workpaper.development_levy_rate', 0)) }}"></div>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Total Taxable</label>
@@ -167,7 +188,15 @@
 <script>
 (function () {
     const btn = document.getElementById('previewTotalsBtn');
+    const filingTypeField = document.getElementById('filing_type');
+    const citFields = document.getElementById('citWorkpaperFields');
     if (!btn) return;
+
+    function toggleCitFields() {
+        citFields.hidden = !['corporate_income_tax', 'all'].includes(filingTypeField.value);
+    }
+    filingTypeField.addEventListener('change', toggleCitFields);
+    toggleCitFields();
 
     btn.addEventListener('click', async function () {
         const start = document.getElementById('period_start').value;
@@ -186,6 +215,9 @@
         url.searchParams.set('period_start', start);
         url.searchParams.set('period_end', end);
         url.searchParams.set('filing_type', filingType);
+        document.querySelectorAll('.cit-input').forEach(function (input) {
+            url.searchParams.set(input.name, input.value || '0');
+        });
         if (jurisdictionId) {
             url.searchParams.set('tax_jurisdiction_id', jurisdictionId);
         }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\TaxAccountMapping;
 use App\Models\TaxAuditLog;
+use App\Models\TaxAuthorityConnection;
 use App\Models\TaxCode;
 use App\Models\TaxJurisdiction;
 use App\Models\WithholdingRule;
@@ -25,6 +26,7 @@ class TaxCenterController extends Controller
                 'withholdingRules' => collect(),
                 'accountMappings' => collect(),
                 'auditLogs' => collect(),
+                'authorityConnection' => null,
                 'supportedCountries' => TaxCountryCatalog::supportedCountries(),
                 'presetCountries' => TaxCountryCatalog::presetCountries(),
                 'taxSetupMissing' => true,
@@ -59,6 +61,14 @@ class TaxCenterController extends Controller
                 ->limit(25)
                 ->get()
             : collect();
+        $authorityConnection = Schema::hasTable('tax_authority_connections')
+            ? TaxAuthorityConnection::query()
+                ->where('provider', 'nrs')
+                ->where('country_code', 'NGA')
+                ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_authority_connections'))
+                ->latest()
+                ->first()
+            : null;
 
         return view('compliance.tax-center.index', [
             'jurisdictions' => $jurisdictions,
@@ -66,6 +76,7 @@ class TaxCenterController extends Controller
             'withholdingRules' => $withholdingRules,
             'accountMappings' => $accountMappings,
             'auditLogs' => $auditLogs,
+            'authorityConnection' => $authorityConnection,
             'supportedCountries' => TaxCountryCatalog::supportedCountries(),
             'presetCountries' => TaxCountryCatalog::presetCountries(),
         ]);

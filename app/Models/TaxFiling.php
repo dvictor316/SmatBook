@@ -76,4 +76,9 @@ class TaxFiling extends Model
     {
         return $this->hasMany(TaxFilingLine::class, 'tax_filing_id');
     }
+
+    public function submissions(): HasMany
+    {
+        return $this->hasMany(TaxFilingSubmission::class, 'tax_filing_id');
+    }
 }

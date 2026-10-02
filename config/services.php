@@ -2,6 +2,10 @@
 
 return [
 
+    'nrs' => [
+        'production_enabled' => env('NRS_PRODUCTION_ENABLED', false),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services
