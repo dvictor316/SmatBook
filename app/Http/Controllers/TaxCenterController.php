@@ -19,7 +19,7 @@ class TaxCenterController extends Controller
 {
     public function index()
     {
-        if (!$this->taxTablesReady()) {
+        if (! $this->taxTablesReady()) {
             return view('compliance.tax-center.index', [
                 'jurisdictions' => collect(),
                 'taxCodes' => collect(),
@@ -84,7 +84,7 @@ class TaxCenterController extends Controller
 
     public function bootstrapDefaults(Request $request, TaxEngineBootstrapService $bootstrapService)
     {
-        if (!$this->taxTablesReady()) {
+        if (! $this->taxTablesReady()) {
             return back()->with('error', $this->migrationMessage());
         }
 
@@ -105,7 +105,7 @@ class TaxCenterController extends Controller
 
     public function storeJurisdiction(Request $request)
     {
-        if (!$this->taxTablesReady()) {
+        if (! $this->taxTablesReady()) {
             return back()->with('error', $this->migrationMessage());
         }
 
@@ -140,7 +140,7 @@ class TaxCenterController extends Controller
 
     public function storeTaxCode(Request $request)
     {
-        if (!$this->taxTablesReady()) {
+        if (! $this->taxTablesReady()) {
             return back()->with('error', $this->migrationMessage());
         }
 
@@ -207,7 +207,7 @@ class TaxCenterController extends Controller
 
     public function storeWithholdingRule(Request $request)
     {
-        if (!$this->taxTablesReady()) {
+        if (! $this->taxTablesReady()) {
             return back()->with('error', $this->migrationMessage());
         }
 
@@ -241,7 +241,7 @@ class TaxCenterController extends Controller
 
     public function updateJurisdiction(Request $request, $id)
     {
-        if (!$this->taxTablesReady()) {
+        if (! $this->taxTablesReady()) {
             return back()->with('error', $this->migrationMessage());
         }
 
@@ -278,7 +278,7 @@ class TaxCenterController extends Controller
 
     public function destroyJurisdiction($id)
     {
-        if (!$this->taxTablesReady()) {
+        if (! $this->taxTablesReady()) {
             return back()->with('error', $this->migrationMessage());
         }
 
@@ -290,7 +290,7 @@ class TaxCenterController extends Controller
 
     public function updateTaxCode(Request $request, $id)
     {
-        if (!$this->taxTablesReady()) {
+        if (! $this->taxTablesReady()) {
             return back()->with('error', $this->migrationMessage());
         }
 
@@ -360,7 +360,7 @@ class TaxCenterController extends Controller
 
     public function destroyTaxCode($id)
     {
-        if (!$this->taxTablesReady()) {
+        if (! $this->taxTablesReady()) {
             return back()->with('error', $this->migrationMessage());
         }
 
@@ -372,7 +372,7 @@ class TaxCenterController extends Controller
 
     public function updateWithholdingRule(Request $request, $id)
     {
-        if (!$this->taxTablesReady()) {
+        if (! $this->taxTablesReady()) {
             return back()->with('error', $this->migrationMessage());
         }
 
@@ -410,7 +410,7 @@ class TaxCenterController extends Controller
 
     public function destroyWithholdingRule($id)
     {
-        if (!$this->taxTablesReady()) {
+        if (! $this->taxTablesReady()) {
             return back()->with('error', $this->migrationMessage());
         }
 
@@ -442,9 +442,9 @@ class TaxCenterController extends Controller
         $branchName = trim((string) session('active_branch_name', ''));
 
         if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
-            $query->where($table . '.company_id', $companyId);
+            $query->where($table.'.company_id', $companyId);
         } elseif ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
-            $query->where($table . '.user_id', $userId);
+            $query->where($table.'.user_id', $userId);
         }
 
         if ($branchScope === 'all' || ($branchId === '' && $branchName === '')) {
@@ -455,13 +455,20 @@ class TaxCenterController extends Controller
             $matched = false;
 
             if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
-                $scoped->where($table . '.branch_id', $branchId);
+                $scoped->where($table.'.branch_id', $branchId);
                 $matched = true;
             }
 
             if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
                 $method = $matched ? 'orWhere' : 'where';
-                $scoped->{$method}($table . '.branch_name', $branchName);
+                $scoped->{$method}($table.'.branch_name', $branchName);
+                $matched = true;
+            }
+            if ($matched && Schema::hasColumn($table, 'branch_id') && Schema::hasColumn($table, 'branch_name')) {
+                $scoped->orWhere(function ($companyWide) use ($table) {
+                    $companyWide->whereNull($table.'.branch_id')
+                        ->whereNull($table.'.branch_name');
+                });
             }
         });
     }

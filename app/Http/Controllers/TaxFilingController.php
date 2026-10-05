@@ -9,6 +9,7 @@ use App\Models\TaxFilingSubmission;
 use App\Models\TaxJurisdiction;
 use App\Support\TaxAuditService;
 use App\Support\TaxAuthorityFilingService;
+use App\Support\TaxCountryCatalog;
 use App\Support\TaxFilingCatalog;
 use App\Support\TaxReturnPreparationService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -54,11 +55,17 @@ class TaxFilingController extends Controller
             fn (TaxJurisdiction $jurisdiction) => [$jurisdiction->id => $filingCatalog->optionsFor($jurisdiction)]
         );
         $frequencyLabels = $filingCatalog->frequencyLabels();
+        $presetCountries = TaxCountryCatalog::presetCountries();
+        $configuredReturnCount = $filingOptionsByJurisdiction->sum(
+            fn (array $options) => count($options)
+        );
 
         return view('compliance.tax-filings.create', compact(
             'jurisdictions',
             'filingOptionsByJurisdiction',
-            'frequencyLabels'
+            'frequencyLabels',
+            'presetCountries',
+            'configuredReturnCount'
         ));
     }
 
@@ -590,6 +597,13 @@ class TaxFilingController extends Controller
             if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
                 $method = $matched ? 'orWhere' : 'where';
                 $sub->{$method}("{$table}.branch_name", $branchName);
+                $matched = true;
+            }
+            if ($matched && Schema::hasColumn($table, 'branch_id') && Schema::hasColumn($table, 'branch_name')) {
+                $sub->orWhere(function ($companyWide) use ($table) {
+                    $companyWide->whereNull("{$table}.branch_id")
+                        ->whereNull("{$table}.branch_name");
+                });
             }
         });
     }

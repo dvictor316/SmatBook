@@ -55,13 +55,15 @@ class TaxEngineBootstrapService
                 'registration_threshold' => $preset['jurisdiction']['registration_threshold'],
                 'portal_url' => $preset['jurisdiction']['portal_url'],
                 'metadata' => $preset['jurisdiction']['metadata'],
-                'is_default' => !$hasDefaultJurisdiction,
+                'is_default' => ! $hasDefaultJurisdiction,
                 'is_active' => true,
             ]
         );
 
         if ($jurisdiction->wasRecentlyCreated) {
             $created['jurisdictions']++;
+        } elseif (! $jurisdiction->is_active) {
+            $jurisdiction->update(['is_active' => true]);
         }
 
         foreach ($preset['tax_codes'] as $taxCodePreset) {
@@ -82,6 +84,8 @@ class TaxEngineBootstrapService
 
             if ($taxCode->wasRecentlyCreated) {
                 $created['tax_codes']++;
+            } elseif (! $taxCode->is_active) {
+                $taxCode->update(['is_active' => true]);
             }
         }
 
@@ -103,6 +107,8 @@ class TaxEngineBootstrapService
 
             if ($rule->wasRecentlyCreated) {
                 $created['withholding_rules']++;
+            } elseif (! $rule->is_active) {
+                $rule->update(['is_active' => true]);
             }
         }
 

@@ -99,6 +99,37 @@
         </div>
     @endif
 
+    @if(session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
+
+    @if($jurisdictions->isEmpty())
+        <div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <strong>Tax setup is required</strong>
+                <div class="small mt-1">Install a verified country tax pack to load jurisdictions, return types, filing frequencies, and reporting currency.</div>
+            </div>
+            <form method="POST" action="{{ route('compliance.tax-center.bootstrap') }}" class="d-flex flex-wrap gap-2">
+                @csrf
+                <select name="country_code" class="form-select" aria-label="Country tax pack" required>
+                    @foreach($presetCountries as $countryCode => $country)
+                        <option value="{{ $countryCode }}">{{ $country['name'] }}</option>
+                    @endforeach
+                </select>
+                <button class="btn btn-primary text-white text-nowrap">Install Tax Pack</button>
+            </form>
+        </div>
+    @elseif($configuredReturnCount === 0)
+        <div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <strong>No active return configuration</strong>
+                <div class="small mt-1">The jurisdiction exists, but it has no active VAT, sales tax, company tax, PAYE, or withholding setup.</div>
+            </div>
+            <a href="{{ route('compliance.tax-center.index') }}" class="btn btn-outline-primary text-nowrap">Open Tax Center</a>
+        </div>
+    @endif
+
+    @if($configuredReturnCount > 0)
     <div class="card border-0 shadow-sm">
         <div class="card-body">
             <form method="POST" action="{{ route('compliance.tax-filings.store') }}" id="taxFilingForm">
@@ -225,6 +256,7 @@
             </form>
         </div>
     </div>
+    @endif
 </div>
 @endsection
 
