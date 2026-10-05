@@ -457,6 +457,12 @@
                 <button type="button" class="btn btn-primary" onclick="window.print()">
                     <i class="bi bi-printer me-1"></i> Print
                 </button>
+                <a href="{{ route('sales.invoice.print', $sale->id) }}?format=thermal&amp;paper=80" class="btn btn-outline-primary">
+                    <i class="bi bi-receipt me-1"></i> Thermal 80mm
+                </a>
+                <a href="{{ route('sales.invoice.print', $sale->id) }}?format=thermal&amp;paper=58" class="btn btn-outline-primary">
+                    <i class="bi bi-receipt me-1"></i> Thermal 58mm
+                </a>
                 <button
                     type="button"
                     class="btn btn-outline-primary"

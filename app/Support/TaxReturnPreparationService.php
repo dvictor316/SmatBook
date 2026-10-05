@@ -112,27 +112,29 @@ class TaxReturnPreparationService
         }
 
         $lines = [];
-        if (in_array($filingType, ['vat', 'all'], true)) {
+        if (in_array($filingType, ['vat', 'sales_tax', 'all'], true)) {
             $lines[] = [
-                'line_key' => 'output_vat',
-                'label' => 'Output VAT / Sales Tax',
-                'tax_type' => 'vat',
+                'line_key' => $filingType === 'sales_tax' ? 'sales_tax_collected' : 'output_vat',
+                'label' => $filingType === 'sales_tax' ? 'Sales Tax Collected' : 'Output VAT',
+                'tax_type' => $filingType === 'sales_tax' ? 'sales_tax' : 'vat',
                 'taxable_base' => round($salesTaxable, 2),
                 'tax_amount' => round($salesTax, 2),
                 'adjustment_amount' => 0.0,
                 'credit_amount' => 0.0,
                 'net_amount' => round($salesTax, 2),
             ];
-            $lines[] = [
-                'line_key' => 'input_vat',
-                'label' => 'Input VAT / Purchase Tax',
-                'tax_type' => 'vat',
-                'taxable_base' => round($purchaseTaxable, 2),
-                'tax_amount' => round($purchaseTax, 2),
-                'adjustment_amount' => 0.0,
-                'credit_amount' => round($purchaseTax, 2),
-                'net_amount' => round(0 - $purchaseTax, 2),
-            ];
+            if ($filingType !== 'sales_tax') {
+                $lines[] = [
+                    'line_key' => 'input_vat',
+                    'label' => 'Input VAT',
+                    'tax_type' => 'vat',
+                    'taxable_base' => round($purchaseTaxable, 2),
+                    'tax_amount' => round($purchaseTax, 2),
+                    'adjustment_amount' => 0.0,
+                    'credit_amount' => round($purchaseTax, 2),
+                    'net_amount' => round(0 - $purchaseTax, 2),
+                ];
+            }
         }
 
         if (in_array($filingType, ['withholding', 'all'], true)) {

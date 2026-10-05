@@ -29,7 +29,7 @@ class SaleItem extends Model
     'total_price', // Added
 ];
     protected $casts = [
-        'qty'        => 'integer',
+        'qty'        => 'float',
         'stock_units'=> 'float',
         'unit_price' => 'float',
         'discount'   => 'float',

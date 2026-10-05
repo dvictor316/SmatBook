@@ -2580,6 +2580,36 @@ body.pos-terminal-workspace .summary-panel {
     font-size: 0.64rem;
 }
 
+.pos-receipt-format {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    padding: 6px 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #f8fafc;
+}
+.pos-receipt-format label {
+    margin: 0;
+    color: #173b73;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+.pos-receipt-format .form-select {
+    width: min(100%, 230px);
+    min-height: 32px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    font-weight: 700;
+}
+@media (max-width: 575.98px) {
+    .pos-receipt-format { align-items: stretch; flex-direction: column; }
+    .pos-receipt-format .form-select { width: 100%; }
+}
+
 body.pos-terminal-workspace .summary-panel .summary-row {
     min-height: 22px;
     margin-bottom: 2px;
@@ -5619,6 +5649,15 @@ body.pos-terminal-workspace .pos-rail-btn[aria-disabled="true"] {
                 </div>
 
                 
+                <div class="pos-receipt-format">
+                    <label for="receipt-format"><i class="fas fa-print me-1"></i> Receipt Format</label>
+                    <select id="receipt-format" class="form-select" aria-label="Receipt format">
+                        <option value="standard">Standard Receipt</option>
+                        <option value="thermal-80">Thermal Receipt - 80mm</option>
+                        <option value="thermal-58">Thermal Receipt - 58mm</option>
+                    </select>
+                </div>
+
                 <button type="button" id="process-btn" class="btn btn-process w-100 mt-3">
                     <span id="btn-text"><i class="fas fa-check-circle me-2"></i> PROCESS SALE</span>
                     <span id="btn-loading" style="display:none;"><i class="fas fa-sync fa-spin me-2"></i> PROCESSING...</span>
@@ -6837,7 +6876,11 @@ $(document).ready(function() {
                 }
             },
             success: function(res) {
-                const invoiceUrl = "{{ url('/sales/invoice') }}/" + res.sale_id + "/print?autoprint=1";
+                const receiptFormat = $('#receipt-format').val() || 'standard';
+                const formatQuery = receiptFormat === 'thermal-58'
+                    ? '&format=thermal&paper=58'
+                    : (receiptFormat === 'thermal-80' ? '&format=thermal&paper=80' : '');
+                const invoiceUrl = "{{ url('/sales/invoice') }}/" + res.sale_id + "/print?autoprint=1" + formatQuery;
                 const balanceDue = Math.max(0, total - paid);
                 window.open(invoiceUrl, '_blank');
 
@@ -7070,6 +7113,18 @@ window.POS_ENABLE_FALLBACK = function () {
 	    const saleStoreUrl = @json($posSaleStoreUrl ?? url('/sales'));
 	    const invoicePrintBaseUrl = @json(url('/sales/invoice'));
     const posSalesLogUrl = @json($posSalesLogUrl ?? url('/pos/sales'));
+    const receiptFormatSelect = document.getElementById('receipt-format');
+    try {
+        const savedReceiptFormat = window.localStorage.getItem('smartprobook.pos.receipt-format');
+        if (savedReceiptFormat && receiptFormatSelect?.querySelector(`option[value="${savedReceiptFormat}"]`)) {
+            receiptFormatSelect.value = savedReceiptFormat;
+        }
+        receiptFormatSelect?.addEventListener('change', () => {
+            window.localStorage.setItem('smartprobook.pos.receipt-format', receiptFormatSelect.value);
+        });
+    } catch (error) {
+        // Printing still works when browser storage is unavailable.
+    }
     const posPermissions = {
         sell: @json((bool) $posCanSell),
         discount: @json((bool) $posCanDiscount),
@@ -8884,7 +8939,11 @@ window.POS_ENABLE_FALLBACK = function () {
             const result = submission.result;
 
             if (result.sale_id) {
-                const invoiceUrl = `${invoicePrintBaseUrl}/${result.sale_id}/print?autoprint=1`;
+                const receiptFormat = document.getElementById('receipt-format')?.value || 'standard';
+                const formatQuery = receiptFormat === 'thermal-58'
+                    ? '&format=thermal&paper=58'
+                    : (receiptFormat === 'thermal-80' ? '&format=thermal&paper=80' : '');
+                const invoiceUrl = `${invoicePrintBaseUrl}/${result.sale_id}/print?autoprint=1${formatQuery}`;
                 window.open(invoiceUrl, '_blank');
             }
 

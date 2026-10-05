@@ -612,11 +612,10 @@
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
                                         <li><a class="dropdown-item" href="{{ route('sales.show', $sale->id) }}"><i class="fas fa-eye me-1"></i> View Items</a></li>
-                                        <li>
-                                            <a class="dropdown-item" href="{{ \Illuminate\Support\Facades\Route::has('sales.invoice.print') ? route('sales.invoice.print', $sale->id) : url('/sales/invoice/' . $sale->id . '/print') }}" target="_blank" rel="noopener">
-                                                <i class="fas fa-print me-1"></i> Print Receipt
-                                            </a>
-                                        </li>
+                                        @php($receiptPrintUrl = \Illuminate\Support\Facades\Route::has('sales.invoice.print') ? route('sales.invoice.print', $sale->id) : url('/sales/invoice/' . $sale->id . '/print'))
+                                        <li><a class="dropdown-item" href="{{ $receiptPrintUrl }}" target="_blank" rel="noopener"><i class="fas fa-file-invoice me-1"></i> Standard Receipt</a></li>
+                                        <li><a class="dropdown-item" href="{{ $receiptPrintUrl }}?format=thermal&amp;paper=80" target="_blank" rel="noopener"><i class="fas fa-receipt me-1"></i> Thermal Receipt (80mm)</a></li>
+                                        <li><a class="dropdown-item" href="{{ $receiptPrintUrl }}?format=thermal&amp;paper=58" target="_blank" rel="noopener"><i class="fas fa-receipt me-1"></i> Thermal Receipt (58mm)</a></li>
                                         @php
                                             $posReturnUrl = \Illuminate\Support\Facades\Route::has('pos.return.show')
                                                 ? route('pos.return.show', ['sale_id' => $sale->id])

@@ -9,11 +9,14 @@ use App\Models\TaxFilingSubmission;
 use App\Models\TaxJurisdiction;
 use App\Support\TaxAuditService;
 use App\Support\TaxAuthorityFilingService;
+use App\Support\TaxFilingCatalog;
 use App\Support\TaxReturnPreparationService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 
 class TaxFilingController extends Controller
 {
@@ -34,23 +37,36 @@ class TaxFilingController extends Controller
         return view('compliance.tax-filings.index', compact('filings'));
     }
 
-    public function create()
+    public function create(TaxFilingCatalog $filingCatalog)
     {
         if (! $this->taxTablesReady()) {
             return redirect()->route('compliance.tax-filings.index')->with('error', $this->migrationMessage());
         }
 
         $jurisdictions = TaxJurisdiction::query()
+            ->with(['taxCodes', 'withholdingRules', 'accountMappings'])
             ->where('is_active', true)
             ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_jurisdictions'))
             ->orderBy('name')
             ->get();
 
-        return view('compliance.tax-filings.create', compact('jurisdictions'));
+        $filingOptionsByJurisdiction = $jurisdictions->mapWithKeys(
+            fn (TaxJurisdiction $jurisdiction) => [$jurisdiction->id => $filingCatalog->optionsFor($jurisdiction)]
+        );
+        $frequencyLabels = $filingCatalog->frequencyLabels();
+
+        return view('compliance.tax-filings.create', compact(
+            'jurisdictions',
+            'filingOptionsByJurisdiction',
+            'frequencyLabels'
+        ));
     }
 
-    public function store(Request $request, TaxReturnPreparationService $returnPreparationService)
-    {
+    public function store(
+        Request $request,
+        TaxReturnPreparationService $returnPreparationService,
+        TaxFilingCatalog $filingCatalog
+    ) {
         if (! $this->taxTablesReady()) {
             return back()->with('error', $this->migrationMessage());
         }
@@ -58,8 +74,8 @@ class TaxFilingController extends Controller
         $validated = $request->validate(array_merge([
             'tax_jurisdiction_id' => 'required|exists:tax_jurisdictions,id',
             'name' => 'required|string|max:255',
-            'filing_type' => 'required|string|max:64',
-            'filing_frequency' => 'nullable|string|max:50',
+            'filing_type' => 'required|in:vat,sales_tax,withholding,paye,corporate_income_tax',
+            'filing_frequency' => 'required|in:weekly,biweekly,monthly,bimonthly,quarterly,semiannual,annual',
             'currency_code' => 'nullable|string|size:3',
             'period_start' => 'required|date',
             'period_end' => 'required|date|after_or_equal:period_start',
@@ -74,8 +90,29 @@ class TaxFilingController extends Controller
         ], $this->citValidationRules()));
 
         $jurisdiction = TaxJurisdiction::query()
+            ->with(['taxCodes', 'withholdingRules', 'accountMappings'])
             ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_jurisdictions'))
             ->findOrFail($validated['tax_jurisdiction_id']);
+        $filingOption = $filingCatalog->optionsFor($jurisdiction)[$validated['filing_type']] ?? null;
+        if (! $filingOption) {
+            throw ValidationException::withMessages([
+                'filing_type' => 'This return type is not configured for the selected jurisdiction.',
+            ]);
+        }
+        if (! in_array($validated['filing_frequency'], $filingOption['frequencies'], true)) {
+            throw ValidationException::withMessages([
+                'filing_frequency' => 'Select a filing frequency configured for this jurisdiction and return type.',
+            ]);
+        }
+        $validated['currency_code'] = $filingOption['currency'];
+        if (empty($validated['due_date'])) {
+            $periodEnd = Carbon::parse($validated['period_end']);
+            if ($filingOption['deadline_months'] > 0) {
+                $validated['due_date'] = $periodEnd->addMonthsNoOverflow($filingOption['deadline_months'])->toDateString();
+            } elseif ($filingOption['deadline_days'] > 0) {
+                $validated['due_date'] = $periodEnd->addDays($filingOption['deadline_days'])->toDateString();
+            }
+        }
 
         $preview = $returnPreparationService->prepare(
             $validated['period_start'],

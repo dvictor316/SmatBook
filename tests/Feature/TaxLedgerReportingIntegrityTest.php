@@ -227,6 +227,50 @@ class TaxLedgerReportingIntegrityTest extends TestCase
         $this->assertEquals(0.0, $result['adjustments_total']);
     }
 
+    public function test_sales_tax_return_does_not_treat_purchase_tax_as_a_credit(): void
+    {
+        DB::table('sales')->insert([
+            'id' => 10,
+            'company_id' => 1,
+            'branch_id' => 'branch-main',
+            'branch_name' => 'Main Branch',
+            'invoice_no' => 'US-SALE-1',
+            'order_date' => '2026-06-01',
+            'subtotal' => 1000,
+            'tax' => 80,
+            'tax_amount' => 80,
+            'total' => 1080,
+            'total_amount' => 1080,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('purchases')->insert([
+            'id' => 10,
+            'company_id' => 1,
+            'branch_id' => 'branch-main',
+            'branch_name' => 'Main Branch',
+            'purchase_no' => 'US-PUR-1',
+            'purchase_date' => '2026-06-01',
+            'total_amount' => 540,
+            'tax_amount' => 40,
+            'status' => 'received',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $result = app(TaxReturnPreparationService::class)->prepare('2026-06-01', '2026-06-30', [
+            'filing_type' => 'sales_tax',
+            'company_id' => 1,
+            'branch_scope' => 'all',
+            'currency_code' => 'USD',
+        ]);
+
+        $this->assertEquals(80.0, $result['tax_due']);
+        $this->assertEquals(0.0, $result['tax_credit']);
+        $this->assertEquals(1000.0, $result['total_taxable']);
+        $this->assertSame('sales_tax_collected', $result['lines'][0]['line_key']);
+    }
+
     private function setUpSchema(): void
     {
         Schema::create('accounts', function (Blueprint $table) {

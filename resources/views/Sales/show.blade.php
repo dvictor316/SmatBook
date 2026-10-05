@@ -118,9 +118,18 @@
                     || $errors->has('attachment');
             @endphp
             <div class="d-flex gap-2">
-                <button onclick="window.print()" class="btn btn-sm btn-outline-primary px-3 shadow-sm">
-                    <i class="fas fa-print me-1"></i> Print
-                </button>
+                <a href="{{ route('sales.invoice.print', $sale->id) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary px-3 shadow-sm">
+                    <i class="fas fa-file-invoice me-1"></i> Standard Receipt
+                </a>
+                <div class="dropdown">
+                    <button type="button" class="btn btn-sm btn-outline-dark px-3 shadow-sm dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fas fa-receipt me-1"></i> Thermal
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" target="_blank" rel="noopener" href="{{ route('sales.invoice.print', $sale->id) }}?format=thermal&amp;paper=80">80mm receipt</a></li>
+                        <li><a class="dropdown-item" target="_blank" rel="noopener" href="{{ route('sales.invoice.print', $sale->id) }}?format=thermal&amp;paper=58">58mm receipt</a></li>
+                    </ul>
+                </div>
                 <button
                     class="btn btn-sm px-3 shadow-sm {{ $isFullyPaid ? 'btn-outline-success' : 'btn-primary' }}"
                     @if($isFullyPaid)

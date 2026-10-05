@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Models\Product;
+use App\Models\SaleItem;
 use PHPUnit\Framework\TestCase;
 
 class ProductMeasurementTest extends TestCase
@@ -23,5 +24,12 @@ class ProductMeasurementTest extends TestCase
             'units' => 10.75,
         ], $product->stockBreakdown());
         $this->assertSame('110.75 kg', $product->formatStockQuantity());
+    }
+
+    public function test_sale_item_quantity_preserves_fractional_measurements(): void
+    {
+        $item = new SaleItem(['qty' => 1.75]);
+
+        $this->assertSame(1.75, $item->qty);
     }
 }

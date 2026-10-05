@@ -1790,9 +1790,11 @@ $sale = Sale::create([
         return view('Sales.Invoices.index', compact('sale', 'company', 'currencySymbol', 'activeBranch'));
     }
 
-    public function printInvoice($id)
+    public function printInvoice(Request $request, $id)
     {
-        $sale = Sale::with(['items.product', 'customer', 'user'])->findOrFail($id);
+        $saleQuery = Sale::with(['items.product', 'customer', 'user']);
+        $this->applyTenantScope($saleQuery, 'sales');
+        $sale = $saleQuery->findOrFail($id);
         $previousCustomerBalance = 0.0;
         if ($sale->customer_id && Schema::hasColumn('sales', 'balance')) {
             $balanceQuery = Sale::query()
@@ -1808,8 +1810,16 @@ $sale = Sale::create([
             $previousCustomerBalance = (float) $balanceQuery->sum(DB::raw('GREATEST(COALESCE(balance, 0), 0)'));
         }
 
-        return view('Sales.Invoices.print', [
+        $format = $request->query('format') === 'thermal' ? 'thermal' : 'standard';
+        $paperWidth = in_array((int) $request->query('paper'), [58, 80], true)
+            ? (int) $request->query('paper')
+            : 80;
+        $company = Company::find($sale->company_id) ?? auth()->user()?->company;
+
+        return view($format === 'thermal' ? 'Sales.Invoices.thermal' : 'Sales.Invoices.print', [
             'sale' => $sale,
+            'company' => $company,
+            'paperWidth' => $paperWidth,
             'previousCustomerBalance' => $previousCustomerBalance,
             'backUrl' => route('sales.invoice.show', $sale->id),
         ]);
