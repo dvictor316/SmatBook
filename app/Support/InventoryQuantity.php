@@ -54,7 +54,11 @@ class InventoryQuantity
 
     public static function productUnitsPerRollExpression(string $productsTable = 'products'): string
     {
-        return "GREATEST(COALESCE({$productsTable}.units_per_roll, 0), 1)";
+        return "CASE
+            WHEN COALESCE({$productsTable}.units_per_roll, 0) > 0
+                THEN COALESCE({$productsTable}.units_per_roll, 0)
+            ELSE 1
+        END";
     }
 
     public static function productUnitsPerCartonExpression(string $productsTable = 'products'): string

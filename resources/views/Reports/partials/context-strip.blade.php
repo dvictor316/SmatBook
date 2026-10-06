@@ -115,10 +115,10 @@
         justify-content: space-between;
         gap: 1rem;
         padding: 1rem 1.1rem;
-        background: linear-gradient(135deg, #f3f8ff 0%, #ffffff 60%, #fffaf0 100%);
+        background: #ffffff;
         border: 1px solid #dbe6f4;
-        border-radius: 20px;
-        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.05);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
     }
     .report-context-kicker {
         display: inline-block;
@@ -126,14 +126,14 @@
         color: #2563eb;
         font-size: 0.7rem;
         font-weight: 800;
-        letter-spacing: 0.12em;
+        letter-spacing: 0;
         text-transform: uppercase;
     }
     .report-context-company {
         color: #102a5a;
         font-size: 1.05rem;
         font-weight: 800;
-        letter-spacing: -0.02em;
+        letter-spacing: 0;
     }
     .report-context-meta {
         display: flex;
@@ -145,12 +145,12 @@
         display: inline-flex;
         align-items: center;
         padding: 0.58rem 0.9rem;
-        border-radius: 999px;
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        border-radius: 6px;
+        background: #174ea6;
         color: #fff;
         font-size: 0.74rem;
         font-weight: 700;
-        box-shadow: 0 10px 18px rgba(37, 99, 235, 0.15);
+        box-shadow: none;
     }
     .report-context-pill--light {
         background: #fffdf8;
@@ -159,27 +159,27 @@
         box-shadow: none;
     }
     .report-context-pill--email {
-        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        background: #047857;
         border: none;
         cursor: pointer;
-        box-shadow: 0 10px 18px rgba(5, 150, 105, 0.18);
+        box-shadow: none;
     }
     .report-context-pill--email:hover {
-        background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+        background: #065f46;
     }
     /* Branch switcher dropdown */
     .report-context-pill--branch {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        background: #174ea6;
         cursor: pointer;
-        box-shadow: 0 10px 18px rgba(37, 99, 235, 0.15);
+        box-shadow: none;
     }
     .report-context-pill--branch:hover,
     .report-context-pill--branch:focus {
-        background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+        background: #123d82;
     }
     .report-branch-menu {
         min-width: 220px;
-        border-radius: 16px;
+        border-radius: 8px;
         padding: 0.4rem 0;
         overflow: hidden;
     }
@@ -212,7 +212,7 @@
         .report-context-strip {
             flex-direction: column;
             align-items: flex-start;
-            border-radius: 18px;
+            border-radius: 8px;
         }
         .report-context-meta {
             justify-content: flex-start;
@@ -226,7 +226,7 @@
 <div class="modal fade" id="emailReportModal" tabindex="-1" aria-labelledby="emailReportModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-            <div class="modal-header" style="background:linear-gradient(135deg,#059669,#047857);color:#fff;">
+            <div class="modal-header" style="background:#047857;color:#fff;">
                 <h5 class="modal-title" id="emailReportModalLabel"><i class="fas fa-envelope me-2"></i>Email Report</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>

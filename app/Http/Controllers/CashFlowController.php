@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Account;
-use App\Models\Transaction;
-use App\Models\Payment;
 use App\Models\Expense;
+use App\Models\Payment;
+use App\Models\Transaction;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CashFlowController extends Controller
@@ -18,8 +18,8 @@ class CashFlowController extends Controller
     public function cashFlow(Request $request)
     {
         // 1. Setup Dates (Matches your $start->format calls in Blade)
-        $start = $request->start_date ? Carbon::parse($request->start_date) : Carbon::now()->startOfMonth();
-        $end = $request->end_date ? Carbon::parse($request->end_date) : Carbon::now()->endOfDay();
+        $start = $request->start_date ? Carbon::parse($request->start_date)->startOfDay() : Carbon::now()->startOfMonth();
+        $end = $request->end_date ? Carbon::parse($request->end_date)->endOfDay() : Carbon::now()->endOfDay();
 
         // 2. Identify Cash/Bank Accounts
         $cashAccountIds = $this->resolveCashAccountIds();
@@ -35,6 +35,8 @@ class CashFlowController extends Controller
                 ->where('transaction_date', '<', $start->toDateString())
                 ->selectRaw('SUM(debit) - SUM(credit) as balance')
                 ->first()->balance ?? 0;
+        } else {
+            $openingBalance = $this->operationalOpeningBalance($start);
         }
 
         // 4. Period Transactions
@@ -68,7 +70,7 @@ class CashFlowController extends Controller
         }
 
         // Separate Inflows and Outflows for the loops in your Blade
-        if (!isset($inflows) || !isset($outflows)) {
+        if (! isset($inflows) || ! isset($outflows)) {
             $inflows = collect();
             $outflows = collect();
             $totalInflow = 0;
@@ -116,7 +118,7 @@ class CashFlowController extends Controller
         for ($i = 5; $i >= 0; $i--) {
             $month = Carbon::now()->subMonths($i);
             $labels[] = $month->format('M Y');
-            
+
             $inflows[] = Transaction::whereIn('account_id', $cashAccountIds)
                 ->tap(fn ($query) => $this->applyTenantScope($query, 'transactions'))
                 ->tap(fn ($query) => $this->applyBranchScope($query, 'transactions'))
@@ -137,8 +139,8 @@ class CashFlowController extends Controller
 
     public function exportCashFlow(Request $request): StreamedResponse
     {
-        $start = $request->start_date ? Carbon::parse($request->start_date) : Carbon::now()->startOfMonth();
-        $end = $request->end_date ? Carbon::parse($request->end_date) : Carbon::now()->endOfDay();
+        $start = $request->start_date ? Carbon::parse($request->start_date)->startOfDay() : Carbon::now()->startOfMonth();
+        $end = $request->end_date ? Carbon::parse($request->end_date)->endOfDay() : Carbon::now()->endOfDay();
 
         $cashAccountIds = $this->resolveCashAccountIds();
 
@@ -152,6 +154,8 @@ class CashFlowController extends Controller
                 ->where('transaction_date', '<', $start->toDateString())
                 ->selectRaw('SUM(debit) - SUM(credit) as balance')
                 ->first()->balance ?? 0;
+        } else {
+            $openingBalance = $this->operationalOpeningBalance($start);
         }
 
         $transactions = collect();
@@ -178,7 +182,7 @@ class CashFlowController extends Controller
         $netCashFlow = $totalInflow - $totalOutflow;
         $closingBalance = $openingBalance + $netCashFlow;
 
-        $filename = 'cash_flow_' . $start->format('Ymd') . '_' . $end->format('Ymd') . '.csv';
+        $filename = 'cash_flow_'.$start->format('Ymd').'_'.$end->format('Ymd').'.csv';
 
         return response()->streamDownload(function () use (
             $start,
@@ -194,7 +198,7 @@ class CashFlowController extends Controller
             $out = fopen('php://output', 'w');
 
             fputcsv($out, ['Cash Flow Report']);
-            fputcsv($out, ['Period', $start->toDateString() . ' to ' . $end->toDateString()]);
+            fputcsv($out, ['Period', $start->toDateString().' to '.$end->toDateString()]);
             fputcsv($out, []);
             fputcsv($out, ['Summary']);
             fputcsv($out, ['Opening Balance', $openingBalance]);
@@ -249,15 +253,23 @@ class CashFlowController extends Controller
 
     private function getActiveBranchContext(): array
     {
+        if (session('active_branch_scope') === 'all') {
+            return ['id' => null, 'name' => 'All Branches', 'scope' => 'all'];
+        }
+
         return [
             'id' => session('active_branch_id') ? (string) session('active_branch_id') : null,
             'name' => session('active_branch_name') ? (string) session('active_branch_name') : null,
+            'scope' => 'branch',
         ];
     }
 
     private function applyBranchScope($query, string $table)
     {
         $activeBranch = $this->getActiveBranchContext();
+        if (($activeBranch['scope'] ?? 'branch') === 'all') {
+            return $query;
+        }
         $branchId = trim((string) ($activeBranch['id'] ?? ''));
         $branchName = trim((string) ($activeBranch['name'] ?? ''));
 
@@ -279,7 +291,6 @@ class CashFlowController extends Controller
     {
         $baseQuery = Account::query();
         $baseQuery = $this->applyTenantScope($baseQuery, 'accounts');
-        $baseQuery = $this->applyBranchScope($baseQuery, 'accounts');
 
         $cashAccountIds = (clone $baseQuery)
             ->whereRaw('LOWER(COALESCE(type, "")) = ?', ['asset'])
@@ -296,13 +307,26 @@ class CashFlowController extends Controller
             })
             ->pluck('id');
 
-        if ($cashAccountIds->isEmpty()) {
-            $cashAccountIds = (clone $baseQuery)
-                ->whereRaw('LOWER(COALESCE(type, "")) = ?', ['asset'])
-                ->pluck('id');
-        }
-
         return $cashAccountIds;
+    }
+
+    private function operationalOpeningBalance(Carbon $start): float
+    {
+        $payments = $this->applyTenantScope(Payment::query(), 'payments')
+            ->tap(fn ($query) => $this->applyBranchScope($query, 'payments'))
+            ->where('created_at', '<', $start)
+            ->where(function ($query) {
+                $query->whereRaw('LOWER(COALESCE(status, "")) IN (?, ?, ?, ?)', ['completed', 'success', 'successful', 'paid']);
+            })
+            ->sum('amount');
+
+        $expenses = $this->applyTenantScope(Expense::query(), 'expenses')
+            ->tap(fn ($query) => $this->applyBranchScope($query, 'expenses'))
+            ->where('created_at', '<', $start)
+            ->whereRaw('LOWER(COALESCE(status, "")) = ?', ['paid'])
+            ->sum('amount');
+
+        return (float) $payments - (float) $expenses;
     }
 
     private function buildOperationalFlows(Carbon $start, Carbon $end): array

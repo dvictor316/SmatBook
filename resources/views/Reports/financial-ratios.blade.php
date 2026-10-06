@@ -4,8 +4,8 @@
     <style>
         .ratio-summary-card {
             border: 0;
-            border-radius: 20px;
-            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
         }
 
         .ratio-summary-card .card-body {
@@ -16,7 +16,7 @@
             font-size: 0.82rem;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
+            letter-spacing: 0;
             color: #64748b;
             margin-bottom: 0.9rem;
         }
@@ -64,13 +64,17 @@
                                 <option value="ytd" @selected(($period ?? 'ytd') === 'ytd')>Year to Date</option>
                                 <option value="monthly" @selected(($period ?? '') === 'monthly')>This Month</option>
                                 <option value="quarterly" @selected(($period ?? '') === 'quarterly')>This Quarter</option>
-                                <option value="annual" @selected(($period ?? '') === 'annual')>Annual</option>
+                                <option value="annual" @selected(($period ?? '') === 'annual')>Trailing 12 Months</option>
                             </select>
                         </div>
                         <button type="submit" class="btn btn-primary">Apply</button>
                     </form>
                 </div>
             </div>
+            @include('Reports.partials.context-strip', [
+                'reportLabel' => 'Ledger-Based Financial Ratios',
+                'periodLabel' => 'Period: ' . $periodStart->toDateString() . ' to ' . $periodEnd->toDateString(),
+            ])
 
             <div class="row">
                 <div class="col-12">

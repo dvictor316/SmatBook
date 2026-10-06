@@ -87,7 +87,7 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <p class="mb-1 opacity-75 small fw-bold uppercase">{{ __('Grand Total') }}</p>
+                                <p class="mb-1 opacity-75 small fw-bold uppercase">{{ __('Filtered Payment Amount') }}</p>
                                 <h3 class="mb-0 fw-bold money-sm">{{ \App\Support\GeoCurrency::format($totalAmount, 'NGN', $currencyCode, $currencyLocale) }}</h3>
                             </div>
                             <div class="rounded-circle bg-white bg-opacity-25 p-2">

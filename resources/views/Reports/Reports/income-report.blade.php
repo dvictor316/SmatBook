@@ -12,8 +12,8 @@
         <div class="page-header mb-3 no-print">
             <div class="row align-items-center">
                 <div class="col">
-                    <h4 class="fw-bold mb-1 report-page-title">Executive Cash Flow Report</h4>
-                    <p class="text-muted mb-0 report-page-subtitle">Revenue and expenditure analysis.</p>
+                    <h4 class="fw-bold mb-1 report-page-title">Income and Expense Overview</h4>
+                    <p class="text-muted mb-0 report-page-subtitle">Operational income and expense activity for the selected period.</p>
                 </div>
                 <div class="col-auto">
                     <div class="btn-group btn-group-sm shadow-sm">
@@ -69,7 +69,7 @@
             <div class="col-md-4">
                 <div class="card border-0 {{ $tNet >= 0 ? 'bg-indigo' : 'bg-danger' }} mb-0 text-white">
                     <div class="card-body p-3">
-                        <p class="text-white mb-1 fw-bold uppercase report-metric-label report-metric-label--light">Net Profit Amount</p>
+                    <p class="text-white mb-1 fw-bold uppercase report-metric-label report-metric-label--light">Net Operating Result</p>
                         <h4 class="text-white fw-bold mb-0 report-metric-value">{{ \App\Support\GeoCurrency::format($tNet, 'NGN', $currencyCode, $currencyLocale) }}</h4>
                     </div>
                 </div>

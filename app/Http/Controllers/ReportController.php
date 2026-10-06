@@ -3,798 +3,839 @@
 namespace App\Http\Controllers;
 
 // 1. Laravel Framework Shorthands
+use App\Models\Account;
+use App\Models\Customer;
+use App\Models\Payment;
+use App\Models\Plan;
+use App\Models\Product;
+use App\Models\PurchaseReturn;
+use App\Models\Sale;
+use App\Models\Setting;
+use App\Support\AppMailer;
+// 2. Third Party Packages
+use App\Support\BranchInventoryService;
+use App\Support\InventoryQuantity;
+// 3. Your Custom Models
+use App\Support\LedgerService;
+use App\Support\PlanAccess;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Illuminate\Pagination\LengthAwarePaginator;
-
-// 2. Third Party Packages
-use Barryvdh\DomPDF\Facade\Pdf; 
-use Carbon\Carbon;
-
-// 3. Your Custom Models
-use App\Models\Payment;
-use App\Models\Quotation;
-use App\Models\Account;
-use App\Models\PurchaseReturn;
-use App\Models\Customer;
-use App\Models\Sale;
-use App\Models\Product;
-use App\Models\Setting;
-use App\Models\Plan;
-use App\Models\Subscription;
-use App\Support\PlanAccess;
-use App\Support\LedgerService;
-use App\Support\AppMailer;
-use App\Support\BranchInventoryService;
-use App\Support\InventoryQuantity;
-
-
 
 class ReportController extends Controller
 {
-        private function normalizeReportPlan(string $plan): string
-        {
-            return PlanAccess::normalizeTier($plan) ?? 'basic';
+    private function normalizeReportPlan(string $plan): string
+    {
+        return PlanAccess::normalizeTier($plan) ?? 'basic';
+    }
+
+    private function resolveReportAccess(): string
+    {
+        return PlanAccess::resolveTierForUser(Auth::user());
+    }
+
+    private function allowedReportTabs(string $reportAccess): array
+    {
+        switch ($reportAccess) {
+            case 'full':
+            case 'enterprise':
+                return ['standard', 'management', 'custom'];
+            case 'pro':
+                return ['standard', 'management'];
+            case 'starter':
+                return ['standard'];
+            default:
+                return ['standard'];
         }
+    }
 
-        private function resolveReportAccess(): string
-        {
-            return PlanAccess::resolveTierForUser(Auth::user());
-        }
-
-        private function allowedReportTabs(string $reportAccess): array
-        {
-            switch ($reportAccess) {
-                case 'full':
-                case 'enterprise':
-                    return ['standard', 'management', 'custom'];
-                case 'pro':
-                    return ['standard', 'management'];
-                case 'starter':
-                    return ['standard'];
-                default:
-                    return ['standard'];
-            }
-        }
-
-        private function reportTabSections(array $allowedTabs): array
-        {
-            if ($this->resolveReportAccess() === 'starter') {
-                return [
-                    'standard' => ['sales', 'inventory'],
-                ];
-            }
-
-            $map = [
-                'standard' => ['overview', 'owes', 'sales', 'inventory'],
-                'management' => ['financial'],
-                'custom' => ['custom'],
-            ];
-
-            return collect($map)->only($allowedTabs)->all();
-        }
-
-        private function ensureCustomReportAccess(): void
-        {
-            abort_unless(in_array('custom', $this->allowedReportTabs($this->resolveReportAccess()), true), 403);
-        }
-
-        private function calculateReportSideBalances(float $amount, bool $isDebitNormal): array
-        {
-            if ($isDebitNormal) {
-                return $amount >= 0
-                    ? ['debit' => $amount, 'credit' => 0.0]
-                    : ['debit' => 0.0, 'credit' => abs($amount)];
-            }
-
-            return $amount >= 0
-                ? ['debit' => 0.0, 'credit' => $amount]
-                : ['debit' => abs($amount), 'credit' => 0.0];
-        }
-
-        private function normalizeProfitLossAccountType(?string $value): string
-        {
-            $value = strtolower(trim((string) $value));
-
-            switch ($value) {
-                case 'asset':
-                case 'assets':
-                    return 'asset';
-                case 'liability':
-                case 'liabilities':
-                case 'payable':
-                case 'payables':
-                case 'current liability':
-                case 'long term liability':
-                case 'long-term liability':
-                    return 'liability';
-                case 'equity':
-                case 'capital':
-                case 'owner equity':
-                case 'owners equity':
-                case "owner's equity":
-                case 'share capital':
-                case 'shareholder equity':
-                    return 'equity';
-                case 'revenue':
-                case 'income':
-                case 'sales':
-                case 'turnover':
-                    return 'revenue';
-                case 'expense':
-                case 'expenses':
-                case 'cost':
-                case 'cogs':
-                case 'cost of sales':
-                case 'cost of goods sold':
-                    return 'expense';
-                default:
-                    return $value;
-            }
-        }
-
-        private function classifyProfitLossEntry(object $entry): ?string
-        {
-            $type = $this->normalizeProfitLossAccountType($entry->account_type ?? null);
-            $subType = $this->normalizeProfitLossAccountType($entry->account_sub_type ?? null);
-            $name = strtolower(trim((string) ($entry->account_name ?? '')));
-
-            if ($type === 'revenue' || $subType === 'revenue') {
-                return 'income';
-            }
-
-            if ($type === 'expense' || $subType === 'expense') {
-                if (
-                    str_contains($name, 'purchase')
-                    || str_contains($name, 'inventory')
-                    || str_contains($name, 'cogs')
-                    || str_contains($name, 'cost of sales')
-                    || str_contains($name, 'cost of goods sold')
-                ) {
-                    return 'purchase_expense';
-                }
-
-                return 'operating_expense';
-            }
-
-            return null;
-        }
-
-        private function profitLossLedgerEntries(string $from, string $to)
-        {
-            $query = DB::table('transactions')
-                ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
-                ->whereNull('transactions.deleted_at')
-                ->whereNull('accounts.deleted_at')
-                ->select([
-                    'transactions.transaction_date',
-                    'transactions.reference',
-                    'transactions.description',
-                    'transactions.debit',
-                    'transactions.credit',
-                    DB::raw('COALESCE(accounts.name, "Unknown Account") as account_name'),
-                    DB::raw('COALESCE(accounts.type, "") as account_type'),
-                    DB::raw('COALESCE(accounts.sub_type, "") as account_sub_type'),
-                ])
-                ->whereBetween('transactions.transaction_date', [$from, $to]);
-
-            $this->applyTenantScope($query, 'transactions');
-            $this->applyGenericBranchFilter($query, 'transactions');
-
-            return $query->orderBy('transactions.transaction_date')
-                ->orderBy('transactions.id')
-                ->get()
-                ->map(function ($entry) {
-                    $stream = $this->classifyProfitLossEntry($entry);
-                    if (!$stream) {
-                        return null;
-                    }
-
-                    $amount = $stream === 'income'
-                        ? ((float) $entry->credit - (float) $entry->debit)
-                        : ((float) $entry->debit - (float) $entry->credit);
-
-                    if (abs($amount) < 0.0001) {
-                        return null;
-                    }
-
-                    $entry->stream = $stream;
-                    $entry->amount = $amount;
-                    $entry->report_date = Carbon::parse($entry->transaction_date)->toDateString();
-                    $entry->party = $entry->account_name;
-
-                    return $entry;
-                })
-                ->filter()
-                ->values();
-        }
-
-        public function reportsHub()
-        {
-            $reportAccess = $this->resolveReportAccess();
-            $allowedTabs = $this->allowedReportTabs($reportAccess);
-            $currentTab = request('tab', $allowedTabs[0] ?? 'standard');
-            if (!in_array($currentTab, $allowedTabs, true)) {
-                $currentTab = $allowedTabs[0] ?? 'standard';
-            }
-
-            $canUseCustomReports = in_array('custom', $allowedTabs, true);
-            $customReportCatalog = $canUseCustomReports ? $this->customReportCatalog() : [];
-            $availableBranches = $canUseCustomReports ? $this->availableCustomReportBranches() : collect();
-            $customReportTemplates = $canUseCustomReports ? $this->getCustomReportTemplates() : collect();
-            $editingTemplate = null;
-            $editTemplateId = trim((string) request()->query('edit_template', ''));
-
-            if ($canUseCustomReports && $editTemplateId !== '') {
-                $editingTemplate = $customReportTemplates->firstWhere('id', $editTemplateId);
-            }
-
-            $tabSections = $this->reportTabSections($allowedTabs);
-
-            return view('Reports.hub', compact(
-                'customReportCatalog',
-                'customReportTemplates',
-                'editingTemplate',
-                'availableBranches',
-                'reportAccess',
-                'allowedTabs',
-                'currentTab',
-                'tabSections'
-            ));
-        }
-
-        private function customReportCatalog(): array
-        {
+    private function reportTabSections(array $allowedTabs): array
+    {
+        if ($this->resolveReportAccess() === 'starter') {
             return [
-                'profit_loss' => [
-                    'label' => 'Profit & Loss',
-                    'route' => 'reports.profit-loss',
-                    'description' => 'Core profit and loss statement for a selected date range.',
-                    'filter' => 'date_range',
-                    'from_param' => 'start_date',
-                    'to_param' => 'end_date',
-                ],
-                'profit_loss_detail' => [
-                    'label' => 'Profit & Loss Detail',
-                    'route' => 'reports.profit-loss-detail',
-                    'description' => 'Detailed income and expense lines for a selected period.',
-                    'filter' => 'date_range',
-                    'from_param' => 'from_date',
-                    'to_param' => 'to_date',
-                ],
-                'cash_flow' => [
-                    'label' => 'Cash Flow',
-                    'route' => 'reports.cash-flow',
-                    'description' => 'Cash inflows and outflows across the selected period.',
-                    'filter' => 'date_range',
-                    'from_param' => 'start_date',
-                    'to_param' => 'end_date',
-                ],
-                'sales_summary' => [
-                    'label' => 'Sales Summary',
-                    'route' => 'reports.sales-summary',
-                    'description' => 'Sales totals, paid amounts, and outstanding balances.',
-                    'filter' => 'date_range',
-                    'from_param' => 'from_date',
-                    'to_param' => 'to_date',
-                ],
-                'purchase_summary' => [
-                    'label' => 'Purchase Summary',
-                    'route' => 'reports.purchase-summary',
-                    'description' => 'Purchase totals and average buying activity by period.',
-                    'filter' => 'date_range',
-                    'from_param' => 'from_date',
-                    'to_param' => 'to_date',
-                ],
-                'expense_by_category' => [
-                    'label' => 'Expense by Category',
-                    'route' => 'reports.expense-by-category',
-                    'description' => 'Spend grouped by category over a selected period.',
-                    'filter' => 'date_range',
-                    'from_param' => 'from_date',
-                    'to_param' => 'to_date',
-                ],
-                'open_invoices' => [
-                    'label' => 'Open Invoices',
-                    'route' => 'reports.open-invoices',
-                    'description' => 'Outstanding invoices filtered by date range.',
-                    'filter' => 'date_range',
-                    'from_param' => 'from_date',
-                    'to_param' => 'to_date',
-                ],
-                'tax_summary' => [
-                    'label' => 'Tax Summary',
-                    'route' => 'reports.tax-summary',
-                    'description' => 'Sales tax, purchase tax, and net liability by period.',
-                    'filter' => 'date_range',
-                    'from_param' => 'from_date',
-                    'to_param' => 'to_date',
-                ],
-                'balance_sheet' => [
-                    'label' => 'Balance Sheet',
-                    'route' => 'balance-sheet',
-                    'description' => 'Balance sheet snapshot as of a chosen date.',
-                    'filter' => 'as_of',
-                    'date_param' => 'date',
-                ],
-                'trial_balance' => [
-                    'label' => 'Trial Balance',
-                    'route' => 'trial-balance',
-                    'description' => 'Trial balance snapshot as of a chosen date.',
-                    'filter' => 'as_of',
-                    'date_param' => 'date',
-                ],
-                'chart_of_accounts' => [
-                    'label' => 'Chart of Accounts',
-                    'route' => 'reports.chart-of-accounts',
-                    'description' => 'Account list with balances, status, and transaction counts.',
-                    'filter' => 'date_range',
-                    'from_param' => 'start_date',
-                    'to_param' => 'end_date',
-                ],
-                'ar_ageing_detail' => [
-                    'label' => 'AR Ageing Detail',
-                    'route' => 'reports.ar-ageing-detail',
-                    'description' => 'Outstanding receivables bucketed by age.',
-                    'filter' => 'as_of',
-                    'date_param' => 'as_of',
-                ],
+                'standard' => ['sales', 'inventory'],
             ];
         }
 
-        private function customReportsSettingKey(): string
-        {
-            $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
+        $map = [
+            'standard' => ['overview', 'owes', 'sales', 'inventory'],
+            'management' => ['financial'],
+            'custom' => ['custom'],
+        ];
 
-            return $companyId > 0 ? 'custom_reports_company_' . $companyId : 'custom_reports';
+        return collect($map)->only($allowedTabs)->all();
+    }
+
+    private function ensureCustomReportAccess(): void
+    {
+        abort_unless(in_array('custom', $this->allowedReportTabs($this->resolveReportAccess()), true), 403);
+    }
+
+    private function calculateReportSideBalances(float $amount, bool $isDebitNormal): array
+    {
+        if ($isDebitNormal) {
+            return $amount >= 0
+                ? ['debit' => $amount, 'credit' => 0.0]
+                : ['debit' => 0.0, 'credit' => abs($amount)];
         }
 
-        private function availableCustomReportBranches()
-        {
-            $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
-            if ($companyId <= 0) {
-                return collect();
+        return $amount >= 0
+            ? ['debit' => 0.0, 'credit' => $amount]
+            : ['debit' => abs($amount), 'credit' => 0.0];
+    }
+
+    private function normalizeProfitLossAccountType(?string $value): string
+    {
+        $value = strtolower(trim((string) $value));
+
+        switch ($value) {
+            case 'asset':
+            case 'assets':
+                return 'asset';
+            case 'liability':
+            case 'liabilities':
+            case 'payable':
+            case 'payables':
+            case 'current liability':
+            case 'long term liability':
+            case 'long-term liability':
+                return 'liability';
+            case 'equity':
+            case 'capital':
+            case 'owner equity':
+            case 'owners equity':
+            case "owner's equity":
+            case 'share capital':
+            case 'shareholder equity':
+                return 'equity';
+            case 'revenue':
+            case 'income':
+            case 'sales':
+            case 'turnover':
+                return 'revenue';
+            case 'expense':
+            case 'expenses':
+            case 'cost':
+            case 'cogs':
+            case 'cost of sales':
+            case 'cost of goods sold':
+                return 'expense';
+            default:
+                return $value;
+        }
+    }
+
+    private function classifyProfitLossEntry(object $entry): ?string
+    {
+        $type = $this->normalizeProfitLossAccountType($entry->account_type ?? null);
+        $subType = $this->normalizeProfitLossAccountType($entry->account_sub_type ?? null);
+        $name = strtolower(trim((string) ($entry->account_name ?? '')));
+
+        if ($type === 'revenue' || $subType === 'revenue') {
+            return 'income';
+        }
+
+        if ($type === 'expense' || $subType === 'expense') {
+            if (
+                str_contains($name, 'purchase')
+                || str_contains($name, 'inventory')
+                || str_contains($name, 'cogs')
+                || str_contains($name, 'cost of sales')
+                || str_contains($name, 'cost of goods sold')
+            ) {
+                return 'purchase_expense';
             }
 
-            $raw = Setting::where('key', 'branches_json_company_' . $companyId)->value('value');
-
-            return collect(json_decode((string) $raw, true) ?: [])
-                ->map(fn ($branch) => [
-                    'id' => (string) ($branch['id'] ?? ''),
-                    'name' => (string) ($branch['name'] ?? ''),
-                ])
-                ->filter(fn ($branch) => $branch['id'] !== '' && $branch['name'] !== '')
-                ->values();
+            return 'operating_expense';
         }
 
-        private function getCustomReportTemplates()
-        {
-            $raw = Setting::where('key', $this->customReportsSettingKey())->value('value');
-            $catalog = $this->customReportCatalog();
+        return null;
+    }
 
-            return collect(json_decode((string) $raw, true) ?: [])
-                ->map(function ($template) use ($catalog) {
-                    $reportKey = (string) ($template['report_key'] ?? '');
-                    $definition = $catalog[$reportKey] ?? null;
+    private function profitLossLedgerEntries(string $from, string $to)
+    {
+        $query = DB::table('transactions')
+            ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
+            ->whereNull('transactions.deleted_at')
+            ->whereNull('accounts.deleted_at')
+            ->select([
+                'transactions.transaction_date',
+                'transactions.reference',
+                'transactions.description',
+                'transactions.debit',
+                'transactions.credit',
+                DB::raw('COALESCE(accounts.name, "Unknown Account") as account_name'),
+                DB::raw('COALESCE(accounts.type, "") as account_type'),
+                DB::raw('COALESCE(accounts.sub_type, "") as account_sub_type'),
+            ])
+            ->whereBetween('transactions.transaction_date', [$from, $to]);
 
-                    return [
-                        'id' => (string) ($template['id'] ?? ''),
-                        'name' => (string) ($template['name'] ?? ''),
-                        'report_key' => $reportKey,
-                        'report_label' => (string) ($definition['label'] ?? $reportKey),
-                        'report_description' => (string) ($definition['description'] ?? ''),
-                        'date_preset' => (string) ($template['date_preset'] ?? 'current_month'),
-                        'custom_from_date' => (string) ($template['custom_from_date'] ?? ''),
-                        'custom_to_date' => (string) ($template['custom_to_date'] ?? ''),
-                        'branch_filter' => (string) ($template['branch_filter'] ?? ($template['branch_scope'] ?? 'current')),
-                        'created_at' => (string) ($template['created_at'] ?? ''),
-                    ];
-                })
-                ->filter(fn ($template) => $template['id'] !== '' && $template['name'] !== '' && isset($catalog[$template['report_key']]))
-                ->values();
-        }
+        $this->applyTenantScope($query, 'transactions');
+        $this->applyGenericBranchFilter($query, 'transactions');
 
-        private function persistCustomReportTemplates($templates): void
-        {
-            $payload = collect($templates)->values()->all();
-
-            Setting::updateOrCreate(
-                ['key' => $this->customReportsSettingKey()],
-                ['value' => json_encode($payload)]
-            );
-        }
-
-        private function resolveTemplateDateRange(string $preset, ?string $customFrom = null, ?string $customTo = null): array
-        {
-            switch ($preset) {
-                case 'today':
-                    return [now()->toDateString(), now()->toDateString()];
-                case 'last_7_days':
-                    return [now()->subDays(6)->toDateString(), now()->toDateString()];
-                case 'last_30_days':
-                    return [now()->subDays(29)->toDateString(), now()->toDateString()];
-                case 'last_month':
-                    return [now()->subMonth()->startOfMonth()->toDateString(), now()->subMonth()->endOfMonth()->toDateString()];
-                case 'current_year':
-                    return [now()->startOfYear()->toDateString(), now()->toDateString()];
-                case 'custom':
-                    return [
-                        $customFrom ?: now()->startOfMonth()->toDateString(),
-                        $customTo ?: now()->toDateString(),
-                    ];
-                default:
-                    return [now()->startOfMonth()->toDateString(), now()->toDateString()];
-            }
-        }
-
-        public function storeCustomReportTemplate(Request $request)
-        {
-            $this->ensureCustomReportAccess();
-
-            $catalog = $this->customReportCatalog();
-            $availableBranches = $this->availableCustomReportBranches();
-            $allowedBranchFilters = array_merge(['current', 'all'], $availableBranches->pluck('id')->all());
-
-            $validated = $request->validate([
-                'edit_id' => 'nullable|string',
-                'name' => 'required|string|max:120',
-                'report_key' => ['required', 'string', Rule::in(array_keys($catalog))],
-                'date_preset' => ['required', 'string', Rule::in(['today', 'last_7_days', 'last_30_days', 'current_month', 'last_month', 'current_year', 'custom'])],
-                'custom_from_date' => 'nullable|date',
-                'custom_to_date' => 'nullable|date|after_or_equal:custom_from_date',
-                'branch_filter' => ['required', 'string', Rule::in($allowedBranchFilters)],
-            ]);
-
-            if ($validated['date_preset'] === 'custom' && (!$request->filled('custom_from_date') || !$request->filled('custom_to_date'))) {
-                return redirect()->back()->withInput()->withErrors([
-                    'custom_from_date' => 'Choose both custom start and end dates.',
-                ]);
-            }
-
-            $templates = $this->getCustomReportTemplates();
-            $payload = [
-                'id' => trim((string) ($validated['edit_id'] ?? '')) !== '' ? trim((string) $validated['edit_id']) : (string) Str::uuid(),
-                'name' => trim((string) $validated['name']),
-                'report_key' => $validated['report_key'],
-                'date_preset' => $validated['date_preset'],
-                'custom_from_date' => (string) ($validated['custom_from_date'] ?? ''),
-                'custom_to_date' => (string) ($validated['custom_to_date'] ?? ''),
-                'branch_filter' => $validated['branch_filter'],
-                'created_at' => now()->toDateTimeString(),
-            ];
-
-            $editId = trim((string) ($validated['edit_id'] ?? ''));
-            if ($editId !== '') {
-                $existing = $templates->firstWhere('id', $editId);
-                if ($existing) {
-                    $payload['created_at'] = (string) ($existing['created_at'] ?? $payload['created_at']);
-                }
-
-                $templates = $templates
-                    ->map(fn ($template) => (string) ($template['id'] ?? '') === $editId ? $payload : $template)
-                    ->values();
-            } else {
-                $templates->push($payload);
-            }
-
-            $this->persistCustomReportTemplates($templates);
-
-            return redirect()->route('reports.hub', ['tab' => 'custom'])->with('success', $editId !== '' ? 'Custom report template updated.' : 'Custom report template saved.');
-        }
-
-        public function runCustomReportTemplate(string $templateId)
-        {
-            $this->ensureCustomReportAccess();
-
-            $catalog = $this->customReportCatalog();
-            $template = $this->getCustomReportTemplates()->firstWhere('id', $templateId);
-
-            abort_unless($template, 404);
-
-            $definition = $catalog[$template['report_key']] ?? null;
-            abort_unless($definition, 404);
-
-            $params = [];
-
-            if (($definition['filter'] ?? '') === 'date_range') {
-                [$from, $to] = $this->resolveTemplateDateRange(
-                    (string) $template['date_preset'],
-                    $template['custom_from_date'] ?? null,
-                    $template['custom_to_date'] ?? null
-                );
-
-                $params[$definition['from_param']] = $from;
-                $params[$definition['to_param']] = $to;
-            }
-
-            if (($definition['filter'] ?? '') === 'as_of') {
-                [, $to] = $this->resolveTemplateDateRange(
-                    (string) $template['date_preset'],
-                    $template['custom_from_date'] ?? null,
-                    $template['custom_to_date'] ?? null
-                );
-
-                $params[$definition['date_param']] = $to;
-            }
-
-            $branchFilter = (string) ($template['branch_filter'] ?? 'current');
-
-            if ($branchFilter === 'all') {
-                $params['all_branches'] = 1;
-                $params['branch_scope'] = 'all';
-            } elseif ($branchFilter !== 'current') {
-                $params['branch_id'] = $branchFilter;
-            }
-
-            return redirect()->route($definition['route'], $params);
-        }
-
-        public function destroyCustomReportTemplate(string $templateId)
-        {
-            $this->ensureCustomReportAccess();
-
-            $templates = $this->getCustomReportTemplates()
-                ->reject(fn ($template) => (string) ($template['id'] ?? '') === $templateId)
-                ->values();
-
-            $this->persistCustomReportTemplates($templates);
-
-            return redirect()->route('reports.hub', ['tab' => 'custom'])->with('success', 'Custom report template removed.');
-        }
-
-        public function duplicateCustomReportTemplate(string $templateId)
-        {
-            $this->ensureCustomReportAccess();
-
-            $template = $this->getCustomReportTemplates()->firstWhere('id', $templateId);
-
-            abort_unless($template, 404);
-
-            $templates = $this->getCustomReportTemplates();
-            $templates->push([
-                'id' => (string) Str::uuid(),
-                'name' => $template['name'] . ' Copy',
-                'report_key' => $template['report_key'],
-                'date_preset' => $template['date_preset'],
-                'custom_from_date' => (string) ($template['custom_from_date'] ?? ''),
-                'custom_to_date' => (string) ($template['custom_to_date'] ?? ''),
-                'branch_filter' => (string) ($template['branch_filter'] ?? 'current'),
-                'created_at' => now()->toDateTimeString(),
-            ]);
-
-            $this->persistCustomReportTemplates($templates);
-
-            return redirect()->route('reports.hub', ['tab' => 'custom'])->with('success', 'Custom report template duplicated.');
-        }
-
-        private function ignoredAppliedPaymentStatuses(): array
-        {
-            return ['failed', 'cancelled', 'pending approval'];
-        }
-
-        private function resolveAppliedPaymentAmount(Sale $sale): ?float
-        {
-            if (!Schema::hasTable('payments') || empty($sale->id)) {
-                return null;
-            }
-
-            $ignoredStatuses = $this->ignoredAppliedPaymentStatuses();
-
-            if ($sale->relationLoaded('payments')) {
-                $payments = collect($sale->payments)->filter(function ($payment) use ($ignoredStatuses) {
-                    $status = strtolower(trim((string) ($payment->status ?? '')));
-                    return !in_array($status, $ignoredStatuses, true);
-                });
-
-                if ($payments->isEmpty()) {
+        return $query->orderBy('transactions.transaction_date')
+            ->orderBy('transactions.id')
+            ->get()
+            ->map(function ($entry) {
+                $stream = $this->classifyProfitLossEntry($entry);
+                if (! $stream) {
                     return null;
                 }
 
-                return (float) $payments->sum(fn ($payment) => (float) ($payment->amount ?? 0));
-            }
+                $amount = $stream === 'income'
+                    ? ((float) $entry->credit - (float) $entry->debit)
+                    : ((float) $entry->debit - (float) $entry->credit);
 
-            $paymentQuery = DB::table('payments')->where('sale_id', $sale->id);
-            $this->applyTenantScope($paymentQuery, 'payments');
-
-            if (Schema::hasColumn('payments', 'status')) {
-                foreach ($ignoredStatuses as $ignoredStatus) {
-                    $paymentQuery->whereRaw('LOWER(COALESCE(status, "")) <> ?', [$ignoredStatus]);
+                if (abs($amount) < 0.0001) {
+                    return null;
                 }
-            }
 
-            $paymentSum = (float) $paymentQuery->sum('amount');
+                $entry->stream = $stream;
+                $entry->amount = $amount;
+                $entry->report_date = Carbon::parse($entry->transaction_date)->toDateString();
+                $entry->party = $entry->account_name;
 
-            return $paymentSum > 0 ? $paymentSum : null;
+                return $entry;
+            })
+            ->filter()
+            ->values();
+    }
+
+    public function reportsHub()
+    {
+        $reportAccess = $this->resolveReportAccess();
+        $allowedTabs = $this->allowedReportTabs($reportAccess);
+        $currentTab = request('tab', $allowedTabs[0] ?? 'standard');
+        if (! in_array($currentTab, $allowedTabs, true)) {
+            $currentTab = $allowedTabs[0] ?? 'standard';
         }
 
-        private function normalizeInvoiceFinancials(Sale $sale): array
-        {
-            $total = max(0, (float) ($sale->total ?? 0));
+        $canUseCustomReports = in_array('custom', $allowedTabs, true);
+        $customReportCatalog = $canUseCustomReports ? $this->customReportCatalog() : [];
+        $availableBranches = $canUseCustomReports ? $this->availableCustomReportBranches() : collect();
+        $customReportTemplates = $canUseCustomReports ? $this->getCustomReportTemplates() : collect();
+        $editingTemplate = null;
+        $editTemplateId = trim((string) request()->query('edit_template', ''));
 
-            $storedPaid = max(0, (float) ($sale->amount_paid ?? $sale->paid ?? 0));
-            $storedBalanceRaw = $sale->balance;
-            $hasStoredBalance = $storedBalanceRaw !== null && $storedBalanceRaw !== '';
-            $storedBalance = $hasStoredBalance ? max(0, (float) $storedBalanceRaw) : null;
-            $storedStatus = strtolower(trim((string) ($sale->payment_status ?? '')));
+        if ($canUseCustomReports && $editTemplateId !== '') {
+            $editingTemplate = $customReportTemplates->firstWhere('id', $editTemplateId);
+        }
 
-            // If stored record explicitly shows fully paid, trust it — don't let a
-            // stale partial sum from the payments table override it.
-            if ($storedStatus === 'paid' || ($hasStoredBalance && $storedBalance <= 0.0001)) {
+        $tabSections = $this->reportTabSections($allowedTabs);
+
+        return view('Reports.hub', compact(
+            'customReportCatalog',
+            'customReportTemplates',
+            'editingTemplate',
+            'availableBranches',
+            'reportAccess',
+            'allowedTabs',
+            'currentTab',
+            'tabSections'
+        ));
+    }
+
+    private function customReportCatalog(): array
+    {
+        return [
+            'profit_loss' => [
+                'label' => 'Profit & Loss',
+                'route' => 'reports.profit-loss',
+                'description' => 'Core profit and loss statement for a selected date range.',
+                'filter' => 'date_range',
+                'from_param' => 'start_date',
+                'to_param' => 'end_date',
+            ],
+            'profit_loss_detail' => [
+                'label' => 'Profit & Loss Detail',
+                'route' => 'reports.profit-loss-detail',
+                'description' => 'Detailed income and expense lines for a selected period.',
+                'filter' => 'date_range',
+                'from_param' => 'from_date',
+                'to_param' => 'to_date',
+            ],
+            'cash_flow' => [
+                'label' => 'Cash Flow',
+                'route' => 'reports.cash-flow',
+                'description' => 'Cash inflows and outflows across the selected period.',
+                'filter' => 'date_range',
+                'from_param' => 'start_date',
+                'to_param' => 'end_date',
+            ],
+            'sales_summary' => [
+                'label' => 'Sales Summary',
+                'route' => 'reports.sales-summary',
+                'description' => 'Sales totals, paid amounts, and outstanding balances.',
+                'filter' => 'date_range',
+                'from_param' => 'from_date',
+                'to_param' => 'to_date',
+            ],
+            'purchase_summary' => [
+                'label' => 'Purchase Summary',
+                'route' => 'reports.purchase-summary',
+                'description' => 'Purchase totals and average buying activity by period.',
+                'filter' => 'date_range',
+                'from_param' => 'from_date',
+                'to_param' => 'to_date',
+            ],
+            'expense_by_category' => [
+                'label' => 'Expense by Category',
+                'route' => 'reports.expense-by-category',
+                'description' => 'Spend grouped by category over a selected period.',
+                'filter' => 'date_range',
+                'from_param' => 'from_date',
+                'to_param' => 'to_date',
+            ],
+            'open_invoices' => [
+                'label' => 'Open Invoices',
+                'route' => 'reports.open-invoices',
+                'description' => 'Outstanding invoices filtered by date range.',
+                'filter' => 'date_range',
+                'from_param' => 'from_date',
+                'to_param' => 'to_date',
+            ],
+            'tax_summary' => [
+                'label' => 'Tax Summary',
+                'route' => 'reports.tax-summary',
+                'description' => 'Sales tax, purchase tax, and net liability by period.',
+                'filter' => 'date_range',
+                'from_param' => 'from_date',
+                'to_param' => 'to_date',
+            ],
+            'balance_sheet' => [
+                'label' => 'Balance Sheet',
+                'route' => 'balance-sheet',
+                'description' => 'Balance sheet snapshot as of a chosen date.',
+                'filter' => 'as_of',
+                'date_param' => 'date',
+            ],
+            'trial_balance' => [
+                'label' => 'Trial Balance',
+                'route' => 'trial-balance',
+                'description' => 'Trial balance snapshot as of a chosen date.',
+                'filter' => 'as_of',
+                'date_param' => 'date',
+            ],
+            'chart_of_accounts' => [
+                'label' => 'Chart of Accounts',
+                'route' => 'reports.chart-of-accounts',
+                'description' => 'Account list with balances, status, and transaction counts.',
+                'filter' => 'date_range',
+                'from_param' => 'start_date',
+                'to_param' => 'end_date',
+            ],
+            'ar_ageing_detail' => [
+                'label' => 'AR Ageing Detail',
+                'route' => 'reports.ar-ageing-detail',
+                'description' => 'Outstanding receivables bucketed by age.',
+                'filter' => 'as_of',
+                'date_param' => 'as_of',
+            ],
+        ];
+    }
+
+    private function customReportsSettingKey(): string
+    {
+        $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
+
+        return $companyId > 0 ? 'custom_reports_company_'.$companyId : 'custom_reports';
+    }
+
+    private function availableCustomReportBranches()
+    {
+        $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
+        if ($companyId <= 0) {
+            return collect();
+        }
+
+        $raw = Setting::where('key', 'branches_json_company_'.$companyId)->value('value');
+
+        return collect(json_decode((string) $raw, true) ?: [])
+            ->map(fn ($branch) => [
+                'id' => (string) ($branch['id'] ?? ''),
+                'name' => (string) ($branch['name'] ?? ''),
+            ])
+            ->filter(fn ($branch) => $branch['id'] !== '' && $branch['name'] !== '')
+            ->values();
+    }
+
+    private function getCustomReportTemplates()
+    {
+        $raw = Setting::where('key', $this->customReportsSettingKey())->value('value');
+        $catalog = $this->customReportCatalog();
+
+        return collect(json_decode((string) $raw, true) ?: [])
+            ->map(function ($template) use ($catalog) {
+                $reportKey = (string) ($template['report_key'] ?? '');
+                $definition = $catalog[$reportKey] ?? null;
+
                 return [
-                    'total'   => $total,
-                    'paid'    => $total,
-                    'balance' => 0.0,
-                    'status'  => 'paid',
+                    'id' => (string) ($template['id'] ?? ''),
+                    'name' => (string) ($template['name'] ?? ''),
+                    'report_key' => $reportKey,
+                    'report_label' => (string) ($definition['label'] ?? $reportKey),
+                    'report_description' => (string) ($definition['description'] ?? ''),
+                    'date_preset' => (string) ($template['date_preset'] ?? 'current_month'),
+                    'custom_from_date' => (string) ($template['custom_from_date'] ?? ''),
+                    'custom_to_date' => (string) ($template['custom_to_date'] ?? ''),
+                    'branch_filter' => (string) ($template['branch_filter'] ?? ($template['branch_scope'] ?? 'current')),
+                    'created_at' => (string) ($template['created_at'] ?? ''),
                 ];
+            })
+            ->filter(fn ($template) => $template['id'] !== '' && $template['name'] !== '' && isset($catalog[$template['report_key']]))
+            ->values();
+    }
+
+    private function persistCustomReportTemplates($templates): void
+    {
+        $payload = collect($templates)->values()->all();
+
+        Setting::updateOrCreate(
+            ['key' => $this->customReportsSettingKey()],
+            ['value' => json_encode($payload)]
+        );
+    }
+
+    private function resolveTemplateDateRange(string $preset, ?string $customFrom = null, ?string $customTo = null): array
+    {
+        switch ($preset) {
+            case 'today':
+                return [now()->toDateString(), now()->toDateString()];
+            case 'last_7_days':
+                return [now()->subDays(6)->toDateString(), now()->toDateString()];
+            case 'last_30_days':
+                return [now()->subDays(29)->toDateString(), now()->toDateString()];
+            case 'last_month':
+                return [now()->subMonth()->startOfMonth()->toDateString(), now()->subMonth()->endOfMonth()->toDateString()];
+            case 'current_year':
+                return [now()->startOfYear()->toDateString(), now()->toDateString()];
+            case 'custom':
+                return [
+                    $customFrom ?: now()->startOfMonth()->toDateString(),
+                    $customTo ?: now()->toDateString(),
+                ];
+            default:
+                return [now()->startOfMonth()->toDateString(), now()->toDateString()];
+        }
+    }
+
+    public function storeCustomReportTemplate(Request $request)
+    {
+        $this->ensureCustomReportAccess();
+
+        $catalog = $this->customReportCatalog();
+        $availableBranches = $this->availableCustomReportBranches();
+        $allowedBranchFilters = array_merge(['current', 'all'], $availableBranches->pluck('id')->all());
+
+        $validated = $request->validate([
+            'edit_id' => 'nullable|string',
+            'name' => 'required|string|max:120',
+            'report_key' => ['required', 'string', Rule::in(array_keys($catalog))],
+            'date_preset' => ['required', 'string', Rule::in(['today', 'last_7_days', 'last_30_days', 'current_month', 'last_month', 'current_year', 'custom'])],
+            'custom_from_date' => 'nullable|date',
+            'custom_to_date' => 'nullable|date|after_or_equal:custom_from_date',
+            'branch_filter' => ['required', 'string', Rule::in($allowedBranchFilters)],
+        ]);
+
+        if ($validated['date_preset'] === 'custom' && (! $request->filled('custom_from_date') || ! $request->filled('custom_to_date'))) {
+            return redirect()->back()->withInput()->withErrors([
+                'custom_from_date' => 'Choose both custom start and end dates.',
+            ]);
+        }
+
+        $templates = $this->getCustomReportTemplates();
+        $payload = [
+            'id' => trim((string) ($validated['edit_id'] ?? '')) !== '' ? trim((string) $validated['edit_id']) : (string) Str::uuid(),
+            'name' => trim((string) $validated['name']),
+            'report_key' => $validated['report_key'],
+            'date_preset' => $validated['date_preset'],
+            'custom_from_date' => (string) ($validated['custom_from_date'] ?? ''),
+            'custom_to_date' => (string) ($validated['custom_to_date'] ?? ''),
+            'branch_filter' => $validated['branch_filter'],
+            'created_at' => now()->toDateTimeString(),
+        ];
+
+        $editId = trim((string) ($validated['edit_id'] ?? ''));
+        if ($editId !== '') {
+            $existing = $templates->firstWhere('id', $editId);
+            if ($existing) {
+                $payload['created_at'] = (string) ($existing['created_at'] ?? $payload['created_at']);
             }
 
-            $appliedPaymentAmount = $this->resolveAppliedPaymentAmount($sale);
-            $computedBalance = max(0, $total - $storedPaid);
+            $templates = $templates
+                ->map(fn ($template) => (string) ($template['id'] ?? '') === $editId ? $payload : $template)
+                ->values();
+        } else {
+            $templates->push($payload);
+        }
 
-            if ($appliedPaymentAmount !== null) {
-                $effectivePaid = min($total, max(0, $appliedPaymentAmount));
-                $effectiveBalance = max(0, $total - $effectivePaid);
-            } else {
-                $effectiveBalance = $hasStoredBalance ? min($total, $storedBalance) : $computedBalance;
-                $effectivePaid = min($total, max(0, $total - $effectiveBalance));
+        $this->persistCustomReportTemplates($templates);
 
-                if (!$hasStoredBalance && $storedPaid > 0) {
-                    $effectivePaid = min($total, $storedPaid);
-                    $effectiveBalance = max(0, $total - $effectivePaid);
-                }
+        return redirect()->route('reports.hub', ['tab' => 'custom'])->with('success', $editId !== '' ? 'Custom report template updated.' : 'Custom report template saved.');
+    }
+
+    public function runCustomReportTemplate(string $templateId)
+    {
+        $this->ensureCustomReportAccess();
+
+        $catalog = $this->customReportCatalog();
+        $template = $this->getCustomReportTemplates()->firstWhere('id', $templateId);
+
+        abort_unless($template, 404);
+
+        $definition = $catalog[$template['report_key']] ?? null;
+        abort_unless($definition, 404);
+
+        $params = [];
+
+        if (($definition['filter'] ?? '') === 'date_range') {
+            [$from, $to] = $this->resolveTemplateDateRange(
+                (string) $template['date_preset'],
+                $template['custom_from_date'] ?? null,
+                $template['custom_to_date'] ?? null
+            );
+
+            $params[$definition['from_param']] = $from;
+            $params[$definition['to_param']] = $to;
+        }
+
+        if (($definition['filter'] ?? '') === 'as_of') {
+            [, $to] = $this->resolveTemplateDateRange(
+                (string) $template['date_preset'],
+                $template['custom_from_date'] ?? null,
+                $template['custom_to_date'] ?? null
+            );
+
+            $params[$definition['date_param']] = $to;
+        }
+
+        $branchFilter = (string) ($template['branch_filter'] ?? 'current');
+
+        if ($branchFilter === 'all') {
+            $params['all_branches'] = 1;
+            $params['branch_scope'] = 'all';
+        } elseif ($branchFilter !== 'current') {
+            $params['branch_id'] = $branchFilter;
+        }
+
+        return redirect()->route($definition['route'], $params);
+    }
+
+    public function destroyCustomReportTemplate(string $templateId)
+    {
+        $this->ensureCustomReportAccess();
+
+        $templates = $this->getCustomReportTemplates()
+            ->reject(fn ($template) => (string) ($template['id'] ?? '') === $templateId)
+            ->values();
+
+        $this->persistCustomReportTemplates($templates);
+
+        return redirect()->route('reports.hub', ['tab' => 'custom'])->with('success', 'Custom report template removed.');
+    }
+
+    public function duplicateCustomReportTemplate(string $templateId)
+    {
+        $this->ensureCustomReportAccess();
+
+        $template = $this->getCustomReportTemplates()->firstWhere('id', $templateId);
+
+        abort_unless($template, 404);
+
+        $templates = $this->getCustomReportTemplates();
+        $templates->push([
+            'id' => (string) Str::uuid(),
+            'name' => $template['name'].' Copy',
+            'report_key' => $template['report_key'],
+            'date_preset' => $template['date_preset'],
+            'custom_from_date' => (string) ($template['custom_from_date'] ?? ''),
+            'custom_to_date' => (string) ($template['custom_to_date'] ?? ''),
+            'branch_filter' => (string) ($template['branch_filter'] ?? 'current'),
+            'created_at' => now()->toDateTimeString(),
+        ]);
+
+        $this->persistCustomReportTemplates($templates);
+
+        return redirect()->route('reports.hub', ['tab' => 'custom'])->with('success', 'Custom report template duplicated.');
+    }
+
+    private function ignoredAppliedPaymentStatuses(): array
+    {
+        return [
+            'failed',
+            'cancelled',
+            'canceled',
+            'pending',
+            'pending approval',
+            'rejected',
+            'refunded',
+            'void',
+        ];
+    }
+
+    private function resolveAppliedPaymentAmount(Sale $sale): ?float
+    {
+        if (! Schema::hasTable('payments') || empty($sale->id)) {
+            return null;
+        }
+
+        $ignoredStatuses = $this->ignoredAppliedPaymentStatuses();
+
+        if ($sale->relationLoaded('payments')) {
+            $payments = collect($sale->payments)->filter(function ($payment) use ($ignoredStatuses) {
+                $status = strtolower(trim((string) ($payment->status ?? '')));
+
+                return ! in_array($status, $ignoredStatuses, true);
+            });
+
+            if ($payments->isEmpty()) {
+                return null;
             }
 
-            $effectiveStatus = $effectiveBalance <= 0.0001
-                ? 'paid'
-                : ($effectivePaid > 0.0001 ? 'partial' : 'unpaid');
+            return (float) $payments->sum(fn ($payment) => (float) ($payment->amount ?? 0));
+        }
 
+        $paymentQuery = DB::table('payments')->where('sale_id', $sale->id);
+        $this->applyTenantScope($paymentQuery, 'payments');
+
+        if (Schema::hasColumn('payments', 'status')) {
+            foreach ($ignoredStatuses as $ignoredStatus) {
+                $paymentQuery->whereRaw('LOWER(COALESCE(status, "")) <> ?', [$ignoredStatus]);
+            }
+        }
+
+        $paymentSum = (float) $paymentQuery->sum('amount');
+
+        return $paymentSum > 0 ? $paymentSum : null;
+    }
+
+    private function normalizeInvoiceFinancials(Sale $sale): array
+    {
+        $total = max(0, (float) ($sale->total ?? 0));
+
+        $storedPaid = max(0, (float) ($sale->amount_paid ?? $sale->paid ?? 0));
+        $storedBalanceRaw = $sale->balance;
+        $hasStoredBalance = $storedBalanceRaw !== null && $storedBalanceRaw !== '';
+        $storedBalance = $hasStoredBalance ? max(0, (float) $storedBalanceRaw) : null;
+        $storedStatus = strtolower(trim((string) ($sale->payment_status ?? '')));
+
+        // If stored record explicitly shows fully paid, trust it — don't let a
+        // stale partial sum from the payments table override it.
+        if ($storedStatus === 'paid' || ($hasStoredBalance && $storedBalance <= 0.0001)) {
             return [
-                'total'   => $total,
-                'paid'    => $effectivePaid,
-                'balance' => $effectiveBalance,
-                'status'  => $effectiveStatus,
+                'total' => $total,
+                'paid' => $total,
+                'balance' => 0.0,
+                'status' => 'paid',
             ];
         }
 
-        // ... rest of the code
-        private function isSuperAdmin(): bool
-        {
-            $role = strtolower((string) (optional(Auth::user())->role ?? ''));
-            return in_array($role, ['super_admin', 'superadmin'], true);
+        $appliedPaymentAmount = $this->resolveAppliedPaymentAmount($sale);
+        $computedBalance = max(0, $total - $storedPaid);
+
+        if ($appliedPaymentAmount !== null) {
+            $effectivePaid = min($total, max(0, $appliedPaymentAmount));
+            $effectiveBalance = max(0, $total - $effectivePaid);
+        } else {
+            $effectiveBalance = $hasStoredBalance ? min($total, $storedBalance) : $computedBalance;
+            $effectivePaid = min($total, max(0, $total - $effectiveBalance));
+
+            if (! $hasStoredBalance && $storedPaid > 0) {
+                $effectivePaid = min($total, $storedPaid);
+                $effectiveBalance = max(0, $total - $effectivePaid);
+            }
         }
 
-        private function getCurrentPlanTier(): string
-        {
-            $user = Auth::user();
-            if (!$user) {
-                return 'basic';
-            }
-            $companyId = (int) ($user->company_id ?? session('current_tenant_id') ?? 0);
-            if ($companyId > 0 && Schema::hasTable('subscriptions')) {
-                $sub = DB::table('subscriptions')
-                    ->where('company_id', $companyId)
-                    ->orderByDesc('id')
-                    ->first();
-                if ($sub) {
-                    return Plan::normalizeTier($sub->plan_name ?? $sub->plan ?? null);
-                }
-            }
-            if ($companyId > 0 && Schema::hasTable('companies')) {
-                $companyPlan = DB::table('companies')->where('id', $companyId)->value('plan');
-                if ($companyPlan) {
-                    return Plan::normalizeTier((string) $companyPlan);
-                }
-            }
+        $effectiveStatus = $effectiveBalance <= 0.0001
+            ? 'paid'
+            : ($effectivePaid > 0.0001 ? 'partial' : 'unpaid');
+
+        return [
+            'total' => $total,
+            'paid' => $effectivePaid,
+            'balance' => $effectiveBalance,
+            'status' => $effectiveStatus,
+        ];
+    }
+
+    // ... rest of the code
+    private function isSuperAdmin(): bool
+    {
+        $role = strtolower((string) (optional(Auth::user())->role ?? ''));
+
+        return in_array($role, ['super_admin', 'superadmin'], true);
+    }
+
+    private function getCurrentPlanTier(): string
+    {
+        $user = Auth::user();
+        if (! $user) {
             return 'basic';
         }
-
-        private function applyTenantScope($query, string $table)
-        {
-            // Every user — including super_admin — is scoped to their own company.
-            // No role or plan bypasses this. Data must never leak between tenants.
-            $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
-            $userId = (int) (Auth::id() ?? 0);
-
-            if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
-                $query->where("{$table}.company_id", $companyId);
-            } elseif ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
-                $query->where("{$table}.user_id", $userId);
-            } elseif ($userId > 0 && Schema::hasColumn($table, 'created_by')) {
-                $query->where("{$table}.created_by", $userId);
+        $companyId = (int) ($user->company_id ?? session('current_tenant_id') ?? 0);
+        if ($companyId > 0 && Schema::hasTable('subscriptions')) {
+            $sub = DB::table('subscriptions')
+                ->where('company_id', $companyId)
+                ->orderByDesc('id')
+                ->first();
+            if ($sub) {
+                return Plan::normalizeTier($sub->plan_name ?? $sub->plan ?? null);
             }
-
-            return $query;
+        }
+        if ($companyId > 0 && Schema::hasTable('companies')) {
+            $companyPlan = DB::table('companies')->where('id', $companyId)->value('plan');
+            if ($companyPlan) {
+                return Plan::normalizeTier((string) $companyPlan);
+            }
         }
 
-        private function getActiveBranchContext(): array
-        {
-            // Branch isolation is enforced for ALL roles and ALL plans.
-            // Every branch only sees its own data. No super_admin or plan tier
-            // bypasses this. The only way to get cross-branch data is an explicit
-            // all_branches=1 or branch_scope=all query parameter.
+        return 'basic';
+    }
 
-            $branchScope = (string) request()->get('branch_scope', '');
-            $requestBranchId = (string) request()->get('branch_id', '');
-            $allBranches = request()->boolean('all_branches')
-                || strtolower($branchScope) === 'all'
-                || strtolower($requestBranchId) === 'all'
-                || session('active_branch_scope') === 'all';
+    private function applyTenantScope($query, string $table)
+    {
+        // Every user — including super_admin — is scoped to their own company.
+        // No role or plan bypasses this. Data must never leak between tenants.
+        $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
+        $userId = (int) (Auth::id() ?? 0);
 
-            if ($allBranches) {
-                request()->session()->put('active_branch_scope', 'all');
+        if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
+            $query->where("{$table}.company_id", $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
+            $query->where("{$table}.user_id", $userId);
+        } elseif ($userId > 0 && Schema::hasColumn($table, 'created_by')) {
+            $query->where("{$table}.created_by", $userId);
+        }
 
-                return [
-                    'id' => null,
-                    'name' => 'All Branches',
-                    'scope' => 'all',
-                ];
+        return $query;
+    }
+
+    private function applyReportableDocumentScope($query, string $table, array $statusColumns = ['status', 'order_status'])
+    {
+        if (Schema::hasColumn($table, 'deleted_at')) {
+            $query->whereNull("{$table}.deleted_at");
+        }
+
+        foreach ($statusColumns as $column) {
+            if (! Schema::hasColumn($table, $column)) {
+                continue;
             }
 
-            $branchId = session('active_branch_id') ? (string) session('active_branch_id') : null;
-            $branchName = session('active_branch_name') ? (string) session('active_branch_name') : null;
+            $query->where(function ($statusQuery) use ($table, $column) {
+                $statusQuery->whereNull("{$table}.{$column}")
+                    ->orWhereRaw(
+                        "LOWER(TRIM(COALESCE({$table}.{$column}, ''))) NOT IN (?, ?, ?, ?, ?, ?)",
+                        ['draft', 'cancelled', 'canceled', 'void', 'rejected', 'failed']
+                    );
+            });
+        }
 
-            if ($requestBranchId !== '') {
-                $branchId = $requestBranchId;
-                $branchName = null;
-            }
+        return $query;
+    }
 
-            if ((!$branchId || !$branchName) && Schema::hasTable('settings')) {
-                $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
-                if ($companyId > 0) {
-                    $key = 'branches_json_company_' . $companyId;
-                    $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
-                    $branches = json_decode($raw, true) ?: [];
+    private function applyReportDateRange($query, string $column, ?string $from, ?string $to)
+    {
+        if ($from) {
+            $query->where($column, '>=', Carbon::parse($from)->startOfDay());
+        }
+        if ($to) {
+            $query->where($column, '<=', Carbon::parse($to)->endOfDay());
+        }
 
-                    if ($branchId) {
-                        $match = collect($branches)->firstWhere('id', $branchId);
-                        $branchName = $branchName ?: ($match['name'] ?? null);
-                    } else {
-                        $first = collect($branches)->first();
-                        if ($first) {
-                            $branchId = $branchId ?: ($first['id'] ?? null);
-                            $branchName = $branchName ?: ($first['name'] ?? null);
-                        }
+        return $query;
+    }
+
+    private function getActiveBranchContext(): array
+    {
+        // Branch isolation is enforced for ALL roles and ALL plans.
+        // Every branch only sees its own data. No super_admin or plan tier
+        // bypasses this. The only way to get cross-branch data is an explicit
+        // all_branches=1 or branch_scope=all query parameter.
+
+        $branchScope = (string) request()->get('branch_scope', '');
+        $requestBranchId = (string) request()->get('branch_id', '');
+        $allBranches = request()->boolean('all_branches')
+            || strtolower($branchScope) === 'all'
+            || strtolower($requestBranchId) === 'all'
+            || session('active_branch_scope') === 'all';
+
+        if ($allBranches) {
+            request()->session()->put('active_branch_scope', 'all');
+
+            return [
+                'id' => null,
+                'name' => 'All Branches',
+                'scope' => 'all',
+            ];
+        }
+
+        $branchId = session('active_branch_id') ? (string) session('active_branch_id') : null;
+        $branchName = session('active_branch_name') ? (string) session('active_branch_name') : null;
+
+        if ($requestBranchId !== '') {
+            $branchId = $requestBranchId;
+            $branchName = null;
+        }
+
+        if ((! $branchId || ! $branchName) && Schema::hasTable('settings')) {
+            $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
+            if ($companyId > 0) {
+                $key = 'branches_json_company_'.$companyId;
+                $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
+                $branches = json_decode($raw, true) ?: [];
+
+                if ($branchId) {
+                    $match = collect($branches)->firstWhere('id', $branchId);
+                    $branchName = $branchName ?: ($match['name'] ?? null);
+                } else {
+                    $first = collect($branches)->first();
+                    if ($first) {
+                        $branchId = $branchId ?: ($first['id'] ?? null);
+                        $branchName = $branchName ?: ($first['name'] ?? null);
                     }
                 }
             }
-
-            if ($branchId !== null && $branchId !== '') {
-                request()->session()->put('active_branch_id', $branchId);
-            }
-            if ($branchName !== null && $branchName !== '') {
-                request()->session()->put('active_branch_name', $branchName);
-            }
-            request()->session()->put('active_branch_scope', 'branch');
-
-            return [
-                'id' => $branchId,
-                'name' => $branchName,
-                'scope' => 'branch',
-            ];
         }
 
-        private function applySalesScope($query, string $salesTable = 'sales')
-        {
-            $this->applyTenantScope($query, $salesTable);
-            $this->applySaleBranchFilter($query, $salesTable);
+        if ($branchId !== null && $branchId !== '') {
+            request()->session()->put('active_branch_id', $branchId);
+        }
+        if ($branchName !== null && $branchName !== '') {
+            request()->session()->put('active_branch_name', $branchName);
+        }
+        request()->session()->put('active_branch_scope', 'branch');
 
+        return [
+            'id' => $branchId,
+            'name' => $branchName,
+            'scope' => 'branch',
+        ];
+    }
+
+    private function applySalesScope($query, string $salesTable = 'sales')
+    {
+        $this->applyTenantScope($query, $salesTable);
+        $this->applySaleBranchFilter($query, $salesTable);
+
+        return $query;
+    }
+
+    private function applySaleBranchFilter($query, string $salesTable = 'sales')
+    {
+        $branchId = trim((string) ($this->getActiveBranchContext()['id'] ?? ''));
+        $branchName = trim((string) ($this->getActiveBranchContext()['name'] ?? ''));
+
+        if ($branchId === '' && $branchName === '') {
             return $query;
         }
-
-        private function applySaleBranchFilter($query, string $salesTable = 'sales')
-        {
-            $branchId = trim((string) ($this->getActiveBranchContext()['id'] ?? ''));
-            $branchName = trim((string) ($this->getActiveBranchContext()['name'] ?? ''));
-
-            if ($branchId === '' && $branchName === '') {
-                return $query;
-            }
 
         return $query->where(function ($sub) use ($salesTable, $branchId, $branchName) {
             if ($branchId !== '' && Schema::hasColumn('sales', 'branch_id')) {
@@ -804,7 +845,9 @@ class ReportController extends Controller
                 $sub->orWhere("{$salesTable}.branch_name", $branchName);
             }
 
-                if ($branchName !== '' && Schema::hasColumn('sales', 'payment_details')) {
+            if ($branchName !== '' && Schema::hasColumn('sales', 'payment_details')) {
+                $driver = DB::connection()->getDriverName();
+                if (in_array($driver, ['mysql', 'mariadb'], true)) {
                     $sub->orWhereRaw(
                         "JSON_UNQUOTE(JSON_EXTRACT(COALESCE({$salesTable}.payment_details, '{}'), '$.branch_name')) = ?",
                         [$branchName]
@@ -812,181 +855,197 @@ class ReportController extends Controller
                         "JSON_UNQUOTE(JSON_EXTRACT(COALESCE({$salesTable}.payment_details, '{}'), '$.branch.name')) = ?",
                         [$branchName]
                     );
+                } elseif ($driver === 'pgsql') {
+                    $sub->orWhereRaw("COALESCE({$salesTable}.payment_details::jsonb ->> 'branch_name', '') = ?", [$branchName])
+                        ->orWhereRaw("COALESCE({$salesTable}.payment_details::jsonb #>> '{branch,name}', '') = ?", [$branchName]);
+                } elseif ($driver === 'sqlite') {
+                    $sub->orWhereRaw("json_extract(COALESCE({$salesTable}.payment_details, '{}'), '$.branch_name') = ?", [$branchName])
+                        ->orWhereRaw("json_extract(COALESCE({$salesTable}.payment_details, '{}'), '$.branch.name') = ?", [$branchName]);
                 }
-            });
-        }
-
-        private function applyPaymentBranchFilter($query, string $paymentsTable = 'payments')
-        {
-            $activeBranch = $this->getActiveBranchContext();
-            $branchId = trim((string) ($activeBranch['id'] ?? ''));
-            $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-            if ($branchId === '' && $branchName === '') {
-                return $query;
             }
+        });
+    }
 
-            return $query->where(function ($sub) use ($paymentsTable, $branchId, $branchName) {
-                if ($branchId !== '' && Schema::hasColumn('payments', 'branch_id')) {
-                    $sub->where("{$paymentsTable}.branch_id", $branchId);
-                }
-                if ($branchName !== '' && Schema::hasColumn('payments', 'branch_name')) {
-                    $sub->orWhere("{$paymentsTable}.branch_name", $branchName);
-                }
+    private function applyPaymentBranchFilter($query, string $paymentsTable = 'payments')
+    {
+        $activeBranch = $this->getActiveBranchContext();
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
 
-                if (Schema::hasTable('sales')) {
-                    $matchingSales = $this->scopedTable('sales')->select('sales.id');
-                    $this->applySalesScope($matchingSales, 'sales');
-
-                    $sub->orWhereIn("{$paymentsTable}.sale_id", $matchingSales);
-                }
-            });
-        }
-
-        private function applyInventoryHistoryBranchFilter($query, string $historyTable = 'inventory_history')
-        {
-            $branchName = trim((string) ($this->getActiveBranchContext()['name'] ?? ''));
-
-            if ($branchName === '') {
-                return $query;
-            }
-
-            return $query->where(function ($sub) use ($historyTable, $branchName) {
-                if (Schema::hasColumn('inventory_history', 'branch_name')) {
-                    $sub->where("{$historyTable}.branch_name", $branchName);
-                }
-
-                $sub->orWhere("{$historyTable}.reference", 'like', '%' . $branchName . '%');
-            });
-        }
-
-        private function applyGenericBranchFilter($query, string $table)
-        {
-            $activeBranch = $this->getActiveBranchContext();
-            if (($activeBranch['scope'] ?? 'branch') === 'all') {
-                return $query;
-            }
-
-            $branchId = trim((string) ($activeBranch['id'] ?? ''));
-            $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-            if ($branchId === '' && $branchName === '') {
-                return $query;
-            }
-
-            $query->where(function ($sub) use ($table, $branchId, $branchName) {
-                if (Schema::hasColumn($table, 'branch_id') && $branchId !== '') {
-                    $sub->where("{$table}.branch_id", $branchId);
-                }
-                if (Schema::hasColumn($table, 'branch_name') && $branchName !== '') {
-                    $sub->orWhere("{$table}.branch_name", $branchName);
-                }
-                // Include records created before the branch feature (branch_id not yet assigned)
-                if (Schema::hasColumn($table, 'branch_id')) {
-                    $sub->orWhereNull("{$table}.branch_id");
-                }
-            });
-
+        if ($branchId === '' && $branchName === '') {
             return $query;
         }
 
-        private function scopedTable(string $table)
-        {
-            $query = DB::table($table);
-            $this->applyTenantScope($query, $table);
-            $this->applyGenericBranchFilter($query, $table);
+        return $query->where(function ($sub) use ($paymentsTable, $branchId, $branchName) {
+            if ($branchId !== '' && Schema::hasColumn('payments', 'branch_id')) {
+                $sub->where("{$paymentsTable}.branch_id", $branchId);
+            }
+            if ($branchName !== '' && Schema::hasColumn('payments', 'branch_name')) {
+                $sub->orWhere("{$paymentsTable}.branch_name", $branchName);
+            }
 
+            if (Schema::hasTable('sales')) {
+                $matchingSales = $this->scopedTable('sales')->select('sales.id');
+                $this->applySalesScope($matchingSales, 'sales');
+
+                $sub->orWhereIn("{$paymentsTable}.sale_id", $matchingSales);
+            }
+        });
+    }
+
+    private function applyInventoryHistoryBranchFilter($query, string $historyTable = 'inventory_history')
+    {
+        $branchName = trim((string) ($this->getActiveBranchContext()['name'] ?? ''));
+
+        if ($branchName === '') {
             return $query;
         }
 
-        private function purchaseItemTotalSubquery()
-        {
-            if (!Schema::hasTable('purchase_items') || !Schema::hasColumn('purchase_items', 'purchase_id')) {
-                return null;
+        return $query->where(function ($sub) use ($historyTable, $branchName) {
+            if (Schema::hasColumn('inventory_history', 'branch_name')) {
+                $sub->where("{$historyTable}.branch_name", $branchName);
             }
 
-            $fallbacks = [];
-            if (Schema::hasColumn('purchase_items', 'line_total')) {
-                $fallbacks[] = 'NULLIF(purchase_items.line_total, 0)';
-            }
-            if (Schema::hasColumn('purchase_items', 'amount')) {
-                $fallbacks[] = 'NULLIF(purchase_items.amount, 0)';
-            }
-            if (Schema::hasColumn('purchase_items', 'subtotal')) {
-                $fallbacks[] = 'NULLIF(purchase_items.subtotal, 0)';
-            }
-            if (Schema::hasColumn('purchase_items', 'total')) {
-                $fallbacks[] = 'NULLIF(purchase_items.total, 0)';
-            }
-            if (Schema::hasColumn('purchase_items', 'qty') && Schema::hasColumn('purchase_items', 'unit_price')) {
-                $fallbacks[] = '(COALESCE(purchase_items.qty, 0) * COALESCE(purchase_items.unit_price, 0))';
-            }
-            if (Schema::hasColumn('purchase_items', 'quantity') && Schema::hasColumn('purchase_items', 'rate')) {
-                $fallbacks[] = '(COALESCE(purchase_items.quantity, 0) * COALESCE(purchase_items.rate, 0))';
-            }
+            $sub->orWhere("{$historyTable}.reference", 'like', '%'.$branchName.'%');
+        });
+    }
 
-            if (empty($fallbacks)) {
-                return null;
-            }
-
-            $itemAmountExpression = 'ABS(COALESCE(' . implode(', ', $fallbacks) . ', 0))';
-
-            return DB::table('purchase_items')
-                ->selectRaw("purchase_items.purchase_id, SUM({$itemAmountExpression}) as item_total")
-                ->groupBy('purchase_items.purchase_id');
+    private function applyGenericBranchFilter($query, string $table)
+    {
+        $activeBranch = $this->getActiveBranchContext();
+        if (($activeBranch['scope'] ?? 'branch') === 'all') {
+            return $query;
         }
 
-        private function attachPurchaseItemTotals($query): string
-        {
-            $itemTotals = $this->purchaseItemTotalSubquery();
-            if ($itemTotals) {
-                $query->leftJoinSub($itemTotals, 'purchase_item_totals', function ($join) {
-                    $join->on('purchase_item_totals.purchase_id', '=', 'purchases.id');
-                });
-            }
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
 
-            $fallbacks = [];
-            if (Schema::hasColumn('purchases', 'total_amount')) {
-                $fallbacks[] = 'NULLIF(purchases.total_amount, 0)';
-            }
-            if (Schema::hasColumn('purchases', 'amount')) {
-                $fallbacks[] = 'NULLIF(purchases.amount, 0)';
-            }
-            if ($itemTotals) {
-                $fallbacks[] = 'purchase_item_totals.item_total';
-            }
-
-            if (empty($fallbacks)) {
-                return '0';
-            }
-
-            return 'ABS(COALESCE(' . implode(', ', $fallbacks) . ', 0))';
+        if ($branchId === '' && $branchName === '') {
+            return $query;
         }
 
-        private function productStockColumn(string $table = 'products'): ?string
-        {
-            foreach (['stock', 'stock_quantity', 'quantity'] as $column) {
-                if (Schema::hasColumn('products', $column)) {
-                    return "{$table}.{$column}";
-                }
+        $query->where(function ($sub) use ($table, $branchId, $branchName) {
+            if (Schema::hasColumn($table, 'branch_id') && $branchId !== '') {
+                $sub->where("{$table}.branch_id", $branchId);
             }
+            if (Schema::hasColumn($table, 'branch_name') && $branchName !== '') {
+                $sub->orWhere("{$table}.branch_name", $branchName);
+            }
+            // Include records created before the branch feature (branch_id not yet assigned)
+            if (Schema::hasColumn($table, 'branch_id')) {
+                $sub->orWhereNull("{$table}.branch_id");
+            }
+        });
 
+        return $query;
+    }
+
+    private function scopedTable(string $table)
+    {
+        $query = DB::table($table);
+        $this->applyTenantScope($query, $table);
+        $this->applyGenericBranchFilter($query, $table);
+
+        return $query;
+    }
+
+    private function purchaseItemTotalSubquery()
+    {
+        if (! Schema::hasTable('purchase_items') || ! Schema::hasColumn('purchase_items', 'purchase_id')) {
             return null;
         }
 
-        private function productCostExpression(string $table = 'products'): string
-        {
-            $columns = [];
-            foreach (['purchase_price', 'cost_price', 'product_price', 'price'] as $column) {
-                if (Schema::hasColumn('products', $column)) {
-                    $columns[] = "NULLIF({$table}.{$column}, 0)";
-                }
-            }
-
-            return 'COALESCE(' . implode(', ', $columns ?: ['0']) . ', 0)';
+        $fallbacks = [];
+        if (Schema::hasColumn('purchase_items', 'line_total')) {
+            $fallbacks[] = 'NULLIF(purchase_items.line_total, 0)';
+        }
+        if (Schema::hasColumn('purchase_items', 'amount')) {
+            $fallbacks[] = 'NULLIF(purchase_items.amount, 0)';
+        }
+        if (Schema::hasColumn('purchase_items', 'subtotal')) {
+            $fallbacks[] = 'NULLIF(purchase_items.subtotal, 0)';
+        }
+        if (Schema::hasColumn('purchase_items', 'total')) {
+            $fallbacks[] = 'NULLIF(purchase_items.total, 0)';
+        }
+        if (Schema::hasColumn('purchase_items', 'qty') && Schema::hasColumn('purchase_items', 'unit_price')) {
+            $fallbacks[] = '(COALESCE(purchase_items.qty, 0) * COALESCE(purchase_items.unit_price, 0))';
+        }
+        if (Schema::hasColumn('purchase_items', 'quantity') && Schema::hasColumn('purchase_items', 'rate')) {
+            $fallbacks[] = '(COALESCE(purchase_items.quantity, 0) * COALESCE(purchase_items.rate, 0))';
         }
 
-        public function index(Request $request)
+        if (empty($fallbacks)) {
+            return null;
+        }
+
+        $itemAmountExpression = 'ABS(COALESCE('.implode(', ', $fallbacks).', 0))';
+
+        return DB::table('purchase_items')
+            ->selectRaw("purchase_items.purchase_id, SUM({$itemAmountExpression}) as item_total")
+            ->groupBy('purchase_items.purchase_id');
+    }
+
+    private function attachPurchaseItemTotals($query): string
+    {
+        $itemTotals = $this->purchaseItemTotalSubquery();
+        if ($itemTotals) {
+            $query->leftJoinSub($itemTotals, 'purchase_item_totals', function ($join) {
+                $join->on('purchase_item_totals.purchase_id', '=', 'purchases.id');
+            });
+        }
+
+        $fallbacks = [];
+        if (Schema::hasColumn('purchases', 'total_amount')) {
+            $fallbacks[] = 'NULLIF(purchases.total_amount, 0)';
+        }
+        if (Schema::hasColumn('purchases', 'amount')) {
+            $fallbacks[] = 'NULLIF(purchases.amount, 0)';
+        }
+        if ($itemTotals) {
+            $fallbacks[] = 'purchase_item_totals.item_total';
+        }
+
+        if (empty($fallbacks)) {
+            return '0';
+        }
+
+        return 'ABS(COALESCE('.implode(', ', $fallbacks).', 0))';
+    }
+
+    private function prefixedIdExpression(string $prefix, string $column): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'pgsql' => "'{$prefix}' || CAST({$column} AS TEXT)",
+            'sqlite' => "'{$prefix}' || {$column}",
+            default => "CONCAT('{$prefix}', {$column})",
+        };
+    }
+
+    private function productStockColumn(string $table = 'products'): ?string
+    {
+        foreach (['stock', 'stock_quantity', 'quantity'] as $column) {
+            if (Schema::hasColumn('products', $column)) {
+                return "{$table}.{$column}";
+            }
+        }
+
+        return null;
+    }
+
+    private function productCostExpression(string $table = 'products'): string
+    {
+        $columns = [];
+        foreach (['purchase_price', 'cost_price', 'product_price', 'price'] as $column) {
+            if (Schema::hasColumn('products', $column)) {
+                $columns[] = "NULLIF({$table}.{$column}, 0)";
+            }
+        }
+
+        return 'COALESCE('.implode(', ', $columns ?: ['0']).', 0)';
+    }
+
+    public function index(Request $request)
     {
         $activeBranch = $this->getActiveBranchContext();
         // 1. Parse Dates
@@ -998,9 +1057,9 @@ class ReportController extends Controller
         $accountsBase = $accountsQuery->get();
         $accountIds = $accountsBase->pluck('id')->all();
 
-        if (!$start || !$end) {
+        if (! $start || ! $end) {
             $latestTxnQuery = \App\Models\Transaction::query();
-            if (!empty($accountIds)) {
+            if (! empty($accountIds)) {
                 $latestTxnQuery->whereIn('account_id', $accountIds);
             }
             $latestTxnDate = $latestTxnQuery->max('transaction_date');
@@ -1016,7 +1075,7 @@ class ReportController extends Controller
         // 2. Fetch and Map Data as ARRAYS (Removed (object) cast)
         // Trial Balance is an "as-of" report; include all transactions up to end date.
         $txnTotals = \App\Models\Transaction::selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
-            ->when(!empty($accountIds), function ($query) use ($accountIds) {
+            ->when(! empty($accountIds), function ($query) use ($accountIds) {
                 $query->whereIn('account_id', $accountIds);
             })
             ->whereDate('transaction_date', '<=', $end->toDateString())
@@ -1027,7 +1086,7 @@ class ReportController extends Controller
         $openingTotals = ['debit' => 0.0, 'credit' => 0.0];
 
         $accounts = $accountsBase
-            ->map(function($account) use ($txnTotals, &$openingTotals) {
+            ->map(function ($account) use ($txnTotals, &$openingTotals) {
                 $totals = $txnTotals->get($account->id);
                 $totalDebit = (float) ($totals->total_debit ?? 0);
                 $totalCredit = (float) ($totals->total_credit ?? 0);
@@ -1066,7 +1125,7 @@ class ReportController extends Controller
                     'has_activity' => $hasActivity,
                 ];
             })
-            ->filter(fn($acc) => $acc['has_activity'])
+            ->filter(fn ($acc) => $acc['has_activity'])
             ->sortBy('code')
             ->values();
 
@@ -1075,7 +1134,7 @@ class ReportController extends Controller
         // 3. Totals
         $totalDebits = $accounts->sum('debit_balance');
         $totalCredits = $accounts->sum('credit_balance');
-        
+
         $startDate = $start->toDateString();
         $endDate = $end->toDateString();
 
@@ -1083,202 +1142,282 @@ class ReportController extends Controller
             'startDate', 'endDate', 'accounts', 'totalDebits', 'totalCredits', 'activeBranch'
         ));
     }
-        /**
-         * Helper to apply Date, Search filters and Paginate (10 per page)
-         */
-        private function process_report($query, Request $request, $dateColumn = 'created_at', $searchColumns = [])
-        {
-            if ($request->filled('start_date') && $request->filled('end_date')) {
-                $query->whereBetween($dateColumn, [
-                    Carbon::parse($request->start_date)->startOfDay(),
-                    Carbon::parse($request->end_date)->endOfDay()
-                ]);
-            }
 
-            if ($request->filled('search') && !empty($searchColumns)) {
-                $query->where(function($q) use ($searchColumns, $request) {
-                    foreach ($searchColumns as $column) {
-                        $q->orWhere($column, 'like', '%' . $request->search . '%');
-                    }
-                });
-            }
+    /**
+     * Helper to apply Date, Search filters and Paginate (10 per page)
+     */
+    private function process_report($query, Request $request, $dateColumn = 'created_at', $searchColumns = [])
+    {
+        $this->applyReportDateRange(
+            $query,
+            $dateColumn,
+            $request->input('start_date'),
+            $request->input('end_date')
+        );
 
-            return $query->orderBy($dateColumn, 'desc')->paginate(10);
-        }
-
-        /**
-         * Helper to return views with 'Reports.Reports' prefix
-         */
-        private function renderReportView($viewName, $data = [])
-        {
-            // Always inject activeBranch so context-strip can show the branch switcher
-            if (!array_key_exists('activeBranch', $data)) {
-                $data['activeBranch'] = $this->getActiveBranchContext();
-            }
-
-            $fullView = 'Reports.Reports.' . trim((string) $viewName, '.');
-            if (view()->exists($fullView)) {
-                return view($fullView, $data);
-            }
-
-            Log::warning('Missing report view fallback used', [
-                'requested_view' => $viewName,
-                'resolved_view'  => $fullView,
-            ]);
-
-            return view('Reports.Reports.profit-loss-list', $data);
-        }
-
-        public function chartOfAccountsReport(Request $request)
-        {
-            $accountsQuery = Account::query()
-                ->when(Schema::hasTable('transactions'), fn ($query) => $query->withCount('transactions'))
-                ->orderByRaw("FIELD(type, 'Asset', 'Liability', 'Equity', 'Revenue', 'Expense')")
-                ->orderBy('code');
-
-            $this->applyTenantScope($accountsQuery, 'accounts');
-            $this->applyGenericBranchFilter($accountsQuery, 'accounts');
-
-            if ($request->filled('type')) {
-                $accountsQuery->where('type', $request->input('type'));
-            }
-
-            if ($request->filled('status') && Schema::hasColumn('accounts', 'is_active')) {
-                if ($request->input('status') === 'active') {
-                    $accountsQuery->where('is_active', 1);
-                } elseif ($request->input('status') === 'inactive') {
-                    $accountsQuery->where('is_active', 0);
+        if ($request->filled('search') && ! empty($searchColumns)) {
+            $query->where(function ($q) use ($searchColumns, $request) {
+                foreach ($searchColumns as $column) {
+                    $q->orWhere($column, 'like', '%'.$request->search.'%');
                 }
-            }
-
-            if ($request->filled('search')) {
-                $search = trim((string) $request->input('search'));
-                $accountsQuery->where(function ($query) use ($search) {
-                    $query->where('name', 'like', '%' . $search . '%');
-                    if (Schema::hasColumn('accounts', 'code')) {
-                        $query->orWhere('code', 'like', '%' . $search . '%');
-                    }
-                    if (Schema::hasColumn('accounts', 'sub_type')) {
-                        $query->orWhere('sub_type', 'like', '%' . $search . '%');
-                    }
-                    if (Schema::hasColumn('accounts', 'description')) {
-                        $query->orWhere('description', 'like', '%' . $search . '%');
-                    }
-                });
-            }
-
-            $accounts = $accountsQuery->get();
-
-            if (Schema::hasTable('transactions') && $accounts->isNotEmpty()) {
-                $transactionTotals = \App\Models\Transaction::query()
-                    ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
-                    ->whereIn('account_id', $accounts->pluck('id')->all())
-                    ->when(
-                        $request->filled('start_date') && $request->filled('end_date'),
-                        fn ($query) => $query->whereBetween('transaction_date', [
-                            Carbon::parse($request->input('start_date'))->startOfDay(),
-                            Carbon::parse($request->input('end_date'))->endOfDay(),
-                        ])
-                    )
-                    ->groupBy('account_id')
-                    ->get()
-                    ->keyBy('account_id');
-
-                $accounts = $accounts->map(function (Account $account) use ($transactionTotals) {
-                    $totals = $transactionTotals->get($account->id);
-                    $debits = (float) ($totals->total_debit ?? 0);
-                    $credits = (float) ($totals->total_credit ?? 0);
-                    $openingBalance = (float) ($account->opening_balance ?? 0);
-                    $isDebitNormal = in_array($account->type, [Account::TYPE_ASSET, Account::TYPE_EXPENSE], true);
-                    $account->current_balance = $isDebitNormal
-                        ? ($openingBalance + $debits) - $credits
-                        : ($openingBalance + $credits) - $debits;
-
-                    return $account;
-                });
-            }
-
-            $accountTypes = Account::typeOptions();
-            $summary = [
-                'total_accounts' => $accounts->count(),
-                'active_accounts' => Schema::hasColumn('accounts', 'is_active') ? $accounts->where('is_active', true)->count() : $accounts->count(),
-                'inactive_accounts' => Schema::hasColumn('accounts', 'is_active') ? $accounts->where('is_active', false)->count() : 0,
-                'total_balance' => (float) $accounts->sum(fn ($account) => (float) ($account->current_balance ?? $account->opening_balance ?? 0)),
-            ];
-
-            return $this->renderReportView('chart-of-accounts-report', compact('accounts', 'accountTypes', 'summary'));
+            });
         }
 
+        return $query->orderBy($dateColumn, 'desc')->paginate(10);
+    }
 
-public function purchaseReport(Request $request)
-{
-    return $this->purchase_report($request);
-}
+    /**
+     * Helper to return views with 'Reports.Reports' prefix
+     */
+    private function renderReportView($viewName, $data = [])
+    {
+        // Always inject activeBranch so context-strip can show the branch switcher
+        if (! array_key_exists('activeBranch', $data)) {
+            $data['activeBranch'] = $this->getActiveBranchContext();
+        }
 
-public function purchase_report(Request $request) 
-{
-    $activeBranch = $this->getActiveBranchContext();
-    $currentSubdomain = request()->route('subdomain') ?? 'admin';
-    $routeParams = ['subdomain' => $currentSubdomain];
+        $fullView = 'Reports.Reports.'.trim((string) $viewName, '.');
+        if (view()->exists($fullView)) {
+            return view($fullView, $data);
+        }
 
-    $purchases = collect();
-    $totalSum = 0;
-    $hasPurchaseRows = false;
+        Log::warning('Missing report view fallback used', [
+            'requested_view' => $viewName,
+            'resolved_view' => $fullView,
+        ]);
 
-    if (Schema::hasTable('purchases')) {
-        $purchaseRefColumn = Schema::hasColumn('purchases', 'purchase_no') ? 'purchase_no' : 'id';
-        $purchaseAmountColumn = Schema::hasColumn('purchases', 'total_amount') ? 'total_amount' : (Schema::hasColumn('purchases', 'amount') ? 'amount' : null);
-        $purchaseDateColumn = Schema::hasColumn('purchases', 'purchase_date') ? 'purchase_date' : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
-        $purchaseStatusColumn = Schema::hasColumn('purchases', 'status') ? 'status' : null;
+        return view('Reports.Reports.profit-loss-list', $data);
+    }
 
-        $supplierNameExpression = DB::raw("'N/A' as CompanyName");
-        $supplierSearchColumn = null;
+    private function paginateCollection($items, int $perPage, string $pageName, Request $request): LengthAwarePaginator
+    {
+        $items = collect($items)->values();
+        $page = max(1, (int) $request->query($pageName, 1));
 
-        if (
-            Schema::hasTable('suppliers') &&
-            Schema::hasColumn('purchases', 'supplier_id') &&
-            Schema::hasColumn('suppliers', 'id')
-        ) {
-            if (Schema::hasColumn('suppliers', 'name')) {
-                $supplierNameExpression = DB::raw("COALESCE(suppliers.name, 'N/A') as CompanyName");
-                $supplierSearchColumn = 'suppliers.name';
-            } elseif (Schema::hasColumn('suppliers', 'supplier_name')) {
-                $supplierNameExpression = DB::raw("COALESCE(suppliers.supplier_name, 'N/A') as CompanyName");
-                $supplierSearchColumn = 'suppliers.supplier_name';
-            } elseif (Schema::hasColumn('suppliers', 'company_name')) {
-                $supplierNameExpression = DB::raw("COALESCE(suppliers.company_name, 'N/A') as CompanyName");
-                $supplierSearchColumn = 'suppliers.company_name';
+        return new LengthAwarePaginator(
+            $items->forPage($page, $perPage)->values(),
+            $items->count(),
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'pageName' => $pageName,
+                'query' => $request->query(),
+            ]
+        );
+    }
+
+    public function chartOfAccountsReport(Request $request)
+    {
+        $accountsQuery = Account::query()
+            ->when(Schema::hasTable('transactions'), fn ($query) => $query->withCount('transactions'))
+            ->orderByRaw("CASE LOWER(type)
+                    WHEN 'asset' THEN 1
+                    WHEN 'liability' THEN 2
+                    WHEN 'equity' THEN 3
+                    WHEN 'revenue' THEN 4
+                    WHEN 'expense' THEN 5
+                    ELSE 6 END")
+            ->orderBy('code');
+
+        $this->applyTenantScope($accountsQuery, 'accounts');
+        $this->applyGenericBranchFilter($accountsQuery, 'accounts');
+
+        if ($request->filled('type')) {
+            $accountsQuery->where('type', $request->input('type'));
+        }
+
+        if ($request->filled('status') && Schema::hasColumn('accounts', 'is_active')) {
+            if ($request->input('status') === 'active') {
+                $accountsQuery->where('is_active', 1);
+            } elseif ($request->input('status') === 'inactive') {
+                $accountsQuery->where('is_active', 0);
             }
         }
 
-        if ($purchaseAmountColumn) {
-            $query = \App\Models\Purchase::query();
-            $this->applyTenantScope($query, 'purchases');
+        if ($request->filled('search')) {
+            $search = trim((string) $request->input('search'));
+            $accountsQuery->where(function ($query) use ($search) {
+                $query->where('name', 'like', '%'.$search.'%');
+                if (Schema::hasColumn('accounts', 'code')) {
+                    $query->orWhere('code', 'like', '%'.$search.'%');
+                }
+                if (Schema::hasColumn('accounts', 'sub_type')) {
+                    $query->orWhere('sub_type', 'like', '%'.$search.'%');
+                }
+                if (Schema::hasColumn('accounts', 'description')) {
+                    $query->orWhere('description', 'like', '%'.$search.'%');
+                }
+            });
+        }
+
+        $accounts = $accountsQuery->get();
+
+        if (Schema::hasTable('transactions') && $accounts->isNotEmpty()) {
+            $transactionTotals = \App\Models\Transaction::query()
+                ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
+                ->whereIn('account_id', $accounts->pluck('id')->all())
+                ->when(
+                    $request->filled('start_date') && $request->filled('end_date'),
+                    fn ($query) => $query->whereBetween('transaction_date', [
+                        Carbon::parse($request->input('start_date'))->startOfDay(),
+                        Carbon::parse($request->input('end_date'))->endOfDay(),
+                    ])
+                )
+                ->groupBy('account_id')
+                ->get()
+                ->keyBy('account_id');
+
+            $accounts = $accounts->map(function (Account $account) use ($transactionTotals) {
+                $totals = $transactionTotals->get($account->id);
+                $debits = (float) ($totals->total_debit ?? 0);
+                $credits = (float) ($totals->total_credit ?? 0);
+                $openingBalance = (float) ($account->opening_balance ?? 0);
+                $isDebitNormal = in_array($account->type, [Account::TYPE_ASSET, Account::TYPE_EXPENSE], true);
+                $account->current_balance = $isDebitNormal
+                    ? ($openingBalance + $debits) - $credits
+                    : ($openingBalance + $credits) - $debits;
+
+                return $account;
+            });
+        }
+
+        $accountTypes = Account::typeOptions();
+        $summary = [
+            'total_accounts' => $accounts->count(),
+            'active_accounts' => Schema::hasColumn('accounts', 'is_active') ? $accounts->where('is_active', true)->count() : $accounts->count(),
+            'inactive_accounts' => Schema::hasColumn('accounts', 'is_active') ? $accounts->where('is_active', false)->count() : 0,
+            'total_balance' => (float) $accounts->sum(fn ($account) => (float) ($account->current_balance ?? $account->opening_balance ?? 0)),
+        ];
+
+        return $this->renderReportView('chart-of-accounts-report', compact('accounts', 'accountTypes', 'summary'));
+    }
+
+    public function purchaseReport(Request $request)
+    {
+        return $this->purchase_report($request);
+    }
+
+    public function purchase_report(Request $request)
+    {
+        $activeBranch = $this->getActiveBranchContext();
+        $currentSubdomain = request()->route('subdomain') ?? 'admin';
+        $routeParams = ['subdomain' => $currentSubdomain];
+
+        $purchases = collect();
+        $totalSum = 0;
+        $hasPurchaseRows = false;
+
+        if (Schema::hasTable('purchases')) {
+            $purchaseRefColumn = Schema::hasColumn('purchases', 'purchase_no') ? 'purchase_no' : 'id';
+            $purchaseDateColumn = Schema::hasColumn('purchases', 'purchase_date') ? 'purchase_date' : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
+            $purchaseStatusColumn = Schema::hasColumn('purchases', 'status') ? 'status' : null;
+
+            $supplierNameExpression = DB::raw("'N/A' as CompanyName");
+            $supplierSearchColumn = null;
 
             if (
                 Schema::hasTable('suppliers') &&
                 Schema::hasColumn('purchases', 'supplier_id') &&
                 Schema::hasColumn('suppliers', 'id')
             ) {
-                $query->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id');
+                if (Schema::hasColumn('suppliers', 'name')) {
+                    $supplierNameExpression = DB::raw("COALESCE(suppliers.name, 'N/A') as CompanyName");
+                    $supplierSearchColumn = 'suppliers.name';
+                } elseif (Schema::hasColumn('suppliers', 'supplier_name')) {
+                    $supplierNameExpression = DB::raw("COALESCE(suppliers.supplier_name, 'N/A') as CompanyName");
+                    $supplierSearchColumn = 'suppliers.supplier_name';
+                } elseif (Schema::hasColumn('suppliers', 'company_name')) {
+                    $supplierNameExpression = DB::raw("COALESCE(suppliers.company_name, 'N/A') as CompanyName");
+                    $supplierSearchColumn = 'suppliers.company_name';
+                }
             }
 
-            $query->select([
-                DB::raw("COALESCE(purchases.{$purchaseRefColumn}, CONCAT('PUR-', purchases.id)) as Reference"),
-                $supplierNameExpression,
-                Schema::hasColumn('purchases', 'branch_name')
-                    ? DB::raw("COALESCE(purchases.branch_name, 'Workspace Default') as BranchName")
-                    : DB::raw("'Workspace Default' as BranchName"),
-                DB::raw("ABS(COALESCE(purchases.{$purchaseAmountColumn}, 0)) as Amount"),
-                DB::raw("purchases.{$purchaseDateColumn} as Date"),
-                $purchaseStatusColumn
-                    ? DB::raw("COALESCE(purchases.{$purchaseStatusColumn}, 'received') as Type")
-                    : DB::raw("'received' as Type"),
-                'purchases.id',
-            ]);
+            if (Schema::hasColumn('purchases', 'total_amount') || Schema::hasColumn('purchases', 'amount') || Schema::hasTable('purchase_items')) {
+                $query = \App\Models\Purchase::query();
+                $this->applyTenantScope($query, 'purchases');
+                $this->applyReportableDocumentScope($query, 'purchases');
+
+                if (
+                    Schema::hasTable('suppliers') &&
+                    Schema::hasColumn('purchases', 'supplier_id') &&
+                    Schema::hasColumn('suppliers', 'id')
+                ) {
+                    $query->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id');
+                }
+
+                $purchaseAmountExpression = $this->attachPurchaseItemTotals($query);
+                $purchaseReferenceExpression = $this->prefixedIdExpression('PUR-', 'purchases.id');
+
+                $query->select([
+                    DB::raw("COALESCE(purchases.{$purchaseRefColumn}, {$purchaseReferenceExpression}) as Reference"),
+                    $supplierNameExpression,
+                    Schema::hasColumn('purchases', 'branch_name')
+                        ? DB::raw("COALESCE(purchases.branch_name, 'Workspace Default') as BranchName")
+                        : DB::raw("'Workspace Default' as BranchName"),
+                    DB::raw("{$purchaseAmountExpression} as Amount"),
+                    DB::raw("purchases.{$purchaseDateColumn} as Date"),
+                    $purchaseStatusColumn
+                        ? DB::raw("COALESCE(purchases.{$purchaseStatusColumn}, 'received') as Type")
+                        : DB::raw("'received' as Type"),
+                    'purchases.id',
+                ]);
+
+                $this->applyReportDateRange(
+                    $query,
+                    "purchases.{$purchaseDateColumn}",
+                    $request->input('start_date'),
+                    $request->input('end_date')
+                );
+
+                if ($request->filled('search')) {
+                    $search = trim((string) $request->search);
+                    $query->where(function ($q) use ($search, $purchaseRefColumn, $supplierSearchColumn) {
+                        $q->where("purchases.{$purchaseRefColumn}", 'like', '%'.$search.'%');
+                        if ($supplierSearchColumn) {
+                            $q->orWhere($supplierSearchColumn, 'like', '%'.$search.'%');
+                        }
+                    });
+                }
+
+                if (! empty($activeBranch['id']) || ! empty($activeBranch['name'])) {
+                    $query->where(function ($sub) use ($activeBranch) {
+                        if (! empty($activeBranch['id']) && Schema::hasColumn('purchases', 'branch_id')) {
+                            $sub->where('purchases.branch_id', $activeBranch['id']);
+                        }
+                        if (! empty($activeBranch['name']) && Schema::hasColumn('purchases', 'branch_name')) {
+                            $sub->orWhere('purchases.branch_name', $activeBranch['name']);
+                        }
+                    });
+                }
+
+                $hasPurchaseRows = (clone $query)->exists();
+
+                if ($hasPurchaseRows) {
+                    $totalSum = (float) ((clone $query)->sum(DB::raw($purchaseAmountExpression)) ?? 0);
+                    $purchases = $query->orderByDesc("purchases.{$purchaseDateColumn}")->paginate(20)->withQueryString();
+                }
+            }
+        }
+
+        if (! $hasPurchaseRows && Schema::hasTable('inventory_history') && Schema::hasTable('products')) {
+            $historyQuery = $this->scopedTable('inventory_history')
+                ->join('products', 'inventory_history.product_id', '=', 'products.id')
+                ->select([
+                    DB::raw($this->prefixedIdExpression('HIST-IN-', 'inventory_history.id').' as Reference'),
+                    DB::raw("'Inventory History' as CompanyName"),
+                    'inventory_history.branch_name as BranchName',
+                    DB::raw('COALESCE(inventory_history.quantity, 0) * COALESCE(products.purchase_price, products.price, 0) as Amount'),
+                    'inventory_history.created_at as Date',
+                    DB::raw("'received' as Type"),
+                    'inventory_history.id as id',
+                ])
+                ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) = 'in'");
+
+            $this->applyTenantScope($historyQuery, 'products');
 
             if ($request->filled('start_date') && $request->filled('end_date')) {
-                $query->whereBetween("purchases.{$purchaseDateColumn}", [
+                $historyQuery->whereBetween('inventory_history.created_at', [
                     Carbon::parse($request->start_date)->startOfDay(),
                     Carbon::parse($request->end_date)->endOfDay(),
                 ]);
@@ -1286,117 +1425,67 @@ public function purchase_report(Request $request)
 
             if ($request->filled('search')) {
                 $search = trim((string) $request->search);
-                $query->where(function ($q) use ($search, $purchaseRefColumn, $supplierSearchColumn) {
-                    $q->where("purchases.{$purchaseRefColumn}", 'like', '%' . $search . '%');
-                    if ($supplierSearchColumn) {
-                        $q->orWhere($supplierSearchColumn, 'like', '%' . $search . '%');
-                    }
+                $historyQuery->where(function ($q) use ($search) {
+                    $q->where('products.name', 'like', '%'.$search.'%')
+                        ->orWhere('products.sku', 'like', '%'.$search.'%')
+                        ->orWhere('inventory_history.id', 'like', '%'.$search.'%');
                 });
             }
 
-            if (!empty($activeBranch['id']) || !empty($activeBranch['name'])) {
-                $query->where(function ($sub) use ($activeBranch) {
-                    if (!empty($activeBranch['id']) && Schema::hasColumn('purchases', 'branch_id')) {
-                        $sub->where('purchases.branch_id', $activeBranch['id']);
-                    }
-                    if (!empty($activeBranch['name']) && Schema::hasColumn('purchases', 'branch_name')) {
-                        $sub->orWhere('purchases.branch_name', $activeBranch['name']);
-                    }
-                });
-            }
-
-            $hasPurchaseRows = (clone $query)->exists();
-
-            if ($hasPurchaseRows) {
-                $purchases = $query->orderByDesc("purchases.{$purchaseDateColumn}")->paginate(20);
-                $totalSum = (float) ((clone $query)->sum(DB::raw("ABS(COALESCE(purchases.{$purchaseAmountColumn}, 0))")) ?? 0);
-            }
+            $purchases = $historyQuery->orderByDesc('inventory_history.created_at')->paginate(20);
+            $totalSum = (clone $historyQuery)->sum(DB::raw('COALESCE(inventory_history.quantity, 0) * COALESCE(products.purchase_price, products.price, 0)'));
+        } elseif (! $hasPurchaseRows) {
+            $purchases = new LengthAwarePaginator([], 0, 20, 1, [
+                'path' => request()->url(),
+                'query' => request()->query(),
+            ]);
+            $totalSum = 0;
         }
+
+        // 6. Return View
+        return view('Reports.Reports.purchase-report', compact(
+            'purchases',
+            'totalSum',
+            'routeParams',
+            'activeBranch'
+        ));
     }
 
-    if (!$hasPurchaseRows && Schema::hasTable('inventory_history') && Schema::hasTable('products')) {
-        $historyQuery = $this->scopedTable('inventory_history')
-            ->join('products', 'inventory_history.product_id', '=', 'products.id')
-            ->select([
-                DB::raw("CONCAT('HIST-IN-', inventory_history.id) as Reference"),
-                DB::raw("'Inventory History' as CompanyName"),
-                'inventory_history.branch_name as BranchName',
-                DB::raw('COALESCE(inventory_history.quantity, 0) * COALESCE(products.purchase_price, products.price, 0) as Amount'),
-                'inventory_history.created_at as Date',
-                DB::raw("'received' as Type"),
-                'inventory_history.id as id',
-            ])
-            ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) = 'in'");
+    public function showProfitLossReport()
+    {
+        return $this->profit_loss_list(request());
+    }
 
-        $this->applyTenantScope($historyQuery, 'products');
+    /** 1. Expense Report **/
+    public function expense_report(Request $request)
+    {
+        $query = $this->scopedTable('expenses')
+            ->leftJoin('users', 'expenses.created_by', '=', 'users.id')
+            ->select(
+                'expenses.*',
+                DB::raw("COALESCE(expenses.category, 'General') as category_name"),
+                DB::raw("COALESCE(users.name, 'System') as user_name")
+            );
+        $this->applyReportableDocumentScope($query, 'expenses');
 
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $historyQuery->whereBetween('inventory_history.created_at', [
-                Carbon::parse($request->start_date)->startOfDay(),
-                Carbon::parse($request->end_date)->endOfDay(),
-            ]);
-        }
-
-        if ($request->filled('search')) {
-            $search = trim((string) $request->search);
-            $historyQuery->where(function ($q) use ($search) {
-                $q->where('products.name', 'like', '%' . $search . '%')
-                    ->orWhere('products.sku', 'like', '%' . $search . '%')
-                    ->orWhere('inventory_history.id', 'like', '%' . $search . '%');
+        if ($request->filled('status')) {
+            $status = strtolower((string) $request->status);
+            $query->where(function ($q) use ($status) {
+                $q->whereRaw('LOWER(expenses.status) = ?', [$status])
+                    ->orWhereRaw('LOWER(expenses.payment_status) = ?', [$status]);
             });
         }
 
-        $purchases = $historyQuery->orderByDesc('inventory_history.created_at')->paginate(20);
-        $totalSum = (clone $historyQuery)->sum(DB::raw('COALESCE(inventory_history.quantity, 0) * COALESCE(products.purchase_price, products.price, 0)'));
-    } elseif (!$hasPurchaseRows) {
-        $purchases = new LengthAwarePaginator([], 0, 20, 1, [
-            'path' => request()->url(),
-            'query' => request()->query(),
-        ]);
-        $totalSum = 0;
+        $expenses = $this->process_report(
+            $query,
+            $request,
+            'expenses.created_at',
+            ['expenses.company_name', 'expenses.reference', 'expenses.notes', 'expenses.category', 'users.name']
+        );
+
+        return $this->renderReportView('expense-report', compact('expenses'));
     }
 
-    // 6. Return View
-    return view('Reports.Reports.purchase-report', compact(
-        'purchases', 
-        'totalSum',
-        'routeParams',
-        'activeBranch'
-    ));
-}
-
-        public function showProfitLossReport()
-        {
-            return $this->profit_loss_list(request());
-        }
-
-        /** 1. Expense Report **/
-        public function expense_report(Request $request)
-        {
-            $query = $this->scopedTable('expenses')
-                ->leftJoin('users', 'expenses.created_by', '=', 'users.id')
-                ->select(
-                    'expenses.*',
-                    DB::raw("COALESCE(expenses.category, 'General') as category_name"),
-                    DB::raw("COALESCE(users.name, 'System') as user_name")
-                );
-
-            if ($request->filled('status')) {
-                $status = strtolower((string) $request->status);
-                $query->where(function ($q) use ($status) {
-                    $q->whereRaw('LOWER(expenses.status) = ?', [$status])
-                        ->orWhereRaw('LOWER(expenses.payment_status) = ?', [$status]);
-                });
-            }
-
-            $expenses = $this->process_report(
-                $query,
-                $request,
-                'expenses.created_at',
-                ['expenses.company_name', 'expenses.reference', 'expenses.notes', 'expenses.category', 'users.name']
-            );
-            return $this->renderReportView('expense-report', compact('expenses'));
-        }
     public function income_report(Request $request)
     {
         $fromDate = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
@@ -1404,7 +1493,7 @@ public function purchase_report(Request $request)
         $prevFrom = \Carbon\Carbon::parse($fromDate)->subYear()->toDateString();
         $prevTo = \Carbon\Carbon::parse($toDate)->subYear()->toDateString();
 
-        $fetchData = function($start, $end) {
+        $fetchData = function ($start, $end) {
             $salesDateColumn = Schema::hasColumn('sales', 'order_date')
                 ? 'order_date'
                 : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
@@ -1413,51 +1502,58 @@ public function purchase_report(Request $request)
                 DB::raw("DATE({$salesDateColumn}) as log_date"),
                 DB::raw('total as amount'),
                 DB::raw("'Inflow' as type"),
-                DB::raw("'Sales' as label")
+                DB::raw("'Sales' as label"),
             ])->whereBetween($salesDateColumn, [$start.' 00:00:00', $end.' 23:59:59']);
             $this->applySalesScope($sales, 'sales');
+            $this->applyReportableDocumentScope($sales, 'sales');
 
             $other = $this->scopedTable('payments')->select([
                 DB::raw('DATE(created_at) as log_date'),
                 DB::raw('amount as amount'),
                 DB::raw("'Inflow' as type"),
-                DB::raw("'Misc' as label")
-            ])->where(function ($query) {
-                $query->whereNull('sale_id')
-                    ->orWhere('payment_method', '!=', 'Sales Payment');
-            })
-            ->whereBetween('created_at', [$start.' 00:00:00', $end.' 23:59:59']);
+                DB::raw("'Misc' as label"),
+            ])->whereNull('sale_id')
+                ->whereBetween('created_at', [$start.' 00:00:00', $end.' 23:59:59']);
             $this->applyPaymentBranchFilter($other, 'payments');
+            $this->applyReportableDocumentScope($other, 'payments');
 
             $exp = $this->scopedTable('expenses')->select([
                 DB::raw('DATE(created_at) as log_date'),
                 DB::raw('amount as amount'),
                 DB::raw("'Outflow' as type"),
-                DB::raw("COALESCE(category, 'Expense') as label")
+                DB::raw("COALESCE(category, 'Expense') as label"),
             ])->whereBetween('created_at', [$start.' 00:00:00', $end.' 23:59:59']);
             $this->applyTenantScope($exp, 'expenses');
             $this->applyGenericBranchFilter($exp, 'expenses');
+            $this->applyReportableDocumentScope($exp, 'expenses');
 
             return $sales->unionAll($other)->unionAll($exp);
         };
 
         $currentUnion = $fetchData($fromDate, $toDate);
+        $labelAggregate = match (DB::connection()->getDriverName()) {
+            'pgsql' => "STRING_AGG(DISTINCT label, ', ')",
+            'sqlite' => 'GROUP_CONCAT(DISTINCT label)',
+            default => 'GROUP_CONCAT(DISTINCT label SEPARATOR ", ")',
+        };
         $results = DB::table(DB::query()->fromSub($currentUnion, 'cf'))
-            ->select(['log_date', 
+            ->select(['log_date',
                 DB::raw('SUM(CASE WHEN type="Inflow" THEN amount ELSE 0 END) as total_in'),
                 DB::raw('SUM(CASE WHEN type="Outflow" THEN amount ELSE 0 END) as total_out'),
-                DB::raw('GROUP_CONCAT(DISTINCT label SEPARATOR ", ") as labels')
+                DB::raw("{$labelAggregate} as labels"),
             ])->groupBy('log_date')->orderBy('log_date', 'desc')->get();
 
         $prevIn = DB::table(DB::query()->fromSub($fetchData($prevFrom, $prevTo), 'pv'))
-                    ->where('type', 'Inflow')->sum('amount');
-        
+            ->where('type', 'Inflow')->sum('amount');
+
         $tIn = $results->sum('total_in');
         $tOut = $results->sum('total_out');
         $growth = ($prevIn > 0) ? (($tIn - $prevIn) / $prevIn) * 100 : 0;
 
-        $incomereports = collect($results)->map(function($item) {
-            $in = (float)$item->total_in; $out = (float)$item->total_out;
+        $incomereports = collect($results)->map(function ($item) {
+            $in = (float) $item->total_in;
+            $out = (float) $item->total_out;
+
             return [
                 'Date' => \Carbon\Carbon::parse($item->log_date)->format('d M y'),
                 'TypeLabel' => $item->labels,
@@ -1470,41 +1566,42 @@ public function purchase_report(Request $request)
 
         return $this->renderReportView('income-report', compact('incomereports', 'fromDate', 'toDate', 'tIn', 'tOut', 'growth'));
     }
-        /** 3. Low Stock Report **/
+
+    /** 3. Low Stock Report **/
     public function low_stock_report(Request $request)
-        {
-            $threshold = $request->get('min_qty', 15);
-            $target = $request->get('target_qty', 100);
-            $activeBranch = $this->getActiveBranchContext();
-            $stockColumn = Schema::hasColumn('products', 'stock')
-                ? 'products.stock'
-                : (Schema::hasColumn('products', 'stock_quantity') ? 'products.stock_quantity' : '0');
-            $reorderColumn = Schema::hasColumn('products', 'reorder_level')
-                ? 'products.reorder_level'
-                : '0';
+    {
+        $threshold = $request->get('min_qty', 15);
+        $target = $request->get('target_qty', 100);
+        $activeBranch = $this->getActiveBranchContext();
+        $stockColumn = Schema::hasColumn('products', 'stock')
+            ? 'products.stock'
+            : (Schema::hasColumn('products', 'stock_quantity') ? 'products.stock_quantity' : '0');
+        $reorderColumn = Schema::hasColumn('products', 'reorder_level')
+            ? 'products.reorder_level'
+            : '0';
 
-            $productsQuery = $this->scopedTable('products')
-                ->select(['products.id', 'products.name', 'products.sku', 'products.purchase_price', 'products.unit_type', 'products.reorder_level', 'products.reorder_quantity']);
+        $productsQuery = $this->scopedTable('products')
+            ->select(['products.id', 'products.name', 'products.sku', 'products.purchase_price', 'products.unit_type', 'products.reorder_level', 'products.reorder_quantity']);
 
-            if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
-                $productsQuery->leftJoin('product_branch_stocks', function ($join) use ($activeBranch) {
-                    $join->on('product_branch_stocks.product_id', '=', 'products.id')
-                        ->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
-                });
+        if (! empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+            $productsQuery->leftJoin('product_branch_stocks', function ($join) use ($activeBranch) {
+                $join->on('product_branch_stocks.product_id', '=', 'products.id')
+                    ->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
+            });
 
-                $productsQuery->addSelect(DB::raw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) as stock"));
-                $productsQuery->whereRaw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) <= COALESCE(NULLIF({$reorderColumn}, 0), ?)", [$threshold]);
-                $productsQuery->orderByRaw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) asc");
-            } else {
-                $productsQuery->addSelect(DB::raw("COALESCE({$stockColumn}, 0) as stock"));
-                $productsQuery->whereRaw("COALESCE({$stockColumn}, 0) <= COALESCE(NULLIF({$reorderColumn}, 0), ?)", [$threshold]);
-                $productsQuery->orderByRaw("COALESCE({$stockColumn}, 0) asc");
-            }
-
-            $products = $productsQuery->get();
-
-            return view('Reports.Reports.low-stock-report', compact('products', 'threshold', 'target'));
+            $productsQuery->addSelect(DB::raw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) as stock"));
+            $productsQuery->whereRaw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) <= COALESCE(NULLIF({$reorderColumn}, 0), ?)", [$threshold]);
+            $productsQuery->orderByRaw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) asc");
+        } else {
+            $productsQuery->addSelect(DB::raw("COALESCE({$stockColumn}, 0) as stock"));
+            $productsQuery->whereRaw("COALESCE({$stockColumn}, 0) <= COALESCE(NULLIF({$reorderColumn}, 0), ?)", [$threshold]);
+            $productsQuery->orderByRaw("COALESCE({$stockColumn}, 0) asc");
         }
+
+        $products = $productsQuery->get();
+
+        return view('Reports.Reports.low-stock-report', compact('products', 'threshold', 'target'));
+    }
 
     /**
      * Expiry Date Report — shows expired and expiring products
@@ -1513,15 +1610,15 @@ public function purchase_report(Request $request)
     {
         if (! Schema::hasColumn('products', 'expiry_date')) {
             return view('Reports.Reports.expiry-report', [
-                'expired'      => collect(),
+                'expired' => collect(),
                 'expiring_soon' => collect(),
-                'daysAhead'    => 30,
+                'daysAhead' => 30,
             ]);
         }
 
-        $daysAhead   = (int) $request->get('days_ahead', 30);
+        $daysAhead = (int) $request->get('days_ahead', 30);
         $stockColumn = Schema::hasColumn('products', 'stock') ? 'stock' : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
-        $selectCols  = ['id', 'name', 'sku', 'expiry_date'];
+        $selectCols = ['id', 'name', 'sku', 'expiry_date'];
         if ($stockColumn) {
             $selectCols[] = DB::raw("{$stockColumn} as stock");
         } else {
@@ -1546,55 +1643,55 @@ public function purchase_report(Request $request)
         return view('Reports.Reports.expiry-report', compact('expired', 'expiring_soon', 'daysAhead'));
     }
 
-        // Email AJAX Logic
-        public function send_low_stock_email(Request $request)
-        {
-            $threshold = $request->get('min_qty', 15);
-            $activeBranch = $this->getActiveBranchContext();
-            $stockColumn = Schema::hasColumn('products', 'stock')
-                ? 'products.stock'
-                : (Schema::hasColumn('products', 'stock_quantity') ? 'products.stock_quantity' : '0');
-            $reorderColumn = Schema::hasColumn('products', 'reorder_level')
-                ? 'products.reorder_level'
-                : '0';
+    // Email AJAX Logic
+    public function send_low_stock_email(Request $request)
+    {
+        $threshold = $request->get('min_qty', 15);
+        $activeBranch = $this->getActiveBranchContext();
+        $stockColumn = Schema::hasColumn('products', 'stock')
+            ? 'products.stock'
+            : (Schema::hasColumn('products', 'stock_quantity') ? 'products.stock_quantity' : '0');
+        $reorderColumn = Schema::hasColumn('products', 'reorder_level')
+            ? 'products.reorder_level'
+            : '0';
 
-            $productsQuery = $this->scopedTable('products')
-                ->select(['products.id', 'products.name', 'products.sku', 'products.purchase_price', 'products.unit_type', 'products.reorder_level', 'products.reorder_quantity']);
+        $productsQuery = $this->scopedTable('products')
+            ->select(['products.id', 'products.name', 'products.sku', 'products.purchase_price', 'products.unit_type', 'products.reorder_level', 'products.reorder_quantity']);
 
-            if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
-                $productsQuery->leftJoin('product_branch_stocks', function ($join) use ($activeBranch) {
-                    $join->on('product_branch_stocks.product_id', '=', 'products.id')
-                        ->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
-                });
+        if (! empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+            $productsQuery->leftJoin('product_branch_stocks', function ($join) use ($activeBranch) {
+                $join->on('product_branch_stocks.product_id', '=', 'products.id')
+                    ->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
+            });
 
-                $productsQuery->addSelect(DB::raw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) as stock"));
-                $productsQuery->whereRaw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) <= COALESCE(NULLIF({$reorderColumn}, 0), ?)", [$threshold]);
-                $productsQuery->orderByRaw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) asc");
-            } else {
-                $productsQuery->addSelect(DB::raw("COALESCE({$stockColumn}, 0) as stock"));
-                $productsQuery->whereRaw("COALESCE({$stockColumn}, 0) <= COALESCE(NULLIF({$reorderColumn}, 0), ?)", [$threshold]);
-                $productsQuery->orderByRaw("COALESCE({$stockColumn}, 0) asc");
-            }
-
-            $products = $productsQuery->get();
-
-            if ($products->isEmpty()) {
-                return response()->json(['status' => 'error', 'message' => 'No low stock items found to report.'], 400);
-            }
-
-            try {
-                // Replace with actual recipient email
-                Mail::to('admin@yourcompany.com')->send(new \App\Mail\LowStockReportMail($products));
-                return response()->json(['status' => 'success', 'message' => 'Email sent successfully!']);
-            } catch (\Exception $e) {
-                return response()->json(['status' => 'error', 'message' => 'Mail Error: ' . $e->getMessage()], 500);
-            }
+            $productsQuery->addSelect(DB::raw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) as stock"));
+            $productsQuery->whereRaw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) <= COALESCE(NULLIF({$reorderColumn}, 0), ?)", [$threshold]);
+            $productsQuery->orderByRaw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) asc");
+        } else {
+            $productsQuery->addSelect(DB::raw("COALESCE({$stockColumn}, 0) as stock"));
+            $productsQuery->whereRaw("COALESCE({$stockColumn}, 0) <= COALESCE(NULLIF({$reorderColumn}, 0), ?)", [$threshold]);
+            $productsQuery->orderByRaw("COALESCE({$stockColumn}, 0) asc");
         }
 
+        $products = $productsQuery->get();
+
+        if ($products->isEmpty()) {
+            return response()->json(['status' => 'error', 'message' => 'No low stock items found to report.'], 400);
+        }
+
+        try {
+            // Replace with actual recipient email
+            Mail::to('admin@yourcompany.com')->send(new \App\Mail\LowStockReportMail($products));
+
+            return response()->json(['status' => 'success', 'message' => 'Email sent successfully!']);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => 'Mail Error: '.$e->getMessage()], 500);
+        }
+    }
 
     public function payment_report(Request $request)
     {
-        if (!Schema::hasTable('payments')) {
+        if (! Schema::hasTable('payments')) {
             $payments = new LengthAwarePaginator([], 0, 25, 1, [
                 'path' => request()->url(),
                 'query' => request()->query(),
@@ -1641,340 +1738,344 @@ public function purchase_report(Request $request)
             ->pluck('status');
 
         $totalAmount = (clone $query)->sum('amount');
-        
+
         // Increased to 25 for better report viewing, preserved filters
         $payments = $query->orderBy('created_at', 'asc')->paginate(25)->withQueryString();
         $payments->getCollection()->transform(function ($payment) {
             $payment->resolved_status = $this->resolvePaymentStatus($payment);
             $payment->resolved_channel = $this->resolvePaymentChannel($payment);
+
             return $payment;
         });
 
         return view('Reports.Reports.payment-report', compact('payments', 'totalAmount', 'activeBranch', 'methodOptions', 'statusOptions'));
     }
+
     public function process_report_data(Request $request)
     {
         return $this->process_report($this->scopedTable('payments'), $request, 'created_at', ['reference_no', 'payment_method']);
     }
 
- 
- public function paymentSummary(Request $request)
-{
-    $activeBranch = $this->getActiveBranchContext();
-    if (!Schema::hasTable('payments')) {
-        $payments = new LengthAwarePaginator([], 0, 10, 1, [
-            'path' => request()->url(),
-            'query' => request()->query(),
-        ]);
-        $totalRevenue = 0;
+    public function paymentSummary(Request $request)
+    {
+        $activeBranch = $this->getActiveBranchContext();
+        if (! Schema::hasTable('payments')) {
+            $payments = new LengthAwarePaginator([], 0, 10, 1, [
+                'path' => request()->url(),
+                'query' => request()->query(),
+            ]);
+            $totalRevenue = 0;
+            $summary = [
+                'total_transactions' => 0,
+                'completed_count' => 0,
+                'pending_count' => 0,
+                'partial_count' => 0,
+                'failed_count' => 0,
+                'completed_amount' => 0,
+                'pending_amount' => 0,
+                'partial_amount' => 0,
+                'average_payment' => 0,
+                'largest_payment' => 0,
+                'top_method' => 'N/A',
+                'top_channel' => 'N/A',
+            ];
+            $methodOptions = collect();
+            $statusOptions = collect(['Completed', 'Pending', 'Partial', 'Failed', 'Cancelled']);
+
+            return view('Reports.payment-summary', compact('payments', 'totalRevenue', 'summary', 'methodOptions', 'statusOptions', 'activeBranch'));
+        }
+
+        $paymentColumns = $this->paymentReportColumns();
+        $baseQuery = Payment::with($this->paymentReportRelations());
+        $this->scopePaymentsForActor($baseQuery);
+
+        $query = clone $baseQuery;
+        $this->applyPaymentBranchFilter($query, 'payments');
+
+        if ($request->filled('search')) {
+            $search = trim((string) $request->search);
+            $query->where(function ($q) use ($search, $paymentColumns) {
+                $hasPaymentSearch = false;
+
+                foreach (['payment_id', 'reference', 'note', 'method', 'status'] as $column) {
+                    if (! empty($paymentColumns[$column])) {
+                        if (! $hasPaymentSearch) {
+                            $q->where($column, 'like', "%$search%");
+                            $hasPaymentSearch = true;
+                        } else {
+                            $q->orWhere($column, 'like', "%$search%");
+                        }
+                    }
+                }
+
+                if (Schema::hasTable('sales')) {
+                    if ($hasPaymentSearch) {
+                        $q->orWhereHas('sale', function ($saleQuery) use ($search) {
+                            if (Schema::hasColumn('sales', 'invoice_no')) {
+                                $saleQuery->where('invoice_no', 'like', "%$search%");
+                            }
+                            if (Schema::hasColumn('sales', 'order_number')) {
+                                $saleQuery->orWhere('order_number', 'like', "%$search%");
+                            }
+                            if (Schema::hasColumn('sales', 'customer_name')) {
+                                $saleQuery->orWhere('customer_name', 'like', "%$search%");
+                            }
+                        });
+                    } else {
+                        $q->whereHas('sale', function ($saleQuery) use ($search) {
+                            if (Schema::hasColumn('sales', 'invoice_no')) {
+                                $saleQuery->where('invoice_no', 'like', "%$search%");
+                            }
+                            if (Schema::hasColumn('sales', 'order_number')) {
+                                $saleQuery->orWhere('order_number', 'like', "%$search%");
+                            }
+                            if (Schema::hasColumn('sales', 'customer_name')) {
+                                $saleQuery->orWhere('customer_name', 'like', "%$search%");
+                            }
+                        });
+                    }
+                }
+            });
+        }
+
+        if ($request->filled('from')) {
+            $query->whereDate('created_at', '>=', $request->from);
+        }
+        if ($request->filled('to')) {
+            $query->whereDate('created_at', '<=', $request->to);
+        }
+        if ($request->filled('method') && ! empty($paymentColumns['method'])) {
+            $query->where('method', $request->method);
+        }
+        if ($request->filled('status')) {
+            $status = strtolower(trim((string) $request->status));
+            $query->where(function ($q) use ($status) {
+                $hasStatusClause = false;
+
+                if (Schema::hasColumn('payments', 'status')) {
+                    $q->whereRaw("LOWER(COALESCE(status, '')) = ?", [$status]);
+                    $hasStatusClause = true;
+                }
+
+                if (Schema::hasTable('sales') && Schema::hasColumn('sales', 'payment_status')) {
+                    if ($hasStatusClause) {
+                        $q->orWhereHas('sale', function ($saleQuery) use ($status) {
+                            $saleQuery->whereRaw("LOWER(COALESCE(payment_status, '')) = ?", [$status]);
+                        });
+                    } else {
+                        $q->whereHas('sale', function ($saleQuery) use ($status) {
+                            $saleQuery->whereRaw("LOWER(COALESCE(payment_status, '')) = ?", [$status]);
+                        });
+                    }
+                }
+            });
+        }
+
+        $filteredPayments = (clone $query)->orderBy('created_at', 'desc')->get();
+        $filteredPayments->transform(function ($payment) {
+            $payment->resolved_status = $this->resolvePaymentStatus($payment);
+            $payment->resolved_channel = $this->resolvePaymentChannel($payment);
+
+            return $payment;
+        });
+
+        $collectedPayments = $filteredPayments->whereIn('resolved_status', ['Completed', 'Partial']);
+        $totalRevenue = (float) $collectedPayments->sum('amount');
         $summary = [
-            'total_transactions' => 0,
-            'completed_count' => 0,
-            'pending_count' => 0,
-            'partial_count' => 0,
-            'failed_count' => 0,
-            'completed_amount' => 0,
-            'pending_amount' => 0,
-            'partial_amount' => 0,
-            'average_payment' => 0,
-            'largest_payment' => 0,
-            'top_method' => 'N/A',
-            'top_channel' => 'N/A',
+            'total_transactions' => $filteredPayments->count(),
+            'completed_count' => $filteredPayments->where('resolved_status', 'Completed')->count(),
+            'pending_count' => $filteredPayments->where('resolved_status', 'Pending')->count(),
+            'partial_count' => $filteredPayments->where('resolved_status', 'Partial')->count(),
+            'failed_count' => $filteredPayments->whereIn('resolved_status', ['Failed', 'Cancelled'])->count(),
+            'completed_amount' => (float) $filteredPayments->where('resolved_status', 'Completed')->sum('amount'),
+            'pending_amount' => (float) $filteredPayments->where('resolved_status', 'Pending')->sum('amount'),
+            'partial_amount' => (float) $filteredPayments->where('resolved_status', 'Partial')->sum('amount'),
+            'average_payment' => $collectedPayments->count() > 0 ? ((float) $collectedPayments->sum('amount') / $collectedPayments->count()) : 0,
+            'largest_payment' => (float) ($collectedPayments->max('amount') ?? 0),
+            'top_method' => (string) ($filteredPayments->groupBy(fn ($payment) => $payment->method ?: 'Unknown')->sortByDesc->count()->keys()->first() ?? 'N/A'),
+            'top_channel' => (string) ($filteredPayments->groupBy(fn ($payment) => $payment->resolved_channel ?: 'Not specified')->sortByDesc->count()->keys()->first() ?? 'N/A'),
         ];
-        $methodOptions = collect();
+
+        $methodOptions = ! empty($paymentColumns['method'])
+            ? (clone $baseQuery)
+                ->get()
+                ->pluck('method')
+                ->filter()
+                ->unique()
+                ->sort()
+                ->values()
+            : collect();
+
         $statusOptions = collect(['Completed', 'Pending', 'Partial', 'Failed', 'Cancelled']);
+
+        $payments = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
+        $payments->getCollection()->transform(function ($payment) {
+            $payment->resolved_status = $this->resolvePaymentStatus($payment);
+            $payment->resolved_channel = $this->resolvePaymentChannel($payment);
+
+            return $payment;
+        });
 
         return view('Reports.payment-summary', compact('payments', 'totalRevenue', 'summary', 'methodOptions', 'statusOptions', 'activeBranch'));
     }
 
-    $paymentColumns = $this->paymentReportColumns();
-    $baseQuery = Payment::with($this->paymentReportRelations());
-    $this->scopePaymentsForActor($baseQuery);
-
-    $branchQuery = clone $baseQuery;
-    $this->applyPaymentBranchFilter($branchQuery, 'payments');
-    $query = (clone $branchQuery)->exists() ? $branchQuery : $baseQuery;
-
-    if ($request->filled('search')) {
-        $search = trim((string) $request->search);
-        $query->where(function($q) use ($search, $paymentColumns) {
-            $hasPaymentSearch = false;
-
-            foreach (['payment_id', 'reference', 'note', 'method', 'status'] as $column) {
-                if (!empty($paymentColumns[$column])) {
-                    if (!$hasPaymentSearch) {
-                        $q->where($column, 'like', "%$search%");
-                        $hasPaymentSearch = true;
-                    } else {
-                        $q->orWhere($column, 'like', "%$search%");
-                    }
-                }
-            }
-
-            if (Schema::hasTable('sales')) {
-                if ($hasPaymentSearch) {
-                    $q->orWhereHas('sale', function ($saleQuery) use ($search) {
-                        if (Schema::hasColumn('sales', 'invoice_no')) {
-                            $saleQuery->where('invoice_no', 'like', "%$search%");
-                        }
-                        if (Schema::hasColumn('sales', 'order_number')) {
-                            $saleQuery->orWhere('order_number', 'like', "%$search%");
-                        }
-                        if (Schema::hasColumn('sales', 'customer_name')) {
-                            $saleQuery->orWhere('customer_name', 'like', "%$search%");
-                        }
-                    });
-                } else {
-                    $q->whereHas('sale', function ($saleQuery) use ($search) {
-                        if (Schema::hasColumn('sales', 'invoice_no')) {
-                            $saleQuery->where('invoice_no', 'like', "%$search%");
-                        }
-                        if (Schema::hasColumn('sales', 'order_number')) {
-                            $saleQuery->orWhere('order_number', 'like', "%$search%");
-                        }
-                        if (Schema::hasColumn('sales', 'customer_name')) {
-                            $saleQuery->orWhere('customer_name', 'like', "%$search%");
-                        }
-                    });
-                }
-            }
-        });
-    }
-
-    if ($request->filled('from')) {
-        $query->whereDate('created_at', '>=', $request->from);
-    }
-    if ($request->filled('to')) {
-        $query->whereDate('created_at', '<=', $request->to);
-    }
-    if ($request->filled('method') && !empty($paymentColumns['method'])) {
-        $query->where('method', $request->method);
-    }
-    if ($request->filled('status')) {
-        $status = strtolower(trim((string) $request->status));
-        $query->where(function ($q) use ($status) {
-            $hasStatusClause = false;
-
-            if (Schema::hasColumn('payments', 'status')) {
-                $q->whereRaw("LOWER(COALESCE(status, '')) = ?", [$status]);
-                $hasStatusClause = true;
-            }
-
-            if (Schema::hasTable('sales') && Schema::hasColumn('sales', 'payment_status')) {
-                if ($hasStatusClause) {
-                    $q->orWhereHas('sale', function ($saleQuery) use ($status) {
-                        $saleQuery->whereRaw("LOWER(COALESCE(payment_status, '')) = ?", [$status]);
-                    });
-                } else {
-                    $q->whereHas('sale', function ($saleQuery) use ($status) {
-                        $saleQuery->whereRaw("LOWER(COALESCE(payment_status, '')) = ?", [$status]);
-                    });
-                }
-            }
-        });
-    }
-
-    $filteredPayments = (clone $query)->orderBy('created_at', 'desc')->get();
-    $filteredPayments->transform(function ($payment) {
+    public function show($id)
+    {
+        $paymentQuery = \App\Models\Payment::with($this->paymentReportRelations())->whereKey($id);
+        $this->scopePaymentsForActor($paymentQuery);
+        $this->applyPaymentBranchFilter($paymentQuery, 'payments');
+        $payment = $paymentQuery->firstOrFail();
         $payment->resolved_status = $this->resolvePaymentStatus($payment);
         $payment->resolved_channel = $this->resolvePaymentChannel($payment);
-        return $payment;
-    });
 
-    $totalRevenue = (float) $filteredPayments->sum('amount');
-    $summary = [
-        'total_transactions' => $filteredPayments->count(),
-        'completed_count' => $filteredPayments->where('resolved_status', 'Completed')->count(),
-        'pending_count' => $filteredPayments->where('resolved_status', 'Pending')->count(),
-        'partial_count' => $filteredPayments->where('resolved_status', 'Partial')->count(),
-        'failed_count' => $filteredPayments->whereIn('resolved_status', ['Failed', 'Cancelled'])->count(),
-        'completed_amount' => (float) $filteredPayments->where('resolved_status', 'Completed')->sum('amount'),
-        'pending_amount' => (float) $filteredPayments->where('resolved_status', 'Pending')->sum('amount'),
-        'partial_amount' => (float) $filteredPayments->where('resolved_status', 'Partial')->sum('amount'),
-        'average_payment' => $filteredPayments->count() > 0 ? ((float) $filteredPayments->sum('amount') / $filteredPayments->count()) : 0,
-        'largest_payment' => (float) ($filteredPayments->max('amount') ?? 0),
-        'top_method' => (string) ($filteredPayments->groupBy(fn ($payment) => $payment->method ?: 'Unknown')->sortByDesc->count()->keys()->first() ?? 'N/A'),
-        'top_channel' => (string) ($filteredPayments->groupBy(fn ($payment) => $payment->resolved_channel ?: 'Not specified')->sortByDesc->count()->keys()->first() ?? 'N/A'),
-    ];
-
-    $methodOptions = !empty($paymentColumns['method'])
-        ? (clone $baseQuery)
-            ->get()
-            ->pluck('method')
-            ->filter()
-            ->unique()
-            ->sort()
-            ->values()
-        : collect();
-
-    $statusOptions = collect(['Completed', 'Pending', 'Partial', 'Failed', 'Cancelled']);
-
-    $payments = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
-    $payments->getCollection()->transform(function ($payment) {
-        $payment->resolved_status = $this->resolvePaymentStatus($payment);
-        $payment->resolved_channel = $this->resolvePaymentChannel($payment);
-        return $payment;
-    });
-
-    return view('Reports.payment-summary', compact('payments', 'totalRevenue', 'summary', 'methodOptions', 'statusOptions', 'activeBranch'));
-}
-
-public function show($id)
-{
-    $paymentQuery = \App\Models\Payment::with($this->paymentReportRelations())->whereKey($id);
-    $this->scopePaymentsForActor($paymentQuery);
-    $this->applyPaymentBranchFilter($paymentQuery, 'payments');
-    $payment = $paymentQuery->firstOrFail();
-    $payment->resolved_status = $this->resolvePaymentStatus($payment);
-    $payment->resolved_channel = $this->resolvePaymentChannel($payment);
-    return response()->json($payment);
-}
-
-public function update(Request $request, $id)
-{
-    $request->validate([
-        'method' => 'required',
-        'amount' => 'required|numeric',
-        'status' => 'required',
-        'reference' => 'nullable|string|max:255',
-    ]);
-
-    $paymentQuery = \App\Models\Payment::query()->whereKey($id);
-    $this->scopePaymentsForActor($paymentQuery);
-    $this->applyPaymentBranchFilter($paymentQuery, 'payments');
-    $payment = $paymentQuery->firstOrFail();
-    $payment->update([
-        'method' => $request->method,
-        'amount' => $request->amount,
-        'status' => $request->status,
-        'reference' => $request->reference,
-        'note' => $request->reference,
-    ]);
-
-    return response()->json(['success' => true, 'message' => 'Payment updated!']);
-}
-
-private function resolvePaymentStatus(Payment $payment): string
-{
-    $raw = strtolower(trim((string) ($payment->status ?? '')));
-    $sale = $payment->sale;
-
-    if (in_array($raw, ['completed', 'paid', 'success', 'successful'], true)) {
-        return 'Completed';
-    }
-    if (in_array($raw, ['pending', 'deposit'], true)) {
-        return 'Pending';
-    }
-    if (in_array($raw, ['partial', 'partially paid'], true)) {
-        return 'Partial';
-    }
-    if (in_array($raw, ['cancelled', 'canceled'], true)) {
-        return 'Cancelled';
-    }
-    if (in_array($raw, ['failed', 'error'], true)) {
-        return 'Failed';
+        return response()->json($payment);
     }
 
-    if ($sale) {
-        $salePaymentStatus = strtolower(trim((string) ($sale->payment_status ?? '')));
-        $saleBalance = (float) ($sale->balance ?? 0);
-        $saleTotal = (float) ($sale->total ?? 0);
-        $salePaid = (float) ($sale->paid ?? ($sale->amount_paid ?? 0));
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'method' => 'required',
+            'amount' => 'required|numeric',
+            'status' => 'required',
+            'reference' => 'nullable|string|max:255',
+        ]);
 
-        if (in_array($salePaymentStatus, ['paid', 'completed', 'success', 'successful'], true) || $saleBalance <= 0 || ($saleTotal > 0 && $salePaid >= $saleTotal)) {
+        $paymentQuery = \App\Models\Payment::query()->whereKey($id);
+        $this->scopePaymentsForActor($paymentQuery);
+        $this->applyPaymentBranchFilter($paymentQuery, 'payments');
+        $payment = $paymentQuery->firstOrFail();
+        $payment->update([
+            'method' => $request->method,
+            'amount' => $request->amount,
+            'status' => $request->status,
+            'reference' => $request->reference,
+            'note' => $request->reference,
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Payment updated!']);
+    }
+
+    private function resolvePaymentStatus(Payment $payment): string
+    {
+        $raw = strtolower(trim((string) ($payment->status ?? '')));
+        $sale = $payment->sale;
+
+        if (in_array($raw, ['completed', 'paid', 'success', 'successful'], true)) {
             return 'Completed';
         }
-
-        if (in_array($salePaymentStatus, ['partial', 'partially paid'], true) || ($salePaid > 0 && $saleBalance > 0)) {
+        if (in_array($raw, ['pending', 'deposit'], true)) {
+            return 'Pending';
+        }
+        if (in_array($raw, ['partial', 'partially paid'], true)) {
             return 'Partial';
         }
-    }
-
-    return 'Pending';
-}
-
-private function resolvePaymentChannel(Payment $payment): string
-{
-    if (!empty(optional($payment->account)->name)) {
-        return (string) optional($payment->account)->name;
-    }
-
-    $details = optional($payment->sale)->payment_details;
-    if (is_string($details)) {
-        $decoded = json_decode($details, true);
-        $details = is_array($decoded) ? $decoded : [];
-    }
-
-    if (is_array($details)) {
-        $directChannel = trim((string) ($details['payment_account_name'] ?? ''));
-        if ($directChannel !== '') {
-            return $directChannel;
+        if (in_array($raw, ['cancelled', 'canceled'], true)) {
+            return 'Cancelled';
+        }
+        if (in_array($raw, ['failed', 'error'], true)) {
+            return 'Failed';
         }
 
-        $splitParts = [];
-        $cardChannel = trim((string) ($details['card_account_name'] ?? ''));
-        $transferChannel = trim((string) ($details['transfer_account_name'] ?? ''));
+        if ($sale) {
+            $salePaymentStatus = strtolower(trim((string) ($sale->payment_status ?? '')));
+            $saleBalance = (float) ($sale->balance ?? 0);
+            $saleTotal = (float) ($sale->total ?? 0);
+            $salePaid = (float) ($sale->paid ?? ($sale->amount_paid ?? 0));
 
-        if ($cardChannel !== '') {
-            $splitParts[] = 'Card: ' . $cardChannel;
+            if (in_array($salePaymentStatus, ['paid', 'completed', 'success', 'successful'], true) || $saleBalance <= 0 || ($saleTotal > 0 && $salePaid >= $saleTotal)) {
+                return 'Completed';
+            }
+
+            if (in_array($salePaymentStatus, ['partial', 'partially paid'], true) || ($salePaid > 0 && $saleBalance > 0)) {
+                return 'Partial';
+            }
         }
-        if ($transferChannel !== '') {
-            $splitParts[] = 'Transfer: ' . $transferChannel;
+
+        return 'Pending';
+    }
+
+    private function resolvePaymentChannel(Payment $payment): string
+    {
+        if (! empty(optional($payment->account)->name)) {
+            return (string) optional($payment->account)->name;
         }
 
-        if ($splitParts !== []) {
-            return implode(' | ', $splitParts);
+        $details = optional($payment->sale)->payment_details;
+        if (is_string($details)) {
+            $decoded = json_decode($details, true);
+            $details = is_array($decoded) ? $decoded : [];
         }
+
+        if (is_array($details)) {
+            $directChannel = trim((string) ($details['payment_account_name'] ?? ''));
+            if ($directChannel !== '') {
+                return $directChannel;
+            }
+
+            $splitParts = [];
+            $cardChannel = trim((string) ($details['card_account_name'] ?? ''));
+            $transferChannel = trim((string) ($details['transfer_account_name'] ?? ''));
+
+            if ($cardChannel !== '') {
+                $splitParts[] = 'Card: '.$cardChannel;
+            }
+            if ($transferChannel !== '') {
+                $splitParts[] = 'Transfer: '.$transferChannel;
+            }
+
+            if ($splitParts !== []) {
+                return implode(' | ', $splitParts);
+            }
+        }
+
+        return 'Not specified';
     }
 
-    return 'Not specified';
-}
+    private function paymentReportColumns(): array
+    {
+        if (! Schema::hasTable('payments')) {
+            return [];
+        }
 
-private function paymentReportColumns(): array
-{
-    if (!Schema::hasTable('payments')) {
-        return [];
+        return [
+            'payment_id' => Schema::hasColumn('payments', 'payment_id'),
+            'reference' => Schema::hasColumn('payments', 'reference'),
+            'note' => Schema::hasColumn('payments', 'note'),
+            'method' => Schema::hasColumn('payments', 'method'),
+            'status' => Schema::hasColumn('payments', 'status'),
+            'payment_account_id' => Schema::hasColumn('payments', 'payment_account_id')
+                || Schema::hasColumn('payments', 'account_id'),
+        ];
     }
 
-    return [
-        'payment_id' => Schema::hasColumn('payments', 'payment_id'),
-        'reference' => Schema::hasColumn('payments', 'reference'),
-        'note' => Schema::hasColumn('payments', 'note'),
-        'method' => Schema::hasColumn('payments', 'method'),
-        'status' => Schema::hasColumn('payments', 'status'),
-        'payment_account_id' => Schema::hasColumn('payments', 'payment_account_id')
-            || Schema::hasColumn('payments', 'account_id'),
-    ];
-}
+    private function paymentReportRelations(): array
+    {
+        $relations = ['creator'];
 
-private function paymentReportRelations(): array
-{
-    $relations = ['creator'];
+        if (Schema::hasTable('sales')) {
+            $relations[] = 'sale.customer';
+        }
 
-    if (Schema::hasTable('sales')) {
-        $relations[] = 'sale.customer';
+        if (
+            Schema::hasTable('accounts')
+            && (Schema::hasColumn('payments', 'payment_account_id') || Schema::hasColumn('payments', 'account_id'))
+        ) {
+            $relations[] = 'account';
+        }
+
+        return $relations;
     }
-
-    if (
-        Schema::hasTable('accounts')
-        && (Schema::hasColumn('payments', 'payment_account_id') || Schema::hasColumn('payments', 'account_id'))
-    ) {
-        $relations[] = 'account';
-    }
-
-    return $relations;
-}
 
     private function scopePaymentsForActor($query): void
     {
         $user = Auth::user();
-        if (!$user) {
+        if (! $user) {
             return;
         }
 
         if (
             $user->company_id
-            && !Schema::hasColumn('payments', 'company_id')
+            && ! Schema::hasColumn('payments', 'company_id')
         ) {
             $query->where(function ($sub) use ($user) {
                 if (Schema::hasTable('sales') && Schema::hasColumn('payments', 'sale_id') && Schema::hasColumn('sales', 'company_id')) {
@@ -1989,6 +2090,7 @@ private function paymentReportRelations(): array
                     });
                 }
             });
+
             return;
         }
 
@@ -1997,7 +2099,7 @@ private function paymentReportRelations(): array
 
     public function accountsReceivable(Request $request)
     {
-        if (!Schema::hasTable('sales') || !Schema::hasColumn('sales', 'customer_id')) {
+        if (! Schema::hasTable('sales') || ! Schema::hasColumn('sales', 'customer_id')) {
             return view('Reports.Reports.accounts-receivable', [
                 'receivables' => collect(),
                 'totalDue' => 0,
@@ -2048,7 +2150,7 @@ private function paymentReportRelations(): array
 
         $openingReferenceMap = [];
         foreach ($openingCustomers as $customer) {
-            $openingReferenceMap[$customer->id] = 'OPENING-BAL-' . $customer->id;
+            $openingReferenceMap[$customer->id] = 'OPENING-BAL-'.$customer->id;
         }
 
         $openingSales = Sale::query()
@@ -2061,12 +2163,12 @@ private function paymentReportRelations(): array
         // ── Compute actual balance from payments table (so AR matches the statement) ──
         $arCustomerIds = $salesSummary->pluck('customer_id')->filter()->unique()->all();
         $actualPaidPerCustomer = [];
-        if (Schema::hasTable('payments') && !empty($arCustomerIds)) {
+        if (Schema::hasTable('payments') && ! empty($arCustomerIds)) {
             $arSaleIdMap = Sale::query()
                 ->whereIn('customer_id', $arCustomerIds)
                 ->where(function ($q) {
                     $q->whereNull('invoice_no')
-                      ->orWhere('invoice_no', 'not like', 'OPENING-BAL-%');
+                        ->orWhere('invoice_no', 'not like', 'OPENING-BAL-%');
                 })
                 ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'))
                 ->tap(fn ($q) => $this->applySaleBranchFilter($q, 'sales'))
@@ -2075,7 +2177,7 @@ private function paymentReportRelations(): array
                 ->pluck('customer_id', 'id') // [sale_id => customer_id]
                 ->all();
 
-            if (!empty($arSaleIdMap)) {
+            if (! empty($arSaleIdMap)) {
                 $ignoredStatuses = $this->ignoredAppliedPaymentStatuses();
                 $pQuery = DB::table('payments')
                     ->whereIn('sale_id', array_keys($arSaleIdMap))
@@ -2098,9 +2200,9 @@ private function paymentReportRelations(): array
 
         $receivableMap = [];
         foreach ($salesSummary as $row) {
-            $customer  = $customerMap->get($row->customer_id);
+            $customer = $customerMap->get($row->customer_id);
             $openingSale = $openingSales->get($row->customer_id);
-            $openingBal  = $openingSale ? (float) ($openingSale->balance ?? 0) : (float) (optional($customer)->balance ?? 0);
+            $openingBal = $openingSale ? (float) ($openingSale->balance ?? 0) : (float) (optional($customer)->balance ?? 0);
 
             // Use max(stored amount_paid, actual payments-table total) so untracked payments
             // are never under-counted and the balance matches the customer statement.
@@ -2116,22 +2218,22 @@ private function paymentReportRelations(): array
             }
 
             $receivableMap[$row->customer_id] = [
-                'customer_id'    => $row->customer_id,
-                'customer_name'  => optional($customer)->customer_name ?? optional($customer)->name ?? 'Walk-in Customer',
-                'email'          => optional($customer)->email,
-                'phone'          => optional($customer)->phone,
+                'customer_id' => $row->customer_id,
+                'customer_name' => optional($customer)->customer_name ?? optional($customer)->name ?? 'Walk-in Customer',
+                'email' => optional($customer)->email,
+                'phone' => optional($customer)->phone,
                 'total_invoiced' => (float) $row->total_invoiced,
-                'total_paid'     => $actualPaid,
-                'total_due'      => $totalDue,
-                'invoice_count'  => (int) $row->invoice_count,
-                'opening_balance'=> $openingBal,
-                'sort_at'        => $row->first_activity_at ?: optional($customer)->created_at,
-                'sort_id'        => (int) (optional($customer)->id ?? $row->customer_id ?? 0),
+                'total_paid' => $actualPaid,
+                'total_due' => $totalDue,
+                'invoice_count' => (int) $row->invoice_count,
+                'opening_balance' => $openingBal,
+                'sort_at' => $row->first_activity_at ?: optional($customer)->created_at,
+                'sort_id' => (int) (optional($customer)->id ?? $row->customer_id ?? 0),
             ];
         }
 
         foreach ($openingCustomers as $customer) {
-            if (!isset($receivableMap[$customer->id])) {
+            if (! isset($receivableMap[$customer->id])) {
                 $openingSaleForThis = $openingSales->get($customer->id);
                 $openingBal = $openingSaleForThis
                     ? (float) ($openingSaleForThis->balance ?? 0)
@@ -2158,10 +2260,10 @@ private function paymentReportRelations(): array
                 $sortId = (int) ($row['sort_id'] ?? 0);
 
                 return ($sortAt ? Carbon::parse($sortAt)->format('Y-m-d H:i:s.u') : '9999-12-31 23:59:59.999999')
-                    . '|'
-                    . str_pad((string) $sortId, 12, '0', STR_PAD_LEFT)
-                    . '|'
-                    . ($row['customer_name'] ?? '');
+                    .'|'
+                    .str_pad((string) $sortId, 12, '0', STR_PAD_LEFT)
+                    .'|'
+                    .($row['customer_name'] ?? '');
             })
             ->map(fn ($row) => (object) $row)
             ->values();
@@ -2211,7 +2313,7 @@ private function paymentReportRelations(): array
 
         $sales = $salesQuery->orderBy('created_at')->orderBy('id')->get();
         $salesIds = $sales->pluck('id')->all();
-        $openingReference = 'OPENING-BAL-' . $customer->id;
+        $openingReference = 'OPENING-BAL-'.$customer->id;
         $openingSale = $sales->first(function ($sale) use ($openingReference) {
             return (string) ($sale->invoice_no ?? '') === $openingReference;
         });
@@ -2220,7 +2322,7 @@ private function paymentReportRelations(): array
         })->values();
 
         $payments = collect();
-        if (Schema::hasTable('payments') && !empty($salesIds)) {
+        if (Schema::hasTable('payments') && ! empty($salesIds)) {
             $paymentQuery = Payment::query()->whereIn('sale_id', $salesIds);
             $this->applyTenantScope($paymentQuery, 'payments');
             $this->applyPaymentBranchFilter($paymentQuery, 'payments');
@@ -2230,7 +2332,8 @@ private function paymentReportRelations(): array
         $ignoredStatuses = $this->ignoredAppliedPaymentStatuses();
         $payments = $payments->filter(function ($payment) use ($ignoredStatuses) {
             $status = strtolower(trim((string) ($payment->status ?? '')));
-            return !in_array($status, $ignoredStatuses, true);
+
+            return ! in_array($status, $ignoredStatuses, true);
         })->values();
 
         $openingPayments = $openingSale
@@ -2278,7 +2381,7 @@ private function paymentReportRelations(): array
                     'sort_id' => (int) ($payment->id ?? 0),
                     'sort_type' => 2,
                     'visible' => true,
-                    'reference' => $payment->payment_id ?: ('PAY-' . $payment->id),
+                    'reference' => $payment->payment_id ?: ('PAY-'.$payment->id),
                     'type' => 'Payment',
                     'description' => $payment->note
                         ?: (($openingSale && (int) $payment->sale_id === (int) $openingSale->id)
@@ -2304,7 +2407,7 @@ private function paymentReportRelations(): array
                 'sort_id' => (int) ($sale->id ?? 0),
                 'sort_type' => 1,
                 'visible' => true,
-                'reference' => $sale->invoice_no ?: ('SALE-' . $sale->id),
+                'reference' => $sale->invoice_no ?: ('SALE-'.$sale->id),
                 'type' => 'Invoice',
                 'description' => 'Invoice issued',
                 'debit' => (float) ($financials['total'] ?? 0),
@@ -2313,7 +2416,7 @@ private function paymentReportRelations(): array
 
             $salePayments
                 ->values()
-                ->each(function ($payment) use (&$entries, $sale) {
+                ->each(function ($payment) use (&$entries) {
                     $paymentEventAt = $payment->created_at ?: now();
 
                     $entries->push([
@@ -2322,7 +2425,7 @@ private function paymentReportRelations(): array
                         'sort_id' => (int) ($payment->id ?? 0),
                         'sort_type' => 2,
                         'visible' => true,
-                        'reference' => $payment->payment_id ?: ('PAY-' . $payment->id),
+                        'reference' => $payment->payment_id ?: ('PAY-'.$payment->id),
                         'type' => 'Payment',
                         'description' => $payment->note ?: 'Customer payment received.',
                         'debit' => 0.0,
@@ -2338,7 +2441,7 @@ private function paymentReportRelations(): array
                     'sort_id' => (int) ($sale->id ?? 0),
                     'sort_type' => 2,
                     'visible' => true,
-                    'reference' => ($sale->invoice_no ?: ('SALE-' . $sale->id)) . '-APPLIED',
+                    'reference' => ($sale->invoice_no ?: ('SALE-'.$sale->id)).'-APPLIED',
                     'type' => 'Payment',
                     'description' => 'Applied payment recorded on invoice',
                     'debit' => 0.0,
@@ -2357,12 +2460,12 @@ private function paymentReportRelations(): array
                 // Primary: chronological date; Secondary: type (invoice before payment same day);
                 // Tertiary: ID; Quaternary: reference
                 return Carbon::parse($sortAt)->format('Y-m-d H:i:s.u')
-                    . '|'
-                    . $sortType
-                    . '|'
-                    . str_pad((string) $sortId, 12, '0', STR_PAD_LEFT)
-                    . '|'
-                    . $entry['reference'];
+                    .'|'
+                    .$sortType
+                    .'|'
+                    .str_pad((string) $sortId, 12, '0', STR_PAD_LEFT)
+                    .'|'
+                    .$entry['reference'];
             })
             ->values();
 
@@ -2384,21 +2487,24 @@ private function paymentReportRelations(): array
                 if ($endDate && $entryDate->gt(\Carbon\Carbon::parse($endDate)->endOfDay())) {
                     return false;
                 }
+
                 return true;
             })->values();
         }
 
         $runningBalance = 0.0;
         $entries = $entries->map(function ($entry) use (&$runningBalance) {
-                $runningBalance += (float) $entry['debit'] - (float) $entry['credit'];
-                $entry['balance'] = $runningBalance;
-                $entry['entry_at'] = $entry['sort_at'] ?? $entry['date'];
-                unset($entry['sort_at'], $entry['sort_rank'], $entry['sort_sequence'], $entry['sort_id']);
-                return $entry;
-            });
+            $runningBalance += (float) $entry['debit'] - (float) $entry['credit'];
+            $entry['balance'] = $runningBalance;
+            $entry['entry_at'] = $entry['sort_at'] ?? $entry['date'];
+            unset($entry['sort_at'], $entry['sort_rank'], $entry['sort_sequence'], $entry['sort_id']);
+
+            return $entry;
+        });
         $totalInvoiced = (float) $entries->sum(fn ($entry) => (float) ($entry['debit'] ?? 0));
         $totalPaid = (float) $entries->sum(fn ($entry) => (float) ($entry['credit'] ?? 0));
         $balanceDue = (float) round($totalInvoiced - $totalPaid, 2);
+
         return view('Reports.Reports.customer-statement', [
             'customer' => $customer,
             'entries' => $entries,
@@ -2439,126 +2545,93 @@ private function paymentReportRelations(): array
         return $created ?: ($updated ?: ($business ?: now()));
     }
 
-
-public function bulkUpdate(Request $request)
-{
-    // 1. Validate the incoming request
-    $request->validate([
-        'ids' => 'required|array',
-        'status' => 'required|string'
-    ]);
-
-    $ids = $request->ids;
-    $status = $request->status;
-
-    try {
-        // 2. Check if the action is a permanent deletion
-        if ($status === 'DELETE_ACTION') {
-            $deleteQuery = \App\Models\Payment::query()->whereIn('id', $ids);
-            $this->scopePaymentsForActor($deleteQuery);
-            $this->applyPaymentBranchFilter($deleteQuery, 'payments');
-            $deleteQuery->delete();
-            return response()->json([
-                'success' => true, 
-                'message' => count($ids) . ' records deleted permanently.'
-            ]);
-        }
-
-        // 3. Otherwise, perform a standard status update
-        $updateQuery = \App\Models\Payment::query()->whereIn('id', $ids);
-        $this->scopePaymentsForActor($updateQuery);
-        $this->applyPaymentBranchFilter($updateQuery, 'payments');
-        $updateQuery->update([
-            'status' => $status
+    public function bulkUpdate(Request $request)
+    {
+        // 1. Validate the incoming request
+        $request->validate([
+            'ids' => 'required|array',
+            'status' => 'required|string',
         ]);
 
-        return response()->json([
-            'success' => true, 
-            'message' => 'Status updated to ' . $status . ' for ' . count($ids) . ' records.'
-        ]);
+        $ids = $request->ids;
+        $status = $request->status;
 
-    } catch (\Exception $e) {
-        // Handle database errors (like foreign key constraints)
-        return response()->json([
-            'success' => false, 
-            'message' => 'Error: ' . $e->getMessage()
-        ], 500);
-    }
-}
+        try {
+            // 2. Check if the action is a permanent deletion
+            if ($status === 'DELETE_ACTION') {
+                $deleteQuery = \App\Models\Payment::query()->whereIn('id', $ids);
+                $this->scopePaymentsForActor($deleteQuery);
+                $this->applyPaymentBranchFilter($deleteQuery, 'payments');
+                $deleteQuery->delete();
 
-public function destroy($id)
-{
-    $paymentQuery = \App\Models\Payment::query()->whereKey($id);
-    $this->scopePaymentsForActor($paymentQuery);
-    $this->applyPaymentBranchFilter($paymentQuery, 'payments');
-    $payment = $paymentQuery->firstOrFail();
-    $payment->delete();
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Payment deleted successfully.',
-    ]);
-}
-
-
-        /** 5. Purchase Report **/
-        public function purchase_return(Request $request)
-        {
-            $query = $this->scopedTable('purchase_transactions')
-                ->leftJoin('companies', 'purchase_transactions.company_id', '=', 'companies.id')
-                ->where('purchase_transactions.transaction_type', 'purchase')
-                ->select([
-                    'purchase_transactions.id as Id',
-                    'purchase_transactions.reference as Reference',
-                    'companies.name as CompanyName',
-                    'purchase_transactions.amount as Amount',
-                    'purchase_transactions.transaction_type as Type',
-                    'purchase_transactions.date as Date'
+                return response()->json([
+                    'success' => true,
+                    'message' => count($ids).' records deleted permanently.',
                 ]);
+            }
 
-            $purchases = $this->process_report($query, $request, 'purchase_transactions.date', ['purchase_transactions.reference', 'companies.name']);
-            return $this->renderReportView('purchase-return', compact('purchases'));
+            // 3. Otherwise, perform a standard status update
+            $updateQuery = \App\Models\Payment::query()->whereIn('id', $ids);
+            $this->scopePaymentsForActor($updateQuery);
+            $this->applyPaymentBranchFilter($updateQuery, 'payments');
+            $updateQuery->update([
+                'status' => $status,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status updated to '.$status.' for '.count($ids).' records.',
+            ]);
+
+        } catch (\Exception $e) {
+            // Handle database errors (like foreign key constraints)
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: '.$e->getMessage(),
+            ], 500);
         }
+    }
+
+    public function destroy($id)
+    {
+        $paymentQuery = \App\Models\Payment::query()->whereKey($id);
+        $this->scopePaymentsForActor($paymentQuery);
+        $this->applyPaymentBranchFilter($paymentQuery, 'payments');
+        $payment = $paymentQuery->firstOrFail();
+        $payment->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment deleted successfully.',
+        ]);
+    }
+
+    /** 5. Purchase Report **/
+    public function purchase_return(Request $request)
+    {
+        $query = $this->scopedTable('purchase_transactions')
+            ->leftJoin('companies', 'purchase_transactions.company_id', '=', 'companies.id')
+            ->where('purchase_transactions.transaction_type', 'purchase')
+            ->select([
+                'purchase_transactions.id as Id',
+                'purchase_transactions.reference as Reference',
+                'companies.name as CompanyName',
+                'purchase_transactions.amount as Amount',
+                'purchase_transactions.transaction_type as Type',
+                'purchase_transactions.date as Date',
+            ]);
+
+        $purchases = $this->process_report($query, $request, 'purchase_transactions.date', ['purchase_transactions.reference', 'companies.name']);
+
+        return $this->renderReportView('purchase-return', compact('purchases'));
+    }
 
     public function quotation_report(Request $request)
     {
-        // Using the full namespace prevents "Class not found" errors
         $query = \App\Models\Quotation::with('customer');
-        $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
-        $userId = (int) (Auth::id() ?? 0);
-        $activeBranch = $this->getActiveBranchContext();
-
-        if ($companyId > 0 && Schema::hasColumn('quotations', 'company_id')) {
-            $query->where('company_id', $companyId)
-                ->orWhere(function ($sub) use ($userId) {
-                    $sub->whereNull('company_id')
-                        ->where('user_id', $userId);
-                });
-        } elseif ($companyId > 0 && Schema::hasTable('customers')) {
-            $query->whereHas('customer', function ($sub) use ($companyId) {
-                if (Schema::hasColumn('customers', 'company_id')) {
-                    $sub->where('company_id', $companyId);
-                }
-            });
-        }
-
-        if (!empty($activeBranch['id']) || !empty($activeBranch['name'])) {
-            $query->where(function ($sub) use ($activeBranch) {
-                if (!empty($activeBranch['id']) && Schema::hasColumn('quotations', 'branch_id')) {
-                    $sub->where('branch_id', $activeBranch['id']);
-                }
-                if (!empty($activeBranch['name']) && Schema::hasColumn('quotations', 'branch_name')) {
-                    $sub->orWhere('branch_name', $activeBranch['name']);
-                }
-            })->orWhereHas('customer', function ($sub) use ($activeBranch) {
-                if (!empty($activeBranch['id']) && Schema::hasColumn('customers', 'branch_id')) {
-                    $sub->where('branch_id', $activeBranch['id']);
-                }
-                if (!empty($activeBranch['name']) && Schema::hasColumn('customers', 'branch_name')) {
-                    $sub->orWhere('branch_name', $activeBranch['name']);
-                }
-            });
-        }
+        $this->applyTenantScope($query, 'quotations');
+        $this->applyGenericBranchFilter($query, 'quotations');
+        $this->applyReportableDocumentScope($query, 'quotations');
 
         if ($request->filled('from_date')) {
             $query->whereDate('created_at', '>=', $request->from_date);
@@ -2573,94 +2646,95 @@ public function destroy($id)
         return view('Reports.Reports.quotation-report', compact('quotationreports'));
     }
 
-        /** 7. Sales Report **/
-        public function sales_report(Request $request)
-        {
-            $activeBranch = $this->getActiveBranchContext();
-            $baseStockExpression = Schema::hasColumn('products', 'stock')
-                ? 'COALESCE(products.stock, 0)'
-                : (Schema::hasColumn('products', 'stock_quantity') ? 'COALESCE(products.stock_quantity, 0)' : '0');
-            $saleQtyExpression = InventoryQuantity::saleStockUnitsExpression('sale_items', 'products');
-            $saleRawQtyExpression = InventoryQuantity::saleItemQuantityColumn('sale_items');
-            $saleLineTotalExpression = Schema::hasColumn('sale_items', 'total_price')
-                ? 'COALESCE(sale_items.total_price, 0)'
-                : (Schema::hasColumn('sale_items', 'subtotal')
-                    ? 'COALESCE(sale_items.subtotal, 0)'
-                    : '(' . $saleRawQtyExpression . ' * COALESCE(sale_items.unit_price, 0))');
-            $branchId = trim((string) ($activeBranch['id'] ?? ''));
-            $branchName = trim((string) ($activeBranch['name'] ?? ''));
-            $hasBranchStocks = Schema::hasTable('product_branch_stocks');
-            $hasBranchId = $hasBranchStocks && Schema::hasColumn('product_branch_stocks', 'branch_id');
-            $hasBranchName = $hasBranchStocks && Schema::hasColumn('product_branch_stocks', 'branch_name');
-            $stockExpression = ($hasBranchStocks && ($branchId !== '' || $branchName !== ''))
-                ? "COALESCE(product_branch_stocks.quantity, {$baseStockExpression}, 0)"
-                : $baseStockExpression;
+    /** 7. Sales Report **/
+    public function sales_report(Request $request)
+    {
+        $activeBranch = $this->getActiveBranchContext();
+        $baseStockExpression = Schema::hasColumn('products', 'stock')
+            ? 'COALESCE(products.stock, 0)'
+            : (Schema::hasColumn('products', 'stock_quantity') ? 'COALESCE(products.stock_quantity, 0)' : '0');
+        $saleQtyExpression = InventoryQuantity::saleStockUnitsExpression('sale_items', 'products');
+        $saleRawQtyExpression = InventoryQuantity::saleItemQuantityColumn('sale_items');
+        $saleLineTotalExpression = Schema::hasColumn('sale_items', 'total_price')
+            ? 'COALESCE(sale_items.total_price, 0)'
+            : (Schema::hasColumn('sale_items', 'subtotal')
+                ? 'COALESCE(sale_items.subtotal, 0)'
+                : '('.$saleRawQtyExpression.' * COALESCE(sale_items.unit_price, 0))');
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+        $hasBranchStocks = Schema::hasTable('product_branch_stocks');
+        $hasBranchId = $hasBranchStocks && Schema::hasColumn('product_branch_stocks', 'branch_id');
+        $hasBranchName = $hasBranchStocks && Schema::hasColumn('product_branch_stocks', 'branch_name');
+        $stockExpression = ($hasBranchStocks && ($branchId !== '' || $branchName !== ''))
+            ? "COALESCE(product_branch_stocks.quantity, {$baseStockExpression}, 0)"
+            : $baseStockExpression;
 
-            $query = \App\Models\Product::query()
-                ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
-                ->when($hasBranchStocks && ($branchId !== '' || $branchName !== ''), function ($query) use ($branchId, $branchName, $hasBranchId, $hasBranchName) {
-                    $query->leftJoin('product_branch_stocks', function ($join) use ($branchId, $branchName, $hasBranchId, $hasBranchName) {
-                        $join->on('product_branch_stocks.product_id', '=', 'products.id');
+        $query = \App\Models\Product::query()
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+            ->when($hasBranchStocks && ($branchId !== '' || $branchName !== ''), function ($query) use ($branchId, $branchName, $hasBranchId, $hasBranchName) {
+                $query->leftJoin('product_branch_stocks', function ($join) use ($branchId, $branchName, $hasBranchId, $hasBranchName) {
+                    $join->on('product_branch_stocks.product_id', '=', 'products.id');
 
-                        if ($branchId !== '' && $hasBranchId) {
-                            $join->where('product_branch_stocks.branch_id', '=', $branchId);
-                        } elseif ($branchName !== '' && $hasBranchName) {
-                            $join->where('product_branch_stocks.branch_name', '=', $branchName);
-                        }
-                    });
-                })
-                ->leftJoin('sale_items', 'products.id', '=', 'sale_items.product_id')
-                ->leftJoin('sales', 'sale_items.sale_id', '=', 'sales.id')
-                ->selectRaw('
+                    if ($branchId !== '' && $hasBranchId) {
+                        $join->where('product_branch_stocks.branch_id', '=', $branchId);
+                    } elseif ($branchName !== '' && $hasBranchName) {
+                        $join->where('product_branch_stocks.branch_name', '=', $branchName);
+                    }
+                });
+            })
+            ->leftJoin('sale_items', 'products.id', '=', 'sale_items.product_id')
+            ->leftJoin('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->selectRaw('
                     products.id as Id,
                     products.name as Product,
                     products.sku as SKU,
                     COALESCE(categories.name, "Uncategorized") as Category,
-                    COALESCE(SUM(' . $saleLineTotalExpression . '), 0) as SoldAmount,
-                    COALESCE(SUM(' . $saleQtyExpression . '), 0) as SoldQty,
-                    ' . $stockExpression . ' as InstockQty,
+                    COALESCE(SUM('.$saleLineTotalExpression.'), 0) as SoldAmount,
+                    COALESCE(SUM('.$saleQtyExpression.'), 0) as SoldQty,
+                    '.$stockExpression.' as InstockQty,
                     MAX(sales.created_at) as DueDate
                 ')
-                ->groupBy('products.id', 'products.name', 'products.sku', 'categories.name', DB::raw($stockExpression));
-            $this->applyTenantScope($query, 'products');
-            $this->applySalesScope($query, 'sales');
+            ->groupBy('products.id', 'products.name', 'products.sku', 'categories.name', DB::raw($stockExpression));
+        $this->applyTenantScope($query, 'products');
+        $this->applySalesScope($query, 'sales');
+        $this->applyReportableDocumentScope($query, 'sales');
 
-            if ($request->filled('search')) {
-                $search = trim((string) $request->search);
-                $query->where(function ($builder) use ($search) {
-                    $builder->where('products.name', 'like', "%{$search}%")
-                        ->orWhere('products.sku', 'like', "%{$search}%")
-                        ->orWhere('categories.name', 'like', "%{$search}%");
-                });
-            }
-
-            $startDate = $request->input('start_date') ?: $request->input('from_date');
-            $endDate = $request->input('end_date') ?: $request->input('to_date');
-
-            if ($startDate) {
-                $query->where(function ($builder) use ($startDate) {
-                    $builder->whereNull('sales.created_at')
-                        ->orWhereDate('sales.created_at', '>=', $startDate);
-                });
-            }
-
-            if ($endDate) {
-                $query->where(function ($builder) use ($endDate) {
-                    $builder->whereNull('sales.created_at')
-                        ->orWhereDate('sales.created_at', '<=', $endDate);
-                });
-            }
-
-            $salesreports = $query
-                ->orderBy('DueDate', 'asc')
-                ->orderBy('products.name')
-                ->paginate(15)
-                ->withQueryString();
-
-            return $this->renderReportView('sales-report', compact('salesreports', 'activeBranch'));
+        if ($request->filled('search')) {
+            $search = trim((string) $request->search);
+            $query->where(function ($builder) use ($search) {
+                $builder->where('products.name', 'like', "%{$search}%")
+                    ->orWhere('products.sku', 'like', "%{$search}%")
+                    ->orWhere('categories.name', 'like', "%{$search}%");
+            });
         }
 
-        /** 8. Sales Return Report **/
+        $startDate = $request->input('start_date') ?: $request->input('from_date');
+        $endDate = $request->input('end_date') ?: $request->input('to_date');
+
+        if ($startDate) {
+            $query->where(function ($builder) use ($startDate) {
+                $builder->whereNull('sales.created_at')
+                    ->orWhereDate('sales.created_at', '>=', $startDate);
+            });
+        }
+
+        if ($endDate) {
+            $query->where(function ($builder) use ($endDate) {
+                $builder->whereNull('sales.created_at')
+                    ->orWhereDate('sales.created_at', '<=', $endDate);
+            });
+        }
+
+        $salesreports = $query
+            ->orderBy('DueDate', 'asc')
+            ->orderBy('products.name')
+            ->paginate(15)
+            ->withQueryString();
+
+        return $this->renderReportView('sales-report', compact('salesreports', 'activeBranch'));
+    }
+
+    /** 8. Sales Return Report **/
     public function sales_return_report(Request $request)
     {
         // Join products to get meaningful report data
@@ -2676,17 +2750,18 @@ public function destroy($id)
                 'products.image as Image',
                 'categories.name as Category',
                 'sales.total as SoldAmount',
-                DB::raw(InventoryQuantity::saleStockUnitsExpression('sale_items', 'products') . ' as SoldQty'),
+                DB::raw(InventoryQuantity::saleStockUnitsExpression('sale_items', 'products').' as SoldQty'),
                 'products.stock as InstockQty',
-                'sales.created_at as DueDate'
+                'sales.created_at as DueDate',
             ]);
         $this->applyTenantScope($query, 'products');
         $this->applySalesScope($query, 'sales');
+        $this->applyReportableDocumentScope($query, 'sales');
 
         // Use your helper function for date filtering and search
         // We add withQueryString() to keep filters alive during pagination
         $salesreturnreports = $this->process_report($query, $request, 'sales.created_at', ['products.name', 'products.sku'])
-                                ->withQueryString();
+            ->withQueryString();
 
         // Calculate Total Refunded Amount specifically for the filtered results
         $totalRefunded = (clone $query)->sum('sales.total');
@@ -2765,13 +2840,13 @@ public function destroy($id)
                 'products.sku',
                 DB::raw($baseUnitColumn ? "NULLIF(products.{$baseUnitColumn}, '') as base_unit_name" : "'' as base_unit_name"),
                 DB::raw($unitTypeColumn ? "NULLIF(products.{$unitTypeColumn}, '') as unit_type" : "'' as unit_type"),
-                DB::raw($unitsPerCartonColumn ? "COALESCE(products.{$unitsPerCartonColumn}, 0) as units_per_carton" : "0 as units_per_carton"),
+                DB::raw($unitsPerCartonColumn ? "COALESCE(products.{$unitsPerCartonColumn}, 0) as units_per_carton" : '0 as units_per_carton'),
                 DB::raw("COALESCE({$purchaseExpr}, 0) as purchase_price"),
                 DB::raw("COALESCE({$salesExpr}, 0) as sales_price"),
                 DB::raw("COALESCE({$reorderExpr}, 0) as reorder_level"),
             ])
             ->tap(fn ($q) => $applyTenantScope($q, 'products'))
-            ->when(!empty($productId), fn ($q) => $q->where('products.id', $productId));
+            ->when(! empty($productId), fn ($q) => $q->where('products.id', $productId));
 
         if ($hasBranchStocks && ($branchId !== '' || $branchName !== '')) {
             $productsQuery->leftJoin('product_branch_stocks', function ($join) use ($branchId, $branchName, $hasBranchId, $hasBranchName) {
@@ -2841,14 +2916,15 @@ public function destroy($id)
                 ?: optional(auth()->user())->email
                 ?: Setting::mailFromAddress();
 
-            if (!filter_var((string) $recipient, FILTER_VALIDATE_EMAIL)) {
+            if (! filter_var((string) $recipient, FILTER_VALIDATE_EMAIL)) {
                 return response()->json(['success' => false, 'message' => 'No valid recipient email found. Please update your profile email or mail settings.'], 422);
             }
 
             AppMailer::sendMailable($recipient, new LowStockReportMail($pdf->output()));
+
             return response()->json(['success' => true, 'message' => "Report sent to {$recipient} successfully!"]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to send email: ' . $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Failed to send email: '.$e->getMessage()]);
         }
     }
 
@@ -2865,7 +2941,7 @@ public function destroy($id)
             ?? optional(auth()->user())->email
             ?? Setting::mailFromAddress();
 
-        if (!filter_var((string) $recipient, FILTER_VALIDATE_EMAIL)) {
+        if (! filter_var((string) $recipient, FILTER_VALIDATE_EMAIL)) {
             return response()->json(['success' => false, 'message' => 'No valid recipient email found. Please update your profile email or mail settings.'], 422);
         }
 
@@ -2900,6 +2976,7 @@ public function destroy($id)
             return response()->json(['success' => true, 'message' => "Report emailed to {$recipient} successfully with attachment."]);
         } catch (\Throwable $e) {
             Log::error('Report email failed', ['error' => $e->getMessage()]);
+
             return response()->json([
                 'success' => false,
                 'message' => $this->friendlyMailErrorMessage($e),
@@ -2947,7 +3024,7 @@ public function destroy($id)
             return 'Email failed: SMTP login was rejected. Update the Gmail address and App Password in mail settings or .env, then try again.';
         }
 
-        return 'Email failed: ' . $message;
+        return 'Email failed: '.$message;
     }
 
     private function buildReportEmailAttachment(string $subject, string $body, ?string $reportHtml = null): array
@@ -2971,7 +3048,7 @@ public function destroy($id)
 
             return [
                 $pdf->output(),
-                $safeBaseName . '-' . $generatedAt->format('Y-m-d-His') . '.pdf',
+                $safeBaseName.'-'.$generatedAt->format('Y-m-d-His').'.pdf',
                 'application/pdf',
             ];
         } catch (\Throwable $e) {
@@ -2982,14 +3059,14 @@ public function destroy($id)
 
             $textAttachment = trim(
                 "Report: {$subject}\n"
-                . "Generated By: {$generatedBy}\n"
-                . "Generated At: {$generatedAt->toDateTimeString()}\n\n"
-                . $body
+                ."Generated By: {$generatedBy}\n"
+                ."Generated At: {$generatedAt->toDateTimeString()}\n\n"
+                .$body
             );
 
             return [
                 $textAttachment,
-                $safeBaseName . '-' . $generatedAt->format('Y-m-d-His') . '.txt',
+                $safeBaseName.'-'.$generatedAt->format('Y-m-d-His').'.txt',
                 'text/plain',
             ];
         }
@@ -2997,7 +3074,7 @@ public function destroy($id)
 
     private function sanitizeReportHtml(?string $html): string
     {
-        if (!is_string($html) || trim($html) === '') {
+        if (! is_string($html) || trim($html) === '') {
             return '';
         }
 
@@ -3015,275 +3092,277 @@ public function destroy($id)
         |--------------------------------------------------------------------------
         */
 
-        /**
-         * Display the Purchase Return Report
-         */
-        public function purchase_return_report(Request $request)
-        {
-            if (!Schema::hasTable('purchase_return_items') || !Schema::hasTable('purchase_returns')) {
-                return view('Reports.Reports.purchase-return', [
-                    'purchasereturns' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 15),
-                    'totalRefunded'   => 0,
-                ]);
-            }
-
-            $query = $this->scopedTable('purchase_return_items')
-                ->join('purchase_returns', 'purchase_return_items.purchase_return_id', '=', 'purchase_returns.id')
-                ->join('products', 'purchase_return_items.product_id', '=', 'products.id')
-                ->leftJoin('vendors', 'purchase_returns.vendor_id', '=', 'vendors.id')
-                ->select([
-                    'purchase_returns.id as Id',
-                    'purchase_returns.return_no as PurchaseNo', 
-                    'products.name as Product',
-                    DB::raw("COALESCE(vendors.name, 'N/A') as VendorName"),
-                    'purchase_return_items.unit_price as ReturnAmount',
-                    'purchase_return_items.qty as ReturnQty',
-                    'purchase_returns.return_date as ReturnDate'
-                ]);
-
-            $purchasereturns = $this->process_report($query, $request, 'purchase_returns.return_date', ['products.name', 'vendors.name'])
-                                    ->withQueryString();
-
-            $totalRefunded = (clone $query)->sum(DB::raw('purchase_return_items.qty * purchase_return_items.unit_price'));
-
-            return view('Reports.Reports.purchase-return', compact('purchasereturns', 'totalRefunded'));
+    /**
+     * Display the Purchase Return Report
+     */
+    public function purchase_return_report(Request $request)
+    {
+        if (! Schema::hasTable('purchase_return_items') || ! Schema::hasTable('purchase_returns')) {
+            return view('Reports.Reports.purchase-return', [
+                'purchasereturns' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 15),
+                'totalRefunded' => 0,
+            ]);
         }
 
-        /**
-         * Show form to create a Purchase Return
-         */
-        public function create_purchase_return()
-        {
-            $purchases = $this->scopedTable('purchases')
-                ->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id')
-                ->select(
-                    'purchases.id',
-                    'purchases.purchase_no',
-                    DB::raw("COALESCE(suppliers.name, 'N/A') as vendor_name")
-                )
-                ->orderBy('purchases.created_at', 'desc')
-                ->get();
-
-            return view('Reports.Reports.create-purchase-return', compact('purchases'));
-        }
-
-        /**
-         * Store the Purchase Return data
-         */
-        public function store_purchase_return(Request $request)
-        {
-            $request->validate([
-                'purchase_id' => 'required|exists:purchases,id',
-                'return_date' => 'required|date',
-                'items'       => 'required|array'
+        $query = $this->scopedTable('purchase_return_items')
+            ->join('purchase_returns', 'purchase_return_items.purchase_return_id', '=', 'purchase_returns.id')
+            ->join('products', 'purchase_return_items.product_id', '=', 'products.id')
+            ->leftJoin('vendors', 'purchase_returns.vendor_id', '=', 'vendors.id')
+            ->select([
+                'purchase_returns.id as Id',
+                'purchase_returns.return_no as PurchaseNo',
+                'products.name as Product',
+                DB::raw("COALESCE(vendors.name, 'N/A') as VendorName"),
+                'purchase_return_items.unit_price as ReturnAmount',
+                'purchase_return_items.qty as ReturnQty',
+                'purchase_returns.return_date as ReturnDate',
             ]);
 
-            DB::beginTransaction();
-            try {
-                $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
-                $userId    = (int) (Auth::id() ?? 0);
+        $purchasereturns = $this->process_report($query, $request, 'purchase_returns.return_date', ['products.name', 'vendors.name'])
+            ->withQueryString();
 
-                $purchase = DB::table('purchases')->where('id', $request->purchase_id)->first();
+        $totalRefunded = (clone $query)->sum(DB::raw('purchase_return_items.qty * purchase_return_items.unit_price'));
 
-                $returnInsert = [
-                    'purchase_id'  => $purchase->id,
-                    'vendor_id'    => null,
-                    'return_no'    => 'RET-' . time(),
-                    'return_date'  => $request->return_date,
-                    'reason'       => $request->reason,
-                    'total_amount' => 0,
-                    'created_at'   => now(),
-                ];
-                if ($companyId > 0 && Schema::hasColumn('purchase_returns', 'company_id')) {
-                    $returnInsert['company_id'] = $companyId;
-                }
-                if ($userId > 0 && Schema::hasColumn('purchase_returns', 'user_id')) {
-                    $returnInsert['user_id'] = $userId;
-                }
-                $returnId = DB::table('purchase_returns')->insertGetId($returnInsert);
-
-                $totalAmount = 0;
-                foreach ($request->items as $productId => $data) {
-                    if ($data['qty'] > 0) {
-                        $subtotal = $data['qty'] * $data['unit_price'];
-                        $totalAmount += $subtotal;
-
-                        $itemInsert = [
-                            'purchase_return_id' => $returnId,
-                            'product_id'         => $productId,
-                            'qty'                => $data['qty'],
-                            'unit_price'         => $data['unit_price'],
-                            'subtotal'           => $subtotal,
-                        ];
-                        if ($companyId > 0 && Schema::hasColumn('purchase_return_items', 'company_id')) {
-                            $itemInsert['company_id'] = $companyId;
-                        }
-                        if ($userId > 0 && Schema::hasColumn('purchase_return_items', 'user_id')) {
-                            $itemInsert['user_id'] = $userId;
-                        }
-                        DB::table('purchase_return_items')->insert($itemInsert);
-                    }
-                }
-
-                DB::table('purchase_returns')->where('id', $returnId)->update(['total_amount' => $totalAmount]);
-
-                if ($totalAmount > 0) {
-                    LedgerService::postPurchaseReturn(
-                        (int) $returnId,
-                        (float) $totalAmount,
-                        'RET-' . $returnId,
-                        $request->return_date,
-                        Auth::id(),
-                        PurchaseReturn::class
-                    );
-                }
-
-                DB::commit();
-                return redirect()->route('reports.purchase')->with('success', 'Purchase Return processed successfully!');
-            } catch (\Exception $e) {
-                DB::rollback();
-                return back()->with('error', 'Error: ' . $e->getMessage());
-            }
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | 2. CREDIT NOTES (Sales Returns)
-        |--------------------------------------------------------------------------
-        */
-        public function credit_notes(Request $request)
-        {
-            if (!Schema::hasTable('credit_notes') || !Schema::hasTable('credit_note_items')) {
-                $salesreturnreports = new LengthAwarePaginator([], 0, 10, 1, [
-                    'path' => $request->url(),
-                    'query' => $request->query(),
-                ]);
-
-                return $this->renderReportView('sales-return-report', [
-                    'salesreturnreports' => $salesreturnreports,
-                    'totalRefunded' => 0,
-                ])->with('warning', 'Sales return item records are not available on this workspace yet.');
-            }
-
-            $customerNameColumns = array_values(array_filter([
-                Schema::hasColumn('customers', 'customer_name') ? 'customers.customer_name' : null,
-                Schema::hasColumn('customers', 'name') ? 'customers.name' : null,
-            ]));
-            $customerNameExpression = $customerNameColumns
-                ? 'COALESCE(' . implode(', ', array_merge($customerNameColumns, ["'Walk-in Customer'"])) . ')'
-                : "'Walk-in Customer'";
-
-            $query = DB::table('credit_note_items')
-                ->join('credit_notes', 'credit_note_items.credit_note_id', '=', 'credit_notes.id')
-                ->leftJoin('products', 'credit_note_items.product_id', '=', 'products.id')
-                ->leftJoin('customers', 'credit_notes.customer_id', '=', 'customers.id')
-                ->select([
-                    'credit_notes.id as Id',
-                    'credit_notes.credit_note_no as ReferenceNo',
-                    DB::raw("COALESCE(products.name, 'Returned item') as Product"),
-                    DB::raw("COALESCE(products.sku, '') as SKU"),
-                    DB::raw("COALESCE(products.image, 'default.png') as Image"),
-                    DB::raw("'N/A' as Category"),
-                    DB::raw("COALESCE(products.stock, products.stock_quantity, 0) as InstockQty"),
-                    DB::raw("COALESCE({$customerNameExpression}, 'Walk-in Customer') as CustomerName"),
-                    DB::raw('COALESCE(credit_note_items.subtotal, credit_note_items.qty * credit_note_items.unit_price, 0) as SoldAmount'),
-                    DB::raw('COALESCE(credit_note_items.qty, 0) as SoldQty'),
-                    'credit_notes.credit_date as DueDate',
-                ]);
-
-            if (Schema::hasColumn('credit_notes', 'deleted_at')) {
-                $query->whereNull('credit_notes.deleted_at');
-            }
-
-            $this->applyTenantScope($query, 'credit_notes');
-            $this->applyTenantScope($query, 'credit_note_items');
-
-            $activeBranch = $this->getActiveBranchContext();
-            $branchId = trim((string) ($activeBranch['id'] ?? ''));
-            $branchName = trim((string) ($activeBranch['name'] ?? ''));
-            if (($activeBranch['scope'] ?? 'branch') !== 'all' && ($branchId !== '' || $branchName !== '')) {
-                $query->where(function ($sub) use ($branchId, $branchName) {
-                    if ($branchId !== '' && Schema::hasColumn('credit_notes', 'branch_id')) {
-                        $sub->where('credit_notes.branch_id', $branchId);
-                    }
-                    if ($branchName !== '' && Schema::hasColumn('credit_notes', 'branch_name')) {
-                        $sub->orWhere('credit_notes.branch_name', $branchName);
-                    }
-                    if (Schema::hasColumn('credit_notes', 'branch_id')) {
-                        $sub->orWhereNull('credit_notes.branch_id');
-                    }
-                });
-            }
-
-            $salesReturnSearchColumns = [
-                'credit_notes.credit_note_no',
-                'products.name',
-                'products.sku',
-            ];
-            $salesReturnSearchColumns = array_merge($salesReturnSearchColumns, $customerNameColumns);
-
-            $salesreturnreports = $this->process_report($query, $request, 'credit_notes.credit_date', $salesReturnSearchColumns)->withQueryString();
-
-            $totalRefunded = (clone $query)->sum(DB::raw('COALESCE(credit_note_items.subtotal, credit_note_items.qty * credit_note_items.unit_price, 0)'));
-
-            return $this->renderReportView('sales-return-report', compact('salesreturnreports', 'totalRefunded', 'activeBranch'));
-        }
+        return view('Reports.Reports.purchase-return', compact('purchasereturns', 'totalRefunded'));
+    }
 
     /**
-     * Show form to create a Sales Return
+     * Show form to create a Purchase Return
      */
-	    public function create_credit_note(Request $request)
-	    {
-        // Pointing to 'sales' where your 9 records actually are
-        $invoices = $this->scopedTable('sales')
-            ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
+    public function create_purchase_return()
+    {
+        $purchases = $this->scopedTable('purchases')
+            ->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id')
             ->select(
-                'sales.id', 
-                'sales.id as display_name', 
-                'customers.customer_name'
+                'purchases.id',
+                'purchases.purchase_no',
+                DB::raw("COALESCE(suppliers.name, 'N/A') as vendor_name")
             )
-            ->orderBy('sales.id', 'desc');
-        $this->applySalesScope($invoices, 'sales');
-	        $invoices = $invoices->get();
-	        $selectedInvoiceId = (int) $request->input('invoice_id', 0);
-	
-	        return view('Reports.Reports.create-sales-return', compact('invoices', 'selectedInvoiceId'));
-	    }
+            ->orderBy('purchases.created_at', 'desc')
+            ->get();
 
-	    /**
-	     * Store the Sales Return (Credit Note) data
+        return view('Reports.Reports.create-purchase-return', compact('purchases'));
+    }
+
+    /**
+     * Store the Purchase Return data
      */
-    public function store_credit_note(Request $request)
+    public function store_purchase_return(Request $request)
     {
         $request->validate([
-            'invoice_id'  => 'required|exists:sales,id',
-            'credit_date' => 'required|date',
-            'items'       => 'required|array'
+            'purchase_id' => 'required|exists:purchases,id',
+            'return_date' => 'required|date',
+            'items' => 'required|array',
         ]);
 
         DB::beginTransaction();
         try {
             $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
-            $userId    = (int) (Auth::id() ?? 0);
+            $userId = (int) (Auth::id() ?? 0);
 
-	            $invoiceQuery = DB::table('sales')->where('id', $request->invoice_id);
-	            $this->applySalesScope($invoiceQuery, 'sales');
-	            $invoice = $invoiceQuery->first();
-	            if (!$invoice) {
-	                throw new \RuntimeException('The selected sale could not be found for this tenant or branch.');
-	            }
-	            $activeBranch = $this->getActiveBranchContext();
+            $purchase = DB::table('purchases')->where('id', $request->purchase_id)->first();
+
+            $returnInsert = [
+                'purchase_id' => $purchase->id,
+                'vendor_id' => null,
+                'return_no' => 'RET-'.time(),
+                'return_date' => $request->return_date,
+                'reason' => $request->reason,
+                'total_amount' => 0,
+                'created_at' => now(),
+            ];
+            if ($companyId > 0 && Schema::hasColumn('purchase_returns', 'company_id')) {
+                $returnInsert['company_id'] = $companyId;
+            }
+            if ($userId > 0 && Schema::hasColumn('purchase_returns', 'user_id')) {
+                $returnInsert['user_id'] = $userId;
+            }
+            $returnId = DB::table('purchase_returns')->insertGetId($returnInsert);
+
+            $totalAmount = 0;
+            foreach ($request->items as $productId => $data) {
+                if ($data['qty'] > 0) {
+                    $subtotal = $data['qty'] * $data['unit_price'];
+                    $totalAmount += $subtotal;
+
+                    $itemInsert = [
+                        'purchase_return_id' => $returnId,
+                        'product_id' => $productId,
+                        'qty' => $data['qty'],
+                        'unit_price' => $data['unit_price'],
+                        'subtotal' => $subtotal,
+                    ];
+                    if ($companyId > 0 && Schema::hasColumn('purchase_return_items', 'company_id')) {
+                        $itemInsert['company_id'] = $companyId;
+                    }
+                    if ($userId > 0 && Schema::hasColumn('purchase_return_items', 'user_id')) {
+                        $itemInsert['user_id'] = $userId;
+                    }
+                    DB::table('purchase_return_items')->insert($itemInsert);
+                }
+            }
+
+            DB::table('purchase_returns')->where('id', $returnId)->update(['total_amount' => $totalAmount]);
+
+            if ($totalAmount > 0) {
+                LedgerService::postPurchaseReturn(
+                    (int) $returnId,
+                    (float) $totalAmount,
+                    'RET-'.$returnId,
+                    $request->return_date,
+                    Auth::id(),
+                    PurchaseReturn::class
+                );
+            }
+
+            DB::commit();
+
+            return redirect()->route('reports.purchase')->with('success', 'Purchase Return processed successfully!');
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            return back()->with('error', 'Error: '.$e->getMessage());
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 2. CREDIT NOTES (Sales Returns)
+    |--------------------------------------------------------------------------
+    */
+    public function credit_notes(Request $request)
+    {
+        if (! Schema::hasTable('credit_notes') || ! Schema::hasTable('credit_note_items')) {
+            $salesreturnreports = new LengthAwarePaginator([], 0, 10, 1, [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]);
+
+            return $this->renderReportView('sales-return-report', [
+                'salesreturnreports' => $salesreturnreports,
+                'totalRefunded' => 0,
+            ])->with('warning', 'Sales return item records are not available on this workspace yet.');
+        }
+
+        $customerNameColumns = array_values(array_filter([
+            Schema::hasColumn('customers', 'customer_name') ? 'customers.customer_name' : null,
+            Schema::hasColumn('customers', 'name') ? 'customers.name' : null,
+        ]));
+        $customerNameExpression = $customerNameColumns
+            ? 'COALESCE('.implode(', ', array_merge($customerNameColumns, ["'Walk-in Customer'"])).')'
+            : "'Walk-in Customer'";
+
+        $query = DB::table('credit_note_items')
+            ->join('credit_notes', 'credit_note_items.credit_note_id', '=', 'credit_notes.id')
+            ->leftJoin('products', 'credit_note_items.product_id', '=', 'products.id')
+            ->leftJoin('customers', 'credit_notes.customer_id', '=', 'customers.id')
+            ->select([
+                'credit_notes.id as Id',
+                'credit_notes.credit_note_no as ReferenceNo',
+                DB::raw("COALESCE(products.name, 'Returned item') as Product"),
+                DB::raw("COALESCE(products.sku, '') as SKU"),
+                DB::raw("COALESCE(products.image, 'default.png') as Image"),
+                DB::raw("'N/A' as Category"),
+                DB::raw('COALESCE(products.stock, products.stock_quantity, 0) as InstockQty'),
+                DB::raw("COALESCE({$customerNameExpression}, 'Walk-in Customer') as CustomerName"),
+                DB::raw('COALESCE(credit_note_items.subtotal, credit_note_items.qty * credit_note_items.unit_price, 0) as SoldAmount'),
+                DB::raw('COALESCE(credit_note_items.qty, 0) as SoldQty'),
+                'credit_notes.credit_date as DueDate',
+            ]);
+
+        if (Schema::hasColumn('credit_notes', 'deleted_at')) {
+            $query->whereNull('credit_notes.deleted_at');
+        }
+
+        $this->applyTenantScope($query, 'credit_notes');
+        $this->applyTenantScope($query, 'credit_note_items');
+
+        $activeBranch = $this->getActiveBranchContext();
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+        if (($activeBranch['scope'] ?? 'branch') !== 'all' && ($branchId !== '' || $branchName !== '')) {
+            $query->where(function ($sub) use ($branchId, $branchName) {
+                if ($branchId !== '' && Schema::hasColumn('credit_notes', 'branch_id')) {
+                    $sub->where('credit_notes.branch_id', $branchId);
+                }
+                if ($branchName !== '' && Schema::hasColumn('credit_notes', 'branch_name')) {
+                    $sub->orWhere('credit_notes.branch_name', $branchName);
+                }
+                if (Schema::hasColumn('credit_notes', 'branch_id')) {
+                    $sub->orWhereNull('credit_notes.branch_id');
+                }
+            });
+        }
+
+        $salesReturnSearchColumns = [
+            'credit_notes.credit_note_no',
+            'products.name',
+            'products.sku',
+        ];
+        $salesReturnSearchColumns = array_merge($salesReturnSearchColumns, $customerNameColumns);
+
+        $salesreturnreports = $this->process_report($query, $request, 'credit_notes.credit_date', $salesReturnSearchColumns)->withQueryString();
+
+        $totalRefunded = (clone $query)->sum(DB::raw('COALESCE(credit_note_items.subtotal, credit_note_items.qty * credit_note_items.unit_price, 0)'));
+
+        return $this->renderReportView('sales-return-report', compact('salesreturnreports', 'totalRefunded', 'activeBranch'));
+    }
+
+    /**
+     * Show form to create a Sales Return
+     */
+    public function create_credit_note(Request $request)
+    {
+        // Pointing to 'sales' where your 9 records actually are
+        $invoices = $this->scopedTable('sales')
+            ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
+            ->select(
+                'sales.id',
+                'sales.id as display_name',
+                'customers.customer_name'
+            )
+            ->orderBy('sales.id', 'desc');
+        $this->applySalesScope($invoices, 'sales');
+        $invoices = $invoices->get();
+        $selectedInvoiceId = (int) $request->input('invoice_id', 0);
+
+        return view('Reports.Reports.create-sales-return', compact('invoices', 'selectedInvoiceId'));
+    }
+
+    /**
+     * Store the Sales Return (Credit Note) data
+     */
+    public function store_credit_note(Request $request)
+    {
+        $request->validate([
+            'invoice_id' => 'required|exists:sales,id',
+            'credit_date' => 'required|date',
+            'items' => 'required|array',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
+            $userId = (int) (Auth::id() ?? 0);
+
+            $invoiceQuery = DB::table('sales')->where('id', $request->invoice_id);
+            $this->applySalesScope($invoiceQuery, 'sales');
+            $invoice = $invoiceQuery->first();
+            if (! $invoice) {
+                throw new \RuntimeException('The selected sale could not be found for this tenant or branch.');
+            }
+            $activeBranch = $this->getActiveBranchContext();
 
             // 1. Create the Credit Note Header
             $cnInsert = [
-                'sale_id'        => $invoice->id,
-                'customer_id'    => $invoice->customer_id ?? null,
-                'credit_note_no' => 'CN-' . strtoupper(Str::random(8)),
-                'credit_date'    => $request->credit_date,
-                'status'         => 'approved',
-                'total_amount'   => 0,
-                'created_at'     => now(),
-                'updated_at'     => now(),
+                'sale_id' => $invoice->id,
+                'customer_id' => $invoice->customer_id ?? null,
+                'credit_note_no' => 'CN-'.strtoupper(Str::random(8)),
+                'credit_date' => $request->credit_date,
+                'status' => 'approved',
+                'total_amount' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
             ];
             if ($companyId > 0 && Schema::hasColumn('credit_notes', 'company_id')) {
                 $cnInsert['company_id'] = $companyId;
@@ -3316,10 +3395,10 @@ public function destroy($id)
                     // Save item details
                     $ciInsert = [
                         'credit_note_id' => $creditNoteId,
-                        'product_id'     => $productId,
-                        'qty'            => $data['qty'],
-                        'unit_price'     => $data['unit_price'],
-                        'subtotal'       => $subtotal,
+                        'product_id' => $productId,
+                        'qty' => $data['qty'],
+                        'unit_price' => $data['unit_price'],
+                        'subtotal' => $subtotal,
                     ];
                     if ($companyId > 0 && Schema::hasColumn('credit_note_items', 'company_id')) {
                         $ciInsert['company_id'] = $companyId;
@@ -3335,43 +3414,43 @@ public function destroy($id)
                     }
                     DB::table('credit_note_items')->insert($ciInsert);
 
-	                    // 3. Update Inventory: returned goods come back into sellable stock for the active branch.
-	                    $product = Product::query()->lockForUpdate()->find($productId);
-	                    if ($product) {
-	                        $stockUnits = InventoryQuantity::resolveSaleStockUnits(
-	                            $product,
-	                            (float) $data['qty'],
-	                            $data['unit_type'] ?? null,
-	                            isset($data['stock_units']) ? (float) $data['stock_units'] : null
-	                        );
-	                        Product::setInventoryContext('Stock Return');
-	                        $product->increment('stock', $stockUnits);
-	                        app(BranchInventoryService::class)->adjustBranchStock(
-	                            $product,
-	                            $stockUnits,
-	                            $activeBranch,
-	                            $companyId > 0 ? $companyId : (int) ($product->company_id ?? 0)
-	                        );
-	                    }
-	                }
-	            }
+                    // 3. Update Inventory: returned goods come back into sellable stock for the active branch.
+                    $product = Product::query()->lockForUpdate()->find($productId);
+                    if ($product) {
+                        $stockUnits = InventoryQuantity::resolveSaleStockUnits(
+                            $product,
+                            (float) $data['qty'],
+                            $data['unit_type'] ?? null,
+                            isset($data['stock_units']) ? (float) $data['stock_units'] : null
+                        );
+                        Product::setInventoryContext('Stock Return');
+                        $product->increment('stock', $stockUnits);
+                        app(BranchInventoryService::class)->adjustBranchStock(
+                            $product,
+                            $stockUnits,
+                            $activeBranch,
+                            $companyId > 0 ? $companyId : (int) ($product->company_id ?? 0)
+                        );
+                    }
+                }
+            }
 
-	            // 4. Finalize the total amount
-	            DB::table('credit_notes')->where('id', $creditNoteId)->update(['total_amount' => $totalAmount]);
+            // 4. Finalize the total amount
+            DB::table('credit_notes')->where('id', $creditNoteId)->update(['total_amount' => $totalAmount]);
 
-	            $invoiceStatus = strtolower((string) ($invoice->payment_status ?? ''));
-	            $invoiceBalance = round((float) ($invoice->balance ?? 0), 2);
-	            if ($totalAmount > 0 && !empty($invoice->customer_id) && Schema::hasColumn('customers', 'wallet_balance') && ($invoiceStatus === 'paid' || $invoiceBalance <= 0)) {
-	                Customer::query()
-	                    ->whereKey((int) $invoice->customer_id)
-	                    ->increment('wallet_balance', $totalAmount);
-	            }
-	
-	            if ($totalAmount > 0) {
+            $invoiceStatus = strtolower((string) ($invoice->payment_status ?? ''));
+            $invoiceBalance = round((float) ($invoice->balance ?? 0), 2);
+            if ($totalAmount > 0 && ! empty($invoice->customer_id) && Schema::hasColumn('customers', 'wallet_balance') && ($invoiceStatus === 'paid' || $invoiceBalance <= 0)) {
+                Customer::query()
+                    ->whereKey((int) $invoice->customer_id)
+                    ->increment('wallet_balance', $totalAmount);
+            }
+
+            if ($totalAmount > 0) {
                 LedgerService::postSalesReturn(
                     (int) $creditNoteId,
                     (float) $totalAmount,
-                    'CN-' . $creditNoteId,
+                    'CN-'.$creditNoteId,
                     $request->credit_date,
                     Auth::id(),
                     'credit_note'
@@ -3379,65 +3458,67 @@ public function destroy($id)
             }
 
             DB::commit();
+
             return redirect()->route('reports.sales-return')->with('success', 'Sales Return processed and stock updated successfully!');
-            
+
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->with('error', 'Error processing return: ' . $e->getMessage());
+
+            return back()->with('error', 'Error processing return: '.$e->getMessage());
         }
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | 3. AJAX HELPERS
+    |--------------------------------------------------------------------------
+    */
 
-        /*
-        |--------------------------------------------------------------------------
-        | 3. AJAX HELPERS
-        |--------------------------------------------------------------------------
-        */
+    public function get_purchase_items($id)
+    {
+        $items = $this->scopedTable('purchase_items')
+            ->join('products', 'purchase_items.product_id', '=', 'products.id')
+            ->where('purchase_id', $id)
+            ->select('products.id as product_id', 'products.name', 'purchase_items.qty', 'purchase_items.unit_price')
+            ->get();
 
-        public function get_purchase_items($id)
-        {
-            $items = $this->scopedTable('purchase_items')
-                ->join('products', 'purchase_items.product_id', '=', 'products.id')
-                ->where('purchase_id', $id)
-                ->select('products.id as product_id', 'products.name', 'purchase_items.qty', 'purchase_items.unit_price')
-                ->get();
+        return response()->json($items);
+    }
 
-            return response()->json($items);
+    public function get_invoice_items($id)
+    {
+        $saleQuery = DB::table('sales')->where('sales.id', $id);
+        $this->applySalesScope($saleQuery, 'sales');
+        abort_unless($saleQuery->exists(), 404);
+
+        $qtyColumn = Schema::hasColumn('sale_items', 'qty') ? 'qty' : 'quantity';
+        $nameExpression = Schema::hasColumn('sale_items', 'product_name')
+            ? 'COALESCE(products.name, sale_items.product_name, "Returned item")'
+            : 'COALESCE(products.name, "Returned item")';
+
+        $selects = [
+            'sale_items.product_id',
+            DB::raw($nameExpression.' as name'),
+            "sale_items.{$qtyColumn} as qty",
+            'sale_items.unit_price',
+        ];
+
+        if (Schema::hasColumn('sale_items', 'unit_type')) {
+            $selects[] = 'sale_items.unit_type';
+        }
+        if (Schema::hasColumn('sale_items', 'stock_units')) {
+            $selects[] = 'sale_items.stock_units';
         }
 
-	    public function get_invoice_items($id)
-	    {
-	        $saleQuery = DB::table('sales')->where('sales.id', $id);
-	        $this->applySalesScope($saleQuery, 'sales');
-	        abort_unless($saleQuery->exists(), 404);
+        $items = DB::table('sale_items')
+            ->leftJoin('products', 'sale_items.product_id', '=', 'products.id')
+            ->where('sale_items.sale_id', $id)
+            ->select($selects)
+            ->get();
 
-	        $qtyColumn = Schema::hasColumn('sale_items', 'qty') ? 'qty' : 'quantity';
-	        $nameExpression = Schema::hasColumn('sale_items', 'product_name')
-	            ? 'COALESCE(products.name, sale_items.product_name, "Returned item")'
-	            : 'COALESCE(products.name, "Returned item")';
+        return response()->json($items);
+    }
 
-	        $selects = [
-	            'sale_items.product_id',
-	            DB::raw($nameExpression . ' as name'),
-	            "sale_items.{$qtyColumn} as qty",
-	            'sale_items.unit_price',
-	        ];
-
-	        if (Schema::hasColumn('sale_items', 'unit_type')) {
-	            $selects[] = 'sale_items.unit_type';
-	        }
-	        if (Schema::hasColumn('sale_items', 'stock_units')) {
-	            $selects[] = 'sale_items.stock_units';
-	        }
-
-	        $items = DB::table('sale_items')
-	            ->leftJoin('products', 'sale_items.product_id', '=', 'products.id')
-	            ->where('sale_items.sale_id', $id)
-	            ->select($selects)
-	            ->get();
-
-	        return response()->json($items);
-	    }
     /**
      * Private helper to keep the Database Query logic in one place
      */
@@ -3446,19 +3527,18 @@ public function destroy($id)
         return $this->scopedTable('purchase_items')
             ->join('purchases', 'purchase_items.purchase_id', '=', 'purchases.id')
             ->join('products', 'purchase_items.product_id', '=', 'products.id')
-            ->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id') 
+            ->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id')
             ->where('purchases.status', 'returned')
             ->select([
                 'purchases.id as Id',
                 'purchases.purchase_no as PurchaseNo',
                 'products.name as Product',
-                DB::raw("COALESCE(suppliers.name, 'N/A') as VendorName"), 
+                DB::raw("COALESCE(suppliers.name, 'N/A') as VendorName"),
                 'purchases.total_amount as ReturnAmount',
                 'purchase_items.qty as ReturnQty',
-                'purchases.created_at as ReturnDate'
+                'purchases.created_at as ReturnDate',
             ]);
     }
-
 
     /**
      * Shared logic to prevent "Undefined Variable" errors
@@ -3468,21 +3548,21 @@ public function destroy($id)
         $query = $this->scopedTable('purchase_items')
             ->join('purchases', 'purchase_items.purchase_id', '=', 'purchases.id')
             ->join('products', 'purchase_items.product_id', '=', 'products.id')
-            ->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id') 
+            ->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id')
             ->where('purchases.status', 'returned')
             ->select([
                 'purchases.id as Id',
                 'purchases.purchase_no as PurchaseNo',
                 'products.name as Product',
-                DB::raw("COALESCE(suppliers.name, 'N/A') as VendorName"), 
+                DB::raw("COALESCE(suppliers.name, 'N/A') as VendorName"),
                 'purchases.total_amount as ReturnAmount',
                 'purchase_items.qty as ReturnQty',
-                'purchases.created_at as ReturnDate'
+                'purchases.created_at as ReturnDate',
             ]);
 
         // This variable name MUST be 'purchasereturns' to match the view
         $purchasereturns = $this->process_report($query, $request, 'purchases.created_at', ['products.name', 'suppliers.name'])
-                                ->withQueryString();
+            ->withQueryString();
 
         $totalRefunded = (clone $query)->sum('purchases.total_amount');
 
@@ -3492,11 +3572,11 @@ public function destroy($id)
     /** 11. Profit & Loss List — queries source tables directly (purchases are an Asset/Inventory debit, not an Expense ledger entry) **/
     public function profit_loss_list(Request $request)
     {
-        $activeBranch  = $this->getActiveBranchContext();
-        $branchId      = trim((string) ($activeBranch['id']   ?? ''));
-        $branchName    = trim((string) ($activeBranch['name'] ?? ''));
+        $activeBranch = $this->getActiveBranchContext();
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
         $isAllBranches = ($activeBranch['scope'] ?? 'branch') === 'all';
-        $companyId     = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
         $salesHasDeletedAt = Schema::hasColumn('sales', 'deleted_at');
         $salesHasOrderStatus = Schema::hasColumn('sales', 'order_status');
         $salesAmountExpr = Schema::hasColumn('sales', 'total')
@@ -3525,16 +3605,16 @@ public function destroy($id)
         // ── Date presets ──────────────────────────────────────────────────────
         $now = Carbon::now();
         $presets = [
-            'today'      => ['label' => 'Today',      'from' => $now->toDateString(),                                                       'to' => $now->toDateString()],
-            'this_week'  => ['label' => 'This Week',  'from' => $now->copy()->startOfWeek()->toDateString(),                                 'to' => $now->toDateString()],
+            'today' => ['label' => 'Today',      'from' => $now->toDateString(),                                                       'to' => $now->toDateString()],
+            'this_week' => ['label' => 'This Week',  'from' => $now->copy()->startOfWeek()->toDateString(),                                 'to' => $now->toDateString()],
             'this_month' => ['label' => 'This Month', 'from' => $now->copy()->startOfMonth()->toDateString(),                                'to' => $now->toDateString()],
             'last_month' => ['label' => 'Last Month', 'from' => $now->copy()->subMonthNoOverflow()->startOfMonth()->toDateString(),          'to' => $now->copy()->subMonthNoOverflow()->endOfMonth()->toDateString()],
-            'this_year'  => ['label' => 'This Year',  'from' => $now->copy()->startOfYear()->toDateString(),                                 'to' => $now->toDateString()],
-            'custom'     => ['label' => 'Custom',     'from' => $request->get('start_date', $now->copy()->startOfMonth()->toDateString()),   'to' => $request->get('end_date', $now->toDateString())],
+            'this_year' => ['label' => 'This Year',  'from' => $now->copy()->startOfYear()->toDateString(),                                 'to' => $now->toDateString()],
+            'custom' => ['label' => 'Custom',     'from' => $request->get('start_date', $now->copy()->startOfMonth()->toDateString()),   'to' => $request->get('end_date', $now->toDateString())],
         ];
 
         $activePreset = $request->get('preset', 'this_month');
-        if (!array_key_exists($activePreset, $presets)) {
+        if (! array_key_exists($activePreset, $presets)) {
             $activePreset = 'this_month';
         }
         if ($request->filled('start_date') || $request->filled('end_date')) {
@@ -3542,7 +3622,7 @@ public function destroy($id)
         }
 
         $startDate = $presets[$activePreset]['from'];
-        $endDate   = $presets[$activePreset]['to'];
+        $endDate = $presets[$activePreset]['to'];
 
         // ── Inline branch filter helper ───────────────────────────────────────
         $applyBranch = function ($q, string $table) use ($isAllBranches, $branchId, $branchName) {
@@ -3900,44 +3980,45 @@ public function destroy($id)
             ->unique()->sort()->values();
 
         $dailyRows = $allDates->map(function ($date) use ($salesByDate, $salesReturnsByDate, $cogsByDate, $returnedCogsByDate, $expensesByDate, $depreciationByDate, $stockDamageByDate, $journalIncomeByDate, $journalExpenseByDate) {
-            $income    = (float) ($salesByDate[$date]->total     ?? 0)
+            $income = (float) ($salesByDate[$date]->total ?? 0)
                 - (float) ($salesReturnsByDate[$date]->total ?? 0)
                 + (float) ($journalIncomeByDate[$date]->total ?? 0);
             $purchases = max(0, (float) ($cogsByDate[$date]->total ?? 0)
                 - (float) ($returnedCogsByDate[$date]->total ?? 0));
-            $opex      = (float) ($expensesByDate[$date]->total  ?? 0)
+            $opex = (float) ($expensesByDate[$date]->total ?? 0)
                 + (float) ($depreciationByDate[$date]->total ?? 0)
                 + (float) ($stockDamageByDate[$date]->total ?? 0)
                 + (float) ($journalExpenseByDate[$date]->total ?? 0);
+
             return (object) [
-                'report_date'       => $date,
-                'income'            => $income,
-                'purchase_expense'  => $purchases,
+                'report_date' => $date,
+                'income' => $income,
+                'purchase_expense' => $purchases,
                 'operating_expense' => $opex,
-                'expense'           => $purchases + $opex,
+                'expense' => $purchases + $opex,
             ];
         })->sortByDesc('report_date')->values();
 
         $totals = (object) [
-            'total_income'            => (float) $dailyRows->sum('income'),
-            'total_purchase_expense'  => (float) $dailyRows->sum('purchase_expense'),
+            'total_income' => (float) $dailyRows->sum('income'),
+            'total_purchase_expense' => (float) $dailyRows->sum('purchase_expense'),
             'total_operating_expense' => (float) $dailyRows->sum('operating_expense'),
-            'total_expense'           => (float) $dailyRows->sum('expense'),
+            'total_expense' => (float) $dailyRows->sum('expense'),
         ];
 
         // ── Load branches for the branch selector ─────────────────────────────
         $allBranches = collect();
         if ($companyId > 0 && Schema::hasTable('settings')) {
             $raw = (string) (DB::table('settings')
-                ->where('key', 'branches_json_company_' . $companyId)
+                ->where('key', 'branches_json_company_'.$companyId)
                 ->value('value') ?? '');
             $allBranches = collect(json_decode($raw, true) ?: []);
         }
 
         // ── Paginate ──────────────────────────────────────────────────────────
         $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        $perPage     = 15;
-        $pageItems   = $dailyRows->forPage($currentPage, $perPage)->values();
+        $perPage = 15;
+        $pageItems = $dailyRows->forPage($currentPage, $perPage)->values();
         $profitLossData = new LengthAwarePaginator(
             $pageItems,
             $dailyRows->count(),
@@ -3953,638 +4034,685 @@ public function destroy($id)
         ));
     }
 
-        /** 12. Tax Purchase **/
-        public function tax_purchase(Request $request)
-        {
-            $query = $this->scopedTable('purchases')->where('purchases.tax_amount', '>', 0);
-            $purchaseDateExpression = Schema::hasColumn('purchases', 'purchase_date')
-                ? 'purchases.purchase_date'
-                : (Schema::hasColumn('purchases', 'date') ? 'purchases.date' : 'purchases.created_at');
+    /** 12. Tax Purchase **/
+    public function tax_purchase(Request $request)
+    {
+        $query = $this->scopedTable('purchases')->where('purchases.tax_amount', '>', 0);
+        $this->applyReportableDocumentScope($query, 'purchases');
+        $purchaseDateExpression = Schema::hasColumn('purchases', 'purchase_date')
+            ? 'purchases.purchase_date'
+            : (Schema::hasColumn('purchases', 'date') ? 'purchases.date' : 'purchases.created_at');
 
-            $supplierSelect = DB::raw("'N/A' as Supplier");
-            $supplierSearchColumn = null;
+        $supplierSelect = DB::raw("'N/A' as Supplier");
+        $supplierSearchColumn = null;
 
-            // Prefer vendor relation if available in current schema.
-            if (
-                Schema::hasColumn('purchases', 'vendor_id') &&
-                Schema::hasTable('vendors') &&
-                Schema::hasColumn('vendors', 'id') &&
-                Schema::hasColumn('vendors', 'name')
-            ) {
-                $query->leftJoin('vendors', 'purchases.vendor_id', '=', 'vendors.id');
-                $supplierSelect = DB::raw("COALESCE(vendors.name, 'N/A') as Supplier");
-                $supplierSearchColumn = 'vendors.name';
-            } elseif (
-                Schema::hasColumn('purchases', 'supplier_id') &&
-                Schema::hasTable('suppliers') &&
-                Schema::hasColumn('suppliers', 'id')
-            ) {
-                $query->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id');
+        // Prefer vendor relation if available in current schema.
+        if (
+            Schema::hasColumn('purchases', 'vendor_id') &&
+            Schema::hasTable('vendors') &&
+            Schema::hasColumn('vendors', 'id') &&
+            Schema::hasColumn('vendors', 'name')
+        ) {
+            $query->leftJoin('vendors', 'purchases.vendor_id', '=', 'vendors.id');
+            $supplierSelect = DB::raw("COALESCE(vendors.name, 'N/A') as Supplier");
+            $supplierSearchColumn = 'vendors.name';
+        } elseif (
+            Schema::hasColumn('purchases', 'supplier_id') &&
+            Schema::hasTable('suppliers') &&
+            Schema::hasColumn('suppliers', 'id')
+        ) {
+            $query->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id');
 
-                if (Schema::hasColumn('suppliers', 'name')) {
-                    $supplierSelect = DB::raw("COALESCE(suppliers.name, 'N/A') as Supplier");
-                    $supplierSearchColumn = 'suppliers.name';
-                } elseif (Schema::hasColumn('suppliers', 'supplier_name')) {
-                    $supplierSelect = DB::raw("COALESCE(suppliers.supplier_name, 'N/A') as Supplier");
-                    $supplierSearchColumn = 'suppliers.supplier_name';
-                } elseif (Schema::hasColumn('suppliers', 'company_name')) {
-                    $supplierSelect = DB::raw("COALESCE(suppliers.company_name, 'N/A') as Supplier");
-                    $supplierSearchColumn = 'suppliers.company_name';
-                }
+            if (Schema::hasColumn('suppliers', 'name')) {
+                $supplierSelect = DB::raw("COALESCE(suppliers.name, 'N/A') as Supplier");
+                $supplierSearchColumn = 'suppliers.name';
+            } elseif (Schema::hasColumn('suppliers', 'supplier_name')) {
+                $supplierSelect = DB::raw("COALESCE(suppliers.supplier_name, 'N/A') as Supplier");
+                $supplierSearchColumn = 'suppliers.supplier_name';
+            } elseif (Schema::hasColumn('suppliers', 'company_name')) {
+                $supplierSelect = DB::raw("COALESCE(suppliers.company_name, 'N/A') as Supplier");
+                $supplierSearchColumn = 'suppliers.company_name';
             }
-
-            $query->select([
-                'purchases.id as Id',
-                $supplierSelect,
-                DB::raw("{$purchaseDateExpression} as Date"),
-                DB::raw("COALESCE(purchases.purchase_no, CONCAT('PUR-', purchases.id)) as RefNo"),
-                DB::raw('ABS(COALESCE(purchases.total_amount, 0)) as TotalAmount'),
-                DB::raw("'N/A' as PaymentMethod"),
-                DB::raw('0 as Discount'),
-                'purchases.tax_amount as TaxAmount',
-            ]);
-
-            if ($request->filled('start_date') && $request->filled('end_date')) {
-                $query->whereBetween(
-                    DB::raw("DATE({$purchaseDateExpression})"),
-                    [$request->start_date, $request->end_date]
-                );
-            }
-
-            if ($request->filled('search')) {
-                $search = trim((string) $request->search);
-                $query->where(function ($q) use ($search, $supplierSearchColumn) {
-                    if ($supplierSearchColumn) {
-                        $q->where($supplierSearchColumn, 'like', '%' . $search . '%');
-                    }
-                    $q->orWhere('purchases.purchase_no', 'like', '%' . $search . '%');
-                });
-            }
-
-            $taxpurchases = $query->orderByDesc(DB::raw($purchaseDateExpression))
-                ->get()
-                ->map(fn ($item) => (array) $item);
-
-            return $this->renderReportView('tax-purchase', compact('taxpurchases'));
         }
 
+        $purchaseAmountExpression = $this->attachPurchaseItemTotals($query);
+        $purchaseReferenceExpression = $this->prefixedIdExpression('PUR-', 'purchases.id');
+        $query->select([
+            'purchases.id as Id',
+            $supplierSelect,
+            DB::raw("{$purchaseDateExpression} as Date"),
+            DB::raw("COALESCE(purchases.purchase_no, {$purchaseReferenceExpression}) as RefNo"),
+            DB::raw("{$purchaseAmountExpression} as TotalAmount"),
+            DB::raw("'N/A' as PaymentMethod"),
+            DB::raw('0 as Discount'),
+            'purchases.tax_amount as TaxAmount',
+        ]);
 
-        
+        $this->applyReportDateRange(
+            $query,
+            $purchaseDateExpression,
+            $request->input('start_date'),
+            $request->input('end_date')
+        );
 
-        public function tax_sales(Request $request)
-        {
-            $start_date = $request->input('start_date');
-            $end_date = $request->input('end_date');
-            $salesDateExpression = Schema::hasColumn('sales', 'order_date')
-                ? 'sales.order_date'
-                : (Schema::hasColumn('sales', 'date') ? 'sales.date' : 'sales.created_at');
+        if ($request->filled('search')) {
+            $search = trim((string) $request->search);
+            $query->where(function ($q) use ($search, $supplierSearchColumn) {
+                if ($supplierSearchColumn) {
+                    $q->where($supplierSearchColumn, 'like', '%'.$search.'%');
+                }
+                $q->orWhere('purchases.purchase_no', 'like', '%'.$search.'%');
+            });
+        }
 
-            if (!$start_date || !$end_date) {
-                $latestTaxDate = $this->scopedTable('sales')
-                    ->where('sales.tax', '>', 0)
-                    ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'))
-                    ->tap(fn ($q) => $this->applySaleBranchFilter($q, 'sales'))
-                    ->max(str_replace('sales.', '', $salesDateExpression));
+        $taxpurchases = $query->orderByDesc(DB::raw($purchaseDateExpression))
+            ->get()
+            ->map(fn ($item) => (array) $item);
 
-                $effectiveEnd = $latestTaxDate
-                    ? \Carbon\Carbon::parse($latestTaxDate)->endOfDay()
-                    : now()->endOfDay();
+        return $this->renderReportView('tax-purchase', compact('taxpurchases'));
+    }
 
-                $end_date = $end_date ?: $effectiveEnd->toDateString();
-                $start_date = $start_date ?: $effectiveEnd->copy()->startOfMonth()->toDateString();
-            }
+    public function tax_sales(Request $request)
+    {
+        $start_date = $request->input('start_date');
+        $end_date = $request->input('end_date');
+        $salesDateExpression = Schema::hasColumn('sales', 'order_date')
+            ? 'sales.order_date'
+            : (Schema::hasColumn('sales', 'date') ? 'sales.date' : 'sales.created_at');
 
-            $query = $this->scopedTable('sales')
-                ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
-                ->select([
-                    'sales.id as Id',
-                    DB::raw("COALESCE(customers.customer_name, sales.customer_name, 'Walk-in Customer') as Customer"),
-                    DB::raw("{$salesDateExpression} as Date"),
-                    'sales.invoice_no as InvoiceNo',
-                    'sales.total as TotalAmount',
-                    DB::raw("COALESCE(sales.payment_method, 'N/A') as PaymentMethod"),
-                    'sales.discount as Discount',
-                    'sales.tax as TaxAmount',
-                ])
+        if (! $start_date || ! $end_date) {
+            $latestTaxDate = $this->scopedTable('sales')
                 ->where('sales.tax', '>', 0)
                 ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'))
-                ->tap(fn ($q) => $this->applySaleBranchFilter($q, 'sales'));
+                ->tap(fn ($q) => $this->applySaleBranchFilter($q, 'sales'))
+                ->tap(fn ($q) => $this->applyReportableDocumentScope($q, 'sales'))
+                ->max(str_replace('sales.', '', $salesDateExpression));
 
-            if ($start_date && $end_date) {
-                $query->whereBetween(
-                    DB::raw("DATE({$salesDateExpression})"),
-                    [$start_date, $end_date]
-                );
-            }
+            $effectiveEnd = $latestTaxDate
+                ? \Carbon\Carbon::parse($latestTaxDate)->endOfDay()
+                : now()->endOfDay();
 
-            if ($request->filled('search')) {
-                $search = trim((string) $request->search);
-                $query->where(function ($q) use ($search) {
-                    $q->where('sales.invoice_no', 'like', '%' . $search . '%')
-                      ->orWhere('sales.customer_name', 'like', '%' . $search . '%')
-                      ->orWhere('customers.customer_name', 'like', '%' . $search . '%');
-                });
-            }
-
-            $taxsales = $query->orderByDesc(DB::raw($salesDateExpression))
-                ->limit(2000)
-                ->get()
-                ->map(function ($item) {
-                    $row = (array) $item;
-                    $row['Image'] = 'avatar-01.jpg';
-                    return $row;
-                });
-
-            return $this->renderReportView('tax-sales', compact('taxsales'));
+            $end_date = $end_date ?: $effectiveEnd->toDateString();
+            $start_date = $start_date ?: $effectiveEnd->copy()->startOfMonth()->toDateString();
         }
 
-        // ─── SUB-REPORT METHODS ──────────────────────────────────────────────
+        $query = $this->scopedTable('sales')
+            ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
+            ->select([
+                'sales.id as Id',
+                DB::raw("COALESCE(customers.customer_name, sales.customer_name, 'Walk-in Customer') as Customer"),
+                DB::raw("{$salesDateExpression} as Date"),
+                'sales.invoice_no as InvoiceNo',
+                'sales.total as TotalAmount',
+                DB::raw("COALESCE(sales.payment_method, 'N/A') as PaymentMethod"),
+                'sales.discount as Discount',
+                'sales.tax as TaxAmount',
+            ])
+            ->where('sales.tax', '>', 0)
+            ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'))
+            ->tap(fn ($q) => $this->applySaleBranchFilter($q, 'sales'));
+        $this->applyReportableDocumentScope($query, 'sales');
 
-        /** P&L: Comparison (two periods) */
-        public function profitLossComparison(Request $request)
-        {
-            $fromA = $request->input('from_a') ?: now()->startOfYear()->toDateString();
-            $toA   = $request->input('to_a')   ?: now()->toDateString();
-            $fromB = $request->input('from_b') ?: now()->subYear()->startOfYear()->toDateString();
-            $toB   = $request->input('to_b')   ?: now()->subYear()->toDateString();
+        $this->applyReportDateRange($query, $salesDateExpression, $start_date, $end_date);
 
-            $fetch = function (string $start, string $end) {
-                $entries = $this->profitLossLedgerEntries($start, $end);
-                $income = (float) $entries->where('stream', 'income')->sum('amount');
-                $expense = (float) $entries->whereIn('stream', ['operating_expense', 'purchase_expense'])->sum('amount');
-                return ['income' => $income, 'expense' => $expense, 'net' => $income - $expense];
-            };
-
-            $periodA = $fetch($fromA, $toA);
-            $periodB = $fetch($fromB, $toB);
-
-            return view('Reports.Reports.profit-loss-comparison', compact('periodA', 'periodB', 'fromA', 'toA', 'fromB', 'toB'));
+        if ($request->filled('search')) {
+            $search = trim((string) $request->search);
+            $query->where(function ($q) use ($search) {
+                $q->where('sales.invoice_no', 'like', '%'.$search.'%')
+                    ->orWhere('sales.customer_name', 'like', '%'.$search.'%')
+                    ->orWhere('customers.customer_name', 'like', '%'.$search.'%');
+            });
         }
 
-        /** P&L: Monthly Breakdown */
-        public function profitLossByMonth(Request $request)
-        {
-            $year = (int) ($request->input('year') ?: now()->year);
-            $entries = $this->profitLossLedgerEntries(
-                sprintf('%04d-01-01', $year),
-                sprintf('%04d-12-31', $year)
-            );
+        $taxsales = $query->orderByDesc(DB::raw($salesDateExpression))
+            ->limit(2000)
+            ->get()
+            ->map(function ($item) {
+                $row = (array) $item;
+                $row['Image'] = 'avatar-01.jpg';
 
-            $months = [];
-            for ($m = 1; $m <= 12; $m++) {
-                $monthRows = $entries->filter(fn ($entry) => (int) Carbon::parse($entry->transaction_date)->month === $m);
-                $income = (float) $monthRows->where('stream', 'income')->sum('amount');
-                $expense = (float) $monthRows->whereIn('stream', ['operating_expense', 'purchase_expense'])->sum('amount');
-                $months[$m] = ['income' => $income, 'expense' => $expense, 'net' => $income - $expense];
-            }
-
-            return view('Reports.Reports.profit-loss-by-month', compact('months', 'year'));
-        }
-
-        /** P&L: Detail (line-by-line transactions) */
-        public function profitLossDetail(Request $request)
-        {
-            $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
-            $to   = $request->input('to_date')   ?: now()->toDateString();
-            $entries = $this->profitLossLedgerEntries($from, $to);
-
-            $salesRows = $entries->where('stream', 'income')
-                ->map(function ($entry) {
-                    return (object) [
-                        'party' => $entry->party ?? 'Revenue',
-                        'amount' => (float) $entry->amount,
-                        'txn_date' => $entry->transaction_date,
-                        'reference' => $entry->reference ?: '—',
-                    ];
-                })
-                ->sortByDesc('txn_date')
-                ->values();
-
-            $expenseRows = $entries->whereIn('stream', ['operating_expense', 'purchase_expense'])
-                ->map(function ($entry) {
-                    return (object) [
-                        'party' => $entry->party ?? 'Expense',
-                        'amount' => (float) $entry->amount,
-                        'txn_date' => $entry->transaction_date,
-                        'reference' => $entry->reference ?: '—',
-                    ];
-                })
-                ->sortByDesc('txn_date')
-                ->values();
-
-            $totalIncome  = (float) $salesRows->sum('amount');
-            $totalExpense = (float) $expenseRows->sum('amount');
-            $netProfit    = $totalIncome - $totalExpense;
-
-            return view('Reports.Reports.profit-loss-detail', compact('salesRows', 'expenseRows', 'totalIncome', 'totalExpense', 'netProfit', 'from', 'to'));
-        }
-
-        /** AR: Ageing Detail (per invoice with bucket) */
-        public function accountsReceivableAgeingDetail(Request $request)
-        {
-            $asOf = $request->input('as_of') ?: now()->toDateString();
-            $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
-                : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
-
-            $sales = $this->scopedTable('sales')
-                ->select('id', 'invoice_no', 'customer_name', 'total', 'amount_paid', 'balance', 'payment_status', DB::raw($dateCol.' as sale_date'))
-                ->where(function ($q) { $q->where('payment_status', '!=', 'paid')->orWhereNull('payment_status'); })
-                ->where($dateCol, '<=', $asOf.' 23:59:59');
-            $this->applySalesScope($sales, 'sales');
-            $sales = $sales->orderByDesc($dateCol)->get();
-
-            $rows = $sales->map(function ($sale) use ($asOf) {
-                $balance = max(0, (float)($sale->balance ?? ($sale->total - ($sale->amount_paid ?? 0))));
-                $ageDays = (int) \Carbon\Carbon::parse($sale->sale_date)->diffInDays(\Carbon\Carbon::parse($asOf));
-                $bucket  = $ageDays <= 30 ? '0–30' : ($ageDays <= 60 ? '31–60' : ($ageDays <= 90 ? '61–90' : '90+'));
-                return (object) ['invoice_no' => $sale->invoice_no, 'customer' => $sale->customer_name ?? 'Walk-in', 'sale_date' => $sale->sale_date, 'total' => (float)$sale->total, 'paid' => (float)($sale->amount_paid ?? 0), 'balance' => $balance, 'age_days' => $ageDays, 'bucket' => $bucket];
+                return $row;
             });
 
-            $buckets = ['0–30' => 0.0, '31–60' => 0.0, '61–90' => 0.0, '90+' => 0.0];
-            foreach ($rows as $r) { $buckets[$r->bucket] += $r->balance; }
-            $totalDue = (float) $rows->sum('balance');
-
-            return view('Reports.Reports.accounts-receivable-ageing-detail', compact('rows', 'buckets', 'totalDue', 'asOf'));
-        }
-
-        /** Open Invoices Report */
-        public function openInvoicesReport(Request $request)
-        {
-            $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
-            $to   = $request->input('to_date')   ?: now()->toDateString();
-            $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
-                : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
-
-            $query = $this->scopedTable('sales')
-                ->select('id', 'invoice_no', 'customer_name', 'total', 'amount_paid', 'balance', 'payment_status', DB::raw($dateCol.' as sale_date'))
-                ->where(function ($statusQuery) {
-                    $statusQuery->whereIn('payment_status', ['unpaid', 'partial'])
-                        ->orWhereNull('payment_status');
-                })
-                ->whereBetween($dateCol, [$from.' 00:00:00', $to.' 23:59:59']);
-            $this->applySalesScope($query, 'sales');
-
-            $invoices   = $query->orderByDesc($dateCol)->paginate(25);
-            $totalOpen  = (float) (clone $query)->sum('balance') ?: (float) (clone $query)->selectRaw('SUM(total - COALESCE(amount_paid,0))')->value(DB::raw('SUM(total - COALESCE(amount_paid,0))'));
-            $totalCount = (clone $query)->count();
-
-            return view('Reports.Reports.open-invoices-report', compact('invoices', 'totalOpen', 'totalCount', 'from', 'to'));
-        }
-
-        /** Sales by Customer */
-        public function salesByCustomer(Request $request)
-        {
-            $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
-            $to   = $request->input('to_date')   ?: now()->toDateString();
-            $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
-                : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
-
-            $query = $this->scopedTable('sales')
-                ->select(DB::raw("COALESCE(customer_name,'Walk-in') as customer"), DB::raw('COUNT(*) as invoice_count'), DB::raw('SUM(total) as total_amount'), DB::raw('SUM(COALESCE(amount_paid,0)) as total_paid'), DB::raw('SUM(total - COALESCE(amount_paid,0)) as total_balance'))
-                ->whereBetween($dateCol, [$from.' 00:00:00', $to.' 23:59:59'])
-                ->groupBy(DB::raw("COALESCE(customer_name,'Walk-in')"))
-                ->orderByDesc(DB::raw('SUM(total)'));
-            $this->applySalesScope($query, 'sales');
-
-            $rows      = $query->get();
-            $grandTotal = (float) $rows->sum('total_amount');
-
-            return view('Reports.Reports.sales-by-customer', compact('rows', 'grandTotal', 'from', 'to'));
-        }
-
-        /** Sales by Product */
-        public function salesByProduct(Request $request)
-        {
-            $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
-            $to   = $request->input('to_date')   ?: now()->toDateString();
-            $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
-                : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
-
-            $rows = collect();
-            if (Schema::hasTable('sale_items') || Schema::hasTable('order_items') || Schema::hasTable('invoice_items')) {
-                $itemsTable = Schema::hasTable('sale_items') ? 'sale_items' : (Schema::hasTable('order_items') ? 'order_items' : 'invoice_items');
-                $salesJoinCol = Schema::hasColumn($itemsTable, 'sale_id') ? 'sale_id' : 'order_id';
-
-                // Resolve product name column — only reference columns that actually exist
-                $nameCol = Schema::hasColumn($itemsTable, 'product_name')
-                    ? "{$itemsTable}.product_name"
-                    : (Schema::hasColumn($itemsTable, 'name')
-                        ? "{$itemsTable}.name"
-                        : (Schema::hasColumn($itemsTable, 'item_name')
-                            ? "{$itemsTable}.item_name"
-                            : null));
-
-                $qtyCol = Schema::hasColumn($itemsTable, 'qty')
-                    ? "{$itemsTable}.qty"
-                    : (Schema::hasColumn($itemsTable, 'quantity') ? "{$itemsTable}.quantity" : null);
-
-                $lineTotalCol = Schema::hasColumn($itemsTable, 'line_total')
-                    ? "{$itemsTable}.line_total"
-                    : (Schema::hasColumn($itemsTable, 'total')
-                        ? "{$itemsTable}.total"
-                        : (Schema::hasColumn($itemsTable, 'amount') ? "{$itemsTable}.amount" : null));
-
-                $priceCol = Schema::hasColumn($itemsTable, 'price')
-                    ? "{$itemsTable}.price"
-                    : (Schema::hasColumn($itemsTable, 'unit_price') ? "{$itemsTable}.unit_price" : null);
-
-                if (!$nameCol || !$qtyCol) {
-                    $rows = collect();
-                } else {
-                    $productExpr = "COALESCE({$nameCol}, 'Unknown')";
-                    $lineRevenueExpr = $lineTotalCol
-                        ? "NULLIF({$lineTotalCol}, 0)"
-                        : 'NULL';
-                    $unitRevenueExpr = $priceCol
-                        ? "({$qtyCol} * COALESCE({$priceCol}, 0))"
-                        : '0';
-                    $revenueExpr = "SUM(COALESCE({$lineRevenueExpr}, {$unitRevenueExpr}, 0))";
-
-                    $query = DB::table($itemsTable)
-                        ->join('sales', "{$itemsTable}.{$salesJoinCol}", '=', 'sales.id')
-                        ->select(
-                            DB::raw("{$productExpr} as product"),
-                            DB::raw("SUM(COALESCE({$qtyCol}, 0)) as qty_sold"),
-                            DB::raw("{$revenueExpr} as revenue")
-                        )
-                        ->whereBetween("sales.{$dateCol}", [$from.' 00:00:00', $to.' 23:59:59'])
-                        ->groupBy(DB::raw($productExpr))
-                        ->orderByDesc(DB::raw($revenueExpr));
-
-                    // Scope via the sales table to prevent cross-tenant or cross-branch data leakage.
-                    $this->applySalesScope($query, 'sales');
-
-                    $rows = $query->get();
-                }
-            }
-            $grandTotal = (float) $rows->sum('revenue');
-
-            return view('Reports.Reports.sales-by-product', compact('rows', 'grandTotal', 'from', 'to'));
-        }
-
-        /** Sales Summary */
-        public function salesSummary(Request $request)
-        {
-            $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
-            $to   = $request->input('to_date')   ?: now()->toDateString();
-            $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
-                : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
-
-            $query = $this->scopedTable('sales')->whereBetween($dateCol, [$from.' 00:00:00', $to.' 23:59:59']);
-            $this->applySalesScope($query, 'sales');
-
-            $totalSales   = (float) (clone $query)->sum('total');
-            $totalPaid    = (float) (clone $query)->sum(DB::raw('COALESCE(amount_paid,0)'));
-            $totalBalance = max(0, $totalSales - $totalPaid);
-            $totalCount   = (int)   (clone $query)->count();
-            $avgSale      = $totalCount > 0 ? $totalSales / $totalCount : 0;
-
-            $byStatus = (clone $query)
-                ->select('payment_status', DB::raw('COUNT(*) as cnt'), DB::raw('SUM(total) as amt'))
-                ->groupBy('payment_status')
-                ->get()
-                ->keyBy('payment_status')
-                ->map(fn ($row) => ['count' => (int) $row->cnt, 'total' => (float) $row->amt]);
-
-            return view('Reports.Reports.sales-summary', compact('totalSales', 'totalPaid', 'totalBalance', 'totalCount', 'avgSale', 'byStatus', 'from', 'to'));
-        }
-
-        /** Purchase by Supplier */
-        public function purchaseBySupplier(Request $request)
-        {
-            $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
-            $to   = $request->input('to_date')   ?: now()->toDateString();
-
-            $rows = collect();
-            if (Schema::hasTable('purchases')) {
-                $dateCol = Schema::hasColumn('purchases', 'purchase_date') ? 'purchase_date'
-                    : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
-                $amtCol  = Schema::hasColumn('purchases', 'total_amount') ? 'total_amount'
-                    : (Schema::hasColumn('purchases', 'amount') ? 'amount' : null);
-                if ($amtCol) {
-                    $query = DB::table('purchases');
-                    if (Schema::hasTable('suppliers') && Schema::hasColumn('purchases', 'supplier_id')) {
-                        $sNameCol = Schema::hasColumn('suppliers', 'name') ? 'name' : (Schema::hasColumn('suppliers', 'supplier_name') ? 'supplier_name' : 'company_name');
-                        $query->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id')
-                              ->select(DB::raw("COALESCE(suppliers.{$sNameCol},'Unknown') as supplier"), DB::raw("COUNT(*) as order_count"), DB::raw("SUM(purchases.{$amtCol}) as total_amount"))
-                              ->groupBy(DB::raw("COALESCE(suppliers.{$sNameCol},'Unknown')"));
-                    } else {
-                        $query->select(DB::raw("'Unknown' as supplier"), DB::raw("COUNT(*) as order_count"), DB::raw("SUM({$amtCol}) as total_amount"));
-                    }
-                    $this->applyTenantScope($query, 'purchases');
-                    $this->applyGenericBranchFilter($query, 'purchases');
-                    $rows = $query->whereBetween("purchases.{$dateCol}", [$from, $to])->orderByDesc(DB::raw("SUM(purchases.{$amtCol})"))->get();
-                }
-            }
-            $grandTotal = (float) $rows->sum('total_amount');
-
-            return view('Reports.Reports.purchase-by-supplier', compact('rows', 'grandTotal', 'from', 'to'));
-        }
-
-        /** Purchase Summary */
-        public function purchaseSummary(Request $request)
-        {
-            $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
-            $to   = $request->input('to_date')   ?: now()->toDateString();
-
-            $totalAmount = 0.0; $totalCount = 0;
-            if (Schema::hasTable('purchases')) {
-                $dateCol = Schema::hasColumn('purchases', 'purchase_date') ? 'purchase_date'
-                    : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
-                $amtCol  = Schema::hasColumn('purchases', 'total_amount') ? 'total_amount'
-                    : (Schema::hasColumn('purchases', 'amount') ? 'amount' : null);
-                if ($amtCol) {
-                    $query = $this->applyTenantScope(DB::table('purchases'), 'purchases');
-                    $this->applyGenericBranchFilter($query, 'purchases');
-                    $query->whereBetween("purchases.{$dateCol}", [$from, $to]);
-                    $totalAmount = (float) $query->sum($amtCol);
-                    $totalCount  = (int)   $query->count();
-                }
-            }
-            $avgPurchase = $totalCount > 0 ? $totalAmount / $totalCount : 0;
-
-            return view('Reports.Reports.purchase-summary', compact('totalAmount', 'totalCount', 'avgPurchase', 'from', 'to'));
-        }
-
-        /** Expense by Category */
-        public function expenseByCategory(Request $request)
-        {
-            $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
-            $to   = $request->input('to_date')   ?: now()->toDateString();
-
-            $rows = $this->scopedTable('expenses')
-                ->select(DB::raw("COALESCE(category,'General') as category"), DB::raw('COUNT(*) as cnt'), DB::raw('SUM(amount) as total'))
-                ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
-                ->groupBy(DB::raw("COALESCE(category,'General')"))
-                ->orderByDesc(DB::raw('SUM(amount)'))
-                ->get();
-
-            $grandTotal = (float) $rows->sum('total');
-
-            return view('Reports.Reports.expense-by-category', compact('rows', 'grandTotal', 'from', 'to'));
-        }
-
-        /** Expense Trend (monthly) */
-        public function expenseTrend(Request $request)
-        {
-            $year = (int) ($request->input('year') ?: now()->year);
-            $months = [];
-            for ($m = 1; $m <= 12; $m++) {
-                $start = sprintf('%04d-%02d-01 00:00:00', $year, $m);
-                $end   = sprintf('%04d-%02d-%02d 23:59:59', $year, $m, cal_days_in_month(CAL_GREGORIAN, $m, $year));
-                $total = Schema::hasTable('expenses')
-                    ? (float) $this->scopedTable('expenses')->whereBetween('created_at', [$start, $end])->sum('amount')
-                    : 0.0;
-                $months[$m] = $total;
-            }
-            $grandTotal = array_sum($months);
-
-            return view('Reports.Reports.expense-trend', compact('months', 'year', 'grandTotal'));
-        }
-
-        /** Stock Valuation */
-        public function stockValuation(Request $request)
-        {
-            $activeBranch = $this->getActiveBranchContext();
-            $rows = collect();
-            if (Schema::hasTable('products')) {
-                $qtyCol = $this->productStockColumn('products');
-                $costExpr = $this->productCostExpression('products');
-                if ($qtyCol) {
-                    $catExpr = Schema::hasColumn('products', 'category')
-                        ? "COALESCE(products.category,'Uncategorized')"
-                        : "'Uncategorized'";
-                    $qtyExpr = "COALESCE({$qtyCol}, 0)";
-                    $query = DB::table('products')
-                        ->select('products.name', 'products.sku', DB::raw("{$catExpr} as category"));
-                    $this->applyTenantScope($query, 'products');
-
-                    if (
-                        (!empty($activeBranch['id']) || !empty($activeBranch['name']))
-                        && Schema::hasTable('product_branch_stocks')
-                        && Schema::hasColumn('product_branch_stocks', 'quantity')
-                    ) {
-                        $query->leftJoin('product_branch_stocks', function ($join) use ($activeBranch) {
-                            $join->on('product_branch_stocks.product_id', '=', 'products.id')
-                                ->where(function ($branchJoin) use ($activeBranch) {
-                                    if (!empty($activeBranch['id']) && Schema::hasColumn('product_branch_stocks', 'branch_id')) {
-                                        $branchJoin->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
-                                    }
-
-                                    if (!empty($activeBranch['name']) && Schema::hasColumn('product_branch_stocks', 'branch_name')) {
-                                        $method = !empty($activeBranch['id']) && Schema::hasColumn('product_branch_stocks', 'branch_id') ? 'orWhere' : 'where';
-                                        $branchJoin->{$method}('product_branch_stocks.branch_name', (string) $activeBranch['name']);
-                                    }
-                                });
-                        });
-                        $qtyExpr = "COALESCE(product_branch_stocks.quantity, {$qtyCol}, 0)";
-                    }
-
-                    $query->addSelect(
-                        DB::raw("{$qtyExpr} as qty"),
-                        DB::raw("{$costExpr} as unit_cost"),
-                        DB::raw("{$qtyExpr} * {$costExpr} as total_value")
-                    )
-                        ->whereRaw("{$qtyExpr} > 0")
-                        ->orderByDesc(DB::raw("{$qtyExpr} * {$costExpr}"));
-
-                    $rows = $query->get();
-                }
-            }
-            $totalValue = (float) $rows->sum('total_value');
-            $totalQty   = (int)   $rows->sum('qty');
-
-            return view('Reports.Reports.stock-valuation', compact('rows', 'totalValue', 'totalQty'));
-        }
-
-        /** Stock by Category */
-        public function stockByCategory(Request $request)
-        {
-            $activeBranch = $this->getActiveBranchContext();
-            $rows = collect();
-            if (Schema::hasTable('products')) {
-                $qtyCol = $this->productStockColumn('products');
-                $costExpr = $this->productCostExpression('products');
-                if ($qtyCol) {
-                    $catExpr = Schema::hasColumn('products', 'category')
-                        ? "COALESCE(products.category,'Uncategorized')"
-                        : "'Uncategorized'";
-                    $qtyExpr = "COALESCE({$qtyCol}, 0)";
-                    $query = DB::table('products')
-                        ->select(DB::raw("{$catExpr} as category"));
-                    $this->applyTenantScope($query, 'products');
-
-                    if (
-                        (!empty($activeBranch['id']) || !empty($activeBranch['name']))
-                        && Schema::hasTable('product_branch_stocks')
-                        && Schema::hasColumn('product_branch_stocks', 'quantity')
-                    ) {
-                        $query->leftJoin('product_branch_stocks', function ($join) use ($activeBranch) {
-                            $join->on('product_branch_stocks.product_id', '=', 'products.id')
-                                ->where(function ($branchJoin) use ($activeBranch) {
-                                    if (!empty($activeBranch['id']) && Schema::hasColumn('product_branch_stocks', 'branch_id')) {
-                                        $branchJoin->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
-                                    }
-
-                                    if (!empty($activeBranch['name']) && Schema::hasColumn('product_branch_stocks', 'branch_name')) {
-                                        $method = !empty($activeBranch['id']) && Schema::hasColumn('product_branch_stocks', 'branch_id') ? 'orWhere' : 'where';
-                                        $branchJoin->{$method}('product_branch_stocks.branch_name', (string) $activeBranch['name']);
-                                    }
-                                });
-                        });
-                        $qtyExpr = "COALESCE(product_branch_stocks.quantity, {$qtyCol}, 0)";
-                    }
-
-                    $query->addSelect(
-                        DB::raw('COUNT(*) as product_count'),
-                        DB::raw("SUM({$qtyExpr}) as total_qty"),
-                        DB::raw("SUM({$qtyExpr} * {$costExpr}) as total_value")
-                    )
-                        ->groupBy(DB::raw($catExpr))
-                        ->orderByDesc(DB::raw("SUM({$qtyExpr} * {$costExpr})"));
-
-                    $rows = $query->get();
-                }
-            }
-            $grandValue = (float) $rows->sum('total_value');
-
-            return view('Reports.Reports.stock-by-category', compact('rows', 'grandValue'));
-        }
-
-        /** Tax Summary (combined) */
-        public function taxSummary(Request $request)
-        {
-            $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
-            $to   = $request->input('to_date')   ?: now()->toDateString();
-
-            $salesDateExpression = 'created_at';
-            if (Schema::hasTable('sales')) {
-                $salesDateExpression = Schema::hasColumn('sales', 'order_date') ? 'order_date'
-                    : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
-            }
-
-            $taxOnSales = 0.0; $taxOnPurchases = 0.0;
-            if (Schema::hasTable('sales') && Schema::hasColumn('sales', 'tax')) {
-                $q = $this->scopedTable('sales')->whereBetween($salesDateExpression, [$from, $to]);
-                $this->applySalesScope($q, 'sales');
-                $taxOnSales = (float) $q->sum('tax');
-            }
-            if (Schema::hasTable('purchases')) {
-                $dateC = Schema::hasColumn('purchases', 'purchase_date')
-                    ? 'purchase_date'
-                    : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
-                $purchaseTaxColumn = Schema::hasColumn('purchases', 'tax_amount')
-                    ? 'tax_amount'
-                    : (Schema::hasColumn('purchases', 'tax') ? 'tax' : null);
-
-                if ($purchaseTaxColumn) {
-                    $q = $this->applyTenantScope(DB::table('purchases'), 'purchases')->whereBetween($dateC, [$from, $to]);
-                    $taxOnPurchases = (float) $q->sum($purchaseTaxColumn);
-                }
-            }
-            $netTaxLiability = $taxOnSales - $taxOnPurchases;
-
-            return view('Reports.Reports.tax-summary', compact('taxOnSales', 'taxOnPurchases', 'netTaxLiability', 'from', 'to'));
-        }
-
+        return $this->renderReportView('tax-sales', compact('taxsales'));
     }
+
+    // ─── SUB-REPORT METHODS ──────────────────────────────────────────────
+
+    /** P&L: Comparison (two periods) */
+    public function profitLossComparison(Request $request)
+    {
+        $fromA = $request->input('from_a') ?: now()->startOfYear()->toDateString();
+        $toA = $request->input('to_a') ?: now()->toDateString();
+        $fromB = $request->input('from_b') ?: now()->subYear()->startOfYear()->toDateString();
+        $toB = $request->input('to_b') ?: now()->subYear()->toDateString();
+
+        $fetch = function (string $start, string $end) {
+            $entries = $this->profitLossLedgerEntries($start, $end);
+            $income = (float) $entries->where('stream', 'income')->sum('amount');
+            $expense = (float) $entries->whereIn('stream', ['operating_expense', 'purchase_expense'])->sum('amount');
+
+            return ['income' => $income, 'expense' => $expense, 'net' => $income - $expense];
+        };
+
+        $periodA = $fetch($fromA, $toA);
+        $periodB = $fetch($fromB, $toB);
+
+        return view('Reports.Reports.profit-loss-comparison', compact('periodA', 'periodB', 'fromA', 'toA', 'fromB', 'toB'));
+    }
+
+    /** P&L: Monthly Breakdown */
+    public function profitLossByMonth(Request $request)
+    {
+        $year = (int) ($request->input('year') ?: now()->year);
+        $entries = $this->profitLossLedgerEntries(
+            sprintf('%04d-01-01', $year),
+            sprintf('%04d-12-31', $year)
+        );
+
+        $months = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $monthRows = $entries->filter(fn ($entry) => (int) Carbon::parse($entry->transaction_date)->month === $m);
+            $income = (float) $monthRows->where('stream', 'income')->sum('amount');
+            $expense = (float) $monthRows->whereIn('stream', ['operating_expense', 'purchase_expense'])->sum('amount');
+            $months[$m] = ['income' => $income, 'expense' => $expense, 'net' => $income - $expense];
+        }
+
+        return view('Reports.Reports.profit-loss-by-month', compact('months', 'year'));
+    }
+
+    /** P&L: Detail (line-by-line transactions) */
+    public function profitLossDetail(Request $request)
+    {
+        $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
+        $to = $request->input('to_date') ?: now()->toDateString();
+        $entries = $this->profitLossLedgerEntries($from, $to);
+
+        $salesRows = $entries->where('stream', 'income')
+            ->map(function ($entry) {
+                return (object) [
+                    'party' => $entry->party ?? 'Revenue',
+                    'amount' => (float) $entry->amount,
+                    'txn_date' => $entry->transaction_date,
+                    'reference' => $entry->reference ?: '—',
+                ];
+            })
+            ->sortByDesc('txn_date')
+            ->values();
+
+        $expenseRows = $entries->whereIn('stream', ['operating_expense', 'purchase_expense'])
+            ->map(function ($entry) {
+                return (object) [
+                    'party' => $entry->party ?? 'Expense',
+                    'amount' => (float) $entry->amount,
+                    'txn_date' => $entry->transaction_date,
+                    'reference' => $entry->reference ?: '—',
+                ];
+            })
+            ->sortByDesc('txn_date')
+            ->values();
+
+        $totalIncome = (float) $salesRows->sum('amount');
+        $totalExpense = (float) $expenseRows->sum('amount');
+        $netProfit = $totalIncome - $totalExpense;
+
+        return view('Reports.Reports.profit-loss-detail', compact('salesRows', 'expenseRows', 'totalIncome', 'totalExpense', 'netProfit', 'from', 'to'));
+    }
+
+    /** AR: Ageing Detail (per invoice with bucket) */
+    public function accountsReceivableAgeingDetail(Request $request)
+    {
+        $asOf = $request->input('as_of') ?: now()->toDateString();
+        $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
+            : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+
+        $sales = Sale::with('payments')
+            ->where($dateCol, '<=', $asOf.' 23:59:59');
+        $this->applySalesScope($sales, 'sales');
+        $this->applyReportableDocumentScope($sales, 'sales');
+        $sales = $sales->orderByDesc($dateCol)->get();
+
+        $rows = $sales->map(function ($sale) use ($asOf) {
+            $financials = $this->normalizeInvoiceFinancials($sale);
+            $saleDate = $sale->order_date ?? $sale->date ?? $sale->created_at;
+            $ageDays = max(0, (int) Carbon::parse($saleDate)->diffInDays(Carbon::parse($asOf), false));
+            $bucket = $ageDays <= 30 ? '0–30' : ($ageDays <= 60 ? '31–60' : ($ageDays <= 90 ? '61–90' : '90+'));
+
+            return (object) ['invoice_no' => $sale->invoice_no, 'customer' => $sale->customer_name ?? 'Walk-in', 'sale_date' => $saleDate, 'total' => $financials['total'], 'paid' => $financials['paid'], 'balance' => $financials['balance'], 'age_days' => $ageDays, 'bucket' => $bucket];
+        })->filter(fn ($sale) => $sale->balance > 0.0001)->values();
+
+        $buckets = ['0–30' => 0.0, '31–60' => 0.0, '61–90' => 0.0, '90+' => 0.0];
+        foreach ($rows as $r) {
+            $buckets[$r->bucket] += $r->balance;
+        }
+        $totalDue = (float) $rows->sum('balance');
+
+        return view('Reports.Reports.accounts-receivable-ageing-detail', compact('rows', 'buckets', 'totalDue', 'asOf'));
+    }
+
+    /** Open Invoices Report */
+    public function openInvoicesReport(Request $request)
+    {
+        $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
+        $to = $request->input('to_date') ?: now()->toDateString();
+        $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
+            : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+
+        $query = Sale::with('payments')
+            ->whereBetween($dateCol, [$from.' 00:00:00', $to.' 23:59:59']);
+        $this->applySalesScope($query, 'sales');
+        $this->applyReportableDocumentScope($query, 'sales');
+
+        $openInvoices = $query->orderByDesc($dateCol)->get()
+            ->map(function (Sale $sale) use ($dateCol) {
+                $financials = $this->normalizeInvoiceFinancials($sale);
+                $sale->setAttribute('total', $financials['total']);
+                $sale->setAttribute('amount_paid', $financials['paid']);
+                $sale->setAttribute('balance', $financials['balance']);
+                $sale->setAttribute('payment_status', $financials['status']);
+                $sale->setAttribute('sale_date', $sale->{$dateCol} ?? $sale->created_at);
+
+                return $sale;
+            })
+            ->filter(fn (Sale $sale) => (float) $sale->balance > 0.0001)
+            ->values();
+
+        $totalOpen = (float) $openInvoices->sum('balance');
+        $totalCount = $openInvoices->count();
+        $invoices = $this->paginateCollection($openInvoices, 25, 'page', $request);
+
+        return view('Reports.Reports.open-invoices-report', compact('invoices', 'totalOpen', 'totalCount', 'from', 'to'));
+    }
+
+    /** Sales by Customer */
+    public function salesByCustomer(Request $request)
+    {
+        $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
+        $to = $request->input('to_date') ?: now()->toDateString();
+        $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
+            : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+
+        $query = Sale::with('payments')
+            ->whereBetween($dateCol, [$from.' 00:00:00', $to.' 23:59:59']);
+        $this->applySalesScope($query, 'sales');
+        $this->applyReportableDocumentScope($query, 'sales');
+
+        $rows = $query->get()
+            ->groupBy(fn (Sale $sale) => trim((string) ($sale->customer_name ?: 'Walk-in')))
+            ->map(function ($sales, string $customer) {
+                $financials = $sales->map(fn (Sale $sale) => $this->normalizeInvoiceFinancials($sale));
+
+                return (object) [
+                    'customer' => $customer,
+                    'invoice_count' => $sales->count(),
+                    'total_amount' => (float) $financials->sum('total'),
+                    'total_paid' => (float) $financials->sum('paid'),
+                    'total_balance' => (float) $financials->sum('balance'),
+                ];
+            })
+            ->sortByDesc('total_amount')
+            ->values();
+        $grandTotal = (float) $rows->sum('total_amount');
+
+        return view('Reports.Reports.sales-by-customer', compact('rows', 'grandTotal', 'from', 'to'));
+    }
+
+    /** Sales by Product */
+    public function salesByProduct(Request $request)
+    {
+        $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
+        $to = $request->input('to_date') ?: now()->toDateString();
+        $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
+            : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+
+        $rows = collect();
+        if (Schema::hasTable('sale_items') || Schema::hasTable('order_items') || Schema::hasTable('invoice_items')) {
+            $itemsTable = Schema::hasTable('sale_items') ? 'sale_items' : (Schema::hasTable('order_items') ? 'order_items' : 'invoice_items');
+            $salesJoinCol = Schema::hasColumn($itemsTable, 'sale_id') ? 'sale_id' : 'order_id';
+
+            // Resolve product name column — only reference columns that actually exist
+            $nameCol = Schema::hasColumn($itemsTable, 'product_name')
+                ? "{$itemsTable}.product_name"
+                : (Schema::hasColumn($itemsTable, 'name')
+                    ? "{$itemsTable}.name"
+                    : (Schema::hasColumn($itemsTable, 'item_name')
+                        ? "{$itemsTable}.item_name"
+                        : null));
+
+            $qtyCol = Schema::hasColumn($itemsTable, 'qty')
+                ? "{$itemsTable}.qty"
+                : (Schema::hasColumn($itemsTable, 'quantity') ? "{$itemsTable}.quantity" : null);
+
+            $lineTotalCol = Schema::hasColumn($itemsTable, 'line_total')
+                ? "{$itemsTable}.line_total"
+                : (Schema::hasColumn($itemsTable, 'total')
+                    ? "{$itemsTable}.total"
+                    : (Schema::hasColumn($itemsTable, 'amount') ? "{$itemsTable}.amount" : null));
+
+            $priceCol = Schema::hasColumn($itemsTable, 'price')
+                ? "{$itemsTable}.price"
+                : (Schema::hasColumn($itemsTable, 'unit_price') ? "{$itemsTable}.unit_price" : null);
+
+            if (! $nameCol || ! $qtyCol) {
+                $rows = collect();
+            } else {
+                $productExpr = "COALESCE({$nameCol}, 'Unknown')";
+                $lineRevenueExpr = $lineTotalCol
+                    ? "NULLIF({$lineTotalCol}, 0)"
+                    : 'NULL';
+                $unitRevenueExpr = $priceCol
+                    ? "({$qtyCol} * COALESCE({$priceCol}, 0))"
+                    : '0';
+                $revenueExpr = "SUM(COALESCE({$lineRevenueExpr}, {$unitRevenueExpr}, 0))";
+
+                $query = DB::table($itemsTable)
+                    ->join('sales', "{$itemsTable}.{$salesJoinCol}", '=', 'sales.id')
+                    ->select(
+                        DB::raw("{$productExpr} as product"),
+                        DB::raw("SUM(COALESCE({$qtyCol}, 0)) as qty_sold"),
+                        DB::raw("{$revenueExpr} as revenue")
+                    )
+                    ->whereBetween("sales.{$dateCol}", [$from.' 00:00:00', $to.' 23:59:59'])
+                    ->groupBy(DB::raw($productExpr))
+                    ->orderByDesc(DB::raw($revenueExpr));
+
+                // Scope via the sales table to prevent cross-tenant or cross-branch data leakage.
+                $this->applySalesScope($query, 'sales');
+                $this->applyReportableDocumentScope($query, 'sales');
+
+                $rows = $query->get();
+            }
+        }
+        $grandTotal = (float) $rows->sum('revenue');
+
+        return view('Reports.Reports.sales-by-product', compact('rows', 'grandTotal', 'from', 'to'));
+    }
+
+    /** Sales Summary */
+    public function salesSummary(Request $request)
+    {
+        $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
+        $to = $request->input('to_date') ?: now()->toDateString();
+        $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
+            : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+
+        $query = Sale::with('payments')->whereBetween($dateCol, [$from.' 00:00:00', $to.' 23:59:59']);
+        $this->applySalesScope($query, 'sales');
+        $this->applyReportableDocumentScope($query, 'sales');
+
+        $sales = $query->get();
+        $financials = $sales->map(fn (Sale $sale) => $this->normalizeInvoiceFinancials($sale));
+        $totalSales = (float) $financials->sum('total');
+        $totalPaid = (float) $financials->sum('paid');
+        $totalBalance = (float) $financials->sum('balance');
+        $totalCount = $financials->count();
+        $avgSale = $totalCount > 0 ? $totalSales / $totalCount : 0;
+
+        $byStatus = $financials
+            ->groupBy('status')
+            ->map(fn ($rows) => [
+                'count' => $rows->count(),
+                'total' => (float) $rows->sum('total'),
+            ]);
+
+        return view('Reports.Reports.sales-summary', compact('totalSales', 'totalPaid', 'totalBalance', 'totalCount', 'avgSale', 'byStatus', 'from', 'to'));
+    }
+
+    /** Purchase by Supplier */
+    public function purchaseBySupplier(Request $request)
+    {
+        $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
+        $to = $request->input('to_date') ?: now()->toDateString();
+
+        $rows = collect();
+        if (Schema::hasTable('purchases')) {
+            $dateCol = Schema::hasColumn('purchases', 'purchase_date') ? 'purchase_date'
+                : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
+            if (Schema::hasColumn('purchases', 'total_amount') || Schema::hasColumn('purchases', 'amount') || Schema::hasTable('purchase_items')) {
+                $query = DB::table('purchases');
+                $amountExpression = $this->attachPurchaseItemTotals($query);
+                if (Schema::hasTable('suppliers') && Schema::hasColumn('purchases', 'supplier_id')) {
+                    $sNameCol = Schema::hasColumn('suppliers', 'name') ? 'name' : (Schema::hasColumn('suppliers', 'supplier_name') ? 'supplier_name' : 'company_name');
+                    $query->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id')
+                        ->select(DB::raw("COALESCE(suppliers.{$sNameCol},'Unknown') as supplier"), DB::raw('COUNT(*) as order_count'), DB::raw("SUM({$amountExpression}) as total_amount"))
+                        ->groupBy(DB::raw("COALESCE(suppliers.{$sNameCol},'Unknown')"));
+                } else {
+                    $query->select(DB::raw("'Unknown' as supplier"), DB::raw('COUNT(*) as order_count'), DB::raw("SUM({$amountExpression}) as total_amount"));
+                }
+                $this->applyTenantScope($query, 'purchases');
+                $this->applyGenericBranchFilter($query, 'purchases');
+                $this->applyReportableDocumentScope($query, 'purchases');
+                $this->applyReportDateRange($query, "purchases.{$dateCol}", $from, $to);
+                $rows = $query->orderByDesc(DB::raw("SUM({$amountExpression})"))->get();
+            }
+        }
+        $grandTotal = (float) $rows->sum('total_amount');
+
+        return view('Reports.Reports.purchase-by-supplier', compact('rows', 'grandTotal', 'from', 'to'));
+    }
+
+    /** Purchase Summary */
+    public function purchaseSummary(Request $request)
+    {
+        $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
+        $to = $request->input('to_date') ?: now()->toDateString();
+
+        $totalAmount = 0.0;
+        $totalCount = 0;
+        if (Schema::hasTable('purchases')) {
+            $dateCol = Schema::hasColumn('purchases', 'purchase_date') ? 'purchase_date'
+                : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
+            if (Schema::hasColumn('purchases', 'total_amount') || Schema::hasColumn('purchases', 'amount') || Schema::hasTable('purchase_items')) {
+                $query = $this->applyTenantScope(DB::table('purchases'), 'purchases');
+                $this->applyGenericBranchFilter($query, 'purchases');
+                $this->applyReportableDocumentScope($query, 'purchases');
+                $this->applyReportDateRange($query, "purchases.{$dateCol}", $from, $to);
+                $amountExpression = $this->attachPurchaseItemTotals($query);
+                $totalAmount = (float) (clone $query)->sum(DB::raw($amountExpression));
+                $totalCount = (int) (clone $query)->count('purchases.id');
+            }
+        }
+        $avgPurchase = $totalCount > 0 ? $totalAmount / $totalCount : 0;
+
+        return view('Reports.Reports.purchase-summary', compact('totalAmount', 'totalCount', 'avgPurchase', 'from', 'to'));
+    }
+
+    /** Expense by Category */
+    public function expenseByCategory(Request $request)
+    {
+        $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
+        $to = $request->input('to_date') ?: now()->toDateString();
+
+        $rows = $this->scopedTable('expenses')
+            ->select(DB::raw("COALESCE(category,'General') as category"), DB::raw('COUNT(*) as cnt'), DB::raw('SUM(amount) as total'))
+            ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
+            ->groupBy(DB::raw("COALESCE(category,'General')"))
+            ->orderByDesc(DB::raw('SUM(amount)'))
+            ->tap(fn ($query) => $this->applyReportableDocumentScope($query, 'expenses'))
+            ->get();
+
+        $grandTotal = (float) $rows->sum('total');
+
+        return view('Reports.Reports.expense-by-category', compact('rows', 'grandTotal', 'from', 'to'));
+    }
+
+    /** Expense Trend (monthly) */
+    public function expenseTrend(Request $request)
+    {
+        $year = (int) ($request->input('year') ?: now()->year);
+        $months = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $start = sprintf('%04d-%02d-01 00:00:00', $year, $m);
+            $end = sprintf('%04d-%02d-%02d 23:59:59', $year, $m, cal_days_in_month(CAL_GREGORIAN, $m, $year));
+            $total = Schema::hasTable('expenses')
+                ? (float) $this->scopedTable('expenses')
+                    ->whereBetween('created_at', [$start, $end])
+                    ->tap(fn ($query) => $this->applyReportableDocumentScope($query, 'expenses'))
+                    ->sum('amount')
+                : 0.0;
+            $months[$m] = $total;
+        }
+        $grandTotal = array_sum($months);
+
+        return view('Reports.Reports.expense-trend', compact('months', 'year', 'grandTotal'));
+    }
+
+    /** Stock Valuation */
+    public function stockValuation(Request $request)
+    {
+        $activeBranch = $this->getActiveBranchContext();
+        $rows = collect();
+        if (Schema::hasTable('products')) {
+            $qtyCol = $this->productStockColumn('products');
+            $costExpr = $this->productCostExpression('products');
+            if ($qtyCol) {
+                $hasCategories = Schema::hasTable('categories') && Schema::hasColumn('products', 'category_id');
+                $catExpr = $hasCategories
+                    ? "COALESCE(categories.name, 'Uncategorized')"
+                    : (Schema::hasColumn('products', 'category') ? "COALESCE(products.category,'Uncategorized')" : "'Uncategorized'");
+                $qtyExpr = "COALESCE({$qtyCol}, 0)";
+                $query = DB::table('products')
+                    ->select('products.name', 'products.sku', DB::raw("{$catExpr} as category"));
+                if ($hasCategories) {
+                    $query->leftJoin('categories', 'products.category_id', '=', 'categories.id');
+                }
+                $this->applyTenantScope($query, 'products');
+
+                if (
+                    (! empty($activeBranch['id']) || ! empty($activeBranch['name']))
+                    && Schema::hasTable('product_branch_stocks')
+                    && Schema::hasColumn('product_branch_stocks', 'quantity')
+                ) {
+                    $query->leftJoin('product_branch_stocks', function ($join) use ($activeBranch) {
+                        $join->on('product_branch_stocks.product_id', '=', 'products.id')
+                            ->where(function ($branchJoin) use ($activeBranch) {
+                                if (! empty($activeBranch['id']) && Schema::hasColumn('product_branch_stocks', 'branch_id')) {
+                                    $branchJoin->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
+                                }
+
+                                if (! empty($activeBranch['name']) && Schema::hasColumn('product_branch_stocks', 'branch_name')) {
+                                    $method = ! empty($activeBranch['id']) && Schema::hasColumn('product_branch_stocks', 'branch_id') ? 'orWhere' : 'where';
+                                    $branchJoin->{$method}('product_branch_stocks.branch_name', (string) $activeBranch['name']);
+                                }
+                            });
+                    });
+                    $qtyExpr = "COALESCE(product_branch_stocks.quantity, {$qtyCol}, 0)";
+                }
+
+                $query->addSelect(
+                    DB::raw("{$qtyExpr} as qty"),
+                    DB::raw("{$costExpr} as unit_cost"),
+                    DB::raw("{$qtyExpr} * {$costExpr} as total_value")
+                )
+                    ->whereRaw("{$qtyExpr} > 0")
+                    ->orderByDesc(DB::raw("{$qtyExpr} * {$costExpr}"));
+
+                $rows = $query->get();
+            }
+        }
+        $totalValue = (float) $rows->sum('total_value');
+        $totalQty = (float) $rows->sum('qty');
+
+        return view('Reports.Reports.stock-valuation', compact('rows', 'totalValue', 'totalQty'));
+    }
+
+    /** Stock by Category */
+    public function stockByCategory(Request $request)
+    {
+        $activeBranch = $this->getActiveBranchContext();
+        $rows = collect();
+        if (Schema::hasTable('products')) {
+            $qtyCol = $this->productStockColumn('products');
+            $costExpr = $this->productCostExpression('products');
+            if ($qtyCol) {
+                $hasCategories = Schema::hasTable('categories') && Schema::hasColumn('products', 'category_id');
+                $catExpr = $hasCategories
+                    ? "COALESCE(categories.name, 'Uncategorized')"
+                    : (Schema::hasColumn('products', 'category') ? "COALESCE(products.category,'Uncategorized')" : "'Uncategorized'");
+                $qtyExpr = "COALESCE({$qtyCol}, 0)";
+                $query = DB::table('products')
+                    ->select(DB::raw("{$catExpr} as category"));
+                if ($hasCategories) {
+                    $query->leftJoin('categories', 'products.category_id', '=', 'categories.id');
+                }
+                $this->applyTenantScope($query, 'products');
+
+                if (
+                    (! empty($activeBranch['id']) || ! empty($activeBranch['name']))
+                    && Schema::hasTable('product_branch_stocks')
+                    && Schema::hasColumn('product_branch_stocks', 'quantity')
+                ) {
+                    $query->leftJoin('product_branch_stocks', function ($join) use ($activeBranch) {
+                        $join->on('product_branch_stocks.product_id', '=', 'products.id')
+                            ->where(function ($branchJoin) use ($activeBranch) {
+                                if (! empty($activeBranch['id']) && Schema::hasColumn('product_branch_stocks', 'branch_id')) {
+                                    $branchJoin->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
+                                }
+
+                                if (! empty($activeBranch['name']) && Schema::hasColumn('product_branch_stocks', 'branch_name')) {
+                                    $method = ! empty($activeBranch['id']) && Schema::hasColumn('product_branch_stocks', 'branch_id') ? 'orWhere' : 'where';
+                                    $branchJoin->{$method}('product_branch_stocks.branch_name', (string) $activeBranch['name']);
+                                }
+                            });
+                    });
+                    $qtyExpr = "COALESCE(product_branch_stocks.quantity, {$qtyCol}, 0)";
+                }
+
+                $query->addSelect(
+                    DB::raw('COUNT(*) as product_count'),
+                    DB::raw("SUM({$qtyExpr}) as total_qty"),
+                    DB::raw("SUM({$qtyExpr} * {$costExpr}) as total_value")
+                )
+                    ->groupBy(DB::raw($catExpr))
+                    ->orderByDesc(DB::raw("SUM({$qtyExpr} * {$costExpr})"));
+
+                $rows = $query->get();
+            }
+        }
+        $grandValue = (float) $rows->sum('total_value');
+
+        return view('Reports.Reports.stock-by-category', compact('rows', 'grandValue'));
+    }
+
+    /** Tax Summary (combined) */
+    public function taxSummary(Request $request)
+    {
+        $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
+        $to = $request->input('to_date') ?: now()->toDateString();
+
+        $salesDateExpression = 'created_at';
+        if (Schema::hasTable('sales')) {
+            $salesDateExpression = Schema::hasColumn('sales', 'order_date') ? 'order_date'
+                : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+        }
+
+        $taxOnSales = 0.0;
+        $taxOnPurchases = 0.0;
+        if (Schema::hasTable('sales') && Schema::hasColumn('sales', 'tax')) {
+            $q = $this->scopedTable('sales');
+            $this->applyReportDateRange($q, "sales.{$salesDateExpression}", $from, $to);
+            $this->applySalesScope($q, 'sales');
+            $this->applyReportableDocumentScope($q, 'sales');
+            $taxOnSales = (float) $q->sum('tax');
+        }
+        if (Schema::hasTable('purchases')) {
+            $dateC = Schema::hasColumn('purchases', 'purchase_date')
+                ? 'purchase_date'
+                : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
+            $purchaseTaxColumn = Schema::hasColumn('purchases', 'tax_amount')
+                ? 'tax_amount'
+                : (Schema::hasColumn('purchases', 'tax') ? 'tax' : null);
+
+            if ($purchaseTaxColumn) {
+                $q = $this->applyTenantScope(DB::table('purchases'), 'purchases');
+                $this->applyGenericBranchFilter($q, 'purchases');
+                $this->applyReportableDocumentScope($q, 'purchases');
+                $this->applyReportDateRange($q, "purchases.{$dateC}", $from, $to);
+                $taxOnPurchases = (float) $q->sum($purchaseTaxColumn);
+            }
+        }
+        $netTaxLiability = $taxOnSales - $taxOnPurchases;
+
+        return view('Reports.Reports.tax-summary', compact('taxOnSales', 'taxOnPurchases', 'netTaxLiability', 'from', 'to'));
+    }
+}
