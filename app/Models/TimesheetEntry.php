@@ -3,26 +3,24 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TimesheetEntry extends Model
 {
-    use SoftDeletes;
-
     protected $fillable = [
-        'timesheet_id', 'work_date', 'project_name', 'task',
-        'hours', 'billable', 'billable_amount', 'rate', 'notes',
+        'timesheet_id', 'entry_date', 'project_id', 'task_id',
+        'activity_description', 'hours', 'is_billable', 'hourly_rate', 'line_total',
     ];
 
     protected $casts = [
-        'work_date'       => 'date',
-        'hours'           => 'decimal:2',
-        'billable'        => 'boolean',
-        'billable_amount' => 'decimal:2',
-        'rate'            => 'decimal:2',
+        'entry_date' => 'date',
+        'hours' => 'decimal:2',
+        'hourly_rate' => 'decimal:4',
+        'line_total' => 'decimal:2',
+        'is_billable' => 'boolean',
     ];
 
-    public function timesheet()
+    public function timesheet(): BelongsTo
     {
         return $this->belongsTo(Timesheet::class);
     }

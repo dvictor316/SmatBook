@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Timesheet extends Model
 {
@@ -19,41 +19,55 @@ class Timesheet extends Model
 
     protected $casts = [
         'week_start_date' => 'date',
-        'approved_at'     => 'datetime',
-        'total_hours'     => 'decimal:2',
-        'billable_hours'  => 'decimal:2',
-        'hourly_rate'     => 'decimal:4',
+        'approved_at' => 'datetime',
+        'total_hours' => 'decimal:2',
+        'billable_hours' => 'decimal:2',
+        'hourly_rate' => 'decimal:4',
         'billable_amount' => 'decimal:2',
     ];
 
-    public function company(): BelongsTo    { return $this->belongsTo(Company::class); }
-    public function employee(): BelongsTo   { return $this->belongsTo(Employee::class); }
-    public function customer(): BelongsTo   { return $this->belongsTo(Customer::class); }
-    public function approvedBy(): BelongsTo { return $this->belongsTo(User::class, 'approved_by'); }
-    public function invoice(): BelongsTo    { return $this->belongsTo(Invoice::class); }
-    public function entries(): HasMany      { return $this->hasMany(TimesheetEntry::class); }
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
 
-    public function scopeForCompany($query, int $companyId) { return $query->where('company_id', $companyId); }
-    public function scopePending($query)    { return $query->where('status', 'submitted'); }
-    public function scopeApproved($query)   { return $query->where('status', 'approved'); }
-}
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class);
+    }
 
-class TimesheetEntry extends Model
-{
-    protected $table = 'timesheet_entries';
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
 
-    protected $fillable = [
-        'timesheet_id', 'entry_date', 'project_id', 'task_id',
-        'activity_description', 'hours', 'is_billable', 'hourly_rate', 'line_total',
-    ];
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
 
-    protected $casts = [
-        'entry_date'   => 'date',
-        'hours'        => 'decimal:2',
-        'hourly_rate'  => 'decimal:4',
-        'line_total'   => 'decimal:2',
-        'is_billable'  => 'boolean',
-    ];
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class);
+    }
 
-    public function timesheet(): BelongsTo { return $this->belongsTo(Timesheet::class); }
+    public function entries(): HasMany
+    {
+        return $this->hasMany(TimesheetEntry::class);
+    }
+
+    public function scopeForCompany($query, int $companyId)
+    {
+        return $query->where('company_id', $companyId);
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where('status', 'submitted');
+    }
+
+    public function scopeApproved($query)
+    {
+        return $query->where('status', 'approved');
+    }
 }

@@ -264,12 +264,14 @@ Route::middleware(['auth'])->group(function () {
 
     // Project Management
     Route::controller(ProjectManagementController::class)->prefix('projects')->name('projects.')->middleware('subscription.active')->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::post('/', 'storeProject')->name('store');
-        Route::patch('/{project}', 'updateProject')->name('update');
-        Route::post('/{project}/tasks', 'storeTask')->name('tasks.store');
+        Route::get('/', 'index')->middleware('permission:projects.projects.view')->name('index');
+        Route::post('/', 'storeProject')->middleware('permission:projects.projects.create')->name('store');
+        Route::patch('/{project}', 'updateProject')->middleware('permission:projects.projects.edit')->name('update');
+        Route::post('/{project}/tasks', 'storeTask')->middleware('permission:projects.projects.edit')->name('tasks.store');
     });
-    Route::patch('/project-tasks/{task}', [ProjectManagementController::class, 'updateTask'])->middleware('subscription.active')->name('projects.tasks.update');
+    Route::patch('/project-tasks/{task}', [ProjectManagementController::class, 'updateTask'])
+        ->middleware(['subscription.active', 'permission:projects.projects.edit'])
+        ->name('projects.tasks.update');
 });
 
 // ============================================================
@@ -1250,19 +1252,19 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::delete('/tax-center/withholding-rules/{id}', [TaxCenterController::class, 'destroyWithholdingRule'])->name('tax-center.withholding.destroy');
         Route::post('/tax-center/authority-connection', [TaxAuthorityConnectionController::class, 'store'])->name('tax-center.authority-connection.store');
 
-        Route::get('/tax-filings', [TaxFilingController::class, 'index'])->name('tax-filings.index');
-        Route::get('/tax-filings/create', [TaxFilingController::class, 'create'])->name('tax-filings.create');
-        Route::post('/tax-filings', [TaxFilingController::class, 'store'])->name('tax-filings.store');
-        Route::get('/tax-filings/{id}/edit', [TaxFilingController::class, 'edit'])->name('tax-filings.edit');
-        Route::put('/tax-filings/{id}', [TaxFilingController::class, 'update'])->name('tax-filings.update');
-        Route::post('/tax-filings/{id}/submit', [TaxFilingController::class, 'submit'])->name('tax-filings.submit');
-        Route::post('/tax-filings/{id}/approve', [TaxFilingController::class, 'approve'])->name('tax-filings.approve');
-        Route::post('/tax-filings/{id}/transmit', [TaxFilingController::class, 'transmit'])->name('tax-filings.transmit');
-        Route::post('/tax-filings/{id}/manual', [TaxFilingController::class, 'recordManual'])->name('tax-filings.manual');
-        Route::post('/tax-filings/{id}/submissions/{submissionId}/sync', [TaxFilingController::class, 'syncSubmission'])->name('tax-filings.submissions.sync');
-        Route::get('/tax-filings/{id}/export/{format}', [TaxFilingController::class, 'export'])->whereIn('format', ['json', 'csv', 'pdf'])->name('tax-filings.export');
-        Route::delete('/tax-filings/{id}', [TaxFilingController::class, 'destroy'])->name('tax-filings.destroy');
-        Route::get('/tax-filings/preview/totals', [TaxFilingController::class, 'previewTotals'])->name('tax-filings.preview');
+        Route::get('/tax-filings', [TaxFilingController::class, 'index'])->middleware('permission:tax.filings.view')->name('tax-filings.index');
+        Route::get('/tax-filings/create', [TaxFilingController::class, 'create'])->middleware('permission:tax.filings.create')->name('tax-filings.create');
+        Route::post('/tax-filings', [TaxFilingController::class, 'store'])->middleware('permission:tax.filings.create')->name('tax-filings.store');
+        Route::get('/tax-filings/{id}/edit', [TaxFilingController::class, 'edit'])->middleware('permission:tax.filings.edit')->name('tax-filings.edit');
+        Route::put('/tax-filings/{id}', [TaxFilingController::class, 'update'])->middleware('permission:tax.filings.edit')->name('tax-filings.update');
+        Route::post('/tax-filings/{id}/submit', [TaxFilingController::class, 'submit'])->middleware('permission:tax.filings.edit')->name('tax-filings.submit');
+        Route::post('/tax-filings/{id}/approve', [TaxFilingController::class, 'approve'])->middleware('permission:tax.filings.edit')->name('tax-filings.approve');
+        Route::post('/tax-filings/{id}/transmit', [TaxFilingController::class, 'transmit'])->middleware('permission:tax.filings.edit')->name('tax-filings.transmit');
+        Route::post('/tax-filings/{id}/manual', [TaxFilingController::class, 'recordManual'])->middleware('permission:tax.filings.edit')->name('tax-filings.manual');
+        Route::post('/tax-filings/{id}/submissions/{submissionId}/sync', [TaxFilingController::class, 'syncSubmission'])->middleware('permission:tax.filings.edit')->name('tax-filings.submissions.sync');
+        Route::get('/tax-filings/{id}/export/{format}', [TaxFilingController::class, 'export'])->middleware('permission:tax.filings.view')->whereIn('format', ['json', 'csv', 'pdf'])->name('tax-filings.export');
+        Route::delete('/tax-filings/{id}', [TaxFilingController::class, 'destroy'])->middleware('permission:tax.filings.edit')->name('tax-filings.destroy');
+        Route::get('/tax-filings/preview/totals', [TaxFilingController::class, 'previewTotals'])->middleware('permission:tax.filings.create')->name('tax-filings.preview');
     });
 
     // Period Close Controls
@@ -1765,18 +1767,18 @@ Route::fallback(function () {
 
 // ── Payroll Routes ──────────────────────────────────────────
 Route::prefix('payroll')->name('payroll.')->middleware(['auth', 'subscription.active', 'plan.access:enterprise'])->group(function () {
-    Route::get('/',                     [App\Http\Controllers\PayrollController::class, 'index'])->name('index');
-    Route::get('/add-employee',         [App\Http\Controllers\PayrollController::class, 'create'])->name('create');
-    Route::post('/add-employee',        [App\Http\Controllers\PayrollController::class, 'store'])->name('store');
-    Route::get('/employee/{id}/edit',   [App\Http\Controllers\PayrollController::class, 'edit'])->name('edit');
-    Route::put('/employee/{id}',        [App\Http\Controllers\PayrollController::class, 'update'])->name('update');
-    Route::get('/run/new',              [App\Http\Controllers\PayrollController::class, 'runPage'])->name('run');
-    Route::get('/run/locked',           [App\Http\Controllers\PayrollController::class, 'lockedEmployees'])->name('run.locked');
-    Route::post('/run/process',         [App\Http\Controllers\PayrollController::class, 'process'])->name('process');
-    Route::get('/history/all',          [App\Http\Controllers\PayrollController::class, 'history'])->name('history');
-    Route::get('/export/csv',           [App\Http\Controllers\PayrollController::class, 'export'])->name('export');
-    Route::get('/{id}/slip',            [App\Http\Controllers\PayrollController::class, 'slip'])->name('slip');
-    Route::get('/{id}/slip/download',   [App\Http\Controllers\PayrollController::class, 'slipDownload'])->name('slip.download');
-    Route::get('/{id}',                 [App\Http\Controllers\PayrollController::class, 'show'])->name('show');
-    Route::post('/{id}/mark-paid',      [App\Http\Controllers\PayrollController::class, 'markPaid'])->name('mark-paid');
+    Route::get('/',                     [App\Http\Controllers\PayrollController::class, 'index'])->middleware('permission:payroll.payroll.view')->name('index');
+    Route::get('/add-employee',         [App\Http\Controllers\PayrollController::class, 'create'])->middleware('permission:payroll.payroll.create')->name('create');
+    Route::post('/add-employee',        [App\Http\Controllers\PayrollController::class, 'store'])->middleware('permission:payroll.payroll.create')->name('store');
+    Route::get('/employee/{id}/edit',   [App\Http\Controllers\PayrollController::class, 'edit'])->middleware('permission:payroll.payroll.edit')->name('edit');
+    Route::put('/employee/{id}',        [App\Http\Controllers\PayrollController::class, 'update'])->middleware('permission:payroll.payroll.edit')->name('update');
+    Route::get('/run/new',              [App\Http\Controllers\PayrollController::class, 'runPage'])->middleware('permission:payroll.payroll.create')->name('run');
+    Route::get('/run/locked',           [App\Http\Controllers\PayrollController::class, 'lockedEmployees'])->middleware('permission:payroll.payroll.create')->name('run.locked');
+    Route::post('/run/process',         [App\Http\Controllers\PayrollController::class, 'process'])->middleware('permission:payroll.payroll.create')->name('process');
+    Route::get('/history/all',          [App\Http\Controllers\PayrollController::class, 'history'])->middleware('permission:payroll.payroll.view')->name('history');
+    Route::get('/export/csv',           [App\Http\Controllers\PayrollController::class, 'export'])->middleware('permission:payroll.payroll.view')->name('export');
+    Route::get('/{id}/slip',            [App\Http\Controllers\PayrollController::class, 'slip'])->middleware('permission:payroll.payroll.view')->name('slip');
+    Route::get('/{id}/slip/download',   [App\Http\Controllers\PayrollController::class, 'slipDownload'])->middleware('permission:payroll.payroll.view')->name('slip.download');
+    Route::get('/{id}',                 [App\Http\Controllers\PayrollController::class, 'show'])->middleware('permission:payroll.payroll.view')->name('show');
+    Route::post('/{id}/mark-paid',      [App\Http\Controllers\PayrollController::class, 'markPaid'])->middleware('permission:payroll.payroll.edit')->name('mark-paid');
 });

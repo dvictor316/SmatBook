@@ -271,6 +271,35 @@ class TaxLedgerReportingIntegrityTest extends TestCase
         $this->assertSame('sales_tax_collected', $result['lines'][0]['line_key']);
     }
 
+    public function test_paye_return_uses_pay_period_and_business_scope(): void
+    {
+        DB::table('payrolls')->insert([
+            [
+                'business_id' => 1,
+                'pay_period' => '2026-06-01',
+                'deductions_json' => json_encode([['name' => 'PAYE Tax', 'amount' => 1200]]),
+                'created_at' => '2026-07-15 10:00:00',
+                'updated_at' => '2026-07-15 10:00:00',
+            ],
+            [
+                'business_id' => 2,
+                'pay_period' => '2026-06-01',
+                'deductions_json' => json_encode([['name' => 'PAYE Tax', 'amount' => 9900]]),
+                'created_at' => '2026-06-15 10:00:00',
+                'updated_at' => '2026-06-15 10:00:00',
+            ],
+        ]);
+
+        $result = app(TaxReturnPreparationService::class)->prepare('2026-06-01', '2026-06-30', [
+            'filing_type' => 'paye',
+            'company_id' => 1,
+            'branch_scope' => 'all',
+        ]);
+
+        $this->assertEquals(1200.0, $result['paye_tax']);
+        $this->assertEquals(1200.0, $result['tax_due']);
+    }
+
     private function setUpSchema(): void
     {
         Schema::create('accounts', function (Blueprint $table) {
@@ -365,6 +394,14 @@ class TaxLedgerReportingIntegrityTest extends TestCase
             $table->decimal('total_amount', 15, 2)->default(0);
             $table->decimal('tax_amount', 15, 2)->default(0);
             $table->string('status')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('payrolls', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('business_id')->nullable();
+            $table->date('pay_period');
+            $table->json('deductions_json')->nullable();
             $table->timestamps();
         });
     }

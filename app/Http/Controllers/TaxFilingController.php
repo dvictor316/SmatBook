@@ -349,31 +349,34 @@ class TaxFilingController extends Controller
             ->setPaper('a4')->download($filename.'.pdf');
     }
 
-    public function edit($id)
+    public function edit($id, TaxFilingCatalog $filingCatalog)
     {
         if (! $this->taxTablesReady()) {
             return redirect()->route('compliance.tax-filings.index')->with('error', $this->migrationMessage());
         }
 
         $filing = TaxFiling::query()
-            ->with('lines')
+            ->with(['lines', 'jurisdiction.taxCodes', 'jurisdiction.withholdingRules', 'jurisdiction.accountMappings'])
             ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_filings'))
             ->findOrFail($id);
         if (! in_array($filing->status, ['draft', 'rejected', 'failed', 'check_failed'], true)) {
             return redirect()->route('compliance.tax-filings.index')
                 ->with('error', 'Approved or authority-filed returns are locked and cannot be edited.');
         }
-        $jurisdictions = TaxJurisdiction::query()
-            ->where('is_active', true)
-            ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_jurisdictions'))
-            ->orderBy('name')
-            ->get();
+        $filingOptions = $filing->jurisdiction
+            ? $filingCatalog->optionsFor($filing->jurisdiction)
+            : [];
+        $frequencyLabels = $filingCatalog->frequencyLabels();
 
-        return view('compliance.tax-filings.edit', compact('filing', 'jurisdictions'));
+        return view('compliance.tax-filings.edit', compact('filing', 'filingOptions', 'frequencyLabels'));
     }
 
-    public function update(Request $request, $id, TaxReturnPreparationService $returnPreparationService)
-    {
+    public function update(
+        Request $request,
+        $id,
+        TaxReturnPreparationService $returnPreparationService,
+        TaxFilingCatalog $filingCatalog
+    ) {
         if (! $this->taxTablesReady()) {
             return back()->with('error', $this->migrationMessage());
         }
@@ -390,8 +393,8 @@ class TaxFilingController extends Controller
         $validated = $request->validate(array_merge([
             'tax_jurisdiction_id' => 'required|exists:tax_jurisdictions,id',
             'name' => 'required|string|max:255',
-            'filing_type' => 'required|string|max:64',
-            'filing_frequency' => 'nullable|string|max:50',
+            'filing_type' => 'required|in:vat,sales_tax,withholding,paye,corporate_income_tax',
+            'filing_frequency' => 'required|in:weekly,biweekly,monthly,bimonthly,quarterly,semiannual,annual',
             'currency_code' => 'nullable|string|size:3',
             'period_start' => 'required|date',
             'period_end' => 'required|date|after_or_equal:period_start',
@@ -407,8 +410,16 @@ class TaxFilingController extends Controller
         ], $this->citValidationRules()));
 
         $jurisdiction = TaxJurisdiction::query()
+            ->with(['taxCodes', 'withholdingRules', 'accountMappings'])
             ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_jurisdictions'))
             ->findOrFail($validated['tax_jurisdiction_id']);
+        $filingOption = $filingCatalog->optionsFor($jurisdiction)[$validated['filing_type']] ?? null;
+        if (! $filingOption || ! in_array($validated['filing_frequency'], $filingOption['frequencies'], true)) {
+            throw ValidationException::withMessages([
+                'filing_type' => 'Select a return type and frequency configured for this jurisdiction.',
+            ]);
+        }
+        $validated['currency_code'] = $filingOption['currency'];
 
         $preview = $returnPreparationService->prepare(
             $validated['period_start'],

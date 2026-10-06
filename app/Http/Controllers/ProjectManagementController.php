@@ -23,7 +23,7 @@ class ProjectManagementController extends Controller
         $planTier = $this->resolvePlanTier($user);
         $isSuperAdmin = $this->isSuperAdmin($user);
 
-        if (!class_exists(\App\Models\Project::class) || !class_exists(\App\Models\ProjectTask::class)) {
+        if (! class_exists(\App\Models\Project::class) || ! class_exists(\App\Models\ProjectTask::class)) {
             return view('projects.index', [
                 'projects' => collect(),
                 'planTier' => $planTier,
@@ -38,7 +38,7 @@ class ProjectManagementController extends Controller
             ])->with('error', 'Project module classes are not loaded. Run `composer dump-autoload` and refresh this page.');
         }
 
-        if (!Schema::hasTable('projects') || !Schema::hasTable('project_tasks')) {
+        if (! Schema::hasTable('projects') || ! Schema::hasTable('project_tasks')) {
             return view('projects.index', [
                 'projects' => collect(),
                 'planTier' => $planTier,
@@ -57,7 +57,7 @@ class ProjectManagementController extends Controller
             ->where(function ($query) use ($user) {
                 $query->where('created_by', $user->id);
 
-                if (!empty($user->company_id)) {
+                if (! empty($user->company_id)) {
                     $query->orWhere('company_id', $user->company_id);
                 }
             })
@@ -114,7 +114,7 @@ class ProjectManagementController extends Controller
             'status' => ['required', 'in:planning,in_progress,on_hold,completed'],
             'priority' => ['required', 'in:low,medium,high'],
             'start_date' => ['nullable', 'date'],
-            'due_date' => ['nullable', 'date'],
+            'due_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'budget' => ['nullable', 'numeric', 'min:0'],
             'spent' => ['nullable', 'numeric', 'min:0'],
             'progress' => ['nullable', 'integer', 'min:0', 'max:100'],
@@ -172,6 +172,10 @@ class ProjectManagementController extends Controller
             'estimated_hours' => ['nullable', 'numeric', 'min:0'],
         ]);
 
+        if (! empty($data['due_date']) && $project->start_date && $data['due_date'] < $project->start_date->toDateString()) {
+            return back()->withErrors(['due_date' => 'Task due date cannot be earlier than the project start date.'])->withInput();
+        }
+
         $project->tasks()->create([
             ...$data,
             'estimated_hours' => isset($data['estimated_hours']) ? (float) $data['estimated_hours'] : null,
@@ -206,7 +210,7 @@ class ProjectManagementController extends Controller
         $user = $request->user();
 
         $owned = (int) $project->created_by === (int) $user->id;
-        $sameCompany = !empty($user->company_id) && (int) $project->company_id === (int) $user->company_id;
+        $sameCompany = ! empty($user->company_id) && (int) $project->company_id === (int) $user->company_id;
 
         abort_unless($owned || $sameCompany, 403);
     }
@@ -227,6 +231,7 @@ class ProjectManagementController extends Controller
     private function isSuperAdmin($user): bool
     {
         $role = strtolower((string) ($user->role ?? ''));
+
         return in_array($role, ['super_admin', 'superadmin', 'admin'], true)
             || strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com';
     }
@@ -235,11 +240,11 @@ class ProjectManagementController extends Controller
     {
         $plan = null;
 
-        if (!empty($user->company_id)) {
+        if (! empty($user->company_id)) {
             $plan = Company::where('id', $user->company_id)->value('plan');
         }
 
-        if (!$plan) {
+        if (! $plan) {
             $plan = Subscription::where('user_id', $user->id)
                 ->latest('id')
                 ->value('plan');

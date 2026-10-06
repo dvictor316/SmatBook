@@ -96,7 +96,9 @@ class TaxReturnPreparationService
         if (Schema::hasTable('payrolls')) {
             $payrollDateColumn = Schema::hasColumn('payrolls', 'payroll_month')
                 ? 'payroll_month'
-                : (Schema::hasColumn('payrolls', 'created_at') ? 'created_at' : null);
+                : (Schema::hasColumn('payrolls', 'pay_period')
+                    ? 'pay_period'
+                    : (Schema::hasColumn('payrolls', 'created_at') ? 'created_at' : null));
             if ($payrollDateColumn) {
                 $payrollQuery = Payroll::query()->whereBetween(DB::raw("DATE({$payrollDateColumn})"), [$start, $end]);
                 $this->applyScope($payrollQuery, 'payrolls', $companyId, $userId, $branchScope, $branchId, $branchName);
@@ -231,6 +233,8 @@ class TaxReturnPreparationService
     {
         if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
             $query->where("{$table}.company_id", $companyId);
+        } elseif ($companyId > 0 && Schema::hasColumn($table, 'business_id')) {
+            $query->where("{$table}.business_id", $companyId);
         } elseif ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
             $query->where("{$table}.user_id", $userId);
         } elseif ($userId > 0 && Schema::hasColumn($table, 'created_by')) {

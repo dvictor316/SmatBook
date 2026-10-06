@@ -11,14 +11,14 @@ class CheckPermission
 {
     public function handle(Request $request, Closure $next, ...$permissions): Response
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect()->route('login');
         }
 
         $user = Auth::user();
 
         if ((method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())
-            || (method_exists($user, 'hasRole') && $user->hasRole('administrator'))) {
+            || (method_exists($user, 'hasRole') && ($user->hasRole('administrator') || $user->hasRole('admin')))) {
             return $next($request);
         }
 

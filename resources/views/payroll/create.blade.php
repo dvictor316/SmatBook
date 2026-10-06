@@ -141,12 +141,9 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Pay Frequency</label>
-                                <select name="pay_frequency" class="form-select">
-                                    <option value="monthly" {{ old('pay_frequency','monthly') == 'monthly' ? 'selected' : '' }}>Monthly</option>
-                                    <option value="weekly" {{ old('pay_frequency') == 'weekly' ? 'selected' : '' }}>Weekly</option>
-                                    <option value="biweekly" {{ old('pay_frequency') == 'biweekly' ? 'selected' : '' }}>Bi-Weekly</option>
-                                </select>
+                                <label class="form-label">Payroll Cycle</label>
+                                <input type="text" class="form-control" value="Monthly" readonly>
+                                <div class="form-text">Salary and recurring payroll lines are monthly amounts.</div>
                             </div>
                         </div>
 
@@ -243,7 +240,7 @@
                 <div class="form-card">
                     <div class="form-card-header">
                         <i class="fas fa-info-circle" style="color:var(--gold);"></i>
-                        <h6>Statutory Rates (Nigeria)</h6>
+                        <h6>Nigeria Payroll Review</h6>
                     </div>
                     <div class="form-card-body p-3">
                         <div style="font-size:0.78rem;color:#6b7280;line-height:1.9;">
@@ -254,15 +251,15 @@
                                 <span>Pension (Employer)</span><strong style="color:var(--blue-deep);">10%</strong>
                             </div>
                             <div class="d-flex justify-content-between py-1 border-bottom" style="border-color:#f0f4f8!important;">
-                                <span>NHF</span><strong style="color:var(--blue-deep);">2.5%</strong>
+                                <span>NHF</span><strong style="color:var(--blue-deep);">Confirm applicability</strong>
                             </div>
                             <div class="d-flex justify-content-between py-1">
-                                <span>PAYE</span><strong style="color:var(--blue-deep);">Progressive</strong>
+                                <span>PAYE</span><strong style="color:var(--blue-deep);">Reviewed calculation</strong>
                             </div>
                         </div>
-                        <button type="button" class="btn-add w-100 justify-content-center mt-3" onclick="autoCalcStatutory()">
-                            <i class="fas fa-magic"></i> Auto-Calculate Statutory
-                        </button>
+                        <div class="alert alert-warning py-2 px-3 mt-3 mb-0 small">
+                            Enter reviewed statutory deductions above. PAYE reliefs, pension coverage and contribution bases vary by employee and filing period.
+                        </div>
                     </div>
                 </div>
             </div>
@@ -338,54 +335,6 @@ function recalculate() {
     document.getElementById('calcDeductions').textContent = fmt(totalDeductions);
     document.getElementById('calcNet').textContent = fmt(net);
     document.getElementById('netPayDisplay').textContent = fmt(net);
-}
-
-function autoCalcStatutory() {
-    const basic = parseFloat(document.getElementById('basicSalary').value) || 0;
-    if (!basic) { alert('Please enter basic salary first.'); return; }
-    const pension = basic * 0.08;
-    const nhf = basic * 0.025;
-    // Simple PAYE estimate
-    let annualIncome = basic * 12;
-    let paye = 0;
-    if (annualIncome > 3200000) paye = (annualIncome - 3200000) * 0.24 + 508000;
-    else if (annualIncome > 1600000) paye = (annualIncome - 1600000) * 0.18 + 220000;
-    else if (annualIncome > 800000) paye = (annualIncome - 800000) * 0.15 + 100000;
-    else if (annualIncome > 400000) paye = (annualIncome - 400000) * 0.11 + 56000;
-    else if (annualIncome > 200000) paye = (annualIncome - 200000) * 0.07 + 14000;
-    else paye = annualIncome * 0.07;
-    const monthlyPaye = paye / 12;
-
-    // Add to deductions
-    const container = document.getElementById('deductionsContainer');
-    container.innerHTML = '';
-    deductionCount = 0;
-    const statutoryDeductions = [
-        { name: 'PAYE Tax', amount: monthlyPaye.toFixed(0) },
-        { name: 'Pension (Employee 8%)', amount: pension.toFixed(0) },
-        { name: 'NHF (2.5%)', amount: nhf.toFixed(0) },
-    ];
-    statutoryDeductions.forEach(d => {
-        const div = document.createElement('div');
-        div.className = 'deduction-row';
-        div.id = 'deduction_' + deductionCount;
-        div.innerHTML = `
-            <button type="button" class="remove-btn" onclick="removeRow('deduction_${deductionCount}')"><i class="fas fa-times"></i></button>
-            <div class="row g-2">
-                <div class="col-7">
-                    <input type="text" name="deductions[${deductionCount}][name]" class="form-control" value="${d.name}">
-                </div>
-                <div class="col-5">
-                    <div class="input-prefix">
-                        <span class="prefix">₦</span>
-                        <input type="number" name="deductions[${deductionCount}][amount]" class="form-control deduction-amount" value="${d.amount}" oninput="recalculate()">
-                    </div>
-                </div>
-            </div>`;
-        container.appendChild(div);
-        deductionCount++;
-    });
-    recalculate();
 }
 
 document.addEventListener('DOMContentLoaded', recalculate);

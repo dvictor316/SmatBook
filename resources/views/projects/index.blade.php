@@ -372,6 +372,7 @@
                                                     <option value="in_progress" @selected($task->status === 'in_progress')>In Progress</option>
                                                     <option value="done" @selected($task->status === 'done')>Done</option>
                                                 </select>
+                                                <input type="number" name="actual_hours" class="form-control form-control-sm" value="{{ $task->actual_hours }}" min="0" step="0.25" placeholder="Hours" aria-label="Actual hours" style="max-width:86px;">
                                                 <button class="btn btn-sm btn-outline-dark" type="submit">Go</button>
                                             </form>
                                         </div>
@@ -405,6 +406,14 @@
                                     <option value="in_progress">In Progress</option>
                                     <option value="done">Done</option>
                                 </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small mb-1">Due Date</label>
+                                <input type="date" name="due_date" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small mb-1">Estimated Hours</label>
+                                <input type="number" name="estimated_hours" class="form-control form-control-sm" min="0" step="0.25" placeholder="0.00">
                             </div>
                             <div class="col-12">
                                 <button class="btn btn-sm btn-primary" type="submit">Add Task</button>

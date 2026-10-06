@@ -89,37 +89,28 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Jurisdiction</label>
-                        <select name="tax_jurisdiction_id" class="form-select" required>
-                            <option value="">Select</option>
-                            @foreach($jurisdictions as $jurisdiction)
-                                <option value="{{ $jurisdiction->id }}" @selected(old('tax_jurisdiction_id', $filing->tax_jurisdiction_id) == $jurisdiction->id)>
-                                    {{ $jurisdiction->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <input type="hidden" name="tax_jurisdiction_id" value="{{ $filing->tax_jurisdiction_id }}">
+                        <input type="text" class="form-control" value="{{ $filing->jurisdiction?->name }}" readonly>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Filing Type</label>
                         <select name="filing_type" id="filing_type" class="form-select" required>
-                            <option value="vat" @selected(old('filing_type', $filing->filing_type) === 'vat')>VAT</option>
-                            <option value="withholding" @selected(old('filing_type', $filing->filing_type) === 'withholding')>Withholding Tax</option>
-                            <option value="paye" @selected(old('filing_type', $filing->filing_type) === 'paye')>PAYE</option>
-                            <option value="corporate_income_tax" @selected(old('filing_type', $filing->filing_type) === 'corporate_income_tax')>Company Income Tax</option>
-                            <option value="all" @selected(old('filing_type', $filing->filing_type) === 'all')>Combined Compliance Snapshot</option>
+                            @foreach($filingOptions as $option)
+                                <option value="{{ $option['value'] }}" @selected(old('filing_type', $filing->filing_type) === $option['value'])>{{ $option['label'] }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Frequency</label>
-                        <select name="filing_frequency" class="form-select">
-                            <option value="">Use jurisdiction default</option>
-                            <option value="monthly" @selected(old('filing_frequency', $filing->filing_frequency) === 'monthly')>Monthly</option>
-                            <option value="quarterly" @selected(old('filing_frequency', $filing->filing_frequency) === 'quarterly')>Quarterly</option>
-                            <option value="annually" @selected(old('filing_frequency', $filing->filing_frequency) === 'annually')>Annually</option>
+                        <select name="filing_frequency" class="form-select" required>
+                            @foreach(collect($filingOptions)->flatMap(fn ($option) => $option['frequencies'])->unique() as $frequency)
+                                <option value="{{ $frequency }}" @selected(old('filing_frequency', $filing->filing_frequency) === $frequency)>{{ $frequencyLabels[$frequency] ?? ucfirst($frequency) }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Currency</label>
-                        <input type="text" name="currency_code" class="form-control" value="{{ old('currency_code', $filing->currency_code ?: 'NGN') }}" maxlength="3">
+                        <input type="text" name="currency_code" class="form-control" value="{{ old('currency_code', $filing->currency_code ?: 'NGN') }}" maxlength="3" readonly>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Period Start</label>
