@@ -10,15 +10,14 @@
 
 namespace App\Models;
 
+use App\Models\Traits\TenantScoped;
+use App\Support\GeoCurrency;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Carbon\Carbon;
-use App\Support\GeoCurrency;
-use App\Models\Plan;
 use Illuminate\Support\Facades\Schema;
-use App\Models\Traits\TenantScoped;
 
 class Subscription extends Model
 {
@@ -28,12 +27,13 @@ class Subscription extends Model
 
     /**
      * REWRITTEN: SUBSCRIPTION MODEL
-     * Modified to include 'plan_name' and 'plan' in fillable to prevent 
+     * Modified to include 'plan_name' and 'plan' in fillable to prevent
      * MassAssignment and SQL Handshake errors.
      */
     protected $fillable = [
         'user_id',
         'company_id',
+        'is_business_addition',
         'plan_id',
         'plan',                // Alias to support various controller versions
         'plan_name',           // Key column for identifying plans in UI
@@ -57,26 +57,27 @@ class Subscription extends Model
         'transfer_validated_by',
         'transfer_validated_at',
         'transfer_validation_note',
-        'transaction_reference', 
+        'transaction_reference',
         'deployed_by',
         'activated_at',
         'initialized_at',
-        'paid_at',             
-        'payment_date',        
+        'paid_at',
+        'payment_date',
     ];
 
     /**
      * Casting attributes for Carbon and Currency logic.
      */
     protected $casts = [
-        'start_date'   => 'date',
-        'end_date'     => 'date',
-        'paid_at'      => 'datetime',
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'paid_at' => 'datetime',
         'payment_date' => 'datetime',
         'transfer_submitted_at' => 'datetime',
         'transfer_validated_at' => 'datetime',
-        'amount'       => 'decimal:2',
-        'user_limit'   => 'integer',
+        'amount' => 'decimal:2',
+        'user_limit' => 'integer',
+        'is_business_addition' => 'boolean',
     ];
 
     // =========================================================================
@@ -143,7 +144,7 @@ class Subscription extends Model
 
     public function hasDomain(): bool
     {
-        return !empty($this->domain_prefix) || ($this->company && !empty($this->company->subdomain));
+        return ! empty($this->domain_prefix) || ($this->company && ! empty($this->company->subdomain));
     }
 
     /**
@@ -153,8 +154,8 @@ class Subscription extends Model
     {
         $base = trim((string) config('session.domain', parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'smartprobook.com'), '.');
         $prefix = $this->domain_prefix ?? ($this->company ? $this->company->subdomain : null);
-        
-        return $prefix ? "https://{$prefix}." . ltrim($base, '.') : '#';
+
+        return $prefix ? "https://{$prefix}.".ltrim($base, '.') : '#';
     }
 
     public function getFormattedAmountAttribute(): string
@@ -165,12 +166,12 @@ class Subscription extends Model
     public function getStatusBadgeAttribute(): string
     {
         return match (strtolower($this->status)) {
-            'active'           => 'badge-success',
-            'trial'            => 'badge-primary',
+            'active' => 'badge-success',
+            'trial' => 'badge-primary',
             'pending', 'awaiting payment' => 'badge-warning',
-            'expired'          => 'badge-danger',
-            'suspended'        => 'badge-dark',
-            default            => 'badge-secondary',
+            'expired' => 'badge-danger',
+            'suspended' => 'badge-dark',
+            default => 'badge-secondary',
         };
     }
 
@@ -186,6 +187,7 @@ class Subscription extends Model
 
         if ($this->end_date && $this->end_date->copy()->endOfDay()->isPast()) {
             $this->updateQuietly(['status' => 'Expired']);
+
             return true;
         }
 
@@ -195,20 +197,24 @@ class Subscription extends Model
     public function isValid(): bool
     {
         $activeStatuses = ['active', 'trial'];
-        return in_array(strtolower($this->status), $activeStatuses) 
-               && !$this->isExpired() 
+
+        return in_array(strtolower($this->status), $activeStatuses)
+               && ! $this->isExpired()
                && ($this->payment_status === 'paid' || $this->payment_status === 'free');
     }
 
     public function daysRemaining(): int
     {
-        if ($this->isExpired() || !$this->end_date) return 0;
+        if ($this->isExpired() || ! $this->end_date) {
+            return 0;
+        }
+
         return (int) now()->diffInDays($this->end_date, false);
     }
 
     public function isExpiringSoon(int $days = 7): bool
     {
-        if ($this->isExpired() || !$this->end_date) {
+        if ($this->isExpired() || ! $this->end_date) {
             return false;
         }
 
@@ -255,14 +261,17 @@ class Subscription extends Model
         if (in_array(strtolower($this->status), ['pending', 'awaiting payment'])) {
             return 'Awaiting payment activation';
         }
-        
+
         if ($this->isExpired()) {
-            return 'Expired on ' . ($this->end_date ? $this->end_date->format('M d, Y') : 'N/A');
+            return 'Expired on '.($this->end_date ? $this->end_date->format('M d, Y') : 'N/A');
         }
 
         $days = $this->daysRemaining();
-        if ($days <= 0) return 'Expires today';
-        return "Expires in $days days (" . ($this->end_date ? $this->end_date->format('M d, Y') : 'N/A') . ")";
+        if ($days <= 0) {
+            return 'Expires today';
+        }
+
+        return "Expires in $days days (".($this->end_date ? $this->end_date->format('M d, Y') : 'N/A').')';
     }
 
     public static function expireDueSubscriptions(?array $companyIds = null): int
@@ -276,14 +285,14 @@ class Subscription extends Model
             ->whereNotNull('end_date')
             ->whereDate('end_date', '<', now()->toDateString());
 
-        if (!empty($companyIds) && Schema::hasColumn('subscriptions', 'company_id')) {
+        if (! empty($companyIds) && Schema::hasColumn('subscriptions', 'company_id')) {
             $query->whereIn('company_id', $companyIds);
         }
 
         return $query->update([
-                'status' => 'Expired',
-                'updated_at' => now(),
-            ]);
+            'status' => 'Expired',
+            'updated_at' => now(),
+        ]);
     }
 
     public static function trialPayload(?Carbon $startDate = null): array
@@ -346,18 +355,22 @@ class Subscription extends Model
 
     public static function resolveCurrentForUser($user): ?self
     {
-        if (!$user) {
+        if (! $user) {
             return null;
         }
 
+        $activeCompanyId = (int) (session('current_tenant_id') ?: $user->company_id ?: 0);
+
         $subscription = static::withoutGlobalScope('tenant')
             ->with('plan_relationship')
-            ->where(function ($query) use ($user) {
-                if (!empty($user->company_id)) {
-                    $query->where('company_id', $user->company_id);
+            ->where(function ($query) use ($user, $activeCompanyId) {
+                if ($activeCompanyId > 0) {
+                    $query->where('company_id', $activeCompanyId);
                 }
 
-                $query->orWhere('user_id', $user->id);
+                if ($activeCompanyId <= 0) {
+                    $query->where('user_id', $user->id);
+                }
             })
             ->orderByRaw("
                 CASE

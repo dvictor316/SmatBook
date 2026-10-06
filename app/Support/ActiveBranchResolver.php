@@ -26,7 +26,7 @@ class ActiveBranchResolver
 
         $branch = $this->resolveDefaultBranch($user);
 
-        if (!$branch) {
+        if (! $branch) {
             return false;
         }
 
@@ -53,7 +53,7 @@ class ActiveBranchResolver
 
         if ($branchId !== '') {
             $branch = $this->resolveBranchById($branchId, $user);
-            if (!$branch) {
+            if (! $branch) {
                 return false;
             }
 
@@ -101,7 +101,7 @@ class ActiveBranchResolver
         $raw = Setting::where('key', $key)->value('value');
         $decoded = json_decode((string) $raw, true);
         $branches = collect(is_array($decoded) ? $decoded : [])
-            ->filter(fn ($branch) => !empty($branch['id']) && !empty($branch['name']))
+            ->filter(fn ($branch) => ! empty($branch['id']) && ! empty($branch['name']))
             ->values();
 
         if ($branches->isNotEmpty()) {
@@ -154,7 +154,7 @@ class ActiveBranchResolver
             $raw = Setting::where('key', $key)->value('value');
             $decoded = json_decode((string) $raw, true);
 
-            if (!is_array($decoded) || $decoded === []) {
+            if (! is_array($decoded) || $decoded === []) {
                 continue;
             }
 
@@ -174,9 +174,9 @@ class ActiveBranchResolver
     private function resolveCompanyId(?Authenticatable $user = null): int
     {
         return (int) (
-            data_get($user, 'company_id')
+            session('current_tenant_id')
+            ?? data_get($user, 'company_id')
             ?? data_get($user, 'company.id')
-            ?? session('current_tenant_id')
             ?? 0
         );
     }
@@ -185,7 +185,7 @@ class ActiveBranchResolver
     {
         $code = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $name), 0, 4));
 
-        return $code !== '' ? $code . '-' . now()->format('Hi') : 'MAIN-' . now()->format('Hi');
+        return $code !== '' ? $code.'-'.now()->format('Hi') : 'MAIN-'.now()->format('Hi');
     }
 
     private function normalizeBranch(array $branch): array

@@ -6,8 +6,8 @@ use App\Support\ActiveBranchResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 trait TenantScoped
 {
@@ -18,12 +18,12 @@ trait TenantScoped
                 return;
             }
 
-            if (!Auth::check()) {
+            if (! Auth::check()) {
                 return;
             }
 
             $user = Auth::user();
-            if (!$user) {
+            if (! $user) {
                 return;
             }
 
@@ -35,7 +35,7 @@ trait TenantScoped
             $model = $builder->getModel();
             $table = $model->getTable();
 
-            $companyId = (int) ($user->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? $user->company_id ?? 0);
             $userId = (int) ($user->id ?? 0);
 
             if ($isSuperAdmin && $isSuperAdminArea && $companyId === 0) {
@@ -83,11 +83,11 @@ trait TenantScoped
                 }
             }
             if ($activeBranchId === '' && $activeBranchName === '' && $companyId > 0 && Schema::hasTable('settings')) {
-                $branchKey = 'branches_json_company_' . $companyId;
+                $branchKey = 'branches_json_company_'.$companyId;
                 $rawBranches = (string) (DB::table('settings')->where('key', $branchKey)->value('value') ?? '');
                 $branches = json_decode($rawBranches, true) ?: [];
                 $firstBranch = collect($branches)
-                    ->filter(fn ($branch) => !empty($branch['id']) || !empty($branch['name']))
+                    ->filter(fn ($branch) => ! empty($branch['id']) || ! empty($branch['name']))
                     ->first();
                 if ($firstBranch) {
                     $activeBranchId = trim((string) ($firstBranch['id'] ?? ''));

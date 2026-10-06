@@ -6,6 +6,7 @@
     @php
         $currentPlanTier = $currentPlanTier ?? null;
         $suggestedUpgradePlan = $suggestedUpgradePlan ?? null;
+        $creatingAdditionalBusiness = $creatingAdditionalBusiness ?? false;
         $planCards = \App\Models\Plan::marketingCardCatalog();
         $tierBenefits = collect($planCards)->mapWithKeys(fn ($card, $key) => [$key => $card['benefits']])->all();
         $planActions = [
@@ -507,11 +508,11 @@
 
     <header class="membership-hero">
         <div class="container">
-            <h1 class="hero-title">Choose the Right <span>Plan for Your Business</span></h1>
-            <p class="hero-subtitle">Annual plans for sales, accounting, inventory and growing teams.</p>
+            <h1 class="hero-title">{{ $creatingAdditionalBusiness ? 'Add Another' : 'Choose the Right' }} <span>Business Workspace</span></h1>
+            <p class="hero-subtitle">{{ $creatingAdditionalBusiness ? 'Select an independent annual subscription for the new business.' : 'Annual plans for sales, accounting, inventory and growing teams.' }}</p>
             <div class="hero-plan-note">
-                <i class="fas fa-gift"></i>
-                <span>First month free. Payment starts after your trial.</span>
+                <i class="fas {{ $creatingAdditionalBusiness ? 'fa-building' : 'fa-gift' }}"></i>
+                <span>{{ $creatingAdditionalBusiness ? 'Separate books, users, tax records, branches and reporting.' : 'First month free. Payment starts after your trial.' }}</span>
                 <span class="annual-note">Annual subscriptions</span>
             </div>
             @if(session('success') || session('error') || session('info') || $errors->any())
@@ -746,6 +747,7 @@
     const upgradeUrl = "{{ route('subscription.upgrade.redirect') }}";
     const userIsAuthenticated = @json(auth()->check());
     const suggestedUpgradePlan = @json($suggestedUpgradePlan);
+    const creatingAdditionalBusiness = @json($creatingAdditionalBusiness);
 
     let isNavigatingToPlan = false;
 
@@ -770,7 +772,8 @@
         const queryParams = new URLSearchParams({ 
             plan: plan, 
             cycle: cycleValue,
-            billing_cycle: cycleValue
+            billing_cycle: cycleValue,
+            new_business: creatingAdditionalBusiness ? '1' : '0'
         });
 
         const destination = userIsAuthenticated ? upgradeUrl : registerUrl;

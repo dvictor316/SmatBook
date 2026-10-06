@@ -13,8 +13,8 @@ use App\Http\Controllers\{
     CustomAuthController, AnalyticsDashboardController, DomainController, PlanController,
     SuperAdminDashboardController, MessageController, CalendarController, EventController,
     NotificationController, ActivityLogController, BackupController, AuditController,
-    TaxCenterController, TaxFilingController, TaxAuthorityConnectionController, PeriodCloseController, ProjectManagementController
-    , AiQuickAgentController, RecurringTransactionController, FinanceApprovalController, FixedAssetController, BudgetController,
+    TaxCenterController, TaxFilingController, TaxAuthorityConnectionController, PeriodCloseController, ProjectManagementController,
+    BusinessWorkspaceController, AiQuickAgentController, RecurringTransactionController, FinanceApprovalController, FixedAssetController, BudgetController,
     AdvancePaymentController, AgentPortalController, StateManagerCrmController
 };
 use App\Http\Controllers\RecurringInvoiceController;
@@ -134,6 +134,8 @@ Route::get('/workspace-not-found', function () {
 Route::get('/membership-plans/upgrade', [SubscriptionController::class, 'redirectToUpgradeCheckout'])->name('subscription.upgrade.redirect');
 
 Route::middleware(['auth'])->group(function () {
+    Route::post('/workspace/businesses/{companyId}/activate', [BusinessWorkspaceController::class, 'activate'])->name('workspace.businesses.activate');
+    Route::get('/workspace/businesses/new', [BusinessWorkspaceController::class, 'create'])->name('workspace.businesses.create');
     Route::get('/workspace/business/dashboard', [DashboardController::class, 'businessDashboard'])->middleware('subscription.active')->name('workspace.business.dashboard');
     Route::get('/workspace/business', [DashboardController::class, 'switchToBusinessWorkspace'])->middleware('subscription.active')->name('workspace.business');
     Route::get('/workspace/platform', [DashboardController::class, 'switchToPlatformWorkspace'])->name('workspace.platform');

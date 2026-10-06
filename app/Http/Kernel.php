@@ -6,7 +6,7 @@ namespace App\Http;
 |--------------------------------------------------------------------------
 | HTTP KERNEL - COMPLETE REWRITE 2026
 |--------------------------------------------------------------------------
-| 
+|
 | Features:
 | ✅ Multi-tenant middleware groups
 | ✅ Subdomain routing middleware
@@ -35,16 +35,16 @@ class Kernel extends HttpKernel
         // Security & Trust
         \App\Http\Middleware\TrustProxies::class,
         \App\Http\Middleware\SecurityHeaders::class,
-        
+
         // CORS Handling
         \Illuminate\Http\Middleware\HandleCors::class,
-        
+
         // Maintenance Mode
         \App\Http\Middleware\PreventRequestsDuringMaintenance::class,
-        
+
         // Request Size Validation
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
-        
+
         // String Processing
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
@@ -72,6 +72,7 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\AutoSuccessFlash::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\VerifyTenantSession::class,
             \App\Http\Middleware\BlockExpiredDemoUser::class,
             \App\Http\Middleware\DemoRestrictions::class,
             // Add subdomain detection for local dev routing
@@ -89,17 +90,17 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
-            
+
             // Tenant Identification (critical for multi-tenancy)
             \App\Http\Middleware\IdentifyTenant::class,
             \App\Http\Middleware\ForceLogoutExpiredSession::class,
             \App\Http\Middleware\EnforceDeviceSessionLimit::class,
-            
+
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\AutoSuccessFlash::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
-            
+
             // Tenant Session Verification
             \App\Http\Middleware\VerifyTenantSession::class,
             // Enforce tenant and branch required for all tenant routes
@@ -170,7 +171,7 @@ class Kernel extends HttpKernel
         // Check user role
         'role' => \App\Http\Middleware\CheckRole::class,
         'permission' => \App\Http\Middleware\CheckPermission::class,
-        
+
         // Deployment Manager Verification
         'manager.verified' => \App\Http\Middleware\ManagerVerified::class,
 
@@ -184,7 +185,7 @@ class Kernel extends HttpKernel
         'device.limit' => \App\Http\Middleware\EnforceDeviceSessionLimit::class,
         'tenant.branch.required' => \App\Http\Middleware\RequireTenantAndBranch::class,
         'hotel.tenant' => \App\Http\Middleware\EnsureHotelTenant::class,
-        'demo.expired'      => \App\Http\Middleware\BlockExpiredDemoUser::class,
+        'demo.expired' => \App\Http\Middleware\BlockExpiredDemoUser::class,
         'demo.restrictions' => \App\Http\Middleware\DemoRestrictions::class,
         // Add any other custom middleware aliases here
     ];
@@ -197,29 +198,29 @@ class Kernel extends HttpKernel
     protected $middlewarePriority = [
         // Cookie handling must come first
         \Illuminate\Cookie\Middleware\EncryptCookies::class,
-        
+
         // Session starts early
         \Illuminate\Session\Middleware\StartSession::class,
-        
+
         // Share errors with views
         \Illuminate\View\Middleware\ShareErrorsFromSession::class,
-        
+
         // Tenant resolution happens before authentication
         \App\Http\Middleware\ResolveTenant::class,
         \App\Http\Middleware\IdentifyTenant::class,
         \App\Http\Middleware\ForceLogoutExpiredSession::class,
         \App\Http\Middleware\EnforceDeviceSessionLimit::class,
-        
+
         // Authentication checks
         \App\Http\Middleware\Authenticate::class,
         \Illuminate\Session\Middleware\AuthenticateSession::class,
-        
+
         // Bindings
         \Illuminate\Routing\Middleware\SubstituteBindings::class,
-        
+
         // Authorization
         \Illuminate\Auth\Middleware\Authorize::class,
-        
+
         // Tenant session verification
         \App\Http\Middleware\VerifyTenantSession::class,
     ];

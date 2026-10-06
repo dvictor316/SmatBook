@@ -2,23 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Subscription, Plan, User, Company, DeploymentManager, Domain, Bank, Setting};
-use App\Support\AppMailer;
+use App\Models\Bank;
+use App\Models\Company;
+use App\Models\DeploymentManager;
+use App\Models\Domain;
+use App\Models\Plan;
+use App\Models\Setting;
+use App\Models\Subscription;
+use App\Models\User;
 use App\Support\ActiveBranchResolver;
+use App\Support\AppMailer;
 use App\Support\DeploymentCommissionPayoutService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{Auth, DB, Http, Log, Mail, Schema};
-use Illuminate\Validation\Rule;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class SubscriptionController extends Controller
 {
     public function __construct(
         private readonly DeploymentCommissionPayoutService $deploymentCommissionPayouts
-    ) {
-    }
+    ) {}
 
     /*
     |--------------------------------------------------------------------------
@@ -51,7 +60,10 @@ class SubscriptionController extends Controller
         }
 
         $plans = Schema::hasTable('plans') ? $plansQuery->get() : collect();
-        $currentSubscription = Auth::check() ? Subscription::resolveCurrentForUser(Auth::user()) : null;
+        $creatingAdditionalBusiness = Auth::check() && $request->boolean('new_business');
+        $currentSubscription = Auth::check() && ! $creatingAdditionalBusiness
+            ? Subscription::resolveCurrentForUser(Auth::user())
+            : null;
         $currentPlanTier = $currentSubscription ? Plan::normalizeTier($currentSubscription->planLabel()) : null;
         $suggestedUpgradePlan = Plan::suggestedUpgradeForTier($currentPlanTier);
 
@@ -63,6 +75,7 @@ class SubscriptionController extends Controller
             'seoNoIndex' => $isLegacyPricingRoute,
             'currentPlanTier' => $currentPlanTier,
             'suggestedUpgradePlan' => $suggestedUpgradePlan,
+            'creatingAdditionalBusiness' => $creatingAdditionalBusiness,
         ]);
     }
 
@@ -101,16 +114,17 @@ class SubscriptionController extends Controller
         if (! $user) {
             // Store plan selection in session so the registration flow picks it up automatically.
             // Also store url.intended so after login the user lands directly on the upgrade page.
-            $guestPlan  = (string) $request->query('plan', '');
+            $guestPlan = (string) $request->query('plan', '');
             $guestCycle = 'yearly';
             if ($guestPlan !== '') {
                 session([
-                    'selected_plan'  => $guestPlan,
+                    'selected_plan' => $guestPlan,
                     'selected_cycle' => $guestCycle,
-                    'reg_role'       => 'admin',
-                    'url.intended'   => $request->fullUrl(),
+                    'reg_role' => 'admin',
+                    'url.intended' => $request->fullUrl(),
                 ]);
             }
+
             return redirect()->route('saas-register-initial');
         }
 
@@ -120,7 +134,8 @@ class SubscriptionController extends Controller
         }
 
         $requestedPlan = $this->normalizeCatalogPlanKey((string) $request->query('plan', ''));
-        $currentSubscription = Subscription::resolveCurrentForUser($user);
+        $creatingAdditionalBusiness = $request->boolean('new_business');
+        $currentSubscription = $creatingAdditionalBusiness ? null : Subscription::resolveCurrentForUser($user);
         $requestedCycle = 'yearly';
 
         if (! $requestedPlan) {
@@ -154,21 +169,23 @@ class SubscriptionController extends Controller
 
         if (
             $samePlan
-            && !$currentSubscription->isExpired()
+            && ! $currentSubscription->isExpired()
             && in_array(strtolower((string) $currentSubscription->payment_status), ['paid', 'free'], true)
         ) {
             return redirect()->route('membership-plans')
                 ->with('success', 'You are already on that plan.');
         }
 
-        $companyId = (int) ($currentSubscription?->company_id ?: $user->company_id ?: 0);
+        $companyId = $creatingAdditionalBusiness
+            ? 0
+            : (int) ($currentSubscription?->company_id ?: $user->company_id ?: 0);
         $domainPrefix = (string) (
             $currentSubscription?->domain_prefix
             ?: optional($currentSubscription?->company)->domain_prefix
             ?: optional($currentSubscription?->company)->subdomain
             ?: ''
         );
-        $hasSubscriptionHistory = Subscription::query()
+        $hasSubscriptionHistory = Subscription::withoutGlobalScope('tenant')
             ->where(function ($query) use ($user, $companyId) {
                 $query->where('user_id', $user->id);
                 if ($companyId > 0) {
@@ -176,17 +193,27 @@ class SubscriptionController extends Controller
                 }
             })
             ->exists();
-        $startsWithFreeTrial = ! $hasSubscriptionHistory;
+        $startsWithFreeTrial = ! $creatingAdditionalBusiness && ! $hasSubscriptionHistory;
 
-        $pendingSubscription = Subscription::query()
+        $pendingSubscription = Subscription::withoutGlobalScope('tenant')
             ->where('user_id', $user->id)
             ->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['pending', 'awaiting payment'])
+            ->when(
+                Schema::hasColumn('subscriptions', 'is_business_addition'),
+                fn ($query) => $query->where('is_business_addition', $creatingAdditionalBusiness)
+            )
+            ->when(
+                $creatingAdditionalBusiness,
+                fn ($query) => $query->whereNull('company_id'),
+                fn ($query) => $query->when($companyId > 0, fn ($companyQuery) => $companyQuery->where('company_id', $companyId))
+            )
             ->orderByDesc('id')
             ->first();
 
         $payload = $this->filterPayloadForTable('subscriptions', array_merge([
             'user_id' => $user->id,
             'company_id' => $companyId ?: null,
+            'is_business_addition' => $creatingAdditionalBusiness,
             'plan_id' => $plan->id,
             'plan' => $plan->name,
             'plan_name' => $plan->name,
@@ -214,11 +241,18 @@ class SubscriptionController extends Controller
             'billing_cycle' => ucfirst($requestedCycle),
             'plan' => $requestedPlan,
             'reg_role' => 'admin',
+            'creating_additional_business' => $creatingAdditionalBusiness,
+            'additional_business_subscription_id' => $creatingAdditionalBusiness ? $subscription->id : null,
         ]);
 
-        if ($startsWithFreeTrial) {
+        if ($startsWithFreeTrial || $creatingAdditionalBusiness) {
             return redirect()->route('saas.setup', ['id' => $subscription->id])
-                ->with('success', 'Your one-month free trial has started. Complete workspace setup to begin using the app.');
+                ->with(
+                    'success',
+                    $creatingAdditionalBusiness
+                        ? 'Plan selected. Configure the new business before checkout.'
+                        : 'Your one-month free trial has started. Complete workspace setup to begin using the app.'
+                );
         }
 
         return redirect()->route('saas.checkout', ['id' => $subscription->id])
@@ -240,7 +274,7 @@ class SubscriptionController extends Controller
 
         // Super admin may also own a business workspace; only send to platform
         // when no business workspace context is active.
-        if ($user && !$isBusinessWorkspace && in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)) {
+        if ($user && ! $isBusinessWorkspace && in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)) {
             return redirect()->route('super_admin.dashboard');
         }
 
@@ -251,7 +285,7 @@ class SubscriptionController extends Controller
                 (int) ($company->owner_id ?? 0),
             ]), true);
 
-            if ($company && !$ownsWorkspace) {
+            if ($company && ! $ownsWorkspace) {
                 session([
                     'user_plan' => strtolower((string) ($company->plan ?? 'basic')),
                     'current_tenant_id' => $company->id,
@@ -274,26 +308,27 @@ class SubscriptionController extends Controller
                 ->latest()
                 ->first();
 
-        if (!$subscription) {
+        if (! $subscription) {
             return redirect()->route('membership-plans')
                 ->with('error', 'Please select a plan to begin setup.');
         }
 
+        $isAdditionalBusiness = (bool) ($subscription->is_business_addition ?? false);
         $existingCompany = $subscription->company_id
             ? Company::withoutGlobalScope('tenant')->find($subscription->company_id)
-            : Company::withoutGlobalScope('tenant')
+            : ($isAdditionalBusiness ? null : Company::withoutGlobalScope('tenant')
                 ->where(function ($query) use ($user) {
                     $query->where('user_id', $user->id)
                         ->orWhere('owner_id', $user->id);
                 })
-                ->first();
+                ->first());
 
         $hasConfiguredWorkspace = filled($subscription->domain_prefix)
             && $existingCompany
             && filled($existingCompany->domain_prefix ?? $existingCompany->subdomain ?? $existingCompany->domain ?? null);
 
         if ($hasConfiguredWorkspace) {
-            if (!in_array(strtolower((string) $subscription->payment_status), ['paid', 'free'], true)) {
+            if (! in_array(strtolower((string) $subscription->payment_status), ['paid', 'free'], true)) {
                 return redirect()->route('saas.checkout', ['id' => $subscription->id])
                     ->with('info', 'Your workspace URL is already configured. Complete checkout to activate it.');
             }
@@ -314,10 +349,10 @@ class SubscriptionController extends Controller
         $planModel = Plan::find($subscription->plan_id);
 
         return view('SuperAdmin.domain-request', [
-            'subscription'   => $subscription,
-            'plan'           => strtolower($planModel->name ?? 'Standard'),
-            'cycle'          => strtolower($subscription->billing_cycle),
-            'selectedPrice'  => $subscription->amount,
+            'subscription' => $subscription,
+            'plan' => strtolower($planModel->name ?? 'Standard'),
+            'cycle' => strtolower($subscription->billing_cycle),
+            'selectedPrice' => $subscription->amount,
             'session_domain' => trim((string) config('session.domain', parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'smartprobook.com'), '.'),
         ]);
     }
@@ -358,7 +393,7 @@ class SubscriptionController extends Controller
 
     private function shouldShowMissingWorkspaceError(?User $user): bool
     {
-        if (!$user || (int) ($user->company_id ?? 0) > 0) {
+        if (! $user || (int) ($user->company_id ?? 0) > 0) {
             return false;
         }
 
@@ -367,7 +402,7 @@ class SubscriptionController extends Controller
             return false;
         }
 
-        return !Subscription::withoutGlobalScope('tenant')
+        return ! Subscription::withoutGlobalScope('tenant')
             ->where('user_id', $user->id)
             ->exists();
     }
@@ -385,7 +420,7 @@ class SubscriptionController extends Controller
 
     private function isAssignedWorkspaceStaff(?User $user): bool
     {
-        if (!$user || (int) ($user->company_id ?? 0) <= 0) {
+        if (! $user || (int) ($user->company_id ?? 0) <= 0) {
             return false;
         }
 
@@ -395,11 +430,11 @@ class SubscriptionController extends Controller
         }
 
         $company = Company::withoutGlobalScope('tenant')->find((int) $user->company_id);
-        if (!$company) {
+        if (! $company) {
             return false;
         }
 
-        return !in_array((int) $user->id, array_filter([
+        return ! in_array((int) $user->id, array_filter([
             (int) ($company->user_id ?? 0),
             (int) ($company->owner_id ?? 0),
         ]), true);
@@ -408,7 +443,7 @@ class SubscriptionController extends Controller
     private function forceAssignedWorkspaceSession(User $user): void
     {
         $company = Company::withoutGlobalScope('tenant')->find((int) $user->company_id);
-        if (!$company) {
+        if (! $company) {
             return;
         }
 
@@ -454,7 +489,7 @@ class SubscriptionController extends Controller
         $clean = trim((string) $clean, ". \t\n\r\0\x0B");
 
         $rootDomain = trim((string) config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')), ". \t\n\r\0\x0B");
-        if ($rootDomain !== '' && str_ends_with($clean, '.' . $rootDomain)) {
+        if ($rootDomain !== '' && str_ends_with($clean, '.'.$rootDomain)) {
             $clean = substr($clean, 0, -1 * (strlen($rootDomain) + 1));
         }
 
@@ -483,26 +518,27 @@ class SubscriptionController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
+        $isAdditionalBusiness = (bool) ($subscription->is_business_addition ?? false);
         $currentCompany = $subscription->company_id
             ? Company::withoutGlobalScope('tenant')->find($subscription->company_id)
-            : Company::withoutGlobalScope('tenant')
+            : ($isAdditionalBusiness ? null : Company::withoutGlobalScope('tenant')
                 ->where(function ($query) use ($user) {
                     $query->where('user_id', $user->id)
                         ->orWhere('owner_id', $user->id);
                 })
-                ->first();
+                ->first());
 
         $request->validate([
-            'customer_name'   => 'required|string|max:191',
-            'domain_prefix'   => [
+            'customer_name' => 'required|string|max:191',
+            'domain_prefix' => [
                 'required',
                 'alpha_dash',
                 Rule::unique('subscriptions', 'domain_prefix')->ignore($subscription->id),
                 Rule::unique('companies', 'domain_prefix')->ignore($currentCompany?->id),
             ],
             'subscription_id' => 'required|exists:subscriptions,id',
-            'branch_name'     => 'required|string|max:191',
-            'employees'       => 'nullable|string',
+            'branch_name' => 'required|string|max:191',
+            'employees' => 'nullable|string',
         ]);
 
         DB::beginTransaction();
@@ -519,24 +555,33 @@ class SubscriptionController extends Controller
             $isHotelPlan = str_contains(strtolower($subscriptionPlanName), 'hotel')
                 || str_contains(strtolower($subscriptionPlanName), 'hospitality');
 
-            $company = Company::updateOrCreate(
-                ['user_id' => $user->id],
-                $this->filterPayloadForTable('companies', [
-                    'domain_prefix' => $prefix,
-                    'subdomain'     => $prefix,
-                    'domain'        => $prefix,
-                    'company_name'  => (string) $request->customer_name,
-                    'name'          => (string) $request->customer_name,
-                    'status'        => $isTrialSubscription ? 'active' : 'pending',
-                    'owner_id'      => $user->id,
-                    'plan'          => $subscriptionPlanName,
-                    'industry'      => $isHotelPlan ? 'hotel' : null,
-                ])
-            );
+            $companyPayload = $this->filterPayloadForTable('companies', [
+                'user_id' => $user->id,
+                'domain_prefix' => $prefix,
+                'subdomain' => $prefix,
+                'domain' => $prefix,
+                'company_name' => (string) $request->customer_name,
+                'name' => (string) $request->customer_name,
+                'status' => $isTrialSubscription ? 'active' : 'pending',
+                'owner_id' => $user->id,
+                'plan' => $subscriptionPlanName,
+                'industry' => $isHotelPlan ? 'hotel' : null,
+            ]);
+
+            $company = $isAdditionalBusiness
+                ? Company::withoutGlobalScope('tenant')->create($companyPayload)
+                : Company::withoutGlobalScope('tenant')->updateOrCreate(['user_id' => $user->id], $companyPayload);
 
             $subscription->update(['company_id' => $company->id]);
-            $user->update(['company_id' => $company->id]);
-            session(['current_tenant_id' => $company->id]);
+            if ((int) ($user->getRawOriginal('company_id') ?? 0) === 0) {
+                $user->update(['company_id' => $company->id]);
+            }
+            session([
+                'current_tenant_id' => $company->id,
+                'current_tenant_name' => $company->name ?? $company->company_name ?? 'Business',
+                'workspace_context' => 'business',
+            ]);
+            $user->setAttribute('company_id', $company->id);
 
             $defaultBranch = app(ActiveBranchResolver::class)->seedDefaultBranch($user->fresh(), (string) $request->branch_name);
             if ($defaultBranch) {
@@ -553,6 +598,7 @@ class SubscriptionController extends Controller
                 );
                 $user->update(['status' => 'active', 'is_verified' => 1]);
                 DB::commit();
+
                 return redirect()->route('deployment.dashboard')
                     ->with('success', 'State manager hub initialized!');
             }
@@ -581,13 +627,16 @@ class SubscriptionController extends Controller
 
             DB::commit();
 
+            session()->forget(['creating_additional_business', 'additional_business_subscription_id']);
+
             return redirect()->route('saas.checkout', $subscription->id)
                 ->with('success', 'Workspace configured! Proceed to payment.');
 
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Workspace setup failed', ['error' => $e->getMessage()]);
-            return back()->withInput()->with('error', 'Setup failed: ' . $e->getMessage());
+
+            return back()->withInput()->with('error', 'Setup failed: '.$e->getMessage());
         }
     }
 
@@ -607,7 +656,7 @@ class SubscriptionController extends Controller
     {
         $id = (int) $id;
 
-        if (!$id) {
+        if (! $id) {
             $fallbackId = (int) (
                 request()->query('sub_id')
                 ?: session('deployment_subscription_id')
@@ -651,7 +700,7 @@ class SubscriptionController extends Controller
                     $subscription->forceFill(['status' => 'Active'])->save();
                 }
 
-                if (!in_array(strtolower((string) $subscription->payment_status), ['paid', 'free'], true)) {
+                if (! in_array(strtolower((string) $subscription->payment_status), ['paid', 'free'], true)) {
                     $subscription->forceFill(['payment_status' => 'free'])->save();
                 }
 
@@ -675,25 +724,25 @@ class SubscriptionController extends Controller
             }
 
             $isDeploymentCheckout = $this->isDeploymentCheckout($subscription);
-            $resolvedManagerId    = $this->resolveDeploymentManagerId($subscription);
+            $resolvedManagerId = $this->resolveDeploymentManagerId($subscription);
             $isSuperAdminCheckout = $currentUser
                 && in_array(strtolower((string) ($currentUser->role ?? '')), ['super_admin', 'superadmin'], true);
-            $isManagerRecord      = DeploymentManager::where('user_id', $currentUser->id)->exists();
-            $isResolvedManager    = $resolvedManagerId > 0 && (int) $currentUser->id === (int) $resolvedManagerId;
-            $isSessionManager     = $isDeploymentCheckout
+            $isManagerRecord = DeploymentManager::where('user_id', $currentUser->id)->exists();
+            $isResolvedManager = $resolvedManagerId > 0 && (int) $currentUser->id === (int) $resolvedManagerId;
+            $isSessionManager = $isDeploymentCheckout
                 && (int) session('deployment_manager_id', 0) === (int) $currentUser->id;
-            $isManager            = $isManagerRecord || $isResolvedManager || $isSessionManager;
-            $deploymentManager    = null;
+            $isManager = $isManagerRecord || $isResolvedManager || $isSessionManager;
+            $deploymentManager = null;
 
             // Keep manager identity intact for deployment-assisted checkout.
             // Switching auth user here can cause wrong dashboard/sidebar context on failure.
             if ($isManager && $isDeploymentCheckout) {
                 session([
-                    'checkout_from_deployment'   => true,
-                    'deployment_manager_id'      => $currentUser->id,
+                    'checkout_from_deployment' => true,
+                    'deployment_manager_id' => $currentUser->id,
                     'deployment_return_manager_id' => $currentUser->id,
-                    'deployment_customer_id'     => $subscription->user_id,
-                    'deployment_company_id'      => $subscription->company_id,
+                    'deployment_customer_id' => $subscription->user_id,
+                    'deployment_company_id' => $subscription->company_id,
                     'deployment_subscription_id' => $subscription->id,
                 ]);
                 session()->save();
@@ -707,25 +756,26 @@ class SubscriptionController extends Controller
             }
 
             // Auth check: own subscription OR a deployment manager
-            if ($subscription->user_id !== $currentUser->id && !$isManager && !$isSuperAdminCheckout) {
+            if ($subscription->user_id !== $currentUser->id && ! $isManager && ! $isSuperAdminCheckout) {
                 Log::warning('Unauthorized checkout attempt', [
                     'subscription_owner' => $subscription->user_id,
-                    'current_user'       => $currentUser->id,
+                    'current_user' => $currentUser->id,
                 ]);
+
                 // Do NOT redirect to /home — redirect to dashboard instead
                 return redirect()->route('deployment.dashboard')
                     ->with('error', 'You do not have permission to access that checkout.');
             }
 
             Log::info('Checkout loaded', [
-                'subscription_id'       => $subscription->id,
-                'by'                    => $currentUser->id,
-                'is_manager'            => $isManager,
-                'is_manager_record'     => $isManagerRecord,
-                'is_resolved_manager'   => $isResolvedManager,
-                'is_session_manager'    => $isSessionManager,
-                'is_super_admin'        => $isSuperAdminCheckout,
-                'is_deployment_checkout'=> $isDeploymentCheckout,
+                'subscription_id' => $subscription->id,
+                'by' => $currentUser->id,
+                'is_manager' => $isManager,
+                'is_manager_record' => $isManagerRecord,
+                'is_resolved_manager' => $isResolvedManager,
+                'is_session_manager' => $isSessionManager,
+                'is_super_admin' => $isSuperAdminCheckout,
+                'is_deployment_checkout' => $isDeploymentCheckout,
             ]);
 
             $bankAccounts = collect();
@@ -753,14 +803,14 @@ class SubscriptionController extends Controller
             $defaultGateway = $availableGateways[0] ?? 'paystack';
 
             return view('Saas.checkout', [
-                'subscription'          => $subscription,
-                'isDeploymentCheckout'  => $isDeploymentCheckout,
-                'isManager'             => $isManager,
-                'deploymentManager'     => $deploymentManager,
-                'bankAccounts'          => $bankAccounts,
-                'stripePublishableKey'  => $this->resolveStripePublishableKey(),
-                'gatewayAvailability'   => $gatewayAvailability,
-                'defaultGateway'        => $defaultGateway,
+                'subscription' => $subscription,
+                'isDeploymentCheckout' => $isDeploymentCheckout,
+                'isManager' => $isManager,
+                'deploymentManager' => $deploymentManager,
+                'bankAccounts' => $bankAccounts,
+                'stripePublishableKey' => $this->resolveStripePublishableKey(),
+                'gatewayAvailability' => $gatewayAvailability,
+                'defaultGateway' => $defaultGateway,
                 'gatewayConfigurationIssue' => $availableGateways === [],
             ]);
 
@@ -843,7 +893,7 @@ class SubscriptionController extends Controller
         }
 
         $request->validate([
-            'gateway' => 'required|string|in:' . implode(',', $availableGateways),
+            'gateway' => 'required|string|in:'.implode(',', $availableGateways),
         ]);
 
         return match ((string) $request->input('gateway')) {
@@ -881,7 +931,7 @@ class SubscriptionController extends Controller
 
         if ($secret === '') {
             if ($this->shouldSimulateGatewayInLocal()) {
-                $localReference = 'LOCAL-STRIPE-' . $subscription->id . '-' . Str::upper(Str::random(8));
+                $localReference = 'LOCAL-STRIPE-'.$subscription->id.'-'.Str::upper(Str::random(8));
                 $localCallback = route('saas.payment.callback', [
                     'sub_id' => $subscription->id,
                     'gateway' => 'stripe',
@@ -900,7 +950,7 @@ class SubscriptionController extends Controller
 
             if ($request->expectsJson()) {
                 return response()->json([
-                    'message' => 'Stripe secret key is missing or invalid. Update it in Payment Settings.'
+                    'message' => 'Stripe secret key is missing or invalid. Update it in Payment Settings.',
                 ], 422);
             }
 
@@ -918,7 +968,7 @@ class SubscriptionController extends Controller
         $returnUrl = route('saas.payment.callback', [
             'sub_id' => $subscription->id,
             'gateway' => 'stripe',
-        ]) . '&reference={CHECKOUT_SESSION_ID}';
+        ]).'&reference={CHECKOUT_SESSION_ID}';
         $cancelUrl = route('saas.checkout', $subscription->id);
 
         try {
@@ -927,7 +977,7 @@ class SubscriptionController extends Controller
                 'customer_email' => $customerEmail,
                 'line_items[0][price_data][currency]' => 'ngn',
                 'line_items[0][price_data][unit_amount]' => $amountKobo,
-                'line_items[0][price_data][product_data][name]' => 'SmartProbook ' . $planName,
+                'line_items[0][price_data][product_data][name]' => 'SmartProbook '.$planName,
                 'line_items[0][quantity]' => 1,
                 'metadata[subscription_id]' => (string) $subscription->id,
                 'metadata[user_id]' => (string) $subscription->user_id,
@@ -947,7 +997,7 @@ class SubscriptionController extends Controller
                 ->acceptJson()
                 ->post('https://api.stripe.com/v1/checkout/sessions', $payload);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 $stripeError = (string) data_get($response->json(), 'error.message', '');
                 Log::error('Stripe session init failed', [
                     'subscription_id' => $subscription->id,
@@ -955,7 +1005,7 @@ class SubscriptionController extends Controller
                     'body' => $response->body(),
                 ]);
 
-                $message = $stripeError !== '' ? ('Stripe error: ' . $stripeError) : 'Unable to initialize Stripe checkout right now.';
+                $message = $stripeError !== '' ? ('Stripe error: '.$stripeError) : 'Unable to initialize Stripe checkout right now.';
                 if ($request->expectsJson()) {
                     return response()->json(['message' => $message], 422);
                 }
@@ -1012,7 +1062,7 @@ class SubscriptionController extends Controller
                 return redirect()->route('saas.payment.callback', [
                     'sub_id' => $subscription->id,
                     'gateway' => 'paystack',
-                    'reference' => 'LOCAL-PAYSTACK-' . $subscription->id . '-' . Str::upper(Str::random(8)),
+                    'reference' => 'LOCAL-PAYSTACK-'.$subscription->id.'-'.Str::upper(Str::random(8)),
                 ]);
             }
 
@@ -1021,7 +1071,7 @@ class SubscriptionController extends Controller
         }
 
         $amountKobo = max(1, (int) round(((float) $subscription->amount) * 100));
-        $reference = 'SPB-PSK-' . $subscription->id . '-' . Str::upper(Str::random(12));
+        $reference = 'SPB-PSK-'.$subscription->id.'-'.Str::upper(Str::random(12));
         $callbackUrl = route('saas.payment.callback', [
             'sub_id' => $subscription->id,
             'gateway' => 'paystack',
@@ -1055,7 +1105,7 @@ class SubscriptionController extends Controller
                     ],
                 ]);
 
-            if (!$response->successful() || !(bool) $response->json('status')) {
+            if (! $response->successful() || ! (bool) $response->json('status')) {
                 Log::error('Paystack init failed', [
                     'subscription_id' => $subscription->id,
                     'status' => $response->status(),
@@ -1089,7 +1139,7 @@ class SubscriptionController extends Controller
         $secret = $this->resolveFlutterwaveSecret();
         if ($secret === '') {
             if ($this->shouldSimulateGatewayInLocal()) {
-                $txRef = 'LOCAL-FLW-' . $subscription->id . '-' . Str::upper(Str::random(8));
+                $txRef = 'LOCAL-FLW-'.$subscription->id.'-'.Str::upper(Str::random(8));
 
                 return redirect()->route('saas.payment.callback', [
                     'sub_id' => $subscription->id,
@@ -1104,7 +1154,7 @@ class SubscriptionController extends Controller
                 ->with('error', 'Flutterwave secret key is missing or invalid. Update it in Payment Settings.');
         }
 
-        $txRef = 'SPB-FLW-' . $subscription->id . '-' . Str::upper(Str::random(10));
+        $txRef = 'SPB-FLW-'.$subscription->id.'-'.Str::upper(Str::random(10));
         $callbackUrl = route('saas.payment.callback', [
             'sub_id' => $subscription->id,
             'gateway' => 'flutterwave',
@@ -1131,7 +1181,7 @@ class SubscriptionController extends Controller
                     ],
                 ]);
 
-            if (!$response->successful() || strtolower((string) $response->json('status')) !== 'success') {
+            if (! $response->successful() || strtolower((string) $response->json('status')) !== 'success') {
                 Log::error('Flutterwave init failed', [
                     'subscription_id' => $subscription->id,
                     'status' => $response->status(),
@@ -1177,7 +1227,7 @@ class SubscriptionController extends Controller
         }
 
         foreach (array_keys($updates) as $column) {
-            if (!Schema::hasColumn('subscriptions', $column)) {
+            if (! Schema::hasColumn('subscriptions', $column)) {
                 unset($updates[$column]);
             }
         }
@@ -1199,15 +1249,15 @@ class SubscriptionController extends Controller
     */
     public function handlePaymentCallback(Request $request)
     {
-        $subId     = $request->sub_id    ?? $request->query('sub_id');
-        $gateway   = strtolower((string) ($request->gateway ?? $request->query('gateway') ?? 'stripe'));
+        $subId = $request->sub_id ?? $request->query('sub_id');
+        $gateway = strtolower((string) ($request->gateway ?? $request->query('gateway') ?? 'stripe'));
         $reference = (string) ($request->reference ?? $request->query('reference') ?? '');
 
         if ($reference === '' && $gateway === 'flutterwave') {
             $reference = (string) ($request->query('tx_ref') ?? $request->input('tx_ref') ?? '');
         }
 
-        if (!$subId) {
+        if (! $subId) {
             return redirect()->route('membership-plans')
                 ->with('error', 'Missing payment verification data.');
         }
@@ -1218,7 +1268,7 @@ class SubscriptionController extends Controller
             ->findOrFail($subId);
 
         $verification = $this->verifyPayment($reference, $gateway, $request, $subscription);
-        if (!(bool) ($verification['ok'] ?? false)) {
+        if (! (bool) ($verification['ok'] ?? false)) {
             return redirect()->route('saas.checkout', $subscription->id)
                 ->with('error', 'Payment verification failed. Please try again.');
         }
@@ -1243,10 +1293,11 @@ class SubscriptionController extends Controller
         if ($isDeploymentBySession || $isDeploymentByDB) {
             Log::info('Routing to deployment payment handler', [
                 'via_session' => $isDeploymentBySession,
-                'via_db'      => $isDeploymentByDB,
+                'via_db' => $isDeploymentByDB,
                 'deployed_by' => $subscription->deployed_by,
                 'resolved_manager_id' => $resolvedManagerId,
             ]);
+
             return $this->handleDeploymentPayment($subscription, $reference);
         }
 
@@ -1282,13 +1333,13 @@ class SubscriptionController extends Controller
             $endDate = Subscription::initialPaidTermEndDate($startDate, $subscription->billing_cycle);
 
             $subscriptionUpdateData = [
-                'status'                => 'Active',
-                'payment_status'        => 'paid',
+                'status' => 'Active',
+                'payment_status' => 'paid',
                 'transaction_reference' => $reference,
-                'payment_date'          => now(),
-                'paid_at'               => now(),
-                'start_date'            => $startDate,
-                'end_date'              => $endDate,
+                'payment_date' => now(),
+                'paid_at' => now(),
+                'start_date' => $startDate,
+                'end_date' => $endDate,
             ];
 
             if (Schema::hasColumn('subscriptions', 'payment_gateway')) {
@@ -1317,10 +1368,14 @@ class SubscriptionController extends Controller
 
             if ($subscription->user) {
                 $userUpdateData = [
-                    'is_verified'       => 1,
+                    'is_verified' => 1,
                     'email_verified_at' => now(),
-                    'company_id'        => $subscription->company_id,
                 ];
+
+                if (! $subscription->is_business_addition
+                    || (int) ($subscription->user->getRawOriginal('company_id') ?? 0) === 0) {
+                    $userUpdateData['company_id'] = $subscription->company_id;
+                }
 
                 if (Schema::hasColumn('users', 'status')) {
                     $userUpdateData['status'] = 'active';
@@ -1371,6 +1426,7 @@ class SubscriptionController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Regular payment failed', ['error' => $e->getMessage()]);
+
             return redirect()->route('saas.checkout', $subscription->id)
                 ->with('error', 'Activation failed. Please contact support.');
         }
@@ -1411,13 +1467,13 @@ class SubscriptionController extends Controller
 
             // 1. Activate subscription
             $subscriptionUpdateData = [
-                'status'                => 'Active',
-                'payment_status'        => 'paid',
+                'status' => 'Active',
+                'payment_status' => 'paid',
                 'transaction_reference' => $reference,
-                'payment_date'          => now(),
-                'paid_at'               => now(),
-                'start_date'            => $startDate,
-                'end_date'              => $endDate,
+                'payment_date' => now(),
+                'paid_at' => now(),
+                'start_date' => $startDate,
+                'end_date' => $endDate,
             ];
 
             if (Schema::hasColumn('subscriptions', 'payment_gateway')) {
@@ -1441,7 +1497,7 @@ class SubscriptionController extends Controller
                 ?? Company::withoutGlobalScope('tenant')->find($subscription->company_id);
             if ($company) {
                 $companyUpdateData = [
-                    'status'      => 'active',
+                    'status' => 'active',
                 ];
 
                 if (Schema::hasColumn('companies', 'subscription_start')) {
@@ -1463,9 +1519,9 @@ class SubscriptionController extends Controller
             $customer = $subscription->user ?? User::find($subscription->user_id);
             if ($customer) {
                 $customerUpdateData = [
-                    'is_verified'       => 1,
+                    'is_verified' => 1,
                     'email_verified_at' => now(),
-                    'company_id'        => $company?->id,
+                    'company_id' => $company?->id,
                 ];
 
                 if (Schema::hasColumn('users', 'status')) {
@@ -1498,7 +1554,7 @@ class SubscriptionController extends Controller
             DB::commit();
 
             try {
-                if (!empty($regData['password'])) {
+                if (! empty($regData['password'])) {
                     $this->sendDeploymentWelcomeEmail($company, $customer, $regData['password']);
                 } else {
                     $this->sendWelcomeEmail($customer, $subscription, $company);
@@ -1523,9 +1579,9 @@ class SubscriptionController extends Controller
             // Setting current_tenant_id to the client's company here causes route() to resolve under
             // the client's subdomain, sending the manager to e.g. ojo.smartprobook.com/deployment/dashboard.
             session([
-                'last_paid_subscription_id'   => $subscription->id,
+                'last_paid_subscription_id' => $subscription->id,
                 'deployment_return_manager_id' => $managerId,
-                'last_deployment_customer_id'  => $customer?->id,
+                'last_deployment_customer_id' => $customer?->id,
             ]);
 
             // Clear all deployment session data
@@ -1544,21 +1600,21 @@ class SubscriptionController extends Controller
 
             Log::info('Deployment payment activated', [
                 'subscription_id' => $subscription->id,
-                'manager_id'      => $managerId,
-                'customer_id'     => $customer?->id,
-                'commission'      => $commissionAmount,
-                'authenticated_as'=> auth()->id(),
+                'manager_id' => $managerId,
+                'customer_id' => $customer?->id,
+                'commission' => $commissionAmount,
+                'authenticated_as' => auth()->id(),
             ]);
 
             // Redirect manager back to deployment dashboard on the main app domain,
             // not to saas.success (which generates URLs in the client's tenant context).
             $prefix = $company?->domain_prefix ?? $subscription->domain_prefix;
             $mainDomain = trim((string) config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')), ". \t\n\r\0\x0B");
-            $workspaceUrl = $prefix ? 'https://' . $prefix . '.' . $mainDomain : null;
+            $workspaceUrl = $prefix ? 'https://'.$prefix.'.'.$mainDomain : null;
 
             $successMsg = 'Payment confirmed! Customer workspace is now live.';
             if ($workspaceUrl) {
-                $successMsg .= ' Workspace: ' . $workspaceUrl;
+                $successMsg .= ' Workspace: '.$workspaceUrl;
             }
             if ($provisioningWarning || $notificationWarning) {
                 $successMsg = 'Payment confirmed. Workspace finishing steps are running in the background.';
@@ -1572,6 +1628,7 @@ class SubscriptionController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
             return redirect()->route('saas.checkout', $subscription->id)
                 ->with('warning', 'Payment recorded but provisioning was incomplete. Please contact support.');
         }
@@ -1589,30 +1646,41 @@ class SubscriptionController extends Controller
         $subscription = Subscription::withoutGlobalScope('tenant')
             ->with(['user', 'company' => fn ($q) => $q->withoutGlobalScope('tenant')])
             ->findOrFail($id);
-        $domain       = $this->resolveSessionDomain();
-        $protocol     = $this->resolveWorkspaceProtocol();
-        $prefix       = $subscription->domain_prefix ?? $subscription->company?->domain_prefix;
+        $domain = $this->resolveSessionDomain();
+        $protocol = $this->resolveWorkspaceProtocol();
+        $prefix = $subscription->domain_prefix ?? $subscription->company?->domain_prefix;
 
         $workspaceUrl = $this->buildTenantDashboardUrl($prefix, $domain, $protocol);
+
+        $currentUser = auth()->user();
+        if ($currentUser && (int) $subscription->user_id === (int) $currentUser->id && $subscription->company_id) {
+            session([
+                'current_tenant_id' => (int) $subscription->company_id,
+                'current_tenant_name' => $subscription->company?->name ?? $subscription->company?->company_name ?? 'Business',
+                'workspace_context' => 'business',
+                'user_plan' => strtolower($subscription->planLabel()),
+            ]);
+            $currentUser->setAttribute('company_id', (int) $subscription->company_id);
+            session()->forget(['creating_additional_business', 'additional_business_subscription_id']);
+        }
 
         if (app()->environment('local')) {
             session(['current_tenant_id' => $subscription->company_id]);
             $workspaceUrl = route('home');
         }
 
-        $currentUser = auth()->user();
         $isManager = $currentUser
             ? DeploymentManager::where('user_id', $currentUser->id)->exists()
             : false;
 
         return view('Saas.success', [
-            'subscription'  => $subscription,
+            'subscription' => $subscription,
             'workspace_url' => $workspaceUrl,
-            'workspaceUrl'  => $workspaceUrl,
-            'company'       => $subscription->company,
-            'domain'        => $domain,
-            'isManager'     => $isManager,
-            'returnUrl'     => $isManager ? route('deployment.dashboard') : route('home'),
+            'workspaceUrl' => $workspaceUrl,
+            'company' => $subscription->company,
+            'domain' => $domain,
+            'isManager' => $isManager,
+            'returnUrl' => $isManager ? route('deployment.dashboard') : route('home'),
         ]);
     }
 
@@ -1628,15 +1696,15 @@ class SubscriptionController extends Controller
     public function paymentSuccess()
     {
         $subscriptionId = session('last_paid_subscription_id');
-        $currentUser    = auth()->user();
-        $isManager      = DeploymentManager::where('user_id', $currentUser->id)->exists();
+        $currentUser = auth()->user();
+        $isManager = DeploymentManager::where('user_id', $currentUser->id)->exists();
 
         $subscription = $subscriptionId
             ? Subscription::with(['user', 'company'])->find($subscriptionId)
             : null;
 
         // Fallback: find most recently paid subscription
-        if (!$subscription) {
+        if (! $subscription) {
             $subscription = $isManager
                 ? Subscription::with(['user', 'company'])
                     ->where('deployed_by', $currentUser->id)
@@ -1650,17 +1718,17 @@ class SubscriptionController extends Controller
                     ->first();
         }
 
-        $domain       = $this->resolveSessionDomain();
-        $prefix       = $subscription?->domain_prefix
+        $domain = $this->resolveSessionDomain();
+        $prefix = $subscription?->domain_prefix
                         ?? $subscription?->company?->domain_prefix;
         $workspaceUrl = $this->buildTenantDashboardUrl($prefix, $domain, $this->resolveWorkspaceProtocol());
 
         return view('Saas.success', [
             'subscription' => $subscription,
             'workspaceUrl' => $workspaceUrl,
-            'isManager'    => $isManager,
-            'returnUrl'    => $isManager ? route('deployment.dashboard') : route('home'),
-            'domain'       => $domain,
+            'isManager' => $isManager,
+            'returnUrl' => $isManager ? route('deployment.dashboard') : route('home'),
+            'domain' => $domain,
         ]);
     }
 
@@ -1674,7 +1742,7 @@ class SubscriptionController extends Controller
     {
         $managerId = (int) session('deployment_return_manager_id');
 
-        if (!$managerId) {
+        if (! $managerId) {
             return redirect()->route('home')
                 ->with('warning', 'Manager return session is no longer available.');
         }
@@ -1683,7 +1751,7 @@ class SubscriptionController extends Controller
         $isManager = $managerUser
             && DeploymentManager::where('user_id', $managerId)->exists();
 
-        if (!$isManager) {
+        if (! $isManager) {
             return redirect()->route('home')
                 ->with('error', 'Unable to switch back to deployment manager.');
         }
@@ -1713,6 +1781,7 @@ class SubscriptionController extends Controller
     public function index()
     {
         $subscriptions = Subscription::with(['user', 'company'])->latest()->paginate(15);
+
         return view('SuperAdmin.subscription', compact('subscriptions'));
     }
 
@@ -1756,6 +1825,7 @@ class SubscriptionController extends Controller
         }
 
         $subscriptions = Subscription::with(['user', 'company'])->latest()->paginate(15);
+
         return view('SuperAdmin.subscription', compact('subscriptions', 'subscription', 'plans'));
     }
 
@@ -1763,10 +1833,11 @@ class SubscriptionController extends Controller
     {
         $subscription = Subscription::findOrFail($id);
         $subscription->update($request->validate([
-            'status'         => 'required|in:Active,Trial,Pending,Cancelled,Expired',
+            'status' => 'required|in:Active,Trial,Pending,Cancelled,Expired',
             'payment_status' => 'required|in:paid,free,unpaid,pending,failed,pending_verification',
-            'end_date'       => 'required|date',
+            'end_date' => 'required|date',
         ]));
+
         return redirect()->route('super_admin.subscriptions.transactions')
             ->with('success', 'Subscription updated.');
     }
@@ -1774,6 +1845,7 @@ class SubscriptionController extends Controller
     public function transactions()
     {
         $purchasereports = Subscription::with(['user', 'company'])->latest()->paginate(15);
+
         return view('SuperAdmin.purchase-transaction', compact('purchasereports'));
     }
 
@@ -1809,12 +1881,14 @@ class SubscriptionController extends Controller
         $subscription = Subscription::with(['company', 'user'])->findOrFail($id);
         $pdf = Pdf::loadView('SuperAdmin.subscriptions.show_pdf', compact('subscription'));
         $pdf->setPaper('a4', 'portrait');
-        return $pdf->download('SmartProbook_Receipt_' . $subscription->id . '.pdf');
+
+        return $pdf->download('SmartProbook_Receipt_'.$subscription->id.'.pdf');
     }
 
     public function printInvoice($id)
     {
         $subscription = Subscription::with(['company', 'user'])->findOrFail($id);
+
         return view('print.invoice', compact('subscription'));
     }
 
@@ -1828,6 +1902,7 @@ class SubscriptionController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('login')
             ->with('success', 'You have been logged out successfully.');
     }
@@ -1901,7 +1976,7 @@ class SubscriptionController extends Controller
 
     private function resolveCommissionRate(?int $managerId): float
     {
-        if (!$managerId) {
+        if (! $managerId) {
             return 35.0;
         }
 
@@ -1915,17 +1990,19 @@ class SubscriptionController extends Controller
     private function calculateCommissionAmount(Subscription $subscription, ?int $managerId): float
     {
         $rate = $this->resolveCommissionRate($managerId);
+
         return round(((float) $subscription->amount * $rate) / 100, 2);
     }
 
     private function recordDeploymentCommission(Subscription $subscription, ?int $managerId, ?int $companyId = null): float
     {
         $commissionAmount = $this->calculateCommissionAmount($subscription, $managerId);
-        if (!$managerId) {
+        if (! $managerId) {
             Log::warning('Skipped commission write: no deployment manager linked.', [
                 'subscription_id' => $subscription->id,
                 'company_id' => $companyId ?? $subscription->company_id,
             ]);
+
             return $commissionAmount;
         }
 
@@ -1934,18 +2011,18 @@ class SubscriptionController extends Controller
 
         // Write to both legacy/new tables when present so all dashboards stay in sync.
         foreach (['deployment_commissions', 'manager_commissions'] as $table) {
-            if (!Schema::hasTable($table)) {
+            if (! Schema::hasTable($table)) {
                 continue;
             }
 
             try {
                 $payload = [
-                    'manager_id'      => $managerId,
+                    'manager_id' => $managerId,
                     'subscription_id' => $subscription->id,
                     'commission_rate' => $commissionRate,
-                    'status'          => $table === 'deployment_commissions' ? 'pending' : 'credited',
-                    'created_at'      => now(),
-                    'updated_at'      => now(),
+                    'status' => $table === 'deployment_commissions' ? 'pending' : 'credited',
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ];
 
                 if (Schema::hasColumn($table, 'company_id') && $companyId) {
@@ -2012,6 +2089,7 @@ class SubscriptionController extends Controller
             if ($reference === '') {
                 return ['ok' => false, 'reference' => ''];
             }
+
             return ['ok' => $this->verifyStripePayment($reference), 'reference' => $reference];
         }
 
@@ -2019,6 +2097,7 @@ class SubscriptionController extends Controller
             if ($reference === '') {
                 return ['ok' => false, 'reference' => ''];
             }
+
             return $this->verifyPaystackPayment($reference, $subscription);
         }
 
@@ -2039,9 +2118,11 @@ class SubscriptionController extends Controller
         try {
             $response = Http::withToken($secret)
                 ->acceptJson()
-                ->get('https://api.stripe.com/v1/checkout/sessions/' . urlencode($reference));
+                ->get('https://api.stripe.com/v1/checkout/sessions/'.urlencode($reference));
 
-            if (!$response->successful()) return false;
+            if (! $response->successful()) {
+                return false;
+            }
 
             $status = strtolower((string) $response->json('status', ''));
             $paymentStatus = strtolower((string) $response->json('payment_status', ''));
@@ -2049,6 +2130,7 @@ class SubscriptionController extends Controller
             return $status === 'complete' && $paymentStatus === 'paid';
         } catch (\Throwable $e) {
             Log::error('Stripe verify exception', ['error' => $e->getMessage()]);
+
             return false;
         }
     }
@@ -2063,9 +2145,9 @@ class SubscriptionController extends Controller
         try {
             $response = Http::withToken($secret)
                 ->acceptJson()
-                ->get('https://api.paystack.co/transaction/verify/' . urlencode($reference));
+                ->get('https://api.paystack.co/transaction/verify/'.urlencode($reference));
 
-            if (!$response->successful() || !(bool) $response->json('status')) {
+            if (! $response->successful() || ! (bool) $response->json('status')) {
                 return ['ok' => false, 'reference' => $reference];
             }
 
@@ -2114,7 +2196,7 @@ class SubscriptionController extends Controller
                 return ['ok' => false, 'reference' => $verifiedReference];
             }
 
-            if ($metadataProduct !== '' && !in_array($metadataProduct, ['smartprobook', 'medic_labo'], true)) {
+            if ($metadataProduct !== '' && ! in_array($metadataProduct, ['smartprobook', 'medic_labo'], true)) {
                 Log::warning('Paystack verification product metadata mismatch.', [
                     'subscription_id' => $subscription?->id,
                     'reference' => $verifiedReference,
@@ -2127,6 +2209,7 @@ class SubscriptionController extends Controller
             return ['ok' => true, 'reference' => $verifiedReference];
         } catch (\Throwable $e) {
             Log::error('Paystack verify exception', ['error' => $e->getMessage()]);
+
             return ['ok' => false, 'reference' => $reference];
         }
     }
@@ -2163,7 +2246,7 @@ class SubscriptionController extends Controller
         if ($secret === '') {
             return [
                 'ok' => $this->shouldSimulateGatewayInLocal(),
-                'reference' => $reference !== '' ? $reference : ('LOCAL-FLW-' . Str::upper(Str::random(8))),
+                'reference' => $reference !== '' ? $reference : ('LOCAL-FLW-'.Str::upper(Str::random(8))),
             ];
         }
 
@@ -2175,9 +2258,9 @@ class SubscriptionController extends Controller
         try {
             $response = Http::withToken($secret)
                 ->acceptJson()
-                ->get('https://api.flutterwave.com/v3/transactions/' . urlencode($transactionId) . '/verify');
+                ->get('https://api.flutterwave.com/v3/transactions/'.urlencode($transactionId).'/verify');
 
-            if (!$response->successful() || strtolower((string) $response->json('status')) !== 'success') {
+            if (! $response->successful() || strtolower((string) $response->json('status')) !== 'success') {
                 return ['ok' => false, 'reference' => $reference];
             }
 
@@ -2190,6 +2273,7 @@ class SubscriptionController extends Controller
             ];
         } catch (\Throwable $e) {
             Log::error('Flutterwave verify exception', ['error' => $e->getMessage()]);
+
             return ['ok' => false, 'reference' => $reference];
         }
     }
@@ -2291,7 +2375,7 @@ class SubscriptionController extends Controller
 
     private function isGatewayEnabledBySetting(string $gateway): bool
     {
-        $raw = Setting::get('payment_' . $gateway . '_enabled', null);
+        $raw = Setting::get('payment_'.$gateway.'_enabled', null);
         if ($raw === null || $raw === '') {
             return true;
         }
@@ -2309,7 +2393,7 @@ class SubscriptionController extends Controller
             return false;
         }
 
-        if (!str_starts_with($secret, 'sk_')) {
+        if (! str_starts_with($secret, 'sk_')) {
             return false;
         }
 
@@ -2326,7 +2410,7 @@ class SubscriptionController extends Controller
             return false;
         }
 
-        if (!str_starts_with($key, 'pk_')) {
+        if (! str_starts_with($key, 'pk_')) {
             return false;
         }
 
@@ -2343,7 +2427,7 @@ class SubscriptionController extends Controller
             return false;
         }
 
-        if (!str_starts_with($value, $prefix)) {
+        if (! str_starts_with($value, $prefix)) {
             return false;
         }
 
@@ -2390,7 +2474,7 @@ class SubscriptionController extends Controller
             $endDate = Subscription::initialPaidTermEndDate($startDate, $subscription->billing_cycle);
 
             $managerId = $this->resolveDeploymentManagerId($subscription);
-            $reference = (string) ($subscription->transfer_reference ?: $subscription->transaction_reference ?: ('BANK_TRANSFER_' . time()));
+            $reference = (string) ($subscription->transfer_reference ?: $subscription->transaction_reference ?: ('BANK_TRANSFER_'.time()));
 
             $updates = [
                 'status' => 'Active',
@@ -2406,7 +2490,7 @@ class SubscriptionController extends Controller
             ];
 
             foreach (array_keys($updates) as $column) {
-                if (!Schema::hasColumn('subscriptions', $column)) {
+                if (! Schema::hasColumn('subscriptions', $column)) {
                     unset($updates[$column]);
                 }
             }
@@ -2449,6 +2533,7 @@ class SubscriptionController extends Controller
                 'subscription_id' => $id,
                 'error' => $e->getMessage(),
             ]);
+
             return back()->with('error', 'Unable to approve transfer right now.');
         }
     }
@@ -2475,7 +2560,7 @@ class SubscriptionController extends Controller
         ];
 
         foreach (array_keys($updates) as $column) {
-            if (!Schema::hasColumn('subscriptions', $column)) {
+            if (! Schema::hasColumn('subscriptions', $column)) {
                 unset($updates[$column]);
             }
         }
@@ -2511,7 +2596,7 @@ class SubscriptionController extends Controller
         }
 
         foreach (array_keys($updates) as $column) {
-            if (!Schema::hasColumn('subscriptions', $column)) {
+            if (! Schema::hasColumn('subscriptions', $column)) {
                 unset($updates[$column]);
             }
         }
@@ -2536,16 +2621,18 @@ class SubscriptionController extends Controller
 
     private function sendWelcomeEmail($user, $subscription, $company): void
     {
-        if (!$user?->email) return;
+        if (! $user?->email) {
+            return;
+        }
         try {
             $domain = trim((string) config('session.domain', parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'smartprobook.com'), '.');
             $prefix = $company?->domain_prefix ?? $subscription->domain_prefix;
-            $url    = $prefix ? 'https://' . $prefix . '.' . $domain : 'https://' . $domain;
+            $url = $prefix ? 'https://'.$prefix.'.'.$domain : 'https://'.$domain;
             AppMailer::sendView('emails.welcome', [
-                'userName'     => $user->name,
+                'userName' => $user->name,
                 'workspaceUrl' => $url,
-                'planName'     => $subscription->plan_name ?? $subscription->plan,
-            ], fn($m) => $m->from(Setting::mailFromAddress(), Setting::mailFromName())
+                'planName' => $subscription->plan_name ?? $subscription->plan,
+            ], fn ($m) => $m->from(Setting::mailFromAddress(), Setting::mailFromName())
                 ->to($user->email, $user->name)
                 ->subject('Your SmartProbook Workspace is Ready!'));
         } catch (\Exception $e) {
@@ -2555,18 +2642,20 @@ class SubscriptionController extends Controller
 
     private function sendDeploymentWelcomeEmail($company, $user, $password): void
     {
-        if (!$user?->email) return;
+        if (! $user?->email) {
+            return;
+        }
         try {
             $domain = trim((string) config('session.domain', parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'smartprobook.com'), '.');
             $prefix = $company?->domain_prefix;
-            $url    = $prefix ? 'https://' . $prefix . '.' . $domain : 'https://' . $domain;
+            $url = $prefix ? 'https://'.$prefix.'.'.$domain : 'https://'.$domain;
             AppMailer::sendView('emails.customer-welcome', [
-                'email'        => $user->email,
-                'password'     => $password,
-                'name'         => $user->name,
+                'email' => $user->email,
+                'password' => $password,
+                'name' => $user->name,
                 'workspaceUrl' => $url,
-                'companyName'  => $company?->company_name ?? $company?->name,
-            ], fn($m) => $m->from(Setting::mailFromAddress(), Setting::mailFromName())
+                'companyName' => $company?->company_name ?? $company?->name,
+            ], fn ($m) => $m->from(Setting::mailFromAddress(), Setting::mailFromName())
                 ->to($user->email, $user->name)
                 ->subject('Your SmartProbook Login Credentials'));
         } catch (\Exception $e) {
@@ -2577,13 +2666,13 @@ class SubscriptionController extends Controller
     private function sendTransferDecisionEmail(Subscription $subscription, string $decision, string $note = ''): void
     {
         $user = $subscription->user;
-        if (!$user?->email) {
+        if (! $user?->email) {
             return;
         }
 
         $decision = strtolower(trim($decision));
         $decisionLabel = ucfirst($decision);
-        $subject = "Bank Transfer {$decisionLabel}: " . ($subscription->plan_name ?? $subscription->plan ?? 'Subscription');
+        $subject = "Bank Transfer {$decisionLabel}: ".($subscription->plan_name ?? $subscription->plan ?? 'Subscription');
 
         $message = match ($decision) {
             'approved' => 'Your bank transfer has been approved and your subscription is now active.',
@@ -2595,7 +2684,7 @@ class SubscriptionController extends Controller
         $details = [
             'Name' => $user->name ?? 'User',
             'Plan' => $subscription->plan_name ?? $subscription->plan ?? 'N/A',
-            'Amount' => '₦' . number_format((float) ($subscription->amount ?? 0), 2),
+            'Amount' => '₦'.number_format((float) ($subscription->amount ?? 0), 2),
             'Status' => strtoupper((string) ($subscription->status ?? '')),
             'Payment Status' => strtoupper((string) ($subscription->payment_status ?? '')),
             'Reference' => (string) ($subscription->transfer_reference ?: $subscription->transaction_reference ?: 'N/A'),
@@ -2655,7 +2744,7 @@ class SubscriptionController extends Controller
             ->orderByDesc('id')
             ->first();
 
-        if (!$activeSubscription) {
+        if (! $activeSubscription) {
             return;
         }
 
@@ -2693,7 +2782,7 @@ class SubscriptionController extends Controller
 
     private function filterSubscriptionPayload(array $payload): array
     {
-        if (!Schema::hasTable('subscriptions')) {
+        if (! Schema::hasTable('subscriptions')) {
             return [];
         }
 
@@ -2711,7 +2800,7 @@ class SubscriptionController extends Controller
         $subscription->loadMissing(['user']);
 
         // Load company bypassing TenantScoped so client company is visible to the deployment manager.
-        if (!$subscription->relationLoaded('company') || $subscription->company === null) {
+        if (! $subscription->relationLoaded('company') || $subscription->company === null) {
             $freshCompany = Company::withoutGlobalScope('tenant')->find($subscription->company_id);
             if ($freshCompany) {
                 $subscription->setRelation('company', $freshCompany);
@@ -2738,24 +2827,24 @@ class SubscriptionController extends Controller
         $domain = $this->resolveSessionDomain();
 
         $subscriptionUpdates = [];
-        if (!$subscription->domain_prefix) {
+        if (! $subscription->domain_prefix) {
             $subscriptionUpdates['domain_prefix'] = $prefix;
         }
         if (Schema::hasColumn('subscriptions', 'initialized_at')) {
             $subscriptionUpdates['initialized_at'] = now();
         }
-        if (!empty($subscriptionUpdates)) {
+        if (! empty($subscriptionUpdates)) {
             $subscription->update($subscriptionUpdates);
         }
 
         if ($subscription->company) {
             $companyUpdates = [
                 'domain_prefix' => $prefix,
-                'subdomain'     => $prefix,
-                'status'        => 'active',
+                'subdomain' => $prefix,
+                'status' => 'active',
             ];
             if (Schema::hasColumn('companies', 'domain')) {
-                $companyUpdates['domain'] = $prefix . '.' . $domain;
+                $companyUpdates['domain'] = $prefix.'.'.$domain;
             }
             $subscription->company->update($companyUpdates);
         }
@@ -2826,7 +2915,7 @@ class SubscriptionController extends Controller
 
         while ($this->workspacePrefixExists($candidate, $subscription)) {
             $suffix++;
-            $candidate = substr($base, 0, max(1, 24 - strlen((string) $suffix))) . $suffix;
+            $candidate = substr($base, 0, max(1, 24 - strlen((string) $suffix))).$suffix;
         }
 
         return $candidate;
@@ -2911,7 +3000,7 @@ class SubscriptionController extends Controller
     {
         $configuredScheme = strtolower((string) parse_url((string) config('app.url', ''), PHP_URL_SCHEME));
         if (in_array($configuredScheme, ['http', 'https'], true)) {
-            return $configuredScheme . '://';
+            return $configuredScheme.'://';
         }
 
         return request()->secure() ? 'https://' : 'http://';
@@ -2925,6 +3014,6 @@ class SubscriptionController extends Controller
             return null;
         }
 
-        return rtrim($protocol, ':/') . '://' . $cleanPrefix . '.' . $domain;
+        return rtrim($protocol, ':/').'://'.$cleanPrefix.'.'.$domain;
     }
 }

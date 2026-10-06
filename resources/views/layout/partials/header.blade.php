@@ -89,6 +89,16 @@
             : route('super_admin.dashboard', $routeParams))
         : route('home');
     $headerBranchOptions = collect();
+    $headerBusinessWorkspaces = collect();
+    $headerCanAddBusiness = false;
+    $activeBusinessId = (int) session('current_tenant_id', $user?->company_id ?? 0);
+    if ($user && Schema::hasTable('companies')) {
+        $headerBusinessWorkspaces = app(\App\Support\BusinessWorkspaceResolver::class)->accessibleCompanies($user);
+        $headerCanAddBusiness = $headerBusinessWorkspaces->contains(
+            fn ($workspace) => (int) $workspace->user_id === (int) $user->id
+                || (int) $workspace->owner_id === (int) $user->id
+        );
+    }
     $activeBranchId = session('active_branch_id');
     $activeBranchName = session('active_branch_name');
     $headerAllBranchesSelected = request()->boolean('all_branches')
@@ -1842,6 +1852,46 @@
             <div class="workspace-switcher">
                 <a href="{{ route('workspace.platform') }}" class="{{ !$isBusinessWorkspace ? 'is-active' : '' }}">Platform</a>
                 <a href="{{ Route::has('workspace.business.dashboard') ? route('workspace.business.dashboard') : route('workspace.business') }}" class="{{ $isBusinessWorkspace ? 'is-active' : '' }}">Business</a>
+            </div>
+        @endif
+
+        @if(($headerBusinessWorkspaces->count() > 1 || $headerCanAddBusiness) && !$isDeploymentManagerHeader && !$isAgentHeader)
+            <div class="dropdown mobile-branch-dropdown">
+                @php
+                    $activeBusiness = $headerBusinessWorkspaces->firstWhere('id', $activeBusinessId)
+                        ?: $headerBusinessWorkspaces->first();
+                    $activeBusinessName = $activeBusiness?->name ?: $activeBusiness?->company_name ?: 'Business';
+                @endphp
+                <a href="#" class="branch-pill" data-bs-toggle="dropdown" aria-label="Switch business">
+                    <i class="fe fe-briefcase"></i>
+                    <span>
+                        <small>Active Business</small>
+                        {{ \Illuminate\Support\Str::limit($activeBusinessName, 22) }}
+                    </span>
+                </a>
+                <a href="#" class="branch-pill-mobile" data-bs-toggle="dropdown" aria-label="Switch business" title="{{ $activeBusinessName }}">
+                    <i class="fe fe-briefcase"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-end">
+                    <h6 class="dropdown-header">Business Workspaces</h6>
+                    @foreach($headerBusinessWorkspaces as $businessWorkspace)
+                        <form method="POST" action="{{ route('workspace.businesses.activate', ['companyId' => $businessWorkspace->id]) }}">
+                            @csrf
+                            <button type="submit" class="dropdown-item d-flex justify-content-between align-items-center">
+                                <span>{{ $businessWorkspace->name ?: $businessWorkspace->company_name }}</span>
+                                @if((int) $businessWorkspace->id === $activeBusinessId)
+                                    <i class="fe fe-check text-success"></i>
+                                @endif
+                            </button>
+                        </form>
+                    @endforeach
+                    @if($headerCanAddBusiness)
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-primary" href="{{ route('workspace.businesses.create') }}">
+                            <i class="fe fe-plus-circle me-2"></i>Add another business
+                        </a>
+                    @endif
+                </div>
             </div>
         @endif
 
