@@ -1,0 +1,20 @@
+<?php
+
+namespace App\Models;
+
+use App\Models\Traits\TenantScoped;
+use Illuminate\Database\Eloquent\Model;
+
+class LivestockRevenueEntry extends Model
+{
+    use TenantScoped;
+
+    protected $fillable = ['company_id', 'farm_id', 'flock_id', 'revenue_date', 'source', 'description', 'quantity', 'unit', 'unit_price', 'amount', 'customer', 'reference', 'created_by'];
+
+    protected $casts = ['revenue_date' => 'date', 'quantity' => 'decimal:3', 'unit_price' => 'decimal:2', 'amount' => 'decimal:2'];
+
+    public function flock()
+    {
+        return $this->belongsTo(LivestockFlock::class, 'flock_id');
+    }
+}

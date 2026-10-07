@@ -793,6 +793,20 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
     Route::post('/maintenance/{ticket}/status', [\App\Http\Controllers\Hotel\MaintenanceController::class, 'updateStatus'])->name('maintenance.status');
 });
 
+Route::group(['prefix' => 'livestock', 'as' => 'livestock.', 'middleware' => ['auth', 'subscription.active', 'branch.required', 'livestock.tenant']], function () {
+    Route::get('/', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'index'])->name('dashboard');
+    Route::post('/farms', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'storeFarm'])->name('farms.store');
+    Route::post('/flocks', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'storeFlock'])->name('flocks.store');
+    Route::post('/investments', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'storeInvestment'])->name('investments.store');
+    Route::delete('/investments/{investment}', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'destroyInvestment'])->name('investments.destroy');
+    Route::post('/opex', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'storeOpex'])->name('opex.store');
+    Route::delete('/opex/{entry}', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'destroyOpex'])->name('opex.destroy');
+    Route::post('/revenue', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'storeRevenue'])->name('revenue.store');
+    Route::delete('/revenue/{entry}', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'destroyRevenue'])->name('revenue.destroy');
+    Route::post('/production', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'storeProduction'])->name('production.store');
+    Route::delete('/production/{production}', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'destroyProduction'])->name('production.destroy');
+});
+
 // Reports hub — authenticated users with an active workspace; individual report routes enforce plan tiers.
 Route::middleware(['auth', 'subscription.active'])->group(function () {
     Route::get('/reports', [ReportController::class, 'reportsHub'])->name('reports.hub');

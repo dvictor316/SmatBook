@@ -53,6 +53,10 @@ class PlanAccess
             return 'hotel';
         }
 
+        if (str_contains($value, 'livestock') || str_contains($value, 'poultry') || str_contains($value, 'layer farm')) {
+            return 'enterprise';
+        }
+
         if (str_contains($value, 'enterprise')) {
             return 'enterprise';
         }
@@ -62,8 +66,8 @@ class PlanAccess
         }
 
         if (str_contains($value, 'basic')) {
-        return 'basic';
-    }
+            return 'basic';
+        }
 
         return null;
     }

@@ -34,6 +34,11 @@
         @include('hotel.partials.tenant-sidebar-menu-flat')
     @endif
 
+    @if(\App\Support\LivestockAccess::userIsLivestockTenant(auth()->user()))
+        <li class="menu-title"><span>Livestock Farm</span></li>
+        @include('livestock.partials.sidebar-menu')
+    @endif
+
     <li class="{{ Request::routeIs('inventory.Products', 'product-list') ? 'active' : '' }}">
         <a href="{{ route('product-list') }}">
             <i class="fe fe-archive"></i>

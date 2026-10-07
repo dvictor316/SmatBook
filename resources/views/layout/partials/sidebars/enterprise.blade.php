@@ -30,6 +30,13 @@
                 </li>
                 @endif
 
+                @if(\App\Support\LivestockAccess::userIsLivestockTenant(auth()->user()))
+                <li class="submenu {{ Request::is('livestock*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-sun"></i><span>Livestock Farm</span><span class="menu-arrow"></span></a>
+                    <ul>@include('livestock.partials.sidebar-menu')</ul>
+                </li>
+                @endif
+
                 <li class="submenu {{ Request::is('pos*', 'sales*', 'quotations*', 'invoices*', 'estimates*', 'customers*', 'price-lists*', 'customer-deposits*', 'credit-notes*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-dollar-sign"></i><span>Sales</span><span class="menu-arrow"></span></a>
                     <ul>

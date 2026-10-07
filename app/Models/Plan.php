@@ -15,6 +15,7 @@ class Plan extends Model
         'professional' => 5,
         'enterprise' => 10,
         'hotel' => 8,
+        'livestock' => 8,
     ];
 
     public const SOLO_USER_LIMITS = [
@@ -23,6 +24,7 @@ class Plan extends Model
         'professional' => 3,
         'enterprise' => 4,
         'hotel' => 8,
+        'livestock' => 8,
     ];
 
     public const DEFAULT_BRANCH_LIMITS = [
@@ -31,6 +33,7 @@ class Plan extends Model
         'professional' => 5,
         'enterprise' => 8,
         'hotel' => 8,
+        'livestock' => 8,
     ];
 
     public const ADDITIONAL_USER_PRICES = [
@@ -62,9 +65,9 @@ class Plan extends Model
     ];
 
     protected $casts = [
-        'price'       => 'decimal:2',
-        'is_active'   => 'boolean',
-        'user_limit'  => 'integer',
+        'price' => 'decimal:2',
+        'is_active' => 'boolean',
+        'user_limit' => 'integer',
         'expiry_date' => 'datetime',
     ];
 
@@ -83,6 +86,10 @@ class Plan extends Model
 
         if (str_contains($value, 'hotel') || str_contains($value, 'hospitality')) {
             return 'hotel';
+        }
+
+        if (str_contains($value, 'livestock') || str_contains($value, 'poultry')) {
+            return 'livestock';
         }
 
         if (str_contains($value, 'enterprise') || str_contains($value, 'institutional')) {
@@ -118,7 +125,7 @@ class Plan extends Model
             return 'Custom seats';
         }
 
-        return $limit === 1 ? '1 User' : $limit . ' Users';
+        return $limit === 1 ? '1 User' : $limit.' Users';
     }
 
     public static function additionalUserPriceForName(?string $planName, ?string $billingCycle = 'yearly'): ?float
@@ -171,6 +178,13 @@ class Plan extends Model
                 'Room rack, availability calendar, housekeeping, and maintenance',
                 'Guest folios, deposits, service charges, and night audit',
                 'Rate plans, room types, service centers, and hotel reports',
+            ],
+            'livestock' => [
+                $seatLabel,
+                'Layer farm cost-return and daily production centre',
+                'Flock cycles, mortality, feed use, and hen-day performance',
+                'Capital depreciation and working-capital amortization schedules',
+                'OPEX, farm revenue, cost-per-egg, and net return reporting',
             ],
             'professional' => [
                 $seatLabel,

@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Plan;
+use Illuminate\Database\Seeder;
 
 class PlanSeeder extends Seeder
 {
@@ -18,6 +18,7 @@ class PlanSeeder extends Seeder
             ['name' => 'Enterprise Solo Yearly', 'price' => 200000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 4],
             ['name' => 'Enterprise Yearly', 'price' => 300000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 10],
             ['name' => 'Hotel Yearly', 'price' => 200000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 8],
+            ['name' => 'Livestock Yearly', 'price' => 200000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 8],
         ];
 
         Plan::query()->whereRaw('LOWER(billing_cycle) = ?', ['monthly'])->update([

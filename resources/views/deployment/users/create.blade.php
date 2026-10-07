@@ -35,6 +35,7 @@
     $enterpriseSoloYearly = $planMeta('enterprise-solo-yearly', 'Enterprise Solo', 200000, 'yearly');
     $enterpriseYearly = $planMeta('enterprise-yearly', 'Enterprise', 300000, 'yearly');
     $hotelYearly = $planMeta('hotel-yearly', 'Hotel', 200000, 'yearly', '40,000');
+    $livestockYearly = $planMeta('livestock-yearly', 'Livestock', 200000, 'yearly', '40,000');
 
     $seatLabel = function (string $key): string {
         return match ($key) {
@@ -46,6 +47,7 @@
             'professional-monthly', 'professional-yearly' => '5 Users',
             'enterprise-monthly', 'enterprise-yearly' => '10 Users',
             'hotel-monthly', 'hotel-yearly' => '8 Users',
+            'livestock-monthly', 'livestock-yearly' => '8 Users',
             default => 'Plan',
         };
     };
@@ -486,6 +488,7 @@
                                             'healthcare'    => 'Healthcare',
                                             'education'     => 'Education',
                                             'hotel'         => 'Hotel & Hospitality',
+                                            'livestock'     => 'Livestock / Poultry / Layer Farm',
                                             'other'         => 'Other',
                                         ] as $val => $label)
                                         <option value="{{ $val }}" {{ old('industry') == $val ? 'selected' : '' }}>
@@ -816,6 +819,24 @@
                                             </ul>
                                         </div>
                                     </div>
+                                    <div class="col-lg-4 col-md-6 livestock-plan-option d-none">
+                                        <div class="plan-card" data-pid="{{ $livestockYearly['plan_id'] }}"
+                                             onclick="pickPlan(@js((string) $livestockYearly['plan_id']), @js($livestockYearly['name']), {{ $livestockYearly['price'] }}, 'yearly')">
+                                            <div class="plan-tick"><i class="fas fa-check"></i></div>
+                                            <span class="plan-pill pill-recommended">Farm Only</span>
+                                            <div class="plan-tier">Livestock Management</div>
+                                            <div class="plan-seat">{{ $seatLabel('livestock-yearly') }}</div>
+                                            <div class="plan-amount">₦{{ $livestockYearly['price_label'] }} <small>/yr</small></div>
+                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $livestockYearly['price_label'] }}/year · Earn ₦{{ $livestockYearly['commission_label'] }}</div>
+                                            <ul class="plan-features">
+                                                <li><i class="fas fa-check-circle"></i> Layer farm cost-return centre</li>
+                                                <li><i class="fas fa-check-circle"></i> Daily eggs and flock production</li>
+                                                <li><i class="fas fa-check-circle"></i> CAPEX depreciation schedules</li>
+                                                <li><i class="fas fa-check-circle"></i> Working-capital amortization</li>
+                                                <li><i class="fas fa-check-circle"></i> OPEX, revenue and net returns</li>
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1060,6 +1081,9 @@ const additionalUserPrices = @js($additionalUserPrices);
 const hotelPlans = {
     yearly: { id: @js((string) $hotelYearly['plan_id']), name: @js($hotelYearly['name']), price: {{ $hotelYearly['price'] }} },
 };
+const livestockPlans = {
+    yearly: { id: @js((string) $livestockYearly['plan_id']), name: @js($livestockYearly['name']), price: {{ $livestockYearly['price'] }} },
+};
 const getSelectedPlanState = () => ({
     id: document.getElementById('planId').value.trim(),
     name: document.getElementById('planName').value.trim(),
@@ -1096,8 +1120,14 @@ function isHotelIndustrySelected() {
     return value.includes('hotel') || value.includes('hospitality');
 }
 
+function isLivestockIndustrySelected() {
+    const value = String(document.getElementById('industrySelect')?.value || '').toLowerCase();
+    return value.includes('livestock') || value.includes('poultry') || value.includes('layer');
+}
+
 function syncHotelPlanCards() {
     const showHotel = isHotelIndustrySelected();
+    const showLivestock = isLivestockIndustrySelected();
     document.querySelectorAll('.plan-card').forEach((card) => {
         const wrapper = card.closest('.col-lg-4, .col-md-6');
         if (!wrapper) return;
@@ -1107,7 +1137,9 @@ function syncHotelPlanCards() {
         }
 
         const isHotelCard = wrapper.classList.contains('hotel-plan-option');
-        wrapper.classList.toggle('d-none', showHotel ? !isHotelCard : isHotelCard);
+        const isLivestockCard = wrapper.classList.contains('livestock-plan-option');
+        const isSpecialistCard = isHotelCard || isLivestockCard;
+        wrapper.classList.toggle('d-none', showHotel ? !isHotelCard : (showLivestock ? !isLivestockCard : isSpecialistCard));
     });
 }
 
@@ -1116,6 +1148,11 @@ function autoPickHotelPlan(cycle) {
     if (hotelPlan) {
         pickPlan(hotelPlan.id, hotelPlan.name, hotelPlan.price, 'yearly');
     }
+}
+
+function autoPickLivestockPlan() {
+    const livestockPlan = livestockPlans.yearly;
+    if (livestockPlan) pickPlan(livestockPlan.id, livestockPlan.name, livestockPlan.price, 'yearly');
 }
 
 document.getElementById('industrySelect')?.addEventListener('change', function () {
@@ -1127,7 +1164,12 @@ document.getElementById('industrySelect')?.addEventListener('change', function (
         return;
     }
 
-    if (normalizePlanTier(plan.name || '') === 'hotel') {
+    if (isLivestockIndustrySelected()) {
+        autoPickLivestockPlan();
+        return;
+    }
+
+    if (['hotel', 'livestock'].includes(normalizePlanTier(plan.name || ''))) {
         setCycle(selectedCycle);
     }
 });
@@ -1206,6 +1248,7 @@ function deploymentAmountForSeats(selectedPlan, seatsInput) {
 function normalizePlanTier(name) {
     const value = String(name).toLowerCase();
     if (value.includes('hotel') || value.includes('hospitality')) return 'hotel';
+    if (value.includes('livestock') || value.includes('poultry')) return 'livestock';
     if (value.includes('enterprise')) return 'enterprise';
     if (value.includes('professional') || value === 'pro' || value.includes('pro ')) return 'professional';
     if (value.includes('starter')) return 'starter';

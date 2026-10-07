@@ -1031,6 +1031,8 @@ public function store(Request $request)
     $isHotelIndustry = str_contains($industryValue, 'hotel') || str_contains($industryValue, 'hospitality');
     $isHotelPlan = str_contains(strtolower((string) $validated['plan_name']), 'hotel')
         || str_contains(strtolower((string) $validated['plan_name']), 'hospitality');
+    $isLivestockIndustry = str_contains($industryValue, 'livestock') || str_contains($industryValue, 'poultry') || str_contains($industryValue, 'layer');
+    $isLivestockPlan = str_contains(strtolower((string) $validated['plan_name']), 'livestock');
 
     if ($isHotelIndustry && !$isHotelPlan) {
         throw \Illuminate\Validation\ValidationException::withMessages([
@@ -1041,6 +1043,18 @@ public function store(Request $request)
     if (!$isHotelIndustry && $isHotelPlan) {
         throw \Illuminate\Validation\ValidationException::withMessages([
             'industry' => ['Select Hotel & Hospitality before choosing the Hotel Management plan.'],
+        ]);
+    }
+
+    if ($isLivestockIndustry && !$isLivestockPlan) {
+        throw \Illuminate\Validation\ValidationException::withMessages([
+            'plan_id' => ['Livestock and poultry customers must use the Livestock plan.'],
+        ]);
+    }
+
+    if (!$isLivestockIndustry && $isLivestockPlan) {
+        throw \Illuminate\Validation\ValidationException::withMessages([
+            'industry' => ['Select Livestock / Poultry before choosing the Livestock plan.'],
         ]);
     }
 

@@ -554,6 +554,8 @@ class SubscriptionController extends Controller
             $subscriptionPlanName = (string) ($subscription->plan_name ?? $subscription->plan ?? 'Basic');
             $isHotelPlan = str_contains(strtolower($subscriptionPlanName), 'hotel')
                 || str_contains(strtolower($subscriptionPlanName), 'hospitality');
+            $isLivestockPlan = str_contains(strtolower($subscriptionPlanName), 'livestock')
+                || str_contains(strtolower($subscriptionPlanName), 'poultry');
 
             $companyPayload = $this->filterPayloadForTable('companies', [
                 'user_id' => $user->id,
@@ -565,7 +567,7 @@ class SubscriptionController extends Controller
                 'status' => $isTrialSubscription ? 'active' : 'pending',
                 'owner_id' => $user->id,
                 'plan' => $subscriptionPlanName,
-                'industry' => $isHotelPlan ? 'hotel' : null,
+                'industry' => $isHotelPlan ? 'hotel' : ($isLivestockPlan ? 'livestock' : null),
             ]);
 
             $company = $isAdditionalBusiness

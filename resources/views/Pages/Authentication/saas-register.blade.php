@@ -837,6 +837,7 @@
                                 <option value="services" @selected(old('field_of_operation') === 'services')>Professional Services</option>
                                 <option value="manufacturing" @selected(old('field_of_operation') === 'manufacturing')>Manufacturing</option>
                                 <option value="hotel" @selected(old('field_of_operation') === 'hotel')>Hotel / Hospitality</option>
+                                <option value="livestock" @selected(old('field_of_operation') === 'livestock')>Livestock / Layer Farm</option>
                             </select>
                             @error('field_of_operation')
                                 <span class="field-error">{{ $message }}</span>
@@ -985,6 +986,7 @@
             access: accessLevel ? accessLevel.textContent : '',
         };
         const hotelAnnualPrice = 200000;
+        const livestockAnnualPrice = 200000;
 
         function formatAmount(value) {
             return '₦' + Number(value || 0).toLocaleString('en-NG', {
@@ -995,6 +997,7 @@
 
         function sync() {
             const isHotel = ['hotel', 'hospitality'].includes(String(operation.value || '').toLowerCase());
+            const isLivestock = ['livestock', 'poultry', 'layer_farm'].includes(String(operation.value || '').toLowerCase());
             const selectedCycle = 'yearly';
 
             if (isHotel) {
@@ -1006,11 +1009,20 @@
                 return;
             }
 
+            if (isLivestock) {
+                plan.value = 'livestock';
+                amount.value = livestockAnnualPrice;
+                if (accessLevel) accessLevel.textContent = 'Livestock';
+                if (amountValue) amountValue.textContent = formatAmount(livestockAnnualPrice);
+                if (hint) hint.textContent = 'Livestock Management plan selected at ₦200,000 yearly.';
+                return;
+            }
+
             plan.value = original.plan;
             amount.value = original.amount;
             if (accessLevel) accessLevel.textContent = original.access;
             if (amountValue) amountValue.textContent = formatAmount(original.amount);
-            if (hint) hint.textContent = 'Choose Hotel / Hospitality only when this workspace needs the hotel module.';
+            if (hint) hint.textContent = 'Choose the specialist workspace that matches this business operation.';
         }
 
         operation.addEventListener('change', sync);

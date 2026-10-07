@@ -140,11 +140,16 @@ class AuthController extends Controller
             $postedPlan = strtolower(trim((string) ($validated['plan'] ?? '')));
             $isHotelOperation = str_contains($operation, 'hotel') || str_contains($operation, 'hospitality');
             $isHotelPlan = str_contains($postedPlan, 'hotel') || str_contains($postedPlan, 'hospitality');
+            $isLivestockOperation = str_contains($operation, 'livestock') || str_contains($operation, 'poultry') || str_contains($operation, 'layer');
+            $isLivestockPlan = str_contains($postedPlan, 'livestock');
 
             if ($isHotelPlan && !$isHotelOperation) {
                 return back()
                     ->withErrors(['field_of_operation' => 'Select Hotel / Hospitality as the field of operation before using the Hotel plan.'])
                     ->withInput();
+            }
+            if ($isLivestockPlan && !$isLivestockOperation) {
+                return back()->withErrors(['field_of_operation' => 'Select Livestock / Layer Farm before using the Livestock plan.'])->withInput();
             }
         }
 
@@ -314,11 +319,14 @@ class AuthController extends Controller
                 if (str_contains($fieldOfOperation, 'hotel') || str_contains($fieldOfOperation, 'hospitality')) {
                     $requestedPlan = 'hotel';
                 }
+                if (str_contains($fieldOfOperation, 'livestock') || str_contains($fieldOfOperation, 'poultry') || str_contains($fieldOfOperation, 'layer')) {
+                    $requestedPlan = 'livestock';
+                }
 
                 $catalog = $this->registrationPlanCatalog();
                 $catalogEntry = $catalog[$requestedPlan] ?? null;
                 $planId = $request->plan_id ?? session('selected_plan_id');
-                if ($requestedPlan === 'hotel') {
+                if (in_array($requestedPlan, ['hotel', 'livestock'], true)) {
                     $planId = null;
                 }
                 $plan = $planId ? Plan::find((int) $planId) : null;
@@ -1737,6 +1745,10 @@ class AuthController extends Controller
             ],
             'hotel' => [
                 'label' => 'Hotel',
+                'prices' => ['yearly' => 200000],
+            ],
+            'livestock' => [
+                'label' => 'Livestock',
                 'prices' => ['yearly' => 200000],
             ],
         ];
