@@ -800,11 +800,15 @@ Route::group(['prefix' => 'livestock', 'as' => 'livestock.', 'middleware' => ['a
     Route::post('/investments', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'storeInvestment'])->name('investments.store');
     Route::delete('/investments/{investment}', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'destroyInvestment'])->name('investments.destroy');
     Route::post('/opex', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'storeOpex'])->name('opex.store');
+    Route::post('/opex/{entry}/reverse-journal', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'reverseOpexJournal'])->name('opex.journal.reverse');
     Route::delete('/opex/{entry}', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'destroyOpex'])->name('opex.destroy');
     Route::post('/revenue', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'storeRevenue'])->name('revenue.store');
+    Route::post('/revenue/{entry}/reverse-journal', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'reverseRevenueJournal'])->name('revenue.journal.reverse');
     Route::delete('/revenue/{entry}', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'destroyRevenue'])->name('revenue.destroy');
     Route::post('/production', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'storeProduction'])->name('production.store');
     Route::delete('/production/{production}', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'destroyProduction'])->name('production.destroy');
+    Route::post('/inventory', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'storeInventoryMovement'])->name('inventory.store');
+    Route::delete('/inventory/{movement}', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'destroyInventoryMovement'])->name('inventory.destroy');
 });
 
 // Reports hub — authenticated users with an active workspace; individual report routes enforce plan tiers.

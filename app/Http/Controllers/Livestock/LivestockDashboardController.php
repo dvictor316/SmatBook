@@ -3,12 +3,16 @@
 namespace App\Http\Controllers\Livestock;
 
 use App\Http\Controllers\Controller;
+use App\Models\Account;
 use App\Models\LivestockDailyProduction;
 use App\Models\LivestockFarm;
 use App\Models\LivestockFlock;
 use App\Models\LivestockInvestment;
+use App\Models\LivestockInventoryMovement;
 use App\Models\LivestockOpexEntry;
 use App\Models\LivestockRevenueEntry;
+use App\Services\Livestock\LivestockInventoryService;
+use App\Services\Livestock\LivestockJournalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -43,6 +47,10 @@ class LivestockDashboardController extends Controller
         $opex = collect();
         $revenue = collect();
         $productions = collect();
+        $inventoryMovements = collect();
+        $inventoryBalances = ['feed' => 0, 'eggs' => 0];
+        $debitAccounts = collect();
+        $creditAccounts = collect();
         $summary = $this->emptySummary();
 
         if ($farm) {
@@ -51,6 +59,10 @@ class LivestockDashboardController extends Controller
             $opex = LivestockOpexEntry::query()->with('flock')->where('company_id', $companyId)->where('farm_id', $farm->id)->whereBetween('expense_date', [$from, $to])->latest('expense_date')->limit(100)->get();
             $revenue = LivestockRevenueEntry::query()->with('flock')->where('company_id', $companyId)->where('farm_id', $farm->id)->whereBetween('revenue_date', [$from, $to])->latest('revenue_date')->limit(100)->get();
             $productions = LivestockDailyProduction::query()->with('flock')->where('company_id', $companyId)->where('farm_id', $farm->id)->whereBetween('production_date', [$from, $to])->latest('production_date')->limit(100)->get();
+            $inventoryMovements = LivestockInventoryMovement::query()->with('flock')->where('company_id', $companyId)->where('farm_id', $farm->id)->whereBetween('movement_date', [$from, $to])->latest('movement_date')->latest('id')->limit(150)->get();
+            $inventoryBalances = app(LivestockInventoryService::class)->balances($companyId, (int) $farm->id);
+            $debitAccounts = Account::query()->active()->whereIn('type', [Account::TYPE_ASSET, Account::TYPE_EXPENSE])->orderBy('name')->get();
+            $creditAccounts = Account::query()->active()->whereIn('type', [Account::TYPE_ASSET, Account::TYPE_LIABILITY, Account::TYPE_REVENUE])->orderBy('name')->get();
 
             $capital = $investments->where('cost_class', 'capital');
             $working = $investments->where('cost_class', 'working_capital');
@@ -79,7 +91,7 @@ class LivestockDashboardController extends Controller
             ];
         }
 
-        return view('livestock.dashboard', compact('farms', 'farm', 'flocks', 'investments', 'opex', 'revenue', 'productions', 'summary', 'from', 'to'));
+        return view('livestock.dashboard', compact('farms', 'farm', 'flocks', 'investments', 'opex', 'revenue', 'productions', 'inventoryMovements', 'inventoryBalances', 'debitAccounts', 'creditAccounts', 'summary', 'from', 'to'));
     }
 
     public function storeFarm(Request $request)
@@ -131,7 +143,12 @@ class LivestockDashboardController extends Controller
         $farm = $this->scopedFarm($request->integer('farm_id'));
         $data = $request->validate($this->transactionRules($farm, 'expense_date', 'category', self::OPEX_CATEGORIES, 'unit_cost'));
         $amount = round((float) ($data['amount'] ?? 0), 2) ?: round((float) $data['quantity'] * (float) $data['unit_cost'], 2);
-        LivestockOpexEntry::create([...$data, 'amount' => $amount, 'company_id' => $farm->company_id, 'farm_id' => $farm->id, 'created_by' => auth()->id()]);
+        DB::transaction(function () use ($request, $data, $amount, $farm) {
+            $entry = LivestockOpexEntry::create([...$data, 'amount' => $amount, 'company_id' => $farm->company_id, 'farm_id' => $farm->id, 'created_by' => auth()->id()]);
+            if ($request->boolean('post_to_ledger')) {
+                app(LivestockJournalService::class)->post($entry, $farm, (int) $data['debit_account_id'], (int) $data['credit_account_id']);
+            }
+        });
 
         return back()->with('success', 'Farm operating expense recorded.');
     }
@@ -141,7 +158,13 @@ class LivestockDashboardController extends Controller
         $farm = $this->scopedFarm($request->integer('farm_id'));
         $data = $request->validate($this->transactionRules($farm, 'revenue_date', 'source', self::REVENUE_SOURCES, 'unit_price', true));
         $amount = round((float) ($data['amount'] ?? 0), 2) ?: round((float) $data['quantity'] * (float) $data['unit_price'], 2);
-        LivestockRevenueEntry::create([...$data, 'amount' => $amount, 'company_id' => $farm->company_id, 'farm_id' => $farm->id, 'created_by' => auth()->id()]);
+        DB::transaction(function () use ($request, $data, $amount, $farm) {
+            $entry = LivestockRevenueEntry::create([...$data, 'amount' => $amount, 'company_id' => $farm->company_id, 'farm_id' => $farm->id, 'created_by' => auth()->id()]);
+            app(LivestockInventoryService::class)->syncEggSale($entry, $farm);
+            if ($request->boolean('post_to_ledger')) {
+                app(LivestockJournalService::class)->post($entry, $farm, (int) $data['debit_account_id'], (int) $data['credit_account_id']);
+            }
+        });
 
         return back()->with('success', 'Farm revenue recorded.');
     }
@@ -163,7 +186,8 @@ class LivestockDashboardController extends Controller
         $goodEggs = ((int) ($data['egg_crates'] ?? 0) * (int) $farm->eggs_per_crate) + (int) ($data['loose_eggs'] ?? 0);
         $henDay = $data['opening_birds'] > 0 ? round(($goodEggs / $data['opening_birds']) * 100, 2) : 0;
         DB::transaction(function () use ($data, $farm, $closing, $goodEggs, $henDay) {
-            LivestockDailyProduction::create([...$data, 'company_id' => $farm->company_id, 'farm_id' => $farm->id, 'closing_birds' => $closing, 'total_good_eggs' => $goodEggs, 'hen_day_percent' => $henDay, 'recorded_by' => auth()->id()]);
+            $production = LivestockDailyProduction::create([...$data, 'company_id' => $farm->company_id, 'farm_id' => $farm->id, 'closing_birds' => $closing, 'total_good_eggs' => $goodEggs, 'hen_day_percent' => $henDay, 'recorded_by' => auth()->id()]);
+            app(LivestockInventoryService::class)->syncProduction($production);
             LivestockFlock::where('company_id', $farm->company_id)->whereKey($data['flock_id'])->update(['current_birds' => $closing]);
         });
 
@@ -181,6 +205,7 @@ class LivestockDashboardController extends Controller
     public function destroyOpex(LivestockOpexEntry $entry)
     {
         $this->assertCompany($entry);
+        abort_if($entry->posted_at, 422, 'Posted farm expenses must be retained. Reverse the journal instead.');
         $entry->delete();
 
         return back()->with('success', 'OPEX record removed.');
@@ -189,7 +214,11 @@ class LivestockDashboardController extends Controller
     public function destroyRevenue(LivestockRevenueEntry $entry)
     {
         $this->assertCompany($entry);
-        $entry->delete();
+        abort_if($entry->posted_at, 422, 'Posted farm revenue must be retained. Reverse the journal instead.');
+        DB::transaction(function () use ($entry) {
+            app(LivestockInventoryService::class)->removeSource($entry);
+            $entry->delete();
+        });
 
         return back()->with('success', 'Revenue record removed.');
     }
@@ -199,6 +228,7 @@ class LivestockDashboardController extends Controller
         $this->assertCompany($production);
         $flockId = (int) $production->flock_id;
         DB::transaction(function () use ($production, $flockId) {
+            app(LivestockInventoryService::class)->removeSource($production);
             $production->delete();
             $flock = LivestockFlock::where('company_id', auth()->user()->company_id)->find($flockId);
             if ($flock) {
@@ -208,6 +238,52 @@ class LivestockDashboardController extends Controller
         });
 
         return back()->with('success', 'Production record removed and flock balance recalculated.');
+    }
+
+    public function storeInventoryMovement(Request $request)
+    {
+        $farm = $this->scopedFarm($request->integer('farm_id'));
+        $data = $request->validate([
+            'flock_id' => ['nullable', 'integer', Rule::exists('livestock_flocks', 'id')->where(fn ($query) => $query->where('company_id', $farm->company_id)->where('farm_id', $farm->id))],
+            'movement_date' => 'required|date',
+            'item_type' => 'required|in:feed,eggs',
+            'movement_type' => 'required|in:opening,receipt,adjustment_in,adjustment_out,wastage',
+            'quantity' => 'required|numeric|min:0.001',
+            'unit_cost' => 'nullable|numeric|min:0',
+            'reference' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+        $outward = in_array($data['movement_type'], ['adjustment_out', 'wastage'], true);
+        $quantity = (float) $data['quantity'] * ($outward ? -1 : 1);
+        $unitCost = (float) ($data['unit_cost'] ?? 0);
+        LivestockInventoryMovement::create([...$data, 'company_id' => $farm->company_id, 'farm_id' => $farm->id, 'quantity' => $quantity, 'unit' => $data['item_type'] === 'feed' ? 'kg' : 'egg', 'unit_cost' => $unitCost, 'total_value' => round(abs($quantity) * $unitCost, 2), 'created_by' => auth()->id()]);
+
+        return back()->with('success', 'Inventory movement recorded.');
+    }
+
+    public function destroyInventoryMovement(LivestockInventoryMovement $movement)
+    {
+        $this->assertCompany($movement);
+        abort_if($movement->source_id, 422, 'Automatic inventory movements must be removed through their production or revenue record.');
+        $movement->delete();
+
+        return back()->with('success', 'Inventory movement removed.');
+    }
+
+    public function reverseOpexJournal(LivestockOpexEntry $entry)
+    {
+        $this->assertCompany($entry);
+        app(LivestockJournalService::class)->reverse($entry, $this->scopedFarm((int) $entry->farm_id));
+
+        return back()->with('success', 'Farm expense journal reversed with a complete audit trail.');
+    }
+
+    public function reverseRevenueJournal(LivestockRevenueEntry $entry)
+    {
+        $this->assertCompany($entry);
+        app(LivestockJournalService::class)->reverse($entry, $this->scopedFarm((int) $entry->farm_id));
+
+        return back()->with('success', 'Farm revenue journal reversed with a complete audit trail.');
     }
 
     private function farmQuery()
@@ -243,6 +319,9 @@ class LivestockDashboardController extends Controller
             'quantity' => 'required|numeric|min:0.001', 'unit' => 'nullable|string|max:30', $priceField => 'required|numeric|min:0', 'amount' => 'nullable|numeric|min:0.01',
             ...($revenue ? ['customer' => 'nullable|string|max:191'] : ['frequency' => 'required|in:daily,weekly,monthly,occasional', 'vendor' => 'nullable|string|max:191']),
             'reference' => 'nullable|string|max:100',
+            'post_to_ledger' => 'nullable|boolean',
+            'debit_account_id' => ['nullable', 'required_if:post_to_ledger,1', 'integer', Rule::exists('accounts', 'id')->where(fn ($query) => $query->where('company_id', $farm->company_id)->where('is_active', true))],
+            'credit_account_id' => ['nullable', 'required_if:post_to_ledger,1', 'integer', 'different:debit_account_id', Rule::exists('accounts', 'id')->where(fn ($query) => $query->where('company_id', $farm->company_id)->where('is_active', true))],
         ];
     }
 }
