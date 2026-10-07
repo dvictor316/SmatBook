@@ -1,16 +1,17 @@
 <?php
+
 namespace App\Models;
 
+use App\Models\Traits\TenantScoped;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Traits\TenantScoped;
 
 class GuestFolio extends Model
 {
     use HasFactory, TenantScoped;
 
     protected $fillable = [
-        'company_id','property_id','stay_id','reservation_id','customer_id','folio_number','opening_deposit','total_charges','total_payments','balance','status'
+        'company_id', 'property_id', 'stay_id', 'reservation_id', 'customer_id', 'folio_number', 'opening_deposit', 'total_charges', 'total_payments', 'balance', 'status',
     ];
 
     protected $casts = [
@@ -40,4 +41,8 @@ class GuestFolio extends Model
         return $this->hasMany(FolioItem::class, 'folio_id');
     }
 
+    public function guestRequests()
+    {
+        return $this->hasMany(HotelGuestRequest::class, 'stay_id', 'stay_id');
+    }
 }

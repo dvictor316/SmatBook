@@ -6,6 +6,7 @@
 
 <li class="menu-title"><span>Dashboard</span></li>
 <li class="{{ $hotelLinkClass('hotel.dashboard') }}"><a href="{{ route('hotel.dashboard') }}">Hotel Dashboard</a></li>
+<li class="{{ $hotelLinkClass('hotel.operations.*') }}"><a href="{{ route('hotel.operations.index') }}">Operations Centre</a></li>
 
 <li class="menu-title"><span>Front Office</span></li>
 <li class="{{ $hotelLinkClass('hotel.frontdesk') }}"><a href="{{ route('hotel.frontdesk') }}">Front Desk / Room Board</a></li>

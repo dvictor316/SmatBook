@@ -686,6 +686,9 @@ Route::middleware(['auth', 'subscription.active'])->prefix('ajax/inventory')->na
 // Hotel tenant routes (isolated from superadmin and protected by hotel tenant gate)
 Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 'subscription.active', 'branch.required', 'hotel.tenant']], function () {
     Route::get('/dashboard', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'dashboard'])->name('dashboard');
+    Route::get('/operations', [\App\Http\Controllers\Hotel\HotelOperationsController::class, 'index'])->name('operations.index');
+    Route::post('/operations/requests', [\App\Http\Controllers\Hotel\HotelOperationsController::class, 'store'])->name('operations.requests.store');
+    Route::put('/operations/requests/{guestRequest}', [\App\Http\Controllers\Hotel\HotelOperationsController::class, 'update'])->name('operations.requests.update');
     Route::get('/front-desk', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'frontDesk'])->name('frontdesk');
     Route::get('/checkin', [\App\Http\Controllers\Hotel\CheckInController::class, 'index'])->name('checkin.index');
     Route::get('/checkout', [\App\Http\Controllers\Hotel\CheckInController::class, 'checkoutDesk'])->name('checkout.index');
@@ -737,6 +740,8 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
     Route::get('/reservations/create', [\App\Http\Controllers\Hotel\ReservationController::class, 'create'])->name('reservations.create');
     Route::post('/reservations', [\App\Http\Controllers\Hotel\ReservationController::class, 'store'])->name('reservations.store');
     Route::get('/reservations/{reservation}', [\App\Http\Controllers\Hotel\ReservationController::class, 'show'])->name('reservations.show');
+    Route::put('/reservations/{reservation}', [\App\Http\Controllers\Hotel\ReservationController::class, 'update'])->name('reservations.update');
+    Route::post('/reservations/{reservation}/status', [\App\Http\Controllers\Hotel\ReservationController::class, 'updateStatus'])->name('reservations.status');
 
     Route::get('/walkin', [\App\Http\Controllers\Hotel\WalkInController::class, 'create'])->name('walkin.create');
     Route::post('/walkin', [\App\Http\Controllers\Hotel\WalkInController::class, 'store'])->name('walkin.store');
@@ -749,6 +754,9 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
     Route::get('/folios/items/{item}/receipt', [\App\Http\Controllers\Hotel\FolioController::class, 'receipt'])->name('folios.items.receipt');
     Route::post('/folios/{folio}/items', [\App\Http\Controllers\Hotel\FolioController::class, 'storeItem'])->name('folios.items.store');
     Route::post('/folios/{folio}/services', [\App\Http\Controllers\Hotel\FolioController::class, 'postService'])->name('folios.services.store');
+    Route::post('/folios/{folio}/payments', [\App\Http\Controllers\Hotel\FolioController::class, 'postPayment'])->name('folios.payments.store');
+    Route::post('/folios/{folio}/close', [\App\Http\Controllers\Hotel\FolioController::class, 'close'])->name('folios.close');
+    Route::post('/folios/{folio}/reopen', [\App\Http\Controllers\Hotel\FolioController::class, 'reopen'])->name('folios.reopen');
 
     Route::get('/night-audit', [\App\Http\Controllers\Hotel\NightAuditController::class, 'index'])->name('night_audit.index');
     Route::post('/night-audit/run', [\App\Http\Controllers\Hotel\NightAuditController::class, 'run'])->name('night_audit.run');

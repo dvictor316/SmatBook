@@ -5,6 +5,7 @@
 @endphp
 
 <li class="{{ $hotelLinkClass('hotel.dashboard') }}"><a href="{{ route('hotel.dashboard') }}"><i class="fe fe-home"></i><span>Hotel Dashboard</span></a></li>
+<li class="{{ $hotelLinkClass('hotel.operations.*') }}"><a href="{{ route('hotel.operations.index') }}"><i class="fe fe-command"></i><span>Operations Centre</span></a></li>
 <li class="{{ $hotelLinkClass('hotel.frontdesk') }}"><a href="{{ route('hotel.frontdesk') }}"><i class="fe fe-briefcase"></i><span>Front Desk</span></a></li>
 <li class="{{ $hotelLinkClass('hotel.rooms.calendar') }}"><a href="{{ route('hotel.rooms.calendar') }}"><i class="fe fe-calendar"></i><span>Room Calendar</span></a></li>
 <li class="{{ $hotelLinkClass('hotel.availability.*') }}"><a href="{{ route('hotel.availability.index') }}"><i class="fe fe-search"></i><span>Availability</span></a></li>

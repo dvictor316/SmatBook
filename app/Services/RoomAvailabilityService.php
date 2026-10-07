@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services;
 
 use App\Models\HotelRoom;
@@ -10,10 +11,11 @@ class RoomAvailabilityService
     /**
      * Check if a room is available for given date range (arrival inclusive, departure exclusive)
      */
-    public static function isRoomAvailable(int $roomId, string $arrivalDate, string $departureDate): bool
+    public static function isRoomAvailable(int $roomId, string $arrivalDate, string $departureDate, ?int $excludeReservationId = null): bool
     {
         // Overlap rule: [arrival, departure) intersects [existing_arrival, existing_departure)
         $overlap = Reservation::where('room_id', $roomId)
+            ->when($excludeReservationId, fn ($query) => $query->whereKeyNot($excludeReservationId))
             ->whereIn('status', ['reserved', 'confirmed', 'checked_in'])
             ->whereDate('arrival_date', '<', $departureDate)
             ->whereDate('departure_date', '>', $arrivalDate)
@@ -29,14 +31,15 @@ class RoomAvailabilityService
             $occupied = \DB::table('stays')
                 ->where('room_id', $roomId)
                 ->where('status', 'checked_in')
-                ->where(function ($q) use ($arrivalDate, $departureDate) {
-                    $q->whereRaw('COALESCE(expected_checkout_at, NOW()) > ?', [$arrivalDate.' 00:00:00'])
-                      ->whereRaw('checkin_at < ?', [$departureDate.' 23:59:59']);
+                ->where('checkin_at', '<', $departureDate.' 00:00:00')
+                ->where(function ($q) use ($arrivalDate) {
+                    $q->whereNull('expected_checkout_at')
+                        ->orWhere('expected_checkout_at', '>', $arrivalDate.' 00:00:00');
                 })
                 ->exists();
         }
 
-        return !$occupied;
+        return ! $occupied;
     }
 
     /**
@@ -48,6 +51,7 @@ class RoomAvailabilityService
             ->where('is_active', true)
             ->whereNotIn('operational_status', ['maintenance', 'out_of_order'])
             ->get();
+
         return $rooms->filter(function ($room) use ($arrivalDate, $departureDate) {
             return self::isRoomAvailable($room->id, $arrivalDate, $departureDate);
         })->values();

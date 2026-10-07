@@ -1,24 +1,28 @@
 <?php
+
 namespace App\Models;
 
+use App\Models\Traits\TenantScoped;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Traits\TenantScoped;
 
 class Reservation extends Model
 {
     use HasFactory, TenantScoped;
 
     protected $fillable = [
-        'company_id','property_id','reservation_number','customer_id','room_type_id','room_id',
-        'arrival_date','arrival_time','departure_date','departure_time','nights','adults','children',
-        'rate_plan_id','nightly_rate','subtotal','discount','tax','service_charge','other_charges','total',
-        'deposit_required','deposit_received','balance','status','source','special_requests','internal_notes'
+        'company_id', 'property_id', 'reservation_number', 'customer_id', 'room_type_id', 'room_id',
+        'arrival_date', 'arrival_time', 'departure_date', 'departure_time', 'nights', 'adults', 'children',
+        'rate_plan_id', 'nightly_rate', 'subtotal', 'discount', 'tax', 'service_charge', 'other_charges', 'total',
+        'deposit_required', 'deposit_received', 'balance', 'status', 'source', 'special_requests', 'internal_notes',
+        'created_by', 'confirmed_by', 'cancelled_by', 'cancellation_reason', 'cancelled_at', 'no_show_at',
     ];
 
     protected $casts = [
         'arrival_date' => 'date',
         'departure_date' => 'date',
+        'cancelled_at' => 'datetime',
+        'no_show_at' => 'datetime',
     ];
 
     public function customer()
@@ -40,5 +44,4 @@ class Reservation extends Model
     {
         return $this->hasOne(Stay::class);
     }
-
 }

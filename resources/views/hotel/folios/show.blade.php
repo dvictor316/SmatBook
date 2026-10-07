@@ -30,7 +30,7 @@
     <div class="content container-fluid">
         <div class="cashier-top mb-0">
             <div><strong>PMS Cashier</strong> · Folio Settlement Desk</div>
-            <div class="d-flex flex-wrap gap-2"><button type="button" onclick="window.print()" class="btn btn-sm btn-outline-light"><i class="fas fa-print me-1"></i> Print Folio</button><a href="{{ route('hotel.folios.index') }}" class="btn btn-sm btn-light">Folios</a><a href="{{ route('hotel.checkout.index', ['stay_id' => $folio->stay_id]) }}" class="btn btn-sm btn-warning">Checkout</a></div>
+            <div class="d-flex flex-wrap gap-2"><button type="button" onclick="window.print()" class="btn btn-sm btn-outline-light"><i class="fas fa-print me-1"></i> Print Folio</button><a href="{{ route('hotel.folios.index') }}" class="btn btn-sm btn-light">Folios</a>@if((string)$folio->status === 'closed')<form method="POST" action="{{ route('hotel.folios.reopen', $folio) }}">@csrf<button class="btn btn-sm btn-outline-light"><i class="fas fa-lock-open me-1"></i> Reopen</button></form>@else<form method="POST" action="{{ route('hotel.folios.close', $folio) }}">@csrf<button class="btn btn-sm btn-outline-light"><i class="fas fa-lock me-1"></i> Close Folio</button></form><a href="{{ route('hotel.checkout.index', ['stay_id' => $folio->stay_id]) }}" class="btn btn-sm btn-warning">Checkout</a>@endif</div>
         </div>
 
         <div class="cashier-shell">
@@ -79,8 +79,9 @@
             </main>
 
             <aside class="cashier-card">
+                @if(in_array((string)$folio->status, ['open','city_ledger']))
                 <div class="payment-pad">
-                    <a class="active" href="{{ route('hotel.checkout.index', ['stay_id' => $folio->stay_id]) }}">Payment</a>
+                    <div class="active">Payment</div>
                     <div class="pad-label">Charge</div>
                     <div class="pad-label">Deposit</div>
                     <div class="pad-label">Cash</div>
@@ -90,6 +91,16 @@
                     <div class="pad-label">Laundry</div>
                     <div class="pad-label">Minibar</div>
                 </div>
+                <form method="POST" action="{{ route('hotel.folios.payments.store', $folio) }}" class="post-form row g-2">
+                    @csrf
+                    <div class="col-12"><strong>Receive Payment</strong></div>
+                    <div class="col-7"><input type="number" step="0.01" min="0.01" max="{{ max(0, (float)$folio->balance) }}" name="amount" class="form-control" value="{{ max(0, (float)$folio->balance) }}" placeholder="Amount" required></div>
+                    <div class="col-5"><select name="payment_method" class="form-select" required><option value="cash">Cash</option><option value="card">Card</option><option value="pos">POS</option><option value="bank_transfer">Bank Transfer</option><option value="mobile_money">Mobile Money</option><option value="cheque">Cheque</option><option value="other">Other</option></select></div>
+                    <div class="col-12"><select name="payment_account_id" class="form-select"><option value="">Default cash / bank account</option>@foreach($paymentAccounts as $account)<option value="{{ $account->id }}">{{ $account->code ? $account->code.' - ' : '' }}{{ $account->name }}</option>@endforeach</select></div>
+                    <div class="col-12"><input name="reference" class="form-control" placeholder="Bank, POS or receipt reference"></div>
+                    <div class="col-12"><input name="note" class="form-control" placeholder="Payment note (optional)"></div>
+                    <div class="col-12"><button class="btn btn-success w-100"><i class="fas fa-check-circle me-1"></i> Post Payment</button></div>
+                </form>
                 <form method="POST" action="{{ route('hotel.folios.items.store', $folio) }}" class="post-form row g-2">
                     @csrf
                     <div class="col-12"><strong>Post Charge</strong></div>
@@ -107,6 +118,9 @@
                     <div class="col-12"><input type="text" name="description" class="form-control" placeholder="Optional note"></div>
                     <div class="col-12"><button class="btn btn-outline-primary w-100">Post Service</button></div>
                 </form>
+                @else
+                    <div class="p-4 text-center"><i class="fas fa-lock fa-2x text-muted mb-2"></i><h6>Folio Closed</h6><p class="text-muted mb-0">Reopen this folio before posting payments or charges.</p></div>
+                @endif
             </aside>
         </div>
     </div>
