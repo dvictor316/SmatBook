@@ -32,6 +32,14 @@
         'plan_id' => $plan_id ?? session('selected_plan_id'),
         'amount' => $displayPrice,
     ]);
+    $linkedinAuthUrl = route('social.login', [
+        'provider' => 'linkedin',
+        'intent' => 'register',
+        'plan' => strtolower((string) $lookupPlan),
+        'cycle' => strtolower((string) $finalCycle),
+        'plan_id' => $plan_id ?? session('selected_plan_id'),
+        'amount' => $displayPrice,
+    ]);
 @endphp
 
 <style>
@@ -523,6 +531,7 @@
         color: #1877f2;
         font-size: 15px;
     }
+    .social-mark.linkedin { color: #0a66c2; font-size: 15px; }
 
     @media (max-width: 1199px) {
         .smat-card { width: min(calc(100vw - 32px), 860px) !important; max-width: 860px !important; }
@@ -923,7 +932,7 @@
                 @if(!$isManager)
                     <div class="divider"><span>or sign up with</span></div>
                     <div class="row g-2">
-                        <div class="col-6">
+                        <div class="col-12 col-sm-4">
                             <a href="{{ $googleAuthUrl }}" class="btn-social">
                                 <span class="social-mark">
                                     <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" width="16" height="16">
@@ -931,12 +940,18 @@
                                 <span>Google</span>
                             </a>
                         </div>
-                        <div class="col-6">
+                        <div class="col-12 col-sm-4">
                             <a href="{{ $facebookAuthUrl }}" class="btn-social">
                                 <span class="social-mark facebook">
                                     <i class="fab fa-facebook-f"></i>
                                 </span>
                                 <span>Facebook</span>
+                            </a>
+                        </div>
+                        <div class="col-12 col-sm-4">
+                            <a href="{{ $linkedinAuthUrl }}" class="btn-social">
+                                <span class="social-mark linkedin"><i class="fab fa-linkedin-in"></i></span>
+                                <span>LinkedIn</span>
                             </a>
                         </div>
                     </div>

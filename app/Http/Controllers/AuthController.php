@@ -967,12 +967,12 @@ class AuthController extends Controller
     {
         $provider = strtolower((string) $provider);
 
-        if (!in_array($provider, ['google', 'facebook'], true)) {
+        if (!in_array($provider, ['google', 'facebook', 'linkedin'], true)) {
             return redirect()->route('saas-login')->with('error', 'Unsupported login provider.');
         }
 
         if (!$this->isSocialProviderConfigured($provider)) {
-            return redirect()->route('saas-login')->with('error', ucfirst($provider) . ' login is not configured yet.');
+            return redirect()->route('saas-login')->with('error', $this->socialProviderLabel($provider) . ' login is not configured yet.');
         }
 
         try {
@@ -1000,14 +1000,14 @@ class AuthController extends Controller
         $provider = strtolower((string) $provider);
         $socialContext = $this->pullSocialContext($request, $provider);
 
-        if (!in_array($provider, ['google', 'facebook'], true)) {
+        if (!in_array($provider, ['google', 'facebook', 'linkedin'], true)) {
             return redirect()->route('saas-login')->with('error', 'Unsupported login provider.');
         }
 
         if ($request->has('error')) {
             $reason = (string) ($request->input('error_description') ?: $request->input('error'));
             return redirect()->route('saas-login')
-                ->with('error', ucfirst($provider) . ' login was cancelled or failed. ' . $reason);
+                ->with('error', $this->socialProviderLabel($provider) . ' login was cancelled or failed. ' . $reason);
         }
 
         try {
@@ -1018,13 +1018,13 @@ class AuthController extends Controller
                 'provider' => $provider,
                 'error' => $e->getMessage(),
             ]);
-            return redirect()->route('saas-login')->with('error', ucfirst($provider) . ' login session expired. Please retry.');
+            return redirect()->route('saas-login')->with('error', $this->socialProviderLabel($provider) . ' login session expired. Please retry.');
         } catch (\Exception $e) {
             Log::error('Social callback failed', [
                 'provider' => $provider,
                 'error' => $e->getMessage(),
             ]);
-            return redirect()->route('saas-login')->with('error', ucfirst($provider) . ' login failed. Please try again.');
+            return redirect()->route('saas-login')->with('error', $this->socialProviderLabel($provider) . ' login failed. Please try again.');
         }
 
         $providerId = (string) $socialUser->getId();
@@ -1079,7 +1079,7 @@ class AuthController extends Controller
         if ($createdNow) {
             DB::afterCommit(function () use ($user, $provider) {
                 \App\Support\SystemEventMailer::notifyRegistration($user, 'user', [
-                    'auth_provider' => ucfirst($provider),
+                    'auth_provider' => $this->socialProviderLabel($provider),
                 ]);
             });
         }
@@ -1098,12 +1098,12 @@ class AuthController extends Controller
             if ($existingSubscription) {
                 if (!in_array(strtolower((string) $existingSubscription->payment_status), ['paid', 'free'], true)) {
                     return redirect()->route('saas.checkout', ['id' => $existingSubscription->id])
-                        ->with('success', ucfirst($provider) . ' account connected. Complete your checkout to continue.');
+                        ->with('success', $this->socialProviderLabel($provider) . ' account connected. Complete your checkout to continue.');
                 }
 
                 if (!in_array(strtolower((string) $existingSubscription->status), ['active', 'trial'], true) || empty($existingSubscription->company_id)) {
                     return redirect()->route('saas.setup', ['id' => $existingSubscription->id])
-                        ->with('success', ucfirst($provider) . ' account connected. Complete your workspace setup to continue.');
+                        ->with('success', $this->socialProviderLabel($provider) . ' account connected. Complete your workspace setup to continue.');
                 }
             }
         }
@@ -1120,7 +1120,7 @@ class AuthController extends Controller
     {
         $provider = strtolower(trim($provider));
 
-        $configured = (string) config("services.{$provider}.redirect", '');
+        $configured = (string) config('services.' . $this->socialProviderConfigKey($provider) . '.redirect', '');
         if ($configured !== '') {
             return $configured;
         }
@@ -1134,7 +1134,7 @@ class AuthController extends Controller
 
     private function socialiteDriver(string $provider, ?string $redirectUrl = null)
     {
-        $driver = Socialite::driver($provider);
+        $driver = Socialite::driver($provider === 'linkedin' ? 'linkedin-openid' : $provider);
 
         if ($redirectUrl) {
             $driver = $driver->redirectUrl($redirectUrl);
@@ -1880,8 +1880,18 @@ class AuthController extends Controller
 
     private function isSocialProviderConfigured(string $provider): bool
     {
-        $cfg = (array) config('services.' . $provider, []);
+        $cfg = (array) config('services.' . $this->socialProviderConfigKey($provider), []);
         return !empty($cfg['client_id']) && !empty($cfg['client_secret']) && !empty($cfg['redirect']);
+    }
+
+    private function socialProviderConfigKey(string $provider): string
+    {
+        return strtolower($provider) === 'linkedin' ? 'linkedin-openid' : strtolower($provider);
+    }
+
+    private function socialProviderLabel(string $provider): string
+    {
+        return strtolower($provider) === 'linkedin' ? 'LinkedIn' : ucfirst(strtolower($provider));
     }
 
 }

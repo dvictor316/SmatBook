@@ -48,6 +48,12 @@ return [
     'redirect'      => env('FACEBOOK_REDIRECT_URL'), // Changed from URI to URL to match your .env
 ],
 
+'linkedin-openid' => [
+    'client_id'     => env('LINKEDIN_CLIENT_ID'),
+    'client_secret' => env('LINKEDIN_CLIENT_SECRET'),
+    'redirect'      => env('LINKEDIN_REDIRECT_URL'),
+],
+
 'stripe' => [
     'model'  => App\Models\User::class,
     'key'    => env('STRIPE_TEST_PUBLISHABLE_KEY', env('STRIPE_KEY', env('STRIPE_PUBLISHABLE_KEY'))),

@@ -34,6 +34,12 @@
         'plan' => $persistedPlan,
         'cycle' => strtolower((string) $persistedCycle),
     ]);
+    $linkedinAuthUrl = route('social.login', [
+        'provider' => 'linkedin',
+        'intent' => 'login',
+        'plan' => $persistedPlan,
+        'cycle' => strtolower((string) $persistedCycle),
+    ]);
 @endphp
 
 <style>
@@ -451,6 +457,7 @@
         color: #1877f2;
         font-size: 15px;
     }
+    .social-mark.linkedin { color: #0a66c2; font-size: 15px; }
 
     .bottom-link {
         margin-top: 25px;
@@ -786,7 +793,7 @@
                 </div>
 
                 <div class="row g-2">
-                    <div class="col-6">
+                    <div class="col-12 col-sm-4">
                         <a href="{{ $googleAuthUrl }}" class="btn-social">
                             <span class="social-mark">
                                 <i class="fab fa-google"></i>
@@ -794,12 +801,18 @@
                             <span>Google</span>
                         </a>
                     </div>
-                    <div class="col-6">
+                    <div class="col-12 col-sm-4">
                         <a href="{{ $facebookAuthUrl }}" class="btn-social">
                             <span class="social-mark facebook">
                                 <i class="fab fa-facebook-f"></i>
                             </span>
                             <span>Facebook</span>
+                        </a>
+                    </div>
+                    <div class="col-12 col-sm-4">
+                        <a href="{{ $linkedinAuthUrl }}" class="btn-social">
+                            <span class="social-mark linkedin"><i class="fab fa-linkedin-in"></i></span>
+                            <span>LinkedIn</span>
                         </a>
                     </div>
                 </div>

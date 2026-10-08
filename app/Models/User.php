@@ -55,6 +55,7 @@ class User extends Authenticatable
         // Social / OAuth
         'google_id',     
         'facebook_id',    
+        'linkedin_id',
         'provider_id',    
         'provider_name',
         
@@ -80,6 +81,7 @@ class User extends Authenticatable
         'remember_token',
         'google_id',
         'facebook_id',
+        'linkedin_id',
         'provider_id',
         'two_factor_secret',
         'two_factor_recovery_codes',
