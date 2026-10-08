@@ -610,6 +610,23 @@ class AuthController extends Controller
             ]);
         }
 
+        if ($user->hasTwoFactorAuthenticationEnabled()) {
+            return $this->beginTwoFactorLoginChallenge($request, $user, $remember);
+        }
+
+        return $this->completeAuthenticatedLogin($request, $user);
+    }
+
+    public function completeAuthenticatedLogin(Request $request, User $user): RedirectResponse
+    {
+        if (Schema::hasColumn('users', 'allow_login') && (int) ($user->allow_login ?? 1) !== 1) {
+            $this->clearClientAuthState($request, false);
+
+            return redirect()->route('saas-login')->withErrors([
+                'login' => 'This user account is not allowed to login. Please contact your workspace administrator.',
+            ]);
+        }
+
         $this->resetWorkspaceSessionState($request);
 
         if ($user?->isDemoUser()) {
@@ -691,6 +708,19 @@ class AuthController extends Controller
         return redirect()->route('home');
     }
 
+    private function beginTwoFactorLoginChallenge(Request $request, User $user, bool $remember): RedirectResponse
+    {
+        Auth::logout();
+        $request->session()->regenerate();
+        $request->session()->put([
+            'two_factor_login_user_id' => (int) $user->id,
+            'two_factor_login_remember' => $remember,
+            'two_factor_login_started_at' => now()->timestamp,
+        ]);
+
+        return redirect()->route('two-factor.challenge');
+    }
+
     private function isAllowedPostLoginRedirect(?string $target): bool
     {
         $target = trim((string) $target);
@@ -752,6 +782,10 @@ class AuthController extends Controller
             'demo_customer_preview_plan',
             'demo_customer_preview_started_at',
             'social_auth_context',
+            'two_factor_login_user_id',
+            'two_factor_login_remember',
+            'two_factor_login_started_at',
+            'two_factor_setup_authorized_until',
             'last_activity',
         ]);
 
@@ -1037,6 +1071,10 @@ class AuthController extends Controller
         }
 
         Auth::login($user, true);
+
+        if ($user->hasTwoFactorAuthenticationEnabled()) {
+            return $this->beginTwoFactorLoginChallenge($request, $user, true);
+        }
 
         if ($createdNow) {
             DB::afterCommit(function () use ($user, $provider) {

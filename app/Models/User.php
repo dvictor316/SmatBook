@@ -66,6 +66,10 @@ class User extends Authenticatable
 
         // Per-user permission overrides
         'permissions_override',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'two_factor_confirmed_at',
+        'two_factor_last_used_timestep',
     ];
 
     /**
@@ -77,6 +81,8 @@ class User extends Authenticatable
         'google_id',
         'facebook_id',
         'provider_id',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     /**
@@ -95,6 +101,10 @@ class User extends Authenticatable
         'is_protected_super_admin' => 'boolean',
         'internal_test_access_enabled' => 'boolean',
         'internal_test_access_expires_at' => 'datetime',
+        'two_factor_secret' => 'encrypted',
+        'two_factor_recovery_codes' => 'array',
+        'two_factor_confirmed_at' => 'datetime',
+        'two_factor_last_used_timestep' => 'integer',
     ];
 
     /* =========================================================================
@@ -276,6 +286,11 @@ class User extends Authenticatable
     public function isProtectedSuperAdmin(): bool
     {
         return $this->isSuperAdmin() && (bool) ($this->is_protected_super_admin ?? false);
+    }
+
+    public function hasTwoFactorAuthenticationEnabled(): bool
+    {
+        return ! empty($this->two_factor_secret) && $this->two_factor_confirmed_at !== null;
     }
 
     public function hasPermissionTo(string $permissionName): bool

@@ -280,7 +280,6 @@ class SettingController extends Controller
             'payment_razorpay_enabled',
             'saas_email_verification',
             'saas_auto_approve_domain',
-            'two_factor_sms_enabled',
             'tax_rate_1_enabled',
             'tax_rate_2_enabled',
             'tax_rate_3_enabled',
@@ -876,7 +875,6 @@ class SettingController extends Controller
         ]);
     }
     public function template_invoice() { return view('Settings.template-invoice', ['settings' => $this->getSettings()]); }
-    public function two_factor()      { return view('Settings.two-factor', ['settings' => $this->getSettings()]); }
     public function custom_filed()
     {
         $customFields = collect($this->getJsonSettingArray('custom_fields_json'));

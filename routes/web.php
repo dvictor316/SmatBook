@@ -15,7 +15,8 @@ use App\Http\Controllers\{
     NotificationController, ActivityLogController, BackupController, AuditController,
     TaxCenterController, TaxFilingController, TaxAuthorityConnectionController, PeriodCloseController, ProjectManagementController,
     BusinessWorkspaceController, AiQuickAgentController, RecurringTransactionController, FinanceApprovalController, FixedAssetController, BudgetController,
-    AdvancePaymentController, AgentPortalController, StateManagerCrmController
+    AdvancePaymentController, AgentPortalController, StateManagerCrmController,
+    TwoFactorAuthenticationController
 };
 use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\SuperAdmin\DeploymentManagerController;
@@ -140,6 +141,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/workspace/business', [DashboardController::class, 'switchToBusinessWorkspace'])->middleware('subscription.active')->name('workspace.business');
     Route::get('/workspace/platform', [DashboardController::class, 'switchToPlatformWorkspace'])->name('workspace.platform');
     Route::get('/subscription/expired', [HomeController::class, 'subscriptionExpired'])->name('subscription.expired');
+    Route::get('/settings/two-factor', [TwoFactorAuthenticationController::class, 'show'])->name('two-factor');
+    Route::post('/settings/two-factor/setup', [TwoFactorAuthenticationController::class, 'beginSetup'])->name('two-factor.setup');
+    Route::post('/settings/two-factor/confirm', [TwoFactorAuthenticationController::class, 'confirmSetup'])->name('two-factor.confirm');
+    Route::post('/settings/two-factor/recovery-codes', [TwoFactorAuthenticationController::class, 'regenerateRecoveryCodes'])->name('two-factor.recovery-codes');
+    Route::delete('/settings/two-factor', [TwoFactorAuthenticationController::class, 'disable'])->name('two-factor.disable');
 });
 
 Route::get('/locations/states', [AuthController::class, 'registrationStates'])->name('locations.states');
@@ -157,6 +163,8 @@ Route::middleware('guest')->group(function () {
     Route::get('/login-account', [AuthController::class, 'showLogin'])->name('login-account');
     Route::post('/login-account', [AuthController::class, 'login'])->name('login-account.post');
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::get('/two-factor-challenge', [TwoFactorAuthenticationController::class, 'challenge'])->name('two-factor.challenge');
+    Route::post('/two-factor-challenge', [TwoFactorAuthenticationController::class, 'verifyChallenge'])->name('two-factor.challenge.verify');
 
     Route::get('/saas-register', [AuthController::class, 'showRegister'])->name('saas-register');
     Route::post('/saas-register', [AuthController::class, 'register'])->name('saas-register.post');
@@ -1370,7 +1378,6 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
             Route::get('/preferences', 'preferences')->name('preferences');
             Route::get('/tax-rates', 'tax_rates')->middleware('plan.access:basic,professional,enterprise')->name('tax-rates');
             Route::get('/template-invoice', 'template_invoice')->name('template-invoice');
-            Route::get('/two-factor', 'two_factor')->name('two-factor');
             Route::get('/custom-filed', 'custom_filed')->name('custom-filed');
             Route::get('/email-template', 'emailtemplate')->name('email-template');
             Route::get('/seo-settings', 'seosettings')->name('seo-settings');
@@ -1389,7 +1396,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/manual-journal', 'manual_journal')->middleware('plan.access:basic,professional,enterprise');
         Route::get('/tax-rates', 'tax_rates')->middleware('plan.access:basic,professional,enterprise');
         Route::get('/plan-billing', 'plan_billing');
-        Route::get('/two-factor', 'two_factor');
+        Route::get('/two-factor', fn () => redirect()->route('two-factor'));
         Route::get('/custom-filed', 'custom_filed');
         Route::get('/email-settings', 'email_settings');
         Route::get('/preferences', 'preferences');
