@@ -40,13 +40,14 @@
     :root {
         --spa-bg: #fbfcff;
         --spa-surface: rgba(255, 255, 255, 0.99);
-        --spa-aside: linear-gradient(145deg, #061a44 0%, #0f3a8a 58%, #2563eb 100%);
+        --spa-aside: #08275f;
         --spa-border: #d8e0ec;
         --spa-primary: #0f3a8a;
         --spa-primary-dark: #061a44;
         --spa-text: #071b3f;
         --spa-muted: #475569;
         --spa-gold: #d7a928;
+        --spa-accent: #c62828;
     }
 
     html, body {
@@ -66,10 +67,7 @@
         width: 100vw;
         min-height: 100vh;
         padding: 20px 15px 40px;
-        background:
-            radial-gradient(circle at top left, rgba(215, 169, 40, 0.12), transparent 24%),
-            radial-gradient(circle at bottom right, rgba(15, 58, 138, 0.07), transparent 30%),
-            linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        background: #f4f7fb;
         z-index: 900;
         display: grid !important;
         place-items: center !important;
@@ -82,6 +80,7 @@
         -moz-osx-font-smoothing: grayscale;
         text-rendering: optimizeLegibility;
     }
+    .smat-viewport, .smat-viewport * { letter-spacing: 0 !important; }
 
     /* Hard reset wrapper overrides to prevent theme conflict */
     .main-wrapper,
@@ -110,15 +109,7 @@
     }
 
     /* 2. SUBTLE MINIMALIST BUBBLES */
-    .bubble-bg {
-        position: fixed; /* Fixed so they don't scroll */
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-        top: 0;
-        left: 0;
-        pointer-events: none;
-    }
+    .bubble-bg { display: none; }
 
     .bubble {
         position: absolute;
@@ -143,7 +134,7 @@
         max-width: 900px !important;
         min-height: 0;
         height: auto;
-        border-radius: 24px;
+        border-radius: 8px;
         box-shadow: 0 28px 80px rgba(15, 23, 42, 0.10), 0 8px 22px rgba(15, 58, 138, 0.05);
         display: flex;
         overflow: hidden;
@@ -151,7 +142,6 @@
 
         /* KEY FIX: This centers it vertically but allows scrolling if needed */
         margin: 24px auto !important;
-        backdrop-filter: blur(10px);
         justify-self: center !important;
     }
 
@@ -190,6 +180,7 @@
         transform: rotate(10deg);
         pointer-events: none;
     }
+    .smat-aside::before, .smat-aside::after { display: none; }
 
     .logo-img { height: 52px; width: auto; flex: 0 0 auto; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.18)); }
     .brand-lockup {
@@ -322,7 +313,7 @@
     }
     .form-shell {
         border: 1px solid #d8e0ec;
-        border-radius: 22px;
+        border-radius: 8px;
         background: #ffffff;
         padding: 22px 22px 20px;
         box-shadow: 0 18px 38px rgba(15, 23, 42, 0.045);
@@ -332,7 +323,7 @@
         border: 1px solid #d8e0ec;
         background: #ffffff;
         color: #0b2a63;
-        border-radius: 14px;
+        border-radius: 6px;
         padding: 12px 14px;
         margin-bottom: 18px;
         font-size: 14px;
@@ -345,8 +336,8 @@
     }
 
     .uplink-badge {
-        font-size: 13px; background: #ffffff; color: #0b2a63;
-        padding: 9px 12px; border-radius: 12px; border: 1px solid #d8e0ec;
+        font-size: 13px; background: #f2f6fc; color: #0b2a63;
+        padding: 9px 12px; border-radius: 6px; border: 1px solid #d8e0ec;
         margin-bottom: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;
     }
     .uplink-badge strong {
@@ -357,7 +348,7 @@
         border: 1px solid #bbf7d0;
         background: #f0fdf4;
         color: #166534;
-        border-radius: 12px;
+        border-radius: 6px;
         padding: 10px 12px;
         margin-bottom: 16px;
         font-size: 14px;
@@ -371,7 +362,7 @@
     }
 
     .input-smat {
-        padding: 13px 16px; border-radius: 14px; border: 1px solid #cfd8e6;
+        padding: 13px 16px; border-radius: 6px; border: 1px solid #cfd8e6;
         background: #ffffff; font-size: 15px; transition: all 0.2s; font-weight: 500;
         color: #061a44;
     }
@@ -390,11 +381,12 @@
 
     /* Action Buttons */
     .btn-smat-navy {
-        background: #ffffff;
-        color: #0b2a63;
-        border: 1px solid #cfd8e6;
+        background: #0f4eaa;
+        color: #ffffff;
+        border: 1px solid #0f4eaa;
+        border-bottom: 3px solid var(--spa-accent);
         padding: 14px;
-        border-radius: 16px;
+        border-radius: 6px;
         width: 100%;
         font-weight: 700;
         font-size: 15px;
@@ -402,11 +394,11 @@
         margin-top: 10px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+        box-shadow: 0 10px 20px rgba(15, 78, 170, 0.18);
     }
     .btn-smat-navy:hover {
-        background: #f8fafc;
-        color: #061a44;
+        background: #0b3f8d;
+        color: #ffffff;
         transform: translateY(-2px);
         box-shadow: 0 16px 30px rgba(15, 23, 42, 0.10);
     }
@@ -421,7 +413,7 @@
         background: #ffffff;
         border: 1px solid #cfd8e6;
         padding: 11px;
-        border-radius: 14px;
+        border-radius: 6px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -481,7 +473,7 @@
     }
     .bottom-action-link {
         border: 1px solid #cfd8e6;
-        border-radius: 14px;
+        border-radius: 6px;
         padding: 12px 14px;
         text-decoration: none;
         color: #0b2a63;
@@ -503,7 +495,7 @@
     }
 
     .auth-alert {
-        border-radius: 12px;
+        border-radius: 6px;
         padding: 12px 14px;
         margin-bottom: 14px;
         font-size: 13px;
@@ -519,6 +511,8 @@
         color: #991b1b;
         border-color: #fecaca;
     }
+    .form-title { color: #071b3f; font-size: 1.55rem; font-weight: 700; letter-spacing: 0; margin: 0 0 5px; }
+    .form-subtitle { color: #5a687b; font-size: 0.9rem; line-height: 1.55; margin: 0 0 16px; }
 
     @media (max-width: 991px) {
         .smat-card {
@@ -561,7 +555,7 @@
         .bottom-actions { grid-template-columns: 1fr; }
         .btn-smat-navy { padding: 13px; font-size: 13px; }
         .btn-social { font-size: 12px; padding: 9px; }
-        .form-shell { padding: 18px 16px; border-radius: 18px; }
+        .form-shell { padding: 18px 16px; border-radius: 8px; }
         .mobile-brand-lockup {
             padding: 8px 10px;
             margin-bottom: 14px;
@@ -704,21 +698,21 @@
             <div>
                 <x-auth-brand-lockup :logo="asset('/assets/img/logos.png')" theme="dark" size="lg" :tagline="'Secure Business Stack'" />
                 <div class="status-badge"><span class="status-dot"></span> Secure Node Active</div>
-                <h2 class="aside-title">Authorized<br>Login</h2>
-                <p class="aside-copy">Connect to your accounting nodes through a cleaner, secure sign-in channel built for finance teams.</p>
+                <h2 class="aside-title">Welcome<br>Back</h2>
+                <p class="aside-copy">Sign in securely to continue managing your business and financial records.</p>
                 <div class="aside-points">
                     <div class="aside-point">
                         <i class="fas fa-lock"></i>
                         <div>
-                            <strong>Protected session access</strong>
-                            <span>Sign in with your username, email, or phone and continue exactly where your workspace left off.</span>
+                            <strong>Flexible sign in</strong>
+                            <span>Use your email address, phone number, or username.</span>
                         </div>
                     </div>
                     <div class="aside-point">
                         <i class="fas fa-wave-square"></i>
                         <div>
-                            <strong>Live node continuity</strong>
-                            <span>Your selected plan context and billing cycle stay attached through the login flow.</span>
+                            <strong>Secure account access</strong>
+                            <span>Two-factor verification is applied automatically when enabled.</span>
                         </div>
                     </div>
                 </div>
@@ -734,17 +728,19 @@
             <div class="mobile-brand-lockup">
                 <x-auth-brand-lockup :logo="$clientLogo" :brand-name="$clientBrandName" size="md" />
             </div>
-            <span class="panel-kicker">Protected access</span>
+            <span class="panel-kicker">Secure sign in</span>
+            <h1 class="form-title">Sign in to SmartProbook</h1>
+            <p class="form-subtitle">Access your business using your registered email address or phone number.</p>
             <form action="{{ route('saas-login.post') }}" method="POST" class="form-shell" data-rendered-at="{{ now()->timestamp }}">
                 @csrf
                 <div class="login-instruction-box">
-                    <strong>Get Started:</strong> Sign in or create account.
+                    Enter the same email address or phone number used when creating your account.
                 </div>
 
                 @if($persistedPlan !== 'enterprise' || $persistedCycle !== 'monthly')
                     <div class="uplink-badge">
                         <i class="fas fa-microchip"></i>
-                        <span>UPLINK: <strong>{{ strtoupper($persistedPlan) }} NODE</strong> DETECTED</span>
+                        <span>Selected plan: <strong>{{ strtoupper($persistedPlan) }}</strong></span>
                     </div>
                 @endif
 
@@ -767,26 +763,26 @@
                 @endif
 
                 <div class="mb-3">
-                    <label class="label-caps">Username, Email or Phone</label>
+                    <label class="label-caps" for="login_identifier">Email or Phone Number</label>
                     <input type="text" name="login" class="form-control input-smat w-100" 
-                           placeholder="username, name@institution.com or +2348012345678" value="{{ old('login', old('email')) }}" required autofocus>
+                           id="login_identifier" placeholder="name@company.com or +2348012345678" value="{{ old('login', old('email')) }}" autocomplete="username" required autofocus>
                 </div>
 
                 <div class="mb-4">
                     <div class="d-flex justify-content-between align-items-center mb-1">
-                        <label class="label-caps m-0">Secure Passcode</label>
+                        <label class="label-caps m-0" for="pass_input">Password</label>
                         <a href="{{ route('password.request', ['plan' => $persistedPlan, 'cycle' => $persistedCycle]) }}" class="text-decoration-none fw-bold" style="color: #dc2626; font-size: 10px; text-transform: uppercase;">Forgot Password?</a>
                     </div>
                     <div class="pass-container">
-                        <input type="password" name="password" id="pass_input" class="form-control input-smat w-100" placeholder="••••••••" required>
+                        <input type="password" name="password" id="pass_input" class="form-control input-smat w-100" placeholder="Enter your password" autocomplete="current-password" required>
                         <i class="far fa-eye-slash toggle-eye" id="eye_toggle"></i>
                     </div>
                 </div>
 
-                <button type="submit" class="btn-smat-navy">Initialize Terminal</button>
+                <button type="submit" class="btn-smat-navy"><i class="fas fa-right-to-bracket me-1"></i> Sign In</button>
 
                 <div class="divider">
-                    <span>OAUTH ACCESS</span>
+                    <span>OR CONTINUE WITH</span>
                 </div>
 
                 <div class="row g-2">
@@ -809,7 +805,7 @@
                 </div>
 
                 <div class="bottom-link">
-                    Choose your onboarding path
+                    New to SmartProbook?
                     <div class="bottom-actions">
                         <a href="{{ route('membership-plans') }}" class="bottom-action-link">Buy a Plan</a>
                         <a href="{{ route('saas-register', ['type' => 'partner']) }}" class="bottom-action-link">Become a Partner</a>

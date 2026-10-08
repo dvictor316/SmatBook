@@ -39,13 +39,14 @@
     :root {
         --spa-bg: #fbfcff;
         --spa-surface: rgba(255, 255, 255, 0.99);
-        --spa-aside: linear-gradient(145deg, #061a44 0%, #0f3a8a 58%, #2563eb 100%);
+        --spa-aside: #08275f;
         --spa-border: #d8e0ec;
         --spa-primary: #0f3a8a;
         --spa-primary-dark: #061a44;
         --spa-text: #071b3f;
         --spa-muted: #475569;
         --spa-gold: #d7a928;
+        --spa-accent: #c62828;
     }
 
     html, body {
@@ -56,6 +57,7 @@
         -webkit-overflow-scrolling: touch;
         touch-action: pan-y;
     }
+    .smat-viewport, .smat-viewport * { letter-spacing: 0 !important; }
 
     .main-wrapper,
     .main-wrapper.login-body {
@@ -82,10 +84,7 @@
         height: 100%;
         min-height: 100%;
         padding: 16px 12px 40px;
-        background:
-            radial-gradient(circle at top left, rgba(215, 169, 40, 0.12), transparent 24%),
-            radial-gradient(circle at bottom right, rgba(15, 58, 138, 0.07), transparent 30%),
-            linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        background: #f4f7fb;
         z-index: 9999;
         display: grid !important;
         place-items: center !important;
@@ -102,12 +101,7 @@
         visibility: hidden !important;
     }
 
-    .bubble-bg {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-    }
+    .bubble-bg { display: none; }
 
     .bubble {
         position: absolute;
@@ -130,12 +124,11 @@
         width: min(calc(100vw - 40px), 920px) !important;
         max-width: 920px !important;
         min-height: 0;
-        border-radius: 24px;
+        border-radius: 8px;
         box-shadow: 0 28px 80px rgba(15, 23, 42, 0.10), 0 8px 22px rgba(15, 58, 138, 0.05);
         display: flex;
         overflow: hidden;
         border: 1px solid rgba(216, 224, 236, 0.95);
-        backdrop-filter: blur(10px);
         margin: 24px auto !important;
         justify-self: center !important;
     }
@@ -175,6 +168,7 @@
         transform: rotate(10deg);
         pointer-events: none;
     }
+    .smat-aside::before, .smat-aside::after { display: none; }
 
     .logo-img { height: 52px; width: auto; flex: 0 0 auto; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.18)); }
     .brand-lockup {
@@ -318,11 +312,11 @@
         background: #173b92;
         box-shadow: 0 0 0 4px rgba(15, 58, 138, 0.08);
     }
-    .form-title { font-weight: 700; color: var(--spa-text); font-size: 1.46rem; margin-bottom: 4px; letter-spacing: -0.02em; }
+    .form-title { font-weight: 700; color: var(--spa-text); font-size: 1.46rem; margin-bottom: 4px; letter-spacing: 0; }
     .form-subtitle { color: #475569; font-size: 0.86rem; margin-bottom: 14px; line-height: 1.55; max-width: 44ch; font-weight: 500; }
     .form-shell {
         border: 1px solid #d8e0ec;
-        border-radius: 20px;
+        border-radius: 8px;
         background: #ffffff;
         padding: 18px 18px 16px;
         box-shadow: 0 18px 38px rgba(15, 23, 42, 0.045);
@@ -332,7 +326,7 @@
         align-items: center;
         gap: 10px;
         padding: 10px 12px;
-        border-radius: 14px;
+        border-radius: 6px;
         background: #ffffff;
         border: 1px solid #d8e0ec;
         color: #0b2a63;
@@ -354,7 +348,7 @@
     }
 
     .input-smat {
-        padding: 11px 14px; border-radius: 14px; border: 1px solid #cfd8e6;
+        padding: 11px 14px; border-radius: 6px; border: 1px solid #cfd8e6;
         background: #ffffff; font-size: 12.5px; transition: all 0.2s; font-weight: 500;
         color: #061a44;
     }
@@ -372,15 +366,16 @@
     }
 
     .btn-smat-red {
-        background: #ffffff;
-        color: #0b2a63;
-        border: 1px solid #cfd8e6;
+        background: #0f4eaa;
+        color: #ffffff;
+        border: 1px solid #0f4eaa;
+        border-bottom: 3px solid var(--spa-accent);
         padding: 12px;
-        border-radius: 16px;
+        border-radius: 6px;
         width: 100%;
         font-weight: 700;
         font-size: 12px;
-        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+        box-shadow: 0 10px 20px rgba(15, 78, 170, 0.18);
         transition: 0.3s;
         margin-top: 8px;
         text-transform: uppercase;
@@ -390,8 +385,8 @@
     .btn-smat-red:hover {
         transform: translateY(-2px);
         box-shadow: 0 16px 30px rgba(15, 23, 42, 0.10);
-        color: #061a44;
-        background: #f8fafc;
+        color: #ffffff;
+        background: #0b3f8d;
     }
 
     .error-pill {
@@ -406,7 +401,7 @@
     }
     .flash-pill {
         padding: 11px 12px;
-        border-radius: 10px;
+        border-radius: 6px;
         margin-bottom: 12px;
         font-size: 12px;
         font-weight: 600;
@@ -451,7 +446,7 @@
     }
     .bottom-action-link {
         border: 1px solid #cfd8e6;
-        border-radius: 14px;
+        border-radius: 6px;
         padding: 10px 12px;
         text-decoration: none;
         color: #0b2a63 !important;
@@ -495,7 +490,7 @@
         background: #ffffff;
         border: 1px solid #cfd8e6;
         padding: 10px;
-        border-radius: 14px;
+        border-radius: 6px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -591,7 +586,7 @@
         }
         .form-shell {
             padding: 14px;
-            border-radius: 18px;
+            border-radius: 8px;
         }
         .info-banner {
             padding: 12px 14px;
@@ -625,7 +620,7 @@
         .smat-card {
             width: min(calc(100vw - 20px), 800px) !important;
             max-width: 800px !important;
-            border-radius: 20px;
+            border-radius: 8px;
         }
         .smat-aside {
             padding: 16px 14px;
@@ -664,9 +659,9 @@
     }
 
     @media (max-width: 640px) {
-        .smat-card { border-radius: 20px; }
+        .smat-card { border-radius: 8px; }
         .smat-aside, .smat-main { padding: 18px 14px; }
-        .form-shell { padding: 18px 16px; border-radius: 18px; }
+        .form-shell { padding: 18px 16px; border-radius: 8px; }
         .bottom-actions { grid-template-columns: 1fr; }
         .mobile-brand-lockup .logo-img { height: 34px; }
         .mobile-brand-lockup .brand-name { font-size: 0.98rem; }
@@ -684,9 +679,9 @@
         <div class="smat-aside">
             <div>
                 <x-auth-brand-lockup :logo="asset('assets/img/logos.png')" theme="dark" size="lg" :tagline="'Secure Business Stack'" />
-                <span class="step-badge">Step 01: Enrollment</span>
+                <span class="step-badge">Account setup</span>
                 <h2 class="aside-title">
-                    {{ $isManager ? 'Partner Agent' : 'Administrator' }}<br>Registration
+                    {{ $isManager ? 'Partner Agent' : 'Business Account' }}<br>Registration
                 </h2>
                 <p class="aside-copy">
                     {{ $isManager ? 'Create a partner agent profile for your country, state/county, and local council.' : 'Begin your deployment by securing your institutional admin identity.' }}
@@ -742,9 +737,9 @@
             <div class="mobile-brand-lockup">
                 <x-auth-brand-lockup :logo="asset('assets/img/logos.png')" size="md" :tagline="'Secure Business Stack'" />
             </div>
-            <span class="panel-kicker">Protected onboarding</span>
+            <span class="panel-kicker">Secure registration</span>
             <h1 class="form-title">Create Account</h1>
-            <p class="form-subtitle">Enter your details to initialize this {{ $isManager ? 'partner agent' : 'terminal' }} node.</p>
+            <p class="form-subtitle">Enter your details to create your {{ $isManager ? 'partner agent profile' : 'business workspace' }}.</p>
 
             @if(session('error'))
                 <div class="flash-pill error">
@@ -810,17 +805,17 @@
 
                 <div class="field-grid mb-3">
                     <div>
-                        <label class="label-caps">Email (or use phone below)</label>
+                        <label class="label-caps" for="registration_email">Email Address (or use phone)</label>
                         <input type="email" name="email" class="form-control input-smat w-100 @error('email') is-invalid @enderror"
-                               placeholder="admin@terminal.com" value="{{ old('email') }}">
+                               id="registration_email" placeholder="admin@company.com" value="{{ old('email') }}" autocomplete="email">
                         @error('email')
                             <span class="field-error">{{ $message }}</span>
                         @enderror
                     </div>
                     <div>
-                        <label class="label-caps">Phone (or use email above)</label>
-                        <input type="text" name="phone" class="form-control input-smat w-100 @error('phone') is-invalid @enderror"
-                               placeholder="+2348012345678" value="{{ old('phone') }}">
+                        <label class="label-caps" for="registration_phone">Phone Number (or use email)</label>
+                        <input type="tel" name="phone" class="form-control input-smat w-100 @error('phone') is-invalid @enderror"
+                               id="registration_phone" placeholder="+2348012345678" value="{{ old('phone') }}" autocomplete="tel" inputmode="tel">
                         @error('phone')
                             <span class="field-error">{{ $message }}</span>
                         @enderror
@@ -899,9 +894,9 @@
 
                 <div class="row g-2 mb-4">
                     <div class="col-md-6">
-                        <label class="label-caps">Master Passcode</label>
+                        <label class="label-caps" for="p1">Password</label>
                         <div class="pass-container">
-                            <input type="password" name="password" id="p1" class="form-control input-smat w-100 @error('password') is-invalid @enderror" placeholder="Min. 8 chars" minlength="8" pattern="(?=.*[A-Za-z])(?=.*\d).{8,}" title="Use at least 8 characters with letters and numbers." required>
+                            <input type="password" name="password" id="p1" class="form-control input-smat w-100 @error('password') is-invalid @enderror" placeholder="Minimum 8 characters" minlength="8" pattern="(?=.*[A-Za-z])(?=.*\d).{8,}" title="Use at least 8 characters with letters and numbers." autocomplete="new-password" required>
                             <i class="far fa-eye toggle-eye" onclick="togglePass('p1', this)"></i>
                         </div>
                         @error('password')
@@ -910,9 +905,9 @@
                         <small class="text-muted d-block mt-1" style="font-size:11px;">Use letters and numbers (symbol optional).</small>
                     </div>
                     <div class="col-md-6">
-                        <label class="label-caps">Verify Passcode</label>
+                        <label class="label-caps" for="p2">Confirm Password</label>
                         <div class="pass-container">
-                            <input type="password" name="password_confirmation" id="p2" class="form-control input-smat w-100 @error('password_confirmation') is-invalid @enderror" placeholder="Repeat" minlength="8" required>
+                            <input type="password" name="password_confirmation" id="p2" class="form-control input-smat w-100 @error('password_confirmation') is-invalid @enderror" placeholder="Repeat your password" minlength="8" autocomplete="new-password" required>
                             <i class="far fa-eye toggle-eye" onclick="togglePass('p2', this)"></i>
                         </div>
                         @error('password_confirmation')
@@ -922,7 +917,7 @@
                 </div>
 
                 <button type="submit" class="btn-smat-red">
-                    {{ $isManager ? 'Submit Partner Agent Profile' : 'Initialize Deployment' }} <i class="fas fa-shield-check ms-1"></i>
+                    {{ $isManager ? 'Submit Partner Profile' : 'Create Account' }} <i class="fas fa-shield-check ms-1"></i>
                 </button>
 
                 @if(!$isManager)
