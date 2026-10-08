@@ -1,8 +1,6 @@
 @php($pwaManifestVersion = file_exists(public_path('manifest.webmanifest')) ? filemtime(public_path('manifest.webmanifest')) : time())
 @php($pwaIconVersion = file_exists(public_path('assets/pwa/icon-192.png')) ? filemtime(public_path('assets/pwa/icon-192.png')) : time())
-@php($pwaWindowControlsVersion = file_exists(public_path('assets/css/pwa-window-controls.css')) ? filemtime(public_path('assets/css/pwa-window-controls.css')) : time())
 <link rel="manifest" href="{{ asset('manifest.webmanifest') }}?v={{ $pwaManifestVersion }}">
-<link rel="stylesheet" href="{{ asset('assets/css/pwa-window-controls.css') }}?v={{ $pwaWindowControlsVersion }}">
 <meta name="theme-color" content="#061a44">
 <meta name="application-name" content="SmartProBook">
 <meta name="apple-mobile-web-app-capable" content="yes">
