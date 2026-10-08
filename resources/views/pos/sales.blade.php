@@ -23,6 +23,9 @@
     $posCanManageSalesLog = $posSalesCan(['sales.sales.edit', 'sales.sales.delete', 'sales.sales.return', 'reports.reports.view', 'sales.sales.view_all']);
     $posCanExportSalesLog = $posSalesCan(['reports.reports.export', 'reports.reports.view', 'sales.sales.view_all']);
     $posReceiptLookupMode = request()->boolean('reprint') && !$posCanManageSalesLog;
+    $posReturnBaseUrl = \Illuminate\Support\Facades\Route::has('pos.return.show')
+        ? route('pos.return.show')
+        : url('/pos/return');
 @endphp
 <style>
     .pos-content-area {
@@ -38,7 +41,7 @@
     .report-header {
         background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
         border: 1px solid #dfe7f3;
-        border-radius: 20px;
+        border-radius: 8px;
         padding: 24px;
         margin-bottom: 30px;
         display: flex;
@@ -397,7 +400,7 @@
     </div>
 
     <div class="card summary-card mb-4">
-        <div class="card-body p-4 p-lg-5">
+        <div class="card-body p-3 p-lg-4">
             <div class="summary-toolbar no-print">
                 <div class="summary-label mb-0">{{ $posReceiptLookupMode ? 'Receipt Lookup' : 'Sales Summary & Filters' }}</div>
                 <div class="summary-actions">
@@ -616,14 +619,9 @@
                                         <li><a class="dropdown-item" href="{{ $receiptPrintUrl }}" target="_blank" rel="noopener"><i class="fas fa-file-invoice me-1"></i> Standard Receipt</a></li>
                                         <li><a class="dropdown-item" href="{{ $receiptPrintUrl }}?format=thermal&amp;paper=80" target="_blank" rel="noopener"><i class="fas fa-receipt me-1"></i> Thermal Receipt (80mm)</a></li>
                                         <li><a class="dropdown-item" href="{{ $receiptPrintUrl }}?format=thermal&amp;paper=58" target="_blank" rel="noopener"><i class="fas fa-receipt me-1"></i> Thermal Receipt (58mm)</a></li>
-                                        @php
-                                            $posReturnUrl = \Illuminate\Support\Facades\Route::has('pos.return.show')
-                                                ? route('pos.return.show', ['sale_id' => $sale->id])
-                                                : url('/pos/return') . '?sale_id=' . urlencode((string) $sale->id);
-                                        @endphp
                                         @if($posCanManageSalesLog)
                                             <li><hr class="dropdown-divider"></li>
-                                            <li><a class="dropdown-item text-warning" href="{{ $posReturnUrl }}"><i class="fas fa-undo me-1"></i> Process Return</a></li>
+                                            <li><a class="dropdown-item text-warning" href="{{ $posReturnBaseUrl }}?sale_id={{ urlencode((string) $sale->id) }}"><i class="fas fa-undo me-1"></i> Process Return</a></li>
                                             <li><a class="dropdown-item" href="{{ route('sales.edit', $sale->id) }}">Edit Sale</a></li>
                                             <li>
                                                 <form method="POST" action="{{ route('sales.destroy', $sale->id) }}" onsubmit="return confirm('Delete this sale?');">
@@ -652,8 +650,8 @@
                 </table>
             </div>
 
-            <div class="p-4 border-top bg-light">
-                <div class="d-flex justify-content-between align-items-center">
+            <div class="p-3 border-top bg-light">
+                <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
                     <p class="text-muted small mb-0">Record {{ $sales->firstItem() }} to {{ $sales->lastItem() }} of {{ $sales->total() }}</p>
                     <div>
                         {{ $sales->appends(request()->query())->links('pagination::bootstrap-5') }}
@@ -671,13 +669,13 @@
     </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    $(document).ready(function() {
-        $('#quick-invoice-id-search').on('keypress', function(e) {
-            if(e.which == 13) {
-                let invoiceId = $(this).val();
-                if(invoiceId) {
+    document.addEventListener('DOMContentLoaded', function () {
+        const search = document.getElementById('quick-invoice-id-search');
+        search?.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const invoiceId = this.value.trim();
+                if (invoiceId) {
                     let url = "{{ route('sales.show', ':id') }}";
                     window.location.href = url.replace(':id', invoiceId);
                 }

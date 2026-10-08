@@ -11,6 +11,7 @@ use App\Models\HotelRoom;
 use App\Models\Reservation;
 use App\Models\Stay;
 use App\Models\User;
+use App\Models\HotelStaffShift;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -67,8 +68,11 @@ class HotelOperationsController extends Controller
             ->get();
 
         $staff = User::query()->where('company_id', $companyId)->orderBy('name')->get(['id', 'name']);
+        $shifts = HotelStaffShift::query()->with('user')->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->whereDate('shift_date', '>=', today()->subDay())
+            ->orderBy('shift_date')->orderBy('starts_at')->limit(30)->get();
 
-        return view('hotel.operations.index', compact('requests', 'summary', 'stays', 'staff'));
+        return view('hotel.operations.index', compact('requests', 'summary', 'stays', 'staff', 'shifts'));
     }
 
     public function store(Request $request)
@@ -79,7 +83,7 @@ class HotelOperationsController extends Controller
 
         $validated = $request->validate([
             'stay_id' => ['nullable', 'integer', Rule::exists('stays', 'id')->where(fn ($q) => $q->where('company_id', $companyId)->where('property_id', $propertyId))],
-            'category' => 'required|in:concierge,housekeeping,maintenance,room_service,laundry,transport,wakeup_call,complaint,amenity,other',
+            'category' => 'required|in:concierge,housekeeping,maintenance,room_service,laundry,transport,wakeup_call,lost_found,complaint,amenity,other',
             'department' => 'required|in:front_office,concierge,housekeeping,engineering,food_beverage,security,transport,management',
             'priority' => 'required|in:low,normal,high,urgent',
             'subject' => 'required|string|max:160',
@@ -147,13 +151,32 @@ class HotelOperationsController extends Controller
         return back()->with('success', "Request {$guestRequest->request_number} updated.");
     }
 
+    public function storeShift(Request $request)
+    {
+        $companyId = (int) auth()->user()->company_id;
+        $propertyId = $this->currentPropertyId();
+        abort_unless($propertyId, 422, 'No active hotel property is configured.');
+        $data = $request->validate([
+            'user_id' => ['required', 'integer', Rule::exists('users', 'id')->where(fn ($query) => $query->where('company_id', $companyId))],
+            'shift_date' => 'required|date', 'department' => 'required|in:front_office,concierge,housekeeping,engineering,food_beverage,security,transport,management',
+            'shift_name' => 'required|string|max:80', 'starts_at' => 'required|date_format:H:i', 'ends_at' => 'required|date_format:H:i',
+            'opening_float' => 'nullable|numeric|min:0', 'handover_note' => 'nullable|string|max:2000',
+        ]);
+        HotelStaffShift::create([...$data, 'company_id' => $companyId, 'property_id' => $propertyId, 'status' => 'scheduled', 'created_by' => auth()->id()]);
+        return back()->with('success', 'Staff shift scheduled.');
+    }
+
+    public function updateShift(Request $request, HotelStaffShift $shift)
+    {
+        abort_unless((int) $shift->company_id === (int) auth()->user()->company_id && (int) $shift->property_id === (int) $this->currentPropertyId(), 404);
+        $data = $request->validate(['status' => 'required|in:scheduled,open,closed,cancelled', 'closing_cash' => 'nullable|numeric|min:0', 'handover_note' => 'nullable|string|max:2000']);
+        $shift->update($data);
+        return back()->with('success', 'Shift updated.');
+    }
+
     private function currentPropertyId(): ?int
     {
-        return HotelProperty::query()
-            ->where('company_id', auth()->user()->company_id)
-            ->when(auth()->user()->branch_id, fn ($query) => $query->where('branch_id', auth()->user()->branch_id))
-            ->where('is_active', true)
-            ->value('id');
+        return \App\Support\HotelPropertyContext::propertyId((int) auth()->user()->company_id);
     }
 
     private function defaultDueAt(string $priority)

@@ -97,7 +97,7 @@
                 <form method="POST" action="{{ route('hotel.operations.requests.store') }}" class="ops-form">
                     @csrf
                     <div><label>Guest / Current Stay</label><select name="stay_id" class="form-select"><option value="">Non-room / General request</option>@foreach($stays as $stay)<option value="{{ $stay->id }}">Room {{ $stay->room?->room_number ?? 'N/A' }} - {{ $stay->customer?->customer_name ?? $stay->customer?->name ?? 'Guest' }}</option>@endforeach</select></div>
-                    <div class="ops-row"><div><label>Category</label><select name="category" class="form-select" required>@foreach(['concierge','housekeeping','maintenance','room_service','laundry','transport','wakeup_call','complaint','amenity','other'] as $value)<option value="{{ $value }}">{{ ucwords(str_replace('_',' ',$value)) }}</option>@endforeach</select></div><div><label>Department</label><select name="department" class="form-select" required>@foreach(['front_office','concierge','housekeeping','engineering','food_beverage','security','transport','management'] as $value)<option value="{{ $value }}">{{ ucwords(str_replace('_',' ',$value)) }}</option>@endforeach</select></div></div>
+                    <div class="ops-row"><div><label>Category</label><select name="category" class="form-select" required>@foreach(['concierge','housekeeping','maintenance','room_service','laundry','transport','wakeup_call','lost_found','complaint','amenity','other'] as $value)<option value="{{ $value }}">{{ ucwords(str_replace('_',' ',$value)) }}</option>@endforeach</select></div><div><label>Department</label><select name="department" class="form-select" required>@foreach(['front_office','concierge','housekeeping','engineering','food_beverage','security','transport','management'] as $value)<option value="{{ $value }}">{{ ucwords(str_replace('_',' ',$value)) }}</option>@endforeach</select></div></div>
                     <div class="ops-row"><div><label>Priority</label><select name="priority" class="form-select" required><option value="normal">Normal - 60 min</option><option value="urgent">Urgent - 15 min</option><option value="high">High - 30 min</option><option value="low">Low - 3 hours</option></select></div><div><label>Assign To</label><select name="assigned_to" class="form-select"><option value="">Queue</option>@foreach($staff as $person)<option value="{{ $person->id }}">{{ $person->name }}</option>@endforeach</select></div></div>
                     <div><label>Subject</label><input name="subject" class="form-control" maxlength="160" required placeholder="What does the guest need?"></div>
                     <div><label>Details</label><textarea name="details" class="form-control" rows="3" placeholder="Instructions, preferences or handover details"></textarea></div>
@@ -106,6 +106,26 @@
                 </form>
             </aside>
         </div>
+
+        <section class="ops-panel mt-3">
+            <div class="ops-panel__head"><h5>Staff Shift Control</h5><span class="badge bg-dark">{{ $shifts->count() }} scheduled / recent</span></div>
+            <div class="p-3">
+                <form method="POST" action="{{ route('hotel.operations.shifts.store') }}" class="row g-2 align-items-end mb-3">@csrf
+                    <div class="col-md-2"><label>Team Member</label><select name="user_id" class="form-select" required>@foreach($staff as $person)<option value="{{ $person->id }}">{{ $person->name }}</option>@endforeach</select></div>
+                    <div class="col-md-2"><label>Date</label><input type="date" name="shift_date" value="{{ now()->toDateString() }}" class="form-control" required></div>
+                    <div class="col-md-2"><label>Department</label><select name="department" class="form-select">@foreach(['front_office','concierge','housekeeping','engineering','food_beverage','security','transport','management'] as $value)<option value="{{ $value }}">{{ ucwords(str_replace('_',' ',$value)) }}</option>@endforeach</select></div>
+                    <div class="col-md-2"><label>Shift</label><input name="shift_name" class="form-control" placeholder="Morning" required></div>
+                    <div class="col-md-1"><label>Starts</label><input type="time" name="starts_at" class="form-control" required></div>
+                    <div class="col-md-1"><label>Ends</label><input type="time" name="ends_at" class="form-control" required></div>
+                    <div class="col-md-1"><label>Float</label><input type="number" step="0.01" min="0" name="opening_float" class="form-control" value="0"></div>
+                    <div class="col-md-1 d-grid"><button class="btn btn-primary">Schedule</button></div>
+                </form>
+                <div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Date</th><th>Team Member</th><th>Department</th><th>Hours</th><th>Status / Handover</th></tr></thead><tbody>
+                    @forelse($shifts as $shift)<tr><td>{{ $shift->shift_date?->format('d M Y') }}</td><td>{{ $shift->user?->name }}</td><td>{{ ucwords(str_replace('_',' ',$shift->department)) }}</td><td>{{ substr($shift->starts_at,0,5) }} - {{ substr($shift->ends_at,0,5) }}</td><td><form method="POST" action="{{ route('hotel.operations.shifts.update', $shift) }}" class="d-flex gap-1">@csrf @method('PUT')<select name="status" class="form-select form-select-sm">@foreach(['scheduled','open','closed','cancelled'] as $value)<option value="{{ $value }}" @selected($shift->status === $value)>{{ ucfirst($value) }}</option>@endforeach</select><input name="handover_note" value="{{ $shift->handover_note }}" class="form-control form-control-sm" placeholder="Handover note"><button class="btn btn-sm btn-outline-primary">Save</button></form></td></tr>
+                    @empty<tr><td colspan="5" class="text-muted">No staff shifts scheduled.</td></tr>@endforelse
+                </tbody></table></div>
+            </div>
+        </section>
     </div>
 </div>
 @endsection

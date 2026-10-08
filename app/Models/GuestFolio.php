@@ -11,7 +11,7 @@ class GuestFolio extends Model
     use HasFactory, TenantScoped;
 
     protected $fillable = [
-        'company_id', 'property_id', 'stay_id', 'reservation_id', 'customer_id', 'folio_number', 'opening_deposit', 'total_charges', 'total_payments', 'balance', 'status',
+        'company_id', 'property_id', 'stay_id', 'reservation_id', 'customer_id', 'folio_number', 'opening_deposit', 'total_charges', 'total_payments', 'balance', 'status', 'corporate_account_id', 'group_booking_id', 'due_date', 'folio_label',
     ];
 
     protected $casts = [
@@ -19,6 +19,7 @@ class GuestFolio extends Model
         'total_charges' => 'decimal:2',
         'total_payments' => 'decimal:2',
         'balance' => 'decimal:2',
+        'due_date' => 'date',
     ];
 
     public function stay()
@@ -44,5 +45,15 @@ class GuestFolio extends Model
     public function guestRequests()
     {
         return $this->hasMany(HotelGuestRequest::class, 'stay_id', 'stay_id');
+    }
+
+    public function corporateAccount()
+    {
+        return $this->belongsTo(HotelCorporateAccount::class, 'corporate_account_id');
+    }
+
+    public function groupBooking()
+    {
+        return $this->belongsTo(HotelGroupBooking::class, 'group_booking_id');
     }
 }

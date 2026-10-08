@@ -186,6 +186,7 @@ class Kernel extends HttpKernel
         'tenant.branch.required' => \App\Http\Middleware\RequireTenantAndBranch::class,
         'hotel.tenant' => \App\Http\Middleware\EnsureHotelTenant::class,
         'livestock.tenant' => \App\Http\Middleware\EnsureLivestockTenant::class,
+        'hotel.permission' => \App\Http\Middleware\EnsureHotelPermission::class,
         'demo.expired' => \App\Http\Middleware\BlockExpiredDemoUser::class,
         'demo.restrictions' => \App\Http\Middleware\DemoRestrictions::class,
         // Add any other custom middleware aliases here

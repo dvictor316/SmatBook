@@ -788,6 +788,7 @@ class UserController extends Controller
             'payroll.payroll.view', 'payroll.payroll.create', 'payroll.payroll.edit',
             'projects.projects.view', 'projects.projects.create', 'projects.projects.edit', 'projects.projects.delete',
             'tax.filings.view', 'tax.filings.create', 'tax.filings.edit',
+            'hotel.frontdesk.manage', 'hotel.cashier.manage', 'hotel.housekeeping.manage', 'hotel.maintenance.manage', 'hotel.night_audit.manage', 'hotel.commercial.manage',
             'approval_queue.approval_queue.view', 'approval_queue.approval_queue.edit',
             'period_close.period_close.view', 'period_close.period_close.execute',
             'activity_log.activity_log.view',

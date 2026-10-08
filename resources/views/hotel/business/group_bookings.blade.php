@@ -1,68 +1,11 @@
 @extends('layout.mainlayout')
-
 @section('content')
 @include('hotel.partials.pms-styles')
-@php
-    $isPaginator = $groups instanceof \Illuminate\Pagination\LengthAwarePaginator;
-    $groupRows = $isPaginator ? collect($groups->items()) : collect($groups);
-    $visibleGuests = $groupRows->sum(fn ($group) => (int) ($group->adults ?? 0) + (int) ($group->children ?? 0));
-    $visibleValue = $groupRows->sum(fn ($group) => (float) ($group->total ?? 0));
-@endphp
-<div class="page-wrapper">
-    <div class="content container-fluid">
-        <div class="hotel-type-page hotel-directory-page">
-            <div class="hotel-type-header">
-                <div>
-                    <span class="hotel-type-label"><i class="fe fe-user-check"></i> Group Sales</span>
-                    <h2>Group booking rooming list</h2>
-                    <p>Manage group arrivals with room assignment, availability checks, booking values, and print-ready lists.</p>
-                </div>
-                <div class="d-flex flex-wrap gap-2">
-                    <a href="{{ route('hotel.availability.index') }}" class="btn btn-primary"><i class="fas fa-search me-1"></i> Check Availability</a>
-                    <a href="{{ route('hotel.rooms.calendar') }}" class="btn btn-outline-primary"><i class="fas fa-calendar-alt me-1"></i> Room Calendar</a>
-                    <button type="button" class="btn btn-outline-dark" onclick="window.print()"><i class="fas fa-print me-1"></i> Print List</button>
-                </div>
-            </div>
-
-            <div class="hotel-ledger-strip">
-                <span>Groups: {{ $isPaginator ? $groups->total() : $groupRows->count() }}</span>
-                <span>Visible guests: {{ $visibleGuests }}</span>
-                <span>Visible value: {{ number_format($visibleValue, 2) }}</span>
-            </div>
-
-            <div class="hotel-directory-grid">
-                @forelse($groups as $group)
-                    <div class="hotel-directory-card">
-                        <div class="d-flex justify-content-between gap-2">
-                            <h5 class="mb-1">{{ $group->reservation_number }}</h5>
-                            <span class="hotel-status-chip">{{ ucfirst(str_replace('_', ' ', (string) $group->status)) }}</span>
-                        </div>
-                        <div class="text-muted small">{{ $group->customer?->customer_name ?? $group->customer?->name ?? 'N/A' }}</div>
-                        <hr>
-                        <div class="d-flex justify-content-between">
-                            <span>Adults: <strong>{{ $group->adults }}</strong></span>
-                            <span>Children: <strong>{{ $group->children }}</strong></span>
-                        </div>
-                        <div class="small text-muted mt-2">
-                            {{ optional($group->arrival_date)->format('d M Y') }} - {{ optional($group->departure_date)->format('d M Y') }}
-                        </div>
-                        <div class="mt-3">Total: <strong>{{ number_format((float) $group->total, 2) }}</strong></div>
-                        <div class="d-flex flex-wrap gap-2 mt-3">
-                            <a href="{{ route('hotel.reservations.show', $group) }}" class="btn btn-sm btn-primary"><i class="fas fa-folder-open me-1"></i> Open</a>
-                            <a href="{{ route('hotel.availability.index') }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-bed me-1"></i> Rooms</a>
-                        </div>
-                    </div>
-                @empty
-                    <div class="hotel-type-panel">
-                        <div class="hotel-type-panel-body text-muted">No group booking data found.</div>
-                    </div>
-                @endforelse
-            </div>
-
-            @if($isPaginator)
-                <div class="mt-3">{{ $groups->links() }}</div>
-            @endif
-        </div>
-    </div>
-</div>
+@php $visible=collect($groups->items()); @endphp
+<div class="page-wrapper"><div class="content container-fluid"><div class="hotel-type-page">
+    <div class="hotel-type-header"><div><span class="hotel-type-label"><i class="fe fe-users"></i> Group Sales</span><h2>Group masters and rooming lists</h2><p>Control room blocks, release dates, deposits, assigned rooms and linked individual reservations.</p></div><div class="d-flex gap-2"><a href="{{ route('hotel.rooms.calendar') }}" class="btn btn-outline-primary">Room Calendar</a><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#groupModal"><i class="fas fa-plus me-1"></i> New Group</button></div></div>
+    <div class="hotel-ledger-strip"><span>Groups: {{ $groups->total() }}</span><span>Visible rooms requested: {{ $visible->sum('rooms_requested') }}</span><span>Visible allocations: {{ $visible->sum('allocations_count') }}</span><span>Estimated value: {{ number_format((float)$visible->sum('estimated_total'),2) }}</span></div>
+    <div class="d-grid gap-3">@forelse($groups as $group)<section class="hotel-type-panel"><div class="hotel-type-panel-header d-flex justify-content-between align-items-center"><div><h5 class="mb-0">{{ $group->group_name }} <small class="text-muted">{{ $group->group_code }}</small></h5><small>{{ $group->arrival_date->format('d M Y') }} - {{ $group->departure_date->format('d M Y') }} | {{ $group->rooms_requested }} rooms | {{ $group->adults }} adults</small></div><span class="badge bg-primary">{{ ucfirst(str_replace('_',' ',$group->status)) }}</span></div><div class="hotel-type-panel-body"><div class="row g-3"><div class="col-lg-8"><div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Room Type</th><th>Rooms</th><th>Assigned Room</th><th>Guest</th><th>Rate</th><th>Status</th><th>Reservation</th></tr></thead><tbody>@forelse($group->allocations as $allocation)<tr><td>{{ $allocation->roomType?->name }}</td><td>{{ $allocation->rooms }}</td><td>{{ $allocation->room?->room_number ?? 'Type block' }}</td><td>{{ $allocation->guest_name ?: 'Rooming list pending' }}</td><td>{{ number_format((float)$allocation->nightly_rate,2) }}</td><td>{{ ucfirst($allocation->status) }}</td><td>@if($allocation->reservation)<a href="{{ route('hotel.reservations.show',$allocation->reservation) }}">{{ $allocation->reservation->reservation_number }}</a>@else-@endif</td></tr>@empty<tr><td colspan="7" class="text-muted">No allocations yet.</td></tr>@endforelse</tbody></table></div></div><div class="col-lg-4"><form method="POST" action="{{ route('hotel.group_bookings.allocations.store',$group) }}" class="border p-3 rounded">@csrf<h6>Add Room Allocation</h6><div class="mb-2"><label>Room Type</label><select name="room_type_id" class="form-select" required>@foreach($roomTypes as $type)<option value="{{ $type->id }}">{{ $type->name }}</option>@endforeach</select></div><div class="mb-2"><label>Assign Specific Room (optional)</label><select name="room_id" class="form-select"><option value="">Type-level block</option>@foreach($rooms as $room)<option value="{{ $room->id }}">{{ $room->room_number }} - {{ $room->type?->name }}</option>@endforeach</select></div><div class="row g-2"><div class="col-6"><label>Rooms</label><input type="number" min="1" name="rooms" value="1" class="form-control" required></div><div class="col-6"><label>Nightly Rate</label><input type="number" step="0.01" min="0" name="nightly_rate" class="form-control" required></div></div><div class="mt-2"><label>Guest Name</label><input name="guest_name" class="form-control"></div><div class="mt-2"><label>Notes</label><input name="notes" class="form-control"></div><button class="btn btn-primary w-100 mt-2">Add Allocation</button></form><form method="POST" action="{{ route('hotel.group_bookings.status',$group) }}" class="d-flex gap-2 mt-2">@csrf<select name="status" class="form-select">@foreach(['tentative','confirmed','in_house','completed','cancelled'] as $status)<option value="{{ $status }}" @selected($group->status===$status)>{{ ucfirst(str_replace('_',' ',$status)) }}</option>@endforeach</select><button class="btn btn-outline-dark">Update</button></form></div></div></div></section>@empty<div class="hotel-type-panel"><div class="hotel-type-panel-body text-muted p-4">No group masters created.</div></div>@endforelse</div><div class="mt-3">{{ $groups->links() }}</div>
+</div></div></div>
+<div class="modal fade" id="groupModal" tabindex="-1"><div class="modal-dialog modal-lg"><form method="POST" action="{{ route('hotel.group_bookings.store') }}" class="modal-content">@csrf<div class="modal-header"><h5 class="modal-title">Create Group Master</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="row g-3"><div class="col-md-8"><label>Group / Event Name</label><input name="group_name" class="form-control" required></div><div class="col-md-4"><label>Corporate Account</label><select name="corporate_account_id" class="form-select"><option value="">None</option>@foreach($corporateAccounts as $account)<option value="{{ $account->id }}">{{ $account->company_name }}</option>@endforeach</select></div><div class="col-md-4"><label>Arrival</label><input type="date" name="arrival_date" class="form-control" required></div><div class="col-md-4"><label>Departure</label><input type="date" name="departure_date" class="form-control" required></div><div class="col-md-4"><label>Release Date</label><input type="date" name="release_date" class="form-control"></div><div class="col-md-3"><label>Rooms Requested</label><input type="number" min="1" name="rooms_requested" value="1" class="form-control" required></div><div class="col-md-3"><label>Adults</label><input type="number" min="1" name="adults" value="1" class="form-control" required></div><div class="col-md-3"><label>Children</label><input type="number" min="0" name="children" value="0" class="form-control"></div><div class="col-md-3"><label>Booking Source</label><select name="booking_source_id" class="form-select"><option value="">Direct</option>@foreach($bookingSources as $source)<option value="{{ $source->id }}">{{ $source->name }}</option>@endforeach</select></div><div class="col-md-6"><label>Estimated Total</label><input type="number" step="0.01" min="0" name="estimated_total" value="0" class="form-control"></div><div class="col-md-6"><label>Deposit Required</label><input type="number" step="0.01" min="0" name="deposit_required" value="0" class="form-control"></div><div class="col-12"><label>Notes / Contract Terms</label><textarea name="notes" class="form-control"></textarea></div></div></div><div class="modal-footer"><button class="btn btn-primary">Create Group</button></div></form></div></div>
 @endsection

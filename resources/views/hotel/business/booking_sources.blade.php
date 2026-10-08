@@ -1,56 +1,16 @@
 @extends('layout.mainlayout')
-
 @section('content')
 @include('hotel.partials.pms-styles')
 @php
-    $maxBookings = max(1, (int) $sources->max('reservations_count'));
-    $totalBookings = (int) $sources->sum('reservations_count');
-    $totalValue = (float) $sources->sum('gross_value');
+    $counts=$performance->groupBy('booking_source_id')->map(fn($rows)=>(int)$rows->sum('reservations_count'));
+    $values=$performance->groupBy('booking_source_id')->map(fn($rows)=>(float)$rows->sum('gross_value'));
 @endphp
-<div class="page-wrapper">
-    <div class="content container-fluid">
-        <div class="hotel-type-page hotel-directory-page">
-            <div class="hotel-type-header">
-                <div>
-                    <span class="hotel-type-label"><i class="fe fe-link"></i> Channel Sales</span>
-                    <h2>Booking source performance</h2>
-                    <p>Review direct, OTA, corporate, and walk-in channels with fast access to reservations and hotel reports.</p>
-                </div>
-                <div class="d-flex flex-wrap gap-2">
-                    <a href="{{ route('hotel.reservations.index') }}" class="btn btn-primary"><i class="fas fa-book me-1"></i> Reservations</a>
-                    <a href="{{ route('hotel.reports.index') }}" class="btn btn-outline-primary"><i class="fas fa-chart-bar me-1"></i> Reports</a>
-                    <button type="button" class="btn btn-outline-dark" onclick="window.print()"><i class="fas fa-print me-1"></i> Print</button>
-                </div>
-            </div>
-
-            <div class="hotel-ledger-strip">
-                <span>Sources: {{ $sources->count() }}</span>
-                <span>Bookings: {{ $totalBookings }}</span>
-                <span>Gross value: {{ number_format($totalValue, 2) }}</span>
-            </div>
-
-            <div class="hotel-type-panel">
-                <div class="hotel-type-panel-body">
-                    @forelse($sources as $source)
-                        @php
-                            $width = round(((int) $source->reservations_count / $maxBookings) * 100);
-                            $share = $totalBookings > 0 ? round(((int) $source->reservations_count / $totalBookings) * 100) : 0;
-                        @endphp
-                        <div class="mb-4">
-                            <div class="d-flex flex-wrap justify-content-between gap-2">
-                                <strong>{{ ucfirst((string) $source->booking_source) }}</strong>
-                                <span>{{ $source->reservations_count }} bookings | {{ $share }}% share | {{ number_format((float) $source->gross_value, 2) }}</span>
-                            </div>
-                            <div class="progress mt-2" style="height: 12px;">
-                                <div class="progress-bar" style="width: {{ $width }}%"></div>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="text-muted">No booking source data found.</div>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<div class="page-wrapper"><div class="content container-fluid"><div class="hotel-type-page">
+    <div class="hotel-type-header"><div><span class="hotel-type-label"><i class="fe fe-link"></i> Distribution</span><h2>Managed booking sources</h2><p>Control direct, OTA, agent, corporate and GDS channels, commissions and settlement terms.</p></div><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#sourceModal"><i class="fas fa-plus me-1"></i> Add Source</button></div>
+    <div class="hotel-ledger-strip"><span>Configured: {{ $sources->count() }}</span><span>Active: {{ $sources->where('is_active',true)->count() }}</span><span>Bookings: {{ number_format($performance->sum('reservations_count')) }}</span><span>Gross value: {{ number_format((float)$performance->sum('gross_value'),2) }}</span></div>
+    <div class="hotel-type-panel"><div class="hotel-type-panel-body table-responsive"><table class="table hotel-type-table align-middle mb-0"><thead><tr><th>Source</th><th>Type</th><th>Commission</th><th>Settlement</th><th>Bookings</th><th>Gross Value</th><th>Contact</th><th>Status</th><th></th></tr></thead><tbody>
+    @forelse($sources as $source)<tr><td><strong>{{ $source->name }}</strong><br><small>{{ $source->code }}</small></td><td>{{ strtoupper($source->source_type) }}</td><td>{{ $source->commission_type==='none'?'None':number_format((float)$source->commission_value,2).($source->commission_type==='percent'?'%':' fixed') }}</td><td>{{ $source->settlement_days }} days</td><td>{{ number_format($counts[$source->id]??0) }}</td><td>{{ number_format($values[$source->id]??0,2) }}</td><td>{{ $source->contact_name ?: '-' }}<br><small>{{ $source->contact_email }}</small></td><td><span class="badge {{ $source->is_active?'bg-success':'bg-secondary' }}">{{ $source->is_active?'Active':'Inactive' }}</span></td><td><form method="POST" action="{{ route('hotel.booking_sources.toggle',$source) }}">@csrf<button class="btn btn-sm btn-outline-primary">{{ $source->is_active?'Disable':'Enable' }}</button></form></td></tr>@empty<tr><td colspan="9" class="text-muted p-4">Add managed booking sources so commissions and performance are no longer based on free text.</td></tr>@endforelse
+    </tbody></table></div></div>
+</div></div></div>
+<div class="modal fade" id="sourceModal" tabindex="-1"><div class="modal-dialog modal-lg"><form method="POST" action="{{ route('hotel.booking_sources.store') }}" class="modal-content">@csrf<div class="modal-header"><h5 class="modal-title">Add Booking Source</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="row g-3"><div class="col-md-4"><label>Code</label><input name="code" class="form-control" required></div><div class="col-md-8"><label>Name</label><input name="name" class="form-control" required></div><div class="col-md-4"><label>Type</label><select name="source_type" class="form-select">@foreach(['direct','ota','agent','gds','corporate','government','event','other'] as $v)<option value="{{ $v }}">{{ strtoupper($v) }}</option>@endforeach</select></div><div class="col-md-4"><label>Commission Type</label><select name="commission_type" class="form-select"><option value="none">None</option><option value="percent">Percent</option><option value="fixed">Fixed</option></select></div><div class="col-md-4"><label>Commission Value</label><input type="number" step="0.01" min="0" name="commission_value" value="0" class="form-control"></div><div class="col-md-4"><label>Settlement Days</label><input type="number" min="0" name="settlement_days" value="0" class="form-control"></div><div class="col-md-8"><label>Contact Name</label><input name="contact_name" class="form-control"></div><div class="col-md-6"><label>Email</label><input type="email" name="contact_email" class="form-control"></div><div class="col-md-6"><label>Phone</label><input name="contact_phone" class="form-control"></div></div></div><div class="modal-footer"><button class="btn btn-primary">Save Source</button></div></form></div></div>
 @endsection

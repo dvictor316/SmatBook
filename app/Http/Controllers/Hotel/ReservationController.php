@@ -14,6 +14,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use App\Support\HotelPropertyContext;
+use App\Models\Account;
+use App\Models\HotelBookingSource;
+use App\Models\HotelCorporateAccount;
+use App\Models\HotelDepositTransaction;
+use App\Services\Hotel\HotelDepositService;
+use App\Models\HotelRatePlan;
+use App\Models\HotelRateRestriction;
+use App\Models\HotelGuestProfile;
 
 class ReservationController extends Controller
 {
@@ -52,9 +61,7 @@ class ReservationController extends Controller
     public function create(Request $request)
     {
         $companyId = auth()->user()->company_id;
-        $property = HotelProperty::where('company_id', $companyId)
-            ->when(auth()->user()->branch_id, fn ($q) => $q->where('branch_id', auth()->user()->branch_id))
-            ->first();
+        $property = HotelPropertyContext::query((int) $companyId)->first();
         $roomTypes = $property ? HotelRoomType::where('company_id', $companyId)->where('property_id', $property->id)->where('is_active', true)->get() : collect();
 
         $arrivalDate = (string) $request->query('arrival_date', now()->toDateString());
@@ -66,8 +73,12 @@ class ReservationController extends Controller
         if ($property && $request->filled('arrival_date') && $request->filled('departure_date')) {
             $availableRooms = RoomAvailabilityService::availableRoomsForProperty((int) $property->id, $arrivalDate, $departureDate);
         }
+        $bookingSources = HotelBookingSource::query()->where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
+        $corporateAccounts = HotelCorporateAccount::query()->where('company_id', $companyId)->where('status', 'active')->orderBy('company_name')->get();
+        $paymentAccounts = Account::query()->where('company_id', $companyId)->where('type', Account::TYPE_ASSET)->where('is_active', true)->orderBy('name')->get();
+        $ratePlans = $property ? HotelRatePlan::query()->where('company_id', $companyId)->where('property_id', $property->id)->where('is_active', true)->orderBy('name')->get() : collect();
 
-        return view('hotel.reservations.create', compact('property', 'roomTypes', 'availableRooms', 'arrivalDate', 'departureDate', 'prefilledRoomTypeId', 'prefilledRoomId'));
+        return view('hotel.reservations.create', compact('property', 'roomTypes', 'availableRooms', 'arrivalDate', 'departureDate', 'prefilledRoomTypeId', 'prefilledRoomId', 'bookingSources', 'corporateAccounts', 'paymentAccounts', 'ratePlans'));
     }
 
     public function store(Request $request)
@@ -77,13 +88,19 @@ class ReservationController extends Controller
             'departure_date' => 'required|date|after:arrival_date',
             'room_type_id' => 'nullable|exists:hotel_room_types,id',
             'room_id' => 'nullable|exists:hotel_rooms,id',
-            'customer_id' => 'nullable|exists:customers,id',
+            'customer_id' => ['nullable', Rule::exists('customers', 'id')->where(fn ($query) => $query->where('company_id', auth()->user()->company_id))],
+            'rate_plan_id' => ['nullable', Rule::exists('hotel_rate_plans', 'id')->where(fn ($query) => $query->where('company_id', auth()->user()->company_id)->where('is_active', true))],
             'nights' => 'nullable|integer|min:1',
             'adults' => 'nullable|integer|min:1',
             'children' => 'nullable|integer|min:0',
             'nightly_rate' => 'nullable|numeric|min:0',
             'deposit_required' => 'nullable|numeric|min:0',
             'deposit_received' => 'nullable|numeric|min:0',
+            'deposit_payment_method' => 'nullable|in:cash,transfer,pos,card,other',
+            'deposit_account_id' => ['nullable', Rule::exists('accounts', 'id')->where(fn ($query) => $query->where('company_id', auth()->user()->company_id)->where('is_active', true))],
+            'deposit_reference' => 'nullable|string|max:100',
+            'booking_source_id' => ['nullable', Rule::exists('hotel_booking_sources', 'id')->where(fn ($query) => $query->where('company_id', auth()->user()->company_id)->where('is_active', true))],
+            'corporate_account_id' => ['nullable', Rule::exists('hotel_corporate_accounts', 'id')->where(fn ($query) => $query->where('company_id', auth()->user()->company_id)->where('status', 'active'))],
             'source' => 'nullable|string|max:120',
             'special_requests' => 'nullable|string|max:1000',
             'internal_notes' => 'nullable|string|max:1000',
@@ -101,6 +118,18 @@ class ReservationController extends Controller
         $subtotal = $nightlyRate * $nights;
         $depositRequired = (float) ($data['deposit_required'] ?? 0);
         $depositReceived = (float) ($data['deposit_received'] ?? 0);
+        if (! empty($data['customer_id']) && HotelGuestProfile::query()->where('company_id', auth()->user()->company_id)->where('customer_id', $data['customer_id'])->where('do_not_rent', true)->exists()) {
+            return back()->withErrors(['customer_id' => 'This guest profile is marked Do Not Rent. A manager must review the profile before booking.'])->withInput();
+        }
+        if (! empty($data['rate_plan_id'])) {
+            $restrictionError = $this->rateRestrictionError((int) $data['rate_plan_id'], $arrival, $departure, $nights);
+            if ($restrictionError) {
+                return back()->withErrors(['rate_plan_id' => $restrictionError])->withInput();
+            }
+        }
+        $source = ! empty($data['booking_source_id'])
+            ? HotelBookingSource::query()->where('company_id', auth()->user()->company_id)->findOrFail((int) $data['booking_source_id'])->name
+            : ($data['source'] ?? 'direct');
 
         $roomId = isset($data['room_id']) && (int) $data['room_id'] > 0 ? (int) $data['room_id'] : null;
         if ($roomId) {
@@ -114,7 +143,8 @@ class ReservationController extends Controller
             }
         }
 
-        $reservation = Reservation::create(array_merge($data, [
+        $reservation = DB::transaction(function () use ($data, $propertyId, $roomId, $nights, $nightlyRate, $subtotal, $depositRequired, $depositReceived, $source) {
+            $reservation = Reservation::create(array_merge($data, [
             'company_id' => auth()->user()->company_id,
             'property_id' => $propertyId,
             'reservation_number' => strtoupper(Str::random(8)),
@@ -126,14 +156,21 @@ class ReservationController extends Controller
             'subtotal' => $subtotal,
             'total' => $subtotal,
             'deposit_required' => $depositRequired,
-            'deposit_received' => $depositReceived,
-            'balance' => max(0, $subtotal - $depositReceived),
+            'deposit_received' => 0,
+            'balance' => $subtotal,
             'status' => 'reserved',
-            'source' => $data['source'] ?? 'direct',
+            'source' => $source,
             'special_requests' => $data['special_requests'] ?? null,
             'internal_notes' => $data['internal_notes'] ?? null,
             'created_by' => auth()->id(),
-        ]));
+            ]));
+
+            if ($depositReceived > 0) {
+                app(HotelDepositService::class)->receive($reservation, $depositReceived, $data['deposit_payment_method'] ?? 'cash', $data['deposit_account_id'] ?? null, $data['deposit_reference'] ?? null, 'Deposit received during reservation creation.');
+            }
+
+            return $reservation->fresh();
+        });
 
         HotelOperationalEvent::create([
             'company_id' => $reservation->company_id,
@@ -155,7 +192,7 @@ class ReservationController extends Controller
     {
         abort_unless($reservation->company_id == auth()->user()->company_id, 404);
 
-        $reservation->load(['customer', 'room', 'roomType']);
+        $reservation->load(['customer', 'room', 'roomType', 'bookingSource', 'corporateAccount', 'groupBooking']);
         $stay = Stay::query()
             ->where('company_id', $reservation->company_id)
             ->where('reservation_id', $reservation->id)
@@ -181,7 +218,10 @@ class ReservationController extends Controller
             ->orderByRaw('CAST(room_number AS UNSIGNED), room_number')
             ->get();
 
-        return view('hotel.reservations.show', compact('reservation', 'stay', 'events', 'availableRooms'));
+        $deposits = HotelDepositTransaction::query()->where('company_id', $reservation->company_id)->where('reservation_id', $reservation->id)->latest('id')->get();
+        $paymentAccounts = Account::query()->where('company_id', $reservation->company_id)->where('type', Account::TYPE_ASSET)->where('is_active', true)->orderBy('name')->get();
+
+        return view('hotel.reservations.show', compact('reservation', 'stay', 'events', 'availableRooms', 'deposits', 'paymentAccounts'));
     }
 
     public function update(Request $request, Reservation $reservation)
@@ -223,16 +263,25 @@ class ReservationController extends Controller
         $nights = max(1, $arrival->diffInDays($departure));
         $subtotal = round($nights * (float) $data['nightly_rate'], 2);
         $total = round($subtotal - (float) ($data['discount'] ?? 0) + (float) ($data['tax'] ?? 0) + (float) ($data['service_charge'] ?? 0) + (float) ($data['other_charges'] ?? 0), 2);
+        $targetDeposit = array_key_exists('deposit_received', $data) ? (float) $data['deposit_received'] : (float) $reservation->deposit_received;
+        unset($data['deposit_received']);
 
-        DB::transaction(function () use ($reservation, $data, $roomId, $room, $nights, $subtotal, $total) {
+        DB::transaction(function () use ($reservation, $data, $roomId, $room, $nights, $subtotal, $total, $targetDeposit) {
             $reservation->update(array_merge($data, [
                 'room_id' => $roomId,
                 'room_type_id' => $room?->room_type_id ?? $reservation->room_type_id,
                 'nights' => $nights,
                 'subtotal' => $subtotal,
                 'total' => max(0, $total),
-                'balance' => max(0, $total - (float) ($data['deposit_received'] ?? 0)),
+                'balance' => max(0, $total - (float) $reservation->deposit_received),
             ]));
+
+            $depositDelta = round($targetDeposit - (float) $reservation->deposit_received, 2);
+            if ($depositDelta > 0) {
+                app(HotelDepositService::class)->receive($reservation, $depositDelta, 'cash', null, null, 'Deposit adjustment during reservation amendment.');
+            } elseif ($depositDelta < 0) {
+                app(HotelDepositService::class)->refund($reservation, abs($depositDelta), null, 'AMEND-'.$reservation->reservation_number, 'Deposit reduction during reservation amendment.');
+            }
 
             $this->recordEvent($reservation, 'reservation.amended', 'Reservation amended', 'Dates, rates or guest requirements were updated.');
         });
@@ -272,6 +321,23 @@ class ReservationController extends Controller
         return back()->with('success', 'Reservation status updated.');
     }
 
+    private function rateRestrictionError(int $ratePlanId, $arrival, $departure, int $nights): ?string
+    {
+        $day = strtolower($arrival->format('D'));
+        $restrictions = HotelRateRestriction::query()->where('company_id', auth()->user()->company_id)->where('rate_plan_id', $ratePlanId)
+            ->whereDate('start_date', '<=', $departure->toDateString())->whereDate('end_date', '>=', $arrival->toDateString())->get();
+        foreach ($restrictions as $restriction) {
+            $days = array_filter(array_map('trim', explode(',', strtolower((string) $restriction->applicable_days))));
+            if ($days && ! in_array($day, $days, true)) { continue; }
+            if ($restriction->stop_sell) { return 'This rate plan is closed for sale during the selected dates.'; }
+            if ($restriction->closed_to_arrival && $arrival->betweenIncluded($restriction->start_date, $restriction->end_date)) { return 'Arrival is closed for this rate plan on the selected date.'; }
+            if ($restriction->closed_to_departure && $departure->betweenIncluded($restriction->start_date, $restriction->end_date)) { return 'Departure is closed for this rate plan on the selected date.'; }
+            if ($restriction->min_stay && $nights < $restriction->min_stay) { return 'This rate plan requires at least '.$restriction->min_stay.' nights.'; }
+            if ($restriction->max_stay && $nights > $restriction->max_stay) { return 'This rate plan permits no more than '.$restriction->max_stay.' nights.'; }
+        }
+        return null;
+    }
+
     private function assertReservationScope(Reservation $reservation): void
     {
         abort_unless((int) $reservation->company_id === (int) auth()->user()->company_id, 404);
@@ -298,12 +364,6 @@ class ReservationController extends Controller
     private function currentPropertyId(): ?int
     {
         $companyId = auth()->user()->company_id;
-        $branchId = auth()->user()->branch_id;
-
-        $property = HotelProperty::where('company_id', $companyId)
-            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
-            ->first();
-
-        return $property?->id;
+        return HotelPropertyContext::propertyId((int) $companyId);
     }
 }

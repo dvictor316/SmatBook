@@ -11,6 +11,8 @@ use App\Models\HotelOperationalEvent;
 use App\Models\HotelRoom;
 use App\Services\Hotel\HotelFolioService;
 use App\Support\LedgerService;
+use App\Services\Hotel\HotelDepositService;
+use App\Models\Account;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -80,26 +82,50 @@ class CheckInController extends Controller
         $folioItems = $selectedFolio
             ? \App\Models\FolioItem::query()->where('folio_id', $selectedFolio->id)->latest('id')->get()
             : collect();
+        $paymentAccounts = Account::query()->where('company_id', $companyId)->where('type', Account::TYPE_ASSET)->where('is_active', true)->orderBy('name')->get();
 
-        return view('hotel.checkout.index', compact('stays', 'selectedStay', 'selectedFolio', 'folioItems'));
+        return view('hotel.checkout.index', compact('stays', 'selectedStay', 'selectedFolio', 'folioItems', 'paymentAccounts'));
     }
 
     public function checkin(Reservation $reservation)
     {
         abort_unless($reservation->company_id == auth()->user()->company_id, 404);
 
-        if ($reservation->room_id) {
-            $room = HotelRoom::query()
-                ->where('company_id', $reservation->company_id)
-                ->find((int) $reservation->room_id);
-
-            if ($room && (string) $room->housekeeping_status === 'dirty' && !$this->canOverrideDirtyCheckin()) {
-                return back()->withErrors(['error' => 'Room Not Ready: selected room is still dirty. Complete housekeeping or use authorized override.']);
-            }
-        }
-
         DB::beginTransaction();
         try {
+            $reservation = Reservation::query()
+                ->where('company_id', auth()->user()->company_id)
+                ->lockForUpdate()
+                ->findOrFail($reservation->id);
+
+            if (! in_array((string) $reservation->status, ['reserved', 'confirmed'], true)) {
+                throw new \RuntimeException('Only a reserved or confirmed booking can be checked in.');
+            }
+            if (! $reservation->room_id) {
+                throw new \RuntimeException('Assign an available room before check-in.');
+            }
+            if (Stay::query()->where('company_id', $reservation->company_id)->where('reservation_id', $reservation->id)->where('status', 'checked_in')->exists()) {
+                throw new \RuntimeException('This reservation already has an active stay.');
+            }
+
+            $room = HotelRoom::query()
+                ->where('company_id', $reservation->company_id)
+                ->where('property_id', $reservation->property_id)
+                ->lockForUpdate()
+                ->findOrFail((int) $reservation->room_id);
+
+            if (! \App\Services\RoomAvailabilityService::isRoomAvailable(
+                $room->id,
+                $reservation->arrival_date->toDateString(),
+                $reservation->departure_date->toDateString(),
+                $reservation->id
+            )) {
+                throw new \RuntimeException('The assigned room is no longer available for this stay.');
+            }
+            if ((string) $room->housekeeping_status !== 'clean' && ! $this->canOverrideDirtyCheckin()) {
+                throw new \RuntimeException('Room Not Ready: housekeeping must mark the room clean before check-in.');
+            }
+
             $stay = Stay::create([
                 'company_id' => $reservation->company_id,
                 'property_id' => $reservation->property_id,
@@ -112,11 +138,7 @@ class CheckInController extends Controller
                 'status' => 'checked_in'
             ]);
 
-            if ($reservation->room_id) {
-                HotelRoom::where('id', $reservation->room_id)
-                    ->where('company_id', $reservation->company_id)
-                    ->update(['operational_status' => 'occupied']);
-            }
+            $room->update(['operational_status' => 'occupied']);
 
             $folio = GuestFolio::create([
                 'company_id' => $reservation->company_id,
@@ -126,6 +148,9 @@ class CheckInController extends Controller
                 'customer_id' => $reservation->customer_id,
                 'folio_number' => 'FOLIO-'.now()->format('Ymd').'-'. $stay->id,
                 'opening_deposit' => $reservation->deposit_received ?? 0,
+                'corporate_account_id' => $reservation->corporate_account_id,
+                'group_booking_id' => $reservation->group_booking_id,
+                'due_date' => $reservation->corporateAccount ? now()->addDays((int) $reservation->corporateAccount->payment_terms_days)->toDateString() : null,
                 'total_payments' => 0,
                 'total_charges' => 0,
                 'balance' => 0,
@@ -164,10 +189,13 @@ class CheckInController extends Controller
             'settlement_method' => 'nullable|in:cash,transfer,pos,split,corporate_credit',
             'paid_amount' => 'nullable|numeric|min:0',
             'deposit_account_id' => 'nullable|integer',
-            'allow_credit' => 'nullable|boolean',
+            'payment_account_id' => 'nullable|integer',
             'split.cash' => 'nullable|numeric|min:0',
             'split.transfer' => 'nullable|numeric|min:0',
             'split.pos' => 'nullable|numeric|min:0',
+            'split_accounts.cash' => 'nullable|integer',
+            'split_accounts.transfer' => 'nullable|integer',
+            'split_accounts.pos' => 'nullable|integer',
         ]);
 
         DB::beginTransaction();
@@ -210,13 +238,7 @@ class CheckInController extends Controller
 
                     [$branchId, $branchName] = $this->resolveBranchContext();
 
-                    LedgerService::postHotelFolioPayment(
-                        $depositItem,
-                        $folio,
-                        (int) ($validated['deposit_account_id'] ?? 0),
-                        $branchId,
-                        $branchName
-                    );
+                    app(HotelDepositService::class)->postApplication($depositItem, $folio);
 
                     $folio = $this->folioService->recalculate($folio);
                     $balance = round((float) ($folio->balance ?? 0), 2);
@@ -224,8 +246,11 @@ class CheckInController extends Controller
             }
 
             $settlementMethod = (string) ($validated['settlement_method'] ?? 'cash');
-            $allowCredit = (bool) ($validated['allow_credit'] ?? false);
             $paidAmount = round((float) ($validated['paid_amount'] ?? 0), 2);
+
+            if ($settlementMethod === 'corporate_credit') {
+                $paidAmount = 0.0;
+            }
 
             if ($settlementMethod === 'split') {
                 $split = $validated['split'] ?? [];
@@ -237,36 +262,46 @@ class CheckInController extends Controller
                 );
             }
 
+            if ($paidAmount > $balance) {
+                throw new \RuntimeException('Payment cannot exceed the outstanding folio balance. Record any excess separately as a guest advance.');
+            }
+
             if ($paidAmount > 0) {
-                $cashItem = $this->folioService->postPayment($folio, [
-                    'description' => 'Checkout settlement payment',
-                    'amount' => $paidAmount,
-                    'type' => 'payment',
-                    'service_code' => strtoupper($settlementMethod),
-                    'service_date' => now()->toDateString(),
-                    'source_type' => self::class,
-                    'source_id' => $stay->id,
-                    'payment_account_id' => (int) ($validated['deposit_account_id'] ?? 0) ?: null,
-                    'posting_key' => 'checkout:payment:' . $folio->id,
-                    'posted_by' => auth()->id(),
-                ]);
-
                 [$branchId, $branchName] = $this->resolveBranchContext();
-
-                LedgerService::postHotelFolioPayment(
-                    $cashItem,
-                    $folio,
-                    (int) ($validated['deposit_account_id'] ?? 0),
-                    $branchId,
-                    $branchName
-                );
+                $payments = $settlementMethod === 'split'
+                    ? collect($validated['split'] ?? [])->filter(fn ($amount) => (float) $amount > 0)
+                    : collect([$settlementMethod => $paidAmount]);
+                foreach ($payments as $method => $amount) {
+                    $accountId = $settlementMethod === 'split'
+                        ? (int) data_get($validated, 'split_accounts.'.$method, 0)
+                        : (int) ($validated['payment_account_id'] ?? $validated['deposit_account_id'] ?? 0);
+                    $cashItem = $this->folioService->postPayment($folio, [
+                        'description' => 'Checkout settlement - '.strtoupper((string) $method), 'amount' => (float) $amount,
+                        'type' => 'payment', 'service_code' => strtoupper((string) $method), 'service_date' => now()->toDateString(),
+                        'source_type' => self::class, 'source_id' => $stay->id, 'payment_account_id' => $accountId ?: null,
+                        'posting_key' => 'checkout:payment:'.$folio->id.':'.$method, 'posted_by' => auth()->id(),
+                    ]);
+                    LedgerService::postHotelFolioPayment($cashItem, $folio, $accountId ?: null, $branchId, $branchName);
+                }
             }
 
             $folio = $this->folioService->recalculate($folio);
             $balance = round((float) ($folio->balance ?? 0), 2);
 
-            if ($balance > 0 && !$allowCredit && $settlementMethod !== 'corporate_credit') {
-                throw new \RuntimeException('Outstanding folio balance remains. Complete settlement or enable credit checkout.');
+            if ($balance > 0 && $settlementMethod !== 'corporate_credit') {
+                throw new \RuntimeException('Outstanding folio balance remains. Complete settlement or use an approved corporate city-ledger account.');
+            }
+
+            if ($balance > 0 && $settlementMethod === 'corporate_credit') {
+                $corporate = $folio->corporateAccount;
+                if (! $corporate || $corporate->status !== 'active') {
+                    throw new \RuntimeException('Select an active corporate account before transferring a balance to city ledger.');
+                }
+                $existingExposure = (float) GuestFolio::query()->where('company_id', $folio->company_id)->where('corporate_account_id', $corporate->id)->where('id', '!=', $folio->id)->whereIn('status', ['open', 'city_ledger'])->sum('balance');
+                if ((float) $corporate->credit_limit > 0 && $existingExposure + $balance > (float) $corporate->credit_limit) {
+                    throw new \RuntimeException('Corporate credit limit would be exceeded by this checkout.');
+                }
+                $folio->due_date = now()->addDays((int) $corporate->payment_terms_days)->toDateString();
             }
 
             $folio->update([
@@ -322,13 +357,8 @@ class CheckInController extends Controller
 
     private function resolveBranchContext(): array
     {
-        $branchId = Auth::user()?->branch_id
-            ? (string) Auth::user()->branch_id
-            : (session('active_branch_id') ? (string) session('active_branch_id') : null);
-
-        $branchName = Auth::user()?->branch_name
-            ? (string) Auth::user()->branch_name
-            : (session('active_branch_name') ? (string) session('active_branch_name') : null);
+        $branchId = \App\Support\HotelPropertyContext::activeBranchId();
+        $branchName = \App\Support\HotelPropertyContext::activeBranchName();
 
         return [$branchId, $branchName];
     }

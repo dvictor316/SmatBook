@@ -11,6 +11,7 @@ use App\Models\Reservation;
 use App\Models\Stay;
 use App\Services\Hotel\NightAuditService;
 use Illuminate\Http\Request;
+use App\Support\HotelPropertyContext;
 
 class NightAuditController extends Controller
 {
@@ -110,13 +111,37 @@ class NightAuditController extends Controller
             return back()->withErrors(['audit_date' => 'Configure a hotel property for this branch before running night audit.']);
         }
         $auditDate = (string) ($validated['audit_date'] ?? now()->toDateString());
+        $force = (bool) ($validated['force'] ?? false);
+
+        $pendingArrivals = Reservation::query()
+            ->where('company_id', $companyId)
+            ->where('property_id', $propertyId)
+            ->whereDate('arrival_date', '<=', $auditDate)
+            ->whereIn('status', ['reserved', 'confirmed'])
+            ->count();
+        $overdueDepartures = Stay::query()
+            ->where('company_id', $companyId)
+            ->where('property_id', $propertyId)
+            ->where('status', 'checked_in')
+            ->whereDate('expected_checkout_at', '<=', $auditDate)
+            ->count();
+
+        if (! $force && ($pendingArrivals > 0 || $overdueDepartures > 0)) {
+            return back()->withErrors([
+                'audit_date' => "Resolve {$pendingArrivals} pending arrival(s) and {$overdueDepartures} overdue departure(s), or use an authorized force run.",
+            ]);
+        }
+
+        if ($force && ! $this->canForceNightAudit()) {
+            abort(403, 'Only a hotel manager or administrator can force a night audit.');
+        }
 
         $audit = $this->nightAuditService->run(
             $companyId,
             $propertyId,
             $auditDate,
             (int) auth()->id(),
-            (bool) ($validated['force'] ?? false)
+            $force
         );
 
         return back()->with('success', 'Night audit completed. Charges posted: ' . $audit->charges_posted . ', skipped: ' . $audit->charges_skipped . '.');
@@ -127,7 +152,7 @@ class NightAuditController extends Controller
         abort_unless((int) $audit->company_id === (int) auth()->user()->company_id, 404);
 
         $validated = $request->validate([
-            'reason' => 'nullable|string|max:255',
+            'reason' => 'required|string|min:10|max:255',
         ]);
 
         $this->nightAuditService->reopen($audit, (int) auth()->id(), $validated['reason'] ?? null);
@@ -138,18 +163,14 @@ class NightAuditController extends Controller
     private function currentPropertyId(): ?int
     {
         $companyId = (int) auth()->user()->company_id;
-        $branchId = auth()->user()->branch_id;
+        return HotelPropertyContext::propertyId($companyId);
+    }
 
-        $propertyId = HotelProperty::query()
-            ->where('company_id', $companyId)
-            ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
-            ->value('id');
+    private function canForceNightAudit(): bool
+    {
+        $role = strtolower((string) (auth()->user()->role ?? ''));
 
-        $propertyId = $propertyId ?: HotelProperty::query()
-            ->where('company_id', $companyId)
-            ->orderBy('id')
-            ->value('id');
-
-        return $propertyId ? (int) $propertyId : null;
+        return in_array($role, ['super_admin', 'administrator', 'admin', 'manager'], true)
+            || auth()->user()?->hasPermissionTo('hotel.night_audit.manage');
     }
 }

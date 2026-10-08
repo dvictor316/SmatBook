@@ -67,7 +67,7 @@
 @php
     $totalRooms = max(1, (int) $roomState->sum('total_count'));
     $occupiedRooms = (int) optional($roomState->firstWhere('status_name', 'occupied'))->total_count;
-    $occupancyRate = round(($occupiedRooms / $totalRooms) * 100);
+    $occupancyRate = (float) $kpis['occupancy_rate'];
     $dailyMax = max(1, (float) $dailyRevenue->max(fn ($row) => (float) $row->room_total + (float) $row->service_total));
     $serviceTotal = (float) $serviceRevenue->sum('total_amount');
     $paymentTotal = abs((float) $paymentRevenue->sum('total_amount'));
@@ -96,8 +96,12 @@
         <div class="report-kpis">
             <div class="report-kpi"><span>Room Revenue</span><strong>{{ number_format((float) $kpis['room_revenue_month'], 2) }}</strong><small>{{ number_format((float) $kpis['room_revenue_today'], 2) }} today</small></div>
             <div class="report-kpi"><span>Service Revenue</span><strong>{{ number_format((float) $kpis['service_revenue_month'], 2) }}</strong><small>{{ $serviceRevenue->sum('tx_count') }} service postings</small></div>
-            <div class="report-kpi"><span>Occupancy</span><strong>{{ $occupancyRate }}%</strong><small>{{ $occupiedRooms }} occupied of {{ $totalRooms }} rooms</small></div>
+            <div class="report-kpi"><span>Period Occupancy</span><strong>{{ number_format($occupancyRate,2) }}%</strong><small>{{ number_format($kpis['sold_room_nights']) }} of {{ number_format($kpis['available_room_nights']) }} room nights</small></div>
             <div class="report-kpi"><span>Open Exposure</span><strong>{{ number_format((float) $kpis['folio_balance'], 2) }}</strong><small>{{ $kpis['open_folios'] }} open folios</small></div>
+            <div class="report-kpi"><span>ADR</span><strong>{{ number_format((float)$kpis['adr'],2) }}</strong><small>Average daily room rate</small></div>
+            <div class="report-kpi"><span>RevPAR</span><strong>{{ number_format((float)$kpis['revpar'],2) }}</strong><small>Revenue per available room</small></div>
+            <div class="report-kpi"><span>Exceptions</span><strong>{{ $kpis['cancellations']+$kpis['no_shows'] }}</strong><small>{{ $kpis['cancellations'] }} cancelled | {{ $kpis['no_shows'] }} no-show</small></div>
+            <div class="report-kpi"><span>30-Day Pickup</span><strong>{{ $kpis['forward_bookings_30d'] }}</strong><small>Confirmed and reserved arrivals</small></div>
         </div>
 
         <div class="reports-grid">
@@ -174,6 +178,11 @@
                 <section class="report-card">
                     <div class="report-card__head"><h5>Cashier Trace</h5><span class="metric-pill">{{ number_format($paymentTotal, 2) }}</span></div>
                     <div class="report-card__body mini-list">@forelse($paymentRevenue as $row)<div class="mini-row"><div><strong>{{ strtoupper(str_replace('_', ' ', (string) $row->payment_code)) }}</strong><br><small>{{ $row->tx_count }} entries</small></div><span class="fw-bold">{{ number_format(abs((float) $row->total_amount), 2) }}</span></div>@empty<div class="text-muted">No cashier payments found for this period.</div>@endforelse</div>
+                </section>
+
+                <section class="report-card">
+                    <div class="report-card__head"><h5>Corporate Debtor Aging</h5><span class="metric-pill">City Ledger</span></div>
+                    <div class="report-card__body mini-list">@foreach(['current'=>'Current','1_30'=>'1-30 days','31_60'=>'31-60 days','61_90'=>'61-90 days','over_90'=>'Over 90 days'] as $key=>$name)<div class="mini-row"><strong>{{ $name }}</strong><span class="fw-bold {{ $key==='over_90'?'text-danger':'' }}">{{ number_format((float)$corporateAging[$key],2) }}</span></div>@endforeach</div>
                 </section>
 
                 <section class="report-card">

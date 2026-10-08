@@ -16,6 +16,7 @@ class Reservation extends Model
         'rate_plan_id', 'nightly_rate', 'subtotal', 'discount', 'tax', 'service_charge', 'other_charges', 'total',
         'deposit_required', 'deposit_received', 'balance', 'status', 'source', 'special_requests', 'internal_notes',
         'created_by', 'confirmed_by', 'cancelled_by', 'cancellation_reason', 'cancelled_at', 'no_show_at',
+        'booking_source_id', 'corporate_account_id', 'group_booking_id',
     ];
 
     protected $casts = [
@@ -44,4 +45,8 @@ class Reservation extends Model
     {
         return $this->hasOne(Stay::class);
     }
+
+    public function bookingSource() { return $this->belongsTo(HotelBookingSource::class, 'booking_source_id'); }
+    public function corporateAccount() { return $this->belongsTo(HotelCorporateAccount::class, 'corporate_account_id'); }
+    public function groupBooking() { return $this->belongsTo(HotelGroupBooking::class, 'group_booking_id'); }
 }

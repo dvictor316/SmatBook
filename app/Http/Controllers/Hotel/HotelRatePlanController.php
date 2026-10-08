@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\HotelProperty;
 use App\Models\HotelRatePlan;
 use App\Models\HotelRoomType;
+use App\Models\HotelRateRestriction;
+use App\Support\HotelPropertyContext;
 use Illuminate\Http\Request;
 
 class HotelRatePlanController extends Controller
@@ -13,10 +15,7 @@ class HotelRatePlanController extends Controller
     public function index(Request $request)
     {
         $companyId = (int) auth()->user()->company_id;
-        $propertyId = HotelProperty::query()
-            ->where('company_id', $companyId)
-            ->when(auth()->user()->branch_id, fn ($query) => $query->where('branch_id', auth()->user()->branch_id))
-            ->value('id');
+        $propertyId = HotelPropertyContext::propertyId($companyId);
 
         $plans = HotelRatePlan::query()
             ->with('roomType')
@@ -33,7 +32,10 @@ class HotelRatePlanController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('hotel.rate_plans.index', compact('plans', 'roomTypes', 'propertyId'));
+        $restrictions = HotelRateRestriction::query()->with('ratePlan')->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->orderByDesc('start_date')->limit(50)->get();
+
+        return view('hotel.rate_plans.index', compact('plans', 'roomTypes', 'propertyId', 'restrictions'));
     }
 
     public function store(Request $request)
@@ -51,10 +53,8 @@ class HotelRatePlanController extends Controller
             'meal_plan' => 'nullable|string|max:120',
         ]);
 
-        $propertyId = HotelProperty::query()
-            ->where('company_id', $companyId)
-            ->when(auth()->user()->branch_id, fn ($query) => $query->where('branch_id', auth()->user()->branch_id))
-            ->value('id');
+        $propertyId = HotelPropertyContext::propertyId($companyId);
+        abort_unless($propertyId, 422, 'No active hotel property is configured.');
 
         HotelRatePlan::create([
             'company_id' => $companyId,
@@ -94,5 +94,29 @@ class HotelRatePlanController extends Controller
         ]);
 
         return back()->with('success', 'Rate plan status updated.');
+    }
+
+    public function storeRestriction(Request $request)
+    {
+        $companyId = (int) auth()->user()->company_id;
+        $propertyId = HotelPropertyContext::propertyId($companyId);
+        abort_unless($propertyId, 422, 'No active hotel property is configured.');
+        $data = $request->validate([
+            'rate_plan_id' => 'required|integer|exists:hotel_rate_plans,id', 'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date', 'applicable_days' => 'nullable|string|max:30',
+            'min_stay' => 'nullable|integer|min:1|max:365', 'max_stay' => 'nullable|integer|min:1|max:365|gte:min_stay',
+            'closed_to_arrival' => 'nullable|boolean', 'closed_to_departure' => 'nullable|boolean', 'stop_sell' => 'nullable|boolean', 'notes' => 'nullable|string|max:1000',
+        ]);
+        abort_unless(HotelRatePlan::where('company_id', $companyId)->where('property_id', $propertyId)->whereKey($data['rate_plan_id'])->exists(), 404);
+        HotelRateRestriction::create([...$data, 'company_id' => $companyId, 'property_id' => $propertyId, 'created_by' => auth()->id(),
+            'closed_to_arrival' => $request->boolean('closed_to_arrival'), 'closed_to_departure' => $request->boolean('closed_to_departure'), 'stop_sell' => $request->boolean('stop_sell')]);
+        return back()->with('success', 'Rate restriction added.');
+    }
+
+    public function destroyRestriction(HotelRateRestriction $restriction)
+    {
+        abort_unless((int) $restriction->company_id === (int) auth()->user()->company_id, 404);
+        $restriction->delete();
+        return back()->with('success', 'Rate restriction removed.');
     }
 }

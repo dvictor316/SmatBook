@@ -100,8 +100,28 @@
                             @if($guest->latest_stay_id)
                                 <a href="{{ route('hotel.checkout.index', ['stay_id' => $guest->latest_stay_id]) }}" class="btn btn-sm btn-outline-dark">Checkout</a>
                             @endif
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#guestProfile{{ $guest->id }}">Profile & ID</button>
                         </div>
                     </div>
+                    @php $profile = $guest->hotel_profile; @endphp
+                    <div class="modal fade" id="guestProfile{{ $guest->id }}" tabindex="-1"><div class="modal-dialog modal-lg"><form method="POST" action="{{ route('hotel.guests.profile', $guest) }}" class="modal-content">@csrf
+                        <div class="modal-header"><h5 class="modal-title">{{ $fullName }} - Identity & Preferences</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                        <div class="modal-body"><div class="row g-3">
+                            <div class="col-md-4"><label class="form-label">Nationality</label><input name="nationality" value="{{ $profile?->nationality }}" class="form-control"></div>
+                            <div class="col-md-4"><label class="form-label">Date of Birth</label><input type="date" name="date_of_birth" value="{{ $profile?->date_of_birth?->toDateString() }}" class="form-control"></div>
+                            <div class="col-md-4"><label class="form-label">Gender</label><select name="gender" class="form-select"><option value="">Not recorded</option>@foreach(['female','male','non_binary','prefer_not_to_say'] as $value)<option value="{{ $value }}" @selected($profile?->gender === $value)>{{ ucwords(str_replace('_',' ',$value)) }}</option>@endforeach</select></div>
+                            <div class="col-md-4"><label class="form-label">ID Type</label><select name="id_type" class="form-select"><option value="">Select</option>@foreach(['passport','national_id','drivers_licence','residence_permit','other'] as $value)<option value="{{ $value }}" @selected($profile?->id_type === $value)>{{ ucwords(str_replace('_',' ',$value)) }}</option>@endforeach</select></div>
+                            <div class="col-md-4"><label class="form-label">ID Number</label><input name="id_number" value="{{ $profile?->id_number }}" class="form-control"></div>
+                            <div class="col-md-4"><label class="form-label">ID Expiry</label><input type="date" name="id_expiry_date" value="{{ $profile?->id_expiry_date?->toDateString() }}" class="form-control"></div>
+                            <div class="col-md-4"><label class="form-label">Issuing Country</label><input name="id_issuing_country" value="{{ $profile?->id_issuing_country }}" class="form-control"></div>
+                            <div class="col-md-4"><label class="form-label">Loyalty Number</label><input name="loyalty_number" value="{{ $profile?->loyalty_number }}" class="form-control"></div>
+                            <div class="col-md-4"><label class="form-label">Guest Tier</label><select name="vip_status" class="form-select">@foreach(['standard','silver','gold','platinum','vip'] as $value)<option value="{{ $value }}" @selected(($profile?->vip_status ?? 'standard') === $value)>{{ ucfirst($value) }}</option>@endforeach</select></div>
+                            <div class="col-md-6"><label class="form-label">Preferences</label><textarea name="preferences" class="form-control">{{ $profile?->preferences }}</textarea></div>
+                            <div class="col-md-6"><label class="form-label">Allergies / Safety Alerts</label><textarea name="allergies" class="form-control">{{ $profile?->allergies }}</textarea></div>
+                            <div class="col-md-4"><label><input type="checkbox" name="do_not_rent" value="1" @checked($profile?->do_not_rent)> Do not rent</label></div>
+                            <div class="col-md-8"><input name="do_not_rent_reason" value="{{ $profile?->do_not_rent_reason }}" class="form-control" placeholder="Reason when do-not-rent is selected"></div>
+                        </div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary">Save Profile</button></div>
+                    </form></div></div>
                 @empty
                     <div class="p-4 text-muted">No hotel guests found.</div>
                 @endforelse

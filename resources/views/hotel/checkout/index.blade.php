@@ -82,7 +82,8 @@
                             </div>
                             <div class="row g-3">
                                 <div class="col-md-6"><label class="form-label">Amount Paid</label><input type="number" step="0.01" min="0" name="paid_amount" value="{{ number_format((float) max($selectedFolio?->balance ?? 0, 0), 2, '.', '') }}" class="form-control" required></div>
-                                <div class="col-md-6"><label class="form-label">Reference</label><input type="text" class="form-control" placeholder="Optional payment reference"></div>
+                                <div class="col-md-6"><label class="form-label">Deposit Account</label><select name="payment_account_id" class="form-select"><option value="">Automatic cash clearing</option>@foreach($paymentAccounts as $account)<option value="{{ $account->id }}">{{ $account->code }} - {{ $account->name }}</option>@endforeach</select></div>
+                                <div class="col-12" id="splitFields" style="display:none"><div class="row g-2 border rounded p-2"><div class="col-md-4"><label>Cash Amount</label><input type="number" step="0.01" min="0" name="split[cash]" value="0" class="form-control"><select name="split_accounts[cash]" class="form-select mt-1"><option value="">Cash clearing</option>@foreach($paymentAccounts as $account)<option value="{{ $account->id }}">{{ $account->name }}</option>@endforeach</select></div><div class="col-md-4"><label>Transfer Amount</label><input type="number" step="0.01" min="0" name="split[transfer]" value="0" class="form-control"><select name="split_accounts[transfer]" class="form-select mt-1"><option value="">Transfer clearing</option>@foreach($paymentAccounts as $account)<option value="{{ $account->id }}">{{ $account->name }}</option>@endforeach</select></div><div class="col-md-4"><label>POS Amount</label><input type="number" step="0.01" min="0" name="split[pos]" value="0" class="form-control"><select name="split_accounts[pos]" class="form-select mt-1"><option value="">POS clearing</option>@foreach($paymentAccounts as $account)<option value="{{ $account->id }}">{{ $account->name }}</option>@endforeach</select></div></div></div>
                                 <div class="col-12"><button class="btn btn-warning btn-lg">Settle and Complete Checkout</button></div>
                             </div>
                         </form>
@@ -112,4 +113,8 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('script')
+<script>document.querySelectorAll('input[name="settlement_method"]').forEach(function(input){input.addEventListener('change',function(){document.getElementById('splitFields').style.display=input.value==='split'&&input.checked?'block':'none';});});</script>
 @endsection

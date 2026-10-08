@@ -12,6 +12,7 @@ use App\Models\HotelRoom;
 use App\Models\HotelRoomType;
 use App\Models\Reservation;
 use App\Models\Stay;
+use App\Models\HotelGuestProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -722,6 +723,8 @@ class HotelDashboardController extends Controller
                     ->latest('id')
                     ->value('id');
 
+                $guest->hotel_profile = HotelGuestProfile::query()->where('company_id', $companyId)->where('customer_id', $guest->id)->first();
+
                 return $guest;
             });
         }
@@ -746,6 +749,21 @@ class HotelDashboardController extends Controller
         return back()->with('success', 'Guest note updated.');
     }
 
+    public function updateGuestProfile(Request $request, Customer $customer)
+    {
+        $companyId = (int) auth()->user()->company_id;
+        abort_unless((int) $customer->company_id === $companyId, 404);
+        $data = $request->validate([
+            'nationality' => 'nullable|string|max:100', 'date_of_birth' => 'nullable|date|before:today', 'gender' => 'nullable|in:female,male,non_binary,prefer_not_to_say',
+            'id_type' => 'nullable|in:passport,national_id,drivers_licence,residence_permit,other', 'id_number' => 'nullable|string|max:100',
+            'id_issuing_country' => 'nullable|string|max:100', 'id_expiry_date' => 'nullable|date', 'preferences' => 'nullable|string|max:3000',
+            'allergies' => 'nullable|string|max:2000', 'loyalty_number' => 'nullable|string|max:80', 'vip_status' => 'required|in:standard,silver,gold,platinum,vip',
+            'do_not_rent' => 'nullable|boolean', 'do_not_rent_reason' => 'nullable|string|max:2000|required_if:do_not_rent,1',
+        ]);
+        HotelGuestProfile::updateOrCreate(['company_id' => $companyId, 'customer_id' => $customer->id], [...$data, 'do_not_rent' => $request->boolean('do_not_rent'), 'updated_by' => auth()->id()]);
+        return back()->with('success', 'Guest identity and preference profile updated.');
+    }
+
     public function deposits(Request $request)
     {
         $companyId = (int) auth()->user()->company_id;
@@ -767,7 +785,7 @@ class HotelDashboardController extends Controller
     {
         $companyId = (int) auth()->user()->company_id;
         $property = HotelProperty::where('company_id', $companyId)
-            ->when(auth()->user()->branch_id, fn($q) => $q->where('branch_id', auth()->user()->branch_id))
+            ->when(\App\Support\HotelPropertyContext::activeBranchId(), fn($q, $branchId) => $q->where('branch_id', $branchId))
             ->first();
 
         return view('hotel.settings.index', compact('property'));
@@ -806,7 +824,7 @@ class HotelDashboardController extends Controller
             }
         }
 
-        $branchId = auth()->user()->branch_id;
+        $branchId = \App\Support\HotelPropertyContext::activeBranchId();
 
         $property = HotelProperty::where('company_id', $companyId)
             ->when($branchId, fn($q) => $q->where('branch_id', $branchId))

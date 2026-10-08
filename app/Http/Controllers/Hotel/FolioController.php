@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\FolioItem;
 use App\Models\GuestFolio;
+use App\Models\Transaction;
 use App\Services\Hotel\HotelFolioService;
 use App\Support\LedgerService;
 use Illuminate\Http\Request;
@@ -20,16 +21,10 @@ class FolioController extends Controller
 
     public function index()
     {
+        $propertyId = \App\Support\HotelPropertyContext::propertyId((int) auth()->user()->company_id);
         $folios = GuestFolio::with(['customer', 'stay.room'])
             ->where('company_id', auth()->user()->company_id)
-            ->when(auth()->user()->branch_id, function ($q) {
-                $propertyId = \App\Models\HotelProperty::where('company_id', auth()->user()->company_id)
-                    ->where('branch_id', auth()->user()->branch_id)
-                    ->value('id');
-                if ($propertyId) {
-                    $q->where('property_id', $propertyId);
-                }
-            })
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->latest('id')
             ->paginate(20);
 
@@ -65,8 +60,9 @@ class FolioController extends Controller
             ->where('type', Account::TYPE_ASSET)
             ->orderBy('name')
             ->get(['id', 'code', 'name']);
+        $relatedFolios = GuestFolio::query()->where('company_id', $folio->company_id)->where('stay_id', $folio->stay_id)->where('id', '!=', $folio->id)->whereIn('status', ['open', 'city_ledger'])->orderBy('id')->get();
 
-        return view('hotel.folios.show', ['folio' => $folio, 'items' => $ledgerItems, 'paymentAccounts' => $paymentAccounts]);
+        return view('hotel.folios.show', compact('folio', 'paymentAccounts', 'relatedFolios') + ['items' => $ledgerItems]);
     }
 
     public function storeItem(Request $request, GuestFolio $folio)
@@ -183,6 +179,70 @@ class FolioController extends Controller
         });
 
         return redirect()->route('hotel.folios.items.receipt', ['item' => $item->id, 'print' => 1])->with('success', 'Payment posted and ledger updated.');
+    }
+
+    public function postRefund(Request $request, GuestFolio $folio)
+    {
+        $this->assertOpenFolio($folio);
+        $companyId = (int) auth()->user()->company_id;
+        $data = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'payment_account_id' => ['required', 'integer', Rule::exists('accounts', 'id')->where(fn ($query) => $query->where('company_id', $companyId)->where('is_active', true)->where('type', Account::TYPE_ASSET))],
+            'reference' => 'required|string|max:120', 'reason' => 'required|string|max:500',
+        ]);
+        $refundable = max(0, (float) $folio->total_payments);
+        abort_if((float) $data['amount'] > $refundable, 422, 'Refund cannot exceed total payments on this folio.');
+
+        DB::transaction(function () use ($folio, $data, $companyId) {
+            $item = FolioItem::create([
+                'company_id' => $folio->company_id, 'property_id' => $folio->property_id, 'folio_id' => $folio->id,
+                'stay_id' => $folio->stay_id, 'reservation_id' => $folio->reservation_id, 'description' => 'Refund: '.$data['reason'],
+                'amount' => round((float) $data['amount'], 2), 'quantity' => 1, 'unit_price' => round((float) $data['amount'], 2),
+                'type' => 'refund', 'service_code' => 'REFUND', 'service_date' => now()->toDateString(), 'payment_account_id' => $data['payment_account_id'],
+                'source_type' => self::class, 'source_id' => $folio->id, 'posting_key' => 'refund:'.$folio->id.':'.$data['reference'],
+                'posted_by' => auth()->id(), 'meta' => ['reference' => $data['reference'], 'reason' => $data['reason']],
+            ]);
+            $cash = Account::withoutGlobalScopes()->where('company_id', $companyId)->findOrFail((int) $data['payment_account_id']);
+            $receivable = Account::withoutGlobalScopes()->firstOrCreate(['company_id' => $companyId, 'code' => 'AUTO-AST-AR'], ['name' => 'Accounts Receivable', 'type' => Account::TYPE_ASSET, 'sub_type' => 'Accounts Receivable', 'opening_balance' => 0, 'current_balance' => 0, 'is_active' => true, 'user_id' => auth()->id()]);
+            $base = ['company_id' => $companyId, 'branch_id' => \App\Support\HotelPropertyContext::activeBranchId(), 'branch_name' => \App\Support\HotelPropertyContext::activeBranchName(), 'transaction_date' => now()->toDateString(), 'reference' => $data['reference'], 'description' => $item->description, 'transaction_type' => Transaction::TYPE_PAYMENT, 'related_id' => $item->id, 'related_type' => FolioItem::class, 'user_id' => auth()->id()];
+            Transaction::create([...$base, 'account_id' => $receivable->id, 'debit' => $item->amount, 'credit' => 0]);
+            Transaction::create([...$base, 'account_id' => $cash->id, 'debit' => 0, 'credit' => $item->amount]);
+            $this->folioService->recalculate($folio->fresh());
+        });
+
+        return back()->with('success', 'Guest refund posted and folio balance updated.');
+    }
+
+    public function createSubFolio(Request $request, GuestFolio $folio)
+    {
+        $this->assertOpenFolio($folio);
+        $data = $request->validate(['folio_label' => 'required|string|max:80']);
+        $sequence = GuestFolio::query()->where('company_id', $folio->company_id)->where('stay_id', $folio->stay_id)->count() + 1;
+        $child = GuestFolio::create([
+            'company_id' => $folio->company_id, 'property_id' => $folio->property_id, 'stay_id' => $folio->stay_id,
+            'reservation_id' => $folio->reservation_id, 'customer_id' => $folio->customer_id,
+            'corporate_account_id' => $folio->corporate_account_id, 'group_booking_id' => $folio->group_booking_id,
+            'folio_number' => $folio->folio_number.'-'.$sequence, 'folio_label' => $data['folio_label'], 'status' => 'open',
+        ]);
+
+        return redirect()->route('hotel.folios.show', $child)->with('success', 'Additional folio window created.');
+    }
+
+    public function transferItem(Request $request, FolioItem $item)
+    {
+        abort_unless((int) $item->company_id === (int) auth()->user()->company_id, 404);
+        abort_if(in_array((string) $item->type, ['payment', 'deposit_applied', 'refund'], true), 422, 'Payments and refunds cannot be moved between folios.');
+        $source = $item->folio;
+        $data = $request->validate(['target_folio_id' => ['required', 'integer', Rule::exists('guest_folios', 'id')->where(fn ($query) => $query->where('company_id', $item->company_id)->where('stay_id', $source->stay_id)->whereIn('status', ['open', 'city_ledger']))]]);
+        abort_if((int) $data['target_folio_id'] === (int) $source->id, 422, 'Select a different folio.');
+        DB::transaction(function () use ($item, $source, $data) {
+            $target = GuestFolio::query()->where('company_id', $item->company_id)->lockForUpdate()->findOrFail((int) $data['target_folio_id']);
+            $item->update(['folio_id' => $target->id]);
+            $this->folioService->recalculate($source->fresh());
+            $this->folioService->recalculate($target->fresh());
+        });
+
+        return back()->with('success', 'Charge transferred to the selected folio window.');
     }
 
     public function close(GuestFolio $folio)

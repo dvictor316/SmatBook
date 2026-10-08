@@ -1,76 +1,14 @@
 @extends('layout.mainlayout')
-
 @section('content')
 @include('hotel.partials.pms-styles')
-@php
-    $isPaginator = $cityLedgers instanceof \Illuminate\Pagination\LengthAwarePaginator;
-    $ledgerRows = $isPaginator ? collect($cityLedgers->items()) : collect($cityLedgers);
-    $visibleCharges = $ledgerRows->sum(fn ($folio) => (float) ($folio->total_charges ?? 0));
-    $visiblePayments = $ledgerRows->sum(fn ($folio) => (float) ($folio->total_payments ?? 0));
-    $visibleBalance = $ledgerRows->sum(fn ($folio) => (float) ($folio->balance ?? 0));
-@endphp
-<div class="page-wrapper">
-    <div class="content container-fluid">
-        <div class="hotel-type-page hotel-ledger-page">
-            <div class="hotel-type-header">
-                <div>
-                    <span class="hotel-type-label"><i class="fe fe-briefcase"></i> Corporate Ledger</span>
-                    <h2>Corporate account ledger</h2>
-                    <p>Track city-ledger folios, outstanding balances, payments, and report actions for company accounts.</p>
-                </div>
-                <div class="d-flex flex-wrap gap-2">
-                    <button type="button" class="btn btn-outline-dark" onclick="window.print()"><i class="fas fa-print me-1"></i> Print Ledger</button>
-                    <a href="{{ route('hotel.folios.index') }}" class="btn btn-primary"><i class="fas fa-file-invoice me-1"></i> Guest Folios</a>
-                    <a href="{{ route('general-ledger', ['module' => 'hotel']) }}" class="btn btn-outline-primary"><i class="fas fa-chart-line me-1"></i> Financial Report</a>
-                </div>
-            </div>
-
-            <div class="hotel-ledger-strip">
-                <span>Accounts: {{ $isPaginator ? $cityLedgers->total() : $ledgerRows->count() }}</span>
-                <span>Visible charges: {{ number_format($visibleCharges, 2) }}</span>
-                <span>Visible payments: {{ number_format($visiblePayments, 2) }}</span>
-                <span>Visible balance: {{ number_format($visibleBalance, 2) }}</span>
-            </div>
-
-            <div class="hotel-type-panel">
-                <div class="hotel-type-panel-body table-responsive">
-                    <table class="table hotel-type-table align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>Company</th>
-                                <th>Folio No</th>
-                                <th>Total Charges</th>
-                                <th>Total Payments</th>
-                                <th>Outstanding</th>
-                                <th class="text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($cityLedgers as $folio)
-                                <tr>
-                                    <td>{{ $folio->customer?->customer_name ?? $folio->customer?->name ?? 'N/A' }}</td>
-                                    <td><strong>{{ $folio->folio_number }}</strong></td>
-                                    <td>{{ number_format((float) $folio->total_charges, 2) }}</td>
-                                    <td>{{ number_format((float) $folio->total_payments, 2) }}</td>
-                                    <td><span class="hotel-status-chip {{ (float) $folio->balance > 0 ? 'red' : 'green' }}">{{ number_format((float) $folio->balance, 2) }}</span></td>
-                                    <td class="text-end">
-                                        <a href="{{ route('hotel.folios.show', $folio) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-folder-open me-1"></i> Open Folio</a>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="6" class="text-muted">No corporate account activity found.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            @if($isPaginator)
-                <div class="mt-3">{{ $cityLedgers->links() }}</div>
-            @endif
-        </div>
-    </div>
-</div>
+@php $rows=collect($accounts->items()); @endphp
+<div class="page-wrapper"><div class="content container-fluid"><div class="hotel-type-page">
+    <div class="hotel-type-header"><div><span class="hotel-type-label"><i class="fe fe-briefcase"></i> Corporate Sales</span><h2>Corporate accounts and city ledger</h2><p>Manage negotiated business, credit limits, payment terms, outstanding folios and billing contacts.</p></div><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#corporateModal"><i class="fas fa-plus me-1"></i> New Corporate Account</button></div>
+    <div class="hotel-ledger-strip"><span>Accounts: {{ $accounts->total() }}</span><span>Active: {{ $rows->where('status','active')->count() }}</span><span>Visible credit: {{ number_format((float)$rows->sum('credit_limit'),2) }}</span><span>Visible outstanding: {{ number_format((float)$rows->sum('outstanding_balance'),2) }}</span></div>
+    <form class="hotel-type-panel mb-3"><div class="hotel-type-panel-body row g-2"><div class="col-md-7"><input name="q" value="{{ request('q') }}" class="form-control" placeholder="Company, code or billing email"></div><div class="col-md-3"><select name="status" class="form-select"><option value="">All statuses</option><option value="active" @selected(request('status')==='active')>Active</option><option value="suspended" @selected(request('status')==='suspended')>Suspended</option></select></div><div class="col-md-2"><button class="btn btn-dark w-100">Filter</button></div></div></form>
+    <div class="hotel-type-panel mb-3"><div class="hotel-type-panel-body table-responsive"><table class="table hotel-type-table align-middle mb-0"><thead><tr><th>Company</th><th>Billing</th><th>Terms</th><th>Credit Limit</th><th>Outstanding</th><th>Usage</th><th>Status</th><th></th></tr></thead><tbody>@forelse($accounts as $account)<tr><td><strong>{{ $account->company_name }}</strong><br><small>{{ $account->account_code }} @if($account->tax_id) | {{ $account->tax_id }} @endif</small></td><td>{{ $account->billing_contact ?: '-' }}<br><small>{{ $account->billing_email }}</small></td><td>{{ $account->payment_terms_days }} days<br><small>{{ number_format((float)$account->negotiated_discount_percent,2) }}% negotiated discount</small></td><td>{{ number_format((float)$account->credit_limit,2) }}</td><td class="{{ (float)$account->outstanding_balance > (float)$account->credit_limit && (float)$account->credit_limit>0?'text-danger fw-bold':'' }}">{{ number_format((float)$account->outstanding_balance,2) }}</td><td>{{ $account->reservations_count }} reservations<br><small>{{ $account->folios_count }} folios</small></td><td><span class="badge {{ $account->status==='active'?'bg-success':'bg-secondary' }}">{{ ucfirst($account->status) }}</span></td><td><form method="POST" action="{{ route('hotel.corporate_accounts.toggle',$account) }}">@csrf<button class="btn btn-sm btn-outline-primary">{{ $account->status==='active'?'Suspend':'Activate' }}</button></form></td></tr>@empty<tr><td colspan="8" class="text-muted p-4">No corporate accounts configured.</td></tr>@endforelse</tbody></table></div></div>
+    <div class="mb-3">{{ $accounts->links() }}</div>
+    <div class="hotel-type-panel"><div class="hotel-type-panel-header"><h5 class="mb-0">City-Ledger Folios</h5></div><div class="hotel-type-panel-body table-responsive"><table class="table hotel-type-table mb-0"><thead><tr><th>Account / Guest</th><th>Folio</th><th>Due</th><th>Charges</th><th>Payments</th><th>Outstanding</th><th></th></tr></thead><tbody>@forelse($cityLedgers as $folio)<tr><td>{{ $folio->corporateAccount?->company_name ?? $folio->customer?->customer_name ?? 'Unassigned' }}</td><td>{{ $folio->folio_number }}</td><td>{{ optional($folio->due_date)->format('d M Y') ?? 'Not set' }}</td><td>{{ number_format((float)$folio->total_charges,2) }}</td><td>{{ number_format((float)$folio->total_payments,2) }}</td><td>{{ number_format((float)$folio->balance,2) }}</td><td><a href="{{ route('hotel.folios.show',$folio) }}" class="btn btn-sm btn-outline-primary">Open</a></td></tr>@empty<tr><td colspan="7" class="text-muted">No city-ledger folios.</td></tr>@endforelse</tbody></table></div></div>
+</div></div></div>
+<div class="modal fade" id="corporateModal" tabindex="-1"><div class="modal-dialog modal-lg"><form method="POST" action="{{ route('hotel.corporate_accounts.store') }}" class="modal-content">@csrf<div class="modal-header"><h5 class="modal-title">New Corporate Account</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="row g-3"><div class="col-md-4"><label>Account Code</label><input name="account_code" class="form-control" required></div><div class="col-md-8"><label>Company Name</label><input name="company_name" class="form-control" required></div><div class="col-md-4"><label>Tax ID</label><input name="tax_id" class="form-control"></div><div class="col-md-4"><label>Billing Contact</label><input name="billing_contact" class="form-control"></div><div class="col-md-4"><label>Billing Phone</label><input name="billing_phone" class="form-control"></div><div class="col-md-6"><label>Billing Email</label><input type="email" name="billing_email" class="form-control"></div><div class="col-md-6"><label>Billing Address</label><input name="billing_address" class="form-control"></div><div class="col-md-4"><label>Credit Limit</label><input type="number" step="0.01" min="0" name="credit_limit" value="0" class="form-control" required></div><div class="col-md-4"><label>Payment Terms (days)</label><input type="number" min="0" max="365" name="payment_terms_days" value="30" class="form-control" required></div><div class="col-md-4"><label>Negotiated Discount %</label><input type="number" step="0.01" min="0" max="100" name="negotiated_discount_percent" value="0" class="form-control"></div><div class="col-12"><label>Notes</label><textarea name="notes" class="form-control"></textarea></div></div></div><div class="modal-footer"><button class="btn btn-primary">Create Account</button></div></form></div></div>
 @endsection

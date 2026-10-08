@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\HotelRoomType;
 use App\Models\HotelProperty;
 use Illuminate\Support\Facades\Auth;
+use App\Support\HotelPropertyContext;
 
 class HotelRoomTypeController extends Controller
 {
@@ -17,9 +18,7 @@ class HotelRoomTypeController extends Controller
     public function index()
     {
         $companyId = Auth::user()->company_id;
-        $propertyId = HotelProperty::where('company_id', $companyId)
-            ->when(Auth::user()->branch_id, fn($q) => $q->where('branch_id', Auth::user()->branch_id))
-            ->value('id');
+        $propertyId = HotelPropertyContext::propertyId((int) $companyId);
 
         $types = HotelRoomType::where('company_id', $companyId)
             ->when($propertyId, fn($q) => $q->where('property_id', $propertyId))
@@ -30,9 +29,7 @@ class HotelRoomTypeController extends Controller
     public function create()
     {
         $companyId = Auth::user()->company_id;
-        $properties = HotelProperty::where('company_id', $companyId)
-            ->when(Auth::user()->branch_id, fn($q) => $q->where('branch_id', Auth::user()->branch_id))
-            ->get();
+        $properties = HotelPropertyContext::query((int) $companyId)->get();
 
         return view('hotel.room_types.create', compact('properties'));
     }
@@ -52,6 +49,9 @@ class HotelRoomTypeController extends Controller
             'max_occupancy' => 'nullable|integer|min:0',
             'base_rate' => 'nullable|numeric|min:0',
         ]);
+
+        $data['property_id'] = $data['property_id'] ?: HotelPropertyContext::propertyId((int) $companyId);
+        abort_unless($data['property_id'] && HotelPropertyContext::query((int) $companyId)->whereKey($data['property_id'])->exists(), 422, 'Select a hotel property for this room type.');
 
         $data['company_id'] = $companyId;
         HotelRoomType::create($data);

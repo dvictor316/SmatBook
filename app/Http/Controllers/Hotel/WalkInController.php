@@ -20,10 +20,7 @@ class WalkInController extends Controller
     public function create()
     {
         $companyId = (int) auth()->user()->company_id;
-        $property = HotelProperty::query()
-            ->where('company_id', $companyId)
-            ->when(auth()->user()->branch_id, fn($q) => $q->where('branch_id', auth()->user()->branch_id))
-            ->first();
+        $property = \App\Support\HotelPropertyContext::query($companyId)->first();
 
         $rooms = HotelRoom::query()
             ->with('type')
@@ -31,6 +28,7 @@ class WalkInController extends Controller
             ->when($property?->id, fn ($q) => $q->where('property_id', $property->id))
             ->where('is_active', true)
             ->where('operational_status', 'available')
+            ->where('housekeeping_status', 'clean')
             ->orderBy('room_number')
             ->get();
 
@@ -71,9 +69,7 @@ class WalkInController extends Controller
         DB::beginTransaction();
         try {
             $companyId = (int) auth()->user()->company_id;
-            $propertyId = HotelProperty::where('company_id', $companyId)
-                ->when(auth()->user()->branch_id, fn($q) => $q->where('branch_id', auth()->user()->branch_id))
-                ->value('id');
+            $propertyId = \App\Support\HotelPropertyContext::propertyId($companyId);
 
             if (!$propertyId) {
                 throw new \RuntimeException('No active hotel property found for current branch.');
@@ -85,8 +81,13 @@ class WalkInController extends Controller
                 ->where('property_id', $propertyId)
                 ->where('is_active', true)
                 ->where('operational_status', 'available')
+                ->where('housekeeping_status', 'clean')
                 ->lockForUpdate()
                 ->findOrFail((int) $data['room_id']);
+
+            if (! \App\Services\RoomAvailabilityService::isRoomAvailable($room->id, now()->toDateString(), \Illuminate\Support\Carbon::parse($data['expected_checkout_at'])->toDateString())) {
+                throw new \RuntimeException('The room is blocked or no longer available for this walk-in stay.');
+            }
 
             $customerId = $data['customer_id'] ?? null;
             if (!$customerId) {
@@ -103,10 +104,10 @@ class WalkInController extends Controller
                     $customerPayload['status'] = 'active';
                 }
                 if (Schema::hasColumn('customers', 'branch_id')) {
-                    $customerPayload['branch_id'] = auth()->user()->branch_id;
+                    $customerPayload['branch_id'] = \App\Support\HotelPropertyContext::activeBranchId();
                 }
                 if (Schema::hasColumn('customers', 'branch_name')) {
-                    $customerPayload['branch_name'] = auth()->user()->branch_name ?? null;
+                    $customerPayload['branch_name'] = \App\Support\HotelPropertyContext::activeBranchName();
                 }
 
                 $customerId = Customer::create($customerPayload)->id;
@@ -161,8 +162,8 @@ class WalkInController extends Controller
                     $deposit,
                     $folio,
                     null,
-                    auth()->user()->branch_id,
-                    auth()->user()->branch_name ?? null
+                    \App\Support\HotelPropertyContext::activeBranchId(),
+                    \App\Support\HotelPropertyContext::activeBranchName()
                 );
             }
 

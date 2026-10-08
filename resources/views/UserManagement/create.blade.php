@@ -370,6 +370,16 @@
              ['t'=>'cb','p'=>'projects.projects.delete','l'=>'Delete Project'],
          ]],
 
+        ['group'=>'Hotel Operations','section'=>'hotel_operations',    'icon'=>'fa-hotel',             'ic'=>'icon-blue',  'cat'=>'Operations',
+         'items'=>[
+             ['t'=>'cb','p'=>'hotel.frontdesk.manage',  'l'=>'Manage Front Desk'],
+             ['t'=>'cb','p'=>'hotel.cashier.manage',    'l'=>'Manage Cashier & Folios'],
+             ['t'=>'cb','p'=>'hotel.housekeeping.manage','l'=>'Manage Housekeeping'],
+             ['t'=>'cb','p'=>'hotel.maintenance.manage','l'=>'Manage Engineering'],
+             ['t'=>'cb','p'=>'hotel.night_audit.manage','l'=>'Run Night Audit'],
+             ['t'=>'cb','p'=>'hotel.commercial.manage','l'=>'Manage Rates & Commercial'],
+         ]],
+
         /* ── COMPLIANCE ────────────────────────────────── */
         ['group'=>'Tax',             'section'=>'tax',                 'icon'=>'fa-percentage',        'ic'=>'icon-rose',  'cat'=>'Compliance',
          'items'=>[

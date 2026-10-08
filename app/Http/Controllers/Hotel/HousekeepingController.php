@@ -17,7 +17,7 @@ class HousekeepingController extends Controller
         $companyId = (int) auth()->user()->company_id;
         $propertyId = HotelProperty::query()
             ->where('company_id', $companyId)
-            ->when(auth()->user()->branch_id, fn ($query) => $query->where('branch_id', auth()->user()->branch_id))
+            ->when(\App\Support\HotelPropertyContext::activeBranchId(), fn ($query, $branchId) => $query->where('branch_id', $branchId))
             ->value('id');
 
         $tasks = HotelHousekeepingTask::query()
@@ -251,7 +251,7 @@ class HousekeepingController extends Controller
     {
         abort_unless((int) $room->company_id === (int) auth()->user()->company_id, 404);
 
-        $branchId = auth()->user()->branch_id ?? null;
+        $branchId = \App\Support\HotelPropertyContext::activeBranchId();
         if (!$branchId) {
             return;
         }
@@ -268,7 +268,7 @@ class HousekeepingController extends Controller
     {
         abort_unless((int) $task->company_id === (int) auth()->user()->company_id, 404);
 
-        $branchId = auth()->user()->branch_id ?? null;
+        $branchId = \App\Support\HotelPropertyContext::activeBranchId();
         if (!$branchId) {
             return;
         }

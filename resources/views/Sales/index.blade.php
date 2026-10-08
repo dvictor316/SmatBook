@@ -51,13 +51,13 @@
     .filter-card {
         background: #ffffff;
         border: 1px solid #e2e8f0;
-        border-radius: 18px;
+        border-radius: 8px;
         box-shadow: 0 12px 28px rgba(15, 23, 42, 0.04);
     }
 
     .sales-table-card {
         border: 1px solid #e2e8f0;
-        border-radius: 18px;
+        border-radius: 8px;
         overflow: hidden;
         box-shadow: 0 12px 28px rgba(15, 23, 42, 0.04);
     }
@@ -183,33 +183,33 @@
     <div class="card filter-card mb-4">
         <div class="card-body p-4">
             <form action="{{ route('sales.index') }}" method="GET" class="row g-3 align-items-end">
-                <div class="col-md-3">
+                <div class="col-xl-3 col-md-6">
                     <label class="form-label small fw-bold text-muted">Invoice No</label>
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-white border-end-0"><i class="fas fa-hashtag text-muted"></i></span>
                         <input type="text" name="invoice_no" class="form-control border-start-0" placeholder="e.g. INV-100" value="{{ request('invoice_no') }}">
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-xl-3 col-md-6">
                     <label class="form-label small fw-bold text-muted">Customer</label>
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-white border-end-0"><i class="fas fa-user text-muted"></i></span>
                         <input type="text" name="customer_name" class="form-control border-start-0" placeholder="Name" value="{{ request('customer_name') }}">
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-xl-2 col-md-4">
                     <label class="form-label small fw-bold text-muted">Specific Date</label>
                     <input type="date" name="sale_date" class="form-control form-control-sm" value="{{ request('sale_date') }}">
                 </div>
-                <div class="col-md-2">
+                <div class="col-xl-2 col-md-4">
                     <label class="form-label small fw-bold text-muted">From Date</label>
                     <input type="date" name="date_from" class="form-control form-control-sm" value="{{ request('date_from') }}">
                 </div>
-                <div class="col-md-2">
+                <div class="col-xl-2 col-md-4">
                     <label class="form-label small fw-bold text-muted">To Date</label>
                     <input type="date" name="date_to" class="form-control form-control-sm" value="{{ request('date_to') }}">
                 </div>
-                <div class="col-md-2 d-flex gap-2">
+                <div class="col-12 d-flex gap-2">
                     <button type="submit" class="btn btn-primary btn-sm px-4 flex-grow-1">
                         <i class="fas fa-filter me-1"></i> Apply Filter
                     </button>
@@ -308,7 +308,7 @@
             </div>
 
             <div class="p-4 border-top bg-light">
-                <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
                     <p class="text-muted small mb-0">Record {{ $sales->firstItem() }} to {{ $sales->lastItem() }} of {{ $sales->total() }}</p>
                     <div>
                         {{ $sales->appends(request()->query())->links('pagination::bootstrap-5') }}
@@ -327,14 +327,13 @@
     </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    $(document).ready(function() {
-        // Quick Search Listener
-        $('#quick-invoice-id-search').on('keypress', function(e) {
-            if(e.which == 13) {
-                let invoiceId = $(this).val();
-                if(invoiceId) {
+    document.addEventListener('DOMContentLoaded', function () {
+        const search = document.getElementById('quick-invoice-id-search');
+        search?.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const invoiceId = this.value.trim();
+                if (invoiceId) {
                     let url = "{{ route('sales.show', ':id') }}";
                     window.location.href = url.replace(':id', invoiceId);
                 }

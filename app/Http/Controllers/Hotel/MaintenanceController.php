@@ -16,7 +16,7 @@ class MaintenanceController extends Controller
         $companyId = (int) auth()->user()->company_id;
         $propertyId = HotelProperty::query()
             ->where('company_id', $companyId)
-            ->when(auth()->user()->branch_id, fn ($query) => $query->where('branch_id', auth()->user()->branch_id))
+            ->when(\App\Support\HotelPropertyContext::activeBranchId(), fn ($query, $branchId) => $query->where('branch_id', $branchId))
             ->value('id');
 
         $tickets = HotelMaintenanceTicket::query()

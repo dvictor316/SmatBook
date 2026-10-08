@@ -54,8 +54,11 @@
                     <div class="card mb-3">
                         <div class="card-header"><h5 class="mb-0">Guest</h5></div>
                         <div class="card-body row g-2">
-                            <div class="col-md-6"><label class="form-label">Existing Guest ID</label><input type="number" name="customer_id" class="form-control" value="{{ old('customer_id') }}" placeholder="Enter customer ID"></div>
-                            <div class="col-md-6"><label class="form-label">Source</label><input type="text" name="source" class="form-control" value="{{ old('source', 'direct') }}" placeholder="Direct, OTA, Agent"></div>
+                            <div class="col-md-6"><label class="form-label">Existing Guest ID</label><input type="number" name="customer_id" class="form-control" value="{{ old('customer_id', request('customer_id')) }}" placeholder="Enter customer ID"></div>
+                            <div class="col-md-6"><label class="form-label">Rate Plan</label><select name="rate_plan_id" class="form-select"><option value="">Standard / manual rate</option>@foreach($ratePlans as $plan)<option value="{{ $plan->id }}" @selected((int)old('rate_plan_id') === (int)$plan->id)>{{ $plan->name }} - {{ number_format((float)$plan->rate, 2) }}</option>@endforeach</select></div>
+                            <div class="col-md-6"><label class="form-label">Managed Booking Source</label><select name="booking_source_id" class="form-control"><option value="">Direct / Unmanaged</option>@foreach($bookingSources as $source)<option value="{{ $source->id }}" @selected((int)old('booking_source_id')===(int)$source->id)>{{ $source->name }} ({{ strtoupper($source->source_type) }})</option>@endforeach</select></div>
+                            <div class="col-md-6"><label class="form-label">Corporate Account</label><select name="corporate_account_id" class="form-control"><option value="">Individual guest</option>@foreach($corporateAccounts as $account)<option value="{{ $account->id }}" @selected((int)old('corporate_account_id')===(int)$account->id)>{{ $account->company_name }} - {{ $account->account_code }}</option>@endforeach</select></div>
+                            <div class="col-md-6"><label class="form-label">Legacy / Other Source</label><input type="text" name="source" class="form-control" value="{{ old('source', 'direct') }}" placeholder="Used when no managed source is selected"></div>
                         </div>
                     </div>
 
@@ -73,7 +76,9 @@
                         <div class="card-body row g-2">
                             <div class="col-md-4"><label class="form-label">Deposit Required</label><input type="number" step="0.01" min="0" name="deposit_required" id="deposit_required" class="form-control" value="{{ old('deposit_required', 0) }}"></div>
                             <div class="col-md-4"><label class="form-label">Deposit Received</label><input type="number" step="0.01" min="0" name="deposit_received" id="deposit_received" class="form-control" value="{{ old('deposit_received', 0) }}"></div>
-                            <div class="col-md-4"><label class="form-label">Payment Method (Preview)</label><select class="form-control"><option>Cash</option><option>Transfer</option><option>POS</option></select></div>
+                            <div class="col-md-4"><label class="form-label">Payment Method</label><select name="deposit_payment_method" class="form-control"><option value="cash">Cash</option><option value="transfer">Transfer</option><option value="pos">POS</option><option value="card">Card</option><option value="other">Other</option></select></div>
+                            <div class="col-md-6"><label class="form-label">Deposit Account</label><select name="deposit_account_id" class="form-control"><option value="">Automatic clearing account</option>@foreach($paymentAccounts as $account)<option value="{{ $account->id }}">{{ $account->code }} - {{ $account->name }}</option>@endforeach</select></div>
+                            <div class="col-md-6"><label class="form-label">Payment Reference</label><input name="deposit_reference" class="form-control" value="{{ old('deposit_reference') }}"></div>
                         </div>
                     </div>
 

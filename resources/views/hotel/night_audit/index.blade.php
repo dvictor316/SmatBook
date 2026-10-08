@@ -72,7 +72,7 @@
                 <div class="table-responsive">
                     <table class="table table-sm audit-table align-middle mb-0"><thead><tr><th>Date</th><th>Status</th><th>Posted</th><th>Total</th><th>Action</th></tr></thead><tbody>
                     @forelse($audits as $audit)
-                        <tr><td>{{ optional($audit->audit_date)->format('d M Y') }}</td><td>{{ ucfirst((string) $audit->status) }}</td><td>{{ $audit->charges_posted }} / {{ $audit->stays_scanned }}</td><td>{{ number_format((float) $audit->total_amount, 2) }}</td><td><form method="POST" action="{{ route('hotel.night_audit.reopen', $audit) }}">@csrf<button class="btn btn-sm btn-outline-warning">Reopen</button></form></td></tr>
+                        <tr><td>{{ optional($audit->audit_date)->format('d M Y') }}</td><td>{{ ucfirst((string) $audit->status) }}</td><td>{{ $audit->charges_posted }} / {{ $audit->stays_scanned }}</td><td>{{ number_format((float) $audit->total_amount, 2) }}</td><td><form method="POST" action="{{ route('hotel.night_audit.reopen', $audit) }}" class="d-flex gap-1">@csrf<input name="reason" class="form-control form-control-sm" required minlength="10" maxlength="255" placeholder="Correction reason"><button class="btn btn-sm btn-outline-warning">Reopen</button></form></td></tr>
                     @empty
                         <tr><td colspan="5" class="text-muted p-4">No night audits have been run yet.</td></tr>
                     @endforelse

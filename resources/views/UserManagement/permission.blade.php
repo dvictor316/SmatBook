@@ -583,6 +583,16 @@
              ['t'=>'cb','p'=>'projects.projects.delete','l'=>'Delete'],
          ]],
 
+        ['group'=>'Hotel Operations',     'section'=>'hotel_operations',       'icon'=>'fa-hotel',               'ic'=>'pal-blue',   'cat'=>'Operations',
+         'items'=>[
+             ['t'=>'cb','p'=>'hotel.frontdesk.manage',   'l'=>'Front Desk'],
+             ['t'=>'cb','p'=>'hotel.cashier.manage',     'l'=>'Cashier & Folios'],
+             ['t'=>'cb','p'=>'hotel.housekeeping.manage','l'=>'Housekeeping'],
+             ['t'=>'cb','p'=>'hotel.maintenance.manage', 'l'=>'Engineering'],
+             ['t'=>'cb','p'=>'hotel.night_audit.manage', 'l'=>'Night Audit'],
+             ['t'=>'cb','p'=>'hotel.commercial.manage',  'l'=>'Rates & Commercial'],
+         ]],
+
         /* ── COMPLIANCE ─────────────────────────────────────────── */
         ['group'=>'Tax',                  'section'=>'tax',                    'icon'=>'fa-percentage',          'ic'=>'pal-rose',   'cat'=>'Compliance',
          'items'=>[

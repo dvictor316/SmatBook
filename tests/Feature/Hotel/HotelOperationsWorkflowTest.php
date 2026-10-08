@@ -12,6 +12,8 @@ use App\Models\HotelRoomType;
 use App\Models\Reservation;
 use App\Models\Stay;
 use App\Models\User;
+use App\Models\HotelRoomBlock;
+use App\Services\RoomAvailabilityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -202,5 +204,25 @@ class HotelOperationsWorkflowTest extends TestCase
         $stay->update(['status' => 'completed', 'actual_checkout_at' => now()]);
         $this->post(route('hotel.folios.close', $folio))->assertRedirect();
         $this->assertSame('closed', $folio->fresh()->status);
+    }
+
+    public function test_blocked_room_is_excluded_from_availability(): void
+    {
+        HotelRoomBlock::create([
+            'company_id' => $this->company->id, 'property_id' => $this->property->id, 'room_id' => $this->room->id,
+            'start_date' => now()->addDays(2)->toDateString(), 'end_date' => now()->addDays(4)->toDateString(),
+            'block_type' => 'maintenance', 'reason' => 'Air conditioning replacement', 'status' => 'active', 'created_by' => $this->user->id,
+        ]);
+
+        $this->assertFalse(RoomAvailabilityService::isRoomAvailable(
+            $this->room->id,
+            now()->addDays(3)->toDateString(),
+            now()->addDays(5)->toDateString()
+        ));
+        $this->assertFalse(RoomAvailabilityService::availableRoomsForProperty(
+            $this->property->id,
+            now()->addDays(3)->toDateString(),
+            now()->addDays(5)->toDateString()
+        )->contains('id', $this->room->id));
     }
 }

@@ -78,7 +78,7 @@
                             </div>
 
                             <div class="table-responsive">
-                                <table class="table table-hover datatable align-middle">
+                                <table class="table table-hover align-middle">
                                     <thead class="thead-light">
                                         <tr>
                                             <th>Invoice ID</th>

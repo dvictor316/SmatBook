@@ -1166,6 +1166,9 @@ class HotelWorkspaceController extends Controller
         if ($reportFrom > $reportTo) {
             [$reportFrom, $reportTo] = [$reportTo, $reportFrom];
         }
+        $periodDays = max(1, Carbon::parse($reportFrom)->diffInDays(Carbon::parse($reportTo)) + 1);
+        $sellableRooms = HotelRoom::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->where('is_active', true)->whereNotIn('operational_status', ['out_of_order'])->count();
+        $availableRoomNights = max(1, $sellableRooms * $periodDays);
 
         $folioScope = fn () => FolioItem::query()
             ->where('company_id', $companyId)
@@ -1181,6 +1184,17 @@ class HotelWorkspaceController extends Controller
             'payments_today' => (float) $folioScope()->whereDate('service_date', $today)->whereIn('type', ['payment', 'deposit_applied'])->sum('amount'),
             'open_folios' => GuestFolio::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->where('status', 'open')->count(),
             'folio_balance' => (float) GuestFolio::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->sum('balance'),
+        ];
+        $soldRoomNights = (float) $folioScope()->whereBetween('service_date', [$reportFrom, $reportTo])->where('service_code', 'ROOM_NIGHT')->sum('quantity');
+        $kpis += [
+            'available_room_nights' => $availableRoomNights,
+            'sold_room_nights' => $soldRoomNights,
+            'occupancy_rate' => round(($soldRoomNights / $availableRoomNights) * 100, 2),
+            'adr' => $soldRoomNights > 0 ? round($kpis['room_revenue_month'] / $soldRoomNights, 2) : 0,
+            'revpar' => round($kpis['room_revenue_month'] / $availableRoomNights, 2),
+            'cancellations' => Reservation::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->whereBetween('arrival_date', [$reportFrom, $reportTo])->where('status', 'cancelled')->count(),
+            'no_shows' => Reservation::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->whereBetween('arrival_date', [$reportFrom, $reportTo])->where('status', 'no_show')->count(),
+            'forward_bookings_30d' => Reservation::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->whereBetween('arrival_date', [now()->toDateString(), now()->addDays(30)->toDateString()])->whereIn('status', ['reserved', 'confirmed'])->count(),
         ];
 
         $serviceRevenue = $folioScope()
@@ -1234,7 +1248,15 @@ class HotelWorkspaceController extends Controller
             ->orderByDesc('total_count')
             ->get();
 
-        return view('hotel.reports.index', compact('kpis', 'serviceRevenue', 'paymentRevenue', 'dailyRevenue', 'recentPostings', 'folioExposure', 'roomState', 'reportFrom', 'reportTo'));
+        $agingFolios = GuestFolio::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->where('status', 'city_ledger')->where('balance', '>', 0)->get(['balance', 'due_date', 'created_at']);
+        $corporateAging = ['current' => 0, '1_30' => 0, '31_60' => 0, '61_90' => 0, 'over_90' => 0];
+        foreach ($agingFolios as $folio) {
+            $daysOverdue = max(0, Carbon::parse($folio->due_date ?? $folio->created_at)->diffInDays(today(), false));
+            $bucket = $daysOverdue === 0 ? 'current' : ($daysOverdue <= 30 ? '1_30' : ($daysOverdue <= 60 ? '31_60' : ($daysOverdue <= 90 ? '61_90' : 'over_90')));
+            $corporateAging[$bucket] += (float) $folio->balance;
+        }
+
+        return view('hotel.reports.index', compact('kpis', 'serviceRevenue', 'paymentRevenue', 'dailyRevenue', 'recentPostings', 'folioExposure', 'roomState', 'corporateAging', 'reportFrom', 'reportTo'));
     }
 
     private function resolvePropertyId(Request $request): ?int
@@ -1273,7 +1295,7 @@ class HotelWorkspaceController extends Controller
 
         return HotelProperty::query()
             ->where('company_id', $companyId)
-            ->when(auth()->user()->branch_id, fn ($query) => $query->where('branch_id', auth()->user()->branch_id))
+            ->when(\App\Support\HotelPropertyContext::activeBranchId(), fn ($query, $branchId) => $query->where('branch_id', $branchId))
             ->value('id');
     }
 

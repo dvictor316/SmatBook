@@ -687,14 +687,17 @@ Route::middleware(['auth', 'subscription.active'])->prefix('ajax/inventory')->na
 Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 'subscription.active', 'branch.required', 'hotel.tenant']], function () {
     Route::get('/dashboard', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'dashboard'])->name('dashboard');
     Route::get('/operations', [\App\Http\Controllers\Hotel\HotelOperationsController::class, 'index'])->name('operations.index');
-    Route::post('/operations/requests', [\App\Http\Controllers\Hotel\HotelOperationsController::class, 'store'])->name('operations.requests.store');
-    Route::put('/operations/requests/{guestRequest}', [\App\Http\Controllers\Hotel\HotelOperationsController::class, 'update'])->name('operations.requests.update');
+    Route::post('/operations/requests', [\App\Http\Controllers\Hotel\HotelOperationsController::class, 'store'])->middleware('hotel.permission:frontdesk')->name('operations.requests.store');
+    Route::put('/operations/requests/{guestRequest}', [\App\Http\Controllers\Hotel\HotelOperationsController::class, 'update'])->middleware('hotel.permission:frontdesk')->name('operations.requests.update');
+    Route::post('/operations/shifts', [\App\Http\Controllers\Hotel\HotelOperationsController::class, 'storeShift'])->name('operations.shifts.store')->middleware('hotel.permission:frontdesk');
+    Route::put('/operations/shifts/{shift}', [\App\Http\Controllers\Hotel\HotelOperationsController::class, 'updateShift'])->name('operations.shifts.update')->middleware('hotel.permission:frontdesk');
     Route::get('/front-desk', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'frontDesk'])->name('frontdesk');
     Route::get('/checkin', [\App\Http\Controllers\Hotel\CheckInController::class, 'index'])->name('checkin.index');
     Route::get('/checkout', [\App\Http\Controllers\Hotel\CheckInController::class, 'checkoutDesk'])->name('checkout.index');
     Route::get('/in-house', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'inHouse'])->name('in_house');
     Route::get('/guests', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'guests'])->name('guests');
-    Route::post('/guests/{customer}/note', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'updateGuestNote'])->name('guests.note');
+    Route::post('/guests/{customer}/note', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'updateGuestNote'])->middleware('hotel.permission:frontdesk')->name('guests.note');
+    Route::post('/guests/{customer}/profile', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'updateGuestProfile'])->name('guests.profile')->middleware('hotel.permission:frontdesk');
     Route::get('/deposits', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'deposits'])->name('deposits');
     Route::get('/settings', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'settings'])->name('settings');
 
@@ -731,6 +734,8 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
     Route::post('/rate-plans', [\App\Http\Controllers\Hotel\HotelRatePlanController::class, 'store'])->name('rate_plans.store');
     Route::post('/rate-plans/{plan}/duplicate', [\App\Http\Controllers\Hotel\HotelRatePlanController::class, 'duplicate'])->name('rate_plans.duplicate');
     Route::post('/rate-plans/{plan}/toggle', [\App\Http\Controllers\Hotel\HotelRatePlanController::class, 'toggle'])->name('rate_plans.toggle');
+    Route::post('/rate-restrictions', [\App\Http\Controllers\Hotel\HotelRatePlanController::class, 'storeRestriction'])->name('rate_restrictions.store')->middleware('hotel.permission:commercial');
+    Route::delete('/rate-restrictions/{restriction}', [\App\Http\Controllers\Hotel\HotelRatePlanController::class, 'destroyRestriction'])->name('rate_restrictions.destroy')->middleware('hotel.permission:commercial');
 
     Route::get('/availability', [\App\Http\Controllers\Hotel\AvailabilityController::class, 'index'])->name('availability.index');
     Route::post('/availability/search', [\App\Http\Controllers\Hotel\AvailabilityController::class, 'search'])->name('availability.search');
@@ -742,25 +747,30 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
     Route::get('/reservations/{reservation}', [\App\Http\Controllers\Hotel\ReservationController::class, 'show'])->name('reservations.show');
     Route::put('/reservations/{reservation}', [\App\Http\Controllers\Hotel\ReservationController::class, 'update'])->name('reservations.update');
     Route::post('/reservations/{reservation}/status', [\App\Http\Controllers\Hotel\ReservationController::class, 'updateStatus'])->name('reservations.status');
+    Route::post('/reservations/{reservation}/deposits', [\App\Http\Controllers\Hotel\HotelDepositController::class, 'store'])->name('reservations.deposits.store');
+    Route::post('/reservations/{reservation}/deposits/refund', [\App\Http\Controllers\Hotel\HotelDepositController::class, 'refund'])->name('reservations.deposits.refund');
 
     Route::get('/walkin', [\App\Http\Controllers\Hotel\WalkInController::class, 'create'])->name('walkin.create');
     Route::post('/walkin', [\App\Http\Controllers\Hotel\WalkInController::class, 'store'])->name('walkin.store');
 
-    Route::post('/checkin/{reservation}', [\App\Http\Controllers\Hotel\CheckInController::class, 'checkin'])->name('checkin');
-    Route::post('/checkout/{stay}', [\App\Http\Controllers\Hotel\CheckInController::class, 'checkout'])->name('checkout');
+    Route::post('/checkin/{reservation}', [\App\Http\Controllers\Hotel\CheckInController::class, 'checkin'])->middleware('hotel.permission:frontdesk')->name('checkin');
+    Route::post('/checkout/{stay}', [\App\Http\Controllers\Hotel\CheckInController::class, 'checkout'])->middleware('hotel.permission:cashier')->name('checkout');
 
     Route::get('/folios', [\App\Http\Controllers\Hotel\FolioController::class, 'index'])->name('folios.index');
     Route::get('/folios/{folio}', [\App\Http\Controllers\Hotel\FolioController::class, 'show'])->name('folios.show');
     Route::get('/folios/items/{item}/receipt', [\App\Http\Controllers\Hotel\FolioController::class, 'receipt'])->name('folios.items.receipt');
-    Route::post('/folios/{folio}/items', [\App\Http\Controllers\Hotel\FolioController::class, 'storeItem'])->name('folios.items.store');
-    Route::post('/folios/{folio}/services', [\App\Http\Controllers\Hotel\FolioController::class, 'postService'])->name('folios.services.store');
-    Route::post('/folios/{folio}/payments', [\App\Http\Controllers\Hotel\FolioController::class, 'postPayment'])->name('folios.payments.store');
-    Route::post('/folios/{folio}/close', [\App\Http\Controllers\Hotel\FolioController::class, 'close'])->name('folios.close');
-    Route::post('/folios/{folio}/reopen', [\App\Http\Controllers\Hotel\FolioController::class, 'reopen'])->name('folios.reopen');
+    Route::post('/folios/{folio}/items', [\App\Http\Controllers\Hotel\FolioController::class, 'storeItem'])->middleware('hotel.permission:cashier')->name('folios.items.store');
+    Route::post('/folios/{folio}/services', [\App\Http\Controllers\Hotel\FolioController::class, 'postService'])->middleware('hotel.permission:cashier')->name('folios.services.store');
+    Route::post('/folios/{folio}/payments', [\App\Http\Controllers\Hotel\FolioController::class, 'postPayment'])->middleware('hotel.permission:cashier')->name('folios.payments.store');
+    Route::post('/folios/{folio}/refunds', [\App\Http\Controllers\Hotel\FolioController::class, 'postRefund'])->middleware('hotel.permission:cashier')->name('folios.refunds.store');
+    Route::post('/folios/{folio}/sub-folios', [\App\Http\Controllers\Hotel\FolioController::class, 'createSubFolio'])->middleware('hotel.permission:cashier')->name('folios.sub_folios.store');
+    Route::post('/folios/items/{item}/transfer', [\App\Http\Controllers\Hotel\FolioController::class, 'transferItem'])->middleware('hotel.permission:cashier')->name('folios.items.transfer');
+    Route::post('/folios/{folio}/close', [\App\Http\Controllers\Hotel\FolioController::class, 'close'])->middleware('hotel.permission:cashier')->name('folios.close');
+    Route::post('/folios/{folio}/reopen', [\App\Http\Controllers\Hotel\FolioController::class, 'reopen'])->middleware('hotel.permission:cashier')->name('folios.reopen');
 
     Route::get('/night-audit', [\App\Http\Controllers\Hotel\NightAuditController::class, 'index'])->name('night_audit.index');
-    Route::post('/night-audit/run', [\App\Http\Controllers\Hotel\NightAuditController::class, 'run'])->name('night_audit.run');
-    Route::post('/night-audit/{audit}/reopen', [\App\Http\Controllers\Hotel\NightAuditController::class, 'reopen'])->name('night_audit.reopen');
+    Route::post('/night-audit/run', [\App\Http\Controllers\Hotel\NightAuditController::class, 'run'])->middleware('hotel.permission:night_audit')->name('night_audit.run');
+    Route::post('/night-audit/{audit}/reopen', [\App\Http\Controllers\Hotel\NightAuditController::class, 'reopen'])->middleware('hotel.permission:night_audit')->name('night_audit.reopen');
 
     Route::get('/restaurant-pos', function () {
         return redirect()->route('sales.showPos', ['context' => 'hotel']);
@@ -775,22 +785,29 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
     Route::put('/service-center-charges/{item}', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'updateServiceCenterCharge'])->name('service_centers.charges.update');
     Route::delete('/service-center-charges/{item}', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'destroyServiceCenterCharge'])->name('service_centers.charges.destroy');
 
-    Route::get('/corporate-accounts', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'corporateAccounts'])->name('corporate_accounts.index');
-    Route::get('/group-bookings', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'groupBookings'])->name('group_bookings.index');
-    Route::get('/booking-sources', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'bookingSources'])->name('booking_sources.index');
+    Route::get('/corporate-accounts', [\App\Http\Controllers\Hotel\HotelCommercialController::class, 'corporateAccounts'])->name('corporate_accounts.index');
+    Route::post('/corporate-accounts', [\App\Http\Controllers\Hotel\HotelCommercialController::class, 'storeCorporateAccount'])->middleware('hotel.permission:commercial')->name('corporate_accounts.store');
+    Route::post('/corporate-accounts/{account}/toggle', [\App\Http\Controllers\Hotel\HotelCommercialController::class, 'toggleCorporateAccount'])->middleware('hotel.permission:commercial')->name('corporate_accounts.toggle');
+    Route::get('/group-bookings', [\App\Http\Controllers\Hotel\HotelCommercialController::class, 'groupBookings'])->name('group_bookings.index');
+    Route::post('/group-bookings', [\App\Http\Controllers\Hotel\HotelCommercialController::class, 'storeGroupBooking'])->middleware('hotel.permission:commercial')->name('group_bookings.store');
+    Route::post('/group-bookings/{group}/allocations', [\App\Http\Controllers\Hotel\HotelCommercialController::class, 'storeGroupAllocation'])->middleware('hotel.permission:commercial')->name('group_bookings.allocations.store');
+    Route::post('/group-bookings/{group}/status', [\App\Http\Controllers\Hotel\HotelCommercialController::class, 'updateGroupStatus'])->middleware('hotel.permission:commercial')->name('group_bookings.status');
+    Route::get('/booking-sources', [\App\Http\Controllers\Hotel\HotelCommercialController::class, 'bookingSources'])->name('booking_sources.index');
+    Route::post('/booking-sources', [\App\Http\Controllers\Hotel\HotelCommercialController::class, 'storeBookingSource'])->middleware('hotel.permission:commercial')->name('booking_sources.store');
+    Route::post('/booking-sources/{source}/toggle', [\App\Http\Controllers\Hotel\HotelCommercialController::class, 'toggleBookingSource'])->middleware('hotel.permission:commercial')->name('booking_sources.toggle');
     Route::get('/reports', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'reports'])->name('reports.index');
     Route::get('/search', [\App\Http\Controllers\Hotel\HotelWorkspaceController::class, 'search'])->name('search');
 
     Route::get('/housekeeping', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'index'])->name('housekeeping.index');
-    Route::post('/housekeeping/rooms/{room}/dirty', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'markDirty'])->name('housekeeping.rooms.dirty');
-    Route::post('/housekeeping/rooms/{room}/clean', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'markClean'])->name('housekeeping.rooms.clean');
-    Route::post('/housekeeping/tasks', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'storeTask'])->name('housekeeping.tasks.store');
-    Route::post('/housekeeping/tasks/{task}/status', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'updateTaskStatus'])->name('housekeeping.tasks.status');
-    Route::post('/housekeeping/tasks/{task}/complete', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'completeTask'])->name('housekeeping.tasks.complete');
+    Route::post('/housekeeping/rooms/{room}/dirty', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'markDirty'])->middleware('hotel.permission:housekeeping')->name('housekeeping.rooms.dirty');
+    Route::post('/housekeeping/rooms/{room}/clean', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'markClean'])->middleware('hotel.permission:housekeeping')->name('housekeeping.rooms.clean');
+    Route::post('/housekeeping/tasks', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'storeTask'])->middleware('hotel.permission:housekeeping')->name('housekeeping.tasks.store');
+    Route::post('/housekeeping/tasks/{task}/status', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'updateTaskStatus'])->middleware('hotel.permission:housekeeping')->name('housekeeping.tasks.status');
+    Route::post('/housekeeping/tasks/{task}/complete', [\App\Http\Controllers\Hotel\HousekeepingController::class, 'completeTask'])->middleware('hotel.permission:housekeeping')->name('housekeeping.tasks.complete');
 
     Route::get('/maintenance', [\App\Http\Controllers\Hotel\MaintenanceController::class, 'index'])->name('maintenance.index');
-    Route::post('/maintenance', [\App\Http\Controllers\Hotel\MaintenanceController::class, 'store'])->name('maintenance.store');
-    Route::post('/maintenance/{ticket}/status', [\App\Http\Controllers\Hotel\MaintenanceController::class, 'updateStatus'])->name('maintenance.status');
+    Route::post('/maintenance', [\App\Http\Controllers\Hotel\MaintenanceController::class, 'store'])->middleware('hotel.permission:maintenance')->name('maintenance.store');
+    Route::post('/maintenance/{ticket}/status', [\App\Http\Controllers\Hotel\MaintenanceController::class, 'updateStatus'])->middleware('hotel.permission:maintenance')->name('maintenance.status');
 });
 
 Route::group(['prefix' => 'livestock', 'as' => 'livestock.', 'middleware' => ['auth', 'subscription.active', 'branch.required', 'livestock.tenant']], function () {
@@ -992,16 +1009,16 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/', 'index')->name('index');
         Route::get('/create', 'create')->name('create');
         Route::post('/', 'store')->name('store');
-        Route::get('/{id}', 'showSale')->name('show');
-        Route::get('/{sale}/edit', 'edit')->name('edit');
-        Route::put('/{sale}', 'update')->name('update');
-        Route::delete('/{id}', 'destroy')->name('destroy');
-        Route::get('/{id}/pdf', 'downloadPDF')->name('pdf');
-        Route::get('/invoice/{id}', 'showInvoice')->name('invoice.show');
-        Route::get('/invoice/{id}/print', 'printInvoice')->name('invoice.print');
         Route::get('/chart-data', 'getChartData')->name('chart-data');
         Route::get('/return-to-pos', 'returnToPos')->name('returnToPos');
         Route::get('/reports', 'report')->middleware('plan.access:basic,professional,enterprise')->name('reports');
+        Route::get('/invoice/{id}', 'showInvoice')->name('invoice.show');
+        Route::get('/invoice/{id}/print', 'printInvoice')->name('invoice.print');
+        Route::get('/{id}/pdf', 'downloadPDF')->name('pdf');
+        Route::get('/{sale}/edit', 'edit')->name('edit');
+        Route::put('/{sale}', 'update')->name('update');
+        Route::delete('/{id}', 'destroy')->name('destroy');
+        Route::get('/{id}', 'showSale')->name('show');
     });
     Route::get('/pos', [SaleController::class, 'showPos'])->name('sales.showPos');
     Route::post('/pos/price-edit-setting', [SaleController::class, 'updatePosPriceEditSetting'])->name('pos.price-edit-setting');

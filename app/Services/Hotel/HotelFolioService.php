@@ -132,7 +132,7 @@ class HotelFolioService
         $items = FolioItem::query()->where('folio_id', $folio->id)->get();
 
         $chargeTypes = ['charge', 'room_night', 'service', 'pos_charge', 'adjustment'];
-        $paymentTypes = ['payment', 'deposit_applied', 'refund_reversal'];
+        $paymentTypes = ['payment', 'deposit_applied'];
 
         $totalCharges = round((float) $items
             ->whereIn('type', $chargeTypes)
@@ -140,7 +140,7 @@ class HotelFolioService
 
         $totalPayments = round((float) $items
             ->whereIn('type', $paymentTypes)
-            ->sum('amount'), 2);
+            ->sum('amount') - (float) $items->where('type', 'refund')->sum('amount'), 2);
 
         $balance = round($totalCharges - $totalPayments, 2);
 

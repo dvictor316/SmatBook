@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use App\Support\HotelPropertyContext;
 
 class HotelRoomController extends Controller
 {
@@ -25,9 +26,7 @@ class HotelRoomController extends Controller
     public function index(Request $request)
     {
         $companyId = Auth::user()->company_id;
-        $propertyId = HotelProperty::where('company_id', $companyId)
-            ->when(Auth::user()->branch_id, fn($q) => $q->where('branch_id', Auth::user()->branch_id))
-            ->value('id');
+        $propertyId = HotelPropertyContext::propertyId((int) $companyId, request()->integer('property_id') ?: null);
 
         $status = trim((string) $request->query('status', ''));
         $viewMode = (string) $request->query('view', 'grid');
@@ -76,18 +75,14 @@ class HotelRoomController extends Controller
     public function create()
     {
         $companyId = Auth::user()->company_id;
-        $propertyId = HotelProperty::where('company_id', $companyId)
-            ->when(Auth::user()->branch_id, fn($q) => $q->where('branch_id', Auth::user()->branch_id))
-            ->value('id');
+        $propertyId = HotelPropertyContext::propertyId((int) $companyId);
 
         $roomTypes = HotelRoomType::where('company_id', $companyId)
             ->when($propertyId, fn($q) => $q->where('property_id', $propertyId))
             ->where('is_active', true)
             ->get();
 
-        $properties = HotelProperty::where('company_id', $companyId)
-            ->when(Auth::user()->branch_id, fn($q) => $q->where('branch_id', Auth::user()->branch_id))
-            ->get();
+        $properties = HotelPropertyContext::query((int) $companyId)->get();
 
         return view('hotel.rooms.create', compact('roomTypes', 'properties'));
     }
@@ -110,6 +105,11 @@ class HotelRoomController extends Controller
             'housekeeping_status' => 'nullable|string|max:50',
             'notes' => 'nullable|string',
         ]);
+
+        abort_unless(HotelPropertyContext::query((int) $companyId)->whereKey($data['property_id'])->exists(), 404);
+        if (! empty($data['room_type_id'])) {
+            abort_unless(HotelRoomType::where('company_id', $companyId)->where('property_id', $data['property_id'])->whereKey($data['room_type_id'])->exists(), 422, 'The room type does not belong to this property.');
+        }
 
         $data['company_id'] = $companyId;
         $data['room_image'] = $request->hasFile('room_image') ? $this->storeHotelMedia($request->file('room_image'), 'hotel/rooms') : null;

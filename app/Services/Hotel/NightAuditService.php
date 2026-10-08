@@ -31,6 +31,13 @@ class NightAuditService
                 return $audit;
             }
 
+            $audit->fill([
+                'status' => 'running',
+                'run_by' => $userId,
+                'run_at' => now(),
+                'meta' => ['force' => $force],
+            ])->save();
+
             $windowStart = Carbon::parse($auditDay)->startOfDay();
             $windowEnd = Carbon::parse($auditDay)->endOfDay();
 
@@ -60,7 +67,8 @@ class NightAuditService
                     'charge_date' => $auditDay,
                 ]);
 
-                if ($charge->exists && in_array((string) $charge->status, ['posted', 'reversed'], true) && !$force) {
+                // Force authorizes a run with unresolved operational exceptions; it never duplicates a posted room night.
+                if ($charge->exists && in_array((string) $charge->status, ['posted', 'reversed'], true)) {
                     $skipped++;
                     continue;
                 }
@@ -123,9 +131,7 @@ class NightAuditService
                 'total_amount' => round($total, 2),
                 'run_by' => $userId,
                 'run_at' => now(),
-                'meta' => [
-                    'force' => $force,
-                ],
+                'meta' => ['force' => $force],
             ])->save();
 
             return $audit->fresh();

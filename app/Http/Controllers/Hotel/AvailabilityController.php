@@ -6,14 +6,13 @@ use Illuminate\Http\Request;
 use App\Services\RoomAvailabilityService;
 use App\Models\HotelProperty;
 use App\Models\HotelRoom;
+use App\Support\HotelPropertyContext;
 
 class AvailabilityController extends Controller
 {
     public function index(Request $request)
     {
-        $property = HotelProperty::where('company_id', auth()->user()->company_id)
-            ->when(auth()->user()->branch_id, fn($q) => $q->where('branch_id', auth()->user()->branch_id))
-            ->first();
+        $property = HotelPropertyContext::query((int) auth()->user()->company_id)->first();
         return view('hotel.availability.index', compact('property'));
     }
 
@@ -24,11 +23,7 @@ class AvailabilityController extends Controller
             'departure_date' => 'required|date|after:arrival_date'
         ]);
 
-        $propertyId = $request->input('property_id') ?: optional(
-            HotelProperty::where('company_id', auth()->user()->company_id)
-                ->when(auth()->user()->branch_id, fn($q) => $q->where('branch_id', auth()->user()->branch_id))
-                ->first()
-        )->id;
+        $propertyId = HotelPropertyContext::propertyId((int) auth()->user()->company_id, $request->integer('property_id') ?: null);
 
         if (!$propertyId) {
             return back()->withErrors(['error' => 'No active hotel property found for current branch.'])->withInput();
@@ -47,11 +42,7 @@ class AvailabilityController extends Controller
             'room_type_id' => 'nullable|integer',
         ]);
 
-        $propertyId = $request->input('property_id') ?: optional(
-            HotelProperty::where('company_id', auth()->user()->company_id)
-                ->when(auth()->user()->branch_id, fn($q) => $q->where('branch_id', auth()->user()->branch_id))
-                ->first()
-        )->id;
+        $propertyId = HotelPropertyContext::propertyId((int) auth()->user()->company_id, $request->integer('property_id') ?: null);
 
         if (!$propertyId) {
             return response()->json(['rooms' => [], 'message' => 'No active hotel property found.'], 422);
