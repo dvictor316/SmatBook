@@ -41,7 +41,8 @@ class LoginIdentifierTest extends TestCase
             ->assertOk()
             ->assertSee('Email or Phone Number')
             ->assertSee('Sign In')
-            ->assertSee('LinkedIn');
+            ->assertSee('LinkedIn')
+            ->assertSee('pwa-window-controls.css', false);
 
         $this->get(route('saas-register'))
             ->assertOk()
@@ -87,6 +88,17 @@ class LoginIdentifierTest extends TestCase
             'is_verified' => 1,
         ]);
         $this->assertAuthenticatedAs(User::where('email', 'linkedin.member@example.test')->firstOrFail());
+    }
+
+    public function test_desktop_app_navigation_reserves_the_window_controls_overlay(): void
+    {
+        $css = file_get_contents(public_path('assets/css/pwa-window-controls.css'));
+        $this->assertStringContainsString('display-mode: window-controls-overlay', $css);
+        $this->assertStringContainsString('titlebar-area-width', $css);
+
+        $this->get(route('membership-plans'))
+            ->assertOk()
+            ->assertSee('pwa-window-controls.css', false);
     }
 
     private function makeUser(): User
