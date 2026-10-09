@@ -8,7 +8,7 @@
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "browser"],
   "background_color": "#ffffff",
-  "theme_color": "#061a44",
+  "theme_color": "#ffffff",
   "orientation": "any",
   "categories": ["business", "finance", "productivity"],
   "icons": [

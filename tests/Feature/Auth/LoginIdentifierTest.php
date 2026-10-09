@@ -89,6 +89,17 @@ class LoginIdentifierTest extends TestCase
         $this->assertAuthenticatedAs(User::where('email', 'linkedin.member@example.test')->firstOrFail());
     }
 
+    public function test_installed_app_uses_an_adaptive_non_blue_titlebar(): void
+    {
+        $manifest = json_decode(file_get_contents(public_path('manifest.webmanifest')), true, flags: JSON_THROW_ON_ERROR);
+        $this->assertSame('#ffffff', $manifest['theme_color']);
+
+        $this->get(route('membership-plans'))
+            ->assertOk()
+            ->assertSee('spbAdaptiveThemeColor', false)
+            ->assertSee('windowControlsOverlay', false);
+    }
+
     private function makeUser(): User
     {
         $company = Company::create([
