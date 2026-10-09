@@ -18,6 +18,7 @@
         'moduleValues' => [],
         'decisionCards' => [],
     ];
+    $moduleCatalog = $moduleCatalog ?? \App\Support\ModuleCatalog::modules();
 @endphp
 
 {{-- Super admin dashboard: keep this file deployed from source control, not edited directly on production. --}}
@@ -1970,30 +1971,42 @@
                                     <div class="card-body p-3">
                                         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                                             <div>
-                                                <h5 class="mb-0 fw-bold text-dark">Plan-Based Business Modules</h5>
-                                                <small class="text-muted">Basic ₦3,000 • Professional ₦7,000 • Enterprise ₦15,000</small>
+                                                <h5 class="mb-0 fw-bold text-dark">Platform Module Catalogue</h5>
+                                                <small class="text-muted">Live modules, registration eligibility, tenant scope, and annual licence tier</small>
                                             </div>
-                                            <a href="{{ route('projects.index') }}" class="btn btn-sm btn-outline-primary">Open Project Workspace</a>
+                                            <a href="{{ route('super_admin.plans.index') }}" class="btn btn-sm btn-outline-primary">Manage Licence Plans</a>
                                         </div>
 
                                         <div class="row g-2">
-                                            @foreach([
-                                                ['title' => 'Project Management', 'tier' => 'Pro', 'href' => route('projects.index', ['module' => 'project-management'])],
-                                                ['title' => 'Project Profitability', 'tier' => 'Pro', 'href' => route('projects.index', ['module' => 'profitability'])],
-                                                ['title' => 'Reputation Management', 'tier' => 'Pro', 'href' => route('projects.index', ['module' => 'reputation-management'])],
-                                                ['title' => 'Lead Management', 'tier' => 'Pro', 'href' => route('projects.index', ['module' => 'lead-management'])],
-                                                ['title' => 'Appointment Scheduling', 'tier' => 'Pro', 'href' => route('projects.index', ['module' => 'appointment-scheduling'])],
-                                                ['title' => 'Contract Upload & E-Signature', 'tier' => 'Enterprise', 'href' => route('projects.index', ['module' => 'contract-esignature'])],
-                                                ['title' => 'Proposals', 'tier' => 'Enterprise', 'href' => route('projects.index', ['module' => 'proposals'])],
-                                                ['title' => 'AI Anomaly Detection', 'tier' => 'Enterprise', 'href' => route('projects.index', ['module' => 'ai-anomaly-detection'])],
-                                                ['title' => 'Project Management AI', 'tier' => 'Enterprise', 'href' => route('projects.index', ['module' => 'project-management-ai'])],
-                                                ['title' => 'Payroll', 'tier' => 'Enterprise', 'href' => route('payroll.index')],
-                                            ] as $module)
-                                                <div class="col-md-6 col-xl-3">
-                                                    <a href="{{ $module['href'] }}" class="d-flex align-items-center justify-content-between p-2 rounded border bg-light text-decoration-none">
-                                                        <span class="small fw-semibold text-dark">{{ $module['title'] }}</span>
-                                                        <span class="badge {{ $module['tier'] === 'Enterprise' ? 'bg-warning text-dark' : 'bg-info text-dark' }}">{{ $module['tier'] }}</span>
-                                                    </a>
+                                            @foreach($moduleCatalog as $module)
+                                                @php
+                                                    $moduleHref = !empty($module['route']) && Route::has($module['route']) ? route($module['route']) : null;
+                                                    $tierTone = match ($module['tier']) {
+                                                        'Enterprise' => 'bg-warning text-dark',
+                                                        'Hotel' => 'bg-danger text-white',
+                                                        'Livestock' => 'bg-success text-white',
+                                                        'Professional' => 'bg-info text-dark',
+                                                        default => 'bg-primary text-white',
+                                                    };
+                                                @endphp
+                                                <div class="col-md-6 col-xl-4">
+                                                    <div class="h-100 border rounded bg-light p-3">
+                                                        <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                                                            <span class="d-inline-flex align-items-center gap-2 fw-bold text-dark">
+                                                                <i class="{{ $module['icon'] }} text-primary" aria-hidden="true"></i>
+                                                                {{ $module['title'] }}
+                                                            </span>
+                                                            <span class="badge {{ $tierTone }}">{{ $module['tier'] }}</span>
+                                                        </div>
+                                                        <p class="small text-muted mb-2">{{ $module['description'] }}</p>
+                                                        <div class="small mb-1"><strong>Scope:</strong> {{ $module['scope'] }}</div>
+                                                        <div class="small mb-3"><strong>Registration:</strong> {{ $module['registration'] }}</div>
+                                                        @if($moduleHref)
+                                                            <a href="{{ $moduleHref }}" class="btn btn-sm btn-outline-primary">Open Module</a>
+                                                        @else
+                                                            <span class="badge bg-light text-dark border">Open through an enabled tenant</span>
+                                                        @endif
+                                                    </div>
                                                 </div>
                                             @endforeach
                                         </div>

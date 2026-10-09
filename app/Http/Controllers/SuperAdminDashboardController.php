@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use App\Support\SystemEventMailer;
 use App\Support\InventoryQuantity;
+use App\Support\ModuleCatalog;
 
 class SuperAdminDashboardController extends Controller
 {
@@ -1432,6 +1433,7 @@ class SuperAdminDashboardController extends Controller
             $domain      = env('SESSION_DOMAIN', 'Default System');
             $isDeploymentView = false;
             $viewPath = 'SuperAdmin.dashboard';
+            $moduleCatalog = ModuleCatalog::modules();
 
             return view($viewPath, compact(
                 'stats', 'metrics', 'revenueTrends', 'tenantGrowth', 'revenueByPlan', 
@@ -1442,7 +1444,8 @@ class SuperAdminDashboardController extends Controller
                 'visitorAnalytics',
                 'activeBranch',
                 'expiringSubscriptions',
-                'payoutRecipientGroups'
+                'payoutRecipientGroups',
+                'moduleCatalog'
             ));
 
         } catch (\Exception $e) {
@@ -1596,6 +1599,7 @@ class SuperAdminDashboardController extends Controller
                 'domain' => env('SESSION_DOMAIN', 'Error State'),
                 'expiringSubscriptions' => collect(),
                 'payoutRecipientGroups' => [],
+                'moduleCatalog' => ModuleCatalog::modules(),
             ])->with('error', 'System Error: ' . $e->getMessage());
         }
     }

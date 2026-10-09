@@ -137,6 +137,7 @@ class PartnerRegistrationTest extends TestCase
             'plan' => 'pro',
             'billing_cycle' => 'monthly',
             'amount' => '19500',
+            'field_of_operation' => 'general',
         ]);
 
         $response->assertRedirect(route('registration.pending.notice'));

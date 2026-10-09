@@ -273,14 +273,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/chat/{id}', [MessageController::class, 'show'])->middleware('subscription.active')->name('messages.chat.show');
 
     // Project Management
-    Route::controller(ProjectManagementController::class)->prefix('projects')->name('projects.')->middleware('subscription.active')->group(function () {
+    Route::controller(ProjectManagementController::class)->prefix('projects')->name('projects.')->middleware(['subscription.active', 'plan.access:pro,enterprise'])->group(function () {
         Route::get('/', 'index')->middleware('permission:projects.projects.view')->name('index');
         Route::post('/', 'storeProject')->middleware('permission:projects.projects.create')->name('store');
         Route::patch('/{project}', 'updateProject')->middleware('permission:projects.projects.edit')->name('update');
         Route::post('/{project}/tasks', 'storeTask')->middleware('permission:projects.projects.edit')->name('tasks.store');
     });
     Route::patch('/project-tasks/{task}', [ProjectManagementController::class, 'updateTask'])
-        ->middleware(['subscription.active', 'permission:projects.projects.edit'])
+        ->middleware(['subscription.active', 'plan.access:pro,enterprise', 'permission:projects.projects.edit'])
         ->name('projects.tasks.update');
 });
 
@@ -692,7 +692,7 @@ Route::middleware(['auth', 'subscription.active'])->prefix('ajax/inventory')->na
 });
 
 // Hotel tenant routes (isolated from superadmin and protected by hotel tenant gate)
-Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 'subscription.active', 'branch.required', 'hotel.tenant']], function () {
+Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 'subscription.active', 'branch.required', 'hotel.tenant', 'plan.access:hotel']], function () {
     Route::get('/dashboard', [\App\Http\Controllers\Hotel\HotelDashboardController::class, 'dashboard'])->name('dashboard');
     Route::get('/operations', [\App\Http\Controllers\Hotel\HotelOperationsController::class, 'index'])->name('operations.index');
     Route::post('/operations/requests', [\App\Http\Controllers\Hotel\HotelOperationsController::class, 'store'])->middleware('hotel.permission:frontdesk')->name('operations.requests.store');
@@ -818,7 +818,7 @@ Route::group(['prefix' => 'hotel', 'as' => 'hotel.', 'middleware' => ['auth', 's
     Route::post('/maintenance/{ticket}/status', [\App\Http\Controllers\Hotel\MaintenanceController::class, 'updateStatus'])->middleware('hotel.permission:maintenance')->name('maintenance.status');
 });
 
-Route::group(['prefix' => 'livestock', 'as' => 'livestock.', 'middleware' => ['auth', 'subscription.active', 'branch.required', 'livestock.tenant']], function () {
+Route::group(['prefix' => 'livestock', 'as' => 'livestock.', 'middleware' => ['auth', 'subscription.active', 'branch.required', 'livestock.tenant', 'plan.access:enterprise']], function () {
     Route::get('/', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'index'])->name('dashboard');
     Route::post('/farms', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'storeFarm'])->name('farms.store');
     Route::post('/flocks', [\App\Http\Controllers\Livestock\LivestockDashboardController::class, 'storeFlock'])->name('flocks.store');

@@ -836,12 +836,9 @@
                         <div>
                             <label class="label-caps">Field of Operation</label>
                             <select name="field_of_operation" id="fieldOfOperation" class="form-control input-smat w-100 @error('field_of_operation') is-invalid @enderror">
-                                <option value="general" @selected(old('field_of_operation', 'general') === 'general')>General Business</option>
-                                <option value="retail" @selected(old('field_of_operation') === 'retail')>Retail / POS</option>
-                                <option value="services" @selected(old('field_of_operation') === 'services')>Professional Services</option>
-                                <option value="manufacturing" @selected(old('field_of_operation') === 'manufacturing')>Manufacturing</option>
-                                <option value="hotel" @selected(old('field_of_operation') === 'hotel')>Hotel / Hospitality</option>
-                                <option value="livestock" @selected(old('field_of_operation') === 'livestock')>Livestock / Layer Farm</option>
+                                @foreach(($operationOptions ?? \App\Support\ModuleCatalog::registrationOperations()) as $operationKey => $operation)
+                                    <option value="{{ $operationKey }}" @selected(old('field_of_operation', 'general') === $operationKey)>{{ $operation['label'] }}</option>
+                                @endforeach
                             </select>
                             @error('field_of_operation')
                                 <span class="field-error">{{ $message }}</span>

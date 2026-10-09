@@ -7,6 +7,7 @@ use App\Support\ActiveBranchResolver;
 use App\Support\AppMailer;
 use App\Support\DeviceSessionManager;
 use App\Support\InternalTestAccess;
+use App\Support\ModuleCatalog;
 use App\Support\PartnerLocationRepository;
 use App\Support\SystemEventMailer;
 use Illuminate\Cookie\CookieJar;
@@ -65,6 +66,7 @@ class AuthController extends Controller
             'amount' => $finalPrice,
             'isManager' => $isPartner,
             'countryOptions' => PartnerLocationRepository::countryOptions(),
+            'operationOptions' => ModuleCatalog::registrationOperations(),
         ]);
     }
 
@@ -103,7 +105,7 @@ class AuthController extends Controller
         } else {
             $rules['plan'] = 'required|string';
             $rules['billing_cycle'] = 'required|string';
-            $rules['field_of_operation'] = 'nullable|string|max:120';
+            $rules['field_of_operation'] = ['required', 'string', \Illuminate\Validation\Rule::in(ModuleCatalog::operationKeys())];
         }
 
         $validated = $request->validate($rules, [
@@ -316,12 +318,7 @@ class AuthController extends Controller
                 $fieldOfOperation = strtolower(trim((string) ($validated['field_of_operation'] ?? '')));
                 $requestedPlan = strtolower((string) ($request->plan ?? session('selected_plan', 'pro')));
                 $requestedCycle = 'yearly';
-                if (str_contains($fieldOfOperation, 'hotel') || str_contains($fieldOfOperation, 'hospitality')) {
-                    $requestedPlan = 'hotel';
-                }
-                if (str_contains($fieldOfOperation, 'livestock') || str_contains($fieldOfOperation, 'poultry') || str_contains($fieldOfOperation, 'layer')) {
-                    $requestedPlan = 'livestock';
-                }
+                $requestedPlan = ModuleCatalog::dedicatedPlanForOperation($fieldOfOperation) ?? $requestedPlan;
 
                 $catalog = $this->registrationPlanCatalog();
                 $catalogEntry = $catalog[$requestedPlan] ?? null;
