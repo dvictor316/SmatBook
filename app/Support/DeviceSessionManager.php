@@ -80,15 +80,30 @@ class DeviceSessionManager
             }
         }
 
-        ActiveUserSession::query()->create([
+        $timestamp = now();
+
+        // A browser can issue parallel requests immediately after login. Both
+        // requests may pass the lookup above, so persist by the unique session
+        // ID in one atomic statement instead of racing through create().
+        ActiveUserSession::query()->upsert([[
             'user_id' => $user->id,
             'company_id' => $companyId,
             'session_id' => $sessionId,
             'device_fingerprint' => $fingerprint,
             'ip_address' => $request->ip(),
             'user_agent' => substr((string) $request->userAgent(), 0, 1000),
-            'authenticated_at' => now(),
-            'last_seen_at' => now(),
+            'authenticated_at' => $timestamp,
+            'last_seen_at' => $timestamp,
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ]], ['session_id'], [
+            'user_id',
+            'company_id',
+            'device_fingerprint',
+            'ip_address',
+            'user_agent',
+            'last_seen_at',
+            'updated_at',
         ]);
 
         return ['allowed' => true];
