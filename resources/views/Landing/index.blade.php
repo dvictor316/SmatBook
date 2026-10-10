@@ -289,7 +289,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 ══════════════════════════════════════════════════════════════ */
 .hero-wrap {
     position: relative; width: 100%;
-    padding-top: calc(var(--nav-h) + var(--announce-h) - 22px);
+    padding-top: calc(var(--nav-h) + var(--announce-h) + 36px);
     background: linear-gradient(135deg, #000c1e 0%, #001240 30%, #061d6b 60%, #0a2fa8 100%);
     overflow: hidden;
     min-height: calc(100vh - var(--nav-h) - var(--announce-h));
@@ -1948,7 +1948,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 }
 @media (max-width: 640px) {
     .hero-wrap {
-        padding-top: calc(var(--nav-h) + var(--announce-h) + 12px);
+        padding-top: calc(var(--nav-h) + var(--announce-h) + 24px);
         min-height: auto;
     }
     .hero-content {
@@ -2158,7 +2158,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         letter-spacing: 0;
     }
     .hero-wrap {
-        padding-top: calc(var(--nav-h) + var(--announce-h) + 10px);
+        padding-top: calc(var(--nav-h) + var(--announce-h) + 20px);
     }
     .hero-content {
         padding: 0 12px 28px;
