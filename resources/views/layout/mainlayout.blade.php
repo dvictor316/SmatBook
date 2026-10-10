@@ -1832,6 +1832,7 @@
         }
     </style>
     @stack('styles')
+    @include('layout.partials.responsive-guardrails')
 </head>
 
 <body @if(!empty($bodyClasses)) class="{{ implode(' ', $bodyClasses) }}" @endif>

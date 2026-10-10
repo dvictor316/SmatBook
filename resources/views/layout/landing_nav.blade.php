@@ -1281,6 +1281,7 @@
             }
         }
     </style>
+    @include('layout.partials.responsive-guardrails')
 
 </head>
 <body>

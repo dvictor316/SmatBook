@@ -1923,33 +1923,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     }
 }
 @media (max-width: 480px) {
-    .hero-circle {
-        width: min(86vw, 300px) !important;
-        height: min(86vw, 300px) !important;
-        padding: 38px 22px !important;
-    }
-    .hero-h1 { font-size: clamp(0.58rem, 2.75vw, 0.74rem) !important; max-width: 15ch !important; line-height: 1.02 !important; }
-    .hero-title-line { color: #fff !important; -webkit-text-fill-color: #fff !important; font-size: 1.08em !important; }
-    .hero-body { font-size: 7.2px !important; max-width: 19ch !important; margin-bottom: 6px !important; }
-    .hero-cta-stack { width: min(100%, 208px) !important; gap: 5px !important; transform: translateY(-3px) !important; }
-    .hero-btn-red,
-    .hero-btn-ghost {
-        min-height: 34px !important;
-        padding: 7px 10px !important;
-        font-size: 0.5rem !important;
-        letter-spacing: 0.25px !important;
-        gap: 6px !important;
-    }
-    .hero-btn-red,
-    .hero-btn-manager {
-        min-height: 36px !important;
-        padding: 8px 10px !important;
-        font-size: 0.53rem !important;
-    }
-    .hero-trust { margin-top: 5px !important; }
-    .trust-dot { width: 5px !important; height: 5px !important; }
-    .trust-text { font-size: 6.4px !important; }
-}
     .impact-story-badge {
         left: 14px;
         right: 14px;
@@ -2187,6 +2160,127 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         min-height: 56px !important;
         font-size: 0.9rem !important;
         padding: 13px 14px !important;
+    }
+
+    .announce-label {
+        width: 38px;
+        flex: 0 0 38px;
+        padding: 0 !important;
+        justify-content: center;
+    }
+    .announce-track {
+        min-width: 0;
+        padding-inline: 8px;
+    }
+    .announce-msg {
+        width: calc(100% - 16px);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .hero-right {
+        width: 100%;
+        min-width: 0;
+    }
+    .hero-phone {
+        width: min(82vw, 280px);
+    }
+    .phone-screen {
+        min-height: 0;
+    }
+    .stats-section {
+        padding: 36px 0;
+    }
+    .stats-section .row {
+        row-gap: 26px;
+    }
+    .stat-box h2 {
+        font-size: 1.85rem;
+    }
+    .stat-box p {
+        font-size: 0.66rem;
+        letter-spacing: 1px;
+    }
+    .sb-section,
+    .testi-section,
+    .strip-section {
+        padding-top: 56px;
+        padding-bottom: 56px;
+    }
+    .sb-section .text-center.mb-5,
+    .strip-section .text-center.mb-5 {
+        margin-bottom: 2rem !important;
+    }
+    .sb-h1,
+    .impact-story-title,
+    .feature-section-heading .sb-h1 {
+        overflow-wrap: anywhere;
+    }
+    .feature-copy-card,
+    .sol-tile,
+    .strip-card {
+        padding: 20px 18px;
+    }
+    .sol-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+    }
+    .project-img {
+        height: 220px;
+    }
+    .project-read-more {
+        width: 100%;
+        min-width: 0;
+    }
+    .testi-track {
+        gap: 14px;
+    }
+    .testi-card {
+        width: calc(100vw - 36px);
+        max-width: 340px;
+        padding: 24px 20px;
+    }
+    .sb-footer {
+        padding: 64px 0 30px;
+    }
+    .map-wrap {
+        min-height: 320px;
+        border-width: 6px;
+    }
+    .spb-support-bubble {
+        width: 56px;
+        height: 56px;
+        font-size: 21px;
+    }
+}
+
+@media (max-width: 359.98px) {
+    .hero-content {
+        padding-inline: 8px;
+    }
+    .hero-circle {
+        min-height: 430px !important;
+        padding-inline: 14px !important;
+    }
+    .hero-title-line,
+    .hero-h1 .gold-text {
+        white-space: normal;
+    }
+    .hero-btn-red,
+    .hero-btn-ghost,
+    .hero-btn-manager {
+        font-size: 0.82rem !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-circle,
+    .hero-circle-orbit,
+    .hero-phone,
+    .ticker-track,
+    .testi-track,
+    .benefit-card {
+        animation: none !important;
     }
 }
 </style>
