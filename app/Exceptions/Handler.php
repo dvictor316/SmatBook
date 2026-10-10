@@ -158,8 +158,11 @@ class Handler extends ExceptionHandler
         $this->renderable(function (QueryException $e, $request) {
             // Handle duplicate entry (unique constraint violation) gracefully
             $errorCode = $e->errorInfo[1] ?? null;
+            $connectionUnavailable = $this->isDatabaseConnectionFailure($e);
             if ($errorCode == 1062) {
                 $message = 'Duplicate entry detected. Please use a unique value.';
+            } elseif ($connectionUnavailable) {
+                $message = 'We cannot reach the database at the moment. Please wait briefly and try again.';
             } else {
                 $message = $this->formatQueryExceptionMessage($e);
             }
@@ -169,10 +172,22 @@ class Handler extends ExceptionHandler
             ]);
 
             if ($this->shouldReturnJson($request)) {
-                return response()->json(['message' => $message], 500);
+                $response = response()->json(['message' => $message], $connectionUnavailable ? 503 : 500);
+
+                if ($connectionUnavailable) {
+                    $response->header('Retry-After', '60');
+                }
+
+                return $response;
             }
 
             if ($request->isMethod('get')) {
+                if ($connectionUnavailable) {
+                    return response()
+                        ->view('errors.db_error', ['message' => $message], 503)
+                        ->header('Retry-After', '60');
+                }
+
                 return response()->view('errors.500', ['errorMessage' => $message], 500);
             }
 
@@ -190,9 +205,8 @@ class Handler extends ExceptionHandler
                 return null;
             }
 
-            $raw = trim((string) $e->getMessage());
             $base = class_basename($e);
-            $message = $raw !== '' ? "Unexpected error ({$base}): {$raw}" : "Unexpected error ({$base}).";
+            $message = 'An unexpected error occurred. Please try again or contact support if it persists.';
 
             Log::error('Unhandled exception', [
                 'message' => $e->getMessage(),
@@ -228,6 +242,21 @@ class Handler extends ExceptionHandler
         }
 
         return 'Database error occurred. Please contact support if it persists.';
+    }
+
+    private function isDatabaseConnectionFailure(QueryException $e): bool
+    {
+        $message = strtolower($e->getMessage());
+        $sqlState = strtoupper((string) ($e->errorInfo[0] ?? ''));
+        $driverCode = (int) ($e->errorInfo[1] ?? $e->getCode());
+
+        return str_starts_with($sqlState, '08')
+            || in_array($driverCode, [1042, 1043, 2002, 2003, 2006, 2013], true)
+            || str_contains($message, 'connection refused')
+            || str_contains($message, 'server has gone away')
+            || str_contains($message, 'lost connection')
+            || str_contains($message, 'could not find driver')
+            || str_contains($message, 'unable to open database file');
     }
 
     private function resolveLoginRedirect($request, array $query = []): string

@@ -1937,7 +1937,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 }
 @media (max-width: 640px) {
     .hero-wrap {
-        padding-top: calc(var(--nav-h) + var(--announce-h) - 20px);
+        padding-top: calc(var(--nav-h) + var(--announce-h) + 12px);
         min-height: auto;
     }
     .hero-content {
@@ -2136,7 +2136,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         letter-spacing: 0;
     }
     .hero-wrap {
-        padding-top: calc(var(--nav-h) + var(--announce-h) - 22px);
+        padding-top: calc(var(--nav-h) + var(--announce-h) + 10px);
     }
     .hero-content {
         padding: 0 12px 28px;
@@ -2163,14 +2163,18 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     }
 
     .announce-label {
-        width: 38px;
-        flex: 0 0 38px;
+        top: 4px;
+        bottom: 4px;
+        left: 8px;
+        width: 34px;
+        flex: 0 0 34px;
         padding: 0 !important;
         justify-content: center;
+        border-radius: 4px;
     }
     .announce-track {
         min-width: 0;
-        padding-inline: 8px;
+        padding: 0 8px 0 50px;
     }
     .announce-msg {
         width: calc(100% - 16px);
