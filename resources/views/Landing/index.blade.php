@@ -415,16 +415,17 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 }
 .hero-cta-stack {
     display: flex; flex-direction: column; gap: clamp(8px,0.7vw,11px);
-    width: min(100%, clamp(238px,22vw,310px));
+    align-items: center;
+    width: min(100%, clamp(300px,28vw,410px));
     transform: translateY(clamp(-12px,-0.9vw,-6px));
 }
 .hero-btn-red {
     display: flex; align-items: center; justify-content: center; gap: 9px;
     background: var(--crimson); color: #fff !important;
     width: 100%;
-    min-height: clamp(50px,3.95vw,58px);
-    padding: clamp(13px,1.08vw,16px) clamp(20px,1.8vw,28px);
-    font-weight: 900; border-radius: 999px; font-size: clamp(0.76rem,0.82vw,0.94rem);
+    min-height: clamp(60px,4.5vw,68px);
+    padding: clamp(15px,1.25vw,18px) clamp(22px,2vw,32px);
+    font-weight: 900; border-radius: 999px; font-size: clamp(0.82rem,0.9vw,1rem);
     letter-spacing: 0.9px; text-transform: uppercase; text-decoration: none; border: none;
     transition: all 0.3s; box-shadow: 0 8px 24px rgba(188,0,45,0.45);
     white-space: nowrap; position: relative; overflow: hidden;
@@ -436,7 +437,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 .hero-btn-ghost {
     display: flex; align-items: center; justify-content: center; gap: 9px;
     background: rgba(255,223,145,0.08); color: #fff8e0 !important;
-    width: 100%;
+    width: 86%;
     min-height: clamp(44px,3.45vw,52px);
     padding: clamp(11px,0.95vw,14px) clamp(18px,1.55vw,24px);
     font-weight: 900; border-radius: 999px; font-size: clamp(0.68rem,0.74vw,0.84rem);
@@ -444,9 +445,9 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     border: 1.5px solid rgba(255,223,145,0.50); transition: all 0.3s; white-space: nowrap;
 }
 .hero-btn-manager {
-    min-height: clamp(50px,3.95vw,58px);
-    padding: clamp(13px,1.08vw,16px) clamp(20px,1.8vw,28px);
-    font-size: clamp(0.76rem,0.82vw,0.94rem);
+    min-height: clamp(44px,3.45vw,52px);
+    padding: clamp(11px,0.95vw,14px) clamp(18px,1.55vw,24px);
+    font-size: clamp(0.68rem,0.74vw,0.84rem);
 }
 .hero-btn-ghost:hover { background: rgba(255,223,145,0.18); border-color: var(--gold-bright); color: #fff8e0 !important; transform: translateY(-2px); }
 .hero-trust { display: flex; align-items: center; gap: 8px; margin-top: clamp(0px,0.25vw,4px); }
@@ -1547,11 +1548,21 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     pointer-events: none;
 }
 /* Footer */
-.sb-footer { background: var(--surface-2); padding: 96px 0 40px; border-top: 5px solid var(--gold); position: relative; overflow: hidden; }
-.sb-footer::before { content:''; position:absolute; inset:0; background:repeating-linear-gradient(45deg,transparent,transparent 48px,rgba(197,160,89,0.04) 48px,rgba(197,160,89,0.04) 50px); pointer-events:none; }
-.footer-link { color: var(--muted); text-decoration: none; font-size: 13px; transition: all 0.2s; }
+.sb-footer { background: var(--navy-deep); color: #fff; padding: 96px 0 40px; border-top: 5px solid var(--gold); position: relative; overflow: hidden; }
+.sb-footer::before { content: none; }
+.sb-footer h2,
+.sb-footer h3,
+.sb-footer h6,
+.sb-footer .mb-4 p,
+.sb-footer .mb-4 a { color: #fff !important; }
+.sb-footer p { color: rgba(255,255,255,0.72) !important; }
+.sb-footer .row.mb-5,
+.sb-footer .text-center { border-color: rgba(255,255,255,0.16) !important; }
+.sb-footer .form-control { background: #fff; color: var(--text); border-color: rgba(255,255,255,0.32) !important; }
+.sb-footer .form-control::placeholder { color: #6b7280; opacity: 1; }
+.footer-link { color: rgba(255,255,255,0.72); text-decoration: none; font-size: 13px; transition: all 0.2s; }
 .footer-link:hover { color: var(--gold); transform: translateX(3px); display: inline-block; }
-.footer-social { width: 38px; height: 38px; border-radius: 50%; background: rgba(0,35,71,0.06); display: flex; align-items: center; justify-content: center; color: var(--navy); transition: all 0.3s; text-decoration: none; }
+.footer-social { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.10); display: flex; align-items: center; justify-content: center; color: #fff; transition: all 0.3s; text-decoration: none; }
 .footer-social:hover { background: var(--gold); color: #fff; transform: scale(1.1); }
 .map-wrap { border: 10px solid #fff; border-radius: var(--radius-md); box-shadow: var(--shadow-md); overflow: hidden; min-height: 480px; }
 
@@ -1990,7 +2001,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     }
     .hero-cta-stack {
         width: 100% !important;
-        max-width: 360px !important;
+        max-width: 440px !important;
         transform: none !important;
         gap: 12px !important;
         margin-inline: auto;
@@ -2006,6 +2017,17 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         letter-spacing: 0 !important;
         white-space: normal !important;
         border-radius: 18px !important;
+    }
+    .hero-btn-red {
+        min-height: 68px !important;
+        font-size: 1rem !important;
+        box-shadow: 0 10px 30px rgba(188,0,45,0.55) !important;
+    }
+    .hero-btn-ghost,
+    .hero-btn-manager {
+        width: 88% !important;
+        min-height: 52px !important;
+        font-size: 0.86rem !important;
     }
     .hero-trust { display: none !important; }
     .hero-eyebrow { margin-bottom: 10px !important; }
@@ -2154,12 +2176,16 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .hero-body {
         font-size: 0.86rem !important;
     }
-    .hero-btn-red,
+    .hero-btn-red {
+        min-height: 68px !important;
+        font-size: 1rem !important;
+        padding: 15px 16px !important;
+    }
     .hero-btn-ghost,
     .hero-btn-manager {
-        min-height: 56px !important;
-        font-size: 0.9rem !important;
-        padding: 13px 14px !important;
+        min-height: 52px !important;
+        font-size: 0.84rem !important;
+        padding: 12px 14px !important;
     }
 
     .announce-label {
@@ -2270,11 +2296,9 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .hero-h1 .gold-text {
         white-space: normal;
     }
-    .hero-btn-red,
+    .hero-btn-red { font-size: 0.9rem !important; }
     .hero-btn-ghost,
-    .hero-btn-manager {
-        font-size: 0.82rem !important;
-    }
+    .hero-btn-manager { font-size: 0.78rem !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2359,7 +2383,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                     <h1 class="hero-h1"><span class="hero-title-line">Run Your Business.</span><br><span class="gold-text">Know Your Money.</span></h1>
                     <p class="hero-body">Accounting-first workflow for sales, invoices, expenses, payroll and tax — all in one platform.</p>
                     <div class="hero-cta-stack">
-                        <a href="{{ route('membership-plans') }}" class="hero-btn-red"><i class="fas fa-shopping-cart"></i> Start Today</a>
+                        <a href="{{ route('membership-plans') }}" class="hero-btn-red"><i class="fas fa-building"></i> Register Your Business Today</a>
                         <a href="{{ route('saas-register', ['type'=>'partner']) }}" class="hero-btn-ghost hero-btn-manager"><i class="fas fa-handshake"></i> Become a Partner</a>
                         <a href="{{ route('demo.request.form') }}" class="hero-btn-ghost"><i class="fas fa-envelope-open-text"></i> Request Demo</a>
                     </div>
