@@ -571,8 +571,18 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     Route::delete('/hotels/folio-items/{item}', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'destroyServiceCharge'])->name('hotels.service_charges.destroy');
     Route::get('/hotels/folio-items/{item}/receipt', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'serviceReceipt'])->name('hotels.receipts.show');
 
-    // Livestock Management (Super Admin, read-only tenant oversight)
+    // Livestock Management (Super Admin)
     Route::get('/livestock', [\App\Http\Controllers\SuperAdmin\LivestockController::class, 'index'])->name('livestock.index');
+    Route::post('/livestock/farms', [\App\Http\Controllers\SuperAdmin\LivestockController::class, 'storeFarm'])->name('livestock.farms.store');
+    Route::put('/livestock/farms/{farm}', [\App\Http\Controllers\SuperAdmin\LivestockController::class, 'updateFarm'])->name('livestock.farms.update');
+    Route::post('/livestock/flocks', [\App\Http\Controllers\SuperAdmin\LivestockController::class, 'storeFlock'])->name('livestock.flocks.store');
+    Route::patch('/livestock/flocks/{flock}/status', [\App\Http\Controllers\SuperAdmin\LivestockController::class, 'updateFlockStatus'])->name('livestock.flocks.status');
+    Route::post('/livestock/investments', [\App\Http\Controllers\SuperAdmin\LivestockController::class, 'storeInvestment'])->name('livestock.investments.store');
+    Route::post('/livestock/opex', [\App\Http\Controllers\SuperAdmin\LivestockController::class, 'storeOpex'])->name('livestock.opex.store');
+    Route::post('/livestock/revenue', [\App\Http\Controllers\SuperAdmin\LivestockController::class, 'storeRevenue'])->name('livestock.revenue.store');
+    Route::post('/livestock/production', [\App\Http\Controllers\SuperAdmin\LivestockController::class, 'storeProduction'])->name('livestock.production.store');
+    Route::post('/livestock/inventory', [\App\Http\Controllers\SuperAdmin\LivestockController::class, 'storeInventory'])->name('livestock.inventory.store');
+    Route::delete('/livestock/records/{type}/{id}', [\App\Http\Controllers\SuperAdmin\LivestockController::class, 'destroyRecord'])->name('livestock.records.destroy');
 
 
 
