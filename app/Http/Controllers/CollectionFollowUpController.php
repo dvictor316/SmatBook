@@ -14,7 +14,7 @@ class CollectionFollowUpController extends Controller
 {
     private function applyTenantScope($query, string $table)
     {
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $userId = (int) (auth()->id() ?? 0);
 
         if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
@@ -171,7 +171,7 @@ class CollectionFollowUpController extends Controller
         $activeBranch = $this->activeBranchContext();
 
         CollectionFollowUp::create([
-            'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
+            'company_id' => session('current_tenant_id') ?? auth()->user()?->company_id,
             'branch_id' => $activeBranch['id'],
             'branch_name' => $activeBranch['name'],
             'party_type' => $data['party_type'],

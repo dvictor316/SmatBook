@@ -84,7 +84,7 @@ class ExpenseController extends Controller
 
     private function applyTenantScope($query, string $table)
     {
-        $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
         $userId = (int) (Auth::id() ?? 0);
 
         if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
@@ -174,7 +174,7 @@ class ExpenseController extends Controller
         $branchName = session('active_branch_name') ? (string) session('active_branch_name') : null;
 
         if (!$branchId && !$branchName && Schema::hasTable('settings')) {
-            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
             if ($companyId > 0) {
                 $key = 'branches_json_company_' . $companyId;
                 $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
@@ -210,7 +210,7 @@ class ExpenseController extends Controller
 
     private function generatedVendorEmail(string $name): string
     {
-        $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
         $slug = strtolower(trim((string) preg_replace('/[^a-z0-9]+/i', '-', $name), '-'));
         $slug = $slug !== '' ? $slug : 'supplier';
         $localPart = substr('supplier-' . ($companyId ?: 'global') . '-' . $slug, 0, 150);
@@ -335,7 +335,7 @@ class ExpenseController extends Controller
                 ];
 
                 if (Schema::hasColumn('expenses', 'company_id')) {
-                    $payload['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
+                    $payload['company_id'] = session('current_tenant_id') ?? Auth::user()?->company_id;
                 }
                 if (Schema::hasColumn('expenses', 'user_id')) {
                     $payload['user_id'] = Auth::id();
@@ -467,7 +467,7 @@ class ExpenseController extends Controller
                         $expensePayload['category_id'] = $categoryId;
                     }
                     if (Schema::hasColumn('expenses', 'company_id')) {
-                        $expensePayload['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
+                        $expensePayload['company_id'] = session('current_tenant_id') ?? Auth::user()?->company_id;
                     }
                     if (Schema::hasColumn('expenses', 'user_id')) {
                         $expensePayload['user_id'] = Auth::id();
@@ -783,7 +783,7 @@ class ExpenseController extends Controller
                 $expense->branch_name = session('active_branch_name');
             }
             if (Schema::hasColumn('expenses', 'company_id') && empty($expense->company_id)) {
-                $expense->company_id = Auth::user()?->company_id ?? session('current_tenant_id');
+                $expense->company_id = session('current_tenant_id') ?? Auth::user()?->company_id;
             }
             if (Schema::hasColumn('expenses', 'user_id') && empty($expense->user_id)) {
                 $expense->user_id = Auth::id();
@@ -968,7 +968,7 @@ class ExpenseController extends Controller
                     'balance' => (float) ($validated['balance'] ?? 0),
                 ];
                 if (Schema::hasColumn('banks', 'company_id')) {
-                    $bankAttributes['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
+                    $bankAttributes['company_id'] = session('current_tenant_id') ?? Auth::user()?->company_id;
                 }
                 if (Schema::hasColumn('banks', 'user_id')) {
                     $bankValues['user_id'] = Auth::id();
@@ -999,7 +999,7 @@ class ExpenseController extends Controller
                 'is_active' => true,
             ];
             if (Schema::hasColumn('accounts', 'company_id')) {
-                $accountAttributes['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
+                $accountAttributes['company_id'] = session('current_tenant_id') ?? Auth::user()?->company_id;
             }
             if (Schema::hasColumn('accounts', 'user_id')) {
                 $accountValues['user_id'] = Auth::id();
@@ -1105,7 +1105,7 @@ class ExpenseController extends Controller
 
         try {
             if (Schema::hasTable('vendors')) {
-                $companyId = Auth::user()?->company_id ?? session('current_tenant_id');
+                $companyId = session('current_tenant_id') ?? Auth::user()?->company_id;
                 $email = trim((string) ($validated['email'] ?? ''));
                 $email = $email !== '' ? $email : $this->generatedVendorEmail($validated['name']);
 

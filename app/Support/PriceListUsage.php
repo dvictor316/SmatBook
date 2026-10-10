@@ -14,7 +14,7 @@ class PriceListUsage
             return collect();
         }
 
-        $companyId = $companyId ?: (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = $companyId ?: (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         if ($companyId <= 0) {
             return collect();
         }

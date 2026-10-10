@@ -337,6 +337,11 @@ class Subscription extends Model
             && strtolower((string) $this->payment_status) === 'free';
     }
 
+    public function managesTenantOwnershipExplicitly(): bool
+    {
+        return true;
+    }
+
     protected static function boot()
     {
         parent::boot();

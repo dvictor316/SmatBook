@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Traits\TenantScoped;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SerialNumber extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, TenantScoped;
 
     protected $fillable = [
         'company_id', 'product_id', 'lot_id', 'serial_number',

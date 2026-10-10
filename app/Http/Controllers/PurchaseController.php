@@ -30,7 +30,7 @@ class PurchaseController extends Controller
 {
 public function applyTenantScope($query, string $table)
     {
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $userId = (int) (auth()->id() ?? 0);
 
         if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
@@ -52,7 +52,7 @@ public function getActiveBranchContext(): array
         $branchName = session('active_branch_name') ? (string) session('active_branch_name') : null;
 
         if (!$branchId && !$branchName && Schema::hasTable('settings')) {
-            $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
             if ($companyId > 0) {
                 $key = 'branches_json_company_' . $companyId;
                 $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
@@ -461,7 +461,7 @@ private function applyBranchScope($query, string $table = 'purchases')
                 $purchasePayload['vendor_id'] = $validated['vendor_id'] ?? null;
             }
             if (Schema::hasColumn('purchases', 'company_id')) {
-                $purchasePayload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
+                $purchasePayload['company_id'] = session('current_tenant_id') ?? auth()->user()?->company_id;
             }
             if (Schema::hasColumn('purchases', 'user_id')) {
                 $purchasePayload['user_id'] = auth()->id();
@@ -516,7 +516,7 @@ private function applyBranchScope($query, string $table = 'purchases')
                     $itemPayload['line_total'] = $itemAmount;
                 }
                 if (Schema::hasColumn('purchase_items', 'company_id')) {
-                    $itemPayload['company_id'] = $purchase->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
+                    $itemPayload['company_id'] = $purchase->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id;
                 }
                 if (Schema::hasColumn('purchase_items', 'branch_id')) {
                     $itemPayload['branch_id'] = $purchase->branch_id ?? $activeBranch['id'];
@@ -534,7 +534,7 @@ private function applyBranchScope($query, string $table = 'purchases')
                     $product,
                     $stockQuantity,
                     $activeBranch,
-                    (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
+                    (int) ($product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0)
                 );
             }
 
@@ -821,7 +821,7 @@ public function show($id)
                     $previousProduct,
                     -$previousQty,
                     $activeBranch,
-                    (int) ($previousProduct->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
+                    (int) ($previousProduct->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0)
                 );
             }
 
@@ -872,7 +872,7 @@ public function show($id)
                     $itemPayload['line_total'] = $itemAmount;
                 }
                 if (Schema::hasColumn('purchase_items', 'company_id')) {
-                    $itemPayload['company_id'] = $purchase->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
+                    $itemPayload['company_id'] = $purchase->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id;
                 }
                 if (Schema::hasColumn('purchase_items', 'branch_id')) {
                     $itemPayload['branch_id'] = $purchase->branch_id ?? $activeBranch['id'];
@@ -890,7 +890,7 @@ public function show($id)
                     $product,
                     $stockQuantity,
                     $activeBranch,
-                    (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
+                    (int) ($product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0)
                 );
             }
 
@@ -984,7 +984,7 @@ public function show($id)
             SupplierPayment::create([
                 'supplier_id' => $purchase->supplier_id,
                 'purchase_id' => $purchase->id,
-                'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
+                'company_id' => session('current_tenant_id') ?? auth()->user()?->company_id,
                 'user_id' => auth()->id(),
                 'branch_id' => $purchase->branch_id ?? $activeBranch['id'],
                 'branch_name' => $purchase->branch_name ?? $activeBranch['name'],
@@ -1015,7 +1015,7 @@ public function show($id)
 
         $paymentQuery = SupplierPayment::query()->where('purchase_id', $purchase->id);
         if (Schema::hasColumn('supplier_payments', 'company_id')) {
-            $paymentQuery->where('company_id', auth()->user()?->company_id ?? session('current_tenant_id'));
+            $paymentQuery->where('company_id', session('current_tenant_id') ?? auth()->user()?->company_id);
         }
         $payment = $paymentQuery->find($paymentId);
 
@@ -1117,7 +1117,7 @@ public function show($id)
                         'id' => $purchase->branch_id ?? $activeBranch['id'],
                         'name' => $purchase->branch_name ?? $activeBranch['name'],
                     ],
-                    (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
+                    (int) ($product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0)
                 );
             }
             
@@ -1256,6 +1256,8 @@ public function show($id)
      */
     public function getPurchaseItems($id)
     {
+        Purchase::query()->findOrFail($id);
+
         $items = DB::table('purchase_items')
             ->join('products', 'purchase_items.product_id', '=', 'products.id')
             ->where('purchase_items.purchase_id', $id)
@@ -1285,20 +1287,35 @@ public function show($id)
             'items.*.unit_price' => 'required|numeric|min:0',
         ]);
 
-        // Calculate the total return amount
+        // Resolve the parent through the tenant scope before reading its lines.
+        $purchase = Purchase::query()->findOrFail($request->purchase_id);
+        $sourceItems = DB::table('purchase_items')
+            ->where('purchase_id', $purchase->id)
+            ->get()
+            ->groupBy(fn ($item) => (string) $item->product_id);
+
         $totalAmount = 0;
-        foreach ($request->items as $item) {
-            if (isset($item['qty']) && $item['qty'] > 0) {
-                $totalAmount += ($item['qty'] * $item['unit_price']);
+        foreach ($request->items as $productId => $item) {
+            $quantity = (float) ($item['qty'] ?? 0);
+            if ($quantity <= 0) {
+                continue;
             }
+
+            $sourceLines = $sourceItems->get((string) $productId, collect());
+            $purchasedQuantity = (float) $sourceLines->sum('qty');
+            $sourceLine = $sourceLines->first();
+            if (! $sourceLine || $quantity > $purchasedQuantity) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    "items.{$productId}.qty" => 'Return quantity cannot exceed the quantity on the selected purchase.',
+                ]);
+            }
+
+            $totalAmount += $quantity * (float) $sourceLine->unit_price;
         }
 
         if ($totalAmount <= 0) {
             return back()->with('error', 'Please enter a quantity for at least one item.');
         }
-
-        // Get the purchase and vendor
-        $purchase = Purchase::findOrFail($request->purchase_id);
 
         // Create the Purchase Return (Debit Note)
         $purchaseReturn = PurchaseReturn::create([
@@ -1481,7 +1498,7 @@ public function show($id)
                 $purchase->notes = $validated['notes'] ?? null;
             }
             if (Schema::hasColumn('purchases', 'company_id')) {
-                $purchase->company_id = auth()->user()?->company_id ?? session('current_tenant_id');
+                $purchase->company_id = session('current_tenant_id') ?? auth()->user()?->company_id;
             }
             if (Schema::hasColumn('purchases', 'user_id')) {
                 $purchase->user_id = auth()->id();
@@ -1505,7 +1522,7 @@ public function show($id)
                     'unit_price' => $rate,
                 ];
                 if (Schema::hasColumn('purchase_items', 'company_id')) {
-                    $itemPayload['company_id'] = $purchase->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
+                    $itemPayload['company_id'] = $purchase->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id;
                 }
                 if (Schema::hasColumn('purchase_items', 'branch_id')) {
                     $itemPayload['branch_id'] = $purchase->branch_id ?? $activeBranch['id'];
@@ -1589,8 +1606,8 @@ public function show($id)
                 ])
                 ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) = 'in'");
 
-            if (Schema::hasColumn('products', 'company_id') && (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0) > 0) {
-                $historyQuery->where('products.company_id', (int) (auth()->user()?->company_id ?? session('current_tenant_id')));
+            if (Schema::hasColumn('products', 'company_id') && (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0) > 0) {
+                $historyQuery->where('products.company_id', (int) (session('current_tenant_id') ?? auth()->user()?->company_id));
             } elseif (Schema::hasColumn('products', 'user_id') && auth()->id()) {
                 $historyQuery->where('products.user_id', auth()->id());
             }

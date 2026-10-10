@@ -17,7 +17,7 @@ class Controller extends BaseController
     protected function scopeContext(): array
     {
         return [
-            'company_id' => (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0),
+            'company_id' => (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0),
             'branch_id' => trim((string) session('active_branch_id', '')),
             'branch_name' => trim((string) session('active_branch_name', '')),
         ];

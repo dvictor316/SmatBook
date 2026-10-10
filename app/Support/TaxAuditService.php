@@ -14,7 +14,7 @@ class TaxAuditService
             return;
         }
 
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0) ?: null;
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0) ?: null;
         $userId = (int) (auth()->id() ?? 0) ?: null;
         $branchId = trim((string) session('active_branch_id', ''));
         $branchName = trim((string) session('active_branch_name', ''));

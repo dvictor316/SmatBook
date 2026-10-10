@@ -26,7 +26,7 @@ class TaxAuthorityConnectionController extends Controller
             'token_expires_at' => 'nullable|date',
             'is_active' => 'nullable|boolean',
         ]);
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0) ?: null;
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0) ?: null;
         $branchId = trim((string) session('active_branch_id', '')) ?: null;
         $connection = TaxAuthorityConnection::firstOrNew([
             'company_id' => $companyId,

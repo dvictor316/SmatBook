@@ -344,14 +344,14 @@ class ReportController extends Controller
 
     private function customReportsSettingKey(): string
     {
-        $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? optional(Auth::user())->company_id ?? 0);
 
         return $companyId > 0 ? 'custom_reports_company_'.$companyId : 'custom_reports';
     }
 
     private function availableCustomReportBranches()
     {
-        $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? optional(Auth::user())->company_id ?? 0);
         if ($companyId <= 0) {
             return collect();
         }
@@ -680,7 +680,7 @@ class ReportController extends Controller
         if (! $user) {
             return 'basic';
         }
-        $companyId = (int) ($user->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? $user->company_id ?? 0);
         if ($companyId > 0 && Schema::hasTable('subscriptions')) {
             $sub = DB::table('subscriptions')
                 ->where('company_id', $companyId)
@@ -704,7 +704,7 @@ class ReportController extends Controller
     {
         // Every user — including super_admin — is scoped to their own company.
         // No role or plan bypasses this. Data must never leak between tenants.
-        $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? optional(Auth::user())->company_id ?? 0);
         $userId = (int) (Auth::id() ?? 0);
 
         if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
@@ -786,7 +786,7 @@ class ReportController extends Controller
         }
 
         if ((! $branchId || ! $branchName) && Schema::hasTable('settings')) {
-            $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? optional(Auth::user())->company_id ?? 0);
             if ($companyId > 0) {
                 $key = 'branches_json_company_'.$companyId;
                 $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
@@ -3153,14 +3153,24 @@ class ReportController extends Controller
             'purchase_id' => 'required|exists:purchases,id',
             'return_date' => 'required|date',
             'items' => 'required|array',
+            'items.*.qty' => 'nullable|numeric|min:0',
         ]);
 
         DB::beginTransaction();
         try {
-            $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? optional(Auth::user())->company_id ?? 0);
             $userId = (int) (Auth::id() ?? 0);
 
-            $purchase = DB::table('purchases')->where('id', $request->purchase_id)->first();
+            $purchaseQuery = $this->scopedTable('purchases')->where('purchases.id', $request->purchase_id);
+            $purchase = $purchaseQuery->first();
+            if (! $purchase) {
+                throw new \RuntimeException('The selected purchase could not be found for this tenant or branch.');
+            }
+
+            $sourceItems = DB::table('purchase_items')
+                ->where('purchase_id', $purchase->id)
+                ->get()
+                ->groupBy(fn ($item) => (string) $item->product_id);
 
             $returnInsert = [
                 'purchase_id' => $purchase->id,
@@ -3181,15 +3191,26 @@ class ReportController extends Controller
 
             $totalAmount = 0;
             foreach ($request->items as $productId => $data) {
-                if ($data['qty'] > 0) {
-                    $subtotal = $data['qty'] * $data['unit_price'];
+                $quantity = (float) ($data['qty'] ?? 0);
+                if ($quantity > 0) {
+                    $sourceLines = $sourceItems->get((string) $productId, collect());
+                    $purchasedQuantity = (float) $sourceLines->sum('qty');
+                    $sourceLine = $sourceLines->first();
+                    if (! $sourceLine || $quantity > $purchasedQuantity) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            "items.{$productId}.qty" => 'Return quantity cannot exceed the quantity on the selected purchase.',
+                        ]);
+                    }
+
+                    $unitPrice = (float) $sourceLine->unit_price;
+                    $subtotal = $quantity * $unitPrice;
                     $totalAmount += $subtotal;
 
                     $itemInsert = [
                         'purchase_return_id' => $returnId,
                         'product_id' => $productId,
-                        'qty' => $data['qty'],
-                        'unit_price' => $data['unit_price'],
+                        'qty' => $quantity,
+                        'unit_price' => $unitPrice,
                         'subtotal' => $subtotal,
                     ];
                     if ($companyId > 0 && Schema::hasColumn('purchase_return_items', 'company_id')) {
@@ -3338,11 +3359,12 @@ class ReportController extends Controller
             'invoice_id' => 'required|exists:sales,id',
             'credit_date' => 'required|date',
             'items' => 'required|array',
+            'items.*.qty' => 'nullable|numeric|min:0',
         ]);
 
         DB::beginTransaction();
         try {
-            $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? optional(Auth::user())->company_id ?? 0);
             $userId = (int) (Auth::id() ?? 0);
 
             $invoiceQuery = DB::table('sales')->where('id', $request->invoice_id);
@@ -3352,6 +3374,11 @@ class ReportController extends Controller
                 throw new \RuntimeException('The selected sale could not be found for this tenant or branch.');
             }
             $activeBranch = $this->getActiveBranchContext();
+            $saleQuantityColumn = Schema::hasColumn('sale_items', 'qty') ? 'qty' : 'quantity';
+            $sourceItems = DB::table('sale_items')
+                ->where('sale_id', $invoice->id)
+                ->get()
+                ->groupBy(fn ($item) => (string) $item->product_id);
 
             // 1. Create the Credit Note Header
             $cnInsert = [
@@ -3388,16 +3415,27 @@ class ReportController extends Controller
 
             // 2. Process each returned item
             foreach ($request->items as $productId => $data) {
-                if ($data['qty'] > 0) {
-                    $subtotal = $data['qty'] * $data['unit_price'];
+                $quantity = (float) ($data['qty'] ?? 0);
+                if ($quantity > 0) {
+                    $sourceLines = $sourceItems->get((string) $productId, collect());
+                    $soldQuantity = (float) $sourceLines->sum($saleQuantityColumn);
+                    $sourceLine = $sourceLines->first();
+                    if (! $sourceLine || $quantity > $soldQuantity) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            "items.{$productId}.qty" => 'Return quantity cannot exceed the quantity on the selected sale.',
+                        ]);
+                    }
+
+                    $unitPrice = (float) $sourceLine->unit_price;
+                    $subtotal = $quantity * $unitPrice;
                     $totalAmount += $subtotal;
 
                     // Save item details
                     $ciInsert = [
                         'credit_note_id' => $creditNoteId,
                         'product_id' => $productId,
-                        'qty' => $data['qty'],
-                        'unit_price' => $data['unit_price'],
+                        'qty' => $quantity,
+                        'unit_price' => $unitPrice,
                         'subtotal' => $subtotal,
                     ];
                     if ($companyId > 0 && Schema::hasColumn('credit_note_items', 'company_id')) {
@@ -3419,7 +3457,7 @@ class ReportController extends Controller
                     if ($product) {
                         $stockUnits = InventoryQuantity::resolveSaleStockUnits(
                             $product,
-                            (float) $data['qty'],
+                            $quantity,
                             $data['unit_type'] ?? null,
                             isset($data['stock_units']) ? (float) $data['stock_units'] : null
                         );
@@ -3476,6 +3514,9 @@ class ReportController extends Controller
 
     public function get_purchase_items($id)
     {
+        $purchase = $this->scopedTable('purchases')->where('purchases.id', $id);
+        abort_unless($purchase->exists(), 404);
+
         $items = $this->scopedTable('purchase_items')
             ->join('products', 'purchase_items.product_id', '=', 'products.id')
             ->where('purchase_id', $id)
@@ -3576,7 +3617,7 @@ class ReportController extends Controller
         $branchId = trim((string) ($activeBranch['id'] ?? ''));
         $branchName = trim((string) ($activeBranch['name'] ?? ''));
         $isAllBranches = ($activeBranch['scope'] ?? 'branch') === 'all';
-        $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? optional(Auth::user())->company_id ?? 0);
         $salesHasDeletedAt = Schema::hasColumn('sales', 'deleted_at');
         $salesHasOrderStatus = Schema::hasColumn('sales', 'order_status');
         $salesAmountExpr = Schema::hasColumn('sales', 'total')

@@ -67,7 +67,7 @@ class SupplierController extends Controller
 
     private function applyTenantScope($query, string $table = 'suppliers')
     {
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $userId = (int) (auth()->id() ?? 0);
         $activeBranch = $this->getActiveBranchContext();
         $branchId = trim((string) ($activeBranch['id'] ?? ''));
@@ -110,7 +110,7 @@ class SupplierController extends Controller
         $branchName = session('active_branch_name') ? (string) session('active_branch_name') : null;
 
         if (!$branchId && !$branchName && Schema::hasTable('settings')) {
-            $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
             if ($companyId > 0) {
                 $key = 'branches_json_company_' . $companyId;
                 $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
@@ -288,7 +288,7 @@ class SupplierController extends Controller
         ]);
 
         if (Schema::hasColumn('suppliers', 'company_id')) {
-            $payload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
+            $payload['company_id'] = session('current_tenant_id') ?? auth()->user()?->company_id;
         }
         if (Schema::hasColumn('suppliers', 'user_id')) {
             $payload['user_id'] = auth()->id();
@@ -727,7 +727,7 @@ class SupplierController extends Controller
                         SupplierPayment::create(array_merge([
                             'supplier_id' => $supplier->id,
                             'purchase_id' => $purchase->id,
-                            'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
+                            'company_id' => session('current_tenant_id') ?? auth()->user()?->company_id,
                             'user_id' => auth()->id(),
                             'branch_id' => $purchase->branch_id ?? $activeBranch['id'],
                             'branch_name' => $purchase->branch_name ?? $activeBranch['name'],
@@ -761,7 +761,7 @@ class SupplierController extends Controller
                             SupplierPayment::create(array_merge([
                                 'supplier_id' => $supplier->id,
                                 'purchase_id' => null,
-                                'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
+                                'company_id' => session('current_tenant_id') ?? auth()->user()?->company_id,
                                 'user_id' => auth()->id(),
                                 'branch_id' => $this->getActiveBranchContext()['id'],
                                 'branch_name' => $this->getActiveBranchContext()['name'],

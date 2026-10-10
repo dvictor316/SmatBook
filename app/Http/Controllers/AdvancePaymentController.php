@@ -54,7 +54,7 @@ class AdvancePaymentController extends Controller
     private function scopedCustomerQuery()
     {
         $query = Customer::query();
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $userId = (int) (auth()->id() ?? 0);
 
         if ($companyId > 0 && Schema::hasColumn('customers', 'company_id')) {
@@ -69,7 +69,7 @@ class AdvancePaymentController extends Controller
     private function scopedSupplierQuery()
     {
         $query = Supplier::query();
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $userId = (int) (auth()->id() ?? 0);
 
         if ($companyId > 0 && Schema::hasColumn('suppliers', 'company_id')) {

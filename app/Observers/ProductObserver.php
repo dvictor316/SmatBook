@@ -28,7 +28,7 @@ class ProductObserver
             $payload['user_id'] = auth()->id() ?? (int) DB::table('users')->min('id');
         }
         if (Schema::hasColumn('inventory_history', 'company_id')) {
-            $payload['company_id'] = $product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
+            $payload['company_id'] = $product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id;
         }
         if (Schema::hasColumn('inventory_history', 'branch_id')) {
             $payload['branch_id'] = $product->branch_id ?? session('active_branch_id');
@@ -68,7 +68,7 @@ class ProductObserver
                 $payload['user_id'] = auth()->id() ?? (int) DB::table('users')->min('id');
             }
             if (Schema::hasColumn('inventory_history', 'company_id')) {
-                $payload['company_id'] = $product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
+                $payload['company_id'] = $product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id;
             }
             if (Schema::hasColumn('inventory_history', 'branch_id')) {
                 $payload['branch_id'] = $product->branch_id ?? session('active_branch_id');

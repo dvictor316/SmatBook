@@ -40,7 +40,7 @@ class GeneralLedgerController extends Controller
         }
 
         if (($branchId === '' || $branchName === '') && Schema::hasTable('settings')) {
-            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
             if ($companyId > 0) {
                 $key = 'branches_json_company_'.$companyId;
                 $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
@@ -74,7 +74,7 @@ class GeneralLedgerController extends Controller
 
     private function applyTenantScope($query, string $table)
     {
-        $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
         $userId = (int) (Auth::id() ?? 0);
 
         if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {

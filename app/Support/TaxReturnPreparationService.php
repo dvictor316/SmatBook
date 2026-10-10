@@ -11,7 +11,7 @@ class TaxReturnPreparationService
     public function prepare(string $start, string $end, array $context = []): array
     {
         $filingType = strtolower((string) ($context['filing_type'] ?? 'vat'));
-        $companyId = (int) ($context['company_id'] ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) ($context['company_id'] ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $userId = (int) ($context['user_id'] ?? auth()->id() ?? 0);
         $branchScope = (string) ($context['branch_scope'] ?? session('active_branch_scope', 'branch'));
         $branchId = trim((string) ($context['branch_id'] ?? session('active_branch_id', '')));

@@ -25,7 +25,7 @@ class RecurringTransactionController extends Controller
 
     private function applyTenantScope($query, string $table)
     {
-        $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
         $userId = (int) (Auth::id() ?? 0);
 
         if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
@@ -43,7 +43,7 @@ class RecurringTransactionController extends Controller
         $branchName = session('active_branch_name') ? (string) session('active_branch_name') : null;
 
         if (!$branchId && !$branchName && Schema::hasTable('settings')) {
-            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
             if ($companyId > 0) {
                 $key = 'branches_json_company_' . $companyId;
                 $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
@@ -174,7 +174,7 @@ class RecurringTransactionController extends Controller
         $activeBranch = $this->getActiveBranchContext();
 
         RecurringTransaction::create([
-            'company_id' => Auth::user()?->company_id ?? session('current_tenant_id'),
+            'company_id' => session('current_tenant_id') ?? Auth::user()?->company_id,
             'branch_id' => $activeBranch['id'] ?? ($record->branch_id ?? null),
             'branch_name' => $activeBranch['name'] ?? ($record->branch_name ?? null),
             'created_by' => Auth::id(),
@@ -205,7 +205,7 @@ class RecurringTransactionController extends Controller
         $expense = $this->scopeExpenseQuery()->findOrFail($expense->id);
 
         RecurringTransaction::create([
-            'company_id' => Auth::user()?->company_id ?? session('current_tenant_id'),
+            'company_id' => session('current_tenant_id') ?? Auth::user()?->company_id,
             'branch_id' => $expense->branch_id,
             'branch_name' => $expense->branch_name,
             'created_by' => Auth::id(),
@@ -234,7 +234,7 @@ class RecurringTransactionController extends Controller
         $purchase = $this->scopePurchaseQuery()->findOrFail($purchase->id);
 
         RecurringTransaction::create([
-            'company_id' => Auth::user()?->company_id ?? session('current_tenant_id'),
+            'company_id' => session('current_tenant_id') ?? Auth::user()?->company_id,
             'branch_id' => $purchase->branch_id,
             'branch_name' => $purchase->branch_name,
             'created_by' => Auth::id(),
@@ -319,7 +319,7 @@ class RecurringTransactionController extends Controller
             'category' => $source->category,
             'notes' => trim((string) (($source->notes ?? '') . "\n" . ($template->notes ?? ''))),
             'status' => $isPaidClone ? 'Paid' : 'Pending',
-            'company_id' => Auth::user()?->company_id ?? session('current_tenant_id'),
+            'company_id' => session('current_tenant_id') ?? Auth::user()?->company_id,
             'branch_id' => $template->branch_id ?: $source->branch_id,
             'branch_name' => $template->branch_name ?: $source->branch_name,
             'created_by' => Auth::id(),
@@ -358,7 +358,7 @@ class RecurringTransactionController extends Controller
             'total_amount' => $source->total_amount ?? 0,
             'tax_amount' => $source->tax_amount ?? 0,
             'status' => $template->approval_required ? 'pending approval' : ($source->status ?: 'received'),
-            'company_id' => Auth::user()?->company_id ?? session('current_tenant_id'),
+            'company_id' => session('current_tenant_id') ?? Auth::user()?->company_id,
             'user_id' => Auth::id(),
             'branch_id' => $template->branch_id ?: $source->branch_id,
             'branch_name' => $template->branch_name ?: $source->branch_name,
@@ -443,7 +443,7 @@ class RecurringTransactionController extends Controller
     private function createApproval(string $type, $approvable, float $amount, ?string $reference, string $title, array $snapshot = []): void
     {
         FinanceApproval::create([
-            'company_id' => Auth::user()?->company_id ?? session('current_tenant_id'),
+            'company_id' => session('current_tenant_id') ?? Auth::user()?->company_id,
             'branch_id' => $approvable->branch_id ?? session('active_branch_id'),
             'branch_name' => $approvable->branch_name ?? session('active_branch_name'),
             'requested_by' => Auth::id(),

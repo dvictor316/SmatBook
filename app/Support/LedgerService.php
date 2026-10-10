@@ -648,7 +648,7 @@ class LedgerService
                 continue;
             }
 
-            self::$currentCompanyId = (int) ($payment->company_id ?? $companyId ?? Auth::user()?->company_id ?? session('current_tenant_id') ?? 0) ?: null;
+            self::$currentCompanyId = (int) ($payment->company_id ?? $companyId ?? session('current_tenant_id') ?? Auth::user()?->company_id ?? 0) ?: null;
 
             $existing = Transaction::withoutGlobalScopes()
                 ->where('related_id', $relatedId)

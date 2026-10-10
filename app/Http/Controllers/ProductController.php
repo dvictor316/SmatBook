@@ -1459,7 +1459,7 @@ class ProductController extends Controller
                 $validated['image'] = $uploadedImage->store('products', 'public');
             }
 
-            $resolvedCompanyId = auth()->user()?->company_id ?? session('current_tenant_id');
+            $resolvedCompanyId = session('current_tenant_id') ?? auth()->user()?->company_id;
             $selectedBranch = $this->resolveBranchContext($validated['branch_id'] ?? null);
 
             $validated['status'] = 'active';
@@ -1983,7 +1983,7 @@ public function inventory(Request $request)
                 $product,
                 $request->type === 'in' ? (float) $request->quantity : -1 * (float) $request->quantity,
                 $activeBranch,
-                (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
+                (int) ($product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0)
             );
 
             $payload = [
@@ -2000,7 +2000,7 @@ public function inventory(Request $request)
                 $payload['user_id'] = auth()->id() ?? (int) DB::table('users')->min('id');
             }
             if (Schema::hasColumn('inventory_history', 'company_id')) {
-                $payload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
+                $payload['company_id'] = session('current_tenant_id') ?? auth()->user()?->company_id;
             }
             if (Schema::hasColumn('inventory_history', 'reference')) {
                 $activeBranch = $this->getActiveBranchContext();
@@ -2029,7 +2029,7 @@ public function inventory(Request $request)
                             'status' => 'received',
                         ]);
                         if (Schema::hasColumn('purchases', 'company_id')) {
-                            $purchase->company_id = auth()->user()?->company_id ?? session('current_tenant_id');
+                            $purchase->company_id = session('current_tenant_id') ?? auth()->user()?->company_id;
                         }
                         if (Schema::hasColumn('purchases', 'user_id')) {
                             $purchase->user_id = auth()->id();
@@ -2084,7 +2084,7 @@ public function inventory(Request $request)
                     throw new \RuntimeException("Insufficient stock in {$sourceContext['name']} for this transfer.");
                 }
 
-                $companyId = (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+                $companyId = (int) ($product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
                 $this->branchInventory->adjustBranchStock($product, -1 * $quantity, $sourceContext, $companyId);
                 $this->branchInventory->adjustBranchStock($product, $quantity, $destinationContext, $companyId, false);
 
@@ -2100,7 +2100,7 @@ public function inventory(Request $request)
                         $basePayload['user_id'] = auth()->id() ?? (int) DB::table('users')->min('id');
                     }
                     if (Schema::hasColumn('inventory_history', 'company_id')) {
-                        $basePayload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
+                        $basePayload['company_id'] = session('current_tenant_id') ?? auth()->user()?->company_id;
                     }
 
                     $sourcePayload = $basePayload + ['type' => 'out'];
@@ -2126,7 +2126,7 @@ public function inventory(Request $request)
 
                 if (Schema::hasTable('stock_transfer_audits')) {
                     StockTransferAudit::query()->create([
-                        'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
+                        'company_id' => session('current_tenant_id') ?? auth()->user()?->company_id,
                         'product_id' => $product->id,
                         'from_branch_id' => $sourceContext['id'],
                         'from_branch_name' => $sourceContext['name'],
@@ -2484,7 +2484,7 @@ public function inventory(Request $request)
                 }
                 DB::table('products')->where('id', $product->id)->update($productPayload);
 
-                $companyId = (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+                $companyId = (int) ($product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
                 $this->branchInventory->adjustBranchStock($product, -1 * $quantity, $activeBranch, $companyId);
                 $damageDate = !empty($validated['damage_date'])
                     ? \Carbon\Carbon::parse($validated['damage_date'])->setTimeFrom(now())
@@ -3344,7 +3344,7 @@ public function inventory(Request $request)
                             'description' => ($rowData['description'] ?? '') ?: null,
                             'branch_id' => $activeBranch['id'] ?? null,
                             'branch_name' => $activeBranch['name'] ?? null,
-                            'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
+                            'company_id' => session('current_tenant_id') ?? auth()->user()?->company_id,
                             'user_id' => auth()->id(),
                         ]);
 
@@ -3354,7 +3354,7 @@ public function inventory(Request $request)
                             $product,
                             $stock,
                             $activeBranch,
-                            (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
+                            (int) ($product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0)
                         );
                         $openingStockAdded += max(0.0, (float) $stock);
 

@@ -126,7 +126,7 @@ class TaxFilingController extends Controller
             $validated['period_end'],
             array_merge([
                 'filing_type' => $validated['filing_type'],
-                'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
+                'company_id' => session('current_tenant_id') ?? auth()->user()?->company_id,
                 'user_id' => auth()->id(),
                 'branch_scope' => session('active_branch_scope', 'branch'),
                 'branch_id' => session('active_branch_id'),
@@ -426,7 +426,7 @@ class TaxFilingController extends Controller
             $validated['period_end'],
             array_merge([
                 'filing_type' => $validated['filing_type'],
-                'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
+                'company_id' => session('current_tenant_id') ?? auth()->user()?->company_id,
                 'user_id' => auth()->id(),
                 'branch_scope' => session('active_branch_scope', 'branch'),
                 'branch_id' => session('active_branch_id'),
@@ -532,7 +532,7 @@ class TaxFilingController extends Controller
             $validated['period_end'],
             array_merge([
                 'filing_type' => $validated['filing_type'] ?? 'vat',
-                'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
+                'company_id' => session('current_tenant_id') ?? auth()->user()?->company_id,
                 'user_id' => auth()->id(),
                 'branch_scope' => session('active_branch_scope', 'branch'),
                 'branch_id' => session('active_branch_id'),
@@ -580,7 +580,7 @@ class TaxFilingController extends Controller
 
     private function applyTaxScope($query, string $table): void
     {
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $userId = (int) (auth()->id() ?? 0);
         $branchScope = (string) session('active_branch_scope', 'branch');
         $branchId = trim((string) session('active_branch_id', ''));
@@ -622,7 +622,7 @@ class TaxFilingController extends Controller
     private function tenantPayload(string $table): array
     {
         $payload = [];
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $userId = (int) (auth()->id() ?? 0);
         $branchId = trim((string) session('active_branch_id', ''));
         $branchName = trim((string) session('active_branch_name', ''));

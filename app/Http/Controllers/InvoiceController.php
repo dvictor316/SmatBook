@@ -182,7 +182,7 @@ class InvoiceController extends Controller
         }
 
         $branch     = $branch ?: $this->getActiveBranchContext();
-        $companyId  = (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId  = (int) ($product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
 
         $row = [
             'product_id' => $product->id,
@@ -259,7 +259,7 @@ class InvoiceController extends Controller
         $paymentQuery = DB::table('payments')->where('sale_id', $sale->id);
 
         if (Schema::hasColumn('payments', 'company_id')) {
-            $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
             if ($companyId > 0) {
                 $paymentQuery->where('company_id', $companyId);
             }
@@ -391,7 +391,7 @@ class InvoiceController extends Controller
             $paymentPayload['branch_name'] = $sale->branch_name ?? $activeBranch['name'];
         }
         if (Schema::hasColumn('payments', 'company_id')) {
-            $paymentPayload['company_id'] = $sale->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
+            $paymentPayload['company_id'] = $sale->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id;
         }
         if (Schema::hasColumn('payments', 'user_id')) {
             $paymentPayload['user_id'] = auth()->id();
@@ -417,7 +417,7 @@ class InvoiceController extends Controller
 
     private function applyTenantScope($query, string $table)
     {
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $userId = (int) (auth()->id() ?? 0);
 
         if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
@@ -594,7 +594,7 @@ class InvoiceController extends Controller
         $products = $productsQuery->get();
         $quotationPrefill = session('quotation_prefill');
         $selected_customer = (string) request()->input('customer_id', session('demo_customer_preview_id', ''));
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $priceLists = $this->priceListUsage->activeForCurrentContext($companyId);
         $priceListData = $this->priceListUsage->toFrontend($priceLists);
 
@@ -642,7 +642,7 @@ class InvoiceController extends Controller
             $customer = $this->applyTenantScope(Customer::query(), 'customers')
                 ->lockForUpdate()
                 ->findOrFail((int) $request->customer_id);
-            $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
             $activeBranch = $this->getActiveBranchContext();
             $branchId = $activeBranch['id'];
             $branchName = $activeBranch['name'];
@@ -896,7 +896,7 @@ class InvoiceController extends Controller
             $productsQuery->with('activeProductUnits');
         }
         $products = $productsQuery->get();
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $priceLists = $this->priceListUsage->activeForCurrentContext($companyId);
         $priceListData = $this->priceListUsage->toFrontend($priceLists);
 
@@ -1041,7 +1041,7 @@ class InvoiceController extends Controller
             $customer = $this->applyTenantScope(Customer::query(), 'customers')
                 ->lockForUpdate()
                 ->findOrFail((int) $request->customer_id);
-            $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
             $activeBranch = $this->getActiveBranchContext();
             $branchId = $activeBranch['id'];
             $branchName = $activeBranch['name'];
@@ -1481,7 +1481,7 @@ class InvoiceController extends Controller
             $invoice = $this->applyTenantScope(Sale::with(['items.product', 'customer']), 'sales')->find($id);
         }
 
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $accounts  = Account::withoutGlobalScopes()
             ->where('company_id', $companyId)
             ->where('type', Account::TYPE_ASSET)
@@ -1510,7 +1510,10 @@ class InvoiceController extends Controller
         $status  = $balance <= 0 ? 'paid' : 'partial';
 
         /** @var \App\Models\Account $depositAccount */
-        $depositAccount = Account::withoutGlobalScopes()->findOrFail((int) $request->account_id);
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
+        $depositAccount = Account::withoutGlobalScopes()
+            ->where('company_id', $companyId)
+            ->findOrFail((int) $request->account_id);
 
         $invoice->update([
             'amount_paid'    => $newPaid,

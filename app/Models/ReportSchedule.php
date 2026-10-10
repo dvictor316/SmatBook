@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Traits\TenantScoped;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ReportSchedule extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, TenantScoped;
 
     protected $fillable = [
         'company_id', 'name', 'report_type', 'frequency', 'format',

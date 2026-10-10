@@ -922,7 +922,7 @@ class SettingController extends Controller
             return redirect()->back()->with('error', 'Accounts table is not available in this installation.');
         }
 
-        $companyId = (int) (Auth::user()->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? Auth::user()->company_id ?? 0);
         $userId    = (int) Auth::id();
         $branchId  = (string) session('active_branch_id', '');
         $branchName = (string) session('active_branch_name', '');
@@ -998,7 +998,7 @@ class SettingController extends Controller
             return redirect()->back()->with('error', 'Bank statement import tables are not available yet. Run the latest migrations first.');
         }
 
-        $companyId = (int) (Auth::user()->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? Auth::user()->company_id ?? 0);
         $userId = (int) Auth::id();
         $activeBranchId = (string) session('active_branch_id', '');
         $activeBranchName = (string) session('active_branch_name', '');
@@ -1351,7 +1351,7 @@ class SettingController extends Controller
             return;
         }
 
-        $companyId = (int) ($bank->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) ($bank->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $userId = (int) ($bank->user_id ?? auth()->id() ?? 0);
         $branchId = trim((string) ($bank->branch_id ?? session('active_branch_id', '')));
         $branchName = trim((string) ($bank->branch_name ?? session('active_branch_name', '')));
@@ -1467,7 +1467,7 @@ class SettingController extends Controller
             return redirect()->back()->with('error', 'Accounts table is not available in this installation.');
         }
 
-        $companyId = (int) (Auth::user()->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? Auth::user()->company_id ?? 0);
 
         $account = Account::withoutGlobalScopes()
             ->when($companyId > 0, fn($q) => $q->where('company_id', $companyId))
@@ -1516,7 +1516,7 @@ class SettingController extends Controller
             return redirect()->back()->with('error', 'Accounts table is not available in this installation.');
         }
 
-        $companyId = (int) (Auth::user()->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? Auth::user()->company_id ?? 0);
 
         $account = Account::withoutGlobalScopes()
             ->when($companyId > 0, fn($q) => $q->where('company_id', $companyId))
@@ -1534,7 +1534,7 @@ class SettingController extends Controller
             return redirect()->back()->with('error', 'Accounts table is not available in this installation.');
         }
 
-        $companyId = (int) (Auth::user()->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? Auth::user()->company_id ?? 0);
 
         $account = Account::withoutGlobalScopes()
             ->when($companyId > 0, fn($q) => $q->where('company_id', $companyId))
@@ -1933,7 +1933,7 @@ class SettingController extends Controller
 
         $this->authorizeBankBalanceManagement();
 
-        $companyId = (int) (Auth::user()->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? Auth::user()->company_id ?? 0);
         $account = Account::withoutGlobalScopes()
             ->when($companyId > 0, fn ($query) => $query->where('company_id', $companyId))
             ->findOrFail($id);
@@ -2040,7 +2040,7 @@ class SettingController extends Controller
 
     private function resolveReconciliationSuspenseAccount(): Account
     {
-        $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
 
         // Use a tenant-specific code so multiple tenants don't collide on the global unique constraint
         $code = $companyId > 0
@@ -2052,7 +2052,10 @@ class SettingController extends Controller
         // The suspense account may have been created without a matching branch_id (NULL),
         // so the scoped SELECT would find nothing → attempt INSERT → 1062 duplicate on code.
         // withoutGlobalScopes() ensures we search by code alone, reliably finding the existing row.
-        $existing = Account::withoutGlobalScopes()->where('code', $code)->first();
+        $existing = Account::withoutGlobalScopes()
+            ->where('company_id', $companyId)
+            ->where('code', $code)
+            ->first();
         if ($existing) {
             return $existing;
         }

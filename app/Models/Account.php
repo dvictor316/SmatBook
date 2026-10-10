@@ -220,4 +220,9 @@ class Account extends Model
     {
         return in_array($this->type, [self::TYPE_LIABILITY, self::TYPE_EQUITY, self::TYPE_REVENUE]);
     }
+
+    public function includesCompanyWideRecords(): bool
+    {
+        return true;
+    }
 }

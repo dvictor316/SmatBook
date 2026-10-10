@@ -16,7 +16,7 @@ class FinanceApprovalController extends Controller
 {
     private function applyTenantScope($query, string $table)
     {
-        $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
         $userId = (int) (Auth::id() ?? 0);
 
         if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
@@ -111,7 +111,7 @@ class FinanceApprovalController extends Controller
         }
 
         FinanceApproval::create([
-            'company_id' => Auth::user()?->company_id ?? session('current_tenant_id'),
+            'company_id' => session('current_tenant_id') ?? Auth::user()?->company_id,
             'branch_id' => $expense->branch_id,
             'branch_name' => $expense->branch_name,
             'requested_by' => Auth::id(),
@@ -139,7 +139,7 @@ class FinanceApprovalController extends Controller
         }
 
         FinanceApproval::create([
-            'company_id' => Auth::user()?->company_id ?? session('current_tenant_id'),
+            'company_id' => session('current_tenant_id') ?? Auth::user()?->company_id,
             'branch_id' => $purchase->branch_id,
             'branch_name' => $purchase->branch_name,
             'requested_by' => Auth::id(),
@@ -167,7 +167,7 @@ class FinanceApprovalController extends Controller
         }
 
         FinanceApproval::create([
-            'company_id' => $payment->company_id ?? (Auth::user()?->company_id ?? session('current_tenant_id')),
+            'company_id' => $payment->company_id ?? (session('current_tenant_id') ?? Auth::user()?->company_id),
             'branch_id' => $payment->branch_id,
             'branch_name' => $payment->branch_name,
             'requested_by' => Auth::id(),

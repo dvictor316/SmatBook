@@ -511,7 +511,7 @@ class RecurringInvoiceController extends Controller
 
     private function companyId(): int
     {
-        return (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+        return (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
     }
 
     private function authorizeTemplate(RecurringInvoiceTemplate $template): void

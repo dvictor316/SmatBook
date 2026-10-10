@@ -24,7 +24,7 @@ class CustomerController extends Controller
 
     private function applyTenantScope($query)
     {
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $userId = (int) (auth()->id() ?? 0);
 
         if ($companyId > 0 && Schema::hasColumn('customers', 'company_id')) {
@@ -80,7 +80,7 @@ class CustomerController extends Controller
      */
     public function store(Request $request)
     {
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $clientRecordId = trim((string) $request->input('client_record_id', ''));
 
         if ($clientRecordId !== '' && mb_strlen($clientRecordId) <= 64) {
@@ -141,7 +141,7 @@ class CustomerController extends Controller
         $data = $this->sanitizeForCustomerColumns($data);
 
         if (Schema::hasColumn('customers', 'company_id')) {
-            $data['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
+            $data['company_id'] = session('current_tenant_id') ?? auth()->user()?->company_id;
         }
         if (Schema::hasColumn('customers', 'user_id')) {
             $data['user_id'] = auth()->id();
@@ -716,7 +716,7 @@ class CustomerController extends Controller
             $payload = [
                 'type' => 'Asset',
                 'is_active' => 1,
-                'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
+                'company_id' => session('current_tenant_id') ?? auth()->user()?->company_id,
                 'user_id' => auth()->id(),
             ];
             if (Schema::hasColumn('accounts', 'code')) {
@@ -757,7 +757,7 @@ class CustomerController extends Controller
         $paymentDestinations = collect();
         if (Schema::hasTable('accounts')) {
             $accountsQuery = Account::query()->orderBy('name');
-            $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
             $userId = (int) (auth()->id() ?? 0);
             if ($companyId > 0 && Schema::hasColumn('accounts', 'company_id')) {
                 $accountsQuery->where('company_id', $companyId);
@@ -780,7 +780,7 @@ class CustomerController extends Controller
 
         if (Schema::hasTable('banks')) {
             $banksQuery = Bank::query()->orderBy('name');
-            $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
             $userId = (int) (auth()->id() ?? 0);
             if ($companyId > 0 && Schema::hasColumn('banks', 'company_id')) {
                 $banksQuery->where('company_id', $companyId);
@@ -1004,7 +1004,7 @@ class CustomerController extends Controller
                         $paymentPayload['account_id'] = $resolvedAccountId;
                     }
                     if (Schema::hasColumn('payments', 'company_id')) {
-                        $paymentPayload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
+                        $paymentPayload['company_id'] = session('current_tenant_id') ?? auth()->user()?->company_id;
                     }
                     if (Schema::hasColumn('payments', 'user_id')) {
                         $paymentPayload['user_id'] = auth()->id();
@@ -1078,7 +1078,7 @@ class CustomerController extends Controller
                         $paymentPayload['account_id'] = $resolvedAccountId;
                     }
                     if (Schema::hasColumn('payments', 'company_id')) {
-                        $paymentPayload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
+                        $paymentPayload['company_id'] = session('current_tenant_id') ?? auth()->user()?->company_id;
                     }
                     if (Schema::hasColumn('payments', 'user_id')) {
                         $paymentPayload['user_id'] = auth()->id();
@@ -1141,7 +1141,7 @@ class CustomerController extends Controller
 	                        $walletPayload['account_id'] = $resolvedAccountId;
 	                    }
 	                    if (Schema::hasColumn('payments', 'company_id')) {
-	                        $walletPayload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
+	                        $walletPayload['company_id'] = session('current_tenant_id') ?? auth()->user()?->company_id;
 	                    }
 	                    if (Schema::hasColumn('payments', 'user_id')) {
 	                        $walletPayload['user_id'] = auth()->id();
@@ -1197,7 +1197,7 @@ class CustomerController extends Controller
 
         $payload = [];
         if (Schema::hasColumn('sales', 'company_id')) {
-            $payload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
+            $payload['company_id'] = session('current_tenant_id') ?? auth()->user()?->company_id;
         }
         if (Schema::hasColumn('sales', 'branch_id')) {
             $payload['branch_id'] = $activeBranch['id'];
@@ -1599,7 +1599,7 @@ class CustomerController extends Controller
             return;
         }
 
-        $companyId   = (int) ($customer->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId   = (int) ($customer->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $userId      = (int) ($customer->user_id ?? auth()->id() ?? 0);
         $reference   = 'CUST-OB-' . $customer->id;
         $txnDate     = $customer->opening_balance_date

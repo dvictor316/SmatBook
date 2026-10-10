@@ -14,7 +14,7 @@ trait TenantScoped
     protected static function bootTenantScoped(): void
     {
         static::addGlobalScope('tenant', function (Builder $builder) {
-            if (app()->runningInConsole()) {
+            if (app()->runningInConsole() && ! config('tenancy.enforce_scopes_in_console', false)) {
                 return;
             }
 
@@ -28,12 +28,14 @@ trait TenantScoped
             }
 
             $role = strtolower((string) ($user->role ?? ''));
-            $isSuperAdmin = in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true);
+            $isSuperAdmin = in_array($role, ['super_admin', 'superadmin'], true);
             $isSuperAdminArea = request()->is('superadmin*');
 
             /** @var Model $model */
             $model = $builder->getModel();
             $table = $model->getTable();
+            $includeCompanyWideRecords = method_exists($model, 'includesCompanyWideRecords')
+                && $model->includesCompanyWideRecords();
 
             $companyId = (int) (session('current_tenant_id') ?? $user->company_id ?? 0);
             $userId = (int) ($user->id ?? 0);
@@ -62,11 +64,8 @@ trait TenantScoped
                 $builder->whereRaw('1 = 0');
             }
 
-            $requestBranchScope = (string) request()->get('branch_scope', '');
             $requestBranchId = trim((string) request()->get('branch_id', ''));
-            $requestAllBranches = request()->boolean('all_branches')
-                || strtolower($requestBranchScope) === 'all'
-                || strtolower($requestBranchId) === 'all';
+            $requestAllBranches = strtolower(trim((string) session('active_branch_scope', ''))) === 'all';
 
             if ($requestAllBranches) {
                 return;
@@ -98,7 +97,18 @@ trait TenantScoped
                 $hasBranchId = Schema::hasColumn($table, 'branch_id');
                 $hasBranchName = Schema::hasColumn($table, 'branch_name');
 
-                $builder->where(function ($q) use ($table, $hasBranchId, $hasBranchName, $activeBranchId, $activeBranchName) {
+                if ($hasBranchId && $activeBranchId !== '' && ! ctype_digit($activeBranchId)) {
+                    try {
+                        $branchColumnType = strtolower((string) Schema::getColumnType($table, 'branch_id'));
+                        if (! in_array($branchColumnType, ['string', 'text', 'char', 'varchar'], true)) {
+                            $hasBranchId = false;
+                        }
+                    } catch (\Throwable) {
+                        $hasBranchId = false;
+                    }
+                }
+
+                $builder->where(function ($q) use ($table, $hasBranchId, $hasBranchName, $activeBranchId, $activeBranchName, $includeCompanyWideRecords) {
                     if ($hasBranchId && $activeBranchId !== '') {
                         $q->where("{$table}.branch_id", $activeBranchId);
 
@@ -111,13 +121,50 @@ trait TenantScoped
                             });
                         }
 
-                        return;
-                    }
-
-                    if ($hasBranchName && $activeBranchName !== '') {
+                    } elseif ($hasBranchName && $activeBranchName !== '') {
                         $q->where("{$table}.branch_name", $activeBranchName);
                     }
+
+                    if ($includeCompanyWideRecords) {
+                        $q->orWhere(function ($companyWide) use ($table, $hasBranchId, $hasBranchName) {
+                            if ($hasBranchId) {
+                                $companyWide->where(function ($emptyBranchId) use ($table) {
+                                    $emptyBranchId->whereNull("{$table}.branch_id")
+                                        ->orWhere("{$table}.branch_id", '');
+                                });
+                            }
+
+                            if ($hasBranchName) {
+                                $companyWide->where(function ($emptyBranchName) use ($table) {
+                                    $emptyBranchName->whereNull("{$table}.branch_name")
+                                        ->orWhere("{$table}.branch_name", '');
+                                });
+                            }
+                        });
+                    }
                 });
+            }
+        });
+
+        static::saving(function (Model $model) {
+            if ((app()->runningInConsole() && ! config('tenancy.enforce_scopes_in_console', false)) || ! Auth::check()) {
+                return;
+            }
+
+            $table = $model->getTable();
+            if (! Schema::hasColumn($table, 'company_id')) {
+                return;
+            }
+
+            $user = Auth::user();
+            $companyId = (int) (session('current_tenant_id') ?? $user?->company_id ?? 0);
+            $allowsUnassignedOwnership = method_exists($model, 'allowsUnassignedTenantOwnership')
+                && $model->allowsUnassignedTenantOwnership();
+            $managesOwnershipExplicitly = method_exists($model, 'managesTenantOwnershipExplicitly')
+                && $model->managesTenantOwnershipExplicitly();
+
+            if ($companyId > 0 && ! $allowsUnassignedOwnership && ! $managesOwnershipExplicitly) {
+                $model->setAttribute('company_id', $companyId);
             }
         });
     }

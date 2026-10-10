@@ -72,7 +72,7 @@ class EstimateController extends Controller
 
     private function estimateFormData(?Estimate $estimate = null): array
     {
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
 
         $customersQuery = Customer::query();
         if ($companyId > 0 && Schema::hasColumn('customers', 'company_id')) {
@@ -115,7 +115,7 @@ class EstimateController extends Controller
 
     private function applyTenantScope($query)
     {
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $userId = (int) (auth()->id() ?? 0);
 
         if ($companyId > 0 && Schema::hasColumn('estimates', 'company_id')) {
@@ -245,7 +245,7 @@ class EstimateController extends Controller
 
         $payload = $this->normalizeEstimatePayload($validated);
         if (Schema::hasColumn('estimates', 'company_id')) {
-            $payload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
+            $payload['company_id'] = session('current_tenant_id') ?? auth()->user()?->company_id;
         }
         if (Schema::hasColumn('estimates', 'user_id')) {
             $payload['user_id'] = auth()->id();

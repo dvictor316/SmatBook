@@ -1204,7 +1204,7 @@ public function customerDetails($id = null)
                         'id' => $sale->branch_id ?? $activeBranch['id'],
                         'name' => $sale->branch_name ?? $activeBranch['name'],
                     ],
-                    (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
+                    (int) ($product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0)
                 );
             }
 
@@ -1242,7 +1242,7 @@ public function customerDetails($id = null)
 public function store(Request $request)
 {
     $isStarterPlan = PlanAccess::resolveTierForUser(auth()->user()) === 'starter';
-    $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id'));
+    $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id);
     $clientSaleId = trim((string) $request->input('client_sale_id', ''));
 
     if ($clientSaleId !== '' && mb_strlen($clientSaleId) <= 64) {
@@ -1438,8 +1438,8 @@ public function store(Request $request)
         if ($sourceType === 'quotation' && $sourceId > 0) {
             $sourceQuotation = Quotation::query()
                 ->whereKey($sourceId)
-                ->when(Schema::hasColumn('quotations', 'company_id') && (auth()->user()?->company_id ?? session('current_tenant_id')), function ($query) {
-                    $query->where('company_id', auth()->user()?->company_id ?? session('current_tenant_id'));
+                ->when(Schema::hasColumn('quotations', 'company_id') && (session('current_tenant_id') ?? auth()->user()?->company_id), function ($query) {
+                    $query->where('company_id', session('current_tenant_id') ?? auth()->user()?->company_id);
                 })
                 ->lockForUpdate()
                 ->first();
@@ -1461,8 +1461,8 @@ public function store(Request $request)
                 $alreadyConverted = Sale::query()
                     ->where('source_type', 'quotation')
                     ->where('source_id', $sourceQuotation->id)
-                    ->when(Schema::hasColumn('sales', 'company_id') && (auth()->user()?->company_id ?? session('current_tenant_id')), function ($query) {
-                        $query->where('company_id', auth()->user()?->company_id ?? session('current_tenant_id'));
+                    ->when(Schema::hasColumn('sales', 'company_id') && (session('current_tenant_id') ?? auth()->user()?->company_id), function ($query) {
+                        $query->where('company_id', session('current_tenant_id') ?? auth()->user()?->company_id);
                     })
                     ->when(Schema::hasColumn('sales', 'payment_status'), function ($query) {
                         $query->where('payment_status', 'paid');
@@ -1490,7 +1490,7 @@ public function store(Request $request)
 
         // --- 2. CREATE THE SALE RECORD ---
 $sale = Sale::create([
-    'company_id'     => auth()->user()?->company_id ?? session('current_tenant_id'),
+    'company_id'     => session('current_tenant_id') ?? auth()->user()?->company_id,
     'branch_id'      => $activeBranch['id'],
     'branch_name'    => $activeBranch['name'],
     'order_number'   => $orderNumber,
@@ -1605,7 +1605,7 @@ $sale = Sale::create([
                 $itemPayload['discount_value'] = $discountValue;
             }
             if (Schema::hasColumn('sale_items', 'company_id')) {
-                $itemPayload['company_id'] = $sale->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
+                $itemPayload['company_id'] = $sale->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id;
             }
             if (Schema::hasColumn('sale_items', 'branch_id')) {
                 $itemPayload['branch_id'] = $sale->branch_id ?? $activeBranch['id'];
@@ -1625,7 +1625,7 @@ $sale = Sale::create([
                 $product,
                 -$requestedStockUnits,
                 $activeBranch,
-                (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
+                (int) ($product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0)
             );
         }
 
@@ -1868,7 +1868,7 @@ $sale = Sale::create([
             $paymentPayload['branch_name'] = $sale->branch_name ?? $activeBranch['name'];
         }
         if (Schema::hasColumn('payments', 'company_id')) {
-            $paymentPayload['company_id'] = $sale->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
+            $paymentPayload['company_id'] = $sale->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id;
         }
         if (Schema::hasColumn('payments', 'user_id')) {
             $paymentPayload['user_id'] = auth()->id();
@@ -2253,7 +2253,7 @@ public function create()
         $sale = Sale::with('items.product')->findOrFail((int) $request->sale_id);
 
         DB::transaction(function () use ($request, $sale) {
-            $companyId  = (int) ($sale->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId  = (int) ($sale->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
             $activeBranch = $this->getActiveBranchContext();
             $branchCtx  = [
                 'id' => $sale->branch_id ? (string) $sale->branch_id : ($activeBranch['id'] ?? null),

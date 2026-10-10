@@ -86,7 +86,7 @@ class AppServiceProvider extends ServiceProvider
                 return;
             }
 
-            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
             $userId = (int) (Auth::id() ?? 0);
             $branchId = trim((string) session('active_branch_id', ''));
             $branchName = trim((string) session('active_branch_name', ''));

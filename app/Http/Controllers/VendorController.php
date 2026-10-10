@@ -24,7 +24,7 @@ class VendorController extends Controller
 
     private function applyTenantScope($query, string $table = 'vendors')
     {
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $userId = (int) (auth()->id() ?? 0);
         $activeBranch = $this->getActiveBranchContext();
         $branchId = trim((string) ($activeBranch['id'] ?? ''));
@@ -56,7 +56,7 @@ class VendorController extends Controller
         $branchName = session('active_branch_name') ? (string) session('active_branch_name') : null;
 
         if (!$branchId && !$branchName && Schema::hasTable('settings')) {
-            $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
             if ($companyId > 0) {
                 $key = 'branches_json_company_' . $companyId;
                 $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
@@ -130,7 +130,7 @@ class VendorController extends Controller
         }
 
         if (Schema::hasColumn('vendors', 'company_id')) {
-            $validated['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
+            $validated['company_id'] = session('current_tenant_id') ?? auth()->user()?->company_id;
         }
         if (Schema::hasColumn('vendors', 'user_id')) {
             $validated['user_id'] = auth()->id();
@@ -155,7 +155,7 @@ class VendorController extends Controller
             'mode' => 'System',
             'amount' => $initialAmount,
             'company_id' => Schema::hasColumn('vendor_ledger_transactions', 'company_id')
-                ? (auth()->user()?->company_id ?? session('current_tenant_id'))
+                ? (session('current_tenant_id') ?? auth()->user()?->company_id)
                 : null,
             'user_id' => Schema::hasColumn('vendor_ledger_transactions', 'user_id') ? auth()->id() : null,
             'branch_id' => Schema::hasColumn('vendor_ledger_transactions', 'branch_id') ? ($this->getActiveBranchContext()['id'] ?? null) : null,
@@ -222,7 +222,7 @@ class VendorController extends Controller
         
         $validated['vendor_id'] = $vendor->id;
         if (Schema::hasColumn('vendor_ledger_transactions', 'company_id')) {
-            $validated['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
+            $validated['company_id'] = session('current_tenant_id') ?? auth()->user()?->company_id;
         }
         if (Schema::hasColumn('vendor_ledger_transactions', 'user_id')) {
             $validated['user_id'] = auth()->id();

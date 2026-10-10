@@ -245,7 +245,9 @@ class TaxCenterController extends Controller
             return back()->with('error', $this->migrationMessage());
         }
 
-        $jurisdiction = TaxJurisdiction::findOrFail($id);
+        $jurisdictionQuery = TaxJurisdiction::query();
+        $this->applyTaxScope($jurisdictionQuery, 'tax_jurisdictions');
+        $jurisdiction = $jurisdictionQuery->findOrFail($id);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -282,7 +284,9 @@ class TaxCenterController extends Controller
             return back()->with('error', $this->migrationMessage());
         }
 
-        $jurisdiction = TaxJurisdiction::findOrFail($id);
+        $jurisdictionQuery = TaxJurisdiction::query();
+        $this->applyTaxScope($jurisdictionQuery, 'tax_jurisdictions');
+        $jurisdiction = $jurisdictionQuery->findOrFail($id);
         $jurisdiction->delete();
 
         return back()->with('success', 'Jurisdiction deleted.');
@@ -294,7 +298,9 @@ class TaxCenterController extends Controller
             return back()->with('error', $this->migrationMessage());
         }
 
-        $taxCode = TaxCode::findOrFail($id);
+        $taxCodeQuery = TaxCode::query();
+        $this->applyTaxScope($taxCodeQuery, 'tax_codes');
+        $taxCode = $taxCodeQuery->findOrFail($id);
 
         $validated = $request->validate([
             'tax_jurisdiction_id' => 'required|exists:tax_jurisdictions,id',
@@ -364,7 +370,9 @@ class TaxCenterController extends Controller
             return back()->with('error', $this->migrationMessage());
         }
 
-        $taxCode = TaxCode::findOrFail($id);
+        $taxCodeQuery = TaxCode::query();
+        $this->applyTaxScope($taxCodeQuery, 'tax_codes');
+        $taxCode = $taxCodeQuery->findOrFail($id);
         $taxCode->delete();
 
         return back()->with('success', 'Tax code deleted.');
@@ -376,7 +384,9 @@ class TaxCenterController extends Controller
             return back()->with('error', $this->migrationMessage());
         }
 
-        $rule = WithholdingRule::findOrFail($id);
+        $ruleQuery = WithholdingRule::query();
+        $this->applyTaxScope($ruleQuery, 'withholding_rules');
+        $rule = $ruleQuery->findOrFail($id);
 
         $validated = $request->validate([
             'tax_jurisdiction_id' => 'required|exists:tax_jurisdictions,id',
@@ -414,7 +424,9 @@ class TaxCenterController extends Controller
             return back()->with('error', $this->migrationMessage());
         }
 
-        $rule = WithholdingRule::findOrFail($id);
+        $ruleQuery = WithholdingRule::query();
+        $this->applyTaxScope($ruleQuery, 'withholding_rules');
+        $rule = $ruleQuery->findOrFail($id);
         $rule->delete();
 
         return back()->with('success', 'Withholding rule deleted.');
@@ -435,7 +447,7 @@ class TaxCenterController extends Controller
 
     private function applyTaxScope($query, string $table): void
     {
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $userId = (int) (auth()->id() ?? 0);
         $branchScope = (string) session('active_branch_scope', 'branch');
         $branchId = trim((string) session('active_branch_id', ''));
@@ -476,7 +488,7 @@ class TaxCenterController extends Controller
     private function tenantPayload(string $table): array
     {
         $payload = [];
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $userId = (int) (auth()->id() ?? 0);
         $branchId = trim((string) session('active_branch_id', ''));
         $branchName = trim((string) session('active_branch_name', ''));

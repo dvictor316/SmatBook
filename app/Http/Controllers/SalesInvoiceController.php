@@ -57,14 +57,21 @@ public function index()
 
   public function clone($id)
     {
-        $original = DB::table('sales')->where('id', $id)->first();
+        $original = Sale::query()->find($id);
         
         if (!$original) {
             return back()->with('error', 'Invoice not found.');
         }
 
-        $clone = (array) $original;
+        $clone = $original->getAttributes();
         unset($clone['id']);
+
+        if (array_key_exists('company_id', $clone)) {
+            $clone['company_id'] = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
+        }
+        if (array_key_exists('user_id', $clone)) {
+            $clone['user_id'] = auth()->id();
+        }
 
         $invoiceBase = trim((string) ($original->invoice_no ?: 'INV'));
         $clone['invoice_no'] = $this->generateUniqueCloneReference('invoice_no', $invoiceBase . '-COPY-');

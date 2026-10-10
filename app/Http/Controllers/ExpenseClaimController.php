@@ -124,7 +124,7 @@ class ExpenseClaimController extends Controller
         }
 
         ExpenseClaim::create([
-            'company_id' => Auth::user()?->company_id ?? session('current_tenant_id'),
+            'company_id' => session('current_tenant_id') ?? Auth::user()?->company_id,
             'branch_id' => $activeBranch['id'],
             'branch_name' => $activeBranch['name'],
             'user_id' => Auth::id(),
@@ -280,7 +280,7 @@ class ExpenseClaimController extends Controller
         $query = Category::query()->orderBy('name');
 
         if (Schema::hasColumn('categories', 'company_id')) {
-            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
             if ($companyId > 0) {
                 $query->where('company_id', $companyId);
             }

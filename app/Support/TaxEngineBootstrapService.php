@@ -18,7 +18,7 @@ class TaxEngineBootstrapService
             throw new \InvalidArgumentException("No verified tax preset is available for {$countryCode}.");
         }
 
-        $companyId = $companyId ?: (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0) ?: null;
+        $companyId = $companyId ?: (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0) ?: null;
         $userId = $userId ?: (int) (auth()->id() ?? 0) ?: null;
         $branchId = trim((string) ($branch['id'] ?? session('active_branch_id', '')));
         $branchName = trim((string) ($branch['name'] ?? session('active_branch_name', '')));

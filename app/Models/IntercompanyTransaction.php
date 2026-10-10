@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Traits\TenantScoped;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class IntercompanyTransaction extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, TenantScoped;
 
     protected $fillable = [
         'company_id', 'counterparty_company_id', 'reference_number', 'transaction_type',

@@ -128,7 +128,7 @@ class BackfillSupplierLedger extends Command
             return Company::query()->orderBy('id')->pluck('id')->map(fn ($id) => (int) $id)->values();
         }
 
-        return collect([(int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)])
+        return collect([(int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0)])
             ->filter(fn ($id) => $id > 0)
             ->values();
     }

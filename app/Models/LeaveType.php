@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Traits\TenantScoped;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LeaveType extends Model
 {
+    use TenantScoped;
     protected $fillable = [
         'company_id', 'name', 'code', 'days_allowed_per_year',
         'is_paid', 'carry_forward', 'max_carry_forward_days',

@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Traits\TenantScoped;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AttendanceRecord extends Model
 {
+    use TenantScoped;
     protected $table = 'attendance_records';
 
     protected $fillable = [

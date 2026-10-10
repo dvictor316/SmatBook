@@ -37,7 +37,7 @@ class PeriodCloseController extends Controller
 
         $period = AccountingPeriod::create($validated + [
             'status' => 'open',
-            'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
+            'company_id' => session('current_tenant_id') ?? auth()->user()?->company_id,
             'branch_id' => session('active_branch_id'),
             'branch_name' => session('active_branch_name'),
         ]);
@@ -65,7 +65,7 @@ class PeriodCloseController extends Controller
             'accounting_period_id' => $period->id,
             'owner_id' => auth()->id(),
             'status' => 'pending',
-            'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
+            'company_id' => session('current_tenant_id') ?? auth()->user()?->company_id,
             'branch_id' => session('active_branch_id'),
             'branch_name' => session('active_branch_name'),
         ]);
@@ -115,7 +115,7 @@ class PeriodCloseController extends Controller
             'status' => 'pending',
             'notes' => trim((string) $request->input('notes', '')),
             'requested_at' => now(),
-            'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
+            'company_id' => session('current_tenant_id') ?? auth()->user()?->company_id,
             'branch_id' => session('active_branch_id'),
             'branch_name' => session('active_branch_name'),
         ]);
@@ -158,7 +158,7 @@ class PeriodCloseController extends Controller
 
         ActivityLog::query()->create([
             'user_id' => auth()->id(),
-            'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
+            'company_id' => session('current_tenant_id') ?? auth()->user()?->company_id,
             'branch_id' => session('active_branch_id'),
             'branch_name' => session('active_branch_name'),
             'module' => $module,

@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Traits\TenantScoped;
 use Illuminate\Database\Eloquent\Model;
 
 class LeaveBalance extends Model
 {
+    use TenantScoped;
     protected $fillable = [
         'company_id', 'employee_id', 'leave_type_id',
         'year', 'entitled_days', 'used_days',

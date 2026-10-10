@@ -18,7 +18,7 @@ class PaymentController extends Controller
 
     private function applyTenantScope($query, string $table)
     {
-        $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
         $userId = (int) (Auth::id() ?? 0);
         $scoped = false;
 
@@ -175,7 +175,7 @@ class PaymentController extends Controller
                         $createPayload = [
                             'type' => 'Asset',
                             'is_active' => 1,
-                            'company_id' => Auth::user()?->company_id ?? session('current_tenant_id'),
+                            'company_id' => session('current_tenant_id') ?? Auth::user()?->company_id,
                             'user_id' => Auth::id(),
                         ];
                         if (Schema::hasColumn('accounts', 'code')) {
@@ -195,7 +195,7 @@ class PaymentController extends Controller
                             'name' => 'Main Bank Account',
                             'type' => 'Asset',
                             'is_active' => 1,
-                            'company_id' => Auth::user()?->company_id ?? session('current_tenant_id'),
+                            'company_id' => session('current_tenant_id') ?? Auth::user()?->company_id,
                             'user_id' => Auth::id(),
                         ];
                         if (Schema::hasColumn('accounts', 'code')) {
@@ -232,7 +232,7 @@ class PaymentController extends Controller
                     $payload['account_id'] = $resolvedAccountId;
                 }
                 if (Schema::hasColumn('payments', 'company_id')) {
-                    $payload['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
+                    $payload['company_id'] = session('current_tenant_id') ?? Auth::user()?->company_id;
                 }
                 if (Schema::hasColumn('payments', 'user_id')) {
                     $payload['user_id'] = Auth::id();
@@ -249,7 +249,7 @@ class PaymentController extends Controller
 
                 if ($requiresApproval) {
                     FinanceApproval::create([
-                        'company_id' => Auth::user()?->company_id ?? session('current_tenant_id'),
+                        'company_id' => session('current_tenant_id') ?? Auth::user()?->company_id,
                         'branch_id' => $payment->branch_id,
                         'branch_name' => $payment->branch_name,
                         'requested_by' => Auth::id(),

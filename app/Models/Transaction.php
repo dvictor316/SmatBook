@@ -251,4 +251,9 @@ class Transaction extends Model
             ])
             ->values();
     }
+
+    public function includesCompanyWideRecords(): bool
+    {
+        return true;
+    }
 }

@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Traits\TenantScoped;
 use Illuminate\Database\Eloquent\Model;
 
 class ProductBarcode extends Model
 {
+    use TenantScoped;
     protected $fillable = [
         'company_id', 'product_id', 'product_unit_id', 'barcode',
         'barcode_type', 'unit_name', 'is_primary',

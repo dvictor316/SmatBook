@@ -166,7 +166,7 @@ class BankBalanceManagementService
             ]);
         }
 
-        $companyId = (int) ($account->company_id ?? Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) ($account->company_id ?? session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
         $userId = (int) (Auth::id() ?? 0);
         $offsetAccount = $this->ensureOffsetAccount($companyId, $userId, $branchId, $branchName);
         $amount = round(abs($balance), 2);
@@ -305,7 +305,7 @@ class BankBalanceManagementService
         }
 
         $accountName = strtolower(trim((string) $account->name));
-        $companyId = (int) ($account->company_id ?? Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) ($account->company_id ?? session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
         $branchId = trim((string) ($account->branch_id ?? session('active_branch_id', '')));
         $branchName = trim((string) ($account->branch_name ?? session('active_branch_name', '')));
 
@@ -483,7 +483,7 @@ class BankBalanceManagementService
             $action,
             "Bank balance management action executed for {$account->name}. Reason: {$reason}",
             [
-                'company_id' => $account->company_id ?? Auth::user()?->company_id ?? session('current_tenant_id'),
+                'company_id' => $account->company_id ?? session('current_tenant_id') ?? Auth::user()?->company_id,
                 'branch_id' => $account->branch_id ?? session('active_branch_id'),
                 'branch_name' => $account->branch_name ?? session('active_branch_name'),
                 'properties' => array_merge([

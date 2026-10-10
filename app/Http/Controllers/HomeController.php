@@ -70,7 +70,7 @@ class HomeController extends Controller
     private function quotationQuery()
     {
         $query = Quotation::with('customer');
-        $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
         $userId = (int) (Auth::id() ?? 0);
         $branchId = trim((string) session('active_branch_id', ''));
         $branchName = trim((string) session('active_branch_name', ''));
@@ -893,7 +893,7 @@ class HomeController extends Controller
         $quotations = new LengthAwarePaginator([], 0, 20);
         if (Schema::hasTable('quotations')) {
             $query = Quotation::with('customer')->latest();
-            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
             $userId = (int) (Auth::id() ?? 0);
             $branchId = trim((string) session('active_branch_id', ''));
             $branchName = trim((string) session('active_branch_name', ''));
@@ -948,7 +948,7 @@ class HomeController extends Controller
         if (Schema::hasTable('customers')) {
             $customerNameColumn = Schema::hasColumn('customers', 'name') ? 'name' : 'customer_name';
             $customersQuery = Customer::orderBy($customerNameColumn);
-            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
             $userId = (int) (Auth::id() ?? 0);
             $branchId = trim((string) session('active_branch_id', ''));
             $branchName = trim((string) session('active_branch_name', ''));
@@ -975,7 +975,7 @@ class HomeController extends Controller
         }
         if (Schema::hasTable('products')) {
             $productsQuery = Product::query()->orderBy(Schema::hasColumn('products', 'name') ? 'name' : 'id');
-            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
             $userId = (int) (Auth::id() ?? 0);
             $branchId = trim((string) session('active_branch_id', ''));
             $branchName = trim((string) session('active_branch_name', ''));
@@ -1014,7 +1014,7 @@ class HomeController extends Controller
         if (Schema::hasTable('customers')) {
             $customerNameColumn = Schema::hasColumn('customers', 'name') ? 'name' : 'customer_name';
             $customersQuery = Customer::orderBy($customerNameColumn);
-            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
             $userId = (int) (Auth::id() ?? 0);
             $branchId = trim((string) session('active_branch_id', ''));
             $branchName = trim((string) session('active_branch_name', ''));
@@ -1041,7 +1041,7 @@ class HomeController extends Controller
         }
         if (Schema::hasTable('products')) {
             $productsQuery = Product::query()->orderBy(Schema::hasColumn('products', 'name') ? 'name' : 'id');
-            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
             $userId = (int) (Auth::id() ?? 0);
             $branchId = trim((string) session('active_branch_id', ''));
             $branchName = trim((string) session('active_branch_name', ''));
@@ -1129,7 +1129,7 @@ class HomeController extends Controller
         $payload = [
             'quotation_id' => $validated['quotation_id'],
             'customer_id' => $validated['customer_id'] ?? null,
-            'company_id' => Auth::user()?->company_id ?? session('current_tenant_id'),
+            'company_id' => session('current_tenant_id') ?? Auth::user()?->company_id,
             'user_id' => Auth::id(),
             'branch_id' => session('active_branch_id'),
             'branch_name' => session('active_branch_name'),
@@ -1217,7 +1217,7 @@ class HomeController extends Controller
         $quotation->update($this->onlyExistingQuotationColumns([
             'quotation_id' => $validated['quotation_id'],
             'customer_id' => $validated['customer_id'] ?? null,
-            'company_id' => $quotation->company_id ?? (Auth::user()?->company_id ?? session('current_tenant_id')),
+            'company_id' => $quotation->company_id ?? (session('current_tenant_id') ?? Auth::user()?->company_id),
             'user_id' => $quotation->user_id ?? Auth::id(),
             'branch_id' => $quotation->branch_id ?? session('active_branch_id'),
             'branch_name' => $quotation->branch_name ?? session('active_branch_name'),
