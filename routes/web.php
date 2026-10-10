@@ -73,7 +73,7 @@ Route::get('/', [LandingController::class, 'index'])->name('landing.index');
 Route::get('/about-us', [LandingController::class, 'about'])->name('landing.about');
 Route::get('/contact-us', [LandingController::class, 'contact'])->name('landing.contact');
 Route::get('/demo', [LandingController::class, 'demo'])->name('landing.demo');
-Route::post('/contact-us', [LandingController::class, 'storeContact'])->name('contact.store');
+Route::post('/contact-us', [LandingController::class, 'storeContact'])->middleware('throttle:5,1')->name('contact.store');
 
 // Demo request (public — controlled access, NOT a free-for-all demo)
 Route::get('/request-demo', [DemoRequestController::class, 'create'])->name('demo.request.form');
@@ -570,6 +570,9 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     Route::put('/hotels/folio-items/{item}', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'updateServiceCharge'])->name('hotels.service_charges.update');
     Route::delete('/hotels/folio-items/{item}', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'destroyServiceCharge'])->name('hotels.service_charges.destroy');
     Route::get('/hotels/folio-items/{item}/receipt', [\App\Http\Controllers\SuperAdmin\HotelController::class, 'serviceReceipt'])->name('hotels.receipts.show');
+
+    // Livestock Management (Super Admin, read-only tenant oversight)
+    Route::get('/livestock', [\App\Http\Controllers\SuperAdmin\LivestockController::class, 'index'])->name('livestock.index');
 
 
 

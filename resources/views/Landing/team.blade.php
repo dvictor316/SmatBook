@@ -20,7 +20,7 @@
 
     /* ===== TEAM HEADER ===== */
     .team-header {
-        margin-top: 85px;
+        margin-top: 0;
         padding: 52px 20px;
         background: linear-gradient(135deg, #f8fafc 0%, #f0f4ff 100%);
         text-align: center;
@@ -554,43 +554,37 @@
                     'img' => 'https://images.pexels.com/photos/3183197/pexels-photo-3183197.jpeg?auto=compress&cs=tinysrgb&w=1200',
                     'name' => 'Operations Dashboard',
                     'role' => 'Control Center',
-                    'description' => 'Human-led operations workspace for transactions, performance snapshots, and global operational control.',
-                    'social' => ['linkedin' => route('landing.about'), 'twitter' => route('landing.contact')]
+                    'description' => 'Human-led operations workspace for transactions, performance snapshots, and global operational control.'
                 ],
                 [
                     'img' => 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?q=80&w=1200&auto=format&fit=crop',
                     'name' => 'Analytics Reports',
                     'role' => 'Reporting Suite',
-                    'description' => 'Performance intelligence workspace where teams review trends, margins, and executive reports on shared screens.',
-                    'social' => ['linkedin' => route('landing.about')]
+                    'description' => 'Performance intelligence workspace where teams review trends, margins, and executive reports on shared screens.'
                 ],
                 [
                     'img' => 'https://images.pexels.com/photos/3184339/pexels-photo-3184339.jpeg?auto=compress&cs=tinysrgb&w=1200',
                     'name' => 'Deployment Overview',
                     'role' => 'Infrastructure Ops',
-                    'description' => 'Deployment teams planning provisioning status, role workflows, and regional infrastructure readiness.',
-                    'social' => ['github' => route('saas-login'), 'linkedin' => route('landing.contact')]
+                    'description' => 'Deployment teams planning provisioning status, role workflows, and regional infrastructure readiness.'
                 ],
                 [
                     'img' => 'https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop',
                     'name' => 'Audit & Compliance',
                     'role' => 'Governance Panel',
-                    'description' => 'Audit-centric teams working through traceability, policy alignment, and structured approval checkpoints.',
-                    'social' => ['linkedin' => route('landing.policy')]
+                    'description' => 'Audit-centric teams working through traceability, policy alignment, and structured approval checkpoints.'
                 ],
                 [
                     'img' => 'https://images.pexels.com/photos/3182773/pexels-photo-3182773.jpeg?auto=compress&cs=tinysrgb&w=1200',
                     'name' => 'Invoice Workspace',
                     'role' => 'Billing Engine',
-                    'description' => 'Sales professionals using laptops and tablets to manage invoices, approvals, and customer payments.',
-                    'social' => ['linkedin' => route('membership-plans')]
+                    'description' => 'Sales professionals using laptops and tablets to manage invoices, approvals, and customer payments.'
                 ],
                 [
                     'img' => 'https://images.unsplash.com/photo-1563986768609-322da13575f3?q=80&w=1200&auto=format&fit=crop',
                     'name' => 'Receipts & Collections',
                     'role' => 'Cash Management',
-                    'description' => 'Payment operators managing receipts, posted payments, reconciliations, and treasury visibility.',
-                    'social' => ['linkedin' => route('landing.contact')]
+                    'description' => 'Payment operators managing receipts, posted payments, reconciliations, and treasury visibility.'
                 ],
             ] as $member)
                 <article class="team-card">
@@ -603,23 +597,6 @@
                         <h3 class="team-name">{{ $member['name'] }}</h3>
                         <p class="team-description">{{ $member['description'] }}</p>
 
-                        <div class="social-links">
-                            @if(isset($member['social']['linkedin']))
-                                <a href="{{ $member['social']['linkedin'] }}" class="social-link" title="LinkedIn" aria-label="LinkedIn">
-                                    <i class="fab fa-linkedin-in"></i>
-                                </a>
-                            @endif
-                            @if(isset($member['social']['twitter']))
-                                <a href="{{ $member['social']['twitter'] }}" class="social-link" title="Twitter" aria-label="Twitter">
-                                    <i class="fab fa-twitter"></i>
-                                </a>
-                            @endif
-                            @if(isset($member['social']['github']))
-                                <a href="{{ $member['social']['github'] }}" class="social-link" title="GitHub" aria-label="GitHub">
-                                    <i class="fab fa-github"></i>
-                                </a>
-                            @endif
-                        </div>
                     </div>
                 </article>
             @endforeach

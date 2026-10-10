@@ -267,6 +267,7 @@ class LandingController extends Controller
             'department' => 'nullable|string|max:191',
             'message' => 'required|string|max:5000',
             'company_name' => 'nullable|string|max:191',
+            'agreement' => 'nullable|accepted',
         ]);
 
         try {

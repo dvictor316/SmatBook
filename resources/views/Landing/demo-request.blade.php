@@ -181,7 +181,7 @@
     .contact-header {
         padding: 52px 20px;
         background: linear-gradient(135deg, #f8fafc 0%, #f0f4ff 100%);
-        margin-top: 85px;
+        margin-top: 0;
     }
 
     .section-label {

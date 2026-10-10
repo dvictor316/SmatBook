@@ -323,9 +323,209 @@ class DemoProvisioningService
             ]));
         }
 
+        $this->seedDemoHotel($company, $user, $now);
+        $this->seedDemoLivestock($company, $user, $now);
+
         // Keep approved demos operational but financially blank:
         // products and customers are available for exploration, while report-
         // driving sales/expense records start empty until the user creates them.
+    }
+
+    private function seedDemoHotel(Company $company, User $user, $now): void
+    {
+        if (! Schema::hasTable('hotel_properties')) {
+            return;
+        }
+
+        $propertyId = DB::table('hotel_properties')->insertGetId($this->onlyExistingColumns('hotel_properties', [
+            'company_id' => $company->id,
+            'branch_id' => null,
+            'name' => 'SmartProbook Demo Hotel',
+            'code' => 'SPB-DEMO-'.$company->id,
+            'address' => '12 Marina Business District',
+            'city' => 'Lagos',
+            'state' => 'Lagos',
+            'country' => 'Nigeria',
+            'phone' => $company->phone,
+            'email' => $company->email,
+            'currency_code' => 'NGN',
+            'timezone' => 'Africa/Lagos',
+            'default_checkin_time' => '14:00:00',
+            'default_checkout_time' => '12:00:00',
+            'is_active' => true,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]));
+
+        if (! Schema::hasTable('hotel_room_types') || ! Schema::hasTable('hotel_rooms')) {
+            return;
+        }
+
+        $roomTypeId = DB::table('hotel_room_types')->insertGetId($this->onlyExistingColumns('hotel_room_types', [
+            'company_id' => $company->id,
+            'property_id' => $propertyId,
+            'name' => 'Executive King',
+            'code' => 'EXEC-KING',
+            'description' => 'Executive room prepared for the controlled product demo.',
+            'bed_type' => 'King',
+            'beds' => 1,
+            'max_adults' => 2,
+            'max_children' => 1,
+            'max_occupancy' => 3,
+            'base_rate' => 85000,
+            'weekend_rate' => 95000,
+            'is_active' => true,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]));
+
+        foreach ([
+            ['101', '1', 'West', 'available', 'clean'],
+            ['102', '1', 'West', 'occupied', 'clean'],
+            ['201', '2', 'East', 'available', 'dirty'],
+        ] as [$number, $floor, $wing, $status, $housekeeping]) {
+            DB::table('hotel_rooms')->insert($this->onlyExistingColumns('hotel_rooms', [
+                'company_id' => $company->id,
+                'property_id' => $propertyId,
+                'room_type_id' => $roomTypeId,
+                'room_number' => $number,
+                'floor' => $floor,
+                'wing' => $wing,
+                'operational_status' => $status,
+                'housekeeping_status' => $housekeeping,
+                'is_active' => true,
+                'notes' => 'Controlled demo room',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]));
+        }
+    }
+
+    private function seedDemoLivestock(Company $company, User $user, $now): void
+    {
+        $requiredTables = [
+            'livestock_farms', 'livestock_flocks', 'livestock_investments',
+            'livestock_opex_entries', 'livestock_revenue_entries', 'livestock_daily_productions',
+        ];
+        foreach ($requiredTables as $table) {
+            if (! Schema::hasTable($table)) {
+                return;
+            }
+        }
+
+        $farmId = DB::table('livestock_farms')->insertGetId($this->onlyExistingColumns('livestock_farms', [
+            'company_id' => $company->id,
+            'branch_id' => null,
+            'branch_name' => 'Demo HQ',
+            'name' => 'Green Acres Layer Farm',
+            'code' => 'DEMO-FARM-'.$company->id,
+            'farm_type' => 'layers',
+            'bird_capacity' => 5000,
+            'eggs_per_crate' => 30,
+            'location' => 'Ogun State',
+            'is_active' => true,
+            'created_by' => $user->id,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]));
+
+        $flockId = DB::table('livestock_flocks')->insertGetId($this->onlyExistingColumns('livestock_flocks', [
+            'company_id' => $company->id,
+            'farm_id' => $farmId,
+            'batch_code' => 'DEMO-LAYERS-'.$company->id,
+            'breed' => 'Isa Brown',
+            'placement_date' => $now->copy()->subMonths(4)->toDateString(),
+            'age_at_placement_weeks' => 16,
+            'opening_birds' => 1200,
+            'current_birds' => 1193,
+            'cost_per_bird' => 5200,
+            'supplier' => 'Demo Poultry Supply',
+            'status' => 'active',
+            'notes' => 'Sample production flock for guided exploration.',
+            'created_by' => $user->id,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]));
+
+        foreach ([
+            ['capital', 'layer_house', 'Layer house and pen', 18000000, 120],
+            ['capital', 'battery_cages', 'Automated battery cages', 12500000, 96],
+            ['working_capital', 'point_of_cage_birds', 'Point-of-cage birds', 6240000, 18],
+            ['working_capital', 'feeding_14_25_weeks', 'Pre-production feeding', 2850000, 12],
+        ] as [$class, $category, $description, $cost, $life]) {
+            DB::table('livestock_investments')->insert($this->onlyExistingColumns('livestock_investments', [
+                'company_id' => $company->id, 'farm_id' => $farmId, 'flock_id' => $flockId,
+                'cost_class' => $class, 'category' => $category, 'description' => $description,
+                'cost_date' => $now->copy()->subMonths(5)->toDateString(), 'cost' => $cost,
+                'salvage_value' => 0, 'useful_life_months' => $life, 'allocation_method' => 'straight_line',
+                'accumulated_allocation' => 0, 'status' => 'active', 'created_by' => $user->id,
+                'created_at' => $now, 'updated_at' => $now,
+            ]));
+        }
+
+        foreach ([
+            ['feeds', 'Layer mash feed', 24, 'bag', 21500, 516000, 'Demo Feed Mill'],
+            ['medication', 'Routine medication', 1, 'lot', 85000, 85000, 'Demo Vet Services'],
+            ['personnel', 'Farm personnel weekly allocation', 1, 'week', 180000, 180000, 'Payroll'],
+        ] as $index => [$category, $description, $quantity, $unit, $unitCost, $amount, $vendor]) {
+            DB::table('livestock_opex_entries')->insert($this->onlyExistingColumns('livestock_opex_entries', [
+                'company_id' => $company->id, 'farm_id' => $farmId, 'flock_id' => $flockId,
+                'expense_date' => $now->copy()->subDays($index * 3)->toDateString(), 'category' => $category,
+                'description' => $description, 'quantity' => $quantity, 'unit' => $unit,
+                'unit_cost' => $unitCost, 'amount' => $amount, 'frequency' => 'weekly',
+                'vendor' => $vendor, 'reference' => 'DEMO-OPEX-'.($index + 1), 'created_by' => $user->id,
+                'created_at' => $now, 'updated_at' => $now,
+            ]));
+        }
+
+        foreach ([
+            ['eggs', 'Sale of graded eggs', 145, 'crate', 6200, 899000, 'Demo Grocers'],
+            ['manure_litter', 'Bagged poultry manure', 40, 'bag', 1800, 72000, 'Demo Farms Cooperative'],
+        ] as $index => [$source, $description, $quantity, $unit, $unitPrice, $amount, $customer]) {
+            DB::table('livestock_revenue_entries')->insert($this->onlyExistingColumns('livestock_revenue_entries', [
+                'company_id' => $company->id, 'farm_id' => $farmId, 'flock_id' => $flockId,
+                'revenue_date' => $now->copy()->subDays($index * 4)->toDateString(), 'source' => $source,
+                'description' => $description, 'quantity' => $quantity, 'unit' => $unit,
+                'unit_price' => $unitPrice, 'amount' => $amount, 'customer' => $customer,
+                'reference' => 'DEMO-REV-'.($index + 1), 'created_by' => $user->id,
+                'created_at' => $now, 'updated_at' => $now,
+            ]));
+        }
+
+        for ($day = 6; $day >= 0; $day--) {
+            $openingBirds = 1200 - (6 - $day);
+            $mortality = $day === 3 ? 1 : 0;
+            $closingBirds = $openingBirds - $mortality;
+            $crates = 34 + (($day + 1) % 4);
+            $looseEggs = ($day * 3) % 30;
+            $goodEggs = ($crates * 30) + $looseEggs;
+            $productionId = DB::table('livestock_daily_productions')->insertGetId($this->onlyExistingColumns('livestock_daily_productions', [
+                'company_id' => $company->id, 'farm_id' => $farmId, 'flock_id' => $flockId,
+                'production_date' => $now->copy()->subDays($day)->toDateString(), 'opening_birds' => $openingBirds,
+                'mortality' => $mortality, 'culled' => 0, 'closing_birds' => $closingBirds,
+                'egg_crates' => $crates, 'loose_eggs' => $looseEggs, 'damaged_eggs' => 4 + ($day % 3),
+                'total_good_eggs' => $goodEggs, 'feed_kg' => 138 + ($day % 4), 'water_litres' => 260,
+                'hen_day_percent' => round(($goodEggs / $openingBirds) * 100, 2),
+                'notes' => 'Controlled demo production record', 'recorded_by' => $user->id,
+                'created_at' => $now, 'updated_at' => $now,
+            ]));
+
+            if (Schema::hasTable('livestock_inventory_movements')) {
+                foreach ([
+                    ['feed', 'consumption', -(138 + ($day % 4)), 'kg'],
+                    ['eggs', 'production', $goodEggs, 'egg'],
+                ] as [$itemType, $movementType, $quantity, $unit]) {
+                    DB::table('livestock_inventory_movements')->insert($this->onlyExistingColumns('livestock_inventory_movements', [
+                        'company_id' => $company->id, 'farm_id' => $farmId, 'flock_id' => $flockId,
+                        'movement_date' => $now->copy()->subDays($day)->toDateString(), 'item_type' => $itemType,
+                        'movement_type' => $movementType, 'quantity' => $quantity, 'unit' => $unit,
+                        'unit_cost' => 0, 'total_value' => 0, 'source_type' => \App\Models\LivestockDailyProduction::class,
+                        'source_id' => $productionId, 'notes' => 'Controlled demo movement', 'created_by' => $user->id,
+                        'created_at' => $now, 'updated_at' => $now,
+                    ]));
+                }
+            }
+        }
     }
 
     /**

@@ -37,7 +37,7 @@ class ModuleCatalog
             ['key' => 'tax-compliance', 'title' => 'Tax & Compliance', 'description' => 'Jurisdictions, tax codes, workpapers, filings, approvals, and exports.', 'tier' => 'Enterprise', 'scope' => 'Tenant and branch scoped', 'registration' => 'Included with Enterprise licence', 'icon' => 'fas fa-file-shield', 'route' => 'compliance.tax-center.index'],
             ['key' => 'payroll', 'title' => 'Payroll & HR', 'description' => 'Employees, payroll runs, payslips, attendance, and leave workflows.', 'tier' => 'Enterprise', 'scope' => 'Tenant scoped', 'registration' => 'Included with Enterprise licence', 'icon' => 'fas fa-people-group', 'route' => 'payroll.index'],
             ['key' => 'hotel', 'title' => 'Hotel Management', 'description' => 'Reservations, front desk, folios, housekeeping, maintenance, and night audit.', 'tier' => 'Hotel', 'scope' => 'Hotel tenants only', 'registration' => 'Select Hotel / Hospitality', 'icon' => 'fas fa-hotel', 'route' => 'super_admin.hotels.index'],
-            ['key' => 'livestock', 'title' => 'Livestock & Layer Farm', 'description' => 'Flocks, production, feed, farm costs, inventory, revenue, and returns.', 'tier' => 'Livestock', 'scope' => 'Livestock tenants only', 'registration' => 'Select Livestock / Layer Farm', 'icon' => 'fas fa-cow', 'route' => null],
+            ['key' => 'livestock', 'title' => 'Livestock & Layer Farm', 'description' => 'Flocks, production, feed, farm costs, inventory, revenue, and returns.', 'tier' => 'Livestock', 'scope' => 'Livestock tenants only', 'registration' => 'Select Livestock / Layer Farm', 'icon' => 'fas fa-cow', 'route' => 'super_admin.livestock.index'],
         ];
     }
 }

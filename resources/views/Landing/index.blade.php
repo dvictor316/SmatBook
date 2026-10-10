@@ -1,6 +1,8 @@
 
 @extends('layout.landing_nav')
 
+@section('hide_landing_chrome', '1')
+
 @section('content')
 @php
     $landingTopProducts = $landingTopProducts ?? $products ?? [
@@ -2204,6 +2206,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                 <li class="nav-item"><a class="sb-nav-link {{ request()->routeIs('landing.about') ? 'active' : '' }}" href="{{ route('landing.about') }}">About</a></li>
                 <li class="nav-item"><a class="sb-nav-link" href="{{ route('landing.index') }}#team">Projects</a></li>
                 <li class="nav-item"><a class="sb-nav-link {{ request()->routeIs('landing.contact') ? 'active' : '' }}" href="{{ route('landing.contact') }}">Contact</a></li>
+                <li class="nav-item"><a class="sb-nav-link {{ request()->routeIs('membership-plans', 'pricing') ? 'active' : '' }}" href="{{ route('membership-plans') }}">Pricing</a></li>
                 <li class="nav-item"><a class="sb-nav-link" href="{{ route('landing.index') }}#product-video">Video</a></li>
                 <li class="nav-item"><a class="sb-nav-link {{ request()->routeIs('landing.policy') ? 'active' : '' }}" href="{{ route('landing.policy') }}">Policy</a></li>
                 <li class="nav-item ms-lg-3">
@@ -2222,9 +2225,9 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     <div class="announce-label"><span class="announce-dot"></span> 📡 LIVE UPDATES</div>
     <div class="announce-track" id="announceTrack">
         <div class="announce-msg active" id="msg0"><i class="fas fa-star" style="color:var(--gold);font-size:.6rem;"></i> SmartProbook v3.0 — Now with AI-powered payroll automation</div>
-        <div class="announce-msg" id="msg1"><i class="fas fa-shield-alt" style="color:var(--gold);font-size:.6rem;"></i> ISO 27001 Certified · Your data is fully encrypted &amp; secured</div>
-        <div class="announce-msg" id="msg2"><i class="fas fa-bolt" style="color:var(--gold);font-size:.6rem;"></i> New: One-click FIRS VAT report generation · Try it today</div>
-        <div class="announce-msg" id="msg3"><i class="fas fa-users" style="color:var(--gold);font-size:.6rem;"></i> Trusted by 60,000+ businesses across Africa &amp; beyond</div>
+        <div class="announce-msg" id="msg1"><i class="fas fa-shield-alt" style="color:var(--gold);font-size:.6rem;"></i> Role-based access, two-factor authentication, and encrypted account secrets</div>
+        <div class="announce-msg" id="msg2"><i class="fas fa-bolt" style="color:var(--gold);font-size:.6rem;"></i> Tax workpapers, filing controls, and auditor-ready exports in one workspace</div>
+        <div class="announce-msg" id="msg3"><i class="fas fa-users" style="color:var(--gold);font-size:.6rem;"></i> Built for growing businesses, institutions, hotels, and livestock operations</div>
     </div>
 </div>
 
@@ -2264,7 +2267,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                     </div>
                     <div class="hero-trust">
                         <div class="trust-dot"></div>
-                        <span class="trust-text">Trusted by 60,000+ businesses across Africa</span>
+                        <span class="trust-text">Built for secure, multi-user business operations</span>
                     </div>
                 </div>
 
@@ -2837,7 +2840,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                 <p class="sb-lead sb-lead-white">Stop spending weekends building spreadsheets. SmartProbook generates polished financial reports automatically — daily, weekly, monthly, or on demand.</p>
                 <div class="d-flex flex-column gap-3 mt-4">
                     <div class="feat-card-dark"><div class="d-flex align-items-start gap-3"><div class="feat-icon feat-icon-dark"><svg viewBox="0 0 24 24" fill="none" stroke="#c5a059" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div><div><h6>Automatic Expense Categorization</h6><p>SmartProbook learns your spending patterns and auto-tags expenses to the right accounts without manual entry.</p></div></div></div>
-                    <div class="feat-card-dark"><div class="d-flex align-items-start gap-3"><div class="feat-icon feat-icon-dark"><svg viewBox="0 0 24 24" fill="none" stroke="#c5a059" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div><div><h6>One-Click Tax Reports</h6><p>Generate VAT, PAYE, and annual tax summaries in seconds — fully formatted for FIRS submission.</p></div></div></div>
+                    <div class="feat-card-dark"><div class="d-flex align-items-start gap-3"><div class="feat-icon feat-icon-dark"><svg viewBox="0 0 24 24" fill="none" stroke="#c5a059" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div><div><h6>Tax Workpapers &amp; Reports</h6><p>Prepare VAT, PAYE, and company tax summaries with review controls and auditor-ready exports.</p></div></div></div>
                     <div class="feat-card-dark"><div class="d-flex align-items-start gap-3"><div class="feat-icon feat-icon-dark"><svg viewBox="0 0 24 24" fill="none" stroke="#c5a059" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><div><h6>Bank Reconciliation</h6><p>Import your bank statements and SmartProbook matches every transaction automatically — zero manual reconciliation.</p></div></div></div>
                 </div>
                 </div>
@@ -3039,7 +3042,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         <div class="row g-5 mb-5 pb-5" style="border-bottom:1px solid var(--border);">
             <div class="col-lg-5">
                 <h2 style="font-family:var(--font-display);font-weight:800;color:var(--navy);margin-bottom:16px;">Uplink <span style="color:var(--gold);">Support</span></h2>
-                <p style="color:var(--muted);line-height:1.85;margin-bottom:24px;">Technical architects are available 24/7 for organizational assessment and rapid deployment.</p>
+                <p style="color:var(--muted);line-height:1.85;margin-bottom:24px;">Our team can help with product questions, onboarding, subscriptions, and deployment planning.</p>
                 <div class="mb-4">
                     <p class="mb-2" style="font-size:13.5px;font-weight:700;color:var(--navy);"><i class="fas fa-map-marker-alt me-3" style="color:var(--gold);"></i>12 Independence Layout, Enugu, Nigeria</p>
                     <p class="mb-2" style="font-size:13.5px;font-weight:700;color:var(--navy);"><i class="fas fa-phone-alt me-3" style="color:var(--gold);"></i>+234 646 463 06</p>
@@ -3047,6 +3050,11 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                 </div>
                 @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
                 @if(session('error'))<div class="alert alert-danger">{{ session('error') }}</div>@endif
+                @if($errors->any())
+                    <div class="alert alert-danger" role="alert">
+                        Please review the highlighted contact details and try again.
+                    </div>
+                @endif
                 <form action="{{ route('contact.store') }}" method="POST">
                     @csrf
                     <div class="mb-3"><input type="text" name="company_name" class="form-control" placeholder="Organization Name" value="{{ old('company_name') }}" style="border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;font-size:0.88rem;"></div>
@@ -3059,7 +3067,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             </div>
             <div class="col-lg-7">
                 <div class="map-wrap" style="height:100%;min-height:480px;">
-                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15858.987654321!2d7.508333!3d6.458333!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x1044a3d6f1a8e1e1%3A0x1234567890abcdef!2sIndependence%20Layout%2C%20Enugu!5e0!3m2!1sen!2sng!4v1234567890123" width="100%" height="100%" style="border:0;min-height:480px;" allowfullscreen="" loading="lazy"></iframe>
+                    <iframe src="https://www.google.com/maps?q=Independence+Layout%2C+Enugu%2C+Nigeria&amp;output=embed" title="SmartProbook office area map" width="100%" height="100%" style="border:0;min-height:480px;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                 </div>
             </div>
         </div>
@@ -3067,11 +3075,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <div class="col-lg-4">
                 <h3 style="font-family:var(--font-display);font-weight:900;color:var(--navy);letter-spacing:0.5px;margin-bottom:12px;">SmartProbook</h3>
                 <p style="font-size:13px;color:var(--muted);max-width:300px;line-height:1.8;">Global Institutional Accounting Intelligence. Engineered for modern wealth governance.</p>
-                <div class="d-flex gap-3 mt-4">
-                    <a href="{{ route('landing.about') }}" class="footer-social"><i class="fab fa-linkedin-in"></i></a>
-                    <a href="{{ route('landing.contact') }}" class="footer-social"><i class="fab fa-twitter"></i></a>
-                    <a href="{{ route('landing.policy') }}" class="footer-social"><i class="fab fa-facebook-f"></i></a>
-                </div>
             </div>
             <div class="col-md-3 col-lg-2 ms-auto">
                 <h6 style="font-family:var(--font-display);font-weight:800;font-size:0.72rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--navy);margin-bottom:18px;">Platform</h6>
@@ -3091,7 +3094,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             </div>
         </div>
         <div class="mt-5 pt-4 text-center" style="border-top:1px solid var(--border);">
-            <p style="font-size:13px;color:var(--muted);margin:0;">© 2026 SmartProbook Intelligence Enterprise. Licensed for Global Financial Governance.</p>
+            <p style="font-size:13px;color:var(--muted);margin:0;">© {{ now()->year }} SmartProbook. All rights reserved.</p>
         </div>
     </div>
 </footer>

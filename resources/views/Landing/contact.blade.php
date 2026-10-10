@@ -5,9 +5,9 @@
 
 <section class="contact-header">
     <div class="container text-center">
-        <h6 class="section-label">Liaison Office</h6>
-        <h1 class="section-title">Connect with <span>Intelligence.</span></h1>
-        <p class="section-subtitle">Have a complex inquiry regarding Enterprise Licensing or Regional Compliance? Our liaison team is ready to assist your organization.</p>
+        <h6 class="section-label">Contact SmartProbook</h6>
+        <h1 class="section-title">Let us understand <span>your business.</span></h1>
+        <p class="section-subtitle">Ask about subscriptions, onboarding, product support, partnerships, or a guided demonstration.</p>
     </div>
 </section>
 
@@ -18,14 +18,14 @@
             
             <div class="contact-info-panel">
                 <div class="info-content">
-                    <h2>Global HQ</h2>
-                    <p>Strategically positioned in the heart of the Enugu Tech Hub to drive financial innovation across West Africa.</p>
+                    <h2>SmartProbook Office</h2>
+                    <p>Speak with our team about implementation, subscriptions, product guidance, or technical support.</p>
 
                     <div class="contact-item">
                         <i class="fas fa-map-marker-alt"></i>
                         <div>
                             <h6>Address</h6>
-                            <p>Enugu Tech Hub, Independence Layout, Enugu, Nigeria</p>
+                            <p>12 Independence Layout, Enugu, Nigeria</p>
                         </div>
                     </div>
 
@@ -33,7 +33,7 @@
                         <i class="fas fa-envelope"></i>
                         <div>
                             <h6>Email</h6>
-                            <a href="mailto:compliance@smartprobook.com">compliance@smartprobook.com</a>
+                            <a href="mailto:donvictorlive@gmail.com">donvictorlive@gmail.com</a>
                         </div>
                     </div>
 
@@ -41,7 +41,7 @@
                         <i class="fas fa-phone"></i>
                         <div>
                             <h6>Phone</h6>
-                            <a href="tel:+234800728626226">+234 (0) 800 SmartProbook</a>
+                            <a href="tel:+2348064646306">+234 806 464 6306</a>
                         </div>
                     </div>
                 </div>
@@ -50,7 +50,7 @@
                     <h6>Technical Support Status</h6>
                     <div class="status-indicator">
                         <span class="status-dot"></span>
-                        <p>All Systems Operational <br> Response time: &lt; 2 hrs</p>
+                        <p>Support desk accepting requests<br>Issues are prioritized by severity</p>
                     </div>
                 </div>
             </div>
@@ -71,45 +71,51 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="fullname">Full Name</label>
-                            <input type="text" id="fullname" name="fullname" class="form-input" placeholder="Victor Don" value="{{ old('fullname') }}" required>
+                            <input type="text" id="fullname" name="fullname" class="form-input @error('fullname') is-invalid @enderror" placeholder="Your full name" value="{{ old('fullname') }}" autocomplete="name" aria-describedby="fullname-error" required>
+                            @error('fullname')<span class="field-error" id="fullname-error">{{ $message }}</span>@enderror
                         </div>
                         <div class="form-group">
                             <label for="email">Work Email</label>
-                            <input type="email" id="email" name="email" class="form-input" placeholder="v.don@enterprise.com" value="{{ old('email') }}" required>
+                            <input type="email" id="email" name="email" class="form-input @error('email') is-invalid @enderror" placeholder="name@company.com" value="{{ old('email') }}" autocomplete="email" aria-describedby="email-error" required>
+                            @error('email')<span class="field-error" id="email-error">{{ $message }}</span>@enderror
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label for="company_name">Company / Organization</label>
-                        <input type="text" id="company_name" name="company_name" class="form-input" placeholder="SmartProbook Global" value="{{ old('company_name') }}">
+                        <input type="text" id="company_name" name="company_name" class="form-input @error('company_name') is-invalid @enderror" placeholder="Your company or organization" value="{{ old('company_name') }}" autocomplete="organization" aria-describedby="company-name-error">
+                        @error('company_name')<span class="field-error" id="company-name-error">{{ $message }}</span>@enderror
                     </div>
 
                     
                     <div class="form-group">
                         <label for="department">Inquiry Department</label>
-                        <select id="department" name="department" class="form-input" required>
+                        <select id="department" name="department" class="form-input @error('department') is-invalid @enderror" aria-describedby="department-error" required>
                             <option value="">Select a department</option>
                             <option value="licensing" {{ old('department') === 'licensing' ? 'selected' : '' }}>Enterprise Solutions & Licensing</option>
                             <option value="governance" {{ old('department') === 'governance' ? 'selected' : '' }}>Legal & Corporate Governance</option>
                             <option value="technical" {{ old('department') === 'technical' ? 'selected' : '' }}>Technical API Support</option>
                             <option value="partnerships" {{ old('department') === 'partnerships' ? 'selected' : '' }}>Strategic Partnerships</option>
                         </select>
+                        @error('department')<span class="field-error" id="department-error">{{ $message }}</span>@enderror
                     </div>
 
                     
                     <div class="form-group">
                         <label for="message">Message</label>
-                        <textarea id="message" name="message" class="form-input" rows="6" placeholder="Briefly describe your business requirement..." required>{{ old('message') }}</textarea>
+                        <textarea id="message" name="message" class="form-input @error('message') is-invalid @enderror" rows="6" placeholder="Briefly describe your business requirement..." aria-describedby="message-error" required>{{ old('message') }}</textarea>
+                        @error('message')<span class="field-error" id="message-error">{{ $message }}</span>@enderror
                     </div>
 
                     
                     <div class="form-checkbox">
-                        <input type="checkbox" id="agreement" name="agreement" required>
+                        <input type="checkbox" id="agreement" name="agreement" value="1" @checked(old('agreement')) required>
                         <label for="agreement">I agree to the SmartProbook <a href="{{ route('landing.policy') }}">Corporate Policy</a> regarding data handling and communication.</label>
                     </div>
+                    @error('agreement')<span class="field-error">{{ $message }}</span>@enderror
 
                     
-                    <button type="submit" class="btn-submit">Establish Connection</button>
+                    <button type="submit" class="btn-submit"><i class="fas fa-paper-plane" aria-hidden="true"></i> Send Message</button>
                 </form>
             </div>
         </div>
@@ -133,7 +139,7 @@
                     <i class="fas fa-headset"></i>
                 </div>
                 <h3>Support Team</h3>
-                <p>Available 24/7 for<br>Enterprise Clients</p>
+                <p>Product, onboarding, and<br>account assistance</p>
             </div>
 
             <div class="info-card">
@@ -141,7 +147,7 @@
                     <i class="fas fa-paper-plane"></i>
                 </div>
                 <h3>Response Time</h3>
-                <p>Average response<br>within 2 hours</p>
+                <p>Acknowledgement during<br>business hours</p>
             </div>
 
             <div class="info-card">
@@ -149,7 +155,7 @@
                     <i class="fas fa-globe"></i>
                 </div>
                 <h3>Global Coverage</h3>
-                <p>Serving enterprises<br>across Africa & Beyond</p>
+                <p>Remote onboarding for<br>distributed teams</p>
             </div>
         </div>
     </div>
@@ -177,7 +183,7 @@
     .contact-header {
         padding: 52px 20px;
         background: linear-gradient(135deg, #f8fafc 0%, #f0f4ff 100%);
-        margin-top: 85px;
+        margin-top: 0;
     }
 
     .section-label {
@@ -403,6 +409,17 @@
         box-shadow: 0 0 0 3px rgba(0, 98, 255, 0.1);
     }
 
+    .form-input.is-invalid {
+        border-color: #dc2626;
+    }
+
+    .field-error {
+        color: #b91c1c;
+        font-size: 0.8rem;
+        font-weight: 700;
+        margin-top: 6px;
+    }
+
     .form-input::placeholder {
         color: #cbd5e1;
     }
@@ -561,7 +578,7 @@
     @media (max-width: 768px) {
         .contact-header {
             padding: 44px 16px 38px;
-            margin-top: 70px;
+            margin-top: 0;
         }
 
         .contact-section {

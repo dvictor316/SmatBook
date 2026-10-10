@@ -15,6 +15,10 @@ class LivestockAccess
             return false;
         }
 
+        if (method_exists($user, 'isDemoUser') && $user->isDemoUser()) {
+            return true;
+        }
+
         $signals = [];
         if (Schema::hasTable('companies')) {
             $company = Company::withoutGlobalScopes()->find($companyId);
@@ -34,5 +38,47 @@ class LivestockAccess
         }
 
         return Schema::hasTable('livestock_farms') && DB::table('livestock_farms')->where('company_id', $companyId)->exists();
+    }
+
+    public static function livestockCompanyIds(): array
+    {
+        if (! Schema::hasTable('companies')) {
+            return [];
+        }
+
+        $ids = collect();
+        $companyColumns = array_values(array_filter(['plan', Company::businessTypeColumn()]));
+
+        foreach ($companyColumns as $column) {
+            if (! Schema::hasColumn('companies', $column)) {
+                continue;
+            }
+
+            $ids = $ids->merge(DB::table('companies')->where(function ($query) use ($column) {
+                foreach (['livestock', 'poultry', 'layer farm', 'agriculture'] as $term) {
+                    $query->orWhereRaw("LOWER(COALESCE({$column}, '')) LIKE ?", ['%'.$term.'%']);
+                }
+            })->pluck('id'));
+        }
+
+        if (Schema::hasTable('subscriptions') && Schema::hasColumn('subscriptions', 'company_id')) {
+            foreach (['plan', 'plan_name'] as $column) {
+                if (! Schema::hasColumn('subscriptions', $column)) {
+                    continue;
+                }
+
+                $ids = $ids->merge(DB::table('subscriptions')->where(function ($query) use ($column) {
+                    foreach (['livestock', 'poultry', 'layer farm', 'agriculture'] as $term) {
+                        $query->orWhereRaw("LOWER(COALESCE({$column}, '')) LIKE ?", ['%'.$term.'%']);
+                    }
+                })->pluck('company_id'));
+            }
+        }
+
+        if (Schema::hasTable('livestock_farms')) {
+            $ids = $ids->merge(DB::table('livestock_farms')->pluck('company_id'));
+        }
+
+        return $ids->map(fn ($id) => (int) $id)->filter()->unique()->values()->all();
     }
 }

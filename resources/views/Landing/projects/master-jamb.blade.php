@@ -13,7 +13,7 @@
         align-items: center;
         background: linear-gradient(135deg, #0f172a, #123d79);
         border: 1px solid rgba(37,99,235,0.28);
-        border-radius: 999px;
+        border-radius: 8px;
         box-shadow: 0 18px 44px rgba(15,23,42,0.18);
         color: #fff;
         display: inline-flex;
@@ -34,7 +34,7 @@
         font-size: 1rem;
     }
 </style>
-<section style="margin-top: 85px; padding: 52px 20px; background: linear-gradient(135deg,#f8fafc 0%,#eff6ff 100%);">
+<section style="margin-top: 0; padding: 52px 20px; background: linear-gradient(135deg,#f8fafc 0%,#eff6ff 100%);">
     <div class="container" style="max-width: 1200px;">
         <div class="row align-items-center g-5">
             <div class="col-lg-6">

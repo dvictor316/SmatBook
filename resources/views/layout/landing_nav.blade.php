@@ -23,9 +23,9 @@
                 'keywords' => 'contact SmartProbook, accounting software support, ERP support, software demo, deployment partnership',
             ],
             'landing.team' => [
-                'title' => 'SmartProbook Team',
-                'description' => 'Meet the SmartProbook team behind our AI-powered accounting software, ERP tools, and deployment infrastructure services.',
-                'keywords' => 'SmartProbook team, accounting software leadership, ERP platform team',
+                'title' => 'SmartProbook Projects and Platform Gallery',
+                'description' => 'Explore SmartProbook projects and preview the accounting, reporting, deployment, compliance, billing, and collections workspaces.',
+                'keywords' => 'SmartProbook projects, accounting software gallery, ERP platform workspaces',
             ],
             'landing.policy' => [
                 'title' => 'SmartProbook Company Policy',
@@ -128,6 +128,23 @@
         .nav-links {
             -webkit-overflow-scrolling: touch;
         }
+
+        .skip-link {
+            position: fixed;
+            top: 8px;
+            left: 8px;
+            z-index: 11000;
+            padding: 10px 14px;
+            border-radius: 6px;
+            background: #ffffff;
+            color: #0b2a63;
+            font-weight: 800;
+            text-decoration: none;
+            transform: translateY(-150%);
+            transition: transform 0.2s ease;
+        }
+
+        .skip-link:focus { transform: translateY(0); }
 
         /* ===== NAVIGATION ===== */
         nav {
@@ -1268,6 +1285,8 @@
 </head>
 <body>
 
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
 
 @unless($hideLandingChrome)
 <nav>
@@ -1277,7 +1296,7 @@
             <span class="logo-text">SmartPro<span>book</span></span>
         </a>
 
-        <button class="hamburger" id="navTrigger" type="button" aria-label="Toggle navigation">
+        <button class="hamburger" id="navTrigger" type="button" aria-label="Toggle navigation" aria-controls="mainMenu" aria-expanded="false">
             <span></span>
             <span></span>
             <span></span>
@@ -1288,6 +1307,7 @@
             <li><a href="{{ route('landing.about') }}" class="{{ Route::is('landing.about') ? 'active' : '' }}">About</a></li>
             <li><a href="{{ route('landing.team') }}" class="{{ Route::is('landing.team') ? 'active' : '' }}">Projects</a></li>
             <li><a href="{{ route('landing.contact') }}" class="{{ Route::is('landing.contact') ? 'active' : '' }}">Contact</a></li>
+            <li><a href="{{ route('membership-plans') }}" class="{{ Route::is('membership-plans', 'pricing') ? 'active' : '' }}">Pricing</a></li>
             <li><a href="{{ url('/#product-video') }}">Video</a></li>
             <li><a href="{{ route('landing.policy') }}" class="{{ Route::is('landing.policy') ? 'active' : '' }}">Policy</a></li>
             <li class="nav-action-item"><a href="{{ route('saas-login', ['portal' => 1]) }}" class="btn-portal"><span class="nav-label-full">Client Portal</span><span class="nav-label-short">Portal</span></a></li>
@@ -1297,7 +1317,7 @@
 @endunless
 
 
-<main>
+<main id="main-content" tabindex="-1">
     @include('layout.partials.flash-messages')
     @yield('content')
 </main>
@@ -1310,7 +1330,7 @@
             
             <div class="footer-col">
                 <a href="{{ url('/') }}" class="footer-logo">SMARTPRO<span>BOOK</span></a>
-                <p>Engineered for excellence. Registered under the laws of the Federal Republic of Nigeria. Global headquarters in Enugu Tech Hub.</p>
+                <p>Accounting, sales, inventory, payroll, tax, and operational tools built for growing businesses and institutions.</p>
             </div>
 
             
@@ -1328,8 +1348,8 @@
                 <h5>Governance</h5>
                 <ul class="footer-links">
                     <li><a href="{{ route('landing.policy') }}" class="footer-link">Company Policy</a></li>
-                    <li><a href="{{ route('landing.policy') }}" class="footer-link">Privacy Policy</a></li>
-                    <li><a href="{{ route('landing.policy') }}" class="footer-link">Terms & Conditions</a></li>
+                    <li><a href="{{ route('landing.policy') }}#section-7" class="footer-link">Data &amp; Security</a></li>
+                    <li><a href="{{ route('landing.policy') }}#section-1" class="footer-link">Terms &amp; Conditions</a></li>
                 </ul>
             </div>
 
@@ -1346,9 +1366,9 @@
             
             <div class="footer-col">
                 <h5>Contact</h5>
-                <p>Enugu Tech Hub<br>Independence Layout<br>Enugu, Nigeria</p>
+                <p>12 Independence Layout<br>Enugu, Nigeria</p>
                 <ul class="footer-links">
-                    <li><a href="tel:+23464646306" class="footer-link">+234 646 463 06</a></li>
+                    <li><a href="tel:+2348064646306" class="footer-link">+234 806 464 6306</a></li>
                     <li><a href="mailto:donvictorlive@gmail.com" class="footer-link">donvictorlive@gmail.com</a></li>
                 </ul>
             </div>
@@ -1359,7 +1379,7 @@
 
         
         <div class="footer-bottom">
-            <p>&copy; 2026 SmartProbook Global Infrastructure Inc. All Rights Reserved.</p>
+            <p>&copy; {{ now()->year }} SmartProbook. All rights reserved.</p>
         </div>
     </div>
 </footer>
@@ -1380,6 +1400,7 @@
             e.stopPropagation();
             navTrigger.classList.toggle('active');
             mainMenu.classList.toggle('active');
+            navTrigger.setAttribute('aria-expanded', mainMenu.classList.contains('active') ? 'true' : 'false');
         });
 
         // Close menu when a link is clicked
@@ -1387,6 +1408,7 @@
             link.addEventListener('click', function() {
                 navTrigger.classList.remove('active');
                 mainMenu.classList.remove('active');
+                navTrigger.setAttribute('aria-expanded', 'false');
             });
         });
 
@@ -1395,6 +1417,7 @@
             if (!e.target.closest('.nav-container') && !e.target.closest('.nav-links')) {
                 navTrigger.classList.remove('active');
                 mainMenu.classList.remove('active');
+                navTrigger.setAttribute('aria-expanded', 'false');
             }
         });
 
@@ -1403,6 +1426,7 @@
             if (e.key === 'Escape') {
                 navTrigger.classList.remove('active');
                 mainMenu.classList.remove('active');
+                navTrigger.setAttribute('aria-expanded', 'false');
             }
         });
 

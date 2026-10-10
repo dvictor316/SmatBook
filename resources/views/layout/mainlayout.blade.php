@@ -33,6 +33,8 @@
         || request()->is('pos');
     $isHotelWorkspace = request()->routeIs('hotel.*', 'super_admin.hotels.*')
         || request()->is('hotel*', 'superadmin/hotels*');
+    $isLivestockWorkspace = request()->routeIs('livestock.*', 'super_admin.livestock.*')
+        || request()->is('livestock*', 'superadmin/livestock*');
     $hideSidebar = ($hideSidebar ?? false) || $isPosWorkspace;
     $bodyClasses = [];
 
@@ -62,6 +64,10 @@
 
     if ($isHotelWorkspace) {
         $bodyClasses[] = 'hotel-workspace';
+    }
+
+    if ($isLivestockWorkspace) {
+        $bodyClasses[] = 'livestock-workspace';
     }
 @endphp
 

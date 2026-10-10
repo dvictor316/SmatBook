@@ -8,7 +8,7 @@
         <div class="carousel-item active">
             <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070" alt="Corporate Intelligence">
             <div class="carousel-caption">
-                <h6 class="text-uppercase mb-3">2026 Executive Briefing</h6>
+                <h6 class="text-uppercase mb-3">SmartProbook Overview</h6>
                 <h1>Defining <span class="text-accent">Financial Clarity.</span></h1>
                 <p class="lead">Harnessing mathematical precision and unwavering ethical standards for the modern African enterprise.</p>
             </div>
@@ -52,7 +52,7 @@
                 <div class="about-label">01. Our Mission</div>
                 <h2 class="about-title">Democratizing Financial <span>Sovereignty.</span></h2>
                 <p class="about-text">In an era where data is the new currency, SmartProbook's mission extends beyond simple bookkeeping. We are dedicated to providing Small and Medium Enterprises (SMEs) with the same level of financial sophistication typically reserved for Fortune 500 companies.</p>
-                <p class="about-text">By automating the most complex aspects of IFRS and GAAP compliance, we eliminate the "intelligence gap" that hinders African businesses from securing international investment. We empower founders to lead with confidence, knowing their financial bedrock is unshakable and verified by global standards.</p>
+                <p class="about-text">By organizing accounting records, approvals, reports, and audit trails in one system, we help reduce the information gaps that slow growing businesses. Founders and finance teams gain clearer evidence for decisions, reviews, and stakeholder conversations.</p>
                 <a href="{{ route('landing.contact') }}" class="btn-main btn-blue">Learn More</a>
             </div>
         </div>
@@ -184,7 +184,7 @@
 
     /* ===== CAROUSEL STYLES ===== */
     .hero-carousel {
-        margin-top: 85px;
+        margin-top: 0;
     }
 
     .carousel-item {

@@ -15,6 +15,10 @@ class HotelAccess
             return false;
         }
 
+        if (method_exists($user, 'isDemoUser') && $user->isDemoUser()) {
+            return true;
+        }
+
         foreach (self::hotelSignalsForUser($user, $companyId) as $signal) {
             if (str_contains(strtolower((string) $signal), 'hotel') || str_contains(strtolower((string) $signal), 'hospitality')) {
                 return true;

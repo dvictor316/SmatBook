@@ -184,6 +184,7 @@ class Handler extends ExceptionHandler
                 || $e instanceof NotFoundHttpException
                 || $e instanceof TokenMismatchException
                 || $e instanceof AuthenticationException
+                || $e instanceof ValidationException
                 || $e instanceof QueryException
                 || $e instanceof ModelNotFoundException) {
                 return null;

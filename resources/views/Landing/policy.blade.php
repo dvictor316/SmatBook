@@ -22,7 +22,7 @@
 
     /* ===== POLICY HEADER ===== */
     .policy-header {
-        margin-top: 85px;
+        margin-top: 0;
         padding: 52px 20px;
         background: linear-gradient(135deg, #f8fafc 0%, #f0f4ff 100%);
         text-align: center;
@@ -507,12 +507,10 @@
             <p>For questions, concerns, or formal notice regarding these terms, please contact:</p>
 
             <div class="contact-box">
-                <p><strong>SmartProbook Global Infrastructure Inc.</strong></p>
-                <p>Enugu Tech Hub, Independence Layout<br>Enugu, Nigeria</p>
-                <p><strong>Email:</strong> <a href="mailto:legal@smartprobook.com">legal@smartprobook.com</a></p>
-                <p><strong>Compliance:</strong> <a href="mailto:compliance@smartprobook.com">compliance@smartprobook.com</a></p>
-                <p><strong>Support:</strong> <a href="mailto:support@smartprobook.com">support@smartprobook.com</a></p>
-                <p><strong>Phone:</strong> <a href="tel:+234800728626226">+234 (0) 800 SmartProbook</a></p>
+                <p><strong>SmartProbook</strong></p>
+                <p>12 Independence Layout<br>Enugu, Nigeria</p>
+                <p><strong>Email:</strong> <a href="mailto:donvictorlive@gmail.com">donvictorlive@gmail.com</a></p>
+                <p><strong>Phone:</strong> <a href="tel:+2348064646306">+234 806 464 6306</a></p>
             </div>
 
             <div class="info-box" style="margin-top: 50px;">

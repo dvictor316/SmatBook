@@ -633,6 +633,13 @@
                 </li>
                 @endif
 
+                @if(Route::has('super_admin.livestock.index'))
+                <li class="menu-title"><span>Livestock Management</span></li>
+                <li class="{{ Request::is('superadmin/livestock*') ? 'active' : '' }}">
+                    <a href="{{ route('super_admin.livestock.index') }}"><i class="fas fa-cow"></i><span>Livestock Management</span></a>
+                </li>
+                @endif
+
                 <li class="menu-title"><span>Sales &amp; Customers</span></li>
 
                 <li class="{{ request()->routeIs('sales.index', 'sales.show', 'sales.create', 'sales.edit', 'sales.pdf', 'sales.invoice.show', 'sales.invoice.print') ? 'active' : '' }}">

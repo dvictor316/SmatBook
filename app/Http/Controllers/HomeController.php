@@ -546,7 +546,7 @@ class HomeController extends Controller
             'workspace_context' => 'business',
         ]);
 
-        if (\App\Support\HotelAccess::userIsHotelTenant($user->fresh())) {
+        if (! $user->isDemoUser() && \App\Support\HotelAccess::userIsHotelTenant($user->fresh())) {
             return redirect()->route('hotel.dashboard');
         }
 
