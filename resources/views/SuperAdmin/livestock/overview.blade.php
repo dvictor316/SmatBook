@@ -37,24 +37,16 @@
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
                 <h2><i class="fas fa-cow me-2"></i>Livestock Management</h2>
-                <p>Full platform management for licensed layer-farm tenants, production, costs, inventory and returns.</p>
+                <p>Manage layer farms, flock production, costs, inventory and returns from the platform workspace.</p>
             </div>
-            <span class="badge bg-light text-primary px-3 py-2">Full access · tenant scoped</span>
+            <span class="badge bg-light text-primary px-3 py-2">Full super-admin access</span>
         </div>
     </section>
 
-    <form method="GET" action="{{ route('super_admin.livestock.index') }}" class="filter-bar d-flex flex-wrap align-items-end gap-3">
-        <div class="flex-grow-1" style="min-width: 240px; max-width: 480px;">
-            <label for="company_id" class="form-label fw-bold">Business workspace</label>
-            <select id="company_id" name="company_id" class="form-select" onchange="this.form.submit()">
-                <option value="">All livestock tenants</option>
-                @foreach($companies as $company)
-                    <option value="{{ $company->id }}" @selected($selectedCompanyId === (int) $company->id)>{{ $company->name }}</option>
-                @endforeach
-            </select>
-        </div>
+    <div class="filter-bar d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div><strong>{{ $selectedCompany->name }}</strong><div class="text-muted small">Premium platform workspace</div></div>
         <div class="text-muted small">Current-month production and operating results: {{ \Illuminate\Support\Carbon::parse($from)->format('d M') }} - {{ \Illuminate\Support\Carbon::parse($to)->format('d M Y') }}</div>
-    </form>
+    </div>
 
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
@@ -63,8 +55,7 @@
         <div class="alert alert-danger"><strong>Please correct the livestock form.</strong><div>{{ $errors->first() }}</div></div>
     @endif
 
-    @if($selectedCompany)
-        <div class="action-strip">
+    <div class="action-strip">
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addFarmModal"><i class="fas fa-plus"></i> Farm</button>
             <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addFlockModal" @disabled($management['farms']->isEmpty())><i class="fas fa-feather"></i> Flock</button>
             <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#addInvestmentModal" @disabled($management['farms']->isEmpty())><i class="fas fa-building-columns"></i> Investment</button>
@@ -72,15 +63,12 @@
             <button class="btn btn-info text-white" data-bs-toggle="modal" data-bs-target="#addRevenueModal" @disabled($management['farms']->isEmpty())><i class="fas fa-money-bill-trend-up"></i> Revenue</button>
             <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addProductionModal" @disabled($management['flocks']->where('status', 'active')->isEmpty())><i class="fas fa-clipboard-list"></i> Production</button>
             <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#addInventoryModal" @disabled($management['farms']->isEmpty())><i class="fas fa-boxes-stacked"></i> Inventory</button>
-        </div>
-        @include('SuperAdmin.livestock._management-modals')
-    @else
-        <div class="manage-note"><strong>Select one livestock tenant</strong> to create and manage farms, flock cycles, investments, operating costs, revenue, production and inventory.</div>
-    @endif
+    </div>
+    @include('SuperAdmin.livestock._management-modals')
 
     <div class="row g-3">
         @foreach([
-            ['Livestock tenants', number_format($metrics['tenants']), ''],
+            ['Revenue this month', '₦'.number_format($metrics['revenue'], 2), 'green'],
             ['Active farms', number_format($metrics['farms']), 'green'],
             ['Active flocks', number_format($metrics['active_flocks']), ''],
             ['Current birds', number_format($metrics['birds']), 'gold'],
@@ -104,7 +92,6 @@
         <div class="col-md-4"><div class="metric-card red"><div class="metric-label">OPEX this month</div><div class="metric-value">₦{{ number_format($metrics['opex'], 2) }}</div></div></div>
     </div>
 
-    @if($selectedCompany)
     <section class="data-panel">
         <header><h3>Flock Cycle Management</h3><span class="badge bg-primary">{{ $management['flocks']->count() }} flocks</span></header>
         <div class="table-responsive">
@@ -114,7 +101,7 @@
                     @forelse($management['flocks'] as $flock)
                         <tr><td>{{ $flock->farm_name }}</td><td><strong>{{ $flock->batch_code }}</strong></td><td>{{ $flock->breed ?: 'Not set' }}</td><td>{{ \Illuminate\Support\Carbon::parse($flock->placement_date)->format('d M Y') }}</td><td>{{ number_format($flock->opening_birds) }}</td><td>{{ number_format($flock->current_birds) }}</td><td><span class="badge {{ $flock->status === 'active' ? 'bg-success' : 'bg-secondary' }}">{{ ucfirst($flock->status) }}</span></td><td class="text-end"><form method="POST" action="{{ route('super_admin.livestock.flocks.status', $flock->id) }}">@csrf @method('PATCH')<input type="hidden" name="status" value="{{ $flock->status === 'active' ? 'closed' : 'active' }}"><button class="btn btn-sm {{ $flock->status === 'active' ? 'btn-outline-danger' : 'btn-outline-success' }}">{{ $flock->status === 'active' ? 'Close' : 'Reopen' }}</button></form></td></tr>
                     @empty
-                        <tr><td colspan="8" class="empty-state">No flock cycles have been created for this tenant.</td></tr>
+                        <tr><td colspan="8" class="empty-state">No flock cycles have been created yet.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -159,18 +146,17 @@
             </table>
         </div>
     </section>
-    @endif
 
     <section class="data-panel">
         <header><h3>Farm and Flock Register</h3><span class="badge bg-primary">{{ $farmRows->count() }} farms</span></header>
         <div class="table-responsive">
             <table class="table table-hover align-middle">
-                <thead><tr><th>Business</th><th>Farm</th><th>Location</th><th>Capacity</th><th>Active flocks</th><th>Current birds</th><th>Status</th><th class="text-end">Manage</th></tr></thead>
+                <thead><tr><th>Farm</th><th>Location</th><th>Capacity</th><th>Active flocks</th><th>Current birds</th><th>Status</th><th class="text-end">Manage</th></tr></thead>
                 <tbody>
                     @forelse($farmRows as $farm)
-                        <tr><td>{{ $farm->company_name }}</td><td><strong>{{ $farm->name }}</strong><br><small class="text-muted">{{ $farm->code }}</small></td><td>{{ $farm->location ?: 'Not set' }}</td><td>{{ number_format($farm->bird_capacity) }}</td><td>{{ number_format($farm->active_flocks) }}</td><td>{{ number_format($farm->current_birds) }}</td><td><span class="badge {{ $farm->is_active ? 'bg-success' : 'bg-secondary' }}">{{ $farm->is_active ? 'Active' : 'Inactive' }}</span></td><td class="text-end">@if($selectedCompanyId === (int) $farm->company_id)<button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editFarm{{ $farm->id }}" title="Edit farm"><i class="fas fa-pen"></i></button>@else<a class="btn btn-sm btn-outline-primary" href="{{ route('super_admin.livestock.index', ['company_id' => $farm->company_id]) }}">Open</a>@endif</td></tr>
+                        <tr><td><strong>{{ $farm->name }}</strong><br><small class="text-muted">{{ $farm->code }}</small></td><td>{{ $farm->location ?: 'Not set' }}</td><td>{{ number_format($farm->bird_capacity) }}</td><td>{{ number_format($farm->active_flocks) }}</td><td>{{ number_format($farm->current_birds) }}</td><td><span class="badge {{ $farm->is_active ? 'bg-success' : 'bg-secondary' }}">{{ $farm->is_active ? 'Active' : 'Inactive' }}</span></td><td class="text-end"><button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editFarm{{ $farm->id }}" title="Edit farm"><i class="fas fa-pen"></i></button></td></tr>
                     @empty
-                        <tr><td colspan="8" class="empty-state">No livestock tenant data is available yet.</td></tr>
+                        <tr><td colspan="7" class="empty-state">No farms yet. Use the Farm button above to create the first one.</td></tr>
                     @endforelse
                 </tbody>
             </table>

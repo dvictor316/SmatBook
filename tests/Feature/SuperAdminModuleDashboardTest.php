@@ -34,14 +34,14 @@ class SuperAdminModuleDashboardTest extends TestCase
             ->assertSee(route('super_admin.livestock.index'), false);
     }
 
-    public function test_super_admin_can_open_livestock_oversight_from_sidebar(): void
+    public function test_super_admin_opens_own_livestock_workspace_without_tenant_selector(): void
     {
         $adminCompany = Company::create(['name' => 'Platform Administration']);
         $superAdmin = User::factory()->create(['company_id' => $adminCompany->id, 'role' => 'super_admin']);
-        $farmCompany = Company::create(['name' => 'Sunrise Layers', 'industry' => 'Livestock / Layer Farm']);
+        $externalCompany = Company::create(['name' => 'External Livestock Tenant', 'industry' => 'Livestock']);
 
         \DB::table('livestock_farms')->insert([
-            'company_id' => $farmCompany->id,
+            'company_id' => $adminCompany->id,
             'name' => 'Main Layer Farm',
             'code' => 'SL-001',
             'farm_type' => 'layers',
@@ -51,13 +51,28 @@ class SuperAdminModuleDashboardTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+        \DB::table('livestock_farms')->insert([
+            'company_id' => $externalCompany->id, 'name' => 'External Farm', 'code' => 'EXT-001',
+            'farm_type' => 'layers', 'bird_capacity' => 1000, 'eggs_per_crate' => 30,
+            'is_active' => true, 'created_at' => now(), 'updated_at' => now(),
+        ]);
 
         $this->actingAs($superAdmin)
             ->get(route('super_admin.livestock.index'))
             ->assertOk()
             ->assertSee('Livestock Management')
-            ->assertSee('Sunrise Layers')
-            ->assertSee('Main Layer Farm');
+            ->assertSee('Platform Administration')
+            ->assertSee('Main Layer Farm')
+            ->assertDontSee('All livestock tenants')
+            ->assertDontSee('Livestock tenants')
+            ->assertDontSee('External Livestock Tenant')
+            ->assertDontSee('External Farm');
+
+        $this->actingAs($superAdmin)->post(route('super_admin.livestock.farms.store'), [
+            'company_id' => $externalCompany->id, 'name' => 'Unauthorized Farm', 'code' => 'NOPE-01',
+            'bird_capacity' => 100, 'eggs_per_crate' => 30,
+        ])->assertForbidden();
+        $this->assertDatabaseMissing('livestock_farms', ['company_id' => $externalCompany->id, 'code' => 'NOPE-01']);
     }
 
     public function test_demo_user_is_entitled_to_both_specialist_workspaces(): void
@@ -69,18 +84,17 @@ class SuperAdminModuleDashboardTest extends TestCase
         $this->assertTrue(LivestockAccess::userIsLivestockTenant($user));
     }
 
-    public function test_super_admin_can_manage_a_livestock_tenant_end_to_end(): void
+    public function test_super_admin_can_manage_own_livestock_workspace_end_to_end(): void
     {
         $adminCompany = Company::create(['name' => 'Platform Administration']);
         $superAdmin = User::factory()->create(['company_id' => $adminCompany->id, 'role' => 'super_admin']);
-        $farmCompany = Company::create(['name' => 'Prime Layers', 'industry' => 'Livestock']);
 
         $this->actingAs($superAdmin)->post(route('super_admin.livestock.farms.store'), [
-            'company_id' => $farmCompany->id, 'name' => 'Prime Farm', 'code' => 'PRIME-01',
+            'company_id' => $adminCompany->id, 'name' => 'Prime Farm', 'code' => 'PRIME-01',
             'bird_capacity' => 3000, 'eggs_per_crate' => 30, 'location' => 'Ogun',
-        ])->assertRedirect(route('super_admin.livestock.index', ['company_id' => $farmCompany->id]));
+        ])->assertRedirect(route('super_admin.livestock.index'));
 
-        $farmId = \DB::table('livestock_farms')->where('company_id', $farmCompany->id)->value('id');
+        $farmId = \DB::table('livestock_farms')->where('company_id', $adminCompany->id)->value('id');
         $this->actingAs($superAdmin)->post(route('super_admin.livestock.flocks.store'), [
             'farm_id' => $farmId, 'batch_code' => 'PRIME-BATCH-01', 'breed' => 'Isa Brown',
             'placement_date' => now()->subMonth()->toDateString(), 'age_at_placement_weeks' => 16,
@@ -107,12 +121,12 @@ class SuperAdminModuleDashboardTest extends TestCase
         ])->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('livestock_flocks', ['id' => $flockId, 'current_birds' => 499]);
-        $this->assertDatabaseHas('livestock_opex_entries', ['company_id' => $farmCompany->id, 'amount' => 200000]);
-        $this->assertDatabaseHas('livestock_revenue_entries', ['company_id' => $farmCompany->id, 'amount' => 30000]);
-        $this->assertSame(3, \DB::table('livestock_inventory_movements')->where('company_id', $farmCompany->id)->count());
+        $this->assertDatabaseHas('livestock_opex_entries', ['company_id' => $adminCompany->id, 'amount' => 200000]);
+        $this->assertDatabaseHas('livestock_revenue_entries', ['company_id' => $adminCompany->id, 'amount' => 30000]);
+        $this->assertSame(3, \DB::table('livestock_inventory_movements')->where('company_id', $adminCompany->id)->count());
 
         $this->actingAs($superAdmin)
-            ->get(route('super_admin.livestock.index', ['company_id' => $farmCompany->id]))
-            ->assertOk()->assertSee('Full access')->assertSee('Prime Farm')->assertSee('PRIME-BATCH-01');
+            ->get(route('super_admin.livestock.index'))
+            ->assertOk()->assertSee('Full super-admin access')->assertSee('Prime Farm')->assertSee('PRIME-BATCH-01');
     }
 }

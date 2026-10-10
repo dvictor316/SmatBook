@@ -5,7 +5,6 @@ namespace App\Http\Controllers\SuperAdmin;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Livestock\LivestockDashboardController as TenantLivestockController;
 use App\Models\Company;
-use App\Support\LivestockAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -15,22 +14,13 @@ class LivestockController extends Controller
 {
     public function index(Request $request)
     {
-        $companyIds = LivestockAccess::livestockCompanyIds();
-        $companies = empty($companyIds)
-            ? collect()
-            : Company::withoutGlobalScopes()->whereIn('id', $companyIds)->orderBy('name')->get(['id', 'name']);
-
-        $selectedCompanyId = $request->integer('company_id');
-        if ($selectedCompanyId && ! in_array($selectedCompanyId, $companyIds, true)) {
-            abort(404);
-        }
-
-        $scopeIds = $selectedCompanyId ? [$selectedCompanyId] : $companyIds;
+        $selectedCompanyId = $this->workspaceCompanyId();
+        $selectedCompany = Company::withoutGlobalScopes()->findOrFail($selectedCompanyId);
+        $scopeIds = [$selectedCompanyId];
         $from = now()->startOfMonth()->toDateString();
         $to = now()->toDateString();
 
         $metrics = [
-            'tenants' => count($companyIds),
             'farms' => $this->count('livestock_farms', $scopeIds, fn ($query) => $query->where('is_active', true)),
             'active_flocks' => $this->count('livestock_flocks', $scopeIds, fn ($query) => $query->where('status', 'active')),
             'birds' => $this->sum('livestock_flocks', 'current_birds', $scopeIds, fn ($query) => $query->where('status', 'active')),
@@ -47,11 +37,10 @@ class LivestockController extends Controller
         $farmRows = $this->farmRows($scopeIds);
         $recentProduction = $this->recentProduction($scopeIds);
         $recentTransactions = $this->recentTransactions($scopeIds);
-        $selectedCompany = $selectedCompanyId ? $companies->firstWhere('id', $selectedCompanyId) : null;
         $management = $this->managementData($selectedCompanyId);
 
         return view('SuperAdmin.livestock.overview', compact(
-            'companies', 'selectedCompany', 'selectedCompanyId', 'metrics', 'farmRows', 'recentProduction',
+            'selectedCompany', 'selectedCompanyId', 'metrics', 'farmRows', 'recentProduction',
             'recentTransactions', 'management', 'from', 'to'
         ));
     }
@@ -422,9 +411,10 @@ class LivestockController extends Controller
 
     private function validatedCompanyId(Request $request): int
     {
-        $companyId = $request->validate(['company_id' => ['required', 'integer', Rule::in(LivestockAccess::livestockCompanyIds())]])['company_id'];
+        $companyId = (int) $request->validate(['company_id' => ['required', 'integer']])['company_id'];
+        abort_unless($companyId === $this->workspaceCompanyId(), 403);
 
-        return (int) $companyId;
+        return $companyId;
     }
 
     private function managedFarm(int $id): object
@@ -436,13 +426,23 @@ class LivestockController extends Controller
     {
         abort_unless(Schema::hasTable($table), 404);
         $row = DB::table($table)->where('id', $id)->first();
-        abort_unless($row && in_array((int) $row->company_id, LivestockAccess::livestockCompanyIds(), true), 404);
+        abort_unless($row && (int) $row->company_id === $this->workspaceCompanyId(), 404);
 
         return $row;
     }
 
     private function backToCompany(int $companyId, string $message)
     {
-        return redirect()->route('super_admin.livestock.index', ['company_id' => $companyId])->with('success', $message);
+        abort_unless($companyId === $this->workspaceCompanyId(), 403);
+
+        return redirect()->route('super_admin.livestock.index')->with('success', $message);
+    }
+
+    private function workspaceCompanyId(): int
+    {
+        $companyId = (int) (auth()->user()?->company_id ?? 0);
+        abort_if($companyId <= 0, 422, 'The super admin account must be attached to a company workspace.');
+
+        return $companyId;
     }
 }
