@@ -31,13 +31,13 @@ class PublicLandingPagesTest extends TestCase
         }
     }
 
-    public function test_homepage_uses_only_its_purpose_built_navigation_and_footer(): void
+    public function test_homepage_uses_its_purpose_built_navigation_and_shared_footer(): void
     {
         $html = $this->get(route('landing.index'))->assertOk()->getContent();
 
         $this->assertSame(1, substr_count($html, 'id="mainNav"'));
-        $this->assertSame(1, substr_count($html, 'class="sb-footer"'));
-        $this->assertSame(0, substr_count($html, 'class="master-footer"'));
+        $this->assertSame(1, substr_count($html, 'class="master-footer"'));
+        $this->assertSame(0, substr_count($html, 'class="sb-footer"'));
     }
 
     public function test_contact_page_reports_validation_errors_without_sending_mail(): void

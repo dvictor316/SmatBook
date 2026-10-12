@@ -3,12 +3,20 @@
 namespace Tests\Feature;
 
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use PDOException;
 use Tests\TestCase;
 
 class ErrorResponseReliabilityTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Log::spy();
+    }
+
     public function test_database_connection_failure_returns_standalone_service_unavailable_page(): void
     {
         Route::get('/testing/database-unavailable', function () {

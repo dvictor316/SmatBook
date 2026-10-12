@@ -523,6 +523,21 @@ class SuperAdminDashboardController extends Controller
         return 'COALESCE(' . implode(', ', $columns ?: ["{$table}.id"]) . ')';
     }
 
+    private function subscriptionPlanExpression(string $table = 'subscriptions'): string
+    {
+        $columns = [];
+
+        foreach (['plan_name', 'plan'] as $column) {
+            if (Schema::hasColumn('subscriptions', $column)) {
+                $columns[] = "NULLIF({$table}.{$column}, '')";
+            }
+        }
+
+        $columns[] = "'Basic'";
+
+        return 'COALESCE(' . implode(', ', $columns) . ')';
+    }
+
     private function subscriptionPaidCondition(string $table = 'subscriptions'): string
     {
         $conditions = [];
@@ -676,6 +691,8 @@ class SuperAdminDashboardController extends Controller
             $activeCompanyStatuses = ['active', 'trial', 'enabled'];
             $subscriptionRevenueExpr = $this->subscriptionRevenueExpression('subscriptions');
             $subscriptionBuyerKeyExpr = $this->subscriptionBuyerKeyExpression('subscriptions');
+            $createdAtMonthName = $this->monthNameExpression('created_at');
+            $createdAtMonthNumber = $this->monthNumberExpression('created_at');
 
             $paidSubscriptionsQuery = Schema::hasTable('subscriptions')
                 ? $this->platformSubscriptionsQuery()->where(function ($query) use ($paidPaymentStatuses, $subscriptionRevenueExpr) {
@@ -950,10 +967,10 @@ class SuperAdminDashboardController extends Controller
             if ($paidSubscriptionsQuery) {
                 $revenueTrends = (clone $paidSubscriptionsQuery)
                     ->select(
-                        DB::raw('MONTHNAME(created_at) as month'), 
+                        DB::raw("{$createdAtMonthName} as month"),
                         DB::raw("SUM({$subscriptionRevenueExpr}) as total"),
                         DB::raw('COUNT(*) as subscriptions_count'),
-                        DB::raw('MONTH(created_at) as month_num')
+                        DB::raw("{$createdAtMonthNumber} as month_num")
                     )
                     ->whereYear('created_at', date('Y'))
                     ->groupBy('month', 'month_num')
@@ -965,10 +982,10 @@ class SuperAdminDashboardController extends Controller
                 $this->applyFinalizedSalesFilter($salesRevenueTrendsQuery);
                 $revenueTrends = $salesRevenueTrendsQuery
                     ->select(
-                        DB::raw('MONTHNAME(created_at) as month'),
+                        DB::raw("{$createdAtMonthName} as month"),
                         DB::raw('SUM(total) as total'),
                         DB::raw('COUNT(*) as subscriptions_count'),
-                        DB::raw('MONTH(created_at) as month_num')
+                        DB::raw("{$createdAtMonthNumber} as month_num")
                     )
                     ->whereYear('created_at', date('Y'))
                     ->groupBy('month', 'month_num')
@@ -981,9 +998,9 @@ class SuperAdminDashboardController extends Controller
             if (Schema::hasTable('companies')) {
                 $tenantGrowth = Company::query()
                     ->select(
-                        DB::raw('MONTHNAME(created_at) as month'),
+                        DB::raw("{$createdAtMonthName} as month"),
                         DB::raw('COUNT(*) as count'),
-                        DB::raw('MONTH(created_at) as month_num')
+                        DB::raw("{$createdAtMonthNumber} as month_num")
                     )
                     ->whereYear('created_at', date('Y'))
                     ->groupBy('month', 'month_num')
@@ -994,7 +1011,7 @@ class SuperAdminDashboardController extends Controller
             // PLAN DISTRIBUTION
             $planStats = [];
             if (Schema::hasTable('subscriptions')) {
-                $planExpr = "COALESCE(NULLIF(plan_name, ''), plan, 'Basic')";
+                $planExpr = $this->subscriptionPlanExpression();
                 $planStats = $this->platformSubscriptionsQuery()->selectRaw("{$planExpr} as plan_label, COUNT(*) as total")
                     ->groupByRaw($planExpr)
                     ->pluck('total', 'plan_label')
@@ -1011,29 +1028,29 @@ class SuperAdminDashboardController extends Controller
             // REVENUE BY PLAN
             $revenueByPlan = collect();
             if ($paidSubscriptionsQuery) {
-                $planExpr = "COALESCE(NULLIF(plan_name, ''), plan, 'Basic')";
+                $planExpr = $this->subscriptionPlanExpression();
                 $revenueByPlan = (clone $paidSubscriptionsQuery)
                     ->whereYear('created_at', date('Y'))
                     ->select(
-                        DB::raw('MONTHNAME(created_at) as month'),
-                        DB::raw('MONTH(created_at) as month_num'),
+                        DB::raw("{$createdAtMonthName} as month"),
+                        DB::raw("{$createdAtMonthNumber} as month_num"),
                         DB::raw("{$planExpr} as plan_name"),
                         DB::raw("SUM({$subscriptionRevenueExpr}) as revenue")
                     )
-                    ->groupByRaw("MONTHNAME(created_at), MONTH(created_at), {$planExpr}")
+                    ->groupByRaw("{$createdAtMonthName}, {$createdAtMonthNumber}, {$planExpr}")
                     ->orderBy('month_num', 'asc')
                     ->get();
             }
             if ($revenueByPlan->isEmpty()) {
                 $companyPlanExpr = "COALESCE(NULLIF(plan, ''), 'Basic')";
                 $revenueByPlan = Company::select(
-                        DB::raw('MONTHNAME(created_at) as month'),
-                        DB::raw('MONTH(created_at) as month_num'),
+                        DB::raw("{$createdAtMonthName} as month"),
+                        DB::raw("{$createdAtMonthNumber} as month_num"),
                         DB::raw("{$companyPlanExpr} as plan_name"),
                         DB::raw('COUNT(*) as revenue')
                     )
                     ->whereYear('created_at', date('Y'))
-                    ->groupByRaw("MONTHNAME(created_at), MONTH(created_at), {$companyPlanExpr}")
+                    ->groupByRaw("{$createdAtMonthName}, {$createdAtMonthNumber}, {$companyPlanExpr}")
                     ->orderBy('month_num', 'asc')
                     ->get();
             }
@@ -1136,9 +1153,10 @@ class SuperAdminDashboardController extends Controller
 
             $deployedMonthlyTrends = collect();
             if ($deployedPaidSubscriptionsQuery) {
+                $subscriptionMonthNumber = $this->monthNumberExpression('subscriptions.created_at');
                 $deployedMonthlyTrends = (clone $deployedPaidSubscriptionsQuery)
                     ->select(
-                        DB::raw('MONTH(subscriptions.created_at) as month_num'),
+                        DB::raw("{$subscriptionMonthNumber} as month_num"),
                         DB::raw("SUM({$subscriptionRevenueExpr}) as total"),
                         DB::raw("COUNT(DISTINCT {$subscriptionBuyerKeyExpr}) as subscriptions_count")
                     )
@@ -1156,7 +1174,7 @@ class SuperAdminDashboardController extends Controller
             }
 
             $companyRows = Company::select(
-                    DB::raw('MONTH(created_at) as month_num'),
+                    DB::raw("{$createdAtMonthNumber} as month_num"),
                     DB::raw('COUNT(*) as total')
                 )
                 ->whereYear('created_at', date('Y'))
@@ -1167,7 +1185,7 @@ class SuperAdminDashboardController extends Controller
 
             $userRows = (clone $customerUsersBaseQuery)
                 ->select(
-                    DB::raw('MONTH(created_at) as month_num'),
+                    DB::raw("{$createdAtMonthNumber} as month_num"),
                     DB::raw('COUNT(*) as total')
                 )
                 ->whereYear('created_at', date('Y'))
@@ -1341,9 +1359,11 @@ class SuperAdminDashboardController extends Controller
             $activityHeatmap = [];
             $forceBranchHeatmap = !empty($activeBranch['id']) || !empty($activeBranch['name']);
             if (!$forceBranchHeatmap && Schema::hasTable('subscriptions')) {
+                $createdAtDayOfWeek = $this->dayOfWeekExpression('created_at');
+                $createdAtHour = $this->hourExpression('created_at');
                 $heatRows = $this->platformSubscriptionsQuery()->select(
-                        DB::raw('DAYOFWEEK(created_at) as dow'),
-                        DB::raw('HOUR(created_at) as hr'),
+                        DB::raw("{$createdAtDayOfWeek} as dow"),
+                        DB::raw("{$createdAtHour} as hr"),
                         DB::raw('COUNT(*) as total')
                     )
                     ->whereYear('created_at', date('Y'))
@@ -1360,12 +1380,14 @@ class SuperAdminDashboardController extends Controller
                 }
             }
             if (empty($activityHeatmap) && Schema::hasTable('sales')) {
+                $createdAtDayOfWeek = $this->dayOfWeekExpression('created_at');
+                $createdAtHour = $this->hourExpression('created_at');
                 $salesHeatRowsQuery = $salesBranchScope(DB::table('sales'));
                 $this->applyFinalizedSalesFilter($salesHeatRowsQuery);
                 $heatRows = $salesHeatRowsQuery
                     ->select(
-                        DB::raw('DAYOFWEEK(created_at) as dow'),
-                        DB::raw('HOUR(created_at) as hr'),
+                        DB::raw("{$createdAtDayOfWeek} as dow"),
+                        DB::raw("{$createdAtHour} as hr"),
                         DB::raw('COUNT(*) as total')
                     )
                     ->whereYear('created_at', date('Y'))
@@ -2394,6 +2416,55 @@ public function pendingManagers()
             foreach ($data as $row) fputcsv($file, (array)$row);
             fclose($file);
         }, 200, $headers);
+    }
+
+    private function monthNumberExpression(string $column): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => "CAST(strftime('%m', {$column}) AS INTEGER)",
+            'pgsql' => "CAST(EXTRACT(MONTH FROM {$column}) AS INTEGER)",
+            'sqlsrv' => "DATEPART(MONTH, {$column})",
+            default => "MONTH({$column})",
+        };
+    }
+
+    private function monthNameExpression(string $column): string
+    {
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            $monthNumber = $this->monthNumberExpression($column);
+
+            return "CASE {$monthNumber} "
+                . "WHEN 1 THEN 'January' WHEN 2 THEN 'February' WHEN 3 THEN 'March' "
+                . "WHEN 4 THEN 'April' WHEN 5 THEN 'May' WHEN 6 THEN 'June' "
+                . "WHEN 7 THEN 'July' WHEN 8 THEN 'August' WHEN 9 THEN 'September' "
+                . "WHEN 10 THEN 'October' WHEN 11 THEN 'November' WHEN 12 THEN 'December' END";
+        }
+
+        return match (DB::connection()->getDriverName()) {
+            'pgsql' => "TRIM(TO_CHAR({$column}, 'Month'))",
+            'sqlsrv' => "DATENAME(MONTH, {$column})",
+            default => "MONTHNAME({$column})",
+        };
+    }
+
+    private function dayOfWeekExpression(string $column): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => "CAST(strftime('%w', {$column}) AS INTEGER) + 1",
+            'pgsql' => "CAST(EXTRACT(DOW FROM {$column}) AS INTEGER) + 1",
+            'sqlsrv' => "DATEPART(WEEKDAY, {$column})",
+            default => "DAYOFWEEK({$column})",
+        };
+    }
+
+    private function hourExpression(string $column): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => "CAST(strftime('%H', {$column}) AS INTEGER)",
+            'pgsql' => "CAST(EXTRACT(HOUR FROM {$column}) AS INTEGER)",
+            'sqlsrv' => "DATEPART(HOUR, {$column})",
+            default => "HOUR({$column})",
+        };
     }
 
     public function exportStats()

@@ -1547,25 +1547,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     background: none;
     pointer-events: none;
 }
-/* Footer */
-.sb-footer { background: var(--navy-deep); color: #fff; padding: 96px 0 40px; border-top: 5px solid var(--gold); position: relative; overflow: hidden; }
-.sb-footer::before { content: none; }
-.sb-footer h2,
-.sb-footer h3,
-.sb-footer h6,
-.sb-footer .mb-4 p,
-.sb-footer .mb-4 a { color: #fff !important; }
-.sb-footer p { color: rgba(255,255,255,0.72) !important; }
-.sb-footer .row.mb-5,
-.sb-footer .text-center { border-color: rgba(255,255,255,0.16) !important; }
-.sb-footer .form-control { background: #fff; color: var(--text); border-color: rgba(255,255,255,0.32) !important; }
-.sb-footer .form-control::placeholder { color: #6b7280; opacity: 1; }
-.footer-link { color: rgba(255,255,255,0.72); text-decoration: none; font-size: 13px; transition: all 0.2s; }
-.footer-link:hover { color: var(--gold); transform: translateX(3px); display: inline-block; }
-.footer-social { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.10); display: flex; align-items: center; justify-content: center; color: #fff; transition: all 0.3s; text-decoration: none; }
-.footer-social:hover { background: var(--gold); color: #fff; transform: scale(1.1); }
-.map-wrap { border: 10px solid #fff; border-radius: var(--radius-md); box-shadow: var(--shadow-md); overflow: hidden; min-height: 480px; }
-
 /* Floating Support Widget */
 .spb-support {
     position: fixed;
@@ -2269,13 +2250,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         width: calc(100vw - 36px);
         max-width: 340px;
         padding: 24px 20px;
-    }
-    .sb-footer {
-        padding: 64px 0 30px;
-    }
-    .map-wrap {
-        min-height: 320px;
-        border-width: 6px;
     }
     .spb-support-bubble {
         width: 56px;
@@ -3159,67 +3133,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </button>
 </div>
 
-<footer class="sb-footer" id="contact">
-    <div class="container" style="position:relative;z-index:1;">
-        <div class="row g-5 mb-5 pb-5" style="border-bottom:1px solid var(--border);">
-            <div class="col-lg-5">
-                <h2 style="font-family:var(--font-display);font-weight:800;color:var(--navy);margin-bottom:16px;">Uplink <span style="color:var(--gold);">Support</span></h2>
-                <p style="color:var(--muted);line-height:1.85;margin-bottom:24px;">Our team can help with product questions, onboarding, subscriptions, and deployment planning.</p>
-                <div class="mb-4">
-                    <p class="mb-2" style="font-size:13.5px;font-weight:700;color:var(--navy);"><i class="fas fa-map-marker-alt me-3" style="color:var(--gold);"></i>12 Independence Layout, Enugu, Nigeria</p>
-                    <p class="mb-2" style="font-size:13.5px;font-weight:700;color:var(--navy);"><i class="fas fa-phone-alt me-3" style="color:var(--gold);"></i>+234 646 463 06</p>
-                    <p class="mb-0" style="font-size:13.5px;font-weight:700;color:var(--navy);"><i class="fas fa-envelope me-3" style="color:var(--gold);"></i><a href="mailto:donvictorlive@gmail.com" style="color:var(--navy);text-decoration:none;">donvictorlive@gmail.com</a></p>
-                </div>
-                @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
-                @if(session('error'))<div class="alert alert-danger">{{ session('error') }}</div>@endif
-                @if($errors->any())
-                    <div class="alert alert-danger" role="alert">
-                        Please review the highlighted contact details and try again.
-                    </div>
-                @endif
-                <form action="{{ route('contact.store') }}" method="POST">
-                    @csrf
-                    <div class="mb-3"><input type="text" name="company_name" class="form-control" placeholder="Organization Name" value="{{ old('company_name') }}" style="border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;font-size:0.88rem;"></div>
-                    <div class="mb-3"><input type="text" name="fullname" class="form-control" placeholder="Full Name" value="{{ old('fullname') }}" required style="border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;font-size:0.88rem;"></div>
-                    <div class="mb-3"><input type="email" name="email" class="form-control" placeholder="Work Email" value="{{ old('email') }}" required style="border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;font-size:0.88rem;"></div>
-                    <div class="mb-3"><input type="text" name="department" class="form-control" placeholder="Department (Optional)" value="{{ old('department') }}" style="border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;font-size:0.88rem;"></div>
-                    <div class="mb-4"><textarea name="message" class="form-control" rows="4" placeholder="Brief Requirements" required style="border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;font-size:0.88rem;">{{ old('message') }}</textarea></div>
-                    <button type="submit" class="btn-red w-100 justify-content-center"><i class="fas fa-paper-plane"></i> INITIALIZE CONNECTION</button>
-                </form>
-            </div>
-            <div class="col-lg-7">
-                <div class="map-wrap" style="height:100%;min-height:480px;">
-                    <iframe src="https://www.google.com/maps?q=Independence+Layout%2C+Enugu%2C+Nigeria&amp;output=embed" title="SmartProbook office area map" width="100%" height="100%" style="border:0;min-height:480px;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-                </div>
-            </div>
-        </div>
-        <div class="row g-4">
-            <div class="col-lg-4">
-                <h3 style="font-family:var(--font-display);font-weight:900;color:var(--navy);letter-spacing:0.5px;margin-bottom:12px;">SmartProbook</h3>
-                <p style="font-size:13px;color:var(--muted);max-width:300px;line-height:1.8;">Global Institutional Accounting Intelligence. Engineered for modern wealth governance.</p>
-            </div>
-            <div class="col-md-3 col-lg-2 ms-auto">
-                <h6 style="font-family:var(--font-display);font-weight:800;font-size:0.72rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--navy);margin-bottom:18px;">Platform</h6>
-                <div class="d-flex flex-column gap-2">
-                    <a href="#solutions" class="footer-link">Neural Engine Core</a>
-                    <a href="#capabilities" class="footer-link">Security Hub</a>
-                    <a href="#product-video" class="footer-link">Product Video</a>
-                </div>
-            </div>
-            <div class="col-md-3 col-lg-2">
-                <h6 style="font-family:var(--font-display);font-weight:800;font-size:0.72rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--navy);margin-bottom:18px;">Support</h6>
-                <div class="d-flex flex-column gap-2">
-                    <a href="{{ route('landing.contact') }}" class="footer-link">Knowledge Base</a>
-                    <a href="{{ route('landing.contact') }}" class="footer-link">SLA Status</a>
-                    <a href="{{ route('saas-login') }}" class="footer-link">Global Deployment</a>
-                </div>
-            </div>
-        </div>
-        <div class="mt-5 pt-4 text-center" style="border-top:1px solid var(--border);">
-            <p style="font-size:13px;color:var(--muted);margin:0;">© {{ now()->year }} SmartProbook. All rights reserved.</p>
-        </div>
-    </div>
-</footer>
+@include('layout.partials.landing-footer')
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
