@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DeploymentManagerPayout;
+use App\Models\Setting;
 use App\Models\User;
 use App\Models\Withdrawal;
 use Illuminate\Http\JsonResponse;
@@ -16,7 +17,17 @@ class PaystackWebhookController extends Controller
     {
         $payload = $request->getContent();
         $signature = (string) $request->header('x-paystack-signature', '');
-        $expectedSignature = hash_hmac('sha512', $payload, (string) env('PAYSTACK_SECRET_KEY'));
+        $secret = $this->paystackSecret();
+        if ($secret === '') {
+            Log::error('Paystack webhook received but no secret key is configured.');
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Paystack webhook is not configured.',
+            ], 503);
+        }
+
+        $expectedSignature = hash_hmac('sha512', $payload, $secret);
 
         if ($signature === '' || !hash_equals($expectedSignature, $signature)) {
             Log::warning('Invalid Paystack webhook signature.', [
@@ -31,10 +42,14 @@ class PaystackWebhookController extends Controller
         }
 
         $event = $request->json()->all();
-        Log::info('Paystack webhook payload received.', ['payload' => $event]);
-
         $eventName = (string) ($event['event'] ?? '');
         $data = (array) ($event['data'] ?? []);
+
+        Log::info('Paystack webhook received.', [
+            'event' => $eventName,
+            'reference' => (string) ($data['reference'] ?? ''),
+            'transfer_code' => (string) ($data['transfer_code'] ?? ''),
+        ]);
 
         if (!in_array($eventName, ['transfer.success', 'transfer.failed', 'transfer.reversed'], true)) {
             return response()->json([
@@ -207,5 +222,13 @@ class PaystackWebhookController extends Controller
                     ]);
             }
         });
+    }
+
+    private function paystackSecret(): string
+    {
+        return trim((string) config('services.paystack.secret'))
+            ?: trim((string) config('services.paystack.secretKey'))
+            ?: trim((string) config('services.paystack.secret_key'))
+            ?: trim((string) Setting::getSensitive('paystack_secret', Setting::get('paystack_secret', '')));
     }
 }

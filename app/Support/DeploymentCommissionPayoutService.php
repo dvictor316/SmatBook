@@ -33,7 +33,6 @@ class DeploymentCommissionPayoutService
 
                 Log::info('Paystack banks response.', [
                     'status' => $response->status(),
-                    'body' => $response->json(),
                 ]);
 
                 if (!$response->successful() || !($response->json('status') ?? false)) {
@@ -310,7 +309,7 @@ class DeploymentCommissionPayoutService
             $gateway = $this->resolveGateway($lockedManager);
             $payout = DeploymentManagerPayout::query()->create([
                 'manager_id' => $lockedManager->user_id,
-                'payout_reference' => 'DMP-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(6)),
+                'payout_reference' => $this->newPaystackCompatibleReference(),
                 'gateway' => $gateway,
                 'status' => 'pending',
                 'amount' => $amount,
@@ -356,7 +355,7 @@ class DeploymentCommissionPayoutService
 
             $payout = DeploymentManagerPayout::query()->create([
                 'manager_id' => $lockedManager->user_id,
-                'payout_reference' => 'DMP-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(6)),
+                'payout_reference' => $this->newPaystackCompatibleReference(),
                 'gateway' => $this->resolveGateway($lockedManager),
                 'status' => 'manual_review',
                 'amount' => $payoutAmount,
@@ -431,8 +430,22 @@ class DeploymentCommissionPayoutService
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->failPayout($payout, $e->getMessage());
+            return $this->markPayoutForReview(
+                $payout,
+                'The transfer result is inconclusive. Resume this payout to verify or retry it with the same reference.'
+            );
         }
+    }
+
+    private function markPayoutForReview(DeploymentManagerPayout $payout, string $reason): DeploymentManagerPayout
+    {
+        $payout->update([
+            'status' => 'manual_review',
+            'failure_reason' => $reason,
+            'processed_at' => now(),
+        ]);
+
+        return $payout->fresh();
     }
 
     private function failPayout(DeploymentManagerPayout $payout, string $reason): DeploymentManagerPayout
@@ -493,7 +506,6 @@ class DeploymentCommissionPayoutService
             Log::info('Paystack payout account resolve response.', [
                 'manager_id' => $manager->user_id,
                 'status' => $resolveResponse->status(),
-                'body' => $resolveResponse->json(),
             ]);
 
             if (!$resolveResponse->successful() || !($resolveResponse->json('status') ?? false)) {
@@ -519,7 +531,6 @@ class DeploymentCommissionPayoutService
             Log::info('Paystack payout recipient response.', [
                 'manager_id' => $manager->user_id,
                 'status' => $recipientResponse->status(),
-                'body' => $recipientResponse->json(),
             ]);
 
             if (!$recipientResponse->successful() || !($recipientResponse->json('status') ?? false)) {
@@ -538,7 +549,7 @@ class DeploymentCommissionPayoutService
             ]);
         }
 
-        $reference = $payout->payout_reference;
+        $reference = $this->paystackCompatibleReference($payout);
         $transferResponse = Http::withToken($secret)
             ->acceptJson()
             ->post('https://api.paystack.co/transfer', [
@@ -554,7 +565,7 @@ class DeploymentCommissionPayoutService
             'manager_id' => $manager->user_id,
             'payout_id' => $payout->id,
             'status' => $transferResponse->status(),
-            'body' => $data,
+            'provider_status' => (string) ($data['data']['status'] ?? ''),
         ]);
 
         if (!$transferResponse->successful() || !($data['status'] ?? false)) {
@@ -622,6 +633,27 @@ class DeploymentCommissionPayoutService
             ?: trim((string) config('services.paystack.secretKey'))
             ?: trim((string) config('services.paystack.secret_key'))
             ?: trim((string) Setting::getSensitive('paystack_secret', Setting::get('paystack_secret', '')));
+    }
+
+    private function paystackCompatibleReference(DeploymentManagerPayout $payout): string
+    {
+        $reference = (string) $payout->payout_reference;
+        if (preg_match('/^[a-z0-9_-]{16,50}$/', $reference) === 1) {
+            return $reference;
+        }
+
+        $reference = $this->newPaystackCompatibleReference();
+        $payout->update(['payout_reference' => $reference]);
+        DB::table('deployment_commissions')
+            ->where('payout_id', $payout->id)
+            ->update(['payout_reference' => $reference, 'updated_at' => now()]);
+
+        return $reference;
+    }
+
+    private function newPaystackCompatibleReference(): string
+    {
+        return 'dmp_' . Str::lower((string) Str::uuid());
     }
 
     private function flutterwaveSecret(): string
