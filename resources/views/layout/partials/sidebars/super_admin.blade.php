@@ -956,6 +956,18 @@
                 @if(Route::has('finance.fixed-assets.index'))
                     <li><a href="{{ route('finance.fixed-assets.index') }}"><i class="fas fa-building-columns"></i><span>Asset Register</span></a></li>
                 @endif
+                @if(Route::has('returnable-assets.index'))
+                    <li><a href="{{ route('returnable-assets.index') }}"><i class="fas fa-rotate"></i><span>Returnable Assets</span></a></li>
+                @endif
+                @if(Route::has('developer-api.index'))
+                    <li><a href="{{ route('developer-api.index') }}"><i class="fas fa-code"></i><span>Developer API</span></a></li>
+                @endif
+                @if(Route::has('online-store.settings'))
+                    <li><a href="{{ route('online-store.settings') }}"><i class="fas fa-store"></i><span>Online Store</span></a></li>
+                @endif
+                @if(Route::has('bill-payments.index'))
+                    <li><a href="{{ route('bill-payments.index') }}"><i class="fas fa-file-invoice-dollar"></i><span>Bill Payments</span></a></li>
+                @endif
                 <li><a href="{{ route('assets.maintenance.index') }}"><i class="fas fa-screwdriver"></i><span>Asset Maintenance</span></a></li>
 
                 <li><a href="{{ route('projects.index') }}"><i class="fas fa-briefcase"></i><span>Project Management</span></a></li>

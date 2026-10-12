@@ -189,6 +189,7 @@ class Kernel extends HttpKernel
         'hotel.permission' => \App\Http\Middleware\EnsureHotelPermission::class,
         'demo.expired' => \App\Http\Middleware\BlockExpiredDemoUser::class,
         'demo.restrictions' => \App\Http\Middleware\DemoRestrictions::class,
+        'api.workspace' => \App\Http\Middleware\ResolveApiWorkspace::class,
         // Add any other custom middleware aliases here
     ];
 

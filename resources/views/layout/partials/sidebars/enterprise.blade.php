@@ -129,6 +129,9 @@
                         <li><a href="{{ route('loans.index') }}">Loans & Overdraft</a></li>
                         <li><a href="{{ route('expenses.index') }}">Expenses</a></li>
                         <li><a href="{{ route('payments.index') }}">Payments</a></li>
+                        @if(Route::has('bill-payments.index'))
+                            <li><a href="{{ route('bill-payments.index') }}">Bill Payments &amp; Commissions</a></li>
+                        @endif
                         @include('layout.partials.sidebars.advance-payments-menu')
                         @if(Route::has('finance.expense-claims.index'))
                             <li><a href="{{ route('finance.expense-claims.index') }}">Expense Claims</a></li>
@@ -158,6 +161,9 @@
                         <li><a href="{{ route('cost-centers.index') }}">Cost Centers</a></li>
                         @if(Route::has('finance.fixed-assets.index'))
                             <li><a href="{{ route('finance.fixed-assets.index') }}">Asset Register</a></li>
+                        @endif
+                        @if(Route::has('returnable-assets.index'))
+                            <li><a href="{{ route('returnable-assets.index') }}">Returnable Assets</a></li>
                         @endif
                         @if(Route::has('depreciation.index'))
                             <li><a href="{{ route('depreciation.index') }}">Depreciation</a></li>
@@ -234,6 +240,12 @@
                         <li><a href="{{ route('roles.index') }}">Roles & Permissions</a></li>
                         <li><a href="{{ route('branches.index') }}">Branches</a></li>
                         <li><a href="{{ route('settings.index') }}">Settings</a></li>
+                        @if(Route::has('online-store.settings'))
+                            <li><a href="{{ route('online-store.settings') }}">Online Store</a></li>
+                        @endif
+                        @if(Route::has('developer-api.index'))
+                            <li><a href="{{ route('developer-api.index') }}">Developer API</a></li>
+                        @endif
                         @if(Route::has('profile'))
                             <li><a href="{{ route('profile') }}">Profile</a></li>
                         @endif

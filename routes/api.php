@@ -3,7 +3,6 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PaystackWebhookController;
-use App\Http\Controllers\ProductController;
 use App\Http\Controllers\WithdrawalController;
 /*
 |--------------------------------------------------------------------------
@@ -29,8 +28,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/withdrawals/history', [WithdrawalController::class, 'history'])->name('api.withdrawals.history');
 });
 
-Route::get('/products', [ProductController::class, 'apiIndex']);
-Route::post('/products', [ProductController::class, 'store']);
-Route::get('/products/{product}', [ProductController::class, 'show']);
-Route::put('/products/{product}', [ProductController::class, 'update']);
-Route::delete('/products/{product}', [ProductController::class, 'destroy']);
+Route::prefix('v1')->middleware(['auth:sanctum', 'api.workspace'])->group(function () {
+    Route::get('/workspace', [\App\Http\Controllers\Api\V1\WorkspaceController::class, 'overview']);
+    Route::get('/products', [\App\Http\Controllers\Api\V1\WorkspaceController::class, 'products']);
+    Route::get('/customers', [\App\Http\Controllers\Api\V1\WorkspaceController::class, 'customers']);
+    Route::get('/invoices', [\App\Http\Controllers\Api\V1\WorkspaceController::class, 'invoices']);
+});

@@ -4,7 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use App\Models\{Domain, DeploymentManager}; 
+use App\Models\{Domain, DeploymentManager, StorefrontSetting};
 use Illuminate\Support\Facades\{View, Auth, Log, Schema};
 
 class IdentifyTenant
@@ -35,6 +35,25 @@ class IdentifyTenant
 
         if ($host === $mainDomainHost || $host === 'www.' . $mainDomainHost) {
             return $next($request);
+        }
+
+        // A mapped storefront host is public commerce traffic, not a private
+        // tenant workspace. Resolve the full host before subdomain handling.
+        if (Schema::hasTable('storefront_settings')) {
+            $storefront = StorefrontSetting::query()
+                ->where('custom_domain', strtolower($host))
+                ->where('is_enabled', true)
+                ->first();
+            if ($storefront) {
+                View::share('currentStorefront', $storefront);
+                $request->attributes->set('public_storefront', $storefront);
+
+                if ($request->path() === '/') {
+                    return redirect('/store');
+                }
+
+                return $next($request);
+            }
         }
 
         // 1. Skip system-level domains

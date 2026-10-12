@@ -93,6 +93,10 @@ Route::get('/projects/master-jamb', [LandingController::class, 'projectMasterJam
 Route::get('/projects/payplus', [LandingController::class, 'projectPayplus'])->name('landing.projects.payplus');
 Route::get('/pricing', [SubscriptionController::class, 'plans'])->name('pricing');
 Route::get('/membership-plans', [SubscriptionController::class, 'plans'])->name('membership-plans');
+Route::get('/shop/{slug}', [\App\Http\Controllers\OnlineStoreController::class, 'catalogue'])->name('storefront.catalogue');
+Route::post('/shop/{slug}/orders', [\App\Http\Controllers\OnlineStoreController::class, 'placeOrder'])->middleware('throttle:10,1')->name('storefront.orders.store');
+Route::get('/store', [\App\Http\Controllers\OnlineStoreController::class, 'catalogue'])->name('storefront.custom-domain');
+Route::post('/store/orders', [\App\Http\Controllers\OnlineStoreController::class, 'placeOrder'])->middleware('throttle:10,1')->name('storefront.custom-domain.orders.store');
 Route::get('/deploy-infrastructure', function (\Illuminate\Http\Request $request) {
     // Always start deployment from a clean state (no stale plan/checkout context).
     $request->session()->forget([
@@ -880,6 +884,28 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     Route::post('/profile/password', [HomeController::class, 'changePassword'])->name('profile.password');
     Route::post('/profile/update-images', [HomeController::class, 'updateProfileImages'])->name('profile.update.images');
 
+    Route::middleware('plan.access:professional,enterprise')->group(function () {
+        Route::get('/online-store', [\App\Http\Controllers\OnlineStoreController::class, 'settings'])->name('online-store.settings');
+        Route::put('/online-store', [\App\Http\Controllers\OnlineStoreController::class, 'updateSettings'])->name('online-store.settings.update');
+        Route::patch('/online-store/orders/{onlineStoreOrder}', [\App\Http\Controllers\OnlineStoreController::class, 'updateOrder'])->name('online-store.orders.update');
+    });
+
+    Route::prefix('bill-payments')->name('bill-payments.')->middleware('plan.access:enterprise')->group(function () {
+        Route::get('/', [\App\Http\Controllers\BillPaymentController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\BillPaymentController::class, 'store'])->name('store');
+        Route::get('/catalog/categories', [\App\Http\Controllers\BillPaymentController::class, 'categories'])->name('categories');
+        Route::get('/catalog/billers', [\App\Http\Controllers\BillPaymentController::class, 'billers'])->name('billers');
+        Route::get('/catalog/items', [\App\Http\Controllers\BillPaymentController::class, 'items'])->name('items');
+        Route::post('/validate-customer', [\App\Http\Controllers\BillPaymentController::class, 'validateCustomer'])->name('validate-customer');
+        Route::post('/{billPayment}/refresh', [\App\Http\Controllers\BillPaymentController::class, 'refresh'])->name('refresh');
+    });
+
+    Route::middleware('plan.access:enterprise')->group(function () {
+        Route::get('/developer-api', [\App\Http\Controllers\DeveloperApiTokenController::class, 'index'])->name('developer-api.index');
+        Route::post('/developer-api/tokens', [\App\Http\Controllers\DeveloperApiTokenController::class, 'store'])->name('developer-api.tokens.store');
+        Route::delete('/developer-api/tokens/{token}', [\App\Http\Controllers\DeveloperApiTokenController::class, 'destroy'])->name('developer-api.tokens.destroy');
+    });
+
     // Account
     Route::get('/account-settings', [SettingController::class, 'accountSettings'])->name('account-settings');
     Route::post('/account-settings/update', [SettingController::class, 'updateAccountSettings'])->name('account-settings.update');
@@ -1658,6 +1684,14 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/{maintenanceLog}/edit', [\App\Http\Controllers\AssetMaintenanceController::class, 'edit'])->name('edit');
         Route::put('/{maintenanceLog}', [\App\Http\Controllers\AssetMaintenanceController::class, 'update'])->name('update');
         Route::delete('/{maintenanceLog}', [\App\Http\Controllers\AssetMaintenanceController::class, 'destroy'])->name('destroy');
+    });
+
+    // Returnable Asset Custody (Enterprise)
+    Route::prefix('returnable-assets')->name('returnable-assets.')->middleware('plan.access:enterprise')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ReturnableAssetController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\ReturnableAssetController::class, 'store'])->name('store');
+        Route::post('/{returnableAsset}/issue', [\App\Http\Controllers\ReturnableAssetController::class, 'issue'])->name('issue');
+        Route::post('/movements/{movement}/return', [\App\Http\Controllers\ReturnableAssetController::class, 'returnAsset'])->name('return');
     });
 
     // Forecasting (Pro+)
