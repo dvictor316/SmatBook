@@ -282,6 +282,17 @@ class SuperAdminDashboardController extends Controller
         return $query;
     }
 
+    private function companyNameExpression(string $table = 'companies'): string
+    {
+        $columns = collect(['name', 'company_name'])
+            ->filter(fn (string $column) => Schema::hasColumn($table, $column))
+            ->map(fn (string $column) => "{$table}.{$column}")
+            ->push("''")
+            ->implode(', ');
+
+        return "COALESCE({$columns})";
+    }
+
     private function registeredBusinessesQuery()
     {
         $registeredBusinessIds = $this->registeredBusinessUserIds();
@@ -290,7 +301,7 @@ class SuperAdminDashboardController extends Controller
 
         $selects = [
             'users.*',
-            DB::raw("COALESCE(companies.name, companies.company_name, '') as company_name"),
+            DB::raw($this->companyNameExpression() . ' as company_name'),
             DB::raw("COALESCE(companies.domain_prefix, '') as company_domain_prefix"),
             DB::raw("COALESCE(companies.plan, '') as company_plan"),
         ];
@@ -2050,7 +2061,7 @@ public function pendingManagers()
                 'subscriptions.*',
                 DB::raw("COALESCE(users.name, subscriptions.subscriber_name, 'N/A') as customer_name"),
                 DB::raw("COALESCE(users.email, '') as customer_email"),
-                DB::raw("COALESCE(companies.name, companies.company_name, '') as company_name")
+                DB::raw($this->companyNameExpression() . ' as company_name')
             )
             ->whereRaw("LOWER(COALESCE(subscriptions.payment_gateway, '')) = 'bank_transfer'")
             ->where(function ($q) {
@@ -2131,10 +2142,17 @@ public function pendingManagers()
                 $search = '%' . trim((string) $request->search) . '%';
                 $query->where(function ($q) use ($search) {
                     $q->where('users.name', 'like', $search)
-                        ->orWhere('users.email', 'like', $search)
-                        ->orWhere('companies.name', 'like', $search)
-                        ->orWhere('companies.company_name', 'like', $search)
-                        ->orWhere('companies.domain_prefix', 'like', $search);
+                        ->orWhere('users.email', 'like', $search);
+
+                    if (Schema::hasColumn('companies', 'name')) {
+                        $q->orWhere('companies.name', 'like', $search);
+                    }
+                    if (Schema::hasColumn('companies', 'company_name')) {
+                        $q->orWhere('companies.company_name', 'like', $search);
+                    }
+                    if (Schema::hasColumn('companies', 'domain_prefix')) {
+                        $q->orWhere('companies.domain_prefix', 'like', $search);
+                    }
                 });
             }
 

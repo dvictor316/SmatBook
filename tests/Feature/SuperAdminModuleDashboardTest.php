@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Company;
+use App\Models\Subscription;
 use App\Models\User;
 use App\Support\HotelAccess;
 use App\Support\LivestockAccess;
@@ -128,5 +129,47 @@ class SuperAdminModuleDashboardTest extends TestCase
         $this->actingAs($superAdmin)
             ->get(route('super_admin.livestock.index'))
             ->assertOk()->assertSee('Full super-admin access')->assertSee('Prime Farm')->assertSee('PRIME-BATCH-01');
+    }
+
+    public function test_registered_business_and_transfer_lists_use_the_current_company_schema(): void
+    {
+        $platform = Company::create(['name' => 'Platform Administration']);
+        $superAdmin = User::factory()->create(['company_id' => $platform->id, 'role' => 'super_admin']);
+        $owner = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $business = Company::withoutGlobalScope('tenant')->create([
+            'user_id' => $owner->id,
+            'owner_id' => $owner->id,
+            'name' => 'Current Schema Limited',
+            'status' => 'active',
+            'plan' => 'Professional Yearly',
+            'domain_prefix' => 'current-schema',
+        ]);
+        $owner->forceFill(['company_id' => $business->id])->save();
+        Subscription::withoutGlobalScopes()->create([
+            'user_id' => $owner->id,
+            'company_id' => $business->id,
+            'subscriber_name' => 'Current Schema Limited',
+            'plan' => 'Professional Yearly',
+            'billing_cycle' => 'Yearly',
+            'amount' => 80000,
+            'status' => 'Active',
+            'payment_status' => 'paid',
+            'payment_gateway' => 'bank_transfer',
+            'transfer_reference' => 'TRANSFER-SCHEMA-001',
+            'transfer_submitted_at' => now(),
+        ]);
+
+        $this->actingAs($superAdmin)
+            ->get(route('super_admin.users.index', [
+                'category' => 'registered_businesses',
+                'search' => 'Current Schema',
+            ]))
+            ->assertOk()
+            ->assertSee('Current Schema Limited');
+
+        $this->actingAs($superAdmin)
+            ->get(route('super_admin.transfer_users.index', ['search' => 'Current Schema']))
+            ->assertOk()
+            ->assertSee('Current Schema Limited');
     }
 }
