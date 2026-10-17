@@ -1099,7 +1099,7 @@
                 <li class="submenu {{ Request::is('deployment/subscription*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-credit-card"></i><span>Subscriptions</span><span class="menu-arrow"></span></a>
                     <ul>
-                        <li><a href="{{ route('deployment.customers.create') }}">Register New Customer</a></li>
+                        <li><a href="{{ route('super_admin.assisted_registrations.create') }}">Register New Customer</a></li>
                         <li><a href="{{ route('deployment.subscription.overview') }}">Overview</a></li>
                         <li><a href="{{ route('deployment.subscription.renewals') }}">Renewals</a></li>
                         <li><a href="{{ route('deployment.subscription.expiring') }}">Expiring Soon</a></li>

@@ -356,7 +356,9 @@ class AuthController extends Controller
                     'billing_cycle' => $billingCycle,
                     'amount' => $planAmount,
                     'user_limit' => $plan?->resolvedUserLimit(),
-                ], Subscription::trialPayload())));
+                    'status' => 'Pending',
+                    'payment_status' => 'unpaid',
+                ])));
 
                 DB::afterCommit(function () use ($user, $planName, $planAmount, $billingCycle) {
                     SystemEventMailer::notifyRegistration($user, 'user', [
@@ -1278,7 +1280,9 @@ class AuthController extends Controller
             'billing_cycle' => $billingCycle,
             'amount' => $amount,
             'user_limit' => $plan?->resolvedUserLimit(),
-        ], Subscription::trialPayload())));
+            'status' => 'Pending',
+            'payment_status' => 'unpaid',
+        ])));
     }
 
     /*

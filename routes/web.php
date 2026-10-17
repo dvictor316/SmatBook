@@ -675,6 +675,8 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     // Super-admin free/custom deployment. Uses the normal tenant-safe deployment flow,
     // but activates the subscription without sending the customer through payment.
     Route::get('/custom-deployments', [DeploymentManagerController::class, 'customDeploymentsIndex'])->name('custom_deployments.index');
+    Route::get('/assisted-registrations/create', [DeploymentManagerController::class, 'create'])->name('assisted_registrations.create');
+    Route::post('/assisted-registrations', [DeploymentManagerController::class, 'store'])->name('assisted_registrations.store');
     Route::get('/custom-deployments/create', [DeploymentManagerController::class, 'create'])->name('custom_deployments.create');
     Route::post('/custom-deployments', [DeploymentManagerController::class, 'store'])->name('custom_deployments.store');
     Route::get('/registered-businesses/add-users', [DeploymentManagerController::class, 'addUsersToBusiness'])->name('business-users.add');

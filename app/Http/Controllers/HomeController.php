@@ -467,8 +467,28 @@ class HomeController extends Controller
             }
         }
 
-        // Unpaid → checkout (covers deployment-created customers on first login)
+        // Set up a workspace before checkout when registration did not create one.
         if (!in_array(strtolower((string) $subscription->payment_status), ['paid', 'free'], true)) {
+            $company = $subscription->company_id
+                ? Company::withoutGlobalScope('tenant')->find($subscription->company_id)
+                : Company::withoutGlobalScope('tenant')->where(function ($query) use ($user) {
+                    $query->where('user_id', $user->id)
+                        ->orWhere('owner_id', $user->id);
+                })->first();
+
+            $hasConfiguredWorkspace = filled($subscription->domain_prefix)
+                && $company
+                && filled($company->domain_prefix ?? $company->subdomain ?? $company->domain ?? null);
+
+            if (!$hasConfiguredWorkspace) {
+                Log::info('→ Unpaid subscription without configured workspace, redirecting to setup', [
+                    'subscription_id' => $subscription->id,
+                ]);
+
+                return redirect()->route('saas.setup', $subscription->id);
+            }
+
+            // Unpaid → checkout (covers deployment-created customers on first login)
             Log::info('→ Unpaid subscription, redirecting to checkout', [
                 'subscription_id' => $subscription->id,
             ]);

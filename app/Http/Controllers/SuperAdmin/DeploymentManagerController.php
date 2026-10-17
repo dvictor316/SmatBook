@@ -695,6 +695,7 @@ class DeploymentManagerController extends Controller
         Log::info('Showing customer registration form', ['manager_id' => $actor?->id]);
 
         $isSuperAdminDeployment = request()->routeIs('super_admin.custom_deployments.create');
+        $isSuperAdminAssistedRegistration = request()->routeIs('super_admin.assisted_registrations.create');
         $managerRecord = DeploymentManager::where('user_id', $actor?->id)->first();
         $currentCount = count($this->managedCompanyIds($actor?->id));
         $limit = $isSuperAdminDeployment ? PHP_INT_MAX : (int) ($managerRecord?->deployment_limit ?? 100);
@@ -710,15 +711,27 @@ class DeploymentManagerController extends Controller
 
         $deploymentPlans = $this->deploymentPlanOptions();
         $isAgentRegistration = request()->routeIs('agent.registration.create');
-        $dashboardRoute = $isSuperAdminDeployment ? 'super_admin.dashboard' : ($isAgentRegistration ? 'agent.dashboard' : 'deployment.dashboard');
-        $listingRoute = $isSuperAdminDeployment ? 'super_admin.super_admin.users.index' : ($isAgentRegistration ? 'agent.leads' : 'deployment.users.index');
-        $formActionRoute = $isSuperAdminDeployment ? 'super_admin.custom_deployments.store' : ($isAgentRegistration ? 'agent.registration.store' : 'deployment.customers.store');
-        $pageTitle = $isSuperAdminDeployment ? 'Deploy Custom Unlimited User' : ($isAgentRegistration ? 'Register Business License' : 'Register New Customer');
+        $dashboardRoute = ($isSuperAdminDeployment || $isSuperAdminAssistedRegistration)
+            ? 'super_admin.dashboard'
+            : ($isAgentRegistration ? 'agent.dashboard' : 'deployment.dashboard');
+        $listingRoute = ($isSuperAdminDeployment || $isSuperAdminAssistedRegistration)
+            ? 'super_admin.super_admin.users.index'
+            : ($isAgentRegistration ? 'agent.leads' : 'deployment.users.index');
+        $formActionRoute = $isSuperAdminDeployment
+            ? 'super_admin.custom_deployments.store'
+            : ($isSuperAdminAssistedRegistration
+                ? 'super_admin.assisted_registrations.store'
+                : ($isAgentRegistration ? 'agent.registration.store' : 'deployment.customers.store'));
+        $pageTitle = $isSuperAdminDeployment
+            ? 'Deploy Custom Unlimited User'
+            : ($isSuperAdminAssistedRegistration
+                ? 'Register New Business Owner'
+                : ($isAgentRegistration ? 'Register Business License' : 'Register New Customer'));
         $pageSubtitle = $isSuperAdminDeployment
             ? 'Create tenant -> Select license -> Set custom seats -> Activate instantly without payment'
-            : ($isAgentRegistration
-            ? 'Create business account -> Select plan -> Set credentials -> SaaS checkout -> SaaS success'
-            : 'Create account -> Select plan -> Set credentials -> SaaS checkout -> SaaS success');
+            : (($isAgentRegistration || $isSuperAdminAssistedRegistration)
+                ? 'Create business account -> Select plan -> Set credentials -> SaaS checkout -> SaaS success'
+                : 'Create account -> Select plan -> Set credentials -> SaaS checkout -> SaaS success');
 
         return view('deployment.users.create', compact(
             'limit',
@@ -1524,12 +1537,14 @@ private function deploymentPlanDefinitions(): array
 {
     return [
         'starter-yearly' => ['name' => 'Starter', 'price' => 20000.0, 'billing_cycle' => 'yearly'],
+        'basic-solo-yearly' => ['name' => 'Basic Solo', 'price' => 80000.0, 'billing_cycle' => 'yearly'],
         'basic-yearly' => ['name' => 'Basic', 'price' => 80000.0, 'billing_cycle' => 'yearly'],
         'professional-solo-yearly' => ['name' => 'Professional Solo', 'price' => 100000.0, 'billing_cycle' => 'yearly'],
         'professional-yearly' => ['name' => 'Professional', 'price' => 150000.0, 'billing_cycle' => 'yearly'],
         'enterprise-solo-yearly' => ['name' => 'Enterprise Solo', 'price' => 200000.0, 'billing_cycle' => 'yearly'],
         'enterprise-yearly' => ['name' => 'Enterprise', 'price' => 300000.0, 'billing_cycle' => 'yearly'],
         'hotel-yearly' => ['name' => 'Hotel', 'price' => 200000.0, 'billing_cycle' => 'yearly'],
+        'livestock-yearly' => ['name' => 'Livestock', 'price' => 200000.0, 'billing_cycle' => 'yearly'],
     ];
 }
 

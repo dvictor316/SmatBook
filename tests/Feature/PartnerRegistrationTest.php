@@ -150,8 +150,8 @@ class PartnerRegistrationTest extends TestCase
         $this->assertSame(0, (int) $user->is_verified);
         $this->assertDatabaseHas('subscriptions', [
             'user_id' => $user->id,
-            'status' => 'Trial',
-            'payment_status' => 'free',
+            'status' => 'Pending',
+            'payment_status' => 'unpaid',
         ]);
     }
 }
