@@ -77,7 +77,10 @@ class AuthController extends Controller
             $requestedRole = 'agent';
             $request->merge(['role' => 'agent']);
         }
-        $retryableUser = $this->findRetryableRegistrationUser((string) $request->input('email', ''));
+        $retryableUser = $this->findRetryableRegistrationUser(
+            (string) $request->input('email', ''),
+            (string) $request->input('phone', '')
+        );
         $isPartnerAgent = strtolower((string) $requestedRole) === 'agent';
 
         $rules = [
@@ -186,12 +189,21 @@ class AuthController extends Controller
         }
 
         if (!$resolvedEmail && $normalizedPhone) {
+            $existingRetryEmail = $retryableUser
+                ? $this->normalizeEmailForAuth((string) $retryableUser->email)
+                : null;
+            if ($existingRetryEmail && str_ends_with($existingRetryEmail, '@phone.smartprobook.local')) {
+                $resolvedEmail = $existingRetryEmail;
+            }
+
             $seed = preg_replace('/\D+/', '', $normalizedPhone) ?: Str::lower(Str::random(10));
             $candidate = 'phone' . $seed . '@phone.smartprobook.local';
-            while (User::withTrashed()->where('email', $candidate)->exists()) {
-                $candidate = 'phone' . $seed . Str::lower(Str::random(3)) . '@phone.smartprobook.local';
+            if (!$resolvedEmail) {
+                while (User::withTrashed()->where('email', $candidate)->where('id', '!=', $retryableUser?->id ?? 0)->exists()) {
+                    $candidate = 'phone' . $seed . Str::lower(Str::random(3)) . '@phone.smartprobook.local';
+                }
+                $resolvedEmail = $candidate;
             }
-            $resolvedEmail = $candidate;
         }
 
         // Early connectivity check to avoid vague catch-all error messages.
@@ -224,15 +236,19 @@ class AuthController extends Controller
                 $normalizedRole = strtolower((string) $role);
                 $isAgentRegistration = $normalizedRole === 'agent';
                 $requiresSuperAdminApproval = !$this->isManagerRoleName($role) && !$isAgentRegistration;
+                $isApprovedRetry = $retryableUser
+                    && strtolower((string) $retryableUser->status) === 'active'
+                    && (int) ($retryableUser->is_verified ?? 0) === 1;
 
                 $userPayload = $this->filterPayloadForTable('users', [
                     'name' => $validated['name'],
                     'email' => $resolvedEmail,
-                    'phone' => $normalizedPhone,
+                    'phone' => $normalizedPhone ?? $retryableUser?->phone,
                     'password' => Hash::make($validated['password']),
                     'role' => $role,
-                    'is_verified' => $isAgentRegistration ? 1 : 0,
-                    'status' => $requiresSuperAdminApproval ? 'pending' : 'active',
+                    'is_verified' => ($isAgentRegistration || $isApprovedRetry) ? 1 : 0,
+                    'status' => ($requiresSuperAdminApproval && !$isApprovedRetry) ? 'pending' : 'active',
+                    'email_verified_at' => $isApprovedRetry ? ($retryableUser->email_verified_at ?? now()) : null,
                     'country' => $validated['country'] ?? null,
                     'state_region' => $validated['state_region'] ?? null,
                     'local_council' => $validated['local_council'] ?? null,
@@ -348,7 +364,7 @@ class AuthController extends Controller
                 $planId = $plan?->id ?? $planId;
                 $billingCycle = ucfirst($requestedCycle);
 
-                $subscription = Subscription::create($this->filterPayloadForTable('subscriptions', array_merge([
+                $subscriptionPayload = $this->filterPayloadForTable('subscriptions', array_merge([
                     'user_id' => $user->id,
                     'plan_id' => $planId,
                     'plan' => $planName,
@@ -358,7 +374,23 @@ class AuthController extends Controller
                     'user_limit' => $plan?->resolvedUserLimit(),
                     'status' => 'Pending',
                     'payment_status' => 'unpaid',
-                ])));
+                ]));
+                $subscription = Subscription::withoutGlobalScope('tenant')
+                    ->where('user_id', $user->id)
+                    ->whereRaw("LOWER(COALESCE(payment_status, '')) NOT IN (?, ?)", ['paid', 'free'])
+                    ->when(Schema::hasColumn('subscriptions', 'domain_prefix'), function ($query) {
+                        $query->where(function ($domainQuery) {
+                            $domainQuery->whereNull('domain_prefix')->orWhere('domain_prefix', '');
+                        });
+                    })
+                    ->latest('id')
+                    ->first();
+
+                if ($subscription) {
+                    $subscription->update($subscriptionPayload);
+                } else {
+                    $subscription = Subscription::create($subscriptionPayload);
+                }
 
                 DB::afterCommit(function () use ($user, $planName, $planAmount, $billingCycle) {
                     SystemEventMailer::notifyRegistration($user, 'user', [
@@ -390,6 +422,12 @@ class AuthController extends Controller
             if (strtolower((string) $registrationResult['role']) === 'agent') {
                 return redirect()->route('agent.dashboard')
                     ->with('success', 'Agent registration successful. You can start using your agent dashboard.');
+            }
+
+            if (strtolower((string) $registrationResult['user']->status) === 'active'
+                && (int) ($registrationResult['user']->is_verified ?? 0) === 1) {
+                return redirect()->route('home')
+                    ->with('success', 'Your existing incomplete registration has been updated. Continue workspace setup and checkout.');
             }
 
             return redirect()->route('registration.pending.notice')
@@ -440,35 +478,120 @@ class AuthController extends Controller
             : null;
     }
 
-    private function findRetryableRegistrationUser(string $email): ?User
+    private function findRetryableRegistrationUser(string $email, string $phone = ''): ?User
     {
         $email = (string) $this->normalizeEmailForAuth($email);
-        if ($email === '') {
+        $phone = (string) $this->normalizePhoneForAuth($phone);
+        $matches = collect();
+
+        if ($email !== '') {
+            $user = User::withTrashed()->whereRaw('LOWER(email) = ?', [$email])->first();
+            if ($user) {
+                $matches->put((int) $user->id, $user);
+            }
+        }
+
+        if ($phone !== '' && Schema::hasColumn('users', 'phone')) {
+            $user = User::withTrashed()->where('phone', $phone)->first();
+            if ($user) {
+                $matches->put((int) $user->id, $user);
+            }
+        }
+
+        if ($matches->count() > 1) {
             return null;
         }
 
-        $user = User::withTrashed()
-            ->whereRaw('LOWER(email) = ?', [$email])
-            ->first();
-
-        if (!$user) {
-            return null;
-        }
-
-        if ($this->isRegistrationRetryableUser($user)) {
+        $user = $matches->first();
+        if ($user && $this->isRegistrationRetryableUser($user)) {
             return $user;
         }
 
-        return $this->findRetryableDeploymentManager($email);
+        return $email !== '' ? $this->findRetryableDeploymentManager($email) : null;
     }
 
     private function isRegistrationRetryableUser(User $user): bool
     {
+        $subscriptions = Subscription::withoutGlobalScope('tenant')
+            ->where('user_id', $user->id)
+            ->get();
+
+        if ($subscriptions->contains(function (Subscription $subscription) {
+            return filled($subscription->domain_prefix)
+                || strtolower((string) $subscription->payment_status) === 'paid'
+                || (strtolower((string) $subscription->payment_status) === 'free'
+                    && in_array(strtolower((string) $subscription->status), ['active', 'trial'], true));
+        })) {
+            return false;
+        }
+
+        $companyOwnerColumns = collect(['user_id', 'owner_id'])
+            ->filter(fn ($column) => Schema::hasColumn('companies', $column))
+            ->values();
+        if (Schema::hasColumn('users', 'company_id') && (int) $user->company_id > 0) {
+            $companyOwnerColumns->push('id');
+        }
+
+        if (Schema::hasTable('companies') && $companyOwnerColumns->isNotEmpty()) {
+            $companyQuery = Company::withoutGlobalScope('tenant')
+                ->where(function ($query) use ($user) {
+                    if (Schema::hasColumn('companies', 'user_id')) {
+                        $query->orWhere('user_id', $user->id);
+                    }
+                    if (Schema::hasColumn('companies', 'owner_id')) {
+                        $query->orWhere('owner_id', $user->id);
+                    }
+                    if (Schema::hasColumn('users', 'company_id') && (int) $user->company_id > 0) {
+                        $query->orWhere('id', (int) $user->company_id);
+                    }
+                });
+
+            $companyHasWorkspace = $companyQuery->get()->contains(function (Company $company) {
+                foreach (['domain_prefix', 'subdomain'] as $column) {
+                    if (Schema::hasColumn('companies', $column) && filled($company->{$column})) {
+                        return true;
+                    }
+                }
+
+                return false;
+            });
+
+            if ($companyHasWorkspace) {
+                return false;
+            }
+        }
+
+        if (Schema::hasTable('domains')) {
+            $domainQuery = \App\Models\Domain::withoutGlobalScopes();
+            $hasTenantId = Schema::hasColumn('domains', 'tenant_id');
+            $hasSubscriptionId = Schema::hasColumn('domains', 'subscription_id');
+            if ($hasTenantId || $hasSubscriptionId) {
+                $domainQuery->where(function ($query) use ($user, $subscriptions, $hasTenantId, $hasSubscriptionId) {
+                    if ($hasTenantId) {
+                        $query->orWhere('tenant_id', $user->id);
+                    }
+                    if ($hasSubscriptionId && $subscriptions->isNotEmpty()) {
+                        $query->orWhereIn('subscription_id', $subscriptions->pluck('id'));
+                    }
+                });
+                if ($domainQuery->exists()) {
+                    return false;
+                }
+            }
+        }
+
         if (method_exists($user, 'trashed') && $user->trashed()) {
             return true;
         }
 
-        return strtolower((string) ($user->status ?? 'pending')) !== 'active';
+        $accountIsPending = strtolower((string) ($user->status ?? 'pending')) !== 'active'
+            || (int) ($user->is_verified ?? 0) !== 1;
+        $hasUnpaidIncompleteSubscription = $subscriptions->contains(function (Subscription $subscription) {
+            return in_array(strtolower((string) $subscription->payment_status), ['unpaid', 'failed', 'pending', 'pending_verification'], true)
+                && !in_array(strtolower((string) $subscription->status), ['active', 'trial'], true);
+        });
+
+        return $accountIsPending || $hasUnpaidIncompleteSubscription;
     }
 
     private function normalizeEmailForAuth(?string $email): ?string

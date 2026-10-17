@@ -47,11 +47,16 @@ class AssistedBusinessRegistrationTest extends TestCase
             $slug = str_replace('_', '-', $role).'-client';
             $email = $slug.'@example.test';
             $password = 'ClientPass123';
+            $customerPhone = match ($role) {
+                'agent' => '+2348098765432',
+                'state_manager' => '+2348098765433',
+                default => '+2348098765434',
+            };
             $plan = $role === 'agent'
                 ? ['id' => 'livestock-yearly', 'name' => 'Livestock', 'price' => 200000]
                 : ['id' => 'starter-yearly', 'name' => 'Starter', 'price' => 20000];
 
-            $response = $this->actingAs($registrar)->post(route($registration['route']), [
+            $registrationPayload = [
                 'company_name' => ucfirst($slug).' Limited',
                 'subdomain' => $slug,
                 'company_email' => $email,
@@ -65,8 +70,10 @@ class AssistedBusinessRegistrationTest extends TestCase
                 'email' => $email,
                 'password' => $password,
                 'password_confirmation' => $password,
-                'customer_phone' => '+2348098765432',
-            ]);
+                'customer_phone' => $customerPhone,
+            ];
+
+            $response = $this->actingAs($registrar)->post(route($registration['route']), $registrationPayload);
 
             $subscription = \DB::table('subscriptions')->where('deployed_by', $registrar->id)->first();
             $customer = User::where('email', $email)->first();
@@ -87,6 +94,13 @@ class AssistedBusinessRegistrationTest extends TestCase
                 'deployment_status' => 'pending',
             ]);
 
+            $retryResponse = $this->actingAs($registrar)->post(route($registration['route']), $registrationPayload);
+            $retryResponse->assertRedirect(route('saas.checkout', $subscription->id));
+            $retryResponse->assertSessionHasNoErrors();
+            $this->assertSame(1, \DB::table('users')->where('email', $email)->count());
+            $this->assertSame(1, \DB::table('companies')->where('domain_prefix', $slug)->count());
+            $this->assertSame(1, \DB::table('subscriptions')->where('deployed_by', $registrar->id)->count());
+
             $this->get(route('saas.payment.callback', [
                 'sub_id' => $subscription->id,
                 'gateway' => 'flutterwave',
@@ -99,6 +113,12 @@ class AssistedBusinessRegistrationTest extends TestCase
             ]);
             $this->assertSame('active', strtolower((string) \DB::table('companies')->where('id', $company->id)->value('status')));
             $this->assertSame('paid', strtolower((string) \DB::table('subscriptions')->where('id', $subscription->id)->value('payment_status')));
+
+            $paidRetryResponse = $this->actingAs($registrar)->post(route($registration['route']), $registrationPayload);
+            $paidRetryResponse->assertSessionHasErrors('email');
+            $this->assertSame(1, \DB::table('users')->where('email', $email)->count());
+            $this->assertSame(1, \DB::table('companies')->where('domain_prefix', $slug)->count());
+            $this->assertSame(1, \DB::table('subscriptions')->where('deployed_by', $registrar->id)->count());
         }
     }
 

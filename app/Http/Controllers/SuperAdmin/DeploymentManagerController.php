@@ -1004,11 +1004,26 @@ public function store(Request $request)
         'customer_phone' => $this->normalizePhoneForStorage($request->input('customer_phone')),
     ]);
 
+    $manager = auth()->user();
+    $retryableRegistration = $manager
+        ? $this->findRetryableAssistedRegistration($request, $manager)
+        : null;
     $subdomainRules = ['required', 'string', 'max:50', 'alpha_dash'];
     $companySlugColumn = $this->resolveCompanySlugColumn();
     if ($companySlugColumn !== null) {
-        $subdomainRules[] = Rule::unique('companies', $companySlugColumn);
+        $slugRule = Rule::unique('companies', $companySlugColumn);
+        if ($retryableRegistration) {
+            $slugRule->ignore($retryableRegistration['company']->id);
+        }
+        $subdomainRules[] = $slugRule;
     }
+
+    $emailRules = ['required', 'email'];
+    $emailRule = Rule::unique('users', 'email');
+    if ($retryableRegistration) {
+        $emailRule->ignore($retryableRegistration['user']->id);
+    }
+    $emailRules[] = $emailRule;
 
     $validated = $request->validate([
         'company_name'    => 'required|string|max:255',
@@ -1022,7 +1037,7 @@ public function store(Request $request)
         'billing_cycle'   => 'required|in:yearly',
         'custom_user_limit' => 'nullable|integer|min:1|max:100000',
         'free_unlimited'  => 'nullable|boolean',
-        'email'           => 'required|email|unique:users,email',
+        'email'           => $emailRules,
         'password'        => [
             'required',
             'string',
@@ -1073,7 +1088,6 @@ public function store(Request $request)
 
     $validated['company_email'] = $validated['company_email'] ?? $validated['email'];
 
-    $manager = auth()->user();
     $isSuperAdminDeployment = $request->routeIs('super_admin.custom_deployments.store')
         && in_array(strtolower((string) ($manager?->role ?? '')), ['super_admin', 'superadmin'], true);
     $isFreeUnlimited = $isSuperAdminDeployment && $request->boolean('free_unlimited');
@@ -1089,10 +1103,21 @@ public function store(Request $request)
     // ── Run DB work inside transaction ──────────────────────
     // session() is NOT called inside — that was causing the bug
     try {
-        $result = DB::transaction(function () use ($validated, $manager, $isFreeUnlimited, $customUserLimit, $licenseUnitAmount) {
+        $result = DB::transaction(function () use ($validated, $manager, $isFreeUnlimited, $customUserLimit, $licenseUnitAmount, $retryableRegistration) {
 
             // 1. Create customer user
-            $customer = User::create($this->filterPayloadForTable('users', [
+            $customer = $retryableRegistration
+                ? User::withTrashed()->whereKey($retryableRegistration['user']->id)->lockForUpdate()->firstOrFail()
+                : new User();
+            if ($retryableRegistration && !$this->assistedRegistrationStillRetryable($retryableRegistration, $manager)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'email' => ['This registration is already paid or provisioned and cannot be reused.'],
+                ]);
+            }
+            if (method_exists($customer, 'trashed') && $customer->trashed()) {
+                $customer->restore();
+            }
+            $customer->fill($this->filterPayloadForTable('users', [
                 'name'              => $validated['name'],
                 'email'             => $validated['email'],
                 'password'          => Hash::make($validated['password']),
@@ -1102,9 +1127,13 @@ public function store(Request $request)
                 'phone'             => $validated['customer_phone'] ?? null,
                 'email_verified_at' => $isFreeUnlimited ? now() : null,
             ]));
+            $customer->save();
 
             // 2. Create company
-            $company = Company::create($this->filterPayloadForTable('companies', array_merge([
+            $company = $retryableRegistration
+                ? Company::withoutGlobalScopes()->whereKey($retryableRegistration['company']->id)->lockForUpdate()->firstOrFail()
+                : new Company();
+            $company->fill($this->filterPayloadForTable('companies', array_merge([
                 'domain_prefix' => $validated['subdomain'],
                 'subdomain'     => $validated['subdomain'],
                 'domain'        => $validated['subdomain'],
@@ -1119,13 +1148,14 @@ public function store(Request $request)
                 'owner_id'      => $customer->id,
                 'deployed_by'   => $manager->id,
             ], $this->companySubscriptionColumnsPayload($validated))));
+            $company->save();
 
             // 3. Link customer → company
             $customer->update($this->filterPayloadForTable('users', ['company_id' => $company->id]));
 
             // 4. Create subscription
             // deployed_by is stored in DB — used as fallback if session is lost
-            $subscription = Subscription::create($this->filterPayloadForTable('subscriptions', [
+            $subscriptionPayload = $this->filterPayloadForTable('subscriptions', [
                 'user_id'         => $customer->id,
                 'company_id'      => $company->id,
                 'domain_prefix'   => $validated['subdomain'],
@@ -1144,7 +1174,15 @@ public function store(Request $request)
                 'start_date'      => $isFreeUnlimited ? now() : null,
                 'end_date'        => $isFreeUnlimited ? now()->addYears(100) : null,
                 'deployed_by'     => $manager->id,  // KEY: stored in DB for fallback
-            ]));
+                'payment_gateway' => null,
+                'payment_reference' => null,
+                'transaction_reference' => null,
+            ]);
+            $subscription = $retryableRegistration
+                ? Subscription::withoutGlobalScopes()->whereKey($retryableRegistration['subscription']->id)->lockForUpdate()->firstOrFail()
+                : new Subscription();
+            $subscription->fill($subscriptionPayload);
+            $subscription->save();
 
             if ($isFreeUnlimited) {
                 $this->activateFreeDeploymentWorkspace($subscription->fresh(['user']));
@@ -1401,6 +1439,98 @@ private function resolveWorkspaceDomain(): string
     }
 
     return $domain;
+}
+
+private function findRetryableAssistedRegistration(Request $request, User $manager): ?array
+{
+    if (!$request->routeIs(
+        'agent.registration.store',
+        'deployment.customers.store',
+        'super_admin.assisted_registrations.store'
+    )) {
+        return null;
+    }
+
+    $role = strtolower((string) $manager->role);
+    $allowedRoles = match ($request->route()->getName()) {
+        'agent.registration.store' => ['agent'],
+        'deployment.customers.store' => ['state_manager', 'deployment_manager'],
+        'super_admin.assisted_registrations.store' => ['super_admin', 'superadmin'],
+        default => [],
+    };
+    if (!in_array($role, $allowedRoles, true)) {
+        return null;
+    }
+
+    $email = strtolower(trim((string) $request->input('email')));
+    $phone = $this->normalizePhoneForStorage($request->input('customer_phone'));
+    $matchedUsers = collect();
+
+    if ($email !== '') {
+        $matchedUsers = $matchedUsers->merge(
+            User::withTrashed()->whereRaw('LOWER(email) = ?', [$email])->get()
+        );
+    }
+    if ($phone !== null) {
+        $matchedUsers = $matchedUsers->merge(
+            User::withTrashed()->where('phone', $phone)->get()
+        );
+    }
+
+    $matchedUsers = $matchedUsers->unique('id')->values();
+    if ($matchedUsers->count() !== 1) {
+        return null;
+    }
+
+    $user = $matchedUsers->first();
+    $subscription = Subscription::withoutGlobalScopes()
+        ->where('user_id', $user->id)
+        ->where('deployed_by', $manager->id)
+        ->whereRaw("LOWER(COALESCE(status, '')) = ?", ['pending'])
+        ->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), ['unpaid', 'failed', 'pending'])
+        ->latest('id')
+        ->first();
+
+    if (!$subscription || (int) $subscription->company_id !== (int) $user->company_id) {
+        return null;
+    }
+
+    $company = Company::withoutGlobalScopes()->find($subscription->company_id);
+    if (!$company || strtolower((string) $company->status) === 'active') {
+        return null;
+    }
+
+    $prefix = (string) ($subscription->domain_prefix ?: $company->domain_prefix ?: $company->subdomain);
+    if ($prefix !== '' && Schema::hasTable('domains') && Domain::withoutGlobalScopes()->where('domain_name', $prefix)->exists()) {
+        return null;
+    }
+
+    return compact('user', 'company', 'subscription');
+}
+
+private function assistedRegistrationStillRetryable(array $registration, User $manager): bool
+{
+    $subscription = Subscription::withoutGlobalScopes()
+        ->whereKey($registration['subscription']->id)
+        ->lockForUpdate()
+        ->first();
+    $company = Company::withoutGlobalScopes()
+        ->whereKey($registration['company']->id)
+        ->lockForUpdate()
+        ->first();
+
+    if (!$subscription || !$company
+        || (int) $subscription->deployed_by !== (int) $manager->id
+        || strtolower((string) $subscription->status) !== 'pending'
+        || !in_array(strtolower((string) $subscription->payment_status), ['unpaid', 'failed', 'pending'], true)
+        || strtolower((string) $company->status) === 'active') {
+        return false;
+    }
+
+    $prefix = (string) ($subscription->domain_prefix ?: $company->domain_prefix ?: $company->subdomain);
+    return $prefix === ''
+        || !Schema::hasTable('domains')
+        || !Domain::withoutGlobalScopes()->where('domain_name', $prefix)->exists();
 }
 
 private function normalizePhoneForStorage(?string $phone): ?string
