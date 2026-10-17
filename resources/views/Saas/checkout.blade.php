@@ -468,7 +468,32 @@
 
         <section class="payment-form">
             @if(session('error'))
-                <div class="alert alert-danger py-2">{{ session('error') }}</div>
+                <div class="alert alert-danger py-2">
+                    <div>{{ session('error') }}</div>
+                    @if(session('payment_retry_available'))
+                        <p class="mb-2 mt-2">
+                            Your registration and workspace details are saved. You do not need to register again.
+                            If you may already have been charged, confirm with your payment provider before retrying.
+                        </p>
+                        <a class="btn btn-sm btn-outline-danger" href="#checkoutPaymentForm">
+                            Continue to secure payment
+                        </a>
+                    @endif
+                </div>
+            @elseif(in_array(request()->query('payment'), ['cancelled', 'retry'], true))
+                <div class="alert alert-warning py-2">
+                    <p class="mb-2">
+                        @if(request()->query('payment') === 'cancelled')
+                            Payment was cancelled. Your registration and workspace details are saved; you do not need to register again.
+                        @else
+                            We could not confirm the payment. Your registration and workspace details are saved; you do not need to register again.
+                            Check with your payment provider before retrying to make sure you were not charged.
+                        @endif
+                    </p>
+                    <a class="btn btn-sm btn-outline-primary" href="#checkoutPaymentForm">
+                        Continue to secure payment
+                    </a>
+                </div>
             @endif
             @if(session('info'))
                 <div class="alert alert-info py-2">{{ session('info') }}</div>

@@ -971,7 +971,7 @@ class SubscriptionController extends Controller
             'sub_id' => $subscription->id,
             'gateway' => 'stripe',
         ]).'&reference={CHECKOUT_SESSION_ID}';
-        $cancelUrl = route('saas.checkout', $subscription->id);
+        $cancelUrl = route('saas.checkout', $subscription->id).'?payment=cancelled';
 
         try {
             $payload = [
@@ -1012,7 +1012,7 @@ class SubscriptionController extends Controller
                     return response()->json(['message' => $message], 422);
                 }
 
-                return redirect()->route('saas.checkout', $subscription->id)->with('error', $message);
+                return $this->redirectToCheckoutAfterPaymentIssue($subscription, $message);
             }
 
             if ($embedded) {
@@ -1024,8 +1024,10 @@ class SubscriptionController extends Controller
                         return response()->json(['message' => 'Stripe embedded checkout token was not returned.'], 422);
                     }
 
-                    return redirect()->route('saas.checkout', $subscription->id)
-                        ->with('error', 'Stripe embedded checkout token was not returned.');
+                    return $this->redirectToCheckoutAfterPaymentIssue(
+                        $subscription,
+                        'Stripe embedded checkout token was not returned.'
+                    );
                 }
 
                 return response()->json([
@@ -1036,8 +1038,10 @@ class SubscriptionController extends Controller
 
             $url = (string) $response->json('url', '');
             if ($url === '') {
-                return redirect()->route('saas.checkout', $subscription->id)
-                    ->with('error', 'Stripe checkout URL was not returned.');
+                return $this->redirectToCheckoutAfterPaymentIssue(
+                    $subscription,
+                    'Stripe checkout URL was not returned.'
+                );
             }
 
             return redirect()->away($url);
@@ -1051,8 +1055,10 @@ class SubscriptionController extends Controller
                 return response()->json(['message' => 'Stripe checkout is temporarily unavailable.'], 500);
             }
 
-            return redirect()->route('saas.checkout', $subscription->id)
-                ->with('error', 'Stripe checkout is temporarily unavailable.');
+            return $this->redirectToCheckoutAfterPaymentIssue(
+                $subscription,
+                'Stripe checkout is temporarily unavailable.'
+            );
         }
     }
 
@@ -1114,14 +1120,15 @@ class SubscriptionController extends Controller
                     'body' => $response->body(),
                 ]);
 
-                return redirect()->route('saas.checkout', $subscription->id)
-                    ->with('error', 'Unable to initialize Paystack right now.');
+                return $this->redirectToCheckoutAfterPaymentIssue($subscription, 'Unable to initialize Paystack right now.');
             }
 
             $url = (string) data_get($response->json(), 'data.authorization_url', '');
             if ($url === '') {
-                return redirect()->route('saas.checkout', $subscription->id)
-                    ->with('error', 'Paystack checkout URL was not returned.');
+                return $this->redirectToCheckoutAfterPaymentIssue(
+                    $subscription,
+                    'Paystack checkout URL was not returned.'
+                );
             }
 
             return redirect()->away($url);
@@ -1131,8 +1138,10 @@ class SubscriptionController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return redirect()->route('saas.checkout', $subscription->id)
-                ->with('error', 'Paystack checkout is temporarily unavailable.');
+            return $this->redirectToCheckoutAfterPaymentIssue(
+                $subscription,
+                'Paystack checkout is temporarily unavailable.'
+            );
         }
     }
 
@@ -1152,8 +1161,10 @@ class SubscriptionController extends Controller
                 ]);
             }
 
-            return redirect()->route('saas.checkout', $subscription->id)
-                ->with('error', 'Flutterwave secret key is missing or invalid. Update it in Payment Settings.');
+            return $this->redirectToCheckoutAfterPaymentIssue(
+                $subscription,
+                'Flutterwave secret key is missing or invalid. Update it in Payment Settings.'
+            );
         }
 
         $txRef = 'SPB-FLW-'.$subscription->id.'-'.Str::upper(Str::random(10));
@@ -1190,14 +1201,15 @@ class SubscriptionController extends Controller
                     'body' => $response->body(),
                 ]);
 
-                return redirect()->route('saas.checkout', $subscription->id)
-                    ->with('error', 'Unable to initialize Flutterwave right now.');
+                return $this->redirectToCheckoutAfterPaymentIssue($subscription, 'Unable to initialize Flutterwave right now.');
             }
 
             $url = (string) data_get($response->json(), 'data.link', '');
             if ($url === '') {
-                return redirect()->route('saas.checkout', $subscription->id)
-                    ->with('error', 'Flutterwave checkout URL was not returned.');
+                return $this->redirectToCheckoutAfterPaymentIssue(
+                    $subscription,
+                    'Flutterwave checkout URL was not returned.'
+                );
             }
 
             return redirect()->away($url);
@@ -1207,8 +1219,10 @@ class SubscriptionController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return redirect()->route('saas.checkout', $subscription->id)
-                ->with('error', 'Flutterwave checkout is temporarily unavailable.');
+            return $this->redirectToCheckoutAfterPaymentIssue(
+                $subscription,
+                'Flutterwave checkout is temporarily unavailable.'
+            );
         }
     }
 
@@ -1271,8 +1285,10 @@ class SubscriptionController extends Controller
 
         $verification = $this->verifyPayment($reference, $gateway, $request, $subscription);
         if (! (bool) ($verification['ok'] ?? false)) {
-            return redirect()->route('saas.checkout', $subscription->id)
-                ->with('error', 'Payment verification failed. Please try again.');
+            return $this->redirectToCheckoutAfterPaymentIssue(
+                $subscription,
+                'We could not confirm the payment. Your registration is saved. Check with your payment provider before retrying to make sure you were not charged.'
+            );
         }
         $reference = (string) ($verification['reference'] ?? $reference);
 
@@ -1914,6 +1930,16 @@ class SubscriptionController extends Controller
     | PRIVATE HELPERS
     |--------------------------------------------------------------------------
     */
+
+    private function redirectToCheckoutAfterPaymentIssue(Subscription $subscription, string $message)
+    {
+        return redirect()->route('saas.checkout', [
+            'id' => $subscription->id,
+            'payment' => 'retry',
+        ])
+            ->with('error', $message)
+            ->with('payment_retry_available', true);
+    }
 
     /**
      * Detect deployment checkout via session OR database.

@@ -94,9 +94,36 @@ class AssistedBusinessRegistrationTest extends TestCase
                 'deployment_status' => 'pending',
             ]);
 
+            User::factory()->create([
+                'phone' => $customerPhone,
+            ]);
+
             $retryResponse = $this->actingAs($registrar)->post(route($registration['route']), $registrationPayload);
             $retryResponse->assertRedirect(route('saas.checkout', $subscription->id));
             $retryResponse->assertSessionHasNoErrors();
+            $this->assertSame(1, \DB::table('users')->where('email', $email)->count());
+            $this->assertSame(1, \DB::table('companies')->where('domain_prefix', $slug)->count());
+            $this->assertSame(1, \DB::table('subscriptions')->where('deployed_by', $registrar->id)->count());
+
+            $failedPaymentResponse = $this->get(route('saas.payment.callback', [
+                'sub_id' => $subscription->id,
+                'gateway' => 'unknown',
+                'reference' => 'UNVERIFIED-'.$subscription->id,
+            ]));
+            $failedPaymentResponse->assertRedirect(route('saas.checkout', [
+                'id' => $subscription->id,
+                'payment' => 'retry',
+            ]));
+            $failedPaymentResponse->assertSessionHas('payment_retry_available', true);
+
+            $this->get(route('saas.checkout', [
+                'id' => $subscription->id,
+                'payment' => 'retry',
+            ]))
+                ->assertOk()
+                ->assertSee('Your registration and workspace details')
+                ->assertSee('Continue to secure payment');
+            $this->assertSame('unpaid', strtolower((string) \DB::table('subscriptions')->where('id', $subscription->id)->value('payment_status')));
             $this->assertSame(1, \DB::table('users')->where('email', $email)->count());
             $this->assertSame(1, \DB::table('companies')->where('domain_prefix', $slug)->count());
             $this->assertSame(1, \DB::table('subscriptions')->where('deployed_by', $registrar->id)->count());

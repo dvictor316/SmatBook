@@ -1000,6 +1000,7 @@ class DeploymentManagerController extends Controller
 public function store(Request $request)
 {
     $request->merge([
+        'email' => strtolower(trim((string) $request->input('email'))),
         'phone' => $this->normalizePhoneForStorage($request->input('phone')),
         'customer_phone' => $this->normalizePhoneForStorage($request->input('customer_phone')),
     ]);
@@ -1463,26 +1464,19 @@ private function findRetryableAssistedRegistration(Request $request, User $manag
     }
 
     $email = strtolower(trim((string) $request->input('email')));
-    $phone = $this->normalizePhoneForStorage($request->input('customer_phone'));
-    $matchedUsers = collect();
-
-    if ($email !== '') {
-        $matchedUsers = $matchedUsers->merge(
-            User::withTrashed()->whereRaw('LOWER(email) = ?', [$email])->get()
-        );
-    }
-    if ($phone !== null) {
-        $matchedUsers = $matchedUsers->merge(
-            User::withTrashed()->where('phone', $phone)->get()
-        );
-    }
-
-    $matchedUsers = $matchedUsers->unique('id')->values();
-    if ($matchedUsers->count() !== 1) {
+    if ($email === '') {
         return null;
     }
 
-    $user = $matchedUsers->first();
+    // Assisted registrations require email, so use that unique identity to find
+    // a retry. Phone numbers are not unique and may belong to another account.
+    $user = User::withTrashed()
+        ->whereRaw('LOWER(email) = ?', [$email])
+        ->first();
+    if (!$user) {
+        return null;
+    }
+
     $subscription = Subscription::withoutGlobalScopes()
         ->where('user_id', $user->id)
         ->where('deployed_by', $manager->id)
