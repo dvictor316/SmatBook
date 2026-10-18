@@ -27,6 +27,15 @@ use Illuminate\Validation\Rule;
 
 class SettingController extends Controller
 {
+    private const COMPANY_ADDRESS_SETTING_FIELDS = [
+        'address_line_1',
+        'address_line_2',
+        'company_city',
+        'company_state',
+        'company_country',
+        'company_pincode',
+    ];
+
     private function normalizeDecimalMoneyInput(mixed $value): ?string
     {
         if ($value === null) {
@@ -93,8 +102,20 @@ class SettingController extends Controller
      */
     private function getSettings()
     {
+        $settings = Setting::pluck('value', 'key')->all();
+        $companyId = (int) (Auth::user()?->company_id ?? optional(Auth::user()?->company)->id ?? 0);
+
+        if ($companyId > 0) {
+            foreach (self::COMPANY_ADDRESS_SETTING_FIELDS as $field) {
+                $scopedValue = Setting::where('key', "{$field}_company_{$companyId}")->value('value');
+                if ($scopedValue !== null) {
+                    $settings[$field] = $scopedValue;
+                }
+            }
+        }
+
         return new \ArrayObject(
-            Setting::pluck('value', 'key')->all(),
+            $settings,
             \ArrayObject::ARRAY_AS_PROPS
         );
     }
@@ -245,6 +266,12 @@ class SettingController extends Controller
             'seo_meta_image' => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
             'email'        => 'nullable|email',
             'company_email' => 'nullable|email',
+            'address_line_1' => 'nullable|string|max:255',
+            'address_line_2' => 'nullable|string|max:255',
+            'company_city' => 'nullable|string|max:150',
+            'company_state' => 'nullable|string|max:150',
+            'company_country' => 'nullable|string|max:150',
+            'company_pincode' => 'nullable|string|max:30',
             'mail_from_address' => 'nullable|email',
             'mail_admin_inbox' => 'nullable|email',
             'expiry_notification_months' => 'nullable|in:1,2,6',
@@ -334,6 +361,11 @@ class SettingController extends Controller
         unset($inputs['expiry_notification_enabled'], $inputs['expiry_notification_months']);
 
         foreach ($inputs as $key => $value) {
+            if (in_array($key, self::COMPANY_ADDRESS_SETTING_FIELDS, true)) {
+                $this->setCompanyScopedSettingValue($key, $value);
+                continue;
+            }
+
             Setting::updateOrCreate(
                 ['key' => $key],
                 ['value' => $value ?? '']

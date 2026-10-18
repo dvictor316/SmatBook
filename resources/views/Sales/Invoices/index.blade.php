@@ -670,9 +670,6 @@
             ?? $companyOwner?->name
             ?? \App\Models\Setting::where('key', 'company_name')->value('value')
             ?? config('app.name', 'SmartProbook');
-        $companyAddress = $resolvedCompany?->address
-            ?? \App\Models\Setting::where('key', 'company_address')->value('value')
-            ?? null;
         $companyPhone = $resolvedCompany?->phone
             ?? $companyOwner?->phone
             ?? \App\Models\Setting::where('key', 'company_phone')->value('value')
@@ -681,9 +678,7 @@
             ?? $companyOwner?->email
             ?? \App\Models\Setting::where('key', 'company_email')->value('value')
             ?? '';
-        $companyAddressDisplay = $companyAddress
-            ?: ($companyOwner?->location
-                ?? null);
+        $companyAddressDisplay = \App\Support\ReceiptCompanyProfile::address($resolvedCompany);
     @endphp
 
     <div class="invoice-wrapper" id="invoice_content" data-print-scope>

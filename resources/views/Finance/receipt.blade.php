@@ -27,9 +27,7 @@
             ?? $receiptCompany?->name
             ?? \App\Models\Setting::where('key', 'company_name')->value('value')
             ?? 'SmartProbook';
-        $receiptAddress = $receiptCompany?->address
-            ?? \App\Models\Setting::where('key', 'company_address')->value('value')
-            ?? config('app.address');
+        $receiptAddress = \App\Support\ReceiptCompanyProfile::address($receiptCompany);
         $receiptEmail = $receiptCompany?->email
             ?? \App\Models\Setting::where('key', 'company_email')->value('value')
             ?? config('app.email');
@@ -53,8 +51,7 @@
                         <div class="col-sm-6">
                             <div class="receipt-logo mb-2">{{ $receiptBrandName }}</div>
                             <div class="company-details">
-                                <p class="mb-0">{{ $receiptAddress }}</p>
-                                <p class="mb-0">{{ config('app.city') }}</p>
+                                @if($receiptAddress)<p class="mb-0">{{ $receiptAddress }}</p>@endif
                                 <p class="mb-0">Phone: {{ $receiptPhone }}</p>
                                 <p class="mb-0">Email: {{ $receiptEmail }}</p>
                             </div>

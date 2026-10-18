@@ -6,8 +6,6 @@
     <title>Invoice #{{ $sale->invoice_no ?? $sale->id }}</title>
     <link rel="stylesheet" href="{{ URL::asset('/assets/css/bootstrap.min.css') }}">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
         :root {
             --light-gold: #fdfaf0;
             --border-gold: #e6d5a7;
@@ -24,7 +22,7 @@
         }
 
         * {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: Arial, Helvetica, sans-serif;
         }
 
         body {
@@ -375,6 +373,33 @@
             .compact-summary-title {
                 font-size: 16px !important;
             }
+
+            :root {
+                --text-gold: #1f2937;
+                --border-gold: #cbd5e1;
+                --deep-blue: #111827;
+            }
+
+            body {
+                color: #111827 !important;
+                font-size: 10.5pt;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .text-muted,
+            .compact-contact-line,
+            .compact-item-meta,
+            .compact-words-value,
+            .compact-note {
+                color: #333 !important;
+            }
+
+            .compact-items-table tbody tr,
+            .compact-total-table tr,
+            .compact-panel {
+                break-inside: avoid;
+            }
         }
 
         @media (max-width: 767.98px) {
@@ -399,14 +424,13 @@
 </head>
 <body>
     @php
-        $invoiceCompany = \App\Models\Company::find($sale->company_id) ?? optional(auth()->user())->company;
+        $invoiceCompany = \App\Models\Company::withoutGlobalScopes()->find($sale->company_id)
+            ?? optional(auth()->user())->company;
         $brandName = $invoiceCompany?->company_name
             ?: $invoiceCompany?->name
             ?: \App\Models\Setting::where('key', 'company_name')->value('value')
             ?: config('app.name', 'SmartProbook');
-        $brandAddress = $invoiceCompany?->address
-            ?: \App\Models\Setting::where('key', 'company_address')->value('value')
-            ?: 'No address provided';
+        $brandAddress = \App\Support\ReceiptCompanyProfile::address($invoiceCompany);
         $brandPhone = $invoiceCompany?->phone
             ?: \App\Models\Setting::where('key', 'company_phone')->value('value')
             ?: '';

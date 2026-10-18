@@ -127,6 +127,9 @@
                                         <input type="text" class="form-control" name="company_pincode" value="{{ $settings['company_pincode'] ?? '' }}">
                                     </div>
                                 </div>
+                                <div class="col-lg-12">
+                                    <p class="small text-muted mb-3">This address appears on your invoices and sales receipts.</p>
+                                </div>
 
                                 <hr class="my-4 text-light">
 

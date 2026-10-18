@@ -3,9 +3,9 @@
 @section('content')
 @php
     $sale = $payment->sale;
-    $company = auth()->user()?->company;
+    $company = $company ?? auth()->user()?->company;
     $brandName = $company?->company_name ?? $company?->name ?? config('app.name', 'SmartProbook');
-    $brandAddress = $company?->address ?? 'No company address configured';
+    $brandAddress = \App\Support\ReceiptCompanyProfile::address($company);
     $brandEmail = $company?->email ?? auth()->user()?->email;
     $brandPhone = $company?->phone ?? auth()->user()?->phone;
     $customerName = $sale?->display_customer_name

@@ -8,7 +8,12 @@
         :root { --paper-width: {{ $paperWidth }}mm; }
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; background: #edf0f4; color: #000; }
-        body { font-family: "Courier New", Courier, monospace; font-size: {{ $paperWidth === 58 ? '10px' : '11px' }}; line-height: 1.25; }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: {{ $paperWidth === 58 ? '11px' : '12px' }};
+            font-weight: 500;
+            line-height: 1.35;
+        }
         .receipt-toolbar {
             width: min(100%, 720px); margin: 16px auto; padding: 10px; display: flex;
             flex-wrap: wrap; justify-content: center; gap: 8px; font-family: Arial, sans-serif;
@@ -19,13 +24,13 @@
         }
         .receipt-toolbar .primary { background: #164e9b; color: #fff; }
         .thermal-receipt {
-            width: var(--paper-width); min-height: 80mm; margin: 0 auto 24px; padding: {{ $paperWidth === 58 ? '3mm 2mm 7mm' : '4mm 3mm 8mm' }};
-            background: #fff; box-shadow: 0 4px 24px rgba(15, 23, 42, .16); overflow: hidden;
+            width: var(--paper-width); margin: 0 auto 24px; padding: {{ $paperWidth === 58 ? '3mm 2mm 6mm' : '4mm 3mm 6mm' }};
+            background: #fff; color: #000; box-shadow: 0 4px 24px rgba(15, 23, 42, .16); overflow: visible;
         }
         .center { text-align: center; }
         .brand { font-family: Arial, sans-serif; font-size: {{ $paperWidth === 58 ? '14px' : '17px' }}; font-weight: 800; line-height: 1.15; overflow-wrap: anywhere; }
         .branch { margin-top: 2px; font-weight: 700; text-transform: uppercase; }
-        .contact { margin-top: 3px; font-size: .92em; overflow-wrap: anywhere; }
+        .contact { margin-top: 3px; font-size: .96em; font-weight: 600; overflow-wrap: anywhere; }
         .receipt-title { margin-top: 8px; font-weight: 800; font-size: 1.15em; }
         .rule { border-top: 1px dashed #000; margin: 7px 0; }
         .double-rule { border-top: 2px solid #000; margin: 7px 0; }
@@ -40,23 +45,39 @@
         .items th:nth-child(4) { width: {{ $paperWidth === 58 ? '23%' : '19%' }}; }
         .items td { padding: 5px 1px 2px; text-align: right; vertical-align: top; overflow-wrap: anywhere; }
         .items td:first-child { text-align: left; font-weight: 700; }
-        .item-code td { padding-top: 0; padding-bottom: 3px; font-size: .86em; font-weight: 400 !important; }
+        .item-code td { padding-top: 0; padding-bottom: 3px; font-size: .9em; font-weight: 500 !important; }
         .strong { font-weight: 800; }
         .grand-total { font-family: Arial, sans-serif; font-size: 1.18em; font-weight: 900; padding: 3px 0; }
         .footer { margin-top: 9px; text-align: center; font-family: Arial, sans-serif; }
-        .receipt-reference { margin-top: 7px; font-family: "Courier New", monospace; font-weight: 700; overflow-wrap: anywhere; }
-        @page { size: {{ $paperWidth }}mm auto; margin: 0; }
+        .receipt-reference { margin-top: 7px; font-weight: 700; overflow-wrap: anywhere; }
+        @page { margin: 0; }
         @media print {
-            html, body { width: var(--paper-width); background: #fff !important; }
+            html, body {
+                width: var(--paper-width);
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #fff !important;
+                color: #000 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
             .receipt-toolbar { display: none !important; }
-            .thermal-receipt { width: var(--paper-width); margin: 0; box-shadow: none; }
+            .thermal-receipt {
+                width: var(--paper-width);
+                min-height: 0;
+                margin: 0;
+                padding-bottom: 4mm;
+                box-shadow: none;
+                overflow: visible;
+            }
+            .items tr, .meta-row, .total-row, .payment-row { break-inside: avoid; }
         }
     </style>
 </head>
 <body>
 @php
     $brandName = $company?->company_name ?: $company?->name ?: config('app.name', 'SmartProBook');
-    $brandAddress = $company?->address ?: \App\Models\Setting::where('key', 'company_address')->value('value');
+    $brandAddress = \App\Support\ReceiptCompanyProfile::address($company);
     $brandPhone = $company?->phone ?: \App\Models\Setting::where('key', 'company_phone')->value('value');
     $branchName = $sale->branch_label ?: 'Main Branch';
     $customerName = $sale->display_customer_name ?: 'Walk-in Customer';

@@ -774,7 +774,12 @@ class PaymentController extends Controller
         $payment = $this->findScopedPayment($payment->id);
         abort_if(!$payment, 404);
         $payment->loadMissing(['sale.items', 'sale.customer', 'customer', 'creator', 'account']);
-        return view('Finance.payment-receipt', compact('payment'));
+        $saleCompanyId = (int) ($payment->sale?->company_id ?? 0);
+        $company = $saleCompanyId > 0
+            ? Company::withoutGlobalScopes()->find($saleCompanyId)
+            : auth()->user()?->company;
+
+        return view('Finance.payment-receipt', compact('payment', 'company'));
     }
 
     public function getBySale($saleId)
