@@ -267,7 +267,8 @@ class SuperAdminModuleDashboardTest extends TestCase
 
         $paidRegistry = $this->get(route('super_admin.users.index', ['category' => 'registered_businesses', 'payment_group' => 'paid']));
         $paidRegistry->assertOk()->assertSee('Paid Businesses')->assertSee('Paid Business')->assertSee('Second Paid Business')
-            ->assertDontSee('Awaiting Payment Business')->assertDontSee('Trial Business');
+            ->assertDontSee('Awaiting Payment Business')->assertDontSee('Trial Business')
+            ->assertDontSee('Edit business')->assertDontSee('Delete business')->assertDontSee('Delete Selected');
         $this->assertSame(2, $paidRegistry->viewData('businesses')->total());
         $paidIds = $paidRegistry->viewData('businesses')->getCollection()->pluck('id')->all();
         $this->assertContains($paid->id, $paidIds);
@@ -279,6 +280,7 @@ class SuperAdminModuleDashboardTest extends TestCase
             ->assertSee('Pending Businesses')
             ->assertSee('Paid Businesses')
             ->assertSee('Edit business')
+            ->assertSee('Delete business')
             ->assertSee('Delete Selected')
             ->assertSee(route('super_admin.users.businesses.bulk-delete'), false);
         $this->assertSame(2, $pendingRegistry->viewData('businesses')->total());

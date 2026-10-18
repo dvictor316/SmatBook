@@ -147,7 +147,7 @@
                         <th>Total Paid</th>
                         <th>Last Payment</th>
                         <th>Status</th>
-                        <th class="text-end pe-4">Actions</th>
+                        @if($paymentGroup === 'pending')<th class="text-end pe-4">Actions</th>@endif
                     </tr>
                 </thead>
                 <tbody>
@@ -179,13 +179,15 @@
                                 {{ $business->last_paid_at ? \Illuminate\Support\Carbon::parse($business->last_paid_at)->format('d M Y') : '—' }}
                             </td>
                             <td><span class="pill {{ $pillClass }}">{{ strtoupper($status ?: 'unknown') }}</span></td>
-                            <td class="text-end pe-4">
-                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#edit-business-{{ $business->id }}" title="Edit business"><i class="fas fa-pen"></i></button>
-                                <form class="d-inline" method="POST" action="{{ route('super_admin.users.businesses.delete', $business->id) }}" onsubmit="return confirm('Remove this business from the registry and disable its users? Financial records will be retained.');">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete business"><i class="fas fa-trash"></i></button>
-                                </form>
-                            </td>
+                            @if($paymentGroup === 'pending')
+                                <td class="text-end pe-4">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#edit-business-{{ $business->id }}" title="Edit business"><i class="fas fa-pen"></i></button>
+                                    <form class="d-inline" method="POST" action="{{ route('super_admin.users.businesses.delete', $business->id) }}" onsubmit="return confirm('Remove this business from the registry and disable its users? Financial records will be retained.');">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete business"><i class="fas fa-trash"></i></button>
+                                    </form>
+                                </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>
@@ -197,6 +199,7 @@
         </div>
     </div>
 
+    @if($paymentGroup === 'pending')
     @foreach($businesses as $business)
     <div class="modal fade" id="edit-business-{{ $business->id }}" tabindex="-1" aria-labelledby="edit-business-title-{{ $business->id }}" aria-hidden="true">
         <div class="modal-dialog"><div class="modal-content">
@@ -215,6 +218,7 @@
         </div></div>
     </div>
     @endforeach
+    @endif
 
     <div class="py-3 d-flex justify-content-between align-items-center">
         <span class="small text-muted">
