@@ -2,178 +2,58 @@
 
 @section('content')
     @php
-        $editMeasurementMode = old(
-            'measurement_mode',
-            strtolower((string) $product->base_unit_name) === 'kg' && (float) $product->units_per_carton > 0 ? 'kg_carton' : 'custom'
-        );
+        $editMeasurementMode = old('measurement_mode', 'custom');
         $cartonProductUnit = $product->activeProductUnits->first(function ($productUnit) {
             return in_array(strtolower((string) ($productUnit->unit_name ?: $productUnit->unit_symbol)), ['carton', 'ctn'], true);
         });
     @endphp
     <style>
-        .product-form-shell {
-            max-width: 1320px;
-            margin: 0 auto;
-        }
-        .product-form-hero {
-            background:
-                radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), transparent 30%),
-                linear-gradient(135deg, #ffffff 0%, #f8fffc 45%, #eefaf6 100%);
-            border: 1px solid #d1fae5;
-            border-radius: 28px;
-            padding: 28px 30px;
-            box-shadow: 0 18px 45px rgba(16, 185, 129, 0.07);
-            margin-bottom: 24px;
-        }
-        .product-form-kicker {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 14px;
-            border-radius: 999px;
-            background: #ecfdf5;
-            color: #059669;
-            font-size: 11px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            margin-bottom: 14px;
-        }
-        .product-form-title {
-            font-size: clamp(1.7rem, 3vw, 2.4rem);
-            line-height: 1.05;
-            font-weight: 800;
-            color: #0f172a;
-            margin: 0 0 8px;
-            letter-spacing: -0.04em;
-        }
-        .product-form-copy {
-            max-width: 760px;
-            color: #64748b;
-            font-size: 1rem;
-            margin: 0;
-        }
-        .product-form-card {
-            border: 1px solid #dcfce7;
-            border-radius: 28px;
-            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.06);
-            overflow: hidden;
-        }
-        .product-form-card .card-body {
-            padding: 28px;
-            background: linear-gradient(180deg, #ffffff 0%, #fbfffd 100%);
-        }
-        .product-section {
-            border: 1px solid #e2e8f0;
-            border-radius: 22px;
-            background: #ffffff;
-            padding: 22px 22px 8px;
-            margin-bottom: 18px;
-        }
-        .product-section-header {
-            margin-bottom: 18px;
-        }
-        .product-section-title {
-            margin: 0;
-            color: #0f172a;
-            font-size: 1.02rem;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-        }
-        .product-section-copy {
-            margin: 4px 0 0;
-            color: #64748b;
-            font-size: 0.9rem;
-        }
-        .field-label {
-            font-size: 0.84rem;
-            font-weight: 800;
-            color: #0f172a;
-            margin-bottom: 7px;
-        }
-        .field-note {
-            color: #64748b;
-            font-size: 0.78rem;
-            margin-top: 6px;
-        }
-        .product-form-card .form-control,
-        .product-form-card .form-select {
-            min-height: 49px;
-            border-radius: 14px;
-            border-color: #dbe3f0;
-            box-shadow: none;
-        }
-        .product-form-card textarea.form-control {
-            min-height: 120px;
-            border-radius: 18px;
-        }
-        .product-form-card .form-control:focus,
-        .product-form-card .form-select:focus {
-            border-color: #34d399;
-            box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.12);
-        }
-        .product-form-actions {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 14px;
-            margin-top: 8px;
-            padding-top: 16px;
-            border-top: 1px solid #dcfce7;
-        }
-        .product-form-actions .helper {
-            color: #64748b;
-            font-size: 0.82rem;
-            margin: 0;
-        }
-        @media (max-width: 991.98px) {
-            .product-form-hero,
-            .product-form-card .card-body,
-            .product-section {
-                padding: 20px 18px;
-            }
-            .product-form-actions {
-                flex-direction: column;
-                align-items: stretch;
-            }
+        .product-form-shell { max-width: 900px; margin: 0 auto; }
+        .product-form-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+        .product-form-heading h1 { font-size: 1.35rem; margin: 0; font-weight: 700; color: #172033; }
+        .product-form-heading p { color: #64748b; font-size: .86rem; margin: 2px 0 0; }
+        .product-form-heading > div { min-width: 0; overflow-wrap: anywhere; }
+        .product-form-back { width: 36px; height: 36px; flex: 0 0 36px; display: grid; place-items: center; border: 1px solid #cbd5e1; border-radius: 6px; color: #334155; background: #fff; }
+        .product-edit-form { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 20px; }
+        .product-section { padding: 0 0 12px; margin-bottom: 18px; border-bottom: 1px solid #e2e8f0; }
+        .product-section-title { font-size: 1rem; font-weight: 700; color: #172033; margin: 0 0 14px; }
+        .product-section-copy { display: none; }
+        .field-label { font-size: .84rem; font-weight: 600; color: #334155; margin-bottom: 5px; }
+        .field-note { color: #64748b; font-size: .77rem; margin-top: 4px; }
+        .product-edit-form .form-group { margin-bottom: 14px; }
+        .product-edit-form .form-control, .product-edit-form .form-select { min-height: 40px; border-radius: 6px; }
+        .product-edit-form textarea.form-control { min-height: 88px; }
+        .product-advanced { border-bottom: 1px solid #e2e8f0; margin-bottom: 18px; }
+        .product-advanced summary { cursor: pointer; font-weight: 700; color: #172033; padding: 0 0 16px; list-style: none; }
+        .product-advanced summary::-webkit-details-marker { display: none; }
+        .product-advanced summary::after { content: '+'; float: right; font-size: 1.1rem; }
+        .product-advanced[open] summary::after { content: '-'; }
+        .product-advanced .product-section { border: 0; margin: 0; }
+        .product-form-actions { display: flex; justify-content: flex-end; gap: 10px; }
+        .product-form-actions .btn { min-width: 108px; }
+        @media (max-width: 576px) {
+            .product-form-shell { padding-left: 12px; padding-right: 12px; }
+            .product-edit-form { padding: 16px; }
+            .product-form-actions .btn { flex: 1; }
         }
     </style>
     <div class="page-wrapper">
         <div class="content container-fluid product-form-shell">
-            @if(session('error'))
-                <div class="alert alert-danger" role="alert">{{ session('error') }}</div>
-            @endif
-            @if($errors->any())
-                <div class="alert alert-danger" role="alert">
-                    <strong>Stock details were not saved. Please correct the following:</strong>
-                    <ul>
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
+            <div class="product-form-heading">
+                <a href="{{ route('product-list') }}" class="product-form-back" title="Back to products" aria-label="Back to products"><i class="fas fa-arrow-left"></i></a>
+                <div>
+                    <h1>Edit product</h1>
+                    <p>{{ $product->name }}{{ !empty($activeBranch['name']) ? ' | ' . $activeBranch['name'] : '' }}</p>
                 </div>
-            @endif
-
-            @component('components.page-header')
-                @slot('title') Edit Product @endslot
-            @endcomponent
-
-            <div class="product-form-hero">
-                <span class="product-form-kicker"><i class="feather-edit-3"></i> Product Update</span>
-                <h1 class="product-form-title">Update product details without losing the stock and pricing context.</h1>
-                <p class="product-form-copy">The edit screen keeps the same fields, but now they are grouped more clearly so updates feel faster, safer, and easier to understand.</p>
             </div>
 
-            <div class="card product-form-card">
-                <div class="card-body">
-                    <form action="{{ route('inventory.Products.update', $product->id) }}" method="POST" enctype="multipart/form-data" novalidate>
+            <form class="product-edit-form" action="{{ route('inventory.Products.update', $product->id) }}" method="POST" enctype="multipart/form-data" novalidate>
                         @csrf
                         @method('PUT')
 
                         <div class="product-section">
                             <div class="product-section-header">
                                 <h5 class="product-section-title">Product Information</h5>
-                                <p class="product-section-copy">Update the product identity, pricing, and branch sellable stock in one place.</p>
                             </div>
                         <div class="row">
                             <div class="col-md-4">
@@ -264,11 +144,9 @@
                         </div>
                         </div>
 
+                        <details class="product-advanced" @if($errors->hasAny(['measurement_mode', 'kg_per_carton', 'units_per_carton', 'units_per_roll', 'unit_type', 'unit_id', 'base_unit_id', 'purchase_unit_id'])) open @endif>
+                            <summary>Packaging and units</summary>
                         <div class="product-section">
-                            <div class="product-section-header">
-                                <h5 class="product-section-title">Packaging & Units</h5>
-                                <p class="product-section-copy">Keep packaging definitions clean so sales and inventory conversions stay consistent.</p>
-                            </div>
                         <input type="hidden" name="measurement_mode" id="edit_measurement_mode_input" value="{{ $editMeasurementMode }}">
                         <div class="form-group">
                             <label class="field-label d-block">How is this product sold?</label>
@@ -278,7 +156,6 @@
                                 </button>
                                 <button type="button" class="btn edit-measurement-mode-button" data-measurement-mode="custom">Other packaging</button>
                             </div>
-                            @error('measurement_mode')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
                         </div>
                         <div id="edit_kg_carton_fields" class="row" style="display: none;">
                             <div class="col-md-6">
@@ -286,7 +163,6 @@
                                     <label class="field-label">Kg Per Carton *</label>
                                     <input type="number" min="0.000001" step="0.000001" name="kg_per_carton" id="edit_kg_per_carton" class="form-control" value="{{ old('kg_per_carton', $product->units_per_carton) }}">
                                     <small class="field-note">The weight contained in one full carton.</small>
-                                    @error('kg_per_carton')<div class="text-danger small">{{ $message }}</div>@enderror
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -395,11 +271,11 @@
                             </div>
                         </div>
                         </div>
+                        </details>
 
                         <div class="product-section">
                             <div class="product-section-header">
                                 <h5 class="product-section-title">Status, Media & Notes</h5>
-                                <p class="product-section-copy">Manage visibility, barcode, imagery, and descriptive notes for this product.</p>
                             </div>
                         <div class="row mt-1">
                             <div class="col-md-4">
@@ -449,15 +325,10 @@
                         </div>
 
                         <div class="product-form-actions">
-                            <p class="helper">Updating for domain: {{ env('SESSION_DOMAIN', 'Localhost') }}</p>
-                            <div class="text-end">
-                                <a href="{{ route('product-list') }}" class="btn btn-secondary">Cancel</a>
-                                <button type="submit" class="btn btn-primary">Save Changes</button>
-                            </div>
+                            <a href="{{ route('product-list') }}" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Save changes</button>
                         </div>
-                    </form>
-                </div>
-            </div>
+            </form>
         </div>
     </div>
 

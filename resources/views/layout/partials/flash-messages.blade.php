@@ -47,6 +47,9 @@
     $popupMessages = $popupMessages
         ->unique(fn ($item) => $item['type'] . '|' . strtolower($item['message']))
         ->values();
+    if (request()->routeIs('inventory.Products.edit')) {
+        $popupMessages = collect();
+    }
 @endphp
 
 @if (!$suppressGlobalFlash && ($flashMessages->isNotEmpty() || $errors->any()))

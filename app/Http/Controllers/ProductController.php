@@ -1860,7 +1860,7 @@ public function inventory(Request $request)
             'units_per_carton' => 'nullable|numeric|min:0',
             'units_per_roll'   => 'nullable|numeric|min:0',
             'measurement_mode' => 'nullable|in:custom,kg_carton',
-            'kg_per_carton'    => 'nullable|required_if:measurement_mode,kg_carton|numeric|gt:0',
+            'kg_per_carton'    => 'exclude_unless:measurement_mode,kg_carton|required|numeric|gt:0',
             'carton_selling_price' => 'nullable|numeric|min:0',
             'base_unit_name'   => 'nullable|string|max:100',
             'category_id'      => 'nullable|exists:categories,id',
@@ -1919,17 +1919,18 @@ public function inventory(Request $request)
         }
         $validated['stock'] = (float) ($calculatedStock ?? (float) $product->stock);
 
-        if ($validated['unit_type'] === 'carton' && $validated['units_per_carton'] < 1) {
+        $unitTypeChanged = $validated['unit_type'] !== (string) $product->unit_type;
+        if ($unitTypeChanged && $validated['unit_type'] === 'carton' && $validated['units_per_carton'] < 1) {
             return back()->withErrors([
                 'units_per_carton' => 'Enter the number of rolls per carton or the number of loose pieces per carton before saving this carton product.'
             ])->withInput();
         }
-        if ($validated['unit_type'] === 'roll' && $validated['units_per_roll'] < 1) {
+        if ($unitTypeChanged && $validated['unit_type'] === 'roll' && $validated['units_per_roll'] < 1) {
             return back()->withErrors([
                 'units_per_roll' => 'Enter the number of sachets or loose pieces inside one roll before saving this roll product.'
             ])->withInput();
         }
-        if ($validated['unit_type'] === 'sachet' && $validated['stock_units'] < 1 && $validated['stock_rolls'] < 1 && $validated['stock_cartons'] < 1) {
+        if ($unitTypeChanged && $validated['unit_type'] === 'sachet' && $validated['stock_units'] < 1 && $validated['stock_rolls'] < 1 && $validated['stock_cartons'] < 1) {
             return back()->withErrors([
                 'stock_units' => 'Enter opening stock for sachets, rolls, or cartons before saving this sachet product.'
             ])->withInput();
