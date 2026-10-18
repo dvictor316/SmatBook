@@ -208,7 +208,7 @@ class SuperAdminDashboardController extends Controller
         $registeredBusinessIds = $this->registeredBusinessUserIds();
 
         if (Schema::hasColumn('users', 'role')) {
-            $query->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), ['agent']);
+            $query->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), $this->agentRoles);
         }
 
         if ($stateManagerIds !== []) {
@@ -291,7 +291,10 @@ class SuperAdminDashboardController extends Controller
             ])
             ->where(function ($owners) {
                 $owners->whereNull('owners.id')
-                    ->orWhereNotIn(DB::raw("LOWER(COALESCE(owners.role, ''))"), ['super_admin', 'superadmin']);
+                    ->orWhereNotIn(DB::raw("LOWER(COALESCE(owners.role, ''))"), array_merge(
+                        ['super_admin', 'superadmin'],
+                        $this->agentRoles
+                    ));
             })
             ->whereNotExists(function ($platformUsers) {
                 $platformUsers->selectRaw('1')
@@ -2143,7 +2146,7 @@ public function pendingManagers()
             $query = $this->stateManagersQuery()->with('company');
         } elseif ($category === 'agents') {
             $pageTitle = 'Agents';
-            $pageSubtitle = 'All non-state-manager field users are classified here automatically unless they become registered business owners.';
+            $pageSubtitle = 'Agents and sales agents are managed here, separately from registered businesses.';
             $query = $this->agentsQuery()->with('company');
         }
 

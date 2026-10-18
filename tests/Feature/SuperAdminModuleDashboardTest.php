@@ -174,6 +174,40 @@ class SuperAdminModuleDashboardTest extends TestCase
             ->assertSee('Current Schema Limited');
     }
 
+    public function test_agent_accounts_are_listed_under_agents_not_registered_businesses(): void
+    {
+        $platform = Company::create(['name' => 'Platform Administration']);
+        $superAdmin = User::factory()->create(['company_id' => $platform->id, 'role' => 'super_admin']);
+        $agent = User::factory()->create(['role' => 'agent', 'name' => 'Field Agent User']);
+        $agentCompany = Company::withoutGlobalScope('tenant')->create([
+            'user_id' => $agent->id,
+            'owner_id' => $agent->id,
+            'name' => 'Agent-Only Workspace',
+            'status' => 'pending',
+        ]);
+        $agent->forceFill(['company_id' => $agentCompany->id])->save();
+        $salesAgent = User::factory()->create(['role' => 'sales_agent', 'name' => 'Sales Agent User']);
+
+        $pendingBusinesses = $this->actingAs($superAdmin)->get(route('super_admin.users.index', [
+            'category' => 'registered_businesses',
+            'payment_group' => 'pending',
+        ]));
+        $pendingBusinesses->assertOk();
+        $this->assertNotContains(
+            $agentCompany->id,
+            $pendingBusinesses->viewData('businesses')->getCollection()->pluck('id')->all()
+        );
+
+        $agents = $this->get(route('super_admin.users.index', ['category' => 'agents']));
+        $agents->assertOk()
+            ->assertSee('Field Agent User')
+            ->assertSee('Sales Agent User')
+            ->assertSee('Agents and sales agents are managed here');
+        $agentIds = $agents->viewData('users')->getCollection()->pluck('id')->all();
+        $this->assertContains($agent->id, $agentIds);
+        $this->assertContains($salesAgent->id, $agentIds);
+    }
+
     public function test_registered_business_dashboard_counts_companies_including_unpaid_and_additional_workspaces(): void
     {
         $platform = Company::create(['name' => 'Platform Administration']);
