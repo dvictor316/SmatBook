@@ -206,6 +206,76 @@ class ReportIntegrityTest extends TestCase
         $this->postJson(route('sales.store'), $payload)->assertUnprocessable();
     }
 
+    public function test_pos_split_sale_records_each_payment_channel_and_account(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $cashAccount = $this->account($company, 'POS Cash Drawer', 'Asset', 'Cash');
+        $transferAccount = $this->account($company, 'POS Transfer Bank', 'Asset', 'Bank');
+        $cardAccount = $this->account($company, 'POS Card Settlement', 'Asset', 'Bank');
+        foreach ([$cashAccount, $transferAccount, $cardAccount] as $account) {
+            $account->forceFill(['branch_id' => 'hq', 'branch_name' => 'Headquarters'])->saveQuietly();
+        }
+        $categoryId = DB::table('categories')->insertGetId([
+            'name' => 'POS Payment Test',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $productId = DB::table('products')->insertGetId([
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'branch_id' => 'hq',
+            'branch_name' => 'Headquarters',
+            'category_id' => $categoryId,
+            'name' => 'POS Split Product',
+            'sku' => 'POS-SPLIT-PAYMENT-TEST',
+            'price' => 1000,
+            'purchase_price' => 500,
+            'stock' => 5,
+            'stock_quantity' => 5,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->withoutReportAccessMiddleware()
+            ->actingAs($user)
+            ->withSession($this->branchSession($company))
+            ->postJson(route('sales.store'), [
+                'payment_method' => 'Split',
+                'total' => 1000,
+                'paid' => 1000,
+                'deposit_account_id' => $cashAccount->id,
+                'items' => [[
+                    'id' => $productId,
+                    'qty' => 1,
+                    'price' => 1000,
+                    'unitType' => 'unit',
+                    'stockUnits' => 1,
+                ]],
+                'split_details' => [
+                    'cash' => 100,
+                    'transfer' => 300,
+                    'transfer_account_id' => $transferAccount->id,
+                    'card' => 600,
+                    'card_account_id' => $cardAccount->id,
+                ],
+            ]);
+        $this->assertSame(200, $response->status(), $response->getContent());
+        $response->assertJsonPath('success', true);
+
+        $sale = Sale::query()->findOrFail($response->json('sale_id'));
+        $payments = Payment::query()
+            ->where('sale_id', $sale->id)
+            ->get()
+            ->keyBy('method');
+
+        $this->assertEquals(100.0, (float) $payments['Cash']->amount);
+        $this->assertEquals($cashAccount->id, (int) $payments['Cash']->account_id);
+        $this->assertEquals(300.0, (float) $payments['Bank Transfer']->amount);
+        $this->assertEquals($transferAccount->id, (int) $payments['Bank Transfer']->account_id);
+        $this->assertEquals(600.0, (float) $payments['POS/Card']->amount);
+        $this->assertEquals($cardAccount->id, (int) $payments['POS/Card']->account_id);
+    }
+
     public function test_general_ledger_includes_company_system_entries_with_no_user(): void
     {
         $this->withoutExceptionHandling();

@@ -358,6 +358,14 @@
         'partial' => 'Partial',
         'unpaid' => 'Unpaid',
     ];
+    $paymentMethodOptions = [
+        '' => 'All payment modes',
+        'cash' => 'Cash',
+        'transfer' => 'Bank Transfer',
+        'card' => 'POS / Card',
+        'wallet' => 'Customer Wallet',
+        'charge_to_room' => 'Charge to Room',
+    ];
     $paymentFilterBase = request()->except(['page', 'payment_method', 'export']);
     $selectedPaymentMethod = (string) request('payment_method');
 
@@ -480,6 +488,14 @@
                         @endforeach
                     </select>
                 </div>
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label">Payment Mode</label>
+                    <select name="payment_method" class="form-control form-control-sm">
+                        @foreach($paymentMethodOptions as $value => $label)
+                            <option value="{{ $value }}" @selected($selectedPaymentMethod === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="col-lg-2 col-md-4">
                     <label class="form-label">Specific Date</label>
                     <input type="date" name="sale_date" class="form-control form-control-sm" value="{{ request('sale_date') }}">
@@ -551,6 +567,16 @@
                         @php
                             $itemsCount = $sale->items?->count() ?? 0;
                             $itemsQty = $sale->items?->sum('qty') ?? 0;
+                            $paymentDetails = is_array($sale->payment_details) ? $sale->payment_details : [];
+                            $splitPayments = is_array($paymentDetails['split'] ?? null) ? $paymentDetails['split'] : [];
+                            $activeChannels = collect([
+                                'cash' => 'Cash',
+                                'transfer' => 'Bank Transfer',
+                                'card' => 'POS / Card',
+                            ])->filter(fn ($label, $channel) => (float) ($splitPayments[$channel] ?? 0) > 0)->values();
+                            $paymentModeLabel = strtolower((string) $sale->payment_method) === 'split' && $activeChannels->count() === 1
+                                ? $activeChannels->first()
+                                : strtoupper(str_replace('_', ' ', $sale->payment_method ?? 'cash'));
                             $badgeStyle = match($sale->payment_status) {
                                 'paid' => 'status-paid',
                                 'partial' => 'status-partial',
@@ -596,7 +622,7 @@
                             </td>
                             <td>
                                 <span class="badge bg-white text-dark border">
-                                    {{ strtoupper(str_replace('_', ' ', $sale->payment_method ?? 'cash')) }}
+                                    {{ $paymentModeLabel }}
                                 </span>
                             </td>
                             <td class="text-center">

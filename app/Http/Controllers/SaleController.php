@@ -33,6 +33,7 @@ use App\Support\InventoryQuantity;
 use App\Support\LedgerService;
 use App\Support\PlanAccess;
 use App\Support\PriceListUsage;
+use App\Support\SalesPaymentModeFilter;
 use App\Services\Hotel\HotelFolioService;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -135,8 +136,9 @@ class SaleController extends Controller
             $details = is_array($details) ? $details : [];
             $split = $this->normalizeSplitDetails($details['split'] ?? []);
             $wallet = (float) ($details['wallet_applied'] ?? $details['wallet_requested'] ?? 0);
+            $splitTotal = (float) $split['cash'] + (float) $split['transfer'] + (float) $split['card'];
 
-            if ($method === 'split') {
+            if ($method === 'split' && $splitTotal > 0) {
                 foreach (['cash', 'transfer', 'card'] as $key) {
                     $amount = round((float) ($split[$key] ?? 0), 2);
                     if ($amount > 0) {
@@ -149,8 +151,15 @@ class SaleController extends Controller
                 $summary['charge_to_room']['count']++;
             } else {
                 $amount = (float) ($sale->amount_paid ?? $sale->paid ?? $sale->total ?? 0);
-                $summary['cash']['amount'] += $amount;
-                $summary['cash']['count']++;
+                $channel = match (true) {
+                    in_array($method, ['transfer', 'bank_transfer', 'bank transfer'], true) => 'transfer',
+                    in_array($method, ['card', 'pos', 'credit_card', 'credit card'], true) => 'card',
+                    default => 'cash',
+                };
+                if ($amount > 0 || $method !== 'split') {
+                    $summary[$channel]['amount'] += $amount;
+                    $summary[$channel]['count']++;
+                }
             }
 
             if ($wallet > 0) {
@@ -806,33 +815,7 @@ class SaleController extends Controller
             $query->where('payment_status', strtolower((string) $request->payment_status));
         }
         if ($request->filled('payment_method')) {
-            $paymentMethod = strtolower((string) $request->payment_method);
-            $query->where(function ($builder) use ($paymentMethod) {
-                if ($paymentMethod === 'cash') {
-                    $builder->whereRaw('LOWER(payment_method) = ?', ['cash'])
-                        ->orWhere(function ($splitQuery) {
-                            $splitQuery->whereRaw('LOWER(payment_method) = ?', ['split'])
-                                ->where('payment_details', 'like', '%"cash"%');
-                        });
-                } elseif ($paymentMethod === 'transfer') {
-                    $builder->where(function ($splitQuery) {
-                        $splitQuery->whereRaw('LOWER(payment_method) = ?', ['split'])
-                            ->where('payment_details', 'like', '%"transfer"%');
-                    });
-                } elseif ($paymentMethod === 'card') {
-                    $builder->where(function ($splitQuery) {
-                        $splitQuery->whereRaw('LOWER(payment_method) = ?', ['split'])
-                            ->where(function ($cardQuery) {
-                                $cardQuery->where('payment_details', 'like', '%"card"%')
-                                    ->orWhere('payment_details', 'like', '%"pos"%');
-                            });
-                    });
-                } elseif ($paymentMethod === 'charge_to_room') {
-                    $builder->whereIn(DB::raw('LOWER(payment_method)'), ['charge_to_room', 'chargetoroom', 'charge-room']);
-                } else {
-                    $builder->whereRaw('LOWER(payment_method) = ?', [$paymentMethod]);
-                }
-            });
+            SalesPaymentModeFilter::apply($query, (string) $request->payment_method);
         }
         if ($request->sale_date) {
             $query->whereDate($salesDateColumn, $request->sale_date);
@@ -1656,6 +1639,20 @@ $sale = Sale::create([
         $finalPaid = max(0, $amountPaid - $finalChange);
         $finalBalance = max(0, $calculatedTotal - $finalPaid);
         $finalPaymentStatus = $finalBalance <= 0 ? 'paid' : ($finalPaid > 0 ? 'partial' : 'unpaid');
+        if ($paymentMethod === 'split') {
+            $unappliedTender = max(0, round(
+                (float) $splitDetails['cash']
+                + (float) $splitDetails['transfer']
+                + (float) $splitDetails['card']
+                - $finalPaid,
+                2
+            ));
+            foreach (['cash', 'transfer', 'card'] as $channel) {
+                $deduction = min((float) $splitDetails[$channel], $unappliedTender);
+                $splitDetails[$channel] = round((float) $splitDetails[$channel] - $deduction, 2);
+                $unappliedTender = round($unappliedTender - $deduction, 2);
+            }
+        }
 
         $sale->update([
             'branch_id'       => $activeBranch['id'],
@@ -1701,25 +1698,40 @@ $sale = Sale::create([
 
         if (!$isChargeToRoom && $finalPaid > 0) {
             $paymentRecordStatus = $finalBalance <= 0 ? 'Completed' : 'Pending';
-            $paymentPayload = [
-                'sale_id' => $sale->id,
-                'branch_id' => $activeBranch['id'],
-                'branch_name' => $activeBranch['name'],
-                'amount'  => $finalPaid,
-                'method'  => $request->payment_method,
-                'status'  => $paymentRecordStatus,
-                'note'    => $finalBalance <= 0
-                    ? ($paymentAccount?->name ? 'Initial POS Payment via ' . $paymentAccount->name : 'Initial POS Payment')
-                    : ($paymentAccount?->name ? 'Deposit received via ' . $paymentAccount->name : 'Deposit received'),
-                'receipt_no' => $this->generatePaymentReceiptNo(),
-                'created_by' => auth()->id(),
-            ];
-            if (Schema::hasColumn('payments', 'payment_account_id')) {
-                $paymentPayload['payment_account_id'] = $paymentAccount?->id;
-            } elseif (Schema::hasColumn('payments', 'account_id')) {
-                $paymentPayload['account_id'] = $paymentAccount?->id;
+            $paymentChannels = $paymentMethod === 'split'
+                ? [
+                    ['amount' => (float) $splitDetails['cash'], 'method' => 'Cash', 'account' => $paymentAccount],
+                    ['amount' => (float) $splitDetails['transfer'], 'method' => 'Bank Transfer', 'account' => $transferSplitAccount],
+                    ['amount' => (float) $splitDetails['card'], 'method' => 'POS/Card', 'account' => $cardSplitAccount],
+                ]
+                : [['amount' => $finalPaid, 'method' => 'Cash', 'account' => $paymentAccount]];
+
+            foreach ($paymentChannels as $channel) {
+                $channelAmount = round((float) $channel['amount'], 2);
+                if ($channelAmount <= 0) {
+                    continue;
+                }
+
+                $account = $channel['account'];
+                $paymentPayload = [
+                    'sale_id' => $sale->id,
+                    'branch_id' => $activeBranch['id'],
+                    'branch_name' => $activeBranch['name'],
+                    'amount' => $channelAmount,
+                    'method' => $channel['method'],
+                    'status' => $paymentRecordStatus,
+                    'note' => 'Initial POS payment via '.$channel['method'].($account?->name ? ' - '.$account->name : ''),
+                    'receipt_no' => $this->generatePaymentReceiptNo(),
+                    'created_by' => auth()->id(),
+                ];
+                if (Schema::hasColumn('payments', 'payment_account_id')) {
+                    $paymentPayload['payment_account_id'] = $account?->id;
+                } elseif (Schema::hasColumn('payments', 'account_id')) {
+                    $paymentPayload['account_id'] = $account?->id;
+                }
+
+                Payment::create($paymentPayload);
             }
-            Payment::create($paymentPayload);
         }
 
         if ($sourceQuotation && $finalPaymentStatus === 'paid') {

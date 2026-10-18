@@ -18,6 +18,7 @@ use App\Support\InventoryQuantity;
 // 3. Your Custom Models
 use App\Support\LedgerService;
 use App\Support\PlanAccess;
+use App\Support\SalesPaymentModeFilter;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -2723,6 +2724,10 @@ class ReportController extends Controller
                 $builder->whereNull('sales.created_at')
                     ->orWhereDate('sales.created_at', '<=', $endDate);
             });
+        }
+
+        if ($request->filled('payment_method')) {
+            SalesPaymentModeFilter::apply($query, (string) $request->input('payment_method'));
         }
 
         $salesreports = $query

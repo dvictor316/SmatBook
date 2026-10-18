@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use Illuminate\Validation\ValidationException;
 
 class CustomerController extends Controller
 {
@@ -111,6 +112,8 @@ class CustomerController extends Controller
             'client_recorded_at' => 'nullable|date',
         ]);
 
+        $this->rejectDuplicateCustomerName((string) $request->input('customer_name'));
+
         // Capture all possible form fields, then keep only real DB columns.
         $data = $request->only([
             'customer_name', 'email', 'phone', 'currency', 'website', 'notes', 'credit_limit',
@@ -121,6 +124,7 @@ class CustomerController extends Controller
             'shipping_country', 'shipping_city', 'shipping_state', 'shipping_pincode',
             'bank_name', 'branch', 'account_holder', 'account_number', 'ifsc'
         ]);
+        $data['customer_name'] = trim((string) $data['customer_name']);
 
         $data['status'] = 'active'; 
         $data['balance'] = (float) $request->input('balance', 0.00);
@@ -242,12 +246,15 @@ class CustomerController extends Controller
         $request->validate([
             'customer_name' => 'required|string|max:191',
             'email'         => 'nullable|email|max:191',
+            'phone'         => 'nullable|string|max:191',
             'image'         => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'status'        => 'required|in:active,deactive',
             'balance'       => 'nullable|numeric|min:0',
             'opening_balance_date' => 'nullable|date',
             'credit_limit'  => 'nullable|numeric|min:0',
         ]);
+
+        $this->rejectDuplicateCustomerName((string) $request->input('customer_name'), (int) $customer->id);
 
         // Capture all possible form fields for update, then keep only real DB columns.
         $data = $request->only([
@@ -259,6 +266,7 @@ class CustomerController extends Controller
             'shipping_country', 'shipping_city', 'shipping_state', 'shipping_pincode',
             'bank_name', 'branch', 'account_holder', 'account_number', 'ifsc'
         ]);
+        $data['customer_name'] = trim((string) $data['customer_name']);
 
         if ($request->hasFile('image')) {
             if ($customer->image && Storage::disk('public')->exists($customer->image)) {
@@ -291,6 +299,37 @@ class CustomerController extends Controller
         return redirect()->route('customers.index')
             ->with('success', 'Customer record updated successfully.');
     }
+
+    private function rejectDuplicateCustomerName(string $customerName, ?int $exceptCustomerId = null): void
+    {
+        $normalizedName = mb_strtolower(trim($customerName));
+        if ($normalizedName === '') {
+            return;
+        }
+
+        $query = Customer::query()
+            ->whereRaw('LOWER(TRIM(customer_name)) = ?', [$normalizedName]);
+
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
+        if (Schema::hasColumn('customers', 'company_id') && $companyId > 0) {
+            $query->where('company_id', $companyId);
+        } elseif (Schema::hasColumn('customers', 'user_id')) {
+            $query->where('user_id', (int) auth()->id());
+        } elseif (Schema::hasColumn('customers', 'company_id')) {
+            $query->whereNull('company_id');
+        }
+
+        if ($exceptCustomerId !== null) {
+            $query->whereKeyNot($exceptCustomerId);
+        }
+
+        if ($query->exists()) {
+            throw ValidationException::withMessages([
+                'customer_name' => 'A customer with this name already exists in this business. Edit the existing customer instead of creating another one.',
+            ]);
+        }
+    }
+
     /**
      * Toggle Status and Filters.
      */

@@ -150,29 +150,65 @@ class LedgerService
 
         $paid = (float) ($sale->paid ?? $sale->amount_paid ?? 0);
         if ($paid > 0) {
-            // Prefer explicitly selected COA deposit account over payment-method guessing
-            if ($depositAccountId) {
-                $cashAccount = Account::withoutGlobalScopes()->find($depositAccountId)
-                    ?? self::resolveCashAccount($sale->payment_method ?? null);
-            } else {
-                $cashAccount = self::resolveCashAccount($sale->payment_method ?? null);
-            }
+            $paymentDetails = is_array($sale->payment_details) ? $sale->payment_details : [];
+            $splitDetails = is_array($paymentDetails['split'] ?? null) ? $paymentDetails['split'] : [];
+            $paymentChannels = [
+                'cash' => ['amount' => (float) ($splitDetails['cash'] ?? 0), 'account_id' => $paymentDetails['payment_account_id'] ?? $depositAccountId],
+                'transfer' => ['amount' => (float) ($splitDetails['transfer'] ?? 0), 'account_id' => $paymentDetails['transfer_account_id'] ?? null],
+                'card' => ['amount' => (float) ($splitDetails['card'] ?? 0), 'account_id' => $paymentDetails['card_account_id'] ?? null],
+            ];
+            $splitTotal = array_sum(array_column($paymentChannels, 'amount'));
 
-            self::postDoubleEntry(
-                debitAccountId: $cashAccount->id,
-                creditAccountId: $receivableAccount->id,
-                amount: min($paid, $total),
-                date: $date,
-            reference: ($sale->receipt_no ?: $reference),
-            description: 'Sale receipt: ' . $reference,
-            transactionType: Transaction::TYPE_RECEIPT,
-            relatedId: $sale->id,
-            relatedType: Sale::class,
-            userId: $userId,
-            branchId: $branchId,
-            branchName: $branchName
-        );
-    }
+            if (strtolower((string) $sale->payment_method) === 'split' && $splitTotal > 0) {
+                $remainingPaid = min($paid, $total);
+                foreach ($paymentChannels as $channel => $details) {
+                    $channelAmount = min(max(0, $details['amount']), $remainingPaid);
+                    if ($channelAmount <= 0) {
+                        continue;
+                    }
+
+                    $cashAccount = !empty($details['account_id'])
+                        ? (Account::withoutGlobalScopes()->find((int) $details['account_id']) ?? self::resolveCashAccount($channel))
+                        : self::resolveCashAccount($channel);
+
+                    self::postDoubleEntry(
+                        debitAccountId: $cashAccount->id,
+                        creditAccountId: $receivableAccount->id,
+                        amount: $channelAmount,
+                        date: $date,
+                        reference: ($sale->receipt_no ?: $reference),
+                        description: 'Sale receipt via '.ucfirst($channel).': '.$reference,
+                        transactionType: Transaction::TYPE_RECEIPT,
+                        relatedId: $sale->id,
+                        relatedType: Sale::class,
+                        userId: $userId,
+                        branchId: $branchId,
+                        branchName: $branchName
+                    );
+
+                    $remainingPaid = round($remainingPaid - $channelAmount, 2);
+                }
+            } else {
+                $cashAccount = $depositAccountId
+                    ? (Account::withoutGlobalScopes()->find($depositAccountId) ?? self::resolveCashAccount($sale->payment_method ?? null))
+                    : self::resolveCashAccount($sale->payment_method ?? null);
+
+                self::postDoubleEntry(
+                    debitAccountId: $cashAccount->id,
+                    creditAccountId: $receivableAccount->id,
+                    amount: min($paid, $total),
+                    date: $date,
+                    reference: ($sale->receipt_no ?: $reference),
+                    description: 'Sale receipt: ' . $reference,
+                    transactionType: Transaction::TYPE_RECEIPT,
+                    relatedId: $sale->id,
+                    relatedType: Sale::class,
+                    userId: $userId,
+                    branchId: $branchId,
+                    branchName: $branchName
+                );
+            }
+        }
     }
 
     public static function postPurchase(Purchase $purchase): void

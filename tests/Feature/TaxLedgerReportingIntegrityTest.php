@@ -71,6 +71,63 @@ class TaxLedgerReportingIntegrityTest extends TestCase
         $this->assertEquals(7500.0, round((float) ($taxRow->credit ?? 0), 2));
     }
 
+    public function test_split_sale_receipts_post_to_the_selected_payment_channel_accounts(): void
+    {
+        $cashAccountId = DB::table('accounts')->insertGetId([
+            'company_id' => 1,
+            'code' => 'TEST-CASH',
+            'name' => 'POS Cash Drawer',
+            'type' => 'Asset',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $transferAccountId = DB::table('accounts')->insertGetId([
+            'company_id' => 1,
+            'code' => 'TEST-TRANSFER',
+            'name' => 'POS Transfer Bank',
+            'type' => 'Asset',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $sale = Sale::query()->create([
+            'company_id' => 1,
+            'branch_id' => 'branch-main',
+            'branch_name' => 'Main Branch',
+            'invoice_no' => 'POS-SPLIT-1001',
+            'order_date' => '2026-05-11',
+            'subtotal' => 1000,
+            'tax' => 0,
+            'discount' => 0,
+            'total' => 1000,
+            'paid' => 1000,
+            'amount_paid' => 1000,
+            'balance' => 0,
+            'payment_method' => 'split',
+            'payment_status' => 'paid',
+            'payment_details' => [
+                'split' => ['cash' => 400, 'transfer' => 600, 'card' => 0],
+                'payment_account_id' => $cashAccountId,
+                'transfer_account_id' => $transferAccountId,
+            ],
+        ]);
+
+        LedgerService::postSale($sale, $cashAccountId);
+
+        $receiptDebits = DB::table('transactions')
+            ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
+            ->where('transactions.related_type', Sale::class)
+            ->where('transactions.related_id', $sale->id)
+            ->where('transactions.transaction_type', \App\Models\Transaction::TYPE_RECEIPT)
+            ->where('transactions.debit', '>', 0)
+            ->pluck('transactions.debit', 'accounts.code');
+
+        $this->assertEquals(400.0, (float) $receiptDebits['TEST-CASH']);
+        $this->assertEquals(600.0, (float) $receiptDebits['TEST-TRANSFER']);
+    }
+
     public function test_purchase_tax_posting_creates_balanced_input_vat_ledger_entries(): void
     {
         $purchase = Purchase::query()->create([
@@ -358,6 +415,8 @@ class TaxLedgerReportingIntegrityTest extends TestCase
             $table->decimal('amount_paid', 15, 2)->default(0);
             $table->decimal('balance', 15, 2)->default(0);
             $table->string('payment_status')->nullable();
+            $table->string('payment_method')->nullable();
+            $table->json('payment_details')->nullable();
             $table->string('order_status')->nullable();
             $table->timestamps();
             $table->softDeletes();

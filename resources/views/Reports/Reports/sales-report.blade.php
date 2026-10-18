@@ -135,15 +135,26 @@
                                 <label class="form-label small fw-bold">{{ __('Search Product / SKU') }}</label>
                                 <input type="text" name="search" class="form-control" placeholder="Search product or SKU" value="{{ request('search') }}">
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="form-label small fw-bold">{{ __('From Date') }}</label>
                                 <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="form-label small fw-bold">{{ __('To Date') }}</label>
                                 <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
                             </div>
                             <div class="col-md-3">
+                                <label class="form-label small fw-bold">{{ __('Payment Mode') }}</label>
+                                <select name="payment_method" class="form-select">
+                                    <option value="">{{ __('All payment modes') }}</option>
+                                    <option value="cash" @selected(request('payment_method') === 'cash')>{{ __('Cash') }}</option>
+                                    <option value="transfer" @selected(request('payment_method') === 'transfer')>{{ __('Bank Transfer') }}</option>
+                                    <option value="card" @selected(request('payment_method') === 'card')>{{ __('POS / Card') }}</option>
+                                    <option value="wallet" @selected(request('payment_method') === 'wallet')>{{ __('Customer Wallet') }}</option>
+                                    <option value="charge_to_room" @selected(request('payment_method') === 'charge_to_room')>{{ __('Charge to Room') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
                                 <div class="d-flex gap-2">
                                     <button type="submit" class="btn btn-primary w-100">
                                         <i class="feather-filter me-1"></i> {{ __('Apply') }}
@@ -256,4 +267,3 @@ $(document).ready(function() {
 });
 </script>
 @endsection
-
