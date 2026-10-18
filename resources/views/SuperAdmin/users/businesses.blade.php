@@ -60,10 +60,14 @@
 <div class="master-hub-wrapper">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h3 class="fw-bold text-dark mb-0">Registered Businesses</h3>
-            <p class="text-muted small">Registered business workspaces, including those awaiting payment or on trial.</p>
+            <h3 class="fw-bold text-dark mb-0">{{ $paymentGroup === 'paid' ? 'Paid Businesses' : ($paymentGroup === 'pending' ? 'Pending Payment Businesses' : 'Registered Businesses') }}</h3>
+            <p class="text-muted small">View registered businesses by payment status.</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 align-items-center">
+            <select class="form-select form-select-sm" aria-label="Business payment status" onchange="if (this.value) window.location.href = this.value;">
+                <option value="{{ route('super_admin.users.index', ['category' => 'registered_businesses', 'payment_group' => 'pending']) }}" @selected($paymentGroup === 'pending')>Pending Businesses</option>
+                <option value="{{ route('super_admin.users.index', ['category' => 'registered_businesses', 'payment_group' => 'paid']) }}" @selected($paymentGroup === 'paid')>Paid Businesses</option>
+            </select>
             <button onclick="window.print();" class="btn btn-white border px-3 btn-sm fw-bold">
                 <i class="fas fa-print me-2 text-primary"></i>Export Registry
             </button>
@@ -94,6 +98,7 @@
         <div class="card-body p-3">
             <form action="{{ url()->current() }}" method="GET" class="row g-2 align-items-center">
                 <input type="hidden" name="category" value="registered_businesses">
+                <input type="hidden" name="payment_group" value="{{ $paymentGroup }}">
                 <div class="col-lg-6 col-md-5">
                     <div class="input-group">
                         <span class="input-group-text bg-light border-0"><i class="fa fa-search text-muted"></i></span>
@@ -113,24 +118,36 @@
                 <div class="col-lg-3 col-md-4 d-flex gap-2">
                     <button type="submit" class="btn btn-primary px-4 fw-bold small">Filter</button>
                     @if(request()->hasAny(['search', 'status']))
-                        <a href="{{ url()->current() }}?category=registered_businesses" class="btn btn-light border fw-bold small">Reset</a>
+                        <a href="{{ route('super_admin.users.index', array_filter(['category' => 'registered_businesses', 'payment_group' => $paymentGroup])) }}" class="btn btn-light border fw-bold small">Reset</a>
                     @endif
                 </div>
             </form>
         </div>
     </div>
 
+    @if($paymentGroup === 'pending')
+        <form id="bulk-delete-pending-businesses" method="POST" action="{{ route('super_admin.users.businesses.bulk-delete') }}" class="mb-3" onsubmit="return document.querySelectorAll('.pending-business-checkbox:checked').length > 0 && confirm('Remove all selected unpaid businesses and disable their users? Financial records will be retained.');">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-outline-danger btn-sm fw-bold">
+                <i class="fas fa-trash me-1"></i> Delete Selected
+            </button>
+        </form>
+    @endif
+
     <div class="hub-table-container">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
+                        @if($paymentGroup === 'pending')<th class="ps-3"><input type="checkbox" id="select-all-pending-businesses" aria-label="Select all pending businesses"></th>@endif
                         <th class="ps-4">Owner</th>
                         <th>Business</th>
                         <th>Domain</th>
                         <th>Total Paid</th>
                         <th>Last Payment</th>
                         <th>Status</th>
+                        <th class="text-end pe-4">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -142,6 +159,9 @@
                                 : (in_array($status, ['inactive', 'suspended', 'disabled', 'expired'], true) ? 'pill-inactive' : 'pill-neutral');
                         @endphp
                         <tr>
+                            @if($paymentGroup === 'pending')
+                                <td class="ps-3"><input class="pending-business-checkbox" type="checkbox" name="business_ids[]" value="{{ $business->id }}" form="bulk-delete-pending-businesses" aria-label="Select {{ $business->company_name }}"></td>
+                            @endif
                             <td class="ps-4">
                                 <div class="fw-bold text-dark">{{ $business->name ?? 'User' }}</div>
                                 <div class="text-muted small">{{ $business->email ?? '—' }}</div>
@@ -159,16 +179,42 @@
                                 {{ $business->last_paid_at ? \Illuminate\Support\Carbon::parse($business->last_paid_at)->format('d M Y') : '—' }}
                             </td>
                             <td><span class="pill {{ $pillClass }}">{{ strtoupper($status ?: 'unknown') }}</span></td>
+                            <td class="text-end pe-4">
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#edit-business-{{ $business->id }}" title="Edit business"><i class="fas fa-pen"></i></button>
+                                <form class="d-inline" method="POST" action="{{ route('super_admin.users.businesses.delete', $business->id) }}" onsubmit="return confirm('Remove this business from the registry and disable its users? Financial records will be retained.');">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete business"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-5 text-muted small">No registered businesses matched your filters.</td>
+                            <td colspan="{{ $paymentGroup === 'pending' ? 8 : 7 }}" class="text-center py-5 text-muted small">No registered businesses matched your filters.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
     </div>
+
+    @foreach($businesses as $business)
+    <div class="modal fade" id="edit-business-{{ $business->id }}" tabindex="-1" aria-labelledby="edit-business-title-{{ $business->id }}" aria-hidden="true">
+        <div class="modal-dialog"><div class="modal-content">
+            <form method="POST" action="{{ route('super_admin.users.businesses.update', $business->id) }}">
+                @csrf @method('PUT')
+                <input type="hidden" name="payment_group" value="{{ $paymentGroup }}">
+                <div class="modal-header"><h5 class="modal-title" id="edit-business-title-{{ $business->id }}">Edit {{ $business->company_name }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                <div class="modal-body">
+                    <div class="mb-3"><label class="form-label" for="business-name-{{ $business->id }}">Business name</label><input id="business-name-{{ $business->id }}" name="name" class="form-control" value="{{ $business->company_name }}" required maxlength="191"></div>
+                    <div class="mb-3"><label class="form-label" for="business-email-{{ $business->id }}">Business email</label><input id="business-email-{{ $business->id }}" name="email" type="email" class="form-control" value="{{ $business->company_email ?? '' }}"></div>
+                    <div class="mb-3"><label class="form-label" for="business-phone-{{ $business->id }}">Phone</label><input id="business-phone-{{ $business->id }}" name="phone" class="form-control" value="{{ $business->company_phone ?? '' }}"></div>
+                    <div class="mb-3"><label class="form-label" for="business-status-{{ $business->id }}">Status</label><select id="business-status-{{ $business->id }}" name="status" class="form-select">@foreach(['active' => 'Active', 'trial' => 'Trial', 'pending' => 'Pending', 'pending_payment' => 'Pending Payment', 'inactive' => 'Inactive', 'suspended' => 'Suspended'] as $value => $label)<option value="{{ $value }}" @selected($business->status === $value)>{{ $label }}</option>@endforeach</select></div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Save</button></div>
+            </form>
+        </div></div>
+    </div>
+    @endforeach
 
     <div class="py-3 d-flex justify-content-between align-items-center">
         <span class="small text-muted">
@@ -183,4 +229,13 @@
         </div>
     </div>
 </div>
+@if($paymentGroup === 'pending')
+    <script>
+        document.getElementById('select-all-pending-businesses')?.addEventListener('change', function () {
+            document.querySelectorAll('.pending-business-checkbox').forEach(function (checkbox) {
+                checkbox.checked = this.checked;
+            }, this);
+        });
+    </script>
+@endif
 @endsection

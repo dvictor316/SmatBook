@@ -162,6 +162,7 @@ class SuperAdminModuleDashboardTest extends TestCase
         $this->actingAs($superAdmin)
             ->get(route('super_admin.users.index', [
                 'category' => 'registered_businesses',
+                'payment_group' => 'paid',
                 'search' => 'Current Schema',
             ]))
             ->assertOk()
@@ -254,14 +255,115 @@ class SuperAdminModuleDashboardTest extends TestCase
 
         $registry = $this->actingAs($superAdmin)->get(route('super_admin.users.index', ['category' => 'registered_businesses']));
         $registry->assertOk()
-            ->assertSee('Paid Business')
-            ->assertSee('Second Paid Business')
             ->assertSee('Awaiting Payment Business')
             ->assertSee('Trial Business')
             ->assertDontSee('Guided Demo');
         $this->assertSame(4, (int) $registry->viewData('metrics')['total']);
-        $this->assertSame(4, $registry->viewData('businesses')->total());
-        $this->assertSame(80000.0, (float) $registry->viewData('businesses')->getCollection()->firstWhere('id', $paid->id)->total_paid);
-        $this->assertSame(10000.0, (float) $registry->viewData('businesses')->getCollection()->firstWhere('id', $additional->id)->total_paid);
+        $this->assertSame('pending', $registry->viewData('paymentGroup'));
+        $this->assertSame(2, $registry->viewData('businesses')->total());
+        $pendingIds = $registry->viewData('businesses')->getCollection()->pluck('id')->all();
+        $this->assertNotContains($paid->id, $pendingIds);
+        $this->assertNotContains($additional->id, $pendingIds);
+
+        $paidRegistry = $this->get(route('super_admin.users.index', ['category' => 'registered_businesses', 'payment_group' => 'paid']));
+        $paidRegistry->assertOk()->assertSee('Paid Businesses')->assertSee('Paid Business')->assertSee('Second Paid Business')
+            ->assertDontSee('Awaiting Payment Business')->assertDontSee('Trial Business');
+        $this->assertSame(2, $paidRegistry->viewData('businesses')->total());
+        $paidIds = $paidRegistry->viewData('businesses')->getCollection()->pluck('id')->all();
+        $this->assertContains($paid->id, $paidIds);
+        $this->assertContains($additional->id, $paidIds);
+
+        $pendingRegistry = $this->get(route('super_admin.users.index', ['category' => 'registered_businesses', 'payment_group' => 'pending']));
+        $pendingRegistry->assertOk()->assertSee('Pending Payment Businesses')->assertSee('Awaiting Payment Business')->assertSee('Trial Business')
+            ->assertDontSee('Second Paid Business')
+            ->assertSee('Pending Businesses')
+            ->assertSee('Paid Businesses')
+            ->assertSee('Edit business')
+            ->assertSee('Delete Selected')
+            ->assertSee(route('super_admin.users.businesses.bulk-delete'), false);
+        $this->assertSame(2, $pendingRegistry->viewData('businesses')->total());
+    }
+
+    public function test_super_admin_can_bulk_delete_only_pending_payment_businesses(): void
+    {
+        $platform = Company::create(['name' => 'Platform Administration']);
+        $superAdmin = User::factory()->create(['company_id' => $platform->id, 'role' => 'super_admin']);
+        $pendingOwner = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $pending = Company::withoutGlobalScope('tenant')->create([
+            'user_id' => $pendingOwner->id,
+            'owner_id' => $pendingOwner->id,
+            'name' => 'Pending Business To Archive',
+            'status' => 'pending',
+        ]);
+        $pendingOwner->forceFill(['company_id' => $pending->id])->save();
+
+        $paidOwner = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $paid = Company::withoutGlobalScope('tenant')->create([
+            'user_id' => $paidOwner->id,
+            'owner_id' => $paidOwner->id,
+            'name' => 'Paid Business To Protect',
+            'status' => 'active',
+        ]);
+        $paidOwner->forceFill(['company_id' => $paid->id])->save();
+        Subscription::withoutGlobalScopes()->create([
+            'user_id' => $paidOwner->id,
+            'company_id' => $paid->id,
+            'subscriber_name' => 'Paid Business To Protect',
+            'plan' => 'Basic',
+            'billing_cycle' => 'Monthly',
+            'amount' => 12000,
+            'status' => 'Active',
+            'payment_status' => 'paid',
+        ]);
+
+        $this->actingAs($superAdmin)
+            ->from(route('super_admin.users.index', ['category' => 'registered_businesses', 'payment_group' => 'pending']))
+            ->delete(route('super_admin.users.businesses.bulk-delete'), [
+                'business_ids' => [$pending->id, $paid->id],
+            ])
+            ->assertSessionHasErrors('business_ids');
+        $this->assertNull(Company::withoutGlobalScope('tenant')->find($pending->id)->deleted_at);
+        $this->assertNull(Company::withoutGlobalScope('tenant')->find($paid->id)->deleted_at);
+
+        $this->delete(route('super_admin.users.businesses.bulk-delete'), [
+            'business_ids' => [$pending->id],
+        ])->assertRedirect();
+
+        $this->assertNotNull(Company::withoutGlobalScope('tenant')->find($pending->id)->deleted_at);
+        $this->assertNull(Company::withoutGlobalScope('tenant')->find($paid->id)->deleted_at);
+        $this->assertDatabaseHas('users', ['id' => $pendingOwner->id, 'status' => 'inactive']);
+        $this->assertDatabaseHas('users', ['id' => $paidOwner->id, 'status' => 'active']);
+    }
+
+    public function test_super_admin_can_edit_and_archive_a_registered_business_without_erasing_payments(): void
+    {
+        $platform = Company::create(['name' => 'Platform Administration']);
+        $superAdmin = User::factory()->create(['company_id' => $platform->id, 'role' => 'super_admin']);
+        $owner = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $business = Company::withoutGlobalScope('tenant')->create([
+            'user_id' => $owner->id, 'name' => 'Original Business', 'status' => 'active',
+        ]);
+        $owner->forceFill(['company_id' => $business->id])->save();
+        $subscription = Subscription::withoutGlobalScopes()->create([
+            'user_id' => $owner->id, 'company_id' => $business->id,
+            'subscriber_name' => 'Original Business', 'plan' => 'Basic',
+            'billing_cycle' => 'Monthly', 'amount' => 12000,
+            'status' => 'Active', 'payment_status' => 'paid',
+        ]);
+
+        $this->actingAs($superAdmin)->put(route('super_admin.users.businesses.update', $business->id), [
+            'name' => 'Updated Business', 'email' => 'business@example.com',
+            'phone' => '08000000000', 'status' => 'active',
+        ])->assertRedirect();
+        $this->assertDatabaseHas('companies', ['id' => $business->id, 'name' => 'Updated Business', 'email' => 'business@example.com']);
+
+        $this->delete(route('super_admin.users.businesses.delete', $platform->id))->assertNotFound();
+        $this->delete(route('super_admin.users.businesses.delete', $business->id))->assertRedirect();
+        $this->assertDatabaseHas('companies', ['id' => $business->id, 'status' => 'inactive']);
+        $this->assertNotNull(Company::withoutGlobalScope('tenant')->find($business->id)->deleted_at);
+        $this->assertDatabaseHas('subscriptions', ['id' => $subscription->id, 'company_id' => $business->id]);
+        $this->assertDatabaseHas('users', ['id' => $owner->id, 'status' => 'inactive']);
+        $this->get(route('super_admin.users.index', ['category' => 'registered_businesses']))
+            ->assertOk()->assertDontSee('Updated Business');
     }
 }

@@ -271,6 +271,8 @@ class SuperAdminDashboardController extends Controller
         $ownerColumn = $this->companyOwnerExpression();
         $domainPrefix = Schema::hasColumn('companies', 'domain_prefix') ? "COALESCE(companies.domain_prefix, '')" : "''";
         $companyPlan = Schema::hasColumn('companies', 'plan') ? "COALESCE(companies.plan, '')" : "''";
+        $companyEmail = Schema::hasColumn('companies', 'email') ? 'companies.email' : "''";
+        $companyPhone = Schema::hasColumn('companies', 'phone') ? 'companies.phone' : "''";
 
         $query = Company::withoutGlobalScope('tenant')
             ->leftJoin('users as owners', 'owners.id', '=', DB::raw($ownerColumn))
@@ -282,6 +284,8 @@ class SuperAdminDashboardController extends Controller
                 DB::raw("COALESCE(owners.name, 'Unknown owner') as name"),
                 DB::raw("COALESCE(owners.email, companies.email, '') as email"),
                 DB::raw($this->companyNameExpression() . ' as company_name'),
+                DB::raw("{$companyEmail} as company_email"),
+                DB::raw("{$companyPhone} as company_phone"),
                 DB::raw("{$domainPrefix} as company_domain_prefix"),
                 DB::raw("{$companyPlan} as company_plan"),
             ])
@@ -2071,6 +2075,18 @@ public function pendingManagers()
         if ($category === 'registered_businesses') {
             $query = $this->registeredBusinessesQuery();
 
+            $paymentGroup = strtolower(trim((string) $request->query('payment_group', 'pending')));
+            if (!in_array($paymentGroup, ['paid', 'pending'], true)) {
+                $paymentGroup = 'pending';
+            }
+            $businessIdsByPaymentGroup = (clone $this->registeredBusinessesQuery())
+                ->get()
+                ->filter(fn ($business) => $paymentGroup === 'paid'
+                    ? (float) $business->total_paid > 0
+                    : (float) $business->total_paid <= 0)
+                ->pluck('id');
+            $query->whereIn('companies.id', $businessIdsByPaymentGroup);
+
             if ($request->filled('search')) {
                 $search = '%' . trim((string) $request->search) . '%';
                 $query->where(function ($q) use ($search) {
@@ -2112,7 +2128,7 @@ public function pendingManagers()
                 'revenue' => (float) $registeredBusinessMetrics['revenue'],
             ];
 
-            return view('SuperAdmin.users.businesses', compact('businesses', 'metrics'));
+            return view('SuperAdmin.users.businesses', compact('businesses', 'metrics', 'paymentGroup'));
         }
 
         $pageTitle = 'Internal Users';
@@ -2174,6 +2190,82 @@ public function pendingManagers()
         ];
 
         return view('SuperAdmin.users.index', compact('users', 'metrics', 'category', 'pageTitle', 'pageSubtitle', 'createRoute'));
+    }
+
+    public function updateRegisteredBusiness(Request $request, int $id)
+    {
+        abort_unless($this->registeredBusinessesQuery()->where('companies.id', $id)->exists(), 404);
+        $data = $request->validate([
+            'name' => 'required|string|max:191',
+            'email' => 'nullable|email|max:191',
+            'phone' => 'nullable|string|max:191',
+            'status' => 'required|in:active,trial,pending,pending_payment,inactive,suspended',
+        ]);
+
+        Company::withoutGlobalScope('tenant')->whereKey($id)->update($data);
+
+        return redirect()->route('super_admin.users.index', [
+            'category' => 'registered_businesses',
+            'payment_group' => $request->input('payment_group'),
+        ])->with('success', 'Business details updated.');
+    }
+
+    public function deleteRegisteredBusiness(int $id)
+    {
+        abort_unless($this->registeredBusinessesQuery()->where('companies.id', $id)->exists(), 404);
+
+        DB::transaction(fn () => $this->archiveRegisteredBusiness($id));
+
+        return redirect()->route('super_admin.users.index', [
+            'category' => 'registered_businesses',
+            'payment_group' => request()->input('payment_group', 'pending'),
+        ])
+            ->with('success', 'Business removed from the registry. Financial records were retained.');
+    }
+
+    public function bulkDeletePendingBusinesses(Request $request)
+    {
+        $validated = $request->validate([
+            'business_ids' => 'required|array|min:1',
+            'business_ids.*' => 'required|integer|distinct',
+        ]);
+        $selectedIds = array_map('intval', $validated['business_ids']);
+        $pendingIds = $this->registeredBusinessesQuery()
+            ->get()
+            ->filter(fn ($business) => (float) $business->total_paid <= 0)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if (array_diff($selectedIds, $pendingIds) !== []) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'business_ids' => 'Only unpaid registered businesses can be bulk deleted from this page.',
+            ]);
+        }
+
+        DB::transaction(function () use ($selectedIds) {
+            foreach ($selectedIds as $id) {
+                $this->archiveRegisteredBusiness($id);
+            }
+        });
+
+        return redirect()->route('super_admin.users.index', [
+            'category' => 'registered_businesses',
+            'payment_group' => 'pending',
+        ])->with('success', count($selectedIds).' pending businesses removed. Financial records were retained.');
+    }
+
+    private function archiveRegisteredBusiness(int $id): void
+    {
+        Company::withoutGlobalScope('tenant')->whereKey($id)->update([
+            'status' => 'inactive',
+            'deleted_at' => now(),
+        ]);
+        $updates = ['status' => 'inactive'];
+        if (Schema::hasColumn('users', 'allow_login')) {
+            $updates['allow_login'] = false;
+        }
+        User::withoutGlobalScopes()->where('company_id', $id)->update($updates);
     }
 
     public function destroyPayout(PlatformPayout $platformPayout)

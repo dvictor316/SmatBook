@@ -593,8 +593,12 @@
                         <li class="{{ Request::is('superadmin/users*') && request('category') === 'agents' ? 'active' : '' }}">
                             <a href="{{ route('super_admin.users.index', array_merge($routeParams, ['category' => 'agents'])) }}">Agents</a>
                         </li>
-                        <li class="{{ Request::is('superadmin/users*') && request('category') === 'registered_businesses' ? 'active' : '' }}">
-                            <a href="{{ route('super_admin.users.index', array_merge($routeParams, ['category' => 'registered_businesses'])) }}">Registered Businesses</a>
+                        <li class="submenu {{ Request::is('superadmin/users*') && request('category') === 'registered_businesses' ? 'active subdrop' : '' }}">
+                            <a href="#"><span>Registered Businesses</span><span class="menu-arrow"></span></a>
+                            <ul>
+                                <li><a href="{{ route('super_admin.users.index', array_merge($routeParams, ['category' => 'registered_businesses', 'payment_group' => 'paid'])) }}" class="{{ request('payment_group') === 'paid' ? 'active' : '' }}">Paid Businesses</a></li>
+                                <li><a href="{{ route('super_admin.users.index', array_merge($routeParams, ['category' => 'registered_businesses', 'payment_group' => 'pending'])) }}" class="{{ request('payment_group', 'pending') === 'pending' ? 'active' : '' }}">Pending Businesses</a></li>
+                            </ul>
                         </li>
                         <li class="{{ request()->routeIs('super_admin.business-users.add') ? 'active' : '' }}">
                             <a href="{{ route('super_admin.business-users.add') }}">Add Business Users</a>

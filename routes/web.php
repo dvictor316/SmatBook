@@ -643,6 +643,9 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     // Registered Users
     Route::prefix('users')->name('users.')->group(function () {
         Route::get('/', [SuperAdminDashboardController::class, 'listUsers'])->name('index');
+        Route::put('/businesses/{id}', [SuperAdminDashboardController::class, 'updateRegisteredBusiness'])->name('businesses.update');
+        Route::delete('/businesses/bulk-delete', [SuperAdminDashboardController::class, 'bulkDeletePendingBusinesses'])->name('businesses.bulk-delete');
+        Route::delete('/businesses/{id}', [SuperAdminDashboardController::class, 'deleteRegisteredBusiness'])->name('businesses.delete');
         Route::post('/{id}/suspend', [SuperAdminDashboardController::class, 'suspendUser'])->name('suspend');
         Route::post('/{id}/activate', [SuperAdminDashboardController::class, 'activateUser'])->name('activate');
         Route::post('/{id}/email', [SuperAdminDashboardController::class, 'emailUser'])->name('email');
