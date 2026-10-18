@@ -45,7 +45,6 @@
         .items th:nth-child(4) { width: {{ $paperWidth === 58 ? '23%' : '19%' }}; }
         .items td { padding: 5px 1px 2px; text-align: right; vertical-align: top; overflow-wrap: anywhere; }
         .items td:first-child { text-align: left; font-weight: 700; }
-        .item-code td { padding-top: 0; padding-bottom: 3px; font-size: .9em; font-weight: 500 !important; }
         .strong { font-weight: 800; }
         .grand-total { font-family: Arial, sans-serif; font-size: 1.18em; font-weight: 900; padding: 3px 0; }
         .footer { margin-top: 9px; text-align: center; font-family: Arial, sans-serif; }
@@ -94,7 +93,7 @@
     $balance = (float) ($sale->effective_balance ?? max(0, $total - $paid));
     $paymentDetails = is_array($sale->payment_details) ? $sale->payment_details : [];
     $split = is_array($paymentDetails['split'] ?? null) ? $paymentDetails['split'] : [];
-    $receiptFooter = \App\Models\Setting::where('key', 'receipt_footer')->value('value') ?: 'Thank you for your patronage.';
+    $receiptFooter = \App\Support\ReceiptCompanyProfile::footer($company);
     $money = fn ($amount) => $currencySymbol . number_format((float) $amount, 2);
 @endphp
 
@@ -139,7 +138,6 @@
                     default => $unitType !== '' ? $unitType : 'pcs',
                 };
                 $productName = $item->product?->name ?? $item->product_name ?? 'Item';
-                $productCode = $item->product?->sku ?? null;
                 $lineTotal = (float) ($item->total_price ?? 0);
             @endphp
             <tr>
@@ -148,9 +146,6 @@
                 <td>{{ number_format((float) $item->unit_price, 2) }}</td>
                 <td>{{ number_format($lineTotal, 2) }}</td>
             </tr>
-            @if($productCode)
-                <tr class="item-code"><td colspan="4">SKU: {{ $productCode }}</td></tr>
-            @endif
         @empty
             <tr><td colspan="4" class="center">No items</td></tr>
         @endforelse

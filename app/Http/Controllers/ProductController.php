@@ -1970,24 +1970,34 @@ public function inventory(Request $request)
         ]);
 
         DB::transaction(function () use ($request) {
-            $operator = ($request->type == 'in') ? '+' : '-';
             $activeBranch = $this->getActiveBranchContext();
             $product = Product::query()->lockForUpdate()->findOrFail($request->product_id);
             $availableBranchStock = $this->branchInventory->getAvailableStock($product, $activeBranch);
 
             if ($request->type === 'out' && $availableBranchStock < (float) $request->quantity) {
-                throw new \RuntimeException("Insufficient stock for {$product->name} in {$activeBranch['name']}.");
+                throw ValidationException::withMessages([
+                    'quantity' => "Insufficient stock for {$product->name} in ".($activeBranch['name'] ?? 'the active branch').'.',
+                ]);
             }
-            
-            DB::table('products')->where('id', $request->product_id)->update([
-                'stock' => DB::raw("stock $operator " . $request->quantity),
-                'stock_quantity' => DB::raw("stock_quantity $operator " . $request->quantity),
-                'updated_at' => now()
-            ]);
+
+            $quantity = (float) $request->quantity;
+            $updatedStock = max(0, (float) ($product->stock ?? $product->stock_quantity ?? 0)
+                + ($request->type === 'in' ? $quantity : -$quantity));
+            $stockUpdate = ['updated_at' => now()];
+            if (Schema::hasColumn('products', 'stock')) {
+                $stockUpdate['stock'] = $updatedStock;
+            }
+            if (Schema::hasColumn('products', 'stock_quantity')) {
+                $stockUpdate['stock_quantity'] = $updatedStock;
+            }
+
+            DB::table('products')->where('id', $product->id)->update($stockUpdate);
+            $product->setAttribute('stock', $updatedStock);
+            $product->setAttribute('stock_quantity', $updatedStock);
 
             $this->branchInventory->adjustBranchStock(
                 $product,
-                $request->type === 'in' ? (float) $request->quantity : -1 * (float) $request->quantity,
+                $request->type === 'in' ? $quantity : -$quantity,
                 $activeBranch,
                 (int) ($product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0)
             );
@@ -1996,7 +2006,7 @@ public function inventory(Request $request)
                 'product_id' => $request->product_id,
                 'branch_id'  => $activeBranch['id'],
                 'branch_name'=> $activeBranch['name'],
-                'quantity'   => $request->quantity,
+                'quantity'   => $quantity,
                 'type'       => $request->type,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -2023,7 +2033,7 @@ public function inventory(Request $request)
                     $purchaseNo = 'AUTO-STK-' . $historyId;
                     if (!Purchase::where('purchase_no', $purchaseNo)->exists()) {
                         $unitPrice = (float) ($product->purchase_price ?? $product->price ?? 0);
-                        $amount = round(((float) $request->quantity) * $unitPrice, 2);
+                        $amount = round($quantity * $unitPrice, 2);
 
                         $purchase = Purchase::create([
                             'branch_id' => $activeBranch['id'],
@@ -2045,7 +2055,7 @@ public function inventory(Request $request)
                         PurchaseItem::create([
                             'purchase_id' => $purchase->id,
                             'product_id' => $product->id,
-                            'qty' => (float) $request->quantity,
+                            'qty' => $quantity,
                             'unit_price' => $unitPrice,
                         ]);
                     }

@@ -106,6 +106,13 @@
                                     <input type="text" class="form-control" name="invoice_signatory_name" value="{{ $settings['invoice_signatory_name'] ?? '' }}" placeholder="Enter Signatory Name">
                                 </div>
                             </div>
+                            <div class="col-lg-12">
+                                <div class="input-block mb-3">
+                                    <label class="form-label fw-semibold">Receipt Footer Message</label>
+                                    <input type="text" class="form-control" name="receipt_footer" maxlength="255" value="{{ $settings['receipt_footer'] ?? '' }}" placeholder="Thank you for your patronage.">
+                                    <small class="text-muted">Shown at the bottom of thermal sales receipts.</small>
+                                </div>
+                            </div>
 
                             <div class="col-xl-6 col-lg-6 col-md-12 col-12">
                                 <div class="input-block mb-3">

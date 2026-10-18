@@ -41,6 +41,17 @@ class ReceiptCompanyProfile
         return trim((string) ($company?->address ?: Setting::get('company_address', '')));
     }
 
+    public static function footer(?Company $company = null): string
+    {
+        $companyId = (int) ($company?->id ?? auth()->user()?->company_id ?? 0);
+        $footer = $companyId > 0
+            ? Setting::where('key', "receipt_footer_company_{$companyId}")->value('value')
+            : null;
+        $footer ??= Setting::get('receipt_footer');
+
+        return trim((string) $footer) ?: 'Thank you for your patronage.';
+    }
+
     private static function formatAddress(array $fields, array $values, ?int $companyId = null): string
     {
         $parts = [];

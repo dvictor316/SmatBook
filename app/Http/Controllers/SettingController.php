@@ -112,6 +112,11 @@ class SettingController extends Controller
                     $settings[$field] = $scopedValue;
                 }
             }
+
+            $receiptFooter = Setting::where('key', "receipt_footer_company_{$companyId}")->value('value');
+            if ($receiptFooter !== null) {
+                $settings['receipt_footer'] = $receiptFooter;
+            }
         }
 
         return new \ArrayObject(
@@ -272,6 +277,7 @@ class SettingController extends Controller
             'company_state' => 'nullable|string|max:150',
             'company_country' => 'nullable|string|max:150',
             'company_pincode' => 'nullable|string|max:30',
+            'receipt_footer' => 'nullable|string|max:255',
             'mail_from_address' => 'nullable|email',
             'mail_admin_inbox' => 'nullable|email',
             'expiry_notification_months' => 'nullable|in:1,2,6',
@@ -362,6 +368,10 @@ class SettingController extends Controller
 
         foreach ($inputs as $key => $value) {
             if (in_array($key, self::COMPANY_ADDRESS_SETTING_FIELDS, true)) {
+                $this->setCompanyScopedSettingValue($key, $value);
+                continue;
+            }
+            if ($key === 'receipt_footer') {
                 $this->setCompanyScopedSettingValue($key, $value);
                 continue;
             }

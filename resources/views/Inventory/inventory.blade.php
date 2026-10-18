@@ -4,6 +4,23 @@
     <div class="page-wrapper">
         <div class="content container-fluid">
 
+            @if ($errors->any())
+                <div class="alert alert-danger" role="alert">
+                    <div class="fw-semibold">Stock adjustment was not saved:</div>
+                    <ul class="mb-0 mt-1">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+            @if (session('error'))
+                <div class="alert alert-danger" role="alert">{{ session('error') }}</div>
+            @endif
+            @if (session('success'))
+                <div class="alert alert-success" role="alert">{{ session('success') }}</div>
+            @endif
+
             <div class="page-header mb-4">
                 <div class="row align-items-center">
                     <div class="col">
@@ -100,7 +117,7 @@
                             <select name="product_id" class="form-control" required>
                                 <option value="">-- Choose Product --</option>
                                 @foreach($products as $product)
-                                    <option value="{{ $product->id }}">{{ $product->name }} (Current Stock: {{ $product->stock }})</option>
+                                    <option value="{{ $product->id }}" @selected(old('product_id') == $product->id)>{{ $product->name }} (Current Stock: {{ $product->stock }})</option>
                                 @endforeach
                             </select>
                         </div>
@@ -108,13 +125,13 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Action Type</label>
                                 <select name="type" class="form-control" required>
-                                    <option value="in">Stock In (+)</option>
-                                    <option value="out">Stock Out (-)</option>
+                                    <option value="in" @selected(old('type', 'in') === 'in')>Stock In (+)</option>
+                                    <option value="out" @selected(old('type') === 'out')>Stock Out (-)</option>
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Quantity</label>
-                                <input type="number" name="quantity" class="form-control" min="1" placeholder="e.g. 10" required>
+                                <input type="number" name="quantity" class="form-control" min="1" step="1" value="{{ old('quantity') }}" placeholder="e.g. 10" required>
                             </div>
                         </div>
                     </div>
@@ -126,6 +143,17 @@
             </div>
         </div>
     </div>
+
+    @if ($errors->any())
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const modal = document.getElementById('stock_adjustment_modal');
+                if (modal && window.bootstrap) {
+                    window.bootstrap.Modal.getOrCreateInstance(modal).show();
+                }
+            });
+        </script>
+    @endif
 
     <style>
         .bg-danger-light { background-color: #fee2e2; border: 1px solid #fecaca; }

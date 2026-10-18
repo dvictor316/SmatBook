@@ -4,9 +4,11 @@ namespace Tests\Feature\Sales;
 
 use App\Models\Company;
 use App\Models\Sale;
+use App\Models\SaleItem;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class ReceiptAndBarcodeTest extends TestCase
@@ -36,6 +38,33 @@ class ReceiptAndBarcodeTest extends TestCase
             'payment_method' => 'cash',
             'payment_status' => 'paid',
         ]);
+        $categoryId = DB::table('categories')->insertGetId([
+            'name' => 'Receipt SKU Category',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $productId = DB::table('products')->insertGetId([
+            'user_id' => $user->id,
+            'company_id' => $company->id,
+            'name' => 'Receipt Item',
+            'sku' => 'RECEIPT-SKU-001',
+            'price' => 1000,
+            'purchase_price' => 500,
+            'stock' => 1,
+            'stock_quantity' => 1,
+            'category_id' => $categoryId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        SaleItem::create([
+            'sale_id' => $sale->id,
+            'product_id' => $productId,
+            'product_name' => 'Receipt Item',
+            'qty' => 1,
+            'unit_price' => 1000,
+            'subtotal' => 1000,
+            'total_price' => 1000,
+        ]);
 
         $this->actingAs($user)->withoutMiddleware()
             ->post(route('settings.update'), [
@@ -45,6 +74,7 @@ class ReceiptAndBarcodeTest extends TestCase
                 'company_state' => 'Lagos State',
                 'company_pincode' => '100001',
                 'company_country' => 'Nigeria',
+                'receipt_footer' => 'Thank you from Receipt Company!',
             ])
             ->assertRedirect();
 
@@ -52,6 +82,14 @@ class ReceiptAndBarcodeTest extends TestCase
             'key' => 'address_line_1_company_'.$company->id,
             'value' => '14 Market Road',
         ]);
+        $this->assertDatabaseHas('settings', [
+            'key' => 'receipt_footer_company_'.$company->id,
+            'value' => 'Thank you from Receipt Company!',
+        ]);
+        $this->get(route('invoice-settings'))
+            ->assertOk()
+            ->assertSee('Receipt Footer Message')
+            ->assertSee('Thank you from Receipt Company!');
 
         $this->get(route('sales.invoice.print', $sale->id))
             ->assertOk()
@@ -66,8 +104,11 @@ class ReceiptAndBarcodeTest extends TestCase
         ]));
         $thermalReceipt->assertOk()
             ->assertSee('14 Market Road')
+            ->assertSee('Thank you from Receipt Company!')
             ->assertSee('Arial, Helvetica, sans-serif')
             ->assertDontSee('Katsina Street')
+            ->assertDontSee('RECEIPT-SKU-001')
+            ->assertDontSee('SKU:')
             ->assertDontSee('size: 80mm auto');
     }
 
