@@ -1862,9 +1862,9 @@ public function inventory(Request $request)
             'measurement_mode' => 'nullable|in:custom,kg_carton',
             'kg_per_carton'    => 'nullable|required_if:measurement_mode,kg_carton|numeric|gt:0',
             'carton_selling_price' => 'nullable|numeric|min:0',
-            'base_unit_name'   => 'required|string|max:100',
+            'base_unit_name'   => 'nullable|string|max:100',
             'category_id'      => 'nullable|exists:categories,id',
-            'unit_id'          => 'required|integer' . (Schema::hasTable('units') ? '|exists:units,id' : ''),
+            'unit_id'          => 'nullable|integer' . (Schema::hasTable('units') ? '|exists:units,id' : ''),
             'base_unit_id'     => 'nullable|integer' . (Schema::hasTable('units') ? '|exists:units,id' : ''),
             'purchase_unit_id' => 'nullable|integer' . (Schema::hasTable('units') ? '|exists:units,id' : ''),
             'conversion_rate'  => 'nullable|numeric|min:0',
@@ -1879,11 +1879,14 @@ public function inventory(Request $request)
 
         $cartonSellingPrice = $validated['carton_selling_price'] ?? null;
         unset($validated['measurement_mode'], $validated['kg_per_carton'], $validated['carton_selling_price']);
-        $validated['units_per_carton'] = (float) ($validated['units_per_carton'] ?? 0);
-        $validated['units_per_roll'] = (float) ($validated['units_per_roll'] ?? 0);
-        $validated['stock_cartons'] = (float) ($validated['stock_cartons'] ?? 0);
-        $validated['stock_rolls'] = (float) ($validated['stock_rolls'] ?? 0);
-        $validated['stock_units'] = (float) ($validated['stock_units'] ?? 0);
+        $validated['base_unit_name'] = trim((string) ($validated['base_unit_name'] ?? ''))
+            ?: ($product->base_unit_name ?: 'pcs');
+        $validated['unit_id'] = $validated['unit_id'] ?? $product->unit_id;
+        $validated['units_per_carton'] = (float) ($validated['units_per_carton'] ?? $product->units_per_carton ?? 0);
+        $validated['units_per_roll'] = (float) ($validated['units_per_roll'] ?? $product->units_per_roll ?? 0);
+        $validated['stock_cartons'] = (float) ($validated['stock_cartons'] ?? $product->stock_cartons ?? 0);
+        $validated['stock_rolls'] = (float) ($validated['stock_rolls'] ?? $product->stock_rolls ?? 0);
+        $validated['stock_units'] = (float) ($validated['stock_units'] ?? $product->stock_units ?? 0);
         $validated['reorder_level'] = max(0, (int) ($validated['reorder_level'] ?? 0));
         $validated['reorder_quantity'] = max(0, (int) ($validated['reorder_quantity'] ?? 0));
         $retailPrice = (float) ($validated['retail_price'] ?? $validated['price']);
@@ -1932,13 +1935,6 @@ public function inventory(Request $request)
             ])->withInput();
         }
 
-        if ($request->hasFile('image') && $request->file('image') instanceof UploadedFile && $request->file('image')->isValid()) {
-            if ($product->image) { 
-                Storage::disk('public')->delete($product->image); 
-            }
-            $validated['image'] = $request->file('image')->store('products', 'public');
-        }
-
         if (!Schema::hasColumn('products', 'reorder_level')) {
             unset($validated['reorder_level']);
         }
@@ -1946,13 +1942,36 @@ public function inventory(Request $request)
             unset($validated['reorder_quantity']);
         }
 
-        $validated['stock_quantity'] = $validated['stock'];
-        DB::transaction(function () use ($product, $validated, $cartonSellingPrice) {
-            $product->update($validated);
-            $this->branchInventory->setBranchStock($product, (float) $validated['stock'], $this->getActiveBranchContext());
-            $this->syncProductUnitRows($product->fresh(['unit', 'baseUnit', 'purchaseUnit']));
-            $this->applyCartonSellingPrice($product, $cartonSellingPrice);
-        });
+        if (Schema::hasColumn('products', 'stock_quantity')) {
+            $validated['stock_quantity'] = $validated['stock'];
+        }
+
+        $newImagePath = null;
+        $oldImagePath = $product->image;
+        try {
+            if ($request->hasFile('image') && $request->file('image') instanceof UploadedFile && $request->file('image')->isValid()) {
+                $newImagePath = $request->file('image')->store('products', 'public');
+                $validated['image'] = $newImagePath;
+            }
+
+            DB::transaction(function () use ($product, $validated, $cartonSellingPrice) {
+                $product->update($validated);
+                $this->branchInventory->setBranchStock($product, (float) $validated['stock'], $this->getActiveBranchContext());
+                $this->syncProductUnitRows($product->fresh(['unit', 'baseUnit', 'purchaseUnit']));
+                $this->applyCartonSellingPrice($product, $cartonSellingPrice);
+            });
+        } catch (\Throwable $e) {
+            if ($newImagePath) {
+                Storage::disk('public')->delete($newImagePath);
+            }
+            Log::error('Product edit failed', ['product_id' => $id, 'user_id' => auth()->id(), 'exception' => $e]);
+
+            return back()->withInput()->withErrors(['save' => 'Stock details could not be saved. Please try again or contact support.']);
+        }
+
+        if ($newImagePath && $oldImagePath) {
+            Storage::disk('public')->delete($oldImagePath);
+        }
         $this->clearDashboardMetricsCache();
 
         return redirect()->route('product-list')->with('success', 'Product and stock details updated successfully.');

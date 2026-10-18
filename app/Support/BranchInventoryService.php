@@ -414,7 +414,7 @@ class BranchInventoryService
 
         $branchStock->company_id = $resolvedCompanyId > 0 ? $resolvedCompanyId : null;
         $branchStock->branch_name = $branch['name'];
-        $branchStock->quantity = round($quantity, 2);
+        $branchStock->quantity = round($quantity, 6);
         $branchStock->save();
 
         return $branchStock;

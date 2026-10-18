@@ -140,8 +140,12 @@
     </style>
     <div class="page-wrapper">
         <div class="content container-fluid product-form-shell">
+            @if(session('error'))
+                <div class="alert alert-danger" role="alert">{{ session('error') }}</div>
+            @endif
             @if($errors->any())
-                <div class="alert alert-danger">
+                <div class="alert alert-danger" role="alert">
+                    <strong>Stock details were not saved. Please correct the following:</strong>
                     <ul>
                         @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
@@ -162,7 +166,7 @@
 
             <div class="card product-form-card">
                 <div class="card-body">
-                    <form action="{{ route('inventory.Products.update', $product->id) }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('inventory.Products.update', $product->id) }}" method="POST" enctype="multipart/form-data" novalidate>
                         @csrf
                         @method('PUT')
 
@@ -296,14 +300,14 @@
                         <div class="row">
                             <div class="col-md-3 edit-measurement-technical-field">
                                 <div class="form-group">
-                                    <label class="field-label">Legacy Unit Label * (e.g., Unit, Tablet, Bottle)</label>
-                                    <input type="text" name="base_unit_name" class="form-control" value="{{ old('base_unit_name', $product->base_unit_name) }}" placeholder="e.g. Pcs" required>
+                                    <label class="field-label">Legacy Unit Label (e.g., Unit, Tablet, Bottle)</label>
+                                    <input type="text" name="base_unit_name" class="form-control" value="{{ old('base_unit_name', $product->base_unit_name ?: 'pcs') }}" placeholder="e.g. Pcs">
                                 </div>
                             </div>
                             <div class="col-md-3 edit-measurement-technical-field">
                                 <div class="form-group">
-                                    <label class="field-label">Unit of Measure *</label>
-                                    <select name="unit_id" class="form-control" required>
+                                    <label class="field-label">Unit of Measure</label>
+                                    <select name="unit_id" class="form-control">
                                         <option value="">Select unit</option>
                                         @foreach(($units ?? collect()) as $unit)
                                             <option value="{{ $unit->id }}" @selected((string) old('unit_id', $product->unit_id) === (string) $unit->id || (!old('unit_id', $product->unit_id) && $unit->symbol === 'pcs'))>
