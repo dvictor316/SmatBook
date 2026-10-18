@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\{Product, Expense, Sale, Company, Subscription, User, Plan, ProductBranchStock};
 use App\Models\Customer;
 use App\Support\InventoryQuantity;
+use App\Support\StockValuation;
 use Illuminate\Support\Facades\{DB, Auth, Schema, Cache, Log};
 use Illuminate\Database\QueryException;
 use Carbon\Carbon;
@@ -194,8 +195,6 @@ class DashboardController extends Controller
             $totalSales = $this->getTotalSales($company, $activeBranch);
             $totalProfit = $this->getTotalProfit($company, $activeBranch);
             $totalExpenses = $this->getTotalExpenses($company, $activeBranch);
-            $activeStock = $this->getTotalStock($company, $activeBranch);
-            $inventoryValue = $this->getInventoryValue($company, $activeBranch);
             $totalInvoices = $this->getTotalInvoices($company, $activeBranch);
             $activeCustomers = $this->getActiveCustomers($company);
             $lowStockCount = $this->getLowStockCount($company, $activeBranch);
@@ -219,8 +218,6 @@ class DashboardController extends Controller
                 'totalProfit'     => $totalProfit,
                 'netProfit'       => $totalProfit, // alias used by pro dashboard
                 'totalExpenses'   => $totalExpenses,
-                'activeStock'     => $activeStock,
-                'inventoryValue'  => $inventoryValue,
                 'totalInvoices'   => $totalInvoices, // alias used by basic dashboard
                 'activeCustomers' => $activeCustomers, // alias used by basic dashboard
                 'lowStockCount'   => $lowStockCount,
@@ -240,6 +237,15 @@ class DashboardController extends Controller
                 'countryHeatMap'  => $this->getHeatMapData($company),
             ];
         });
+
+        $valuation = app(StockValuation::class);
+        $stockSummary = $valuation->summary($valuation->rowsQuery(
+            $resolvedCompanyScopeId,
+            (int) $user->id,
+            $activeBranch
+        ));
+        $metrics['activeStock'] = $stockSummary['quantity'];
+        $metrics['inventoryValue'] = $stockSummary['value'];
 
      // 4. PACKAGING DATA FOR DEEP SAPPHIRE VIEW
         $monthlySalesData = $this->getMonthlySalesData($company, $activeBranch);
@@ -887,52 +893,6 @@ class DashboardController extends Controller
         }
 
         return round(min(100, max(0, ($todayRevenue / $projectedMonthRevenue) * 100)), 1);
-    }
-
-    private function getInventoryValue($company, ?array $activeBranch = null): float
-    {
-        if (!Schema::hasTable('products')) {
-            return 0;
-        }
-
-        if (($activeBranch['scope'] ?? 'branch') === 'all' && Schema::hasTable('product_branch_stocks')) {
-            $priceColumn = Schema::hasColumn('products', 'price') ? 'products.price' : (Schema::hasColumn('products', 'product_price') ? 'products.product_price' : null);
-            if (!$priceColumn) {
-                return 0;
-            }
-
-            return (float) ($this->scopeByCompany(DB::table('products'), 'products', $company)
-                ->join('product_branch_stocks', 'product_branch_stocks.product_id', '=', 'products.id')
-                ->selectRaw("SUM(COALESCE(product_branch_stocks.quantity, 0) * COALESCE({$priceColumn}, 0)) as inventory_value")
-                ->value('inventory_value') ?? 0);
-        }
-
-        if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
-            $priceColumn = Schema::hasColumn('products', 'price') ? 'products.price' : (Schema::hasColumn('products', 'product_price') ? 'products.product_price' : null);
-            $stockColumn = Schema::hasColumn('products', 'stock') ? 'products.stock' : (Schema::hasColumn('products', 'stock_quantity') ? 'products.stock_quantity' : '0');
-            if (!$priceColumn) {
-                return 0;
-            }
-
-            return (float) ($this->scopeByCompany(Product::query(), 'products', $company)
-                ->leftJoin('product_branch_stocks', function ($join) use ($activeBranch) {
-                    $join->on('product_branch_stocks.product_id', '=', 'products.id')
-                        ->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
-                })
-                ->selectRaw("SUM(COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) * COALESCE({$priceColumn}, 0)) as inventory_value")
-                ->value('inventory_value') ?? 0);
-        }
-
-        $stockColumn = Schema::hasColumn('products', 'stock') ? 'stock' : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
-        $priceColumn = Schema::hasColumn('products', 'price') ? 'price' : (Schema::hasColumn('products', 'product_price') ? 'product_price' : null);
-
-        if (!$stockColumn || !$priceColumn) {
-            return 0;
-        }
-
-        return (float) ($this->scopeByCompany(Product::query(), 'products', $company)
-            ->selectRaw("SUM(COALESCE({$stockColumn}, 0) * COALESCE({$priceColumn}, 0)) as inventory_value")
-            ->value('inventory_value') ?? 0);
     }
 
     private function getCurrentMonthSales($company, ?array $activeBranch = null): float

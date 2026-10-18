@@ -4602,57 +4602,28 @@ class ReportController extends Controller
     public function stockValuation(Request $request)
     {
         $activeBranch = $this->getActiveBranchContext();
+        $valuation = app(\App\Support\StockValuation::class);
+        $query = $valuation->rowsQuery(
+            (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0),
+            (int) (Auth::id() ?? 0),
+            $activeBranch
+        );
         $rows = collect();
-        if (Schema::hasTable('products')) {
-            $qtyCol = $this->productStockColumn('products');
-            $costExpr = $this->productCostExpression('products');
-            if ($qtyCol) {
-                $hasCategories = Schema::hasTable('categories') && Schema::hasColumn('products', 'category_id');
-                $catExpr = $hasCategories
-                    ? "COALESCE(categories.name, 'Uncategorized')"
-                    : (Schema::hasColumn('products', 'category') ? "COALESCE(products.category,'Uncategorized')" : "'Uncategorized'");
-                $qtyExpr = "COALESCE({$qtyCol}, 0)";
-                $query = DB::table('products')
-                    ->select('products.name', 'products.sku', DB::raw("{$catExpr} as category"));
-                if ($hasCategories) {
-                    $query->leftJoin('categories', 'products.category_id', '=', 'categories.id');
-                }
-                $this->applyTenantScope($query, 'products');
-
-                if (
-                    (! empty($activeBranch['id']) || ! empty($activeBranch['name']))
-                    && Schema::hasTable('product_branch_stocks')
-                    && Schema::hasColumn('product_branch_stocks', 'quantity')
-                ) {
-                    $query->leftJoin('product_branch_stocks', function ($join) use ($activeBranch) {
-                        $join->on('product_branch_stocks.product_id', '=', 'products.id')
-                            ->where(function ($branchJoin) use ($activeBranch) {
-                                if (! empty($activeBranch['id']) && Schema::hasColumn('product_branch_stocks', 'branch_id')) {
-                                    $branchJoin->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
-                                }
-
-                                if (! empty($activeBranch['name']) && Schema::hasColumn('product_branch_stocks', 'branch_name')) {
-                                    $method = ! empty($activeBranch['id']) && Schema::hasColumn('product_branch_stocks', 'branch_id') ? 'orWhere' : 'where';
-                                    $branchJoin->{$method}('product_branch_stocks.branch_name', (string) $activeBranch['name']);
-                                }
-                            });
-                    });
-                    $qtyExpr = "COALESCE(product_branch_stocks.quantity, {$qtyCol}, 0)";
-                }
-
-                $query->addSelect(
-                    DB::raw("{$qtyExpr} as qty"),
-                    DB::raw("{$costExpr} as unit_cost"),
-                    DB::raw("{$qtyExpr} * {$costExpr} as total_value")
-                )
-                    ->whereRaw("{$qtyExpr} > 0")
-                    ->orderByDesc(DB::raw("{$qtyExpr} * {$costExpr}"));
-
-                $rows = $query->get();
+        $summary = $valuation->summary($query ? clone $query : null);
+        if ($query) {
+            $hasCategories = Schema::hasTable('categories') && Schema::hasColumn('products', 'category_id');
+            $category = $hasCategories
+                ? "COALESCE(categories.name, 'Uncategorized')"
+                : (Schema::hasColumn('products', 'category') ? "COALESCE(products.category, 'Uncategorized')" : "'Uncategorized'");
+            if ($hasCategories) {
+                $query->leftJoin('categories', 'products.category_id', '=', 'categories.id');
             }
+            $rows = $query->addSelect(DB::raw("{$category} as category"))
+                ->orderByDesc('total_value')
+                ->get();
         }
-        $totalValue = (float) $rows->sum('total_value');
-        $totalQty = (float) $rows->sum('qty');
+        $totalValue = $summary['value'];
+        $totalQty = $summary['quantity'];
 
         return view('Reports.Reports.stock-valuation', compact('rows', 'totalValue', 'totalQty'));
     }

@@ -99,6 +99,59 @@ class ReportIntegrityTest extends TestCase
             ->assertViewHas('summary', fn (array $summary) => $summary['total_transactions'] === 0);
     }
 
+    public function test_dashboard_inventory_assets_match_stock_valuation_report_at_cost(): void
+    {
+        $this->withoutExceptionHandling();
+        DB::connection()->getPdo()->sqliteCreateFunction('MONTHNAME', fn ($date) => date('F', strtotime($date)), 1);
+        DB::connection()->getPdo()->sqliteCreateFunction('MONTH', fn ($date) => (int) date('n', strtotime($date)), 1);
+        [$user, $company] = $this->businessUser();
+        $otherCompany = Company::withoutGlobalScope('tenant')->create(['name' => 'Other Business']);
+        $categoryId = DB::table('categories')->insertGetId(['name' => 'Valuation', 'created_at' => now(), 'updated_at' => now()]);
+        $product = DB::table('products')->insertGetId([
+            'company_id' => $company->id, 'user_id' => $user->id, 'category_id' => $categoryId,
+            'name' => 'Branch Product', 'sku' => 'VALUATION-BRANCH',
+            'price' => 200, 'purchase_price' => 100, 'stock' => 10, 'stock_quantity' => 10,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        DB::table('product_branch_stocks')->insert([
+            ['product_id' => $product, 'company_id' => $company->id, 'branch_id' => 'hq', 'branch_name' => 'Headquarters', 'quantity' => 7, 'created_at' => now(), 'updated_at' => now()],
+            ['product_id' => $product, 'company_id' => $company->id, 'branch_id' => 'other', 'branch_name' => 'Other Branch', 'quantity' => 3, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+        DB::table('products')->insert([
+            ['company_id' => $company->id, 'user_id' => $user->id, 'category_id' => $categoryId, 'name' => 'Unseeded Product', 'sku' => 'VALUATION-FALLBACK', 'price' => 90, 'purchase_price' => 50, 'stock' => 2, 'stock_quantity' => 2, 'created_at' => now(), 'updated_at' => now()],
+            ['company_id' => $company->id, 'user_id' => $user->id, 'category_id' => $categoryId, 'name' => 'No Cost Product', 'sku' => 'VALUATION-NO-COST', 'price' => 400, 'purchase_price' => 0, 'stock' => 1, 'stock_quantity' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['company_id' => $otherCompany->id, 'user_id' => $user->id, 'category_id' => $categoryId, 'name' => 'Other Tenant Product', 'sku' => 'VALUATION-OTHER', 'price' => 900, 'purchase_price' => 500, 'stock' => 4, 'stock_quantity' => 4, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $this->withoutReportAccessMiddleware()->actingAs($user)->withSession($this->branchSession($company));
+        $report = $this->get(route('reports.stock-valuation'));
+        $report->assertOk()->assertViewHas('totalValue', 800.0)->assertViewHas('totalQty', 10.0);
+
+        $dashboard = $this->get(route('workspace.business.dashboard'));
+        $dashboard->assertOk();
+        $this->assertSame(800.0, (float) $dashboard->viewData('metrics')['inventoryValue']);
+        $this->assertSame(10.0, (float) $dashboard->viewData('metrics')['activeStock']);
+
+        $this->withSession(['active_branch_scope' => 'all']);
+        $allBranchesReport = $this->get(route('reports.stock-valuation'));
+        $allBranchesReport->assertOk()->assertViewHas('totalValue', 1100.0)->assertViewHas('totalQty', 13.0);
+
+        $allBranchesDashboard = $this->get(route('workspace.business.dashboard'));
+        $allBranchesDashboard->assertOk();
+        $this->assertSame(1100.0, (float) $allBranchesDashboard->viewData('metrics')['inventoryValue']);
+        $this->assertSame(13.0, (float) $allBranchesDashboard->viewData('metrics')['activeStock']);
+
+        DB::table('product_branch_stocks')->where('product_id', $product)->where('branch_id', 'hq')->update(['quantity' => 5]);
+        $this->withSession($this->branchSession($company));
+        $updatedReport = $this->get(route('reports.stock-valuation'));
+        $updatedReport->assertOk()->assertViewHas('totalValue', 600.0)->assertViewHas('totalQty', 8.0);
+
+        $updatedDashboard = $this->get(route('workspace.business.dashboard'));
+        $updatedDashboard->assertOk();
+        $this->assertSame(600.0, (float) $updatedDashboard->viewData('metrics')['inventoryValue']);
+        $this->assertSame(8.0, (float) $updatedDashboard->viewData('metrics')['activeStock']);
+    }
+
     public function test_general_ledger_includes_company_system_entries_with_no_user(): void
     {
         $this->withoutExceptionHandling();

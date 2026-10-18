@@ -172,4 +172,96 @@ class SuperAdminModuleDashboardTest extends TestCase
             ->assertOk()
             ->assertSee('Current Schema Limited');
     }
+
+    public function test_registered_business_dashboard_counts_companies_including_unpaid_and_additional_workspaces(): void
+    {
+        $platform = Company::create(['name' => 'Platform Administration']);
+        $superAdmin = User::factory()->create(['company_id' => $platform->id, 'role' => 'super_admin']);
+        $owner = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+
+        $paid = Company::withoutGlobalScope('tenant')->create([
+            'user_id' => $owner->id,
+            'owner_id' => $owner->id,
+            'name' => 'Paid Business',
+            'status' => 'active',
+            'domain_prefix' => 'paid-business',
+        ]);
+        $owner->forceFill(['company_id' => $paid->id])->save();
+
+        Company::withoutGlobalScope('tenant')->create([
+            'user_id' => $owner->id,
+            'owner_id' => $owner->id,
+            'name' => 'Awaiting Payment Business',
+            'status' => 'pending',
+            'domain_prefix' => 'awaiting-business',
+        ]);
+        $additional = Company::withoutGlobalScope('tenant')->create([
+            'user_id' => $owner->id,
+            'owner_id' => $owner->id,
+            'name' => 'Second Paid Business',
+            'status' => 'active',
+            'domain_prefix' => 'second-paid-business',
+        ]);
+        $trialOwner = User::factory()->create(['role' => 'admin']);
+        $trial = Company::withoutGlobalScope('tenant')->create([
+            'owner_id' => $trialOwner->id,
+            'name' => 'Trial Business',
+            'status' => 'trial',
+        ]);
+        $trialOwner->forceFill(['company_id' => $trial->id])->save();
+        Company::withoutGlobalScope('tenant')->create([
+            'name' => 'Guided Demo',
+            'status' => 'demo',
+            'is_demo' => true,
+        ]);
+
+        Subscription::withoutGlobalScopes()->create([
+            'user_id' => $owner->id,
+            'company_id' => $paid->id,
+            'subscriber_name' => 'Paid Business',
+            'plan' => 'Professional Yearly',
+            'billing_cycle' => 'Yearly',
+            'amount' => 80000,
+            'status' => 'Active',
+            'payment_status' => 'paid',
+        ]);
+        Subscription::withoutGlobalScopes()->create([
+            'user_id' => $trialOwner->id,
+            'company_id' => $trial->id,
+            'subscriber_name' => 'Trial Business',
+            'plan' => 'Basic',
+            'billing_cycle' => 'Monthly',
+            'amount' => 20000,
+            'status' => 'Active',
+            'payment_status' => 'unpaid',
+        ]);
+        Subscription::withoutGlobalScopes()->create([
+            'user_id' => $owner->id,
+            'company_id' => $additional->id,
+            'subscriber_name' => 'Second Paid Business',
+            'plan' => 'Basic',
+            'billing_cycle' => 'Monthly',
+            'amount' => 10000,
+            'status' => 'Active',
+            'payment_status' => 'paid',
+        ]);
+
+        $dashboard = $this->actingAs($superAdmin)->get(route('super_admin.dashboard'));
+        $dashboard->assertOk();
+        $this->assertSame(4, (int) $dashboard->viewData('metrics')['registered_businesses_total']);
+        $this->assertSame(2, (int) $dashboard->viewData('metrics')['paid_subs']);
+        $this->assertSame(90000.0, (float) $dashboard->viewData('metrics')['registered_user_revenue']);
+
+        $registry = $this->actingAs($superAdmin)->get(route('super_admin.users.index', ['category' => 'registered_businesses']));
+        $registry->assertOk()
+            ->assertSee('Paid Business')
+            ->assertSee('Second Paid Business')
+            ->assertSee('Awaiting Payment Business')
+            ->assertSee('Trial Business')
+            ->assertDontSee('Guided Demo');
+        $this->assertSame(4, (int) $registry->viewData('metrics')['total']);
+        $this->assertSame(4, $registry->viewData('businesses')->total());
+        $this->assertSame(80000.0, (float) $registry->viewData('businesses')->getCollection()->firstWhere('id', $paid->id)->total_paid);
+        $this->assertSame(10000.0, (float) $registry->viewData('businesses')->getCollection()->firstWhere('id', $additional->id)->total_paid);
+    }
 }

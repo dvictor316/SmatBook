@@ -61,7 +61,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="fw-bold text-dark mb-0">Registered Businesses</h3>
-            <p class="text-muted small">Businesses that have bought the app and therefore belong in the registered businesses bucket.</p>
+            <p class="text-muted small">Registered business workspaces, including those awaiting payment or on trial.</p>
         </div>
         <div class="d-flex gap-2">
             <button onclick="window.print();" class="btn btn-white border px-3 btn-sm fw-bold">
@@ -105,6 +105,7 @@
                         <option value="">All Statuses</option>
                         <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
                         <option value="trial" {{ request('status') == 'trial' ? 'selected' : '' }}>Trial</option>
+                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                         <option value="suspended" {{ request('status') == 'suspended' ? 'selected' : '' }}>Suspended</option>
                         <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
                     </select>
