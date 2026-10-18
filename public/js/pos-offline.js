@@ -55,7 +55,7 @@
             : review ? `${review} sale${review === 1 ? '' : 's'} need review`
                 : queued ? `Syncing ${queued} sale${queued === 1 ? '' : 's'}` : 'Online';
         indicator.title = review
-            ? 'A queued sale could not synchronize, usually because stock or account details changed.'
+            ? 'A queued sale could not synchronize. Click to review stock, account, or business/branch details.'
             : 'POS connection and offline sale queue status';
     }
 
@@ -150,6 +150,9 @@
             ...payload,
             client_sale_id: payload.client_sale_id || uuid(),
             client_recorded_at: payload.client_recorded_at || new Date().toISOString(),
+            offline_company_id: config.companyId,
+            offline_branch_id: config.branchId,
+            offline_branch_name: config.branchName,
         };
 
         if (!navigator.onLine) {

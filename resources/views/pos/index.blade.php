@@ -5695,6 +5695,9 @@ body.pos-terminal-workspace .pos-rail-btn[aria-disabled="true"] {
 window.POS_OFFLINE_CONFIG = {
     saleUrl: @json($posSaleStoreUrl ?? url('/sales')),
     csrfToken: @json(csrf_token()),
+    companyId: @json((string) (session('current_tenant_id') ?? auth()->user()?->company_id ?? '')),
+    branchId: @json((string) ($activeBranch['id'] ?? '')),
+    branchName: @json((string) ($activeBranch['name'] ?? '')),
 };
 </script>
 <script src="{{ asset('js/pos-offline.js') }}"></script>

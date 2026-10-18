@@ -4628,6 +4628,45 @@ class ReportController extends Controller
         return view('Reports.Reports.stock-valuation', compact('rows', 'totalValue', 'totalQty'));
     }
 
+    /** Expected gross profit on stock currently on hand at retail price. */
+    public function expectedStockProfit(Request $request)
+    {
+        $query = app(\App\Support\StockValuation::class)->rowsQuery(
+            (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0),
+            (int) (Auth::id() ?? 0),
+            $this->getActiveBranchContext()
+        );
+
+        $rows = $query ? $query->orderBy('products.name')->get() : collect();
+        $summary = [
+            'quantity' => 0.0,
+            'cost' => 0.0,
+            'revenue' => 0.0,
+            'profit' => 0.0,
+            'incomplete_products' => 0,
+        ];
+
+        foreach ($rows as $row) {
+            $row->selling_price = (float) (($row->retail_price ?? 0) ?: ($row->price ?? 0));
+            $row->unit_cost = (float) $row->unit_cost;
+            $row->qty = (float) $row->qty;
+            $row->has_complete_pricing = $row->unit_cost > 0 && $row->selling_price > 0;
+            $row->expected_revenue = $row->has_complete_pricing ? $row->qty * $row->selling_price : null;
+            $row->expected_profit = $row->has_complete_pricing ? $row->qty * ($row->selling_price - $row->unit_cost) : null;
+
+            $summary['quantity'] += $row->qty;
+            if ($row->has_complete_pricing) {
+                $summary['cost'] += $row->qty * $row->unit_cost;
+                $summary['revenue'] += $row->expected_revenue;
+                $summary['profit'] += $row->expected_profit;
+            } else {
+                $summary['incomplete_products']++;
+            }
+        }
+
+        return view('Reports.Reports.expected-stock-profit', compact('rows', 'summary'));
+    }
+
     /** Stock by Category */
     public function stockByCategory(Request $request)
     {

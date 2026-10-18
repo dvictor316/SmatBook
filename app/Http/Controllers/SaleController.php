@@ -1245,6 +1245,21 @@ public function store(Request $request)
     $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id);
     $clientSaleId = trim((string) $request->input('client_sale_id', ''));
 
+    if ($clientSaleId !== '' && $request->filled('offline_company_id')) {
+        $activeBranch = $this->getActiveBranchContext();
+        $sameCompany = (string) $request->input('offline_company_id') === (string) $companyId;
+        $sameBranch = (string) $request->input('offline_branch_id', '') === (string) ($activeBranch['id'] ?? '');
+        if ($sameBranch && (string) ($activeBranch['id'] ?? '') === '') {
+            $sameBranch = (string) $request->input('offline_branch_name', '') === (string) ($activeBranch['name'] ?? '');
+        }
+        if (!$sameCompany || !$sameBranch) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This sale was recorded in a different business or branch. Switch back to that workspace, then retry synchronization.',
+            ], 409);
+        }
+    }
+
     if ($clientSaleId !== '' && mb_strlen($clientSaleId) <= 64) {
         $existingSale = Sale::query()
             ->where('company_id', $companyId)
@@ -1283,6 +1298,9 @@ public function store(Request $request)
         'split_details.transfer_account_id' => 'nullable|integer',
         'client_sale_id' => 'nullable|string|max:64',
         'client_recorded_at' => 'nullable|date',
+        'offline_company_id' => 'nullable|integer',
+        'offline_branch_id' => 'nullable|string|max:100',
+        'offline_branch_name' => 'nullable|string|max:255',
     ]);
     $validator->after(function ($validator) use ($request) {
         $customerId = (int) ($request->input('customer_id') ?? 0);

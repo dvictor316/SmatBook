@@ -1304,6 +1304,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
 
         // Sub-report family — Stock
         Route::get('/stock-valuation', 'stockValuation')->middleware('plan.access:basic,professional,enterprise')->name('stock-valuation');
+        Route::get('/expected-stock-profit', 'expectedStockProfit')->middleware('plan.access:basic,professional,enterprise')->name('expected-stock-profit');
         Route::get('/stock-by-category', 'stockByCategory')->middleware('plan.access:basic,professional,enterprise')->name('stock-by-category');
 
         // Sub-report family — Tax

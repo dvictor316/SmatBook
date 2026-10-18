@@ -152,6 +152,60 @@ class ReportIntegrityTest extends TestCase
         $this->assertSame(8.0, (float) $updatedDashboard->viewData('metrics')['activeStock']);
     }
 
+    public function test_expected_stock_profit_uses_branch_stock_and_excludes_missing_prices(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $otherCompany = Company::withoutGlobalScope('tenant')->create(['name' => 'Other Business']);
+        $product = DB::table('products')->insertGetId([
+            'company_id' => $company->id, 'user_id' => $user->id, 'name' => 'Retail Product',
+            'sku' => 'EXPECTED-1', 'price' => 200, 'purchase_price' => 100, 'stock' => 10,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        DB::table('product_branch_stocks')->insert([
+            ['product_id' => $product, 'company_id' => $company->id, 'branch_id' => 'hq', 'branch_name' => 'Headquarters', 'quantity' => 7, 'created_at' => now(), 'updated_at' => now()],
+            ['product_id' => $product, 'company_id' => $company->id, 'branch_id' => 'other', 'branch_name' => 'Other', 'quantity' => 3, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+        DB::table('products')->insert([
+            ['company_id' => $company->id, 'user_id' => $user->id, 'name' => 'Missing Cost', 'sku' => 'EXPECTED-2', 'price' => 400, 'purchase_price' => 0, 'stock' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['company_id' => $otherCompany->id, 'user_id' => $user->id, 'name' => 'Other Tenant', 'sku' => 'EXPECTED-3', 'price' => 900, 'purchase_price' => 500, 'stock' => 4, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $this->withoutReportAccessMiddleware()->actingAs($user)->withSession($this->branchSession($company));
+        $this->get(route('reports.expected-stock-profit'))->assertOk()
+            ->assertViewHas('summary', fn (array $summary) => $summary['quantity'] === 8.0
+                && $summary['cost'] === 700.0 && $summary['revenue'] === 1400.0
+                && $summary['profit'] === 700.0 && $summary['incomplete_products'] === 1);
+
+        $this->withSession(['active_branch_scope' => 'all']);
+        $this->get(route('reports.expected-stock-profit'))->assertOk()
+            ->assertViewHas('summary', fn (array $summary) => $summary['quantity'] === 11.0
+                && $summary['cost'] === 1000.0 && $summary['revenue'] === 2000.0
+                && $summary['profit'] === 1000.0 && $summary['incomplete_products'] === 1);
+    }
+
+    public function test_offline_sale_cannot_sync_to_another_branch_or_business(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $this->withoutReportAccessMiddleware()->actingAs($user)->withSession($this->branchSession($company));
+
+        $payload = [
+            'client_sale_id' => 'offline-context-test',
+            'offline_company_id' => $company->id,
+            'offline_branch_id' => 'other',
+            'offline_branch_name' => 'Other',
+        ];
+        $this->postJson(route('sales.store'), $payload)->assertStatus(409);
+        $this->assertDatabaseMissing('sales', ['client_sale_id' => 'offline-context-test']);
+
+        $payload['offline_branch_id'] = 'hq';
+        $payload['offline_company_id'] = $company->id + 1;
+        $this->postJson(route('sales.store'), $payload)->assertStatus(409);
+        $this->assertDatabaseMissing('sales', ['client_sale_id' => 'offline-context-test']);
+
+        $payload['offline_company_id'] = $company->id;
+        $this->postJson(route('sales.store'), $payload)->assertUnprocessable();
+    }
+
     public function test_general_ledger_includes_company_system_entries_with_no_user(): void
     {
         $this->withoutExceptionHandling();

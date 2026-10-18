@@ -503,6 +503,11 @@
                         <a href="{{ route('reports.stock-valuation') }}" class="rl-name">Stock Valuation</a>
                         <a href="{{ route('reports.stock-valuation') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
+                    <div class="rl-row" data-section="inventory" data-tab="inventory" data-id="expected-stock-profit" data-url="{{ route('reports.expected-stock-profit') }}" data-keywords="expected stock profit projected gross margin retail selling purchase price">
+                        <button class="rl-star" data-id="expected-stock-profit" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.expected-stock-profit') }}" class="rl-name">Expected Stock Profit</a>
+                        <a href="{{ route('reports.expected-stock-profit') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
                     @endunless
 
                     @unless($isStarterReportAccess)
