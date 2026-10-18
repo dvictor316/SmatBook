@@ -1549,10 +1549,12 @@ class ProductController extends Controller
     public function edit($id)
     {
         $product = Product::with('activeProductUnits')->findOrFail($id);
+        $activeBranch = $this->getActiveBranchContext();
+        $product->setAttribute('active_branch_stock', $this->branchInventory->getAvailableStock($product, $activeBranch));
         $categories = Category::orderBy('name')->get();
         $units = $this->unitRows();
         
-        return view('Inventory.Products.edit', compact('product', 'categories', 'units'));
+        return view('Inventory.Products.edit', compact('product', 'categories', 'units', 'activeBranch'));
     }
 
 public function inventory(Request $request)
@@ -1851,7 +1853,7 @@ public function inventory(Request $request)
             'wholesale_price'  => 'nullable|numeric|min:0',
             'special_price'    => 'nullable|numeric|min:0',
             'purchase_price'   => 'required|numeric|min:0',
-            'stock'            => 'nullable|numeric|min:0',
+            'stock'            => 'required|numeric|min:0',
             'stock_cartons'    => 'nullable|numeric|min:0',
             'stock_rolls'      => 'nullable|numeric|min:0',
             'stock_units'      => 'nullable|numeric|min:0',
@@ -1870,6 +1872,7 @@ public function inventory(Request $request)
             'status'           => 'required|in:active,inactive',
             'description'      => 'nullable|string',
             'barcode'          => 'nullable|string|max:191',
+            'expiry_date'      => 'nullable|date',
             'reorder_level'    => 'nullable|integer|min:0',
             'reorder_quantity' => 'nullable|integer|min:0',
         ]);
@@ -1943,13 +1946,16 @@ public function inventory(Request $request)
             unset($validated['reorder_quantity']);
         }
 
-        $validated['stock_quantity'] = $validated['stock']; 
-        $product->update($validated);
-        $this->syncProductUnitRows($product->fresh(['unit', 'baseUnit', 'purchaseUnit']));
-        $this->applyCartonSellingPrice($product, $cartonSellingPrice);
+        $validated['stock_quantity'] = $validated['stock'];
+        DB::transaction(function () use ($product, $validated, $cartonSellingPrice) {
+            $product->update($validated);
+            $this->branchInventory->setBranchStock($product, (float) $validated['stock'], $this->getActiveBranchContext());
+            $this->syncProductUnitRows($product->fresh(['unit', 'baseUnit', 'purchaseUnit']));
+            $this->applyCartonSellingPrice($product, $cartonSellingPrice);
+        });
         $this->clearDashboardMetricsCache();
 
-        return redirect()->route('product-list')->with('success', 'Update pushed to ' . env('SESSION_DOMAIN'));
+        return redirect()->route('product-list')->with('success', 'Product and stock details updated successfully.');
     }
 
     /**
