@@ -5567,7 +5567,7 @@ body.pos-terminal-workspace .pos-rail-btn[aria-disabled="true"] {
                         </select>
                         @unless($isStarterPos ?? false)
                             <div class="col-md-6" id="pos-cash-account-wrap">
-                                <label class="fw-semibold">Payment Method: Cash Account <span class="text-danger">*</span></label>
+                                <label class="fw-semibold" for="deposit-account"><span id="pos-cash-account-label">Payment Method</span> <span class="text-danger">*</span></label>
                                 <small class="text-muted d-block mb-1">Options come from your active Chart of Accounts payment accounts.</small>
                                 <select id="deposit-account" class="form-select">
                                     <option value="">-- Select Account --</option>
@@ -5586,12 +5586,12 @@ body.pos-terminal-workspace .pos-rail-btn[aria-disabled="true"] {
                             </div>
                         @endunless
                         <div class="col-md-6" id="pos-cash-amount-wrap">
-                            <label>Amount Paid: Cash</label>
+                            <label for="amount-paid" id="pos-cash-amount-label">Amount Paid</label>
                             <input type="number" min="0" step="0.01" id="amount-paid" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--success-500);">
                         </div>
                         @unless($isStarterPos ?? false)
                             <div class="col-md-6 d-none" id="split-transfer-account-wrap">
-                                <label>Payment Method: Bank Account (Transfer)</label>
+                                <label for="transfer-account" id="pos-transfer-account-label">Payment Method</label>
                                 <small class="text-muted d-block mb-1">Select a bank account created in Chart of Accounts.</small>
                                 <select id="transfer-account" class="form-select">
                                     <option value="">-- Select Account --</option>
@@ -5608,12 +5608,12 @@ body.pos-terminal-workspace .pos-rail-btn[aria-disabled="true"] {
                             </div>
                         @endunless
                         <div class="col-md-6 d-none" id="split-transfer-wrap">
-                            <label>Amount Paid: Bank Transfer</label>
+                            <label for="transfer-amount" id="pos-transfer-amount-label">Amount Paid</label>
                             <input type="number" min="0" step="0.01" id="transfer-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
                         </div>
                         @unless($isStarterPos ?? false)
 	                        <div class="col-md-6 d-none" id="split-card-account-wrap">
-                                <label>Payment Method: Bank Account (POS Settlement)</label>
+                                <label for="card-account" id="pos-card-account-label">Payment Method</label>
                                 <select id="card-account" class="form-select">
                                     <option value="">-- Select Account --</option>
                                     @foreach(($depositAccounts ?? []) as $acct)
@@ -5631,7 +5631,7 @@ body.pos-terminal-workspace .pos-rail-btn[aria-disabled="true"] {
 	                        </div>
                         @endunless
                         <div class="col-md-6 d-none" id="split-card-wrap">
-                            <label>Amount Paid: POS</label>
+                            <label for="card-amount" id="pos-card-amount-label">Amount Paid</label>
                             <input type="number" min="0" step="0.01" id="card-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
                         </div>
 	                        <div class="col-md-6 d-none" id="wallet-payment-wrap">
@@ -8337,6 +8337,7 @@ window.POS_ENABLE_FALLBACK = function () {
 
     function toggleSplitFields() {
         const isSplit = paymentMethod?.value === 'Split';
+        const isMixed = activePaymentTab === 'Split';
         const showCash = !isSplit || activePaymentTab === 'Split';
         const showTransfer = isSplit && activePaymentTab !== 'pos-pay-card-shortcut';
         const showCard = isSplit && activePaymentTab !== 'pos-pay-transfer-shortcut';
@@ -8350,6 +8351,18 @@ window.POS_ENABLE_FALLBACK = function () {
         splitCardWrap?.classList.toggle('d-none', !showCard);
         splitCardAccountWrap?.classList.toggle('d-none', !showCard);
         idleIllustration?.classList.toggle('is-split-compact', isSplit);
+        const labels = {
+            'pos-cash-account-label': isMixed ? 'Cash payment account' : 'Payment Method',
+            'pos-cash-amount-label': isMixed ? 'Cash Amount' : 'Amount Paid',
+            'pos-transfer-account-label': isMixed ? 'Transfer payment account' : 'Payment Method',
+            'pos-transfer-amount-label': isMixed ? 'Transfer Amount' : 'Amount Paid',
+            'pos-card-account-label': isMixed ? 'POS settlement account' : 'Payment Method',
+            'pos-card-amount-label': isMixed ? 'POS Amount' : 'Amount Paid',
+        };
+        Object.entries(labels).forEach(([id, label]) => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = label;
+        });
 
         if (isSplit && amountPaid) {
             const total = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount));
@@ -8379,6 +8392,18 @@ window.POS_ENABLE_FALLBACK = function () {
         }
 
         updateChange();
+    }
+
+    function syncSelectedPaymentAmount(previousDue) {
+        const input = activePaymentTab === 'pos-pay-transfer-shortcut'
+            ? transferAmount
+            : activePaymentTab === 'pos-pay-card-shortcut' ? cardAmount : null;
+        if (!input) return;
+
+        const current = moneyValue(input);
+        if (current <= 0 || Math.abs(current - previousDue) < 0.01) {
+            input.value = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount)).toFixed(2);
+        }
     }
 
     function resetVanillaPosWorkspace() {
@@ -8442,6 +8467,7 @@ window.POS_ENABLE_FALLBACK = function () {
 
     function renderCart() {
         if (!cartBody) return;
+        const previousDue = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount));
         let html = '';
         let totSub = 0;
         let totDisc = 0;
@@ -8499,6 +8525,7 @@ window.POS_ENABLE_FALLBACK = function () {
 	            amountPaid.value = Math.max(0, totGrand - walletApplied).toFixed(2);
 	        }
 	        refreshWalletApplication();
+	        syncSelectedPaymentAmount(previousDue);
 	        updateChange();
 	    }
 
@@ -8845,7 +8872,9 @@ window.POS_ENABLE_FALLBACK = function () {
         });
     });
 	    customerSelect?.addEventListener('change', function () {
+	        const previousDue = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount));
 	        refreshWalletApplication();
+	        syncSelectedPaymentAmount(previousDue);
 	        updateChange();
 	    });
 
