@@ -178,7 +178,7 @@
                                 <td class="fw-bold text-primary money-cell">{{ \App\Support\GeoCurrency::format($runningTotal, 'NGN', $currencyCode, $currencyLocale) }}</td>
                                 <td>
                                     <span class="text-secondary small">
-                                        <i class="fas fa-credit-card me-1"></i> {{ $payment->method }}
+                                        <i class="fas fa-credit-card me-1"></i> {{ $payment->resolved_channel ?: $payment->method }}
                                     </span>
                                 </td>
                                 <td class="small text-muted">

@@ -79,7 +79,6 @@
                             @if($payment->reference)
                                 <p class="small text-muted mb-0">Ref: {{ $payment->reference }}</p>
                             @endif
-                            <p class="small text-muted">Posted to: {{ $payment->account->name ?? 'General Ledger' }}</p>
                         </div>
                     </div>
 

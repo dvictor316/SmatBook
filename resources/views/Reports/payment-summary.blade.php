@@ -235,7 +235,7 @@
                                     {{ optional($payment->sale)->customer_name ?? optional(optional($payment->sale)->customer)->name ?? ($payment->note ?: 'No extra note') }}
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $payment->method ?: 'Not set' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $payment->resolved_channel ?: ($payment->method ?: 'Not set') }}</td>
                             <td class="px-6 py-4 min-w-[220px] text-sm text-gray-600">
                                 {{ $payment->resolved_channel ?? 'Not specified' }}
                             </td>

@@ -92,6 +92,39 @@ class Sale extends Model
         return $this->hasMany(SaleItem::class);
     }
 
+    public function getPaymentReportLabelAttribute(): string
+    {
+        $details = is_array($this->payment_details) ? $this->payment_details : [];
+        $split = is_array($details['split'] ?? null) ? $details['split'] : [];
+        $channels = [
+            'cash' => ['Cash', 'payment_account_name'],
+            'transfer' => ['Bank Transfer', 'transfer_account_name'],
+            'card' => ['POS/Card', 'card_account_name'],
+        ];
+        $labels = [];
+        foreach ($channels as $channel => [$mode, $accountKey]) {
+            if ((float) ($split[$channel] ?? 0) > 0) {
+                $labels[] = trim((string) ($details[$accountKey] ?? '')) ?: $mode;
+            }
+        }
+        if ($labels !== []) {
+            return implode(' / ', array_unique($labels));
+        }
+        $method = strtolower((string) $this->payment_method);
+        $accountKey = match ($method) {
+            'transfer', 'bank_transfer', 'bank transfer' => 'transfer_account_name',
+            'card', 'pos', 'pos/card' => 'card_account_name',
+            default => 'payment_account_name',
+        };
+        return trim((string) ($details[$accountKey] ?? $details['payment_account_name'] ?? '')) ?: match ($method) {
+            'transfer', 'bank_transfer', 'bank transfer' => 'Bank Transfer',
+            'card', 'pos', 'pos/card' => 'POS/Card',
+            'split' => 'Split Payment',
+            'charge_to_room' => 'Charge to Room',
+            default => 'Cash',
+        };
+    }
+
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);

@@ -98,6 +98,22 @@
                                 @endif
                             </div>
 
+                            @if(!in_array(strtolower((string) $user->role), ['super_admin', 'superadmin', 'state_manager', 'agent'], true))
+                                <details class="mb-3">
+                                    <summary class="form-label">User permissions</summary>
+                                    <input type="hidden" name="permissions_submitted" value="1">
+                                    <p class="text-muted small">Checked permissions define this user's access. Uncheck a permission to revoke it.</p>
+                                    <div class="row">
+                                        @foreach(\App\Models\Permission::orderBy('name')->get() as $permission)
+                                            <label class="col-md-6 mb-2">
+                                                <input type="checkbox" name="permissions[]" value="{{ $permission->name }}" @checked(($user->permissions_override === null && $user->hasRole('administrator')) || $user->hasPermissionTo($permission->name))>
+                                                {{ ucwords(str_replace(['.', '_'], ' ', $permission->name)) }}
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </details>
+                            @endif
+
                             <div class="text-end mt-4">
                                 <a href="{{ route($indexRouteName) }}" class="btn btn-secondary me-2">Cancel</a>
                                 <button type="submit" class="btn btn-primary">Update User</button>

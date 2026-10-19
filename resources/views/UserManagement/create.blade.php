@@ -651,6 +651,7 @@
 
             @unless($isPartnerRole)
             <div class="col-lg-8" id="permissionWorkbench">
+                <input type="hidden" name="permissions_submitted" value="1">
 
                 <div class="perm-toolbar">
                     <div class="perm-toolbar-left">

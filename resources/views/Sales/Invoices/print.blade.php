@@ -569,9 +569,6 @@
                                     <div class="compact-split-pill">
                                         <div class="compact-invoice-meta-label">{{ $line['label'] }}</div>
                                         <div class="compact-item-name">₦{{ number_format($line['amount'], 2) }}</div>
-                                        @if($line['account'])
-                                            <div class="compact-item-meta mt-1">{{ $line['account'] }}</div>
-                                        @endif
                                     </div>
                                 @endforeach
                             </div>

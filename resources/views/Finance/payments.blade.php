@@ -143,7 +143,7 @@
                                                 <i class="fas fa-university small"></i>
                                             </span>
                                         </div>
-                                        <span>{{ $payment->method }}</span>
+                                        <span>{{ $payment->account?->name ?: $payment->method }}</span>
                                     </div>
                                 </td>
                                 <td>

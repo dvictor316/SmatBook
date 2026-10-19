@@ -18,7 +18,7 @@ class CheckPermission
         $user = Auth::user();
 
         if ((method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())
-            || (method_exists($user, 'hasRole') && ($user->hasRole('administrator') || $user->hasRole('admin')))) {
+            || ($user->permissions_override === null && method_exists($user, 'hasRole') && ($user->hasRole('administrator') || $user->hasRole('admin')))) {
             return $next($request);
         }
 

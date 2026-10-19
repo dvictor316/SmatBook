@@ -32,6 +32,28 @@ class ProductController extends Controller
 {
     public function __construct(private readonly BranchInventoryService $branchInventory)
     {
+        $this->middleware('permission:inventory.products.view')->only(['index', 'inventory', 'show', 'exportStock', 'inventory_history']);
+        $this->middleware('permission:inventory.products.create')->only(['create', 'store', 'import']);
+        $this->middleware('permission:inventory.products.edit')->only(['edit', 'update']);
+        $this->middleware('permission:inventory.products.delete')->only(['destroy', 'bulkDestroy', 'undoLastImport']);
+        $this->middleware('permission:inventory.stock.edit')->only(['adjust_stock', 'update_history', 'delete_history', 'storeDamageStock', 'transferStock']);
+        $this->middleware(function ($request, $next) {
+            $hasStock = collect(['stock', 'stock_quantity', 'stock_cartons', 'stock_rolls', 'stock_units'])
+                ->contains(fn ($field) => (float) $request->input($field, 0) > 0);
+            if ($hasStock) {
+                $this->authorizeStockPermission('inventory.products.add_opening_stock');
+            }
+            return $next($request);
+        })->only('store');
+        $this->middleware('permission:inventory.products.add_opening_stock')->only('import');
+    }
+
+    private function authorizeStockPermission(string $permission): void
+    {
+        $user = auth()->user();
+        abort_unless($user && ($user->isSuperAdmin()
+            || ($user->permissions_override === null && $user->hasRole('administrator'))
+            || $user->hasPermissionTo($permission)), 403, 'You do not have permission to change stock.');
     }
 
     private function hasDatabaseConnection(): bool
@@ -1918,6 +1940,13 @@ public function inventory(Request $request)
             $calculatedStock = $this->calculateStockFromPackaging($validated);
         }
         $validated['stock'] = (float) ($calculatedStock ?? (float) $product->stock);
+        $existingBranchStock = $this->branchInventory->getAvailableStock($product, $this->getActiveBranchContext());
+        if (abs($validated['stock'] - $existingBranchStock) > 0.00001) {
+            $this->authorizeStockPermission('inventory.stock.edit');
+            if ($validated['stock'] > $existingBranchStock) {
+                $this->authorizeStockPermission('inventory.products.add_opening_stock');
+            }
+        }
 
         $unitTypeChanged = $validated['unit_type'] !== (string) $product->unit_type;
         if ($unitTypeChanged && $validated['unit_type'] === 'carton' && $validated['units_per_carton'] < 1) {
@@ -1988,6 +2017,10 @@ public function inventory(Request $request)
             'quantity'   => 'required|numeric|min:0.01',
             'type'       => 'required|in:in,out',
         ]);
+
+        if ($request->type === 'in') {
+            $this->authorizeStockPermission('inventory.products.add_opening_stock');
+        }
 
         DB::transaction(function () use ($request) {
             $activeBranch = $this->getActiveBranchContext();

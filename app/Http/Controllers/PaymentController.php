@@ -528,7 +528,7 @@ class PaymentController extends Controller
      */
     public function index(Request $request)
     {
-        $paymentsBase = Payment::with(['sale', 'sale.customer', 'customer', 'creator'])->latest();
+        $paymentsBase = Payment::with(['sale', 'sale.customer', 'customer', 'creator', 'account'])->latest();
         $this->applyTenantScope($paymentsBase, 'payments');
         $paymentsQuery = clone $paymentsBase;
         $this->applyBranchScope($paymentsQuery, 'payments');
@@ -686,54 +686,13 @@ class PaymentController extends Controller
         abort_if(!$payment, 404);
 
         try {
-            DB::transaction(function () use ($payment) {
-                $sale = $payment->sale;
-                Transaction::where('related_id', $payment->id)
-                           ->where('related_type', Payment::class)
-                           ->delete();
-                
-                if ($payment->attachment) {
-                    $filepath = $this->resolveAttachmentPath($payment->attachment);
-                    if ($filepath && file_exists($filepath)) {
-                        @unlink($filepath);
-                    }
+            app(\App\Support\PaymentDeletion::class)->delete($payment);
+            if ($payment->attachment) {
+                $filepath = $this->resolveAttachmentPath($payment->attachment);
+                if ($filepath && file_exists($filepath)) {
+                    @unlink($filepath);
                 }
-                $payment->delete();
-
-                if ($sale) {
-                    $paid = (float) $sale->payments()->sum('amount');
-                    $balance = max(0, (float) ($sale->total ?? 0) - $paid);
-                    $saleUpdate = [
-                        'paid' => $paid,
-                        'amount_paid' => $paid,
-                        'balance' => $balance,
-                        'payment_status' => $balance <= 0 ? 'paid' : ($paid > 0 ? 'partial' : 'unpaid'),
-                    ];
-                    if (Schema::hasColumn('sales', 'order_status')) {
-                        $saleUpdate['order_status'] = $balance <= 0 ? 'completed' : 'pending';
-                    }
-                    $sale->update($saleUpdate);
-
-                    if (
-                        Schema::hasColumn('sales', 'invoice_no')
-                        && Schema::hasColumn('customers', 'balance')
-                        && str_starts_with((string) ($sale->invoice_no ?? ''), 'OPENING-BAL-')
-                        && !empty($sale->customer_id)
-                    ) {
-                        $customer = Customer::query()->find($sale->customer_id);
-                        if ($customer) {
-                            $customer->update(['balance' => $balance]);
-                        }
-                    }
-                } elseif (!empty($payment->customer_id) && Schema::hasColumn('customers', 'balance')) {
-                    $customer = Customer::query()->find($payment->customer_id);
-                    if ($customer) {
-                        $customer->update([
-                            'balance' => round((float) ($customer->balance ?? 0) + (float) ($payment->amount ?? 0), 2),
-                        ]);
-                    }
-                }
-            });
+            }
             return redirect()->route('payments.index')->with('success', 'Transaction purged.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());

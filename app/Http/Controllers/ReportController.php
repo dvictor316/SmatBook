@@ -831,6 +831,10 @@ class ReportController extends Controller
 
     private function applySaleBranchFilter($query, string $salesTable = 'sales')
     {
+        if (($this->getActiveBranchContext()['scope'] ?? '') === 'all') {
+            return $query;
+        }
+
         $branchId = trim((string) ($this->getActiveBranchContext()['id'] ?? ''));
         $branchName = trim((string) ($this->getActiveBranchContext()['name'] ?? ''));
 
@@ -2160,6 +2164,16 @@ class ReportController extends Controller
         $this->applyTenantScope($openingSales, 'sales');
         $this->applySaleBranchFilter($openingSales, 'sales');
         $openingSales = $openingSales->get()->keyBy('customer_id');
+        // Opening invoices keep the original debt; only surviving applied payments reduce it.
+        foreach ($openingSales as $openingSale) {
+            $paidQuery = Payment::query()->where('sale_id', $openingSale->id);
+            $this->applyTenantScope($paidQuery, 'payments');
+            foreach ($this->ignoredAppliedPaymentStatuses() as $status) {
+                $paidQuery->whereRaw("LOWER(COALESCE(status, '')) <> ?", [$status]);
+            }
+            $openingSale->balance = max(0, round((float) $openingSale->total - (float) $paidQuery->sum('amount'), 2));
+        }
+
 
         // ── Compute actual balance from payments table (so AR matches the statement) ──
         $arCustomerIds = $salesSummary->pluck('customer_id')->filter()->unique()->all();
@@ -2599,7 +2613,7 @@ class ReportController extends Controller
         $this->scopePaymentsForActor($paymentQuery);
         $this->applyPaymentBranchFilter($paymentQuery, 'payments');
         $payment = $paymentQuery->firstOrFail();
-        $payment->delete();
+        app(\App\Support\PaymentDeletion::class)->delete($payment);
 
         return response()->json([
             'success' => true,

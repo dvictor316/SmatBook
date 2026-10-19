@@ -174,8 +174,6 @@
     @foreach(['cash' => 'Cash', 'transfer' => 'Transfer', 'card' => 'POS/Card'] as $key => $label)
         @if((float) ($split[$key] ?? 0) > 0)
             <div class="payment-row"><span>{{ $label }}</span><span>{{ $money($split[$key]) }}</span></div>
-            @php $accountName = $paymentDetails[match ($key) { 'cash' => 'payment_account_name', 'transfer' => 'transfer_account_name', default => 'card_account_name' }] ?? null; @endphp
-            @if($accountName)<div class="payment-row"><span>Account:</span><span>{{ $accountName }}</span></div>@endif
         @endif
     @endforeach
 

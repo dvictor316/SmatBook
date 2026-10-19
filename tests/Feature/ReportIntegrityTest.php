@@ -317,10 +317,23 @@ class ReportIntegrityTest extends TestCase
             $this->assertSame($case['account']->id, (int) $channelPayments->first()->account_id);
 
             $this->get(route('sales.invoice.print', $channelSale->id))
-                ->assertOk()->assertSee($case['label'])->assertSee($case['account']->name);
+                ->assertOk()->assertSee($case['label'])->assertDontSee($case['account']->name);
             $this->get(route('sales.invoice.print', ['id' => $channelSale->id, 'format' => 'thermal', 'paper' => 58]))
-                ->assertOk()->assertSee(strtoupper($case['label']))->assertSee($case['account']->name);
+                ->assertOk()->assertSee(strtoupper($case['label']))->assertDontSee($case['account']->name);
         }
+
+        $this->postJson(route('sales.store'), [
+            'payment_method' => 'Split',
+            'total' => 1000,
+            'paid' => 1000,
+            'items' => [[
+                'id' => $productId, 'qty' => 1, 'price' => 1000,
+                'unitType' => 'unit', 'stockUnits' => 1,
+            ]],
+            'split_details' => [
+                'cash' => 0, 'transfer' => 1000, 'transfer_account_id' => $cashAccount->id, 'card' => 0,
+            ],
+        ])->assertUnprocessable()->assertJsonValidationErrors('split_details.transfer_account_id');
 
         $cashAccount->update(['is_active' => false]);
         $this->postJson(route('sales.store'), [

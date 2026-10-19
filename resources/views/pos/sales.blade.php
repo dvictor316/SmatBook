@@ -628,7 +628,7 @@
                             </td>
                             <td>
                                 <span class="badge bg-white text-dark border">
-                                    {{ $paymentModeLabel }}
+                                    {{ $sale->payment_report_label }}
                                 </span>
                             </td>
                             <td class="text-center">

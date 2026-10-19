@@ -526,13 +526,25 @@ class SaleController extends Controller
         return $query;
     }
 
-    private function findScopedDepositAccount(?int $accountId): ?Account
+    private function scopedBankDepositAccounts()
     {
-        if (!$accountId) {
-            return null;
+        $query = $this->scopedDepositAccounts();
+        if (Schema::hasColumn('accounts', 'sub_type')) {
+            $query->where(function ($accounts) {
+                $accounts->whereNull('accounts.sub_type')
+                    ->orWhereNotIn(DB::raw('LOWER(accounts.sub_type)'), ['cash', 'cash account']);
+            });
         }
 
-        return $this->scopedDepositAccounts()->whereKey($accountId)->first();
+        return $query->where(function ($accounts) {
+            $accounts->whereRaw('LOWER(accounts.name) NOT LIKE ?', ['%cash%'])
+                ->orWhereRaw('LOWER(accounts.name) LIKE ?', ['%bank%']);
+        });
+    }
+
+    private function findScopedBankDepositAccount(?int $accountId): ?Account
+    {
+        return $accountId ? $this->scopedBankDepositAccounts()->whereKey($accountId)->first() : null;
     }
 
     private function scopedCashDepositAccount(): ?Account
@@ -873,13 +885,7 @@ class SaleController extends Controller
                             'quantity' => (float) ($sale->items?->sum('qty') ?? 0),
                             'total_amount' => (float) ($sale->total ?? 0),
                             'amount_paid' => (float) ($sale->amount_paid ?? $sale->paid ?? 0),
-                            'payment_method' => match (strtolower((string) ($sale->payment_method ?? 'cash'))) {
-                                'transfer', 'bank_transfer' => 'Bank Transfer',
-                                'card', 'pos' => 'POS/Card',
-                                'split' => 'Split Payment',
-                                'charge_to_room' => 'Charge to Room',
-                                default => 'Cash',
-                            },
+                            'payment_method' => $sale->payment_report_label,
                             'payment_status' => strtoupper((string) ($sale->payment_status ?? '')),
                             'sale_date' => $formattedDate,
                         ];
@@ -1135,7 +1141,7 @@ public function customerDetails($id = null)
             // Active Asset accounts from Chart of Accounts — used as deposit/collection accounts
             // These drive journal entries (Moniepoint, First Bank, Petty Cash, etc.)
             $depositAccounts = Schema::hasTable('accounts')
-                ? $this->scopedDepositAccounts()->get()
+                ? $this->scopedBankDepositAccounts()->get()
                 : collect();
             $cashDepositAccount = Schema::hasTable('accounts')
                 ? $this->scopedCashDepositAccount()
@@ -1342,14 +1348,12 @@ public function store(Request $request)
         }
 
         foreach ([
-            'deposit_account_id',
-            'payment_account_id',
             'split_details.card_account_id',
             'split_details.transfer_account_id',
         ] as $field) {
             $accountId = (int) data_get($request->all(), $field, 0);
-            if ($accountId > 0 && !$this->findScopedDepositAccount($accountId)) {
-                $validator->errors()->add($field, 'The selected deposit account is not available for this tenant/branch.');
+            if ($accountId > 0 && !$this->findScopedBankDepositAccount($accountId)) {
+                $validator->errors()->add($field, 'Select an active bank account for this tenant/branch. Cash accounts cannot receive transfer or POS payments.');
             }
         }
 
@@ -1528,11 +1532,17 @@ public function store(Request $request)
             throw new \RuntimeException('No active cash account is configured for this branch. Contact your administrator to configure one in Chart of Accounts.');
         }
         $cardSplitAccount = !$isStarterPlan && !empty($splitDetails['card_account_id'])
-            ? $this->findScopedDepositAccount((int) $splitDetails['card_account_id'])
+            ? $this->findScopedBankDepositAccount((int) $splitDetails['card_account_id'])
             : null;
         $transferSplitAccount = !$isStarterPlan && !empty($splitDetails['transfer_account_id'])
-            ? $this->findScopedDepositAccount((int) $splitDetails['transfer_account_id'])
+            ? $this->findScopedBankDepositAccount((int) $splitDetails['transfer_account_id'])
             : null;
+        if ($paymentMethod === 'split' && (float) $splitDetails['transfer'] > 0 && !$transferSplitAccount) {
+            throw new \RuntimeException('Select a bank account for the transfer payment. Contact your administrator if none is configured.');
+        }
+        if ($paymentMethod === 'split' && (float) $splitDetails['card'] > 0 && !$cardSplitAccount) {
+            throw new \RuntimeException('Select a bank account for the POS payment. Contact your administrator if none is configured.');
+        }
 
         // --- 2. CREATE THE SALE RECORD ---
 $sale = Sale::create([

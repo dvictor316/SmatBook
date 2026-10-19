@@ -14,6 +14,11 @@ use Illuminate\Support\Str;
 
 class DashboardController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:dashboard.overview.view')->only(['index', 'businessDashboard', 'switchToBusinessWorkspace']);
+    }
+
     public function switchToBusinessWorkspace(Request $request)
     {
         $request->session()->put('workspace_context', 'business');
@@ -163,17 +168,11 @@ class DashboardController extends Controller
             }
         }
 
-        // 2. PERMISSION LOGIC (Cached for performance)
-        $userRole = $user->role; 
-        $permissions = Cache::remember("perms_{$userRole}", 3600, function() use ($userRole) {
-            if (!Schema::hasTable('permissions')) return [];
-            return DB::table('permissions')
-                ->join('role_has_permissions', 'permissions.id', '=', 'role_has_permissions.permission_id')
-                ->join('roles', 'roles.id', '=', 'role_has_permissions.role_id')
-                ->where('roles.name', $userRole)
-                ->pluck('permissions.name')
-                ->toArray();
-        });
+        $userRole = $user->role;
+        // Resolve current grants on every request so revocations apply immediately.
+        $permissions = Schema::hasTable('permissions')
+            ? \App\Models\Permission::pluck('name')->filter(fn ($name) => $user->hasPermissionTo($name))->values()->all()
+            : [];
 
         $plan = ($isSuperAdmin && $isBusinessWorkspace)
             ? 'enterprise'

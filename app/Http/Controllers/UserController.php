@@ -246,7 +246,8 @@ class UserController extends Controller
         $checkPerms = $request->input('permissions', []);
         $radioPerms = array_filter(array_values($request->input('perm_radio', [])));
         $allPerms   = array_values(array_unique(array_filter(array_merge($checkPerms, $radioPerms))));
-        if (!in_array($legacyRole, ['state_manager', 'agent'], true) && !empty($allPerms)) {
+        if (!in_array($legacyRole, ['state_manager', 'agent'], true)
+            && ($request->has('permissions') || $request->has('perm_radio') || $request->boolean('permissions_submitted'))) {
             $user->permissions_override = $allPerms;
         }
 
@@ -380,6 +381,11 @@ class UserController extends Controller
 
         if (in_array($selectedRole['legacy'], ['state_manager', 'agent'], true)) {
             $user->permissions_override = null;
+        } elseif ($request->has('permissions') || $request->has('perm_radio') || $request->boolean('permissions_submitted')) {
+            $user->permissions_override = array_values(array_unique(array_filter(array_merge(
+                (array) $request->input('permissions', []),
+                array_values((array) $request->input('perm_radio', []))
+            ))));
         }
 
         $user->save();

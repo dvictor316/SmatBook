@@ -19,6 +19,8 @@
     $saleTotal = (float) ($sale->total ?? $payment->amount);
     $salePaid = (float) ($sale->amount_paid ?? $payment->amount);
     $saleBalance = (float) ($sale->balance ?? max(0, $saleTotal - $salePaid));
+    $paymentMethod = trim((string) ($payment->method ?? ''));
+    $paymentDisplay = $paymentMethod !== '' ? $paymentMethod : 'N/A';
 @endphp
 
 <style>
@@ -221,8 +223,8 @@
                             <div class="payment-receipt-pill-value">₦{{ number_format((float) $payment->amount, 2) }}</div>
                         </div>
                         <div class="payment-receipt-pill">
-                            <div class="payment-receipt-pill-label">Method</div>
-                            <div class="payment-receipt-pill-value">{{ $payment->method ?? 'N/A' }}</div>
+                            <div class="payment-receipt-pill-label">Method / Bank</div>
+                            <div class="payment-receipt-pill-value">{{ $paymentDisplay }}</div>
                         </div>
                         <div class="payment-receipt-pill">
                             <div class="payment-receipt-pill-label">Status</div>
@@ -245,10 +247,6 @@
                         <div class="payment-detail-card">
                             <div class="payment-detail-label">Recorded By</div>
                             <div class="payment-detail-value">{{ $payment->creator?->name ?? 'System' }}</div>
-                        </div>
-                        <div class="payment-detail-card">
-                            <div class="payment-detail-label">Paid Into</div>
-                            <div class="payment-detail-value">{{ $payment->account?->name ?? $payment->reference ?? 'Not specified' }}</div>
                         </div>
                     </div>
 
