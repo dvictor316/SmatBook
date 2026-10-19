@@ -366,6 +366,9 @@
         'wallet' => 'Customer Wallet',
         'charge_to_room' => 'Charge to Room',
     ];
+    foreach (($paymentAccountOptions ?? collect()) as $account) {
+        $paymentMethodOptions['account:'.$account->id] = $account->name;
+    }
     $paymentFilterBase = request()->except(['page', 'payment_method', 'export']);
     $selectedPaymentMethod = (string) request('payment_method');
 
@@ -437,11 +440,11 @@
                     @endif
                 </div>
                 <div class="col-lg-4 text-lg-end">
-                    <div class="summary-label">{{ $posReceiptLookupMode ? 'Matches' : 'Total Paid' }}</div>
+                    <div class="summary-label">{{ $posReceiptLookupMode ? 'Matches' : ($selectedPaymentAccount ? 'Paid Into '.$selectedPaymentAccount->name : 'Total Paid') }}</div>
                     @if($posReceiptLookupMode)
                     <div class="fs-2 fw-bold">{{ number_format((int) ($totalSalesCount ?? 0)) }}</div>
                     @else
-                    <div class="fs-2 fw-bold">₦{{ number_format((float) ($totalAmountPaid ?? 0), 2) }}</div>
+                    <div class="fs-2 fw-bold">₦{{ number_format((float) ($selectedAccountTotal ?? $totalAmountPaid ?? 0), 2) }}</div>
                     @endif
                     <div class="summary-subtle mt-2">{{ $posReceiptLookupMode ? 'Receipt records found' : number_format((int) ($totalSalesCount ?? 0)) . ' filtered POS transactions' }}</div>
                 </div>
@@ -490,7 +493,7 @@
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <label class="form-label">Payment Mode</label>
-                    <select name="payment_method" class="form-control form-control-sm">
+                    <select name="payment_method" class="form-control form-control-sm" onchange="this.form.submit()">
                         @foreach($paymentMethodOptions as $value => $label)
                             <option value="{{ $value }}" @selected($selectedPaymentMethod === $value)>{{ $label }}</option>
                         @endforeach
@@ -555,7 +558,7 @@
                             <th>Customer</th>
                             <th>Items</th>
                             <th class="text-end">Total Amount</th>
-                            <th class="text-end">Paid</th>
+                            <th class="text-end">{{ $selectedPaymentAccount ? 'Paid Into '.$selectedPaymentAccount->name : 'Paid' }}</th>
                             <th>Payment Mode</th>
                             <th class="text-center">Status</th>
                             <th>Date / Time</th>
@@ -624,7 +627,7 @@
                                 ₦{{ number_format($sale->total, 2) }}
                             </td>
                             <td class="text-end fw-bold text-dark" style="font-size: 15px;">
-                                ₦{{ number_format((float) ($sale->amount_paid ?? $sale->paid ?? 0), 2) }}
+                                ₦{{ number_format($selectedPaymentAccount ? \App\Support\PosSalesAccountFilter::amount($sale, (int) $selectedPaymentAccount->id) : (float) ($sale->amount_paid ?? $sale->paid ?? 0), 2) }}
                             </td>
                             <td>
                                 <span class="badge bg-white text-dark border">
@@ -671,7 +674,7 @@
                         <tr class="sales-total-row">
                             <td class="ps-4" colspan="3">Total</td>
                             <td class="text-end">₦{{ number_format((float) ($totalRevenue ?? 0), 2) }}</td>
-                            <td class="text-end">₦{{ number_format((float) ($totalAmountPaid ?? 0), 2) }}</td>
+                            <td class="text-end">₦{{ number_format((float) ($selectedAccountTotal ?? $totalAmountPaid ?? 0), 2) }}</td>
                             <td colspan="4">
                                 @foreach(($paymentStatusSummary ?? []) as $statusTotal)
                                     <span class="me-3">{{ $statusTotal['label'] }} - {{ number_format((int) $statusTotal['count']) }}</span>

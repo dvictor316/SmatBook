@@ -34,6 +34,7 @@ use App\Support\LedgerService;
 use App\Support\PlanAccess;
 use App\Support\PriceListUsage;
 use App\Support\SalesPaymentModeFilter;
+use App\Support\PosSalesAccountFilter;
 use App\Services\Hotel\HotelFolioService;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -808,6 +809,20 @@ class SaleController extends Controller
         $branchOptions = collect($this->getAvailableBranches())
             ->mapWithKeys(fn ($branch) => [(string) $branch['id'] => (string) $branch['name']])
             ->all();
+        $paymentAccountOptions = Schema::hasTable('accounts')
+            ? $this->scopedBankDepositAccounts()->get(['accounts.id', 'accounts.name'])
+            : collect();
+        $selectedPaymentAccount = null;
+        $paymentMode = (string) $request->input('payment_method', '');
+        if (str_starts_with($paymentMode, 'account:')) {
+            $accountId = substr($paymentMode, strlen('account:'));
+            abort_unless(ctype_digit($accountId), 422, 'Select a valid payment account.');
+            $selectedPaymentAccount = $paymentAccountOptions->firstWhere('id', (int) $accountId);
+            abort_unless($selectedPaymentAccount, 422, 'The selected payment account is unavailable for this business and branch.');
+            if (Schema::hasTable('payments')) {
+                $query->with('payments');
+            }
+        }
         $staffOptions = [];
 
         if (Schema::hasTable('users')) {
@@ -847,7 +862,9 @@ class SaleController extends Controller
         if ($request->filled('payment_status')) {
             $query->where('payment_status', strtolower((string) $request->payment_status));
         }
-        if ($request->filled('payment_method')) {
+        if ($selectedPaymentAccount) {
+            PosSalesAccountFilter::apply($query, (int) $selectedPaymentAccount->id);
+        } elseif ($request->filled('payment_method')) {
             SalesPaymentModeFilter::apply($query, (string) $request->payment_method);
         }
         if ($request->sale_date) {
@@ -863,10 +880,11 @@ class SaleController extends Controller
         if ($request->get('export') === 'xlsx') {
             $exportSales = (clone $query)->orderByDesc($salesDateColumn)->orderByDesc('created_at')->get();
 
-            return Excel::download(new class($exportSales, $salesDateColumn) implements FromCollection, WithHeadings {
+            return Excel::download(new class($exportSales, $salesDateColumn, $selectedPaymentAccount?->id) implements FromCollection, WithHeadings {
                 public function __construct(
                     private readonly \Illuminate\Support\Collection $sales,
-                    private readonly string $salesDateColumn
+                    private readonly string $salesDateColumn,
+                    private readonly ?int $paymentAccountId
                 ) {
                 }
 
@@ -878,7 +896,7 @@ class SaleController extends Controller
                             ? $saleDate->format('Y-m-d H:i:s')
                             : (string) $saleDate;
 
-                        return [
+                        $row = [
                             'invoice_no' => (string) ($sale->invoice_no ?? ''),
                             'customer' => (string) ($sale->customer_name ?? optional($sale->customer)->customer_name ?? optional($sale->customer)->name ?? 'Customer'),
                             'items_count' => (int) ($sale->items?->count() ?? 0),
@@ -889,12 +907,16 @@ class SaleController extends Controller
                             'payment_status' => strtoupper((string) ($sale->payment_status ?? '')),
                             'sale_date' => $formattedDate,
                         ];
+                        if ($this->paymentAccountId) {
+                            $row['selected_account_amount'] = PosSalesAccountFilter::amount($sale, $this->paymentAccountId);
+                        }
+                        return $row;
                     });
                 }
 
                 public function headings(): array
                 {
-                    return [
+                    return array_merge([
                         'Invoice No',
                         'Customer',
                         'Items Count',
@@ -904,7 +926,7 @@ class SaleController extends Controller
                         'Payment Method',
                         'Payment Status',
                         'Sale Date',
-                    ];
+                    ], $this->paymentAccountId ? ['Paid Into Selected Account'] : []);
                 }
             }, 'pos-sales-' . now()->format('Y-m-d-His') . '.xlsx');
         }
@@ -912,6 +934,12 @@ class SaleController extends Controller
         $filteredSalesForTotals = (clone $query)
             ->setEagerLoads([])
             ->get(['id', 'total', 'paid', 'amount_paid', 'payment_method', 'payment_status', 'payment_details']);
+        if ($selectedPaymentAccount && Schema::hasTable('payments')) {
+            $filteredSalesForTotals->load('payments');
+        }
+        $selectedAccountTotal = $selectedPaymentAccount
+            ? round((float) $filteredSalesForTotals->sum(fn ($sale) => PosSalesAccountFilter::amount($sale, (int) $selectedPaymentAccount->id)), 2)
+            : null;
         $totalRevenue = $filteredSalesForTotals->sum(fn ($sale) => (float) ($sale->total ?? 0));
         $totalAmountPaid = $filteredSalesForTotals->sum(fn ($sale) => (float) ($sale->amount_paid ?? $sale->paid ?? 0));
         $totalBalance = max(0, $totalRevenue - $totalAmountPaid);
@@ -940,6 +968,9 @@ class SaleController extends Controller
             'activeBranch',
             'branchOptions',
             'staffOptions',
+            'paymentAccountOptions',
+            'selectedPaymentAccount',
+            'selectedAccountTotal',
             'paymentBreakdown',
             'showChargeToRoomSummary',
             'paymentStatusSummary'
