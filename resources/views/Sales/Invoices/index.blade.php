@@ -778,7 +778,7 @@
                     {{ $sale->created_at ? $sale->created_at->format('d M, Y h:i A') : date('d M, Y h:i A') }}
                 </div>
                 <div class="payment-badge">
-                    {{ strtoupper($sale->payment_method ?? 'Cash') }}
+                    {{ strtoupper($sale->payment_mode_label) }}
                 </div>
                 @if(!empty($splitLines))
                     <div style="margin-top: 10px; display: inline-flex; flex-direction: column; gap: 4px; align-items: flex-end;">

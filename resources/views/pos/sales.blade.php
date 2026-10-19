@@ -361,6 +361,7 @@
     $paymentMethodOptions = [
         '' => 'All payment modes',
         'cash' => 'Cash',
+        'credit' => 'Credit / Unpaid',
         'transfer' => 'Bank Transfer',
         'card' => 'POS / Card',
         'wallet' => 'Customer Wallet',

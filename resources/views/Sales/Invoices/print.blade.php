@@ -472,15 +472,7 @@
                 ];
             }
         }
-        $paymentMethodLabel = count($splitLines) > 1
-            ? 'Split Payment'
-            : ($splitLines[0]['label'] ?? match (strtolower((string) $sale->payment_method)) {
-                'transfer', 'bank_transfer' => 'Bank Transfer',
-                'card', 'pos' => 'POS/Card',
-                'split' => 'Split Payment',
-                'charge_to_room' => 'Charge to Room',
-                default => 'Cash',
-            });
+        $paymentMethodLabel = $sale->payment_mode_label;
     @endphp
 
     <div class="container py-4 py-lg-5">

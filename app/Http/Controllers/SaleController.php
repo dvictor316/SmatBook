@@ -1908,7 +1908,7 @@ $sale = Sale::create([
 
     public function printInvoice(Request $request, $id)
     {
-        $saleQuery = Sale::with(['items.product', 'customer', 'user']);
+        $saleQuery = Sale::with(['items.product', 'customer', 'user', 'payments']);
         $this->applyTenantScope($saleQuery, 'sales');
         $sale = $saleQuery->findOrFail($id);
         $previousCustomerBalance = 0.0;

@@ -92,8 +92,56 @@ class Sale extends Model
         return $this->hasMany(SaleItem::class);
     }
 
+    public function getPaymentModeLabelAttribute(): string
+    {
+        $method = strtolower(trim((string) $this->payment_method));
+        if (in_array($method, ['charge_to_room', 'chargetoroom', 'charge-room'], true)) {
+            return 'Charge to Room';
+        }
+        $payments = $this->relationLoaded('payments') ? $this->payments->filter(fn ($payment) =>
+            (float) $payment->amount > 0
+            && !in_array(strtolower(trim((string) $payment->status)), ['failed', 'error', 'cancelled', 'canceled', 'pending approval', 'rejected', 'refunded', 'void'], true)
+        ) : collect();
+        $paid = max((float) ($this->amount_paid ?? 0), (float) ($this->paid ?? 0), (float) $payments->sum('amount'));
+        if ($paid <= 0 && (float) $this->total > 0) {
+            return 'Credit';
+        }
+        $receivedModes = $payments->map(fn ($payment) => $this->labelForPaymentMethod($payment->method))->filter()->unique()->values();
+        if ($receivedModes->isNotEmpty()) {
+            return $receivedModes->count() > 1 ? 'Split Payment' : $receivedModes->first();
+        }
+        $details = is_array($this->payment_details) ? $this->payment_details : [];
+        $split = is_array($details['split'] ?? null) ? $details['split'] : [];
+        $channels = collect(['cash' => 'Cash', 'transfer' => 'Bank Transfer', 'card' => 'POS/Card'])
+            ->filter(fn ($label, $channel) => (float) ($split[$channel] ?? 0) > 0)->values();
+        if ($channels->isNotEmpty()) {
+            return $channels->count() > 1 ? 'Split Payment' : $channels->first();
+        }
+        return $this->labelForPaymentMethod($method) ?? 'Payment not specified';
+    }
+
+    private function labelForPaymentMethod(?string $method): ?string
+    {
+        $method = strtolower(trim((string) $method));
+        if (str_contains($method, 'wallet')) {
+            return 'Customer Wallet';
+        }
+        return match ($method) {
+            'cash' => 'Cash',
+            'transfer', 'bank_transfer', 'bank transfer' => 'Bank Transfer',
+            'card', 'pos', 'pos/card', 'credit_card', 'credit card' => 'POS/Card',
+            'split' => 'Split Payment',
+            'cheque', 'check' => 'Cheque',
+            default => null,
+        };
+    }
+
     public function getPaymentReportLabelAttribute(): string
     {
+        $mode = $this->payment_mode_label;
+        if (in_array($mode, ['Credit', 'Charge to Room'], true)) {
+            return $mode;
+        }
         $details = is_array($this->payment_details) ? $this->payment_details : [];
         $split = is_array($details['split'] ?? null) ? $details['split'] : [];
         $channels = [
@@ -121,7 +169,7 @@ class Sale extends Model
             'card', 'pos', 'pos/card' => 'POS/Card',
             'split' => 'Split Payment',
             'charge_to_room' => 'Charge to Room',
-            default => 'Cash',
+            default => $mode,
         };
     }
 

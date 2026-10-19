@@ -230,6 +230,17 @@ class InvoiceController extends Controller
         }
     }
 
+    private function invoicePaymentMethod(float $paidAmount, ?Sale $sale = null): string
+    {
+        $received = $sale ? (float) ($this->resolveAppliedPaymentAmount($sale) ?? 0) : 0;
+        if ($paidAmount <= 0 && $received <= 0) {
+            return 'credit';
+        }
+        $existing = trim((string) ($sale?->payment_method ?? ''));
+        return in_array(strtolower($existing), ['', 'manual', 'send', 'credit', 'unspecified'], true)
+            ? 'unspecified' : $existing;
+    }
+
     private function ignoredAppliedPaymentStatuses(): array
     {
         return ['failed', 'cancelled', 'pending approval'];
@@ -458,7 +469,7 @@ class InvoiceController extends Controller
         $query = Sale::with([
             'customer',
             'payments' => function ($paymentQuery) {
-                $paymentQuery->select('id', 'sale_id', 'amount', 'status');
+                $paymentQuery->select('id', 'sale_id', 'amount', 'status', 'method');
             },
         ])->latest();
         $this->applyTenantScope($query, 'sales');
@@ -507,7 +518,7 @@ class InvoiceController extends Controller
         $salesQuery = $this->applyTenantScope(Sale::query(), 'sales');
         $sales = $salesQuery
             ->with(['payments' => function ($paymentQuery) {
-                $paymentQuery->select('id', 'sale_id', 'amount', 'status');
+                $paymentQuery->select('id', 'sale_id', 'amount', 'status', 'method');
             }])
             ->get(['id', 'total', 'amount_paid', 'balance', 'payment_status']);
 
@@ -735,7 +746,7 @@ class InvoiceController extends Controller
                 'amount_paid' => $paidAmount,
                 'balance' => $balanceAmount,
                 'currency' => 'NGN',
-                'payment_method' => $action === 'send' ? 'send' : 'manual',
+                'payment_method' => $this->invoicePaymentMethod($paidAmount),
                 'payment_status' => $paymentStatus,
                 'payment_details' => [
                     'description' => $request->description,
@@ -884,7 +895,7 @@ class InvoiceController extends Controller
             Sale::with([
                 'items.product',
                 'payments' => function ($paymentQuery) {
-                    $paymentQuery->select('id', 'sale_id', 'amount', 'status');
+                    $paymentQuery->select('id', 'sale_id', 'amount', 'status', 'method');
                 },
             ]),
             'sales'
@@ -1001,6 +1012,7 @@ class InvoiceController extends Controller
                 'total'          => $total,
                 'tax'            => $request->tax ?? 0,
                 'payment_status' => $computedStatus,
+                'payment_method' => $this->invoicePaymentMethod($amountPaid, $sale),
                 'paid'           => $amountPaid,
                 'amount_paid'    => $amountPaid,
                 'balance'        => $balance,
@@ -1139,11 +1151,10 @@ class InvoiceController extends Controller
             }
 
             $totalAmount = (float) $request->total_amount;
-            $paidAmount = $isPaid ? $totalAmount : 0;
+            $recordedPaid = (float) ($this->resolveAppliedPaymentAmount($sale) ?? 0);
+            $paidAmount = $isPaid ? $totalAmount : min($totalAmount, $recordedPaid);
             $balanceAmount = max(0, $totalAmount - $paidAmount);
-            $paymentStatus = $isPaid
-                ? 'paid'
-                : ($requestedStatus === 'partially paid' ? 'partial' : 'unpaid');
+            $paymentStatus = $balanceAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partial' : 'unpaid');
             $orderStatus = $isDraft ? 'draft' : ($action === 'send' ? 'sent' : 'pending');
 
             if (!$isDraft && $creditLimitResponse = $this->creditLimitWarningResponse($request, $customer, $balanceAmount, (int) $sale->id)) {
@@ -1166,14 +1177,14 @@ class InvoiceController extends Controller
                 'amount_paid' => $paidAmount,
                 'balance' => $balanceAmount,
                 'currency' => 'NGN',
-                'payment_method' => $action === 'send' ? 'send' : 'manual',
+                'payment_method' => $this->invoicePaymentMethod($paidAmount, $sale),
                 'payment_status' => $paymentStatus,
-                'payment_details' => [
+                'payment_details' => array_merge((array) $sale->payment_details, [
                     'description' => $request->description,
                     'action' => $action,
                     'source' => 'invoice-update',
                     'price_list_id' => $request->input('price_list_id'),
-                ],
+                ]),
             ];
 
             if (Schema::hasColumn('sales', 'order_date')) {
@@ -1304,7 +1315,7 @@ class InvoiceController extends Controller
                 'customer',
                 'items.product',
                 'payments' => function ($paymentQuery) {
-                    $paymentQuery->select('id', 'sale_id', 'amount', 'status');
+                    $paymentQuery->select('id', 'sale_id', 'amount', 'status', 'method');
                 },
             ]),
             'sales'
@@ -1325,7 +1336,7 @@ class InvoiceController extends Controller
                 'customer',
                 'items.product',
                 'payments' => function ($paymentQuery) {
-                    $paymentQuery->select('id', 'sale_id', 'amount', 'status');
+                    $paymentQuery->select('id', 'sale_id', 'amount', 'status', 'method');
                 },
             ]),
             'sales'
@@ -1347,7 +1358,7 @@ class InvoiceController extends Controller
                 'customer',
                 'items.product',
                 'payments' => function ($paymentQuery) {
-                    $paymentQuery->select('id', 'sale_id', 'amount', 'status');
+                    $paymentQuery->select('id', 'sale_id', 'amount', 'status', 'method');
                 },
             ]),
             'sales'
@@ -1363,7 +1374,7 @@ class InvoiceController extends Controller
                 'customer',
                 'items.product',
                 'payments' => function ($paymentQuery) {
-                    $paymentQuery->select('id', 'sale_id', 'amount', 'status');
+                    $paymentQuery->select('id', 'sale_id', 'amount', 'status', 'method');
                 },
             ]),
             'sales'

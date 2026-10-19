@@ -15,6 +15,29 @@ class SalesPaymentModeFilter
         $methodColumn = "{$table}.payment_method";
         $detailsColumn = "{$table}.payment_details";
 
+        $paidColumns = array_values(array_filter(['amount_paid', 'paid'], fn ($column) => Schema::hasColumn($table, $column)));
+        if ($paymentMode === 'cash') {
+            // A credit invoice has no cash receipt, even if an old row says Cash.
+            $query->where(function ($paid) use ($paidColumns, $table) {
+                if ($paidColumns === []) {
+                    $paid->whereRaw('1 = 0');
+                }
+                foreach ($paidColumns as $column) {
+                    $paid->orWhere($table.'.'.$column, '>', 0);
+                }
+            });
+        }
+        if ($paymentMode === 'credit') {
+            $query->where($table.'.total', '>', 0)
+                ->whereNotIn(DB::raw("LOWER(COALESCE({$methodColumn}, ''))"), ['charge_to_room', 'chargetoroom', 'charge-room']);
+            foreach ($paidColumns as $column) {
+                $query->where(function ($unpaid) use ($table, $column) {
+                    $unpaid->whereNull($table.'.'.$column)->orWhere($table.'.'.$column, '<=', 0);
+                });
+            }
+            return;
+        }
+
         $query->where(function ($builder) use ($paymentMode, $methodColumn, $detailsColumn, $table) {
             $splitChannel = function (string $channel) use ($builder, $methodColumn, $detailsColumn, $table): void {
                 $builder->orWhere(function ($splitQuery) use ($channel, $methodColumn, $detailsColumn, $table) {

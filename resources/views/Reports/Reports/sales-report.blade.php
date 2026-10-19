@@ -148,6 +148,7 @@
                                 <select name="payment_method" class="form-select">
                                     <option value="">{{ __('All payment modes') }}</option>
                                     <option value="cash" @selected(request('payment_method') === 'cash')>{{ __('Cash') }}</option>
+                                    <option value="credit" @selected(request('payment_method') === 'credit')>{{ __('Credit / Unpaid') }}</option>
                                     <option value="transfer" @selected(request('payment_method') === 'transfer')>{{ __('Bank Transfer') }}</option>
                                     <option value="card" @selected(request('payment_method') === 'card')>{{ __('POS / Card') }}</option>
                                     <option value="wallet" @selected(request('payment_method') === 'wallet')>{{ __('Customer Wallet') }}</option>
