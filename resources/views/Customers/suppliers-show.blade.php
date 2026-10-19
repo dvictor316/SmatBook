@@ -32,6 +32,17 @@
             </div>
         </div>
 
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="mb-0">Supplier Information</h5></div>
+            <div class="card-body row g-3">
+                @foreach(['contact' => 'Contact Person', 'email' => 'Email', 'phone' => 'Phone', 'alternate_phone' => 'Alternate Phone / WhatsApp', 'address' => 'Address', 'city' => 'City / Town', 'state' => 'State / Region', 'country' => 'Country', 'website' => 'Website', 'tax_number' => 'Tax / Registration Number', 'supply_description' => 'Goods / Services Supplied', 'payment_terms_days' => 'Payment Terms (days)', 'bank_name' => 'Bank Name', 'account_name' => 'Account Holder', 'account_number' => 'Account Number', 'notes' => 'Internal Notes'] as $field => $label)
+                    @if(filled($supplier->{$field}))
+                        <div class="col-md-4"><div class="small text-muted">{{ $label }}</div><div style="white-space:pre-wrap;overflow-wrap:anywhere;">{{ $supplier->{$field} }}</div></div>
+                    @endif
+                @endforeach
+            </div>
+        </div>
+
         <div class="row g-3 mb-4">
             <div class="col-md-3">
                 <div class="card">

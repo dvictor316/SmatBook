@@ -295,19 +295,29 @@
                                     <h4>Total Amount: <span id="totalAmount">0.00</span></h4>
                                 </div>
 
+                                @php
+                                    $savedSignature = isset($purchase)
+                                        ? ['signature_name' => $purchase->signature_name, 'signature_image' => $purchase->signature_image]
+                                        : \App\Support\PurchaseSignature::defaults();
+                                    $signaturePreviewUrl = \App\Models\Setting::mediaUrl($savedSignature['signature_image']);
+                                @endphp
                                 <!-- Signature Name -->
                                 <div class="mb-3">
                                     <label for="signature_name" class="form-label">Signature Name</label>
                                     <input type="text" id="signature_name" name="signature_name" 
-                                           value="{{ old('signature_name') }}" 
+                                           value="{{ old('signature_name', $savedSignature['signature_name']) }}"
                                            class="form-control" placeholder="Enter Signature Name">
                                 </div>
 
                                 <!-- Signature Upload -->
                                 <div class="mb-3">
-                                    <label for="signature_image" class="form-label">Upload Signature</label>
+                                    <label for="signature_image" class="form-label">{{ $signaturePreviewUrl ? 'Replace Signature' : 'Upload Signature' }}</label>
+                                    <div id="purchase-signature-preview-box" class="border rounded bg-white p-3 mb-2" @if(!$signaturePreviewUrl) hidden @endif>
+                                        <img id="purchase-signature-preview" src="{{ $signaturePreviewUrl ?? '' }}" alt="Purchase signature" style="max-width:180px;max-height:90px;object-fit:contain;">
+                                    </div>
                                     <input type="file" id="signature_image" name="signature_image" 
                                            class="form-control" accept="image/*">
+                                    <small class="text-muted d-block mt-2">The signature is saved with this purchase and reused for new purchases in this business. Leave empty to keep it; upload a replacement to change the default.</small>
                                     @error('signature_image')
                                         <div class="invalid-feedback d-block">{{ $message }}</div>
                                     @enderror
@@ -708,3 +718,23 @@
         });
     </script>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var input = document.getElementById('signature_image');
+    var preview = document.getElementById('purchase-signature-preview');
+    var box = document.getElementById('purchase-signature-preview-box');
+    if (!input || !preview || !box) return;
+    var savedUrl = preview.getAttribute('src');
+    var objectUrl = null;
+    input.addEventListener('change', function () {
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        var file = input.files && input.files[0];
+        objectUrl = file ? URL.createObjectURL(file) : null;
+        preview.src = objectUrl || savedUrl;
+        box.hidden = !objectUrl && !savedUrl;
+    });
+});
+</script>
+@endpush

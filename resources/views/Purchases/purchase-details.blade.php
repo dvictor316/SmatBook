@@ -242,8 +242,10 @@
 
                                     <div class="invoice-sign text-end mt-5">
                                         <p class="mb-0">Authorized By</p>
-                                        <img src="{{ asset('assets/img/signature.png') }}" alt="sign" width="120">
-                                        <span class="d-block mt-2">{{ auth()->user()->name ?? 'Administrator' }}</span>
+                                        @if($purchase->signature_image)
+                                            <img src="{{ $signatureImageUrl ?? \App\Models\Setting::mediaUrl($purchase->signature_image) }}" alt="Authorized signature" style="max-width:180px;max-height:90px;object-fit:contain;">
+                                        @endif
+                                        <span class="d-block mt-2">{{ $purchase->signature_name ?? '' }}</span>
                                     </div>
 
                                 </div>

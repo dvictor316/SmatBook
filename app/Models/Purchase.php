@@ -12,6 +12,8 @@ class Purchase extends Model
     use HasFactory, TenantScoped;
 
     protected $fillable = [
+        'signature_name',
+        'signature_image',
         'branch_id',
         'branch_name',
         'purchase_no', 

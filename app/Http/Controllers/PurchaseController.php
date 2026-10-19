@@ -14,7 +14,6 @@ use App\Models\PurchaseReturn;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 use App\Models\Setting;
 use Illuminate\Support\Str;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -23,6 +22,7 @@ use App\Exports\PurchaseExport;
 use App\Models\Transaction;
 use App\Support\BranchInventoryService;
 use App\Support\LedgerService;
+use App\Support\PurchaseSignature;
 use App\Models\Transaction as LedgerTransaction;
 // -----------------------------
 
@@ -422,11 +422,7 @@ private function applyBranchScope($query, string $table = 'purchases')
         DB::beginTransaction();
         
         try {
-            // Handle signature image upload
-            $signaturePath = null;
-            if ($request->hasFile('signature_image')) {
-                $signaturePath = $request->file('signature_image')->store('signatures', 'public');
-            }
+            $signature = PurchaseSignature::resolve($request);
 
             // Calculate totals
             $totals = $this->calculateTotals($request);
@@ -467,7 +463,7 @@ private function applyBranchScope($query, string $table = 'purchases')
                 $purchasePayload['user_id'] = auth()->id();
             }
 
-            $purchase = Purchase::create($purchasePayload);
+            $purchase = Purchase::create(array_merge($purchasePayload, $signature));
 
             // Create purchase items
             foreach ($request->products as $item) {
@@ -620,7 +616,8 @@ public function show($id)
         $purchase->setAttribute('balance_amount', max(0, $normalizedTotalAmount - $paidAmount));
         $purchase->setAttribute('status', $this->resolvePurchaseStatus($purchase, $paidAmount));
 
-        $pdf = Pdf::loadView('Purchases.purchase-details', compact('purchase', 'logo'));
+        $signatureImageUrl = PurchaseSignature::pdfImage($purchase->signature_image);
+        $pdf = Pdf::loadView('Purchases.purchase-details', compact('purchase', 'logo', 'signatureImageUrl'));
         
         // Return the file for download
         return $pdf->download('Purchase_'.$purchase->purchase_no.'.pdf');
@@ -771,17 +768,7 @@ public function show($id)
         DB::beginTransaction();
         
         try {
-            // Handle signature image upload
-            if ($request->hasFile('signature_image')) {
-                // Delete old signature if exists
-                if ($purchase->signature_image) {
-                    Storage::disk('public')->delete($purchase->signature_image);
-                }
-                $signaturePath = $request->file('signature_image')->store('signatures', 'public');
-                $validated['signature_image'] = $signaturePath;
-            } else {
-                $validated['signature_image'] = $purchase->signature_image;
-            }
+            $signature = PurchaseSignature::resolve($request, $purchase);
 
             // Calculate totals
             $totals = $this->calculateTotals($request);
@@ -799,7 +786,7 @@ public function show($id)
             if (Schema::hasColumn('purchases', 'vendor_id')) {
                 $purchasePayload['vendor_id'] = $validated['vendor_id'] ?? null;
             }
-            $purchase->update($purchasePayload);
+            $purchase->update(array_merge($purchasePayload, $signature));
 
             $previousItems = $purchase->items()->get();
             foreach ($previousItems as $previousItem) {
@@ -1089,10 +1076,7 @@ public function show($id)
         DB::beginTransaction();
         
         try {
-            // Delete signature image if exists
-            if ($purchase->signature_image) {
-                Storage::disk('public')->delete($purchase->signature_image);
-            }
+            // Signature files can also belong to the business default or other purchases.
 
             $activeBranch = $this->getActiveBranchContext();
             foreach ($purchase->items as $item) {

@@ -257,6 +257,31 @@ class SupplierController extends Controller
         return view('Customers.suppliers', compact('suppliers', 'totalPayables'));
     }
 
+    private function supplierRules(): array
+    {
+        return [
+            'name' => 'required|string|max:191',
+            'contact' => 'nullable|string|max:191',
+            'email' => 'nullable|email|max:191',
+            'phone' => 'nullable|string|max:191',
+            'alternate_phone' => 'nullable|string|max:50',
+            'address' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
+            'website' => 'nullable|url|max:255',
+            'tax_number' => 'nullable|string|max:100',
+            'supply_description' => 'nullable|string|max:1000',
+            'payment_terms_days' => 'nullable|integer|min:0|max:3650',
+            'bank_name' => 'nullable|string|max:191',
+            'account_name' => 'nullable|string|max:191',
+            'account_number' => 'nullable|string|max:50',
+            'notes' => 'nullable|string|max:3000',
+            'opening_balance' => 'nullable|numeric',
+            'opening_balance_date' => 'nullable|date',
+        ];
+    }
+
     public function create()
     {
         return view('Customers.suppliers-create');
@@ -264,28 +289,15 @@ class SupplierController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
-            'name'    => 'required|string|max:191',
-            'contact' => 'nullable|string|max:191',
-            'email'   => 'nullable|email|max:191',
-            'phone'   => 'nullable|string|max:191',
-            'address' => 'nullable|string|max:255',
-            'opening_balance' => 'nullable|numeric',
-            'opening_balance_date' => 'nullable|date',
-        ]);
+        $validated = $request->validate($this->supplierRules());
+        unset($validated['name']);
 
-        $payload = $this->sanitizeForSupplierColumns([
-            'contact' => $request->input('contact'),
-            'email' => $request->input('email'),
-            'phone' => $request->input('phone'),
-            'address' => $request->input('address'),
-            'opening_balance' => $request->input('opening_balance'),
-            'opening_balance_date' => $request->input('opening_balance_date'),
+        $payload = $this->sanitizeForSupplierColumns(array_merge($validated, [
             'company_id' => auth()->user()?->company_id ?? null,
             'user_id' => auth()->id(),
             'branch_id' => $this->getActiveBranchContext()['id'],
             'branch_name' => $this->getActiveBranchContext()['name'],
-        ]);
+        ]));
 
         if (Schema::hasColumn('suppliers', 'company_id')) {
             $payload['company_id'] = session('current_tenant_id') ?? auth()->user()?->company_id;
@@ -789,24 +801,9 @@ class SupplierController extends Controller
     public function update(Request $request, $id): RedirectResponse
     {
         $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
-        $request->validate([
-            'name'    => 'required|string|max:191',
-            'contact' => 'nullable|string|max:191',
-            'email'   => 'nullable|email|max:191',
-            'phone'   => 'nullable|string|max:191',
-            'address' => 'nullable|string|max:255',
-            'opening_balance' => 'nullable|numeric',
-            'opening_balance_date' => 'nullable|date',
-        ]);
-
-        $payload = $this->sanitizeForSupplierColumns([
-            'contact' => $request->input('contact'),
-            'email' => $request->input('email'),
-            'phone' => $request->input('phone'),
-            'address' => $request->input('address'),
-            'opening_balance' => $request->input('opening_balance'),
-            'opening_balance_date' => $request->input('opening_balance_date'),
-        ]);
+        $validated = $request->validate($this->supplierRules());
+        unset($validated['name']);
+        $payload = $this->sanitizeForSupplierColumns($validated);
         $nameColumn = $this->resolveNameColumn();
         $payload[$nameColumn] = $request->input('name');
 
