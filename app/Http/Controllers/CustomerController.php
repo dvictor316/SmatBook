@@ -181,6 +181,12 @@ class CustomerController extends Controller
                 'success' => true,
                 'message' => 'Customer added successfully.',
                 'customer_id' => $customer->id,
+                'customer' => [
+                    'id' => $customer->id,
+                    'name' => $customer->customer_name ?? $customer->name,
+                    'price_list_id' => $customer->price_list_id,
+                    'outstanding_balance' => (float) ($customer->balance ?? 0),
+                ],
             ], 201);
         }
 

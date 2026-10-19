@@ -120,11 +120,12 @@
                                                     </select>
                                                 </li>
                                                 <li>
-                                                    <a class="btn btn-primary form-plus-btn" href="{{ url('add-customer') }}">
-                                                        <i class="fas fa-plus-circle"></i>
-                                                    </a>
+                                                    <button type="button" class="btn btn-primary form-plus-btn" data-bs-toggle="modal" data-bs-target="#invoice-customer-modal" aria-label="Add customer">
+                                                        <i class="fas fa-plus-circle" aria-hidden="true"></i>
+                                                    </button>
                                                 </li>
                                             </ul>
+                                            <div id="invoice-customer-created-message" class="alert alert-success py-2 px-3 mt-2 mb-0 d-none" role="status"></div>
                                             <div id="customer-balance-summary" class="alert alert-warning py-2 px-3 mt-2 mb-0 d-none">
                                                 <span class="fw-semibold">Previous Customer Balance:</span>
                                                 <span id="customer-balance-amount">₦0.00</span>
@@ -314,6 +315,58 @@
                     </div>
                 </form>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="invoice-customer-modal" tabindex="-1" aria-labelledby="invoice-customer-modal-title" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form id="invoice-customer-form" action="{{ route('customers.store') }}" method="POST">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title" id="invoice-customer-modal-title">Add Customer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">Save the customer and continue this invoice.</p>
+                    <div id="invoice-customer-errors" class="alert alert-danger d-none" role="alert" tabindex="-1"></div>
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="invoice-new-customer-name" class="form-label">Customer Name <span class="text-danger">*</span></label>
+                            <input id="invoice-new-customer-name" name="customer_name" class="form-control" maxlength="191" required autocomplete="organization">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="invoice-new-customer-phone" class="form-label">Phone</label>
+                            <input type="tel" id="invoice-new-customer-phone" name="phone" class="form-control" maxlength="191" autocomplete="tel">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="invoice-new-customer-email" class="form-label">Email</label>
+                            <input type="email" id="invoice-new-customer-email" name="email" class="form-control" maxlength="191" autocomplete="email">
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label for="invoice-new-customer-address" class="form-label">Billing Address</label>
+                            <input id="invoice-new-customer-address" name="billing_address_line1" class="form-control" autocomplete="street-address">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="invoice-new-customer-balance" class="form-label">Opening Balance (₦)</label>
+                            <input type="number" id="invoice-new-customer-balance" name="balance" class="form-control" min="0" step="0.01" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="invoice-new-customer-balance-date" class="form-label">Opening Balance Date</label>
+                            <input type="date" id="invoice-new-customer-balance-date" name="opening_balance_date" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="invoice-new-customer-credit-limit" class="form-label">Credit Limit (₦)</label>
+                            <input type="number" id="invoice-new-customer-credit-limit" name="credit_limit" class="form-control" min="0" step="0.01">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save & Select Customer</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -772,3 +825,7 @@
     });
 </script>
 @endsection
+
+@push('scripts')
+<script src="{{ asset('assets/js/invoice-customer.js') }}"></script>
+@endpush
