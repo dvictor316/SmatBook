@@ -243,7 +243,7 @@ class ReportIntegrityTest extends TestCase
                 'payment_method' => 'Split',
                 'total' => 1000,
                 'paid' => 1000,
-                'deposit_account_id' => $cashAccount->id,
+                'deposit_account_id' => $transferAccount->id,
                 'items' => [[
                     'id' => $productId,
                     'qty' => 1,
@@ -274,6 +274,21 @@ class ReportIntegrityTest extends TestCase
         $this->assertEquals($transferAccount->id, (int) $payments['Bank Transfer']->account_id);
         $this->assertEquals(600.0, (float) $payments['POS/Card']->amount);
         $this->assertEquals($cardAccount->id, (int) $payments['POS/Card']->account_id);
+
+        $cashResponse = $this->postJson(route('sales.store'), [
+            'payment_method' => 'Cash',
+            'total' => 1000,
+            'paid' => 1000,
+            'deposit_account_id' => $transferAccount->id,
+            'items' => [[
+                'id' => $productId, 'qty' => 1, 'price' => 1000,
+                'unitType' => 'unit', 'stockUnits' => 1,
+            ]],
+        ]);
+        $this->assertSame(200, $cashResponse->status(), $cashResponse->getContent());
+        $cashSale = Sale::query()->findOrFail($cashResponse->json('sale_id'));
+        $this->assertSame($cashAccount->id, (int) $cashSale->payment_details['payment_account_id']);
+        $this->assertSame($cashAccount->id, (int) Payment::query()->where('sale_id', $cashSale->id)->firstOrFail()->account_id);
 
         foreach ([
             ['channel' => 'transfer', 'method' => 'Bank Transfer', 'account' => $transferAccount, 'label' => 'Bank Transfer'],
@@ -306,6 +321,18 @@ class ReportIntegrityTest extends TestCase
             $this->get(route('sales.invoice.print', ['id' => $channelSale->id, 'format' => 'thermal', 'paper' => 58]))
                 ->assertOk()->assertSee(strtoupper($case['label']))->assertSee($case['account']->name);
         }
+
+        $cashAccount->update(['is_active' => false]);
+        $this->postJson(route('sales.store'), [
+            'payment_method' => 'Cash',
+            'total' => 1000,
+            'paid' => 1000,
+            'items' => [[
+                'id' => $productId, 'qty' => 1, 'price' => 1000,
+                'unitType' => 'unit', 'stockUnits' => 1,
+            ]],
+        ])->assertUnprocessable()->assertJsonPath('success', false)
+            ->assertSee('No active cash account is configured');
     }
 
     public function test_general_ledger_includes_company_system_entries_with_no_user(): void

@@ -5565,26 +5565,17 @@ body.pos-terminal-workspace .pos-rail-btn[aria-disabled="true"] {
                             <option value="Cash">Cash</option>
                             <option value="Split">Split (Cash + Transfer + POS)</option>
                         </select>
-                        @unless($isStarterPos ?? false)
-                            <div class="col-md-6" id="pos-cash-account-wrap">
-                                <label class="fw-semibold" for="deposit-account"><span id="pos-cash-account-label">Payment Method</span> <span class="text-danger">*</span></label>
-                                <small class="text-muted d-block mb-1">Options come from your active Chart of Accounts payment accounts.</small>
-                                <select id="deposit-account" class="form-select">
-                                    <option value="">-- Select Account --</option>
-                                    @foreach(($depositAccounts ?? []) as $acct)
-                                        <option value="{{ $acct->id }}">{{ $acct->name }}@if($acct->code) ({{ $acct->code }})@endif</option>
-                                    @endforeach
-                                </select>
-                                @if(collect($depositAccounts ?? [])->isEmpty())
+                        <div class="col-md-6" id="pos-cash-account-wrap">
+                                <label class="fw-semibold"><span id="pos-cash-account-label">Payment Method</span></label>
+                                <input type="hidden" id="deposit-account" value="{{ $cashDepositAccount?->id }}">
+                                <div class="form-control" id="pos-cash-account-name">{{ $cashDepositAccount?->name ?? 'Cash account not configured' }}</div>
+                                @unless($cashDepositAccount ?? null)
                                     <small class="text-danger d-block mt-1">
-                                        No active asset accounts found.
-                                        <a href="{{ $posChartAccountsUrl ?? url('/settings/chart-of-accounts') }}" class="fw-bold">Add one in Chart of Accounts</a>
+                                        Ask an administrator to add an active cash account in
+                                        <a href="{{ $posChartAccountsUrl ?? url('/settings/chart-of-accounts') }}" class="fw-bold">Chart of Accounts</a>.
                                     </small>
-                                @else
-                                    <small class="text-muted">This COA account will be debited in the journal entry.</small>
-                                @endif
-                            </div>
-                        @endunless
+                                @endunless
+                        </div>
                         <div class="col-md-6" id="pos-cash-amount-wrap">
                             <label for="amount-paid" id="pos-cash-amount-label">Amount Paid</label>
                             <input type="number" min="0" step="0.01" id="amount-paid" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--success-500);">
@@ -8902,8 +8893,8 @@ window.POS_ENABLE_FALLBACK = function () {
 	        }
 
         const cashValue = moneyValue(amountPaid);
-        if (!isStarterPos && cashValue > 0 && !depositAccount?.value) {
-            alertFallback('Choose the cash/deposit account.');
+        if (cashValue > 0 && !depositAccount?.value) {
+            alertFallback('No cash account is configured for this branch. Ask an administrator to add one in Chart of Accounts.');
             return;
         }
 
@@ -8918,6 +8909,12 @@ window.POS_ENABLE_FALLBACK = function () {
                 alertFallback('Choose the bank account where the POS funds will settle, such as Opay or Moniepoint.');
                 return;
             }
+        }
+
+        const receiptWindow = window.open('about:blank', '_blank');
+        if (receiptWindow) {
+            receiptWindow.document.title = 'Preparing receipt';
+            receiptWindow.document.body.textContent = 'Processing sale...';
         }
 
         processBtn.disabled = true;
@@ -8972,24 +8969,29 @@ window.POS_ENABLE_FALLBACK = function () {
                 })() };
 
             if (submission.queued) {
+                receiptWindow?.close();
                 resetVanillaPosWorkspace();
                 alertFallback('Sale saved offline. It will synchronize automatically when internet returns.');
                 return;
             }
 
             const result = submission.result;
+            if (!result?.sale_id) throw new Error('Sale response did not include a receipt. Check the sales register before retrying.');
 
-            if (result.sale_id) {
-                const receiptFormat = document.getElementById('receipt-format')?.value || 'standard';
-                const formatQuery = receiptFormat === 'thermal-58'
-                    ? '&format=thermal&paper=58'
-                    : (receiptFormat === 'thermal-80' ? '&format=thermal&paper=80' : '');
-                const invoiceUrl = `${invoicePrintBaseUrl}/${result.sale_id}/print?autoprint=1${formatQuery}`;
-                window.open(invoiceUrl, '_blank');
-            }
+            const receiptFormat = document.getElementById('receipt-format')?.value || 'standard';
+            const formatQuery = receiptFormat === 'thermal-58'
+                ? '&format=thermal&paper=58'
+                : (receiptFormat === 'thermal-80' ? '&format=thermal&paper=80' : '');
+            const invoiceUrl = `${invoicePrintBaseUrl}/${result.sale_id}/print?autoprint=1${formatQuery}`;
 
             resetVanillaPosWorkspace();
+            if (receiptWindow && !receiptWindow.closed) {
+                receiptWindow.location.replace(invoiceUrl);
+            } else {
+                window.location.assign(invoiceUrl);
+            }
         } catch (error) {
+            receiptWindow?.close();
             alertFallback(error.message || 'Failed to process sale.');
         } finally {
             processBtn.disabled = false;

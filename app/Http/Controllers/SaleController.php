@@ -196,6 +196,7 @@ class SaleController extends Controller
             'activeBranch' => $activeBranch,
             'bankAccounts' => collect(),
             'depositAccounts' => collect(),
+            'cashDepositAccount' => null,
             'priceLists' => collect(),
             'priceListData' => [],
         ], $this->posViewMeta()));
@@ -532,6 +533,26 @@ class SaleController extends Controller
         }
 
         return $this->scopedDepositAccounts()->whereKey($accountId)->first();
+    }
+
+    private function scopedCashDepositAccount(): ?Account
+    {
+        $accounts = $this->scopedDepositAccounts();
+
+        if (Schema::hasColumn('accounts', 'sub_type')) {
+            $cash = (clone $accounts)
+                ->whereIn(DB::raw('LOWER(accounts.sub_type)'), ['cash', 'cash account'])
+                ->whereRaw('LOWER(accounts.name) NOT LIKE ?', ['%bank%'])
+                ->first();
+            if ($cash) {
+                return $cash;
+            }
+        }
+
+        return (clone $accounts)
+            ->whereRaw('LOWER(accounts.name) LIKE ?', ['%cash%'])
+            ->whereRaw('LOWER(accounts.name) NOT LIKE ?', ['%bank%'])
+            ->first();
     }
 
     private function clearDashboardMetricsCache(?string $branchId = null): void
@@ -1116,12 +1137,15 @@ public function customerDetails($id = null)
             $depositAccounts = Schema::hasTable('accounts')
                 ? $this->scopedDepositAccounts()->get()
                 : collect();
+            $cashDepositAccount = Schema::hasTable('accounts')
+                ? $this->scopedCashDepositAccount()
+                : null;
 
             $priceLists = $this->priceListUsage->activeForCurrentContext($this->tenantCompanyId());
             $priceListData = $this->priceListUsage->toFrontend($priceLists);
 
             return view('pos.index', array_merge(
-                compact('products', 'customers', 'sales', 'activeBranch', 'bankAccounts', 'depositAccounts', 'priceLists', 'priceListData'),
+                compact('products', 'customers', 'sales', 'activeBranch', 'bankAccounts', 'depositAccounts', 'cashDepositAccount', 'priceLists', 'priceListData'),
                 $this->posViewMeta()
             ));
         } catch (\Throwable $e) {
@@ -1496,8 +1520,13 @@ public function store(Request $request)
                 : (string) ($sourceQuotation->quotation_id ?? ('Quotation #' . $sourceQuotation->id));
         }
         // Resolve deposit/collection accounts from Chart of Accounts
-        $depositAccountId = $isStarterPlan ? 0 : (int) ($request->deposit_account_id ?? $request->payment_account_id ?? 0);
-        $paymentAccount = $this->findScopedDepositAccount($depositAccountId);
+        $cashTendered = $paymentMethod === 'cash'
+            ? $paidAmount > 0
+            : ($paymentMethod === 'split' && (float) $splitDetails['cash'] > 0);
+        $paymentAccount = $cashTendered ? $this->scopedCashDepositAccount() : null;
+        if ($cashTendered && !$paymentAccount) {
+            throw new \RuntimeException('No active cash account is configured for this branch. Ask an administrator to add one in Chart of Accounts.');
+        }
         $cardSplitAccount = !$isStarterPlan && !empty($splitDetails['card_account_id'])
             ? $this->findScopedDepositAccount((int) $splitDetails['card_account_id'])
             : null;
