@@ -21,7 +21,7 @@ class PosPaymentFormTest extends TestCase
             'type' => Account::TYPE_ASSET, 'sub_type' => 'Cash', 'is_active' => true,
         ]);
 
-        $this->actingAs($user)->withoutMiddleware()
+        $response = $this->actingAs($user)->withoutMiddleware()
             ->get(route('sales.showPos'))
             ->assertOk()
             ->assertSee('id="pos-cash-account-label">Payment Method', false)
@@ -30,6 +30,10 @@ class PosPaymentFormTest extends TestCase
             ->assertSee('Cash Drawer')
             ->assertDontSee('Payment Method: Cash Account')
             ->assertDontSee('Amount Paid: Cash');
+
+        $html = $response->getContent();
+        $this->assertGreaterThan(strpos($html, 'id="grand-total"'), strpos($html, '<div class="pos-payment-tabs"'));
+        $this->assertLessThan(strpos($html, 'id="amount-paid"'), strpos($html, '<div class="pos-payment-tabs"'));
 
         $cashAccount->update(['is_active' => false]);
         $this->get(route('sales.showPos'))

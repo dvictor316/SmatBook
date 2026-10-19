@@ -4909,6 +4909,26 @@ body.pos-terminal-workspace .pos-rail-btn[aria-disabled="true"] {
     }
 }
 
+body.pos-terminal-workspace .pos-receipt-toolbar {
+    grid-template-columns: minmax(0, 1fr) !important;
+}
+
+body.pos-terminal-workspace .pos-payment-methods {
+    border-top: 1px solid #d4dde8;
+    padding-top: 10px;
+    margin-bottom: 10px;
+}
+
+body.pos-terminal-workspace .pos-payment-methods .pos-payment-tabs {
+    margin-top: 0;
+}
+
+@media (max-width: 380px) {
+    body.pos-terminal-workspace .pos-payment-methods .pos-payment-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
 </style>
 
 <div class="pos-full-page-wrapper">
@@ -5498,12 +5518,6 @@ body.pos-terminal-workspace .pos-rail-btn[aria-disabled="true"] {
                             @endforeach
                         </select>
                     </div>
-                    <div class="pos-payment-tabs" aria-label="Payment method">
-                        <button type="button" class="pos-pay-tab pos-pay-cash active" data-payment-method="Cash"><span>Cash</span></button>
-                        <button type="button" class="pos-pay-tab pos-pay-split" data-payment-method="Split"><span>Split</span></button>
-                        <button type="button" class="pos-pay-tab pos-pay-card" data-payment-method="Split" id="pos-pay-card-shortcut"><span>Bank /<br>POS</span></button>
-                        <button type="button" class="pos-pay-tab pos-pay-transfer" data-payment-method="Split" id="pos-pay-transfer-shortcut"><span>Bank<br>Transfer</span></button>
-                    </div>
                     <small id="customer-wallet-hint" class="receipt-wallet-hint">Select a customer to apply wallet credit automatically.</small>
                 </div>
 
@@ -5556,7 +5570,16 @@ body.pos-terminal-workspace .pos-rail-btn[aria-disabled="true"] {
                     </div>
 
                     
-                    <div class="row g-3 border-top pt-3">
+                    <div class="pos-payment-methods">
+                        <div class="pos-payment-tabs" aria-label="Payment method">
+                            <button type="button" class="pos-pay-tab pos-pay-cash active" data-payment-method="Cash"><span>Cash</span></button>
+                            <button type="button" class="pos-pay-tab pos-pay-split" data-payment-method="Split"><span>Split</span></button>
+                            <button type="button" class="pos-pay-tab pos-pay-card" data-payment-method="Split" id="pos-pay-card-shortcut"><span>Bank /<br>POS</span></button>
+                            <button type="button" class="pos-pay-tab pos-pay-transfer" data-payment-method="Split" id="pos-pay-transfer-shortcut"><span>Bank<br>Transfer</span></button>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
                         <div class="col-12">
                             <div class="small fw-bold text-uppercase" style="color: var(--primary-600); letter-spacing: 0.08em;">Amount</div>
                             <div class="small text-muted">Enter the amount received for each payment method.</div>
