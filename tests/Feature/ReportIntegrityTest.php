@@ -274,6 +274,38 @@ class ReportIntegrityTest extends TestCase
         $this->assertEquals($transferAccount->id, (int) $payments['Bank Transfer']->account_id);
         $this->assertEquals(600.0, (float) $payments['POS/Card']->amount);
         $this->assertEquals($cardAccount->id, (int) $payments['POS/Card']->account_id);
+
+        foreach ([
+            ['channel' => 'transfer', 'method' => 'Bank Transfer', 'account' => $transferAccount, 'label' => 'Bank Transfer'],
+            ['channel' => 'card', 'method' => 'POS/Card', 'account' => $cardAccount, 'label' => 'POS/Card'],
+        ] as $case) {
+            $split = ['cash' => 0, 'transfer' => 0, 'card' => 0];
+            $split[$case['channel']] = 1000;
+            $split[$case['channel'].'_account_id'] = $case['account']->id;
+
+            $response = $this->postJson(route('sales.store'), [
+                'payment_method' => 'Split',
+                'total' => 1000,
+                'paid' => 1000,
+                'items' => [[
+                    'id' => $productId, 'qty' => 1, 'price' => 1000,
+                    'unitType' => 'unit', 'stockUnits' => 1,
+                ]],
+                'split_details' => $split,
+            ]);
+            $this->assertSame(200, $response->status(), $response->getContent());
+            $channelSale = Sale::query()->findOrFail($response->json('sale_id'));
+            $this->assertSame($case['channel'], $channelSale->payment_method);
+            $channelPayments = Payment::query()->where('sale_id', $channelSale->id)->get();
+            $this->assertCount(1, $channelPayments);
+            $this->assertSame($case['method'], $channelPayments->first()->method);
+            $this->assertSame($case['account']->id, (int) $channelPayments->first()->account_id);
+
+            $this->get(route('sales.invoice.print', $channelSale->id))
+                ->assertOk()->assertSee($case['label'])->assertSee($case['account']->name);
+            $this->get(route('sales.invoice.print', ['id' => $channelSale->id, 'format' => 'thermal', 'paper' => 58]))
+                ->assertOk()->assertSee(strtoupper($case['label']))->assertSee($case['account']->name);
+        }
     }
 
     public function test_general_ledger_includes_company_system_entries_with_no_user(): void

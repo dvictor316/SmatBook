@@ -138,7 +138,7 @@ class SaleController extends Controller
             $wallet = (float) ($details['wallet_applied'] ?? $details['wallet_requested'] ?? 0);
             $splitTotal = (float) $split['cash'] + (float) $split['transfer'] + (float) $split['card'];
 
-            if ($method === 'split' && $splitTotal > 0) {
+            if ($splitTotal > 0 && ($method === 'split' || ($details['source'] ?? null) === 'pos')) {
                 foreach (['cash', 'transfer', 'card'] as $key) {
                     $amount = round((float) ($split[$key] ?? 0), 2);
                     if ($amount > 0) {
@@ -852,7 +852,13 @@ class SaleController extends Controller
                             'quantity' => (float) ($sale->items?->sum('qty') ?? 0),
                             'total_amount' => (float) ($sale->total ?? 0),
                             'amount_paid' => (float) ($sale->amount_paid ?? $sale->paid ?? 0),
-                            'payment_method' => strtoupper(str_replace('_', ' ', (string) ($sale->payment_method ?? 'cash'))),
+                            'payment_method' => match (strtolower((string) ($sale->payment_method ?? 'cash'))) {
+                                'transfer', 'bank_transfer' => 'Bank Transfer',
+                                'card', 'pos' => 'POS/Card',
+                                'split' => 'Split Payment',
+                                'charge_to_room' => 'Charge to Room',
+                                default => 'Cash',
+                            },
                             'payment_status' => strtoupper((string) ($sale->payment_status ?? '')),
                             'sale_date' => $formattedDate,
                         ];
@@ -1368,6 +1374,16 @@ public function store(Request $request)
 	    }
         $walletAmount = min($requestedWalletAmount, $availableWalletAmount, $totalAmount);
         $isChargeToRoom = in_array($paymentMethod, ['chargetoroom', 'charge_to_room', 'charge-room'], true);
+        $recordedPaymentMethod = $paymentMethod;
+        if ($paymentMethod === 'split') {
+            $usedChannels = array_keys(array_filter(
+                array_intersect_key($splitDetails, array_flip(['cash', 'transfer', 'card'])),
+                fn ($amount) => (float) $amount > 0
+            ));
+            if (count($usedChannels) === 1) {
+                $recordedPaymentMethod = $usedChannels[0];
+            }
+        }
 
     if (!in_array($paymentMethod, ['cash', 'split', 'chargetoroom', 'charge_to_room', 'charge-room'], true)) {
         return response()->json(['success' => false, 'message' => 'POS accepts cash, split, or charge-to-room sales only. Use Invoices for credit sales.'], 422);
@@ -1515,7 +1531,7 @@ $sale = Sale::create([
     'change_amount'  => $changeAmount,
     'balance'        => $balance,
     'currency'       => 'NGN',
-    'payment_method' => $isChargeToRoom ? 'charge_to_room' : $paymentMethod,
+    'payment_method' => $isChargeToRoom ? 'charge_to_room' : $recordedPaymentMethod,
     'payment_status' => $paymentStatus,
         'payment_details' => [
         'source' => 'pos',

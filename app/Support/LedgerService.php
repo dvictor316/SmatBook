@@ -159,7 +159,7 @@ class LedgerService
             ];
             $splitTotal = array_sum(array_column($paymentChannels, 'amount'));
 
-            if (strtolower((string) $sale->payment_method) === 'split' && $splitTotal > 0) {
+            if ($splitTotal > 0 && (strtolower((string) $sale->payment_method) === 'split' || ($paymentDetails['source'] ?? null) === 'pos')) {
                 $remainingPaid = min($paid, $total);
                 foreach ($paymentChannels as $channel => $details) {
                     $channelAmount = min(max(0, $details['amount']), $remainingPaid);

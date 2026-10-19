@@ -163,10 +163,19 @@
     @if($change > 0)<div class="total-row strong"><span>Change</span><span>{{ $money($change) }}</span></div>@endif
 
     <div class="rule"></div>
-    <div class="payment-row"><span>Payment:</span><span>{{ strtoupper(str_replace('_', ' ', (string) ($sale->payment_method ?: 'cash'))) }}</span></div>
+    @php
+        $usedPaymentChannels = array_filter(['cash' => (float) ($split['cash'] ?? 0), 'transfer' => (float) ($split['transfer'] ?? 0), 'card' => (float) ($split['card'] ?? 0)], fn ($amount) => $amount > 0);
+        $paymentMethodLabel = count($usedPaymentChannels) > 1 ? 'SPLIT PAYMENT' : match (array_key_first($usedPaymentChannels) ?? strtolower((string) $sale->payment_method)) {
+            'transfer', 'bank_transfer' => 'BANK TRANSFER', 'card', 'pos' => 'POS/CARD',
+            'split' => 'SPLIT PAYMENT', 'charge_to_room' => 'CHARGE TO ROOM', default => 'CASH',
+        };
+    @endphp
+    <div class="payment-row"><span>Payment:</span><span>{{ $paymentMethodLabel }}</span></div>
     @foreach(['cash' => 'Cash', 'transfer' => 'Transfer', 'card' => 'POS/Card'] as $key => $label)
         @if((float) ($split[$key] ?? 0) > 0)
             <div class="payment-row"><span>{{ $label }}</span><span>{{ $money($split[$key]) }}</span></div>
+            @php $accountName = $paymentDetails[match ($key) { 'cash' => 'payment_account_name', 'transfer' => 'transfer_account_name', default => 'card_account_name' }] ?? null; @endphp
+            @if($accountName)<div class="payment-row"><span>Account:</span><span>{{ $accountName }}</span></div>@endif
         @endif
     @endforeach
 

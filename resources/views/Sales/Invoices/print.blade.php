@@ -459,9 +459,9 @@
         $splitLines = [];
 
         foreach ([
-            ['key' => 'cash', 'label' => 'Cash', 'account' => null],
-            ['key' => 'transfer', 'label' => 'Transfer', 'account' => $paymentDetails['transfer_account_name'] ?? null],
-            ['key' => 'card', 'label' => 'POS', 'account' => $paymentDetails['card_account_name'] ?? null],
+            ['key' => 'cash', 'label' => 'Cash', 'account' => $paymentDetails['payment_account_name'] ?? null],
+            ['key' => 'transfer', 'label' => 'Bank Transfer', 'account' => $paymentDetails['transfer_account_name'] ?? null],
+            ['key' => 'card', 'label' => 'POS/Card', 'account' => $paymentDetails['card_account_name'] ?? null],
         ] as $line) {
             $amount = (float) ($splitDetails[$line['key']] ?? 0);
             if ($amount > 0) {
@@ -472,6 +472,15 @@
                 ];
             }
         }
+        $paymentMethodLabel = count($splitLines) > 1
+            ? 'Split Payment'
+            : ($splitLines[0]['label'] ?? match (strtolower((string) $sale->payment_method)) {
+                'transfer', 'bank_transfer' => 'Bank Transfer',
+                'card', 'pos' => 'POS/Card',
+                'split' => 'Split Payment',
+                'charge_to_room' => 'Charge to Room',
+                default => 'Cash',
+            });
     @endphp
 
     <div class="container py-4 py-lg-5">
@@ -551,6 +560,8 @@
                             </div>
                         </div>
 
+                        <div class="compact-invoice-meta-label mt-3">Payment Method</div>
+                        <div class="compact-invoice-meta-value">{{ $paymentMethodLabel }}</div>
                         @if(!empty($splitLines))
                             <div class="compact-invoice-meta-label mt-3">Payment Breakdown</div>
                             <div class="compact-split-grid">

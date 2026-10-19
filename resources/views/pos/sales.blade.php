@@ -574,9 +574,15 @@
                                 'transfer' => 'Bank Transfer',
                                 'card' => 'POS / Card',
                             ])->filter(fn ($label, $channel) => (float) ($splitPayments[$channel] ?? 0) > 0)->values();
-                            $paymentModeLabel = strtolower((string) $sale->payment_method) === 'split' && $activeChannels->count() === 1
+                            $paymentModeLabel = $activeChannels->count() === 1
                                 ? $activeChannels->first()
-                                : strtoupper(str_replace('_', ' ', $sale->payment_method ?? 'cash'));
+                                : match (strtolower((string) $sale->payment_method)) {
+                                    'transfer', 'bank_transfer' => 'Bank Transfer',
+                                    'card', 'pos' => 'POS / Card',
+                                    'split' => 'Split Payment',
+                                    'charge_to_room' => 'Charge to Room',
+                                    default => 'Cash',
+                                };
                             $badgeStyle = match($sale->payment_status) {
                                 'paid' => 'status-paid',
                                 'partial' => 'status-partial',

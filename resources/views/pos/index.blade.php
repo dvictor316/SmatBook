@@ -5252,7 +5252,7 @@ body.pos-terminal-workspace .pos-rail-btn[aria-disabled="true"] {
             <div class="controls-card">
                 <div class="scanner-section mb-2">
                     <label class="scanner-label"><i class="fas fa-barcode me-1"></i> Barcode Scanner</label>
-                    <input type="text" id="barcode-input" class="form-control scanner-input" placeholder="Scan product..." autofocus>
+                    <input type="text" id="barcode-input" class="form-control scanner-input" placeholder="Scan barcode, then press Enter" autocomplete="off" autofocus>
                 </div>
 
                 <div id="image-frame" class="image-frame mb-2">
@@ -5566,7 +5566,7 @@ body.pos-terminal-workspace .pos-rail-btn[aria-disabled="true"] {
                             <option value="Split">Split (Cash + Transfer + POS)</option>
                         </select>
                         @unless($isStarterPos ?? false)
-                            <div class="col-md-6">
+                            <div class="col-md-6" id="pos-cash-account-wrap">
                                 <label class="fw-semibold">Payment Method: Cash Account <span class="text-danger">*</span></label>
                                 <small class="text-muted d-block mb-1">Options come from your active Chart of Accounts payment accounts.</small>
                                 <select id="deposit-account" class="form-select">
@@ -5585,7 +5585,7 @@ body.pos-terminal-workspace .pos-rail-btn[aria-disabled="true"] {
                                 @endif
                             </div>
                         @endunless
-                        <div class="col-md-6">
+                        <div class="col-md-6" id="pos-cash-amount-wrap">
                             <label>Amount Paid: Cash</label>
                             <input type="number" min="0" step="0.01" id="amount-paid" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--success-500);">
                         </div>
@@ -6387,7 +6387,6 @@ $(document).ready(function() {
 
     // Barcode
     let barcodeBuffer = '';
-    let barcodeTimeout;
 
     function optionMatchesBarcodeScan(option, normalizedCode) {
         const barcode = String(option.data('barcode') || '').trim().toLowerCase();
@@ -6403,6 +6402,7 @@ $(document).ready(function() {
     }
 
     function commitBarcodeScan(rawCode) {
+        if (window.POS_VANILLA_BOUND) return false;
         const normalizedCode = String(rawCode || '').trim().toLowerCase();
         if (!normalizedCode) {
             return false;
@@ -6419,9 +6419,12 @@ $(document).ready(function() {
 
         if (matchedOption && matchedOption.val()) {
             $('#product-select').val(matchedOption.val());
+            $('#quantity').val('1');
             applyProductSelection(matchedOption);
             $('#barcode-input').val('');
             barcodeBuffer = '';
+            $('#add-btn').trigger('click');
+            $('#barcode-input').trigger('focus');
             return true;
         }
 
@@ -6439,20 +6442,12 @@ $(document).ready(function() {
     }
 
     $('#barcode-input').on('input', function() {
-        clearTimeout(barcodeTimeout);
         barcodeBuffer = $(this).val();
-
-        barcodeTimeout = setTimeout(() => {
-            if (barcodeBuffer && barcodeBuffer.trim().length >= 3) {
-                commitBarcodeScan(barcodeBuffer);
-            }
-        }, 220);
     });
 
     $('#barcode-input').on('keydown', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
-            clearTimeout(barcodeTimeout);
             barcodeBuffer = $(this).val();
             commitBarcodeScan(barcodeBuffer);
         }
@@ -6925,8 +6920,9 @@ $(document).ready(function() {
         let total = parseFloat($('#grand-total').text().replace(/[^\d.]/g, '')) || 0;
         let cashPaid = parseFloat($('#amount-paid').val()) || 0;
         let transferPaid = parseFloat($('#transfer-amount').val()) || 0;
+        let cardPaid = parseFloat($('#card-amount').val()) || 0;
         let method = $('#payment-method').val();
-        let paid = method === 'Split' ? (cashPaid + transferPaid) : cashPaid;
+        let paid = method === 'Split' ? (cashPaid + transferPaid + cardPaid) : cashPaid;
 
         if(paid <= 0) {
             showAlert({ icon: 'warning', title: 'Enter Payment', text: 'Enter the amount received before processing this sale.', confirmButtonColor: '#f59e0b' });
@@ -8016,9 +8012,6 @@ window.POS_ENABLE_FALLBACK = function () {
             || (sku && sku === normalizedCode);
     }
 
-    let vanillaBarcodeBuffer = '';
-    let vanillaBarcodeTimer = null;
-
     function commitVanillaBarcodeScan(rawCode) {
         const normalizedCode = String(rawCode || '').trim().toLowerCase();
         if (!normalizedCode || !productSelect) {
@@ -8029,9 +8022,11 @@ window.POS_ENABLE_FALLBACK = function () {
             .find((option) => option.value && datasetMatchesBarcodeScan(option.dataset || {}, normalizedCode));
 
         if (matchedOption) {
+            if (qtyInput) qtyInput.value = '1';
             applyVanillaSelection({ dataset: { ...matchedOption.dataset, id: matchedOption.value }});
             if (barcodeInput) barcodeInput.value = '';
-            vanillaBarcodeBuffer = '';
+            addBtn?.click();
+            barcodeInput?.focus();
             return true;
         }
 
@@ -8188,26 +8183,13 @@ window.POS_ENABLE_FALLBACK = function () {
         });
     }
 
-    barcodeInput?.addEventListener('input', function () {
-        window.clearTimeout(vanillaBarcodeTimer);
-        vanillaBarcodeBuffer = barcodeInput.value;
-
-        vanillaBarcodeTimer = window.setTimeout(() => {
-            if (vanillaBarcodeBuffer && vanillaBarcodeBuffer.trim().length >= 3) {
-                commitVanillaBarcodeScan(vanillaBarcodeBuffer);
-            }
-        }, 220);
-    });
-
     barcodeInput?.addEventListener('keydown', function (event) {
         if (event.key !== 'Enter') {
             return;
         }
 
         event.preventDefault();
-        window.clearTimeout(vanillaBarcodeTimer);
-        vanillaBarcodeBuffer = barcodeInput.value;
-        commitVanillaBarcodeScan(vanillaBarcodeBuffer);
+        commitVanillaBarcodeScan(barcodeInput.value);
     });
 
     function updateItemTotal() {
@@ -8329,12 +8311,11 @@ window.POS_ENABLE_FALLBACK = function () {
     }
 
     function syncSplitCounterpart(changedField) {
-        if (splitAutoSync || paymentMethod?.value !== 'Split') {
+        if (splitAutoSync || paymentMethod?.value !== 'Split' || activePaymentTab !== 'Split') {
             return;
         }
 
-        const totalText = grandTotal?.textContent || '0';
-        const total = parseFloat(totalText.replace(/[^\d.]/g, '')) || 0;
+        const total = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount));
         const cashPaid = moneyValue(amountPaid);
         const transferPaid = moneyValue(transferAmount);
         const cardPaid = moneyValue(cardAmount);
@@ -8356,27 +8337,44 @@ window.POS_ENABLE_FALLBACK = function () {
 
     function toggleSplitFields() {
         const isSplit = paymentMethod?.value === 'Split';
+        const showCash = !isSplit || activePaymentTab === 'Split';
+        const showTransfer = isSplit && activePaymentTab !== 'pos-pay-card-shortcut';
+        const showCard = isSplit && activePaymentTab !== 'pos-pay-transfer-shortcut';
         paymentTabs.forEach((button) => {
             button.classList.toggle('active', (button.id || button.textContent.trim()) === activePaymentTab);
         });
-        splitTransferWrap?.classList.toggle('d-none', !isSplit);
-        splitTransferAccountWrap?.classList.toggle('d-none', !isSplit);
-        splitCardWrap?.classList.toggle('d-none', !isSplit);
-        splitCardAccountWrap?.classList.toggle('d-none', !isSplit);
+        document.getElementById('pos-cash-account-wrap')?.classList.toggle('d-none', !showCash);
+        document.getElementById('pos-cash-amount-wrap')?.classList.toggle('d-none', !showCash);
+        splitTransferWrap?.classList.toggle('d-none', !showTransfer);
+        splitTransferAccountWrap?.classList.toggle('d-none', !showTransfer);
+        splitCardWrap?.classList.toggle('d-none', !showCard);
+        splitCardAccountWrap?.classList.toggle('d-none', !showCard);
         idleIllustration?.classList.toggle('is-split-compact', isSplit);
 
         if (isSplit && amountPaid) {
-            const currentCash = moneyValue(amountPaid);
-            const totalText = grandTotal?.textContent || '0';
-            const total = parseFloat(totalText.replace(/[^\d.]/g, '')) || 0;
-            if (Math.abs(currentCash - total) < 0.01) {
+            const total = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount));
+
+            if (activePaymentTab === 'pos-pay-card-shortcut') {
                 amountPaid.value = '0.00';
-            }
-            if (transferAmount && !transferAmount.value) {
-                transferAmount.value = '0.00';
-            }
-            if (cardAmount && !cardAmount.value) {
-                cardAmount.value = total.toFixed(2);
+                if (transferAmount) transferAmount.value = '0.00';
+                if (cardAmount) cardAmount.value = total.toFixed(2);
+            } else if (activePaymentTab === 'pos-pay-transfer-shortcut') {
+                amountPaid.value = '0.00';
+                if (transferAmount) transferAmount.value = total.toFixed(2);
+                if (cardAmount) cardAmount.value = '0.00';
+            } else {
+                if (transferAmount && !transferAmount.value) {
+                    transferAmount.value = '0.00';
+                }
+                if (cardAmount && !cardAmount.value) {
+                    cardAmount.value = '0.00';
+                }
+                if (
+                    moneyValue(amountPaid) + moneyValue(transferAmount) + moneyValue(cardAmount) <= 0
+                    && total > 0
+                ) {
+                    amountPaid.value = total.toFixed(2);
+                }
             }
         }
 
@@ -8399,6 +8397,9 @@ window.POS_ENABLE_FALLBACK = function () {
 
         activePaymentTab = 'Cash';
         if (paymentMethod) paymentMethod.value = 'Cash';
+        paymentTabs.forEach((button) => {
+            button.classList.toggle('active', button.textContent.trim() === 'Cash');
+        });
         if (depositAccount) depositAccount.value = '';
         if (amountPaid) amountPaid.value = '0.00';
         if (transferAmount) transferAmount.value = '0.00';
@@ -8820,6 +8821,14 @@ window.POS_ENABLE_FALLBACK = function () {
 
             activePaymentTab = button.id || button.textContent.trim();
             paymentMethod.value = button.dataset.paymentMethod || 'Cash';
+            if (activePaymentTab === 'Cash') {
+                const requiredPayment = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount));
+                if (moneyValue(amountPaid) <= 0 && amountPaid) {
+                    amountPaid.value = requiredPayment.toFixed(2);
+                }
+                if (transferAmount) transferAmount.value = '0.00';
+                if (cardAmount) cardAmount.value = '0.00';
+            }
             paymentMethod.dispatchEvent(new Event('change', { bubbles: true }));
 
             if (button.id === 'pos-pay-card-shortcut' && cardAmount) {
