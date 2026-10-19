@@ -38,6 +38,7 @@ class PosPaymentFormTest extends TestCase
         $cashAccount->update(['is_active' => false]);
         $this->get(route('sales.showPos'))
             ->assertOk()
-            ->assertSee('Contact your administrator to configure a cash account');
+            ->assertSee('Cash account not configured')
+            ->assertSee('Call your administrator to set it up.');
     }
 }

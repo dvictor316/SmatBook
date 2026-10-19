@@ -4923,6 +4923,21 @@ body.pos-terminal-workspace .pos-payment-methods .pos-payment-tabs {
     margin-top: 0;
 }
 
+body.pos-terminal-workspace #pos-cash-account-name.is-unconfigured {
+    height: auto !important;
+    min-height: 58px;
+    white-space: normal;
+    line-height: 1.25;
+    border-color: #d97706;
+    background: #fff7ed;
+}
+
+#pos-cash-account-name.is-unconfigured span {
+    display: block;
+    margin-top: 3px;
+    font-size: 0.78rem;
+}
+
 @media (max-width: 380px) {
     body.pos-terminal-workspace .pos-payment-methods .pos-payment-tabs {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -5591,10 +5606,17 @@ body.pos-terminal-workspace .pos-payment-methods .pos-payment-tabs {
                         <div class="col-md-6" id="pos-cash-account-wrap">
                                 <label class="fw-semibold"><span id="pos-cash-account-label">Payment Method</span></label>
                                 <input type="hidden" id="deposit-account" value="{{ $cashDepositAccount?->id }}">
-                                <div class="form-control" id="pos-cash-account-name">{{ $cashDepositAccount?->name ?? 'Cash account not configured' }}</div>
+                                <div class="form-control @unless($cashDepositAccount ?? null) is-unconfigured @endunless" id="pos-cash-account-name">
+                                    @if($cashDepositAccount ?? null)
+                                        {{ $cashDepositAccount->name }}
+                                    @else
+                                        <strong>Cash account not configured</strong>
+                                        <span>Call your administrator to set it up.</span>
+                                    @endif
+                                </div>
                                 @unless($cashDepositAccount ?? null)
                                     <small class="text-danger d-block mt-1">
-                                        Cash payments are unavailable. Contact your administrator to configure a cash account in Chart of Accounts.
+                                        Cash payments are unavailable until an administrator configures the cash account in Chart of Accounts.
                                     </small>
                                 @endunless
                         </div>
