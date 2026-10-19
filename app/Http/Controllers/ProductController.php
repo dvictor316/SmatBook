@@ -735,36 +735,43 @@ class ProductController extends Controller
 
     private function applyMeasurementPreset(Request $request): void
     {
-        if ($request->input('measurement_mode') !== 'kg_carton') {
+        $mode = $request->input('measurement_mode');
+        if (!in_array($mode, ['pieces', 'pieces_carton', 'kg_carton'], true)) {
             return;
         }
 
-        $kgUnit = $this->unitRows()->first(function ($unit) {
-            $symbol = Str::lower(trim((string) ($unit->symbol ?? '')));
-            $name = Str::lower(trim((string) ($unit->name ?? '')));
-
-            return $symbol === 'kg' || in_array($name, ['kilogram', 'kilograms'], true);
+        $isKg = $mode === 'kg_carton';
+        $symbol = $isKg ? 'kg' : 'pcs';
+        $unit = $this->unitRows()->first(function ($unit) use ($isKg) {
+            $definition = $this->canonicalUnitDefinition($unit->name ?? '', $unit->symbol ?? '');
+            return ($definition['symbol'] ?? null) === ($isKg ? 'kg' : 'pcs');
         });
 
-        if (!$kgUnit) {
+        if (!$unit) {
             throw ValidationException::withMessages([
-                'measurement_mode' => 'The Kilogram (kg) unit is unavailable. Add it under Units and try again.',
+                'measurement_mode' => 'The '.($isKg ? 'Kilogram (kg)' : 'Piece (pcs)').' unit is unavailable. Add it under Units and try again.',
             ]);
         }
 
-        $kgPerCarton = max(0, (float) $request->input('kg_per_carton', 0));
+        // The explicit setup choice is authoritative, even if old hidden fields
+        // still contain another measurement. Never infer units from product names.
         $preset = [
-            'base_unit_name' => 'kg',
-            'unit_id' => $kgUnit->id,
-            'base_unit_id' => $kgUnit->id,
+            'base_unit_name' => $symbol,
+            'unit_id' => $unit->id,
+            'base_unit_id' => $unit->id,
             'purchase_unit_id' => null,
             'conversion_rate' => null,
-            'units_per_carton' => $kgPerCarton,
+            'units_per_carton' => $mode === 'pieces' ? 0 : ($isKg
+                ? $request->input('kg_per_carton', 0)
+                : $request->input('units_per_carton', 0)),
             'units_per_roll' => 0,
             'stock_rolls' => 0,
-            'unit_type' => 'carton',
+            'unit_type' => $mode === 'pieces' ? 'unit' : 'carton',
         ];
 
+        if ($mode === 'pieces') {
+            $preset['stock_cartons'] = 0;
+        }
         if ($request->has('stock_cartons') || $request->has('stock_units')) {
             $preset['stock'] = null;
         }
@@ -1388,8 +1395,8 @@ class ProductController extends Controller
                 'stock_units'      => 'nullable|numeric|min:0',
                 'units_per_carton' => 'nullable|numeric|min:0',
                 'units_per_roll'   => 'nullable|numeric|min:0',
-                'measurement_mode' => 'nullable|in:custom,kg_carton',
-                'kg_per_carton'    => 'nullable|required_if:measurement_mode,kg_carton|numeric|gt:0',
+                'measurement_mode' => 'nullable|in:custom,pieces,pieces_carton,kg_carton',
+                'kg_per_carton'    => 'exclude_unless:measurement_mode,kg_carton|required|numeric|gt:0',
                 'carton_selling_price' => 'nullable|numeric|min:0',
                 'base_unit_name'   => 'required|string|max:100',
                 'category_id'      => 'nullable|exists:categories,id',
@@ -1881,7 +1888,7 @@ public function inventory(Request $request)
             'stock_units'      => 'nullable|numeric|min:0',
             'units_per_carton' => 'nullable|numeric|min:0',
             'units_per_roll'   => 'nullable|numeric|min:0',
-            'measurement_mode' => 'nullable|in:custom,kg_carton',
+            'measurement_mode' => 'nullable|in:custom,pieces,pieces_carton,kg_carton',
             'kg_per_carton'    => 'exclude_unless:measurement_mode,kg_carton|required|numeric|gt:0',
             'carton_selling_price' => 'nullable|numeric|min:0',
             'base_unit_name'   => 'nullable|string|max:100',
