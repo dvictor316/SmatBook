@@ -1,3 +1,8 @@
+{{-- Start shared downloads early without changing script execution order. --}}
+<link rel="preload" as="script" href="{{ URL::asset('/assets/js/jquery-3.7.1.min.js') }}">
+<link rel="preload" as="script" href="{{ URL::asset('/assets/js/bootstrap.bundle.min.js') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
 <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}">
 
@@ -25,7 +30,7 @@
 
 @unless(Route::is(['index-two', 'saas-login', 'saas-register', 'forgot-password', 'password.reset']))
     <link rel="stylesheet" href="{{ asset('assets/css/bootstrap-datetimepicker.min.css') }}">
-    <script src="{{ asset('assets/js/layout.js') }}"></script>
+    <script src="{{ asset('assets/js/layout.js') }}?v=20261019"></script>
 @endunless
 
 @unless(Route::is(['index-two', 'companies', 'saas-login', 'saas-register', 'forgot-password', 'password.reset']))

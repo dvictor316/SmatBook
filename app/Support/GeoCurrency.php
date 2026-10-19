@@ -4,6 +4,9 @@ namespace App\Support;
 
 class GeoCurrency
 {
+    /** @var array<string, \NumberFormatter> Locale rules only; never balances or exchange rates. */
+    private static array $decimalFormatters = [];
+
     private const CURRENCY_SYMBOLS = [
         'NGN' => '₦',
         'USD' => '$',
@@ -110,9 +113,17 @@ class GeoCurrency
             return ($isNegative ? '-' : '') . $symbol . number_format($absoluteAmount, 2);
         }
 
-        $formatter = new \NumberFormatter($displayLocale, \NumberFormatter::DECIMAL);
-        $formatter->setAttribute(\NumberFormatter::MIN_FRACTION_DIGITS, 2);
-        $formatter->setAttribute(\NumberFormatter::MAX_FRACTION_DIGITS, 2);
+        if (!isset(self::$decimalFormatters[$displayLocale])) {
+            // Bound memory in long-running workers accepting arbitrary locales.
+            if (count(self::$decimalFormatters) >= 16) {
+                self::$decimalFormatters = [];
+            }
+            $formatter = new \NumberFormatter($displayLocale, \NumberFormatter::DECIMAL);
+            $formatter->setAttribute(\NumberFormatter::MIN_FRACTION_DIGITS, 2);
+            $formatter->setAttribute(\NumberFormatter::MAX_FRACTION_DIGITS, 2);
+            self::$decimalFormatters[$displayLocale] = $formatter;
+        }
+        $formatter = self::$decimalFormatters[$displayLocale];
         $result = $formatter->format($absoluteAmount);
 
         if ($result === false) {
