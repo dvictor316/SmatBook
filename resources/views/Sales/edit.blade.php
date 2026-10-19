@@ -13,6 +13,7 @@
     .edit-card { border: 1px solid #e3eaf4; border-radius: 20px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05); background: #fff; }
     .section-title { color: #0f172a; font-weight: 700; border-bottom: 1px solid #dfe8f7; padding-bottom: 10px; margin-bottom: 25px; }
     .table-thead-blue th { background-color: #f5f8ff !important; color: #5b6b87 !important; text-transform: uppercase; font-size: 11px; letter-spacing: .04em; }
+    .pos-content-area .rate { min-width: 200px; width: 100%; font-variant-numeric: tabular-nums; }
     .grand-total-box { background: #f8fafc; border: 1px solid #dbe4f0; padding: 20px; border-radius: 16px; }
     .form-control-sm, .form-select-sm { border: 1px solid #ced4da; }
 </style>
@@ -68,7 +69,7 @@
                                     <th style="width: 35%;">Product</th>
                                     <th style="width: 18%;">Price Level</th>
                                     <th style="width: 15%;">Qty</th>
-                                    <th style="width: 15%;">Rate (₦)</th>
+                                    <th style="min-width: 224px; width: 224px;">Rate (₦)</th>
                                     <th style="width: 15%;">Disc (%)</th>
                                     <th class="text-end" style="width: 15%;">Total</th>
                                     <th></th>

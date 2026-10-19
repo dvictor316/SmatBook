@@ -1,6 +1,10 @@
 <?php $page = 'add-invoice'; ?>
 @extends('layout.mainlayout')
 @section('content')
+<style>
+    #invoice_table .invoice-rate-column { min-width: 224px; }
+    #invoice_table .rate-input { min-width: 200px; width: 100%; font-variant-numeric: tabular-nums; }
+</style>
 @php
     $isEditMode = ($formMode ?? 'create') === 'edit';
     $quotationPrefill = $quotationPrefill ?? session('quotation_prefill') ?? [];
@@ -187,7 +191,7 @@
                                                     <th style="min-width: 150px;">Price Level</th>
                                                     <th style="min-width: 120px;">Unit</th>
                                                     <th>Quantity</th>
-                                                    <th>Rate (₦)</th>
+                                                    <th class="invoice-rate-column">Rate (₦)</th>
                                                     <th>Discount (₦)</th>
                                                     <th>Tax (₦)</th>
                                                     <th>Amount</th>
