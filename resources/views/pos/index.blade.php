@@ -5571,8 +5571,7 @@ body.pos-terminal-workspace .pos-rail-btn[aria-disabled="true"] {
                                 <div class="form-control" id="pos-cash-account-name">{{ $cashDepositAccount?->name ?? 'Cash account not configured' }}</div>
                                 @unless($cashDepositAccount ?? null)
                                     <small class="text-danger d-block mt-1">
-                                        Ask an administrator to add an active cash account in
-                                        <a href="{{ $posChartAccountsUrl ?? url('/settings/chart-of-accounts') }}" class="fw-bold">Chart of Accounts</a>.
+                                        Cash payments are unavailable. Contact your administrator to configure a cash account in Chart of Accounts.
                                     </small>
                                 @endunless
                         </div>
@@ -8894,7 +8893,7 @@ window.POS_ENABLE_FALLBACK = function () {
 
         const cashValue = moneyValue(amountPaid);
         if (cashValue > 0 && !depositAccount?.value) {
-            alertFallback('No cash account is configured for this branch. Ask an administrator to add one in Chart of Accounts.');
+            alertFallback('No cash account is configured for this branch. Contact your administrator to configure one in Chart of Accounts.');
             return;
         }
 
@@ -8909,12 +8908,6 @@ window.POS_ENABLE_FALLBACK = function () {
                 alertFallback('Choose the bank account where the POS funds will settle, such as Opay or Moniepoint.');
                 return;
             }
-        }
-
-        const receiptWindow = window.open('about:blank', '_blank');
-        if (receiptWindow) {
-            receiptWindow.document.title = 'Preparing receipt';
-            receiptWindow.document.body.textContent = 'Processing sale...';
         }
 
         processBtn.disabled = true;
@@ -8969,7 +8962,6 @@ window.POS_ENABLE_FALLBACK = function () {
                 })() };
 
             if (submission.queued) {
-                receiptWindow?.close();
                 resetVanillaPosWorkspace();
                 alertFallback('Sale saved offline. It will synchronize automatically when internet returns.');
                 return;
@@ -8985,13 +8977,11 @@ window.POS_ENABLE_FALLBACK = function () {
             const invoiceUrl = `${invoicePrintBaseUrl}/${result.sale_id}/print?autoprint=1${formatQuery}`;
 
             resetVanillaPosWorkspace();
-            if (receiptWindow && !receiptWindow.closed) {
-                receiptWindow.location.replace(invoiceUrl);
-            } else {
+            const receiptWindow = window.open(invoiceUrl, '_blank');
+            if (!receiptWindow) {
                 window.location.assign(invoiceUrl);
             }
         } catch (error) {
-            receiptWindow?.close();
             alertFallback(error.message || 'Failed to process sale.');
         } finally {
             processBtn.disabled = false;

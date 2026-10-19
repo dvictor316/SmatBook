@@ -30,5 +30,10 @@ class PosPaymentFormTest extends TestCase
             ->assertSee('Cash Drawer')
             ->assertDontSee('Payment Method: Cash Account')
             ->assertDontSee('Amount Paid: Cash');
+
+        $cashAccount->update(['is_active' => false]);
+        $this->get(route('sales.showPos'))
+            ->assertOk()
+            ->assertSee('Contact your administrator to configure a cash account');
     }
 }

@@ -1525,7 +1525,7 @@ public function store(Request $request)
             : ($paymentMethod === 'split' && (float) $splitDetails['cash'] > 0);
         $paymentAccount = $cashTendered ? $this->scopedCashDepositAccount() : null;
         if ($cashTendered && !$paymentAccount) {
-            throw new \RuntimeException('No active cash account is configured for this branch. Ask an administrator to add one in Chart of Accounts.');
+            throw new \RuntimeException('No active cash account is configured for this branch. Contact your administrator to configure one in Chart of Accounts.');
         }
         $cardSplitAccount = !$isStarterPlan && !empty($splitDetails['card_account_id'])
             ? $this->findScopedDepositAccount((int) $splitDetails['card_account_id'])
