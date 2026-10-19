@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Models\DeploymentManager;
 use App\Models\ActivityLog;
 use App\Models\Role;
+use App\Support\RoleNames;
+use Illuminate\Validation\ValidationException;
 use App\Support\PartnerLocationRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -61,6 +63,7 @@ class UserController extends Controller
     public function userIndex()
     {
         $users = $this->scopedUsersQuery()
+            ->with('roleModel')
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
@@ -119,7 +122,11 @@ class UserController extends Controller
             'first_name'     => 'required|string|max:255',
             'last_name'      => 'nullable|string|max:255',
             'email'          => 'required|email|unique:users,email',
-            'role'           => 'required',
+            'role'           => 'required|string|max:255',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'string|max:255',
+            'perm_radio' => 'nullable|array',
+            'perm_radio.*' => 'nullable|string|max:255',
             'password'       => 'required|min:6|same:confirm_password',
             'confirm_password' => 'required',
             'username_base'  => 'nullable|string|max:100|alpha_dash',
@@ -278,10 +285,10 @@ class UserController extends Controller
             return response()->json(['permissions' => []]);
         }
 
-        $role = \App\Models\Role::whereRaw('LOWER(name) = ?', [strtolower($roleName)])->first();
+        $role = RoleNames::find($roleName);
         $perms = $role ? $role->permissions()->pluck('name')->map('strtolower')->toArray() : [];
 
-        if ($perms === []) {
+        if (!$role) {
             $perms = $this->defaultPermissionsForRole($roleName);
         }
 
@@ -294,7 +301,7 @@ class UserController extends Controller
     public function edit($id)
     {
         $user = $this->findScopedUser($id);
-        $roles = $this->getRoles();
+        $roles = collect($this->getRoles())->push($user->role_display_name)->unique()->sort()->values()->all();
         $countryOptions = PartnerLocationRepository::countryOptions();
         $managerProfile = DeploymentManager::withoutGlobalScopes()->where('user_id', $user->id)->first();
         return view('UserManagement.edit', compact('user', 'roles', 'countryOptions', 'managerProfile'));
@@ -315,11 +322,16 @@ class UserController extends Controller
     public function update(Request $request, $id)
     {
         $user = $this->findScopedUser($id);
+        abort_if($user->isSuperAdmin() && !$this->isCentralAdmin(Auth::user()), 403, 'Only a super admin can edit a super admin account.');
 
         $request->validate([
             'name'  => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'role'  => 'required',
+            'role'  => 'required|string|max:255',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'string|max:255',
+            'perm_radio' => 'nullable|array',
+            'perm_radio.*' => 'nullable|string|max:255',
             'profile_photo' => 'nullable|file|mimetypes:image/*|max:2048',
             'country'        => 'nullable|string|max:100',
             'state_region'   => 'nullable|string|max:100',
@@ -331,6 +343,7 @@ class UserController extends Controller
         $user->name = $request->name;
         $user->email = $request->email;
         $selectedRole = $this->resolveSelectedRole($request->role);
+        abort_if($user->isProtectedSuperAdmin() && $selectedRole['legacy'] !== 'super_admin', 403, 'The protected super admin role cannot be changed.');
 
         if ($selectedRole['legacy'] === 'state_manager') {
             if (!$this->isCentralAdmin(Auth::user())) {
@@ -682,24 +695,7 @@ class UserController extends Controller
             }
         }
 
-        $results = DB::select("SHOW COLUMNS FROM users WHERE Field = 'role'");
-        $roles = [];
-        
-        if (!empty($results)) {
-            $type = $results[0]->Type;
-            preg_match('/^enum\((.*)\)$/', $type, $matches);
-            if (isset($matches[1])) {
-                foreach (explode(',', $matches[1]) as $value) {
-                    $roles[] = trim($value, "'");
-                }
-            }
-        }
-        
-        if(empty($roles)) {
-            $roles = $this->defaultRoleOptions();
-        }
-
-        return $roles;
+        return $this->defaultRoleOptions();
     }
 
     private function defaultRoleOptions(): array
@@ -813,66 +809,21 @@ class UserController extends Controller
     private function resolveSelectedRole(?string $roleName): array
     {
         $roleName = trim((string) $roleName);
-
-        if ($roleName === '') {
-            return ['id' => null, 'legacy' => null, 'display' => null];
+        $role = RoleNames::find($roleName);
+        $key = RoleNames::key($role?->name ?? $roleName);
+        $defaultKeys = array_map(fn ($name) => RoleNames::key($name), array_merge($this->defaultRoleOptions(), ['super_admin', 'user', 'editor', 'manager']));
+        if (!$role && !in_array($key, $defaultKeys, true)) {
+            throw ValidationException::withMessages(['role' => 'Select an existing role. Create the custom role before assigning it.']);
         }
-
-        if (!Schema::hasTable('roles')) {
-            return [
-                'id' => null,
-                'legacy' => $this->legacyRoleKey($roleName),
-                'display' => Str::title(str_replace('_', ' ', $roleName)),
-            ];
+        if ($key === 'super_admin' && !$this->isCentralAdmin(Auth::user())) {
+            abort(403, 'Only a super admin can assign the super admin role.');
         }
-
-        $role = Role::query()
-            ->whereRaw('LOWER(name) = ?', [strtolower($roleName)])
-            ->orWhereRaw('LOWER(name) = ?', [strtolower(Str::title(str_replace('_', ' ', $roleName)))])
-            ->first();
-
-        if (!$role) {
-            $legacyKey = $this->legacyRoleKey($roleName);
-            $role = Role::query()
-                ->get()
-                ->first(fn (Role $candidate) => $this->legacyRoleKey($candidate->name) === $legacyKey);
-        }
-
-        if (!$role) {
-            return [
-                'id' => null,
-                'legacy' => $this->legacyRoleKey($roleName),
-                'display' => Str::title(str_replace('_', ' ', $roleName)),
-            ];
-        }
-
-        return [
-            'id' => $role->id,
-            'legacy' => $this->legacyRoleKey($role->name),
-            'display' => $role->name,
-        ];
+        return ['id' => $role?->id, 'legacy' => $key, 'display' => $role?->name ?? Str::title(str_replace('_', ' ', $roleName))];
     }
 
     private function legacyRoleKey(?string $roleName): ?string
     {
-        $normalized = strtolower(trim((string) $roleName));
-
-        if ($normalized === '') {
-            return null;
-        }
-
-        return match ($normalized) {
-            'super admin', 'super_admin', 'superadmin' => 'super_admin',
-            'administrator', 'admin' => 'administrator',
-            'state manager', 'state_manager', 'deployment manager', 'deployment_manager' => 'state_manager',
-            'manager' => 'manager',
-            'agent', 'sales agent', 'sales_agent' => 'agent',
-            'store manager', 'store_manager' => 'store_manager',
-            'sales manager', 'sales_manager' => 'sales_manager',
-            'finance manager', 'finance_manager' => 'finance_manager',
-            'account officer', 'account_officer', 'accountant' => 'accountant',
-            default => Str::snake(str_replace('-', ' ', $normalized)),
-        };
+        return RoleNames::key($roleName);
     }
 
     private function usersIndexRoute(): string
@@ -913,7 +864,7 @@ class UserController extends Controller
             return false;
         }
 
-        return in_array(strtolower((string) $user->role), ['super_admin', 'superadmin'], true)
+        return $user->isSuperAdmin()
             || strtolower((string) $user->email) === 'donvictorlive@gmail.com';
     }
 
@@ -927,8 +878,7 @@ class UserController extends Controller
             return false;
         }
 
-        $actorRole = $this->legacyRoleKey($actor->role);
-        if (!in_array($actorRole, ['super_admin', 'administrator'], true) && !$this->isCentralAdmin($actor)) {
+        if (!$actor->hasRole('administrator') && !$this->isCentralAdmin($actor)) {
             return false;
         }
 
@@ -946,7 +896,7 @@ class UserController extends Controller
             return;
         }
 
-        if ($this->legacyRoleKey($user->role) === 'state_manager') {
+        if ($user->hasRole('state_manager')) {
             $payload = array_filter([
                 'business_name' => $user->name,
                 'phone' => Schema::hasColumn('users', 'phone') ? ($user->phone ?? null) : null,

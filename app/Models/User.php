@@ -14,6 +14,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use App\Support\RoleNames;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -185,7 +186,37 @@ class User extends Authenticatable
 
     public function role(): BelongsTo
     {
-        return $this->belongsTo(Role::class);
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    public function roleModel(): BelongsTo
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    public function assignedRole(): ?Role
+    {
+        if (!$this->role_id) {
+            return null;
+        }
+        foreach (['roleModel', 'role'] as $relation) {
+            if ($this->relationLoaded($relation)) {
+                $role = $this->getRelation($relation);
+                if ($role instanceof Role && (int) $role->id === (int) $this->role_id) {
+                    return $role;
+                }
+            }
+        }
+        $role = $this->roleModel()->first();
+        $this->setRelation('roleModel', $role);
+        return $role;
+    }
+
+    protected function roleDisplayName(): Attribute
+    {
+        return Attribute::make(get: fn () => $this->assignedRole()?->name
+            ?? RoleNames::find($this->attributes['role'] ?? null)?->name
+            ?? Str::title(str_replace('_', ' ', (string) ($this->attributes['role'] ?? 'User'))));
     }
 
     public function subscription(): HasOne
@@ -253,17 +284,14 @@ class User extends Authenticatable
 
     public function hasRole(string $roleName): bool
     {
-        $target = $this->normalizeRoleKey($roleName);
-
-        if ($this->relationLoaded('role') && $this->getRelation('role')) {
-            return $this->normalizeRoleKey($this->role?->name) === $target;
+        if (RoleNames::key($roleName) === null) {
+            return false;
         }
-
-        if (!empty($this->role_id) && $this->role()->exists()) {
-            return $this->normalizeRoleKey((string) $this->role()->value('name')) === $target;
+        $assignedRole = $this->assignedRole();
+        if ($this->role_id) {
+            return $assignedRole && RoleNames::key($assignedRole->name) === RoleNames::key($roleName);
         }
-
-        return $this->normalizeRoleKey((string) ($this->attributes['role'] ?? '')) === $target;
+        return RoleNames::key($this->attributes['role'] ?? null) === RoleNames::key($roleName);
     }
 
     public function isSuperAdmin(): bool
@@ -309,49 +337,8 @@ class User extends Authenticatable
         }
 
 
-        if (!empty($this->role_id)) {
-            return $this->role()
-                ->whereHas('permissions', fn ($query) => $query->whereRaw('LOWER(name) = ?', [$permissionName]))
-                ->exists();
-        }
-
-        if (!empty($this->attributes['role'])) {
-            $legacyRole = $this->normalizeRoleKey((string) $this->attributes['role']);
-
-            return Role::query()
-                ->where(function ($query) use ($legacyRole) {
-                    $query->whereRaw('LOWER(name) = ?', [strtolower((string) $this->attributes['role'])]);
-                    if ($legacyRole !== null) {
-                        $query->orWhereRaw('LOWER(name) = ?', [strtolower(Str::title(str_replace('_', ' ', $legacyRole)))]);
-                    }
-                })
-                ->whereHas('permissions', fn ($query) => $query->whereRaw('LOWER(name) = ?', [$permissionName]))
-                ->exists();
-        }
-
-        return false;
-    }
-
-    private function normalizeRoleKey(?string $role): ?string
-    {
-        $normalized = strtolower(trim((string) $role));
-
-        if ($normalized === '') {
-            return null;
-        }
-
-        return match ($normalized) {
-            'super admin', 'super_admin', 'superadmin' => 'super_admin',
-            'administrator', 'admin' => 'administrator',
-            'state manager', 'state_manager', 'deployment manager', 'deployment_manager' => 'state_manager',
-            'manager' => 'manager',
-            'agent', 'sales agent', 'sales_agent' => 'agent',
-            'store manager', 'store_manager' => 'store_manager',
-            'sales manager', 'sales_manager' => 'sales_manager',
-            'finance manager', 'finance_manager' => 'finance_manager',
-            'account officer', 'account_officer', 'accountant' => 'accountant',
-            default => Str::snake(str_replace('-', ' ', $normalized)),
-        };
+        $role = $this->role_id ? $this->assignedRole() : RoleNames::find($this->attributes['role'] ?? null);
+        return $role && $role->permissions()->whereRaw('LOWER(name) = ?', [$permissionName])->exists();
     }
 
     /**

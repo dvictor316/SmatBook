@@ -6,7 +6,6 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 
 class CheckRole
 {
@@ -21,51 +20,17 @@ class CheckRole
         }
 
         $user = Auth::user();
-        $allowedRoles = collect($roles)
-            ->map(fn ($role) => $this->normalizeRoleKey($role))
-            ->filter()
-            ->values()
-            ->all();
-
-        // Super Admin bypass: They can go anywhere
-        if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+        if ($user->isSuperAdmin()) {
             return $next($request);
         }
-
-        $relatedRoleName = method_exists($user, 'role') ? optional($user->role()->first())->name : null;
-        $userRoleKeys = collect([
-            $this->normalizeRoleKey($user->role ?? null),
-            $this->normalizeRoleKey($relatedRoleName),
-        ])->filter()->unique()->values()->all();
-
-        // Check if the user's role is in the allowed list
-        if (array_intersect($userRoleKeys, $allowedRoles)) {
-            return $next($request);
+        foreach ($roles as $role) {
+            if ($user->hasRole((string) $role)) {
+                return $next($request);
+            }
         }
 
         // Unauthorized access
         abort(403, 'You do not have permission to access this resource.');
     }
 
-    private function normalizeRoleKey(?string $role): ?string
-    {
-        $normalized = strtolower(trim((string) $role));
-
-        if ($normalized === '') {
-            return null;
-        }
-
-        return match ($normalized) {
-            'super admin', 'super_admin', 'superadmin' => 'super_admin',
-            'administrator', 'admin' => 'administrator',
-            'state manager', 'state_manager', 'deployment manager', 'deployment_manager' => 'state_manager',
-            'manager' => 'manager',
-            'agent', 'sales agent', 'sales_agent' => 'agent',
-            'store manager', 'store_manager' => 'store_manager',
-            'sales manager', 'sales_manager' => 'sales_manager',
-            'finance manager', 'finance_manager' => 'finance_manager',
-            'account officer', 'account_officer', 'accountant' => 'accountant',
-            default => Str::snake(str_replace('-', ' ', $normalized)),
-        };
-    }
 }

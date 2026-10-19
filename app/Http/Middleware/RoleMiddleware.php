@@ -26,28 +26,7 @@ class RoleMiddleware
                 ->with('error', 'Please login to continue.');
         }
 
-        $allowedRoles = array_map(fn ($role) => strtolower(trim((string) $role)), $roles);
-        $userRole = strtolower((string) ($user->role ?? ''));
-        $roleMatch = in_array($userRole, $allowedRoles, true);
-
-        $roleAliases = [
-            'state_manager' => ['state_manager', 'deployment_manager'],
-            'deployment_manager' => ['state_manager', 'deployment_manager'],
-            'agent' => ['agent', 'sales_agent', 'sales agent'],
-            'sales_agent' => ['agent', 'sales_agent', 'sales agent'],
-            'sales agent' => ['agent', 'sales_agent', 'sales agent'],
-        ];
-
-        foreach ($roleAliases[$userRole] ?? [] as $alias) {
-            if (in_array($alias, $allowedRoles, true)) {
-                $roleMatch = true;
-                break;
-            }
-        }
-
-        if (!$roleMatch && method_exists($user, 'role') && $user->relationLoaded('role') ? $user->role : $user->role()->first()) {
-            $roleMatch = in_array(strtolower((string) optional($user->role)->name), $allowedRoles, true);
-        }
+        $roleMatch = collect($roles)->contains(fn ($role) => $user->hasRole((string) $role));
 
         // Check if user has any of the allowed roles
         if (!$roleMatch) {

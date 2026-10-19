@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Role;
 use App\Models\Permission;
+use App\Support\RoleNames;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -37,7 +39,8 @@ class RoleController extends Controller
             'role_group' => 'nullable|string|max:191',
         ]);
 
-        $roleName = Str::title($request->name);
+        $this->validateRoleName((string) $request->name);
+        $roleName = Str::title(trim($request->name));
 
         $role = Role::create([
             'name' => $roleName,
@@ -110,25 +113,25 @@ class RoleController extends Controller
 
         $role = Role::findOrFail($id);
         $oldName = $role->name;
-        $newName = Str::title($request->name);
-
-        $role->update([
-            'name' => $newName,
-            'description' => $request->description,
-            'role_group' => $request->role_group ?: ($role->role_group ?? 'Staff'),
-        ]);
-
-        DB::table('users')
-            ->where('role_id', $role->id)
-            ->update(['role' => Str::snake(strtolower($newName))]);
-
-        DB::table('users')
-            ->whereRaw('LOWER(role) = ?', [strtolower($oldName)])
-            ->update([
-                'role_id' => $role->id,
-                'role' => Str::snake(strtolower($newName)),
+        $newName = Str::title(trim($request->name));
+        $this->validateRoleName($newName, (int) $role->id);
+        if (($role->is_system_role || in_array(RoleNames::key($oldName), ['super_admin', 'administrator', 'state_manager', 'agent'], true))
+            && RoleNames::key($newName) !== RoleNames::key($oldName)) {
+            throw ValidationException::withMessages(['name' => 'Core system role names cannot be changed. Create a custom staff role instead.']);
+        }
+        DB::transaction(function () use ($role, $request, $oldName, $newName) {
+            $role->update([
+                'name' => $newName,
+                'description' => $request->description,
+                'role_group' => $request->role_group ?: ($role->role_group ?? 'Staff'),
             ]);
-        
+            DB::table('users')->where(function ($query) use ($role, $oldName) {
+                $query->where('role_id', $role->id)->orWhere(function ($legacy) use ($oldName) {
+                    $legacy->whereNull('role_id')->whereIn(DB::raw('LOWER(TRIM(role))'), RoleNames::aliases($oldName));
+                });
+            })->update(['role_id' => $role->id, 'role' => RoleNames::key($newName)]);
+        });
+
         return redirect()->back()->with('success', 'Role updated successfully');
     }
 
@@ -140,12 +143,18 @@ class RoleController extends Controller
         $role = Role::findOrFail($id);
         
         // Safety check: Protect core administrative roles
-        $protectedRoles = ['Administrator', 'State Manager', 'Agent'];
-        if(in_array($role->name, $protectedRoles) || (bool) ($role->is_system_role ?? false)) {
+        $protectedRoles = ['super_admin', 'administrator', 'state_manager', 'agent'];
+        if(in_array(RoleNames::key($role->name), $protectedRoles, true) || (bool) ($role->is_system_role ?? false)) {
             return redirect()->back()->with('error', 'Cannot delete core system roles');
         }
 
-        DB::table('users')->where('role_id', $role->id)->update(['role_id' => null]);
+        $assigned = DB::table('users')->where('role_id', $role->id)
+            ->orWhere(function ($legacy) use ($role) {
+                $legacy->whereNull('role_id')->whereIn(DB::raw('LOWER(TRIM(role))'), RoleNames::aliases($role->name));
+            })->exists();
+        if ($assigned) {
+            return back()->with('error', 'This role is assigned to staff. Reassign those users before deleting it.');
+        }
         if (Schema::hasTable('role_has_permissions')) {
             $role->permissions()->detach();
         }
@@ -226,6 +235,18 @@ class RoleController extends Controller
         file_put_contents($path, json_encode($updated, JSON_PRETTY_PRINT));
 
         return redirect()->back()->with('success', 'User deleted successfully.');
+    }
+
+    private function validateRoleName(string $name, ?int $exceptId = null): void
+    {
+        if (RoleNames::key($name) === 'super_admin' && !auth()->user()?->isSuperAdmin()) {
+            abort(403, 'Only a super admin can manage the super admin role.');
+        }
+        $duplicate = Role::query()->when($exceptId, fn ($query) => $query->whereKeyNot($exceptId))->get()
+            ->contains(fn ($role) => RoleNames::key($role->name) === RoleNames::key($name));
+        if ($duplicate) {
+            throw ValidationException::withMessages(['name' => 'A role with this name or alias already exists.']);
+        }
     }
 
     private function ensurePermissionCatalog(): void

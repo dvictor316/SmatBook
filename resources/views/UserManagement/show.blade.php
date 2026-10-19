@@ -29,7 +29,7 @@
                     <div>
                         <h4 class="mb-1">{{ $user->name }}</h4>
                         <p class="text-muted mb-1">{{ $user->email }}</p>
-                        <span class="badge bg-light text-dark">{{ ucwords(str_replace('_', ' ', $user->role ?? 'user')) }}</span>
+                        <span class="badge bg-light text-dark">{{ $user->role_display_name }}</span>
                     </div>
                 </div>
 

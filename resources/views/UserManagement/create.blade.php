@@ -132,7 +132,8 @@
     $isSuperAdminRoute = request()->routeIs('super_admin.*');
     $storeRouteName = $isSuperAdminRoute && app('router')->has('super_admin.users.store') ? 'super_admin.users.store' : 'users.store';
     $selectedRoleValue = old('role', request('role'));
-    $selectedRoleKey = strtolower(str_replace([' ', '-'], '_', (string) $selectedRoleValue));
+    $selectedRoleKey = \App\Support\RoleNames::key($selectedRoleValue);
+    $hasSelectedRole = collect($roles ?? [])->contains(fn ($role) => \App\Support\RoleNames::key($role) === $selectedRoleKey);
     $partnerRoleValues = ['state_manager', 'deployment_manager', 'agent'];
     $isPartnerRole = in_array($selectedRoleKey, $partnerRoleValues, true);
     $isStateManagerRole = in_array($selectedRoleKey, ['state_manager', 'deployment_manager'], true);
@@ -566,9 +567,9 @@
                                     @endif
                                 </div>
                                 <select name="role" id="roleSelect" class="form-select form-select-sm" required>
-                                    <option value="" disabled {{ $selectedRoleValue ? '' : 'selected' }}>Select a role</option>
+                                    <option value="" disabled @selected(!$hasSelectedRole)>Select a role</option>
                                     @foreach(($roles ?? []) as $role)
-                                        @php $roleKey = strtolower(str_replace([' ', '-'], '_', (string) $role)); @endphp
+                                        @php $roleKey = \App\Support\RoleNames::key($role); @endphp
                                         <option value="{{ $role }}" {{ $selectedRoleKey === $roleKey ? 'selected' : '' }}>
                                             {{ ucwords(str_replace('_', ' ', $role)) }}
                                         </option>

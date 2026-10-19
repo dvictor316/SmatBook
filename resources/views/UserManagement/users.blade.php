@@ -247,7 +247,7 @@
                         <tbody>
                             @forelse ($users as $user)
                             @php
-                                $roleName   = $user->roleModel->name ?? ucwords(str_replace('_', ' ', $user->role ?? ''));
+                                $roleName   = $user->role_display_name;
                                 $isActive   = ($user->is_active ?? $user->status ?? true);
                                 $initials   = strtoupper(substr($user->name ?? $user->first_name ?? '?', 0, 1));
                                 $actor = auth()->user();

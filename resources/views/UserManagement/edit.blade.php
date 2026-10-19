@@ -6,6 +6,8 @@
     $isSuperAdminRoute = request()->routeIs('super_admin.*');
     $updateRouteName = $isSuperAdminRoute && app('router')->has('super_admin.users.update') ? 'super_admin.users.update' : 'users.update';
     $indexRouteName = $isSuperAdminRoute && app('router')->has('super_admin.users.index') ? 'super_admin.users.index' : 'users.index';
+    $selectedRoleKey = \App\Support\RoleNames::key(old('role', $user->role_display_name));
+    $hasSelectedRole = collect($roles)->contains(fn ($role) => \App\Support\RoleNames::key($role) === $selectedRoleKey);
     $countryOptions = $countryOptions ?? [];
     $selectedCountry = old('country', $user->country ?? $managerProfile->country ?? '');
     $selectedState = old('state_region', $user->state_region ?? $managerProfile->state_region ?? '');
@@ -43,8 +45,9 @@
                             <div class="mb-3">
                                 <label class="form-label">Role</label>
                                 <select name="role" id="roleSelect" class="form-select" required>
+                                    <option value="" disabled @selected(!$hasSelectedRole)>Select a role</option>
                                     @foreach($roles as $role)
-                                        <option value="{{ $role }}" {{ $user->role == $role ? 'selected' : '' }}>
+                                        <option value="{{ $role }}" @selected($selectedRoleKey === \App\Support\RoleNames::key($role))>
                                             {{ ucwords(str_replace('_', ' ', $role)) }}
                                         </option>
                                     @endforeach
