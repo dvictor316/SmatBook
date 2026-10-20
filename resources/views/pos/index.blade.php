@@ -5223,7 +5223,7 @@ body.pos-terminal-workspace #pos-cash-account-name.is-unconfigured {
                 }
                 $measurementLabel = implode(' | ', $measurementParts);
                 $categoryName = $p->category->name ?? 'Uncategorized';
-                $minStockLevel = (int) ($p->min_stock_level ?? 15);
+                $minStockLevel = (int) ($p->reorder_level ?? 0) > 0 ? (int) $p->reorder_level : 15;
                 $availableStock = (float) ($p->available_stock ?? $p->stock ?? 0);
                 $isOutOfStock = $availableStock <= 0;
                 $barcodeList = collect($p->barcodes ?? [])
@@ -5386,7 +5386,7 @@ body.pos-terminal-workspace #pos-cash-account-name.is-unconfigured {
                         }
                         $measurementLabel = implode(' | ', $measurementParts);
                         $categoryName = $p->category->name ?? 'Uncategorized';
-                        $minStockLevel = (int) ($p->min_stock_level ?? 15);
+                        $minStockLevel = (int) ($p->reorder_level ?? 0) > 0 ? (int) $p->reorder_level : 15;
                         $barcodeList = collect($p->barcodes ?? [])
                             ->pluck('barcode')
                             ->push($p->barcode ?? null)
@@ -5624,7 +5624,6 @@ body.pos-terminal-workspace #pos-cash-account-name.is-unconfigured {
                             <label for="amount-paid" id="pos-cash-amount-label">Amount Paid</label>
                             <input type="number" min="0" step="0.01" id="amount-paid" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--success-500);">
                         </div>
-                        @unless($isStarterPos ?? false)
                             <div class="col-md-6 d-none" id="split-transfer-account-wrap">
                                 <label for="transfer-account" id="pos-transfer-account-label">Payment Method</label>
                                 <small class="text-muted d-block mb-1">Select a bank account created in Chart of Accounts.</small>
@@ -5635,18 +5634,15 @@ body.pos-terminal-workspace #pos-cash-account-name.is-unconfigured {
                                     @endforeach
                                 </select>
                                 @if(collect($depositAccounts ?? [])->isEmpty())
-                                    <small class="text-muted d-block mt-2">
-                                        No asset accounts yet.
-                                        <a href="{{ $posChartAccountsUrl ?? url('/settings/chart-of-accounts') }}" class="fw-bold text-primary">Add in Chart of Accounts</a>
+                                    <small class="text-danger d-block mt-2">
+                                        No bank account is configured. Contact your administrator to add one in Chart of Accounts.
                                     </small>
                                 @endif
                             </div>
-                        @endunless
                         <div class="col-md-6 d-none" id="split-transfer-wrap">
                             <label for="transfer-amount" id="pos-transfer-amount-label">Amount Paid</label>
                             <input type="number" min="0" step="0.01" id="transfer-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
                         </div>
-                        @unless($isStarterPos ?? false)
 	                        <div class="col-md-6 d-none" id="split-card-account-wrap">
                                 <label for="card-account" id="pos-card-account-label">Payment Method</label>
                                 <select id="card-account" class="form-select">
@@ -5656,15 +5652,13 @@ body.pos-terminal-workspace #pos-cash-account-name.is-unconfigured {
                                     @endforeach
                                 </select>
                                 @if(collect($depositAccounts ?? [])->isEmpty())
-                                    <small class="text-muted d-block mt-2">
-                                        No asset accounts yet.
-                                        <a href="{{ $posChartAccountsUrl ?? url('/settings/chart-of-accounts') }}" class="fw-bold text-primary">Add in Chart of Accounts</a>
+                                    <small class="text-danger d-block mt-2">
+                                        No bank account is configured. Contact your administrator to add one in Chart of Accounts.
                                     </small>
 	                                @else
 	                                    <small class="text-muted d-block mt-2">Select where the POS funds settle, e.g. Opay or Moniepoint.</small>
 	                            @endif
 	                        </div>
-                        @endunless
                         <div class="col-md-6 d-none" id="split-card-wrap">
                             <label for="card-amount" id="pos-card-amount-label">Amount Paid</label>
                             <input type="number" min="0" step="0.01" id="card-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
@@ -6591,7 +6585,7 @@ $(document).ready(function() {
         $('#quick-selected-sku').text(opt.data('sku') || '-');
         $('#quick-selected-category').text(opt.data('category-name') || 'Uncategorized');
         const minStock = parseInt(opt.data('min-stock')) || 15;
-        const stock = parseInt(opt.data('stock')) || 0;
+        const stock = parseFloat(opt.data('stock')) || 0;
         $('#quick-selected-min-stock').text(minStock);
         $('#quick-selected-stock').text(stock);
         if (stock <= minStock) {
@@ -8945,11 +8939,11 @@ window.POS_ENABLE_FALLBACK = function () {
         if (paymentMethod?.value === 'Split') {
             const transferValue = moneyValue(transferAmount);
             const cardValue = moneyValue(cardAmount);
-            if (!isStarterPos && transferValue > 0 && !transferAccount?.value) {
+            if (transferValue > 0 && !transferAccount?.value) {
                 alertFallback('Choose the transfer account.');
                 return;
             }
-            if (!isStarterPos && cardValue > 0 && !cardAccount?.value) {
+            if (cardValue > 0 && !cardAccount?.value) {
                 alertFallback('Choose the bank account where the POS funds will settle, such as Opay or Moniepoint.');
                 return;
             }
@@ -8972,15 +8966,15 @@ window.POS_ENABLE_FALLBACK = function () {
                     tax: cart.reduce((sum, item) => sum + item.taxVal, 0),
                     discount: cart.reduce((sum, item) => sum + item.discVal, 0),
                     total,
-                    deposit_account_id: isStarterPos ? null : (depositAccount?.value || null),
+                    deposit_account_id: depositAccount?.value || null,
 	                    paid: externalPaid,
 	                    wallet_amount: walletApplied,
 	                    split_details: {
                         cash: moneyValue(amountPaid),
                         transfer: moneyValue(transferAmount),
-                        transfer_account_id: isStarterPos ? null : (transferAccount?.value || null),
+                        transfer_account_id: transferAccount?.value || null,
                         card: moneyValue(cardAmount),
-                        card_account_id: isStarterPos ? null : (cardAccount?.value || null),
+                        card_account_id: cardAccount?.value || null,
                     },
                 };
 

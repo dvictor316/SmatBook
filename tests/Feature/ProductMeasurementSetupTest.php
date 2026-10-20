@@ -102,6 +102,45 @@ class ProductMeasurementSetupTest extends TestCase
         $this->assertDatabaseCount('products', 0);
     }
 
+    public function test_saved_reorder_level_is_used_by_both_pos_product_selectors_after_creation_and_edit(): void
+    {
+        $units = $this->workspace();
+        $payload = $this->payload($units, 'pieces');
+        $payload['reorder_level'] = 6;
+        $payload['reorder_quantity'] = 100;
+        $this->post(route('inventory.Products.store'), $payload)->assertSessionHasNoErrors();
+        $product = Product::sole();
+        $this->assertSame(6, (int) $product->reorder_level);
+        $this->assertSame(100, (int) $product->reorder_quantity);
+
+        $html = $this->get(route('sales.showPos'))->assertOk()->getContent();
+        $this->assertSame(2, substr_count($html, 'data-min-stock="6"'));
+        $this->assertStringNotContainsString('data-min-stock="15"', $html);
+
+        $payload['reorder_level'] = 30;
+        $payload['status'] = 'active';
+        $payload['stock'] = $product->stock;
+        unset($payload['stock_units'], $payload['stock_cartons'], $payload['stock_rolls']);
+        $this->put(route('inventory.Products.update', $product->id), $payload)->assertSessionHasNoErrors();
+        $html = $this->get(route('sales.showPos'))->assertOk()->getContent();
+        $this->assertSame(2, substr_count($html, 'data-min-stock="30"'));
+        $this->assertStringNotContainsString('data-min-stock="6"', $html);
+    }
+
+    public function test_pos_uses_default_threshold_only_when_no_positive_reorder_level_is_set(): void
+    {
+        $units = $this->workspace();
+        foreach ([null, 0] as $level) {
+            $payload = $this->payload($units, 'pieces');
+            $payload['reorder_level'] = $level;
+            $payload['reorder_quantity'] = 100;
+            $this->post(route('inventory.Products.store'), $payload)->assertSessionHasNoErrors();
+        }
+        $html = $this->get(route('sales.showPos'))->assertOk()->getContent();
+        $this->assertSame(4, substr_count($html, 'data-min-stock="15"'));
+        $this->assertStringNotContainsString('data-min-stock="100"', $html);
+    }
+
     public function test_all_available_measurements_including_custom_units_can_be_saved_with_opening_stock(): void
     {
         $this->workspace();

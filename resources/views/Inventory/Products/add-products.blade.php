@@ -522,11 +522,13 @@ body:not(.login-body):not(.landing-page-body) #add-product-page > .content.conta
                                     <div class="col-md-4">
                                         <label class="form-label">Reorder Level (<span class="product-base-unit-label">pcs</span>)</label>
                                         <input type="number" name="reorder_level" min="0" class="form-control @error('reorder_level') is-invalid @enderror" value="{{ old('reorder_level', 0) }}">
+                                        <small class="field-hint">Low-stock alert threshold. Leave at 0 to use the default of 15.</small>
                                         @error('reorder_level')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label">Reorder Quantity (<span class="product-base-unit-label">pcs</span>)</label>
                                         <input type="number" name="reorder_quantity" min="0" class="form-control @error('reorder_quantity') is-invalid @enderror" value="{{ old('reorder_quantity', 0) }}">
+                                        <small class="field-hint">Suggested quantity to buy when restocking.</small>
                                         @error('reorder_quantity')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
