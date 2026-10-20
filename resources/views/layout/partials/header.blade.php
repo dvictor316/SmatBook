@@ -1095,6 +1095,7 @@
         #toggle_btn.header-toggle,
         #toggle_btn     { display: none !important; }
         #mobile_btn     { display: inline-flex !important; order: 0; }
+        .dm-hamburger { display: none !important; }
         .header-search-container { display: none; }
         .mobile-search-btn       { display: flex; }
         .user-info, .country-name { display: none; }
@@ -1152,6 +1153,7 @@
             margin-left: 0 !important; /* cancel theme mobile -575px offset */
             width: 280px !important;
             height: calc(100vh - var(--spb-header-offset)) !important;
+            height: calc(100dvh - var(--spb-header-offset)) !important;
             z-index: 1045 !important;
             overflow: hidden !important;
             -webkit-overflow-scrolling: touch !important;
@@ -1176,6 +1178,7 @@
             margin-left: 0 !important;
             width: 280px !important;
             height: calc(100vh - var(--spb-header-offset)) !important;
+            height: calc(100dvh - var(--spb-header-offset)) !important;
             z-index: 1045 !important;
             overflow: hidden !important;
             -webkit-overflow-scrolling: touch !important;
@@ -1209,80 +1212,7 @@
         }
     }
 
-    @media (min-width: 992px) and (max-width: 1199.98px) {
-        #mobile_btn {
-            display: none !important;
-        }
 
-        .header-toggle,
-        #toggle_btn.header-toggle,
-        #toggle_btn {
-            display: inline-flex !important;
-        }
-
-        #sidebar,
-        #deploymentSidebar,
-        .deployment-sidebar {
-            top: var(--sb-header-h, 76px) !important;
-            left: 0 !important;
-            margin-left: 0 !important;
-            width: var(--sb-sidebar-w, 270px) !important;
-            height: calc(100vh - var(--sb-header-h, 76px)) !important;
-            max-height: calc(100vh - var(--sb-header-h, 76px)) !important;
-            box-shadow: none !important;
-            transform: none !important;
-        }
-
-        body.sidebar-collapsed #sidebar,
-        body.sidebar-collapsed .sidebar,
-        body.mini-sidebar #sidebar,
-        body.mini-sidebar .sidebar,
-        body.sidebar-icon-only #sidebar,
-        body.sidebar-icon-only .sidebar {
-            width: var(--sb-sidebar-collapsed, 80px) !important;
-        }
-
-        #sidebar-overlay,
-        .sidebar-overlay {
-            display: none !important;
-        }
-
-        body.sidebar-mobile-open {
-            overflow: auto;
-        }
-
-        .header-search-container {
-            display: flex !important;
-            flex: 1 1 auto;
-            max-width: none;
-            min-width: 300px;
-        }
-
-        .header-search {
-            max-width: none;
-        }
-
-        .mobile-search-btn {
-            display: none !important;
-        }
-
-        .header-actions {
-            flex: 0 0 auto;
-            margin-left: auto;
-            min-width: 0;
-        }
-
-        .header-actions > .dropdown:last-child {
-            min-width: 0;
-            flex: 0 1 clamp(104px, 13vw, 150px);
-            max-width: clamp(104px, 13vw, 150px);
-        }
-
-        .user-profile {
-            max-width: 100%;
-            min-width: 0;
-        }
-    }
 
     @media (min-width: 768px) and (max-width: 1199.98px) {
         .header {
@@ -1337,19 +1267,7 @@
         }
     }
 
-    @media (min-width: 992px) and (max-width: 1199.98px) {
-        .header-search-container {
-            display: flex !important;
-            flex: 1 1 auto;
-            max-width: none;
-            min-width: 300px;
-        }
 
-        .header-actions {
-            flex: 0 0 auto;
-            margin-left: auto;
-        }
-    }
 
     /* Mobile search overlay */
     .mobile-search-overlay {
@@ -1372,7 +1290,7 @@
     body.sidebar-collapsed .spb-wordmark,
     body.mini-sidebar .spb-wordmark { display: none; }
 
-    @media (max-width: 991px) {
+    @media (max-width: 1199.98px) {
         :root {
             --spb-header-offset: 70px;
         }
@@ -1638,7 +1556,7 @@
         }
     }
 
-    @media (max-width: 991px) {
+    @media (max-width: 1199.98px) {
         :root { --spb-header-offset: 70px; }
 
         .header {
@@ -1807,6 +1725,10 @@
         .header-actions > .profile-dropdown { right: 6px; }
     }
 
+    @media (prefers-reduced-motion: reduce) {
+        #sidebar, #deploymentSidebar, .deployment-sidebar { transition: none !important; }
+    }
+
     @media print { .header { display: none !important; } }
 </style>
 
@@ -1814,7 +1736,7 @@
 
 <div class="header d-print-none">
 
-    <button id="mobile_btn" aria-label="Open menu" aria-expanded="false">
+    <button id="mobile_btn" type="button" aria-label="Open menu" aria-expanded="false">
         <div class="toggle-bars">
             <span class="bar-icon"></span>
             <span class="bar-icon"></span>
@@ -2083,6 +2005,10 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const compactSidebar = window.matchMedia('(max-width: 1199.98px)');
+    const readPreference = (key) => { try { return localStorage.getItem(key); } catch (_) { return null; } };
+    const writePreference = (key, value) => { try { localStorage.setItem(key, value); } catch (_) {} };
+
     const geoFlag = document.getElementById('geoCountryFlag');
     const geoCode = document.getElementById('geoCountryCode');
     const geoCurrencyCode = document.getElementById('geoCurrencyCode');
@@ -2162,7 +2088,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (geoFlag) geoFlag.src = geoFlags[code] || geoFlags.NG;
         if (geoCode) geoCode.textContent = code;
         if (geoCurrencyCode) geoCurrencyCode.textContent = geoCurrencies[code] || 'NGN';
-        localStorage.setItem('smat_country', code);
+        writePreference('smat_country', code);
         setGeoCookie(code);
         document.dispatchEvent(new CustomEvent('smat:geo-change', {
             detail: {
@@ -2174,7 +2100,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const cookieMatch = document.cookie.match(/(?:^|;\s*)smat_country=([^;]+)/);
     const cookieCountry = cookieMatch ? decodeURIComponent(cookieMatch[1]) : '';
-    const geoSaved = localStorage.getItem('smat_country');
+    const geoSaved = readPreference('smat_country');
     const serverDefault = @json($geoCountry ?? 'NG');
     const detectedCountry = timezoneCountry() || localeCountry();
     const persistedCountry = geoSaved || cookieCountry || '';
@@ -2414,15 +2340,15 @@ document.addEventListener('DOMContentLoaded', function () {
         const sb = getSidebar();
         if (!sb) return;
         sb.classList.add('mobile-open');
-        overlay.classList.add('active');
+        overlay?.classList.add('active');
         document.body.classList.add('sidebar-mobile-open');
         document.querySelector('.main-wrapper')?.classList.add('slide-nav');
         document.documentElement.classList.add('menu-opened');
         document.querySelector('.sidebar-overlay')?.classList.add('opened');
-        mobileBtn.setAttribute('aria-expanded', 'true');
-        mobileBtn.setAttribute('aria-label', 'Close menu');
+        mobileBtn?.setAttribute('aria-expanded', 'true');
+        mobileBtn?.setAttribute('aria-label', 'Close menu');
         // Animate hamburger → X
-        mobileBtn.classList.add('is-open');
+        mobileBtn?.classList.add('is-open');
     }
 
     /* ── Close sidebar on mobile ── */
@@ -2430,21 +2356,23 @@ document.addEventListener('DOMContentLoaded', function () {
         const sb = getSidebar();
         if (!sb) return;
         sb.classList.remove('mobile-open');
-        overlay.classList.remove('active');
+        overlay?.classList.remove('active');
         document.body.classList.remove('sidebar-mobile-open');
         document.querySelector('.main-wrapper')?.classList.remove('slide-nav');
         document.documentElement.classList.remove('menu-opened');
         document.querySelector('.sidebar-overlay')?.classList.remove('opened');
-        mobileBtn.setAttribute('aria-expanded', 'false');
-        mobileBtn.setAttribute('aria-label', 'Open menu');
-        mobileBtn.classList.remove('is-open');
+        mobileBtn?.setAttribute('aria-expanded', 'false');
+        mobileBtn?.setAttribute('aria-label', 'Open menu');
+        mobileBtn?.classList.remove('is-open');
     }
 
     /* ── Hamburger click ── */
     if (mobileBtn) {
+        mobileBtn.dataset.sidebarManaged = 'true';
         mobileBtn.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
+            e.stopImmediatePropagation();
             const sb = getSidebar();
             if (!sb) return;
             if (sb.classList.contains('mobile-open')) {
@@ -2483,13 +2411,14 @@ document.addEventListener('DOMContentLoaded', function () {
        DESKTOP SIDEBAR COLLAPSE TOGGLE
        ════════════════════════════════════════════ */
     if (desktopBtn) {
+        desktopBtn.dataset.sidebarManaged = 'true';
         desktopBtn.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
             if (typeof e.stopImmediatePropagation === 'function') {
                 e.stopImmediatePropagation();
             }
-            if (window.innerWidth <= 991) {
+            if (compactSidebar.matches) {
                 openMobileSidebar();
                 return;
             }
@@ -2497,17 +2426,17 @@ document.addEventListener('DOMContentLoaded', function () {
             if (isCollapsed) {
                 document.body.classList.remove('sidebar-collapsed', 'mini-sidebar', 'sidebar-icon-only');
                 document.body.classList.remove('expand-menu');
-                localStorage.setItem('sidebarCollapsed', 'false');
+                writePreference('sidebarCollapsed', 'false');
             } else {
                 document.body.classList.add('sidebar-collapsed');
                 document.body.classList.remove('mini-sidebar', 'sidebar-icon-only');
                 document.body.classList.remove('expand-menu');
-                localStorage.setItem('sidebarCollapsed', 'true');
+                writePreference('sidebarCollapsed', 'true');
             }
         });
 
         // Restore desktop collapsed state on load
-        if (window.innerWidth > 991 && localStorage.getItem('sidebarCollapsed') === 'true') {
+        if (!compactSidebar.matches && readPreference('sidebarCollapsed') === 'true') {
             document.body.classList.add('sidebar-collapsed');
         }
     }
@@ -2516,10 +2445,10 @@ document.addEventListener('DOMContentLoaded', function () {
         // Always clear any stale mobile-open state first
         closeMobileSidebar();
         document.body.classList.remove('expand-menu');
-        if (window.innerWidth <= 991) {
+        if (compactSidebar.matches) {
             document.body.classList.remove('sidebar-collapsed', 'mini-sidebar', 'sidebar-icon-only');
         } else {
-            if (localStorage.getItem('sidebarCollapsed') === 'true') {
+            if (readPreference('sidebarCollapsed') === 'true') {
                 document.body.classList.add('sidebar-collapsed');
                 document.body.classList.remove('mini-sidebar', 'sidebar-icon-only');
             } else {
@@ -2528,9 +2457,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    window.addEventListener('resize', function () {
-        normalizeSidebarState();
-    });
+    compactSidebar.addEventListener('change', normalizeSidebarState);
 
     normalizeSidebarState();
     refreshSidebarScrollPersistence();

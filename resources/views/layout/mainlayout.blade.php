@@ -96,7 +96,8 @@
     {{-- CRITICAL: Prevent theme flickering on load --}}
     <script>
         (function() {
-            const savedSettings = JSON.parse(localStorage.getItem('themeSettings')) || {};
+            let savedSettings = {};
+            try { savedSettings = JSON.parse(localStorage.getItem('themeSettings')) || {}; } catch (_) {}
             Object.keys(savedSettings).forEach(key => {
                 document.documentElement.setAttribute(key, savedSettings[key]);
             });
@@ -324,7 +325,7 @@
                 font-weight: 700;
                 padding: 0.42rem 0.9rem;
             }
-            @media (min-width: 992px) {
+            @media (min-width: 1200px) {
                 body:not(.sidebar-collapsed):not(.mini-sidebar):not(.sidebar-icon-only) .demo-top-strip {
                     margin-left: var(--sb-sidebar-w, 270px);
                     width: calc(100% - var(--sb-sidebar-w, 270px));

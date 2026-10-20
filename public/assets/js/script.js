@@ -151,6 +151,7 @@ Version      : 1.0
 	// Mobile menu sidebar overlay
 	$('body').append('<div class="sidebar-overlay"></div>');
 	$(document).on('click', '#mobile_btn', function () {
+		if (this.dataset.sidebarManaged === 'true') return;
 		$wrapper.toggleClass('slide-nav');
 		$('.sidebar-overlay').toggleClass('opened');
 		$('html').toggleClass('menu-opened');
@@ -410,6 +411,7 @@ Version      : 1.0
 
 	// Small Sidebar
 	$(document).on('click', '#toggle_btn', function () {
+		if (this.dataset.sidebarManaged === 'true') return;
 		if ($('body').hasClass('mini-sidebar')) {
 			$('body').removeClass('mini-sidebar');
 			$('.subdrop + ul').slideDown();

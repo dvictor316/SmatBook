@@ -519,7 +519,7 @@
     /* ============================================
        RESPONSIVE
        ============================================ */
-    @media (max-width: 992px) {
+    @media (max-width: 1199.98px) {
         .deployment-sidebar {
             transform: translateX(-100%);
             top: 0;
@@ -1077,7 +1077,7 @@
         // Close mobile sidebar when clicking on a link
         document.querySelectorAll('.dm-menu-link, .dm-submenu-link').forEach(link => {
             link.addEventListener('click', function() {
-                if (window.innerWidth <= 992) {
+                if (window.matchMedia('(max-width: 1199.98px)').matches) {
                     setTimeout(closeMobileSidebar, 300);
                 }
             });
@@ -1085,9 +1085,5 @@
     });
 
     // Handle resize
-    window.addEventListener('resize', function() {
-        if (window.innerWidth > 992) {
-            closeMobileSidebar();
-        }
-    });
+    window.matchMedia('(max-width: 1199.98px)').addEventListener('change', closeMobileSidebar);
 </script>

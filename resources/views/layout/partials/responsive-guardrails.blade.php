@@ -77,7 +77,7 @@
         overflow-wrap: anywhere;
     }
 
-    @media (max-width: 991.98px) {
+    @media (max-width: 1199.98px) {
         .page-wrapper,
         .sb-shell,
         #main-content-wrapper,
@@ -196,6 +196,72 @@
         .page-actions > .btn,
         .filter-actions > .btn {
             flex: 1 1 100%;
+        }
+    }
+
+    body.landing-menu-open {
+        overflow: hidden;
+    }
+
+    [data-public-menu-toggle],
+    #mobile_btn,
+    #toggle_btn {
+        min-width: 44px;
+        min-height: 44px;
+        touch-action: manipulation;
+    }
+
+    [data-public-menu-toggle]:focus-visible,
+    #mobile_btn:focus-visible,
+    #toggle_btn:focus-visible {
+        outline: 3px solid #2563eb;
+        outline-offset: 3px;
+    }
+
+    @media (max-width: 1199.98px) {
+        .page-header .d-flex,
+        .card-header.d-flex,
+        .filter-row,
+        .filter-actions,
+        .toolbar,
+        .page-actions {
+            flex-wrap: wrap;
+            min-width: 0;
+        }
+
+        .page-wrapper .table-responsive {
+            width: 100%;
+        }
+
+        #mainNav .container,
+        .nav-container {
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        #mainNav .navbar-brand,
+        .nav-container .logo-container {
+            min-width: 0;
+            max-width: calc(100% - 60px);
+        }
+
+        #mainNav .navbar-toggler,
+        #navTrigger {
+            flex: 0 0 44px;
+            width: 44px;
+            height: 44px;
+            position: relative;
+            z-index: 10001;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        #mujiNav,
+        #mainMenu,
+        #sidebar,
+        #deploymentSidebar {
+            transition: none !important;
+            scroll-behavior: auto;
         }
     }
 </style>

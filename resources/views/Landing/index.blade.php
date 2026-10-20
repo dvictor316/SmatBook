@@ -205,6 +205,35 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .sb-brand-logo { height: 58px; }
 }
 
+@media (max-width: 1199.98px) {
+    #mujiNav {
+        position: fixed;
+        top: var(--nav-h);
+        left: -100%;
+        width: 100%;
+        height: calc(100vh - var(--nav-h));
+        height: calc(100dvh - var(--nav-h));
+        background: #fff;
+        padding: 24px 16px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        transition: left .35s ease;
+        box-shadow: inset 0 2px 14px rgba(0,0,0,.04);
+        z-index: 9998;
+    }
+    #mujiNav.show {
+        left: 0 !important;
+        display: block !important;
+    }
+    #mujiNav .navbar-nav { align-items: stretch !important; gap: 0 !important; }
+    #mujiNav .nav-item { width: 100%; border-bottom: 1px solid #eef3fb; }
+    #mujiNav .nav-item:last-child { border-bottom: none; }
+    #mujiNav .sb-nav-link { display: flex; align-items: center; padding: 14px 12px !important; border-radius: var(--radius-sm) !important; font-size: 0.82rem !important; color: var(--navy) !important; width: 100%; }
+    #mujiNav .sb-nav-link:hover { background: rgba(28,102,232,0.06) !important; color: #1c66e8 !important; }
+    #mujiNav .btn-portal { width: 100%; justify-content: center; margin-top: 12px; }
+    #mujiNav .ms-lg-3 { margin-left: 0 !important; margin-top: 4px; }
+}
+
 /* ── BUTTONS ── */
 .btn-red {
     background: var(--crimson); color: #fff !important; border: none;
@@ -1757,31 +1786,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .hero-trust { margin-top: 7px !important; }
     .trust-text { font-size: clamp(7px,1.9vw,8.5px) !important; }
 
-    #mujiNav {
-        position: fixed;
-        top: var(--nav-h);
-        left: -100%;
-        width: 100%;
-        height: calc(100vh - var(--nav-h));
-        background: #fff;
-        padding: 24px 16px;
-        overflow-y: auto;
-        overflow-x: hidden;
-        transition: left .35s ease;
-        box-shadow: inset 0 2px 14px rgba(0,0,0,.04);
-        z-index: 9998;
-    }
-    #mujiNav.show {
-        left: 0 !important;
-        display: block !important;
-    }
-    #mujiNav .navbar-nav { align-items: stretch !important; gap: 0 !important; }
-    #mujiNav .nav-item { width: 100%; border-bottom: 1px solid #eef3fb; }
-    #mujiNav .nav-item:last-child { border-bottom: none; }
-    #mujiNav .sb-nav-link { display: flex; align-items: center; padding: 14px 12px !important; border-radius: var(--radius-sm) !important; font-size: 0.82rem !important; color: var(--navy) !important; width: 100%; }
-    #mujiNav .sb-nav-link:hover { background: rgba(28,102,232,0.06) !important; color: #1c66e8 !important; }
-    #mujiNav .btn-portal { width: 100%; justify-content: center; margin-top: 12px; }
-    #mujiNav .ms-lg-3 { margin-left: 0 !important; margin-top: 4px; }
     .gadget-mobile-column {
         padding-left: 0 !important;
         padding-right: 0 !important;
@@ -2285,15 +2289,79 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         animation: none !important;
     }
 }
+
+/* Keep text readable and controls reachable on phones and tablets. */
+@media (max-width: 1199.98px) {
+    .hero-content { flex-direction: column; align-items: center; gap: 32px; }
+    .hero-left, .hero-circle-wrapper { width: 100%; max-width: 640px; min-width: 0; }
+    .hero-circle {
+        width: 100% !important;
+        max-width: 640px !important;
+        height: auto !important;
+        min-height: 0 !important;
+        border-radius: 32px !important;
+        padding: clamp(24px, 5vw, 48px) !important;
+    }
+    .hero-eyebrow {
+        max-width: 100%;
+        font-size: clamp(.625rem, 1.5vw, .75rem) !important;
+        letter-spacing: .15em !important;
+        white-space: normal;
+        line-height: 1.5;
+    }
+    .hero-h1 {
+        font-size: clamp(1.5rem, 4.2vw, 2.4rem) !important;
+        max-width: 100% !important;
+        line-height: 1.12 !important;
+        margin-bottom: 16px !important;
+    }
+    .hero-title-line, .hero-h1 .gold-text {
+        font-size: inherit !important;
+        white-space: normal !important;
+        transform: none !important;
+    }
+    .hero-body {
+        font-size: clamp(.95rem, 2vw, 1.1rem) !important;
+        max-width: 48ch !important;
+        line-height: 1.6 !important;
+        color: #dbeafe;
+        margin-bottom: 22px !important;
+    }
+    .hero-cta-stack { width: min(100%, 380px) !important; gap: 12px !important; transform: none !important; }
+    .hero-btn-red, .hero-btn-ghost, .hero-btn-manager {
+        width: 100% !important;
+        min-height: 48px !important;
+        padding: 14px 18px !important;
+        font-size: clamp(.85rem, 1.6vw, 1rem) !important;
+        line-height: 1.35 !important;
+        letter-spacing: .02em !important;
+        white-space: normal !important;
+    }
+    .circle-badge, .hero-circle-orbit { display: none !important; }
+    .trust-text { font-size: .8rem !important; white-space: normal; }
+    .announce-label { position: relative; flex: 0 0 auto; height: 100%; padding-inline: 12px; }
+    .announce-track { min-width: 0; overflow: hidden; padding: 0; }
+    .announce-msg {
+        left: 0;
+        width: 100%;
+        padding-inline: 12px;
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transform: translateY(8px);
+    }
+    .announce-msg.active { transform: translateY(0); }
+    .announce-msg.exit { transform: translateY(-8px); }
+}
 </style>
 
-<nav class="navbar navbar-expand-lg fixed-top sb-nav" id="mainNav">
+<nav class="navbar navbar-expand-xl fixed-top sb-nav" id="mainNav">
     <div class="container">
         <a class="sb-brand navbar-brand" href="#home">
             <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook" class="sb-brand-logo">
             <span class="spb-nav-wordmark">SmartPro<span class="book">book</span></span>
         </a>
-        <button class="navbar-toggler border-0" type="button" aria-controls="mujiNav" aria-expanded="false" style="color:var(--navy);">
+        <button class="navbar-toggler border-0" type="button" data-public-menu-toggle data-menu-open-class="show" aria-label="Open navigation" aria-controls="mujiNav" aria-expanded="false" style="color:var(--navy);">
             <span class="tog-bar"></span><span class="tog-bar"></span><span class="tog-bar"></span>
         </button>
         <div class="collapse navbar-collapse" id="mujiNav">
@@ -3170,45 +3238,10 @@ document.addEventListener('DOMContentLoaded', function () {
     };
     syncNav();
     ['load','resize'].forEach(e => window.addEventListener(e, syncNav, {passive:true}));
-    setInterval(syncNav, 1200);
+    if (window.ResizeObserver) new ResizeObserver(syncNav).observe(document.getElementById('mainNav'));
 
     const nav = document.getElementById('mainNav');
     window.addEventListener('scroll', () => nav && nav.classList.toggle('scrolled', scrollY > 50));
-
-    const navToggler = document.querySelector('#mainNav .navbar-toggler');
-    const navCollapse = document.getElementById('mujiNav');
-    const bsCollapse = navCollapse ? bootstrap.Collapse.getOrCreateInstance(navCollapse, { toggle: false }) : null;
-
-    if (navToggler && navCollapse && bsCollapse) {
-        navToggler.addEventListener('click', function (e) {
-            e.stopPropagation();
-            navCollapse.classList.contains('show') ? bsCollapse.hide() : bsCollapse.show();
-        });
-
-        navCollapse.addEventListener('shown.bs.collapse', function () {
-            navToggler.classList.add('active');
-            navToggler.setAttribute('aria-expanded', 'true');
-            document.body.style.overflow = 'hidden';
-        });
-
-        navCollapse.addEventListener('hidden.bs.collapse', function () {
-            navToggler.classList.remove('active');
-            navToggler.setAttribute('aria-expanded', 'false');
-            document.body.style.overflow = '';
-        });
-
-        document.addEventListener('click', function (e) {
-            if (!navCollapse.classList.contains('show')) return;
-            if (e.target.closest('#mujiNav') || e.target.closest('#mainNav .navbar-toggler')) return;
-            bsCollapse.hide();
-        });
-
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape' && navCollapse.classList.contains('show')) {
-                bsCollapse.hide();
-            }
-        });
-    }
 
     document.querySelectorAll('a[href*="#"]').forEach(a => {
         a.addEventListener('click', e => {
@@ -3228,7 +3261,6 @@ document.addEventListener('DOMContentLoaded', function () {
             e.preventDefault();
             history.pushState(null, '', url.hash);
             window.scrollTo({ top: t.offsetTop - 100, behavior: 'smooth' });
-            if (navCollapse?.classList.contains('show')) bsCollapse?.hide();
         });
     });
 

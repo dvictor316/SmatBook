@@ -81,8 +81,8 @@
     <link rel="shortcut icon" href="{{ asset('assets/img/log-favicon.png') }}?v={{ $faviconVersion }}">
 
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('assets/plugins/fontawesome/css/all.min.css') }}">
+    <link href="{{ asset('assets/css/bootstrap.min.css') }}" rel="stylesheet">
 
     <style>
         /* ===== SmartProbook 2026: ENTERPRISE CORE STYLING ===== */
@@ -974,7 +974,7 @@
         }
 
         /* ===== TABLET LAYOUT ===== */
-        @media (max-width: 991px) {
+        @media (max-width: 1199.98px) {
             :root {
                 --landing-nav-height: 64px;
             }
@@ -1003,7 +1003,9 @@
                 left: -100%; 
                 width: 100%; 
                 max-width: 100%;
+                min-height: calc(100vh - var(--landing-nav-height));
                 min-height: calc(100dvh - var(--landing-nav-height));
+                max-height: calc(100vh - var(--landing-nav-height));
                 max-height: calc(100dvh - var(--landing-nav-height));
                 height: auto;
                 background: white; 
@@ -1155,7 +1157,9 @@
 
             .nav-links { 
                 top: var(--landing-nav-height);
+                min-height: calc(100vh - var(--landing-nav-height));
                 min-height: calc(100dvh - var(--landing-nav-height));
+                max-height: calc(100vh - var(--landing-nav-height));
                 max-height: calc(100dvh - var(--landing-nav-height));
                 padding: 10px 12px 24px;
             }
@@ -1287,6 +1291,7 @@
         }
     </style>
     @include('layout.partials.responsive-guardrails')
+    <script src="{{ asset('assets/js/public-navigation.js') }}?v={{ filemtime(public_path('assets/js/public-navigation.js')) }}" defer></script>
 
 </head>
 <body>
@@ -1302,7 +1307,7 @@
             <span class="logo-text">SmartPro<span>book</span></span>
         </a>
 
-        <button class="hamburger" id="navTrigger" type="button" aria-label="Toggle navigation" aria-controls="mainMenu" aria-expanded="false">
+        <button class="hamburger" id="navTrigger" type="button" data-public-menu-toggle aria-label="Toggle navigation" aria-controls="mainMenu" aria-expanded="false">
             <span></span>
             <span></span>
             <span></span>
@@ -1334,7 +1339,7 @@
 @endunless
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script src="{{ asset('assets/js/bootstrap.bundle.min.js') }}"></script>
 
 @unless($hideLandingChrome)
 <script>
@@ -1343,41 +1348,6 @@
     const mainMenu = document.getElementById('mainMenu');
 
     if (navTrigger && mainMenu) {
-        // Toggle menu on hamburger click
-        navTrigger.addEventListener('click', function(e) {
-            e.stopPropagation();
-            navTrigger.classList.toggle('active');
-            mainMenu.classList.toggle('active');
-            navTrigger.setAttribute('aria-expanded', mainMenu.classList.contains('active') ? 'true' : 'false');
-        });
-
-        // Close menu when a link is clicked
-        mainMenu.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', function() {
-                navTrigger.classList.remove('active');
-                mainMenu.classList.remove('active');
-                navTrigger.setAttribute('aria-expanded', 'false');
-            });
-        });
-
-        // Close menu when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.nav-container') && !e.target.closest('.nav-links')) {
-                navTrigger.classList.remove('active');
-                mainMenu.classList.remove('active');
-                navTrigger.setAttribute('aria-expanded', 'false');
-            }
-        });
-
-        // Close menu on escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                navTrigger.classList.remove('active');
-                mainMenu.classList.remove('active');
-                navTrigger.setAttribute('aria-expanded', 'false');
-            }
-        });
-
         // Active route highlighting
         const currentPath = window.location.pathname;
         mainMenu.querySelectorAll('a').forEach(link => {
