@@ -9,521 +9,111 @@
 @endphp
 
 <style>
-    .add-product-page {
-        min-height: 100vh;
-        background:
-            radial-gradient(900px 360px at 8% -8%, rgba(20, 184, 166, 0.12), transparent 64%),
-            radial-gradient(760px 340px at 96% 0%, rgba(37, 99, 235, 0.10), transparent 62%),
-            #f6f8fc;
-        padding-bottom: 2rem;
-    }
-
-    .add-product-heading {
-        display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 0.7rem 0 1rem;
-    }
-
-    .add-product-kicker {
-        color: #0f766e;
-        font-size: 0.72rem;
-        font-weight: 800;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        margin-bottom: 0.35rem;
-    }
-
-    .add-product-heading h4 {
-        color: #102a56 !important;
-        letter-spacing: -0.02em;
-    }
-
-    .add-product-heading p {
-        max-width: 620px;
-    }
-
-    .page-add-product-card {
-        overflow: hidden;
-        background: rgba(255, 255, 255, 0.94);
-        backdrop-filter: blur(8px);
-    }
-
-    .page-add-product-card .card-header {
-        position: relative;
-        padding: 1.35rem 1.5rem;
-    }
-
-    .page-add-product-card .card-header::after {
-        content: '';
-        position: absolute;
-        left: 1.5rem;
-        bottom: 0;
-        width: 72px;
-        height: 4px;
-        border-radius: 999px;
-        background: #f59e0b;
-    }
-
-    .product-flow-banner {
-        position: relative;
-        gap: 0;
-        overflow: hidden;
-        background: #102a56;
-        border: 0;
-        box-shadow: 0 14px 30px rgba(16, 42, 86, 0.14);
-    }
-
-    .product-flow-banner::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(90deg, rgba(20, 184, 166, 0.18), transparent 42%, rgba(245, 158, 11, 0.16));
-        pointer-events: none;
-    }
-
-    .product-flow-step {
-        position: relative;
-        padding: 0.35rem 1rem;
-        border-right: 1px solid rgba(255, 255, 255, 0.16);
-    }
-
-    .product-flow-step:last-child {
-        border-right: 0;
-    }
-
-    .product-flow-step strong {
-        color: #fcd34d;
-        font-size: 0.76rem;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-    }
-
-    .product-flow-step span {
-        color: #dbeafe;
-    }
-
-    .product-form-sheet {
-        border-radius: 16px;
-        border-color: #dfe7f2;
-        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.055);
-    }
-
-    .product-form-grid > div:first-child .product-form-sheet {
-        border-top: 4px solid #f59e0b;
-    }
-
-    .product-form-grid > div:last-child .product-form-sheet {
-        border-top: 4px solid #14b8a6;
-    }
-
-    .product-form-sheet .form-label {
-        color: #334155;
-        font-size: 0.82rem;
-        font-weight: 800;
-        letter-spacing: 0.01em;
-    }
-
-    .product-form-sheet .form-control,
-    .product-form-sheet .form-select {
-        min-height: 44px;
-        border-radius: 10px;
-    }
-
-    .product-form-sheet .form-control:hover,
-    .product-form-sheet .form-select:hover {
-        border-color: #93c5fd;
-    }
-
-    .quick-summary-pills {
-        gap: 0.6rem;
-    }
-
-    .quick-summary-pill {
-        border-radius: 10px;
-        background: #f8fafc;
-        border-color: #e2e8f0;
-    }
-
-    .quick-summary-pill strong {
-        color: #102a56;
-    }
-
-    .product-form-sheet .form-control:focus,
-    .product-form-sheet .form-select:focus {
-        transform: translateY(-1px);
-        transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
-    }
-
-    @media (max-width: 767.98px) {
-        .add-product-heading {
-            align-items: flex-start;
-            flex-direction: column;
-        }
-
-        .add-product-heading .btn {
-            width: 100%;
-        }
-
-        .product-flow-banner {
-            gap: 0.7rem;
-        }
-
-        .product-flow-step {
-            flex-basis: 100%;
-            border-right: 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.16);
-            padding: 0.2rem 0;
-        }
-
-        .product-flow-step:last-child {
-            border-bottom: 0;
-        }
-    }
-
-    .product-form-muted {
-        color: #64748b;
-        font-size: 0.82rem;
-        margin-bottom: 0.75rem;
-    }
-
-    .product-flow-banner {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        padding: 0.9rem 1rem;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #f4f7ff 0%, #f8fbff 100%);
-        border: 1px solid #dbe7ff;
-    }
-
-    .product-flow-step {
-        flex: 1 1 180px;
-        min-width: 0;
-    }
-
-    .product-flow-step strong {
-        display: block;
-        color: #1d4ed8;
-        font-size: 0.86rem;
-        margin-bottom: 0.15rem;
-    }
-
-    .product-flow-step span {
-        color: #475569;
-        font-size: 0.78rem;
-        line-height: 1.45;
-    }
-
-    .product-form-sheet {
-        border: 1px solid #e5e7eb;
-        border-radius: 22px;
-        background: #fff;
-        padding: 1.25rem;
-        min-height: auto;
-        box-shadow: 0 18px 42px rgba(15, 23, 42, 0.07);
-    }
-
-    .product-form-sheet h6 {
-        font-weight: 700;
-        color: #111827;
-        margin-bottom: 0.2rem;
-    }
-
-    .product-form-sheet .form-control,
-    .product-form-sheet .form-select {
-        color: #1f2937;
-        background-color: #ffffff;
-        border-color: #dbe3f0;
-    }
-
-    .product-form-sheet .form-select option,
-    .product-form-sheet .form-control option {
-        background-color: #ffffff;
-        color: #111827;
-    }
-
-    .product-form-sheet .form-select:focus,
-    .product-form-sheet .form-control:focus {
-        border-color: #60a5fa;
-        box-shadow: 0 0 0 0.2rem rgba(96, 165, 250, 0.18);
-    }
-
-    .quick-summary-pills {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        margin-top: 0.75rem;
-    }
-
-    .quick-summary-pill {
-        flex: 1 1 180px;
-        min-width: 0;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        background: #fff;
-        padding: 0.75rem 0.9rem;
-    }
-
-    .quick-summary-pill span {
-        display: block;
-        font-size: 0.78rem;
-        color: #64748b;
-        margin-bottom: 0.2rem;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-
-    .quick-summary-pill strong {
-        font-size: 1rem;
-        color: #0f172a;
-        font-weight: 800;
-    }
-
-    .product-collapse-toggle {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.45rem;
-        font-weight: 700;
-    }
-
-    .page-add-product-card {
-        border: 1px solid #e5e7eb;
-        border-radius: 16px;
-        box-shadow: 0 4px 24px rgba(15,23,42,0.06);
-    }
-
-    .page-add-product-card .card-header {
-        background:
-            radial-gradient(600px 180px at 8% 0%, rgba(20, 184, 166, 0.14), transparent 62%),
-            radial-gradient(520px 180px at 92% 0%, rgba(245, 158, 11, 0.16), transparent 58%),
-            linear-gradient(135deg, #f7fbff 0%, #fffdf6 100%);
-        border-bottom: 1px solid #dbe7ff;
-        border-radius: 16px 16px 0 0 !important;
-        padding: 1.1rem 1.4rem;
-    }
-
-    .product-form-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
-        gap: 1rem;
-        align-items: start;
-    }
-
-    .product-form-card-head {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .product-form-card-eyebrow {
-        color: #0f766e;
-        font-size: 0.74rem;
-        font-weight: 800;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        margin-bottom: 0.2rem;
-    }
-
-    .product-form-card-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 14px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--spb-icon-fg, #92400e);
-        background: var(--spb-icon-bg, #fef3c7);
-        flex: 0 0 auto;
-    }
-
-    .product-form-card-icon i,
-    .product-form-card-icon svg {
-        color: inherit;
-        font-size: 1.12rem;
-    }
-
-    .product-form-card-icon.icon-tone-amber {
-        --spb-icon-bg: #fef3c7;
-        --spb-icon-fg: #92400e;
-    }
-
-    .product-form-card-icon.icon-tone-green {
-        --spb-icon-bg: #dcfce7;
-        --spb-icon-fg: #065f46;
-    }
-
-    .unit-suggestion-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.45rem;
-        margin-top: 0.55rem;
-    }
-
-    .unit-suggestion-chip {
-        border: 1px solid #dbe3f0;
-        background: #f8fafc;
-        color: #334155;
-        border-radius: 999px;
-        padding: 0.28rem 0.65rem;
-        font-size: 0.78rem;
-        font-weight: 700;
-        line-height: 1.2;
-    }
-
-    .unit-suggestion-chip:hover {
-        border-color: #0f766e;
-        background: #ecfdf5;
-        color: #0f766e;
-    }
-
-    .measurement-divider {
-        border-top: 1px solid #e5e7eb;
-        margin: 1.15rem 0;
-    }
-
-    .unit-action-link {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.2rem;
-        border: 1px solid #bfdbfe;
-        border-radius: 999px;
-        background: #eff6ff;
-        color: #1d4ed8;
-        padding: 0.12rem 0.45rem !important;
-        font-weight: 800;
-        font-size: 0.68rem;
-        line-height: 1.15;
-        text-decoration: none;
-        white-space: nowrap;
-    }
-
-    .unit-action-link i {
-        font-size: 0.7rem;
-    }
-
-    .unit-action-link:hover {
-        border-color: #60a5fa;
-        background: #dbeafe;
-        color: #1e40af;
-    }
-
-    .field-hint {
-        color: #64748b;
-        font-size: 0.76rem;
-        line-height: 1.35;
-        margin-top: 0.28rem;
-        display: block;
-    }
-
-    .required-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3rem;
-        border-radius: 999px;
-        background: #fff7ed;
-        color: #9a3412;
-        border: 1px solid #fed7aa;
-        padding: 0.25rem 0.6rem;
-        font-size: 0.72rem;
-        font-weight: 800;
-    }
-
-    .product-price-list-panel {
-        border: 1px solid #dbeafe;
-        border-radius: 14px;
-        background: #f8fbff;
-        padding: 0.85rem 1rem;
-    }
-
-    .product-price-list-panel summary {
-        cursor: pointer;
-        list-style: none;
-    }
-
-    .product-price-list-panel summary::-webkit-details-marker {
-        display: none;
-    }
-
-    .product-price-list-panel .summary-title {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        color: #0f3768;
-        font-weight: 800;
-    }
-
-    .product-price-list-panel .summary-title span {
-        font-size: 0.8rem;
-        color: #64748b;
-        font-weight: 700;
-    }
-
-    .product-price-list-panel[open] .price-list-chevron {
-        transform: rotate(180deg);
-    }
-
-    .price-list-chevron {
-        transition: transform 0.18s ease;
-    }
-
-    @media (max-width: 1199.98px) {
-        .product-form-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    .add-product-page .product-form-body { padding: 18px; }
-    .add-product-page .product-form-sheet { padding: 16px; border-radius: 14px; box-shadow: 0 4px 16px rgba(15,23,42,.04); }
-    .add-product-page .product-form-grid { gap: 14px; align-items: start; }
-    .add-product-page .product-form-sheet > .row { --bs-gutter-y: 12px; --bs-gutter-x: 12px; }
-    .add-product-page .product-form-card-head { margin-bottom: 12px; gap: 10px; }
-    .add-product-page .product-form-muted { margin-bottom: 10px; font-size: 12px; }
-    .add-product-page .product-form-sheet .form-label { margin-bottom: 5px; font-weight: 650; }
-    .add-product-page .product-form-sheet .form-control,
-    .add-product-page .product-form-sheet .form-select { min-height: 40px; border-radius: 8px; }
-    .add-product-page .measurement-divider { margin: 16px 0; }
-    .add-product-page .measurement-mode-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
-    .add-product-page .measurement-mode-button { position: relative; display: grid; align-content: start; gap: 5px; padding: 12px; border: 1px solid #dce5f1; border-radius: 12px; background: #f8fafc; color: #334155; box-shadow: none; white-space: normal; text-align: left; line-height: 1.35; transition: border-color .15s, background-color .15s, box-shadow .15s; }
-    .add-product-page .measurement-mode-button .measurement-option-icon { color: #2563eb; font-size: 18px; margin-bottom: 2px; }
-    .add-product-page .measurement-mode-button strong { font-size: 13px; color: inherit; }
-    .add-product-page .measurement-mode-button small { font-size: 12px; line-height: 1.4; color: #64748b; }
-    .add-product-page .measurement-mode-button:hover { border-color: #93c5fd; background: #eff6ff; }
-    .add-product-page .measurement-mode-button[aria-pressed="true"] { background: #eff6ff; border: 2px solid #2563eb; padding: 11px; color: #1e40af; box-shadow: 0 2px 8px #2563eb14; }
-    .add-product-page .measurement-mode-button[aria-pressed="true"]::after { content: '✓'; position: absolute; top: 9px; right: 10px; color: #1e40af; font-weight: 800; }
-    .add-product-page .measurement-mode-button:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
-    .add-product-page #measurement_selection_summary { padding: 9px 11px; font-size: 11px; border-radius: 9px; margin-top: 10px !important; }
-    .add-product-page .quick-summary-pills { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
-    .add-product-page .quick-summary-pill { min-width: 0; padding: 10px; }
-    .add-product-page .btn:not(.measurement-mode-button):not(.btn-close) { border-radius: 9px; font-weight: 650; }
-    .add-product-page #page_add_product_submit { background: linear-gradient(135deg,#1e40af,#2563eb); border: 0; padding: 11px 22px; box-shadow: 0 4px 12px #2563eb24; }
-    .add-product-page #page_add_product_submit:hover { background: #1e40af; box-shadow: 0 5px 16px #2563eb33; }
-    .add-product-page .product-form-actions { flex-wrap: wrap; gap: 12px; }
-    .add-product-page .product-form-actions p { flex: 1 1 240px; }
-    .add-product-page .carton-mode-field,
-    .add-product-page #kg_carton_fields { margin-bottom: 14px !important; }
-    @media(max-width:575px) { .add-product-page .product-form-body { padding: 12px; } .add-product-page .product-form-sheet { padding: 12px; } }
-
-    @media print {
-        .no-print, .sidebar, .header { display: none !important; }
-        .page-wrapper { margin: 0 !important; }
-    }
+/* Keep this form compact even when the app theme applies large pill buttons. */
+#add-product-page { background:#f5f7fb; padding-bottom:16px; }
+body:not(.login-body):not(.landing-page-body) #add-product-page > .content.container-fluid {
+    max-width:1200px; margin:0 auto; padding:12px 16px 18px !important;
+}
+#add-product-page .add-product-heading { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin:0 0 12px; padding:0; }
+#add-product-page .add-product-heading > div { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
+#add-product-page .add-product-heading h4 { color:#172b4d !important; font-size:20px; line-height:1.3; margin:0; }
+#add-product-page .product-required-note { font-size:12px; color:#64748b; }
+#add-product-page .page-add-product-card { overflow:hidden; background:#fff; border:1px solid #dce3ed !important; border-radius:10px !important; box-shadow:0 2px 8px #172b4d06 !important; }
+#add-product-page .product-form-body { padding:0 !important; }
+#add-product-page #add_product_form > .row { --bs-gutter-y:0; --bs-gutter-x:0; margin:0; }
+#add-product-page .product-form-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:0; }
+#add-product-page .product-form-sheet { min-width:0; min-height:0; padding:16px 18px; border:0; border-bottom:1px solid #e5eaf1; border-radius:0; background:#fff; box-shadow:none; }
+#add-product-page .product-form-card-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
+#add-product-page .product-form-card-head h6,
+#add-product-page .product-form-sheet h6 { color:#172b4d; font-size:15px; font-weight:650; margin:0 0 4px; }
+#add-product-page .product-form-muted { margin:0 0 10px; color:#64748b; font-size:12px; line-height:1.4; }
+#add-product-page .product-form-sheet .form-label { margin-bottom:5px; color:#334155; font-size:13px; font-weight:600; line-height:1.4; }
+#add-product-page .product-form-sheet .form-control,
+#add-product-page .product-form-sheet .form-select { min-height:38px; border:1px solid #d8e0eb; border-radius:6px; background:#fff; color:#172b4d; font-size:13px; box-shadow:none; }
+#add-product-page .product-form-sheet .form-control:focus,
+#add-product-page .product-form-sheet .form-select:focus { border-color:#60a5fa; box-shadow:0 0 0 3px #3b82f620; }
+#add-product-page .product-form-sheet .is-invalid { border-color:#dc3545; }
+#add-product-page .product-form-sheet .form-control[readonly] { background:#f8fafc; }
+#add-product-page .product-details-fields { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px 16px; margin:0; }
+#add-product-page .product-details-fields > div { width:auto; min-width:0; padding:0; margin:0; }
+#add-product-page .product-details-fields > .col-12 { grid-column:1 / -1; }
+#add-product-page .product-details-fields > .product-name-field,
+#add-product-page .product-details-fields > .product-image-field { grid-column:span 2; }
+#add-product-page .field-hint { display:block; color:#64748b; font-size:11px; line-height:1.4; margin-top:4px; }
+#add-product-page .measurement-mode-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+#add_product_form .measurement-mode-button {
+    position:relative; display:flex; flex-direction:column; justify-content:center; gap:4px; width:100%; min-width:0;
+    min-height:70px !important; margin:0; padding:10px 24px 10px 12px !important;
+    border:1px solid #d8e0eb !important; border-radius:6px !important; background:#fff !important;
+    color:#334155 !important; -webkit-text-fill-color:#334155 !important; box-shadow:none !important;
+    font-family:inherit; font-size:13px !important; font-weight:600 !important; line-height:1.35;
+    text-align:left; white-space:normal; cursor:pointer; transform:none !important;
+}
+#add_product_form .measurement-mode-button strong { color:inherit !important; -webkit-text-fill-color:inherit !important; font-size:13px; font-weight:600; }
+#add_product_form .measurement-mode-button small { color:#64748b !important; -webkit-text-fill-color:#64748b !important; font-size:11px; font-weight:400; line-height:1.4; }
+#add_product_form .measurement-mode-button:hover { background:#f8fafc !important; border-color:#93b4e8 !important; }
+#add_product_form .measurement-mode-button[aria-pressed="true"] { background:#eff6ff !important; border-color:#2563eb !important; color:#1e40af !important; -webkit-text-fill-color:#1e40af !important; box-shadow:inset 0 0 0 1px #2563eb !important; }
+#add_product_form .measurement-mode-button[aria-pressed="true"]::after { content:'✓'; position:absolute; right:9px; top:9px; color:#2563eb; font-size:12px; }
+#add_product_form .measurement-mode-button:focus-visible { outline:3px solid #93c5fd; outline-offset:2px; }
+#add-product-page .measurement-choice { margin-bottom:12px; }
+#add-product-page #measurement_selection_summary { margin:8px 0 0 !important; padding:7px 10px; border:1px solid #dbeafe; border-radius:6px; background:#f8fbff; color:#365373; font-size:12px; line-height:1.45; }
+#add-product-page #kg_carton_fields,
+#add-product-page .carton-mode-field { margin-bottom:12px !important; }
+#add-product-page .measurement-divider { border-top:1px solid #e5eaf1; margin:14px 0; }
+#add-product-page .quick-summary-pills { display:flex; flex-wrap:wrap; gap:0; margin-top:0; padding:10px 12px; border:1px solid #e5eaf1; border-radius:6px; background:#f8fafc; }
+#add-product-page .quick-summary-pill { flex:1 1 180px; min-width:0; padding:4px 12px; border:0; border-left:1px solid #e2e8f0; border-radius:0; background:transparent; }
+#add-product-page .quick-summary-pill:first-child { border-left:0; padding-left:0; }
+#add-product-page .quick-summary-pill span { display:block; margin-bottom:3px; color:#64748b; font-size:11px; }
+#add-product-page .quick-summary-pill strong { color:#172b4d; font-size:14px; font-weight:650; }
+#add-product-page .btn:not(.btn-close) { min-height:34px !important; padding:6px 12px !important; border-radius:6px !important; font-size:13px !important; font-weight:600 !important; line-height:1.5; box-shadow:none !important; transform:none !important; }
+#add-product-page .input-group .btn { min-height:38px !important; }
+#add-product-page .product-collapse-toggle { display:inline-flex; align-items:center; gap:7px; margin:12px 18px; background:#fff !important; color:#475569 !important; border-color:#d8e0eb !important; }
+#add-product-page .btn.unit-action-link { min-height:26px !important; padding:2px 7px !important; }
+#add-product-page .unit-suggestion-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+#add-product-page .unit-suggestion-chip { padding:3px 8px; border:1px solid #d8e0eb; border-radius:5px; background:#f8fafc; color:#475569; font-size:12px; }
+#add-product-page .product-price-list-panel { padding:10px 12px; border:1px solid #e2e8f0; border-radius:6px; background:#f8fafc; }
+#add-product-page .product-price-list-panel summary { cursor:pointer; list-style:none; }
+#add-product-page .summary-title { display:flex; align-items:center; justify-content:space-between; gap:8px; color:#334155; font-size:13px; font-weight:600; }
+#add-product-page .summary-title span { color:#64748b; font-size:12px; font-weight:400; }
+#add-product-page .product-price-list-panel[open] .price-list-chevron { transform:rotate(180deg); }
+#add-product-page .product-form-actions { display:flex; flex-wrap:wrap; gap:12px; padding:12px 18px !important; border-top:1px solid #e5eaf1; background:#f8fafc; }
+#add-product-page .product-form-actions p { flex:1 1 240px; font-size:12px; }
+#add-product-page #page_add_product_submit { min-height:36px !important; padding:7px 20px !important; border:1px solid #1d4ed8; background:#2563eb !important; color:#fff !important; }
+#add-product-page #page_add_product_submit:hover { background:#1d4ed8 !important; }
+
+#add-product-page .product-packaging-fields { display:flex; flex-wrap:wrap; align-items:start; gap:12px 16px; }
+#add-product-page .product-packaging-fields > .row { flex:1 1 260px; width:auto; margin:0 !important; --bs-gutter-x:0; --bs-gutter-y:0; }
+#add-product-page .product-packaging-fields > #custom_packaging_intro { flex:0 0 100%; }
+#add-product-page .product-packaging-fields .col-md-6 { width:100%; }
+#add-product-page .opening-stock-fields { --bs-gutter-y:12px; }
+#add-product-page .opening-stock-fields > div:not(.col-12) { flex:1 1 160px; width:auto; }
+@media (max-width:900px) {
+    #add-product-page .measurement-mode-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width:767px) {
+    #add-product-page .product-details-fields { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    #add-product-page .product-details-fields > .product-name-field { grid-column:1 / -1; }
+    #add-product-page .product-details-fields > .product-image-field { grid-column:auto; }
+}
+@media (max-width:575px) {
+    body:not(.login-body):not(.landing-page-body) #add-product-page > .content.container-fluid { padding:10px !important; }
+    #add-product-page .product-form-sheet { padding:14px 12px; }
+    #add-product-page .product-details-fields { grid-template-columns:minmax(0,1fr); }
+    #add-product-page .product-details-fields > .product-name-field { grid-column:auto; }
+    #add-product-page .product-required-note { display:none; }
+    #add-product-page .quick-summary-pill { flex-basis:100%; border-left:0; padding:5px 0; }
+}
+@media print { #add-product-page .no-print { display:none !important; } }
 </style>
 
-<div class="page-wrapper add-product-page">
-    <div class="content container-fluid" style="max-width:1100px; margin:0 auto;">
+<div class="page-wrapper add-product-page" id="add-product-page">
+    <div class="content container-fluid">
 
         {{-- Page header --}}
         <div class="add-product-heading no-print">
             <div>
-                <div class="add-product-kicker">Inventory setup</div>
                 <h4 class="mb-0 fw-bold text-dark"><i class="feather-package me-2 text-primary"></i>Add New Product</h4>
-                <p class="mb-0 text-muted small mt-1">Set up product, price, and opening stock.</p>
+                <span class="product-required-note"><span class="text-danger">*</span> Required fields</span>
             </div>
             <a href="{{ route('product-list') }}" class="btn btn-outline-secondary btn-sm">
                 <i class="feather-arrow-left me-1"></i> Back to Products
@@ -565,34 +155,10 @@
 
         {{-- Main card --}}
         <div class="card page-add-product-card border-0 mb-4">
-            <div class="card-header">
-                <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
-                    <h5 class="mb-0 fw-bold" style="color:#111827;">Add New Product</h5>
-                    <span class="required-chip"><i class="fas fa-asterisk"></i> Required fields first</span>
-                </div>
-            </div>
             <div class="card-body product-form-body">
                 <form method="POST" action="{{ route('inventory.Products.store') }}" enctype="multipart/form-data" id="add_product_form" novalidate>
                     @csrf
                     <div class="row g-3">
-
-                        {{-- Flow banner --}}
-                        <div class="col-12">
-                            <div class="product-flow-banner">
-                                <div class="product-flow-step">
-                                    <strong>1. Product Details</strong>
-                                    <span>Name, category, unit, and price.</span>
-                                </div>
-                                <div class="product-flow-step">
-                                    <strong>2. Packaging Setup</strong>
-                                    <span>How cartons, rolls, and units convert.</span>
-                                </div>
-                                <div class="product-flow-step">
-                                    <strong>3. Opening Stock</strong>
-                                    <span>Enter current stock; total updates itself.</span>
-                                </div>
-                            </div>
-                        </div>
 
                         <div class="col-12">
                             <div class="product-form-grid">
@@ -601,14 +167,12 @@
                             <div class="product-form-sheet">
                                 <div class="product-form-card-head">
                                     <div>
-                                        <div class="product-form-card-eyebrow">Product setup</div>
                                         <h6>Identity, Pricing & Category</h6>
                                         <p class="product-form-muted mb-0">Start with the fields marked required.</p>
                                     </div>
-                                    <span class="product-form-card-icon icon-tone-amber"><i class="fas fa-box-open"></i></span>
                                 </div>
-                                <div class="row g-3">
-                                    <div class="col-md-6">
+                                <div class="row g-3 product-details-fields">
+                                    <div class="col-md-6 product-name-field">
                                         <label class="form-label">Product Name <span class="text-danger">*</span></label>
                                         <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" placeholder="e.g. Big Bull Rice 50kg" value="{{ old('name') }}" required>
                                         @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -752,7 +316,7 @@
                                         </select>
                                         @error('branch_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-6 product-image-field">
                                         <label class="form-label">Product Image</label>
                                         <input type="file" name="image" id="product_image_input" class="form-control @error('image') is-invalid @enderror">
                                         @error('image')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -772,32 +336,31 @@
                             <div class="product-form-sheet">
                                 <div class="product-form-card-head">
                                     <div>
-                                        <div class="product-form-card-eyebrow">Measurement</div>
                                         <h6>Packaging & Opening Stock</h6>
                                         <p class="product-form-muted mb-0">Enter packaging only where it applies.</p>
                                     </div>
-                                    <span class="product-form-card-icon icon-tone-green"><i class="fas fa-balance-scale"></i></span>
                                 </div>
                                 <input type="hidden" name="measurement_mode" id="measurement_mode_input" value="{{ old('measurement_mode', 'pieces') }}">
-                                <div class="mb-4">
+                                <div class="measurement-choice">
                                     <label class="form-label d-block">How is this product sold?</label>
                                     <div class="measurement-mode-grid" role="group" aria-label="Measurement setup">
-                                        <button type="button" class="btn btn-outline-primary text-start measurement-mode-button" data-measurement-mode="pieces">
-                                            <i class="fas fa-cube measurement-option-icon" aria-hidden="true"></i><strong>Pieces only (pcs)</strong><small class="d-block">Count each item as one piece, even if its name includes a weight.</small>
+                                        <button type="button" class="measurement-mode-button" data-measurement-mode="pieces" aria-pressed="{{ old('measurement_mode', 'pieces') === 'pieces' ? 'true' : 'false' }}">
+                                            <strong>Pieces only (pcs)</strong><small class="d-block">Count each item individually.</small>
                                         </button>
-                                        <button type="button" class="btn btn-outline-primary text-start measurement-mode-button" data-measurement-mode="pieces_carton">
-                                            <i class="fas fa-boxes measurement-option-icon" aria-hidden="true"></i><strong>Cartons containing pieces (pcs)</strong><small class="d-block">Enter how many pieces are in each carton.</small>
+                                        <button type="button" class="measurement-mode-button" data-measurement-mode="pieces_carton" aria-pressed="{{ old('measurement_mode', 'pieces') === 'pieces_carton' ? 'true' : 'false' }}">
+                                            <strong>Cartons containing pieces (pcs)</strong><small class="d-block">Set the pieces in each carton.</small>
                                         </button>
-                                        <button type="button" class="btn btn-outline-primary text-start measurement-mode-button" data-measurement-mode="kg_carton">
-                                            <i class="fas fa-weight-hanging measurement-option-icon" aria-hidden="true"></i><strong>Cartons measured in kilograms (kg)</strong><small class="d-block">Choose only when stock is weighed and sold by kg.</small>
+                                        <button type="button" class="measurement-mode-button" data-measurement-mode="kg_carton" aria-pressed="{{ old('measurement_mode', 'pieces') === 'kg_carton' ? 'true' : 'false' }}">
+                                            <strong>Cartons measured in kilograms (kg)</strong><small class="d-block">Only for stock sold by kg.</small>
                                         </button>
-                                        <button type="button" class="btn btn-outline-secondary text-start measurement-mode-button" data-measurement-mode="custom">
-                                            <i class="fas fa-sliders-h measurement-option-icon" aria-hidden="true"></i><strong>Other units / rolls</strong><small class="d-block">Choose your own base unit and conversion.</small>
+                                        <button type="button" class="measurement-mode-button" data-measurement-mode="custom" aria-pressed="{{ old('measurement_mode', 'pieces') === 'custom' ? 'true' : 'false' }}">
+                                            <strong>Other units / rolls</strong><small class="d-block">Choose another unit or rolls.</small>
                                         </button>
                                     </div>
                                     @error('measurement_mode')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
-                                    <div class="alert alert-info small mt-3 mb-0" id="measurement_selection_summary" role="status" aria-live="polite">Stock will be recorded in pieces (pcs). Product names such as Rice 50kg do not change the counting unit.</div>
+                                    <div class="alert alert-info small mt-3 mb-0" id="measurement_selection_summary" role="status" aria-live="polite">Stock unit: pieces (pcs). Enter prices per piece.</div>
                                 </div>
+                                <div class="product-packaging-fields">
                                 <div id="kg_carton_fields" class="row g-3 mb-4" style="display: none;">
                                     <div class="col-md-6">
                                         <label class="form-label">Kg Per Carton <span class="text-danger">*</span></label>
@@ -806,19 +369,11 @@
                                         @error('kg_per_carton')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
-                                <div class="row g-3 mb-4 carton-mode-field" style="display: none;">
-                                    <div class="col-12">
-                                        <label class="form-label">Selling Price Per Full Carton <span class="text-muted">(optional)</span></label>
-                                        <input type="number" min="0" step="0.01" name="carton_selling_price" id="carton_selling_price_input" class="form-control @error('carton_selling_price') is-invalid @enderror" value="{{ old('carton_selling_price') }}" placeholder="Calculated from price per base unit">
-                                        <small class="field-hint" id="carton_price_hint">Leave empty to calculate it automatically.</small>
-                                        @error('carton_selling_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                </div>
                                 <div id="custom_packaging_intro">
                                     <h6 class="mb-1">Packaging Setup</h6>
                                     <p class="product-form-muted">Use carton/roll fields only when the product is packed that way.</p>
                                 </div>
-                                <div class="row g-3">
+                                <div class="row g-3 packaging-custom-row">
                                     <div class="col-md-4 custom-packaging-field">
                                         <label class="form-label" id="quick_rolls_per_carton_label">Rolls Per Ctn</label>
                                         <input type="number" id="quick_rolls_per_carton_helper" min="0" step="0.01" class="form-control" value="{{ $oldRollsPerCarton }}">
@@ -840,11 +395,21 @@
                                     <input type="hidden" name="unit_type" id="quick_unit_type_input" value="{{ old('unit_type', 'unit') }}">
                                 </div>
 
+                                <div class="row g-3 mb-4 carton-mode-field" style="display: none;">
+                                    <div class="col-12">
+                                        <label class="form-label">Selling Price Per Full Carton <span class="text-muted">(optional)</span></label>
+                                        <input type="number" min="0" step="0.01" name="carton_selling_price" id="carton_selling_price_input" class="form-control @error('carton_selling_price') is-invalid @enderror" value="{{ old('carton_selling_price') }}" placeholder="Calculated from price per base unit">
+                                        <small class="field-hint" id="carton_price_hint">Leave empty to calculate it automatically.</small>
+                                        @error('carton_selling_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
+                                </div>
+                                </div>
+
                         {{-- Section 3: Opening Stock --}}
                                 <div class="measurement-divider"></div>
                                 <h6>Opening Stock</h6>
                                 <p class="product-form-muted">Leave at 0 if stock will be added later.</p>
-                                <div class="row g-3">
+                                <div class="row g-3 opening-stock-fields">
                                     <div class="col-md-4 opening-carton-field">
                                         <label class="form-label">Opening Full Cartons</label>
                                         <input type="number" step="0.01" name="stock_cartons" class="form-control @error('stock_cartons') is-invalid @enderror" value="{{ old('stock_cartons', 0) }}">
@@ -869,10 +434,6 @@
                                             <div class="quick-summary-pill carton-summary-field">
                                                 <span id="quick_units_per_carton_summary_label">Base Units Per Ctn</span>
                                                 <strong id="quick_units_per_carton_preview_text">0 pcs</strong>
-                                            </div>
-                                            <div class="quick-summary-pill">
-                                                <span>Total Opening Stock</span>
-                                                <strong id="quick_stock_preview_text">0 pcs</strong>
                                             </div>
                                             <div class="quick-summary-pill">
                                                 <span>Entered Mix</span>
@@ -1171,15 +732,14 @@ $(document).ready(function () {
         $('#kg_carton_fields').toggle(isKgCarton);
         $('.measurement-technical-field, .custom-packaging-field, #custom_packaging_intro, .opening-roll-field').toggle(isCustom);
         $('.pieces-carton-field').toggle(isCustom || isPiecesCarton);
+        $('.packaging-custom-row').toggle(isCustom || isPiecesCarton);
         $('.carton-mode-field').toggle(isKgCarton || isPiecesCarton);
         $('.opening-carton-field, .carton-summary-field').toggle(mode !== 'pieces');
         $('#kg_per_carton_input').prop('disabled', !isKgCarton).prop('required', isKgCarton);
         $('#carton_selling_price_input').prop('disabled', isCustom || mode === 'pieces');
         $('.measurement-mode-button').each(function () {
             var active = $(this).data('measurement-mode') === mode;
-            $(this).removeClass('btn-primary btn-secondary btn-outline-primary btn-outline-secondary')
-                .addClass(active ? 'btn-primary' : 'btn-outline-primary')
-                .attr('aria-pressed', active ? 'true' : 'false');
+            $(this).attr('aria-pressed', active ? 'true' : 'false');
         });
 
         if (!isCustom) {
@@ -1203,10 +763,10 @@ $(document).ready(function () {
             applyUnitSymbol('pcs');
         }
         $('#measurement_selection_summary').text(isKgCarton
-            ? 'Stock is recorded in kilograms (kg). Enter kg per carton; all unit prices below are per kg.'
+            ? 'Stock unit: kilograms (kg). Enter kg per carton and prices per kg.'
             : (mode === 'pieces' || isPiecesCarton)
-                ? 'Stock is recorded in pieces (pcs). Rice bought as individual items stays in pcs, regardless of the weight in its name. Prices are per piece.'
-                : 'Choose the base unit on the left. All prices and stock totals use that unit; add carton/roll conversions only if needed.');
+                ? 'Stock unit: pieces (pcs). Enter prices per piece. A weight in the product name does not change the unit.'
+                : 'Choose a base unit above. Prices and stock totals use that unit; add carton or roll conversions only if needed.');
         refreshQuickPackagingLabels();
         calculateQuickCartonContent();
         calculateQuickStock();
