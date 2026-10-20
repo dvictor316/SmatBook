@@ -1685,8 +1685,15 @@ class ReportController extends Controller
         }
 
         try {
-            // Replace with actual recipient email
-            Mail::to('admin@yourcompany.com')->send(new \App\Mail\LowStockReportMail($products));
+            AppMailer::bootCurrentSettings();
+            $recipient = auth()->user()?->email ?: config('mail.admin_inbox');
+            $sent = \App\Support\SystemEventMailer::sendMessage($recipient, 'Low Stock Alert', 'Low Stock Alert', 'These products need restocking.', [
+                'Products' => $products->map(fn ($product) => $product->name.': '.$product->stock)->implode("\n"),
+                'Branch' => $activeBranch['name'] ?? 'Active workspace',
+            ], (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0));
+            if (!$sent) {
+                throw new \RuntimeException('The mail service could not send the stock alert.');
+            }
 
             return response()->json(['status' => 'success', 'message' => 'Email sent successfully!']);
         } catch (\Exception $e) {

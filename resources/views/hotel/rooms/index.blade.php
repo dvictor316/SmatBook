@@ -113,9 +113,7 @@
                                         <div class="modal-body">
                                             <div class="hotel-preview-viewer {{ $panoramaImage ? 'has-image' : 'is-empty' }}" @if($panoramaImage) style="--hotel-preview-image:url('{{ $panoramaImage }}')" @endif>
                                                 @if($panoramaImage)
-                                                    <div class="hotel-preview-media">
-                                                        <img src="{{ $panoramaImage }}" alt="Room {{ $room->room_number }} preview">
-                                                    </div>
+                                                    @include('hotel.partials.room-image-viewer', ['imageUrl' => $panoramaImage, 'imageAlt' => 'Room '.$room->room_number.' preview'])
                                                 @else
                                                     <div class="sa-room-preview-empty">
                                                         <i class="fas fa-bed fa-3x mb-3"></i>

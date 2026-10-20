@@ -4,12 +4,9 @@
 <style>
     .room-show-page { background:#eef4f8; color:#10233f; }
     .room-show-hero { display:grid; grid-template-columns:minmax(0,1.2fr) 340px; gap:18px; align-items:stretch; margin-bottom:18px; }
-    .room-show-gallery { position:relative; min-height:430px; border-radius:8px; overflow:hidden; background:#061b33; box-shadow:0 18px 42px rgba(15,23,42,.16); }
-    .room-slide { position:absolute; inset:0; opacity:0; transition:opacity .45s ease; }
-    .room-slide.is-active { opacity:1; }
-    .room-slide img { width:100%; height:100%; object-fit:cover; display:block; }
-    .room-show-overlay { position:absolute; left:0; right:0; bottom:0; padding:22px; color:#fff; background:linear-gradient(180deg,transparent,rgba(6,27,51,.86)); }
-    .room-show-overlay h3 { color:#fff; font-size:34px; margin:0; font-weight:900; }
+    .room-show-gallery { position:relative; min-height:0; border-radius:8px; overflow:hidden; background:#061b33; box-shadow:0 18px 42px rgba(15,23,42,.16); }
+    .room-show-overlay { padding:14px 18px; color:#fff; background:#0b2038; }
+    .room-show-overlay h3 { color:#fff; font-size:24px; margin:0; font-weight:900; }
     .room-show-panel { background:#fff; border:1px solid #d8e2ee; border-radius:8px; padding:18px; box-shadow:0 14px 32px rgba(15,23,42,.07); }
     .room-show-status { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:14px 0; }
     .room-show-chip { border:1px solid #d8e2ee; border-radius:8px; padding:12px; background:#f8fbff; }
@@ -35,17 +32,11 @@
         <section class="room-show-hero">
             <div>
                 <div class="room-show-gallery" data-room-show-gallery>
-                    @forelse($images as $image)
-                        <div class="room-slide {{ $loop->first ? 'is-active' : '' }}" data-room-slide>
-                            <img src="{{ asset('storage/'.$image->path) }}" alt="Room {{ $room->room_number }} image {{ $loop->iteration }}">
-                        </div>
-                    @empty
-                        @if($fallback)
-                            <div class="room-slide is-active" data-room-slide><img src="{{ asset('storage/'.$fallback) }}" alt="Room {{ $room->room_number }}"></div>
-                        @else
-                            <div class="d-flex h-100 align-items-center justify-content-center text-white"><i class="fas fa-bed fa-4x"></i></div>
-                        @endif
-                    @endforelse
+                    @if($images->isNotEmpty() || $fallback)
+                        @include('hotel.partials.room-image-viewer', ['imageUrl' => asset('storage/'.($images->first()?->path ?: $fallback)), 'imageAlt' => 'Room '.$room->room_number.' preview'])
+                    @else
+                        <div class="d-flex align-items-center justify-content-center text-white py-5"><i class="fas fa-bed fa-4x"></i></div>
+                    @endif
                     <div class="room-show-overlay">
                         <small class="text-warning fw-semibold">ROOM {{ $room->room_number }}</small>
                         <h3>{{ $room->type?->name ?? 'Hotel Room' }}</h3>
@@ -119,17 +110,21 @@
 @section('script')
 <script>
 (function () {
-    const slides = Array.from(document.querySelectorAll('[data-room-slide]'));
+    const gallery = document.querySelector('[data-room-show-gallery]');
+    const image = gallery?.querySelector('[data-room-viewport] img');
     const thumbs = Array.from(document.querySelectorAll('[data-room-thumb]'));
-    if (!slides.length) return;
-    let index = 0;
-    function show(next) {
-        index = (next + slides.length) % slides.length;
-        slides.forEach((slide, i) => slide.classList.toggle('is-active', i === index));
-        thumbs.forEach((thumb, i) => thumb.classList.toggle('is-active', i === index));
-    }
-    thumbs.forEach((thumb) => thumb.addEventListener('click', () => show(Number(thumb.dataset.roomThumb || 0))));
-    if (slides.length > 1) window.setInterval(() => show(index + 1), 4500);
+    if (!image) return;
+    thumbs.forEach((thumb, index) => {
+        thumb.setAttribute('aria-label', 'View room image ' + (index + 1));
+        thumb.setAttribute('aria-pressed', index === 0 ? 'true' : 'false');
+        thumb.addEventListener('click', () => {
+            image.src = thumb.querySelector('img').src;
+            thumbs.forEach((item) => {
+                item.classList.toggle('is-active', item === thumb);
+                item.setAttribute('aria-pressed', item === thumb ? 'true' : 'false');
+            });
+        });
+    });
 })();
 </script>
 @endsection

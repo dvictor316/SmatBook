@@ -1,77 +1,31 @@
 <?php $page = 'contact-messages'; ?>
 @extends('layout.mainlayout')
 @section('content')
-    
-    <div class="page-wrapper">
-        <div class="content container-fluid">
-            
-            @component('components.page-header')
-                @slot('title')
-                    Contact Messages
-                @endslot
-            @endcomponent
-            
-
-            
-            <div class="row">
-                <div class="col-sm-12">
-                    <div class="card-table">
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-stripped table-hover datatable">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Name</th>
-                                            <th>Email</th>
-                                            <th>Mobile Number</th>
-                                            <th>Message</th>
-                                            <th>Created on</th>
-                                            <th class="no-sort">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @php
-                                            $json = file_get_contents(public_path('../public/assets/json/contact-messages.json'));
-                                            $contactmessages = json_decode($json, true);
-                                        @endphp
-                                        @foreach ($contactmessages as $contactmessage)
-                                            <tr>
-                                                <td>{{ $contactmessage['Id'] }}</td>
-                                                <td>
-                                                    <h2 class="table-avatar">
-                                                        <a href="{{ url('contact-details') }}"
-                                                            class="avatar avatar-sm me-2"><img
-                                                                class="avatar-img rounded-circle"
-                                                                src="{{ URL::asset('assets/img/profiles/' . $contactmessage['Image']) }}"
-                                                                alt="User Image"></a>
-                                                        <a href="{{ url('profile') }}">{{ $contactmessage['Name'] }}</a>
-                                                    </h2>
-                                                </td>
-                                                <td><span>{{ $contactmessage['Email'] }}</span></td>
-                                                <td>{{ $contactmessage['MobileNumber'] }}</td>
-                                                <td>{{ $contactmessage['Message'] }}</td>
-                                                <td>{{ $contactmessage['Createdon'] }}</td>
-                                                <td class="d-flex align-items-center">
-                                                    <a class=" btn-action-icon me-2" href="javascript:void(0);"
-                                                        data-bs-toggle="modal" data-bs-target="#edit_contact"><i
-                                                            class="fa-regular fa-eye"></i></a>
-                                                    <a class=" btn-action-icon" href="javascript:void(0);"
-                                                        data-bs-toggle="modal" data-bs-target="#delete_modal"><i
-                                                            class="fe fe-trash-2"></i></a>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+<div class="page-wrapper">
+    <div class="content container-fluid">
+        <h3 class="mb-2">Contact Messages</h3>
+        <p class="text-muted mb-4">Website enquiries are saved here, including messages whose email notification failed.</p>
+        @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
+        @forelse($messages as $message)
+            <article class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-start flex-wrap gap-2">
+                    <div><strong>{{ $message->details['Name'] ?? 'Website visitor' }}</strong><div class="small text-muted">{{ $message->details['Email'] ?? '' }} · {{ $message->created_at->format('d M Y H:i') }}</div></div>
+                    <span class="badge {{ $message->status === 'sent' ? 'bg-success' : 'bg-warning text-dark' }}">{{ $message->status === 'sent' ? 'Submitted to mail service' : 'Email notification '.$message->status }}</span>
                 </div>
-            </div>
-            
-
-        </div>
+                <div class="card-body">
+                    <div class="small text-muted mb-2">{{ $message->details['Company'] ?? '' }} · {{ $message->details['Department'] ?? 'General' }} · To: {{ $message->recipient }}</div>
+                    <p style="white-space:pre-wrap;overflow-wrap:anywhere;">{{ $message->details['Message'] ?? '' }}</p>
+                    @if($message->status === 'failed')<p class="small text-danger">Email delivery failed. The enquiry is saved; check Email Settings and the server mail logs.</p>@endif
+                    <form action="{{ route('contact-messages.delete', $message->id) }}" method="POST" onsubmit="return confirm('Delete this saved enquiry?');">
+                        @csrf @method('DELETE')
+                        <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                    </form>
+                </div>
+            </article>
+        @empty
+            <div class="card"><div class="card-body text-muted">No contact enquiries received yet.</div></div>
+        @endforelse
+        {{ $messages->links() }}
     </div>
-    
+</div>
 @endsection

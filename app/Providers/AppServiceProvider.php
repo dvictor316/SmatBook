@@ -20,7 +20,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Standard Laravel mail and notifications must use the same saved SMTP
+        // configuration as contact messages and system-event emails.
+        $this->app->resolving('mail.manager', function () {
+            \App\Support\AppMailer::bootCurrentSettings();
+            $mailer = (string) config('mail.default');
+            if (app()->environment('production') && in_array(config("mail.mailers.{$mailer}.transport", $mailer), ['log', 'array'], true)) {
+                throw new \RuntimeException('No email delivery transport is configured. Enable SMTP in Email Settings.');
+            }
+        });
     }
 
     /**
@@ -28,6 +36,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \Illuminate\Support\Facades\Queue::before(function ($event) {
+            if (in_array($event->job->resolveName(), [\Illuminate\Mail\SendQueuedMailable::class, \Illuminate\Notifications\SendQueuedNotifications::class], true)) {
+                \App\Support\AppMailer::bootCurrentSettings();
+            }
+        });
         // 1. Database & Schema Defaults
         // Prevents "index too long" errors on older MySQL versions
         Schema::defaultStringLength(191);

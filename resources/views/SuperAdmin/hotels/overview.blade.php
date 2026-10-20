@@ -165,10 +165,7 @@
     .sa-room-lock-note { margin-top:7px; padding:7px 9px; border-radius:8px; background:#fff1f2; color:#9f1239; font-size:12px; font-weight:800; }
     .sa-ops-action-strip { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin-bottom:14px; }
     .sa-ops-action-strip a, .sa-ops-action-strip button { min-height:54px; display:flex; align-items:center; justify-content:center; gap:8px; border-radius:10px; font-weight:900; text-decoration:none; }
-    .hotel-panorama-stage { position:relative; width:100%; height:100%; overflow:hidden; background:#030b14; }
-    .hotel-panorama-image { width:150%; height:112%; max-width:none; object-fit:cover !important; object-position:center; animation:saPanoramaDrift 28s ease-in-out infinite; transform-origin:center; }
     .hotel-panorama-badge { position:absolute; top:14px; left:14px; z-index:2; display:inline-flex; align-items:center; gap:8px; padding:8px 11px; border-radius:999px; background:rgba(6,21,38,.82); color:#fff; font-weight:900; box-shadow:0 10px 26px rgba(0,0,0,.28); }
-    @keyframes saPanoramaDrift { 0% { transform:scale(1.06) translate(-16%,-2%); } 24% { transform:scale(1.14) translate(8%,2%); } 50% { transform:scale(1.2) translate(16%,-1%); } 76% { transform:scale(1.12) translate(-7%,2%); } 100% { transform:scale(1.06) translate(-16%,-2%); } }
     .sa-room-gallery-strip { display:grid; grid-template-columns:repeat(auto-fill,minmax(92px,1fr)); gap:8px; }
     .sa-room-gallery-strip article { border:1px solid #d8e2ee; border-radius:8px; overflow:hidden; background:#f8fbff; }
     .sa-room-gallery-strip img { width:100%; height:68px; object-fit:cover; display:block; }
@@ -844,12 +841,7 @@
                                         <div class="modal-body">
                                             <div class="hotel-preview-viewer {{ $previewUrl ? 'has-image' : 'is-empty' }}" @if($previewUrl) style="--hotel-preview-image:url('{{ $previewUrl }}')" @endif>
                                                 @if($previewUrl)
-                                                    <div class="hotel-preview-media">
-                                                        <div class="hotel-panorama-stage">
-                                                            <span class="hotel-panorama-badge"><i class="fas fa-vr-cardboard"></i> Panorama tour</span>
-                                                            <img class="hotel-panorama-image" src="{{ $previewUrl }}" alt="Room {{ $roomNo }} panorama preview" loading="eager" decoding="async">
-                                                        </div>
-                                                    </div>
+                                                    @include('hotel.partials.room-image-viewer', ['imageUrl' => $previewUrl, 'imageAlt' => 'Room '.$roomNo.' panorama preview'])
                                                 @else
                                                     <div class="sa-room-preview-empty">
                                                         <i class="fas fa-bed fa-3x mb-3"></i>

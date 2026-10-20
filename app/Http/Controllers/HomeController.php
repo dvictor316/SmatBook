@@ -16,6 +16,20 @@ use Illuminate\Validation\Rule;
 
 class HomeController extends Controller
 {
+    public function contactMessages()
+    {
+        abort_unless(auth()->user()?->isSuperAdmin(), 403);
+        $messages = \App\Models\EmailAuditLog::where('event_type', 'Website Contact')->latest()->paginate(25);
+        return view('Support.contact-messages', compact('messages'));
+    }
+
+    public function deleteContactMessage($id)
+    {
+        abort_unless(auth()->user()?->isSuperAdmin(), 403);
+        \App\Models\EmailAuditLog::where('event_type', 'Website Contact')->findOrFail($id)->delete();
+        return redirect()->route('contact-messages')->with('success', 'Contact message deleted.');
+    }
+
     private function replaceUserMedia(User $user, string $field, \Illuminate\Http\UploadedFile $file, string $directory): void
     {
         $existingPath = trim((string) ($user->{$field} ?? ''));

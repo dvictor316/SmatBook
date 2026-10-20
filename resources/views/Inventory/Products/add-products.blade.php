@@ -221,7 +221,7 @@
         border-radius: 22px;
         background: #fff;
         padding: 1.25rem;
-        min-height: 100%;
+        min-height: auto;
         box-shadow: 0 18px 42px rgba(15, 23, 42, 0.07);
     }
 
@@ -308,7 +308,7 @@
         display: grid;
         grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
         gap: 1rem;
-        align-items: stretch;
+        align-items: start;
     }
 
     .product-form-card-head {
@@ -478,6 +478,37 @@
         }
     }
 
+    .add-product-page .product-form-body { padding: 18px; }
+    .add-product-page .product-form-sheet { padding: 16px; border-radius: 14px; box-shadow: 0 4px 16px rgba(15,23,42,.04); }
+    .add-product-page .product-form-grid { gap: 14px; align-items: start; }
+    .add-product-page .product-form-sheet > .row { --bs-gutter-y: 12px; --bs-gutter-x: 12px; }
+    .add-product-page .product-form-card-head { margin-bottom: 12px; gap: 10px; }
+    .add-product-page .product-form-muted { margin-bottom: 10px; font-size: 12px; }
+    .add-product-page .product-form-sheet .form-label { margin-bottom: 5px; font-weight: 650; }
+    .add-product-page .product-form-sheet .form-control,
+    .add-product-page .product-form-sheet .form-select { min-height: 40px; border-radius: 8px; }
+    .add-product-page .measurement-divider { margin: 16px 0; }
+    .add-product-page .measurement-mode-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+    .add-product-page .measurement-mode-button { position: relative; display: grid; align-content: start; gap: 5px; padding: 12px; border: 1px solid #dce5f1; border-radius: 12px; background: #f8fafc; color: #334155; box-shadow: none; white-space: normal; text-align: left; line-height: 1.35; transition: border-color .15s, background-color .15s, box-shadow .15s; }
+    .add-product-page .measurement-mode-button .measurement-option-icon { color: #2563eb; font-size: 18px; margin-bottom: 2px; }
+    .add-product-page .measurement-mode-button strong { font-size: 13px; color: inherit; }
+    .add-product-page .measurement-mode-button small { font-size: 12px; line-height: 1.4; color: #64748b; }
+    .add-product-page .measurement-mode-button:hover { border-color: #93c5fd; background: #eff6ff; }
+    .add-product-page .measurement-mode-button[aria-pressed="true"] { background: #eff6ff; border: 2px solid #2563eb; padding: 11px; color: #1e40af; box-shadow: 0 2px 8px #2563eb14; }
+    .add-product-page .measurement-mode-button[aria-pressed="true"]::after { content: '✓'; position: absolute; top: 9px; right: 10px; color: #1e40af; font-weight: 800; }
+    .add-product-page .measurement-mode-button:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+    .add-product-page #measurement_selection_summary { padding: 9px 11px; font-size: 11px; border-radius: 9px; margin-top: 10px !important; }
+    .add-product-page .quick-summary-pills { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+    .add-product-page .quick-summary-pill { min-width: 0; padding: 10px; }
+    .add-product-page .btn:not(.measurement-mode-button):not(.btn-close) { border-radius: 9px; font-weight: 650; }
+    .add-product-page #page_add_product_submit { background: linear-gradient(135deg,#1e40af,#2563eb); border: 0; padding: 11px 22px; box-shadow: 0 4px 12px #2563eb24; }
+    .add-product-page #page_add_product_submit:hover { background: #1e40af; box-shadow: 0 5px 16px #2563eb33; }
+    .add-product-page .product-form-actions { flex-wrap: wrap; gap: 12px; }
+    .add-product-page .product-form-actions p { flex: 1 1 240px; }
+    .add-product-page .carton-mode-field,
+    .add-product-page #kg_carton_fields { margin-bottom: 14px !important; }
+    @media(max-width:575px) { .add-product-page .product-form-body { padding: 12px; } .add-product-page .product-form-sheet { padding: 12px; } }
+
     @media print {
         .no-print, .sidebar, .header { display: none !important; }
         .page-wrapper { margin: 0 !important; }
@@ -540,7 +571,7 @@
                     <span class="required-chip"><i class="fas fa-asterisk"></i> Required fields first</span>
                 </div>
             </div>
-            <div class="card-body p-4">
+            <div class="card-body product-form-body">
                 <form method="POST" action="{{ route('inventory.Products.store') }}" enctype="multipart/form-data" id="add_product_form" novalidate>
                     @csrf
                     <div class="row g-3">
@@ -750,18 +781,18 @@
                                 <input type="hidden" name="measurement_mode" id="measurement_mode_input" value="{{ old('measurement_mode', 'pieces') }}">
                                 <div class="mb-4">
                                     <label class="form-label d-block">How is this product sold?</label>
-                                    <div class="d-grid gap-2" role="group" aria-label="Measurement setup">
+                                    <div class="measurement-mode-grid" role="group" aria-label="Measurement setup">
                                         <button type="button" class="btn btn-outline-primary text-start measurement-mode-button" data-measurement-mode="pieces">
-                                            <strong>Pieces only (pcs)</strong><small class="d-block">Count each item as one piece, even if its name includes a weight.</small>
+                                            <i class="fas fa-cube measurement-option-icon" aria-hidden="true"></i><strong>Pieces only (pcs)</strong><small class="d-block">Count each item as one piece, even if its name includes a weight.</small>
                                         </button>
                                         <button type="button" class="btn btn-outline-primary text-start measurement-mode-button" data-measurement-mode="pieces_carton">
-                                            <strong>Cartons containing pieces (pcs)</strong><small class="d-block">Enter how many pieces are in each carton.</small>
+                                            <i class="fas fa-boxes measurement-option-icon" aria-hidden="true"></i><strong>Cartons containing pieces (pcs)</strong><small class="d-block">Enter how many pieces are in each carton.</small>
                                         </button>
                                         <button type="button" class="btn btn-outline-primary text-start measurement-mode-button" data-measurement-mode="kg_carton">
-                                            <strong>Cartons measured in kilograms (kg)</strong><small class="d-block">Choose only when stock is weighed and sold by kg.</small>
+                                            <i class="fas fa-weight-hanging measurement-option-icon" aria-hidden="true"></i><strong>Cartons measured in kilograms (kg)</strong><small class="d-block">Choose only when stock is weighed and sold by kg.</small>
                                         </button>
                                         <button type="button" class="btn btn-outline-secondary text-start measurement-mode-button" data-measurement-mode="custom">
-                                            <strong>Other units / rolls</strong><small class="d-block">Choose your own base unit and conversion.</small>
+                                            <i class="fas fa-sliders-h measurement-option-icon" aria-hidden="true"></i><strong>Other units / rolls</strong><small class="d-block">Choose your own base unit and conversion.</small>
                                         </button>
                                     </div>
                                     @error('measurement_mode')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
@@ -909,9 +940,9 @@
                         </div>
 
                         {{-- Save button --}}
-                        <div class="col-12 d-flex justify-content-between align-items-center pt-2">
+                        <div class="col-12 d-flex justify-content-between align-items-center pt-2 product-form-actions">
                             <p class="text-muted small mb-0">Save once and the product, pricing, and opening stock will be ready together.</p>
-                            <button type="submit" class="btn btn-primary px-5" id="page_add_product_submit">Save Product</button>
+                            <button type="submit" class="btn btn-primary px-5" id="page_add_product_submit"><i class="fas fa-check me-2" aria-hidden="true"></i>Save Product</button>
                         </div>
 
                     </div>{{-- /row --}}

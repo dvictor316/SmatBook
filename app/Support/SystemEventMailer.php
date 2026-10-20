@@ -53,7 +53,7 @@ class SystemEventMailer
         self::send($recipients, $subject, 'State Manager Approval', 'A state manager account has been approved.', $details);
     }
 
-    public static function sendMessage(array|string $recipients, string $subject, string $title, string $intro, array $details = [], ?int $companyId = null): bool
+    public static function sendMessage(array|string $recipients, string $subject, string $title, string $intro, array $details = [], ?int $companyId = null, ?string $replyToEmail = null, ?string $replyToName = null): bool
     {
         $recipientList = is_array($recipients) ? $recipients : [$recipients];
         $recipientList = self::uniqueEmails($recipientList);
@@ -62,7 +62,7 @@ class SystemEventMailer
             return false;
         }
 
-        return self::send($recipientList, $subject, $title, $intro, $details, $companyId);
+        return self::send($recipientList, $subject, $title, $intro, $details, $companyId, $replyToEmail, $replyToName);
     }
 
     private static function adminInbox(): string
@@ -82,21 +82,27 @@ class SystemEventMailer
         return array_values($emails);
     }
 
-    private static function send(array $recipients, string $subject, string $title, string $intro, array $details = [], ?int $companyId = null): bool
+    private static function send(array $recipients, string $subject, string $title, string $intro, array $details = [], ?int $companyId = null, ?string $replyToEmail = null, ?string $replyToName = null): bool
     {
         $allSent = true;
 
         foreach ($recipients as $email) {
             $auditId = self::createAudit($title, $email, $subject, $details, $companyId);
+            if ($title === 'Website Contact' && !$auditId) {
+                throw new \RuntimeException('Contact enquiry could not be recorded.');
+            }
             try {
                 AppMailer::sendView('emails.system-event', [
                     'title' => $title,
                     'intro' => $intro,
                     'details' => $details,
-                ], function ($message) use ($email, $subject) {
-                    $message->from(Setting::mailFromAddress(), Setting::mailFromName())
+                ], function ($message) use ($email, $subject, $replyToEmail, $replyToName) {
+                    $message->from(config('mail.from.address'), config('mail.from.name'))
                         ->to($email)
                         ->subject($subject);
+                    if ($replyToEmail && filter_var($replyToEmail, FILTER_VALIDATE_EMAIL)) {
+                        $message->replyTo($replyToEmail, $replyToName);
+                    }
                 });
                 self::markAudit($auditId, 'sent');
             } catch (\Throwable $e) {
@@ -123,7 +129,7 @@ class SystemEventMailer
             $payload = [
                 'event_type' => $eventType,
                 'recipient'  => $recipient,
-                'subject'    => $subject,
+                'subject'    => mb_substr($subject, 0, 191),
                 'status'     => 'queued',
                 'details'    => $details,
             ];

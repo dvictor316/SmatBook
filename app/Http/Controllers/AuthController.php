@@ -1563,35 +1563,7 @@ class AuthController extends Controller
 
     private function sendPasswordResetMailOrFail(string $view, array $data, callable $callback, string $email): void
     {
-        $attempts = [];
-
-        if (AppMailer::smtpReady()) {
-            try {
-                Mail::mailer('smtp')->send($view, $data, $callback);
-                return;
-            } catch (\Throwable $smtpException) {
-                $attempts['smtp'] = $smtpException->getMessage();
-                Log::warning('Password reset SMTP send failed', [
-                    'email' => $email,
-                    'error' => $smtpException->getMessage(),
-                ]);
-            }
-        }
-
-        try {
-            Mail::mailer('sendmail')->send($view, $data, $callback);
-            return;
-        } catch (\Throwable $sendmailException) {
-            $attempts['sendmail'] = $sendmailException->getMessage();
-            Log::warning('Password reset sendmail fallback failed', [
-                'email' => $email,
-                'error' => $sendmailException->getMessage(),
-            ]);
-        }
-
-        throw new \RuntimeException(
-            'Password reset delivery failed via configured mailers: ' . json_encode($attempts, JSON_UNESCAPED_SLASHES)
-        );
+        AppMailer::sendView($view, $data, $callback);
     }
 
     /*

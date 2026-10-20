@@ -14,6 +14,7 @@ use App\Models\Plan; // Added Plan model
 use App\Models\Subscription;
 use App\Models\Setting;
 use App\Support\AppMailer;
+use App\Support\SystemEventMailer;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -276,56 +277,36 @@ class LandingController extends Controller
                 $settings = LandingSetting::first();
             }
 
-            $recipients = array_values(array_filter(array_unique([
-                $settings?->contact_email,
-                env('MAIL_ADMIN_INBOX'),
-                config('mail.from.address'),
-                'smartprobookoffice@gmail.com',
-            ]), fn ($email) => is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL)));
+            $contactEmail = trim((string) $settings?->contact_email);
+            $recipients = [filter_var($contactEmail, FILTER_VALIDATE_EMAIL)
+                ? $contactEmail : Setting::get('mail_admin_inbox', config('mail.admin_inbox'))];
+            $recipients = array_values(array_filter($recipients, fn ($email) => filter_var($email, FILTER_VALIDATE_EMAIL)));
 
             if (empty($recipients)) {
                 return back()->with('error', 'No contact email is configured right now.')->withInput();
             }
 
             $subject = 'New Landing Contact: ' . ($validated['department'] ?? 'General Inquiry');
-            $body = implode("\n", [
-                'Name: ' . $validated['fullname'],
-                'Email: ' . $validated['email'],
-                'Company: ' . ($validated['company_name'] ?? 'N/A'),
-                'Department: ' . ($validated['department'] ?? 'General'),
-                '',
-                'Message:',
-                $validated['message'],
-            ]);
+            // The audit row stores the complete contact before SMTP is attempted,
+            // so a temporary delivery failure cannot discard the enquiry.
+            $sent = SystemEventMailer::sendMessage($recipients, $subject, 'Website Contact', 'A visitor submitted a contact enquiry.', [
+                'Name' => $validated['fullname'],
+                'Email' => $validated['email'],
+                'Company' => $validated['company_name'] ?? '',
+                'Department' => $validated['department'] ?? 'General',
+                'Message' => $validated['message'],
+            ], replyToEmail: $validated['email'], replyToName: $validated['fullname']);
 
-            $deliveryMailer = AppMailer::preferredMailer();
-
-            AppMailer::raw($body, function ($message) use ($recipients, $validated, $subject) {
-                $message->from(Setting::mailFromAddress(), Setting::mailFromName())
-                    ->to($recipients)
-                    ->subject($subject);
-                $message->replyTo($validated['email'], $validated['fullname']);
-            });
-
-            if ($deliveryMailer === 'log') {
-                return back()->with('success', 'Request received. Mailer is in LOG mode, so email was captured in logs. Set MAIL_MAILER=smtp with valid credentials for inbox delivery.');
-            }
-
-            return back()->with('success', 'Message sent successfully. Our team will reach out shortly.');
+            return back()->with('success', $sent
+                ? 'Message received. Our team will reach out shortly.'
+                : 'Your message has been saved for our team. Email notification is temporarily unavailable.');
         } catch (\Throwable $e) {
             Log::error('Landing contact submission failed', [
                 'error' => $e->getMessage(),
                 'email' => $validated['email'] ?? null,
             ]);
 
-            if (str_contains(strtolower($e->getMessage()), 'daily user sending limit exceeded')) {
-                return back()->withInput()->with(
-                    'error',
-                    'Your request was captured, but email delivery is temporarily paused because the current sender mailbox has reached its daily Gmail sending limit.'
-                );
-            }
-
-            return back()->with('error', 'Request captured, but email delivery failed. Check MAIL settings and try again.')->withInput();
+            return back()->with('error', 'Your message could not be saved right now. Please try again shortly.')->withInput();
         }
     }
 
