@@ -1,142 +1,76 @@
 @extends('layout.mainlayout')
 
 @section('content')
-<div class="page-wrapper">
+<div class="page-wrapper" id="customer-directory-page">
     <div class="content container-fluid">
         <style>
-            .customer-report-shell .report-stamp {
-                font-size: 0.78rem;
-                color: #64748b;
-                background: linear-gradient(135deg, #eff6ff, #f8fafc);
-                border: 1px solid #dbeafe;
-                border-radius: 18px;
-                padding: 0.95rem 1rem;
-                min-width: 280px;
+            /* Compact directory styles stay local to the customer list. */
+            body #customer-directory-page > .content.container-fluid { padding:12px 18px 16px !important; }
+            #customer-directory-page .page-header { margin-bottom:10px; }
+            #customer-directory-page .page-title { font-size:20px !important; margin-bottom:3px; }
+            #customer-directory-page .breadcrumb { margin:0; font-size:12px; }
+            #customer-directory-page .customer-page-actions { display:flex; flex-wrap:wrap; gap:6px; }
+            #customer-directory-page .btn:not(.btn-close) { min-height:32px !important; padding:5px 10px !important; border-radius:6px !important; font-size:12px !important; line-height:1.5; font-weight:600; box-shadow:none !important; }
+            #customer-directory-page .customer-page-actions .btn { margin:0 !important; }
+            #customer-directory-page .customer-filter-card,
+            #customer-directory-page .customer-table-card { border:1px solid #dce3ed; border-radius:8px !important; box-shadow:none; margin-bottom:10px !important; }
+            #customer-directory-page .customer-filter-card { background:#f1f2f4; }
+            #customer-directory-page .customer-filter-card > .card-body { padding:12px !important; }
+            #customer-directory-page .directory-overview { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px 16px; margin-bottom:10px; }
+            #customer-directory-page .directory-description { margin:0; color:#526176; font-size:12px; }
+            #customer-directory-page .report-stamp { display:flex; flex-wrap:wrap; gap:4px 14px; color:#526176; font-size:11px; }
+            #customer-directory-page .report-stamp span { color:#334155; font-weight:600; }
+            #customer-directory-page .customer-summary-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:8px; margin-bottom:12px; }
+            #customer-directory-page .summary-card { min-width:0; padding:8px 10px; background:#fff; border:1px solid #dce3ed; border-radius:6px; }
+            #customer-directory-page .summary-label { display:block; color:#475569; font-size:11px; font-weight:600; line-height:1.4; }
+            #customer-directory-page .summary-label i { margin-right:4px !important; }
+            #customer-directory-page .summary-card strong { display:block; margin-top:4px; color:#172b4d; font-size:13px; font-weight:700; line-height:1.4; overflow-wrap:anywhere; }
+            #customer-directory-page .customer-filter-grid { display:grid; grid-template-columns:minmax(170px,1.5fr) repeat(4,minmax(115px,1fr)) auto; gap:8px; align-items:end; }
+            #customer-directory-page .customer-filter-grid > div { min-width:0; }
+            #customer-directory-page .filter-label { display:block; margin-bottom:4px !important; color:#334155; font-size:12px; font-weight:600; }
+            #customer-directory-page .customer-filter-grid .form-control,
+            #customer-directory-page .customer-filter-grid .form-select { height:34px; min-height:34px; padding:5px 9px; border:1px solid #d8e0eb; border-radius:6px; background-color:#fff; color:#172b4d; font-size:12px; }
+            #customer-directory-page .customer-table-card > .card-body { padding:0 !important; }
+            #customer-directory-page .customer-table-scroll { max-height:max(260px,calc(100dvh - 365px)); overflow:auto; border-radius:6px; }
+            #customer-directory-page .table { margin:0; }
+            #customer-directory-page .table thead th { position:sticky; top:0; z-index:2; padding:9px 10px !important; background:#edf2f8; color:#334155; font-size:11px !important; font-weight:700; letter-spacing:0; white-space:nowrap; }
+            #customer-directory-page .table tbody td { padding:8px 10px !important; vertical-align:middle; color:#334155; font-size:12px !important; line-height:1.45; }
+            #customer-directory-page .table td.text-end { white-space:nowrap; }
+            #customer-directory-page .table-avatar { display:flex; align-items:center; margin:0; font-size:12px !important; }
+            #customer-directory-page .table-avatar .avatar { flex:0 0 28px; width:28px; height:28px; }
+            #customer-directory-page .customer-name-stack { min-width:145px; max-width:210px; color:#172b4d; font-size:12px !important; font-weight:600 !important; white-space:normal; }
+            #customer-directory-page .customer-meta,
+            #customer-directory-page .table td small { display:block; color:#64748b; font-size:11px !important; font-weight:400; line-height:1.4; }
+            #customer-directory-page .customer-meta span { font-size:11px; }
+            #customer-directory-page .table td:nth-child(3) { min-width:150px; }
+            #customer-directory-page .table td:nth-child(4) { min-width:130px; }
+            #customer-directory-page .customer-chip { display:inline-flex; padding:3px 6px; border-radius:4px; font-size:11px; font-weight:600; white-space:nowrap; }
+            #customer-directory-page .table tr > :last-child { position:sticky; right:0; background:#fff; box-shadow:-1px 0 #e2e8f0; }
+            #customer-directory-page .table thead tr > :last-child { z-index:3; background:#edf2f8; }
+            #customer-directory-page .customer-pagination { padding:8px 12px; border-top:1px solid #e2e8f0; }
+            #customer-directory-page .customer-pagination nav { margin:0; }
+            #customer-directory-page .customer-pagination .pagination { margin-bottom:0; }
+            @media (max-width:1199.98px) {
+                #customer-directory-page .customer-filter-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+                #customer-directory-page .customer-filter-search { grid-column:span 2; }
             }
-
-            .customer-report-shell .report-stamp span,
-            .customer-report-shell .summary-label,
-            .customer-report-shell .filter-label {
-                color: #334155;
-                font-weight: 700;
+            @media (max-width:767.98px) {
+                body #customer-directory-page > .content.container-fluid { padding:10px !important; }
+                #customer-directory-page .page-header .col-auto { width:100%; margin-top:8px; }
+                #customer-directory-page .customer-summary-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+                #customer-directory-page .customer-filter-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+                #customer-directory-page .customer-filter-actions { grid-column:1 / -1; }
+                #customer-directory-page .customer-table-scroll { max-height:60dvh; }
             }
-
-            .customer-report-shell .customer-summary-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-                gap: 0.85rem;
+            @media (max-width:419.98px) {
+                #customer-directory-page .customer-summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
             }
-
-            .customer-report-shell .summary-card {
-                border: 1px solid #e2e8f0;
-                border-radius: 18px;
-                background: #fff;
-                box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
-                padding: 1rem 1.05rem;
-            }
-
-            .customer-report-shell .summary-card strong {
-                display: block;
-                margin-top: 0.3rem;
-                color: #0f172a;
-                font-size: 1rem;
-            }
-
-            .customer-report-shell .customer-filter-card,
-            .customer-report-shell .customer-table-card {
-                border: 0;
-                border-radius: 22px;
-                box-shadow: 0 16px 34px rgba(15, 23, 42, 0.06);
-            }
-
-            .customer-report-shell .customer-filter-grid {
-                display: grid;
-                grid-template-columns: minmax(0, 1.7fr) repeat(4, minmax(0, 1fr));
-                gap: 0.85rem;
-                align-items: end;
-            }
-
-            .customer-report-shell .customer-filter-grid .form-control,
-            .customer-report-shell .customer-filter-grid .form-select {
-                min-height: 46px;
-                border-radius: 14px;
-            }
-
-            .customer-report-shell .table thead th {
-                background: #f8fafc;
-                font-size: 0.73rem;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-                color: #334155;
-                white-space: nowrap;
-            }
-
-            .customer-report-shell .table tbody td {
-                vertical-align: top;
-                font-size: 0.9rem;
-            }
-
-            .customer-report-shell .customer-name-stack {
-                min-width: 220px;
-            }
-
-            .customer-report-shell .customer-meta {
-                display: grid;
-                gap: 0.15rem;
-                color: #64748b;
-                font-size: 0.78rem;
-            }
-
-            .customer-report-shell .customer-chip {
-                display: inline-flex;
-                align-items: center;
-                gap: 0.45rem;
-                padding: 0.4rem 0.7rem;
-                border-radius: 999px;
-                background: #eef2ff;
-                color: #3730a3;
-                font-size: 0.74rem;
-                font-weight: 700;
-                white-space: nowrap;
-            }
-
-            .customer-report-shell .customer-actions {
-                min-width: 270px;
-            }
-
-            .customer-report-shell .customer-action-btn {
-                border-radius: 8px;
-                white-space: nowrap;
-            }
-
-            @media (max-width: 767.98px) {
-                .customer-page-actions {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 0.5rem;
-                    justify-content: flex-start;
-                }
-
-                .customer-page-actions > * {
-                    flex: 1 1 calc(50% - 0.5rem);
-                    min-width: 0;
-                }
-
-                .customer-mobile-full {
-                    flex-basis: 100%;
-                }
-
-                .customer-report-shell .customer-filter-grid {
-                    grid-template-columns: 1fr;
-                }
-
-                .customer-report-shell .report-stamp {
-                    min-width: auto;
-                }
-
-                .customer-report-shell .customer-actions {
-                    min-width: 0;
-                }
+            @media print {
+                #customer-directory-page .customer-table-scroll { max-height:none; overflow:visible; }
+                #customer-directory-page .table tr > :last-child,
+                #customer-directory-page .table thead th { position:static; box-shadow:none; }
+                #customer-directory-page .customer-page-actions,
+                #customer-directory-page .customer-filter-grid { display:none; }
             }
         </style>
 
@@ -171,11 +105,8 @@
         <div class="customer-report-shell">
             <div class="card customer-filter-card mb-4">
                 <div class="card-body">
-                    <div class="d-flex flex-column flex-xl-row justify-content-between gap-3 mb-4">
-                        <div>
-                            <h4 class="mb-1">{{ $reportMeta['title'] ?? 'Customers' }} Directory</h4>
-                            <p class="text-muted mb-0">Search, segment and review customers by contact quality, onboarding date, status, receivables exposure and branch coverage.</p>
-                        </div>
+                    <div class="directory-overview">
+                        <p class="directory-description">Find customers, review balances and manage their accounts.</p>
                         <div class="report-stamp">
                             <div><span>Coverage:</span> {{ $reportMeta['period_label'] ?? 'All customer records' }}</div>
                             <div><span>Generated:</span> {{ optional($reportMeta['generated_at'] ?? null)->format('d M Y, h:i A') }}</div>
@@ -184,7 +115,7 @@
                         </div>
                     </div>
 
-                    <div class="customer-summary-grid mb-4">
+                    <div class="customer-summary-grid">
                         <div class="summary-card">
                             <span class="summary-label"><i class="fas fa-users me-2"></i>Total Customers</span>
                             <strong>{{ number_format($summary['total_customers'] ?? 0) }}</strong>
@@ -212,7 +143,7 @@
                     </div>
 
                     <form method="GET" action="{{ url()->current() }}" class="customer-filter-grid">
-                        <div>
+                        <div class="customer-filter-search">
                             <label class="filter-label mb-2">Search Customer</label>
                             <input type="text" name="search" class="form-control" value="{{ request('search') }}" placeholder="Search business name, email, phone, or contact">
                         </div>
@@ -248,7 +179,7 @@
                             <label class="filter-label mb-2">To Date</label>
                             <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
                         </div>
-                        <div class="d-flex gap-2 justify-content-end">
+                        <div class="d-flex gap-2 justify-content-end customer-filter-actions">
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-filter me-1"></i> Apply
                             </button>
@@ -270,7 +201,7 @@
                                 No customers found in the database.
                             </div>
                         @else
-                            <div class="table-responsive">
+                            <div class="table-responsive customer-table-scroll" tabindex="0" role="region" aria-label="Customer list">
                                 <table class="table table-center table-hover">
                                     <thead class="thead-light">
                                         <tr>
@@ -308,10 +239,8 @@
                                                         </a>
                                                         <a href="{{ route('customers.show', $customer->id) }}" class="customer-name-stack">
                                                             {{ $customer->customer_name }}
-                                                            <span>{{ $customer->email ?? 'No Email' }}</span>
                                                             <small class="customer-meta">
                                                                 <span><i class="fas fa-id-card me-1"></i> Customer ID: CL-{{ str_pad((string) $customer->id, 4, '0', STR_PAD_LEFT) }}</span>
-                                                                <span><i class="fas fa-calendar-plus me-1"></i> Created {{ $customer->created_at ? $customer->created_at->format('d M Y') : 'N/A' }}</span>
                                                             </small>
                                                         </a>
                                                     </h2>
@@ -402,7 +331,7 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <div class="mt-3">
+                            <div class="customer-pagination">
                                 {{ $customers->links() }}
                             </div>
                         @endif
