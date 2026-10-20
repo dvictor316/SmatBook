@@ -54,8 +54,8 @@
                     <div class="card mb-3">
                         <div class="card-header"><h5 class="mb-0">Guest</h5></div>
                         <div class="card-body row g-2">
-                            <div class="col-md-6"><label class="form-label">Existing Guest ID</label><input type="number" name="customer_id" class="form-control" value="{{ old('customer_id', request('customer_id')) }}" placeholder="Enter customer ID"></div>
-                            <div class="col-md-6"><label class="form-label">Rate Plan</label><select name="rate_plan_id" class="form-select"><option value="">Standard / manual rate</option>@foreach($ratePlans as $plan)<option value="{{ $plan->id }}" @selected((int)old('rate_plan_id') === (int)$plan->id)>{{ $plan->name }} - {{ number_format((float)$plan->rate, 2) }}</option>@endforeach</select></div>
+                            <div class="col-md-6"><label class="form-label">Guest</label><select name="customer_id" class="form-select"><option value="">Walk-in / guest details to follow</option>@foreach($guests as $guest)<option value="{{ $guest->id }}" @selected((int)old('customer_id', request('customer_id')) === (int)$guest->id)>{{ $guest->customer_name }}{{ $guest->phone ? ' - '.$guest->phone : '' }}</option>@endforeach</select></div>
+                            <div class="col-md-6"><label class="form-label">Rate Plan</label><select name="rate_plan_id" id="rate_plan_id" class="form-select"><option value="">Standard / manual rate</option>@foreach($ratePlans as $plan)<option value="{{ $plan->id }}" data-rate="{{ $plan->rate }}" @selected((int)old('rate_plan_id') === (int)$plan->id)>{{ $plan->name }} - {{ number_format((float)$plan->rate, 2) }}</option>@endforeach</select></div>
                             <div class="col-md-6"><label class="form-label">Managed Booking Source</label><select name="booking_source_id" class="form-control"><option value="">Direct / Unmanaged</option>@foreach($bookingSources as $source)<option value="{{ $source->id }}" @selected((int)old('booking_source_id')===(int)$source->id)>{{ $source->name }} ({{ strtoupper($source->source_type) }})</option>@endforeach</select></div>
                             <div class="col-md-6"><label class="form-label">Corporate Account</label><select name="corporate_account_id" class="form-control"><option value="">Individual guest</option>@foreach($corporateAccounts as $account)<option value="{{ $account->id }}" @selected((int)old('corporate_account_id')===(int)$account->id)>{{ $account->company_name }} - {{ $account->account_code }}</option>@endforeach</select></div>
                             <div class="col-md-6"><label class="form-label">Legacy / Other Source</label><input type="text" name="source" class="form-control" value="{{ old('source', 'direct') }}" placeholder="Used when no managed source is selected"></div>
@@ -68,6 +68,10 @@
                             <div class="col-md-4"><label class="form-label">Nightly Rate</label><input type="number" step="0.01" min="0" name="nightly_rate" id="nightly_rate" class="form-control" value="{{ old('nightly_rate', 0) }}"></div>
                             <div class="col-md-4"><label class="form-label">Discount</label><input type="number" step="0.01" min="0" id="preview_discount" class="form-control" value="0"></div>
                             <div class="col-md-4"><label class="form-label">Service Charge %</label><input type="number" step="0.01" min="0" id="preview_service" class="form-control" value="0"></div>
+                            <input type="hidden" name="discount" id="discount_amount" value="{{ old('discount', 0) }}">
+                            <input type="hidden" name="tax" id="tax_amount" value="{{ old('tax', 0) }}">
+                            <input type="hidden" name="service_charge" id="service_charge_amount" value="{{ old('service_charge', 0) }}">
+                            <input type="hidden" name="other_charges" value="{{ old('other_charges', 0) }}">
                         </div>
                     </div>
 
@@ -126,6 +130,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const nightlyRate = document.getElementById('nightly_rate');
     const discount = document.getElementById('preview_discount');
     const servicePct = document.getElementById('preview_service');
+    const ratePlan = document.getElementById('rate_plan_id');
+    const discountAmountField = document.getElementById('discount_amount');
+    const taxAmountField = document.getElementById('tax_amount');
+    const serviceAmountField = document.getElementById('service_charge_amount');
     const deposit = document.getElementById('deposit_received');
     const roomType = document.getElementById('room_type_id');
     const roomSelect = document.getElementById('room_id');
@@ -223,6 +231,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const paid = parseFloatSafe(deposit.value);
         const balance = Math.max(0, total - paid);
 
+        discountAmountField.value = discountAmount.toFixed(2);
+        taxAmountField.value = tax.toFixed(2);
+        serviceAmountField.value = serviceAmount.toFixed(2);
         outputs.nights.textContent = nights.toString();
         outputs.rate.textContent = rate.toFixed(2);
         outputs.accommodation.textContent = accommodation.toFixed(2);
@@ -244,6 +255,13 @@ document.addEventListener('DOMContentLoaded', function () {
     roomSelect.addEventListener('change', () => {
         const selected = roomSelect.selectedOptions[0];
         if (selected && selected.dataset.rate && parseFloatSafe(nightlyRate.value) === 0) {
+            nightlyRate.value = selected.dataset.rate;
+            calculate();
+        }
+    });
+    ratePlan.addEventListener('change', () => {
+        const selected = ratePlan.selectedOptions[0];
+        if (selected && selected.dataset.rate) {
             nightlyRate.value = selected.dataset.rate;
             calculate();
         }

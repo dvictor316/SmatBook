@@ -1022,7 +1022,9 @@
                     </a>
                 </li>
 
+@if(auth()->user()?->canManageRoles())
                 <li><a href="{{ route('roles.index') }}"><i class="fas fa-shield-halved"></i><span>Roles & Permission</span></a></li>
+@endif
 
                 @if(Route::has('profile'))
                     <li><a href="{{ route('profile') }}"><i class="fas fa-id-badge"></i><span>Profile</span></a></li>
@@ -1288,7 +1290,9 @@
                 <li><a href="{{ route('projects.index') }}"><i class="fe fe-briefcase"></i><span>Project Management</span></a></li>
                 <li><a href="{{ route('projects.index') }}#profitability"><i class="fe fe-trending-up"></i><span>Project Profitability</span></a></li>
 
+@if(auth()->user()?->canManageRoles())
                 <li><a href="{{ route('roles.index') }}"><i class="fe fe-shield"></i><span>Roles & Permission</span></a></li>
+@endif
 
                 <li><a href="{{ route('settings.index') }}"><i class="fe fe-settings"></i><span>Settings</span></a></li>
 

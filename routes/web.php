@@ -943,7 +943,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     });
 
     // Roles & Permissions (available to all subscribed plans)
-    Route::middleware(['plan.access:basic,professional,enterprise', 'role:super_admin,administrator'])->controller(RoleController::class)->prefix('roles')->name('roles.')->group(function () {
+    Route::middleware(['plan.access:basic,professional,enterprise', 'business.owner'])->controller(RoleController::class)->prefix('roles')->name('roles.')->group(function () {
         Route::get('/permission', 'index')->name('index');
         Route::post('/store', 'store')->name('store');
         Route::put('/update/{id}', 'update')->name('update');
@@ -1887,3 +1887,6 @@ Route::prefix('payroll')->name('payroll.')->middleware(['auth', 'subscription.ac
     Route::get('/{id}',                 [App\Http\Controllers\PayrollController::class, 'show'])->middleware('permission:payroll.payroll.view')->name('show');
     Route::post('/{id}/mark-paid',      [App\Http\Controllers\PayrollController::class, 'markPaid'])->middleware('permission:payroll.payroll.edit')->name('mark-paid');
 });
+
+// Always available to authenticated users, even when all module permissions are revoked.
+Route::view('/access-recovery', 'errors.access-recovery')->middleware('auth')->name('access.recovery');

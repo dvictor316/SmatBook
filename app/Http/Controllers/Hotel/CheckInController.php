@@ -13,8 +13,8 @@ use App\Services\Hotel\HotelFolioService;
 use App\Support\LedgerService;
 use App\Services\Hotel\HotelDepositService;
 use App\Models\Account;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class CheckInController extends Controller
 {
@@ -26,9 +26,11 @@ class CheckInController extends Controller
     public function index(Request $request)
     {
         $companyId = (int) auth()->user()->company_id;
+        $propertyId = \App\Support\HotelPropertyContext::propertyId($companyId);
         $query = Reservation::query()
             ->with(['customer', 'room', 'roomType'])
             ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->whereIn('status', ['reserved', 'confirmed'])
             ->orderBy('arrival_date');
 
@@ -43,20 +45,43 @@ class CheckInController extends Controller
             });
         }
 
-        if ($request->filled('arrival')) {
-            $query->whereDate('arrival_date', (string) $request->query('arrival'));
+        if ($request->has('arrival')) {
+            if ($request->filled('arrival')) {
+                $query->whereDate('arrival_date', (string) $request->query('arrival'));
+            }
+        } else {
+            $query->whereDate('arrival_date', now()->toDateString());
         }
 
         $reservations = $query->paginate(20)->withQueryString();
-        return view('hotel.checkin.index', compact('reservations'));
+        $canOverrideDirtyCheckin = $this->canOverrideDirtyCheckin();
+        $checkinReadiness = [];
+        foreach ($reservations as $reservation) {
+            $roomIsAvailable = $reservation->room_id && \App\Services\RoomAvailabilityService::isRoomAvailable(
+                (int) $reservation->room_id,
+                $reservation->arrival_date->toDateString(),
+                $reservation->departure_date->toDateString(),
+                (int) $reservation->id
+            );
+            $roomIsClean = (string) $reservation->room?->housekeeping_status === 'clean';
+            $checkinReadiness[$reservation->id] = [
+                'ready' => $roomIsAvailable && ($roomIsClean || $canOverrideDirtyCheckin),
+                'room_available' => $roomIsAvailable,
+                'room_clean' => $roomIsClean,
+            ];
+        }
+
+        return view('hotel.checkin.index', compact('reservations', 'checkinReadiness', 'canOverrideDirtyCheckin'));
     }
 
     public function checkoutDesk(Request $request)
     {
         $companyId = (int) auth()->user()->company_id;
+        $propertyId = \App\Support\HotelPropertyContext::propertyId($companyId);
         $stays = Stay::query()
             ->with(['customer', 'room', 'reservation'])
             ->where('company_id', $companyId)
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->where('status', 'checked_in')
             ->latest('id')
             ->paginate(20)
@@ -67,6 +92,7 @@ class CheckInController extends Controller
             $selectedStay = Stay::query()
                 ->with(['customer', 'room', 'reservation'])
                 ->where('company_id', $companyId)
+                ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
                 ->where('status', 'checked_in')
                 ->find((int) $request->query('stay_id'));
         }
@@ -90,6 +116,8 @@ class CheckInController extends Controller
     public function checkin(Reservation $reservation)
     {
         abort_unless($reservation->company_id == auth()->user()->company_id, 404);
+        $propertyId = \App\Support\HotelPropertyContext::propertyId((int) auth()->user()->company_id);
+        abort_unless(! $propertyId || (int) $reservation->property_id === $propertyId, 404);
 
         DB::beginTransaction();
         try {
@@ -184,22 +212,34 @@ class CheckInController extends Controller
     public function checkout(Stay $stay)
     {
         abort_unless($stay->company_id == auth()->user()->company_id, 404);
+        $companyId = (int) auth()->user()->company_id;
+        $propertyId = \App\Support\HotelPropertyContext::propertyId($companyId);
+        abort_unless(! $propertyId || (int) $stay->property_id === $propertyId, 404);
+        $validPaymentAccount = fn ($query) => $query->where('company_id', $companyId)->where('is_active', true)->where('type', Account::TYPE_ASSET);
 
         $validated = request()->validate([
             'settlement_method' => 'nullable|in:cash,transfer,pos,split,corporate_credit',
             'paid_amount' => 'nullable|numeric|min:0',
-            'deposit_account_id' => 'nullable|integer',
-            'payment_account_id' => 'nullable|integer',
+            'deposit_account_id' => ['nullable', 'integer', Rule::exists('accounts', 'id')->where($validPaymentAccount)],
+            'payment_account_id' => ['nullable', 'integer', Rule::exists('accounts', 'id')->where($validPaymentAccount)],
             'split.cash' => 'nullable|numeric|min:0',
             'split.transfer' => 'nullable|numeric|min:0',
             'split.pos' => 'nullable|numeric|min:0',
-            'split_accounts.cash' => 'nullable|integer',
-            'split_accounts.transfer' => 'nullable|integer',
-            'split_accounts.pos' => 'nullable|integer',
+            'split_accounts.cash' => ['nullable', 'integer', Rule::exists('accounts', 'id')->where($validPaymentAccount)],
+            'split_accounts.transfer' => ['nullable', 'integer', Rule::exists('accounts', 'id')->where($validPaymentAccount)],
+            'split_accounts.pos' => ['nullable', 'integer', Rule::exists('accounts', 'id')->where($validPaymentAccount)],
         ]);
 
         DB::beginTransaction();
         try {
+            $stay = Stay::query()
+                ->where('company_id', $companyId)
+                ->lockForUpdate()
+                ->findOrFail($stay->id);
+            if ((string) $stay->status !== 'checked_in') {
+                throw new \RuntimeException('Only an in-house guest can be checked out.');
+            }
+
             $folio = GuestFolio::query()
                 ->where('company_id', $stay->company_id)
                 ->where('stay_id', $stay->id)
@@ -317,17 +357,32 @@ class CheckInController extends Controller
                         'housekeeping_status' => 'dirty',
                     ]);
 
-                HotelHousekeepingTask::create([
-                    'company_id' => $stay->company_id,
-                    'property_id' => $stay->property_id,
-                    'room_id' => $stay->room_id,
-                    'stay_id' => $stay->id,
-                    'task_type' => 'checkout_clean',
-                    'status' => 'open',
-                    'priority' => 'high',
-                    'created_by' => auth()->id(),
-                    'note' => 'Auto-created on checkout.',
-                ]);
+                $activeTask = HotelHousekeepingTask::query()
+                    ->where('company_id', $stay->company_id)
+                    ->where('room_id', $stay->room_id)
+                    ->whereIn('status', ['open', 'assigned', 'cleaning', 'inspection'])
+                    ->latest('id')
+                    ->first();
+
+                if ($activeTask) {
+                    $activeTask->update([
+                        'stay_id' => $stay->id,
+                        'task_type' => 'checkout_clean',
+                        'priority' => 'high',
+                    ]);
+                } else {
+                    HotelHousekeepingTask::create([
+                        'company_id' => $stay->company_id,
+                        'property_id' => $stay->property_id,
+                        'room_id' => $stay->room_id,
+                        'stay_id' => $stay->id,
+                        'task_type' => 'checkout_clean',
+                        'status' => 'open',
+                        'priority' => 'high',
+                        'created_by' => auth()->id(),
+                        'note' => 'Auto-created on checkout.',
+                    ]);
+                }
             }
             if ($stay->reservation) {
                 $stay->reservation->update(['status' => 'completed','checkout_id' => $stay->id]);
@@ -365,7 +420,7 @@ class CheckInController extends Controller
 
     private function canOverrideDirtyCheckin(): bool
     {
-        $role = strtolower((string) (auth()->user()->role ?? ''));
-        return in_array($role, ['super_admin', 'administrator', 'admin', 'manager'], true);
+        $role = strtolower(str_replace([' ', '-'], '_', (string) (auth()->user()->role ?? '')));
+        return in_array($role, ['super_admin', 'administrator', 'admin', 'business_owner', 'owner', 'manager', 'hotel_manager', 'general_manager'], true);
     }
 }

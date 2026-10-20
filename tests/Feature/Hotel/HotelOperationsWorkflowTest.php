@@ -9,6 +9,7 @@ use App\Models\GuestFolio;
 use App\Models\HotelProperty;
 use App\Models\HotelRoom;
 use App\Models\HotelRoomType;
+use App\Models\HotelHousekeepingTask;
 use App\Models\Reservation;
 use App\Models\Stay;
 use App\Models\User;
@@ -159,6 +160,142 @@ class HotelOperationsWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_reservation_creation_uses_actual_nights_and_all_pricing_components(): void
+    {
+        $this->get(route('hotel.reservations.create'))
+            ->assertOk()
+            ->assertSee('Walk-in / guest details to follow')
+            ->assertSee('Rate Plan');
+
+        $response = $this->post(route('hotel.reservations.store'), [
+            'arrival_date' => now()->toDateString(),
+            'departure_date' => now()->addDays(2)->toDateString(),
+            'nights' => 1,
+            'room_type_id' => $this->room->room_type_id,
+            'room_id' => $this->room->id,
+            'nightly_rate' => 50000,
+            'discount' => 1000,
+            'tax' => 7500,
+            'service_charge' => 5000,
+            'other_charges' => 2000,
+        ]);
+
+        $reservation = Reservation::firstOrFail();
+        $response->assertRedirect(route('hotel.reservations.show', $reservation));
+        $this->assertSame(2, $reservation->nights);
+        $this->assertEquals(100000, $reservation->subtotal);
+        $this->assertEquals(1000, $reservation->discount);
+        $this->assertEquals(7500, $reservation->tax);
+        $this->assertEquals(5000, $reservation->service_charge);
+        $this->assertEquals(2000, $reservation->other_charges);
+        $this->assertEquals(113500, $reservation->total);
+        $this->assertEquals(113500, $reservation->balance);
+    }
+
+    public function test_guest_can_complete_reservation_folio_checkout_and_housekeeping_journey(): void
+    {
+        $this->post(route('hotel.reservations.store'), [
+            'arrival_date' => now()->toDateString(),
+            'departure_date' => now()->addDay()->toDateString(),
+            'room_type_id' => $this->room->room_type_id,
+            'room_id' => $this->room->id,
+            'nightly_rate' => 10000,
+            'deposit_received' => 10000,
+        ])->assertRedirect();
+
+        $reservation = Reservation::firstOrFail();
+        $this->post(route('hotel.checkin', $reservation))->assertRedirect();
+        $stay = Stay::where('reservation_id', $reservation->id)->firstOrFail();
+        $folio = GuestFolio::where('stay_id', $stay->id)->firstOrFail();
+
+        app(\App\Services\Hotel\HotelFolioService::class)->postCharge($folio, [
+            'description' => 'Room service',
+            'amount' => 25000,
+            'service_code' => 'ROOM_SERVICE',
+        ]);
+        $this->post(route('hotel.folios.payments.store', $folio), [
+            'amount' => 5000,
+            'payment_method' => 'cash',
+            'reference' => 'JOURNEY-PAYMENT-1',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->get(route('hotel.checkout.index', ['stay_id' => $stay->id]))
+            ->assertOk()
+            ->assertSee('value="10000.00"', false);
+
+        $this->post(route('hotel.checkout', $stay), [
+            'settlement_method' => 'cash',
+            'paid_amount' => 10000,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->assertSame('checked_out', $stay->fresh()->status);
+        $this->assertSame('completed', $reservation->fresh()->status);
+        $this->assertSame('closed', $folio->fresh()->status);
+        $this->assertSame('dirty', $this->room->fresh()->housekeeping_status);
+        $this->assertSame(1, HotelHousekeepingTask::where('stay_id', $stay->id)->where('status', 'open')->count());
+
+        $folioItemCount = $folio->items()->count();
+        $this->post(route('hotel.checkout', $stay), [
+            'settlement_method' => 'cash',
+            'paid_amount' => 0,
+        ])->assertSessionHasErrors('error');
+        $this->assertSame($folioItemCount, $folio->items()->count());
+
+        $task = HotelHousekeepingTask::where('stay_id', $stay->id)->firstOrFail();
+        $this->post(route('hotel.housekeeping.tasks.complete', $task))->assertRedirect();
+        $this->assertSame('clean', $this->room->fresh()->housekeeping_status);
+        $this->assertSame('available', $this->room->fresh()->operational_status);
+    }
+
+    public function test_dirty_room_is_not_checkin_ready_for_front_desk_staff(): void
+    {
+        $this->user->update(['role' => 'frontdesk']);
+        $this->room->update(['housekeeping_status' => 'dirty']);
+        $this->post(route('hotel.reservations.store'), [
+            'arrival_date' => now()->toDateString(),
+            'departure_date' => now()->addDay()->toDateString(),
+            'room_type_id' => $this->room->room_type_id,
+            'room_id' => $this->room->id,
+            'nightly_rate' => 10000,
+        ])->assertRedirect();
+        $reservation = Reservation::firstOrFail();
+
+        $this->get(route('hotel.checkin.index', ['arrival' => now()->toDateString()]))
+            ->assertOk()
+            ->assertSee('Room Dirty')
+            ->assertSee('disabled', false);
+        $this->post(route('hotel.checkin', $reservation))
+            ->assertRedirect()
+            ->assertSessionHasErrors('error');
+        $this->assertDatabaseMissing('stays', ['reservation_id' => $reservation->id]);
+    }
+
+    public function test_completing_a_housekeeping_task_does_not_clear_other_tasks_or_maintenance_state(): void
+    {
+        $this->room->update(['housekeeping_status' => 'dirty']);
+        $tasks = collect(['checkout_clean', 'deep_clean'])->map(fn ($type) => HotelHousekeepingTask::create([
+            'company_id' => $this->company->id,
+            'property_id' => $this->property->id,
+            'room_id' => $this->room->id,
+            'task_type' => $type,
+            'status' => 'open',
+            'priority' => 'normal',
+            'created_by' => $this->user->id,
+        ]));
+
+        $this->post(route('hotel.housekeeping.tasks.complete', $tasks->first()))->assertRedirect();
+        $this->assertSame('dirty', $this->room->fresh()->housekeeping_status);
+        $this->assertSame('available', $this->room->fresh()->operational_status);
+
+        $this->post(route('hotel.housekeeping.tasks.complete', $tasks->last()))->assertRedirect();
+        $this->assertSame('clean', $this->room->fresh()->housekeeping_status);
+
+        $this->room->update(['operational_status' => 'maintenance', 'housekeeping_status' => 'dirty']);
+        $this->post(route('hotel.housekeeping.rooms.clean', $this->room))->assertRedirect();
+        $this->assertSame('maintenance', $this->room->fresh()->operational_status);
+        $this->assertSame('clean', $this->room->fresh()->housekeeping_status);
+    }
+
     public function test_folio_payment_must_settle_before_closure(): void
     {
         $stay = Stay::create([
@@ -201,6 +338,11 @@ class HotelOperationsWorkflowTest extends TestCase
 
         $folio->refresh();
         $this->assertEquals(0, $folio->balance);
+        $this->post(route('hotel.folios.payments.store', $folio), [
+            'amount' => 1,
+            'payment_method' => 'cash',
+            'reference' => 'BANK-OVERPAY',
+        ])->assertSessionHasErrors('amount');
         $stay->update(['status' => 'completed', 'actual_checkout_at' => now()]);
         $this->post(route('hotel.folios.close', $folio))->assertRedirect();
         $this->assertSame('closed', $folio->fresh()->status);

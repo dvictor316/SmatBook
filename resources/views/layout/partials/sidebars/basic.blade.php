@@ -148,7 +148,9 @@
                 <li><a href="{{ route('settings.index') }}">Settings</a></li>
             @endif
             @if(Route::has('roles.index'))
+@if(auth()->user()?->canManageRoles())
                 <li><a href="{{ route('roles.index') }}">Roles & Permission</a></li>
+@endif
             @endif
             @if(Route::has('activity-log.index'))
                 <li><a href="{{ route('activity-log.index') }}">Activity Log</a></li>

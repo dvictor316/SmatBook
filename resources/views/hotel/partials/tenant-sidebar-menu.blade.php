@@ -18,7 +18,6 @@
 <li class="{{ $hotelLinkClass('hotel.checkout.index') }}"><a href="{{ route('hotel.checkout.index') }}">Checkout</a></li>
 <li class="{{ $hotelLinkClass('hotel.guests') }}"><a href="{{ route('hotel.guests') }}">Guest Profiles</a></li>
 <li class="{{ $hotelLinkClass('hotel.folios.*') }}"><a href="{{ route('hotel.folios.index') }}">Guest Folios</a></li>
-<li class="{{ $hotelLinkClass('hotel.deposits') }}"><a href="{{ route('hotel.deposits') }}">Deposits / Payments</a></li>
 
 <li class="menu-title"><span>Rooms</span></li>
 <li class="{{ $hotelLinkClass('hotel.rooms.index', 'hotel.rooms.create', 'hotel.rooms.edit', 'hotel.rooms.status', 'hotel.rooms.show') }}"><a href="{{ route('hotel.rooms.index') }}">Rooms</a></li>

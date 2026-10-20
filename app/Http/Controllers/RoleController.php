@@ -13,6 +13,11 @@ use Illuminate\Support\Facades\Schema;
 
 class RoleController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('business.owner');
+    }
+
     /**
      * Display role management view.
      * domain => env('SESSION_DOMAIN', null)

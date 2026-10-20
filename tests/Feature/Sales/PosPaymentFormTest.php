@@ -20,6 +20,18 @@ class PosPaymentFormTest extends TestCase
             'company_id' => $company->id, 'name' => 'Cash Drawer', 'code' => 'CASH-1',
             'type' => Account::TYPE_ASSET, 'sub_type' => 'Cash', 'is_active' => true,
         ]);
+        $bankAccount = Account::create([
+            'company_id' => $company->id, 'name' => 'Main Bank', 'code' => 'BANK-1',
+            'type' => Account::TYPE_ASSET, 'sub_type' => 'Bank', 'is_active' => true,
+        ]);
+        $legacyCash = Account::create([
+            'company_id' => $company->id, 'name' => 'Petty Cash', 'code' => 'CASH-OLD',
+            'type' => Account::TYPE_ASSET, 'sub_type' => 'Cash & Bank', 'is_active' => true,
+        ]);
+        $legacyBank = Account::create([
+            'company_id' => $company->id, 'name' => 'Old Bank', 'code' => 'BANK-OLD',
+            'type' => Account::TYPE_ASSET, 'is_active' => true,
+        ]);
 
         $response = $this->actingAs($user)->withoutMiddleware()
             ->get(route('sales.showPos'))
@@ -28,6 +40,10 @@ class PosPaymentFormTest extends TestCase
             ->assertSee('id="pos-cash-amount-label">Amount Paid', false)
             ->assertSee('id="deposit-account" value="'.$cashAccount->id.'"', false)
             ->assertSee('Cash Drawer')
+            ->assertSee('<option value="'.$bankAccount->id.'">Main Bank', false)
+            ->assertSee('<option value="'.$legacyBank->id.'">Old Bank', false)
+            ->assertDontSee('<option value="'.$cashAccount->id.'">Cash Drawer', false)
+            ->assertDontSee('<option value="'.$legacyCash->id.'">Petty Cash', false)
             ->assertDontSee('Payment Method: Cash Account')
             ->assertDontSee('Amount Paid: Cash');
 
@@ -40,5 +56,37 @@ class PosPaymentFormTest extends TestCase
             ->assertOk()
             ->assertSee('Cash account not configured')
             ->assertSee('Call your administrator to set it up.');
+
+        $this->assertContains('Cash', Account::subtypeOptionsFor(Account::TYPE_ASSET));
+        $this->assertContains('Bank', Account::subtypeOptionsFor(Account::TYPE_ASSET));
+    }
+
+    public function test_new_chart_accounts_use_separate_cash_and_bank_subtypes(): void
+    {
+        $company = Company::create(['name' => 'Chart Company', 'industry' => 'retail', 'plan' => 'Enterprise']);
+        $user = User::factory()->create(['company_id' => $company->id, 'role' => 'admin']);
+        $this->actingAs($user)->withoutMiddleware();
+
+        foreach (['Cash', 'Bank'] as $subType) {
+            $this->post(route('settings.chart-of-accounts.store'), [
+                'code' => strtoupper($subType).'-NEW',
+                'name' => $subType.' account',
+                'type' => Account::TYPE_ASSET,
+                'sub_type' => $subType,
+            ])->assertRedirect(route('chart-of-accounts'));
+            $this->assertDatabaseHas('accounts', [
+                'company_id' => $company->id,
+                'name' => $subType.' account',
+                'sub_type' => $subType,
+            ]);
+        }
+
+        $this->post(route('settings.chart-of-accounts.store'), [
+            'code' => 'COMBINED-NEW',
+            'name' => 'Combined account',
+            'type' => Account::TYPE_ASSET,
+            'sub_type' => 'Cash & Bank',
+        ])->assertSessionHasErrors('sub_type');
+        $this->assertDatabaseMissing('accounts', ['company_id' => $company->id, 'code' => 'COMBINED-NEW']);
     }
 }

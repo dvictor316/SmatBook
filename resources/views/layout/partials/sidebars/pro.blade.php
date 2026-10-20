@@ -172,7 +172,9 @@
                         @endif
                         <li><a href="{{ route('branches.index') }}">Branches</a></li>
                         <li><a href="{{ route('settings.index') }}">Settings</a></li>
+@if(auth()->user()?->canManageRoles())
                         <li><a href="{{ route('roles.index') }}">Roles & Permission</a></li>
+@endif
                         @if(Route::has('activity-log.index'))
                             <li><a href="{{ route('activity-log.index') }}">Activity Log</a></li>
                         @endif

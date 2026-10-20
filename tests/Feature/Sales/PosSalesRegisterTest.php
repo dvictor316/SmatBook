@@ -56,4 +56,24 @@ class PosSalesRegisterTest extends TestCase
         $this->assertSame('sales.chart-data', app('router')->getRoutes()->match(Request::create('/sales/chart-data', 'GET'))->getName());
         $this->assertSame('sales.returnToPos', app('router')->getRoutes()->match(Request::create('/sales/return-to-pos', 'GET'))->getName());
     }
+
+    public function test_pos_receipts_render_standard_and_both_thermal_paper_widths(): void
+    {
+        $company = Company::create(['name' => 'Receipt Company', 'industry' => 'retail', 'plan' => 'Enterprise']);
+        $user = User::factory()->create(['company_id' => $company->id, 'role' => 'admin']);
+        $sale = Sale::create([
+            'company_id' => $company->id, 'user_id' => $user->id,
+            'invoice_no' => 'POS-PRINT-1', 'customer_name' => 'Walk-in Customer',
+            'subtotal' => 1000, 'total' => 1000, 'paid' => 1000,
+            'amount_paid' => 1000, 'balance' => 0, 'payment_method' => 'cash',
+            'payment_status' => 'paid',
+        ]);
+
+        $this->actingAs($user)->withoutMiddleware();
+        $this->get(route('sales.invoice.print', $sale->id))->assertOk()->assertSee('POS-PRINT-1');
+        $this->get(route('sales.invoice.print', ['id' => $sale->id, 'format' => 'thermal', 'paper' => 58]))
+            ->assertOk()->assertSee('58mm')->assertSee('POS-PRINT-1');
+        $this->get(route('sales.invoice.print', ['id' => $sale->id, 'format' => 'thermal', 'paper' => 80]))
+            ->assertOk()->assertSee('80mm')->assertSee('POS-PRINT-1');
+    }
 }

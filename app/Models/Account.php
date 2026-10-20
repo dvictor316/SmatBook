@@ -73,6 +73,8 @@ class Account extends Model
         return [
             self::TYPE_ASSET => [
                 self::SUBTYPE_CURRENT_ASSET,
+                'Cash',
+                'Bank',
                 'Cash & Bank',
                 'Accounts Receivable',
                 'Inventory',

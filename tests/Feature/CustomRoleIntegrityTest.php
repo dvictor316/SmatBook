@@ -182,7 +182,7 @@ class CustomRoleIntegrityTest extends TestCase
     {
         [$company] = $this->workspace();
         $superAdmin = User::factory()->create(['company_id' => $company->id, 'role' => 'super_admin']);
-        $this->put(route('users.update', $superAdmin->id), ['name' => $superAdmin->name,
+        $this->putJson(route('users.update', $superAdmin->id), ['name' => $superAdmin->name,
             'email' => $superAdmin->email, 'role' => 'cashier'])->assertForbidden();
         $this->assertTrue($superAdmin->fresh()->isSuperAdmin());
     }
@@ -194,7 +194,7 @@ class CustomRoleIntegrityTest extends TestCase
         $this->put(route('users.update', $staff->id), ['name' => $staff->name, 'email' => $staff->email, 'role' => 'Missing Custom Role'])
             ->assertSessionHasErrors('role');
         $this->assertSame('cashier', $staff->fresh()->role);
-        $this->put(route('users.update', $staff->id), ['name' => $staff->name, 'email' => $staff->email, 'role' => 'super_admin'])->assertForbidden();
-        $this->post(route('roles.store'), ['name' => 'Super Admin'])->assertForbidden();
+        $this->putJson(route('users.update', $staff->id), ['name' => $staff->name, 'email' => $staff->email, 'role' => 'super_admin'])->assertForbidden();
+        $this->postJson(route('roles.store'), ['name' => 'Super Admin'])->assertForbidden();
     }
 }

@@ -192,7 +192,9 @@
 
         <div class="prokip-tabs">
             <a href="#" class="prokip-tab active">Users</a>
+@if(auth()->user()?->canManageRoles())
             <a href="{{ route('roles.index') }}" class="prokip-tab">Roles</a>
+@endif
             <a href="#" class="prokip-tab">Sales Commission Agent</a>
         </div>
 

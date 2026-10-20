@@ -70,6 +70,7 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\EnforceDeviceSessionLimit::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\AutoSuccessFlash::class,
+            \App\Http\Middleware\RememberAccessiblePage::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\VerifyTenantSession::class,
@@ -98,6 +99,7 @@ class Kernel extends HttpKernel
 
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\AutoSuccessFlash::class,
+            \App\Http\Middleware\RememberAccessiblePage::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
 
@@ -170,6 +172,7 @@ class Kernel extends HttpKernel
         */
         // Check user role
         'role' => \App\Http\Middleware\CheckRole::class,
+        'business.owner' => \App\Http\Middleware\EnsureBusinessOwner::class,
         'permission' => \App\Http\Middleware\CheckPermission::class,
 
         // Deployment Manager Verification

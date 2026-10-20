@@ -24,6 +24,7 @@ body:not(.login-body):not(.landing-page-body) #add-product-page > .content.conta
 #add-product-page .product-form-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:0; }
 #add-product-page .product-form-sheet { min-width:0; min-height:0; padding:16px 18px; border:0; border-bottom:1px solid #e5eaf1; border-radius:0; background:#fff; box-shadow:none; }
 #add-product-page .product-details-sheet { background:#f1f2f4; border-bottom-color:#d9dde3; }
+#add-product-page .product-opening-stock-sheet { background:#fff1f2; border-bottom-color:#fecdd3; }
 #add-product-page .product-form-card-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
 #add-product-page .product-form-card-head h6,
 #add-product-page .product-form-sheet h6 { color:#172b4d; font-size:15px; font-weight:650; margin:0 0 4px; }
@@ -387,7 +388,7 @@ body:not(.login-body):not(.landing-page-body) #add-product-page > .content.conta
 
                         {{-- Section 2: Packaging Setup --}}
                         <div>
-                            <div class="product-form-sheet">
+                            <div class="product-form-sheet product-opening-stock-sheet">
                                 <div class="product-form-card-head">
                                     <div>
                                         <h6>Opening stock & conversions</h6>

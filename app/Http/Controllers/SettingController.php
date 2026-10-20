@@ -997,12 +997,12 @@ class SettingController extends Controller
         }
 
         $allowedSubtypes = Account::subtypeOptionsFor($validated['type']);
-        if ($validated['sub_type'] !== null && !in_array($validated['sub_type'], $allowedSubtypes, true)) {
+        if ($validated['sub_type'] === 'Cash & Bank' || ($validated['sub_type'] !== null && !in_array($validated['sub_type'], $allowedSubtypes, true))) {
             return redirect()
                 ->back()
                 ->withInput()
                 ->withErrors([
-                    'sub_type' => 'Please select a valid sub type for the chosen account type.',
+                    'sub_type' => 'Please select a valid sub type for the chosen account type. Use Cash or Bank for payment accounts.',
                 ]);
         }
 
@@ -1427,7 +1427,7 @@ class SettingController extends Controller
         ];
 
         if (Schema::hasColumn('accounts', 'sub_type') && empty($account->sub_type)) {
-            $payload['sub_type'] = Account::SUBTYPE_CURRENT_ASSET;
+            $payload['sub_type'] = 'Bank';
         }
         if (Schema::hasColumn('accounts', 'branch_id') && $branchId !== '' && empty($account->branch_id)) {
             $payload['branch_id'] = $branchId;
@@ -1454,7 +1454,7 @@ class SettingController extends Controller
             'code' => $this->generateChartAccountCode(Account::TYPE_ASSET, $companyId),
             'name' => $bankName,
             'type' => Account::TYPE_ASSET,
-            'sub_type' => Account::SUBTYPE_CURRENT_ASSET,
+            'sub_type' => 'Bank',
             'opening_balance' => $openingBalance,
             'current_balance' => $openingBalance,
             'description' => 'Auto-created bank ledger account for bank settings sync.',

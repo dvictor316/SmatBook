@@ -47,11 +47,18 @@
             <main class="ci-panel">
                 <div class="p-3 border-bottom"><h5 class="mb-0">Arrival Queue</h5><small class="text-muted">{{ $reservations->count() }} reservation(s) loaded</small></div>
                 @forelse($reservations as $r)
-                    @php $ready = $r->room_id && (!$r->room || $r->room->housekeeping_status !== 'dirty'); @endphp
+                    @php
+                        $readiness = $checkinReadiness[$r->id] ?? ['ready' => false, 'room_available' => false, 'room_clean' => false];
+                        $readinessLabel = !$r->room_id
+                            ? 'Assign Room'
+                            : (!$readiness['room_available']
+                                ? 'Room Unavailable'
+                                : ($readiness['room_clean'] ? 'Ready' : ($canOverrideDirtyCheckin ? 'Manager Override' : 'Room Dirty')));
+                    @endphp
                     <div class="arrival-card">
-                        <div class="arrival-head"><div><div class="arrival-name">{{ $r->customer?->customer_name ?? $r->customer?->name ?? 'N/A' }}</div><div class="small text-muted">Reservation {{ $r->reservation_number }}</div></div><span class="badge {{ !$r->room_id ? 'bg-warning text-dark' : ($ready ? 'bg-success' : 'bg-danger') }}">{{ !$r->room_id ? 'Assign Room' : ($ready ? 'Ready' : 'Room Dirty') }}</span></div>
+                        <div class="arrival-head"><div><div class="arrival-name">{{ $r->customer?->customer_name ?? $r->customer?->name ?? 'N/A' }}</div><div class="small text-muted">Reservation {{ $r->reservation_number }}</div></div><span class="badge {{ $readiness['ready'] ? 'bg-success' : 'bg-warning text-dark' }}">{{ $readinessLabel }}</span></div>
                         <div class="arrival-details"><div><strong>Stay</strong><br>{{ optional($r->arrival_date)->format('d M Y') }} to {{ optional($r->departure_date)->format('d M Y') }}</div><div><strong>Room</strong><br>{{ $r->room?->room_number ?? 'Unassigned' }} · {{ $r->roomType?->name ?? 'N/A' }}</div><div><strong>Deposit</strong><br>{{ number_format((float) $r->deposit_received, 2) }} / {{ number_format((float) ($r->deposit_required ?? 0), 2) }}</div></div>
-                        <div class="d-flex gap-2 flex-wrap"><a href="{{ route('hotel.reservations.show', $r) }}" class="btn btn-sm btn-light border">Open Reservation</a><a href="{{ route('hotel.rooms.calendar') }}" class="btn btn-sm btn-outline-primary">Assign Room</a><form method="POST" action="{{ route('hotel.checkin', $r) }}">@csrf<button class="btn btn-sm btn-success" {{ !$r->room_id ? 'disabled' : '' }}>Complete Check-In</button></form></div>
+                        <div class="d-flex gap-2 flex-wrap"><a href="{{ route('hotel.reservations.show', $r) }}" class="btn btn-sm btn-light border">Open Reservation</a><a href="{{ route('hotel.rooms.calendar') }}" class="btn btn-sm btn-outline-primary">Assign Room</a><form method="POST" action="{{ route('hotel.checkin', $r) }}">@csrf<button class="btn btn-sm btn-success" {{ !$readiness['ready'] ? 'disabled' : '' }}>Complete Check-In</button></form></div>
                     </div>
                 @empty
                     <div class="p-4 text-muted">No pending check-ins found.</div>

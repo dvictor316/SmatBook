@@ -45,19 +45,19 @@ class PermissionsAndOpeningBalanceTest extends TestCase
     {
         foreach (['cashier', 'admin'] as $role) {
             $this->workspace($role);
-            $this->get(route('user.dashboard'))->assertForbidden();
-            $this->get(route('workspace.business.dashboard'))->assertForbidden();
-            $this->post(route('inventory.adjust'), ['type' => 'in', 'quantity' => 10])->assertForbidden();
-            $this->post(route('inventory.Products.store'), ['stock' => 10])->assertForbidden();
-            $this->post(route('inventory.Products.import'))->assertForbidden();
+            $this->getJson(route('user.dashboard'))->assertForbidden();
+            $this->getJson(route('workspace.business.dashboard'))->assertForbidden();
+            $this->postJson(route('inventory.adjust'), ['type' => 'in', 'quantity' => 10])->assertForbidden();
+            $this->postJson(route('inventory.Products.store'), ['stock' => 10])->assertForbidden();
+            $this->postJson(route('inventory.Products.import'))->assertForbidden();
         }
     }
 
     public function test_product_creation_does_not_grant_opening_stock_access(): void
     {
         $this->workspace('cashier', ['inventory.products.create']);
-        $this->post(route('inventory.Products.store'), ['stock_cartons' => 2])->assertForbidden();
-        $this->post(route('inventory.Products.import'))->assertForbidden();
+        $this->postJson(route('inventory.Products.store'), ['stock_cartons' => 2])->assertForbidden();
+        $this->postJson(route('inventory.Products.import'))->assertForbidden();
     }
 
     public function test_role_permission_revocation_is_effective_on_the_next_request(): void
@@ -69,7 +69,7 @@ class PermissionsAndOpeningBalanceTest extends TestCase
         $user->update(['role_id' => $role->id]);
         $this->assertTrue($user->hasPermissionTo('inventory.products.create'));
         $role->permissions()->sync([]);
-        $this->post(route('inventory.Products.store'))->assertForbidden();
+        $this->postJson(route('inventory.Products.store'))->assertForbidden();
     }
 
     public function test_both_payment_delete_routes_restore_the_original_customer_opening_debt(): void
@@ -113,7 +113,7 @@ class PermissionsAndOpeningBalanceTest extends TestCase
             'name' => $staff->name, 'email' => $staff->email, 'role' => 'cashier', 'permissions_submitted' => 1,
         ])->assertSessionHasNoErrors()->assertRedirect();
         $this->assertSame([], $staff->fresh()->permissions_override);
-        $this->actingAs($staff->fresh())->get(route('user.dashboard'))->assertForbidden();
+        $this->actingAs($staff->fresh())->getJson(route('user.dashboard'))->assertForbidden();
     }
 
     public function test_receipt_shows_only_mode_while_report_shows_the_bank(): void

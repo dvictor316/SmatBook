@@ -154,26 +154,32 @@ class FolioController extends Controller
         ]);
 
         $amount = round((float) $data['amount'], 2);
-        if ((float) $folio->balance > 0 && $amount - (float) $folio->balance > 0.01) {
-            return back()->withErrors(['amount' => 'Payment cannot exceed the outstanding folio balance.'])->withInput();
-        }
+        $item = DB::transaction(function () use ($folio, $data, $amount, $companyId) {
+            $lockedFolio = GuestFolio::query()
+                ->where('company_id', $companyId)
+                ->lockForUpdate()
+                ->findOrFail($folio->id);
+            $this->assertOpenFolio($lockedFolio);
+            $lockedFolio = $this->folioService->recalculate($lockedFolio);
+            if ($amount > (float) $lockedFolio->balance + 0.001) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['amount' => 'Payment cannot exceed the outstanding folio balance.']);
+            }
 
-        $item = DB::transaction(function () use ($folio, $data, $amount) {
-            $item = $this->folioService->postPayment($folio, [
+            $item = $this->folioService->postPayment($lockedFolio, [
                 'description' => ($data['note'] ?? null) ?: ('Guest payment - '.str_replace('_', ' ', $data['payment_method'])),
                 'amount' => $amount,
                 'service_code' => 'PAYMENT_'.strtoupper($data['payment_method']),
                 'service_date' => $data['service_date'] ?? now()->toDateString(),
                 'payment_account_id' => $data['payment_account_id'] ?? null,
-                'posting_key' => ! empty($data['reference']) ? 'payment:'.$folio->id.':'.$data['reference'] : null,
+                'posting_key' => ! empty($data['reference']) ? 'payment:'.$lockedFolio->id.':'.$data['reference'] : null,
                 'source_type' => self::class,
-                'source_id' => $folio->id,
+                'source_id' => $lockedFolio->id,
                 'posted_by' => auth()->id(),
                 'meta' => ['method' => $data['payment_method'], 'reference' => $data['reference'] ?? null],
             ]);
 
-            $stay = $folio->stay;
-            LedgerService::postHotelFolioPayment($item, $folio, $data['payment_account_id'] ?? null, $stay?->branch_id, $stay?->branch_name);
+            $stay = $lockedFolio->stay;
+            LedgerService::postHotelFolioPayment($item, $lockedFolio, $data['payment_account_id'] ?? null, $stay?->branch_id, $stay?->branch_name);
 
             return $item;
         });

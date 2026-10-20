@@ -53,7 +53,9 @@
                 <span>Users</span>
             </a>
         </li>
+    @endif
 
+    @if(auth()->user()?->canManageRoles())
         <li class="{{ Request::routeIs('roles.index') ? 'active' : '' }}">
             <a href="{{ route('roles.index') }}">
                 <i class="fe fe-shield"></i>

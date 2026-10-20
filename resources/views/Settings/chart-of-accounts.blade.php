@@ -415,6 +415,11 @@
     $formSubtypeMap = (isset($subtypeOptionsByType) && is_array($subtypeOptionsByType) && count($subtypeOptionsByType) > 0)
         ? $subtypeOptionsByType
         : \App\Models\Account::subtypeOptionsByType();
+    $createSubtypeMap = $formSubtypeMap;
+    $createSubtypeMap[\App\Models\Account::TYPE_ASSET] = array_values(array_diff(
+        $formSubtypeMap[\App\Models\Account::TYPE_ASSET] ?? [],
+        ['Cash & Bank']
+    ));
 @endphp
 
 <div class="page-wrapper">
@@ -609,7 +614,7 @@
                                 @endif
 
 <script>
-window._coaSubtypeMap = @json($formSubtypeMap);
+window._coaSubtypeMap = @json($createSubtypeMap);
 function coaBuildSubtypes(typeValue, selectId, preselect) {
     var sel = document.getElementById(selectId || 'accountSubTypeSelect');
     if (!sel) return;
@@ -666,7 +671,7 @@ function coaBuildSubtypes(typeValue, selectId, preselect) {
                                         <label class="coa-field-label">Sub Type</label>
                                         <select name="sub_type" id="accountSubTypeSelect" class="coa-input">
                                             <option value="">-- Select sub type --</option>
-                                            @foreach($formSubtypeMap as $typeName => $subtypes)
+                                            @foreach($createSubtypeMap as $typeName => $subtypes)
                                                 <optgroup label="{{ $typeName }}">
                                                     @foreach($subtypes as $sub)
                                                         <option value="{{ $sub }}" {{ old('sub_type') === $sub ? 'selected' : '' }}>{{ $sub }}</option>

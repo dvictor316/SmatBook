@@ -175,7 +175,7 @@ class HousekeepingController extends Controller
             'housekeeping_status' => 'clean',
         ];
 
-        if ((string) $room->operational_status !== 'occupied') {
+        if (! in_array((string) $room->operational_status, ['occupied', 'maintenance', 'out_of_order'], true)) {
             $updates['operational_status'] = 'available';
         }
 
@@ -204,14 +204,22 @@ class HousekeepingController extends Controller
             'completed_at' => now(),
         ]);
 
-        HotelRoom::query()
+        $hasOpenTasks = HotelHousekeepingTask::query()
             ->where('company_id', $task->company_id)
-            ->where('id', $task->room_id)
-            ->where('operational_status', '!=', 'occupied')
-            ->update([
-                'housekeeping_status' => 'clean',
-                'operational_status' => 'available',
-            ]);
+            ->where('room_id', $task->room_id)
+            ->whereIn('status', ['open', 'assigned', 'cleaning', 'inspection'])
+            ->exists();
+
+        if (! $hasOpenTasks) {
+            HotelRoom::query()
+                ->where('company_id', $task->company_id)
+                ->where('id', $task->room_id)
+                ->whereNotIn('operational_status', ['occupied', 'maintenance', 'out_of_order'])
+                ->update([
+                    'housekeeping_status' => 'clean',
+                    'operational_status' => 'available',
+                ]);
+        }
 
         return back()->with('success', 'Housekeeping task completed.');
     }
@@ -261,7 +269,7 @@ class HousekeepingController extends Controller
             ->where('id', $room->property_id)
             ->value('branch_id');
 
-        abort_unless((string) $propertyBranchId === (string) $branchId, 404);
+        abort_unless($propertyBranchId === null || (string) $propertyBranchId === '' || (string) $propertyBranchId === (string) $branchId, 404);
     }
 
     private function assertTaskScope(HotelHousekeepingTask $task): void
@@ -278,6 +286,6 @@ class HousekeepingController extends Controller
             ->where('id', $task->property_id)
             ->value('branch_id');
 
-        abort_unless((string) $propertyBranchId === (string) $branchId, 404);
+        abort_unless($propertyBranchId === null || (string) $propertyBranchId === '' || (string) $propertyBranchId === (string) $branchId, 404);
     }
 }

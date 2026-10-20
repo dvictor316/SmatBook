@@ -230,7 +230,9 @@
                     <a href="#"><i class="fe fe-settings"></i><span>Settings</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('users.index') }}">Users</a></li>
+@if(auth()->user()?->canManageRoles())
                         <li><a href="{{ route('roles.index') }}">Roles & Permissions</a></li>
+@endif
                         <li><a href="{{ route('branches.index') }}">Branches</a></li>
                         <li><a href="{{ route('settings.index') }}">Settings</a></li>
                         @if(Route::has('online-store.settings'))

@@ -299,6 +299,23 @@ class User extends Authenticatable
         return $this->hasRole('super_admin');
     }
 
+    public function canManageRoles(): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        $companyId = (int) (session('current_tenant_id') ?: $this->company_id);
+        if ($companyId <= 0) {
+            return false;
+        }
+
+        return Company::withoutGlobalScope('tenant')->whereKey($companyId)
+            ->where(function ($query) {
+                $query->where('user_id', $this->id)->orWhere('owner_id', $this->id);
+            })->exists();
+    }
+
     public function isDemoUser(): bool
     {
         if ($this->relationLoaded('company') && $this->company) {

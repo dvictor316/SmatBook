@@ -37,6 +37,14 @@ class Handler extends ExceptionHandler
             //
         });
 
+        $this->renderable(function (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e, $request) {
+            if ($e->getStatusCode() !== 403 || !$request->user() || !$request->hasSession() || $this->shouldReturnJson($request)) {
+                return null;
+            }
+
+            return app(\App\Support\AccessDeniedRedirect::class)->respond($request);
+        });
+
         // Graceful recovery for "Page Expired" (419), especially on registration flows.
         $this->renderable(function (TokenMismatchException $e, $request) {
             $message = 'Your session expired. Please login again to continue.';
