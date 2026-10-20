@@ -1,6 +1,11 @@
 @php
-    $siteName = config('app.name', 'SmartProbook');
-    $resolvedTitle = 'SmartProbook';
+    $siteName = 'SmartProbook';
+    $resolvedTitle = trim((string) ($seoTitle ?? $__env->yieldContent('title')));
+    if ($resolvedTitle === '') {
+        $resolvedTitle = $siteName;
+    } elseif (stripos($resolvedTitle, $siteName) === false) {
+        $resolvedTitle .= ' | ' . $siteName;
+    }
 
     $resolvedDescription = trim((string) ($seoDescription ?? $__env->yieldContent('meta_description') ?? ''));
     if ($resolvedDescription === '') {
@@ -22,28 +27,25 @@
     $resolvedUrl = url()->current();
     $resolvedCanonical = trim((string) ($seoCanonical ?? $resolvedUrl));
 
-    $resolvedNoIndex = (bool) ($seoNoIndex ?? false);
+    if (\App\Support\SearchVisibility::isMarketingPage(request())) {
+        $resolvedCanonical = \App\Support\SearchVisibility::canonical($resolvedCanonical);
+    }
+    $resolvedNoIndex = (bool) ($seoNoIndex ?? false) || !\App\Support\SearchVisibility::isIndexablePage(request());
     $robotsContent = $resolvedNoIndex ? 'noindex,nofollow' : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1';
 
     $organizationJsonLd = [
         '@context' => 'https://schema.org',
         '@type' => 'Organization',
         'name' => $siteName,
-        'url' => config('app.url'),
+        'url' => \App\Support\SearchVisibility::baseUrl() . '/',
         'logo' => asset('assets/img/logos.png'),
-        'sameAs' => [],
     ];
 
     $websiteJsonLd = [
         '@context' => 'https://schema.org',
         '@type' => 'WebSite',
         'name' => $siteName,
-        'url' => config('app.url'),
-        'potentialAction' => [
-            '@type' => 'SearchAction',
-            'target' => url('/').'?q={search_term_string}',
-            'query-input' => 'required name=search_term_string',
-        ],
+        'url' => \App\Support\SearchVisibility::baseUrl() . '/',
     ];
 
     $softwareJsonLd = [
@@ -52,15 +54,9 @@
         'name' => $siteName,
         'applicationCategory' => 'BusinessApplication',
         'operatingSystem' => 'Web',
-        'url' => config('app.url'),
+        'url' => \App\Support\SearchVisibility::baseUrl() . '/',
         'image' => $resolvedImage,
         'description' => $resolvedDescription,
-        'offers' => [
-            '@type' => 'Offer',
-            'price' => '0',
-            'priceCurrency' => 'USD',
-            'availability' => 'https://schema.org/InStock',
-        ],
     ];
 @endphp
 
@@ -83,7 +79,7 @@
 <meta property="og:url" content="{{ $resolvedCanonical }}">
 <meta property="og:image" content="{{ $resolvedImage }}">
 <meta property="og:image:alt" content="{{ $resolvedTitle }}">
-<meta property="og:locale" content="en_US">
+<meta property="og:locale" content="{{ $seoLocale ?? 'en_NG' }}">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ $resolvedTitle }}">
@@ -93,8 +89,10 @@
 <link rel="icon" type="image/png" href="{{ $resolvedFavicon }}">
 <link rel="shortcut icon" href="{{ $resolvedFavicon }}">
 
-<script type="application/ld+json">{!! json_encode($organizationJsonLd, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}</script>
-<script type="application/ld+json">{!! json_encode($websiteJsonLd, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}</script>
 @unless($resolvedNoIndex)
-<script type="application/ld+json">{!! json_encode($softwareJsonLd, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}</script>
+<script type="application/ld+json">{!! json_encode($organizationJsonLd, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}</script>
+<script type="application/ld+json">{!! json_encode($websiteJsonLd, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}</script>
+@if(request()->routeIs('landing.index'))
+<script type="application/ld+json">{!! json_encode($softwareJsonLd, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}</script>
+@endif
 @endunless

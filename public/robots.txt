@@ -1,2 +1,5 @@
 User-agent: *
-Disallow:
+Allow: /
+
+# Private application routes send noindex headers and require authentication.
+Sitemap: https://smartprobook.com/sitemap.xml

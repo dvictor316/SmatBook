@@ -3,9 +3,6 @@
 @foreach($urls as $entry)
     <url>
         <loc>{{ $entry['loc'] }}</loc>
-        <lastmod>{{ $now }}</lastmod>
-        <changefreq>{{ $entry['changefreq'] }}</changefreq>
-        <priority>{{ $entry['priority'] }}</priority>
     </url>
 @endforeach
 </urlset>

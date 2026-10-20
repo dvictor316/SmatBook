@@ -12,6 +12,12 @@ class SecurityHeaders
     {
         $response = $next($request);
 
+        $isDiscoveryFile = $request->routeIs('sitemap.xml') || $request->is('robots.txt');
+        if (!$isDiscoveryFile && (!\App\Support\SearchVisibility::isIndexablePage($request)
+            || !in_array($request->method(), ['GET', 'HEAD'], true) || $response->getStatusCode() !== 200)) {
+            $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+        }
+
         $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');

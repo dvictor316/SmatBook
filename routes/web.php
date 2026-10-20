@@ -33,39 +33,19 @@ use App\Http\Controllers\AdminDemoRequestController;
 */
 
 Route::get('/robots.txt', function () {
-    $base = rtrim(config('app.url') ?: url('/'), '/');
-    $content = implode("\n", [
-        'User-agent: *',
-        'Allow: /',
-        'Disallow: /superadmin/',
-        'Disallow: /deployment/',
-        'Disallow: /saas/',
-        'Disallow: /login',
-        'Disallow: /register',
-        'Disallow: /saas-login',
-        'Disallow: /saas-register',
-        'Disallow: /password/',
-        'Sitemap: ' . $base . '/sitemap.xml',
-    ]);
+    $content = str_replace(
+        'https://smartprobook.com/sitemap.xml',
+        \App\Support\SearchVisibility::baseUrl() . '/sitemap.xml',
+        file_get_contents(public_path('robots.txt'))
+    );
 
     return response($content, 200)->header('Content-Type', 'text/plain; charset=UTF-8');
 });
 
 Route::get('/sitemap.xml', function () {
-    $now = now()->toAtomString();
-    $urls = [
-        ['loc' => url('/'), 'changefreq' => 'daily', 'priority' => '1.0'],
-        ['loc' => route('landing.about'), 'changefreq' => 'weekly', 'priority' => '0.8'],
-        ['loc' => route('landing.contact'), 'changefreq' => 'weekly', 'priority' => '0.7'],
-        ['loc' => route('landing.team'), 'changefreq' => 'weekly', 'priority' => '0.7'],
-        ['loc' => route('landing.policy'), 'changefreq' => 'monthly', 'priority' => '0.5'],
-        ['loc' => route('landing.projects.lahome'), 'changefreq' => 'weekly', 'priority' => '0.7'],
-        ['loc' => route('landing.projects.master-jamb'), 'changefreq' => 'weekly', 'priority' => '0.7'],
-        ['loc' => route('landing.projects.payplus'), 'changefreq' => 'weekly', 'priority' => '0.7'],
-        ['loc' => route('membership-plans'), 'changefreq' => 'weekly', 'priority' => '0.8'],
-    ];
-
-    $xml = view('sitemap.xml', compact('urls', 'now'));
+    $urls = collect(\App\Support\SearchVisibility::PUBLIC_PAGES)
+        ->map(fn ($name) => ['loc' => \App\Support\SearchVisibility::canonical(route($name))]);
+    $xml = view('sitemap.xml', compact('urls'));
     return response($xml, 200)->header('Content-Type', 'application/xml; charset=UTF-8');
 })->name('sitemap.xml');
 

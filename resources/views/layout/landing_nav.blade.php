@@ -8,8 +8,8 @@
         $hideLandingChrome = trim($__env->yieldContent('hide_landing_chrome')) !== '';
         $publicSeoMap = [
             'landing.index' => [
-                'title' => 'AI Accounting Software, ERP and Business Automation',
-                'description' => 'SmartProbook helps businesses manage accounting, invoicing, inventory, payments, reports, and operational workflows from one cloud platform.',
+                'title' => 'Accounting & Inventory Software in Nigeria',
+                'description' => 'Manage invoicing, inventory, POS sales, payroll and financial reports with SmartProbook cloud accounting software for growing businesses in Nigeria.',
                 'keywords' => 'AI accounting software, ERP software, invoicing software, inventory management software, business automation, accounting platform',
             ],
             'landing.about' => [
@@ -52,6 +52,11 @@
                 'description' => 'Compare SmartProbook membership plans, pricing tiers, accounting features, ERP modules, and business upgrade options.',
                 'keywords' => 'SmartProbook pricing, membership plans, accounting software pricing, ERP pricing',
             ],
+            'demo.request.form' => [
+                'title' => 'Request an Accounting Software Demo',
+                'description' => 'Request a SmartProbook demo to explore invoicing, POS sales, stock control, payroll and accounting reports for your business in Nigeria.',
+                'keywords' => 'SmartProbook demo, accounting software demo Nigeria',
+            ],
             'pricing' => [
                 'title' => 'Pricing for SmartProbook',
                 'description' => 'Explore SmartProbook pricing for accounting, ERP, inventory, invoicing, reporting, and business management workflows.',
@@ -59,9 +64,9 @@
             ],
         ];
         $publicSeo = $publicSeoMap[$routeName] ?? [];
-        $seoNoIndex = false;
+        $seoNoIndex = $seoNoIndex ?? !\App\Support\SearchVisibility::isIndexablePage(request());
         $seoType = 'website';
-        $seoTitle = $seoTitle ?? ($publicSeo['title'] ?? 'SmartProbook');
+        $seoTitle = $seoTitle ?? (trim($__env->yieldContent('title')) ?: ($publicSeo['title'] ?? 'SmartProbook'));
         $seoDescription = trim($__env->yieldContent('meta_description')) !== ''
             ? $__env->yieldContent('meta_description')
             : ($publicSeo['description'] ?? 'SmartProbook provides AI-powered accounting, enterprise reporting, global deployment workflows, and institutional-grade financial operations.');

@@ -2353,9 +2353,9 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 
                 <div class="hero-circle">
                     <div class="hero-circle-orbit"></div>
-                    <div class="hero-eyebrow">SmartProbook</div>
+                    <div class="hero-eyebrow">Accounting Software for Nigerian Businesses</div>
                     <h1 class="hero-h1"><span class="hero-title-line">Run Your Business.</span><br><span class="gold-text">Know Your Money.</span></h1>
-                    <p class="hero-body">Accounting-first workflow for sales, invoices, expenses, payroll and tax — all in one platform.</p>
+                    <p class="hero-body">SmartProbook cloud accounting software brings invoicing, POS sales, inventory, expenses, payroll and tax reports into one platform for Nigerian businesses.</p>
                     <div class="hero-cta-stack">
                         <a href="{{ route('membership-plans') }}" class="hero-btn-red"><i class="fas fa-building"></i> Register Your Business Today</a>
                         <a href="{{ route('saas-register', ['type'=>'partner']) }}" class="hero-btn-ghost hero-btn-manager"><i class="fas fa-handshake"></i> Become a Partner</a>
@@ -3056,7 +3056,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 <section class="sb-section" id="capabilities">
     <div class="container">
         <div class="row align-items-center g-5 mb-5 pb-5">
-            <div class="col-lg-6"><div class="cap-img"><img src="https://images.pexels.com/photos/8867434/pexels-photo-8867434.jpeg?auto=compress&cs=tinysrgb&w=800" alt="African business team analysing live financial data and analytics" class="img-fluid"></div></div>
+            <div class="col-lg-6"><div class="cap-img"><img src="https://images.pexels.com/photos/8867434/pexels-photo-8867434.jpeg?auto=compress&cs=tinysrgb&w=800" alt="African business team analysing live financial data and analytics" class="img-fluid" loading="lazy"></div></div>
             <div class="col-lg-6">
                 <span class="sb-eyebrow">01 — Engine Depth</span>
                 <h2 class="sb-h1">Strategic <span class="accent">Liquidity</span> Ecosystem</h2>
@@ -3065,7 +3065,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             </div>
         </div>
         <div class="row align-items-center g-5 pt-5">
-            <div class="col-lg-6 order-lg-2"><div class="cap-img"><img src="https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Professional Nigerian business leaders in a governance and strategy meeting" class="img-fluid"></div></div>
+            <div class="col-lg-6 order-lg-2"><div class="cap-img"><img src="https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Professional Nigerian business leaders in a governance and strategy meeting" class="img-fluid" loading="lazy"></div></div>
             <div class="col-lg-6 order-lg-1">
                 <span class="sb-eyebrow">02 — Governance</span>
                 <h2 class="sb-h1">Institutional <span class="accent">Sovereignty</span> Protocols</h2>
@@ -3086,7 +3086,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <div class="testi-card">
                 <p style="font-size:0.88rem;color:rgba(255,255,255,0.88);font-style:italic;line-height:1.7;margin-bottom:22px;">"{{ $t['quote'] }}"</p>
                 <div class="d-flex align-items-center gap-3">
-                    <img src="{{ $t['img'] }}" class="testi-avatar" alt="{{ $t['name'] }}">
+                    <img src="{{ $t['img'] }}" class="testi-avatar" alt="{{ $t['name'] }}" loading="lazy" width="44" height="44">
                     <div>
                         <div style="font-weight:700;color:#fff;font-size:0.83rem;font-family:var(--font-display);">{{ $t['name'] }}</div>
                         <div style="color:var(--gold);font-size:0.68rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;">{{ $t['role'] }}</div>
@@ -3094,6 +3094,31 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                 </div>
             </div>
             @endforeach
+        </div>
+    </div>
+</section>
+
+<section class="sb-section" id="accounting-software-nigeria" aria-labelledby="nigeria-accounting-title">
+    <div class="container">
+        <h2 class="sb-h1" id="nigeria-accounting-title">Accounting software for <span class="accent">Nigerian businesses</span></h2>
+        <p>SmartProbook helps shops, service businesses and growing teams bring their daily sales, stock and accounting records together in one cloud workspace.</p>
+        <div class="row g-4 mt-2">
+            <div class="col-md-6">
+                <h3>What can I manage with SmartProbook?</h3>
+                <p>Create invoices, record POS sales, track inventory and expenses, manage payroll, and review financial reports from the same platform.</p>
+            </div>
+            <div class="col-md-6">
+                <h3>Can I record transactions in Nigerian naira?</h3>
+                <p>Yes. Record naira sales, invoices and expenses, with multi-currency support for businesses that also work with international customers or suppliers.</p>
+            </div>
+            <div class="col-md-6">
+                <h3>Can my staff work across multiple branches?</h3>
+                <p>Use branch controls and staff permissions to give each team member access to the work they need while keeping business records organized.</p>
+            </div>
+            <div class="col-md-6">
+                <h3>How do I choose a plan?</h3>
+                <p><a href="{{ route('membership-plans') }}">Compare accounting software plans and pricing</a> or <a href="{{ route('demo.request.form') }}">request a SmartProbook demo</a> to explore the workflow before choosing a plan.</p>
+            </div>
         </div>
     </div>
 </section>
