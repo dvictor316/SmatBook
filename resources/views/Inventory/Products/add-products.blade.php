@@ -87,6 +87,23 @@ body:not(.login-body):not(.landing-page-body) #add-product-page > .content.conta
 #add-product-page .product-packaging-fields .col-md-6 { width:100%; }
 #add-product-page .opening-stock-fields { --bs-gutter-y:12px; }
 #add-product-page .opening-stock-fields > div:not(.col-12) { flex:1 1 160px; width:auto; }
+
+/* Stronger labels and values, with the same compact layout. */
+#add-product-page .product-form-sheet h6 { font-weight:700; }
+#add-product-page .product-form-muted { font-weight:500; color:#526176; }
+#add-product-page .product-form-sheet .form-label { font-weight:700; color:#25354c; }
+#add-product-page .product-form-sheet .form-control,
+#add-product-page .product-form-sheet .form-select { font-weight:600; color:#172b4d; }
+#add_product_form .measurement-mode-button { font-weight:700 !important; }
+#add_product_form .measurement-mode-button strong { font-weight:700; }
+#add_product_form .measurement-mode-button small { font-size:12px; font-weight:500; }
+#add-product-page .product-packaging-choice { padding:10px 0 12px !important; border-bottom:1px solid #e5eaf1; }
+#add-product-page .product-packaging-choice .measurement-choice { margin-bottom:0; }
+#add-product-page .other-measurement-choice { display:flex; flex-direction:column; justify-content:center; gap:5px; min-width:0; padding:10px 12px; border:1px solid #d8e0eb; border-radius:6px; background:#fff; }
+#add-product-page .other-measurement-choice label { margin:0; color:#25354c; font-size:13px; font-weight:700; }
+#add-product-page .other-measurement-choice small { color:#64748b; font-size:11px; font-weight:500; }
+#add-product-page .other-measurement-choice .form-select { min-height:34px; padding-top:4px; padding-bottom:4px; }
+#add-product-page .other-measurement-choice[data-active="true"] { background:#eff6ff; border-color:#2563eb; box-shadow:inset 0 0 0 1px #2563eb; }
 @media (max-width:900px) {
     #add-product-page .measurement-mode-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
@@ -167,7 +184,7 @@ body:not(.login-body):not(.landing-page-body) #add-product-page > .content.conta
                             <div class="product-form-sheet">
                                 <div class="product-form-card-head">
                                     <div>
-                                        <h6>Identity, Pricing & Category</h6>
+                                        <h6>Product details</h6>
                                         <p class="product-form-muted mb-0">Start with the fields marked required.</p>
                                     </div>
                                 </div>
@@ -190,9 +207,38 @@ body:not(.login-body):not(.landing-page-body) #add-product-page > .content.conta
                                         </div>
                                         @error('category_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                                     </div>
+                                    <div class="col-12 product-packaging-choice">
+                                        <input type="hidden" name="measurement_mode" id="measurement_mode_input" value="{{ old('measurement_mode', 'pieces') }}">
+                                        <div class="measurement-choice">
+                                            <label class="form-label d-block">Packaging / measurement</label>
+                                            <div class="measurement-mode-grid" role="group" aria-label="Measurement setup">
+                                                <button type="button" class="measurement-mode-button" data-measurement-mode="pieces" aria-pressed="{{ old('measurement_mode', 'pieces') === 'pieces' ? 'true' : 'false' }}">
+                                                    <strong>Pieces only (pcs)</strong><small class="d-block">Count each item individually.</small>
+                                                </button>
+                                                <button type="button" class="measurement-mode-button" data-measurement-mode="pieces_carton" aria-pressed="{{ old('measurement_mode', 'pieces') === 'pieces_carton' ? 'true' : 'false' }}">
+                                                    <strong>Cartons containing pieces (pcs)</strong><small class="d-block">Set the pieces in each carton.</small>
+                                                </button>
+                                                <button type="button" class="measurement-mode-button" data-measurement-mode="kg_carton" aria-pressed="{{ old('measurement_mode', 'pieces') === 'kg_carton' ? 'true' : 'false' }}">
+                                                    <strong>Cartons measured in kilograms (kg)</strong><small class="d-block">Only for stock sold by kg.</small>
+                                                </button>
+                                                <div class="other-measurement-choice" id="other_measurement_choice" data-active="{{ old('measurement_mode', 'pieces') === 'custom' ? 'true' : 'false' }}">
+                                                    <label for="other_measurement_unit">Other measurements</label>
+                                                    <select id="other_measurement_unit" aria-label="Choose another measurement" class="form-select">
+                                                        <option value="" disabled @selected(old('measurement_mode', 'pieces') !== 'custom')>Choose a measurement…</option>
+                                                        @foreach(($units ?? collect()) as $unit)
+                                                            <option value="{{ $unit->id }}" data-symbol="{{ $unit->symbol }}" @selected(old('measurement_mode') === 'custom' && (string) old('base_unit_id', old('unit_id')) === (string) $unit->id)>{{ $unit->name }} ({{ $unit->symbol }})</option>
+                                                        @endforeach
+                                                    </select>
+                                                    <small>All active units, including your own.</small>
+                                                </div>
+                                            </div>
+                                            @error('measurement_mode')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                                            <div class="alert alert-info small mt-3 mb-0" id="measurement_selection_summary" role="status" aria-live="polite">Stock unit: pieces (pcs). Enter prices per piece.</div>
+                                        </div>
+                                    </div>
                                     <div class="col-md-6 measurement-technical-field">
                                         <label class="form-label">Stock Unit Label</label>
-                                        <input type="text" name="base_unit_name" class="form-control @error('base_unit_name') is-invalid @enderror" value="{{ old('base_unit_name', 'pcs') }}" list="baseUnitSuggestions" required>
+                                        <input type="text" name="base_unit_name" readonly class="form-control @error('base_unit_name') is-invalid @enderror" value="{{ old('base_unit_name', 'pcs') }}" list="baseUnitSuggestions" required>
                                         <datalist id="baseUnitSuggestions">
                                             <option value="pcs">
                                             <option value="kg">
@@ -336,29 +382,9 @@ body:not(.login-body):not(.landing-page-body) #add-product-page > .content.conta
                             <div class="product-form-sheet">
                                 <div class="product-form-card-head">
                                     <div>
-                                        <h6>Packaging & Opening Stock</h6>
+                                        <h6>Opening stock & conversions</h6>
                                         <p class="product-form-muted mb-0">Enter packaging only where it applies.</p>
                                     </div>
-                                </div>
-                                <input type="hidden" name="measurement_mode" id="measurement_mode_input" value="{{ old('measurement_mode', 'pieces') }}">
-                                <div class="measurement-choice">
-                                    <label class="form-label d-block">How is this product sold?</label>
-                                    <div class="measurement-mode-grid" role="group" aria-label="Measurement setup">
-                                        <button type="button" class="measurement-mode-button" data-measurement-mode="pieces" aria-pressed="{{ old('measurement_mode', 'pieces') === 'pieces' ? 'true' : 'false' }}">
-                                            <strong>Pieces only (pcs)</strong><small class="d-block">Count each item individually.</small>
-                                        </button>
-                                        <button type="button" class="measurement-mode-button" data-measurement-mode="pieces_carton" aria-pressed="{{ old('measurement_mode', 'pieces') === 'pieces_carton' ? 'true' : 'false' }}">
-                                            <strong>Cartons containing pieces (pcs)</strong><small class="d-block">Set the pieces in each carton.</small>
-                                        </button>
-                                        <button type="button" class="measurement-mode-button" data-measurement-mode="kg_carton" aria-pressed="{{ old('measurement_mode', 'pieces') === 'kg_carton' ? 'true' : 'false' }}">
-                                            <strong>Cartons measured in kilograms (kg)</strong><small class="d-block">Only for stock sold by kg.</small>
-                                        </button>
-                                        <button type="button" class="measurement-mode-button" data-measurement-mode="custom" aria-pressed="{{ old('measurement_mode', 'pieces') === 'custom' ? 'true' : 'false' }}">
-                                            <strong>Other units / rolls</strong><small class="d-block">Choose another unit or rolls.</small>
-                                        </button>
-                                    </div>
-                                    @error('measurement_mode')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
-                                    <div class="alert alert-info small mt-3 mb-0" id="measurement_selection_summary" role="status" aria-live="polite">Stock unit: pieces (pcs). Enter prices per piece.</div>
                                 </div>
                                 <div class="product-packaging-fields">
                                 <div id="kg_carton_fields" class="row g-3 mb-4" style="display: none;">
@@ -737,6 +763,8 @@ $(document).ready(function () {
         $('.opening-carton-field, .carton-summary-field').toggle(mode !== 'pieces');
         $('#kg_per_carton_input').prop('disabled', !isKgCarton).prop('required', isKgCarton);
         $('#carton_selling_price_input').prop('disabled', isCustom || mode === 'pieces');
+        $('#other_measurement_choice').attr('data-active', isCustom ? 'true' : 'false');
+        if (!isCustom) $('#other_measurement_unit').val('');
         $('.measurement-mode-button').each(function () {
             var active = $(this).data('measurement-mode') === mode;
             $(this).attr('aria-pressed', active ? 'true' : 'false');
@@ -776,6 +804,17 @@ $(document).ready(function () {
     $('.measurement-mode-button').on('click', function () {
         setMeasurementMode($(this).data('measurement-mode'));
     });
+
+    function selectOtherMeasurement() {
+        var unitId = $('#other_measurement_unit').val();
+        var symbol = selectedUnitKey('#other_measurement_unit');
+        if (!unitId || !symbol) return;
+        setMeasurementMode('custom');
+        applyUnitSymbol(symbol);
+        $('select[name="unit_id"], select[name="base_unit_id"]').val(unitId);
+        $('#other_measurement_unit').val(unitId);
+    }
+    $('#other_measurement_unit').on('change', selectOtherMeasurement);
 
     $('#kg_per_carton_input').on('input change', function () {
         if ($('#measurement_mode_input').val() === 'kg_carton') {
@@ -1025,6 +1064,9 @@ $(document).ready(function () {
         selectUnitBySuggestion('select[name="unit_id"]', symbol);
         selectUnitBySuggestion('select[name="base_unit_id"]', symbol);
         unitSyncing = false;
+        if ($('#measurement_mode_input').val() === 'custom') {
+            $('#other_measurement_unit').val($('select[name="base_unit_id"]').val() || $('select[name="unit_id"]').val());
+        }
         refreshQuickPackagingLabels();
         calculateQuickCartonContent();
         calculateQuickStock();

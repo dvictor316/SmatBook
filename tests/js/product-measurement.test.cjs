@@ -7,13 +7,16 @@ const template = readFileSync(join(__dirname, '../../resources/views/Inventory/P
 const start = template.indexOf('    function setMeasurementMode(mode) {');
 const end = template.indexOf("    $('.measurement-mode-button').on", start);
 const source = template.slice(start, end);
+const selectStart = template.indexOf('    function selectOtherMeasurement() {');
+const selectEnd = template.indexOf("    $('#other_measurement_unit').on", selectStart);
+const selectionSource = template.slice(selectStart, selectEnd);
 
-function changeMode(previous, next) {
+function changeMode(previous, next, selectedUnit = null) {
     const elements = new Map();
     function $(selector) {
         if (!elements.has(selector)) {
             elements.set(selector, {
-                value: '', visible: true, properties: {},
+                value: '', visible: true, properties: {}, attributes: {},
                 val(value) {
                     if (arguments.length === 0) return this.value;
                     this.value = value;
@@ -22,6 +25,7 @@ function changeMode(previous, next) {
                 },
                 toggle(visible) { this.visible = visible; return this; },
                 prop(key, value) { this.properties[key] = value; return this; },
+                attr(key, value) { this.attributes[key] = value; return this; },
                 each() { return this; },
                 text(value) { this.textContent = value; return this; },
             });
@@ -32,9 +36,11 @@ function changeMode(previous, next) {
     $('#kg_per_carton_input').val(25);
     $('#quick_pcs_per_carton_helper').val(12);
     $('input[name="stock_cartons"]').val(2);
+    if (selectedUnit) $('#other_measurement_unit').val(selectedUnit.id);
     let unit = 'kg';
-    runInNewContext(source + '\nsetMeasurementMode(next);', {
+    runInNewContext(source + selectionSource + (selectedUnit ? '\nselectOtherMeasurement();' : '\nsetMeasurementMode(next);'), {
         $, next,
+        selectedUnitKey() { return selectedUnit?.symbol || ''; },
         applyUnitSymbol(symbol) { unit = symbol; },
         refreshQuickPackagingLabels() {}, calculateQuickCartonContent() {},
         calculateQuickStock() {}, refreshKgCartonPriceHint() {},
@@ -66,3 +72,16 @@ test('validation redisplay preserves the selected piece carton conversion', () =
     assert.equal($('#quick_pcs_per_carton_helper').val(), 12);
     assert.equal($('input[name="stock_cartons"]').val(), 2);
 });
+
+for (const symbol of ['litre', 'g', 'm', 'doz', 'bag', 'roll', 'm²']) {
+    test('other measurement dropdown selects and submits ' + symbol + ' after kg mode', () => {
+        const { $, unit } = changeMode('kg_carton', 'custom', { id: '42', symbol });
+        assert.equal(unit, symbol);
+        assert.equal($('#measurement_mode_input').val(), 'custom');
+        assert.equal($('select[name="unit_id"]').val(), '42');
+        assert.equal($('select[name="base_unit_id"]').val(), '42');
+        assert.equal($('#other_measurement_unit').val(), '42');
+        assert.equal($('#other_measurement_choice').attributes['data-active'], 'true');
+        assert.equal($('#quick_pcs_per_carton_helper').val(), 0);
+    });
+}
