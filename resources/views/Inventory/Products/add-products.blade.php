@@ -23,6 +23,7 @@ body:not(.login-body):not(.landing-page-body) #add-product-page > .content.conta
 #add-product-page #add_product_form > .row { --bs-gutter-y:0; --bs-gutter-x:0; margin:0; }
 #add-product-page .product-form-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:0; }
 #add-product-page .product-form-sheet { min-width:0; min-height:0; padding:16px 18px; border:0; border-bottom:1px solid #e5eaf1; border-radius:0; background:#fff; box-shadow:none; }
+#add-product-page .product-details-sheet { background:#edf5ff; border-bottom-color:#cbdff7; }
 #add-product-page .product-form-card-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
 #add-product-page .product-form-card-head h6,
 #add-product-page .product-form-sheet h6 { color:#172b4d; font-size:15px; font-weight:650; margin:0 0 4px; }
@@ -188,7 +189,7 @@ body:not(.login-body):not(.landing-page-body) #add-product-page > .content.conta
                             <div class="product-form-grid">
                         {{-- Section 1: Product Details --}}
                         <div>
-                            <div class="product-form-sheet">
+                            <div class="product-form-sheet product-details-sheet">
                                 <div class="product-form-card-head">
                                     <div>
                                         <h6>Product details</h6>
