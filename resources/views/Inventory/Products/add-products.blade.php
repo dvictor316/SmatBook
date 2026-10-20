@@ -41,20 +41,24 @@ body:not(.login-body):not(.landing-page-body) #add-product-page > .content.conta
 #add-product-page .product-details-fields > .product-image-field { grid-column:span 2; }
 #add-product-page .field-hint { display:block; color:#64748b; font-size:11px; line-height:1.4; margin-top:4px; }
 #add-product-page .measurement-mode-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+#add_product_form .measurement-mode-button[data-measurement-mode="pieces"] { --option-bg:#f0fdfa; --option-hover:#ccfbf1; --option-accent:#0f766e; --option-ink:#115e59; --option-border:#99d6cd; }
+#add_product_form .measurement-mode-button[data-measurement-mode="pieces_carton"] { --option-bg:#eff6ff; --option-hover:#dbeafe; --option-accent:#1d4ed8; --option-ink:#1e40af; --option-border:#b3cdf8; }
+#add_product_form .measurement-mode-button[data-measurement-mode="kg_carton"] { --option-bg:#fffbeb; --option-hover:#fef3c7; --option-accent:#92400e; --option-ink:#78350f; --option-border:#efd399; }
 #add_product_form .measurement-mode-button {
     position:relative; display:flex; flex-direction:column; justify-content:center; gap:4px; width:100%; min-width:0;
     min-height:70px !important; margin:0; padding:10px 24px 10px 12px !important;
-    border:1px solid #d8e0eb !important; border-radius:6px !important; background:#fff !important;
-    color:#334155 !important; -webkit-text-fill-color:#334155 !important; box-shadow:none !important;
+    border:1px solid var(--option-border) !important; border-radius:6px !important; background:var(--option-bg) !important;
+    color:var(--option-ink) !important; -webkit-text-fill-color:var(--option-ink) !important; box-shadow:none !important;
     font-family:inherit; font-size:13px !important; font-weight:600 !important; line-height:1.35;
     text-align:left; white-space:normal; cursor:pointer; transform:none !important;
 }
 #add_product_form .measurement-mode-button strong { color:inherit !important; -webkit-text-fill-color:inherit !important; font-size:13px; font-weight:600; }
-#add_product_form .measurement-mode-button small { color:#64748b !important; -webkit-text-fill-color:#64748b !important; font-size:11px; font-weight:400; line-height:1.4; }
-#add_product_form .measurement-mode-button:hover { background:#f8fafc !important; border-color:#93b4e8 !important; }
-#add_product_form .measurement-mode-button[aria-pressed="true"] { background:#eff6ff !important; border-color:#2563eb !important; color:#1e40af !important; -webkit-text-fill-color:#1e40af !important; box-shadow:inset 0 0 0 1px #2563eb !important; }
-#add_product_form .measurement-mode-button[aria-pressed="true"]::after { content:'✓'; position:absolute; right:9px; top:9px; color:#2563eb; font-size:12px; }
-#add_product_form .measurement-mode-button:focus-visible { outline:3px solid #93c5fd; outline-offset:2px; }
+#add_product_form .measurement-mode-button small { color:var(--option-ink) !important; -webkit-text-fill-color:var(--option-ink) !important; font-size:11px; font-weight:400; line-height:1.4; }
+#add_product_form .measurement-mode-button:hover { background:var(--option-hover) !important; border-color:var(--option-accent) !important; }
+#add_product_form .measurement-mode-button[aria-pressed="true"] { background:var(--option-accent) !important; border-color:var(--option-accent) !important; color:#fff !important; -webkit-text-fill-color:#fff !important; box-shadow:inset 0 0 0 1px var(--option-accent) !important; }
+#add_product_form .measurement-mode-button[aria-pressed="true"] small { color:#fff !important; -webkit-text-fill-color:#fff !important; }
+#add_product_form .measurement-mode-button[aria-pressed="true"]::after { content:'✓'; position:absolute; right:9px; top:9px; color:#fff; font-size:12px; }
+#add_product_form .measurement-mode-button:focus-visible { outline:3px solid var(--option-accent); outline-offset:2px; }
 #add-product-page .measurement-choice { margin-bottom:12px; }
 #add-product-page #measurement_selection_summary { margin:8px 0 0 !important; padding:7px 10px; border:1px solid #dbeafe; border-radius:6px; background:#f8fbff; color:#365373; font-size:12px; line-height:1.45; }
 #add-product-page #kg_carton_fields,
@@ -99,11 +103,14 @@ body:not(.login-body):not(.landing-page-body) #add-product-page > .content.conta
 #add_product_form .measurement-mode-button small { font-size:12px; font-weight:500; }
 #add-product-page .product-packaging-choice { padding:10px 0 12px !important; border-bottom:1px solid #e5eaf1; }
 #add-product-page .product-packaging-choice .measurement-choice { margin-bottom:0; }
-#add-product-page .other-measurement-choice { display:flex; flex-direction:column; justify-content:center; gap:5px; min-width:0; padding:10px 12px; border:1px solid #d8e0eb; border-radius:6px; background:#fff; }
-#add-product-page .other-measurement-choice label { margin:0; color:#25354c; font-size:13px; font-weight:700; }
-#add-product-page .other-measurement-choice small { color:#64748b; font-size:11px; font-weight:500; }
+#add-product-page .other-measurement-choice { display:flex; flex-direction:column; justify-content:center; gap:5px; min-width:0; padding:10px 12px; border:1px solid #d8e0eb; border-radius:6px; background:#f5f3ff; border-color:#c4b5fd; }
+#add-product-page .other-measurement-choice label { margin:0; color:#5b21b6; font-size:13px; font-weight:700; }
+#add-product-page .other-measurement-choice small { color:#5b21b6; font-size:11px; font-weight:500; }
 #add-product-page .other-measurement-choice .form-select { min-height:34px; padding-top:4px; padding-bottom:4px; }
-#add-product-page .other-measurement-choice[data-active="true"] { background:#eff6ff; border-color:#2563eb; box-shadow:inset 0 0 0 1px #2563eb; }
+#add-product-page .other-measurement-choice[data-active="true"] { background:#6d28d9; border-color:#6d28d9; box-shadow:inset 0 0 0 1px #6d28d9; }
+#add-product-page .other-measurement-choice[data-active="true"] label,
+#add-product-page .other-measurement-choice[data-active="true"] small { color:#fff; -webkit-text-fill-color:#fff; }
+#add-product-page .other-measurement-choice:focus-within { outline:2px solid #7c3aed; outline-offset:2px; }
 @media (max-width:900px) {
     #add-product-page .measurement-mode-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
