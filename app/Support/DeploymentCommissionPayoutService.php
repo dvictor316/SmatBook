@@ -165,7 +165,7 @@ class DeploymentCommissionPayoutService
             return null;
         }
 
-        $manager = DeploymentManager::query()->where('user_id', $managerId)->first();
+        $manager = DeploymentManager::withoutGlobalScope('tenant')->where('user_id', $managerId)->first();
         if (!$manager || empty($manager->auto_payout_enabled)) {
             return null;
         }
@@ -179,7 +179,7 @@ class DeploymentCommissionPayoutService
             return null;
         }
 
-        $manager = DeploymentManager::query()->where('user_id', $managerId)->first();
+        $manager = DeploymentManager::withoutGlobalScope('tenant')->where('user_id', $managerId)->first();
         if (!$manager || empty($manager->payout_bank_code) || empty($manager->payout_account_number)) {
             return null;
         }
@@ -250,7 +250,7 @@ class DeploymentCommissionPayoutService
             return null;
         }
 
-        $manager = DeploymentManager::query()->where('user_id', $managerId)->first();
+        $manager = DeploymentManager::withoutGlobalScope('tenant')->where('user_id', $managerId)->first();
         if (!$manager) {
             return null;
         }
@@ -289,7 +289,7 @@ class DeploymentCommissionPayoutService
         }
 
         return DB::transaction(function () use ($manager, $automatic, $approvedBy) {
-            $lockedManager = DeploymentManager::query()->whereKey($manager->id)->lockForUpdate()->firstOrFail();
+            $lockedManager = DeploymentManager::withoutGlobalScope('tenant')->whereKey($manager->id)->lockForUpdate()->firstOrFail();
             $commissionRows = DB::table('deployment_commissions')
                 ->where('manager_id', $lockedManager->user_id)
                 ->where('status', 'pending')
@@ -342,7 +342,7 @@ class DeploymentCommissionPayoutService
     private function createManualReviewPayout(DeploymentManager $manager, float $amount, bool $automatic, string $reason, ?int $approvedBy = null): DeploymentManagerPayout
     {
         return DB::transaction(function () use ($manager, $amount, $automatic, $reason, $approvedBy) {
-            $lockedManager = DeploymentManager::query()->whereKey($manager->id)->lockForUpdate()->firstOrFail();
+            $lockedManager = DeploymentManager::withoutGlobalScope('tenant')->whereKey($manager->id)->lockForUpdate()->firstOrFail();
             $commissionRows = DB::table('deployment_commissions')
                 ->where('manager_id', $lockedManager->user_id)
                 ->where('status', 'pending')

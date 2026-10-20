@@ -216,7 +216,7 @@ class AgentPortalController extends Controller
         ));
     }
 
-    public function updatePayoutProfile(Request $request): RedirectResponse
+    private function savePayoutProfile(Request $request): DeploymentManager
     {
         $validated = $request->validate([
             'payout_bank_name' => 'required|string|max:191',
@@ -254,10 +254,17 @@ class AgentPortalController extends Controller
             'payout_account_number' => $validated['payout_account_number'],
             'payout_provider' => $validated['payout_provider'],
             'minimum_payout_amount' => $validated['minimum_payout_amount'] ?? ($manager->minimum_payout_amount ?? 5000),
-            'auto_payout_enabled' => $request->boolean('auto_payout_enabled'),
+            'auto_payout_enabled' => Auth::user()->hasRole('agent') || $request->boolean('auto_payout_enabled'),
             'payout_status' => 'configured',
             'payout_recipient_code' => ($providerChanged || $bankChanged) ? null : $manager->payout_recipient_code,
         ]);
+
+        return $manager;
+    }
+
+    public function updatePayoutProfile(Request $request): RedirectResponse
+    {
+        $manager = $this->savePayoutProfile($request);
 
         try {
             $resumedPayout = $this->deploymentCommissionPayouts->retryManualReviewPayoutForManager($manager->user_id, Auth::id());
@@ -271,7 +278,17 @@ class AgentPortalController extends Controller
             }
 
             if ($manager->auto_payout_enabled) {
-                $this->deploymentCommissionPayouts->attemptAutoPayout($manager->user_id);
+                $payout = $this->deploymentCommissionPayouts->attemptAutoPayout($manager->user_id);
+                if ($payout) {
+                    if ($payout->status === 'failed') {
+                        return back()->with('error', $payout->failure_reason ?: 'Bank transfer failed. Please check your payout details.');
+                    }
+                    if ($payout->status === 'manual_review') {
+                        return back()->with('info', $payout->failure_reason ?: 'Your bank transfer needs review.');
+                    }
+
+                    return back()->with('success', 'Bank details saved. Your automatic bank payout has been submitted.');
+                }
             }
         } catch (\Throwable $e) {
             Log::warning('Agent auto payout did not run after payout profile update.', [
@@ -283,8 +300,12 @@ class AgentPortalController extends Controller
         return back()->with('success', 'Payout profile updated successfully.');
     }
 
-    public function requestPayout(): RedirectResponse
+    public function requestPayout(Request $request): RedirectResponse
     {
+        if ($request->has('payout_bank_code')) {
+            $this->savePayoutProfile($request);
+        }
+
         $payout = $this->deploymentCommissionPayouts->retryManualReviewPayoutForManager(Auth::id(), Auth::id())
             ?: $this->deploymentCommissionPayouts->createPayoutForManager(Auth::id(), false, Auth::id());
 

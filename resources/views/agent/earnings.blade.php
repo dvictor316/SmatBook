@@ -31,11 +31,11 @@
                 <div class="value">₦{{ number_format($stats['processing_commissions'] ?? 0) }}</div>
             </section>
 
-            <section class="agent-card span-12">
+            <section class="agent-card span-12" id="payout-setup">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                     <div>
                         <h4>Payout Setup</h4>
-                        <small class="agent-muted">Add verified bank details, enable automatic payout, or request your available balance.</small>
+                        <small class="agent-muted">Save your bank details once. Eligible commissions are sent automatically to your bank account.</small>
                     </div>
                     <span class="agent-pill">Status: {{ str_replace('_', ' ', optional($manager)->payout_status ?? 'not_configured') }}</span>
                 </div>
@@ -91,20 +91,21 @@
                         <input type="number" step="0.01" min="0" name="minimum_payout_amount" class="form-control" value="{{ old('minimum_payout_amount', optional($manager)->minimum_payout_amount ?? 5000) }}">
                     </div>
                     <div class="col-md-4 d-flex align-items-end">
+                        @if($user->hasRole('agent'))
+                            <p class="agent-muted mb-2">Automatic bank payouts are enabled after you save your bank details.</p>
+                        @else
                         <div class="form-check form-switch mb-2">
                             <input class="form-check-input" type="checkbox" id="agent_auto_payout_enabled" name="auto_payout_enabled" value="1" {{ old('auto_payout_enabled', !empty(optional($manager)->auto_payout_enabled)) ? 'checked' : '' }}>
                             <label class="form-check-label fw-semibold" for="agent_auto_payout_enabled">Enable automatic payout</label>
                         </div>
+                        @endif
                     </div>
                     <div class="col-12 d-flex gap-2 flex-wrap">
                         <button type="submit" class="agent-button"><i class="fa-solid fa-floppy-disk"></i> Save Payout Profile</button>
-                        <button type="submit" form="agent-request-payout-form" class="agent-button soft" {{ !$canRequestPayout ? 'disabled' : '' }}>
+                        <button type="submit" formaction="{{ route('agent.earnings.request-payout') }}" class="agent-button soft" {{ !$canRequestPayout ? 'disabled' : '' }}>
                             <i class="fa-solid fa-money-bill-transfer"></i> {{ $hasRetryablePayout ? 'Resume Payout' : 'Request Payout' }}
                         </button>
                     </div>
-                </form>
-                <form method="POST" action="{{ route('agent.earnings.request-payout') }}" id="agent-request-payout-form">
-                    @csrf
                 </form>
             </section>
 

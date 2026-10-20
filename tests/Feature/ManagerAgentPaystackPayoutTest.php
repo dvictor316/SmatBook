@@ -136,6 +136,172 @@ class ManagerAgentPaystackPayoutTest extends TestCase
         $this->assertSame('processing', $retried->status);
     }
 
+    public function test_agent_can_save_bank_details_and_request_own_payout_from_the_portal(): void
+    {
+        [$manager, $commissionId] = $this->payoutWorkspace();
+        $user = User::findOrFail($manager->user_id);
+        $manager->delete(); // An agent may not have a payout profile yet.
+        $this->withoutMiddleware([
+            \App\Http\Middleware\ForceLogoutExpiredSession::class,
+            \App\Http\Middleware\EnforceDeviceSessionLimit::class,
+        ]);
+        Http::preventStrayRequests();
+        Http::fake([
+            'api.paystack.co/bank?*' => Http::response(['status' => true, 'data' => [['name' => 'Access Bank', 'code' => '044']]]),
+            'api.paystack.co/bank/resolve?*' => Http::response(['status' => true, 'data' => ['account_name' => 'Agent Account']]),
+            'api.paystack.co/transferrecipient' => Http::response(['status' => true, 'data' => ['recipient_code' => 'RCP_agent']]),
+            'api.paystack.co/transfer' => Http::response(['status' => true, 'data' => ['status' => 'pending', 'transfer_code' => 'TRF_agent']]),
+        ]);
+
+        $response = $this->actingAs($user)->from(route('agent.earnings'))->post(route('agent.earnings.request-payout'), [
+            'payout_bank_name' => 'Access Bank',
+            'payout_bank_code' => '044',
+            'payout_account_name' => 'Agent Account',
+            'payout_account_number' => '0123456789',
+            'payout_provider' => 'paystack',
+            'minimum_payout_amount' => 5000,
+        ]);
+
+        $response->assertRedirect(route('agent.earnings'))->assertSessionHasNoErrors()->assertSessionHas('success');
+        $this->assertDatabaseHas('deployment_manager_payouts', ['manager_id' => $user->id, 'status' => 'processing', 'amount' => 12500]);
+        $this->assertDatabaseHas('deployment_commissions', ['id' => $commissionId, 'status' => 'pending']);
+        Http::assertSentCount(4);
+        Http::assertSent(fn (ClientRequest $request) => str_ends_with($request->url(), '/transfer') && $request['amount'] === 1250000);
+
+        // A repeat click must not send the same commissions a second time.
+        $this->post(route('agent.earnings.request-payout'))->assertSessionHas('error');
+        Http::assertSentCount(4);
+        $this->assertDatabaseCount('deployment_manager_payouts', 1);
+    }
+
+    public function test_agent_payout_validates_entered_details_before_sending_money(): void
+    {
+        [$manager] = $this->payoutWorkspace('RCP_existing');
+        $user = User::findOrFail($manager->user_id);
+        $this->withoutMiddleware([
+            \App\Http\Middleware\ForceLogoutExpiredSession::class,
+            \App\Http\Middleware\EnforceDeviceSessionLimit::class,
+        ]);
+        Http::preventStrayRequests();
+        Http::fake();
+
+        $this->actingAs($user)->from(route('agent.earnings'))->post(route('agent.earnings.request-payout'), [
+            'payout_bank_code' => '044',
+            'payout_bank_name' => 'Access Bank',
+            'payout_account_name' => 'Agent Account',
+            'payout_account_number' => '',
+            'payout_provider' => 'paystack',
+        ])->assertRedirect(route('agent.earnings'))->assertSessionHasErrors('payout_account_number');
+
+        Http::assertNothingSent();
+        $this->assertDatabaseCount('deployment_manager_payouts', 0);
+        $this->assertSame('0123456789', $manager->fresh()->payout_account_number);
+    }
+
+    public function test_saving_agent_bank_details_automatically_starts_bank_transfer_without_opt_in(): void
+    {
+        [$manager] = $this->payoutWorkspace('RCP_existing');
+        $user = User::findOrFail($manager->user_id);
+        $this->withoutMiddleware([
+            \App\Http\Middleware\ForceLogoutExpiredSession::class,
+            \App\Http\Middleware\EnforceDeviceSessionLimit::class,
+        ]);
+        Http::preventStrayRequests();
+        Http::fake([
+            'api.paystack.co/bank?*' => Http::response(['status' => true, 'data' => [['name' => 'Access Bank', 'code' => '044']]]),
+            'api.paystack.co/transfer' => Http::response(['status' => true, 'data' => ['status' => 'pending', 'transfer_code' => 'TRF_auto']]),
+        ]);
+
+        $this->actingAs($user)->from(route('agent.earnings'))->post(route('agent.earnings.payout-profile'), [
+            'payout_bank_name' => 'Access Bank', 'payout_bank_code' => '044',
+            'payout_account_name' => 'Agent Account', 'payout_account_number' => '0123456789',
+            'payout_provider' => 'paystack', 'minimum_payout_amount' => 5000,
+        ])->assertSessionHasNoErrors()->assertSessionHas('success');
+
+        $this->assertTrue($manager->fresh()->auto_payout_enabled);
+        $this->assertDatabaseHas('deployment_manager_payouts', [
+            'manager_id' => $user->id, 'status' => 'processing', 'is_automatic' => true, 'amount' => 12500,
+        ]);
+        Http::assertSent(fn (ClientRequest $request) => str_ends_with($request->url(), '/transfer') && $request['recipient'] === 'RCP_existing');
+    }
+
+    public function test_automatic_payout_can_find_agent_profile_while_customer_is_logged_in(): void
+    {
+        [$manager] = $this->payoutWorkspace('RCP_existing');
+        $manager->update(['auto_payout_enabled' => true]);
+        $customer = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($customer);
+        config(['tenancy.enforce_scopes_in_console' => true]);
+        // Reproduce the web checkout scope that previously hid the agent profile.
+        $this->assertNull(DeploymentManager::where('user_id', $manager->user_id)->first());
+        Http::preventStrayRequests();
+        Http::fake(['api.paystack.co/transfer' => Http::response([
+            'status' => true, 'data' => ['status' => 'pending', 'transfer_code' => 'TRF_checkout'],
+        ])]);
+
+        $payout = app(DeploymentCommissionPayoutService::class)->attemptAutoPayout($manager->user_id);
+        $this->assertNotNull($payout);
+        $this->assertSame('processing', $payout->status);
+        $this->assertSame($manager->user_id, $payout->manager_id);
+        $this->assertTrue($payout->is_automatic);
+        Http::assertSentCount(1);
+        $this->assertNull(app(DeploymentCommissionPayoutService::class)->attemptAutoPayout($manager->user_id));
+        Http::assertSentCount(1);
+    }
+
+    public function test_scheduled_payouts_send_eligible_agent_commissions_without_dashboard_visit(): void
+    {
+        [$manager] = $this->payoutWorkspace('RCP_existing');
+        $manager->update(['auto_payout_enabled' => true]);
+        Http::preventStrayRequests();
+        Http::fake(['api.paystack.co/transfer' => Http::response([
+            'status' => true, 'data' => ['status' => 'pending', 'transfer_code' => 'TRF_scheduled'],
+        ])]);
+
+        $this->artisan('agents:process-payouts')->assertSuccessful();
+        $this->assertDatabaseHas('deployment_manager_payouts', [
+            'manager_id' => $manager->user_id, 'status' => 'processing', 'is_automatic' => true,
+        ]);
+        $this->artisan('agents:process-payouts')->assertSuccessful();
+        Http::assertSentCount(1);
+    }
+
+    public function test_existing_agent_profiles_are_enabled_without_enabling_other_staff(): void
+    {
+        [$manager] = $this->payoutWorkspace();
+        $staff = User::factory()->create(['role' => 'cashier']);
+        $staffProfile = DeploymentManager::create(['user_id' => $staff->id, 'auto_payout_enabled' => false]);
+        $migration = require database_path('migrations/2026_10_20_000001_enable_automatic_bank_payouts_for_agents.php');
+        $migration->up();
+
+        $this->assertTrue($manager->fresh()->auto_payout_enabled);
+        $this->assertFalse($staffProfile->fresh()->auto_payout_enabled);
+    }
+
+    public function test_automatic_transfer_failure_is_shown_instead_of_reporting_success(): void
+    {
+        [$manager, $commissionId] = $this->payoutWorkspace('RCP_existing');
+        $user = User::findOrFail($manager->user_id);
+        $this->withoutMiddleware([
+            \App\Http\Middleware\ForceLogoutExpiredSession::class,
+            \App\Http\Middleware\EnforceDeviceSessionLimit::class,
+        ]);
+        Http::preventStrayRequests();
+        Http::fake([
+            'api.paystack.co/bank?*' => Http::response(['status' => true, 'data' => [['name' => 'Access Bank', 'code' => '044']]]),
+            'api.paystack.co/transfer' => Http::response(['status' => false, 'message' => 'Your balance is not enough to fulfill this request'], 400),
+        ]);
+
+        $this->actingAs($user)->from(route('agent.earnings'))->post(route('agent.earnings.payout-profile'), [
+            'payout_bank_name' => 'Access Bank', 'payout_bank_code' => '044',
+            'payout_account_name' => 'Agent Account', 'payout_account_number' => '0123456789',
+            'payout_provider' => 'paystack', 'minimum_payout_amount' => 5000,
+        ])->assertSessionHas('error', 'Your balance is not enough to fulfill this request')->assertSessionMissing('success');
+
+        $this->assertDatabaseHas('deployment_manager_payouts', ['manager_id' => $user->id, 'status' => 'failed']);
+        $this->assertDatabaseHas('deployment_commissions', ['id' => $commissionId, 'status' => 'pending', 'payout_id' => null]);
+    }
+
     private function payoutWorkspace(?string $recipientCode = null): array
     {
         $user = User::factory()->create(['role' => 'agent']);

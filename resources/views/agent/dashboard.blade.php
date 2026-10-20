@@ -18,7 +18,10 @@
                 <h1>Welcome, {{ strtok($user->name ?? 'Agent', ' ') }}!</h1>
                 <p>{{ now()->format('l, F j, Y') }} · Agent Dashboard</p>
             </div>
-            <div class="agent-avatar">{{ $initials ?: 'AG' }}</div>
+            <div class="d-flex align-items-center gap-3">
+                <a href="{{ route('agent.earnings') }}#payout-setup" class="agent-button"><i class="fa-solid fa-money-bill-transfer"></i> Request Payout</a>
+                <div class="agent-avatar">{{ $initials ?: 'AG' }}</div>
+            </div>
         </div>
 
         <div class="agent-grid">
