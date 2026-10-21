@@ -50,8 +50,7 @@ class ReservationController extends Controller
             })
             ->with(['customer', 'roomType', 'room'])
             ->latest('id')
-            ->paginate(20)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $properties = HotelProperty::where('company_id', $companyId)->orderBy('name')->get();
 

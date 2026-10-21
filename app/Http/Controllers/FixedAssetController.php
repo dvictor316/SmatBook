@@ -96,7 +96,7 @@ class FixedAssetController extends Controller
                 $assetsQuery->whereDate('acquired_on', '<=', $toDate);
             }
         }
-        $assets = $assetsQuery->paginate(15)->appends($request->query());
+        $assets = $assetsQuery->paginate(\App\Support\PageSize::resolve())->withQueryString()->appends($request->query());
         $assets->getCollection()->transform(function (FixedAsset $asset) {
             $asset->next_due_date = $this->depreciationService->nextDueDate($asset);
             $asset->scheduled_depreciation_amount = $this->depreciationService->previewAmount($asset);

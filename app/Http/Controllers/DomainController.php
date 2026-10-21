@@ -40,7 +40,7 @@ class DomainController extends Controller
             $query->where('customer_id', $request->customer_id);
         }
 
-        $domains = $query->orderBy('created_at', 'desc')->paginate(15);
+        $domains = $query->orderBy('created_at', 'desc')->paginate(\App\Support\PageSize::resolve())->withQueryString();
         
         // Fetch users with 'customer' role for filtering dropdowns
         $customers = User::where('role', 'customer')->get();

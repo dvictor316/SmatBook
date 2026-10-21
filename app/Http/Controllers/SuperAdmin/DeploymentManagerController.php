@@ -779,7 +779,7 @@ class DeploymentManagerController extends Controller
             }
         }
 
-        $deployments = $query->paginate(15)->withQueryString();
+        $deployments = $query->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $base = $this->customDeploymentsQuery();
         $unlimitedDeployments = (clone $base)->where('user_limit', '>=', self::UNLIMITED_USER_LIMIT)->count();
@@ -980,12 +980,12 @@ class DeploymentManagerController extends Controller
                     DB::raw("COALESCE(users.email, '') as email")
                 )
                 ->orderByDesc('deployment_managers.created_at')
-                ->paginate(15);
+                ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         } else {
             $users = User::whereIn('company_id', $this->managedCompanyIds())
                 ->with('company')
                 ->latest()
-                ->paginate(10);
+                ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         }
 
         return view('deployment.users.index', compact('users'));
@@ -1734,7 +1734,7 @@ private function formatDeploymentAmount(float $amount): string
                 });
             })
             ->latest()
-            ->paginate(10);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('deployment.companies.index', compact('companies'));
     }
@@ -1748,7 +1748,7 @@ private function formatDeploymentAmount(float $amount): string
             ->whereRaw('LOWER(status) = ?', ['active'])
             ->with(['subscription' => fn ($q) => $q->withoutGlobalScope('tenant'), 'user'])
             ->latest()
-            ->paginate(10);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         // Point to the same index view to avoid "View not found" or "Undefined variable"
         return view('deployment.companies.index', compact('companies'));
@@ -1763,7 +1763,7 @@ private function formatDeploymentAmount(float $amount): string
             ->whereRaw('LOWER(status) = ?', ['pending'])
             ->with(['subscription' => fn ($q) => $q->withoutGlobalScope('tenant'), 'user'])
             ->latest()
-            ->paginate(10);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('deployment.companies.index', compact('companies'));
     }
@@ -1818,7 +1818,7 @@ private function formatDeploymentAmount(float $amount): string
         $subscriptions = $this->managedSubscriptions()
             ->with(['company' => fn ($q) => $q->withoutGlobalScope('tenant'), 'user'])
             ->latest('end_date')
-            ->paginate(15);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $stats = [
             'total_revenue' => (clone $this->managedSubscriptions())
@@ -1849,7 +1849,7 @@ private function formatDeploymentAmount(float $amount): string
             ->with(['company' => fn ($q) => $q->withoutGlobalScope('tenant'), 'user'])
             ->whereRaw('LOWER(status) IN (?, ?)', ['active', 'expiring'])
             ->orderBy('end_date', 'asc')
-            ->paginate(15);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('deployment.subscriptions.renewals', compact('renewals'));
     }
@@ -1871,7 +1871,7 @@ private function formatDeploymentAmount(float $amount): string
             ->with(['company' => fn ($q) => $q->withoutGlobalScope('tenant'), 'user'])
             ->latest('updated_at');
 
-        $subscriptions = $query->paginate(12)->withQueryString();
+        $subscriptions = $query->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $subscriptions->getCollection()->transform(fn (Subscription $subscription) => $this->decorateSeatUpgradeSubscription($subscription));
 
         $selectedSubscription = null;
@@ -2067,7 +2067,7 @@ private function formatDeploymentAmount(float $amount): string
             ->with(['company' => fn ($q) => $q->withoutGlobalScope('tenant'), 'user'])
             ->whereRaw('LOWER(status) = ?', ['active'])
             ->where('end_date', '<=', now()->addDays(30))
-            ->paginate(15);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('deployment.subscriptions.expiring', compact('renewals'));
     }
@@ -2090,10 +2090,10 @@ private function formatDeploymentAmount(float $amount): string
     {
         $user = Auth::user();
         if ($user->role === 'super_admin' || $user->hasRole('super_admin')) {
-            $users = DeploymentManager::with('user')->latest()->paginate(10);
+            $users = DeploymentManager::with('user')->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
         } else {
             $users = User::whereIn('company_id', $this->managedCompanyIds())
-                ->with(['company' => fn ($q) => $q->withoutGlobalScope('tenant')])->latest()->paginate(10);
+                ->with(['company' => fn ($q) => $q->withoutGlobalScope('tenant')])->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
         }
         return view('deployment.users.index', compact('users'));
     }
@@ -2393,7 +2393,7 @@ private function formatDeploymentAmount(float $amount): string
             ->with('company')
             ->whereRaw('LOWER(payment_status) = ?', ['paid'])
             ->latest()
-            ->paginate(20);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         return view('deployment.invoices.index', compact('invoices'));
     }
 
@@ -2417,7 +2417,7 @@ private function formatDeploymentAmount(float $amount): string
     }
 
     public function paymentsIndex() { 
-        $payments = $this->managedSubscriptions()->with('company')->latest()->paginate(20);
+        $payments = $this->managedSubscriptions()->with('company')->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
         return view('deployment.payments.index', compact('payments')); 
     }
 
@@ -2431,7 +2431,7 @@ private function formatDeploymentAmount(float $amount): string
             ->with('company')
             ->whereRaw('LOWER(payment_status) IN (?, ?)', ['pending', 'unpaid'])
             ->latest()
-            ->paginate(20);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         return view('deployment.payments.pending', compact('payments')); 
     }
 
@@ -2440,7 +2440,7 @@ private function formatDeploymentAmount(float $amount): string
             ->with('company')
             ->whereRaw('LOWER(payment_status) = ?', ['paid'])
             ->latest()
-            ->paginate(20);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         return view('deployment.payments.completed', compact('payments')); 
     }
 
@@ -2471,7 +2471,7 @@ private function formatDeploymentAmount(float $amount): string
                 $q->where('module', 'deployment')->orWhereNull('module');
             })
             ->latest()
-            ->paginate(20);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('deployment.reports.client-activity', compact('activities'));
     }
@@ -2613,7 +2613,7 @@ private function formatDeploymentAmount(float $amount): string
             ->where('user_id', Auth::id())
             ->where('module', 'deployment_support')
             ->latest()
-            ->paginate(15);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('deployment.support.tickets', compact('tickets'));
     }
@@ -2691,7 +2691,7 @@ private function formatDeploymentAmount(float $amount): string
     public function notifications()
     {
         $user = Auth::user();
-        $notifications = $user->notifications()->latest()->paginate(15);
+        $notifications = $user->notifications()->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $unreadCount = $user->unreadNotifications()->count();
 
         return view('deployment.notifications.index', compact('notifications', 'unreadCount'));

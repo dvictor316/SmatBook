@@ -26,7 +26,7 @@ class FolioController extends Controller
             ->where('company_id', auth()->user()->company_id)
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->latest('id')
-            ->paginate(20);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('hotel.folios.index', compact('folios'));
     }

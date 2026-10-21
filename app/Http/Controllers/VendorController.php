@@ -93,7 +93,7 @@ class VendorController extends Controller
             });
         }
 
-        $vendors = $query->paginate(20)->withQueryString();
+        $vendors = $query->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         // Loop through vendors and calculate their actual current balance dynamically
         foreach ($vendors as $vendor) {

@@ -25,8 +25,7 @@ class MaintenanceController extends Controller
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->query('status')))
             ->latest('id')
-            ->paginate(30)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $rooms = HotelRoom::query()
             ->with('type')

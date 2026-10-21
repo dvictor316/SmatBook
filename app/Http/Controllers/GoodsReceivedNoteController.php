@@ -70,7 +70,7 @@ class GoodsReceivedNoteController extends Controller
             ->with(['supplier', 'purchaseOrder', 'createdBy'])
             ->tap(fn ($query) => $this->applyGrnScope($query))
             ->latest('received_date')
-            ->paginate(25);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('grn.index', compact('grns'));
     }

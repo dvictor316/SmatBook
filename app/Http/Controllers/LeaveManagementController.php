@@ -71,7 +71,7 @@ class LeaveManagementController extends Controller
             $query->where('status', $status);
         }
 
-        $requests = $query->paginate(25);
+        $requests = $query->paginate(\App\Support\PageSize::resolve())->withQueryString();
         return view('hr.leave.requests', compact('requests'));
     }
 

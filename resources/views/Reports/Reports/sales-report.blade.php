@@ -90,7 +90,7 @@
                         <div class="card-body">
                             <div class="inform-item">
                                 <h6 class="text-primary">Total Items Sold</h6>
-                                <h5>{{ number_format($salesreports->sum('SoldQty')) }}</h5>
+                                <h5>{{ number_format($reportSummary->quantity) }}</h5>
                             </div>
                         </div>
                     </div>
@@ -100,7 +100,7 @@
                         <div class="card-body">
                             <div class="inform-item">
                                 <h6 class="text-success">Total Sales Revenue</h6>
-                                <h5>{{ \App\Support\GeoCurrency::format($salesreports->sum('SoldAmount'), 'NGN', $currencyCode, $currencyLocale) }}</h5>
+                                <h5>{{ \App\Support\GeoCurrency::format($reportSummary->revenue, 'NGN', $currencyCode, $currencyLocale) }}</h5>
                             </div>
                         </div>
                     </div>
@@ -109,8 +109,8 @@
                     <div class="card reporte-card bg-warning-light sales-summary-card">
                         <div class="card-body">
                             <div class="inform-item">
-                                <h6 class="text-warning">Total Products</h6>
-                                <h5>{{ $salesreports->unique('Product')->count() }}</h5>
+                                <h6 class="text-warning">Distinct Products Sold</h6>
+                                <h5>{{ $reportSummary->products }}</h5>
                             </div>
                         </div>
                     </div>
@@ -119,8 +119,8 @@
                     <div class="card reporte-card bg-info-light sales-summary-card">
                         <div class="card-body">
                             <div class="inform-item">
-                                <h6 class="text-info">Avg Sale Value</h6>
-                                <h5>{{ \App\Support\GeoCurrency::format($salesreports->count() > 0 ? ($salesreports->sum('SoldAmount') / $salesreports->count()) : 0, 'NGN', $currencyCode, $currencyLocale) }}</h5>
+                                <h6 class="text-info">Average Revenue per Product</h6>
+                                <h5>{{ \App\Support\GeoCurrency::format($reportSummary->products > 0 ? ($reportSummary->revenue / $reportSummary->products) : 0, 'NGN', $currencyCode, $currencyLocale) }}</h5>
                             </div>
                         </div>
                     </div>
@@ -190,11 +190,11 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @php $runningTotal = 0; @endphp
+                                        @php $runningTotal = (float) $reportRunningTotal; @endphp
                                         @foreach ($salesreports as $report)
                                             @php $runningTotal += (float) $report->SoldAmount; @endphp
                                             <tr>
-                                                <td>{{ $loop->iteration }}</td>
+                                                <td>{{ ($salesreports->firstItem() ?? 1) + $loop->index }}</td>
                                                 <td class="fw-bold">{{ $report->Product }}</td>
                                                 <td><span class="badge badge-soft-secondary">{{ $report->SKU }}</span></td>
                                                 <td>{{ $report->Category }}</td>
@@ -234,12 +234,6 @@
 @section('script')
 <script>
 $(document).ready(function() {
-    // Toggle filter section
-    $('#filter_search').on('click', function(e) {
-        e.preventDefault();
-        $('#filter_inputs').slideToggle("fast");
-    });
-
     // Excel Export
     document.getElementById('export_excel').addEventListener('click', function() {
         const table = document.getElementById('sales-report-table');

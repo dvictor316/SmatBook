@@ -25,7 +25,7 @@ class ChequeController extends Controller
             $query->where('status', $status);
         }
 
-        $cheques = $query->latest('cheque_date')->paginate(25);
+        $cheques = $query->latest('cheque_date')->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('cheques.index', compact('cheques', 'type'));
     }

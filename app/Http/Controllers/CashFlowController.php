@@ -60,8 +60,8 @@ class CashFlowController extends Controller
                 ->where('credit', '>', 0)
                 ->orderBy('transaction_date', 'asc');
 
-            $inflows = $inflowsQuery->paginate(20, ['*'], 'inflow_page')->appends($request->query());
-            $outflows = $outflowsQuery->paginate(20, ['*'], 'outflow_page')->appends($request->query());
+            $inflows = $inflowsQuery->paginate(\App\Support\PageSize::resolve(), ['*'], 'inflow_page')->appends($request->query());
+            $outflows = $outflowsQuery->paginate(\App\Support\PageSize::resolve(), ['*'], 'outflow_page')->appends($request->query());
 
             $totalInflow = (clone $baseQuery)->where('debit', '>', 0)->sum('debit');
             $totalOutflow = (clone $baseQuery)->where('credit', '>', 0)->sum('credit');
@@ -368,6 +368,7 @@ class CashFlowController extends Controller
 
     private function paginateCollection($items, int $perPage, string $pageName, Request $request): LengthAwarePaginator
     {
+        $perPage = \App\Support\PageSize::resolve();
         $page = (int) $request->query($pageName, 1);
         $items = collect($items);
         $slice = $items->forPage($page, $perPage)->values();

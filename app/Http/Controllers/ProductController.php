@@ -1137,7 +1137,7 @@ class ProductController extends Controller
                 }
             }
 
-            $products = $query->paginate(500)->withQueryString();
+            $products = $query->paginate(\App\Support\PageSize::resolve())->withQueryString();
             $products->getCollection()->transform(function ($product) use ($activeBranch, $hasCategories) {
                 $product->setAttribute('active_branch_stock', $this->branchInventory->getAvailableStock($product, $activeBranch));
                 $product->setAttribute('category_name', $hasCategories ? ($product->category->name ?? null) : null);
@@ -2258,7 +2258,7 @@ public function inventory(Request $request)
             }
         }
 
-        $audits = $auditsQuery->paginate(20)->appends($request->query());
+        $audits = $auditsQuery->paginate(\App\Support\PageSize::resolve())->withQueryString()->appends($request->query());
 
         return view('Inventory.transfer-audit', compact('audits', 'search', 'month', 'fromDate', 'toDate'));
     }
@@ -2271,7 +2271,7 @@ public function inventory(Request $request)
         $activeBranch = $this->getActiveBranchContext();
 
         if (!Schema::hasTable('inventory_history')) {
-            $damages = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 25, 1, [
+            $damages = new \Illuminate\Pagination\LengthAwarePaginator([], 0, \App\Support\PageSize::resolve(), 1, [
                 'path' => $request->url(),
                 'query' => $request->query(),
             ]);
@@ -2381,7 +2381,7 @@ public function inventory(Request $request)
 
         $damages = $damagesQuery
             ->orderByDesc('inventory_history.created_at')
-            ->paginate(25)
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString()
             ->appends($request->query());
 
         return view('Inventory.damage-report', compact(

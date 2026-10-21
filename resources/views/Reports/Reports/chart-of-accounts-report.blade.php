@@ -179,7 +179,7 @@
 let coaTable;
 $(document).ready(function() {
     coaTable = $('#chartAccountsReportTable').DataTable({
-        pageLength: -1,
+        pageLength: 500,
         ordering: false,
         dom: 'Bfrtip',
         buttons: [

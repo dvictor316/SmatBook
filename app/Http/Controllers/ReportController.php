@@ -1168,7 +1168,7 @@ class ReportController extends Controller
             });
         }
 
-        return $query->orderBy($dateColumn, 'desc')->paginate(10);
+        return $query->orderBy($dateColumn, 'desc')->paginate(\App\Support\PageSize::resolve())->withQueryString();
     }
 
     /**
@@ -1196,6 +1196,7 @@ class ReportController extends Controller
 
     private function paginateCollection($items, int $perPage, string $pageName, Request $request): LengthAwarePaginator
     {
+        $perPage = \App\Support\PageSize::resolve();
         $items = collect($items)->values();
         $page = max(1, (int) $request->query($pageName, 1));
 
@@ -1400,7 +1401,7 @@ class ReportController extends Controller
 
                 if ($hasPurchaseRows) {
                     $totalSum = (float) ((clone $query)->sum(DB::raw($purchaseAmountExpression)) ?? 0);
-                    $purchases = $query->orderByDesc("purchases.{$purchaseDateColumn}")->paginate(20)->withQueryString();
+                    $purchases = $query->orderByDesc("purchases.{$purchaseDateColumn}")->paginate(\App\Support\PageSize::resolve())->withQueryString();
                 }
             }
         }
@@ -1437,10 +1438,10 @@ class ReportController extends Controller
                 });
             }
 
-            $purchases = $historyQuery->orderByDesc('inventory_history.created_at')->paginate(20);
+            $purchases = $historyQuery->orderByDesc('inventory_history.created_at')->paginate(\App\Support\PageSize::resolve())->withQueryString();
             $totalSum = (clone $historyQuery)->sum(DB::raw('COALESCE(inventory_history.quantity, 0) * COALESCE(products.purchase_price, products.price, 0)'));
         } elseif (! $hasPurchaseRows) {
-            $purchases = new LengthAwarePaginator([], 0, 20, 1, [
+            $purchases = new LengthAwarePaginator([], 0, \App\Support\PageSize::resolve(), 1, [
                 'path' => request()->url(),
                 'query' => request()->query(),
             ]);
@@ -1704,7 +1705,7 @@ class ReportController extends Controller
     public function payment_report(Request $request)
     {
         if (! Schema::hasTable('payments')) {
-            $payments = new LengthAwarePaginator([], 0, 25, 1, [
+            $payments = new LengthAwarePaginator([], 0, \App\Support\PageSize::resolve(), 1, [
                 'path' => request()->url(),
                 'query' => request()->query(),
             ]);
@@ -1752,7 +1753,7 @@ class ReportController extends Controller
         $totalAmount = (clone $query)->sum('amount');
 
         // Increased to 25 for better report viewing, preserved filters
-        $payments = $query->orderBy('created_at', 'asc')->paginate(25)->withQueryString();
+        $payments = $query->orderBy('created_at', 'asc')->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $payments->getCollection()->transform(function ($payment) {
             $payment->resolved_status = $this->resolvePaymentStatus($payment);
             $payment->resolved_channel = $this->resolvePaymentChannel($payment);
@@ -1772,7 +1773,7 @@ class ReportController extends Controller
     {
         $activeBranch = $this->getActiveBranchContext();
         if (! Schema::hasTable('payments')) {
-            $payments = new LengthAwarePaginator([], 0, 10, 1, [
+            $payments = new LengthAwarePaginator([], 0, \App\Support\PageSize::resolve(), 1, [
                 'path' => request()->url(),
                 'query' => request()->query(),
             ]);
@@ -1920,7 +1921,7 @@ class ReportController extends Controller
 
         $statusOptions = collect(['Completed', 'Pending', 'Partial', 'Failed', 'Cancelled']);
 
-        $payments = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
+        $payments = $query->orderBy('created_at', 'desc')->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $payments->getCollection()->transform(function ($payment) {
             $payment->resolved_status = $this->resolvePaymentStatus($payment);
             $payment->resolved_channel = $this->resolvePaymentChannel($payment);
@@ -2663,7 +2664,7 @@ class ReportController extends Controller
         }
 
         // Get results with query string preserved for pagination
-        $quotationreports = $query->latest()->paginate(20)->withQueryString();
+        $quotationreports = $query->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('Reports.Reports.quotation-report', compact('quotationreports'));
     }
@@ -2671,6 +2672,14 @@ class ReportController extends Controller
     /** 7. Sales Report **/
     public function sales_report(Request $request)
     {
+        $request->validate([
+            'search' => 'nullable|string|max:200',
+            'start_date' => 'nullable|date_format:Y-m-d', 'end_date' => 'nullable|date_format:Y-m-d',
+            'from_date' => 'nullable|date_format:Y-m-d', 'to_date' => 'nullable|date_format:Y-m-d',
+            'payment_method' => 'nullable|string|max:50',
+        ]);
+        $saleDateExpression = Schema::hasColumn('sales', 'order_date')
+            ? 'COALESCE(sales.order_date, sales.created_at)' : 'sales.created_at';
         $activeBranch = $this->getActiveBranchContext();
         $baseStockExpression = Schema::hasColumn('products', 'stock')
             ? 'COALESCE(products.stock, 0)'
@@ -2714,7 +2723,7 @@ class ReportController extends Controller
                     COALESCE(SUM('.$saleLineTotalExpression.'), 0) as SoldAmount,
                     COALESCE(SUM('.$saleQtyExpression.'), 0) as SoldQty,
                     '.$stockExpression.' as InstockQty,
-                    MAX(sales.created_at) as DueDate
+                    MAX('.$saleDateExpression.') as DueDate
                 ')
             ->groupBy('products.id', 'products.name', 'products.sku', 'categories.name', DB::raw($stockExpression));
         $this->applyTenantScope($query, 'products');
@@ -2734,16 +2743,16 @@ class ReportController extends Controller
         $endDate = $request->input('end_date') ?: $request->input('to_date');
 
         if ($startDate) {
-            $query->where(function ($builder) use ($startDate) {
+            $query->where(function ($builder) use ($startDate, $saleDateExpression) {
                 $builder->whereNull('sales.created_at')
-                    ->orWhereDate('sales.created_at', '>=', $startDate);
+                    ->orWhereDate(DB::raw($saleDateExpression), '>=', $startDate);
             });
         }
 
         if ($endDate) {
-            $query->where(function ($builder) use ($endDate) {
+            $query->where(function ($builder) use ($endDate, $saleDateExpression) {
                 $builder->whereNull('sales.created_at')
-                    ->orWhereDate('sales.created_at', '<=', $endDate);
+                    ->orWhereDate(DB::raw($saleDateExpression), '<=', $endDate);
             });
         }
 
@@ -2751,13 +2760,24 @@ class ReportController extends Controller
             SalesPaymentModeFilter::apply($query, (string) $request->input('payment_method'));
         }
 
+        if ($startDate && $endDate && $startDate > $endDate) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['end_date' => 'The end date must be on or after the start date.']);
+        }
+        $reportSummary = DB::query()->fromSub(clone $query, 'filtered_sales')
+            ->selectRaw('COALESCE(SUM(SoldQty), 0) as quantity, COALESCE(SUM(SoldAmount), 0) as revenue, COUNT(*) as products')
+            ->first();
+
         $salesreports = $query
             ->orderBy('DueDate', 'asc')
-            ->orderBy('products.name')
-            ->paginate(15)
-            ->withQueryString();
+            ->orderBy('products.name')->orderBy('products.id')
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
-        return $this->renderReportView('sales-report', compact('salesreports', 'activeBranch'));
+        $precedingCount = max(0, ($salesreports->currentPage() - 1) * $salesreports->perPage());
+        $reportRunningTotal = $precedingCount > 0
+            ? DB::query()->fromSub((clone $query)->reorder()->orderBy('DueDate')->orderBy('products.name')->orderBy('products.id')
+                ->offset(0)->limit($precedingCount), 'preceding_sales')->sum('SoldAmount') : 0;
+
+        return $this->renderReportView('sales-report', compact('salesreports', 'activeBranch', 'reportSummary', 'reportRunningTotal'));
     }
 
     /** 8. Sales Return Report **/
@@ -3125,7 +3145,7 @@ class ReportController extends Controller
     {
         if (! Schema::hasTable('purchase_return_items') || ! Schema::hasTable('purchase_returns')) {
             return view('Reports.Reports.purchase-return', [
-                'purchasereturns' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 15),
+                'purchasereturns' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, \App\Support\PageSize::resolve()),
                 'totalRefunded' => 0,
             ]);
         }
@@ -3280,7 +3300,7 @@ class ReportController extends Controller
     public function credit_notes(Request $request)
     {
         if (! Schema::hasTable('credit_notes') || ! Schema::hasTable('credit_note_items')) {
-            $salesreturnreports = new LengthAwarePaginator([], 0, 10, 1, [
+            $salesreturnreports = new LengthAwarePaginator([], 0, \App\Support\PageSize::resolve(), 1, [
                 'path' => $request->url(),
                 'query' => $request->query(),
             ]);
@@ -4084,7 +4104,7 @@ class ReportController extends Controller
 
         // ── Paginate ──────────────────────────────────────────────────────────
         $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        $perPage = 15;
+        $perPage = \App\Support\PageSize::resolve();
         $pageItems = $dailyRows->forPage($currentPage, $perPage)->values();
         $profitLossData = new LengthAwarePaginator(
             $pageItems,

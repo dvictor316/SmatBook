@@ -44,7 +44,7 @@ class BarcodeController extends Controller
         $barcodes  = ProductBarcode::where('company_id', $companyId)
             ->with('product')
             ->latest()
-            ->paginate(25);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $products = Product::where('company_id', $companyId)
             ->orderBy('name')
             ->get(['id', 'name', 'sku']);

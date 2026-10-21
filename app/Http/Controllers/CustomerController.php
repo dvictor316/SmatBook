@@ -53,8 +53,7 @@ class CustomerController extends Controller
         $summaryCustomers = (clone $customerQuery)->get();
 
         $customers = $customerQuery
-            ->paginate(20)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $customers->getCollection()->transform(function ($customer) {
             $customer->computed_balance = (float) ($customer->balance ?? 0) + (float) ($customer->sales_balance_sum ?? 0);
@@ -345,8 +344,7 @@ class CustomerController extends Controller
         $summaryCustomers = (clone $customerQuery)->get();
 
         $customers = $customerQuery
-            ->paginate(20)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $customers->getCollection()->transform(function ($customer) {
             $customer->computed_balance = (float) ($customer->balance ?? 0) + (float) ($customer->sales_balance_sum ?? 0);
@@ -365,8 +363,7 @@ class CustomerController extends Controller
         $summaryCustomers = (clone $customerQuery)->get();
 
         $customers = $customerQuery
-            ->paginate(20)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $customers->getCollection()->transform(function ($customer) {
             $customer->computed_balance = (float) ($customer->balance ?? 0) + (float) ($customer->sales_balance_sum ?? 0);

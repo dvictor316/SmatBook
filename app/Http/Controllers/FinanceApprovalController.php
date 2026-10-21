@@ -96,7 +96,7 @@ class FinanceApprovalController extends Controller
             }
         }
 
-        $approvals = $query->paginate(20)->appends($request->query());
+        $approvals = $query->paginate(\App\Support\PageSize::resolve())->withQueryString()->appends($request->query());
 
         return view('Finance.approvals', compact('approvals', 'status', 'type', 'search', 'month', 'fromDate', 'toDate'));
     }

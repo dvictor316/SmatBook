@@ -34,7 +34,7 @@ class StockValuationController extends Controller
         $hasBranchId = $hasBranchStocks && Schema::hasColumn('product_branch_stocks', 'branch_id');
         $hasBranchName = $hasBranchStocks && Schema::hasColumn('product_branch_stocks', 'branch_name');
 
-        $rows = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 25, 1, [
+        $rows = new \Illuminate\Pagination\LengthAwarePaginator([], 0, \App\Support\PageSize::resolve(), 1, [
             'path' => $request->url(),
             'query' => $request->query(),
         ]);
@@ -100,7 +100,7 @@ class StockValuationController extends Controller
 
             $rows = $query
                 ->orderBy('products.name')
-                ->paginate(25)
+                ->paginate(\App\Support\PageSize::resolve())->withQueryString()
                 ->appends($request->query());
 
             $rows->setCollection($rows->getCollection()->map(function ($product) {

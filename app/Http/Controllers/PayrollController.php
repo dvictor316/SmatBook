@@ -26,7 +26,7 @@ class PayrollController extends Controller
         $schemaReady = $hasEmployeesTable && $hasPayrollsTable && $hasPayrollRunsTable;
 
         if (! $schemaReady) {
-            $payrolls = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 15, 1, [
+            $payrolls = new \Illuminate\Pagination\LengthAwarePaginator([], 0, \App\Support\PageSize::resolve(), 1, [
                 'path' => request()->url(),
                 'query' => request()->query(),
             ]);
@@ -76,7 +76,7 @@ class PayrollController extends Controller
         $payrolls = $this->scopeByBusiness(Payroll::with('employee'), 'payrolls', $businessId)
             ->whereYear('pay_period', $currentMonth->year)
             ->whereMonth('pay_period', $currentMonth->month)
-            ->paginate(15);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $monthlyPayroll = $this->scopeByBusiness(Payroll::query(), 'payrolls', $businessId)
             ->whereYear('pay_period', $currentMonth->year)
@@ -429,7 +429,7 @@ class PayrollController extends Controller
         $businessId = $this->currentBusinessId();
         $runs = $this->scopeByBusiness(PayrollRun::query(), 'payroll_runs', $businessId)
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('payroll.history', compact('runs'));
     }

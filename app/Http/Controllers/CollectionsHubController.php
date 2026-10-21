@@ -235,6 +235,7 @@ class CollectionsHubController extends Controller
 
     private function paginateCollection(Collection $items, int $perPage, int $page, string $pageName, Request $request): LengthAwarePaginator
     {
+        $perPage = \App\Support\PageSize::resolve();
         $slice = $items->forPage($page, $perPage)->values();
 
         return new LengthAwarePaginator(

@@ -27,7 +27,7 @@ class CostCenterController extends Controller
             ->where('branch_id', $branchId)
             ->with('department')
             ->orderBy('name')
-            ->paginate(25);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         return view('cost-centers.index', compact('costCenters'));
     }
 

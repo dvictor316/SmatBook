@@ -1927,8 +1927,7 @@ public function pendingManagers()
         }
 
         $managers = $query->orderBy('deployment_managers.business_name', 'asc')
-            ->paginate(15)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('SuperAdmin.managers.approved', compact('managers'));
     }
@@ -1958,8 +1957,7 @@ public function pendingManagers()
         }
 
         $managers = $query->orderByDesc('deployment_managers.created_at')
-            ->paginate(15)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('SuperAdmin.managers.approved', compact('managers'));
     }
@@ -1986,8 +1984,7 @@ public function pendingManagers()
         }
 
         $managers = $query->orderBy('deployment_managers.business_name', 'asc')
-            ->paginate(15)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('SuperAdmin.managers.approved', compact('managers'));
     }
@@ -2035,8 +2032,7 @@ public function pendingManagers()
 
         $transferUsers = $query->orderByDesc('subscriptions.transfer_submitted_at')
             ->orderByDesc('subscriptions.created_at')
-            ->paginate(15)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('SuperAdmin.users.transfer', compact('transferUsers'));
     }
@@ -2113,8 +2109,7 @@ public function pendingManagers()
             }
 
             $businesses = $query->orderByDesc('companies.created_at')
-                ->paginate(20)
-                ->withQueryString();
+                ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
             $baseBusinesses = $this->registeredBusinessesQuery();
             $registeredBusinessMetrics = $this->safeRegisteredBusinessMetrics();
@@ -2168,7 +2163,7 @@ public function pendingManagers()
             $query->where('role', $request->role);
         }
 
-        $users = $query->orderByDesc('created_at')->paginate(20)->withQueryString();
+        $users = $query->orderByDesc('created_at')->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $base = match ($category) {
             'state_managers' => $this->stateManagersQuery(),
@@ -2591,7 +2586,7 @@ public function pendingManagers()
             ->latest();
 
         $totalPayouts = (float) (clone $query)->sum('amount');
-        $payouts      = $query->paginate(20)->withQueryString();
+        $payouts      = $query->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $payoutRecipientGroups = $this->payoutRecipientGroups();
 
         return view('SuperAdmin.payout-history', compact('payouts', 'totalPayouts', 'from', 'to', 'type', 'recipientType', 'recipient', 'payoutRecipientGroups'));

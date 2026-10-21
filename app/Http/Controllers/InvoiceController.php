@@ -500,7 +500,7 @@ class InvoiceController extends Controller
             $query->whereDate('created_at', '<=', $request->input('date_to'));
         }
 
-        $invoices = $query->paginate(15)->withQueryString();
+        $invoices = $query->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $invoices->getCollection()->transform(fn ($invoice) => $this->applyComputedInvoiceState($invoice));
         $invoicescards = $this->getInvoiceStats();
         

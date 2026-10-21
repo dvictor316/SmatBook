@@ -53,7 +53,7 @@ class CheckInController extends Controller
             $query->whereDate('arrival_date', now()->toDateString());
         }
 
-        $reservations = $query->paginate(20)->withQueryString();
+        $reservations = $query->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $canOverrideDirtyCheckin = $this->canOverrideDirtyCheckin();
         $checkinReadiness = [];
         foreach ($reservations as $reservation) {
@@ -84,8 +84,7 @@ class CheckInController extends Controller
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->where('status', 'checked_in')
             ->latest('id')
-            ->paginate(20)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $selectedStay = null;
         if ($request->filled('stay_id')) {

@@ -34,7 +34,7 @@ class AdminDemoRequestController extends Controller
             $query->where('status', $status);
         }
 
-        $demoRequests = $query->paginate(20)->withQueryString();
+        $demoRequests = $query->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $counts = [
             'pending'  => DemoRequest::pending()->count(),
             'approved' => DemoRequest::approved()->count(),

@@ -33,8 +33,7 @@ class HotelCommercialController extends Controller
                 $query->where(fn ($scope) => $scope->where('company_name', 'like', "%{$term}%")->orWhere('account_code', 'like', "%{$term}%")->orWhere('billing_email', 'like', "%{$term}%"));
             })
             ->orderBy('company_name')
-            ->paginate(25)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $cityLedgers = \App\Models\GuestFolio::query()
             ->with(['customer', 'corporateAccount'])
@@ -119,7 +118,7 @@ class HotelCommercialController extends Controller
             ->where('company_id', $companyId)
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->query('status')))
-            ->latest('arrival_date')->paginate(20)->withQueryString();
+            ->latest('arrival_date')->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $corporateAccounts = HotelCorporateAccount::query()->where('company_id', $companyId)->where('status', 'active')->orderBy('company_name')->get();
         $bookingSources = HotelBookingSource::query()->where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
         $roomTypes = HotelRoomType::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->where('is_active', true)->orderBy('name')->get();

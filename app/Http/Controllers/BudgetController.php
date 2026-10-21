@@ -94,7 +94,7 @@ class BudgetController extends Controller
             }
         }
 
-        $budgets = $budgetQuery->paginate(15)->appends($request->query());
+        $budgets = $budgetQuery->paginate(\App\Support\PageSize::resolve())->withQueryString()->appends($request->query());
 
         $budgets->getCollection()->transform(function (Budget $budget) {
             $budget->actual_amount = $this->calculateActualAmount($budget);

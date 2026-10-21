@@ -19,7 +19,7 @@ class AssetMaintenanceController extends Controller
             $query->where('fixed_asset_id', $assetId);
         }
 
-        $logs = $query->latest('maintenance_date')->paginate(25);
+        $logs = $query->latest('maintenance_date')->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $nameColumn = Schema::hasColumn('fixed_assets', 'name') ? 'name' : 'asset_name';
         $assetColumns = ['id', $nameColumn];

@@ -247,7 +247,7 @@ private function applyBranchScope($query, string $table = 'purchases')
         $purchaseQuery = Purchase::with(['supplier', 'items.product']);
         $this->applyTenantScope($purchaseQuery, 'purchases');
         $this->applyBranchScope($purchaseQuery, 'purchases');
-        $purchases = $purchaseQuery->orderBy('created_at', 'desc')->paginate(10);
+        $purchases = $purchaseQuery->orderBy('created_at', 'desc')->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $purchases->getCollection()->transform(function (Purchase $purchase) {
             $normalizedTotalAmount = abs((float) ($purchase->total_amount ?? 0));
             $paidAmount = $this->resolvePurchasePaidAmount($purchase);
@@ -267,7 +267,7 @@ private function applyBranchScope($query, string $table = 'purchases')
         } else {
             $this->applyBranchScope($productQuery, 'products');
         }
-        $products = $productQuery->paginate(10);
+        $products = $productQuery->paginate(\App\Support\PageSize::resolve())->withQueryString();
             
         // 3. Pass BOTH variables to the view
         return view('Purchases.purchases', compact('purchases', 'products', 'activeBranch'));
@@ -294,12 +294,12 @@ private function applyBranchScope($query, string $table = 'purchases')
                              ->orWhere('sku', 'like', "%{$search}%");
             })
             ->latest()
-            ->paginate(10);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $purchaseQuery = Purchase::with(['supplier', 'items.product']);
         $this->applyTenantScope($purchaseQuery, 'purchases');
         $this->applyBranchScope($purchaseQuery, 'purchases');
-        $purchases = $purchaseQuery->latest()->paginate(10);
+        $purchases = $purchaseQuery->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $purchases->getCollection()->transform(function (Purchase $purchase) {
             $normalizedTotalAmount = abs((float) ($purchase->total_amount ?? 0));
             $paidAmount = $this->resolvePurchasePaidAmount($purchase);
@@ -1361,7 +1361,7 @@ public function show($id)
             $query->whereDate('created_at', '<=', $request->end_date);
         }
 
-        $debit_notes = $query->orderBy('created_at', 'desc')->paginate(15);
+        $debit_notes = $query->orderBy('created_at', 'desc')->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $vendors = Vendor::orderBy('name', 'asc')->get();
 
         return view('Purchases.debit-notes', compact('debit_notes', 'vendors'));
@@ -1380,7 +1380,7 @@ public function show($id)
 
         $orders = $ordersQuery
             ->orderByDesc('created_at')
-            ->paginate(10);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $purchase_orders = $orders->getCollection()->map(function ($row) {
             $id = (int) ($row->id ?? 0);
@@ -1576,7 +1576,7 @@ public function show($id)
         $hasPurchaseRows = (clone $query)->exists();
 
         if ($hasPurchaseRows) {
-            $purchasereports = $query->orderBy('created_at', 'desc')->paginate(15);
+            $purchasereports = $query->orderBy('created_at', 'desc')->paginate(\App\Support\PageSize::resolve())->withQueryString();
         } elseif (Schema::hasTable('inventory_history') && Schema::hasTable('products')) {
             $historyQuery = DB::table('inventory_history')
                 ->join('products', 'inventory_history.product_id', '=', 'products.id')
@@ -1625,9 +1625,9 @@ public function show($id)
                 $historyQuery->whereDate('inventory_history.created_at', '<=', $request->end_date);
             }
 
-            $purchasereports = $historyQuery->orderByDesc('inventory_history.created_at')->paginate(15);
+            $purchasereports = $historyQuery->orderByDesc('inventory_history.created_at')->paginate(\App\Support\PageSize::resolve())->withQueryString();
         } else {
-            $purchasereports = $query->orderBy('created_at', 'desc')->paginate(15);
+            $purchasereports = $query->orderBy('created_at', 'desc')->paginate(\App\Support\PageSize::resolve())->withQueryString();
         }
         $vendors = Vendor::orderBy('name')->get();
 

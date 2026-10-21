@@ -28,7 +28,7 @@ class ForecastingController extends Controller
         $forecasts = Forecast::forCompany($companyId)
             ->with('items')
             ->latest('period_start')
-            ->paginate(20);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         return view('forecasting.index', compact('forecasts'));
     }
 

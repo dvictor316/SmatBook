@@ -644,7 +644,7 @@ class SaleController extends Controller
         $totalSalesCount = $query->count();
 
         // 4. Paginate
-        $sales = $query->orderByDesc($salesDateColumn)->orderByDesc('created_at')->paginate(10)->withQueryString();
+        $sales = $query->orderByDesc($salesDateColumn)->orderByDesc('created_at')->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('Sales.index', compact('sales', 'totalRevenue', 'totalSalesCount', 'activeBranch'));
     }
@@ -793,8 +793,7 @@ class SaleController extends Controller
         $reports = $query
             // Keep report rows stable by product creation order so new items append at the end.
             ->orderBy('products.id')
-            ->paginate(15)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('pos.reports', compact('reports', 'branchOptions', 'staffOptions'));
     }
@@ -957,7 +956,7 @@ class SaleController extends Controller
             ])
             ->sortKeys()
             ->all();
-        $sales = $query->orderByDesc($salesDateColumn)->orderByDesc('created_at')->paginate(15)->withQueryString();
+        $sales = $query->orderByDesc($salesDateColumn)->orderByDesc('created_at')->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('pos.sales', compact(
             'sales',

@@ -122,7 +122,7 @@ class RecurringTransactionController extends Controller
                 $templatesQuery->whereDate('next_run_on', '<=', $toDate);
             }
         }
-        $templates = $templatesQuery->paginate(15)->appends($request->query());
+        $templates = $templatesQuery->paginate(\App\Support\PageSize::resolve())->withQueryString()->appends($request->query());
 
         $expenseSourceQuery = Expense::query()->latest();
         $this->applyTenantScope($expenseSourceQuery, 'expenses');

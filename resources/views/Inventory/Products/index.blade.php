@@ -1190,14 +1190,14 @@
             scrollY: 'calc(100vh - 255px)',
             scrollCollapse: false,
             paging: true,
-            lengthMenu: [[500, -1], [500, 'All']],
+            lengthMenu: [[25, 50, 100, 250, 500], [25, 50, 100, 250, 500]],
             language: {
                 search: "",
                 searchPlaceholder: "Search...",
                 info: "Showing _START_ to _END_ of _TOTAL_ stock items",
                 paginate: {
-                    previous: "Previous 500",
-                    next: "Next 500"
+                    previous: "Previous",
+                    next: "Next"
                 }
             }
         });
@@ -1218,7 +1218,7 @@
             $('#damage-stock-note').text(productName + ' has ' + availableStock + ' available in the active branch.');
         });
 
-        table.page.len(500).draw(false);
+        if (!document.querySelector('[data-server-pagination]')) table.page.len(500).draw(false);
         table.on('draw', syncVisibleProductChecks);
         syncVisibleProductChecks();
 
@@ -1227,8 +1227,12 @@
             var query = this.value;
             clearTimeout(searchDebounce);
             searchDebounce = setTimeout(function() {
-                table.search(query).draw();
-            }, 120);
+                if (document.querySelector('[data-server-pagination]')) {
+                    document.getElementById('inventory-toolbar-search-form').requestSubmit();
+                } else {
+                    table.search(query).draw();
+                }
+            }, 450);
         });
 
         $('#products-table').on('change', '.product-select-checkbox', function() {

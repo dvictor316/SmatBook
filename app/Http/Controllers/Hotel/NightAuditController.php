@@ -29,7 +29,7 @@ class NightAuditController extends Controller
             $audits = HotelNightAudit::query()
                 ->where('company_id', $companyId)
                 ->latest('audit_date')
-                ->paginate(30);
+                ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
             $businessDate = now()->toDateString();
             $arrivalsExpected = $arrivalsCheckedIn = $arrivalsPending = 0;
@@ -56,7 +56,7 @@ class NightAuditController extends Controller
             ->where('company_id', $companyId)
             ->where('property_id', $propertyId)
             ->latest('audit_date')
-            ->paginate(30);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $businessDate = now()->toDateString();
         $arrivalsExpected = Reservation::query()->where('company_id', $companyId)->where('property_id', $propertyId)->whereDate('arrival_date', $businessDate)->count();

@@ -149,7 +149,7 @@ class WithdrawalController extends Controller
         $withdrawals = Withdrawal::query()
             ->where('user_id', $request->user()->id)
             ->latest()
-            ->paginate((int) $request->integer('per_page', 15));
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return response()->json([
             'success' => true,

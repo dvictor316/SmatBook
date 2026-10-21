@@ -44,8 +44,7 @@ class HotelOperationsController extends Controller
             ->orderByRaw("CASE priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'normal' THEN 3 ELSE 4 END")
             ->orderBy('due_at')
             ->latest('id')
-            ->paginate(30)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $activeStatuses = ['open', 'assigned', 'in_progress'];
         $summary = [

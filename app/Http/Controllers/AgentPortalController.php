@@ -45,7 +45,7 @@ class AgentPortalController extends Controller
     {
         $user = Auth::user();
         if (!Schema::hasTable('agent_leads')) {
-            $leads = new LengthAwarePaginator([], 0, 12);
+            $leads = new LengthAwarePaginator([], 0, \App\Support\PageSize::resolve());
             $stats = $this->agentStats($user->id);
             $categories = $this->leadCategories();
             $statuses = $this->leadStatuses();
@@ -84,7 +84,7 @@ class AgentPortalController extends Controller
             default => $query->orderByRaw("FIELD(priority, 'hot', 'high', 'normal', 'low')")->latest(),
         };
 
-        $leads = $query->paginate(12)->withQueryString();
+        $leads = $query->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $stats = $this->agentStats($user->id);
         $categories = $this->leadCategories();
         $statuses = $this->leadStatuses();
@@ -190,7 +190,7 @@ class AgentPortalController extends Controller
         $stats = $this->agentStats($user->id);
         $manager = DeploymentManager::where('user_id', $user->id)->first();
         $commissions = Schema::hasTable('deployment_commissions')
-            ? DB::table('deployment_commissions')->where('manager_id', $user->id)->latest()->paginate(12)
+            ? DB::table('deployment_commissions')->where('manager_id', $user->id)->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString()
             : collect();
         $payoutSummary = $this->deploymentCommissionPayouts->summaryForManager($user->id);
         $paystackBanks = $this->deploymentCommissionPayouts->paystackBanks();

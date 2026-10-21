@@ -113,7 +113,7 @@ class CollectionFollowUpController extends Controller
             }
         }
 
-        $followUps = $query->paginate(15)->appends($request->query());
+        $followUps = $query->paginate(\App\Support\PageSize::resolve())->withQueryString()->appends($request->query());
 
         $customers = Customer::query()->orderBy('customer_name');
         $this->applyTenantScope($customers, 'customers');

@@ -48,8 +48,7 @@ class HotelWorkspaceController extends Controller
             ->when($roomTypeId > 0, fn ($query) => $query->where('room_type_id', $roomTypeId))
             ->when($floor !== '', fn ($query) => $query->where('floor', $floor))
             ->orderByRaw('CAST(room_number AS UNSIGNED), room_number')
-            ->paginate(36)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $statusTotals = HotelRoom::query()
             ->where('company_id', $companyId)
@@ -707,8 +706,7 @@ class HotelWorkspaceController extends Controller
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->where('service_code', 'LAUNDRY')
             ->latest('service_date')
-            ->paginate(20)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $activeFolios = $this->activeServiceFolios($companyId, $propertyId);
 
@@ -726,8 +724,7 @@ class HotelWorkspaceController extends Controller
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->where('service_code', 'MINIBAR')
             ->latest('service_date')
-            ->paginate(20)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $activeStays = Stay::query()
             ->with(['customer', 'room'])
@@ -754,8 +751,7 @@ class HotelWorkspaceController extends Controller
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->whereIn('service_code', ['ROOM_SERVICE', 'RESTAURANT'])
             ->latest('service_date')
-            ->paginate(20)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $activeFolios = $this->activeServiceFolios($companyId, $propertyId);
 
@@ -773,8 +769,7 @@ class HotelWorkspaceController extends Controller
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->whereRaw('LOWER(COALESCE(source, "")) in (?, ?)', ['conference', 'event'])
             ->latest('id')
-            ->paginate(20)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $charges = FolioItem::query()
             ->with(['folio.customer', 'folio.stay.room'])
@@ -812,8 +807,7 @@ class HotelWorkspaceController extends Controller
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->whereIn('service_code', $meta['codes'])
             ->latest('service_date')
-            ->paginate(20)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $total = (float) FolioItem::query()
             ->where('company_id', $companyId)
@@ -1115,8 +1109,7 @@ class HotelWorkspaceController extends Controller
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->where('status', 'city_ledger')
             ->latest('id')
-            ->paginate(20)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('hotel.business.corporate_accounts', compact('cityLedgers'));
     }
@@ -1132,8 +1125,7 @@ class HotelWorkspaceController extends Controller
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->where('adults', '>=', 4)
             ->latest('id')
-            ->paginate(20)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('hotel.business.group_bookings', compact('groups'));
     }

@@ -256,7 +256,7 @@ class ExpenseController extends Controller
                 $expensesQuery->whereDate('created_at', '<=', $toDate);
             }
         }
-        $expenses = $expensesQuery->paginate(15)->appends($request->query());
+        $expenses = $expensesQuery->paginate(\App\Support\PageSize::resolve())->withQueryString()->appends($request->query());
         $expenseAccounts = Schema::hasTable('accounts')
             ? $this->applyTenantScope(Account::where('type', 'Expense')->orderBy('name'), 'accounts')->get()
             : collect();

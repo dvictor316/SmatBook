@@ -244,7 +244,7 @@ class SupplierController extends Controller
             });
         }
 
-        $suppliers = $query->paginate(20)->withQueryString();
+        $suppliers = $query->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $outstandingBySupplier = $this->supplierOutstandingBalances($suppliers->getCollection()->pluck('id')->all());
         $suppliers->getCollection()->transform(function ($supplier) use ($outstandingBySupplier) {
             $payables = (float) ($outstandingBySupplier[$supplier->id] ?? 0);

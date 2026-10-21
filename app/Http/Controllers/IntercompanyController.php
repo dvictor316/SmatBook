@@ -20,7 +20,7 @@ class IntercompanyController extends Controller
             })
             ->with(['company', 'counterpartyCompany', 'sourceAccount', 'targetAccount'])
             ->latest('transaction_date')
-            ->paginate(25);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('intercompany.index', compact('transactions'));
     }

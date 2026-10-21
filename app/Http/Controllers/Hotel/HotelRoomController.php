@@ -39,7 +39,7 @@ class HotelRoomController extends Controller
                 $sub->where('operational_status', $status)
                     ->orWhere('housekeeping_status', $status);
             }))
-            ->paginate(30);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $activeStays = Stay::query()
             ->with('customer')

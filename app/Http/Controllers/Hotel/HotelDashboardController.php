@@ -627,7 +627,7 @@ class HotelDashboardController extends Controller
                 ->where('status', 'checked_in')
                 ->with(['customer', 'room'])
                 ->latest('id')
-                ->paginate(20)
+                ->paginate(\App\Support\PageSize::resolve())->withQueryString()
             : collect();
 
         if ($stays instanceof \Illuminate\Pagination\LengthAwarePaginator && $stays->count() > 0) {
@@ -679,7 +679,7 @@ class HotelDashboardController extends Controller
 
         $guests = $guestIds->isEmpty()
             ? collect()
-            : Customer::query()->whereIn('id', $guestIds)->paginate(20);
+            : Customer::query()->whereIn('id', $guestIds)->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         if ($guests instanceof \Illuminate\Pagination\LengthAwarePaginator && $guests->count() > 0) {
             $guests->getCollection()->transform(function ($guest) use ($companyId, $propertyId) {
@@ -775,7 +775,7 @@ class HotelDashboardController extends Controller
                 ->where('deposit_received', '>', 0)
                 ->with('customer')
                 ->latest('id')
-                ->paginate(20)
+                ->paginate(\App\Support\PageSize::resolve())->withQueryString()
             : collect();
 
         return view('hotel.deposits.index', compact('deposits'));

@@ -52,7 +52,7 @@ class SerialNumberController extends Controller
             $query->where('product_id', $productId);
         }
 
-        $serials  = $query->latest()->paginate(25);
+        $serials  = $query->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $productsQuery = Product::where('company_id', $companyId)->orderBy('name');
 
         if (Schema::hasColumn('products', 'track_serials')) {

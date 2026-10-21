@@ -22,7 +22,7 @@ class HotelRoomTypeController extends Controller
 
         $types = HotelRoomType::where('company_id', $companyId)
             ->when($propertyId, fn($q) => $q->where('property_id', $propertyId))
-            ->paginate(20);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         return view('hotel.room_types.index', compact('types'));
     }
 

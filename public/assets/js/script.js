@@ -273,8 +273,11 @@ Version      : 1.0
 	}
 
 	if($('.datatable').length > 0) {
-		$('.datatable').DataTable({
-			"bFilter": false,
+		$('.datatable').filter(function () {
+            var scope = this.closest('.card') || this.closest('.content');
+            return !scope || !scope.querySelector('[data-server-pagination]');
+        }).DataTable({
+			"bFilter": true,
 			// "scrollX": true,
 			"autoWidth": false,
 			"sDom": 'fBtlpi', 
@@ -293,8 +296,8 @@ Version      : 1.0
 				},
 			 },
 			initComplete: (settings, json)=>{
-				$('.dataTables_filter').appendTo('#tableSearch');
-				$('.dataTables_filter').appendTo('.search-input');
+				var target = document.querySelector('#tableSearch');
+                if (target) $(settings.nTableWrapper).find('.dataTables_filter').appendTo(target);
 			},	
 		});
 

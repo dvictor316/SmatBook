@@ -25,8 +25,7 @@ class AdvancePaymentController extends Controller
         }
 
         $customers = $query->orderByRaw($this->customerNameOrderExpression())
-            ->paginate(20)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('Finance.advance-payments', [
             'mode' => 'customers',
@@ -40,8 +39,7 @@ class AdvancePaymentController extends Controller
     {
         $suppliers = $this->scopedSupplierQuery()
             ->orderByRaw($this->supplierNameOrderExpression())
-            ->paginate(20)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('Finance.advance-payments', [
             'mode' => 'suppliers',

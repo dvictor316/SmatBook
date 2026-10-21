@@ -32,7 +32,7 @@ class ReturnableAssetController extends Controller
             $assetsQuery->where('status', $status);
         }
 
-        $assets = $assetsQuery->paginate(15)->withQueryString();
+        $assets = $assetsQuery->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $availableAssets = ReturnableAsset::query()
             ->where('status', 'active')
             ->where('available_quantity', '>', 0)

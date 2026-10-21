@@ -47,7 +47,7 @@ class RecurringInvoiceController extends Controller
             });
         }
 
-        $templates = (clone $base)->latest()->paginate(20)->appends($request->query());
+        $templates = (clone $base)->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString()->appends($request->query());
 
         // Summary stats
         $stats = [
@@ -255,7 +255,7 @@ class RecurringInvoiceController extends Controller
 
         return view('Sales.recurring-invoices.show', [
             'template' => $recurringInvoice,
-            'logs'     => $recurringInvoice->logs()->paginate(20),
+            'logs'     => $recurringInvoice->logs()->paginate(\App\Support\PageSize::resolve())->withQueryString(),
         ]);
     }
 

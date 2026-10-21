@@ -33,7 +33,7 @@ class TaxFilingController extends Controller
         $filings = TaxFiling::with(['jurisdiction', 'lines', 'submissions' => fn ($query) => $query->latest()])
             ->tap(fn ($query) => $this->applyTaxScope($query, 'tax_filings'))
             ->latest()
-            ->paginate(20);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('compliance.tax-filings.index', compact('filings'));
     }

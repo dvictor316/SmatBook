@@ -29,7 +29,7 @@ class RFQController extends Controller
         $rfqs = RequestForQuotation::where('company_id', $companyId)
             ->with(['rfqSuppliers'])
             ->latest()
-            ->paginate(20);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('rfq.index', compact('rfqs'));
     }

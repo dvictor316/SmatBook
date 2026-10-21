@@ -736,9 +736,9 @@ class SettingController extends Controller
             ? Bank::query()->orderBy('name')->get()
             : collect();
 
-        $imports = new LengthAwarePaginator([], 0, 15);
+        $imports = new LengthAwarePaginator([], 0, \App\Support\PageSize::resolve());
         $selectedImport = null;
-        $selectedLines = new LengthAwarePaginator([], 0, 25);
+        $selectedLines = new LengthAwarePaginator([], 0, \App\Support\PageSize::resolve());
         $selectedAccount = null;
         $selectedBank = null;
         $statusSummary = [
@@ -765,7 +765,7 @@ class SettingController extends Controller
                 $importsQuery->whereDate('created_at', '<=', $request->input('date_to'));
             }
 
-            $imports = $importsQuery->paginate(12)->withQueryString();
+            $imports = $importsQuery->paginate(\App\Support\PageSize::resolve())->withQueryString();
             $selectedImportId = (int) $request->input('import_id', $imports->first()?->id ?? 0);
 
             if ($selectedImportId > 0) {
@@ -811,7 +811,7 @@ class SettingController extends Controller
                 }
             }
 
-            $selectedLines = $lineQuery->paginate(25)->withQueryString();
+            $selectedLines = $lineQuery->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
             $transactionPool = collect();
             if ($selectedAccount && Schema::hasTable('transactions')) {

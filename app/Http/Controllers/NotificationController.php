@@ -16,8 +16,8 @@ class NotificationController extends Controller
         $user = Auth::user();
 
         $notifications = $user
-            ? $user->notifications()->latest()->paginate(20)
-            : DatabaseNotification::query()->whereRaw('1 = 0')->paginate(20);
+            ? $user->notifications()->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString()
+            : DatabaseNotification::query()->whereRaw('1 = 0')->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('notifications', compact('notifications'));
     }

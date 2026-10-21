@@ -120,7 +120,7 @@ class PriceListController extends Controller
     public function index()
     {
         $companyId  = Auth::user()->company_id;
-        $priceLists = PriceList::forCompany($companyId)->withCount('items')->latest()->paginate(25);
+        $priceLists = PriceList::forCompany($companyId)->withCount('items')->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
         return view('price-lists.index', compact('priceLists'));
     }
 

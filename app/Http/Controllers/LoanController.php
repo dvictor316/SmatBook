@@ -16,7 +16,7 @@ class LoanController extends Controller
         $loans = Loan::forCompany($companyId)
             ->with('bank')
             ->latest()
-            ->paginate(25);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('loans.index', compact('loans'));
     }

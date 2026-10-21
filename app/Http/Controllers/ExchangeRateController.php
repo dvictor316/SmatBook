@@ -13,7 +13,7 @@ class ExchangeRateController extends Controller
         $companyId = Auth::user()->company_id;
         $rates = ExchangeRate::forCompany($companyId)
             ->latest('effective_date')
-            ->paginate(25);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('exchange-rates.index', compact('rates'));
     }

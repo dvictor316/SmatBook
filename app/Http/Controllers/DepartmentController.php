@@ -103,7 +103,7 @@ class DepartmentController extends Controller
             ->with(['head', 'parent'])
             ->withCount('employees')
             ->orderBy('name')
-            ->paginate(25);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         return view('departments.index', compact('departments'));
     }
 

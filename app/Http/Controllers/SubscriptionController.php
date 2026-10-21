@@ -1798,7 +1798,7 @@ class SubscriptionController extends Controller
     */
     public function index()
     {
-        $subscriptions = Subscription::with(['user', 'company'])->latest()->paginate(15);
+        $subscriptions = Subscription::with(['user', 'company'])->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('SuperAdmin.subscription', compact('subscriptions'));
     }
@@ -1842,7 +1842,7 @@ class SubscriptionController extends Controller
             return view('SuperAdmin.subscription-edit', compact('subscription', 'plans'));
         }
 
-        $subscriptions = Subscription::with(['user', 'company'])->latest()->paginate(15);
+        $subscriptions = Subscription::with(['user', 'company'])->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('SuperAdmin.subscription', compact('subscriptions', 'subscription', 'plans'));
     }
@@ -1862,7 +1862,7 @@ class SubscriptionController extends Controller
 
     public function transactions()
     {
-        $purchasereports = Subscription::with(['user', 'company'])->latest()->paginate(15);
+        $purchasereports = Subscription::with(['user', 'company'])->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('SuperAdmin.purchase-transaction', compact('purchasereports'));
     }

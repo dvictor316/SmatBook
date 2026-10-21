@@ -175,8 +175,7 @@ class GeneralLedgerController extends Controller
 
         $entries = $query->orderBy('transaction_date', 'asc')
             ->orderBy('id', 'asc')
-            ->paginate(40)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('Reports.Reports.general-ledger', [
             'entries' => $entries,

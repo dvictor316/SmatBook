@@ -640,7 +640,7 @@ class PaymentController extends Controller
             ->all();
 
         $data = [
-            'payments'      => $paymentsQuery->paginate(10)->appends($request->query()),
+            'payments'      => $paymentsQuery->paginate(\App\Support\PageSize::resolve())->withQueryString()->appends($request->query()),
             'sales'         => $salesQuery->get(),
             'assetAccounts' => $assetAccountsQuery->get(),
             'bankAccounts'  => $bankAccounts,
@@ -674,7 +674,7 @@ class PaymentController extends Controller
         }
 
         $totalAmount = (clone $query)->sum('amount');
-        $payments = $query->latest()->paginate(25);
+        $payments = $query->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('Reports.Reports.payment-report', compact('payments', 'totalAmount'))
                ->with(['from_date' => $request->from_date, 'to_date' => $request->to_date]);

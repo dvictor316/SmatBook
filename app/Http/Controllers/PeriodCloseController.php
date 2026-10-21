@@ -15,7 +15,7 @@ class PeriodCloseController extends Controller
     {
         $periods = AccountingPeriod::with(['tasks.owner', 'approvals.requester', 'approvals.approver'])
             ->latest('start_date')
-            ->paginate(15);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $stats = [
             'total' => AccountingPeriod::query()->count(),

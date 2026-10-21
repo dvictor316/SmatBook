@@ -24,7 +24,7 @@ class OnlineStoreController extends Controller
             'slug' => $this->uniqueSlug($company->name ?: 'store', $companyId),
             'store_name' => $company->name ?: 'Online Store',
         ]);
-        $orders = OnlineStoreOrder::with('items')->latest()->paginate(20);
+        $orders = OnlineStoreOrder::with('items')->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('storefront.settings', compact('setting', 'orders'));
     }
@@ -111,8 +111,7 @@ class OnlineStoreController extends Controller
                     ->orWhere('description', 'like', "%{$search}%");
             }))
             ->orderBy('name')
-            ->paginate(24)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('storefront.catalogue', compact('store', 'company', 'products', 'search'));
     }

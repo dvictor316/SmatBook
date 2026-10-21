@@ -150,4 +150,5 @@
     <script src="{{ URL::asset('/assets/js/jvectormap.js') }}"></script>
 @endif
 
+<script src="{{ asset('assets/js/list-controls.js') }}?v={{ filemtime(public_path('assets/js/list-controls.js')) }}"></script>
 <script src="{{ URL::asset('/assets/js/script.js') }}?v={{ filemtime(public_path('assets/js/script.js')) }}"></script>

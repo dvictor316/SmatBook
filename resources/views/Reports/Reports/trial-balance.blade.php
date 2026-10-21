@@ -362,7 +362,7 @@
 <script>
 $(document).ready(function() {
     window.tbTable = $('#trialBalanceTable').DataTable({
-        "pageLength": -1,
+        "pageLength": 500,
         "dom": 'Bfrtip',
         "ordering": false,
         "buttons": [

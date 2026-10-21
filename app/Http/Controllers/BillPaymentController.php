@@ -20,7 +20,7 @@ class BillPaymentController extends Controller
 
     public function index(): View
     {
-        $payments = BillPayment::latest()->paginate(25);
+        $payments = BillPayment::latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $summary = [
             'count' => BillPayment::count(),
             'successful_amount' => (float) BillPayment::where('status', 'successful')->sum('amount'),

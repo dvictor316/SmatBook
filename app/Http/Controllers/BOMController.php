@@ -29,7 +29,7 @@ class BOMController extends Controller
         $boms      = BillOfMaterials::forCompany($companyId)
             ->with('product')
             ->latest()
-            ->paginate(25);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         return view('bom.index', compact('boms'));
     }
 

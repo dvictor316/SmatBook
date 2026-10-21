@@ -13,7 +13,7 @@ class ReportScheduleController extends Controller
         $companyId = Auth::user()->company_id;
         $schedules = ReportSchedule::forCompany($companyId)
             ->orderBy('report_type')
-            ->paginate(20);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         return view('report-schedules.index', compact('schedules'));
     }
 

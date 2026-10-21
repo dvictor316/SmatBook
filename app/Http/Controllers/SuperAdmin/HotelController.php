@@ -1062,8 +1062,7 @@ class HotelController extends Controller
                 ->when($this->hasColumn('hotel_rooms', 'is_active'), fn($q) => $q->where('is_active', 1))
                 ->where('operational_status', 'available')
                 ->orderByRaw('CAST(room_number AS UNSIGNED), room_number')
-                ->paginate(20)
-                ->withQueryString();
+                ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         }
 
         if (in_array($panel, ['reservations', 'room_calendar', 'check_in'], true) && $this->hasTable('reservations')) {
@@ -1071,8 +1070,7 @@ class HotelController extends Controller
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
                 ->orderByDesc('id')
-                ->paginate(20)
-                ->withQueryString();
+                ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         }
 
         if (in_array($panel, ['stays', 'checkout'], true) && $this->hasTable('stays')) {
@@ -1080,8 +1078,7 @@ class HotelController extends Controller
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
                 ->orderByDesc('id')
-                ->paginate(20)
-                ->withQueryString();
+                ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         }
 
         if ($panel === 'folios' && $this->hasTable('guest_folios')) {
@@ -1089,8 +1086,7 @@ class HotelController extends Controller
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
                 ->orderByDesc('id')
-                ->paginate(20)
-                ->withQueryString();
+                ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         }
 
         if ($panel === 'deposits' && $this->hasTable('reservations')) {
@@ -1098,16 +1094,14 @@ class HotelController extends Controller
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
                 ->orderByDesc('id')
-                ->paginate(20)
-                ->withQueryString();
+                ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         }
 
         if ($panel === 'tenants' && $this->hasTable('companies')) {
             return Company::query()
                 ->when(!empty($hotelCompanyIds), fn($q) => $q->whereIn('id', $hotelCompanyIds))
                 ->orderBy('name')
-                ->paginate(20)
-                ->withQueryString();
+                ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         }
 
         if ($panel === 'properties' && $this->hasTable('hotel_properties')) {
@@ -1115,8 +1109,7 @@ class HotelController extends Controller
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
                 ->orderByDesc('id')
-                ->paginate(20)
-                ->withQueryString();
+                ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         }
 
         if (in_array($panel, ['rooms', 'room_gallery'], true) && $this->hasTable('hotel_rooms')) {
@@ -1125,8 +1118,7 @@ class HotelController extends Controller
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
                 ->when($this->hasColumn('hotel_rooms', 'is_active'), fn($q) => $q->where('is_active', 1))
                 ->orderByDesc('id')
-                ->paginate(20)
-                ->withQueryString();
+                ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         }
 
         if ($panel === 'room_types' && $this->hasTable('hotel_room_types')) {
@@ -1134,8 +1126,7 @@ class HotelController extends Controller
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
                 ->orderByDesc('id')
-                ->paginate(20)
-                ->withQueryString();
+                ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         }
 
         if ($panel === 'guests' && $this->hasTable('customers')) {
@@ -1158,7 +1149,7 @@ class HotelController extends Controller
                 return collect();
             }
 
-            return \DB::table('customers')->whereIn('id', $ids)->orderByDesc('id')->paginate(20)->withQueryString();
+            return \DB::table('customers')->whereIn('id', $ids)->orderByDesc('id')->paginate(\App\Support\PageSize::resolve())->withQueryString();
         }
 
         if ($panel === 'services' || str_starts_with($panel, 'service_')) {
@@ -1181,8 +1172,7 @@ class HotelController extends Controller
                     ->when(!empty($serviceCodes[$selectedServiceCenter] ?? []), fn($q) => $q->whereIn('service_code', $serviceCodes[$selectedServiceCenter]))
                     ->whereIn('type', ['charge', 'room_night', 'service', 'pos_charge'])
                     ->orderByDesc('id')
-                    ->paginate(20)
-                    ->withQueryString();
+                    ->paginate(\App\Support\PageSize::resolve())->withQueryString();
             }
 
             if ($this->hasTable('hotel_transactions')) {
@@ -1190,8 +1180,7 @@ class HotelController extends Controller
                     ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                     ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
                     ->orderByDesc('id')
-                    ->paginate(20)
-                    ->withQueryString();
+                    ->paginate(\App\Support\PageSize::resolve())->withQueryString();
             }
 
             return collect();
@@ -1202,8 +1191,7 @@ class HotelController extends Controller
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
                 ->orderByDesc('id')
-                ->paginate(20)
-                ->withQueryString();
+                ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         }
 
         if ($panel === 'maintenance') {
@@ -1216,8 +1204,7 @@ class HotelController extends Controller
                     ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                     ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
                     ->orderByDesc('id')
-                    ->paginate(20)
-                    ->withQueryString();
+                    ->paginate(\App\Support\PageSize::resolve())->withQueryString();
             }
         }
 
@@ -1226,8 +1213,7 @@ class HotelController extends Controller
                 ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                 ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
                 ->orderByDesc('id')
-                ->paginate(20)
-                ->withQueryString();
+                ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         }
 
         if ($panel === 'reports') {
@@ -1238,8 +1224,7 @@ class HotelController extends Controller
                     ->when(!$companyId && !empty($hotelCompanyIds), fn($q) => $q->whereIn('company_id', $hotelCompanyIds))
                     ->groupBy('company_id', 'business_date')
                     ->orderByDesc('business_date')
-                    ->paginate(20)
-                    ->withQueryString();
+                    ->paginate(\App\Support\PageSize::resolve())->withQueryString();
             }
 
             if ($this->hasTable('folio_items')) {
@@ -1250,8 +1235,7 @@ class HotelController extends Controller
                     ->whereIn('type', ['charge', 'room_night', 'service', 'pos_charge'])
                     ->groupBy('company_id', 'business_date')
                     ->orderByDesc('business_date')
-                    ->paginate(20)
-                    ->withQueryString();
+                    ->paginate(\App\Support\PageSize::resolve())->withQueryString();
             }
         }
 

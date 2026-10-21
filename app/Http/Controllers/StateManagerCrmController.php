@@ -46,7 +46,7 @@ class StateManagerCrmController extends Controller
             }
         }
 
-        $agents = $query->latest()->paginate(12)->withQueryString();
+        $agents = $query->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $agentRows = $this->agentPerformanceRows(collect($agents->items()));
         $zones = $this->zones();
         $stats = $this->managerStats($this->agentsQuery()->pluck('id')->all());
@@ -61,7 +61,7 @@ class StateManagerCrmController extends Controller
         $stats = $this->managerStats($agentIds);
 
         if (!Schema::hasTable('agent_leads')) {
-            $leads = new LengthAwarePaginator([], 0, 12);
+            $leads = new LengthAwarePaginator([], 0, \App\Support\PageSize::resolve());
             return view('deployment.crm.leads', compact('agents', 'leads', 'stats'));
         }
 
@@ -86,7 +86,7 @@ class StateManagerCrmController extends Controller
             }
         }
 
-        $leads = $query->latest()->paginate(12)->withQueryString();
+        $leads = $query->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('deployment.crm.leads', compact('agents', 'leads', 'stats'));
     }

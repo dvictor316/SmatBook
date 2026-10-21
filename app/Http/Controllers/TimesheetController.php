@@ -27,7 +27,7 @@ class TimesheetController extends Controller
         $timesheets = Timesheet::forCompany($companyId)
             ->with(['employee', 'approvedBy'])
             ->latest('week_start_date')
-            ->paginate(25);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('timesheets.index', compact('timesheets'));
     }

@@ -65,7 +65,7 @@ class UserController extends Controller
         $users = $this->scopedUsersQuery()
             ->with('roleModel')
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $roles = $this->getRoles();
 

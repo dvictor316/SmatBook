@@ -19,7 +19,7 @@ class ActivityLogController extends Controller
     {
         if (!Schema::hasTable('activity_logs')) {
             return view('activity-log.index', [
-                'logs' => new LengthAwarePaginator([], 0, 25),
+                'logs' => new LengthAwarePaginator([], 0, \App\Support\PageSize::resolve()),
                 'modules' => collect(),
                 'search' => trim((string) $request->input('search', '')),
                 'module' => trim((string) $request->input('module', '')),
@@ -50,7 +50,7 @@ class ActivityLogController extends Controller
 
         $statsQuery = clone $query;
 
-        $logs = $query->latest()->paginate(25)->withQueryString();
+        $logs = $query->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $modulesQuery = ActivityLog::withoutGlobalScopes()
             ->select('module')
             ->whereNotNull('module');

@@ -69,7 +69,7 @@ class ExpenseClaimController extends Controller
         $claims = $claimsQuery
             ->latest('expense_date')
             ->latest('id')
-            ->paginate(15)
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString()
             ->appends($request->query());
 
         $projects = $this->availableProjects($request);

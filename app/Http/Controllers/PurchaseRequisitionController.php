@@ -24,7 +24,7 @@ class PurchaseRequisitionController extends Controller
             $query->where('status', $status);
         }
 
-        $requisitions = $query->paginate(25);
+        $requisitions = $query->paginate(\App\Support\PageSize::resolve())->withQueryString();
         return view('purchase-requisitions.index', compact('requisitions'));
     }
 

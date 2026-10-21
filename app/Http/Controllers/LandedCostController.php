@@ -81,7 +81,7 @@ class LandedCostController extends Controller
         $landedCosts = LandedCost::with('grn')
             ->where('company_id', $companyId)
             ->latest()
-            ->paginate(20);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('landed-costs.index', compact('landedCosts'));
     }

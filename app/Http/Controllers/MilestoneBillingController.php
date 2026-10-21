@@ -28,7 +28,7 @@ class MilestoneBillingController extends Controller
         $milestones = ProjectMilestone::forCompany($companyId)
             ->with(['project', 'customer', 'invoice'])
             ->latest()
-            ->paginate(25);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('milestones.index', compact('milestones'));
     }

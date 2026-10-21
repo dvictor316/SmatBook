@@ -50,7 +50,7 @@ class ManufacturingController extends Controller
             $query->where('status', $status);
         }
 
-        $orders = $query->latest('planned_start_date')->paginate(25);
+        $orders = $query->latest('planned_start_date')->paginate(\App\Support\PageSize::resolve())->withQueryString();
         return view('manufacturing.index', compact('orders'));
     }
 

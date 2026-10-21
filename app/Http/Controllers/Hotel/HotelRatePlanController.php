@@ -22,8 +22,7 @@ class HotelRatePlanController extends Controller
             ->where('company_id', $companyId)
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->latest('id')
-            ->paginate(20)
-            ->withQueryString();
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $roomTypes = HotelRoomType::query()
             ->where('company_id', $companyId)

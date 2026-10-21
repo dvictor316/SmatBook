@@ -48,7 +48,7 @@ class LotTrackingController extends Controller
             $query->where('product_id', $productId);
         }
 
-        $lots     = $query->latest()->paginate(25);
+        $lots     = $query->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $productsQuery = Product::where('company_id', $companyId)->orderBy('name');
 
         if (Schema::hasColumn('products', 'track_lots')) {

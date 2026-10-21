@@ -30,7 +30,7 @@ class AttendanceController extends Controller
             ->with('employee')
             ->forDate($date)
             ->orderBy('check_in_time')
-            ->paginate(50);
+            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         $employees = Employee::forWorkspaceCompany($companyId)
             ->where('status', 'active')

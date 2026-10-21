@@ -19,7 +19,7 @@ class HomeController extends Controller
     public function contactMessages()
     {
         abort_unless(auth()->user()?->isSuperAdmin(), 403);
-        $messages = \App\Models\EmailAuditLog::where('event_type', 'Website Contact')->latest()->paginate(25);
+        $messages = \App\Models\EmailAuditLog::where('event_type', 'Website Contact')->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
         return view('Support.contact-messages', compact('messages'));
     }
 
@@ -924,7 +924,7 @@ class HomeController extends Controller
     // Quotations / Delivery pages used by sidebar links
     public function quotations()
     {
-        $quotations = new LengthAwarePaginator([], 0, 20);
+        $quotations = new LengthAwarePaginator([], 0, \App\Support\PageSize::resolve());
         if (Schema::hasTable('quotations')) {
             $query = Quotation::with('customer')->latest();
             $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
@@ -970,7 +970,7 @@ class HomeController extends Controller
                 $query->whereNotIn('status', ['Converted to Cash Receipt', 'Converted to Invoice']);
             }
 
-            $quotations = $query->paginate(20);
+            $quotations = $query->paginate(\App\Support\PageSize::resolve())->withQueryString();
         }
         return view('Quotations.quotations', compact('quotations'));
     }
