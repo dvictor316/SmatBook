@@ -63,7 +63,7 @@ function bindViewer(root) {
             if (ratio >= 1.95 && ratio <= 2.05) sphere = createPanorama(canvas, image);
         }
         const showingSphere = immersive();
-        if (playing && !showingSphere && !fullImage) photoTour = true;
+        if (!showingSphere && !fullImage) photoTour = true;
         root.classList.toggle('is-photo-tour', photoTour && !showingSphere && !fullImage);
         canvas.hidden = !showingSphere;
         image.hidden = showingSphere;
@@ -82,14 +82,13 @@ function bindViewer(root) {
             label.textContent = `${(75 / camera.fov).toFixed(1)}×`;
             root.querySelector('[data-room-bearing]').textContent = `${Math.round(camera.yaw) % 360}°`;
         } else {
-            view = constrainView(view, { width: viewport.clientWidth, height: viewport.clientHeight }, { width: image.naturalWidth, height: image.naturalHeight });
-            // Keep every edge of the photo visible inside the landscape stage.
-            const fitted = fittedSize(viewport.clientWidth, viewport.clientHeight, image.naturalWidth, image.naturalHeight);
-            const horizontalRoom = Math.max(0, (viewport.clientWidth - fitted.width * .94) / 2);
-            const drift = Math.sin(elapsed * .6) * Math.min(56, horizontalRoom * .65, viewport.clientWidth * .025);
+            const fillStage = photoTour && !fullImage;
+            view = constrainView(view, { width: viewport.clientWidth, height: viewport.clientHeight }, { width: image.naturalWidth, height: image.naturalHeight }, fillStage);
+            // A small overscan keeps the stage covered throughout the moving tour.
+            const drift = Math.sin(elapsed * .8) * Math.min(56, viewport.clientWidth * .02);
             const tilt = Math.min(2.5, Math.atan(10 / viewport.clientWidth) * 180 / Math.PI);
-            const depth = photoTour && !fullImage
-                ? `translateX(${drift.toFixed(3)}px) perspective(1800px) rotateY(${(Math.sin(elapsed * .45) * tilt).toFixed(3)}deg) scale(.94)`
+            const depth = fillStage
+                ? `translateX(${drift.toFixed(3)}px) perspective(1800px) rotateY(${(Math.sin(elapsed * .45) * tilt).toFixed(3)}deg) scale(1.06)`
                 : '';
             image.style.transform = `translate(${view.x}px, ${view.y}px) ${depth} scale(${view.scale})`;
             label.textContent = `${Number(view.scale.toFixed(1))}×`;
@@ -127,7 +126,7 @@ function bindViewer(root) {
             camera.yaw += delta * 5;
             camera.pitch = Math.sin(elapsed * .15) * 9;
         } else {
-            // Animate the presentation without cropping the original photo.
+            // Move the filled presentation without adding a heavy extra zoom.
             view = { scale: 1, x: 0, y: 0 };
         }
         render();
