@@ -20,8 +20,14 @@ class BusinessWorkspaceResolver
 
         return Company::withoutGlobalScope('tenant')
             ->where(function ($query) use ($user, $primaryCompanyId) {
-                $query->where('user_id', $user->id)
-                    ->orWhere('owner_id', $user->id);
+                // Disagreeing owner fields must not grant a second account access.
+                $query->where(function ($owned) use ($user) {
+                    $owned->where('user_id', $user->id)
+                        ->where(fn ($owner) => $owner->whereNull('owner_id')->orWhere('owner_id', 0)->orWhere('owner_id', $user->id));
+                })->orWhere(function ($legacyOwned) use ($user) {
+                    $legacyOwned->where('owner_id', $user->id)
+                        ->where(fn ($owner) => $owner->whereNull('user_id')->orWhere('user_id', 0)->orWhere('user_id', $user->id));
+                });
 
                 if ($primaryCompanyId > 0) {
                     $query->orWhere(function ($assigned) use ($user, $primaryCompanyId) {

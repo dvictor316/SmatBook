@@ -22,16 +22,6 @@ class DashboardController extends Controller
     public function switchToBusinessWorkspace(Request $request)
     {
         $request->session()->put('workspace_context', 'business');
-        $resolver = app(\App\Support\BusinessWorkspaceResolver::class);
-        $company = $resolver->accessibleCompanies(Auth::user())->firstWhere('id', $resolver->activeCompanyId(Auth::user()));
-        if ($company) {
-            $resolver->bindCompany(Auth::user(), $company);
-        }
-
-        if ($this->isSuperAdminUser(Auth::user())) {
-            $request->session()->put('user_plan', 'enterprise');
-        }
-
         return $this->index($request);
     }
 
@@ -47,16 +37,6 @@ class DashboardController extends Controller
     public function businessDashboard(Request $request)
     {
         $request->session()->put('workspace_context', 'business');
-        $resolver = app(\App\Support\BusinessWorkspaceResolver::class);
-        $company = $resolver->accessibleCompanies(Auth::user())->firstWhere('id', $resolver->activeCompanyId(Auth::user()));
-        if ($company) {
-            $resolver->bindCompany(Auth::user(), $company);
-        }
-
-        if ($this->isSuperAdminUser(Auth::user())) {
-            $request->session()->put('user_plan', 'enterprise');
-        }
-
         return $this->index($request);
     }
 
@@ -66,6 +46,10 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
+        if (in_array(strtolower((string) $user->role), ['super_admin', 'superadmin'], true)
+            && session('workspace_context') !== 'platform') {
+            app(\App\Support\SuperAdminBusinessWorkspace::class)->activate($user);
+        }
         $currentHost = $request->getHost();
         $mainDomain = ltrim(config('app.domain', 'smartprobook.com'), '.');
         $appUrlHost = parse_url((string) config('app.url'), PHP_URL_HOST);
