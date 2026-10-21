@@ -1,14 +1,14 @@
-import { createPanorama } from './room-panorama.js';
+import { createPanorama } from './room-panorama.js?v=20261021-quality';
 
-export function fittedSize(width, height, imageWidth, imageHeight) {
+export function fittedSize(width, height, imageWidth, imageHeight, fill = false) {
     if (!width || !height || !imageWidth || !imageHeight) return { width: 0, height: 0 };
-    const ratio = Math.min(width / imageWidth, height / imageHeight);
+    const ratio = (fill ? Math.max : Math.min)(width / imageWidth, height / imageHeight);
     return { width: imageWidth * ratio, height: imageHeight * ratio };
 }
 
-export function constrainView(view, viewport, image) {
+export function constrainView(view, viewport, image, fill = false) {
     const scale = Math.max(1, Math.min(5, view.scale));
-    const fitted = fittedSize(viewport.width, viewport.height, image.width, image.height);
+    const fitted = fittedSize(viewport.width, viewport.height, image.width, image.height, fill);
     const maxX = Math.max(0, (fitted.width * scale - viewport.width) / 2);
     const maxY = Math.max(0, (fitted.height * scale - viewport.height) / 2);
     return { scale, x: Math.max(-maxX, Math.min(maxX, view.x)), y: Math.max(-maxY, Math.min(maxY, view.y)) };
@@ -34,7 +34,7 @@ function bindViewer(root) {
     let camera = { yaw: 0, pitch: 0, fov: 75 };
     let sphere = null, attempted = false, gesture = null, frame = 0, previousTime = 0, elapsed = 0;
     let playing = root.dataset.panorama === 'true' && !reducedMotion.matches;
-    let fullImage = false;
+    let fullImage = false, photoTour = false;
     let visible = false, onScreen = true, failed = false;
 
     const announce = text => { root.querySelector('[data-room-status]').textContent = text; };
@@ -61,16 +61,17 @@ function bindViewer(root) {
             attempted = true;
             const ratio = image.naturalWidth / image.naturalHeight;
             if (ratio >= 1.95 && ratio <= 2.05) sphere = createPanorama(canvas, image);
-            if (!sphere) playing = false;
         }
         const showingSphere = immersive();
+        if (playing && !showingSphere && !fullImage) photoTour = true;
+        root.classList.toggle('is-photo-tour', photoTour && !showingSphere && !fullImage);
         canvas.hidden = !showingSphere;
         image.hidden = showingSphere;
         root.style.setProperty('--room-image-ratio', `${image.naturalWidth} / ${image.naturalHeight}`);
         const panoramaButton = root.querySelector('[data-room-action="panorama"]');
         panoramaButton.hidden = !sphere || showingSphere;
         root.classList.toggle('is-spherical', showingSphere);
-        root.querySelector('[data-room-mode]').textContent = showingSphere ? '360° immersive tour' : (fullImage && sphere ? 'Full panorama image' : isPanorama() ? 'Panorama photo tour' : 'Room photo');
+        root.querySelector('[data-room-mode]').textContent = showingSphere ? '360° immersive tour' : (fullImage && sphere ? 'Full panorama image' : photoTour && !fullImage ? '3D photo presentation' : isPanorama() ? 'Panorama photo tour' : 'Room photo');
         root.querySelector('.room-tour-angles').hidden = !showingSphere;
         root.querySelector('.room-tour-bearing').hidden = !showingSphere;
         if (immersive()) {
@@ -81,8 +82,11 @@ function bindViewer(root) {
             label.textContent = `${(75 / camera.fov).toFixed(1)}×`;
             root.querySelector('[data-room-bearing]').textContent = `${Math.round(camera.yaw) % 360}°`;
         } else {
-            view = constrainView(view, { width: viewport.clientWidth, height: viewport.clientHeight }, { width: image.naturalWidth, height: image.naturalHeight });
-            image.style.transform = `translate(${view.x}px, ${view.y}px) scale(${view.scale})`;
+            view = constrainView(view, { width: viewport.clientWidth, height: viewport.clientHeight }, { width: image.naturalWidth, height: image.naturalHeight }, photoTour && !fullImage);
+            const depth = photoTour && !fullImage
+                ? `perspective(1800px) rotateX(${(Math.sin(elapsed * .12) * .45).toFixed(3)}deg) rotateY(${(Math.sin(elapsed * .16) * .75).toFixed(3)}deg)`
+                : '';
+            image.style.transform = `translate(${view.x}px, ${view.y}px) ${depth} scale(${view.scale})`;
             label.textContent = `${Number(view.scale.toFixed(1))}×`;
         }
         viewport.classList.toggle('is-zoomed', immersive() || view.scale > 1);
@@ -112,10 +116,12 @@ function bindViewer(root) {
             camera.yaw += delta * 5;
             camera.pitch = Math.sin(elapsed * .15) * 9;
         } else {
-            view.scale = 1.8;
-            const fitted = fittedSize(viewport.clientWidth, viewport.clientHeight, image.naturalWidth, image.naturalHeight);
-            view.x = Math.sin(elapsed * .18) * Math.max(0, (fitted.width * view.scale - viewport.clientWidth) / 2);
-            view.y = Math.cos(elapsed * .14) * Math.max(0, (fitted.height * view.scale - viewport.clientHeight) / 2);
+            // Cover the stage with the original photo. A small overscan protects
+            // the edges during the perspective movement, without a heavy zoom.
+            view.scale = 1.045 + Math.sin(elapsed * .1) * .005;
+            const fitted = fittedSize(viewport.clientWidth, viewport.clientHeight, image.naturalWidth, image.naturalHeight, true);
+            view.x = Math.sin(elapsed * .12) * Math.max(0, (fitted.width * view.scale - viewport.clientWidth) / 2) * .35;
+            view.y = Math.sin(elapsed * .1) * Math.max(0, (fitted.height * view.scale - viewport.clientHeight) / 2) * .25;
         }
         render();
         if (playing && visible && onScreen && !document.hidden && !failed) frame = requestAnimationFrame(tick);
@@ -139,7 +145,7 @@ function bindViewer(root) {
         sphere?.destroy(); sphere = null; attempted = false; failed = false;
         playButton.disabled = false;
         root.querySelector('[data-room-loading]').hidden = true;
-        fullImage = false;
+        fullImage = false; photoTour = false;
         setInteraction(false);
         reset(); updatePlay();
     }
@@ -182,7 +188,7 @@ function bindViewer(root) {
             return;
         }
         stop();
-        if (action === 'fit') { fullImage = true; setInteraction(false); reset(); announce('Complete image fitted in view'); }
+        if (action === 'fit') { photoTour = false; fullImage = true; setInteraction(false); reset(); announce('Complete image fitted in view'); }
         else zoom(action === 'in' ? 1.3 : 1 / 1.3);
     });
     viewport.addEventListener('wheel', event => {
@@ -229,7 +235,7 @@ function bindViewer(root) {
         event.preventDefault();
         if (event.key === ' ') { toggleTour(); return; }
         stop();
-        if (event.key === 'Home') return reset();
+        if (event.key === 'Home') { photoTour = false; return reset(); }
         if (['+', '=', '-'].includes(event.key)) return zoom(event.key === '-' ? 1 / 1.3 : 1.3);
         if (immersive()) {
             if (event.key === 'ArrowLeft') camera.yaw -= 12;

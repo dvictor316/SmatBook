@@ -21,11 +21,21 @@ const publicDir = path.resolve(__dirname, '../../public');
             }
             return canvas.toDataURL('image/png').split(',')[1];
         });
+        const portrait = await page.evaluate(() => {
+            const canvas = document.createElement('canvas'); canvas.width = 1200; canvas.height = 1600;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 1200, 1600);
+            gradient.addColorStop(0, '#087e8b'); gradient.addColorStop(1, '#d9b26f');
+            ctx.fillStyle = gradient; ctx.fillRect(0, 0, 1200, 1600);
+            ctx.fillStyle = '#fff'; ctx.font = '70px sans-serif'; ctx.fillText('Portrait room photo', 100, 800);
+            return canvas.toDataURL('image/png').split(',')[1];
+        });
         await context.route('**/*', async route => {
             const url = new URL(route.request().url());
             if (url.hostname !== 'localhost') return route.abort();
             if (url.pathname === '/') return route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(fixtures, 'room-tour.html')) });
             if (url.pathname.includes('missing.png')) return route.fulfill({ status: 404, body: '' });
+            if (url.pathname.endsWith('tour-photo.png')) return route.fulfill({ contentType: 'image/png', body: Buffer.from(portrait, 'base64') });
             if (url.pathname.startsWith('/storage/')) return route.fulfill({ contentType: 'image/png', body: Buffer.from(panorama, 'base64') });
             const file = path.join(publicDir, url.pathname);
             if (url.pathname.startsWith('/assets/') && fs.existsSync(file)) return route.fulfill({ body: fs.readFileSync(file), contentType: file.endsWith('.js') ? 'application/javascript' : 'text/css' });
@@ -107,6 +117,35 @@ const publicDir = path.resolve(__dirname, '../../public');
         assert(await page.locator('[data-room-sphere]').isHidden());
         await page.locator('[data-room-action="in"]').click();
         assert.equal(await page.locator('[data-room-zoom]').textContent(), '1.3×');
+        await play.click();
+        await page.waitForFunction(() => document.querySelector('[data-room-mode]').textContent === '3D photo presentation');
+        const imageTransform = await viewport.locator('img').evaluate(el => getComputedStyle(el).transform);
+        await page.waitForTimeout(350);
+        assert.notEqual(await viewport.locator('img').evaluate(el => getComputedStyle(el).transform), imageTransform, 'the 3D photo must actually move');
+        for (const width of [320, 800, 1920]) {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.waitForTimeout(100);
+            const coverage = await viewport.evaluate(el => {
+                const img = el.querySelector('img');
+                const stage = el.getBoundingClientRect(), photo = img.getBoundingClientRect();
+                return { fit: getComputedStyle(img).objectFit, stageWidth: stage.width, photoWidth: photo.width, stageHeight: stage.height, photoHeight: photo.height, left: photo.left - stage.left, right: stage.right - photo.right };
+            });
+            assert.equal(coverage.fit, 'cover');
+            assert(coverage.photoWidth >= coverage.stageWidth && coverage.photoHeight >= coverage.stageHeight, 'tour photo must fill the entire viewport');
+            assert(coverage.left <= 0 && coverage.right <= 0, 'tour must not leave side panels');
+            assert(Number.parseFloat(await page.locator('[data-room-zoom]').textContent()) <= 1.1, 'gentle tour must avoid a heavy extra zoom');
+            assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+        }
+        await page.locator('[data-room-action="fullscreen"]').click();
+        await page.waitForFunction(() => !!document.fullscreenElement);
+        await page.waitForTimeout(100);
+        assert.equal(await viewport.locator('img').evaluate(el => getComputedStyle(el).objectFit), 'cover');
+        await page.screenshot({ path: path.join(fixtures, 'room-photo-tour-fullscreen.png') });
+        await page.locator('[data-room-action="fullscreen"]').click();
+        await page.waitForFunction(() => !document.fullscreenElement);
+        await page.locator('[data-room-action="fit"]').click();
+        assert.equal(await viewport.locator('img').evaluate(el => getComputedStyle(el).objectFit), 'contain');
+        assert.equal(await play.getAttribute('aria-pressed'), 'false');
         await page.locator('[data-room-scene]').nth(2).click();
         await page.waitForFunction(() => document.querySelector('[data-room-mode]').textContent === 'Image unavailable');
         assert(await play.isDisabled());
@@ -132,6 +171,11 @@ const publicDir = path.resolve(__dirname, '../../public');
         assert.equal(await flatPage.locator('[data-room-zoom]').textContent(), '1.3×');
         await flatPage.locator('[data-room-action="fit"]').click();
         assert.equal(await flatPage.locator('[data-room-zoom]').textContent(), '1×');
+        await flatPage.emulateMedia({ reducedMotion: 'no-preference' });
+        await flatPage.reload();
+        await flatPage.waitForFunction(() => document.querySelector('[data-room-mode]').textContent === '3D photo presentation');
+        assert.equal(await flatPage.locator('[data-room-action="play"]').getAttribute('aria-pressed'), 'true', 'panorama photos should automatically start a full-width tour');
+        await flatPage.locator('[data-room-action="fit"]').click();
         // Match the hotel preview's real Bootstrap + skin cascade on a short tablet screen.
         await flatPage.setViewportSize({ width: 800, height: 500 });
         await flatPage.addStyleTag({ url: 'http://localhost/assets/css/bootstrap.min.css' });
@@ -150,6 +194,6 @@ const publicDir = path.resolve(__dirname, '../../public');
         await modalBody.hover(); await flatPage.mouse.wheel(0, 300);
         await flatPage.waitForFunction(() => document.querySelector('.modal-body').scrollTop > 10);
         assert.deepEqual(errors, []);
-        console.log('Room tour passed: page wheel/touch scrolling, complete image fit, short preview scrolling, responsive widths, 360° angles, motion/pause, touch drag/pinch, fullscreen, scene switching, image recovery, reduced motion and WebGL fallback.');
+        console.log('Room tour passed: automatic full-width 3D photo tours, portrait/landscape coverage, gentle zoom, page wheel/touch scrolling, complete image fit, short preview scrolling, responsive widths, 360° angles, motion/pause, touch drag/pinch, fullscreen, scene switching, image recovery, reduced motion and WebGL fallback.');
     } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

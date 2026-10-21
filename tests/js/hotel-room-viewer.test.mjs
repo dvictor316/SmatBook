@@ -38,3 +38,20 @@ test('fit centers an image even after it was dragged and enlarged', () => {
     assert.equal(Math.abs(result.x), 0);
     assert.equal(Math.abs(result.y), 0);
 });
+
+
+test('a tour fills a wide stage with a portrait photo without stretching it', () => {
+    const portrait = fittedSize(1600, 600, 1200, 1600, true);
+    assert.equal(portrait.width, 1600);
+    assert(Math.abs(portrait.width / portrait.height - 1200 / 1600) < 1e-10);
+    const covered = fittedSize(800, 450, 2000, 1000, true);
+    assert.deepEqual(covered, { width: 900, height: 450 });
+    assert.equal(covered.width / covered.height, 2);
+});
+
+test('tour dragging keeps the covered photo across the entire stage', () => {
+    const view = constrainView({ scale: 1, x: 2000, y: -2000 }, { width: 800, height: 450 }, { width: 2000, height: 1000 }, true);
+    assert.equal(view.x, 50);
+    assert.equal(Math.abs(view.y), 0);
+    assert.equal(view.scale, 1);
+});

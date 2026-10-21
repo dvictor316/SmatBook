@@ -45,7 +45,7 @@ export function createPanorama(canvas, image) {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         // Keep large uploads within the device's GPU texture limit, especially on tablets.
-        const limit = Math.min(4096, gl.getParameter(gl.MAX_TEXTURE_SIZE));
+        const limit = Math.min(navigator.deviceMemory && navigator.deviceMemory <= 4 ? 4096 : 8192, gl.getParameter(gl.MAX_TEXTURE_SIZE));
         let source = image;
         if (image.naturalWidth > limit || image.naturalHeight > limit) {
             source = document.createElement('canvas');
@@ -59,7 +59,7 @@ export function createPanorama(canvas, image) {
         const uniforms = Object.fromEntries(['aspect', 'lens', 'yaw', 'pitch'].map(name => [name, gl.getUniformLocation(program, name)]));
         return {
             draw(width, height, yaw, pitch, fov) {
-                const density = Math.min(window.devicePixelRatio || 1, 1.5);
+                const density = Math.min(window.devicePixelRatio || 1, 2);
                 const w = Math.round(width * density), h = Math.round(height * density);
                 if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
                 gl.viewport(0, 0, w, h);

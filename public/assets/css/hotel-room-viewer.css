@@ -86,3 +86,21 @@ body.hotel-workspace .hotel-preview-modal.sa-panorama-fullscreen .modal-content 
     max-height:100dvh;
 }
 body.hotel-workspace .hotel-preview-modal .modal-body { overflow-y:auto; min-height:0; }
+
+/* Photos use the entire stage during a tour; Fit room preserves the full frame. */
+.room-image-viewer.is-photo-tour .room-image-viewport {
+    aspect-ratio:16 / 9;
+    height:clamp(240px, 48vw, 620px);
+    max-height:65svh;
+    perspective:1800px;
+}
+.room-image-viewer.is-photo-tour .room-image-viewport img {
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    backface-visibility:hidden;
+}
+.room-image-viewer.is-photo-tour.is-playing .room-image-viewport img { will-change:transform; }
+.room-image-viewer.is-photo-tour:fullscreen .room-image-viewport { height:auto; max-height:none; }
