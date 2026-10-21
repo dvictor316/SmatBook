@@ -1777,7 +1777,7 @@
             </div>
         @endif
 
-        @if(($headerBusinessWorkspaces->count() > 1 || $headerCanAddBusiness) && !$isDeploymentManagerHeader && !$isAgentHeader)
+        @if($headerBusinessWorkspaces->count() > 1 && !$isDeploymentManagerHeader && !$isAgentHeader)
             <div class="dropdown mobile-branch-dropdown">
                 @php
                     $activeBusiness = $headerBusinessWorkspaces->firstWhere('id', $activeBusinessId)
@@ -1974,6 +1974,11 @@
                 <a class="dropdown-item" href="{{ $settingsUrl }}">
                     <i class="fas fa-cog me-2"></i> Settings
                 </a>
+                @if($headerCanAddBusiness && $headerBusinessWorkspaces->count() <= 1 && !$isDeploymentManagerHeader && !$isAgentHeader)
+                    <a class="dropdown-item" href="{{ route('workspace.businesses.create') }}">
+                        <i class="fe fe-plus-circle me-2"></i>Add another business
+                    </a>
+                @endif
                 @if(Route::has('remote-support'))
                     <a class="dropdown-item" href="{{ route('remote-support') }}">
                         <i class="fas fa-headset me-2"></i> Remote Support

@@ -74,7 +74,7 @@
                     <td>
                         <div class="text-muted small">
                             <i class="far fa-calendar-alt me-1"></i>
-                            {{ $invoice->created_at->format('d M, Y') }}
+                            {{ ($invoice->order_date ?? $invoice->created_at)?->format('d M, Y') ?? '—' }}
                         </div>
                     </td>
                 </tr>
