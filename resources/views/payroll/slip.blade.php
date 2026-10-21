@@ -246,7 +246,7 @@
             @php
                 $payslipBrand = auth()->user()?->company?->company_name
                     ?? auth()->user()?->company?->name
-                    ?? \App\Models\Setting::where('key', 'company_name')->value('value')
+                    ?? (\App\Models\Setting::businessProfile()['company_name'] ?? null)
                     ?? 'SmartProbook';
             @endphp
             This payslip is computer generated and does not require a signature. · {{ $payslipBrand }} · {{ now()->year }}

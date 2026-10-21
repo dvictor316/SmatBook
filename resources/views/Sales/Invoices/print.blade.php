@@ -428,14 +428,14 @@
             ?? optional(auth()->user())->company;
         $brandName = $invoiceCompany?->company_name
             ?: $invoiceCompany?->name
-            ?: \App\Models\Setting::where('key', 'company_name')->value('value')
+            ?: (\App\Models\Setting::businessProfile()['company_name'] ?? null)
             ?: config('app.name', 'SmartProbook');
         $brandAddress = \App\Support\ReceiptCompanyProfile::address($invoiceCompany);
         $brandPhone = $invoiceCompany?->phone
-            ?: \App\Models\Setting::where('key', 'company_phone')->value('value')
+            ?: (\App\Models\Setting::businessProfile()['company_phone'] ?? null)
             ?: '';
         $brandEmail = $invoiceCompany?->email
-            ?: \App\Models\Setting::where('key', 'company_email')->value('value')
+            ?: (\App\Models\Setting::businessProfile()['company_email'] ?? null)
             ?: '';
         $displayStatus = strtolower((string) ($sale->effective_payment_status ?? $sale->payment_status ?? 'unpaid'));
         $appliedAmount = (float) ($sale->effective_paid ?? $sale->amount_paid ?? $sale->paid ?? 0);

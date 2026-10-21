@@ -27,15 +27,6 @@ use Illuminate\Validation\Rule;
 
 class SettingController extends Controller
 {
-    private const COMPANY_ADDRESS_SETTING_FIELDS = [
-        'address_line_1',
-        'address_line_2',
-        'company_city',
-        'company_state',
-        'company_country',
-        'company_pincode',
-    ];
-
     private function normalizeDecimalMoneyInput(mixed $value): ?string
     {
         if ($value === null) {
@@ -102,22 +93,9 @@ class SettingController extends Controller
      */
     private function getSettings()
     {
-        $settings = Setting::pluck('value', 'key')->all();
-        $companyId = (int) (Auth::user()?->company_id ?? optional(Auth::user()?->company)->id ?? 0);
-
-        if ($companyId > 0) {
-            foreach (self::COMPANY_ADDRESS_SETTING_FIELDS as $field) {
-                $scopedValue = Setting::where('key', "{$field}_company_{$companyId}")->value('value');
-                if ($scopedValue !== null) {
-                    $settings[$field] = $scopedValue;
-                }
-            }
-
-            $receiptFooter = Setting::where('key', "receipt_footer_company_{$companyId}")->value('value');
-            if ($receiptFooter !== null) {
-                $settings['receipt_footer'] = $receiptFooter;
-            }
-        }
+        // Never send other businesses' suffixed settings to a settings view.
+        $settings = Setting::pluck('value', 'key')->reject(fn ($value, $key) => preg_match('/_company_\d+$/', $key))->all();
+        $settings = array_replace($settings, Setting::businessProfile());
 
         return new \ArrayObject(
             $settings,
@@ -261,6 +239,14 @@ class SettingController extends Controller
      */
     public function update(Request $request)
     {
+        foreach (array_keys($request->except(['_token'])) as $key) {
+            abort_if(preg_match('/_company_\d+$/', $key), 403, 'Business settings must use the active workspace.');
+        }
+        $profileFields = array_intersect(array_keys($request->all()), Setting::BUSINESS_PROFILE_FIELDS);
+        $profileCompanyId = auth()->user()
+            ? app(\App\Support\BusinessWorkspaceResolver::class)->activeCompanyId(auth()->user()) : 0;
+        abort_if($profileFields !== [] && $profileCompanyId <= 0, 422, 'Select your business workspace before saving its profile.');
+
         // 1. Validation
         $request->validate([
             'site_logo'    => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
@@ -288,17 +274,18 @@ class SettingController extends Controller
         foreach ($fileFields as $field) {
             if ($request->hasFile($field)) {
                 // Delete old file
-                $oldFile = Setting::where('key', $field)->first();
+                $storageKey = in_array($field, Setting::BUSINESS_PROFILE_FIELDS, true) ? $field.'_company_'.$profileCompanyId : $field;
+                $oldFile = Setting::where('key', $storageKey)->first();
                 if ($oldFile && $oldFile->value) {
                     $this->deleteManagedSettingFile($oldFile->value);
                 }
 
                 // Save new file
                 $file = $request->file($field);
-                $name = $field . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $name = $field . '_' . $profileCompanyId . '_' . \Illuminate\Support\Str::uuid() . '.' . $file->getClientOriginalExtension();
                 Storage::disk('public')->putFileAs('settings', $file, $name);
                 
-                Setting::updateOrCreate(['key' => $field], ['value' => 'storage/settings/' . $name]);
+                Setting::updateOrCreate(['key' => $storageKey], ['value' => 'storage/settings/' . $name]);
             }
         }
 
@@ -321,7 +308,7 @@ class SettingController extends Controller
         ];
 
         foreach ($booleanFields as $field) {
-            if (!$request->has($field)) {
+            if ($profileFields === [] && !$request->has($field)) {
                 Setting::updateOrCreate(['key' => $field], ['value' => '0']);
             }
         }
@@ -367,15 +354,10 @@ class SettingController extends Controller
         unset($inputs['expiry_notification_enabled'], $inputs['expiry_notification_months']);
 
         foreach ($inputs as $key => $value) {
-            if (in_array($key, self::COMPANY_ADDRESS_SETTING_FIELDS, true)) {
-                $this->setCompanyScopedSettingValue($key, $value);
+            if (in_array($key, Setting::BUSINESS_PROFILE_FIELDS, true)) {
+                Setting::updateOrCreate(['key' => $key.'_company_'.$profileCompanyId], ['value' => $value ?? '']);
                 continue;
             }
-            if ($key === 'receipt_footer') {
-                $this->setCompanyScopedSettingValue($key, $value);
-                continue;
-            }
-
             Setting::updateOrCreate(
                 ['key' => $key],
                 ['value' => $value ?? '']

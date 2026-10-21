@@ -25,14 +25,14 @@
         $receiptCompany = auth()->user()?->company;
         $receiptBrandName = $receiptCompany?->company_name
             ?? $receiptCompany?->name
-            ?? \App\Models\Setting::where('key', 'company_name')->value('value')
+            ?? (\App\Models\Setting::businessProfile()['company_name'] ?? null)
             ?? 'SmartProbook';
         $receiptAddress = \App\Support\ReceiptCompanyProfile::address($receiptCompany);
         $receiptEmail = $receiptCompany?->email
-            ?? \App\Models\Setting::where('key', 'company_email')->value('value')
+            ?? (\App\Models\Setting::businessProfile()['company_email'] ?? null)
             ?? config('app.email');
         $receiptPhone = $receiptCompany?->phone
-            ?? \App\Models\Setting::where('key', 'company_phone')->value('value')
+            ?? (\App\Models\Setting::businessProfile()['company_phone'] ?? null)
             ?? config('app.phone');
     @endphp
     <div class="container py-5">

@@ -77,7 +77,7 @@
 @php
     $brandName = $company?->company_name ?: $company?->name ?: config('app.name', 'SmartProBook');
     $brandAddress = \App\Support\ReceiptCompanyProfile::address($company);
-    $brandPhone = $company?->phone ?: \App\Models\Setting::where('key', 'company_phone')->value('value');
+    $brandPhone = $company?->phone ?: (\App\Models\Setting::businessProfile()['company_phone'] ?? null);
     $branchName = $sale->branch_label ?: 'Main Branch';
     $customerName = $sale->display_customer_name ?: 'Walk-in Customer';
     $customerPhone = $sale->customer?->phone;

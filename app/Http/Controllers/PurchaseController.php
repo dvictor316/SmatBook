@@ -599,8 +599,7 @@ public function show($id)
     $vendorLogo = $purchase->vendor->logo ?? null;
     
     if (!$vendorLogo) {
-        $siteSetting = \App\Models\Setting::where('key', 'site_logo')->first();
-        $logo = $siteSetting ? $siteSetting->value : 'assets/img/logo.png';
+        $logo = \App\Models\Setting::businessProfile()['site_logo'] ?: 'assets/img/logo.png';
     } else {
         $logo = $vendorLogo;
     }
@@ -638,7 +637,7 @@ public function show($id)
         
         // Use the dynamic logo logic we built
         $vendorLogo = $purchase->vendor->logo ?? null;
-        $logo = $vendorLogo ?: (\App\Models\Setting::where('key', 'site_logo')->value('value') ?: 'assets/img/logo.png');
+        $logo = $vendorLogo ?: ((\App\Models\Setting::businessProfile()['site_logo'] ?? null) ?: 'assets/img/logo.png');
 
         // Load the view and pass the data
         $normalizedTotalAmount = abs((float) ($purchase->total_amount ?? 0));

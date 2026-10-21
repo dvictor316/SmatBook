@@ -4,9 +4,11 @@
     use App\Models\Setting;
 
     $route = Route::currentRouteName();
-    $layoutSettings = Cache::remember('ui:layout:settings', now()->addMinutes(5), function () {
-        return Setting::whereIn('key', ['company_name', 'favicon'])->pluck('value', 'key')->all();
-    });
+    $isPlatformAdminPage = auth()->check()
+        && in_array(strtolower((string) auth()->user()->role), ['super_admin', 'superadmin'], true)
+        && request()->routeIs('super_admin.*');
+    // Platform pages do not borrow a client's global company settings or cache.
+    $layoutSettings = $isPlatformAdminPage ? [] : Setting::businessProfile();
     $siteTitle = $layoutSettings['company_name'] ?? 'SmartProbook';
     $defaultFavicon = 'assets/img/log-favicon.png';
     $defaultFaviconUrl = asset($defaultFavicon);
@@ -443,7 +445,8 @@
         ]) && !str_starts_with((string) $route, 'deployment.')
            && !str_starts_with((string) $route, 'agent.')
            && !str_starts_with((string) $route, 'reports.')
-           && !str_starts_with((string) $route, 'saas.');
+           && !str_starts_with((string) $route, 'saas.')
+           && !$isPlatformAdminPage;
     @endphp
     @php
         $allBranchesScopeActive = session('active_branch_scope') === 'all';

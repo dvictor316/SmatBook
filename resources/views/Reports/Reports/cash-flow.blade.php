@@ -104,7 +104,7 @@
             $cashFlowCompany = optional(auth()->user())->company;
             $cashFlowCompanyName = optional($cashFlowCompany)->company_name
                 ?? optional($cashFlowCompany)->name
-                ?? \App\Models\Setting::where('key', 'company_name')->value('value')
+                ?? (\App\Models\Setting::businessProfile()['company_name'] ?? null)
                 ?? 'SmartProbook';
         @endphp
         @include('Reports.partials.context-strip', [

@@ -1,12 +1,12 @@
 @php
     $invoiceCompany = \App\Models\Company::find($sale->company_id)
         ?? optional(auth()->user())->company;
-    $invoiceLogoPath = \App\Models\Setting::where('key', 'invoice_logo')->value('value')
-        ?: \App\Models\Setting::where('key', 'site_logo')->value('value');
+    $invoiceLogoPath = (\App\Models\Setting::businessProfile()['invoice_logo'] ?? null)
+        ?: (\App\Models\Setting::businessProfile()['site_logo'] ?? null);
     $invoiceLogoUrl = $invoiceLogoPath ? asset($invoiceLogoPath) : null;
     $brandName = $invoiceCompany?->company_name
         ?: $invoiceCompany?->name
-        ?: \App\Models\Setting::where('key', 'company_name')->value('value')
+        ?: (\App\Models\Setting::businessProfile()['company_name'] ?? null)
         ?: config('app.name', 'SmartProbook');
     $appliedAmount = (float) ($sale->effective_paid ?? $sale->amount_paid ?? $sale->paid ?? 0);
     $changeAmount = (float) ($sale->change_amount ?? 0);

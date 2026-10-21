@@ -1,13 +1,13 @@
 @php
     $invoiceCompany = optional(auth()->user())->company;
-    $logoPath = \App\Models\Setting::where('key', 'invoice_logo')->value('value')
-        ?: \App\Models\Setting::where('key', 'site_logo')->value('value');
+    $logoPath = (\App\Models\Setting::businessProfile()['invoice_logo'] ?? null)
+        ?: (\App\Models\Setting::businessProfile()['site_logo'] ?? null);
     $brandName = $invoiceCompany?->company_name
         ?: $invoiceCompany?->name
-        ?: \App\Models\Setting::where('key', 'company_name')->value('value')
+        ?: (\App\Models\Setting::businessProfile()['company_name'] ?? null)
         ?: config('app.name', 'SmartProbook');
-    $brandEmail = \App\Models\Setting::where('key', 'company_email')->value('value') ?: 'support@smartprobook.com';
-    $brandPhone = \App\Models\Setting::where('key', 'company_phone')->value('value') ?: '+234-000-0000';
+    $brandEmail = (\App\Models\Setting::businessProfile()['company_email'] ?? null) ?: 'support@smartprobook.com';
+    $brandPhone = (\App\Models\Setting::businessProfile()['company_phone'] ?? null) ?: '+234-000-0000';
     $currency = \App\Models\Setting::where('key', 'pref_currency')->value('value') ?: 'NGN';
     $logoUrl = $logoPath ? asset($logoPath) : asset('assets/img/settings-logo1.png');
     $invoiceNo = 'INV-' . now()->format('Ymd') . '-001';

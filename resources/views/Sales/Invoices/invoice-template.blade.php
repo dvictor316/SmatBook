@@ -5,12 +5,12 @@
 @section('content')
 @php
     $invoiceCompany = optional(auth()->user())->company;
-    $logoPath = \App\Models\Setting::where('key', 'invoice_logo')->value('value')
-        ?: \App\Models\Setting::where('key', 'site_logo')->value('value');
+    $logoPath = (\App\Models\Setting::businessProfile()['invoice_logo'] ?? null)
+        ?: (\App\Models\Setting::businessProfile()['site_logo'] ?? null);
     $logoUrl = $logoPath ? asset($logoPath) : asset('assets/img/logos.png');
     $companyName = $invoiceCompany?->company_name
         ?: $invoiceCompany?->name
-        ?: \App\Models\Setting::where('key', 'company_name')->value('value')
+        ?: (\App\Models\Setting::businessProfile()['company_name'] ?? null)
         ?: config('app.name', 'SmartProbook');
     $selectedInvoiceTemplate = \App\Models\Setting::where('key', 'invoice_template')->value('value') ?: 'template_1';
     $templates = [

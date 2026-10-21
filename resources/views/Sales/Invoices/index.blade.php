@@ -668,15 +668,15 @@
         $companyDisplayName = $resolvedCompany?->company_name
             ?? $resolvedCompany?->name
             ?? $companyOwner?->name
-            ?? \App\Models\Setting::where('key', 'company_name')->value('value')
+            ?? (\App\Models\Setting::businessProfile()['company_name'] ?? null)
             ?? config('app.name', 'SmartProbook');
         $companyPhone = $resolvedCompany?->phone
             ?? $companyOwner?->phone
-            ?? \App\Models\Setting::where('key', 'company_phone')->value('value')
+            ?? (\App\Models\Setting::businessProfile()['company_phone'] ?? null)
             ?? '';
         $companyEmail = $resolvedCompany?->email
             ?? $companyOwner?->email
-            ?? \App\Models\Setting::where('key', 'company_email')->value('value')
+            ?? (\App\Models\Setting::businessProfile()['company_email'] ?? null)
             ?? '';
         $companyAddressDisplay = \App\Support\ReceiptCompanyProfile::address($resolvedCompany);
     @endphp

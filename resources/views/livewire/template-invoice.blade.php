@@ -1,7 +1,7 @@
 @php
-    $logoPath = \App\Models\Setting::where('key', 'invoice_logo')->value('value')
-        ?: \App\Models\Setting::where('key', 'site_logo')->value('value');
-    $companyName = \App\Models\Setting::where('key', 'company_name')->value('value') ?: (optional(auth()->user())->company->name ?? config('app.name'));
+    $logoPath = (\App\Models\Setting::businessProfile()['invoice_logo'] ?? null)
+        ?: (\App\Models\Setting::businessProfile()['site_logo'] ?? null);
+    $companyName = (\App\Models\Setting::businessProfile()['company_name'] ?? null) ?: (optional(auth()->user())->company->name ?? config('app.name'));
     $selectedInvoiceTemplate = \App\Models\Setting::where('key', 'invoice_template')->value('value') ?: 'template_1';
     $logoUrl = $logoPath ? asset($logoPath) : asset('assets/img/logos.png');
 @endphp

@@ -15,6 +15,42 @@ class Setting extends Model
 
     protected $fillable = ['key', 'value'];
 
+    public const BUSINESS_PROFILE_FIELDS = [
+        'company_name', 'company_phone', 'company_email', 'address_line_1', 'address_line_2',
+        'company_city', 'company_state', 'company_country', 'company_pincode', 'receipt_footer',
+        'site_logo', 'favicon', 'company_icon', 'invoice_logo', 'digital_signature',
+    ];
+
+    public static function businessProfile(): array
+    {
+        $user = auth()->user();
+        $resolver = app(\App\Support\BusinessWorkspaceResolver::class);
+        $companyId = $user ? $resolver->activeCompanyId($user) : 0;
+        $profile = array_fill_keys(self::BUSINESS_PROFILE_FIELDS, null);
+        if ($companyId <= 0) {
+            return $profile;
+        }
+
+        $company = Company::withoutGlobalScope('tenant')->find($companyId);
+        $profile = array_replace($profile, [
+            'company_name' => $company?->name ?: $company?->company_name,
+            'company_phone' => $company?->phone,
+            'company_email' => $company?->email,
+            'address_line_1' => $company?->address,
+            'company_country' => $company?->country,
+            'site_logo' => $company?->logo,
+        ]);
+        $keys = array_map(fn ($field) => $field.'_company_'.$companyId, self::BUSINESS_PROFILE_FIELDS);
+        $values = self::whereIn('key', $keys)->pluck('value', 'key');
+        foreach (self::BUSINESS_PROFILE_FIELDS as $field) {
+            if ($values->has($field.'_company_'.$companyId)) {
+                $profile[$field] = $values[$field.'_company_'.$companyId];
+            }
+        }
+
+        return $profile;
+    }
+
     /**
      * Helper to get a setting value instantly in Blade
      * Usage: {{ \App\Models\Setting::get('first_name') }}
@@ -85,7 +121,7 @@ class Setting extends Model
         $candidates = [
             (string) self::get('mail_from_name', ''),
             (string) config('mail.from.name', ''),
-            (string) self::get('company_name', ''),
+            (string) (self::businessProfile()['company_name'] ?? ''),
             (string) env('MAIL_FROM_NAME', ''),
             (string) config('app.name', ''),
             (string) ($fallback ?? ''),
@@ -112,7 +148,7 @@ class Setting extends Model
         $candidates = [
             (string) self::get('mail_from_address', ''),
             $smtpUsername,
-            (string) self::get('company_email', ''),
+            (string) (self::businessProfile()['company_email'] ?? ''),
             (string) config('mail.from.address', ''),
             (string) env('MAIL_FROM_ADDRESS', ''),
             (string) ($fallback ?? ''),
