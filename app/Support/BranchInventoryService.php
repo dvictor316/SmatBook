@@ -34,16 +34,9 @@ class BranchInventoryService
                 : $product->branchStocks()->where('branch_id', (string) $branch['id'])->first();
 
             if ($branchStock) {
-                $branchQuantity = (float) ($branchStock->quantity ?? 0);
-
-                // Branch row exists but is zero while products.stock is positive:
-                // the branch row has not been seeded yet — fall back to products.stock
-                // so we never incorrectly report "Out of Stock".
-                if ($branchQuantity === 0.0 && $savedStock > 0.0) {
-                    return max(0.0, $savedStock);
-                }
-
-                return max(0.0, $branchQuantity);
+                // An existing zero balance is real stock information, not a missing row.
+                // Falling back here can display another branch's stock after a purchase is reversed.
+                return max(0.0, (float) ($branchStock->quantity ?? 0));
             }
 
             // Branch table exists but no row for this product/branch yet.

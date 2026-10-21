@@ -6,6 +6,7 @@ use App\Models\Purchase;
 use App\Models\Vendor;
 use App\Models\Supplier;
 use App\Models\Product;
+use App\Models\ProductBranchStock;
 use App\Models\TaxCode;
 use App\Models\Bank;
 use App\Models\PurchaseItem;
@@ -197,6 +198,46 @@ private function applyBranchScope($query, string $table = 'purchases')
         $factor = (float) ($item->conversion_factor ?? 0);
 
         return round($qty * max(1, $factor ?: 1), 6);
+    }
+
+    /** Product rows must be locked by the caller and changed inside the purchase transaction. */
+    private function applyPurchaseStockChange(Product $product, float $delta, array $branch): void
+    {
+        $currentStock = (float) ($product->stock ?? $product->stock_quantity ?? 0);
+        $nextStock = round($currentStock + $delta, 6);
+        if ($nextStock < 0) {
+            throw new \RuntimeException("This change would leave negative stock for {$product->name}.");
+        }
+
+        $companyId = (int) ($product->company_id ?: session('current_tenant_id') ?: auth()->user()?->company_id);
+        $branchStock = null;
+        $branchQuantity = null;
+        if (!empty($branch['id']) && Schema::hasTable('product_branch_stocks')) {
+            // Explicit tenant scope allows checking whether other branches already own stock.
+            $branchRows = ProductBranchStock::withoutGlobalScope('tenant')
+                ->where('product_id', $product->id)
+                ->where(fn ($query) => $query->where('company_id', $companyId)->orWhereNull('company_id'));
+            $branchStock = (clone $branchRows)->where('branch_id', (string) $branch['id'])->lockForUpdate()->first();
+            $openingQuantity = $branchStock
+                ? (float) $branchStock->quantity
+                : ((clone $branchRows)->exists() ? 0.0 : $currentStock);
+            $branchQuantity = round($openingQuantity + $delta, 6);
+            if ($branchQuantity < 0) {
+                throw new \RuntimeException("This change would leave negative stock for {$product->name} in the receiving branch.");
+            }
+        }
+
+        // Save one canonical total to both fields, including legacy rows whose fields drifted apart.
+        $product->stock = $nextStock;
+        if (Schema::hasColumn('products', 'stock_quantity')) {
+            $product->stock_quantity = $nextStock;
+        }
+        $product->save();
+        if ($branchQuantity !== null) {
+            $branchStock ??= new ProductBranchStock(['product_id' => $product->id, 'branch_id' => (string) $branch['id']]);
+            $branchStock->fill(['company_id' => $companyId, 'branch_name' => $branch['name'] ?? null, 'quantity' => $branchQuantity]);
+            $branchStock->save();
+        }
     }
 
     public function index()
@@ -522,16 +563,7 @@ private function applyBranchScope($query, string $table = 'purchases')
                 }
 
                 PurchaseItem::create($itemPayload);
-                $product->increment('stock', $stockQuantity);
-                if (Schema::hasColumn('products', 'stock_quantity')) {
-                    $product->increment('stock_quantity', $stockQuantity);
-                }
-                $this->branchInventory->adjustBranchStock(
-                    $product,
-                    $stockQuantity,
-                    $activeBranch,
-                    (int) ($product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0)
-                );
+                $this->applyPurchaseStockChange($product, $stockQuantity, $activeBranch);
             }
 
             LedgerService::postPurchase($purchase->fresh());
@@ -788,28 +820,10 @@ public function show($id)
             }
             $purchase->update(array_merge($purchasePayload, $signature));
 
-            $previousItems = $purchase->items()->get();
-            foreach ($previousItems as $previousItem) {
-                $previousProduct = Product::query()->lockForUpdate()->find($previousItem->product_id);
-                if (!$previousProduct) {
-                    continue;
-                }
-
-                $previousQty = $this->purchaseItemStockUnits($previousItem);
-                if ($previousQty <= 0) {
-                    continue;
-                }
-
-                $previousProduct->decrement('stock', $previousQty);
-                if (Schema::hasColumn('products', 'stock_quantity')) {
-                    $previousProduct->decrement('stock_quantity', $previousQty);
-                }
-                $this->branchInventory->adjustBranchStock(
-                    $previousProduct,
-                    -$previousQty,
-                    $activeBranch,
-                    (int) ($previousProduct->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0)
-                );
+            $stockChanges = [];
+            foreach ($purchase->items()->get() as $previousItem) {
+                $stockChanges[$previousItem->product_id] = ($stockChanges[$previousItem->product_id] ?? 0)
+                    - $this->purchaseItemStockUnits($previousItem);
             }
 
             // Delete old items and create new ones
@@ -869,16 +883,13 @@ public function show($id)
                 }
 
                 PurchaseItem::create($itemPayload);
-                $product->increment('stock', $stockQuantity);
-                if (Schema::hasColumn('products', 'stock_quantity')) {
-                    $product->increment('stock_quantity', $stockQuantity);
-                }
-                $this->branchInventory->adjustBranchStock(
-                    $product,
-                    $stockQuantity,
-                    $activeBranch,
-                    (int) ($product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0)
-                );
+                $stockChanges[$product->id] = ($stockChanges[$product->id] ?? 0) + $stockQuantity;
+            }
+
+            ksort($stockChanges);
+            foreach ($stockChanges as $productId => $delta) {
+                $stockProduct = Product::query()->lockForUpdate()->findOrFail($productId);
+                $this->applyPurchaseStockChange($stockProduct, round($delta, 6), $activeBranch);
             }
 
             LedgerService::postPurchase($purchase->fresh());
@@ -1085,24 +1096,15 @@ public function show($id)
                     continue;
                 }
 
-                $quantity = (float) ($item->qty ?? $item->quantity ?? 0);
+                $quantity = $this->purchaseItemStockUnits($item);
                 if ($quantity <= 0) {
                     continue;
                 }
 
-                $product->decrement('stock', $quantity);
-                if (Schema::hasColumn('products', 'stock_quantity')) {
-                    $product->decrement('stock_quantity', $quantity);
-                }
-                $this->branchInventory->adjustBranchStock(
-                    $product,
-                    -$quantity,
-                    [
-                        'id' => $purchase->branch_id ?? $activeBranch['id'],
-                        'name' => $purchase->branch_name ?? $activeBranch['name'],
-                    ],
-                    (int) ($product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0)
-                );
+                $this->applyPurchaseStockChange($product, -$quantity, [
+                    'id' => $purchase->branch_id ?? $activeBranch['id'],
+                    'name' => $purchase->branch_name ?? $activeBranch['name'],
+                ]);
             }
             
             // Delete purchase items
