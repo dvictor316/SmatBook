@@ -87,11 +87,12 @@ body.hotel-workspace .hotel-preview-modal.sa-panorama-fullscreen .modal-content 
 }
 body.hotel-workspace .hotel-preview-modal .modal-body { overflow-y:auto; min-height:0; }
 
-/* Photos use the entire stage during a tour; Fit room preserves the full frame. */
-.room-image-viewer.is-photo-tour .room-image-viewport {
+/* Give both panorama and photo tours a tall stage; Fit room preserves the full frame. */
+.room-image-viewer:is(.is-photo-tour, .is-spherical) .room-image-viewport {
     aspect-ratio:16 / 9;
-    height:clamp(240px, 48vw, 620px);
-    max-height:65svh;
+    height:clamp(320px, 72vh, 900px);
+    height:clamp(320px, 72svh, 900px);
+    max-height:none;
     perspective:1800px;
 }
 .room-image-viewer.is-photo-tour .room-image-viewport img {
@@ -103,4 +104,10 @@ body.hotel-workspace .hotel-preview-modal .modal-body { overflow-y:auto; min-hei
     backface-visibility:hidden;
 }
 .room-image-viewer.is-photo-tour.is-playing .room-image-viewport img { will-change:transform; }
-.room-image-viewer.is-photo-tour:fullscreen .room-image-viewport { height:auto; max-height:none; }
+@media(max-width:575px) {
+    .room-image-viewer:is(.is-photo-tour, .is-spherical) .room-image-viewport {
+        height:clamp(280px, 68vh, 700px);
+        height:clamp(280px, 68svh, 700px);
+    }
+}
+.room-image-viewer:is(.is-photo-tour, .is-spherical):fullscreen .room-image-viewport { height:auto; max-height:none; }
