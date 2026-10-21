@@ -1,5 +1,7 @@
 @extends('layout.mainlayout')
 
+@section('dashboard_variant', 'professional')
+
 @section('content')
 
 <style>
@@ -428,13 +430,13 @@
         $allBranchesUrl = $dashboardBaseUrl . '?all_branches=1&branch_scope=all';
     @endphp
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="spb-dashboard-heading d-flex justify-content-between align-items-center mb-4">
         <div>
             <div class="d-flex align-items-center gap-2 mb-1">
-                <h3 class="fw-bold mb-0 pro-page-title" style="color: var(--deep-sapphire);">Professional Node Dashboard</h3>
+                <h3 class="fw-bold mb-0 pro-page-title" style="color: var(--deep-sapphire);">Professional overview</h3>
                 <span class="badge-pro">PRO TIER</span>
             </div>
-            <p class="text-muted small">Live analytics for <strong>{{ request()->getHost() }}</strong> | Domain: <code>{{ env('SESSION_DOMAIN', 'Live Node') }}</code></p>
+            <p class="text-muted small">Your sales, inventory and financial performance at a glance.</p>
         </div>
         <div class="d-flex gap-2 pro-dashboard-actions">
             <span class="branch-chip">

@@ -69,7 +69,7 @@ class SuperAdminModuleDashboardTest extends TestCase
             ->assertDontSee('External Livestock Tenant')
             ->assertDontSee('External Farm');
 
-        $this->actingAs($superAdmin)->post(route('super_admin.livestock.farms.store'), [
+        $this->actingAs($superAdmin)->postJson(route('super_admin.livestock.farms.store'), [
             'company_id' => $externalCompany->id, 'name' => 'Unauthorized Farm', 'code' => 'NOPE-01',
             'bird_capacity' => 100, 'eggs_per_crate' => 30,
         ])->assertForbidden();

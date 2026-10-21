@@ -1,5 +1,7 @@
 @extends('layout.mainlayout')
 
+@section('dashboard_variant', 'manager')
+
 @section('title', 'Deployment Console')
 
 @section('content')
@@ -120,7 +122,7 @@
 
 <div id="deployment-wrapper">
 
-    <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-3">
+    <div class="spb-dashboard-heading d-flex justify-content-between align-items-end mb-4 flex-wrap gap-3">
         <div>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1 small text-muted">

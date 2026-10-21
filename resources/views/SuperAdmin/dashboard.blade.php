@@ -1,5 +1,7 @@
 @extends('layout.mainlayout')
 
+@section('dashboard_variant', 'platform')
+
 @section('title', 'Super Admin Command Center')
 
 @section('content')
@@ -1413,13 +1415,12 @@
         <div class="col-sm-12">
             <div class="home-tab">
 
-                <div class="header-responsive-flex border-bottom pb-3 mb-4">
+                <div class="header-responsive-flex border-bottom pb-3 mb-4 spb-dashboard-heading">
                     <div class="d-flex align-items-center">
                         <div>
-                            <h3 class="fw-bold text-dark mb-1">Master Command Center</h3>
+                            <h3 class="fw-bold text-dark mb-1">Platform overview</h3>
                             <p class="text-muted mb-0">
-                                System-wide overview for domain: 
-                                <span class="text-primary fw-bold">{{ env('SESSION_DOMAIN', 'Primary Cluster') }}</span>
+                                Monitor subscriptions, customers, revenue and platform activity.
                             </p>
                         </div>
                     </div>

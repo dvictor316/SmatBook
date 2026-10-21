@@ -1,5 +1,7 @@
 @extends('layout.mainlayout')
 
+@section('dashboard_variant', 'enterprise')
+
 @section('content')
 
 <style> 
@@ -327,16 +329,13 @@
         $allBranchesUrl = $dashboardBaseUrl . '?all_branches=1&branch_scope=all';
     @endphp
 
-    <div class="enterprise-header"> 
+    <div class="enterprise-header spb-dashboard-heading">
         <div class="enterprise-header-title"> 
             <div class="d-flex align-items-center gap-2 mb-1"> 
-                <h3 class="fw-bold mb-0" style="color: var(--deep-sapphire);">Enterprise Node Control</h3> 
+                <h3 class="fw-bold mb-0" style="color: var(--deep-sapphire);">Enterprise overview</h3>
                 <span class="master-badge"><i class="fas fa-crown me-1 text-warning"></i> Master Access</span> 
             </div> 
-            <p class="text-muted small mb-0">
-                Analytics Node: <strong>{{ request()->getHost() }}</strong> | 
-                Domain: <code>{{ env('SESSION_DOMAIN', 'Enterprise_Core') }}</code>
-            </p> 
+            <p class="text-muted small mb-0">A clear view of sales, inventory and finance across your business.</p>
         </div> 
         <div class="d-flex align-items-center gap-3 enterprise-dashboard-actions"> 
             <span class="branch-chip">

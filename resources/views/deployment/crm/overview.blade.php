@@ -1,5 +1,7 @@
 @extends('layout.mainlayout')
 
+@section('dashboard_variant', 'manager')
+
 @section('style')
     @include('agent.partials.styles')
     <style>
@@ -35,7 +37,7 @@
 @section('content')
 <div class="page-wrapper">
     <div class="content agent-page">
-        <div class="agent-topline">
+        <div class="agent-topline spb-dashboard-heading">
             <div class="agent-title">
                 <h1>Manager Dashboard</h1>
                 <p>State targets, agent activation, customer activity, and CRM health.</p>

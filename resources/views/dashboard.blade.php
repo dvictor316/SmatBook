@@ -1,5 +1,7 @@
 @extends('layout.mainlayout')
 
+@section('dashboard_variant', 'overview')
+
 @section('page-title', 'Dashboard')
 
 @section('content')
@@ -19,11 +21,16 @@
                 @endif
             </div>
         @endif
+        <div class="spb-dashboard-heading">
+            <div>
+                <h1 class="mb-1">Welcome back{{ auth()->user()?->name ? ', ' . auth()->user()->name : '' }}</h1>
+                <p class="text-muted mb-0">{{ now()->format('l, j F Y') }} &middot; Your business workspace</p>
+            </div>
+        </div>
         <div class="card border-0 shadow-sm">
             <div class="card-body">
-                <h4 class="mb-2">Dashboard</h4>
-                <p class="text-muted mb-3">This module page is now wired and reachable. Replace content with final business UI as needed.</p>
-                <div class="small text-muted">View file: <code>dashboard.blade.php</code></div>
+                <h4 class="mb-2">Ready for your next task?</h4>
+                <p class="text-muted mb-3">Use your workspace menu to open the tools available to your role, or return to your overview to review the latest business activity.</p>
                 <div class="mt-3">
                     <a href="{{ url()->previous() }}" class="btn btn-light border">Go Back</a>
                     <a href="{{ route('home') }}" class="btn btn-primary">Home</a>

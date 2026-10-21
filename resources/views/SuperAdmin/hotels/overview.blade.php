@@ -779,7 +779,7 @@
                                                 <div><label class="form-label">Housekeeping</label><select name="housekeeping_status" class="form-select">@foreach(['clean','dirty','inspection','cleaning'] as $option)<option value="{{ $option }}" @selected((string)$room->housekeeping_status === $option)>{{ ucfirst($option) }}</option>@endforeach</select></div>
                                                 <div><label class="form-label">Active</label><select name="is_active" class="form-select"><option value="1" @selected($room->is_active)>Active</option><option value="0" @selected(!$room->is_active)>Inactive</option></select></div>
                                                 <div><label class="form-label">Cover Image</label><input type="file" name="room_image" class="form-control" accept="image/*"></div>
-                                                <div><label class="form-label">Panorama Image</label><input type="file" name="panorama_image" class="form-control" accept="image/*"></div>
+                                                <div><label class="form-label">Panorama Image</label><input type="file" name="panorama_image" class="form-control" accept="image/*"><small class="text-muted">Use a stitched 2:1 equirectangular image for a full 360° tour. Maximum 8 MB.</small></div>
                                                 <div class="full"><label class="form-label">Gallery Photos</label><input type="file" name="gallery_images[]" class="form-control" accept="image/*" multiple></div>
                                                 <div class="full"><label class="form-label">Room Information / Notes</label><textarea name="notes" class="form-control" rows="3">{{ $room->notes }}</textarea></div>
                                             </div>
@@ -797,7 +797,7 @@
                                         <div class="modal-body">
                                             <div class="sa-form-grid mb-3">
                                                 <div><label class="form-label">Cover Image</label><input type="file" name="room_image" class="form-control" accept="image/*"></div>
-                                                <div><label class="form-label">Panorama Image</label><input type="file" name="panorama_image" class="form-control" accept="image/*"></div>
+                                                <div><label class="form-label">Panorama Image</label><input type="file" name="panorama_image" class="form-control" accept="image/*"><small class="text-muted">Use a stitched 2:1 equirectangular image for a full 360° tour. Maximum 8 MB.</small></div>
                                                 <div class="full"><label class="form-label">Gallery Photos</label><input type="file" name="gallery_images[]" class="form-control" accept="image/*" multiple></div>
                                             </div>
                                             <div class="sa-room-gallery-strip">
@@ -893,7 +893,7 @@
                                 <div><label class="form-label">Housekeeping</label><select name="housekeeping_status" class="form-select">@foreach(['clean','dirty','inspection','cleaning'] as $option)<option value="{{ $option }}">{{ ucfirst($option) }}</option>@endforeach</select></div>
                                 <div><label class="form-label">Active</label><select name="is_active" class="form-select"><option value="1">Active</option><option value="0">Inactive</option></select></div>
                                 <div><label class="form-label">Cover Image</label><input type="file" name="room_image" class="form-control" accept="image/*"></div>
-                                <div><label class="form-label">Panorama Image</label><input type="file" name="panorama_image" class="form-control" accept="image/*"></div>
+                                <div><label class="form-label">Panorama Image</label><input type="file" name="panorama_image" class="form-control" accept="image/*"><small class="text-muted">Use a stitched 2:1 equirectangular image for a full 360° tour. Maximum 8 MB.</small></div>
                                 <div class="full"><label class="form-label">Gallery Photos</label><input type="file" name="gallery_images[]" class="form-control" accept="image/*" multiple></div>
                                 <div class="full"><label class="form-label">Room Information / Notes</label><textarea name="notes" class="form-control" rows="3" placeholder="Amenities, bed setup, view, smoking policy, accessibility, minibar, cancellation note"></textarea></div>
                             </div>

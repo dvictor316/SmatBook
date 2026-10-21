@@ -12,10 +12,6 @@
     .room-show-chip { border:1px solid #d8e2ee; border-radius:8px; padding:12px; background:#f8fbff; }
     .room-show-chip span { display:block; color:#64748b; font-size:12px; text-transform:uppercase; font-weight:800; }
     .room-show-chip strong { font-size:20px; color:#061b33; }
-    .room-thumbs { display:flex; gap:8px; overflow:auto; margin-top:12px; padding-bottom:4px; }
-    .room-thumbs button { width:92px; height:64px; border:2px solid transparent; border-radius:8px; padding:0; overflow:hidden; flex:0 0 auto; background:#fff; }
-    .room-thumbs button.is-active { border-color:#0b5fb8; }
-    .room-thumbs img { width:100%; height:100%; object-fit:cover; display:block; }
     .room-show-grid { display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:18px; }
     .room-show-table th { background:#061b33; color:#fff; font-size:12px; text-transform:uppercase; }
     @media(max-width:991px){.room-show-hero,.room-show-grid{grid-template-columns:1fr}.room-show-gallery{min-height:320px}}
@@ -43,13 +39,7 @@
                         <div>{{ $room->wing ?: 'Main Wing' }} - Floor {{ $room->floor ?: 'N/A' }}</div>
                     </div>
                 </div>
-                @if($images->count())
-                    <div class="room-thumbs" data-room-thumbs>
-                        @foreach($images as $image)
-                            <button type="button" class="{{ $loop->first ? 'is-active' : '' }}" data-room-thumb="{{ $loop->index }}"><img src="{{ asset('storage/'.$image->path) }}" alt=""></button>
-                        @endforeach
-                    </div>
-                @endif
+
             </div>
             <aside class="room-show-panel">
                 <div class="d-flex justify-content-between gap-2 align-items-start">
@@ -105,26 +95,4 @@
         </div>
     </div>
 </div>
-@endsection
-
-@section('script')
-<script>
-(function () {
-    const gallery = document.querySelector('[data-room-show-gallery]');
-    const image = gallery?.querySelector('[data-room-viewport] img');
-    const thumbs = Array.from(document.querySelectorAll('[data-room-thumb]'));
-    if (!image) return;
-    thumbs.forEach((thumb, index) => {
-        thumb.setAttribute('aria-label', 'View room image ' + (index + 1));
-        thumb.setAttribute('aria-pressed', index === 0 ? 'true' : 'false');
-        thumb.addEventListener('click', () => {
-            image.src = thumb.querySelector('img').src;
-            thumbs.forEach((item) => {
-                item.classList.toggle('is-active', item === thumb);
-                item.setAttribute('aria-pressed', item === thumb ? 'true' : 'false');
-            });
-        });
-    });
-})();
-</script>
 @endsection

@@ -1,0 +1,38 @@
+/* Decorative icons follow the readable label color of their interactive control.
+   Keep explicit fill="none" / stroke="none" for outline SVGs. Brand artwork can
+   opt out with data-preserve-color or .preserve-icon-colors. */
+html body :is(button, .btn, [role="button"], a[class*="btn"], a[class*="button"], .action-icon, .report-action, .agent-button, .agent-icon-btn, .starter-action, .dropdown-item, .hotel-command-actions a, .spb-support-btn):is(:hover, :focus-visible, :active, .active, [aria-pressed="true"])
+:is(i, svg, .icon, .feather, .material-icons, .material-symbols-outlined, .btn-icon, .button-icon, .action-icon, .icon-wrapper, .fa, .fas, .far, .fab, .mdi, [class^="fa-"], [data-feather], [data-lucide]):not([data-preserve-color]):not(.preserve-icon-colors),
+html body :is(button, .btn, [role="button"], a[class*="btn"], a[class*="button"], .action-icon, .report-action, .agent-button, .agent-icon-btn, .starter-action, .dropdown-item, .hotel-command-actions a, .spb-support-btn):is(:hover, :focus-visible, :active, .active, [aria-pressed="true"])
+:is(i, .icon, .material-icons, .material-symbols-outlined):not([data-preserve-color]):not(.preserve-icon-colors)::before {
+    color: inherit !important;
+    -webkit-text-fill-color: currentColor !important;
+}
+
+html body :is(button, .btn, [role="button"], a[class*="btn"], a[class*="button"], .action-icon, .report-action, .agent-button, .agent-icon-btn, .starter-action, .dropdown-item, .hotel-command-actions a, .spb-support-btn):is(:hover, :focus-visible, :active, .active, [aria-pressed="true"])
+svg:not([data-preserve-color]):not(.preserve-icon-colors):not([fill="none"]),
+html body :is(button, .btn, [role="button"], a[class*="btn"], a[class*="button"], .action-icon, .report-action, .agent-button, .agent-icon-btn, .starter-action, .dropdown-item, .hotel-command-actions a, .spb-support-btn):is(:hover, :focus-visible, :active, .active, [aria-pressed="true"])
+svg:not([data-preserve-color]):not(.preserve-icon-colors) [fill]:not([fill="none"]) {
+    fill: currentColor !important;
+}
+
+html body :is(button, .btn, [role="button"], a[class*="btn"], a[class*="button"], .action-icon, .report-action, .agent-button, .agent-icon-btn, .starter-action, .dropdown-item, .hotel-command-actions a, .spb-support-btn):is(:hover, :focus-visible, :active, .active, [aria-pressed="true"])
+svg:not([data-preserve-color]):not(.preserve-icon-colors)[stroke]:not([stroke="none"]),
+html body :is(button, .btn, [role="button"], a[class*="btn"], a[class*="button"], .action-icon, .report-action, .agent-button, .agent-icon-btn, .starter-action, .dropdown-item, .hotel-command-actions a, .spb-support-btn):is(:hover, :focus-visible, :active, .active, [aria-pressed="true"])
+svg:not([data-preserve-color]):not(.preserve-icon-colors) [stroke]:not([stroke="none"]) {
+    stroke: currentColor !important;
+}
+
+/* Some legacy themes set a fill/stroke directly on every button SVG. */
+html body :is(button, .btn, [role="button"], a[class*="btn"], a[class*="button"], .action-icon, .report-action, .agent-button, .agent-icon-btn, .starter-action, .dropdown-item, .hotel-command-actions a, .spb-support-btn):is(:hover, :focus-visible, :active, .active, [aria-pressed="true"])
+svg:not([data-preserve-color]):not(.preserve-icon-colors)[fill="none"],
+html body :is(button, .btn, [role="button"], a[class*="btn"], a[class*="button"], .action-icon, .report-action, .agent-button, .agent-icon-btn, .starter-action, .dropdown-item, .hotel-command-actions a, .spb-support-btn):is(:hover, :focus-visible, :active, .active, [aria-pressed="true"])
+svg:not([data-preserve-color]):not(.preserve-icon-colors) [fill="none"] {
+    fill: none !important;
+}
+html body :is(button, .btn, [role="button"], a[class*="btn"], a[class*="button"], .action-icon, .report-action, .agent-button, .agent-icon-btn, .starter-action, .dropdown-item, .hotel-command-actions a, .spb-support-btn):is(:hover, :focus-visible, :active, .active, [aria-pressed="true"])
+svg:not([data-preserve-color]):not(.preserve-icon-colors)[stroke="none"],
+html body :is(button, .btn, [role="button"], a[class*="btn"], a[class*="button"], .action-icon, .report-action, .agent-button, .agent-icon-btn, .starter-action, .dropdown-item, .hotel-command-actions a, .spb-support-btn):is(:hover, :focus-visible, :active, .active, [aria-pressed="true"])
+svg:not([data-preserve-color]):not(.preserve-icon-colors) [stroke="none"] {
+    stroke: none !important;
+}

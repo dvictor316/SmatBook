@@ -37,6 +37,8 @@
         || request()->is('livestock*', 'superadmin/livestock*');
     $hideSidebar = ($hideSidebar ?? false) || $isPosWorkspace;
     $bodyClasses = [];
+    $dashboardVariant = trim($__env->yieldContent('dashboard_variant'));
+    if ($dashboardVariant !== '') { $bodyClasses[] = 'spb-dashboard'; }
 
     if ($route === 'chat') {
         $bodyClasses[] = 'chat-page';
@@ -129,9 +131,12 @@
     <link rel="stylesheet" href="{{ asset('assets/css/app-shell.css') }}?v=22f729ed2d6d">
     @stack('styles')
     @include('layout.partials.responsive-guardrails')
+    @if($dashboardVariant !== '')
+        <link rel="stylesheet" href="{{ asset('assets/css/dashboard-polish.css') }}?v={{ filemtime(public_path('assets/css/dashboard-polish.css')) }}">
+    @endif
 </head>
 
-<body @if(!empty($bodyClasses)) class="{{ implode(' ', $bodyClasses) }}" @endif>
+<body @if($dashboardVariant !== '') data-dashboard="{{ $dashboardVariant }}" @endif @if(!empty($bodyClasses)) class="{{ implode(' ', $bodyClasses) }}" @endif>
     {{-- MAIN WRAPPER --}}
     @if ($isPosWorkspace)
         <div class="main-wrapper pos-main-wrapper" style="width:100vw;max-width:100vw;margin:0;padding:0;overflow-x:hidden;">

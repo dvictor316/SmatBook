@@ -1,0 +1,139 @@
+/* Shared dashboard finish. Data, permissions, chart palettes and actions stay in their views. */
+body.spb-dashboard {
+    --dashboard-accent: #2563eb;
+    --dashboard-tint: #eff6ff;
+    --dashboard-ink: #172b4d;
+    --dashboard-muted: #64748b;
+    --dashboard-line: #e2e8f2;
+    --dashboard-shadow: 0 4px 20px rgba(24, 43, 76, .055);
+    background: #f5f7fb;
+}
+body.spb-dashboard[data-dashboard="enterprise"] { --dashboard-accent: #0f766e; --dashboard-tint: #f0fdfa; }
+body.spb-dashboard[data-dashboard="professional"],
+body.spb-dashboard[data-dashboard="manager"],
+body.spb-dashboard[data-dashboard="platform"] { --dashboard-accent: #6366f1; --dashboard-tint: #eef2ff; }
+body.spb-dashboard[data-dashboard="hotel"] { --dashboard-accent: #0e7490; --dashboard-tint: #ecfeff; }
+body.spb-dashboard[data-dashboard="farm"] { --dashboard-accent: #15803d; --dashboard-tint: #f0fdf4; }
+
+body.spb-dashboard :is(.pos-content-area, .starter-dashboard, #deployment-wrapper, #main-content-wrapper, .agent-page, .spb-hotel-enterprise, .farm-page) {
+    background: linear-gradient(180deg, var(--dashboard-tint), #f5f7fb 340px) !important;
+}
+body.spb-dashboard :is(.pos-content-area, .starter-dashboard, #deployment-wrapper, #main-content-wrapper) {
+    padding: clamp(16px, 2.2vw, 32px);
+}
+body.spb-dashboard .spb-dashboard-heading {
+    min-width: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-bottom: 24px !important;
+    border-radius: 20px;
+}
+body.spb-dashboard .spb-dashboard-heading:not(.hotel-hero):not(.farm-hero):not(.starter-hero) {
+    padding: clamp(18px, 2.2vw, 28px) !important;
+    background: linear-gradient(110deg, #fff 55%, var(--dashboard-tint));
+    border: 1px solid var(--dashboard-line);
+    border-left: 4px solid var(--dashboard-accent);
+    box-shadow: var(--dashboard-shadow);
+}
+body.spb-dashboard .spb-dashboard-heading :is(h1, h2, h3) {
+    font-size: clamp(1.35rem, 2vw, 1.9rem);
+    line-height: 1.22;
+    font-weight: 800;
+    letter-spacing: -.035em;
+    margin-bottom: 6px;
+}
+body.spb-dashboard .spb-dashboard-heading p { line-height: 1.6; margin-bottom: 0; max-width: 66ch; }
+body.spb-dashboard .spb-dashboard-heading > * { min-width: 0; }
+body.spb-dashboard .spb-dashboard-heading .d-flex { flex-wrap: wrap; }
+
+body.spb-dashboard :is(.agent-card, .glass-card, .glass-card-pro, .metric-card-basic, .enterprise-card, .starter-card, .starter-chart-card, .panel-card, .chart-card, .metric-card, .hotel-panel, .farm-kpi, .farm-setup, .executive-kpi, .visit-mini-card, .visit-decision-card) {
+    border-radius: 18px !important;
+    border: 1px solid var(--dashboard-line);
+    box-shadow: var(--dashboard-shadow) !important;
+    min-width: 0;
+    transition: box-shadow .18s ease, border-color .18s ease;
+}
+body.spb-dashboard :is(.agent-card, .glass-card, .glass-card-pro, .metric-card-basic, .enterprise-card, .starter-card, .starter-chart-card, .panel-card, .hotel-panel, .farm-kpi):hover {
+    transform: none;
+    box-shadow: 0 8px 26px rgba(24, 43, 76, .09) !important;
+}
+body.spb-dashboard :is(.starter-chart-card, .panel-card, .chart-card) { background-color: #fff; }
+body.spb-dashboard :is(.agent-metric .value, .starter-value, .kpi-value, .hotel-kpi strong, .farm-kpi strong, .metric-value, .metric-card-basic h3, .glass-card-pro h3) {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.035em;
+    line-height: 1.15;
+}
+body.spb-dashboard :is(.agent-metric .value, .starter-value, .hotel-kpi strong, .farm-kpi strong, .metric-card-basic h3) {
+    font-size: clamp(1.55rem, 2.25vw, 2.15rem);
+}
+body.spb-dashboard :is(.agent-card h4, .panel-card h5, .starter-chart-card h3, .hotel-panel h5) {
+    font-weight: 750;
+    letter-spacing: -.02em;
+}
+body.spb-dashboard :is(.agent-card, .starter-card, .hotel-panel, .farm-kpi) small { line-height: 1.5; }
+body.spb-dashboard .agent-metric { padding: 22px; }
+body.spb-dashboard .agent-metric .label { font-size: .72rem; letter-spacing: .075em; }
+body.spb-dashboard .agent-metric .icon { border-radius: 13px; }
+body.spb-dashboard .agent-topline .agent-title p { color: var(--dashboard-muted); }
+body.spb-dashboard .table { font-variant-numeric: tabular-nums; }
+body.spb-dashboard .table > :not(caption) > * > * { padding-top: 14px; padding-bottom: 14px; vertical-align: middle; }
+body.spb-dashboard .table thead th { font-size: .7rem; letter-spacing: .055em; font-weight: 750; }
+body.spb-dashboard .table tbody tr:last-child td { border-bottom: 0; }
+body.spb-dashboard :is(.btn, .agent-button, .starter-action) { border-radius: 11px; min-height: 40px; }
+body.spb-dashboard :is(.hotel-service-card, .farm-setup) { padding: 22px; }
+body.spb-dashboard .farm-kpi { padding: 20px; }
+
+@media (max-width: 1199.98px) {
+    body.spb-dashboard :is(.starter-dashboard, #deployment-wrapper) {
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    body.spb-dashboard .spb-dashboard-heading { align-items: flex-start; }
+}
+@media (max-width: 767.98px) {
+    body.spb-dashboard .spb-dashboard-heading { gap: 14px; border-radius: 16px; }
+    body.spb-dashboard .spb-dashboard-heading > .d-flex { width: 100%; }
+    body.spb-dashboard .spb-dashboard-heading :is(.basic-dashboard-actions, .pro-dashboard-actions, .enterprise-dashboard-actions) { width: 100%; justify-content: flex-start; }
+    body.spb-dashboard .agent-metric { padding: 18px; }
+    body.spb-dashboard :is(.hotel-filter, .farm-filter) { justify-content: flex-start; }
+    body.spb-dashboard :is(.hotel-filter, .farm-filter) > div { flex: 1 1 140px; min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    body.spb-dashboard :is(.agent-card, .glass-card, .glass-card-pro, .metric-card-basic, .enterprise-card, .starter-card, .hotel-panel, .farm-kpi) { transition: none; }
+}
+@media print {
+    body.spb-dashboard :is(.spb-dashboard-heading, .agent-card, .glass-card, .glass-card-pro, .metric-card-basic, .enterprise-card, .starter-card, .hotel-panel, .farm-kpi) { box-shadow: none !important; }
+}
+
+body.spb-dashboard .spb-dashboard-heading :is(.basic-dashboard-actions, .pro-dashboard-actions, .enterprise-dashboard-actions) {
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+body.spb-dashboard .spb-dashboard-heading :is(.basic-dashboard-actions, .pro-dashboard-actions, .enterprise-dashboard-actions) img {
+    max-height: 48px;
+    width: auto;
+    object-fit: contain;
+}
+body.spb-dashboard .spb-dashboard-heading .text-muted {
+    color: var(--dashboard-muted) !important;
+    -webkit-text-fill-color: currentColor !important;
+}
+body.spb-dashboard .metric-card-basic.metric-amber,
+body.spb-dashboard .metric-card-basic.metric-amber * {
+    color: #382b07 !important;
+    -webkit-text-fill-color: currentColor !important;
+    text-shadow: none !important;
+}
+body.spb-dashboard .agent-sidebar .agent-brand strong {
+    color: #fff !important;
+    -webkit-text-fill-color: currentColor !important;
+}
+body.spb-dashboard .agent-sidebar .agent-brand small {
+    color: #b7c9e6 !important;
+    -webkit-text-fill-color: currentColor !important;
+}

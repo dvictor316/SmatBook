@@ -1,5 +1,7 @@
 @extends('layout.mainlayout')
 
+@section('dashboard_variant', 'starter')
+
 @section('content')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
@@ -337,7 +339,7 @@
     <div class="starter-shell">
         @include('SuperAdmin.partials._subscription_status_banner')
 
-        <section class="starter-hero">
+        <section class="starter-hero spb-dashboard-heading">
             <span class="starter-badge"><i class="fas fa-cash-register"></i> Starter POS Dashboard</span>
             <h1 class="starter-title">Sales and inventory, without the accounting noise.</h1>
             <p class="starter-copy">This workspace is optimized for cashiers and inventory operators. You can process sales, manage products, track stock, monitor movement, and review the reports included in your STARTER plan.</p>

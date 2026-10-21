@@ -1,5 +1,7 @@
 @extends('layout.mainlayout')
 
+@section('dashboard_variant', 'admin')
+
 @section('content')
 <style>
     /* FIXED SIDEBAR OFFSET & THEME COLORS */
@@ -58,7 +60,7 @@
 
 <div class="pos-content-area">
 
-    <div class="report-header">
+    <div class="report-header spb-dashboard-heading">
         <div>
             <h3 class="fw-bold mb-0" style="color: #0369a1;">Business Analytics</h3>
             <p class="text-muted small mb-0">Overview of sales performance and inventory status.</p>

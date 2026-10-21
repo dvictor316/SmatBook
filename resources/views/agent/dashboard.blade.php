@@ -1,5 +1,7 @@
 @extends('layout.mainlayout')
 
+@section('dashboard_variant', 'agent')
+
 @section('style')
     @include('agent.partials.styles')
 @endsection
@@ -13,7 +15,7 @@
 @endphp
 <div class="page-wrapper">
     <div class="content agent-page">
-        <div class="agent-topline">
+        <div class="agent-topline spb-dashboard-heading">
             <div class="agent-title">
                 <h1>Welcome, {{ strtok($user->name ?? 'Agent', ' ') }}!</h1>
                 <p>{{ now()->format('l, F j, Y') }} · Agent Dashboard</p>

@@ -1,5 +1,7 @@
 @extends('layout.mainlayout')
 
+@section('dashboard_variant', 'hotel')
+
 @section('style')
 <style>
     .spb-hotel-enterprise { background:#edf3f9; color:#10233f; }
@@ -74,7 +76,7 @@
 @section('content')
 <div class="page-wrapper spb-hotel-enterprise">
     <div class="content container-fluid">
-        <section class="hotel-hero">
+        <section class="hotel-hero spb-dashboard-heading">
             <div class="hotel-hero-grid">
                 <div>
                     <div class="hotel-eyebrow">SmartProbook Hotel PMS · Enterprise Command</div>

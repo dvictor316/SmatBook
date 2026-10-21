@@ -79,7 +79,7 @@
                             <div>
                                 <label class="form-label">Panorama / Wide Preview Image</label>
                                 <input type="file" name="panorama_image" class="form-control" accept="image/*" data-room-image-input="panorama_image">
-                                <small class="d-block mt-2">Use a wide landscape image so clients can inspect the room without entering.</small>
+                                <small class="d-block mt-2">For a full 360° tour, upload a stitched equirectangular panorama (2:1, for example 4096 × 2048). Other images play as a moving photo preview. Maximum 8 MB.</small>
                             </div>
                         </div>
                     </div>
