@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Company;
+use App\Models\Setting;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Support\Collection;
@@ -18,7 +19,13 @@ class BusinessWorkspaceResolver
 
         $primaryCompanyId = (int) ($user->getRawOriginal('company_id') ?? 0);
 
+        $retiredIds = Schema::hasTable('settings')
+            ? Setting::where('key', 'like', 'workspace_retired_company_%')->pluck('key')
+                ->map(fn ($key) => preg_match('/^workspace_retired_company_(\d+)$/', $key, $match) ? (int) $match[1] : 0)->filter()->all()
+            : [];
+
         return Company::withoutGlobalScope('tenant')
+            ->whereNotIn('id', $retiredIds)
             ->where(function ($query) use ($user, $primaryCompanyId) {
                 // Disagreeing owner fields must not grant a second account access.
                 $query->where(function ($owned) use ($user) {
