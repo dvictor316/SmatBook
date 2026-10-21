@@ -20,31 +20,32 @@ class VerifyTenantSession
             $role = strtolower((string) ($user->role ?? ''));
             $isSuperAdmin = in_array($role, ['super_admin', 'superadmin'], true);
 
-            if ($isSuperAdmin
-                && session('workspace_context') === 'platform'
-                && $sessionTenantId === 0) {
+            if ($isSuperAdmin && session('workspace_context') === 'platform') {
+                $this->workspaceResolver->clearContext($user);
                 return $next($request);
             }
 
-            // A regular user without a company must never inherit a tenant
-            // selected by a previous session or another account.
-            if ($sessionTenantId > 0 && ! $this->workspaceResolver->canAccess($user, $sessionTenantId) && ! $isSuperAdmin) {
-                session()->forget(['current_tenant_id', 'current_tenant_name', 'active_branch_id', 'active_branch_name']);
+            if ($sessionTenantId > 0 && ! $this->workspaceResolver->canAccess($user, $sessionTenantId)) {
+                $this->workspaceResolver->clearContext($user);
                 $sessionTenantId = 0;
             }
 
             $activeCompanyId = $this->workspaceResolver->activeCompanyId($user);
-            if ($activeCompanyId > 0 && $sessionTenantId !== $activeCompanyId) {
-                $company = $this->workspaceResolver->accessibleCompanies($user)->firstWhere('id', $activeCompanyId);
-                if ($company) {
+            $company = $this->workspaceResolver->accessibleCompanies($user)->firstWhere('id', $activeCompanyId);
+            if ($company) {
+                if ($sessionTenantId !== $activeCompanyId) {
                     $this->workspaceResolver->activate($user, $company);
                 } else {
-                    session()->forget(['active_branch_id', 'active_branch_name', 'active_branch_scope']);
-                    session(['current_tenant_id' => $activeCompanyId]);
-                    $user->setAttribute('company_id', $activeCompanyId);
+                    // Refresh both identity and label, including an already-loaded Eloquent relation.
+                    $this->workspaceResolver->bindCompany($user, $company);
                 }
-            } elseif ($activeCompanyId > 0) {
+            } elseif ($activeCompanyId > 0 && ! \Illuminate\Support\Facades\Schema::hasTable('companies')) {
+                // Support installations that still use legacy user-company assignments.
+                session(['current_tenant_id' => $activeCompanyId]);
                 $user->setAttribute('company_id', $activeCompanyId);
+                $user->unsetRelation('company');
+            } else {
+                $this->workspaceResolver->clearContext($user);
             }
 
             app(ActiveBranchResolver::class)->ensureSession($user);

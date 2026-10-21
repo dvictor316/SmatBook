@@ -364,7 +364,8 @@ class Subscription extends Model
             return null;
         }
 
-        $activeCompanyId = (int) (session('current_tenant_id') ?: $user->company_id ?: 0);
+        $workspaceResolver = app(\App\Support\BusinessWorkspaceResolver::class);
+        $activeCompanyId = $workspaceResolver->activeCompanyId($user);
 
         $subscription = static::withoutGlobalScope('tenant')
             ->with('plan_relationship')
@@ -374,7 +375,7 @@ class Subscription extends Model
                 }
 
                 if ($activeCompanyId <= 0) {
-                    $query->where('user_id', $user->id);
+                    $query->where('user_id', $user->id)->whereNull('company_id');
                 }
             })
             ->orderByRaw("

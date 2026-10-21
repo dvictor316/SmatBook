@@ -440,7 +440,7 @@ class LivestockController extends Controller
 
     private function workspaceCompanyId(): int
     {
-        $companyId = (int) (auth()->user()?->company_id ?? 0);
+        $companyId = app(\App\Support\BusinessWorkspaceResolver::class)->activeCompanyId(auth()->user());
         abort_if($companyId <= 0, 422, 'The super admin account must be attached to a company workspace.');
 
         return $companyId;

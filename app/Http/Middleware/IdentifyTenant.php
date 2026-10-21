@@ -4,7 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use App\Models\{Domain, DeploymentManager, StorefrontSetting};
+use App\Models\{Company, Domain, DeploymentManager, StorefrontSetting};
 use Illuminate\Support\Facades\{View, Auth, Log, Schema};
 
 class IdentifyTenant
@@ -16,6 +16,9 @@ class IdentifyTenant
      */
     public function handle(Request $request, Closure $next)
     {
+        View::share('currentTenant', null);
+        View::share('currentStorefront', null);
+
         // Never apply tenant logic to the workspace-not-found page — prevents redirect loops
         if ($request->is('workspace-not-found')) {
             return $next($request);
@@ -85,7 +88,7 @@ class IdentifyTenant
         $tenant = null;
         try {
             if (Schema::hasTable('domains')) {
-                $query = Domain::query();
+                $query = Domain::withoutGlobalScope('tenant');
                 if (Schema::hasColumn('domains', 'domain_name')) {
                     $query->where('domain_name', $subdomain);
                 } elseif (Schema::hasColumn('domains', 'domain')) {
@@ -130,20 +133,37 @@ class IdentifyTenant
             return redirect((config('app.url') ?: 'https://smartprobook.com') . '/workspace-not-found');
         }
 
-        // 4. Set Global Data for Sidebars and Menus
-        View::share('currentTenant', $tenant);
+        // Domain IDs and company IDs are different namespaces. Resolve the actual
+        // company, then authorize it before changing any authenticated context.
+        $companyId = (int) ($tenant->subscription()->withoutGlobalScope('tenant')->first()?->company_id ?? 0);
+        $company = $companyId > 0
+            ? Company::withoutGlobalScope('tenant')->find($companyId)
+            : Company::withoutGlobalScope('tenant')
+                ->where(function ($query) use ($subdomain) {
+                    $query->where('domain_prefix', $subdomain)->orWhere('subdomain', $subdomain);
+                })
+                ->when((int) $tenant->tenant_id > 0, function ($query) use ($tenant) {
+                    $query->where(fn ($owner) => $owner->where('user_id', $tenant->tenant_id)->orWhere('owner_id', $tenant->tenant_id));
+                })->first();
 
-        // Required for accessing $request->get('tenant') in Controllers
-        $request->attributes->set('tenant', $tenant);
-
-        // 5. Session Persistence (domain => env('SESSION_DOMAIN', null))
-        if (session('current_tenant_id') !== $tenant->id) {
-            $tenantName = $tenant->domain_name
-                ?? $tenant->customer_name
-                ?? $subdomain;
-            session(['current_tenant_id' => $tenant->id]);
-            session(['current_tenant_name' => $tenantName]);
+        if (Auth::check()) {
+            $resolver = app(\App\Support\BusinessWorkspaceResolver::class);
+            if (! $company || ! $resolver->canAccess(Auth::user(), (int) $company->id)) {
+                if ($this->shouldReturnJson($request)) {
+                    return response()->json(['message' => 'You do not have access to this business workspace.'], 403);
+                }
+                return redirect()->to(rtrim(config('app.url'), '/').'/dashboard')
+                    ->with('error', 'Please use a business workspace you have access to.');
+            }
+            if ((int) session('current_tenant_id') !== (int) $company->id) {
+                $resolver->activate(Auth::user(), $company);
+            } else {
+                $resolver->bindCompany(Auth::user(), $company);
+            }
         }
+
+        View::share('currentTenant', $tenant);
+        $request->attributes->set('tenant', $tenant);
 
         return $next($request);
     }

@@ -63,7 +63,7 @@ class BusinessWorkspaceIsolationTest extends TestCase
         $owner->forceFill(['company_id' => $first->id])->save();
 
         $response = $this->actingAs($owner)
-            ->post(route('workspace.businesses.activate', ['companyId' => $foreign->id]));
+            ->postJson(route('workspace.businesses.activate', ['companyId' => $foreign->id]));
         $response->assertForbidden();
 
         $this->assertNotSame($foreign->id, (int) session('current_tenant_id'));

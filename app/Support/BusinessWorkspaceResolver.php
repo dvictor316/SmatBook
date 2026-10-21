@@ -24,7 +24,14 @@ class BusinessWorkspaceResolver
                     ->orWhere('owner_id', $user->id);
 
                 if ($primaryCompanyId > 0) {
-                    $query->orWhere('id', $primaryCompanyId);
+                    $query->orWhere(function ($assigned) use ($user, $primaryCompanyId) {
+                        $assigned->where('id', $primaryCompanyId);
+                        // Platform privileges do not confer ownership of a client's business.
+                        if (in_array(strtolower((string) $user->role), ['super_admin', 'superadmin'], true)) {
+                            $assigned->where(fn ($q) => $q->whereNull('user_id')->orWhere('user_id', 0))
+                                ->where(fn ($q) => $q->whereNull('owner_id')->orWhere('owner_id', 0));
+                        }
+                    });
                 }
             })
             ->orderBy('name')
@@ -58,6 +65,27 @@ class BusinessWorkspaceResolver
         return (int) ($this->accessibleCompanies($user)->first()?->id ?? 0);
     }
 
+    public function clearContext(User $user): void
+    {
+        session()->forget([
+            'current_tenant_id', 'current_tenant_name', 'active_branch_id',
+            'active_branch_name', 'active_branch_scope', 'is_demo_workspace', 'user_plan',
+        ]);
+        // This is request-local; never overwrite the user's primary assignment in the database.
+        $user->setAttribute('company_id', null);
+        $user->setRelation('company', null);
+    }
+
+    public function bindCompany(User $user, Company $company): void
+    {
+        session([
+            'current_tenant_id' => (int) $company->id,
+            'current_tenant_name' => $company->name ?: ($company->company_name ?: 'Business'),
+        ]);
+        $user->setAttribute('company_id', (int) $company->id);
+        $user->setRelation('company', $company);
+    }
+
     public function activate(User $user, Company $company): void
     {
         abort_unless($this->canAccess($user, (int) $company->id), 403, 'You do not have access to this business workspace.');
@@ -84,6 +112,6 @@ class BusinessWorkspaceResolver
             'user_plan' => strtolower((string) ($subscription?->planLabel() ?: $company->plan ?: 'basic')),
         ]);
 
-        $user->setAttribute('company_id', (int) $company->id);
+        $this->bindCompany($user, $company);
     }
 }

@@ -22,6 +22,11 @@ class DashboardController extends Controller
     public function switchToBusinessWorkspace(Request $request)
     {
         $request->session()->put('workspace_context', 'business');
+        $resolver = app(\App\Support\BusinessWorkspaceResolver::class);
+        $company = $resolver->accessibleCompanies(Auth::user())->firstWhere('id', $resolver->activeCompanyId(Auth::user()));
+        if ($company) {
+            $resolver->bindCompany(Auth::user(), $company);
+        }
 
         if ($this->isSuperAdminUser(Auth::user())) {
             $request->session()->put('user_plan', 'enterprise');
@@ -32,6 +37,7 @@ class DashboardController extends Controller
 
     public function switchToPlatformWorkspace(Request $request)
     {
+        app(\App\Support\BusinessWorkspaceResolver::class)->clearContext(Auth::user());
         $request->session()->put('workspace_context', 'platform');
 
         return redirect()->route('super_admin.dashboard')
@@ -41,6 +47,11 @@ class DashboardController extends Controller
     public function businessDashboard(Request $request)
     {
         $request->session()->put('workspace_context', 'business');
+        $resolver = app(\App\Support\BusinessWorkspaceResolver::class);
+        $company = $resolver->accessibleCompanies(Auth::user())->firstWhere('id', $resolver->activeCompanyId(Auth::user()));
+        if ($company) {
+            $resolver->bindCompany(Auth::user(), $company);
+        }
 
         if ($this->isSuperAdminUser(Auth::user())) {
             $request->session()->put('user_plan', 'enterprise');
@@ -136,10 +147,6 @@ class DashboardController extends Controller
             $company = $this->resolveDashboardCompany($user, $subdomain, $subscription);
         } else {
             $company = $this->resolveDashboardCompany($user, null, $currentSubscription);
-        }
-
-        if (!$company && !empty($currentSubscription?->company_id)) {
-            $company = Company::withoutGlobalScope('tenant')->find((int) $currentSubscription->company_id);
         }
 
         if ($subdomain && $company) {
@@ -935,17 +942,8 @@ class DashboardController extends Controller
 
     private function resolvedDashboardCompanyId(): int
     {
-        $sessionCompanyId = (int) session('current_tenant_id', 0);
-        if ($sessionCompanyId > 0) {
-            return $sessionCompanyId;
-        }
-
-        $subscriptionCompanyId = (int) (Subscription::resolveCurrentForUser(Auth::user())?->company_id ?? 0);
-        if ($subscriptionCompanyId > 0) {
-            return $subscriptionCompanyId;
-        }
-
-        return (int) (Auth::user()?->company_id ?? 0);
+        $user = Auth::user();
+        return $user ? app(\App\Support\BusinessWorkspaceResolver::class)->activeCompanyId($user) : 0;
     }
 
     private function shouldShowMissingWorkspaceError($user, ?Subscription $subscription): bool
@@ -1004,34 +1002,7 @@ class DashboardController extends Controller
             return Company::withoutGlobalScope('tenant')->find($tenantId);
         }
 
-        if (!empty($subscription?->company_id)) {
-            $company = Company::withoutGlobalScope('tenant')->find((int) $subscription->company_id);
-            if ($company) {
-                return $company;
-            }
-        }
-
-        $query = Company::query()->where(function ($fallback) use ($user, $subdomain, $subscription) {
-            $fallback->where('user_id', $user->id)
-                ->orWhere('owner_id', $user->id);
-
-            if ($subdomain) {
-                $fallback->orWhere('subdomain', $subdomain)
-                    ->orWhere('domain_prefix', $subdomain);
-            }
-
-            if ($subscription && !empty($subscription->user_id) && $subdomain) {
-                $fallback->orWhere(function ($subQuery) use ($subscription, $subdomain) {
-                    $subQuery->where('user_id', $subscription->user_id)
-                        ->where(function ($match) use ($subdomain) {
-                            $match->where('subdomain', $subdomain)
-                                ->orWhere('domain_prefix', $subdomain);
-                        });
-                });
-            }
-        });
-
-        return $query->orderByDesc('id')->first();
+        return null;
     }
 
     private function scopeByCompany($query, string $table, $company, ?string $column = null)
@@ -1060,7 +1031,7 @@ class DashboardController extends Controller
                 return $query->where($table . '.user_id', (int) Auth::id());
             }
 
-            return $query;
+            return $query->whereRaw('1 = 0');
         }
 
         // Primary scope: direct company link.

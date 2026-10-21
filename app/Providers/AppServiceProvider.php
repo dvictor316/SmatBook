@@ -117,7 +117,7 @@ class AppServiceProvider extends ServiceProvider
                 return;
             }
 
-            $categoriesCache[$cacheKey] = Cache::remember('ui:categories:minimal:' . $cacheKey, now()->addMinutes(10), function () use ($companyId, $userId, $branchId, $branchName) {
+            $categoriesCache[$cacheKey] = Cache::remember('ui:categories:minimal:v2:' . $cacheKey, now()->addMinutes(10), function () use ($companyId, $userId, $branchId, $branchName) {
                 $query = DB::table('categories')->select('id', 'name');
 
                 if ($companyId > 0 && Schema::hasColumn('categories', 'company_id')) {
@@ -133,6 +133,8 @@ class AppServiceProvider extends ServiceProvider
                     });
                 } elseif ($userId > 0 && Schema::hasColumn('categories', 'user_id')) {
                     $query->where('user_id', $userId);
+                } else {
+                    $query->whereRaw('1 = 0');
                 }
 
                 $hasBranchId = Schema::hasColumn('categories', 'branch_id');
@@ -186,17 +188,14 @@ class AppServiceProvider extends ServiceProvider
         // COMPOSER 3: Global Subscription/Tenant Data
         // This helps debug why users are being redirected to plans.
         View::composer('*', function ($view) {
-            static $resolvedUser = false;
-            static $resolvedSubscription = null;
-            static $resolvedAuthUser = null;
-
             if (Auth::check()) {
-                if (!$resolvedUser) {
-                    $resolvedAuthUser = Auth::user();
-                    // Resolve once per request even though composer runs for each partial.
-                    $resolvedSubscription = Subscription::resolveCurrentForUser($resolvedAuthUser);
-                    $resolvedUser = true;
+                $resolvedAuthUser = Auth::user();
+                // Request attributes cannot retain another account's identity in a long-lived worker.
+                $cacheKey = 'view_subscription.'.$resolvedAuthUser->id.'.'.(int) $resolvedAuthUser->company_id;
+                if (! request()->attributes->has($cacheKey)) {
+                    request()->attributes->set($cacheKey, Subscription::resolveCurrentForUser($resolvedAuthUser));
                 }
+                $resolvedSubscription = request()->attributes->get($cacheKey);
 
                 $view->with('currentSubscription', $resolvedSubscription);
                 $view->with('currentUser', $resolvedAuthUser);

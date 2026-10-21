@@ -18,7 +18,7 @@ class HotelTenantRouteProtectionTest extends TestCase
 
         $response = $this->actingAs($user)
             ->withoutMiddleware([\App\Http\Middleware\RequireActiveBranch::class, \App\Http\Middleware\SubscriptionActive::class])
-            ->get(route('hotel.dashboard'));
+            ->getJson(route('hotel.dashboard'));
 
         $response->assertStatus(403);
     }

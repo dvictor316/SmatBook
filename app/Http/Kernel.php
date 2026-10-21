@@ -221,13 +221,14 @@ class Kernel extends HttpKernel
         \App\Http\Middleware\Authenticate::class,
         \Illuminate\Session\Middleware\AuthenticateSession::class,
 
+        // Validate tenant context before scoped route model bindings.
+        \App\Http\Middleware\VerifyTenantSession::class,
+
         // Bindings
         \Illuminate\Routing\Middleware\SubstituteBindings::class,
 
         // Authorization
         \Illuminate\Auth\Middleware\Authorize::class,
 
-        // Tenant session verification
-        \App\Http\Middleware\VerifyTenantSession::class,
     ];
 }
