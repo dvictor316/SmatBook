@@ -40,6 +40,32 @@ const publicDir = path.resolve(__dirname, '../../public');
             await page.setViewportSize({ width, height: 1000 });
             assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `overflow at ${width}`);
         }
+        // Wheel and vertical touch gestures over the image must scroll the surrounding page.
+        await page.evaluate(() => { const spacer = document.createElement('div'); spacer.style.height = '1800px'; document.body.append(spacer); });
+        await viewport.hover();
+        const originalZoom = await page.locator('[data-room-zoom]').textContent();
+        await page.mouse.wheel(0, 280);
+        await page.waitForFunction(() => scrollY > 50);
+        assert.equal(await page.locator('[data-room-zoom]').textContent(), originalZoom, 'normal wheel must not zoom the panorama');
+        await page.evaluate(() => scrollTo(0, 0));
+        const scrollClient = await context.newCDPSession(page);
+        const scrollBounds = await viewport.boundingBox();
+        await scrollClient.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: scrollBounds.x + 100, y: scrollBounds.y + 160, id: 7 }] });
+        for (let step = 1; step <= 5; step++) {
+            await scrollClient.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: scrollBounds.x + 100, y: scrollBounds.y + 160 - step * 22, id: 7 }] });
+            await page.waitForTimeout(20);
+        }
+        await scrollClient.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await page.waitForFunction(() => scrollY > 30);
+        await page.waitForTimeout(300);
+        await page.evaluate(() => scrollTo(0, 0));
+        await page.locator('[data-room-action="fit"]').click();
+        assert(await page.locator('[data-room-sphere]').isHidden(), 'Fit room must show the complete original image');
+        assert.equal(await page.locator('[data-room-zoom]').textContent(), '1×');
+        const fit = await viewport.locator('img').evaluate(img => ({ transform: getComputedStyle(img).transform, fit: getComputedStyle(img).objectFit }));
+        assert.equal(fit.fit, 'contain');
+        assert.equal(fit.transform, 'matrix(1, 0, 0, 1, 0, 0)');
+        await page.locator('[data-room-action="panorama"]').click();
         const frontPixels = await page.locator('[data-room-sphere]').screenshot();
         await page.locator('[data-room-angle="90"]').click();
         assert.notDeepEqual(await page.locator('[data-room-sphere]').screenshot(), frontPixels, 'changing angle must render different panorama pixels');
@@ -55,6 +81,7 @@ const publicDir = path.resolve(__dirname, '../../public');
         const pausedBearing = await page.locator('[data-room-bearing]').textContent();
         await page.waitForTimeout(250);
         assert.equal(await page.locator('[data-room-bearing]').textContent(), pausedBearing);
+        await page.locator('[data-room-action="interact"]').click();
         const bounds = await viewport.boundingBox();
         const client = await context.newCDPSession(page);
         const touch = (type, points) => client.send('Input.dispatchTouchEvent', { type, touchPoints: points });
@@ -67,6 +94,8 @@ const publicDir = path.resolve(__dirname, '../../public');
         await touch('touchMove', [{ x: bounds.x + 160, y: bounds.y + 150, id: 1 }, { x: bounds.x + 340, y: bounds.y + 150, id: 2 }]);
         await touch('touchEnd', []);
         assert.notEqual(await page.locator('[data-room-zoom]').textContent(), oldZoom, 'pinch must zoom');
+        await page.locator('[data-room-action="interact"]').click();
+        assert.equal(await page.locator('[data-room-action="interact"]').getAttribute('aria-pressed'), 'false');
         await page.locator('[data-room-action="fullscreen"]').click();
         await page.waitForFunction(() => !!document.fullscreenElement);
         await page.locator('[data-room-action="fullscreen"]').click();
@@ -103,7 +132,24 @@ const publicDir = path.resolve(__dirname, '../../public');
         assert.equal(await flatPage.locator('[data-room-zoom]').textContent(), '1.3×');
         await flatPage.locator('[data-room-action="fit"]').click();
         assert.equal(await flatPage.locator('[data-room-zoom]').textContent(), '1×');
+        // Match the hotel preview's real Bootstrap + skin cascade on a short tablet screen.
+        await flatPage.setViewportSize({ width: 800, height: 500 });
+        await flatPage.addStyleTag({ url: 'http://localhost/assets/css/bootstrap.min.css' });
+        await flatPage.addStyleTag({ url: 'http://localhost/assets/css/hotel-keto-skin.css' });
+        await flatPage.addStyleTag({ url: 'http://localhost/assets/css/hotel-room-viewer.css' });
+        await flatPage.evaluate(() => {
+            document.body.classList.add('hotel-workspace');
+            const viewer = document.querySelector('[data-room-viewer]');
+            const modal = document.createElement('div');
+            modal.className = 'modal hotel-preview-modal'; modal.style.display = 'block';
+            modal.innerHTML = '<div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header">Room preview</div><div class="modal-body"></div></div></div>';
+            document.body.append(modal); modal.querySelector('.modal-body').append(viewer);
+        });
+        const modalBody = flatPage.locator('.modal-body');
+        assert(await modalBody.evaluate(el => el.scrollHeight > el.clientHeight), 'short preview must expose a scrollable body');
+        await modalBody.hover(); await flatPage.mouse.wheel(0, 300);
+        await flatPage.waitForFunction(() => document.querySelector('.modal-body').scrollTop > 10);
         assert.deepEqual(errors, []);
-        console.log('Room tour passed: responsive widths, 360° angles, motion/pause, touch drag/pinch, fullscreen, scene switching, image recovery, reduced motion and WebGL fallback.');
+        console.log('Room tour passed: page wheel/touch scrolling, complete image fit, short preview scrolling, responsive widths, 360° angles, motion/pause, touch drag/pinch, fullscreen, scene switching, image recovery, reduced motion and WebGL fallback.');
     } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

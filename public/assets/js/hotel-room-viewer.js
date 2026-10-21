@@ -34,9 +34,21 @@ function bindViewer(root) {
     let camera = { yaw: 0, pitch: 0, fov: 75 };
     let sphere = null, attempted = false, gesture = null, frame = 0, previousTime = 0, elapsed = 0;
     let playing = root.dataset.panorama === 'true' && !reducedMotion.matches;
+    let fullImage = false;
     let visible = false, onScreen = true, failed = false;
 
     const announce = text => { root.querySelector('[data-room-status]').textContent = text; };
+    const immersive = () => !!sphere && !fullImage;
+    function setInteraction(enabled) {
+        root.classList.toggle('is-interacting', enabled);
+        const button = root.querySelector('[data-room-action="interact"]');
+        button.setAttribute('aria-pressed', String(enabled));
+        button.textContent = enabled ? 'Scroll page' : 'Drag freely';
+        root.querySelector('[data-room-hint]').textContent = enabled
+            ? 'Drag in any direction or pinch to zoom · Tap Scroll page when finished'
+            : 'Swipe up to scroll · Drag sideways to explore · Ctrl + scroll to zoom';
+        pointers.clear(); gesture = null;
+    }
     const isPanorama = () => root.dataset.panorama === 'true';
     function point(event) {
         const rect = viewport.getBoundingClientRect();
@@ -49,14 +61,19 @@ function bindViewer(root) {
             attempted = true;
             const ratio = image.naturalWidth / image.naturalHeight;
             if (ratio >= 1.95 && ratio <= 2.05) sphere = createPanorama(canvas, image);
+            if (!sphere) playing = false;
         }
-        canvas.hidden = !sphere;
-        image.hidden = !!sphere;
-        root.classList.toggle('is-spherical', !!sphere);
-        root.querySelector('[data-room-mode]').textContent = sphere ? '360° immersive tour' : (isPanorama() ? 'Panorama photo tour' : 'Room photo');
-        root.querySelector('.room-tour-angles').hidden = !sphere;
-        root.querySelector('.room-tour-bearing').hidden = !sphere;
-        if (sphere) {
+        const showingSphere = immersive();
+        canvas.hidden = !showingSphere;
+        image.hidden = showingSphere;
+        root.style.setProperty('--room-image-ratio', `${image.naturalWidth} / ${image.naturalHeight}`);
+        const panoramaButton = root.querySelector('[data-room-action="panorama"]');
+        panoramaButton.hidden = !sphere || showingSphere;
+        root.classList.toggle('is-spherical', showingSphere);
+        root.querySelector('[data-room-mode]').textContent = showingSphere ? '360° immersive tour' : (fullImage && sphere ? 'Full panorama image' : isPanorama() ? 'Panorama photo tour' : 'Room photo');
+        root.querySelector('.room-tour-angles').hidden = !showingSphere;
+        root.querySelector('.room-tour-bearing').hidden = !showingSphere;
+        if (immersive()) {
             camera.pitch = Math.max(-80, Math.min(80, camera.pitch));
             camera.fov = Math.max(30, Math.min(100, camera.fov));
             camera.yaw = ((camera.yaw % 360) + 360) % 360;
@@ -68,9 +85,9 @@ function bindViewer(root) {
             image.style.transform = `translate(${view.x}px, ${view.y}px) scale(${view.scale})`;
             label.textContent = `${Number(view.scale.toFixed(1))}×`;
         }
-        viewport.classList.toggle('is-zoomed', !!sphere || view.scale > 1);
-        root.querySelector('[data-room-action="out"]').disabled = sphere ? camera.fov >= 100 : view.scale <= 1;
-        root.querySelector('[data-room-action="in"]').disabled = sphere ? camera.fov <= 30 : view.scale >= 5;
+        viewport.classList.toggle('is-zoomed', immersive() || view.scale > 1);
+        root.querySelector('[data-room-action="out"]').disabled = immersive() ? camera.fov >= 100 : view.scale <= 1;
+        root.querySelector('[data-room-action="in"]').disabled = immersive() ? camera.fov <= 30 : view.scale >= 5;
     }
     function updatePlay() {
         playButton.textContent = playing ? 'Pause tour' : 'Play tour';
@@ -82,11 +99,16 @@ function bindViewer(root) {
         if (playing && visible && onScreen && !document.hidden && !failed) frame = requestAnimationFrame(tick);
     }
     function stop() { playing = false; updatePlay(); }
+    function toggleTour() {
+        playing = !playing;
+        if (playing) fullImage = false;
+        render(); updatePlay();
+    }
     function tick(time) {
         const delta = previousTime ? Math.min((time - previousTime) / 1000, .05) : 0;
         previousTime = time;
         elapsed += delta;
-        if (sphere) {
+        if (immersive()) {
             camera.yaw += delta * 5;
             camera.pitch = Math.sin(elapsed * .15) * 9;
         } else {
@@ -105,7 +127,7 @@ function bindViewer(root) {
         render();
     }
     function zoom(factor, anchor = { x: 0, y: 0 }) {
-        if (sphere) camera.fov /= factor;
+        if (immersive()) camera.fov /= factor;
         else view = zoomAt(view, view.scale * factor, anchor);
         render();
     }
@@ -117,6 +139,8 @@ function bindViewer(root) {
         sphere?.destroy(); sphere = null; attempted = false; failed = false;
         playButton.disabled = false;
         root.querySelector('[data-room-loading]').hidden = true;
+        fullImage = false;
+        setInteraction(false);
         reset(); updatePlay();
     }
     root.addEventListener('click', async event => {
@@ -143,7 +167,13 @@ function bindViewer(root) {
         const button = event.target.closest('[data-room-action]');
         if (!button) return;
         const action = button.dataset.roomAction;
-        if (action === 'play') { playing = !playing; updatePlay(); return; }
+        if (action === 'interact') {
+            setInteraction(!root.classList.contains('is-interacting'));
+            announce(root.classList.contains('is-interacting') ? 'Free dragging enabled. Use Scroll page to restore touch scrolling.' : 'Page scrolling enabled');
+            return;
+        }
+        if (action === 'panorama') { fullImage = false; render(); return; }
+        if (action === 'play') { toggleTour(); return; }
         if (action === 'fullscreen') {
             try {
                 if (document.fullscreenElement === root) await document.exitFullscreen();
@@ -152,10 +182,11 @@ function bindViewer(root) {
             return;
         }
         stop();
-        if (action === 'fit') { reset(); announce('Room view reset'); }
+        if (action === 'fit') { fullImage = true; setInteraction(false); reset(); announce('Complete image fitted in view'); }
         else zoom(action === 'in' ? 1.3 : 1 / 1.3);
     });
     viewport.addEventListener('wheel', event => {
+        if (!event.ctrlKey && !event.metaKey) return;
         event.preventDefault(); stop();
         zoom(Math.exp(-Math.max(-100, Math.min(100, event.deltaY)) * .004), point(event));
     }, { passive: false });
@@ -174,15 +205,17 @@ function bindViewer(root) {
             const initialDistance = Math.hypot(initialB.x - initialA.x, initialB.y - initialA.y);
             if (!initialDistance) return;
             const factor = Math.hypot(b.x - a.x, b.y - a.y) / initialDistance;
-            if (sphere) camera.fov = gesture.camera.fov / factor;
+            if (immersive()) camera.fov = gesture.camera.fov / factor;
             else {
                 const anchor = { x: (initialA.x + initialB.x) / 2, y: (initialA.y + initialB.y) / 2 };
                 view = zoomAt(gesture.view, gesture.view.scale * factor, anchor);
                 view.x += (a.x + b.x) / 2 - anchor.x; view.y += (a.y + b.y) / 2 - anchor.y;
             }
-        } else if (sphere) {
+        } else if (immersive()) {
             camera.yaw = gesture.camera.yaw - (points[0].x - gesture.points[0].x) * camera.fov / viewport.clientHeight;
-            camera.pitch = gesture.camera.pitch + (points[0].y - gesture.points[0].y) * camera.fov / viewport.clientHeight;
+            if (event.pointerType !== 'touch' || root.classList.contains('is-interacting')) {
+                camera.pitch = gesture.camera.pitch + (points[0].y - gesture.points[0].y) * camera.fov / viewport.clientHeight;
+            }
         } else if (view.scale > 1) {
             view.x = gesture.view.x + points[0].x - gesture.points[0].x;
             view.y = gesture.view.y + points[0].y - gesture.points[0].y;
@@ -194,11 +227,11 @@ function bindViewer(root) {
     viewport.addEventListener('keydown', event => {
         if (!['+', '=', '-', 'Home', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(event.key)) return;
         event.preventDefault();
-        if (event.key === ' ') { playing = !playing; updatePlay(); return; }
+        if (event.key === ' ') { toggleTour(); return; }
         stop();
         if (event.key === 'Home') return reset();
         if (['+', '=', '-'].includes(event.key)) return zoom(event.key === '-' ? 1 / 1.3 : 1.3);
-        if (sphere) {
+        if (immersive()) {
             if (event.key === 'ArrowLeft') camera.yaw -= 12;
             if (event.key === 'ArrowRight') camera.yaw += 12;
             if (event.key === 'ArrowUp') camera.pitch += 12;
@@ -224,7 +257,7 @@ function bindViewer(root) {
     });
     const modal = root.closest('.modal');
     modal?.addEventListener('shown.bs.modal', () => { render(); updatePlay(); });
-    modal?.addEventListener('hidden.bs.modal', () => { visible = false; cancelAnimationFrame(frame); pointers.clear(); gesture = null; });
+    modal?.addEventListener('hidden.bs.modal', () => { setInteraction(false); visible = false; cancelAnimationFrame(frame); pointers.clear(); gesture = null; });
     document.addEventListener('visibilitychange', updatePlay);
     document.addEventListener('fullscreenchange', () => {
         root.querySelector('[data-room-action="fullscreen"]').textContent = document.fullscreenElement === root ? 'Exit fullscreen' : 'Fullscreen';

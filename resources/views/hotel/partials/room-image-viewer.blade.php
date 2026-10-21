@@ -22,7 +22,7 @@
         <div><span class="room-tour-eyebrow">A closer look</span><strong>Explore Room {{ $room->room_number }}</strong></div>
         <span class="room-tour-mode" data-room-mode>Room tour</span>
     </header>
-    <div class="room-image-viewport" data-room-viewport tabindex="0" role="region" aria-label="Interactive room view. Drag or swipe to look around, pinch or use plus and minus to zoom. Arrow keys change the view; Home resets it.">
+    <div class="room-image-viewport" data-room-viewport tabindex="0" role="region" aria-label="Interactive room view. Swipe vertically to scroll the page or horizontally to look around. Enable Drag freely for vertical room movement and pinch zoom. Arrow keys change the view; Home resets it.">
         <img src="{{ $viewerScenes->first()['url'] }}" alt="{{ $imageAlt }}" draggable="false" decoding="async" loading="lazy">
         <canvas data-room-sphere aria-hidden="true" hidden></canvas>
         <span class="room-tour-loading" data-room-loading hidden>Opening this view…</span>
@@ -46,9 +46,11 @@
             <output data-room-zoom>1×</output>
             <button type="button" data-room-action="in" aria-label="Zoom in">+</button>
             <button type="button" data-room-action="fit">Fit room</button>
+            <button type="button" data-room-action="panorama" hidden>360° view</button>
+            <button type="button" data-room-action="interact" aria-pressed="false">Drag freely</button>
             <button type="button" data-room-action="fullscreen">Fullscreen</button>
         </div>
-        <span class="room-image-hint" data-room-hint>Drag to explore · Pinch to zoom · Play for a moving tour</span>
+        <span class="room-image-hint" data-room-hint>Swipe up to scroll · Drag sideways to explore · Ctrl + scroll to zoom</span>
         <span class="visually-hidden" role="status" data-room-status></span>
     </div>
     @if($viewerScenes->count() > 1)
