@@ -85,9 +85,11 @@ function bindViewer(root) {
             view = constrainView(view, { width: viewport.clientWidth, height: viewport.clientHeight }, { width: image.naturalWidth, height: image.naturalHeight });
             // Keep every edge of the photo visible inside the landscape stage.
             const fitted = fittedSize(viewport.clientWidth, viewport.clientHeight, image.naturalWidth, image.naturalHeight);
-            const drift = Math.sin(elapsed * .12) * Math.min(10, Math.max(0, viewport.clientWidth - fitted.width) * .04);
+            const horizontalRoom = Math.max(0, (viewport.clientWidth - fitted.width * .94) / 2);
+            const drift = Math.sin(elapsed * .6) * Math.min(56, horizontalRoom * .65, viewport.clientWidth * .025);
+            const tilt = Math.min(2.5, Math.atan(10 / viewport.clientWidth) * 180 / Math.PI);
             const depth = photoTour && !fullImage
-                ? `translateX(${drift.toFixed(3)}px) perspective(1800px) rotateY(${(Math.sin(elapsed * .16) * .65).toFixed(3)}deg) scale(.96)`
+                ? `translateX(${drift.toFixed(3)}px) perspective(1800px) rotateY(${(Math.sin(elapsed * .45) * tilt).toFixed(3)}deg) scale(.94)`
                 : '';
             image.style.transform = `translate(${view.x}px, ${view.y}px) ${depth} scale(${view.scale})`;
             label.textContent = `${Number(view.scale.toFixed(1))}×`;
@@ -96,14 +98,18 @@ function bindViewer(root) {
         root.querySelector('[data-room-action="out"]').disabled = immersive() ? camera.fov >= 100 : view.scale <= 1;
         root.querySelector('[data-room-action="in"]').disabled = immersive() ? camera.fov <= 30 : view.scale >= 5;
     }
+    const shouldAnimate = () => playing && visible && onScreen && !document.hidden && !failed;
     function updatePlay() {
         playButton.textContent = playing ? 'Pause tour' : 'Play tour';
         playButton.setAttribute('aria-pressed', String(playing));
         root.classList.toggle('is-playing', playing);
-        cancelAnimationFrame(frame);
-        frame = 0;
-        previousTime = 0;
-        if (playing && visible && onScreen && !document.hidden && !failed) frame = requestAnimationFrame(tick);
+        if (!shouldAnimate()) {
+            cancelAnimationFrame(frame);
+            frame = 0;
+            previousTime = 0;
+        } else if (!frame) {
+            frame = requestAnimationFrame(tick);
+        }
     }
     function stop() { playing = false; updatePlay(); }
     function toggleTour() {
@@ -112,6 +118,8 @@ function bindViewer(root) {
         render(); updatePlay();
     }
     function tick(time) {
+        frame = 0;
+        if (!shouldAnimate()) return;
         const delta = previousTime ? Math.min((time - previousTime) / 1000, .05) : 0;
         previousTime = time;
         elapsed += delta;
@@ -123,7 +131,7 @@ function bindViewer(root) {
             view = { scale: 1, x: 0, y: 0 };
         }
         render();
-        if (playing && visible && onScreen && !document.hidden && !failed) frame = requestAnimationFrame(tick);
+        if (shouldAnimate() && !frame) frame = requestAnimationFrame(tick);
     }
     function reset() {
         view = { scale: 1, x: 0, y: 0 };
@@ -263,7 +271,7 @@ function bindViewer(root) {
     });
     const modal = root.closest('.modal');
     modal?.addEventListener('shown.bs.modal', () => { render(); updatePlay(); });
-    modal?.addEventListener('hidden.bs.modal', () => { setInteraction(false); visible = false; cancelAnimationFrame(frame); pointers.clear(); gesture = null; });
+    modal?.addEventListener('hidden.bs.modal', () => { setInteraction(false); visible = false; updatePlay(); pointers.clear(); gesture = null; });
     document.addEventListener('visibilitychange', updatePlay);
     document.addEventListener('fullscreenchange', () => {
         root.querySelector('[data-room-action="fullscreen"]').textContent = document.fullscreenElement === root ? 'Exit fullscreen' : 'Fullscreen';

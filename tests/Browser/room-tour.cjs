@@ -119,9 +119,21 @@ const publicDir = path.resolve(__dirname, '../../public');
         assert.equal(await page.locator('[data-room-zoom]').textContent(), '1.3×');
         await play.click();
         await page.waitForFunction(() => document.querySelector('[data-room-mode]').textContent === '3D photo presentation');
-        const imageTransform = await viewport.locator('img').evaluate(el => getComputedStyle(el).transform);
+        const horizontalPosition = () => viewport.locator('img').evaluate(el => new DOMMatrixReadOnly(getComputedStyle(el).transform).m41);
+        const startingPosition = await horizontalPosition();
+        // Repeated visibility notifications must not restart the frame clock.
+        for (let update = 0; update < 24; update++) {
+            await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+            await page.waitForTimeout(40);
+        }
+        assert(Math.abs(await horizontalPosition() - startingPosition) > 8, 'Play tour must produce visibly noticeable motion, even during visibility updates');
+        await play.click();
+        const pausedTransform = await viewport.locator('img').evaluate(el => getComputedStyle(el).transform);
+        await page.waitForTimeout(250);
+        assert.equal(await viewport.locator('img').evaluate(el => getComputedStyle(el).transform), pausedTransform, 'Pause must hold the current photo view');
+        await play.click();
         await page.waitForTimeout(350);
-        assert.notEqual(await viewport.locator('img').evaluate(el => getComputedStyle(el).transform), imageTransform, 'the 3D photo must actually move');
+        assert.notEqual(await viewport.locator('img').evaluate(el => getComputedStyle(el).transform), pausedTransform, 'Play must resume photo movement');
         for (const width of [320, 800, 1920]) {
             await page.setViewportSize({ width, height: 1000 });
             await page.waitForTimeout(100);
@@ -196,6 +208,6 @@ const publicDir = path.resolve(__dirname, '../../public');
         await modalBody.hover(); await flatPage.mouse.wheel(0, 300);
         await flatPage.waitForFunction(() => document.querySelector('.modal-body').scrollTop > 10);
         assert.deepEqual(errors, []);
-        console.log('Room tour passed: landscape 3D photo tours, full photo height, portrait/landscape coverage, gentle zoom, page wheel/touch scrolling, complete image fit, short preview scrolling, responsive widths, 360° angles, motion/pause, touch drag/pinch, fullscreen, scene switching, image recovery, reduced motion and WebGL fallback.');
+        console.log('Room tour passed: visible photo motion and pause/resume, uninterrupted animation clock, landscape 3D photo tours, full photo height, portrait/landscape coverage, gentle zoom, page wheel/touch scrolling, complete image fit, short preview scrolling, responsive widths, 360° angles, motion/pause, touch drag/pinch, fullscreen, scene switching, image recovery, reduced motion and WebGL fallback.');
     } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
