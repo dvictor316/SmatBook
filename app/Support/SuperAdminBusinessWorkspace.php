@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Company;
+use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -58,8 +59,14 @@ class SuperAdminBusinessWorkspace
             }
 
             if (! $accessible->contains('id', (int) $account->company_id)) {
+                $previousCompanyId = (int) $account->company_id;
                 $account->company_id = $company->id;
                 $account->save();
+                ActivityLog::withoutEvents(fn () => ActivityLog::record('Workspace', 'primary_assigned',
+                    'Super-admin primary workspace changed from #'.$previousCompanyId.' to #'.$company->id.'. Business records were not moved.',
+                    ['user_id' => $account->id, 'company_id' => $company->id,
+                        'properties' => ['previous_company_id' => $previousCompanyId, 'assigned_company_id' => $company->id]]));
+
             }
             $user->setAttribute('company_id', $account->company_id);
             $user->syncOriginalAttribute('company_id');
