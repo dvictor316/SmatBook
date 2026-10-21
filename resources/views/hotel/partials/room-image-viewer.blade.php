@@ -24,6 +24,7 @@
     </header>
     <div class="room-image-viewport" data-room-viewport tabindex="0" role="region" aria-label="Interactive room view. Swipe vertically to scroll the page or horizontally to look around. Enable Drag freely for vertical room movement and pinch zoom. Arrow keys change the view; Home resets it.">
         <img src="{{ $viewerScenes->first()['url'] }}" alt="{{ $imageAlt }}" draggable="false" decoding="async" loading="lazy">
+        <div class="room-tour-backdrop" data-room-backdrop aria-hidden="true"></div>
         <canvas data-room-sphere aria-hidden="true" hidden></canvas>
         <span class="room-tour-loading" data-room-loading hidden>Opening this view…</span>
         <div class="room-tour-shade" aria-hidden="true"></div>

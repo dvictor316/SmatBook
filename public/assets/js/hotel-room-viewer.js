@@ -82,9 +82,12 @@ function bindViewer(root) {
             label.textContent = `${(75 / camera.fov).toFixed(1)}×`;
             root.querySelector('[data-room-bearing]').textContent = `${Math.round(camera.yaw) % 360}°`;
         } else {
-            view = constrainView(view, { width: viewport.clientWidth, height: viewport.clientHeight }, { width: image.naturalWidth, height: image.naturalHeight }, photoTour && !fullImage);
+            view = constrainView(view, { width: viewport.clientWidth, height: viewport.clientHeight }, { width: image.naturalWidth, height: image.naturalHeight });
+            // Keep every edge of the photo visible inside the landscape stage.
+            const fitted = fittedSize(viewport.clientWidth, viewport.clientHeight, image.naturalWidth, image.naturalHeight);
+            const drift = Math.sin(elapsed * .12) * Math.min(10, Math.max(0, viewport.clientWidth - fitted.width) * .04);
             const depth = photoTour && !fullImage
-                ? `perspective(1800px) rotateX(${(Math.sin(elapsed * .12) * .45).toFixed(3)}deg) rotateY(${(Math.sin(elapsed * .16) * .75).toFixed(3)}deg)`
+                ? `translateX(${drift.toFixed(3)}px) perspective(1800px) rotateY(${(Math.sin(elapsed * .16) * .65).toFixed(3)}deg) scale(.96)`
                 : '';
             image.style.transform = `translate(${view.x}px, ${view.y}px) ${depth} scale(${view.scale})`;
             label.textContent = `${Number(view.scale.toFixed(1))}×`;
@@ -116,12 +119,8 @@ function bindViewer(root) {
             camera.yaw += delta * 5;
             camera.pitch = Math.sin(elapsed * .15) * 9;
         } else {
-            // Cover the stage with the original photo. A small overscan protects
-            // the edges during the perspective movement, without a heavy zoom.
-            view.scale = 1.045 + Math.sin(elapsed * .1) * .005;
-            const fitted = fittedSize(viewport.clientWidth, viewport.clientHeight, image.naturalWidth, image.naturalHeight, true);
-            view.x = Math.sin(elapsed * .12) * Math.max(0, (fitted.width * view.scale - viewport.clientWidth) / 2) * .35;
-            view.y = Math.sin(elapsed * .1) * Math.max(0, (fitted.height * view.scale - viewport.clientHeight) / 2) * .25;
+            // Animate the presentation without cropping the original photo.
+            view = { scale: 1, x: 0, y: 0 };
         }
         render();
         if (playing && visible && onScreen && !document.hidden && !failed) frame = requestAnimationFrame(tick);
@@ -145,6 +144,7 @@ function bindViewer(root) {
         sphere?.destroy(); sphere = null; attempted = false; failed = false;
         playButton.disabled = false;
         root.querySelector('[data-room-loading]').hidden = true;
+        root.querySelector('[data-room-backdrop]').style.backgroundImage = `url(${JSON.stringify(image.currentSrc || image.src)})`;
         fullImage = false; photoTour = false;
         setInteraction(false);
         reset(); updatePlay();
