@@ -13,7 +13,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use App\Support\SuperAdminBusinessWorkspace;
 use App\Support\SystemEventMailer;
 use App\Support\InventoryQuantity;
 use App\Support\ModuleCatalog;
@@ -23,6 +25,19 @@ class SuperAdminDashboardController extends Controller
     private array $paidSaleStatuses = ['paid', 'completed', 'success', 'successful', 'verified'];
     private array $stateManagerRoles = ['state_manager', 'deployment_manager'];
     private array $agentRoles = ['agent', 'sales_agent', 'sales agent'];
+
+    public function openModule(Request $request, string $moduleKey): \Illuminate\Http\RedirectResponse
+    {
+        $module = collect(ModuleCatalog::modules())->firstWhere('key', $moduleKey);
+        abort_unless($module && ! empty($module['route']) && Route::has($module['route']), 404);
+
+        $user = $request->user();
+        abort_unless($user instanceof User, 403);
+
+        app(SuperAdminBusinessWorkspace::class)->activate($user);
+
+        return redirect()->route($module['route']);
+    }
 
     private function resolveDeploymentManager(string|int $id): DeploymentManager
     {

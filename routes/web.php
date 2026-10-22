@@ -487,6 +487,9 @@ Route::middleware(['auth', 'role:agent,state_manager,super_admin'])
 Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('super_admin.')->group(function () {
 
     Route::get('/dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/modules/{module}', [SuperAdminDashboardController::class, 'openModule'])
+        ->where('module', '[a-z0-9-]+')
+        ->name('modules.open');
     Route::get('/dashboard/export', [SuperAdminDashboardController::class, 'exportStats'])->name('dashboard.export');
     Route::post('/platform-payouts', [SuperAdminDashboardController::class, 'storePayout'])->name('platform_payouts.store');
     Route::get('/platform-payouts', [SuperAdminDashboardController::class, 'payoutHistory'])->name('platform_payouts.index');

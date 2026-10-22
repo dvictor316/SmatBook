@@ -32,7 +32,30 @@ class SuperAdminModuleDashboardTest extends TestCase
             ->assertSee('Livestock &amp; Layer Farm', false)
             ->assertSee('Hotel tenants only')
             ->assertSee('Livestock tenants only')
-            ->assertSee(route('super_admin.livestock.index'), false);
+            ->assertSee(route('super_admin.modules.open', 'livestock'), false);
+    }
+
+    public function test_super_admin_can_open_every_catalogued_module(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role' => 'super_admin',
+        ]);
+
+        $this->actingAs($superAdmin);
+
+        foreach (\App\Support\ModuleCatalog::modules() as $module) {
+            $this->get(route('super_admin.modules.open', $module['key']))
+                ->assertRedirect(route($module['route']));
+
+            $this->get(route($module['route']))
+                ->assertOk("Super Admin could not open {$module['title']} via {$module['route']}.");
+        }
+
+        $this->assertDatabaseHas('companies', [
+            'id' => session('current_tenant_id'),
+            'user_id' => $superAdmin->id,
+            'plan' => 'enterprise',
+        ]);
     }
 
     public function test_super_admin_opens_own_livestock_workspace_without_tenant_selector(): void

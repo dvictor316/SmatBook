@@ -1971,7 +1971,7 @@
                                         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                                             <div>
                                                 <h5 class="mb-0 fw-bold text-dark">Platform Module Catalogue</h5>
-                                                <small class="text-muted">Live modules, registration eligibility, tenant scope, and annual licence tier</small>
+                                                <small class="text-muted">Open modules in your Enterprise workspace. Client business data remains separate.</small>
                                             </div>
                                             <a href="{{ route('super_admin.plans.index') }}" class="btn btn-sm btn-outline-primary">Manage Licence Plans</a>
                                         </div>
@@ -1979,7 +1979,9 @@
                                         <div class="row g-2">
                                             @foreach($moduleCatalog as $module)
                                                 @php
-                                                    $moduleHref = !empty($module['route']) && Route::has($module['route']) ? route($module['route']) : null;
+                                                    $moduleHref = !empty($module['route']) && Route::has($module['route'])
+                                                        ? route('super_admin.modules.open', $module['key'])
+                                                        : null;
                                                     $tierTone = match ($module['tier']) {
                                                         'Enterprise' => 'bg-warning text-dark',
                                                         'Hotel' => 'bg-danger text-white',
