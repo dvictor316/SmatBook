@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Sale;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -36,6 +37,7 @@ class PosSuspendedSaleTest extends TestCase
             'price' => 20,
             'purchase_price' => 10,
         ]);
+        DB::table('products')->where('id', $product->id)->update(['branch_id' => null]);
         $token = (string) Str::uuid();
         $item = [
             'id' => $product->id,

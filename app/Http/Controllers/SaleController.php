@@ -481,6 +481,37 @@ class SaleController extends Controller
         return $query;
     }
 
+    private function scopedPosProducts()
+    {
+        $query = Product::query()
+            ->with(Schema::hasTable('units') ? ['unit', 'baseUnit', 'purchaseUnit'] : []);
+        $this->applyTenantScope($query, 'products');
+
+        $branch = $this->getActiveBranchContext();
+        $hasBranchStocks = Schema::hasTable('product_branch_stocks')
+            && Schema::hasColumn('product_branch_stocks', 'branch_id');
+
+        if (!empty($branch['id']) && $hasBranchStocks) {
+            $branchId = (string) $branch['id'];
+            $branchName = (string) ($branch['name'] ?? '');
+            $query->where(function ($sub) use ($branchId, $branchName) {
+                $sub->whereHas('branchStocks', fn ($stocks) => $stocks->where('branch_id', $branchId))
+                    ->orWhereDoesntHave('branchStocks');
+
+                if (Schema::hasColumn('products', 'branch_id')) {
+                    $sub->orWhere('products.branch_id', $branchId);
+                }
+                if ($branchName !== '' && Schema::hasColumn('products', 'branch_name')) {
+                    $sub->orWhere('products.branch_name', $branchName);
+                }
+            });
+        } else {
+            $this->applyBranchScope($query, 'products');
+        }
+
+        return $query;
+    }
+
     private function scopedBanks()
     {
         $query = Bank::query()->orderBy($this->bankLabelColumn());
@@ -1370,7 +1401,7 @@ public function storePosSuspendedSale(Request $request)
             ->map(fn ($id) => (int) $id)
             ->unique()
             ->values();
-        $scopedProductIds = $this->scopedProducts()
+        $scopedProductIds = $this->scopedPosProducts()
             ->whereIn('id', $productIds)
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
@@ -1511,7 +1542,7 @@ public function claimPosSuspendedSale(Request $request, int $id)
         }
 
         $productIds = collect($sale->items)->pluck('id')->map(fn ($productId) => (int) $productId)->unique();
-        $availableProductIds = $this->scopedProducts()
+        $availableProductIds = $this->scopedPosProducts()
             ->whereIn('id', $productIds)
             ->pluck('id')
             ->map(fn ($productId) => (int) $productId);
@@ -1711,7 +1742,7 @@ public function store(Request $request)
             ->values();
 
         if ($productIds->isNotEmpty()) {
-            $scopedProductIds = $this->scopedProducts()
+            $scopedProductIds = $this->scopedPosProducts()
                 ->whereIn('id', $productIds)
                 ->pluck('id')
                 ->map(fn ($id) => (int) $id)
