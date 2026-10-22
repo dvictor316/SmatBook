@@ -4944,6 +4944,173 @@ body.pos-terminal-workspace #pos-cash-account-name.is-unconfigured {
     }
 }
 
+#pos-suspense-modal .modal-dialog {
+    width: calc(100% - 2rem);
+    max-width: 920px;
+    margin: 1rem auto;
+}
+
+#pos-suspense-modal .modal-content {
+    max-height: calc(100dvh - 2rem);
+    overflow: hidden;
+    border: 1px solid #cbd8e8;
+    border-radius: 16px;
+    box-shadow: 0 24px 70px rgba(15, 35, 65, 0.28);
+}
+
+#pos-suspense-modal .modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #d9e2ef;
+    background: linear-gradient(135deg, #ffffff 0%, #f3f7ff 100%);
+}
+
+#pos-suspense-modal .modal-title {
+    color: #142d55;
+    font-size: 1.35rem;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+}
+
+#pos-suspense-modal .modal-header p {
+    color: #475569 !important;
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+#pos-suspense-modal .modal-body {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 18px 22px;
+    background: #f7f9fc;
+}
+
+#pos-suspense-list {
+    gap: 10px !important;
+}
+
+#pos-suspense-list .pos-suspense-entry {
+    padding: 15px 17px !important;
+    border: 1px solid #d5dfeb !important;
+    border-radius: 12px !important;
+    background: #ffffff;
+    box-shadow: 0 2px 7px rgba(23, 43, 77, 0.05);
+    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+#pos-suspense-list .pos-suspense-entry:hover {
+    transform: translateY(-1px);
+    border-color: #a9bfdc !important;
+    box-shadow: 0 7px 18px rgba(23, 43, 77, 0.09);
+}
+
+#pos-suspense-list .pos-suspense-details {
+    min-width: 0;
+}
+
+#pos-suspense-list .pos-suspense-customer {
+    color: #172b4d;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+#pos-suspense-list .pos-suspense-summary {
+    margin-top: 3px;
+    color: #334155;
+    font-size: 0.93rem;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+#pos-suspense-list .pos-suspense-meta {
+    margin-top: 2px;
+    color: #526174;
+    font-size: 0.85rem;
+    line-height: 1.45;
+}
+
+#pos-suspense-list .pos-suspense-actions {
+    align-items: center;
+}
+
+#pos-suspense-list .pos-suspense-actions .btn {
+    min-width: 94px;
+    min-height: 42px;
+    border-radius: 999px;
+    font-weight: 700;
+}
+
+#pos-suspense-list .pos-suspense-actions .btn-outline-danger {
+    border-color: #d92d20;
+    color: #b42318;
+}
+
+#pos-suspense-list .pos-suspense-lock-note {
+    color: #9a6700 !important;
+    font-weight: 600;
+}
+
+#pos-suspense-list .pos-suspense-empty {
+    padding: 30px 16px !important;
+    border: 1px dashed #b8c6d8;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #475569 !important;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+#pos-suspense-modal .modal-footer {
+    gap: 8px;
+    padding: 14px 22px;
+    border-top: 1px solid #d9e2ef;
+    background: #ffffff;
+}
+
+#pos-suspense-modal .modal-footer .btn {
+    min-height: 42px;
+    padding-inline: 18px;
+    border-radius: 999px;
+    font-weight: 700;
+}
+
+@media (max-width: 575.98px) {
+    #pos-suspense-modal .modal-dialog {
+        width: calc(100% - 1rem);
+        margin: 0.5rem auto;
+    }
+
+    #pos-suspense-modal .modal-content {
+        max-height: calc(100dvh - 1rem);
+        border-radius: 13px;
+    }
+
+    #pos-suspense-modal .modal-header {
+        padding: 16px;
+    }
+
+    #pos-suspense-modal .modal-body {
+        padding: 12px;
+    }
+
+    #pos-suspense-list .pos-suspense-entry {
+        align-items: stretch !important;
+        padding: 13px !important;
+    }
+
+    #pos-suspense-list .pos-suspense-actions {
+        width: 100%;
+    }
+
+    #pos-suspense-list .pos-suspense-actions .btn {
+        flex: 1;
+    }
+
+    #pos-suspense-modal .modal-footer {
+        padding: 12px;
+    }
+}
+
 </style>
 
 <div class="pos-full-page-wrapper">
@@ -8653,26 +8820,26 @@ window.POS_ENABLE_FALLBACK = function () {
             if (suspenseCount) suspenseCount.textContent = String(sales.length);
 
             if (!sales.length) {
-                suspenseList.innerHTML = '<div class="text-center text-muted py-4">No suspended sales in this branch.</div>';
+                suspenseList.innerHTML = '<div class="text-center py-4 pos-suspense-empty">No suspended sales in this branch.</div>';
                 return;
             }
 
             suspenseList.replaceChildren();
             sales.forEach((sale) => {
                 const row = document.createElement('div');
-                row.className = 'border rounded-3 p-3 d-flex flex-wrap align-items-center justify-content-between gap-3';
+                row.className = 'pos-suspense-entry d-flex flex-wrap align-items-center justify-content-between gap-3';
 
                 const details = document.createElement('div');
-                details.className = 'me-auto';
+                details.className = 'pos-suspense-details me-auto';
                 const date = sale.created_at ? new Date(sale.created_at).toLocaleString() : 'Recently';
                 details.innerHTML = `
-                    <div class="fw-semibold">${escapeHtml(sale.customer_name || 'Walk-in Customer')}</div>
-                    <div class="small text-muted">${Number(sale.item_count) || 0} item(s) · ${fmt.format(Number(sale.total) || 0)}</div>
-                    <div class="small text-muted">Saved ${escapeHtml(date)} by ${escapeHtml(sale.created_by || 'POS cashier')}</div>
+                    <div class="pos-suspense-customer">${escapeHtml(sale.customer_name || 'Walk-in Customer')}</div>
+                    <div class="pos-suspense-summary">${Number(sale.item_count) || 0} item(s) · ${fmt.format(Number(sale.total) || 0)}</div>
+                    <div class="pos-suspense-meta">Saved ${escapeHtml(date)} by ${escapeHtml(sale.created_by || 'POS cashier')}</div>
                 `;
 
                 const actions = document.createElement('div');
-                actions.className = 'd-flex gap-2';
+                actions.className = 'pos-suspense-actions d-flex flex-wrap gap-2';
                 const recallButton = document.createElement('button');
                 recallButton.type = 'button';
                 recallButton.className = 'btn btn-sm btn-primary';
@@ -8692,7 +8859,7 @@ window.POS_ENABLE_FALLBACK = function () {
                 actions.append(recallButton, deleteButton);
                 if (sale.locked && !isOwnedByThisTerminal) {
                     const lockNote = document.createElement('div');
-                    lockNote.className = 'small text-warning w-100 text-end';
+                    lockNote.className = 'pos-suspense-lock-note small w-100 text-end';
                     lockNote.textContent = `In use by ${sale.claimed_by || 'another POS terminal'}`;
                     actions.appendChild(lockNote);
                 }
