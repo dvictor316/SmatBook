@@ -72,6 +72,11 @@ class PosSuspendedSaleTest extends TestCase
             ->assertJsonPath('items.0.id', $product->id)
             ->assertJsonPath('customer_name', 'Walk-in Customer');
 
+        $this->getJson(route('pos.suspense.index', ['claim_token' => $token]))
+            ->assertOk()
+            ->assertJsonPath('sales.0.locked', true)
+            ->assertJsonPath('sales.0.locked_by_this_terminal', true);
+
         $this->postJson(route('pos.suspense.claim', $id), ['claim_token' => (string) Str::uuid()])
             ->assertConflict();
 

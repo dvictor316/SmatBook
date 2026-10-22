@@ -1336,7 +1336,7 @@ public function listPosSuspendedSales(Request $request)
     $sales = $this->posSuspenseWorkspaceQuery()
         ->latest()
         ->get()
-        ->map(function (PosSuspendedSale $sale) {
+        ->map(function (PosSuspendedSale $sale) use ($token) {
             $claimExpired = !$sale->claimed_at || $sale->claimed_at->lt(now()->subMinutes(15));
 
             return [
