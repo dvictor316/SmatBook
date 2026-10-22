@@ -15,7 +15,7 @@
                 <a class="btn btn-outline-secondary" href="{{ request()->fullUrlWithQuery(['period' => 'today', 'date_from' => null, 'date_to' => null, 'date_time_from' => null, 'date_time_to' => null, 'sale_date' => null, 'page' => null]) }}">Today</a>
             </form>
             <div class="spb-period-cards">
-                @foreach(collect($periodSales)->except('today') as $key => $summary)
+                @foreach($periodSales as $key => $summary)
                     <a class="spb-period-card {{ $reportingPeriod->key === $key ? 'is-selected' : '' }}" href="{{ request()->fullUrlWithQuery(['period' => $key, 'date_from' => null, 'date_to' => null, 'date_time_from' => null, 'date_time_to' => null, 'sale_date' => null, 'page' => null]) }}" @if($reportingPeriod->key === $key) aria-current="true" @endif>
                         <span>{{ $summary['period']->label() }}</span>
                         <strong>₦{{ number_format($summary['revenue'], 2) }}</strong>

@@ -25,6 +25,6 @@
     </div>
 </div>
 @once
-<link rel="stylesheet" href="{{ asset('css/reporting-period.css') }}?v=4">
+<link rel="stylesheet" href="{{ asset('css/reporting-period.css') }}?v=5">
 <script src="{{ asset('js/reporting-period.js') }}?v=2" defer></script>
 @endonce

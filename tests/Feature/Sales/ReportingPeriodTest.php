@@ -51,6 +51,7 @@ class ReportingPeriodTest extends TestCase
         $response->assertOk()
             ->assertSee('Week to date')
             ->assertSee('Sales performance')
+            ->assertSee('<span>Today</span>', false)
             ->assertSee('<details class="spb-period-menu">', false)
             ->assertSee('Filters &amp; periods', false)
             ->assertSee('reporting-period.js?v=2', false)
