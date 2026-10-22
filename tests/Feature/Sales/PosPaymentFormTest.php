@@ -33,7 +33,10 @@ class PosPaymentFormTest extends TestCase
             'type' => Account::TYPE_ASSET, 'is_active' => true,
         ]);
 
-        $response = $this->actingAs($user)->withoutMiddleware()
+        $response = $this->actingAs($user)->withoutMiddleware()->withSession([
+            'active_branch_id' => 'branch-1',
+            'active_branch_name' => 'Main Branch',
+        ])
             ->get(route('sales.showPos'))
             ->assertOk()
             ->assertSee('id="pos-cash-account-label">Payment Method', false)

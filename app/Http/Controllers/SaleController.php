@@ -528,8 +528,8 @@ class SaleController extends Controller
             ->where('is_active', true)
             ->orderBy('name');
 
+        // Account's tenant scope includes both branch and company-wide accounts.
         $this->applyTenantScope($query, 'accounts');
-        $this->applyBranchScope($query, 'accounts');
 
         // Keep the POS deposit dropdown focused on real collection accounts,
         // not operational asset ledgers like inventory or receivables.
@@ -594,7 +594,15 @@ class SaleController extends Controller
             }
         }
 
-        return (clone $accounts)
+        $legacyCash = (clone $accounts);
+        if (Schema::hasColumn('accounts', 'sub_type')) {
+            $legacyCash->where(function ($sub) {
+                $sub->whereNull('accounts.sub_type')
+                    ->orWhere('accounts.sub_type', '');
+            });
+        }
+
+        return $legacyCash
             ->whereRaw('LOWER(accounts.name) LIKE ?', ['%cash%'])
             ->whereRaw('LOWER(accounts.name) NOT LIKE ?', ['%bank%'])
             ->first();
