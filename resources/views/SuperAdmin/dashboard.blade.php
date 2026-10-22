@@ -26,16 +26,14 @@
 {{-- Super admin dashboard: keep this file deployed from source control, not edited directly on production. --}}
 
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
-
     :root {
         --dash-ink: #0f172a;
         --dash-muted: #5f6b7a;
         --dash-line: #dbe5f0;
         --dash-surface: #ffffff;
         --dash-surface-soft: #f8fbff;
-        --kpi-display-font: 'Space Grotesk', 'Plus Jakarta Sans', 'Inter', sans-serif;
-        --kpi-ui-font: 'Plus Jakarta Sans', 'Inter', sans-serif;
+        --kpi-display-font: 'Inter', sans-serif;
+        --kpi-ui-font: 'Inter', sans-serif;
         --kpi-indigo-start: #312e81;
         --kpi-indigo-end: #4f46e5;
         --kpi-emerald-start: #065f46;
