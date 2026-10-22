@@ -867,10 +867,14 @@
         color: #ffffff !important;
         -webkit-text-fill-color: #ffffff !important;
     }
+    .executive-kpi.kpi-users .kpi-icon-shell {
+        background: rgba(124, 45, 18, 0.82);
+        border-color: rgba(255, 255, 255, 0.52);
+    }
     .executive-kpi.kpi-users .kpi-icon-shell i,
     .executive-kpi.kpi-users .kpi-icon-shell svg {
-        color: #061b33 !important;
-        -webkit-text-fill-color: #061b33 !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
     }
     .executive-kpi .kpi-kicker {
         font-family: var(--kpi-ui-font);
