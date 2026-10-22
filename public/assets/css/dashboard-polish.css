@@ -20,6 +20,17 @@ body.spb-dashboard[data-dashboard="platform"] { --dashboard-accent: #6366f1; --d
 body.spb-dashboard[data-dashboard="hotel"] { --dashboard-accent: #0e7490; --dashboard-tint: #ecfeff; }
 body.spb-dashboard[data-dashboard="farm"] { --dashboard-accent: #15803d; --dashboard-tint: #f0fdf4; }
 
+@supports (color: color-mix(in srgb, #000 50%, #fff)) {
+    body.spb-dashboard {
+        --dashboard-line: color-mix(in srgb, var(--dashboard-accent) 18%, #e2e8f2);
+    }
+
+    body.spb-dashboard :is(.agent-metric .icon, .metric-icon, .metric-icon-box, .kpi-icon-shell, .visit-icon, .stat-icon-circle) {
+        outline: 1px solid color-mix(in srgb, currentColor 24%, transparent);
+        outline-offset: -1px;
+    }
+}
+
 body.spb-dashboard :is(.pos-content-area, .starter-dashboard, #deployment-wrapper, #main-content-wrapper, .agent-page, .spb-hotel-enterprise, .farm-page) {
     background: linear-gradient(180deg, var(--dashboard-tint), #f5f7fb 340px) !important;
 }
