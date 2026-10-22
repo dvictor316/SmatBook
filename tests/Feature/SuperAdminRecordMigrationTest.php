@@ -85,12 +85,16 @@ class SuperAdminRecordMigrationTest extends TestCase
     public function test_database_failure_rolls_back_all_already_moved_links(): void
     {
         $f = $this->fixtures();
+        $category = DB::table('categories')->insertGetId(['company_id' => $f['source']->id, 'name' => 'Rollback lookup']);
+        DB::table('products')->where('sku', 'MIGRATION-SKU')->update(['category_id' => $category]);
+        $categoriesBefore = DB::table('categories')->orderBy('id')->get()->toArray();
         DB::statement("CREATE TRIGGER fail_workspace_migration BEFORE UPDATE OF company_id ON transactions BEGIN SELECT RAISE(ABORT, 'Migration test rollback'); END");
         $before = $this->snapshot();
         $this->artisan('workspace:migrate-super-admin-records', $this->migrationOptions($f) + [
             '--apply' => true, '--expect-sales' => 1, '--expect-products' => 1,
         ])->assertFailed();
         $this->assertSame($before, $this->snapshot());
+        $this->assertEquals($categoriesBefore, DB::table('categories')->orderBy('id')->get()->toArray());
     }
 
     public function test_single_workspace_header_has_no_extra_business_pill_but_keeps_account_menu_action(): void
@@ -123,6 +127,76 @@ class SuperAdminRecordMigrationTest extends TestCase
         $this->assertSame(1, (int) $response->viewData('metrics')['totalInvoices']);
         $this->assertSame('all', session('active_branch_scope'));
         $response->assertDontSee('aria-label="Switch business"', false);
+    }
+
+    public function test_shared_lookup_parents_are_copied_without_gathering_other_businesses(): void
+    {
+        $f = $this->fixtures();
+        $unit = DB::table('units')->whereNull('company_id')->first();
+        $category = DB::table('categories')->insertGetId(['name' => 'Shared lookup', 'company_id' => $f['source']->id, 'user_id' => $f['agent']->id]);
+        $product = DB::table('products')->where('sku', 'MIGRATION-SKU')->first();
+        DB::table('products')->where('id', $product->id)->update(['category_id' => $category]);
+        $foreignProduct = DB::table('products')->where('sku', 'STAFF-PRODUCT')->first();
+        DB::table('products')->where('id', $foreignProduct->id)->update(['category_id' => $category]);
+        $ownUnit = DB::table('product_units')->insertGetId(['company_id' => $f['source']->id, 'user_id' => $f['admin']->id,
+            'product_id' => $product->id, 'unit_id' => $unit->id, 'unit_name' => $unit->name]);
+        $otherUnit = DB::table('product_units')->insertGetId(['company_id' => 444, 'user_id' => $f['agent']->id,
+            'product_id' => $foreignProduct->id, 'unit_id' => $unit->id, 'unit_name' => $unit->name]);
+        $foreignBefore = (array) DB::table('product_units')->where('id', $otherUnit)->first();
+        $plan = app(SuperAdminRecordMigration::class)->plan($f['admin']->id, $f['source']->id, $f['target']->id);
+        $this->assertSame([], $plan['problems']);
+        $this->assertSame(1, $plan['counts']['products']['linked']);
+        $this->assertSame(1, $plan['counts']['units']['copied']);
+        $this->assertSame(0, $plan['counts']['units']['reassigned']);
+        $this->artisan('workspace:migrate-super-admin-records', $this->migrationOptions($f) + [
+            '--apply' => true, '--expect-sales' => 1, '--expect-products' => 1,
+        ])->assertSuccessful();
+        $newUnit = DB::table('units')->where('company_id', $f['target']->id)->first();
+        $newCategory = DB::table('categories')->where('company_id', $f['target']->id)->first();
+        $this->assertNotEquals($unit->id, $newUnit->id);
+        $this->assertDatabaseHas('product_units', ['id' => $ownUnit, 'company_id' => $f['target']->id, 'unit_id' => $newUnit->id]);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'category_id' => $newCategory->id]);
+        $this->assertDatabaseHas('products', ['id' => $foreignProduct->id, 'category_id' => $category, 'company_id' => $f['source']->id]);
+        $this->assertSame($foreignBefore, (array) DB::table('product_units')->where('id', $otherUnit)->first());
+        $this->assertSame((array) $unit, (array) DB::table('units')->where('id', $unit->id)->first());
+        $this->assertDatabaseHas('categories', ['id' => $category, 'user_id' => $f['agent']->id, 'company_id' => $f['source']->id]);
+    }
+
+    public function test_missing_historical_ledger_parent_requires_exact_explicit_id_and_preserves_values(): void
+    {
+        $f = $this->fixtures();
+        $transaction = DB::table('transactions')->first();
+        $linked = (array) $transaction;
+        unset($linked['id']);
+        DB::table('transactions')->insert($linked); // The same account connects the historical entry to a real sale.
+        DB::table('transactions')->where('id', $transaction->id)->update(['related_id' => 999999]);
+        $before = $this->snapshot();
+        $options = $this->migrationOptions($f) + ['--apply' => true, '--expect-sales' => 1, '--expect-products' => 1];
+        $this->artisan('workspace:migrate-super-admin-records', $options)->assertFailed();
+        $this->assertSame($before, $this->snapshot());
+        $this->artisan('workspace:migrate-super-admin-records', $options + ['--preserve-missing-ledger' => '888888'])->assertFailed();
+        $this->assertSame($before, $this->snapshot());
+        $this->artisan('workspace:migrate-super-admin-records', $options + ['--preserve-missing-ledger' => (string) $transaction->id])
+            ->expectsOutputToContain('Existing historical link preserved exactly as recorded')->assertSuccessful();
+        $this->assertDatabaseHas('transactions', ['id' => $transaction->id, 'related_id' => 999999, 'debit' => 300, 'company_id' => $f['target']->id]);
+    }
+
+    public function test_hotel_controller_source_labels_preserve_the_folio_graph_but_unknown_model_types_still_block(): void
+    {
+        $f = $this->fixtures();
+        $property = DB::table('hotel_properties')->insertGetId(['company_id' => $f['source']->id, 'name' => 'Own hotel']);
+        $folio = DB::table('guest_folios')->insertGetId(['company_id' => $f['source']->id, 'property_id' => $property,
+            'folio_number' => 'MIG-FOLIO', 'customer_id' => $f['customer']]);
+        $item = DB::table('folio_items')->insertGetId(['company_id' => $f['source']->id, 'property_id' => $property,
+            'folio_id' => $folio, 'description' => 'Manual service', 'amount' => 20,
+            'source_type' => \App\Http\Controllers\Hotel\FolioController::class, 'source_id' => $folio]);
+        $plan = app(SuperAdminRecordMigration::class)->plan($f['admin']->id, $f['source']->id, $f['target']->id);
+        $this->assertSame([], $plan['problems']);
+        $this->assertSame(1, $plan['counts']['hotel_properties']['reassigned']);
+        $this->assertSame(1, $plan['counts']['folio_items']['reassigned']);
+        DB::table('folio_items')->where('id', $item)->update(['source_type' => 'UnknownModel']);
+        $plan = app(SuperAdminRecordMigration::class)->plan($f['admin']->id, $f['source']->id, $f['target']->id);
+        $this->assertNotEmpty($plan['problems']);
     }
 
     private function migrationOptions(array $f): array

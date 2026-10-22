@@ -17,6 +17,7 @@ class MigrateSuperAdminRecords extends Command
         {--to= : Super admin private destination company ID}
         {--expect-sales= : Expected original sales count; required when applying}
         {--expect-products= : Expected original product count; required when applying}
+        {--preserve-missing-ledger= : Comma-separated transaction IDs whose already-missing related parents must be preserved}
         {--apply : Apply the verified connected record plan; omission is read-only}';
 
     protected $description = 'Preview or migrate explicitly confirmed super-admin records with related stock and accounting links.';
@@ -32,17 +33,21 @@ class MigrateSuperAdminRecords extends Command
                     throw new \RuntimeException('--'.$key.' must be an explicit expected count when applying.');
                 }
             }
-            DB::transaction(function () use ($migration) {
+            $preserve = (string) ($this->option('preserve-missing-ledger') ?? '');
+            if ($preserve !== '' && ! preg_match('/^[1-9][0-9]*(,[1-9][0-9]*)*$/', $preserve)) throw new \RuntimeException('Provide exact comma-separated positive transaction IDs.');
+            $preserveIds = $preserve === '' ? [] : array_map('intval', explode(',', $preserve));
+            DB::transaction(function () use ($migration, $preserveIds) {
                 $apply = (bool) $this->option('apply');
                 $userId = (int) $this->option('user'); $from = (int) $this->option('from'); $to = (int) $this->option('to');
                 if ($apply) {
                     DB::table('users')->where('id', $userId)->lockForUpdate()->first();
                     DB::table('companies')->whereIn('id', [$from, $to])->orderBy('id')->lockForUpdate()->get();
                 }
-                $plan = $migration->plan($userId, $from, $to);
+                $plan = $migration->plan($userId, $from, $to, $preserveIds);
                 $this->info('Confirmed account #'.$userId.': company #'.$from.' → private company #'.$to);
-                $this->table(['Table', 'Linked rows', 'Company links to move'], collect($plan['counts'])->map(fn ($counts, $table) => [$table, $counts['linked'], $counts['reassigned']])->values()->all());
+                $this->table(['Table', 'Linked rows', 'Company links to move', 'Private lookup copies'], collect($plan['counts'])->map(fn ($counts, $table) => [$table, $counts['linked'], $counts['reassigned'], $counts['copied']])->values()->all());
                 $this->table(['Source records left in place', 'Count'], collect($plan['retained'])->map(fn ($count, $table) => [$table, $count])->values()->all());
+                foreach ($plan['notes'] as $note) $this->warn('NOTE: '.$note);
                 if ($plan['problems']) {
                     foreach ($plan['problems'] as $problem) $this->error('REVIEW: '.$problem);
                     throw new \RuntimeException('Migration blocked for review. No records moved.');
@@ -74,6 +79,27 @@ class MigrateSuperAdminRecords extends Command
                 if (fwrite($handle, $json) !== strlen($json)) { fclose($handle); throw new \RuntimeException('Backup write was incomplete.'); }
                 fclose($handle);
                 $this->info('Private before-change backup: '.$file);
+                $referenceIds = [];
+                foreach ($plan['references'] as $table => $rows) {
+                    foreach ($rows as $id => $row) {
+                        unset($row['id']);
+                        $row['company_id'] = $to;
+                        if (array_key_exists('user_id', $row)) $row['user_id'] = $userId;
+                        $referenceIds[$table][$id] = DB::table($table)->insertGetId($row);
+                    }
+                }
+                // Keep the allocated lookup IDs alongside original snapshots for rollback.
+                $plan['created_reference_ids'] = $referenceIds;
+                $json = json_encode($plan, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
+                if (file_put_contents($file, $json, LOCK_EX) !== strlen($json)) throw new \RuntimeException('Cannot save lookup mapping in private backup.');
+                foreach ($plan['reference_bindings'] as $table => $rows) {
+                    foreach ($rows as $id => $columns) {
+                        $changes = [];
+                        foreach ($columns as $column => $parent) $changes[$column] = $referenceIds[$parent['table']][$parent['id']];
+                        $recordId = $referenceIds[$table][$id] ?? $id;
+                        DB::table($table)->where('id', $recordId)->update($changes);
+                    }
+                }
                 foreach ($plan['before'] as $table => $rows) {
                     foreach (array_chunk(array_keys($rows), 250) as $ids) DB::table($table)->whereIn('id', $ids)->update(['company_id' => $to]);
                 }
@@ -88,7 +114,7 @@ class MigrateSuperAdminRecords extends Command
                     Cache::forget('metrics_co_'.$companyId.'_branch_all');
                     foreach ($plan['branches'] as $branch) Cache::forget('metrics_co_'.$companyId.'_branch_'.($branch['id'] ?? 'all'));
                 }
-                $this->info('Migration complete. Record IDs, amounts, stock and history retained. Source company, staff and subscriptions were not deleted or reassigned.');
+                $this->info('Migration complete. Document IDs, amounts, stock and history retained; lookup references copied privately. Source company, staff and subscriptions were not deleted or reassigned.');
                 $this->line('Sign out and sign in, then open Business with All Branches to see the recovered records.');
             });
             return self::SUCCESS;

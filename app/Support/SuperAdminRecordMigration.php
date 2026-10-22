@@ -17,6 +17,7 @@ class SuperAdminRecordMigration
     private array $rows = [];
     private array $queue = [];
     private array $problems = [];
+    private array $notes = [];
     private int $userId;
     private int $from;
     private int $to;
@@ -28,9 +29,9 @@ class SuperAdminRecordMigration
             || preg_match('/(^|_)(roles?|permissions?|deployment|commissions?|demo)(_|$)/', $table);
     }
 
-    public function plan(int $userId, int $from, int $to): array
+    public function plan(int $userId, int $from, int $to, array $preserveMissingLedger = []): array
     {
-        $this->columns = $this->edges = $this->aliases = $this->rows = $this->queue = $this->problems = [];
+        $this->columns = $this->edges = $this->aliases = $this->rows = $this->queue = $this->problems = $this->notes = [];
         $this->userId = $userId; $this->from = $from; $this->to = $to;
         $user = User::withoutGlobalScopes()->findOrFail($userId);
         $source = Company::withoutGlobalScopes()->findOrFail($from);
@@ -61,6 +62,9 @@ class SuperAdminRecordMigration
                 if (! str_ends_with($column, '_id') || in_array($column, ['company_id', 'source_id', 'related_id'], true)) continue;
                 $base = substr($column, 0, -3);
                 $parent = $this->aliases[strtolower($base)] ?? null;
+                if (str_starts_with($table, 'hotel_') || in_array($table, ['stays', 'reservations', 'guest_folios', 'folio_items'], true)) {
+                    $parent = ['property_id' => 'hotel_properties', 'room_id' => 'hotel_rooms', 'room_type_id' => 'hotel_room_types', 'folio_id' => 'guest_folios'][$column] ?? $parent;
+                }
                 if ($column === 'parent_id' && in_array($table, ['accounts', 'categories'], true)) $parent = $table;
                 if (in_array($column, ['payment_account_id', 'asset_account_id', 'debit_account_id', 'credit_account_id', 'ledger_account_id'], true)) $parent = 'accounts';
                 if ($parent === $table && $column !== 'parent_id') continue;
@@ -91,12 +95,30 @@ class SuperAdminRecordMigration
                 $column = $kind.'_id'; $type = $kind.'_type';
                 if (empty($row->{$column}) || empty($row->{$type})) continue;
                 $parent = $this->resolveType((string) $row->{$type});
+                // Hotel posting controllers are audit labels, not Eloquent model types.
+                if ($table === 'folio_items' && $kind === 'source' && in_array((string) $row->{$type}, [
+                    \App\Http\Controllers\Hotel\FolioController::class,
+                    \App\Http\Controllers\Hotel\HotelWorkspaceController::class,
+                    \App\Http\Controllers\Hotel\WalkInController::class,
+                    \App\Http\Controllers\Hotel\CheckInController::class,
+                ], true)) continue;
                 if (! $parent) { $this->problems[] = "Unknown {$kind} relationship on {$table} #{$id}."; continue; }
                 $record = DB::table($parent)->where('id', $row->{$column})->first();
-                if (! $record) { $this->problems[] = "Missing {$kind} parent on {$table} #{$id}."; continue; }
+                if (! $record) {
+                    $message = "Missing {$kind} parent {$parent} #{$row->{$column}} on {$table} #{$id}.";
+                    if ($table === 'transactions' && $kind === 'related' && in_array((int) $id, $preserveMissingLedger, true)) {
+                        $this->notes[] = $message.' Existing historical link preserved exactly as recorded.';
+                    } else {
+                        $this->problems[] = $message;
+                    }
+                    continue;
+                }
                 if (isset($record->company_id) && (int) $record->company_id === $to) continue;
                 $this->add($parent, $record);
             }
+            // Lookup parents are references, never roots for gathering other documents.
+            // Copy them privately; other businesses keep their original lookup IDs.
+            if ($this->isReference($table)) continue;
             foreach ($this->columns as $child => $columns) {
                 foreach ($this->edges[$child] ?? [] as $column => $parent) {
                     if ($parent !== $table) continue;
@@ -118,14 +140,23 @@ class SuperAdminRecordMigration
             $remaining = $query->whereNotIn('id', array_keys($this->rows[$table] ?? []))->count();
             if ($remaining && array_sum($roots)) $this->problems[] = "{$remaining} unlinked {$table} row(s) require review before moving accounting records.";
         }
-        $counts = []; $before = []; $branches = [];
+        $counts = []; $before = []; $branches = []; $references = []; $bindings = [];
         foreach ($this->rows as $table => $records) {
             foreach ($records as $id => $row) {
-                if (in_array('company_id', $this->columns[$table])) $before[$table][$id] = (array) $row;
+                if ($this->isReference($table)) {
+                    $references[$table][$id] = (array) $row;
+                } elseif (in_array('company_id', $this->columns[$table])) {
+                    $before[$table][$id] = (array) $row;
+                }
+                foreach ($this->edges[$table] ?? [] as $column => $parent) {
+                    if ($this->isReference($parent) && isset($this->rows[$parent][$row->{$column} ?? 0])) {
+                        $bindings[$table][$id][$column] = ['table' => $parent, 'id' => $row->{$column}];
+                    }
+                }
                 $branchId = trim((string) ($row->branch_id ?? ''));
                 if ($branchId !== '') $branches[$branchId] = ['id' => $branchId, 'name' => ($row->branch_name ?? '') ?: 'Branch '.$branchId, 'is_active' => true];
             }
-            $counts[$table] = ['linked' => count($records), 'reassigned' => count($before[$table] ?? [])];
+            $counts[$table] = ['linked' => count($records), 'reassigned' => count($before[$table] ?? []), 'copied' => count($references[$table] ?? [])];
         }
         $settingKey = 'branches_json_company_'.$to;
         $branchSetting = DB::table('settings')->where('key', $settingKey)->value('value');
@@ -142,9 +173,14 @@ class SuperAdminRecordMigration
             }
         }
         return ['user' => $userId, 'user_company_before' => $user->company_id, 'from' => $from, 'to' => $to, 'roots' => $roots, 'counts' => $counts, 'retained' => $retained,
-            'before' => $before, 'linked_before' => array_map(fn ($records) => array_map(fn ($row) => (array) $row, $records), $this->rows), 'problems' => array_values(array_unique($this->problems)),
+            'before' => $before, 'references' => $references, 'reference_bindings' => $bindings, 'notes' => array_values(array_unique($this->notes)), 'linked_before' => array_map(fn ($records) => array_map(fn ($row) => (array) $row, $records), $this->rows), 'problems' => array_values(array_unique($this->problems)),
             'branch_setting_before' => $branchSetting,
             'branch_scope_before' => DB::table('settings')->where('key', 'workspace_default_branch_scope_company_'.$to)->value('value'), 'branches' => [...$existing, ...array_values($branches)]];
+    }
+
+    private function isReference(string $table): bool
+    {
+        return in_array($table, ['units', 'categories'], true);
     }
 
     private function resolveType(string $type): ?string
@@ -160,7 +196,7 @@ class SuperAdminRecordMigration
         if (isset($row->company_id) && ! in_array((int) $row->company_id, [0, $this->from], true)) {
             $this->problems[] = "Shared/cross-business relationship: {$table} #{$id} belongs to company #{$row->company_id}."; return;
         }
-        foreach (['user_id', 'created_by'] as $column) {
+        foreach ($this->isReference($table) ? [] : ['user_id', 'created_by', 'posted_by'] as $column) {
             if (isset($row->{$column}) && (int) $row->{$column} > 0 && (int) $row->{$column} !== $this->userId) {
                 $this->problems[] = "{$table} #{$id} was created by another account; review required."; return;
             }
