@@ -101,6 +101,7 @@ class SuperAdminRecordMigration
                     \App\Http\Controllers\Hotel\HotelWorkspaceController::class,
                     \App\Http\Controllers\Hotel\WalkInController::class,
                     \App\Http\Controllers\Hotel\CheckInController::class,
+                    \App\Http\Controllers\SuperAdmin\HotelController::class,
                 ], true)) continue;
                 if (! $parent) { $this->problems[] = "Unknown {$kind} relationship on {$table} #{$id}."; continue; }
                 $record = DB::table($parent)->where('id', $row->{$column})->first();

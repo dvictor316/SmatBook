@@ -194,6 +194,12 @@ class SuperAdminRecordMigrationTest extends TestCase
         $this->assertSame([], $plan['problems']);
         $this->assertSame(1, $plan['counts']['hotel_properties']['reassigned']);
         $this->assertSame(1, $plan['counts']['folio_items']['reassigned']);
+        DB::table('folio_items')->where('id', $item)->update([
+            'source_type' => \App\Http\Controllers\SuperAdmin\HotelController::class,
+        ]);
+        $plan = app(SuperAdminRecordMigration::class)->plan($f['admin']->id, $f['source']->id, $f['target']->id);
+        $this->assertSame([], $plan['problems']);
+        $this->assertSame(1, $plan['counts']['folio_items']['reassigned']);
         DB::table('folio_items')->where('id', $item)->update(['source_type' => 'UnknownModel']);
         $plan = app(SuperAdminRecordMigration::class)->plan($f['admin']->id, $f['source']->id, $f['target']->id);
         $this->assertNotEmpty($plan['problems']);
