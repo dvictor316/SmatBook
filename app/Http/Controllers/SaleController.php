@@ -1334,7 +1334,6 @@ public function listPosSuspendedSales(Request $request)
     $token = (string) ($request->validate(['claim_token' => 'nullable|uuid'])['claim_token'] ?? '');
 
     $sales = $this->posSuspenseWorkspaceQuery()
-        ->with(['creator:id,name', 'claimant:id,name'])
         ->latest()
         ->get()
         ->map(function (PosSuspendedSale $sale) {
@@ -1346,13 +1345,13 @@ public function listPosSuspendedSales(Request $request)
                 'item_count' => $sale->item_count,
                 'total' => (float) $sale->total,
                 'created_at' => $sale->created_at?->toIso8601String(),
-                'created_by' => $sale->creator?->name ?? 'POS cashier',
+                'created_by' => $sale->created_by ? 'Cashier #' . $sale->created_by : 'POS cashier',
                 'locked' => filled($sale->claim_token) && !$claimExpired,
                 'locked_by_this_terminal' => filled($sale->claim_token)
                     && $sale->claim_token === $token
                     && (int) $sale->claimed_by === (int) auth()->id(),
                 'claimed_by' => filled($sale->claim_token) && !$claimExpired
-                    ? ($sale->claimant?->name ?? 'Another POS terminal')
+                    ? ((int) $sale->claimed_by === (int) auth()->id() ? 'This POS terminal' : 'Another POS terminal')
                     : null,
             ];
         });
