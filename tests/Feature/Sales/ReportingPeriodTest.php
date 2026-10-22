@@ -48,7 +48,12 @@ class ReportingPeriodTest extends TestCase
         $foreign = Company::create(['name' => 'Other business']);
         $this->sale($foreign, $user, '2026-10-22', 9999);
         $response = $this->get(route('workspace.business.dashboard'));
-        $response->assertOk()->assertSee('Week to date')->assertSee('Sales performance');
+        $response->assertOk()
+            ->assertSee('Week to date')
+            ->assertSee('Sales performance')
+            ->assertSee('<details class="spb-period-menu">', false)
+            ->assertSee('Filters &amp; periods', false)
+            ->assertDontSee('Weeks start on Monday');
         $this->assertSame(0.0, (float) $response->viewData('metrics')['todayRevenue']);
         $this->assertSame(0.0, (float) $response->viewData('metrics')['totalSales']);
         $rows = $response->viewData('periodSales');
