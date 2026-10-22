@@ -10,6 +10,7 @@ use App\Models\Sale;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -163,6 +164,18 @@ class PosSuspendedSaleTest extends TestCase
         $this->actingAs($user)->withoutMiddleware()
             ->getJson(route('pos.suspense.index'))
             ->assertForbidden();
+    }
+
+    public function test_missing_suspense_installation_returns_an_actionable_error(): void
+    {
+        $company = Company::create(['name' => 'Suspense Setup', 'industry' => 'retail', 'plan' => 'Enterprise']);
+        $user = User::factory()->create(['company_id' => $company->id, 'role' => 'admin']);
+        $this->actingAs($user)->withoutMiddleware();
+        Schema::dropIfExists('pos_suspended_sales');
+
+        $this->getJson(route('pos.suspense.index'))
+            ->assertStatus(503)
+            ->assertJsonPath('message', 'Sales Suspense is not fully installed on this server. Deploy the latest code and run php artisan migrate --force.');
     }
 
     public function test_successful_checkout_removes_the_claimed_suspended_sale_atomically(): void

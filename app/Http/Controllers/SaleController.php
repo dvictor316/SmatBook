@@ -1649,6 +1649,12 @@ private function authorizePosSaleAccess(): void
 
 private function posSuspenseWorkspaceQuery()
 {
+    abort_unless(
+        class_exists(PosSuspendedSale::class) && Schema::hasTable('pos_suspended_sales'),
+        503,
+        'Sales Suspense is not fully installed on this server. Deploy the latest code and run php artisan migrate --force.'
+    );
+
     $companyId = $this->tenantCompanyId();
     abort_if($companyId <= 0, 403, 'No business workspace is active.');
     $branchId = $this->getActiveBranchContext()['id'] ?? null;
