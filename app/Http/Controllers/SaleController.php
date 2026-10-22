@@ -800,11 +800,12 @@ class SaleController extends Controller
 
     public function posSales(Request $request)
     {
-        $query = Sale::with(['customer', 'user', 'items']);
+        $reportingPeriod = \App\Support\ReportingPeriod::fromRequest($request, 'all');
+        $query = Sale::with(['customer', 'user', 'items'])->select('sales.*')->selectRaw(\App\Support\SalesReportingDate::expression().' as reporting_sale_date');
         $activeBranch = $this->getActiveBranchContext();
         $this->applyTenantScope($query, 'sales');
         $this->applyBranchScope($query, 'sales');
-        $salesDateColumn = Schema::hasColumn('sales', 'order_date') ? 'order_date' : 'created_at';
+        $salesDateColumn = 'reporting_sale_date';
         $branchOptions = collect($this->getAvailableBranches())
             ->mapWithKeys(fn ($branch) => [(string) $branch['id'] => (string) $branch['name']])
             ->all();
@@ -866,15 +867,7 @@ class SaleController extends Controller
         } elseif ($request->filled('payment_method')) {
             SalesPaymentModeFilter::apply($query, (string) $request->payment_method);
         }
-        if ($request->sale_date) {
-            $query->whereDate($salesDateColumn, $request->sale_date);
-        }
-        if ($request->filled('date_from')) {
-            $query->whereDate($salesDateColumn, '>=', $request->date_from);
-        }
-        if ($request->filled('date_to')) {
-            $query->whereDate($salesDateColumn, '<=', $request->date_to);
-        }
+        $reportingPeriod->apply($query, \App\Support\SalesReportingDate::expression(), 'sales.created_at');
 
         if ($request->get('export') === 'xlsx') {
             $exportSales = (clone $query)->orderByDesc($salesDateColumn)->orderByDesc('created_at')->get();
@@ -959,6 +952,7 @@ class SaleController extends Controller
         $sales = $query->orderByDesc($salesDateColumn)->orderByDesc('created_at')->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
         return view('pos.sales', compact(
+            'reportingPeriod',
             'sales',
             'totalRevenue',
             'totalAmountPaid',

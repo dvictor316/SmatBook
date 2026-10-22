@@ -36,11 +36,12 @@ class LivestockDashboardController extends Controller
             ? $farms->firstWhere('id', (int) $request->query('farm_id'))
             : $farms->first();
 
-        $from = Carbon::parse($request->query('from', now()->startOfMonth()->toDateString()))->toDateString();
-        $to = Carbon::parse($request->query('to', now()->toDateString()))->toDateString();
-        if (Carbon::parse($from)->gt(Carbon::parse($to))) {
-            [$from, $to] = [$to, $from];
-        }
+        $dateInput = $request->query();
+        $dateInput['date_from'] = $request->query('date_from', $request->query('from'));
+        $dateInput['date_to'] = $request->query('date_to', $request->query('to'));
+        $reportingPeriod = \App\Support\ReportingPeriod::fromRequest(Request::create('/', 'GET', $dateInput));
+        $from = $reportingPeriod->from ?? '1970-01-01';
+        $to = $reportingPeriod->to ?? \App\Support\ReportingPeriod::today()->toDateString();
 
         $flocks = collect();
         $investments = collect();
@@ -91,7 +92,7 @@ class LivestockDashboardController extends Controller
             ];
         }
 
-        return view('livestock.dashboard', compact('farms', 'farm', 'flocks', 'investments', 'opex', 'revenue', 'productions', 'inventoryMovements', 'inventoryBalances', 'debitAccounts', 'creditAccounts', 'summary', 'from', 'to'));
+        return view('livestock.dashboard', compact('farms', 'farm', 'flocks', 'investments', 'opex', 'revenue', 'productions', 'inventoryMovements', 'inventoryBalances', 'debitAccounts', 'creditAccounts', 'summary', 'from', 'to', 'reportingPeriod'));
     }
 
     public function storeFarm(Request $request)

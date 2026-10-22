@@ -81,7 +81,7 @@
                 <div>
                     <div class="hotel-eyebrow">SmartProbook Hotel PMS · Enterprise Command</div>
                     <h2>Run front desk, rooms, guests, and hotel accounting from one screen.</h2>
-                    <p>{{ $property?->name ?? 'All Properties' }} · Business Date {{ now()->format('d M Y') }} · {{ ucfirst(str_replace('_',' ', $rangeKey)) }} performance view.</p>
+                    <p>{{ $property?->name ?? 'All Properties' }} · Business Date {{ \App\Support\ReportingPeriod::today()->format('d M Y') }} · {{ ucfirst(str_replace('_',' ', $rangeKey)) }} performance view.</p>
                 </div>
                 <div class="hotel-command-actions">
                     <a href="{{ route('hotel.reservations.create') }}"><i class="fe fe-calendar"></i><span>New Reservation</span></a>
@@ -117,12 +117,12 @@
                 @endforeach
             </select>
             <select name="range" class="form-select form-select-sm" style="max-width:170px">
-                @foreach(['today' => 'Today', 'yesterday' => 'Yesterday', 'last_7_days' => 'Last 7 Days', 'last_30_days' => 'Last 30 Days', 'this_month' => 'This Month', 'custom' => 'Custom Range'] as $key => $label)
+                @foreach(array_diff_key(\App\Support\ReportingPeriod::OPTIONS, ['all' => true]) as $key => $label)
                     <option value="{{ $key }}" {{ $rangeKey === $key ? 'selected' : '' }}>{{ $label }}</option>
                 @endforeach
             </select>
-            <input type="date" name="from_date" class="form-control form-control-sm" value="{{ $fromDate }}" style="max-width:160px">
-            <input type="date" name="to_date" class="form-control form-control-sm" value="{{ $toDate }}" style="max-width:160px">
+            <input type="date" name="from_date" onchange="this.form.elements.range.value='custom'" class="form-control form-control-sm" value="{{ $fromDate }}" style="max-width:160px">
+            <input type="date" name="to_date" onchange="this.form.elements.range.value='custom'" class="form-control form-control-sm" value="{{ $toDate }}" style="max-width:160px">
             <button class="btn btn-sm btn-primary">Refresh Dashboard</button>
         </form>
 

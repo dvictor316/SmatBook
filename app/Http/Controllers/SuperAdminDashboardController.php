@@ -707,7 +707,7 @@ class SuperAdminDashboardController extends Controller
                 $itemSalesTodayRevenueQuery = $salesBranchScope(DB::table('sales'));
                 $this->applyFinalizedSalesFilter($itemSalesTodayRevenueQuery);
                 $itemSalesTodayRevenue = (float) ($itemSalesTodayRevenueQuery
-                    ->whereDate('created_at', today())
+                    ->whereRaw(\App\Support\SalesReportingDate::expression().' = ?', [\App\Support\ReportingPeriod::today()->toDateString()])
                     ->sum('total') ?? 0);
 
                 $itemSalesOrdersQuery = $salesBranchScope(DB::table('sales'));

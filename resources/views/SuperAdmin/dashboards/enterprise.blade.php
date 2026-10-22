@@ -309,6 +309,7 @@
 
 <div class="pos-content-area"> 
     @include('SuperAdmin.partials._subscription_status_banner')
+    @include('SuperAdmin.partials._sales_reporting_period')
 
     @php
         $salesRows = collect($monthlySalesData ?? []);
@@ -367,7 +368,7 @@
 
     <div class="row g-3 mb-4">
         @foreach([
-            ['label' => 'Platform Revenue', 'value' => '₦' . number_format($metrics['totalSales'] ?? 0, 0)],
+            ['label' => 'Sales revenue', 'value' => '₦' . number_format($metrics['totalSales'] ?? 0, 0)],
             ['label' => 'Net Profit', 'value' => '₦' . number_format($metrics['netProfit'] ?? 0, 0)],
             ['label' => 'Expense Load', 'value' => number_format($metrics['expenseRatio'] ?? 0, 1) . '%'],
             ['label' => 'Inventory Value', 'value' => '₦' . number_format($inventoryValue, 0)],
@@ -440,7 +441,7 @@
                     <h5 class="fw-bold mb-0" style="color: var(--deep-sapphire);">
                         <i class="fas fa-file-invoice-dollar me-2 opacity-50 text-info"></i> Latest Invoices
                     </h5>
-                    <span class="text-muted small">Updated 1m ago</span>
+                    <span class="text-muted small">Updated on refresh</span>
                 </div>
                 <div class="table-responsive">
                     @include('SuperAdmin.partials._latest_invoices')

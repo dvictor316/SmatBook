@@ -351,7 +351,7 @@
     $selectedSaleDate = request('sale_date');
     $dateFrom = request('date_from');
     $dateTo = request('date_to');
-    $filterDateLabel = 'All recorded sales';
+    $filterDateLabel = $reportingPeriod->label() . ' · ' . $reportingPeriod->dates();
     $paymentStatusOptions = [
         '' => 'All payment statuses',
         'paid' => 'Paid',
@@ -373,18 +373,6 @@
     $paymentFilterBase = request()->except(['page', 'payment_method', 'export']);
     $selectedPaymentMethod = (string) request('payment_method');
 
-    if ($selectedSaleDate) {
-        $filterDateLabel = 'Sales for ' . \Illuminate\Support\Carbon::parse($selectedSaleDate)->format('D, M d, Y');
-    } elseif ($dateFrom && $dateTo) {
-        $filterDateLabel = 'Sales from '
-            . \Illuminate\Support\Carbon::parse($dateFrom)->format('M d, Y')
-            . ' to '
-            . \Illuminate\Support\Carbon::parse($dateTo)->format('M d, Y');
-    } elseif ($dateFrom) {
-        $filterDateLabel = 'Sales from ' . \Illuminate\Support\Carbon::parse($dateFrom)->format('M d, Y');
-    } elseif ($dateTo) {
-        $filterDateLabel = 'Sales up to ' . \Illuminate\Support\Carbon::parse($dateTo)->format('M d, Y');
-    }
 @endphp
 
 <div class="pos-content-area">
@@ -451,7 +439,7 @@
                 </div>
             </div>
 
-            <form action="{{ route('pos.sales') }}" method="GET" class="row g-3 align-items-end mt-1 summary-filter-grid no-print">
+            <form action="{{ route('pos.sales') }}" method="GET" data-reporting-period class="row g-3 align-items-end mt-1 summary-filter-grid no-print">
                 <div class="col-lg-3 col-md-6">
                     <label class="form-label">Business Location</label>
                     <select name="branch_id" class="form-control form-control-sm">
@@ -500,18 +488,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-lg-2 col-md-4">
-                    <label class="form-label">Specific Date</label>
-                    <input type="date" name="sale_date" class="form-control form-control-sm" value="{{ request('sale_date') }}">
-                </div>
-                <div class="col-lg-2 col-md-4">
-                    <label class="form-label">From Date</label>
-                    <input type="date" name="date_from" class="form-control form-control-sm" value="{{ request('date_from') }}">
-                </div>
-                <div class="col-lg-2 col-md-4">
-                    <label class="form-label">To Date</label>
-                    <input type="date" name="date_to" class="form-control form-control-sm" value="{{ request('date_to') }}">
-                </div>
+                @include('components.reporting-period-fields', ['periodFieldId' => 'pos-sales'])
                 <div class="col-lg-12 d-flex gap-2 flex-wrap">
                     <button type="submit" class="btn btn-light btn-sm px-4">
                         <i class="fas fa-filter me-1"></i> Apply Filter
@@ -641,8 +618,8 @@
                                 </span>
                             </td>
                             <td>
-                                <div class="text-dark small fw-bold">{{ $sale->created_at->format('d M Y') }}</div>
-                                <div class="text-muted" style="font-size: 10px;">{{ $sale->created_at->format('H:i A') }}</div>
+                                <div class="text-dark small fw-bold">{{ $sale->reporting_sale_date ? \Carbon\CarbonImmutable::parse($sale->reporting_sale_date)->format('d M Y') : '—' }}</div>
+                                <div class="text-muted" style="font-size: 10px;">{{ $sale->created_at?->copy()->setTimezone(config('reporting.timezone'))->format('h:i A') ?? '—' }}</div>
                             </td>
                             <td class="text-center pe-4">
                                 <div class="dropdown">

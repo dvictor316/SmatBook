@@ -46,7 +46,7 @@ class HotelDashboardController extends Controller
         $maintenanceRooms = (clone $totalRoomsQuery)->where('operational_status', 'maintenance')->count();
         $outOfOrderRooms = (clone $totalRoomsQuery)->where('operational_status', 'out_of_order')->count();
 
-        $today = now()->toDateString();
+        $today = \App\Support\ReportingPeriod::today()->toDateString();
         $todayArrivals = Reservation::query()
             ->where('company_id', $companyId)
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
@@ -80,21 +80,23 @@ class HotelDashboardController extends Controller
         $chargesQuery = FolioItem::query()
             ->where('company_id', $companyId)
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
-            ->whereIn('type', ['charge', 'room_night', 'service', 'pos_charge'])
-            ->whereBetween('service_date', [$fromDate, $toDate]);
+            ->whereIn('type', ['charge', 'room_night', 'service', 'pos_charge']);
+        $calendarCharges = clone $chargesQuery;
+        $chargesQuery->whereBetween('service_date', [$fromDate, $toDate]);
 
         $paymentsQuery = FolioItem::query()
             ->where('company_id', $companyId)
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
-            ->whereIn('type', ['payment', 'deposit_applied'])
-            ->whereBetween('service_date', [$fromDate, $toDate]);
+            ->whereIn('type', ['payment', 'deposit_applied']);
+        $calendarPayments = clone $paymentsQuery;
+        $paymentsQuery->whereBetween('service_date', [$fromDate, $toDate]);
 
-        $todayRevenue = (clone $chargesQuery)
+        $todayRevenue = (clone $calendarCharges)
             ->whereDate('service_date', $today)
             ->sum('amount');
 
-        $monthRevenue = (clone $chargesQuery)
-            ->whereBetween('service_date', [now()->startOfMonth()->toDateString(), now()->endOfMonth()->toDateString()])
+        $monthRevenue = (clone $calendarCharges)
+            ->whereBetween('service_date', [\App\Support\ReportingPeriod::today()->startOfMonth()->toDateString(), $today])
             ->sum('amount');
 
         $roomRevenue = (clone $chargesQuery)
@@ -264,7 +266,7 @@ class HotelDashboardController extends Controller
             'new_reservations' => Reservation::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->whereDate('created_at', $today)->count(),
             'cancellations' => Reservation::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->where('status', 'cancelled')->whereDate('updated_at', $today)->count(),
             'no_shows' => Reservation::query()->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->where('status', 'no_show')->whereDate('updated_at', $today)->count(),
-            'payments_received' => (clone $paymentsQuery)->whereDate('service_date', $today)->sum('amount'),
+            'payments_received' => (clone $calendarPayments)->whereDate('service_date', $today)->sum('amount'),
             'room_changes' => 0,
             'maintenance_tickets' => Schema::hasTable('hotel_maintenance_tickets')
                 ? DB::table('hotel_maintenance_tickets')->where('company_id', $companyId)->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))->whereDate('created_at', $today)->count()
@@ -371,7 +373,7 @@ class HotelDashboardController extends Controller
     {
         $companyId = (int) auth()->user()->company_id;
         $propertyId = $this->currentPropertyId($request);
-        $today = now()->toDateString();
+        $today = \App\Support\ReportingPeriod::today()->toDateString();
 
         $search = trim((string) $request->query('q', ''));
 
@@ -835,20 +837,16 @@ class HotelDashboardController extends Controller
 
     private function resolveRange(Request $request): array
     {
-        $rangeKey = (string) $request->query('range', 'today');
-        $today = now()->startOfDay();
-
-        return match ($rangeKey) {
-            'yesterday' => [$today->copy()->subDay()->toDateString(), $today->copy()->subDay()->toDateString(), 'yesterday'],
-            'last_7_days' => [$today->copy()->subDays(6)->toDateString(), $today->copy()->toDateString(), 'last_7_days'],
-            'last_30_days' => [$today->copy()->subDays(29)->toDateString(), $today->copy()->toDateString(), 'last_30_days'],
-            'this_month' => [$today->copy()->startOfMonth()->toDateString(), $today->copy()->endOfMonth()->toDateString(), 'this_month'],
-            'custom' => [
-                (string) ($request->query('from_date') ?: $today->copy()->subDays(6)->toDateString()),
-                (string) ($request->query('to_date') ?: $today->copy()->toDateString()),
-                'custom',
-            ],
-            default => [$today->toDateString(), $today->toDateString(), 'today'],
-        };
+        $key = (string) $request->query('range', 'today');
+        if ($key === 'all') throw \Illuminate\Validation\ValidationException::withMessages(['range' => 'Choose a dated period for hotel performance.']);
+        $key = ['this_month' => 'month_to_date', 'this_week' => 'week_to_date', 'this_year' => 'year_to_date'][$key] ?? $key;
+        $data = ['period' => $key, 'date_from' => $request->query('from_date'), 'date_to' => $request->query('to_date')];
+        if ($key === 'custom' && ! $data['date_from'] && ! $data['date_to']) {
+            $data['date_from'] = \App\Support\ReportingPeriod::today()->subDays(6)->toDateString();
+            $data['date_to'] = \App\Support\ReportingPeriod::today()->toDateString();
+        }
+        if ($key === 'custom' && (! $data['date_from'] || ! $data['date_to'])) throw \Illuminate\Validation\ValidationException::withMessages(['from_date' => 'Choose both hotel reporting dates.']);
+        $period = \App\Support\ReportingPeriod::fromRequest(Request::create('/', 'GET', $data));
+        return [$period->from ?? '1970-01-01', $period->to ?? \App\Support\ReportingPeriod::today()->toDateString(), $period->key];
     }
 }

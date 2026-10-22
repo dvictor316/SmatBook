@@ -14,6 +14,7 @@ use Illuminate\Support\Str;
 
 class DashboardController extends Controller
 {
+    private ?\App\Support\ReportingPeriod $reportingPeriod = null;
     public function __construct()
     {
         $this->middleware('permission:dashboard.overview.view')->only(['index', 'businessDashboard', 'switchToBusinessWorkspace']);
@@ -45,6 +46,7 @@ class DashboardController extends Controller
      */
     public function index(Request $request)
     {
+        $this->reportingPeriod = \App\Support\ReportingPeriod::fromRequest($request);
         $user = Auth::user();
         if (in_array(strtolower((string) $user->role), ['super_admin', 'superadmin'], true)
             && session('workspace_context') !== 'platform') {
@@ -176,11 +178,9 @@ class DashboardController extends Controller
             ? 'All Branches'
             : ($activeBranch['name'] ?? null);
 
-        // 3. CACHED ANALYTICS (Scoped to Company)
+        // Recompute sales figures on every request: new sales and midnight must be visible immediately.
         $resolvedCompanyScopeId = (int) (($company?->id ?? null) ?: $this->resolvedDashboardCompanyId());
-        $branchCacheKey = $isBusinessWorkspace ? ('_branch_' . ($activeBranch['id'] ?? 'all')) : '_global';
-        $cacheKey = 'metrics_co_' . ($resolvedCompanyScopeId > 0 ? $resolvedCompanyScopeId : ('user_' . $user->id)) . $branchCacheKey;
-        $metrics = Cache::remember($cacheKey, 300, function() use ($company, $activeBranch) {
+        $metrics = (function() use ($company, $activeBranch) {
             $todayRevenue = $this->getTodayRevenue($company, $activeBranch);
             $totalSales = $this->getTotalSales($company, $activeBranch);
             $totalProfit = $this->getTotalProfit($company, $activeBranch);
@@ -206,7 +206,7 @@ class DashboardController extends Controller
                 'todayRevenue'    => $todayRevenue,
                 'totalSales'      => $totalSales,
                 'totalProfit'     => $totalProfit,
-                'netProfit'       => $totalProfit, // alias used by pro dashboard
+                'netProfit'       => $totalProfit - $totalExpenses, // alias used by pro dashboard
                 'totalExpenses'   => $totalExpenses,
                 'totalInvoices'   => $totalInvoices, // alias used by basic dashboard
                 'activeCustomers' => $activeCustomers, // alias used by basic dashboard
@@ -226,7 +226,7 @@ class DashboardController extends Controller
                 'revenueProgress' => $revenueProgress,
                 'countryHeatMap'  => $this->getHeatMapData($company),
             ];
-        });
+        })();
 
         $valuation = app(StockValuation::class);
         $stockSummary = $valuation->summary($valuation->rowsQuery(
@@ -249,6 +249,8 @@ class DashboardController extends Controller
         $seatCount = $company?->users()->count() ?? ($user->company_id ? User::where('company_id', $user->company_id)->count() : 1);
 
         $data = [
+            'reportingPeriod' => $this->reportingPeriod,
+            'periodSales' => $this->periodSales($company, $activeBranch),
             'company'          => $company,
             'metrics'          => $metrics,
             'monthlySalesData' => $monthlySalesData,
@@ -411,18 +413,18 @@ class DashboardController extends Controller
     private function getTodayRevenue($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('sales')) return 0;
         return $this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
-            ->whereDate('created_at', Carbon::today())
+            ->whereRaw(\App\Support\SalesReportingDate::expression().' = ?', [\App\Support\ReportingPeriod::today()->toDateString()])
             ->sum('total') ?? 0;
     }
 
     private function getTotalSales($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('sales')) return 0;
-        return $this->scopeSalesByContext(Sale::query(), $company, $activeBranch)->sum('total') ?? 0;
+        return $this->scopePeriodSalesByContext(Sale::query(), $company, $activeBranch)->sum('total') ?? 0;
     }
 
     private function getTotalProfit($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('sales')) return 0;
-        $salesQuery = $this->scopeSalesByContext(Sale::query(), $company, $activeBranch);
+        $salesQuery = $this->scopePeriodSalesByContext(Sale::query(), $company, $activeBranch);
         $totalRevenue = (clone $salesQuery)->sum('total') ?? 0;
         $totalCost = 0;
 
@@ -438,7 +440,7 @@ class DashboardController extends Controller
                 ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
                 ->join('products', 'products.id', '=', 'sale_items.product_id');
 
-            $costQuery = $this->scopeSalesByContext($costQuery, $company, $activeBranch, 'sales');
+            $costQuery = $this->scopePeriodSalesByContext($costQuery, $company, $activeBranch, 'sales');
 
             $totalCost = (float) ($costQuery->selectRaw("SUM(" . InventoryQuantity::saleStockUnitsExpression('sale_items', 'products') . " * COALESCE({$costColumn}, 0)) as total_cost")->value('total_cost') ?? 0);
         }
@@ -448,7 +450,7 @@ class DashboardController extends Controller
 
     private function getTotalExpenses($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('expenses')) return 0;
-        return $this->scopeExpensesByContext(Expense::query(), $company, $activeBranch, 'expenses')
+        return ($this->reportingPeriod ?? \App\Support\ReportingPeriod::preset('all'))->apply($this->scopeExpensesByContext(Expense::query(), $company, $activeBranch, 'expenses'), \App\Support\SalesReportingDate::timestampExpression('expenses.created_at'), 'expenses.created_at')
             ->where(function ($q) {
                 // Count all expenses except explicitly rejected ones
                 $q->whereRaw('LOWER(COALESCE(status, \'pending\')) != ?', ['rejected']);
@@ -484,10 +486,7 @@ class DashboardController extends Controller
 
     private function getMonthlySalesData($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('sales')) return collect();
-        return $this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
-            ->select(DB::raw('MONTHNAME(created_at) as month'), DB::raw('SUM(total) as total_sales'), DB::raw('MONTH(created_at) as month_num'))
-            ->whereYear('created_at', date('Y'))
-            ->groupBy('month', 'month_num')->orderBy('month_num', 'asc')->get();
+        return $this->calendarMonthlyData($this->scopeSalesByContext(Sale::query(), $company, $activeBranch), \App\Support\SalesReportingDate::expression(), 'SUM(total)', 'total_sales');
     }
 
     private function getTopProducts($company, ?array $activeBranch = null) {
@@ -496,7 +495,7 @@ class DashboardController extends Controller
             ->join('products', 'products.id', '=', 'sale_items.product_id')
             ->join('sales', 'sales.id', '=', 'sale_items.sale_id');
 
-        return $this->scopeSalesByContext($query, $company, $activeBranch, 'sales')
+        return $this->scopePeriodSalesByContext($query, $company, $activeBranch, 'sales')
             ->select('products.id', 'products.name', DB::raw("SUM(" . InventoryQuantity::saleStockUnitsExpression('sale_items', 'products') . ") as total_qty"))
             ->groupBy('products.id', 'products.name')
             ->orderByDesc('total_qty')
@@ -689,7 +688,7 @@ class DashboardController extends Controller
 
     private function getTotalInvoices($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('sales')) return 0;
-        return $this->scopeSalesByContext(Sale::query(), $company, $activeBranch)->count();
+        return $this->scopePeriodSalesByContext(Sale::query(), $company, $activeBranch)->count();
     }
 
     private function getActiveCustomers($company) {
@@ -720,16 +719,16 @@ class DashboardController extends Controller
 
     private function getLatestInvoices($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('sales')) return collect();
-        return $this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
-            ->select('id', 'order_number', 'invoice_no', 'customer_name', 'total', 'balance', 'payment_status', 'created_at')
-            ->orderByDesc('created_at')
+        return $this->scopePeriodSalesByContext(Sale::query(), $company, $activeBranch)
+            ->select('id', 'order_number', 'invoice_no', 'customer_name', 'total', 'balance', 'payment_status', 'order_date', 'created_at')
+            ->orderByRaw(\App\Support\SalesReportingDate::expression().' DESC')->orderByDesc('id')
             ->limit(10)
             ->get();
     }
 
     private function getRecentActivity($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('sales')) return collect();
-        return $this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
+        return $this->scopePeriodSalesByContext(Sale::query(), $company, $activeBranch)
             ->latest()
             ->limit(8)
             ->get()
@@ -750,16 +749,7 @@ class DashboardController extends Controller
 
     private function getMonthlyExpensesData($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('expenses')) return collect();
-        return $this->scopeExpensesByContext(Expense::query(), $company, $activeBranch, 'expenses')
-            ->select(
-                DB::raw('MONTHNAME(created_at) as month'),
-                DB::raw('MONTH(created_at) as month_num'),
-                DB::raw('SUM(amount) as total_expenses')
-            )
-            ->whereYear('created_at', date('Y'))
-            ->groupBy('month', 'month_num')
-            ->orderBy('month_num', 'asc')
-            ->get();
+        return $this->calendarMonthlyData($this->scopeExpensesByContext(Expense::query(), $company, $activeBranch, 'expenses'), \App\Support\SalesReportingDate::timestampExpression('expenses.created_at'), 'SUM(amount)', 'total_expenses');
     }
 
     private function getMonthlyProfitData($monthlySalesData, $monthlyExpenseData) {
@@ -782,21 +772,12 @@ class DashboardController extends Controller
 
     private function getSalesCountByMonth($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('sales')) return collect();
-        return $this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
-            ->select(
-                DB::raw('MONTHNAME(created_at) as month'),
-                DB::raw('MONTH(created_at) as month_num'),
-                DB::raw('COUNT(*) as total_orders')
-            )
-            ->whereYear('created_at', date('Y'))
-            ->groupBy('month', 'month_num')
-            ->orderBy('month_num', 'asc')
-            ->get();
+        return $this->calendarMonthlyData($this->scopeSalesByContext(Sale::query(), $company, $activeBranch), \App\Support\SalesReportingDate::expression(), 'COUNT(*)', 'total_orders');
     }
 
     private function getTopCustomers($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('sales')) return collect();
-        $query = $this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
+        $query = $this->scopePeriodSalesByContext(Sale::query(), $company, $activeBranch)
             ->whereNotNull('customer_name')
             ->select('customer_name', DB::raw('SUM(total) as total_spend'), DB::raw('COUNT(*) as invoices_count'));
 
@@ -829,7 +810,7 @@ class DashboardController extends Controller
         $query = DB::table('sale_items')
             ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
             ->join('products', 'products.id', '=', 'sale_items.product_id')
-            ->whereDate('sales.created_at', Carbon::today());
+            ->whereRaw(\App\Support\SalesReportingDate::expression().' = ?', [\App\Support\ReportingPeriod::today()->toDateString()]);
 
         $query = $this->scopeSalesByContext($query, $company, $activeBranch, 'sales');
 
@@ -841,7 +822,7 @@ class DashboardController extends Controller
         if (!Schema::hasTable('sales')) return 0;
 
         return (int) ($this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
-            ->whereDate('created_at', Carbon::today())
+            ->whereRaw(\App\Support\SalesReportingDate::expression().' = ?', [\App\Support\ReportingPeriod::today()->toDateString()])
             ->count() ?? 0);
     }
 
@@ -851,7 +832,7 @@ class DashboardController extends Controller
             return ['paid' => 0, 'partial' => 0, 'unpaid' => 0];
         }
 
-        $statusData = $this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
+        $statusData = $this->scopePeriodSalesByContext(Sale::query(), $company, $activeBranch)
             ->select('payment_status', DB::raw('COUNT(*) as total'))
             ->groupBy('payment_status')
             ->pluck('total', 'payment_status');
@@ -887,28 +868,52 @@ class DashboardController extends Controller
 
     private function getCurrentMonthSales($company, ?array $activeBranch = null): float
     {
-        if (!Schema::hasTable('sales')) {
-            return 0;
-        }
-
-        return (float) ($this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
-            ->whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
-            ->sum('total') ?? 0);
+        if (!Schema::hasTable('sales')) return 0;
+        return (float) \App\Support\ReportingPeriod::preset('month_to_date')->apply(
+            $this->scopeSalesByContext(Sale::query(), $company, $activeBranch),
+            \App\Support\SalesReportingDate::expression()
+        )->sum('total');
     }
 
     private function getPreviousMonthSales($company, ?array $activeBranch = null): float
     {
-        if (!Schema::hasTable('sales')) {
-            return 0;
+        if (!Schema::hasTable('sales')) return 0;
+        $today = \App\Support\ReportingPeriod::today();
+        $range = new \App\Support\ReportingPeriod('custom', $today->startOfMonth()->subMonth()->toDateString(), $today->startOfMonth()->subDay()->toDateString());
+        return (float) $range->apply($this->scopeSalesByContext(Sale::query(), $company, $activeBranch), \App\Support\SalesReportingDate::expression())->sum('total');
+    }
+
+    private function calendarMonthlyData($query, string $date, string $aggregate, string $alias)
+    {
+        $month = match (DB::connection()->getDriverName()) {
+            'sqlite' => "CAST(STRFTIME('%m', {$date}) AS INTEGER)",
+            'pgsql' => "EXTRACT(MONTH FROM {$date})",
+            default => "MONTH({$date})",
+        };
+        return \App\Support\ReportingPeriod::preset('year_to_date')->apply($query, $date)
+            ->selectRaw("{$month} as month_num, {$aggregate} as {$alias}")->groupBy('month_num')->orderBy('month_num')->get()
+            ->map(function ($row) { $row->month = \Carbon\CarbonImmutable::create(2000, (int) $row->month_num, 1)->format('F'); return $row; });
+    }
+
+    private function periodSales($company, ?array $branch): array
+    {
+        $result = [];
+        foreach (['today', 'week_to_date', 'month_to_date', 'year_to_date'] as $key) {
+            $period = \App\Support\ReportingPeriod::preset($key);
+            $row = Schema::hasTable('sales') ? $period->apply($this->scopeSalesByContext(Sale::query(), $company, $branch), \App\Support\SalesReportingDate::expression())
+                ->selectRaw('COALESCE(SUM(total), 0) as revenue, COUNT(*) as orders')->first() : null;
+            $result[$key] = ['period' => $period, 'revenue' => (float) ($row->revenue ?? 0), 'orders' => (int) ($row->orders ?? 0)];
         }
+        return $result;
+    }
 
-        $previousMonth = now()->copy()->subMonth();
-
-        return (float) ($this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
-            ->whereMonth('created_at', $previousMonth->month)
-            ->whereYear('created_at', $previousMonth->year)
-            ->sum('total') ?? 0);
+    private function scopePeriodSalesByContext($query, $company, ?array $branch = null, string $table = 'sales')
+    {
+        return ($this->reportingPeriod ?? \App\Support\ReportingPeriod::preset('all'))->apply(
+            $this->scopeSalesByContext($query, $company, $branch, $table),
+            \App\Support\SalesReportingDate::expression($table),
+            $table.'.created_at'
+        );
     }
 
     private function getDashboardHealth(array $metrics): array
@@ -1111,6 +1116,7 @@ class DashboardController extends Controller
     private function scopeSalesByContext($query, $company, ?array $activeBranch = null, string $table = 'sales')
     {
         $query = $this->scopeByCompany($query, $table, $company);
+        if ($table === 'sales' && Schema::hasColumn('sales', 'deleted_at')) $query->whereNull('sales.deleted_at');
 
         if (($activeBranch['scope'] ?? 'branch') === 'all') {
             return $query;

@@ -285,6 +285,7 @@
 
 <div class="pos-content-area">
     @include('SuperAdmin.partials._subscription_status_banner')
+    @include('SuperAdmin.partials._sales_reporting_period')
     @php
         $currentMonthSales = (float) ($metrics['currentMonthSales'] ?? 0);
         $salesGrowthRate = (float) ($metrics['salesGrowthRate'] ?? 0);
@@ -339,7 +340,7 @@
             <div class="metric-card-basic metric-violet">
                 <div class="small fw-bold mb-1">TOTAL INVOICES</div>
                 <h3 class="fw-bold mb-0">{{ number_format($metrics['totalInvoices'] ?? 0) }}</h3>
-                <p class="small mb-0 mt-2">All recorded sales documents</p>
+                <p class="small mb-0 mt-2">Invoices in the selected period</p>
             </div>
         </div>
         <div class="col-md-3">

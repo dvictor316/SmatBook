@@ -420,6 +420,7 @@
 
 <div class="pos-content-area">
     @include('SuperAdmin.partials._subscription_status_banner')
+    @include('SuperAdmin.partials._sales_reporting_period')
     @php
         $inventoryValue = (float) ($metrics['inventoryValue'] ?? 0);
         $currentMonthSales = (float) ($metrics['currentMonthSales'] ?? 0);
@@ -468,7 +469,7 @@
                 <div class="stat-icon-circle" style="background: rgba(255,255,255,0.16); color: #fff;">
                     <i class="fas fa-wallet fa-lg"></i>
                 </div>
-                <div class="small fw-bold text-uppercase">Gross Revenue</div>
+                <div class="small fw-bold text-uppercase">Today's revenue</div>
                 <h3 class="fw-bold mb-0">₦{{ number_format($metrics['todayRevenue'] ?? 0, 2) }}</h3>
                 <span class="small"><i class="fas fa-caret-up"></i> Live from sales ledger</span>
             </div>

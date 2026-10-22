@@ -16,7 +16,7 @@
 <div class="page-wrapper farm-page"><div class="content container-fluid">
     <section class="farm-hero mb-3 spb-dashboard-heading">
         <div><h3>Layer Farm Cost & Production Centre</h3><p>Control flock performance, production cost, investment recovery and farm returns from one operating record.</p></div>
-        @if($farm)<form method="GET" class="farm-filter"><div><label>Farm</label><select name="farm_id" class="form-select">@foreach($farms as $option)<option value="{{ $option->id }}" @selected($farm->id===$option->id)>{{ $option->name }}</option>@endforeach</select></div><div><label>From</label><input type="date" name="from" class="form-control" value="{{ $from }}"></div><div><label>To</label><input type="date" name="to" class="form-control" value="{{ $to }}"></div><button class="btn btn-warning"><i class="fas fa-filter me-1"></i> Apply</button></form>@endif
+        @if($farm)<form method="GET" class="farm-filter" data-reporting-period><div><label>Farm</label><select name="farm_id" class="form-select">@foreach($farms as $option)<option value="{{ $option->id }}" @selected($farm->id===$option->id)>{{ $option->name }}</option>@endforeach</select></div>@include('components.reporting-period-fields', ['periodFieldId' => 'livestock'])<button class="btn btn-warning"><i class="fas fa-filter me-1"></i> Apply</button></form>@endif
     </section>
 
     @if(!$farm)

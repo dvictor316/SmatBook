@@ -338,6 +338,7 @@
 <div class="starter-dashboard">
     <div class="starter-shell">
         @include('SuperAdmin.partials._subscription_status_banner')
+    @include('SuperAdmin.partials._sales_reporting_period')
 
         <section class="starter-hero spb-dashboard-heading">
             <span class="starter-badge"><i class="fas fa-cash-register"></i> Starter POS Dashboard</span>
