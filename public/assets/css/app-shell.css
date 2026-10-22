@@ -1636,6 +1636,17 @@ button.action-icon.dropdown-toggle::after {
 .feather-arrow-left:before { content: "\f060"; }
 .feather-arrow-left-circle:before { content: "\f0a8"; }
 
+body:not(.landing-page-body) .btn:not(.btn-link):not(.btn-close) :is(i, svg) {
+    color: inherit !important;
+    -webkit-text-fill-color: currentColor !important;
+}
+
+.dashboard-workspace :is(.card, .metric-card, .chart-card, .stat-card, .kpi-card, .metric-node, .panel-card, .enterprise-card) .text-white:is(i, svg),
+.dashboard-workspace :is(.card, .metric-card, .chart-card, .stat-card, .kpi-card, .metric-node, .panel-card, .enterprise-card) .text-white :is(i, svg) {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
 /* ── PRINT OVERRIDE (must be last to win over sidebar margin rules) ── */
 @media print {
     @page { size: auto; margin: 10mm; }

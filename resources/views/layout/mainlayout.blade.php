@@ -130,7 +130,7 @@
         }
     </style>
     @endif
-    <link rel="stylesheet" href="{{ asset('assets/css/app-shell.css') }}?v=22f729ed2d6d">
+    <link rel="stylesheet" href="{{ asset('assets/css/app-shell.css') }}?v=20261022-icon-contrast">
     @stack('styles')
     @include('layout.partials.responsive-guardrails')
     @if($dashboardVariant !== '')
