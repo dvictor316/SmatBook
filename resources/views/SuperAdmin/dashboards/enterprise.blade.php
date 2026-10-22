@@ -277,6 +277,127 @@
         letter-spacing: 0.02em;
     }
 
+    body.spb-dashboard .spb-dashboard-heading.enterprise-header:not(.hotel-hero):not(.farm-hero):not(.starter-hero) {
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 12px;
+        min-height: 0;
+        margin-bottom: 16px !important;
+        padding: 10px 16px !important;
+        overflow: visible;
+    }
+
+    body.spb-dashboard .enterprise-header-title {
+        flex: 0 0 390px;
+        min-width: 0;
+    }
+
+    body.spb-dashboard .enterprise-header-title > .d-flex {
+        flex-wrap: nowrap !important;
+        align-items: center;
+        gap: 8px !important;
+        margin-bottom: 4px !important;
+    }
+
+    body.spb-dashboard .enterprise-header-title h3 {
+        flex: 0 0 auto;
+        font-size: clamp(1.35rem, 1.55vw, 1.65rem) !important;
+        line-height: 1.1;
+        white-space: nowrap;
+    }
+
+    body.spb-dashboard .enterprise-header-title .master-badge {
+        flex: 0 0 auto;
+        padding: 5px 9px;
+        font-size: 0.56rem;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+    }
+
+    body.spb-dashboard .enterprise-header-title p {
+        max-width: 42ch;
+        font-size: 0.82rem;
+        line-height: 1.3 !important;
+    }
+
+    body.spb-dashboard .enterprise-header .enterprise-dashboard-actions {
+        flex: 1 1 0%;
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+        min-width: 0;
+        margin-top: 0;
+    }
+
+    body.spb-dashboard .enterprise-dashboard-actions .branch-chip,
+    body.spb-dashboard .enterprise-dashboard-actions .btn {
+        flex: 1 1 120px;
+        min-width: 0;
+        min-height: 40px;
+        max-width: none;
+        padding: 7px 10px !important;
+        font-size: 0.66rem;
+        line-height: 1.15;
+    }
+
+    body.spb-dashboard .enterprise-dashboard-actions .branch-chip {
+        flex: 0 1 155px;
+    }
+
+    body.spb-dashboard .enterprise-dashboard-actions .enterprise-dashboard-logo {
+        flex: 0 0 72px;
+        width: 72px;
+        height: 38px;
+        max-width: 72px;
+    }
+
+    @media (max-width: 1199.98px) {
+        body.spb-dashboard .spb-dashboard-heading.enterprise-header:not(.hotel-hero):not(.farm-hero):not(.starter-hero) {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+            padding: 12px 14px !important;
+        }
+
+        body.spb-dashboard .enterprise-header-title {
+            order: 0;
+            flex: 0 1 auto;
+            min-width: 0;
+        }
+
+        body.spb-dashboard .enterprise-dashboard-actions {
+            order: 1;
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            width: 100%;
+            margin-top: 0;
+        }
+
+        body.spb-dashboard .enterprise-dashboard-actions .branch-chip,
+        body.spb-dashboard .enterprise-dashboard-actions .btn {
+            width: 100%;
+            min-height: 38px;
+            margin: 0;
+        }
+
+        body.spb-dashboard .enterprise-dashboard-actions .enterprise-dashboard-logo {
+            display: none;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        body.spb-dashboard .enterprise-header-title > .d-flex {
+            flex-wrap: wrap !important;
+        }
+
+        body.spb-dashboard .enterprise-header-title h3 {
+            white-space: normal;
+        }
+
+        body.spb-dashboard .enterprise-dashboard-actions .branch-chip {
+            grid-column: 1 / -1;
+        }
+    }
+
     /* Override btn-white hover to use theme blue instead of purple */
     .pos-content-area .btn-white {
         color: #061a44;
