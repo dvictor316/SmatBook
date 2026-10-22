@@ -169,8 +169,8 @@
                     <i class="fas fa-wallet"></i>
                 </div>
                 <div>
-                    <small class="text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Today's Revenue</small>
-                    <h4 class="fw-bold mb-0">₦{{ number_format($metrics['todayRevenue'], 2) }}</h4>
+                    <small class="text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Sales Revenue · {{ $reportingPeriod->label() }}</small>
+                    <h4 class="fw-bold mb-0">₦{{ number_format((float) ($metrics['totalSales'] ?? 0), 2) }}</h4>
                 </div>
             </div>
         </div>
@@ -188,8 +188,8 @@
                     <i class="fas fa-chart-line"></i>
                 </div>
                 <div>
-                    <small class="text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Total Profit</small>
-                    <h4 class="fw-bold mb-0">₦{{ number_format($metrics['totalProfit'], 2) }}</h4>
+                    <small class="text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Net Profit · {{ $reportingPeriod->label() }}</small>
+                    <h4 class="fw-bold mb-0">₦{{ number_format((float) ($metrics['netProfit'] ?? 0), 2) }}</h4>
                 </div>
             </div>
         </div>
@@ -207,8 +207,8 @@
                     <i class="fas fa-receipt"></i>
                 </div>
                 <div>
-                    <small class="text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Total Expenses</small>
-                    <h4 class="fw-bold mb-0">₦{{ number_format($metrics['totalExpenses'], 2) }}</h4>
+                    <small class="text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Expenses · {{ $reportingPeriod->label() }}</small>
+                    <h4 class="fw-bold mb-0">₦{{ number_format((float) ($metrics['totalExpenses'] ?? 0), 2) }}</h4>
                 </div>
             </div>
         </div>
@@ -218,11 +218,11 @@
         <div class="card metric-glass metric-theme-dark p-3">
             <div class="d-flex align-items-center gap-3">
                 <div class="metric-icon-box">
-                    <i class="fas fa-boxes"></i>
+                    <i class="fas fa-warehouse"></i>
                 </div>
                 <div>
-                    <small class="text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Inventory Items</small>
-                    <h4 class="fw-bold mb-0">{{ number_format($metrics['activeStock'] ?? $metrics['activeCompanies']) }}</h4>
+                    <small class="text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Inventory Value</small>
+                    <h4 class="fw-bold mb-0">₦{{ number_format((float) ($metrics['inventoryValue'] ?? 0), 2) }}</h4>
                 </div>
             </div>
         </div>

@@ -55,8 +55,22 @@ class ReportingPeriodTest extends TestCase
         $this->assertSame(300.0, $rows['week_to_date']['revenue']);
         $this->assertSame(1000.0, $rows['month_to_date']['revenue']);
         $this->assertSame(1500.0, $rows['year_to_date']['revenue']);
-        $this->get(route('workspace.business.dashboard', ['period' => 'last_week']))->assertOk()
-            ->assertViewHas('metrics', fn ($m) => (float) $m['totalSales'] === 300.0 && (int) $m['totalInvoices'] === 1);
+        $weeklyDashboard = $this->get(route('workspace.business.dashboard', ['period' => 'last_week']));
+        $weeklyDashboard->assertOk()
+            ->assertSee('Sales Revenue · Last week')
+            ->assertSee('Net Profit · Last week')
+            ->assertSee('Expenses · Last week')
+            ->assertSee('Inventory Value')
+            ->assertDontSee('Inventory Items')
+            ->assertDontSee('Expense Load')
+            ->assertViewHas('metrics', fn ($m) =>
+                (float) $m['totalSales'] === 300.0
+                && (float) $m['totalProfit'] === 300.0
+                && (float) $m['netProfit'] === 300.0
+                && (float) $m['totalExpenses'] === 0.0
+                && (float) $m['expenseRatio'] === 0.0
+                && (int) $m['totalInvoices'] === 1
+            );
     }
 
     public function test_midnight_rollover_and_new_sales_are_visible_without_clearing_cache(): void

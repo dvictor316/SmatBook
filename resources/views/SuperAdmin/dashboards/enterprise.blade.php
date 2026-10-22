@@ -322,7 +322,6 @@
         $salesRunRate = $salesTotals->count() ? ($salesTotals->sum() / max($salesTotals->count(), 1)) : 0;
         $expenseRunRate = $expenseTotals->count() ? ($expenseTotals->sum() / max($expenseTotals->count(), 1)) : 0;
         $profitRunRate = $profitTotals->count() ? ($profitTotals->sum() / max($profitTotals->count(), 1)) : 0;
-        $inventoryValue = (float) ($metrics['inventoryValue'] ?? 0);
         $branchScope = $activeBranch['scope'] ?? 'branch';
         $branchLabel = $dashboardBranchLabel ?? ($branchScope === 'all' ? 'All Branches' : ($activeBranch['name'] ?? 'Workspace Default'));
         $dashboardBaseUrl = Route::has('workspace.business.dashboard') ? route('workspace.business.dashboard') : url()->current();
@@ -364,25 +363,6 @@
 
     <div class="mb-5">
         @include('SuperAdmin.partials._metrics_all')
-    </div>
-
-    <div class="row g-3 mb-4">
-        @foreach([
-            ['label' => 'Sales revenue', 'value' => '₦' . number_format($metrics['totalSales'] ?? 0, 0)],
-            ['label' => 'Net Profit', 'value' => '₦' . number_format($metrics['netProfit'] ?? 0, 0)],
-            ['label' => 'Expense Load', 'value' => number_format($metrics['expenseRatio'] ?? 0, 1) . '%'],
-            ['label' => 'Inventory Value', 'value' => '₦' . number_format($inventoryValue, 0)],
-        ] as $m)
-            <div class="col-sm-6 col-xl-3">
-                <div class="mini-metric">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="label">{{ $m['label'] }}</div>
-                        <span class="live-chip">Live</span>
-                    </div>
-                    <div class="value">{{ $m['value'] }}</div>
-                </div>
-            </div>
-        @endforeach
     </div>
 
     <div class="row g-4 mb-4">
