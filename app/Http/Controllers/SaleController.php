@@ -923,11 +923,25 @@ class SaleController extends Controller
             }, 'pos-sales-' . now()->format('Y-m-d-His') . '.xlsx');
         }
 
-        $filteredSalesForTotals = (clone $query)
-            ->setEagerLoads([])
-            ->get(['id', 'total', 'paid', 'amount_paid', 'payment_method', 'payment_status', 'payment_details']);
-        if ($selectedPaymentAccount && Schema::hasTable('payments')) {
-            $filteredSalesForTotals->load('payments');
+        if ($selectedPaymentAccount) {
+            $filteredSalesForTotals = (clone $query)
+                ->setEagerLoads([])
+                ->get(['id', 'total', 'paid', 'amount_paid', 'payment_method', 'payment_status', 'payment_details']);
+            if (Schema::hasTable('payments')) {
+                $filteredSalesForTotals->load('payments');
+            }
+        } else {
+            $filteredSalesForTotals = (clone $query)
+                ->reorder()
+                ->toBase()
+                ->get([
+                    'sales.total',
+                    'sales.paid',
+                    'sales.amount_paid',
+                    'sales.payment_method',
+                    'sales.payment_status',
+                    'sales.payment_details',
+                ]);
         }
         $selectedAccountTotal = $selectedPaymentAccount
             ? round((float) $filteredSalesForTotals->sum(fn ($sale) => PosSalesAccountFilter::amount($sale, (int) $selectedPaymentAccount->id)), 2)

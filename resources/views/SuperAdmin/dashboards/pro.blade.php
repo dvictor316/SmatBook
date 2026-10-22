@@ -420,7 +420,6 @@
 
 <div class="pos-content-area">
     @include('SuperAdmin.partials._subscription_status_banner')
-    @include('SuperAdmin.partials._sales_reporting_period')
     @php
         $inventoryValue = (float) ($metrics['inventoryValue'] ?? 0);
         $currentMonthSales = (float) ($metrics['currentMonthSales'] ?? 0);
@@ -462,6 +461,7 @@
             <img src="{{ asset('assets/img/logos.png') }}" style="height: 70px;">
         </div>
     </div>
+    @include('SuperAdmin.partials._sales_reporting_period')
 
     <div class="row g-3 mb-4 pro-metric-row">
         <div class="col-sm-6 col-xl-3">

@@ -897,12 +897,43 @@ class DashboardController extends Controller
 
     private function periodSales($company, ?array $branch): array
     {
-        $result = [];
+        $periods = [];
+        $selects = [];
+        $bindings = [];
+        $dateExpression = \App\Support\SalesReportingDate::expression();
+
         foreach (['today', 'week_to_date', 'month_to_date', 'year_to_date'] as $key) {
             $period = \App\Support\ReportingPeriod::preset($key);
-            $row = Schema::hasTable('sales') ? $period->apply($this->scopeSalesByContext(Sale::query(), $company, $branch), \App\Support\SalesReportingDate::expression())
-                ->selectRaw('COALESCE(SUM(total), 0) as revenue, COUNT(*) as orders')->first() : null;
-            $result[$key] = ['period' => $period, 'revenue' => (float) ($row->revenue ?? 0), 'orders' => (int) ($row->orders ?? 0)];
+            $conditions = [];
+            $periodBindings = [];
+            if ($period->from) {
+                $conditions[] = $dateExpression.' >= ?';
+                $periodBindings[] = $period->from;
+            }
+            if ($period->to) {
+                $conditions[] = $dateExpression.' <= ?';
+                $periodBindings[] = $period->to;
+            }
+            $condition = $conditions ? implode(' AND ', $conditions) : '1 = 1';
+            $selects[] = "COALESCE(SUM(CASE WHEN ({$condition}) THEN total ELSE 0 END), 0) as revenue_{$key}";
+            $selects[] = "COUNT(CASE WHEN ({$condition}) THEN 1 END) as orders_{$key}";
+            $bindings = array_merge($bindings, $periodBindings, $periodBindings);
+            $periods[$key] = $period;
+        }
+
+        $row = Schema::hasTable('sales')
+            ? $this->scopeSalesByContext(Sale::query(), $company, $branch)
+                ->selectRaw(implode(', ', $selects), $bindings)
+                ->first()
+            : null;
+
+        $result = [];
+        foreach ($periods as $key => $period) {
+            $result[$key] = [
+                'period' => $period,
+                'revenue' => (float) ($row->{'revenue_'.$key} ?? 0),
+                'orders' => (int) ($row->{'orders_'.$key} ?? 0),
+            ];
         }
         return $result;
     }

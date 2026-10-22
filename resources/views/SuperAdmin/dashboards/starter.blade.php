@@ -338,7 +338,6 @@
 <div class="starter-dashboard">
     <div class="starter-shell">
         @include('SuperAdmin.partials._subscription_status_banner')
-    @include('SuperAdmin.partials._sales_reporting_period')
 
         <section class="starter-hero spb-dashboard-heading">
             <span class="starter-badge"><i class="fas fa-cash-register"></i> Starter POS Dashboard</span>
@@ -351,6 +350,7 @@
                 <a href="{{ route('reports.hub') }}" class="starter-action"><i class="fas fa-chart-line"></i> Reports</a>
             </div>
         </section>
+        @include('SuperAdmin.partials._sales_reporting_period')
 
         <section class="starter-grid">
             <article class="starter-card">

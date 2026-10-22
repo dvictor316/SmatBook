@@ -309,7 +309,6 @@
 
 <div class="pos-content-area"> 
     @include('SuperAdmin.partials._subscription_status_banner')
-    @include('SuperAdmin.partials._sales_reporting_period')
 
     @php
         $salesRows = collect($monthlySalesData ?? []);
@@ -361,6 +360,7 @@
             <img src="{{ asset('assets/img/logos.png') }}" class="enterprise-dashboard-logo" alt="Smat Logo"> 
         </div> 
     </div>
+    @include('SuperAdmin.partials._sales_reporting_period')
 
     <div class="mb-5">
         @include('SuperAdmin.partials._metrics_all')
