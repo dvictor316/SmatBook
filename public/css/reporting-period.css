@@ -194,16 +194,6 @@
     outline-offset: 2px;
 }
 
-@media (min-width: 768px) {
-    .spb-period-menu > summary {
-        display: none !important;
-    }
-
-    .spb-period-menu:not([open]) > .spb-period-menu-content {
-        display: block !important;
-    }
-}
-
 .summary-filter-grid > .spb-period-fields {
     flex-basis: 100%;
     margin-top: 14px;

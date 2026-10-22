@@ -1,5 +1,25 @@
 (function () {
     'use strict';
+
+    function syncReportingPeriodMenu() {
+        var menu = document.querySelector('.spb-period-menu');
+        if (!menu || !window.matchMedia) return;
+
+        var desktopQuery = window.matchMedia('(min-width: 768px)');
+        var updateMenu = function () {
+            menu.open = desktopQuery.matches;
+        };
+
+        updateMenu();
+        desktopQuery.addEventListener('change', updateMenu);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', syncReportingPeriodMenu, { once: true });
+    } else {
+        syncReportingPeriodMenu();
+    }
+
     document.addEventListener('change', function (event) {
         var field = event.target;
         if (!field || !field.closest) return;

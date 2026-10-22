@@ -53,6 +53,7 @@ class ReportingPeriodTest extends TestCase
             ->assertSee('Sales performance')
             ->assertSee('<details class="spb-period-menu">', false)
             ->assertSee('Filters &amp; periods', false)
+            ->assertSee('reporting-period.js?v=2', false)
             ->assertDontSee('Weeks start on Monday');
         $this->assertSame(0.0, (float) $response->viewData('metrics')['todayRevenue']);
         $this->assertSame(0.0, (float) $response->viewData('metrics')['totalSales']);
