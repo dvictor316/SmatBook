@@ -251,6 +251,7 @@ class DashboardController extends Controller
         $data = [
             'reportingPeriod' => $this->reportingPeriod,
             'periodSales' => $this->periodSales($company, $activeBranch),
+            'headerSalesMetrics' => $this->salesHeaderMetrics($company, $activeBranch),
             'company'          => $company,
             'metrics'          => $metrics,
             'monthlySalesData' => $monthlySalesData,
@@ -936,6 +937,128 @@ class DashboardController extends Controller
             ];
         }
         return $result;
+    }
+
+    private function salesHeaderMetrics($company, ?array $branch): array
+    {
+        $period = $this->reportingPeriod ?? \App\Support\ReportingPeriod::preset('today');
+        if (!Schema::hasTable('sales')) {
+            return ['customers' => 0, 'average_daily_sales' => 0.0, 'days' => 1, 'change_percent' => null, 'previous_revenue' => null];
+        }
+
+        $dateExpression = \App\Support\SalesReportingDate::expression();
+        $baseQuery = $this->scopeSalesByContext(Sale::query(), $company, $branch);
+        $currentQuery = clone $baseQuery;
+        $period->apply($currentQuery, $dateExpression, 'sales.created_at');
+        $customerCount = Schema::hasColumn('sales', 'customer_id')
+            ? 'COUNT(DISTINCT sales.customer_id)'
+            : '0';
+        $current = $currentQuery
+            ->selectRaw("COALESCE(SUM(sales.total), 0) as revenue, {$customerCount} as customers")
+            ->first();
+
+        [$start, $end] = $this->salesMetricPeriodBounds($period, $baseQuery, $dateExpression);
+        $days = max(1, $start->startOfDay()->diffInDays($end->startOfDay()) + 1);
+        $previousPeriod = $this->previousSalesMetricPeriod($period, $start, $end, $days);
+        $previousRevenue = null;
+
+        if ($previousPeriod) {
+            $previousQuery = $this->scopeSalesByContext(Sale::query(), $company, $branch);
+            $previousPeriod->apply($previousQuery, $dateExpression, 'sales.created_at');
+            $previousRevenue = (float) $previousQuery->sum('sales.total');
+        }
+
+        $revenue = (float) ($current->revenue ?? 0);
+        $changePercent = $previousRevenue > 0
+            ? round((($revenue - $previousRevenue) / $previousRevenue) * 100, 1)
+            : null;
+
+        return [
+            'customers' => (int) ($current->customers ?? 0),
+            'average_daily_sales' => round($revenue / $days, 2),
+            'days' => $days,
+            'change_percent' => $changePercent,
+            'previous_revenue' => $previousRevenue,
+        ];
+    }
+
+    private function salesMetricPeriodBounds($period, $baseQuery, string $dateExpression): array
+    {
+        $timezone = config('reporting.timezone', 'Africa/Lagos');
+        $storageTimezone = config('app.timezone', 'UTC');
+        $latest = \Carbon\CarbonImmutable::now($timezone);
+
+        if ($period->timestampFrom || $period->timestampTo) {
+            $start = $period->timestampFrom
+                ? \Carbon\CarbonImmutable::parse($period->timestampFrom, $storageTimezone)->setTimezone($timezone)
+                : $this->salesMetricDateBounds($baseQuery, $dateExpression)['start'];
+            $end = $period->timestampTo
+                ? \Carbon\CarbonImmutable::parse($period->timestampTo, $storageTimezone)->setTimezone($timezone)
+                : $latest;
+        } elseif ($period->key === 'all') {
+            $bounds = $this->salesMetricDateBounds($baseQuery, $dateExpression);
+            $start = $bounds['start'];
+            $end = $bounds['end'];
+        } else {
+            $bounds = $this->salesMetricDateBounds($baseQuery, $dateExpression);
+            $start = $period->from
+                ? \Carbon\CarbonImmutable::parse($period->from, $timezone)->startOfDay()
+                : $bounds['start'];
+            $end = $period->to
+                ? \Carbon\CarbonImmutable::parse($period->to, $timezone)->startOfDay()
+                : $latest;
+        }
+
+        if ($end->lessThan($start)) {
+            $end = $start;
+        }
+
+        return [$start, $end];
+    }
+
+    private function salesMetricDateBounds($baseQuery, string $dateExpression): array
+    {
+        $bounds = (clone $baseQuery)
+            ->selectRaw("MIN({$dateExpression}) as earliest_date, MAX({$dateExpression}) as latest_date")
+            ->first();
+        $timezone = config('reporting.timezone', 'Africa/Lagos');
+
+        return [
+            'start' => $bounds?->earliest_date
+                ? \Carbon\CarbonImmutable::parse($bounds->earliest_date, $timezone)->startOfDay()
+                : \App\Support\ReportingPeriod::today(),
+            'end' => $bounds?->latest_date
+                ? \Carbon\CarbonImmutable::parse($bounds->latest_date, $timezone)->startOfDay()
+                : \App\Support\ReportingPeriod::today(),
+        ];
+    }
+
+    private function previousSalesMetricPeriod($period, \Carbon\CarbonImmutable $start, \Carbon\CarbonImmutable $end, int $days): ?\App\Support\ReportingPeriod
+    {
+        if ($period->key === 'all') {
+            return null;
+        }
+
+        if ($period->timestampFrom || $period->timestampTo) {
+            $durationSeconds = max(1, $start->diffInSeconds($end) + 1);
+            $previousEnd = $start->subSecond();
+            $previousStart = $previousEnd->subSeconds($durationSeconds - 1);
+            $storageTimezone = config('app.timezone', 'UTC');
+
+            return new \App\Support\ReportingPeriod(
+                'custom',
+                null,
+                null,
+                $previousStart->setTimezone($storageTimezone)->format('Y-m-d H:i:s'),
+                $previousEnd->setTimezone($storageTimezone)->format('Y-m-d H:i:s')
+            );
+        }
+
+        return new \App\Support\ReportingPeriod(
+            'custom',
+            $start->subDays($days)->toDateString(),
+            $start->subDay()->toDateString()
+        );
     }
 
     private function scopePeriodSalesByContext($query, $company, ?array $branch = null, string $table = 'sales')

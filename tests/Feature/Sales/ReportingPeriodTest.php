@@ -30,14 +30,54 @@ class ReportingPeriodTest extends TestCase
         return [$company, $user];
     }
 
-    private function sale(Company $company, User $user, ?string $date, float $amount, string $created = '2026-10-22 09:00:00', ?string $deleted = null): int
+    private function sale(Company $company, User $user, ?string $date, float $amount, string $created = '2026-10-22 09:00:00', ?string $deleted = null, ?int $customerId = null): int
     {
         $ref = 'CAL-'.bin2hex(random_bytes(4));
         return DB::table('sales')->insertGetId(['company_id' => $company->id, 'user_id' => $user->id,
             'invoice_no' => $ref, 'receipt_no' => $ref.'-R', 'order_number' => $ref.'-O', 'order_date' => $date,
+            'customer_id' => $customerId,
             'total' => $amount, 'subtotal' => $amount, 'paid' => $amount, 'amount_paid' => $amount,
             'terminal_id' => 'POS-1', 'payment_status' => 'paid', 'payment_method' => 'cash',
             'created_at' => $created, 'updated_at' => $created, 'deleted_at' => $deleted]);
+    }
+
+    public function test_dashboard_header_shows_unique_buyers_daily_average_and_previous_period_comparison(): void
+    {
+        [$company, $user] = $this->workspace();
+        $buyer = DB::table('customers')->insertGetId([
+            'customer_name' => 'Repeat buyer',
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $otherBuyer = DB::table('customers')->insertGetId([
+            'customer_name' => 'Earlier buyer',
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $this->sale($company, $user, '2026-10-22', 100, customerId: $buyer);
+        $this->sale($company, $user, '2026-10-21', 50, customerId: $buyer);
+        $this->sale($company, $user, '2026-10-20', 25, customerId: $otherBuyer);
+
+        $response = $this->get(route('workspace.business.dashboard', [
+            'date_from' => '2026-10-21',
+            'date_to' => '2026-10-22',
+        ]));
+
+        $response->assertOk()
+            ->assertSee('Unique customers')
+            ->assertSee('Average daily sales')
+            ->assertSee('Vs previous period')
+            ->assertViewHas('headerSalesMetrics', fn ($metrics) =>
+                $metrics['customers'] === 1
+                && $metrics['average_daily_sales'] === 75.0
+                && $metrics['days'] === 2
+                && $metrics['change_percent'] === 500.0
+                && $metrics['previous_revenue'] === 25.0
+            );
     }
 
     public function test_daily_zero_and_calendar_to_date_totals_exclude_other_business_future_and_deleted_sales(): void

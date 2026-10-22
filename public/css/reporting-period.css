@@ -43,6 +43,65 @@
     font-size: 12px;
 }
 
+.spb-header-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(145px, 1fr));
+    gap: 9px;
+    width: min(720px, 66%);
+}
+
+.spb-header-metric {
+    --metric-accent: #2563eb;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+    padding: 9px 11px;
+    background: color-mix(in srgb, var(--metric-accent) 5%, #fff);
+    border: 1px solid color-mix(in srgb, var(--metric-accent) 20%, #e1e9f4);
+    border-inline-start: 3px solid var(--metric-accent);
+    border-radius: 10px;
+}
+
+.spb-header-metric-customers { --metric-accent: #2563eb; }
+.spb-header-metric-average { --metric-accent: #059669; }
+.spb-header-metric-change { --metric-accent: #7c3aed; }
+
+.spb-header-metric > span {
+    overflow: hidden;
+    color: var(--period-muted);
+    font-size: 10px;
+    font-weight: 750;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.spb-header-metric > span i {
+    margin-right: 4px;
+    color: var(--metric-accent);
+}
+
+.spb-header-metric > strong {
+    overflow: hidden;
+    color: var(--metric-accent);
+    font-size: clamp(14px, 1.25vw, 18px);
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.spb-header-metric > strong.is-negative { color: #dc2626; }
+.spb-header-metric > strong.is-positive { color: #047857; }
+
+.spb-header-metric > small {
+    overflow: hidden;
+    color: var(--period-muted);
+    font-size: 9px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .spb-period-menu {
     border-top: 1px solid #edf1f6;
     padding-top: 9px;
@@ -234,6 +293,15 @@
 }
 
 @media (max-width: 1100px) {
+    .spb-sales-period-heading {
+        align-items: flex-start;
+    }
+
+    .spb-header-metrics {
+        width: min(720px, 68%);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
     .spb-period-cards {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -253,6 +321,32 @@
     .spb-sales-period-heading {
         align-items: flex-start;
         margin-bottom: 8px;
+    }
+
+    .spb-sales-period-heading {
+        flex-direction: column;
+    }
+
+    .spb-header-metrics {
+        width: 100%;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .spb-header-metric {
+        padding: 8px 7px;
+    }
+
+    .spb-header-metric > span {
+        font-size: 9px;
+    }
+
+    .spb-header-metric > strong {
+        font-size: 12px;
+    }
+
+    .spb-header-metric > small {
+        font-size: 8px;
     }
 
     .spb-period-fields,

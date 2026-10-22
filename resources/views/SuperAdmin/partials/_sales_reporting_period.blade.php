@@ -2,6 +2,35 @@
 <section class="spb-sales-period mb-4" aria-label="Sales reporting period">
     <div class="spb-sales-period-heading">
         <div><span class="spb-period-eyebrow">Sales performance</span><h4>{{ $reportingPeriod->label() }}</h4><p>{{ $reportingPeriod->dates() }}</p></div>
+        @if(isset($headerSalesMetrics))
+            <div class="spb-header-metrics" aria-label="Sales summary">
+                <div class="spb-header-metric spb-header-metric-customers">
+                    <span><i class="fas fa-user-group" aria-hidden="true"></i> Unique customers</span>
+                    <strong>{{ number_format($headerSalesMetrics['customers']) }}</strong>
+                    <small>Made a purchase in this period</small>
+                </div>
+                <div class="spb-header-metric spb-header-metric-average">
+                    <span><i class="fas fa-chart-line" aria-hidden="true"></i> Average daily sales</span>
+                    <strong>₦{{ number_format($headerSalesMetrics['average_daily_sales'], 2) }}</strong>
+                    <small>Across {{ number_format($headerSalesMetrics['days']) }} {{ \Illuminate\Support\Str::plural('day', $headerSalesMetrics['days']) }}</small>
+                </div>
+                <div class="spb-header-metric spb-header-metric-change">
+                    <span><i class="fas fa-arrow-trend-up" aria-hidden="true"></i> Vs previous period</span>
+                    <strong class="{{ ($headerSalesMetrics['change_percent'] ?? 0) >= 0 ? 'is-positive' : 'is-negative' }}">
+                        {{ is_null($headerSalesMetrics['change_percent']) ? '—' : (($headerSalesMetrics['change_percent'] > 0 ? '+' : '').number_format($headerSalesMetrics['change_percent'], 1).'%') }}
+                    </strong>
+                    <small>
+                        @if(is_null($headerSalesMetrics['previous_revenue']))
+                            No comparison available
+                        @elseif($headerSalesMetrics['previous_revenue'] <= 0)
+                            No previous-period sales
+                        @else
+                            Previous: ₦{{ number_format($headerSalesMetrics['previous_revenue'], 2) }}
+                        @endif
+                    </small>
+                </div>
+            </div>
+        @endif
     </div>
     <details class="spb-period-menu">
         <summary><i class="fas fa-sliders" aria-hidden="true"></i><span>Filters &amp; periods</span></summary>
