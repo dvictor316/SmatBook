@@ -1054,6 +1054,12 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     });
     Route::get('/pos', [SaleController::class, 'showPos'])->name('sales.showPos');
     Route::post('/pos/price-edit-setting', [SaleController::class, 'updatePosPriceEditSetting'])->name('pos.price-edit-setting');
+    Route::get('/pos/suspense', [SaleController::class, 'listPosSuspendedSales'])->name('pos.suspense.index');
+    Route::post('/pos/suspense', [SaleController::class, 'storePosSuspendedSale'])->name('pos.suspense.store');
+    Route::post('/pos/suspense/{id}/claim', [SaleController::class, 'claimPosSuspendedSale'])->whereNumber('id')->name('pos.suspense.claim');
+    Route::post('/pos/suspense/{id}/touch', [SaleController::class, 'touchPosSuspendedSale'])->whereNumber('id')->name('pos.suspense.touch');
+    Route::post('/pos/suspense/{id}/release', [SaleController::class, 'releasePosSuspendedSale'])->whereNumber('id')->name('pos.suspense.release');
+    Route::delete('/pos/suspense/{id}', [SaleController::class, 'destroyPosSuspendedSale'])->whereNumber('id')->name('pos.suspense.destroy');
     Route::get('/pos/reports', [SaleController::class, 'report'])->middleware('plan.access:basic,professional,enterprise')->name('pos.reports');
     Route::get('/pos/sales', [SaleController::class, 'posSales'])->name('pos.sales');
     Route::get('/pos/return', [SaleController::class, 'showPosReturn'])->name('pos.return.show');

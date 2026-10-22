@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Product;
+use App\Models\PosSuspendedSale;
 use Illuminate\Support\Str;
 use App\Models\Customer;
 use App\Models\Company;
@@ -1296,6 +1297,337 @@ public function customerDetails($id = null)
         }
     }
 
+public function listPosSuspendedSales(Request $request)
+{
+    $this->authorizePosSaleAccess();
+    $token = (string) ($request->validate(['claim_token' => 'nullable|uuid'])['claim_token'] ?? '');
+
+    $sales = $this->posSuspenseWorkspaceQuery()
+        ->with(['creator:id,name', 'claimant:id,name'])
+        ->latest()
+        ->get()
+        ->map(function (PosSuspendedSale $sale) {
+            $claimExpired = !$sale->claimed_at || $sale->claimed_at->lt(now()->subMinutes(15));
+
+            return [
+                'id' => $sale->id,
+                'customer_name' => $sale->customer_name,
+                'item_count' => $sale->item_count,
+                'total' => (float) $sale->total,
+                'created_at' => $sale->created_at?->toIso8601String(),
+                'created_by' => $sale->creator?->name ?? 'POS cashier',
+                'locked' => filled($sale->claim_token) && !$claimExpired,
+                'locked_by_this_terminal' => filled($sale->claim_token)
+                    && $sale->claim_token === $token
+                    && (int) $sale->claimed_by === (int) auth()->id(),
+                'claimed_by' => filled($sale->claim_token) && !$claimExpired
+                    ? ($sale->claimant?->name ?? 'Another POS terminal')
+                    : null,
+            ];
+        });
+
+    return response()->json(['sales' => $sales]);
+}
+
+public function storePosSuspendedSale(Request $request)
+{
+    $this->authorizePosSaleAccess();
+
+    $validator = Validator::make($request->all(), [
+        'id' => 'nullable|integer',
+        'claim_token' => 'required|uuid',
+        'customer_id' => 'nullable|integer',
+        'customer_name' => 'nullable|string|max:255',
+        'items' => 'required|array|min:1|max:100',
+        'items.*.id' => 'required|integer',
+        'items.*.name' => 'required|string|max:255',
+        'items.*.qty' => 'required|numeric|gt:0',
+        'items.*.price' => 'required|numeric|min:0',
+        'items.*.unitType' => 'nullable|string|max:50',
+        'items.*.unitLabel' => 'nullable|string|max:100',
+        'items.*.unitMultiplier' => 'nullable|numeric|gt:0|max:100000',
+        'items.*.stockUnits' => 'nullable|numeric|gte:0',
+        'items.*.stockAvailable' => 'nullable|numeric|gte:0',
+        'items.*.baseUnit' => 'nullable|string|max:100',
+        'items.*.priceLevel' => 'nullable|string|max:40',
+        'items.*.priceLevelLabel' => 'nullable|string|max:100',
+        'items.*.priceListId' => 'nullable|string|max:100',
+        'items.*.discountType' => 'nullable|in:percent,fixed',
+        'items.*.discountValue' => 'nullable|numeric|gte:0',
+        'items.*.discount' => 'nullable|numeric|gte:0',
+        'items.*.tax' => 'nullable|numeric|gte:0|lte:100',
+    ]);
+
+    $validator->after(function ($validator) use ($request) {
+        $customerId = (int) ($request->input('customer_id') ?? 0);
+        if ($customerId > 0 && !$this->scopedCustomers()->whereKey($customerId)->exists()) {
+            $validator->errors()->add('customer_id', 'The selected customer does not belong to this tenant/branch.');
+        }
+
+        $productIds = collect($request->input('items', []))
+            ->pluck('id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+        $scopedProductIds = $this->scopedProducts()
+            ->whereIn('id', $productIds)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if ($productIds->contains(fn ($id) => !in_array((int) $id, $scopedProductIds, true))) {
+            $validator->errors()->add('items', 'One or more selected products do not belong to this tenant/branch.');
+        }
+
+        foreach ($request->input('items', []) as $index => $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $discountType = $item['discountType'] ?? 'percent';
+            $discount = (float) ($item['discountValue'] ?? $item['discount'] ?? 0);
+            if ($discountType === 'percent' && $discount > 100) {
+                $validator->errors()->add("items.{$index}.discountValue", 'Percentage discounts cannot exceed 100%.');
+            }
+        }
+    });
+
+    if ($validator->fails()) {
+        return response()->json([
+            'message' => $validator->errors()->first(),
+            'errors' => $validator->errors(),
+        ], 422);
+    }
+
+    $companyId = $this->tenantCompanyId();
+    abort_if($companyId <= 0, 403, 'No business workspace is active.');
+    $branch = $this->getActiveBranchContext();
+    $token = (string) $request->input('claim_token');
+    $customerId = $request->filled('customer_id') ? (int) $request->input('customer_id') : null;
+    $items = collect($request->input('items'))->map(function (array $item) {
+        $qty = (float) $item['qty'];
+        $price = (float) $item['price'];
+        $discountType = $item['discountType'] ?? 'percent';
+        $discountValue = (float) ($item['discountValue'] ?? $item['discount'] ?? 0);
+        $tax = (float) ($item['tax'] ?? 0);
+        $subtotal = $price * $qty;
+        $discount = $discountType === 'fixed'
+            ? min($discountValue, $subtotal)
+            : $subtotal * ($discountValue / 100);
+        $taxAmount = max(0, $subtotal - $discount) * ($tax / 100);
+
+        return [
+            'id' => (int) $item['id'],
+            'name' => $item['name'],
+            'qty' => $qty,
+            'price' => $price,
+            'unitType' => $item['unitType'] ?? 'unit',
+            'unitLabel' => $item['unitLabel'] ?? 'unit',
+            'unitMultiplier' => (float) ($item['unitMultiplier'] ?? 1),
+            'stockUnits' => (float) ($item['stockUnits'] ?? $qty),
+            'stockAvailable' => isset($item['stockAvailable']) ? (float) $item['stockAvailable'] : null,
+            'baseUnit' => $item['baseUnit'] ?? null,
+            'priceLevel' => $item['priceLevel'] ?? 'retail',
+            'priceLevelLabel' => $item['priceLevelLabel'] ?? null,
+            'priceListId' => $item['priceListId'] ?? null,
+            'discountType' => $discountType,
+            'discountValue' => $discountValue,
+            'discount' => $discountType === 'fixed' ? 0 : $discountValue,
+            'tax' => $tax,
+            'sub' => round($subtotal, 2),
+            'discVal' => round($discount, 2),
+            'taxVal' => round($taxAmount, 2),
+            'total' => round(max(0, $subtotal - $discount) + $taxAmount, 2),
+        ];
+    })->values()->all();
+    $customerName = trim((string) $request->input('customer_name', ''));
+    if ($customerId) {
+        $customer = $this->scopedCustomers()->whereKey($customerId)->first();
+        $customerName = (string) ($customer?->{$this->customerNameColumn() ?: 'name'} ?? $customerName);
+    }
+    if ($customerName === '') {
+        $customerName = 'Walk-in Customer';
+    }
+
+    $sale = DB::transaction(function () use ($request, $companyId, $branch, $token, $customerId, $customerName, $items) {
+        $sale = null;
+        if ($request->filled('id')) {
+            $sale = $this->posSuspenseWorkspaceQuery()
+                ->whereKey((int) $request->input('id'))
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($sale->claim_token !== $token || (int) $sale->claimed_by !== (int) auth()->id()) {
+                abort(409, 'This suspended sale is no longer claimed by this POS terminal.');
+            }
+        }
+
+        $attributes = [
+            'company_id' => $companyId,
+            'branch_id' => $branch['id'],
+            'branch_name' => $branch['name'],
+            'created_by' => $sale?->created_by ?? auth()->id(),
+            'customer_id' => $customerId,
+            'customer_name' => $customerName,
+            'items' => $items,
+            'item_count' => count($items),
+            'total' => round(collect($items)->sum('total'), 2),
+            'claim_token' => null,
+            'claimed_by' => null,
+            'claimed_at' => null,
+        ];
+
+        if ($sale) {
+            $sale->update($attributes);
+            return $sale->fresh();
+        }
+
+        return PosSuspendedSale::create($attributes);
+    });
+
+    return response()->json([
+        'message' => 'Sale suspended.',
+        'id' => $sale->id,
+    ]);
+}
+
+public function claimPosSuspendedSale(Request $request, int $id)
+{
+    $this->authorizePosSaleAccess();
+    $validated = $request->validate(['claim_token' => 'required|uuid']);
+    $branch = $this->getActiveBranchContext();
+    $token = $validated['claim_token'];
+
+    $sale = DB::transaction(function () use ($id, $branch, $token) {
+        $sale = $this->posSuspenseWorkspaceQuery()
+            ->whereKey($id)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        $claimIsActive = $sale->claimed_at && $sale->claimed_at->gte(now()->subMinutes(15));
+        if ($claimIsActive && ($sale->claim_token !== $token || (int) $sale->claimed_by !== (int) auth()->id())) {
+            abort(409, 'This suspended sale is being continued on another POS terminal.');
+        }
+
+        $productIds = collect($sale->items)->pluck('id')->map(fn ($productId) => (int) $productId)->unique();
+        $availableProductIds = $this->scopedProducts()
+            ->whereIn('id', $productIds)
+            ->pluck('id')
+            ->map(fn ($productId) => (int) $productId);
+        if ($productIds->diff($availableProductIds)->isNotEmpty()) {
+            abort(409, 'A product in this suspended sale is no longer available in this branch. Contact an administrator before continuing.');
+        }
+        if ($sale->customer_id && !$this->scopedCustomers()->whereKey($sale->customer_id)->exists()) {
+            abort(409, 'The customer attached to this suspended sale is no longer available in this branch.');
+        }
+
+        $sale->update([
+            'claim_token' => $token,
+            'claimed_by' => auth()->id(),
+            'claimed_at' => now(),
+        ]);
+
+        return $sale->fresh();
+    });
+
+    if ((string) $sale->branch_id !== (string) ($branch['id'] ?? '')) {
+        abort(404);
+    }
+
+    return response()->json([
+        'id' => $sale->id,
+        'customer_id' => $sale->customer_id,
+        'customer_name' => $sale->customer_name,
+        'items' => $sale->items,
+    ]);
+}
+
+public function touchPosSuspendedSale(Request $request, int $id)
+{
+    $this->authorizePosSaleAccess();
+    $validated = $request->validate(['claim_token' => 'required|uuid']);
+    $updated = $this->posSuspenseWorkspaceQuery()
+        ->whereKey($id)
+        ->where('claim_token', $validated['claim_token'])
+        ->where('claimed_by', auth()->id())
+        ->where('claimed_at', '>=', now()->subMinutes(15))
+        ->update(['claimed_at' => now()]);
+
+    abort_unless($updated === 1, 409, 'The suspended sale claim expired or is no longer held by this terminal.');
+
+    return response()->json(['message' => 'Claim renewed.']);
+}
+
+public function releasePosSuspendedSale(Request $request, int $id)
+{
+    $this->authorizePosSaleAccess();
+    $validated = $request->validate(['claim_token' => 'required|uuid']);
+    $released = $this->posSuspenseWorkspaceQuery()
+        ->whereKey($id)
+        ->where('claim_token', $validated['claim_token'])
+        ->where('claimed_by', auth()->id())
+        ->update([
+            'claim_token' => null,
+            'claimed_by' => null,
+            'claimed_at' => null,
+        ]);
+
+    abort_unless($released === 1, 409, 'The suspended sale is no longer claimed by this terminal.');
+
+    return response()->json(['message' => 'Suspended sale released.']);
+}
+
+public function destroyPosSuspendedSale(Request $request, int $id)
+{
+    $this->authorizePosSaleAccess();
+    $token = $request->validate(['claim_token' => 'nullable|uuid'])['claim_token'] ?? null;
+
+    $deleted = DB::transaction(function () use ($id, $token) {
+        $sale = $this->posSuspenseWorkspaceQuery()
+            ->whereKey($id)
+            ->lockForUpdate()
+            ->firstOrFail();
+        $claimIsActive = $sale->claimed_at && $sale->claimed_at->gte(now()->subMinutes(15));
+        $claimedByAnotherTerminal = $claimIsActive
+            && ($sale->claim_token !== $token || (int) $sale->claimed_by !== (int) auth()->id());
+
+        abort_if($claimedByAnotherTerminal, 409, 'This suspended sale is being continued on another POS terminal.');
+        return $sale->delete();
+    });
+
+    return response()->json(['deleted' => (bool) $deleted]);
+}
+
+private function authorizePosSaleAccess(): void
+{
+    $user = auth()->user();
+    $role = strtolower(str_replace(' ', '_', (string) ($user?->role ?? '')));
+    $isAdmin = in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true)
+        || ($user && method_exists($user, 'hasRole') && (
+            $user->hasRole('super_admin') || $user->hasRole('administrator') || $user->hasRole('admin')
+        ));
+    $canSell = $user && collect([
+        'sales.sales.create',
+        'sales.invoices.create',
+        'pos.sales.create',
+    ])->contains(fn ($permission) => $user->can($permission));
+
+    abort_unless($isAdmin || $canSell, 403, 'You do not have permission to manage POS sales.');
+}
+
+private function posSuspenseWorkspaceQuery()
+{
+    $companyId = $this->tenantCompanyId();
+    abort_if($companyId <= 0, 403, 'No business workspace is active.');
+    $branchId = $this->getActiveBranchContext()['id'] ?? null;
+
+    return PosSuspendedSale::query()
+        ->where('company_id', $companyId)
+        ->when($branchId === null, fn ($query) => $query->whereNull('branch_id'))
+        ->when($branchId !== null, fn ($query) => $query->where('branch_id', (string) $branchId));
+}
+
 public function store(Request $request)
 {
     $isStarterPlan = PlanAccess::resolveTierForUser(auth()->user()) === 'starter';
@@ -1358,8 +1690,14 @@ public function store(Request $request)
         'offline_company_id' => 'nullable|integer',
         'offline_branch_id' => 'nullable|string|max:100',
         'offline_branch_name' => 'nullable|string|max:255',
+        'suspended_sale_id' => 'nullable|integer',
+        'suspension_claim_token' => 'nullable|uuid',
     ]);
     $validator->after(function ($validator) use ($request) {
+        if ($request->filled('suspended_sale_id') !== $request->filled('suspension_claim_token')) {
+            $validator->errors()->add('suspended_sale_id', 'The suspended sale claim is incomplete. Recall the sale again before checkout.');
+        }
+
         $customerId = (int) ($request->input('customer_id') ?? 0);
         if ($customerId > 0 && !$this->scopedCustomers()->whereKey($customerId)->exists()) {
             $validator->errors()->add('customer_id', 'The selected customer does not belong to this tenant/branch.');
@@ -1476,6 +1814,21 @@ public function store(Request $request)
     DB::beginTransaction();
 
     try {
+        $claimedSuspendedSale = null;
+        if ($request->filled('suspended_sale_id')) {
+            $claimedSuspendedSale = $this->posSuspenseWorkspaceQuery()
+                ->whereKey((int) $request->input('suspended_sale_id'))
+                ->where('claim_token', (string) $request->input('suspension_claim_token'))
+                ->where('claimed_by', auth()->id())
+                ->where('claimed_at', '>=', now()->subMinutes(15))
+                ->lockForUpdate()
+                ->first();
+
+            if (!$claimedSuspendedSale) {
+                throw new \RuntimeException('This suspended sale claim expired or is no longer held by this POS terminal. Recall it again before checkout.');
+            }
+        }
+
         // --- 1. GENERATE REQUIRED NUMBERS ---
         $invoiceNo = $this->generateSaleInvoiceNo();
         $receiptNo = $this->generateSaleReceiptNo();
@@ -1885,6 +2238,7 @@ $sale = Sale::create([
         // Broadcast Real-time event
         broadcast(new NewSaleRegistered($sale))->toOthers();
 
+        $claimedSuspendedSale?->delete();
         DB::commit();
 
         $this->clearDashboardMetricsCache($activeBranch['id'] ?? null);

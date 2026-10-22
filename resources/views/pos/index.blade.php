@@ -5040,9 +5040,17 @@ body.pos-terminal-workspace #pos-cash-account-name.is-unconfigured {
                     <span>Clear Cart</span>
                 </button>
                 @if($posCanSell)
-                    <button type="button" class="pos-rail-btn mt-2" id="rail-checkout-btn">
-                        <i class="fas fa-cash-register"></i>
-                        <span>Checkout</span>
+                <button type="button" class="pos-rail-btn mt-2" id="rail-suspend-sale-btn">
+                    <i class="fas fa-pause-circle"></i>
+                    <span>Suspend Sale</span>
+                </button>
+                <button type="button" class="pos-rail-btn mt-2" id="rail-sales-suspense-btn">
+                    <i class="fas fa-rotate-left"></i>
+                    <span>Sales Suspense <span class="badge bg-primary ms-1" id="pos-suspense-count">0</span></span>
+                </button>
+                <button type="button" class="pos-rail-btn mt-2" id="rail-checkout-btn">
+                    <i class="fas fa-cash-register"></i>
+                    <span>Checkout</span>
                     </button>
                     <button type="button" class="pos-rail-btn mt-2" id="rail-messages-btn">
                         <i class="fas fa-comment-alt"></i>
@@ -5536,7 +5544,12 @@ body.pos-terminal-workspace #pos-cash-account-name.is-unconfigured {
                     <small id="customer-wallet-hint" class="receipt-wallet-hint">Select a customer to apply wallet credit automatically.</small>
                 </div>
 
-                
+                <div id="pos-suspense-status" class="alert alert-info py-2 px-3 mt-2 mb-0 d-none" role="status">
+                    <i class="fas fa-pause-circle me-1"></i>
+                    Continuing suspended sale <strong id="pos-suspense-current-id"></strong>.
+                    Use Suspend Sale to save changes; successful checkout removes it.
+                </div>
+
                 <div class="cart-wrapper">
                     <div id="cart-empty-state" class="cart-empty-state">
                         <div class="cart-empty-shell">
@@ -5714,6 +5727,29 @@ body.pos-terminal-workspace #pos-cash-account-name.is-unconfigured {
             </div>
         </div>
     </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="pos-suspense-modal" tabindex="-1" aria-labelledby="pos-suspense-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title mb-1" id="pos-suspense-modal-title">Sales Suspense</h5>
+                    <p class="small text-muted mb-0">Suspended carts are available to authorized cashiers in this business branch.</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="pos-suspense-list" class="d-grid gap-2">
+                    <div class="text-center text-muted py-4">Loading suspended sales...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="pos-suspense-refresh-btn">Refresh</button>
+            </div>
         </div>
     </div>
 </div>
@@ -7109,8 +7145,16 @@ window.POS_ENABLE_FALLBACK = function () {
     const railReprintBtn = document.getElementById('rail-reprint-btn');
     const railPriceCheckBtn = document.getElementById('rail-price-check-btn');
     const railClearCartBtn = document.getElementById('rail-clear-cart-btn');
+    const railSuspendSaleBtn = document.getElementById('rail-suspend-sale-btn');
+    const railSalesSuspenseBtn = document.getElementById('rail-sales-suspense-btn');
     const railCheckoutBtn = document.getElementById('rail-checkout-btn');
     const railMessagesBtn = document.getElementById('rail-messages-btn');
+    const suspenseList = document.getElementById('pos-suspense-list');
+    const suspenseCount = document.getElementById('pos-suspense-count');
+    const suspenseStatus = document.getElementById('pos-suspense-status');
+    const suspenseCurrentId = document.getElementById('pos-suspense-current-id');
+    const suspenseModal = document.getElementById('pos-suspense-modal');
+    const suspenseRefreshBtn = document.getElementById('pos-suspense-refresh-btn');
     let processBtn = document.getElementById('process-btn');
     const newSaleBtn = document.getElementById('new-sale-btn');
     let btnText = document.getElementById('btn-text');
@@ -7141,6 +7185,25 @@ window.POS_ENABLE_FALLBACK = function () {
 	    const saleStoreUrl = @json($posSaleStoreUrl ?? url('/sales'));
 	    const invoicePrintBaseUrl = @json(url('/sales/invoice'));
     const posSalesLogUrl = @json($posSalesLogUrl ?? url('/pos/sales'));
+	    const posSuspenseUrl = @json(route('pos.suspense.index'));
+	    const posSuspenseTokenKey = 'smartprobook.pos.suspense-token:' + @json((string) (session('current_tenant_id') ?? auth()->user()?->company_id ?? '')) + ':' + @json((string) ($activeBranch['id'] ?? ''));
+	    let posSuspenseClaimToken = '';
+	    let currentSuspendedSaleId = null;
+	    let suspenseClaimHeartbeat = null;
+	    try {
+	        posSuspenseClaimToken = window.sessionStorage.getItem(posSuspenseTokenKey) || '';
+	        if (!posSuspenseClaimToken && window.crypto?.getRandomValues) {
+	            const bytes = new Uint8Array(16);
+	            window.crypto.getRandomValues(bytes);
+	            bytes[6] = (bytes[6] & 0x0f) | 0x40;
+	            bytes[8] = (bytes[8] & 0x3f) | 0x80;
+	            const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0'));
+	            posSuspenseClaimToken = `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10).join('')}`;
+	            window.sessionStorage.setItem(posSuspenseTokenKey, posSuspenseClaimToken);
+	        }
+	    } catch (error) {
+	        posSuspenseClaimToken = '';
+	    }
     const receiptFormatSelect = document.getElementById('receipt-format');
     try {
         const savedReceiptFormat = window.localStorage.getItem('smartprobook.pos.receipt-format');
@@ -7534,7 +7597,7 @@ window.POS_ENABLE_FALLBACK = function () {
             return;
         }
 
-        if (!cart.length) {
+        if (!cart.length && currentSuspendedSaleId === null) {
             alertFallback('Add an item to cart before checkout.');
             return;
         }
@@ -7697,7 +7760,9 @@ window.POS_ENABLE_FALLBACK = function () {
 
         if (!window.Swal || typeof Swal.fire !== 'function') {
             if (window.confirm('Clear the current cart?')) {
-                resetVanillaPosWorkspace();
+                releaseCurrentSuspendedSale().then((released) => {
+                    if (released) resetVanillaPosWorkspace();
+                });
             }
             return;
         }
@@ -7705,13 +7770,15 @@ window.POS_ENABLE_FALLBACK = function () {
         Swal.fire({
             icon: 'warning',
             title: 'Clear current cart?',
-            text: 'This only clears the unsaved POS cart.',
+            text: 'This clears the cart and releases any recalled sale without completing it.',
             showCancelButton: true,
             confirmButtonText: 'Clear Cart',
             confirmButtonColor: '#0f3a8a',
         }).then((result) => {
             if (result.isConfirmed) {
-                resetVanillaPosWorkspace();
+                releaseCurrentSuspendedSale().then((released) => {
+                    if (released) resetVanillaPosWorkspace();
+                });
             }
         });
     }
@@ -7724,8 +7791,12 @@ window.POS_ENABLE_FALLBACK = function () {
     railReprintBtn?.addEventListener('click', openReprintLookup);
     railPriceCheckBtn?.addEventListener('click', openPriceCheck);
     railClearCartBtn?.addEventListener('click', confirmClearCart);
+    railSuspendSaleBtn?.addEventListener('click', suspendCurrentSale);
+    railSalesSuspenseBtn?.addEventListener('click', openPosSuspenseList);
     railCheckoutBtn?.addEventListener('click', openCheckoutPanel);
     railMessagesBtn?.addEventListener('click', showPosMessages);
+    suspenseRefreshBtn?.addEventListener('click', loadPosSuspendedSales);
+    loadPosSuspendedSales();
     railScanBtn?.addEventListener('click', () => {
         if (!requirePosPermission('sell', 'You do not have permission to scan POS items.')) {
             return;
@@ -8494,6 +8565,266 @@ window.POS_ENABLE_FALLBACK = function () {
         }, 50);
     }
 
+    async function requestPosSuspense(url, method = 'GET', body = null) {
+        if (!posSuspenseClaimToken) {
+            throw new Error('Secure browser storage is unavailable. Enable session storage and reload the POS before using sales suspense.');
+        }
+
+        const response = await fetch(url, {
+            method,
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            ...(body ? { body: JSON.stringify(body) } : {}),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(result.message || 'Could not complete the sales suspense request.');
+        }
+        return result;
+    }
+
+    function updateSuspenseStatus() {
+        const active = currentSuspendedSaleId !== null;
+        suspenseStatus?.classList.toggle('d-none', !active);
+        if (suspenseCurrentId) suspenseCurrentId.textContent = active ? `#${currentSuspendedSaleId}` : '';
+    }
+
+    function suspenseEndpoint(id, action = '') {
+        return `${posSuspenseUrl}/${encodeURIComponent(id)}${action ? `/${action}` : ''}`;
+    }
+
+    function startSuspenseClaimHeartbeat() {
+        window.clearInterval(suspenseClaimHeartbeat);
+        if (currentSuspendedSaleId === null) return;
+
+        suspenseClaimHeartbeat = window.setInterval(async () => {
+            try {
+                await requestPosSuspense(suspenseEndpoint(currentSuspendedSaleId, 'touch'), 'POST', {
+                    claim_token: posSuspenseClaimToken,
+                });
+            } catch (error) {
+                window.clearInterval(suspenseClaimHeartbeat);
+                suspenseClaimHeartbeat = null;
+                showAlert({
+                    icon: 'warning',
+                    title: 'Suspended sale claim expired',
+                    text: `${error.message} Save the cart as a new suspended sale before continuing.`,
+                    confirmButtonColor: '#0f3a8a',
+                });
+            }
+        }, 60 * 1000);
+    }
+
+    async function releaseCurrentSuspendedSale() {
+        if (currentSuspendedSaleId === null) return true;
+
+        try {
+            await requestPosSuspense(suspenseEndpoint(currentSuspendedSaleId, 'release'), 'POST', {
+                claim_token: posSuspenseClaimToken,
+            });
+            currentSuspendedSaleId = null;
+            window.clearInterval(suspenseClaimHeartbeat);
+            suspenseClaimHeartbeat = null;
+            updateSuspenseStatus();
+            return true;
+        } catch (error) {
+            showAlert({
+                icon: 'error',
+                title: 'Could not release suspended sale',
+                text: error.message,
+                confirmButtonColor: '#0f3a8a',
+            });
+            return false;
+        }
+    }
+
+    async function loadPosSuspendedSales() {
+        if (!suspenseList) return;
+        suspenseList.innerHTML = '<div class="text-center text-muted py-4">Loading suspended sales...</div>';
+
+        try {
+            const query = `?claim_token=${encodeURIComponent(posSuspenseClaimToken)}`;
+            const result = await requestPosSuspense(`${posSuspenseUrl}${query}`);
+            const sales = Array.isArray(result.sales) ? result.sales : [];
+            if (suspenseCount) suspenseCount.textContent = String(sales.length);
+
+            if (!sales.length) {
+                suspenseList.innerHTML = '<div class="text-center text-muted py-4">No suspended sales in this branch.</div>';
+                return;
+            }
+
+            suspenseList.replaceChildren();
+            sales.forEach((sale) => {
+                const row = document.createElement('div');
+                row.className = 'border rounded-3 p-3 d-flex flex-wrap align-items-center justify-content-between gap-3';
+
+                const details = document.createElement('div');
+                details.className = 'me-auto';
+                const date = sale.created_at ? new Date(sale.created_at).toLocaleString() : 'Recently';
+                details.innerHTML = `
+                    <div class="fw-semibold">${escapeHtml(sale.customer_name || 'Walk-in Customer')}</div>
+                    <div class="small text-muted">${Number(sale.item_count) || 0} item(s) · ${fmt.format(Number(sale.total) || 0)}</div>
+                    <div class="small text-muted">Saved ${escapeHtml(date)} by ${escapeHtml(sale.created_by || 'POS cashier')}</div>
+                `;
+
+                const actions = document.createElement('div');
+                actions.className = 'd-flex gap-2';
+                const recallButton = document.createElement('button');
+                recallButton.type = 'button';
+                recallButton.className = 'btn btn-sm btn-primary';
+                const isOwnedByThisTerminal = Boolean(sale.locked_by_this_terminal);
+                const isCurrent = Number(currentSuspendedSaleId) === Number(sale.id);
+                recallButton.textContent = isCurrent ? 'Currently open' : 'Recall';
+                recallButton.disabled = (sale.locked && !isOwnedByThisTerminal) || isCurrent;
+                recallButton.addEventListener('click', () => recallPosSuspendedSale(sale.id));
+
+                const deleteButton = document.createElement('button');
+                deleteButton.type = 'button';
+                deleteButton.className = 'btn btn-sm btn-outline-danger';
+                deleteButton.textContent = 'Delete';
+                deleteButton.disabled = (sale.locked && !isOwnedByThisTerminal) || isCurrent;
+                deleteButton.addEventListener('click', () => deletePosSuspendedSale(sale.id));
+
+                actions.append(recallButton, deleteButton);
+                if (sale.locked && !isOwnedByThisTerminal) {
+                    const lockNote = document.createElement('div');
+                    lockNote.className = 'small text-warning w-100 text-end';
+                    lockNote.textContent = `In use by ${sale.claimed_by || 'another POS terminal'}`;
+                    actions.appendChild(lockNote);
+                }
+
+                row.append(details, actions);
+                suspenseList.appendChild(row);
+            });
+        } catch (error) {
+            suspenseList.innerHTML = '';
+            const message = document.createElement('div');
+            message.className = 'alert alert-danger mb-0';
+            message.textContent = error.message;
+            suspenseList.appendChild(message);
+        }
+    }
+
+    async function openPosSuspenseList() {
+        if (!requirePosPermission('sell', 'You do not have permission to access sales suspense.')) return;
+        if (window.bootstrap?.Modal && suspenseModal) {
+            window.bootstrap.Modal.getOrCreateInstance(suspenseModal).show();
+        }
+        await loadPosSuspendedSales();
+    }
+
+    async function suspendCurrentSale() {
+        if (!requirePosPermission('sell', 'You do not have permission to suspend POS sales.')) return;
+        if (!navigator.onLine) {
+            alertFallback('Connect to the internet before suspending a sale.');
+            return;
+        }
+        if (!cart.length) {
+            alertFallback('Add at least one item before suspending this sale.');
+            return;
+        }
+
+        const customerOption = customerSelect?.selectedOptions?.[0];
+        try {
+            await requestPosSuspense(posSuspenseUrl, 'POST', {
+                id: currentSuspendedSaleId,
+                claim_token: posSuspenseClaimToken,
+                customer_id: customerSelect?.value || null,
+                customer_name: customerOption?.textContent?.trim() || 'Walk-in Customer',
+                items: cart,
+            });
+            currentSuspendedSaleId = null;
+            window.clearInterval(suspenseClaimHeartbeat);
+            suspenseClaimHeartbeat = null;
+            updateSuspenseStatus();
+            resetVanillaPosWorkspace();
+            showAlert({
+                icon: 'success',
+                title: 'Sale suspended',
+                text: 'The cart is saved and can be recalled from Sales Suspense.',
+                timer: 2200,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+            });
+            await loadPosSuspendedSales();
+        } catch (error) {
+            showAlert({
+                icon: 'error',
+                title: 'Could not suspend sale',
+                text: error.message,
+                confirmButtonColor: '#0f3a8a',
+            });
+        }
+    }
+
+    async function recallPosSuspendedSale(id) {
+        if (cart.length || currentSuspendedSaleId !== null) {
+            alertFallback('Suspend or clear the current cart before recalling another sale.');
+            return;
+        }
+        if (!navigator.onLine) {
+            alertFallback('Connect to the internet before recalling a suspended sale.');
+            return;
+        }
+
+        try {
+            const sale = await requestPosSuspense(suspenseEndpoint(id, 'claim'), 'POST', {
+                claim_token: posSuspenseClaimToken,
+            });
+            if (customerSearchInput) customerSearchInput.value = '';
+            filterCustomerOptions('');
+            if (sale.customer_id && !Array.from(customerSelect?.options || []).some((option) => option.value === String(sale.customer_id))) {
+                await requestPosSuspense(suspenseEndpoint(id, 'release'), 'POST', {
+                    claim_token: posSuspenseClaimToken,
+                });
+                throw new Error('The saved customer is not available in the current POS list. Refresh the POS and try again.');
+            }
+
+            cart.length = 0;
+            sale.items.forEach((item) => cart.push(calculateCartItem(item)));
+            if (customerSelect) {
+                customerSelect.value = sale.customer_id ? String(sale.customer_id) : '';
+                customerSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            currentSuspendedSaleId = Number(sale.id);
+            updateSuspenseStatus();
+            startSuspenseClaimHeartbeat();
+            renderCart();
+            window.bootstrap?.Modal?.getInstance(suspenseModal)?.hide();
+        } catch (error) {
+            showAlert({
+                icon: 'error',
+                title: 'Could not recall sale',
+                text: error.message,
+                confirmButtonColor: '#0f3a8a',
+            });
+            await loadPosSuspendedSales();
+        }
+    }
+
+    async function deletePosSuspendedSale(id) {
+        if (!window.confirm('Delete this suspended sale? This cannot be undone.')) return;
+
+        try {
+            await requestPosSuspense(suspenseEndpoint(id), 'DELETE', {
+                claim_token: posSuspenseClaimToken,
+            });
+            await loadPosSuspendedSales();
+        } catch (error) {
+            showAlert({
+                icon: 'error',
+                title: 'Could not delete suspended sale',
+                text: error.message,
+                confirmButtonColor: '#0f3a8a',
+            });
+        }
+    }
+
     function renderCart() {
         if (!cartBody) return;
         const previousDue = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount));
@@ -8512,8 +8843,8 @@ window.POS_ENABLE_FALLBACK = function () {
             html += `
                 <tr>
                     <td class="ps-3">
-                        <div class="fw-bold" style="color: var(--text-primary);">${item.name}</div>
-                        <small style="color: var(--text-secondary); font-size: 0.75rem;">${item.qty} ${item.unitLabel || 'unit'} × ${fmt.format(item.price)}</small>
+                        <div class="fw-bold" style="color: var(--text-primary);">${escapeHtml(item.name)}</div>
+                        <small style="color: var(--text-secondary); font-size: 0.75rem;">${item.qty} ${escapeHtml(item.unitLabel || 'unit')} × ${fmt.format(item.price)}</small>
                     </td>
                     <td class="text-center">
                         <input type="number" min="1" step="1" value="${Math.max(1, Math.round(parseFloat(item.qty) || 1))}" class="cart-qty-input" data-index="${i}" inputmode="numeric">
@@ -8918,6 +9249,11 @@ window.POS_ENABLE_FALLBACK = function () {
             return;
         }
 
+        if (currentSuspendedSaleId !== null && !navigator.onLine) {
+            alertFallback('Connect to the internet before checking out a recalled suspended sale. The saved cart will remain available if checkout cannot complete.');
+            return;
+        }
+
         if (cart.some((item) => !Number.isFinite(parseFloat(item.qty)) || (parseFloat(item.qty) || 0) <= 0)) {
             alertFallback('All cart quantities must be greater than zero.');
             return;
@@ -8976,13 +9312,17 @@ window.POS_ENABLE_FALLBACK = function () {
                         card: moneyValue(cardAmount),
                         card_account_id: cardAccount?.value || null,
                     },
+	                    ...(currentSuspendedSaleId !== null ? {
+	                        suspended_sale_id: currentSuspendedSaleId,
+	                        suspension_claim_token: posSuspenseClaimToken,
+	                    } : {}),
                 };
 
             if (!navigator.onLine && (walletApplied > 0 || posSourceContext?.source || paymentMethod?.value === 'ChargeToRoom')) {
                 throw new Error('Wallet, room-charge, and converted-document sales require an internet connection.');
             }
 
-            const submission = window.SmartProBookOffline
+            const submission = currentSuspendedSaleId === null && window.SmartProBookOffline
                 ? await window.SmartProBookOffline.submit(payload)
                 : { queued: false, result: await (async () => {
                     const response = await fetch(saleStoreUrl, {
@@ -9015,6 +9355,10 @@ window.POS_ENABLE_FALLBACK = function () {
                 : (receiptFormat === 'thermal-80' ? '&format=thermal&paper=80' : '');
             const invoiceUrl = `${invoicePrintBaseUrl}/${result.sale_id}/print?autoprint=1${formatQuery}`;
 
+            currentSuspendedSaleId = null;
+            window.clearInterval(suspenseClaimHeartbeat);
+            suspenseClaimHeartbeat = null;
+            updateSuspenseStatus();
             resetVanillaPosWorkspace();
             const receiptWindow = window.open(invoiceUrl, '_blank');
             if (!receiptWindow) {
@@ -9030,7 +9374,8 @@ window.POS_ENABLE_FALLBACK = function () {
         }
     });
 
-    newSaleBtn?.addEventListener('click', function () {
+    newSaleBtn?.addEventListener('click', async function () {
+        if (!await releaseCurrentSuspendedSale()) return;
         resetVanillaPosWorkspace();
         barcodeInput?.focus();
     });
