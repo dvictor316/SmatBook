@@ -44,6 +44,7 @@ class PosPaymentFormTest extends TestCase
             ->assertSee('id="rail-sales-suspense-btn"', false)
             ->assertSee('id="payment-suspend-sale-btn"', false)
             ->assertSee('id="payment-sales-suspense-btn"', false)
+            ->assertSee('pos-item-entry-fields', false)
             ->assertSee('id="pos-pay-bank-shortcut"', false)
             ->assertSee('id="split-transfer-account-wrap"', false)
             ->assertSee('id="split-card-account-wrap"', false)

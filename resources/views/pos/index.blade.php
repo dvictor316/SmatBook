@@ -2601,8 +2601,10 @@ body.pos-terminal-workspace .summary-panel {
 
 .pos-cashier-suspense-actions .btn-suspend:hover *,
 .pos-cashier-suspense-actions .btn-suspend:focus-visible *,
-.pos-cashier-suspense-actions .btn-suspense:hover *,
-.pos-cashier-suspense-actions .btn-suspense:focus-visible * {
+.pos-cashier-suspense-actions .btn-suspense:hover > i,
+.pos-cashier-suspense-actions .btn-suspense:focus-visible > i,
+.pos-cashier-suspense-actions .btn-suspense:hover > span:not(.badge),
+.pos-cashier-suspense-actions .btn-suspense:focus-visible > span:not(.badge) {
     color: #ffd700 !important;
     -webkit-text-fill-color: #ffd700 !important;
 }
@@ -5028,6 +5030,123 @@ body.pos-terminal-workspace #pos-cash-account-name.is-unconfigured {
     }
 }
 
+@media (max-width: 991.98px) {
+    body.pos-terminal-workspace .controls-card .pos-item-entry-fields {
+        --bs-gutter-x: 0.5rem;
+        --bs-gutter-y: 0.45rem;
+    }
+
+    body.pos-terminal-workspace .controls-card .pos-item-entry-fields label {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 0.68rem !important;
+        line-height: 1.2;
+    }
+
+    body.pos-terminal-workspace .controls-card .pos-item-entry-fields > .col-6 {
+        width: 50%;
+    }
+
+    body.pos-terminal-workspace .controls-card .pos-item-entry-fields .form-control,
+    body.pos-terminal-workspace .controls-card .pos-item-entry-fields .form-select {
+        min-height: 38px !important;
+        height: 38px !important;
+        padding: 5px 8px !important;
+        border-radius: 8px !important;
+        font-size: 15px !important;
+    }
+
+    body.pos-terminal-workspace .controls-card .pos-item-entry-fields .input-group {
+        display: flex;
+        flex-wrap: nowrap;
+        width: 100%;
+    }
+
+    body.pos-terminal-workspace .controls-card .pos-item-entry-fields #discount-type {
+        flex: 0 0 52px !important;
+        width: 52px !important;
+        min-width: 52px !important;
+        max-width: 52px !important;
+    }
+
+    body.pos-terminal-workspace .controls-card .pos-item-entry-fields #discount {
+        flex: 1 1 0 !important;
+        width: 1% !important;
+        min-width: 0 !important;
+    }
+
+    body.pos-terminal-workspace .controls-card .pos-item-entry-fields .form-switch {
+        flex: 0 0 auto;
+    }
+
+    body.pos-terminal-workspace .controls-card .pos-item-entry-fields .form-switch .form-check-input {
+        min-height: 1rem !important;
+        height: 1rem !important;
+        width: 2rem !important;
+        min-width: 2rem !important;
+        margin-top: 0;
+    }
+
+    body.pos-terminal-workspace .controls-card .unit-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 6px !important;
+        margin-bottom: 8px !important;
+    }
+
+    body.pos-terminal-workspace .controls-card .unit-btn {
+        min-height: 42px !important;
+        padding: 6px 4px !important;
+        font-size: 0.7rem !important;
+    }
+
+    body.pos-terminal-workspace .unit-helper {
+        margin: 0 0 8px;
+        font-size: 0.68rem !important;
+        line-height: 1.3;
+    }
+
+    body.pos-terminal-workspace .controls-card .pos-item-entry-fields > .col-12 > form {
+        min-height: 38px;
+        padding: 5px 8px !important;
+        font-size: 0.72rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    body.pos-terminal-workspace .controls-card .pos-item-entry-fields .form-control,
+    body.pos-terminal-workspace .controls-card .pos-item-entry-fields .form-select {
+        min-height: 38px !important;
+        height: 38px !important;
+        font-size: 16px !important;
+    }
+
+    body.pos-terminal-workspace .controls-card .pos-item-entry-fields .form-check-label {
+        font-size: 0.68rem !important;
+    }
+}
+
+body.pos-terminal-workspace #payment-suspend-sale-btn:hover,
+body.pos-terminal-workspace #payment-suspend-sale-btn:focus-visible,
+body.pos-terminal-workspace #payment-suspend-sale-btn:hover > i,
+body.pos-terminal-workspace #payment-suspend-sale-btn:focus-visible > i,
+body.pos-terminal-workspace #payment-suspend-sale-btn:hover > span,
+body.pos-terminal-workspace #payment-suspend-sale-btn:focus-visible > span,
+body.pos-terminal-workspace #payment-sales-suspense-btn:hover,
+body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible,
+body.pos-terminal-workspace #payment-sales-suspense-btn:hover > i,
+body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > i,
+body.pos-terminal-workspace #payment-sales-suspense-btn:hover > span:not(.badge),
+body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > span:not(.badge) {
+    color: #ffd700 !important;
+    -webkit-text-fill-color: #ffd700 !important;
+}
+
+body.pos-terminal-workspace #payment-sales-suspense-btn:hover > .badge,
+body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
+    color: #1e3a8a !important;
+    -webkit-text-fill-color: #1e3a8a !important;
+}
+
 #pos-suspense-modal .modal-dialog {
     width: calc(100% - 2rem);
     max-width: 920px;
@@ -5695,8 +5814,8 @@ body.pos-terminal-workspace #pos-cash-account-name.is-unconfigured {
                 </div>
                 <div class="unit-helper" id="unit-helper-copy">Select a product to unlock the right unit packs and live pricing.</div>
 
-                <div class="row g-2 mb-2">
-                    <div class="col-12">
+                <div class="row g-2 mb-2 pos-item-entry-fields">
+                    <div class="col-6">
                         <label>Price List</label>
                         <select id="price-list-select" class="form-select">
                             <option value="">No price list</option>
@@ -5707,7 +5826,7 @@ body.pos-terminal-workspace #pos-cash-account-name.is-unconfigured {
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-12">
+                    <div class="col-6">
                         <label>Price Level</label>
                         <select id="price-tier" class="form-select">
                             <option value="list">Selected Price List</option>
@@ -5720,20 +5839,6 @@ body.pos-terminal-workspace #pos-cash-account-name.is-unconfigured {
                         <label>Price</label>
                         <input type="number" id="unit-price-input" class="form-control {{ $posCanEditPrice ? '' : 'bg-light' }} fw-bold tabular-nums" step="0.01" min="0" @readonly(!$posCanEditPrice) title="{{ $posCanEditPrice ? 'Admins can edit POS prices.' : 'Only admins can edit POS prices.' }}">
                     </div>
-                    @if($posCanManagePriceEditSetting && \Illuminate\Support\Facades\Route::has('pos.price-edit-setting'))
-                        <div class="col-12">
-                            <form method="POST" action="{{ route('pos.price-edit-setting') }}" class="d-flex align-items-center justify-content-between gap-2 p-2 rounded border bg-light">
-                                @csrf
-                                <input type="hidden" name="allow_staff_price_edit" value="0">
-                                <label class="form-check-label fw-semibold small mb-0" for="allow-staff-price-edit">
-                                    Allow staff to edit POS price
-                                </label>
-                                <div class="form-check form-switch m-0">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="allow-staff-price-edit" name="allow_staff_price_edit" value="1" onchange="this.form.submit()" @checked($posAllowStaffPriceEdit)>
-                                </div>
-                            </form>
-                        </div>
-                    @endif
                     <div class="col-6">
                         <label id="qty-label">Quantity</label>
                         <input type="number" id="quantity" class="form-control fw-bold tabular-nums" value="1" min="1" step="1" inputmode="numeric">
@@ -5753,6 +5858,20 @@ body.pos-terminal-workspace #pos-cash-account-name.is-unconfigured {
                         <label style="color: var(--primary-600);">Tax %</label>
                         <input type="number" id="tax" class="form-control tabular-nums" value="0" min="0" max="100">
                     </div>
+                    @if($posCanManagePriceEditSetting && \Illuminate\Support\Facades\Route::has('pos.price-edit-setting'))
+                        <div class="col-12">
+                            <form method="POST" action="{{ route('pos.price-edit-setting') }}" class="d-flex align-items-center justify-content-between gap-2 p-2 rounded border bg-light">
+                                @csrf
+                                <input type="hidden" name="allow_staff_price_edit" value="0">
+                                <label class="form-check-label fw-semibold small mb-0" for="allow-staff-price-edit">
+                                    Allow staff to edit POS price
+                                </label>
+                                <div class="form-check form-switch m-0">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="allow-staff-price-edit" name="allow_staff_price_edit" value="1" onchange="this.form.submit()" @checked($posAllowStaffPriceEdit)>
+                                </div>
+                            </form>
+                        </div>
+                    @endif
                 </div>
 
                 <div class="subtotal-box mt-0">
