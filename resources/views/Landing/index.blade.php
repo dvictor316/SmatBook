@@ -2355,14 +2355,17 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 }
 
 @media (min-width: 992px) {
+    .hero-eyebrow-line {
+        display: block;
+    }
     .hero-h1 {
         width: 100%;
-        font-size: clamp(1.1rem, 1.3vw, 1.35rem) !important;
+        font-size: clamp(2rem, 3.2vw, 2.8rem) !important;
         max-width: 20ch !important;
         line-height: 1.08 !important;
     }
     .hero-title-line, .hero-h1 .gold-text {
-        font-size: .9em !important;
+        font-size: inherit !important;
         max-width: 100%;
         white-space: normal !important;
         transform: none !important;
@@ -2436,7 +2439,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 
                 <div class="hero-circle">
                     <div class="hero-circle-orbit"></div>
-                    <div class="hero-eyebrow">Accounting Software for Nigerian Businesses</div>
+                    <div class="hero-eyebrow"><span class="hero-eyebrow-line">Accounting Software for</span><span class="hero-eyebrow-line">Nigerian Businesses</span></div>
                     <h1 class="hero-h1"><span class="hero-title-line">Run Your Business.</span><br><span class="gold-text">Know Your Money.</span></h1>
                     <p class="hero-body">SmartProbook cloud accounting software brings invoicing, POS sales, inventory, expenses, payroll and tax reports into one platform for Nigerian businesses.</p>
                     <div class="hero-cta-stack">
