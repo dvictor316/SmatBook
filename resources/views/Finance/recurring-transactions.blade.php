@@ -53,7 +53,7 @@
                                     <option value="">Select expense</option>
                                     @foreach(($expenseSources ?? []) as $expense)
                                         <option value="{{ $expense->id }}" {{ (string) old('source_id') === (string) $expense->id && old('source_type', 'expense') === 'expense' ? 'selected' : '' }}>
-                                            {{ $expense->expense_id }} - {{ $expense->company_name }} - ₦{{ number_format((float) $expense->amount, 2) }}
+                                            {{ $expense->expense_id }} - {{ $expense->company_name }} - ₦{{ \App\Support\CompactNumber::format((float) $expense->amount, 2) }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -64,7 +64,7 @@
                                     <option value="">Select purchase</option>
                                     @foreach(($purchaseSources ?? []) as $purchase)
                                         <option value="{{ $purchase->id }}">
-                                            {{ $purchase->purchase_no ?? ('PUR-' . $purchase->id) }} - {{ $purchase->supplier?->name ?? $purchase->vendor?->name ?? 'Supplier' }} - ₦{{ number_format((float) ($purchase->total_amount ?? 0), 2) }}
+                                            {{ $purchase->purchase_no ?? ('PUR-' . $purchase->id) }} - {{ $purchase->supplier?->name ?? $purchase->vendor?->name ?? 'Supplier' }} - ₦{{ \App\Support\CompactNumber::format((float) ($purchase->total_amount ?? 0), 2) }}
                                         </option>
                                     @endforeach
                                 </select>

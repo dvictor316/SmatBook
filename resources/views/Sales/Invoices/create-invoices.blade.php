@@ -79,11 +79,11 @@
                             {{ $creditWarning['customer'] ?? 'This customer' }} will exceed the approved credit limit if this transaction continues.
                         </p>
                         <div class="small mb-3">
-                            Credit Limit: <strong>₦{{ number_format((float) ($creditWarning['credit_limit'] ?? 0), 2) }}</strong>
-                            · Current Outstanding: <strong>₦{{ number_format((float) ($creditWarning['current_outstanding'] ?? 0), 2) }}</strong>
-                            · This Invoice Credit: <strong>₦{{ number_format((float) ($creditWarning['new_credit'] ?? 0), 2) }}</strong>
-                            · Projected Outstanding: <strong>₦{{ number_format((float) ($creditWarning['projected_outstanding'] ?? 0), 2) }}</strong>
-                            · Excess: <strong>₦{{ number_format((float) ($creditWarning['excess'] ?? 0), 2) }}</strong>
+                            Credit Limit: <strong>₦{{ \App\Support\CompactNumber::format((float) ($creditWarning['credit_limit'] ?? 0), 2) }}</strong>
+                            · Current Outstanding: <strong>₦{{ \App\Support\CompactNumber::format((float) ($creditWarning['current_outstanding'] ?? 0), 2) }}</strong>
+                            · This Invoice Credit: <strong>₦{{ \App\Support\CompactNumber::format((float) ($creditWarning['new_credit'] ?? 0), 2) }}</strong>
+                            · Projected Outstanding: <strong>₦{{ \App\Support\CompactNumber::format((float) ($creditWarning['projected_outstanding'] ?? 0), 2) }}</strong>
+                            · Excess: <strong>₦{{ \App\Support\CompactNumber::format((float) ($creditWarning['excess'] ?? 0), 2) }}</strong>
                         </div>
                         <div class="fw-semibold mb-2 text-danger">Transaction blocked until the customer pays down the balance or the credit limit is increased.</div>
                         <a href="{{ route('invoices.index') }}" class="btn btn-white border">Back to Invoices</a>
@@ -112,7 +112,7 @@
                                                         @foreach($customers as $customer)
                                                         <option value="{{ $customer->id }}"
                                                             data-price-list-id="{{ $customer->price_list_id ?? '' }}"
-                                                            data-outstanding-balance="{{ number_format((float) ($customer->outstanding_balance ?? 0), 2, '.', '') }}"
+                                                            data-outstanding-balance="{{ \App\Support\CompactNumber::format((float) ($customer->outstanding_balance ?? 0), 2, '.', '') }}"
                                                             {{ (string) $selectedCustomer === (string) $customer->id ? 'selected' : '' }}>
                                                             {{ $customer->customer_name ?? $customer->name }}
                                                         </option>
@@ -267,7 +267,7 @@
                                                         <td><input type="number" name="items[{{ $index }}][rate]" class="form-control rate-input" value="{{ $item['rate'] ?? '0.00' }}" step="0.01" oninput="calculateRow(this)"></td>
                                                         <td><input type="number" name="items[{{ $index }}][discount]" class="form-control discount-input" value="{{ $item['discount'] ?? 0 }}" oninput="calculateRow(this)"></td>
                                                         <td><input type="number" name="items[{{ $index }}][tax]" class="form-control tax-input" value="{{ $item['tax'] ?? 0 }}" oninput="calculateRow(this)"></td>
-                                                        <td class="fw-bold"><span class="row-total-text">₦{{ number_format((float) ($item['amount'] ?? 0), 2) }}</span><input type="hidden" name="items[{{ $index }}][amount]" class="row-amount-hidden" value="{{ (float) ($item['amount'] ?? 0) }}"></td>
+                                                        <td class="fw-bold"><span class="row-total-text">₦{{ \App\Support\CompactNumber::format((float) ($item['amount'] ?? 0), 2) }}</span><input type="hidden" name="items[{{ $index }}][amount]" class="row-amount-hidden" value="{{ (float) ($item['amount'] ?? 0) }}"></td>
                                                         <td class="text-end"><button type="button" class="btn btn-sm btn-white text-danger delete-row"><i class="fas fa-trash-alt"></i></button></td>
                                                     </tr>
                                                 @endforeach
@@ -496,7 +496,7 @@
 
         const option = customerSelect.options[customerSelect.selectedIndex];
         const balance = toInvoiceNumber(option?.dataset?.outstandingBalance);
-        amount.textContent = '₦' + balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        amount.textContent = '₦' + window.formatCompactAmount(balance);
         summary.classList.toggle('d-none', !customerSelect.value);
     }
 

@@ -42,7 +42,7 @@
                             <tr>
                                 <td>{{ $cheque->cheque_number }}</td>
                                 <td><span class="badge bg-{{ $cheque->type === 'receive' ? 'success' : 'primary' }}">{{ ucfirst($cheque->type) }}</span></td>
-                                <td>{{ number_format($cheque->amount, 2) }} {{ $cheque->currency ?? 'NGN' }}</td>
+                                <td>{{ \App\Support\CompactNumber::format($cheque->amount, 2) }} {{ $cheque->currency ?? 'NGN' }}</td>
                                 <td>{{ $cheque->payee_name }}</td>
                                 <td>{{ $cheque->bank?->name ?? '—' }}</td>
                                 <td>{{ $cheque->cheque_date?->format('d M Y') ?? '—' }}</td>

@@ -99,7 +99,7 @@
                         <dd class="col-7">{{ $template->currency }}</dd>
 
                         <dt class="col-5">Amount</dt>
-                        <dd class="col-7 fw-semibold">{{ $template->currency }} {{ number_format($template->total, 2) }}</dd>
+                        <dd class="col-7 fw-semibold">{{ $template->currency }} {{ \App\Support\CompactNumber::format($template->total, 2) }}</dd>
 
                         <dt class="col-5">Frequency</dt>
                         <dd class="col-7">{{ $template->frequency_label }}</dd>
@@ -206,11 +206,11 @@
                                 <tr>
                                     <td>{{ $item['product_name'] ?? '—' }}</td>
                                     <td class="text-end">{{ $item['qty'] ?? 1 }}</td>
-                                    <td class="text-end">{{ number_format($item['unit_price'] ?? 0, 2) }}</td>
-                                    <td class="text-end">{{ number_format($item['tax'] ?? 0, 2) }}</td>
-                                    <td class="text-end">{{ number_format($item['discount'] ?? 0, 2) }}</td>
+                                    <td class="text-end">{{ \App\Support\CompactNumber::format($item['unit_price'] ?? 0, 2) }}</td>
+                                    <td class="text-end">{{ \App\Support\CompactNumber::format($item['tax'] ?? 0, 2) }}</td>
+                                    <td class="text-end">{{ \App\Support\CompactNumber::format($item['discount'] ?? 0, 2) }}</td>
                                     <td class="text-end fw-semibold">
-                                        {{ number_format((($item['qty'] ?? 1) * ($item['unit_price'] ?? 0)) + ($item['tax'] ?? 0) - ($item['discount'] ?? 0), 2) }}
+                                        {{ \App\Support\CompactNumber::format((($item['qty'] ?? 1) * ($item['unit_price'] ?? 0)) + ($item['tax'] ?? 0) - ($item['discount'] ?? 0), 2) }}
                                     </td>
                                 </tr>
                                 @empty
@@ -220,19 +220,19 @@
                             <tfoot class="table-light">
                                 <tr>
                                     <td colspan="5" class="text-end fw-semibold">Subtotal</td>
-                                    <td class="text-end">{{ number_format($template->subtotal, 2) }}</td>
+                                    <td class="text-end">{{ \App\Support\CompactNumber::format($template->subtotal, 2) }}</td>
                                 </tr>
                                 <tr>
                                     <td colspan="5" class="text-end fw-semibold">Tax</td>
-                                    <td class="text-end">{{ number_format($template->tax_amount, 2) }}</td>
+                                    <td class="text-end">{{ \App\Support\CompactNumber::format($template->tax_amount, 2) }}</td>
                                 </tr>
                                 <tr>
                                     <td colspan="5" class="text-end fw-semibold">Discount</td>
-                                    <td class="text-end">{{ number_format($template->discount, 2) }}</td>
+                                    <td class="text-end">{{ \App\Support\CompactNumber::format($template->discount, 2) }}</td>
                                 </tr>
                                 <tr>
                                     <td colspan="5" class="text-end fw-bold">Total</td>
-                                    <td class="text-end fw-bold">{{ $template->currency }} {{ number_format($template->total, 2) }}</td>
+                                    <td class="text-end fw-bold">{{ $template->currency }} {{ \App\Support\CompactNumber::format($template->total, 2) }}</td>
                                 </tr>
                             </tfoot>
                         </table>

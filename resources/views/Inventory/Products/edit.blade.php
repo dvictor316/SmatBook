@@ -415,7 +415,7 @@
             const pricePerKg = parseFloat($('input[name="price"]').val()) || 0;
             const calculated = kgPerCarton * pricePerKg;
             $('#edit_carton_price_hint').text(calculated > 0
-                ? 'Automatic carton price: ' + calculated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                ? 'Automatic carton price: ' + window.formatCompactAmount(calculated)
                 : 'Leave empty to calculate it automatically.');
         }
 

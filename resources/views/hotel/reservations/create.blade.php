@@ -55,7 +55,7 @@
                         <div class="card-header"><h5 class="mb-0">Guest</h5></div>
                         <div class="card-body row g-2">
                             <div class="col-md-6"><label class="form-label">Guest</label><select name="customer_id" class="form-select"><option value="">Walk-in / guest details to follow</option>@foreach($guests as $guest)<option value="{{ $guest->id }}" @selected((int)old('customer_id', request('customer_id')) === (int)$guest->id)>{{ $guest->customer_name }}{{ $guest->phone ? ' - '.$guest->phone : '' }}</option>@endforeach</select></div>
-                            <div class="col-md-6"><label class="form-label">Rate Plan</label><select name="rate_plan_id" id="rate_plan_id" class="form-select"><option value="">Standard / manual rate</option>@foreach($ratePlans as $plan)<option value="{{ $plan->id }}" data-rate="{{ $plan->rate }}" @selected((int)old('rate_plan_id') === (int)$plan->id)>{{ $plan->name }} - {{ number_format((float)$plan->rate, 2) }}</option>@endforeach</select></div>
+                            <div class="col-md-6"><label class="form-label">Rate Plan</label><select name="rate_plan_id" id="rate_plan_id" class="form-select"><option value="">Standard / manual rate</option>@foreach($ratePlans as $plan)<option value="{{ $plan->id }}" data-rate="{{ $plan->rate }}" @selected((int)old('rate_plan_id') === (int)$plan->id)>{{ $plan->name }} - {{ \App\Support\CompactNumber::format((float)$plan->rate, 2) }}</option>@endforeach</select></div>
                             <div class="col-md-6"><label class="form-label">Managed Booking Source</label><select name="booking_source_id" class="form-control"><option value="">Direct / Unmanaged</option>@foreach($bookingSources as $source)<option value="{{ $source->id }}" @selected((int)old('booking_source_id')===(int)$source->id)>{{ $source->name }} ({{ strtoupper($source->source_type) }})</option>@endforeach</select></div>
                             <div class="col-md-6"><label class="form-label">Corporate Account</label><select name="corporate_account_id" class="form-control"><option value="">Individual guest</option>@foreach($corporateAccounts as $account)<option value="{{ $account->id }}" @selected((int)old('corporate_account_id')===(int)$account->id)>{{ $account->company_name }} - {{ $account->account_code }}</option>@endforeach</select></div>
                             <div class="col-md-6"><label class="form-label">Legacy / Other Source</label><input type="text" name="source" class="form-control" value="{{ old('source', 'direct') }}" placeholder="Used when no managed source is selected"></div>
@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         option.value = room.id;
                         option.dataset.roomType = room.room_type_id || '';
                         option.dataset.rate = room.rate || 0;
-                        option.textContent = `${room.room_number} - ${room.room_type || 'Room'} - ${Number(room.rate || 0).toFixed(2)}`;
+                        option.textContent = `${room.room_number} - ${room.room_type || 'Room'} - ${window.formatCompactAmount(Number(room.rate || 0))}`;
                         roomSelect.appendChild(option);
                     }
 
@@ -235,14 +235,14 @@ document.addEventListener('DOMContentLoaded', function () {
         taxAmountField.value = tax.toFixed(2);
         serviceAmountField.value = serviceAmount.toFixed(2);
         outputs.nights.textContent = nights.toString();
-        outputs.rate.textContent = rate.toFixed(2);
-        outputs.accommodation.textContent = accommodation.toFixed(2);
-        outputs.tax.textContent = tax.toFixed(2);
-        outputs.service.textContent = serviceAmount.toFixed(2);
-        outputs.discount.textContent = discountAmount.toFixed(2);
-        outputs.total.textContent = total.toFixed(2);
-        outputs.deposit.textContent = paid.toFixed(2);
-        outputs.balance.textContent = balance.toFixed(2);
+        outputs.rate.textContent = window.formatCompactAmount(rate);
+        outputs.accommodation.textContent = window.formatCompactAmount(accommodation);
+        outputs.tax.textContent = window.formatCompactAmount(tax);
+        outputs.service.textContent = window.formatCompactAmount(serviceAmount);
+        outputs.discount.textContent = window.formatCompactAmount(discountAmount);
+        outputs.total.textContent = window.formatCompactAmount(total);
+        outputs.deposit.textContent = window.formatCompactAmount(paid);
+        outputs.balance.textContent = window.formatCompactAmount(balance);
     }
 
     [arrival, departure, nightlyRate, discount, servicePct, deposit].forEach((el) => {

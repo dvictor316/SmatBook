@@ -38,7 +38,7 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <div class="text-muted text-uppercase small fw-bold">Total Quantity</div>
-                        <div class="fs-3 fw-bold">{{ number_format((float) $audits->getCollection()->sum('quantity'), 2) }}</div>
+                        <div class="fs-3 fw-bold">{{ \App\Support\CompactNumber::format((float) $audits->getCollection()->sum('quantity'), 2) }}</div>
                     </div>
                 </div>
             </div>
@@ -68,7 +68,7 @@
                                     </td>
                                     <td>{{ $audit->from_branch_name ?: 'Unknown source' }}</td>
                                     <td>{{ $audit->to_branch_name ?: 'Unknown destination' }}</td>
-                                    <td class="fw-semibold">{{ number_format((float) $audit->quantity, 2) }}</td>
+                                    <td class="fw-semibold">{{ \App\Support\CompactNumber::format((float) $audit->quantity, 2) }}</td>
                                     <td>{{ $audit->initiator?->name ?? 'System' }}</td>
                                 </tr>
                             @empty

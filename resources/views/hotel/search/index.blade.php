@@ -121,7 +121,7 @@
                             @forelse($results['receipts'] as $item)
                                 <tr>
                                     <td>{{ $item->description }}</td>
-                                    <td>{{ number_format((float)$item->amount, 2) }}</td>
+                                    <td>{{ \App\Support\CompactNumber::format((float)$item->amount, 2) }}</td>
                                     <td><a href="{{ route('hotel.folios.items.receipt', $item) }}" target="_blank" rel="noopener" class="btn btn-sm btn-light">Receipt</a></td>
                                 </tr>
                             @empty

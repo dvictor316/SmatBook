@@ -99,7 +99,7 @@
                                         @endif
                                     </td>
                                     <td class="text-end pe-3 align-middle fs-5">
-                                        {{ number_format($payment->amount, 2) }}
+                                        {{ \App\Support\CompactNumber::format($payment->amount, 2) }}
                                     </td>
                                 </tr>
                             </tbody>
@@ -107,7 +107,7 @@
                                 <tr>
                                     <td class="text-end fw-bold bg-light">TOTAL PAID</td>
                                     <td class="text-end fw-bold bg-primary text-white pe-3 fs-4">
-                                        ${{ number_format($payment->amount, 2) }}
+                                        ${{ \App\Support\CompactNumber::format($payment->amount, 2) }}
                                     </td>
                                 </tr>
                             </tfoot>

@@ -240,7 +240,7 @@
         const totalText = row.querySelector('.row-total-text');
         const amountHidden = row.querySelector('.row-amount-hidden');
 
-        if (totalText) totalText.textContent = `₦${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        if (totalText) totalText.textContent = `₦${window.formatCompactAmount(total)}`;
         if (amountHidden) amountHidden.value = total.toFixed(2);
 
         calculateQuotationGrandTotal();
@@ -264,7 +264,7 @@
             total += Math.max(0, (qty * rate) - lineDiscount + lineTax);
         });
 
-        const fmt = (value) => `₦${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const fmt = (value) => `₦${window.formatCompactAmount(value)}`;
         const subtotalEl = document.getElementById('quotation-display-subtotal');
         const discountEl = document.getElementById('quotation-display-discount');
         const taxEl = document.getElementById('quotation-display-tax');

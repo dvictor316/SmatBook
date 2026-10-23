@@ -68,7 +68,7 @@
                                     <div class="form-group">
                                         <label for="current_balance" class="col-form-label">Current Balance (Read Only)</label>
                                         <input type="text" id="current_balance" class="form-control" 
-                                               value="${{ number_format($vendor->current_balance ?? 0, 2) }}" readonly disabled>
+                                               value="${{ \App\Support\CompactNumber::format($vendor->current_balance ?? 0, 2) }}" readonly disabled>
                                     </div>
                                 </div>
                             </div>

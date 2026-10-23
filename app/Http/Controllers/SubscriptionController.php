@@ -2712,7 +2712,7 @@ class SubscriptionController extends Controller
         $details = [
             'Name' => $user->name ?? 'User',
             'Plan' => $subscription->plan_name ?? $subscription->plan ?? 'N/A',
-            'Amount' => '₦'.number_format((float) ($subscription->amount ?? 0), 2),
+            'Amount' => '₦'.\App\Support\CompactNumber::format((float) ($subscription->amount ?? 0), 2),
             'Status' => strtoupper((string) ($subscription->status ?? '')),
             'Payment Status' => strtoupper((string) ($subscription->payment_status ?? '')),
             'Reference' => (string) ($subscription->transfer_reference ?: $subscription->transaction_reference ?: 'N/A'),

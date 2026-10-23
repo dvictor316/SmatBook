@@ -39,9 +39,9 @@
                     <div class="sell-room-head"><div class="sell-room-no">{{ $room->room_number }}</div><h5 class="mb-1">{{ $room->type?->name ?? 'Room Type' }}</h5><small>Floor {{ $room->floor ?: 'N/A' }} · {{ ucfirst((string)$room->housekeeping_status) }}</small></div>
                     <div class="sell-room-body">
                         <div class="sell-row"><span>Capacity</span><strong>{{ $room->type?->max_occupancy ?? '-' }}</strong></div>
-                        <div class="sell-row"><span>Rate per night</span><strong>{{ number_format($rate, 2) }}</strong></div>
+                        <div class="sell-row"><span>Rate per night</span><strong>{{ \App\Support\CompactNumber::format($rate, 2) }}</strong></div>
                         <div class="sell-row"><span>Nights</span><strong>{{ $nights }}</strong></div>
-                        <div class="sell-total"><span>Estimated total</span><strong>{{ number_format($estimate, 2) }}</strong></div>
+                        <div class="sell-total"><span>Estimated total</span><strong>{{ \App\Support\CompactNumber::format($estimate, 2) }}</strong></div>
                         <div class="d-grid gap-2"><a href="{{ route('hotel.reservations.create', ['room_id' => $room->id, 'room_type_id' => $room->room_type_id, 'arrival_date' => request('arrival_date'), 'departure_date' => request('departure_date')]) }}" class="btn btn-primary">Select Room</a><a href="{{ route('hotel.walkin.create') }}" class="btn btn-outline-success">Walk-In</a></div>
                     </div>
                 </article>

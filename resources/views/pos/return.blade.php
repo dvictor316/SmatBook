@@ -80,9 +80,9 @@
                                             <td>
                                                 <input type="hidden" name="items[{{ $item->product_id }}][unit_price]" value="{{ $item->unit_price }}">
                                                 <input type="hidden" name="items[{{ $item->product_id }}][unit_type]" value="{{ $item->unit_type ?? 'unit' }}">
-                                                {{ number_format($item->unit_price, 2) }}
+                                                {{ \App\Support\CompactNumber::format($item->unit_price, 2) }}
                                             </td>
-                                            <td class="row-total fw-bold text-primary">0.00</td>
+                                            <td class="row-total fw-bold text-primary">0</td>
                                         </tr>
                                     @endforeach
                                 @else
@@ -155,9 +155,9 @@ $(document).ready(function() {
                             <td>
                                 <input type="hidden" name="items[${item.product_id}][unit_price]" value="${item.unit_price}">
                                 <input type="hidden" name="items[${item.product_id}][unit_type]" value="${item.unit_type || 'unit'}">
-                                ${parseFloat(item.unit_price).toLocaleString(undefined, {minimumFractionDigits: 2})}
+                                ${window.formatCompactAmount(item.unit_price)}
                             </td>
-                            <td class="row-total fw-bold text-primary">0.00</td>
+                            <td class="row-total fw-bold text-primary">0</td>
                         </tr>`;
                     });
                 }
@@ -180,7 +180,7 @@ $(document).ready(function() {
         if (qty < 0)   { $(this).val(0);   qty = 0;   }
 
         let rowTotal = qty * price;
-        $(this).closest('tr').find('.row-total').text(rowTotal.toLocaleString(undefined, {minimumFractionDigits: 2}));
+        $(this).closest('tr').find('.row-total').text(window.formatCompactAmount(rowTotal));
         updateGrandTotal();
     });
 
@@ -190,7 +190,7 @@ $(document).ready(function() {
         $('.return-qty').each(function() {
             grandTotal += (parseFloat($(this).val()) || 0) * (parseFloat($(this).data('price')) || 0);
         });
-        $('#return_grand_total').text('₦' + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2}));
+        $('#return_grand_total').text('₦' + window.formatCompactAmount(grandTotal));
     }
 
     // Trigger on page load if a sale is already selected

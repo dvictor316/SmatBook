@@ -71,8 +71,8 @@
                                     <tr>
                                         <td>{{ $item->name ?? $item->product_name }}</td>
                                         <td class="text-center">{{ $item->quantity }}</td>
-                                        <td class="text-end">{{ number_format($item->price, 2) }}</td>
-                                        <td class="text-end">{{ number_format($item->quantity * $item->price, 2) }}</td>
+                                        <td class="text-end">{{ \App\Support\CompactNumber::format($item->price, 2) }}</td>
+                                        <td class="text-end">{{ \App\Support\CompactNumber::format($item->quantity * $item->price, 2) }}</td>
                                     </tr>
                                     @empty
                                     <tr>
@@ -94,10 +94,10 @@
                                 <div class="invoice-total-card">
                                     <div class="invoice-total-box">
                                         <div class="invoice-total-inner">
-                                            <p>Subtotal <span>{{ number_format($invoice->subtotal ?? 0, 2) }}</span></p>
-                                            <p>Tax <span>{{ number_format($invoice->tax ?? 0, 2) }}</span></p>
+                                            <p>Subtotal <span>{{ \App\Support\CompactNumber::format($invoice->subtotal ?? 0, 2) }}</span></p>
+                                            <p>Tax <span>{{ \App\Support\CompactNumber::format($invoice->tax ?? 0, 2) }}</span></p>
                                             <div class="status-toggle h4 text-end mt-2">
-                                                <strong>Total: {{ number_format($invoice->total_amount ?? 0, 2) }}</strong>
+                                                <strong>Total: {{ \App\Support\CompactNumber::format($invoice->total_amount ?? 0, 2) }}</strong>
                                             </div>
                                         </div>
                                     </div>

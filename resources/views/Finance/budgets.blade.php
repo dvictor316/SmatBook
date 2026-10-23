@@ -83,9 +83,9 @@
                     <div class="card-body">
                         <h6 class="mb-3">Budget Summary</h6>
                         <div class="mb-2 d-flex justify-content-between"><span>Budget Count</span><strong>{{ number_format((int) ($summary['budget_count'] ?? 0)) }}</strong></div>
-                        <div class="mb-2 d-flex justify-content-between"><span>Total Budget</span><strong>₦{{ number_format((float) ($summary['budget_total'] ?? 0), 2) }}</strong></div>
-                        <div class="mb-2 d-flex justify-content-between"><span>Actual Total</span><strong>₦{{ number_format((float) ($summary['actual_total'] ?? 0), 2) }}</strong></div>
-                        <div class="d-flex justify-content-between"><span>Variance Total</span><strong>₦{{ number_format((float) ($summary['variance_total'] ?? 0), 2) }}</strong></div>
+                        <div class="mb-2 d-flex justify-content-between"><span>Total Budget</span><strong>₦{{ \App\Support\CompactNumber::format((float) ($summary['budget_total'] ?? 0), 2) }}</strong></div>
+                        <div class="mb-2 d-flex justify-content-between"><span>Actual Total</span><strong>₦{{ \App\Support\CompactNumber::format((float) ($summary['actual_total'] ?? 0), 2) }}</strong></div>
+                        <div class="d-flex justify-content-between"><span>Variance Total</span><strong>₦{{ \App\Support\CompactNumber::format((float) ($summary['variance_total'] ?? 0), 2) }}</strong></div>
                     </div>
                 </div>
             </div>
@@ -115,10 +115,10 @@
                                                 <small class="text-muted">{{ $budget->account?->name ?? 'No account' }}</small>
                                             </td>
                                             <td>{{ $budget->start_date?->format('d M Y') }} - {{ $budget->end_date?->format('d M Y') }}</td>
-                                            <td class="text-end">₦{{ number_format((float) $budget->amount, 2) }}</td>
-                                            <td class="text-end">₦{{ number_format((float) ($budget->actual_amount ?? 0), 2) }}</td>
+                                            <td class="text-end">₦{{ \App\Support\CompactNumber::format((float) $budget->amount, 2) }}</td>
+                                            <td class="text-end">₦{{ \App\Support\CompactNumber::format((float) ($budget->actual_amount ?? 0), 2) }}</td>
                                             <td class="text-end {{ ($budget->variance_amount ?? 0) < 0 ? 'text-danger' : 'text-success' }}">
-                                                ₦{{ number_format((float) ($budget->variance_amount ?? 0), 2) }}
+                                                ₦{{ \App\Support\CompactNumber::format((float) ($budget->variance_amount ?? 0), 2) }}
                                                 <div><small>{{ number_format((float) ($budget->utilization_pct ?? 0), 1) }}% used</small></div>
                                             </td>
                                             <td>

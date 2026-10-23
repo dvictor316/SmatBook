@@ -258,7 +258,7 @@
                                 </span>
                             </td>
                             <td class="text-end fw-bold amount-text">
-                                ₦{{ number_format($sale->total, 2) }}
+                                ₦{{ \App\Support\CompactNumber::format($sale->total, 2) }}
                             </td>
                             <td class="text-center">
                                 @php

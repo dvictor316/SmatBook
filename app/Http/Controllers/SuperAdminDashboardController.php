@@ -2289,7 +2289,7 @@ public function pendingManagers()
 
         return redirect()
             ->route('super_admin.platform_payouts.index')
-            ->with('payout_success', 'Payout of ₦' . number_format($amount, 2) . ' to ' . $recipient . ' was reversed successfully.');
+            ->with('payout_success', 'Payout of ₦' . \App\Support\CompactNumber::format($amount, 2) . ' to ' . $recipient . ' was reversed successfully.');
     }
 
     public function suspendUser($id)
@@ -2580,7 +2580,7 @@ public function pendingManagers()
             return redirect()->back()->with('payout_error', 'Failed to save payout: ' . $e->getMessage());
         }
 
-        return redirect()->back()->with('payout_success', 'Payout of ₦' . number_format($validated['amount'], 2) . ' to ' . $recipient['name'] . ' recorded successfully.');
+        return redirect()->back()->with('payout_success', 'Payout of ₦' . \App\Support\CompactNumber::format($validated['amount'], 2) . ' to ' . $recipient['name'] . ' recorded successfully.');
     }
 
     public function payoutHistory(\Illuminate\Http\Request $request)

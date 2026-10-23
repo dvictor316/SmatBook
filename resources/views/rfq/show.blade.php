@@ -81,7 +81,7 @@
                                     @forelse($rfq->items as $item)
                                         <tr>
                                             <td>{{ $item->product_name ?: ($item->product?->name ?? 'N/A') }}</td>
-                                            <td>{{ number_format((float) $item->quantity, 2) }}</td>
+                                            <td>{{ \App\Support\CompactNumber::format((float) $item->quantity, 2) }}</td>
                                             <td>{{ $item->unit ?: 'N/A' }}</td>
                                             <td>{{ $item->specifications ?: 'N/A' }}</td>
                                         </tr>
@@ -115,7 +115,7 @@
                                         <tr>
                                             <td>{{ $rfqSupplier->supplier_name ?: ($rfqSupplier->supplier?->name ?? 'N/A') }}</td>
                                             <td>{{ ucfirst($rfqSupplier->status ?? 'pending') }}</td>
-                                            <td>{{ $rfqSupplier->total_quoted_amount !== null ? number_format((float) $rfqSupplier->total_quoted_amount, 2) : 'N/A' }}</td>
+                                            <td>{{ $rfqSupplier->total_quoted_amount !== null ? \App\Support\CompactNumber::format((float) $rfqSupplier->total_quoted_amount, 2) : 'N/A' }}</td>
                                             <td>{{ $rfqSupplier->responded_at ? $rfqSupplier->responded_at->format('d M Y H:i') : 'N/A' }}</td>
                                             <td class="text-end">
                                                 <form method="POST" action="{{ route('rfq.suppliers.remove', [$rfq, $rfqSupplier]) }}" class="d-inline">

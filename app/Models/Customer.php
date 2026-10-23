@@ -100,6 +100,6 @@ class Customer extends Model
     {
         // Automatically uses the saved currency or defaults to Naira
         $symbol = $this->currency ?: '₦';
-        return $symbol . number_format($this->balance, 2);
+        return $symbol . \App\Support\CompactNumber::format($this->balance, 2);
     }
 }

@@ -130,15 +130,15 @@
                         </div>
                         <div class="summary-card">
                             <span class="summary-label"><i class="fas fa-wallet me-2"></i>Opening Balance Total</span>
-                            <strong>₦{{ number_format($summary['total_opening_balance'] ?? 0, 2) }}</strong>
+                            <strong>₦{{ \App\Support\CompactNumber::format($summary['total_opening_balance'] ?? 0, 2) }}</strong>
                         </div>
                         <div class="summary-card">
                             <span class="summary-label"><i class="fas fa-file-invoice-dollar me-2"></i>Invoice Due Total</span>
-                            <strong>₦{{ number_format($summary['total_invoice_due'] ?? 0, 2) }}</strong>
+                            <strong>₦{{ \App\Support\CompactNumber::format($summary['total_invoice_due'] ?? 0, 2) }}</strong>
                         </div>
                         <div class="summary-card">
                             <span class="summary-label"><i class="fas fa-scale-balanced me-2"></i>Total Receivables</span>
-                            <strong>₦{{ number_format($summary['total_receivables'] ?? 0, 2) }}</strong>
+                            <strong>₦{{ \App\Support\CompactNumber::format($summary['total_receivables'] ?? 0, 2) }}</strong>
                         </div>
                     </div>
 
@@ -253,10 +253,10 @@
                                                     <div>{{ \Illuminate\Support\Str::limit($customer->address ?? $customer->billing_address_line1 ?? $customer->billing_city ?? 'No address saved', 40) }}</div>
                                                     <small class="text-muted">{{ $customer->billing_city ?? $customer->shipping_city ?? 'No city' }}</small>
                                                 </td>
-                                                <td class="text-end fw-semibold">₦{{ number_format((float) ($customer->balance ?? 0), 2) }}</td>
-                                                <td class="text-end fw-semibold">₦{{ number_format((float) ($customer->sales_balance_sum ?? 0), 2) }}</td>
-                                                <td class="text-end fw-bold text-danger">₦{{ number_format((float) ($customer->computed_balance ?? $customer->balance), 2) }}</td>
-                                                <td class="text-end">₦{{ number_format((float) ($customer->credit_limit ?? 0), 2) }}</td>
+                                                <td class="text-end fw-semibold">₦{{ \App\Support\CompactNumber::format((float) ($customer->balance ?? 0), 2) }}</td>
+                                                <td class="text-end fw-semibold">₦{{ \App\Support\CompactNumber::format((float) ($customer->sales_balance_sum ?? 0), 2) }}</td>
+                                                <td class="text-end fw-bold text-danger">₦{{ \App\Support\CompactNumber::format((float) ($customer->computed_balance ?? $customer->balance), 2) }}</td>
+                                                <td class="text-end">₦{{ \App\Support\CompactNumber::format((float) ($customer->credit_limit ?? 0), 2) }}</td>
                                                 <td>
                                                     <div>{{ $customer->created_at ? $customer->created_at->format('d M Y') : 'N/A' }}</div>
                                                     <small class="text-muted">Balance date: {{ $customer->opening_balance_date ?? '—' }}</small>

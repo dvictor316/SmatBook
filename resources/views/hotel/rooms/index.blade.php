@@ -123,7 +123,7 @@
                                                 @endif
                                                 <div class="hotel-preview-controls">
                                                     <div>
-                                                        <strong>{{ $room->type?->name ?? 'Room' }} - {{ number_format((float)($room->base_rate_override ?: ($room->type?->base_rate ?? 0)), 2) }}</strong>
+                                                        <strong>{{ $room->type?->name ?? 'Room' }} - {{ \App\Support\CompactNumber::format((float)($room->base_rate_override ?: ($room->type?->base_rate ?? 0)), 2) }}</strong>
                                                         <span>{{ $room->notes ?: 'Wide room preview for customer-facing inspection.' }}</span>
                                                     </div>
                                                     <div class="hotel-preview-status">

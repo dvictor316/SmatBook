@@ -296,7 +296,7 @@
         // Email Feature
         $('#emailReport').on('click', function() {
             const subject = "Payment Report: {{ $reportDate }}";
-            const body = "Attached is the payment report. Total Received: {{ $currencySymbol }}{{ number_format($totalAmount, 2) }}";
+            const body = "Attached is the payment report. Total Received: {{ $currencySymbol }}{{ \App\Support\CompactNumber::format($totalAmount, 2) }}";
             const token = '{{ csrf_token() }}';
             const recipient = prompt('Send report to email (leave blank to use your account email):') ?? null;
             if (recipient === null) return;

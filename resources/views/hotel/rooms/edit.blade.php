@@ -31,7 +31,7 @@
         <div class="room-form-card"><div class="card-header"><h5 class="mb-0">Room Details</h5></div><div class="card-body">
             <div class="row g-3">
                 <div class="col-md-4"><label class="form-label">Room Number</label><input class="form-control" value="{{ $room->room_number }}" disabled><small class="text-muted">Room number is fixed to protect reservations.</small></div>
-                <div class="col-md-4"><label class="form-label">Room Type</label><select name="room_type_id" class="form-select"><option value="">Select room type</option>@foreach($roomTypes as $rt)<option value="{{ $rt->id }}" @if($room->room_type_id == $rt->id) selected @endif>{{ $rt->name }} - {{ number_format((float)$rt->base_rate, 2) }}</option>@endforeach</select></div>
+                <div class="col-md-4"><label class="form-label">Room Type</label><select name="room_type_id" class="form-select"><option value="">Select room type</option>@foreach($roomTypes as $rt)<option value="{{ $rt->id }}" @if($room->room_type_id == $rt->id) selected @endif>{{ $rt->name }} - {{ \App\Support\CompactNumber::format((float)$rt->base_rate, 2) }}</option>@endforeach</select></div>
                 <div class="col-md-2"><label class="form-label">Floor</label><input name="floor" class="form-control" value="{{ old('floor', $room->floor) }}"></div>
                 <div class="col-md-2"><label class="form-label">Wing</label><input name="wing" class="form-control" value="{{ old('wing', $room->wing) }}"></div>
                 <div class="col-md-3"><label class="form-label">Base Rate Override</label><input name="base_rate_override" class="form-control" type="number" step="0.01" value="{{ old('base_rate_override', $room->base_rate_override) }}"></div>

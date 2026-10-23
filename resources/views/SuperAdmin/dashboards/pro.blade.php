@@ -470,7 +470,7 @@
                     <i class="fas fa-wallet fa-lg"></i>
                 </div>
                 <div class="small fw-bold text-uppercase">Today's revenue</div>
-                <h3 class="fw-bold mb-0">₦{{ number_format($metrics['todayRevenue'] ?? 0, 2) }}</h3>
+                <h3 class="fw-bold mb-0">₦{{ \App\Support\CompactNumber::format($metrics['todayRevenue'] ?? 0, 2) }}</h3>
                 <span class="small"><i class="fas fa-caret-up"></i> Live from sales ledger</span>
             </div>
         </div>
@@ -480,7 +480,7 @@
                     <i class="fas fa-chart-line fa-lg"></i>
                 </div>
                 <div class="small fw-bold text-uppercase">Net Profit</div>
-                <h3 class="fw-bold mb-0">₦{{ number_format($metrics['netProfit'] ?? 0, 2) }}</h3>
+                <h3 class="fw-bold mb-0">₦{{ \App\Support\CompactNumber::format($metrics['netProfit'] ?? 0, 2) }}</h3>
                 <span class="small">Real-time margin</span>
             </div>
         </div>
@@ -490,7 +490,7 @@
                     <i class="fas fa-receipt fa-lg"></i>
                 </div>
                 <div class="small fw-bold text-uppercase">Operating Expenses</div>
-                <h3 class="fw-bold mb-0">₦{{ number_format($metrics['totalExpenses'] ?? 0, 2) }}</h3>
+                <h3 class="fw-bold mb-0">₦{{ \App\Support\CompactNumber::format($metrics['totalExpenses'] ?? 0, 2) }}</h3>
                 <span class="small"><i class="fas fa-arrow-up"></i> Dynamic from expenses table</span>
             </div>
         </div>
@@ -500,7 +500,7 @@
                     <i class="fas fa-boxes fa-lg"></i>
                 </div>
                 <div class="small fw-bold text-uppercase">Inventory Assets</div>
-                <h3 class="fw-bold mb-0">₦{{ number_format($inventoryValue, 2) }}</h3>
+                <h3 class="fw-bold mb-0">₦{{ \App\Support\CompactNumber::format($inventoryValue, 2) }}</h3>
                 <span class="small">{{ number_format($metrics['activeStock'] ?? 0) }} units across categories</span>
             </div>
         </div>
@@ -548,7 +548,7 @@
             <div class="col-sm-6 col-xl-3">
                 <div class="insight-item">
                     <div class="label">Pending Balance</div>
-                    <div class="value">₦{{ number_format($metrics['pendingBalance'] ?? 0, 2) }}</div>
+                    <div class="value">₦{{ \App\Support\CompactNumber::format($metrics['pendingBalance'] ?? 0, 2) }}</div>
                 </div>
             </div>
             <div class="col-sm-6 col-xl-3">
@@ -620,7 +620,7 @@
                                 <tr>
                                     <td>{{ $customer->customer_name }}</td>
                                     <td class="text-end">{{ number_format($customer->invoices_count) }}</td>
-                                    <td class="text-end">₦{{ number_format($customer->total_spend, 2) }}</td>
+                                    <td class="text-end">₦{{ \App\Support\CompactNumber::format($customer->total_spend, 2) }}</td>
                                 </tr>
                             @empty
                                 <tr>
@@ -759,7 +759,7 @@
                             <div class="text-muted small">{{ optional($activity->created_at)->diffForHumans() }}</div>
                         </div>
                         <div class="text-end">
-                            <div class="small fw-bold text-primary">₦{{ number_format((float) ($activity->amount ?? 0), 2) }}</div>
+                            <div class="small fw-bold text-primary">₦{{ \App\Support\CompactNumber::format((float) ($activity->amount ?? 0), 2) }}</div>
                             <div class="text-muted small text-uppercase">{{ $activity->status ?? 'paid' }}</div>
                         </div>
                     </div>

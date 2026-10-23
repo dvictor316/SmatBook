@@ -151,8 +151,8 @@
                                         @php $isActive = (bool) ($account->is_active ?? true); @endphp
                                         <span class="coa-status {{ $isActive ? 'coa-status-active' : 'coa-status-inactive' }}">{{ $isActive ? 'Active' : 'Inactive' }}</span>
                                     </td>
-                                    <td class="text-end">{{ number_format((float) ($account->opening_balance ?? 0), 2) }}</td>
-                                    <td class="text-end fw-semibold">{{ number_format((float) ($account->current_balance ?? 0), 2) }}</td>
+                                    <td class="text-end">{{ \App\Support\CompactNumber::format((float) ($account->opening_balance ?? 0), 2) }}</td>
+                                    <td class="text-end fw-semibold">{{ \App\Support\CompactNumber::format((float) ($account->current_balance ?? 0), 2) }}</td>
                                     <td class="text-end">{{ number_format((int) ($account->transactions_count ?? 0)) }}</td>
                                 </tr>
                             @empty

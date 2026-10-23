@@ -685,7 +685,7 @@ class SupplierController extends Controller
         $totalPayment = round($paymentAmount > 0 ? $paymentAmount : ($allocations->sum() + $openingBalancePayment), 2);
         if ($sourceBalanceCursor !== null) {
             if ($totalPayment > $sourceBalanceCursor) {
-                return back()->withInput()->with('error', 'Selected payment source does not have enough funds to cover the payment total of ₦' . number_format($totalPayment, 2) . '.');
+                return back()->withInput()->with('error', 'Selected payment source does not have enough funds to cover the payment total of ₦' . \App\Support\CompactNumber::format($totalPayment, 2) . '.');
             }
         }
 

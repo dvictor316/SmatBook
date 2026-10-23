@@ -66,15 +66,15 @@
                     @endphp
                     <div class="p-3 border-bottom d-flex justify-content-between flex-wrap gap-2">
                         <div><strong>{{ $selectedStay->customer?->customer_name ?? $selectedStay->customer?->name ?? 'Guest' }}</strong><div class="small text-muted">Room {{ $selectedStay->room?->room_number ?? 'N/A' }} · Folio {{ $selectedFolio?->folio_number ?? 'N/A' }}</div></div>
-                        <span class="badge bg-warning text-dark align-self-start">Due after deposit: {{ number_format($amountDueAfterDeposit, 2) }}</span>
+                        <span class="badge bg-warning text-dark align-self-start">Due after deposit: {{ \App\Support\CompactNumber::format($amountDueAfterDeposit, 2) }}</span>
                     </div>
 
                     <div class="p-3">
                         <div class="folio-strip mb-3">
-                            <div class="folio-stat"><small>Charges</small><h5 class="mb-0">{{ number_format((float) ($selectedFolio?->total_charges ?? 0), 2) }}</h5></div>
-                            <div class="folio-stat"><small>Deposits</small><h5 class="mb-0">{{ number_format((float) ($selectedFolio?->opening_deposit ?? 0), 2) }}</h5></div>
-                            <div class="folio-stat"><small>Payments</small><h5 class="mb-0">{{ number_format((float) ($selectedFolio?->total_payments ?? 0), 2) }}</h5></div>
-                            <div class="folio-stat"><small>Net Due</small><h5 class="mb-0 {{ (float)($selectedFolio?->balance ?? 0) > 0 ? 'text-danger' : 'text-success' }}">{{ number_format((float) ($selectedFolio?->balance ?? 0), 2) }}</h5></div>
+                            <div class="folio-stat"><small>Charges</small><h5 class="mb-0">{{ \App\Support\CompactNumber::format((float) ($selectedFolio?->total_charges ?? 0), 2) }}</h5></div>
+                            <div class="folio-stat"><small>Deposits</small><h5 class="mb-0">{{ \App\Support\CompactNumber::format((float) ($selectedFolio?->opening_deposit ?? 0), 2) }}</h5></div>
+                            <div class="folio-stat"><small>Payments</small><h5 class="mb-0">{{ \App\Support\CompactNumber::format((float) ($selectedFolio?->total_payments ?? 0), 2) }}</h5></div>
+                            <div class="folio-stat"><small>Net Due</small><h5 class="mb-0 {{ (float)($selectedFolio?->balance ?? 0) > 0 ? 'text-danger' : 'text-success' }}">{{ \App\Support\CompactNumber::format((float) ($selectedFolio?->balance ?? 0), 2) }}</h5></div>
                         </div>
 
                         <form method="POST" action="{{ route('hotel.checkout', $selectedStay) }}">
@@ -86,7 +86,7 @@
                                 @endforeach
                             </div>
                             <div class="row g-3">
-                                <div class="col-md-6"><label class="form-label">Amount Paid</label><input type="number" step="0.01" min="0" name="paid_amount" value="{{ number_format($amountDueAfterDeposit, 2, '.', '') }}" class="form-control" required><small class="text-muted">The available reservation deposit is applied before this payment.</small></div>
+                                <div class="col-md-6"><label class="form-label">Amount Paid</label><input type="number" step="0.01" min="0" name="paid_amount" value="{{ \App\Support\CompactNumber::format($amountDueAfterDeposit, 2, '.', '') }}" class="form-control" required><small class="text-muted">The available reservation deposit is applied before this payment.</small></div>
                                 <div class="col-md-6"><label class="form-label">Deposit Account</label><select name="payment_account_id" class="form-select"><option value="">Automatic cash clearing</option>@foreach($paymentAccounts as $account)<option value="{{ $account->id }}">{{ $account->code }} - {{ $account->name }}</option>@endforeach</select></div>
                                 <div class="col-12" id="splitFields" style="display:none"><div class="row g-2 border rounded p-2"><div class="col-md-4"><label>Cash Amount</label><input type="number" step="0.01" min="0" name="split[cash]" value="0" class="form-control"><select name="split_accounts[cash]" class="form-select mt-1"><option value="">Cash clearing</option>@foreach($paymentAccounts as $account)<option value="{{ $account->id }}">{{ $account->name }}</option>@endforeach</select></div><div class="col-md-4"><label>Transfer Amount</label><input type="number" step="0.01" min="0" name="split[transfer]" value="0" class="form-control"><select name="split_accounts[transfer]" class="form-select mt-1"><option value="">Transfer clearing</option>@foreach($paymentAccounts as $account)<option value="{{ $account->id }}">{{ $account->name }}</option>@endforeach</select></div><div class="col-md-4"><label>POS Amount</label><input type="number" step="0.01" min="0" name="split[pos]" value="0" class="form-control"><select name="split_accounts[pos]" class="form-select mt-1"><option value="">POS clearing</option>@foreach($paymentAccounts as $account)<option value="{{ $account->id }}">{{ $account->name }}</option>@endforeach</select></div></div></div>
                                 <div class="col-12"><button class="btn btn-warning btn-lg">Settle and Complete Checkout</button></div>
@@ -95,10 +95,10 @@
                     </div>
 
                     <div class="settle-summary">
-                        <div class="settle-row"><span>Suggested deposit applied</span><strong>{{ number_format($depositToApply, 2) }}</strong></div>
-                        <div class="settle-row"><span>Subtotal</span><strong>{{ number_format((float) ($selectedFolio?->total_charges ?? 0), 2) }}</strong></div>
-                        <div class="settle-row"><span>Amount paid</span><strong>{{ number_format((float) ($selectedFolio?->total_payments ?? 0), 2) }}</strong></div>
-                        <div class="settle-row"><span>Balance due</span><strong>{{ number_format((float) ($selectedFolio?->balance ?? 0), 2) }}</strong></div>
+                        <div class="settle-row"><span>Suggested deposit applied</span><strong>{{ \App\Support\CompactNumber::format($depositToApply, 2) }}</strong></div>
+                        <div class="settle-row"><span>Subtotal</span><strong>{{ \App\Support\CompactNumber::format((float) ($selectedFolio?->total_charges ?? 0), 2) }}</strong></div>
+                        <div class="settle-row"><span>Amount paid</span><strong>{{ \App\Support\CompactNumber::format((float) ($selectedFolio?->total_payments ?? 0), 2) }}</strong></div>
+                        <div class="settle-row"><span>Balance due</span><strong>{{ \App\Support\CompactNumber::format((float) ($selectedFolio?->balance ?? 0), 2) }}</strong></div>
                     </div>
 
                     <div class="p-3 table-responsive">
@@ -106,7 +106,7 @@
                             <thead><tr><th>Date</th><th>Description</th><th>Department</th><th>Type</th><th>Amount</th></tr></thead>
                             <tbody>
                             @forelse($folioItems as $item)
-                                <tr><td>{{ optional($item->service_date)->format('d M Y') }}</td><td>{{ $item->description }}</td><td>{{ strtoupper((string) ($item->service_code ?? '-')) }}</td><td>{{ ucfirst(str_replace('_', ' ', (string) $item->type)) }}</td><td>{{ number_format((float) $item->amount, 2) }}</td></tr>
+                                <tr><td>{{ optional($item->service_date)->format('d M Y') }}</td><td>{{ $item->description }}</td><td>{{ strtoupper((string) ($item->service_code ?? '-')) }}</td><td>{{ ucfirst(str_replace('_', ' ', (string) $item->type)) }}</td><td>{{ \App\Support\CompactNumber::format((float) $item->amount, 2) }}</td></tr>
                             @empty
                                 <tr><td colspan="5" class="text-muted text-center py-4">No folio line items available.</td></tr>
                             @endforelse

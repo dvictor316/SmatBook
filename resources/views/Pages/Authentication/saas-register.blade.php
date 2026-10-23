@@ -714,7 +714,7 @@
                             FREE <span style="font-size: 0.8rem; color: #94a3b8;">(Partner)</span>
                         @else
 
-                            ₦{{ number_format($displayPrice, 2) }}
+                            ₦{{ \App\Support\CompactNumber::format($displayPrice, 2) }}
                         @endif
                     </div>
                     @unless($isManager)
@@ -996,10 +996,7 @@
         const livestockAnnualPrice = 200000;
 
         function formatAmount(value) {
-            return '₦' + Number(value || 0).toLocaleString('en-NG', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            });
+            return '₦' + window.formatCompactAmount(value, 'en-NG');
         }
 
         function sync() {

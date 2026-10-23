@@ -38,34 +38,34 @@
             @foreach($filing->lines as $line)
                 <tr>
                     <td>{{ $line->label }}</td>
-                    <td>{{ number_format((float) $line->taxable_base, 2) }}</td>
-                    <td>{{ number_format((float) $line->tax_amount, 2) }}</td>
-                    <td>{{ number_format((float) $line->credit_amount, 2) }}</td>
-                    <td>{{ number_format((float) $line->net_amount, 2) }}</td>
+                    <td>{{ \App\Support\CompactNumber::format((float) $line->taxable_base, 2) }}</td>
+                    <td>{{ \App\Support\CompactNumber::format((float) $line->tax_amount, 2) }}</td>
+                    <td>{{ \App\Support\CompactNumber::format((float) $line->credit_amount, 2) }}</td>
+                    <td>{{ \App\Support\CompactNumber::format((float) $line->net_amount, 2) }}</td>
                 </tr>
             @endforeach
         </tbody>
     </table>
 
     <table class="meta">
-        <tr><td>Total Taxable</td><td>{{ $filing->currency_code }} {{ number_format((float) $filing->total_taxable, 2) }}</td></tr>
-        <tr><td>Tax Due</td><td>{{ $filing->currency_code }} {{ number_format((float) $filing->tax_due, 2) }}</td></tr>
-        <tr><td>Tax Credit / Refund</td><td>{{ $filing->currency_code }} {{ number_format((float) $filing->tax_credit, 2) }} / {{ number_format((float) $filing->tax_refund, 2) }}</td></tr>
+        <tr><td>Total Taxable</td><td>{{ $filing->currency_code }} {{ \App\Support\CompactNumber::format((float) $filing->total_taxable, 2) }}</td></tr>
+        <tr><td>Tax Due</td><td>{{ $filing->currency_code }} {{ \App\Support\CompactNumber::format((float) $filing->tax_due, 2) }}</td></tr>
+        <tr><td>Tax Credit / Refund</td><td>{{ $filing->currency_code }} {{ \App\Support\CompactNumber::format((float) $filing->tax_credit, 2) }} / {{ \App\Support\CompactNumber::format((float) $filing->tax_refund, 2) }}</td></tr>
     </table>
 
     @if(data_get($filing->metadata, 'cit_workpaper'))
         @php($cit = data_get($filing->metadata, 'cit_workpaper'))
         <h2>Company Income Tax Computation</h2>
         <table class="meta">
-            <tr><td>Accounting Profit</td><td>{{ number_format((float) data_get($cit, 'accounting_profit'), 2) }}</td></tr>
-            <tr><td>Disallowable Expenses</td><td>{{ number_format((float) data_get($cit, 'disallowable_expenses'), 2) }}</td></tr>
-            <tr><td>Loss Relief</td><td>({{ number_format((float) data_get($cit, 'loss_relief'), 2) }})</td></tr>
-            <tr><td>Capital Allowances</td><td>({{ number_format((float) data_get($cit, 'capital_allowances'), 2) }})</td></tr>
-            <tr><td>Taxable Profit</td><td>{{ number_format((float) data_get($cit, 'taxable_profit'), 2) }}</td></tr>
-            <tr><td>Company Tax</td><td>{{ data_get($cit, 'cit_rate') }}% / {{ number_format((float) data_get($cit, 'gross_cit'), 2) }}</td></tr>
-            <tr><td>Development Levy</td><td>{{ data_get($cit, 'development_levy_rate') }}% / {{ number_format((float) data_get($cit, 'development_levy'), 2) }}</td></tr>
-            <tr><td>Credits</td><td>({{ number_format((float) data_get($cit, 'credits'), 2) }})</td></tr>
-            <tr><td>Net Company Tax Due</td><td>{{ number_format((float) data_get($cit, 'net_cit_due'), 2) }}</td></tr>
+            <tr><td>Accounting Profit</td><td>{{ \App\Support\CompactNumber::format((float) data_get($cit, 'accounting_profit'), 2) }}</td></tr>
+            <tr><td>Disallowable Expenses</td><td>{{ \App\Support\CompactNumber::format((float) data_get($cit, 'disallowable_expenses'), 2) }}</td></tr>
+            <tr><td>Loss Relief</td><td>({{ \App\Support\CompactNumber::format((float) data_get($cit, 'loss_relief'), 2) }})</td></tr>
+            <tr><td>Capital Allowances</td><td>({{ \App\Support\CompactNumber::format((float) data_get($cit, 'capital_allowances'), 2) }})</td></tr>
+            <tr><td>Taxable Profit</td><td>{{ \App\Support\CompactNumber::format((float) data_get($cit, 'taxable_profit'), 2) }}</td></tr>
+            <tr><td>Company Tax</td><td>{{ data_get($cit, 'cit_rate') }}% / {{ \App\Support\CompactNumber::format((float) data_get($cit, 'gross_cit'), 2) }}</td></tr>
+            <tr><td>Development Levy</td><td>{{ data_get($cit, 'development_levy_rate') }}% / {{ \App\Support\CompactNumber::format((float) data_get($cit, 'development_levy'), 2) }}</td></tr>
+            <tr><td>Credits</td><td>({{ \App\Support\CompactNumber::format((float) data_get($cit, 'credits'), 2) }})</td></tr>
+            <tr><td>Net Company Tax Due</td><td>{{ \App\Support\CompactNumber::format((float) data_get($cit, 'net_cit_due'), 2) }}</td></tr>
         </table>
     @endif
 

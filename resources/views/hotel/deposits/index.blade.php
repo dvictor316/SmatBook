@@ -26,8 +26,8 @@
 
             <div class="hotel-ledger-strip">
                 <span>Rows: {{ $isPaginator ? $deposits->total() : $depositRows->count() }}</span>
-                <span>Visible received: {{ number_format($visibleReceived, 2) }}</span>
-                <span>Visible gap: {{ number_format($visibleGap, 2) }}</span>
+                <span>Visible received: {{ \App\Support\CompactNumber::format($visibleReceived, 2) }}</span>
+                <span>Visible gap: {{ \App\Support\CompactNumber::format($visibleGap, 2) }}</span>
             </div>
 
             <div class="hotel-type-panel">
@@ -50,8 +50,8 @@
                                 <tr>
                                     <td><strong>{{ $deposit->reservation_number }}</strong></td>
                                     <td>{{ $deposit->customer?->customer_name ?? $deposit->customer?->name ?? 'N/A' }}</td>
-                                    <td>{{ number_format((float) $deposit->deposit_received, 2) }}</td>
-                                    <td>{{ number_format($gap, 2) }}</td>
+                                    <td>{{ \App\Support\CompactNumber::format((float) $deposit->deposit_received, 2) }}</td>
+                                    <td>{{ \App\Support\CompactNumber::format($gap, 2) }}</td>
                                     <td><span class="hotel-status-chip {{ $gap > 0 ? 'gold' : 'green' }}">{{ $gap > 0 ? 'More Required' : 'Covered' }}</span></td>
                                     <td>{{ optional($deposit->created_at)->format('d M Y H:i') }}</td>
                                     <td class="text-end">

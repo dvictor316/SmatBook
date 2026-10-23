@@ -229,7 +229,7 @@ class FixedAssetController extends Controller
 
         return redirect()
             ->route('finance.fixed-assets.index')
-            ->with($level, $result['message'] . (((int) $result['posted']) > 0 ? ' Total: ₦' . number_format((float) $result['amount'], 2) : ''));
+            ->with($level, $result['message'] . (((int) $result['posted']) > 0 ? ' Total: ₦' . \App\Support\CompactNumber::format((float) $result['amount'], 2) : ''));
     }
 
     public function depreciateDue(Request $request)
@@ -258,7 +258,7 @@ class FixedAssetController extends Controller
         return redirect()
             ->route('finance.fixed-assets.index')
             ->with($posted > 0 ? 'success' : 'info', $posted > 0
-                ? 'Posted ' . $posted . ' due depreciation period(s). Total: ₦' . number_format($amount, 2)
+                ? 'Posted ' . $posted . ' due depreciation period(s). Total: ₦' . \App\Support\CompactNumber::format($amount, 2)
                 : 'No asset depreciation is due yet.');
     }
 

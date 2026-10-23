@@ -44,7 +44,7 @@
                                 @foreach ($invoices as $invoice) 
                                     <tr>
                                         <td><h2 class="table-avatar"><a href="{{ url('customer-details', $invoice->customer?->id) }}"><img class="avatar avatar-sm me-2 avatar-img rounded-circle" src="{{ URL::asset('/assets/img/profiles/avatar-01.jpg') }}" alt="User Image">{{ $invoice->customer?->name ?? 'N/A' }}</a></h2></td>
-                                        <td>{{ $currencySymbol }}{{ number_format($invoice->amount, 2) }}</td>
+                                        <td>{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($invoice->amount, 2) }}</td>
                                         <td>{{ optional($invoice->due_date)->format('d M Y') ?? 'N/A' }}</td>
                                         <td><span class="badge bg-inverse-{{ Str::slug($invoice->status) ?? 'info' }}">{{ ucfirst($invoice->status) }}</span></td>
                                         <td class="text-end"><div class="dropdown dropdown-action"><button type="button" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-ellipsis-h"></i></button><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" href="{{ url('edit-invoice') }}"><i class="far fa-edit me-2"></i>Edit</a><a class="dropdown-item" href="{{ url('invoice-details') }}"><i class="far fa-eye me-2"></i>View</a></div></div></td>

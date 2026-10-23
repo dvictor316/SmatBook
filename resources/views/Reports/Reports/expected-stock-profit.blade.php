@@ -35,7 +35,7 @@
         <tbody>
         @forelse($rows as $row)
             <tr>
-                <td>{{ $row->name }}</td><td>{{ $row->sku ?? '' }}</td><td class="text-end">{{ number_format($row->qty, 2) }}</td>
+                <td>{{ $row->name }}</td><td>{{ $row->sku ?? '' }}</td><td class="text-end">{{ \App\Support\CompactNumber::format($row->qty, 2) }}</td>
                 <td class="text-end">{{ $row->unit_cost > 0 ? $fmt($row->unit_cost) : 'Missing' }}</td>
                 <td class="text-end">{{ $row->selling_price > 0 ? $fmt($row->selling_price) : 'Missing' }}</td>
                 <td class="text-end">{{ $row->has_complete_pricing ? $fmt($row->total_value) : '-' }}</td>

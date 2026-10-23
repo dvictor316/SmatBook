@@ -424,7 +424,7 @@
                         <div class="summary-value" style="font-size: 1.35rem;">Find and reprint receipts only</div>
                         <div class="summary-subtle mt-2">Use invoice number, customer, or date to locate a receipt.</div>
                     @else
-                        <div class="summary-value">₦{{ number_format((float) ($totalRevenue ?? 0), 2) }}</div>
+                        <div class="summary-value">₦{{ \App\Support\CompactNumber::format((float) ($totalRevenue ?? 0), 2) }}</div>
                         <div class="summary-subtle mt-2">{{ $filterDateLabel }} • Gross sales before Balance Sheet profit adjustments</div>
                     @endif
                 </div>
@@ -433,7 +433,7 @@
                     @if($posReceiptLookupMode)
                     <div class="fs-2 fw-bold">{{ number_format((int) ($totalSalesCount ?? 0)) }}</div>
                     @else
-                    <div class="fs-2 fw-bold">₦{{ number_format((float) ($selectedAccountTotal ?? $totalAmountPaid ?? 0), 2) }}</div>
+                    <div class="fs-2 fw-bold">₦{{ \App\Support\CompactNumber::format((float) ($selectedAccountTotal ?? $totalAmountPaid ?? 0), 2) }}</div>
                     @endif
                     <div class="summary-subtle mt-2">{{ $posReceiptLookupMode ? 'Receipt records found' : number_format((int) ($totalSalesCount ?? 0)) . ' filtered POS transactions' }}</div>
                 </div>
@@ -511,13 +511,13 @@
                         @endphp
                         <a class="payment-total-card {{ $isActivePaymentMode ? 'active' : '' }}" href="{{ $paymentModeUrl }}">
                             <div class="payment-label">{{ $paymentTotal['label'] }}</div>
-                            <div class="payment-amount">₦{{ number_format((float) ($paymentTotal['amount'] ?? 0), 2) }}</div>
+                            <div class="payment-amount">₦{{ \App\Support\CompactNumber::format((float) ($paymentTotal['amount'] ?? 0), 2) }}</div>
                             <div class="summary-subtle">{{ number_format((int) ($paymentTotal['count'] ?? 0)) }} sale(s){{ $isActivePaymentMode ? ' selected' : '' }}</div>
                         </a>
                     @endforeach
                     <div class="payment-total-card">
                         <div class="payment-label">Balance Due</div>
-                        <div class="payment-amount">₦{{ number_format((float) ($totalBalance ?? 0), 2) }}</div>
+                        <div class="payment-amount">₦{{ \App\Support\CompactNumber::format((float) ($totalBalance ?? 0), 2) }}</div>
                         <div class="summary-subtle">After paid amount</div>
                     </div>
                 </div>
@@ -599,13 +599,13 @@
                             </td>
                             <td>
                                 <div class="fw-bold text-dark">{{ $itemsCount }} item(s)</div>
-                                <small class="text-muted" style="font-size: 10px;">Qty: {{ number_format($itemsQty, 2) }}</small>
+                                <small class="text-muted" style="font-size: 10px;">Qty: {{ \App\Support\CompactNumber::format($itemsQty, 2) }}</small>
                             </td>
                             <td class="text-end fw-bold text-dark" style="font-size: 15px;">
-                                ₦{{ number_format($sale->total, 2) }}
+                                ₦{{ \App\Support\CompactNumber::format($sale->total, 2) }}
                             </td>
                             <td class="text-end fw-bold text-dark" style="font-size: 15px;">
-                                ₦{{ number_format($selectedPaymentAccount ? \App\Support\PosSalesAccountFilter::amount($sale, (int) $selectedPaymentAccount->id) : (float) ($sale->amount_paid ?? $sale->paid ?? 0), 2) }}
+                                ₦{{ \App\Support\CompactNumber::format($selectedPaymentAccount ? \App\Support\PosSalesAccountFilter::amount($sale, (int) $selectedPaymentAccount->id) : (float) ($sale->amount_paid ?? $sale->paid ?? 0), 2) }}
                             </td>
                             <td>
                                 <span class="badge bg-white text-dark border">
@@ -651,8 +651,8 @@
                         @endforeach
                         <tr class="sales-total-row">
                             <td class="ps-4" colspan="3">Total</td>
-                            <td class="text-end">₦{{ number_format((float) ($totalRevenue ?? 0), 2) }}</td>
-                            <td class="text-end">₦{{ number_format((float) ($selectedAccountTotal ?? $totalAmountPaid ?? 0), 2) }}</td>
+                            <td class="text-end">₦{{ \App\Support\CompactNumber::format((float) ($totalRevenue ?? 0), 2) }}</td>
+                            <td class="text-end">₦{{ \App\Support\CompactNumber::format((float) ($selectedAccountTotal ?? $totalAmountPaid ?? 0), 2) }}</td>
                             <td colspan="4">
                                 @foreach(($paymentStatusSummary ?? []) as $statusTotal)
                                     <span class="me-3">{{ $statusTotal['label'] }} - {{ number_format((int) $statusTotal['count']) }}</span>

@@ -42,8 +42,8 @@
                             <tr>
                                 <td>{{ $mo->mo_number }}</td>
                                 <td>{{ $mo->product->name ?? '—' }}</td>
-                                <td>{{ number_format((float) ($mo->planned_quantity ?? 0), 2) }}</td>
-                                <td>{{ number_format((float) ($mo->produced_quantity ?? 0), 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format((float) ($mo->planned_quantity ?? 0), 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format((float) ($mo->produced_quantity ?? 0), 2) }}</td>
                                 <td>{{ $mo->bom->bom_number ?? '—' }}</td>
                                 <td>{{ $mo->planned_start_date ? $mo->planned_start_date->format('d M Y') : '—' }}</td>
                                 <td>

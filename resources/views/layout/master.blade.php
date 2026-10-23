@@ -76,6 +76,7 @@
 
     <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
     @include('layout.partials.design-system')
+    @include('layout.partials.compact-number-script')
 
     <style>
 

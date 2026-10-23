@@ -1308,7 +1308,7 @@ class HomeController extends Controller
                 'Quotation Number' => $quotation->quotation_id ?? ('#' . $quotation->id),
                 'Issue Date' => $quotation->issue_date ? Carbon::parse($quotation->issue_date)->format('d M Y') : 'N/A',
                 'Valid Until' => $quotation->expiry_date ? Carbon::parse($quotation->expiry_date)->format('d M Y') : 'N/A',
-                'Total Amount' => 'NGN ' . number_format((float) ($quotation->total ?? 0), 2),
+                'Total Amount' => 'NGN ' . \App\Support\CompactNumber::format((float) ($quotation->total ?? 0), 2),
             ]
         );
 

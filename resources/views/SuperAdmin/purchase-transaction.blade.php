@@ -154,7 +154,7 @@
                                                 </span>
                                             </td>
                                             <td>{{ \Carbon\Carbon::parse($transaction->created_at)->format('d M Y') }}</td> 
-                                            <td class="fw-bold text-dark">₦{{ number_format($transaction->amount ?? $transaction->total_amount, 2) }}</td>
+                                            <td class="fw-bold text-dark">₦{{ \App\Support\CompactNumber::format($transaction->amount ?? $transaction->total_amount, 2) }}</td>
                                             <td>
                                                 @php
                                                     $status = strtolower($transaction->status ?? $transaction->payment_status);

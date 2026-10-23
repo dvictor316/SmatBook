@@ -5348,7 +5348,7 @@ body.pos-terminal-workspace #pos-cash-account-name.is-unconfigured {
                     $measurementParts[] = $cartonUnitCount . ' ' . $baseUnitName . ($cartonUnitCount === 1 ? '' : 's') . ' / carton';
                 }
                 if (!empty($p->purchaseUnit?->symbol) && (float) ($p->conversion_rate ?? 0) > 0) {
-                    $measurementParts[] = 'Buy ' . $p->purchaseUnit->symbol . ' = ' . rtrim(rtrim(number_format((float) $p->conversion_rate, 2), '0'), '.') . ' ' . $baseUnitName;
+                    $measurementParts[] = 'Buy ' . $p->purchaseUnit->symbol . ' = ' . rtrim(rtrim(\App\Support\CompactNumber::format((float) $p->conversion_rate, 2), '0'), '.') . ' ' . $baseUnitName;
                 }
                 $unitOptions = collect($p->activeProductUnits ?? [])
                     ->map(function ($unit) use ($p) {
@@ -5511,7 +5511,7 @@ body.pos-terminal-workspace #pos-cash-account-name.is-unconfigured {
                             $measurementParts[] = $cartonUnitCount . ' ' . $baseUnitName . ($cartonUnitCount === 1 ? '' : 's') . ' / carton';
                         }
                         if (!empty($p->purchaseUnit?->symbol) && (float) ($p->conversion_rate ?? 0) > 0) {
-                            $measurementParts[] = 'Buy ' . $p->purchaseUnit->symbol . ' = ' . rtrim(rtrim(number_format((float) $p->conversion_rate, 2), '0'), '.') . ' ' . $baseUnitName;
+                            $measurementParts[] = 'Buy ' . $p->purchaseUnit->symbol . ' = ' . rtrim(rtrim(\App\Support\CompactNumber::format((float) $p->conversion_rate, 2), '0'), '.') . ' ' . $baseUnitName;
                         }
                         $unitOptions = collect($p->activeProductUnits ?? [])
                             ->map(function ($unit) use ($p) {

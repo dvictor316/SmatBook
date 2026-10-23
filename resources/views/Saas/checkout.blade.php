@@ -462,7 +462,7 @@
                     <span>Email</span>
                     <strong style="font-size:11px;">{{ $checkoutProfileEmail }}</strong>
                 </div>
-                <div class="summary-total">₦{{ number_format((float) ($subscription->amount ?? 0), 2) }}</div>
+                <div class="summary-total">₦{{ \App\Support\CompactNumber::format((float) ($subscription->amount ?? 0), 2) }}</div>
             </div>
         </aside>
 
@@ -555,7 +555,7 @@
                 </div>
 
                 <button class="pay-btn" type="submit" id="payNowBtn" {{ $hasGatewayIssue ? 'disabled' : '' }}>
-                    Continue to Paystack (₦{{ number_format((float) ($subscription->amount ?? 0), 2) }})
+                    Continue to Paystack (₦{{ \App\Support\CompactNumber::format((float) ($subscription->amount ?? 0), 2) }})
                 </button>
             </form>
 
@@ -578,7 +578,7 @@
         const gatewayHelpText = document.getElementById('gatewayHelpText');
         if (!form || !payNowBtn) return;
 
-        const amountLabel = '₦{{ number_format((float) ($subscription->amount ?? 0), 2) }}';
+        const amountLabel = '₦{{ \App\Support\CompactNumber::format((float) ($subscription->amount ?? 0), 2) }}';
 
         const setGatewayUI = (gateway) => {
             if (gatewayInput) {

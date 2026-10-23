@@ -39,9 +39,9 @@
 
         <div class="folio-strip">
             <div class="folio-stat"><span>Open Folios</span><strong>{{ $openCount }}</strong></div>
-            <div class="folio-stat"><span>Charges Loaded</span><strong>{{ number_format($charges, 2) }}</strong></div>
-            <div class="folio-stat"><span>Payments Loaded</span><strong>{{ number_format($payments, 2) }}</strong></div>
-            <div class="folio-stat"><span>Balance Loaded</span><strong class="{{ $balances > 0 ? 'text-danger' : 'text-success' }}">{{ number_format($balances, 2) }}</strong></div>
+            <div class="folio-stat"><span>Charges Loaded</span><strong>{{ \App\Support\CompactNumber::format($charges, 2) }}</strong></div>
+            <div class="folio-stat"><span>Payments Loaded</span><strong>{{ \App\Support\CompactNumber::format($payments, 2) }}</strong></div>
+            <div class="folio-stat"><span>Balance Loaded</span><strong class="{{ $balances > 0 ? 'text-danger' : 'text-success' }}">{{ \App\Support\CompactNumber::format($balances, 2) }}</strong></div>
         </div>
 
         @include('hotel.partials.operations-action-deck', [
@@ -73,9 +73,9 @@
                                     <td><a class="folio-number" href="{{ route('hotel.folios.show', $folio) }}">{{ $folio->folio_number }}</a></td>
                                     <td><strong>{{ $folio->customer?->customer_name ?? $folio->customer?->name ?? 'N/A' }}</strong></td>
                                     <td><span class="badge bg-light text-dark">Room {{ $folio->stay?->room?->room_number ?? 'N/A' }}</span></td>
-                                    <td>{{ number_format((float)$folio->total_charges,2) }}</td>
-                                    <td>{{ number_format((float)$folio->total_payments,2) }}</td>
-                                    <td><strong class="{{ (float)$folio->balance > 0 ? 'text-danger' : 'text-success' }}">{{ number_format((float)$folio->balance,2) }}</strong></td>
+                                    <td>{{ \App\Support\CompactNumber::format((float)$folio->total_charges,2) }}</td>
+                                    <td>{{ \App\Support\CompactNumber::format((float)$folio->total_payments,2) }}</td>
+                                    <td><strong class="{{ (float)$folio->balance > 0 ? 'text-danger' : 'text-success' }}">{{ \App\Support\CompactNumber::format((float)$folio->balance,2) }}</strong></td>
                                     <td><span class="badge {{ $folio->status === 'open' ? 'bg-warning text-dark' : 'bg-success' }}">{{ ucfirst((string) $folio->status) }}</span></td>
                                     <td><a href="{{ route('hotel.folios.show', $folio) }}" class="btn btn-sm btn-outline-primary">Open Folio</a></td>
                                 </tr>

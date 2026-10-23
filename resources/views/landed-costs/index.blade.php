@@ -43,7 +43,7 @@
                                 <td>{{ $lc->grn->grn_number ?? '—' }}</td>
                                 <td>{{ str_replace('_', ' ', ucfirst($lc->cost_type)) }}</td>
                                 <td>{{ $lc->description ?? '—' }}</td>
-                                <td>{{ number_format($lc->amount, 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format($lc->amount, 2) }}</td>
                                 <td>{{ $lc->currency ?? '—' }}</td>
                                 <td>{{ str_replace('_', ' ', ucfirst($lc->allocation_method)) }}</td>
                                 <td>

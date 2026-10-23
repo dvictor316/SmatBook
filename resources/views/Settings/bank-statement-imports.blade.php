@@ -326,11 +326,11 @@
                                                     </div>
                                                     <div>
                                                         <small>Amount</small>
-                                                        <div>{{ number_format((float) $line->amount, 2) }}</div>
+                                                        <div>{{ \App\Support\CompactNumber::format((float) $line->amount, 2) }}</div>
                                                     </div>
                                                     <div>
                                                         <small>Running Balance</small>
-                                                        <div>{{ $line->balance !== null ? number_format((float) $line->balance, 2) : 'N/A' }}</div>
+                                                        <div>{{ $line->balance !== null ? \App\Support\CompactNumber::format((float) $line->balance, 2) : 'N/A' }}</div>
                                                     </div>
                                                     <div>
                                                         <small>Matched Ledger Ref</small>

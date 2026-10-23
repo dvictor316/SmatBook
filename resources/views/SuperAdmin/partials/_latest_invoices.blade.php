@@ -69,7 +69,7 @@
                         <small class="text-muted" style="font-size: 0.7rem;">Verified Transaction</small>
                     </td>
                     <td class="amount-bold">
-                        ₦{{ number_format($invoice->total, 2) }}
+                        ₦{{ \App\Support\CompactNumber::format($invoice->total, 2) }}
                     </td>
                     <td>
                         <div class="text-muted small">

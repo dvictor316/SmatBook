@@ -1474,7 +1474,7 @@
                                         </div>
                                         <div class="mt-3">
                                             <h6 class="kpi-kicker mb-2">Total Plan Revenue</h6>
-                                            <h3 class="fw-bold mb-0 kpi-value">₦{{ number_format($metrics['owner_subscription_revenue'] ?? 0, 2) }}</h3>
+                                            <h3 class="fw-bold mb-0 kpi-value">₦{{ \App\Support\CompactNumber::format($metrics['owner_subscription_revenue'] ?? 0, 2) }}</h3>
                                             <p class="kpi-note mb-0 mt-2">All verified subscription income to platform owners</p>
                                         </div>
                                     </div>
@@ -1491,7 +1491,7 @@
                                         </div>
                                         <div class="mt-3">
                                             <h6 class="kpi-kicker mb-2">Monthly Plan Revenue</h6>
-                                            <h3 class="fw-bold mb-0 kpi-value">₦{{ number_format($metrics['plan_sales_value_month'] ?? 0, 2) }}</h3>
+                                            <h3 class="fw-bold mb-0 kpi-value">₦{{ \App\Support\CompactNumber::format($metrics['plan_sales_value_month'] ?? 0, 2) }}</h3>
                                             <p class="kpi-note mb-0 mt-2">Income collected from plan buyers this month</p>
                                         </div>
                                     </div>
@@ -1525,7 +1525,7 @@
                                         </div>
                                         <div class="mt-3">
                                             <h6 class="kpi-kicker mb-2">Average Plan Sale</h6>
-                                            <h3 class="fw-bold mb-0 kpi-value">₦{{ number_format($metrics['avg_plan_sale'] ?? 0, 2) }}</h3>
+                                            <h3 class="fw-bold mb-0 kpi-value">₦{{ \App\Support\CompactNumber::format($metrics['avg_plan_sale'] ?? 0, 2) }}</h3>
                                             <p class="kpi-note mb-0 mt-2">Average income per verified plan purchase</p>
                                         </div>
                                     </div>
@@ -1691,14 +1691,14 @@
                                             <div class="col-md-4">
                                                 <div class="money-mini-card rounded-3 bg-light text-center">
                                                     <div class="text-muted money-label mb-1">Gross Revenue</div>
-                                                    <div class="fw-bold money-value text-success">₦{{ number_format($metrics['owner_subscription_revenue'] ?? 0, 2) }}</div>
+                                                    <div class="fw-bold money-value text-success">₦{{ \App\Support\CompactNumber::format($metrics['owner_subscription_revenue'] ?? 0, 2) }}</div>
                                                     <div class="text-muted money-note">Total subscription income</div>
                                                 </div>
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="money-mini-card rounded-3 bg-light text-center">
                                                     <div class="text-muted money-label mb-1">Total Paid Out</div>
-                                                    <div class="fw-bold money-value text-danger">₦{{ number_format($metrics['total_payouts'] ?? 0, 2) }}</div>
+                                                    <div class="fw-bold money-value text-danger">₦{{ \App\Support\CompactNumber::format($metrics['total_payouts'] ?? 0, 2) }}</div>
                                                     <div class="text-muted money-note">Dividends, commissions &amp; more</div>
                                                 </div>
                                             </div>
@@ -1706,7 +1706,7 @@
                                                 <div class="money-mini-card rounded-3 {{ ($metrics['net_platform_balance'] ?? 0) >= 0 ? 'bg-success' : 'bg-danger' }} text-center">
                                                     <div class="money-label mb-1" style="color:#fff;">Net Platform Balance</div>
                                                     <div class="fw-bold money-value" style="color:#fff;">
-                                                        ₦{{ number_format($metrics['net_platform_balance'] ?? 0, 2) }}
+                                                        ₦{{ \App\Support\CompactNumber::format($metrics['net_platform_balance'] ?? 0, 2) }}
                                                     </div>
                                                     <div class="money-note" style="color:#fff;">Gross minus all payouts</div>
                                                 </div>
@@ -1734,8 +1734,8 @@
                                                 ['label' => 'Agents', 'value' => number_format($metrics['agents_total'] ?? 0), 'tone' => 'tone-violet'],
                                                 ['label' => 'Registered Businesses', 'value' => number_format($metrics['registered_businesses_total'] ?? 0), 'tone' => 'tone-emerald'],
                                                 ['label' => 'Internal Users', 'value' => number_format($metrics['other_users_total'] ?? 0), 'tone' => 'tone-amber'],
-                                                ['label' => 'Registered Business Revenue', 'value' => '₦' . number_format($metrics['registered_user_revenue'] ?? 0, 2), 'tone' => 'tone-rose'],
-                                                ['label' => 'Net Platform Balance', 'value' => '₦' . number_format($metrics['net_platform_balance'] ?? 0, 2), 'tone' => 'tone-cobalt'],
+                                                ['label' => 'Registered Business Revenue', 'value' => '₦' . \App\Support\CompactNumber::format($metrics['registered_user_revenue'] ?? 0, 2), 'tone' => 'tone-rose'],
+                                                ['label' => 'Net Platform Balance', 'value' => '₦' . \App\Support\CompactNumber::format($metrics['net_platform_balance'] ?? 0, 2), 'tone' => 'tone-cobalt'],
                                             ] as $sourceKpi)
                                                 <div class="col-sm-6 col-xl">
                                                     <div class="kpi-compact w-100 {{ $sourceKpi['tone'] }}">
@@ -1758,8 +1758,8 @@
                                             @foreach([
                                                 ['label' => 'Direct Paid Buyers', 'value' => number_format($directPaidSubs)],
                                                 ['label' => 'Deployment Paid Buyers', 'value' => number_format($deploymentPaidSubs)],
-                                                ['label' => 'Direct Avg Revenue', 'value' => '₦' . number_format($directPaidSubs > 0 ? ($directRevenue / $directPaidSubs) : 0, 2)],
-                                                ['label' => 'Deployment Avg Revenue', 'value' => '₦' . number_format($deploymentPaidSubs > 0 ? ($deploymentRevenue / $deploymentPaidSubs) : 0, 2)],
+                                                ['label' => 'Direct Avg Revenue', 'value' => '₦' . \App\Support\CompactNumber::format($directPaidSubs > 0 ? ($directRevenue / $directPaidSubs) : 0, 2)],
+                                                ['label' => 'Deployment Avg Revenue', 'value' => '₦' . \App\Support\CompactNumber::format($deploymentPaidSubs > 0 ? ($deploymentRevenue / $deploymentPaidSubs) : 0, 2)],
                                                 ['label' => 'Verified Users', 'value' => number_format($metrics['verified_users'] ?? 0)],
                                                 ['label' => 'Recent Signups (30d)', 'value' => number_format($metrics['recent_signups'] ?? 0)],
                                             ] as $sourceMini)
@@ -1789,8 +1789,8 @@
                                         </div>
                                         <div class="row g-2">
                                             @foreach([
-                                                ['label' => 'Item Sales Revenue', 'value' => '₦' . number_format($metrics['item_sales_revenue'] ?? 0, 2), 'tone' => 'tone-cobalt'],
-                                                ['label' => 'Item Sales Today', 'value' => '₦' . number_format($metrics['item_sales_today_revenue'] ?? 0, 2), 'tone' => 'tone-emerald'],
+                                                ['label' => 'Item Sales Revenue', 'value' => '₦' . \App\Support\CompactNumber::format($metrics['item_sales_revenue'] ?? 0, 2), 'tone' => 'tone-cobalt'],
+                                                ['label' => 'Item Sales Today', 'value' => '₦' . \App\Support\CompactNumber::format($metrics['item_sales_today_revenue'] ?? 0, 2), 'tone' => 'tone-emerald'],
                                                 ['label' => 'Item Orders', 'value' => number_format($metrics['item_sales_orders'] ?? 0), 'tone' => 'tone-amber'],
                                                 ['label' => 'Item Units Sold', 'value' => number_format($metrics['item_sales_units'] ?? 0), 'tone' => 'tone-rose'],
                                             ] as $salesKpi)
@@ -1807,10 +1807,10 @@
                                         </div>
                                         <div class="row g-2 mt-3">
                                             @foreach([
-                                                ['label' => 'Stock Value', 'value' => '₦' . number_format($metrics['total_stock_val'] ?? 0, 2)],
+                                                ['label' => 'Stock Value', 'value' => '₦' . \App\Support\CompactNumber::format($metrics['total_stock_val'] ?? 0, 2)],
                                                 ['label' => 'Low Stock Items', 'value' => number_format($metrics['low_stock_items'] ?? 0)],
-                                                ['label' => 'Orders per User', 'value' => number_format(((int) ($metrics['total_users'] ?? 0)) > 0 ? ((float) ($metrics['item_sales_orders'] ?? 0) / max(1, (int) ($metrics['total_users'] ?? 0))) : 0, 2)],
-                                                ['label' => 'Revenue per Order', 'value' => '₦' . number_format(((int) ($metrics['item_sales_orders'] ?? 0)) > 0 ? ((float) ($metrics['item_sales_revenue'] ?? 0) / max(1, (int) ($metrics['item_sales_orders'] ?? 0))) : 0, 2)],
+                                                ['label' => 'Orders per User', 'value' => \App\Support\CompactNumber::format(((int) ($metrics['total_users'] ?? 0)) > 0 ? ((float) ($metrics['item_sales_orders'] ?? 0) / max(1, (int) ($metrics['total_users'] ?? 0))) : 0, 2)],
+                                                ['label' => 'Revenue per Order', 'value' => '₦' . \App\Support\CompactNumber::format(((int) ($metrics['item_sales_orders'] ?? 0)) > 0 ? ((float) ($metrics['item_sales_revenue'] ?? 0) / max(1, (int) ($metrics['item_sales_orders'] ?? 0))) : 0, 2)],
                                             ] as $salesMini)
                                                 <div class="col-sm-6 col-xl-3">
                                                     <div class="summary-fill h-100">
@@ -2389,7 +2389,7 @@
                                         <div class="dashboard-micro-grid mt-3">
                                             <div class="summary-fill">
                                                 <div class="label">Year Revenue</div>
-                                                <div class="value">₦{{ number_format((float) $revenueSeries->sum(), 2) }}</div>
+                                                <div class="value">₦{{ \App\Support\CompactNumber::format((float) $revenueSeries->sum(), 2) }}</div>
                                             </div>
                                             <div class="summary-fill">
                                                 <div class="label">Peak Month</div>
@@ -3044,7 +3044,7 @@
                                                         </div>
                                                         <small class="text-muted" style="font-size: 0.7rem;">{{ $activity->created_at->diffForHumans() }}</small>
                                                     </div>
-                                                    <p class="text-muted mb-0" style="font-size: 0.75rem;">Ref: #{{ str_pad($activity->id, 6, '0', STR_PAD_LEFT) }} | Amount: ₦{{ number_format($activity->amount ?? 0, 2) }}</p>
+                                                    <p class="text-muted mb-0" style="font-size: 0.75rem;">Ref: #{{ str_pad($activity->id, 6, '0', STR_PAD_LEFT) }} | Amount: ₦{{ \App\Support\CompactNumber::format($activity->amount ?? 0, 2) }}</p>
                                                 </li>
                                                 @empty
                                                 <p class="text-center py-4 text-muted small">No recent activity detected.</p>
@@ -3061,7 +3061,7 @@
                                             <div class="col-sm-6">
                                                 <div class="summary-fill">
                                                     <div class="label">Latest Stream Value</div>
-                                                    <div class="value">₦{{ number_format((float) optional($platformActivity->first())->amount, 2) }}</div>
+                                                    <div class="value">₦{{ \App\Support\CompactNumber::format((float) optional($platformActivity->first())->amount, 2) }}</div>
                                                 </div>
                                             </div>
                                         </div>

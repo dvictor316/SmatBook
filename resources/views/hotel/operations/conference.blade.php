@@ -25,7 +25,7 @@
             <div class="hotel-op-kpis">
                 <div class="hotel-op-kpi"><span>Events</span><strong>{{ $bookings->total() }}</strong></div>
                 <div class="hotel-op-kpi"><span>Confirmed</span><strong>{{ $confirmed }}</strong></div>
-                <div class="hotel-op-kpi"><span>Visible Value</span><strong>{{ number_format($expectedValue, 2) }}</strong></div>
+                <div class="hotel-op-kpi"><span>Visible Value</span><strong>{{ \App\Support\CompactNumber::format($expectedValue, 2) }}</strong></div>
                 <div class="hotel-op-kpi"><span>Open Folios</span><strong>{{ $activeFolios->count() }}</strong></div>
             </div>
 
@@ -39,7 +39,7 @@
                                 <p>{{ $event->customer?->customer_name ?? $event->customer?->name ?? 'N/A' }} at {{ $event->property?->name ?? 'N/A' }}</p>
                                 <div class="hotel-op-actions">
                                     <span class="hotel-status-chip">{{ optional($event->arrival_date)->format('d M') }} - {{ optional($event->departure_date)->format('d M Y') }}</span>
-                                    <strong>{{ number_format((float) ($event->total ?? 0), 2) }}</strong>
+                                    <strong>{{ \App\Support\CompactNumber::format((float) ($event->total ?? 0), 2) }}</strong>
                                 </div>
                             </article>
                         @empty
@@ -59,7 +59,7 @@
                                             <td><span class="hotel-status-chip gold">Room {{ $item->folio?->stay?->room?->room_number ?? 'N/A' }}</span></td>
                                             <td>{{ $item->description }}</td>
                                             <td>{{ $item->quantity }}</td>
-                                            <td>{{ number_format((float) ($item->line_total ?? $item->amount ?? 0), 2) }}</td>
+                                            <td>{{ \App\Support\CompactNumber::format((float) ($item->line_total ?? $item->amount ?? 0), 2) }}</td>
                                             <td>{{ optional($item->service_date ?? $item->created_at)->format('d M Y') }}</td>
                                             <td>@include('hotel.partials.service-sale-actions', ['item' => $item])</td>
                                         </tr>

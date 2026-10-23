@@ -56,7 +56,7 @@
                                 </span>
                                 <div class="dash-count">
                                     <p class="text-muted mb-1">{{ __('Total Purchase Value') }}</p>
-                                    <h4 class="mb-0 fw-bold">{{ number_format($totalSum, 2) }}</h4>
+                                    <h4 class="mb-0 fw-bold">{{ \App\Support\CompactNumber::format($totalSum, 2) }}</h4>
                                 </div>
                             </div>
                         </div>
@@ -128,7 +128,7 @@
                                                     </span>
                                                 </td>
                                                 <td class="fw-bold">
-                                                    {{ number_format($item->Amount, 2) }}
+                                                    {{ \App\Support\CompactNumber::format($item->Amount, 2) }}
                                                 </td>
                                                 <td>
                                                     {{ \Carbon\Carbon::parse($item->Date)->format('d M Y') }}

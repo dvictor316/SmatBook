@@ -40,7 +40,7 @@
                 <div class="card border shadow-none mb-0 low-stock-metric-card" style="border-left: 4px solid #10b981 !important;">
                     <div class="card-body p-3">
                         <small class="text-muted fw-bold low-stock-metric-label">Valuation At Risk</small>
-                        <h4 class="mb-0 fw-bold">{{ number_format($totalValuation, 2) }}</h4>
+                        <h4 class="mb-0 fw-bold">{{ \App\Support\CompactNumber::format($totalValuation, 2) }}</h4>
                     </div>
                 </div>
             </div>
@@ -78,7 +78,7 @@
                                     <span class="text-danger fw-bold">{{ number_format($product->stock) }}</span>
                                 </td>
                                 <td class="py-3 text-end text-muted">{{ number_format($productThreshold) }}</td>
-                                <td class="py-3 text-end text-muted">{{ number_format($product->stock * $product->purchase_price, 2) }}</td>
+                                <td class="py-3 text-end text-muted">{{ \App\Support\CompactNumber::format($product->stock * $product->purchase_price, 2) }}</td>
                                 <td class="py-3 text-end fw-bold text-primary">+{{ number_format($needed) }}</td>
                                 <td class="pe-4 py-3 text-center">
                                     <a href="{{ route('purchases.create', $restockQuery) }}" 

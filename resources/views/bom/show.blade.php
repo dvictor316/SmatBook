@@ -10,8 +10,8 @@
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-4"><strong>Product:</strong> {{ $bom->product->name ?? '—' }}</div>
-                <div class="col-md-4"><strong>Output Quantity:</strong> {{ number_format((float) $bom->output_quantity, 2) }} {{ $bom->unit }}</div>
-                <div class="col-md-4"><strong>Standard Cost:</strong> {{ number_format((float) $bom->standard_cost, 2) }}</div>
+                <div class="col-md-4"><strong>Output Quantity:</strong> {{ \App\Support\CompactNumber::format((float) $bom->output_quantity, 2) }} {{ $bom->unit }}</div>
+                <div class="col-md-4"><strong>Standard Cost:</strong> {{ \App\Support\CompactNumber::format((float) $bom->standard_cost, 2) }}</div>
                 <div class="col-12"><strong>Instructions:</strong> {{ $bom->instructions ?: 'None' }}</div>
             </div>
         </div>
@@ -26,10 +26,10 @@
                         @foreach($bom->items as $item)
                             <tr>
                                 <td>{{ $item->component_name }}</td>
-                                <td>{{ number_format((float) $item->quantity, 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format((float) $item->quantity, 2) }}</td>
                                 <td>{{ $item->unit ?: '—' }}</td>
-                                <td>{{ number_format((float) $item->unit_cost, 2) }}</td>
-                                <td>{{ number_format((float) $item->scrap_percentage, 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format((float) $item->unit_cost, 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format((float) $item->scrap_percentage, 2) }}</td>
                             </tr>
                         @endforeach
                     </tbody>

@@ -11,7 +11,7 @@
                 </div>
                 <div class="spb-header-metric spb-header-metric-average">
                     <span><i class="fas fa-chart-line" aria-hidden="true"></i> Average daily sales</span>
-                    <strong>₦{{ number_format($headerSalesMetrics['average_daily_sales'], 2) }}</strong>
+                    <strong>₦{{ \App\Support\CompactNumber::format($headerSalesMetrics['average_daily_sales'], 2) }}</strong>
                     <small>Across {{ number_format($headerSalesMetrics['days']) }} {{ \Illuminate\Support\Str::plural('day', $headerSalesMetrics['days']) }}</small>
                 </div>
                 <div class="spb-header-metric spb-header-metric-change">
@@ -25,7 +25,7 @@
                         @elseif($headerSalesMetrics['previous_revenue'] <= 0)
                             No previous-period sales
                         @else
-                            Previous: ₦{{ number_format($headerSalesMetrics['previous_revenue'], 2) }}
+                            Previous: ₦{{ \App\Support\CompactNumber::format($headerSalesMetrics['previous_revenue'], 2) }}
                         @endif
                     </small>
                 </div>
@@ -47,7 +47,7 @@
                 @foreach($periodSales as $key => $summary)
                     <a class="spb-period-card {{ $reportingPeriod->key === $key ? 'is-selected' : '' }}" href="{{ request()->fullUrlWithQuery(['period' => $key, 'date_from' => null, 'date_to' => null, 'date_time_from' => null, 'date_time_to' => null, 'sale_date' => null, 'page' => null]) }}" @if($reportingPeriod->key === $key) aria-current="true" @endif>
                         <span>{{ $summary['period']->label() }}</span>
-                        <strong>₦{{ number_format($summary['revenue'], 2) }}</strong>
+                        <strong>₦{{ \App\Support\CompactNumber::format($summary['revenue'], 2) }}</strong>
                         <small>{{ number_format($summary['orders']) }} {{ \Illuminate\Support\Str::plural('sale', $summary['orders']) }} · {{ $summary['period']->dates() }}</small>
                     </a>
                 @endforeach

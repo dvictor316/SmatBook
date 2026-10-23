@@ -220,7 +220,7 @@
                         </div>
                         <div class="payment-receipt-pill">
                             <div class="payment-receipt-pill-label">Amount Received</div>
-                            <div class="payment-receipt-pill-value">₦{{ number_format((float) $payment->amount, 2) }}</div>
+                            <div class="payment-receipt-pill-value">₦{{ \App\Support\CompactNumber::format((float) $payment->amount, 2) }}</div>
                         </div>
                         <div class="payment-receipt-pill">
                             <div class="payment-receipt-pill-label">Method / Bank</div>
@@ -276,11 +276,11 @@
                                             @endphp
                                             <tr>
                                                 <td>{{ $item->product_name ?? $item->name ?? $item->product->name ?? 'Item' }}</td>
-                                                <td class="text-center">{{ rtrim(rtrim(number_format($qty, 2), '0'), '.') }}</td>
-                                                <td class="text-end">₦{{ number_format($unitPrice, 2) }}</td>
-                                                <td class="text-end">₦{{ number_format($discount, 2) }}</td>
-                                                <td class="text-end">₦{{ number_format($tax, 2) }}</td>
-                                                <td class="text-end fw-semibold">₦{{ number_format($lineAmount, 2) }}</td>
+                                                <td class="text-center">{{ rtrim(rtrim(\App\Support\CompactNumber::format($qty, 2), '0'), '.') }}</td>
+                                                <td class="text-end">₦{{ \App\Support\CompactNumber::format($unitPrice, 2) }}</td>
+                                                <td class="text-end">₦{{ \App\Support\CompactNumber::format($discount, 2) }}</td>
+                                                <td class="text-end">₦{{ \App\Support\CompactNumber::format($tax, 2) }}</td>
+                                                <td class="text-end fw-semibold">₦{{ \App\Support\CompactNumber::format($lineAmount, 2) }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -292,27 +292,27 @@
                     <div class="payment-summary-box">
                         <div class="payment-summary-row">
                             <span>Subtotal</span>
-                            <strong>₦{{ number_format($saleSubtotal, 2) }}</strong>
+                            <strong>₦{{ \App\Support\CompactNumber::format($saleSubtotal, 2) }}</strong>
                         </div>
                         <div class="payment-summary-row">
                             <span>Discount</span>
-                            <strong>₦{{ number_format($saleDiscount, 2) }}</strong>
+                            <strong>₦{{ \App\Support\CompactNumber::format($saleDiscount, 2) }}</strong>
                         </div>
                         <div class="payment-summary-row">
                             <span>Tax</span>
-                            <strong>₦{{ number_format($saleTax, 2) }}</strong>
+                            <strong>₦{{ \App\Support\CompactNumber::format($saleTax, 2) }}</strong>
                         </div>
                         <div class="payment-summary-row total">
                             <span>Total Invoice Value</span>
-                            <strong>₦{{ number_format($saleTotal, 2) }}</strong>
+                            <strong>₦{{ \App\Support\CompactNumber::format($saleTotal, 2) }}</strong>
                         </div>
                         <div class="payment-summary-row">
                             <span>Total Paid So Far</span>
-                            <strong>₦{{ number_format($salePaid, 2) }}</strong>
+                            <strong>₦{{ \App\Support\CompactNumber::format($salePaid, 2) }}</strong>
                         </div>
                         <div class="payment-summary-row balance">
                             <span>Balance Remaining</span>
-                            <strong>₦{{ number_format($saleBalance, 2) }}</strong>
+                            <strong>₦{{ \App\Support\CompactNumber::format($saleBalance, 2) }}</strong>
                         </div>
                     </div>
 

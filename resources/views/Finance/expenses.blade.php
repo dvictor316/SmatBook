@@ -103,7 +103,7 @@
                                                 <small class="text-muted">{{ $expense->reference ?? 'No Reference' }}</small>
                                             </td>
                                             <td>
-                                                <strong class="text-danger">₦{{ number_format((float) $expense->amount, 2) }}</strong>
+                                                <strong class="text-danger">₦{{ \App\Support\CompactNumber::format((float) $expense->amount, 2) }}</strong>
                                             </td>
                                             <td>
                                                 <span class="badge bg-outline-secondary">
@@ -293,7 +293,7 @@
                             <select class="form-select border-success" name="payment_account_id" required>
                                 <option value="">-- Choose Bank/Cash --</option>
                                 @foreach($assetAccounts as $acc)
-                                    <option value="{{ $acc->id }}">{{ $acc->name }} ({{ $acc->code }}) — Bal: ₦{{ number_format((float) ($acc->current_balance ?? 0), 2) }}</option>
+                                    <option value="{{ $acc->id }}">{{ $acc->name }} ({{ $acc->code }}) — Bal: ₦{{ \App\Support\CompactNumber::format((float) ($acc->current_balance ?? 0), 2) }}</option>
                                 @endforeach
                             </select>
                             <small class="text-muted">This defines where the money is coming from.</small>
@@ -406,7 +406,7 @@
                     <div class="col-6"><small class="text-muted">Expense ID</small><div class="fw-semibold">{{ $expense->expense_id }}</div></div>
                     <div class="col-6"><small class="text-muted">Date</small><div class="fw-semibold">{{ optional($expense->created_at)->format('d M Y h:i A') }}</div></div>
                     <div class="col-12"><small class="text-muted">Supplier / Company</small><div class="fw-semibold">{{ $expense->company_name }}</div></div>
-                    <div class="col-6"><small class="text-muted">Amount</small><div class="fw-semibold">₦{{ number_format((float) $expense->amount, 2) }}</div></div>
+                    <div class="col-6"><small class="text-muted">Amount</small><div class="fw-semibold">₦{{ \App\Support\CompactNumber::format((float) $expense->amount, 2) }}</div></div>
                     <div class="col-6"><small class="text-muted">Status</small><div class="fw-semibold">{{ $expense->status }}</div></div>
                     <div class="col-6"><small class="text-muted">Category</small><div class="fw-semibold">{{ $expense->category ?? 'N/A' }}</div></div>
                     <div class="col-6"><small class="text-muted">Paid From</small><div class="fw-semibold">{{ $expense->payment_mode ?? 'N/A' }}</div></div>
@@ -502,7 +502,7 @@
                                 <option value="">-- Choose Bank/Cash --</option>
                                 @foreach($assetAccounts as $acc)
                                     <option value="{{ $acc->id }}" {{ strtolower((string) $expense->payment_mode) === strtolower((string) $acc->name) ? 'selected' : '' }}>
-                                        {{ $acc->name }} ({{ $acc->code }}) — Bal: ₦{{ number_format((float) ($acc->current_balance ?? 0), 2) }}
+                                        {{ $acc->name }} ({{ $acc->code }}) — Bal: ₦{{ \App\Support\CompactNumber::format((float) ($acc->current_balance ?? 0), 2) }}
                                     </option>
                                 @endforeach
                             </select>
@@ -560,7 +560,7 @@
                         </div>
                         <div class="d-flex justify-content-between mt-1">
                             <span class="text-muted">Amount</span>
-                            <strong class="text-danger">&#8358;{{ number_format((float) $expense->amount, 2) }}</strong>
+                            <strong class="text-danger">&#8358;{{ \App\Support\CompactNumber::format((float) $expense->amount, 2) }}</strong>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -569,7 +569,7 @@
                             <option value="">-- Choose Bank / Cash Account --</option>
                             @foreach($assetAccounts as $acc)
                                 <option value="{{ $acc->id }}" {{ strtolower((string) $expense->payment_mode) === strtolower((string) $acc->name) ? 'selected' : '' }}>
-                                    {{ $acc->name }} ({{ $acc->code }}) &mdash; Bal: &#8358;{{ number_format((float) ($acc->current_balance ?? 0), 2) }}
+                                    {{ $acc->name }} ({{ $acc->code }}) &mdash; Bal: &#8358;{{ \App\Support\CompactNumber::format((float) ($acc->current_balance ?? 0), 2) }}
                                 </option>
                             @endforeach
                         </select>

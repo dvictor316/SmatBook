@@ -24,9 +24,9 @@
                             <tr><th>Batch Number</th><td>{{ $productLot->batch_number ?: 'N/A' }}</td></tr>
                             <tr><th>Manufacture Date</th><td>{{ $productLot->manufacture_date ? $productLot->manufacture_date->format('d M Y') : 'N/A' }}</td></tr>
                             <tr><th>Expiry Date</th><td>{{ $productLot->expiry_date ? $productLot->expiry_date->format('d M Y') : 'N/A' }}</td></tr>
-                            <tr><th>Received Qty</th><td>{{ number_format((float) $productLot->quantity_received, 2) }}</td></tr>
-                            <tr><th>Available Qty</th><td>{{ number_format((float) $productLot->quantity_available, 2) }}</td></tr>
-                            <tr><th>Used Qty</th><td>{{ number_format((float) $productLot->quantity_used, 2) }}</td></tr>
+                            <tr><th>Received Qty</th><td>{{ \App\Support\CompactNumber::format((float) $productLot->quantity_received, 2) }}</td></tr>
+                            <tr><th>Available Qty</th><td>{{ \App\Support\CompactNumber::format((float) $productLot->quantity_available, 2) }}</td></tr>
+                            <tr><th>Used Qty</th><td>{{ \App\Support\CompactNumber::format((float) $productLot->quantity_used, 2) }}</td></tr>
                             <tr><th>Status</th><td>{{ ucfirst($productLot->status ?? 'unknown') }}</td></tr>
                             <tr><th>Notes</th><td>{{ $productLot->notes ?: 'N/A' }}</td></tr>
                         </table>

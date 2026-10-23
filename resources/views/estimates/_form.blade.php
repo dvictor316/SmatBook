@@ -301,10 +301,10 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('estimate-discount-input').value = discount.toFixed(2);
         document.getElementById('estimate-tax-input').value = tax.toFixed(2);
         document.getElementById('estimate-total-input').value = total.toFixed(2);
-        document.getElementById('estimate-subtotal-display').textContent = subtotal.toFixed(2);
-        document.getElementById('estimate-discount-display').textContent = discount.toFixed(2);
-        document.getElementById('estimate-tax-display').textContent = tax.toFixed(2);
-        document.getElementById('estimate-total-display').textContent = total.toFixed(2);
+        document.getElementById('estimate-subtotal-display').textContent = window.formatCompactAmount(subtotal);
+        document.getElementById('estimate-discount-display').textContent = window.formatCompactAmount(discount);
+        document.getElementById('estimate-tax-display').textContent = window.formatCompactAmount(tax);
+        document.getElementById('estimate-total-display').textContent = window.formatCompactAmount(total);
     }
 
     function refreshRow(row, shouldResolveRate = false) {

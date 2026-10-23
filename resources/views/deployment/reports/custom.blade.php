@@ -22,7 +22,7 @@
                             <tr>
                                 <td>{{ ucfirst($row->status ?? 'N/A') }}</td>
                                 <td>{{ (int)$row->total }}</td>
-                                <td class="text-end">₦{{ number_format((float)$row->amount_total, 2) }}</td>
+                                <td class="text-end">₦{{ \App\Support\CompactNumber::format((float)$row->amount_total, 2) }}</td>
                             </tr>
                         @empty
                             <tr><td colspan="3" class="text-center text-muted py-4">No data.</td></tr>
@@ -44,7 +44,7 @@
                             <tr>
                                 <td>{{ ucfirst($row->billing_cycle ?? 'N/A') }}</td>
                                 <td>{{ (int)$row->total }}</td>
-                                <td class="text-end">₦{{ number_format((float)$row->amount_total, 2) }}</td>
+                                <td class="text-end">₦{{ \App\Support\CompactNumber::format((float)$row->amount_total, 2) }}</td>
                             </tr>
                         @empty
                             <tr><td colspan="3" class="text-center text-muted py-4">No data.</td></tr>

@@ -45,7 +45,7 @@
                                     <td>{{ $txn->reference_number ?: 'N/A' }}</td>
                                     <td>{{ str_replace('_', ' ', ucfirst($txn->transaction_type)) }}</td>
                                     <td>{{ $txn->counterpartyCompany?->name ?? $txn->counterpartyCompany?->company_name ?? 'N/A' }}</td>
-                                    <td>{{ number_format((float) $txn->amount, 2) }}</td>
+                                    <td>{{ \App\Support\CompactNumber::format((float) $txn->amount, 2) }}</td>
                                     <td>{{ $txn->currency ?? 'NGN' }}</td>
                                     <td>{{ $txn->transaction_date?->format('d M Y') ?: 'N/A' }}</td>
                                     <td>

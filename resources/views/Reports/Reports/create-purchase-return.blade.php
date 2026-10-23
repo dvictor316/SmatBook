@@ -140,9 +140,9 @@ $(document).ready(function() {
                             </td>
                             <td>
                                 <input type="hidden" name="items[${item.product_id}][unit_price]" value="${item.unit_price}">
-                                <span class="text-muted">₦${parseFloat(item.unit_price).toLocaleString()}</span>
+                                <span class="text-muted">₦${window.formatCompactAmount(item.unit_price)}</span>
                             </td>
-                            <td class="row-total fw-bold text-dark">0.00</td>
+                            <td class="row-total fw-bold text-dark">0</td>
                         </tr>`;
                     });
                 }
@@ -169,7 +169,7 @@ $(document).ready(function() {
         }
 
         let rowTotal = qty * price;
-        $row.find('.row-total').text(rowTotal.toLocaleString(undefined, {minimumFractionDigits: 2}));
+        $row.find('.row-total').text(window.formatCompactAmount(rowTotal));
         calculateGrandTotal();
     });
 
@@ -180,7 +180,7 @@ $(document).ready(function() {
             let price = parseFloat($(this).data('price')) || 0;
             grandTotal += (qty * price);
         });
-        $('#grand_total_display').text('₦' + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2}));
+        $('#grand_total_display').text('₦' + window.formatCompactAmount(grandTotal));
         $('#total_amount_input').val(grandTotal);
     }
 });

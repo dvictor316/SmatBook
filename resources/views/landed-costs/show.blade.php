@@ -9,7 +9,7 @@
     <div class="card">
         <div class="card-body">
             <div class="row g-3">
-                <div class="col-md-4"><strong>Amount:</strong> {{ number_format((float) $landedCost->amount, 2) }}</div>
+                <div class="col-md-4"><strong>Amount:</strong> {{ \App\Support\CompactNumber::format((float) $landedCost->amount, 2) }}</div>
                 <div class="col-md-4"><strong>Currency:</strong> {{ $landedCost->currency ?: '—' }}</div>
                 <div class="col-md-4"><strong>Status:</strong> {{ ucfirst($landedCost->status) }}</div>
                 <div class="col-md-6"><strong>Method:</strong> {{ ucfirst(str_replace('_', ' ', $landedCost->allocation_method)) }}</div>

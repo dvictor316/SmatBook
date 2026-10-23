@@ -413,7 +413,7 @@ class RecurringInvoiceService
                     'Invoice Number' => $sale->invoice_no,
                     'Invoice Date'   => optional($sale->order_date)->format('d M Y'),
                     'Due Date'       => optional($sale->delivery_date)->format('d M Y'),
-                    'Total Amount'   => ($sale->currency ?? 'NGN') . ' ' . number_format((float) $sale->total, 2),
+                    'Total Amount'   => ($sale->currency ?? 'NGN') . ' ' . \App\Support\CompactNumber::format((float) $sale->total, 2),
                 ]
             );
         } catch (Throwable $e) {
@@ -442,7 +442,7 @@ class RecurringInvoiceService
                 'Customer' => $template->display_customer_name,
                 'Template' => $template->template_name,
                 'Scheduled Date' => $scheduledDate->format('d M Y'),
-                'Amount' => ($template->currency ?? 'NGN') . ' ' . number_format((float) $template->total, 2),
+                'Amount' => ($template->currency ?? 'NGN') . ' ' . \App\Support\CompactNumber::format((float) $template->total, 2),
             ]
         );
     }

@@ -38,7 +38,7 @@
                 <div class="row g-4">
                 <div class="col-md-6"><label class="form-label">Property</label><select name="property_id" class="form-select" required>@foreach($properties as $p)<option value="{{ $p->id }}">{{ $p->name }}</option>@endforeach</select></div>
                 <div class="col-md-3"><label class="form-label">Room Number</label><input name="room_number" class="form-control" required></div>
-                <div class="col-md-3"><label class="form-label">Room Type</label><select name="room_type_id" class="form-select"><option value="">Select room type</option>@foreach($roomTypes as $rt)<option value="{{ $rt->id }}">{{ $rt->name }} - {{ number_format((float)$rt->base_rate, 2) }}</option>@endforeach</select></div>
+                <div class="col-md-3"><label class="form-label">Room Type</label><select name="room_type_id" class="form-select"><option value="">Select room type</option>@foreach($roomTypes as $rt)<option value="{{ $rt->id }}">{{ $rt->name }} - {{ \App\Support\CompactNumber::format((float)$rt->base_rate, 2) }}</option>@endforeach</select></div>
                 <div class="col-md-3"><label class="form-label">Floor</label><input name="floor" class="form-control"></div>
                 <div class="col-md-3"><label class="form-label">Wing</label><input name="wing" class="form-control"></div>
                 <div class="col-md-3"><label class="form-label">Base Rate Override</label><input name="base_rate_override" class="form-control" type="number" step="0.01" placeholder="Optional"></div>

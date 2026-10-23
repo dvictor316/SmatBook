@@ -56,7 +56,7 @@
                 <div class="card">
                     <div class="card-body">
                         <p class="text-muted mb-1">Total Spend</p>
-                        <h4 class="fw-bold mb-0">{{ number_format($summary['total_spend'], 2) }}</h4>
+                        <h4 class="fw-bold mb-0">{{ \App\Support\CompactNumber::format($summary['total_spend'], 2) }}</h4>
                     </div>
                 </div>
             </div>
@@ -80,7 +80,7 @@
                 <div class="card">
                     <div class="card-body">
                         <p class="text-muted mb-1">Opening Balance</p>
-                        <h4 class="fw-bold mb-0">{{ number_format((float) ($summary['opening_balance_original'] ?? $supplier->opening_balance ?? 0), 2) }}</h4>
+                        <h4 class="fw-bold mb-0">{{ \App\Support\CompactNumber::format((float) ($summary['opening_balance_original'] ?? $supplier->opening_balance ?? 0), 2) }}</h4>
                         <small class="text-muted">as of {{ $supplier->opening_balance_date ?? '—' }}</small>
                     </div>
                 </div>
@@ -89,7 +89,7 @@
                 <div class="card">
                     <div class="card-body">
                         <p class="text-muted mb-1">Outstanding Payables</p>
-                        <h4 class="fw-bold mb-0">{{ number_format((float) ($summary['outstanding_payables'] ?? 0), 2) }}</h4>
+                        <h4 class="fw-bold mb-0">{{ \App\Support\CompactNumber::format((float) ($summary['outstanding_payables'] ?? 0), 2) }}</h4>
                     </div>
                 </div>
             </div>
@@ -97,7 +97,7 @@
                 <div class="card">
                     <div class="card-body">
                         <p class="text-muted mb-1">Paid So Far</p>
-                        <h4 class="fw-bold mb-0">{{ number_format((float) ($summary['total_paid'] ?? 0), 2) }}</h4>
+                        <h4 class="fw-bold mb-0">{{ \App\Support\CompactNumber::format((float) ($summary['total_paid'] ?? 0), 2) }}</h4>
                     </div>
                 </div>
             </div>
@@ -143,7 +143,7 @@
                                         <small class="text-muted">{{ $receivedQty }} received / {{ $totalQty }} total</small>
                                     </td>
                                     <td class="text-end">
-                                        {{ number_format((float) ($purchase->resolved_total_amount ?? ($totalColumn ? ($purchase->{$totalColumn} ?? 0) : 0)), 2) }}
+                                        {{ \App\Support\CompactNumber::format((float) ($purchase->resolved_total_amount ?? ($totalColumn ? ($purchase->{$totalColumn} ?? 0) : 0)), 2) }}
                                     </td>
                                     <td class="text-end">
                                         <button class="btn btn-sm btn-outline-secondary me-2" type="button" data-bs-toggle="collapse" data-bs-target="#purchase-items-{{ $purchase->id }}">
@@ -176,8 +176,8 @@
                                                                 <td class="text-end">{{ number_format((float) ($item->qty ?? 0)) }}</td>
                                                                 <td class="text-end">{{ $item->unit_name ?? 'unit' }}</td>
                                                                 <td class="text-end">{{ number_format((float) ($item->received_qty ?? 0)) }}</td>
-                                                                <td class="text-end">{{ number_format((float) ($item->unit_price ?? 0), 2) }}</td>
-                                                                <td class="text-end">{{ number_format((float) ($item->line_total ?? 0), 2) }}</td>
+                                                                <td class="text-end">{{ \App\Support\CompactNumber::format((float) ($item->unit_price ?? 0), 2) }}</td>
+                                                                <td class="text-end">{{ \App\Support\CompactNumber::format((float) ($item->line_total ?? 0), 2) }}</td>
                                                             </tr>
                                                         @empty
                                                             <tr>
@@ -228,7 +228,7 @@
                                     <td>{{ $payment->purchase?->purchase_no ?: 'Manual supplier payment' }}</td>
                                     <td>{{ $payment->bank?->name ?: 'Not specified' }}</td>
                                     <td>{{ $payment->method ?: '—' }}</td>
-                                    <td class="text-end">{{ number_format((float) $payment->amount, 2) }}</td>
+                                    <td class="text-end">{{ \App\Support\CompactNumber::format((float) $payment->amount, 2) }}</td>
                                     <td>{{ $payment->note ?: '—' }}</td>
                                 </tr>
                             @empty

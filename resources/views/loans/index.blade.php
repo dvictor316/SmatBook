@@ -42,8 +42,8 @@
                             <tr>
                                 <td>{{ $loan->loan_number }}</td>
                                 <td>{{ str_replace('_', ' ', ucfirst($loan->type)) }}</td>
-                                <td>{{ number_format($loan->principal_amount, 2) }}</td>
-                                <td>{{ number_format($loan->outstanding_balance, 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format($loan->principal_amount, 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format($loan->outstanding_balance, 2) }}</td>
                                 <td>{{ $loan->interest_rate }}%</td>
                                 <td>{{ $loan->lender_name }}</td>
                                 <td>{{ $loan->disbursement_date?->format('d M Y') ?? '—' }}</td>

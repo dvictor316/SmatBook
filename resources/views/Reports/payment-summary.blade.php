@@ -582,7 +582,7 @@
                 // Populate Receipt Mode
                 document.getElementById('rec_id').innerText = data.payment_id;
                 document.getElementById('rec_method').innerText = data.method || 'Not specified';
-                document.getElementById('rec_amount').innerText = '₦' + parseFloat(data.amount).toLocaleString(undefined, {minimumFractionDigits: 2});
+                document.getElementById('rec_amount').innerText = '₦' + window.formatCompactAmount(parseFloat(data.amount));
                 const resolvedStatus = data.resolved_status || data.status || 'Pending';
                 document.getElementById('rec_status_text').innerText = resolvedStatus;
                 document.getElementById('rec_note').innerText = data.reference || data.note || 'No notes available.';

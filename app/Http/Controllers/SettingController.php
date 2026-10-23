@@ -1974,11 +1974,11 @@ class SettingController extends Controller
         try {
             if ($validated['mode'] === 'direct_clear') {
                 $result = $service->directClear($account, trim((string) $validated['reason']));
-                return redirect()->route('chart-of-accounts')->with('success', 'Bank/payment balance cleared safely from reset mode. Old balance: ' . number_format((float) ($result['old_balance'] ?? 0), 2) . ', new balance: ' . number_format((float) ($result['new_balance'] ?? 0), 2) . '.');
+                return redirect()->route('chart-of-accounts')->with('success', 'Bank/payment balance cleared safely from reset mode. Old balance: ' . \App\Support\CompactNumber::format((float) ($result['old_balance'] ?? 0), 2) . ', new balance: ' . \App\Support\CompactNumber::format((float) ($result['new_balance'] ?? 0), 2) . '.');
             }
 
             $result = $service->zeroViaJournal($account, trim((string) $validated['reason']));
-            return redirect()->route('chart-of-accounts')->with('success', 'Balancing journal entry posted successfully (' . ($result['reference'] ?? 'n/a') . '). Old balance: ' . number_format((float) ($result['old_balance'] ?? 0), 2) . ', new balance: ' . number_format((float) ($result['new_balance'] ?? 0), 2) . '.');
+            return redirect()->route('chart-of-accounts')->with('success', 'Balancing journal entry posted successfully (' . ($result['reference'] ?? 'n/a') . '). Old balance: ' . \App\Support\CompactNumber::format((float) ($result['old_balance'] ?? 0), 2) . ', new balance: ' . \App\Support\CompactNumber::format((float) ($result['new_balance'] ?? 0), 2) . '.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             return redirect()->back()->withInput()->withErrors($e->errors());
         } catch (\Throwable $e) {

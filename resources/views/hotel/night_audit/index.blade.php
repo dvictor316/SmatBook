@@ -44,8 +44,8 @@
         <div class="audit-kpis">
             <div class="audit-kpi"><span>Arrivals Expected</span><strong>{{ $arrivalsExpected }}</strong><small>{{ $arrivalsCheckedIn }} checked in · {{ $arrivalsPending }} pending</small></div>
             <div class="audit-kpi"><span>Departures Expected</span><strong>{{ $departuresExpected }}</strong><small>{{ $departuresCheckedOut }} checked out · {{ $departuresPending }} pending</small></div>
-            <div class="audit-kpi"><span>Open Folios</span><strong>{{ $financial['open_folios'] }}</strong><small>Outstanding {{ number_format((float) $financial['outstanding_balances'], 2) }}</small></div>
-            <div class="audit-kpi"><span>Payments Today</span><strong>{{ number_format((float) $financial['payments_today'], 2) }}</strong><small>Room charges pending: {{ $financial['room_charges_pending'] }}</small></div>
+            <div class="audit-kpi"><span>Open Folios</span><strong>{{ $financial['open_folios'] }}</strong><small>Outstanding {{ \App\Support\CompactNumber::format((float) $financial['outstanding_balances'], 2) }}</small></div>
+            <div class="audit-kpi"><span>Payments Today</span><strong>{{ \App\Support\CompactNumber::format((float) $financial['payments_today'], 2) }}</strong><small>Room charges pending: {{ $financial['room_charges_pending'] }}</small></div>
         </div>
 
         <div class="audit-grid">
@@ -54,7 +54,7 @@
                 <div class="audit-checks">
                     <div class="audit-check {{ $arrivalsPending > 0 ? 'warning' : '' }}"><span class="text-muted small">Arrivals</span><h5>{{ $arrivalsCheckedIn }} / {{ $arrivalsExpected }} checked in</h5><p class="mb-0 text-muted">Pending arrivals should be resolved or marked no-show.</p></div>
                     <div class="audit-check {{ $departuresPending > 0 ? 'warning' : '' }}"><span class="text-muted small">Departures</span><h5>{{ $departuresCheckedOut }} / {{ $departuresExpected }} checked out</h5><p class="mb-0 text-muted">Pending departures may keep rooms occupied.</p></div>
-                    <div class="audit-check {{ (float)$financial['outstanding_balances'] > 0 ? 'danger' : '' }}"><span class="text-muted small">Financial</span><h5>{{ number_format((float) $financial['outstanding_balances'], 2) }} outstanding</h5><p class="mb-0 text-muted">Review open folios before close-day posting.</p></div>
+                    <div class="audit-check {{ (float)$financial['outstanding_balances'] > 0 ? 'danger' : '' }}"><span class="text-muted small">Financial</span><h5>{{ \App\Support\CompactNumber::format((float) $financial['outstanding_balances'], 2) }} outstanding</h5><p class="mb-0 text-muted">Review open folios before close-day posting.</p></div>
                     <div class="audit-check {{ ($roomStatus['dirty'] + $roomStatus['maintenance'] + $roomStatus['out_of_order']) > 0 ? 'warning' : '' }}"><span class="text-muted small">Rooms</span><h5>{{ $roomStatus['occupied'] }} occupied · {{ $roomStatus['dirty'] }} dirty</h5><p class="mb-0 text-muted">Maintenance and dirty rooms carry into tomorrow.</p></div>
                 </div>
                 <div class="audit-run">
@@ -72,7 +72,7 @@
                 <div class="table-responsive">
                     <table class="table table-sm audit-table align-middle mb-0"><thead><tr><th>Date</th><th>Status</th><th>Posted</th><th>Total</th><th>Action</th></tr></thead><tbody>
                     @forelse($audits as $audit)
-                        <tr><td>{{ optional($audit->audit_date)->format('d M Y') }}</td><td>{{ ucfirst((string) $audit->status) }}</td><td>{{ $audit->charges_posted }} / {{ $audit->stays_scanned }}</td><td>{{ number_format((float) $audit->total_amount, 2) }}</td><td><form method="POST" action="{{ route('hotel.night_audit.reopen', $audit) }}" class="d-flex gap-1">@csrf<input name="reason" class="form-control form-control-sm" required minlength="10" maxlength="255" placeholder="Correction reason"><button class="btn btn-sm btn-outline-warning">Reopen</button></form></td></tr>
+                        <tr><td>{{ optional($audit->audit_date)->format('d M Y') }}</td><td>{{ ucfirst((string) $audit->status) }}</td><td>{{ $audit->charges_posted }} / {{ $audit->stays_scanned }}</td><td>{{ \App\Support\CompactNumber::format((float) $audit->total_amount, 2) }}</td><td><form method="POST" action="{{ route('hotel.night_audit.reopen', $audit) }}" class="d-flex gap-1">@csrf<input name="reason" class="form-control form-control-sm" required minlength="10" maxlength="255" placeholder="Correction reason"><button class="btn btn-sm btn-outline-warning">Reopen</button></form></td></tr>
                     @empty
                         <tr><td colspan="5" class="text-muted p-4">No night audits have been run yet.</td></tr>
                     @endforelse

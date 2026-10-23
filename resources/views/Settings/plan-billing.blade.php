@@ -155,7 +155,7 @@
                                         </div>
                                     </div>
                                     <div class="text-sm-end mt-2 mt-sm-0">
-                                        <h4 class="fw-bold text-primary mb-0">₦{{ number_format($amount, 2) }}</h4>
+                                        <h4 class="fw-bold text-primary mb-0">₦{{ \App\Support\CompactNumber::format($amount, 2) }}</h4>
                                         <p class="text-muted small">{{ ucfirst((string) $billingCycle) }}</p>
                                     </div>
                                 </div>

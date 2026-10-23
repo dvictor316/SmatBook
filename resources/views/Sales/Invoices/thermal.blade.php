@@ -94,7 +94,7 @@
     $paymentDetails = is_array($sale->payment_details) ? $sale->payment_details : [];
     $split = is_array($paymentDetails['split'] ?? null) ? $paymentDetails['split'] : [];
     $receiptFooter = \App\Support\ReceiptCompanyProfile::footer($company);
-    $money = fn ($amount) => $currencySymbol . number_format((float) $amount, 2);
+    $money = fn ($amount) => $currencySymbol . \App\Support\CompactNumber::format((float) $amount, 2);
 @endphp
 
 <div class="receipt-toolbar">
@@ -143,8 +143,8 @@
             <tr>
                 <td>{{ $productName }}</td>
                 <td>{{ $quantityLabel }} {{ $unitLabel }}</td>
-                <td>{{ number_format((float) $item->unit_price, 2) }}</td>
-                <td>{{ number_format($lineTotal, 2) }}</td>
+                <td>{{ \App\Support\CompactNumber::format((float) $item->unit_price, 2) }}</td>
+                <td>{{ \App\Support\CompactNumber::format($lineTotal, 2) }}</td>
             </tr>
         @empty
             <tr><td colspan="4" class="center">No items</td></tr>

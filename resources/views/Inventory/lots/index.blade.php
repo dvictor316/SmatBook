@@ -53,8 +53,8 @@
                                     <td>{{ $lot->lot_number }}</td>
                                     <td>{{ $lot->batch_number ?: 'N/A' }}</td>
                                     <td>{{ $lot->product?->name ?? 'N/A' }}</td>
-                                    <td>{{ number_format((float) $lot->quantity_received, 2) }}</td>
-                                    <td>{{ number_format((float) $lot->quantity_available, 2) }}</td>
+                                    <td>{{ \App\Support\CompactNumber::format((float) $lot->quantity_received, 2) }}</td>
+                                    <td>{{ \App\Support\CompactNumber::format((float) $lot->quantity_available, 2) }}</td>
                                     <td>{{ $lot->expiry_date ? $lot->expiry_date->format('d M Y') : 'N/A' }}</td>
                                     <td><span class="badge bg-{{ $lot->status === 'active' ? 'success' : 'secondary' }}">{{ ucfirst($lot->status ?? 'unknown') }}</span></td>
                                     <td class="text-end">

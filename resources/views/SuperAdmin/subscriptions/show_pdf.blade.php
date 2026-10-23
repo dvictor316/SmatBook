@@ -73,7 +73,7 @@
                     </td>
                     <td>{{ ucfirst($subscription->billing_cycle) }}</td>
                     <td>{{ $subscription->start_date?->format('d/m/y') }} - {{ $subscription->end_date?->format('d/m/y') }}</td>
-                    <td class="text-right">₦{{ number_format($subscription->amount, 2) }}</td>
+                    <td class="text-right">₦{{ \App\Support\CompactNumber::format($subscription->amount, 2) }}</td>
                 </tr>
             </tbody>
         </table>
@@ -81,7 +81,7 @@
         <table class="totals-table">
             <tr>
                 <td class="bg-light">Subtotal</td>
-                <td class="text-right">₦{{ number_format($subscription->amount, 2) }}</td>
+                <td class="text-right">₦{{ \App\Support\CompactNumber::format($subscription->amount, 2) }}</td>
             </tr>
             <tr>
                 <td class="bg-light">Tax (0%)</td>
@@ -89,7 +89,7 @@
             </tr>
             <tr style="background-color: #007bff; color: white;">
                 <td><strong>Total Paid</strong></td>
-                <td class="text-right"><strong>₦{{ number_format($subscription->amount, 2) }}</strong></td>
+                <td class="text-right"><strong>₦{{ \App\Support\CompactNumber::format($subscription->amount, 2) }}</strong></td>
             </tr>
         </table>
 

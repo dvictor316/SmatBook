@@ -253,7 +253,7 @@
                                 <option value="">-- Choose Sale --</option>
                                 @forelse($sales as $sale)
                                     <option value="{{ $sale->id }}" data-balance="{{ (float) ($sale->balance ?? 0) }}" @selected(!empty($selectedSaleId) && (int) $selectedSaleId === (int) $sale->id)>
-                                        {{ $sale->invoice_no ?? ('SALE-' . $sale->id) }} (Bal: {{ number_format((float) ($sale->balance ?? 0), 2) }})
+                                        {{ $sale->invoice_no ?? ('SALE-' . $sale->id) }} (Bal: {{ \App\Support\CompactNumber::format((float) ($sale->balance ?? 0), 2) }})
                                     </option>
                                 @empty
                                     <option value="" disabled>No unpaid sales available for this customer.</option>
@@ -281,7 +281,7 @@
                                 <input type="number" class="form-control border-primary" name="amount" id="payment-amount" step="0.01" required placeholder="0.00" value="{{ old('amount', $selectedSaleBalance ?? $outstandingBalance ?? '') }}">
                             </div>
                             @if(!empty($outstandingBalance))
-                                <small class="text-muted">Outstanding for customer: ₦{{ number_format($outstandingBalance, 2) }}</small>
+                                <small class="text-muted">Outstanding for customer: ₦{{ \App\Support\CompactNumber::format($outstandingBalance, 2) }}</small>
                             @endif
                         </div>
 
@@ -318,8 +318,8 @@
                                                     <tr class="select-sale-row" data-sale-id="{{ $sale->id }}" data-balance="{{ (float) ($sale->balance ?? 0) }}">
                                                         <td>{{ $sale->invoice_no ?? ('SALE-' . $sale->id) }}</td>
                                                         <td>{{ optional($sale->created_at)->format('d M Y') }}</td>
-                                                        <td class="text-end">₦{{ number_format((float) ($sale->balance ?? 0), 2) }}</td>
-                                                        <td class="text-end">₦{{ number_format((float) ($sale->total ?? 0), 2) }}</td>
+                                                        <td class="text-end">₦{{ \App\Support\CompactNumber::format((float) ($sale->balance ?? 0), 2) }}</td>
+                                                        <td class="text-end">₦{{ \App\Support\CompactNumber::format((float) ($sale->total ?? 0), 2) }}</td>
                                                     </tr>
                                                 @endforeach
                                             </tbody>

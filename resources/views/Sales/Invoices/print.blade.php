@@ -560,7 +560,7 @@
                                 @foreach($splitLines as $line)
                                     <div class="compact-split-pill">
                                         <div class="compact-invoice-meta-label">{{ $line['label'] }}</div>
-                                        <div class="compact-item-name">₦{{ number_format($line['amount'], 2) }}</div>
+                                        <div class="compact-item-name">₦{{ \App\Support\CompactNumber::format($line['amount'], 2) }}</div>
                                     </div>
                                 @endforeach
                             </div>
@@ -571,7 +571,7 @@
                         <div class="compact-summary-top">
                             <div>
                                 <div class="compact-invoice-meta-label">Summary</div>
-                                <div class="compact-summary-title">₦{{ number_format((float) ($sale->total ?? 0), 2) }}</div>
+                                <div class="compact-summary-title">₦{{ \App\Support\CompactNumber::format((float) ($sale->total ?? 0), 2) }}</div>
                             </div>
                             <div class="compact-status {{ $displayStatus === 'paid' ? 'text-success' : ($displayStatus === 'partial' ? 'text-info' : 'text-danger') }}">
                                 {{ strtoupper($displayStatus) }}
@@ -581,57 +581,57 @@
                         <table class="w-100 compact-total-table">
                             <tr>
                                 <td class="text-muted">Subtotal</td>
-                                <td class="text-end fw-bold">₦{{ number_format($subtotal, 2) }}</td>
+                                <td class="text-end fw-bold">₦{{ \App\Support\CompactNumber::format($subtotal, 2) }}</td>
                             </tr>
                             @if(abs($discount) > 0.00001)
                                 <tr>
                                     <td class="text-muted">Discount</td>
-                                    <td class="text-end fw-bold">₦{{ number_format($discount, 2) }}</td>
+                                    <td class="text-end fw-bold">₦{{ \App\Support\CompactNumber::format($discount, 2) }}</td>
                                 </tr>
                             @endif
                             @if(abs($tax) > 0.00001)
                                 <tr>
                                     <td class="text-muted">Tax</td>
-                                    <td class="text-end fw-bold">₦{{ number_format($tax, 2) }}</td>
+                                    <td class="text-end fw-bold">₦{{ \App\Support\CompactNumber::format($tax, 2) }}</td>
                                 </tr>
                             @endif
                             @if(abs($tenderedAmount - $appliedAmount) > 0.00001)
                                 <tr>
                                     <td class="text-muted">Tendered</td>
-                                    <td class="text-end fw-bold">₦{{ number_format($tenderedAmount, 2) }}</td>
+                                    <td class="text-end fw-bold">₦{{ \App\Support\CompactNumber::format($tenderedAmount, 2) }}</td>
                                 </tr>
                             @endif
                             <tr>
                                 <td class="text-muted">Applied</td>
-                                <td class="text-end fw-bold">₦{{ number_format($appliedAmount, 2) }}</td>
+                                <td class="text-end fw-bold">₦{{ \App\Support\CompactNumber::format($appliedAmount, 2) }}</td>
                             </tr>
                             @if(abs($changeAmount) > 0.00001)
                                 <tr>
                                     <td class="text-muted">Change</td>
-                                    <td class="text-end fw-bold">₦{{ number_format($changeAmount, 2) }}</td>
+                                    <td class="text-end fw-bold">₦{{ \App\Support\CompactNumber::format($changeAmount, 2) }}</td>
                                 </tr>
                             @endif
                             @if(abs($balanceDue) > 0.00001)
                                 <tr>
                                     <td class="text-muted">Balance Due</td>
-                                    <td class="text-end fw-bold text-danger">₦{{ number_format($balanceDue, 2) }}</td>
+                                    <td class="text-end fw-bold text-danger">₦{{ \App\Support\CompactNumber::format($balanceDue, 2) }}</td>
                                 </tr>
                             @endif
                             <tr class="total-row">
                                 <td>Total</td>
-                                <td class="text-end">₦{{ number_format((float) ($sale->total ?? 0), 2) }}</td>
+                                <td class="text-end">₦{{ \App\Support\CompactNumber::format((float) ($sale->total ?? 0), 2) }}</td>
                             </tr>
                             <tr>
                                 <td class="text-muted">Previous Customer Balance</td>
-                                <td class="text-end fw-bold">₦{{ number_format($previousCustomerBalance, 2) }}</td>
+                                <td class="text-end fw-bold">₦{{ \App\Support\CompactNumber::format($previousCustomerBalance, 2) }}</td>
                             </tr>
                             <tr>
                                 <td class="text-muted">Current Invoice Balance</td>
-                                <td class="text-end fw-bold">₦{{ number_format($balanceDue, 2) }}</td>
+                                <td class="text-end fw-bold">₦{{ \App\Support\CompactNumber::format($balanceDue, 2) }}</td>
                             </tr>
                             <tr class="total-row">
                                 <td>Customer Balance Due</td>
-                                <td class="text-end text-danger">₦{{ number_format($customerBalanceDue, 2) }}</td>
+                                <td class="text-end text-danger">₦{{ \App\Support\CompactNumber::format($customerBalanceDue, 2) }}</td>
                             </tr>
                         </table>
                     </div>
@@ -659,7 +659,7 @@
                                         'unit', 'pcs', 'piece', 'pieces', 'sachet' => 'pcs',
                                         default => $soldUnitType !== '' ? $soldUnitType : 'pcs',
                                     };
-                                    $soldQuantity = rtrim(rtrim(number_format($qty, 2), '0'), '.');
+                                    $soldQuantity = rtrim(rtrim(\App\Support\CompactNumber::format($qty, 2), '0'), '.');
                                 @endphp
                                 <tr>
                                     <td>
@@ -671,9 +671,9 @@
                                             <span class="text-muted text-uppercase">{{ $soldUnitLabel }}</span>
                                         </span>
                                     </td>
-                                    <td class="text-end">₦{{ number_format((float) ($item->unit_price ?? 0), 2) }}</td>
-                                    <td class="text-end">{{ number_format((float) ($item->discount ?? 0), 2) }}%</td>
-                                    <td class="text-end fw-bold">₦{{ number_format((float) ($item->subtotal ?? $item->total_price ?? 0), 2) }}</td>
+                                    <td class="text-end">₦{{ \App\Support\CompactNumber::format((float) ($item->unit_price ?? 0), 2) }}</td>
+                                    <td class="text-end">{{ \App\Support\CompactNumber::format((float) ($item->discount ?? 0), 2) }}%</td>
+                                    <td class="text-end fw-bold">₦{{ \App\Support\CompactNumber::format((float) ($item->subtotal ?? $item->total_price ?? 0), 2) }}</td>
                                 </tr>
                             @empty
                                 <tr>

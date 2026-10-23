@@ -106,7 +106,7 @@
                                                     </h2>
                                                 </td>
                                                 <td class="text-dark fw-bold">
-                                                    {{ number_format($note->amount, 2) }}
+                                                    {{ \App\Support\CompactNumber::format($note->amount, 2) }}
                                                 </td>
                                                 <td>{{ $note->created_at->format('d M Y') }}</td>
                                                 <td>

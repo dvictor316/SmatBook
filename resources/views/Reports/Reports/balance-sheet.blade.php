@@ -172,7 +172,7 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
         $pctVal = round(($delta / abs($compare)) * 100, 1);
         $pct = ' <span class="bs-change-pct">(' . ($pctVal > 0 ? '+' : '') . $pctVal . '%)</span>';
     }
-    return '<td class="bs-chg-amt ' . $cls . '">' . $prefix . number_format($delta, 2) . $pct . '</td>';
+    return '<td class="bs-chg-amt ' . $cls . '">' . $prefix . \App\Support\CompactNumber::format($delta, 2) . $pct . '</td>';
 };
 @endphp
 

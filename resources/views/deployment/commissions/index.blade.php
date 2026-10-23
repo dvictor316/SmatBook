@@ -145,7 +145,7 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <div class="small text-muted text-uppercase fw-bold mb-1">Total Commissions</div>
-                                <div class="h4 fw-bold mb-0 text-dark">₦{{ number_format($totalCommissions ?? 0, 2) }}</div>
+                                <div class="h4 fw-bold mb-0 text-dark">₦{{ \App\Support\CompactNumber::format($totalCommissions ?? 0, 2) }}</div>
                             </div>
                             <div class="bg-primary-subtle text-primary rounded p-3">
                                 <i class="fas fa-chart-line fa-lg"></i>
@@ -160,7 +160,7 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <div class="small text-muted text-uppercase fw-bold mb-1">Paid Out</div>
-                                <div class="h4 fw-bold mb-0 text-dark">₦{{ number_format($paidCommissions ?? 0, 2) }}</div>
+                                <div class="h4 fw-bold mb-0 text-dark">₦{{ \App\Support\CompactNumber::format($paidCommissions ?? 0, 2) }}</div>
                             </div>
                             <div class="bg-success-subtle text-success rounded p-3">
                                 <i class="fas fa-check-double fa-lg"></i>
@@ -175,7 +175,7 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <div class="small text-muted text-uppercase fw-bold mb-1">Available For Payout</div>
-                                <div class="h4 fw-bold mb-0 text-dark">₦{{ number_format($pendingCommissions ?? 0, 2) }}</div>
+                                <div class="h4 fw-bold mb-0 text-dark">₦{{ \App\Support\CompactNumber::format($pendingCommissions ?? 0, 2) }}</div>
                             </div>
                             <div class="bg-warning-subtle text-warning rounded p-3">
                                 <i class="fas fa-clock fa-lg"></i>
@@ -190,7 +190,7 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <div class="small text-muted text-uppercase fw-bold mb-1">Processing Payouts</div>
-                                <div class="h4 fw-bold mb-0 text-dark">₦{{ number_format($processingPayouts ?? 0, 2) }}</div>
+                                <div class="h4 fw-bold mb-0 text-dark">₦{{ \App\Support\CompactNumber::format($processingPayouts ?? 0, 2) }}</div>
                             </div>
                             <div class="bg-info-subtle text-info rounded p-3">
                                 <i class="fas fa-spinner fa-lg"></i>
@@ -288,19 +288,19 @@
                         </div>
                         <div class="d-flex justify-content-between py-2 border-bottom">
                             <span class="text-muted">Available balance</span>
-                            <span class="fw-semibold">₦{{ number_format($pendingCommissions ?? 0, 2) }}</span>
+                            <span class="fw-semibold">₦{{ \App\Support\CompactNumber::format($pendingCommissions ?? 0, 2) }}</span>
                         </div>
                         <div class="d-flex justify-content-between py-2 border-bottom">
                             <span class="text-muted">Processing balance</span>
-                            <span class="fw-semibold">₦{{ number_format($processingPayouts ?? 0, 2) }}</span>
+                            <span class="fw-semibold">₦{{ \App\Support\CompactNumber::format($processingPayouts ?? 0, 2) }}</span>
                         </div>
                         <div class="d-flex justify-content-between py-2 border-bottom">
                             <span class="text-muted">Failed / review balance</span>
-                            <span class="fw-semibold">₦{{ number_format($failedPayouts ?? 0, 2) }}</span>
+                            <span class="fw-semibold">₦{{ \App\Support\CompactNumber::format($failedPayouts ?? 0, 2) }}</span>
                         </div>
                         <div class="d-flex justify-content-between py-2">
                             <span class="text-muted">Threshold</span>
-                            <span class="fw-semibold">₦{{ number_format((float) (optional($manager)->minimum_payout_amount ?? 5000), 2) }}</span>
+                            <span class="fw-semibold">₦{{ \App\Support\CompactNumber::format((float) (optional($manager)->minimum_payout_amount ?? 5000), 2) }}</span>
                         </div>
                         @if(!empty($retryablePayout))
                             <div class="alert alert-warning border mt-3 mb-0 small">
@@ -341,7 +341,7 @@
                             <tr>
                                 <td class="ps-4"><code>{{ $payout->payout_reference }}</code></td>
                                 <td class="text-capitalize">{{ $payout->gateway ?: 'n/a' }}</td>
-                                <td class="fw-bold">₦{{ number_format((float) $payout->amount, 2) }}</td>
+                                <td class="fw-bold">₦{{ \App\Support\CompactNumber::format((float) $payout->amount, 2) }}</td>
                                 <td><span class="badge bg-light text-dark border text-uppercase">{{ str_replace('_', ' ', $payout->status) }}</span></td>
                                 <td class="small text-muted">{{ optional($payout->processed_at ?? $payout->created_at)->format('M d, Y H:i') }}</td>
                                 <td class="pe-4 small text-muted">{{ $payout->failure_reason ?: 'Healthy payout record' }}</td>
@@ -394,7 +394,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="fw-bold text-dark">₦{{ number_format((float) ($comm->commission_amount ?? $comm->amount ?? 0), 2) }}</td>
+                                <td class="fw-bold text-dark">₦{{ \App\Support\CompactNumber::format((float) ($comm->commission_amount ?? $comm->amount ?? 0), 2) }}</td>
                                 <td>
                                     <span class="badge bg-light text-dark border">{{ (float) ($comm->rate ?? $comm->commission_rate ?? $rate ?? 0) }}%</span>
                                 </td>

@@ -10,7 +10,7 @@
         ?? 'SmartProbook';
     $activeBranchName = trim((string) (session('active_branch_name') ?? ''));
     $fmt = fn ($amount) => \App\Support\GeoCurrency::format((float) $amount, 'NGN', $currencyCode, $currencyLocale);
-    $signedCost = fn ($amount) => ((float) $amount > 0 ? '-' : '') . number_format(abs((float) $amount), 2);
+    $signedCost = fn ($amount) => ((float) $amount > 0 ? '-' : '') . \App\Support\CompactNumber::format(abs((float) $amount), 2);
 
     // Subdomain parameter detection for all routes
     $currentSubdomain = request()->route('subdomain') ?? 'admin';
@@ -454,12 +454,12 @@
                                 @php $dailyProfit = $item->income - $item->expense; @endphp
                                 <tr>
                                     <td class="fw-semibold" data-order="{{ $item->report_date }}">{{ \Carbon\Carbon::parse($item->report_date)->format('D, d M Y') }}</td>
-                                    <td class="text-success">+{{ number_format($item->income, 2) }}</td>
+                                    <td class="text-success">+{{ \App\Support\CompactNumber::format($item->income, 2) }}</td>
                                     <td class="text-muted">{{ $signedCost($item->purchase_expense ?? 0) }}</td>
                                     <td class="text-muted">{{ $signedCost($item->operating_expense ?? 0) }}</td>
                                     <td class="text-danger">{{ $signedCost($item->expense) }}</td>
                                     <td class="fw-semibold {{ $dailyProfit >= 0 ? 'text-success' : 'text-danger' }}">
-                                        {{ number_format($dailyProfit, 2) }}
+                                        {{ \App\Support\CompactNumber::format($dailyProfit, 2) }}
                                     </td>
                                 </tr>
                             @endforeach
@@ -467,12 +467,12 @@
                         <tfoot class="bg-light fw-bold">
                             <tr>
                                 <td>PAGE TOTALS</td>
-                                <td class="text-success">₦{{ number_format($pageIncome, 2) }}</td>
-                                <td class="text-muted">₦{{ number_format($pagePurchaseExpense, 2) }}</td>
-                                <td class="text-muted">₦{{ number_format($pageOperatingExpense, 2) }}</td>
-                                <td class="text-danger">₦{{ number_format($pageExpense, 2) }}</td>
+                                <td class="text-success">₦{{ \App\Support\CompactNumber::format($pageIncome, 2) }}</td>
+                                <td class="text-muted">₦{{ \App\Support\CompactNumber::format($pagePurchaseExpense, 2) }}</td>
+                                <td class="text-muted">₦{{ \App\Support\CompactNumber::format($pageOperatingExpense, 2) }}</td>
+                                <td class="text-danger">₦{{ \App\Support\CompactNumber::format($pageExpense, 2) }}</td>
                                 <td class="{{ $pageNet >= 0 ? 'text-success' : 'text-danger' }}">
-                                    ₦{{ number_format($pageNet, 2) }}
+                                    ₦{{ \App\Support\CompactNumber::format($pageNet, 2) }}
                                 </td>
                             </tr>
                         </tfoot>
@@ -534,11 +534,11 @@ $(document).ready(function() {
         const subject = "Business P&L Summary: {{ $reportDate }}";
         const body =
             "Hello,\n\nHere is the financial summary for the selected period:\n\n" +
-            "Grand Total Revenue: ₦{{ number_format($grandIncome, 2) }}\n" +
-            "Purchase Cost: ₦{{ number_format($grandPurchaseExpense, 2) }}\n" +
-            "Operating Expenses: ₦{{ number_format($grandOperatingExpense, 2) }}\n" +
-            "Grand Total Expenses: ₦{{ number_format($grandExpense, 2) }}\n" +
-            "Net Profit/Loss: ₦{{ number_format($grandNet, 2) }}\n\n" +
+            "Grand Total Revenue: ₦{{ \App\Support\CompactNumber::format($grandIncome, 2) }}\n" +
+            "Purchase Cost: ₦{{ \App\Support\CompactNumber::format($grandPurchaseExpense, 2) }}\n" +
+            "Operating Expenses: ₦{{ \App\Support\CompactNumber::format($grandOperatingExpense, 2) }}\n" +
+            "Grand Total Expenses: ₦{{ \App\Support\CompactNumber::format($grandExpense, 2) }}\n" +
+            "Net Profit/Loss: ₦{{ \App\Support\CompactNumber::format($grandNet, 2) }}\n\n" +
             "Generated via SmartProbook.";
         const token = '{{ csrf_token() }}';
         const recipient = prompt('Send report to email (leave blank to use your account email):') ?? null;

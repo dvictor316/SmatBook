@@ -306,17 +306,17 @@
                     <div class="vendor-ledger-summary">
                         <div class="vendor-ledger-stat">
                             <div class="vendor-ledger-stat-label">Closing Balance</div>
-                            <div class="vendor-ledger-stat-value">₦{{ number_format($closingBalance ?? 0, 2) }}</div>
+                            <div class="vendor-ledger-stat-value">₦{{ \App\Support\CompactNumber::format($closingBalance ?? 0, 2) }}</div>
                             <div class="vendor-ledger-stat-note">Live running balance across all entries.</div>
                         </div>
                         <div class="vendor-ledger-stat">
                             <div class="vendor-ledger-stat-label">Credits</div>
-                            <div class="vendor-ledger-stat-value">₦{{ number_format($credits, 2) }}</div>
+                            <div class="vendor-ledger-stat-value">₦{{ \App\Support\CompactNumber::format($credits, 2) }}</div>
                             <div class="vendor-ledger-stat-note">Positive value added to the ledger.</div>
                         </div>
                         <div class="vendor-ledger-stat">
                             <div class="vendor-ledger-stat-label">Debits</div>
-                            <div class="vendor-ledger-stat-value">₦{{ number_format($debits, 2) }}</div>
+                            <div class="vendor-ledger-stat-value">₦{{ \App\Support\CompactNumber::format($debits, 2) }}</div>
                             <div class="vendor-ledger-stat-note">Outflows and negative adjustments.</div>
                         </div>
                         <div class="vendor-ledger-stat">
@@ -408,10 +408,10 @@
                                         </td>
                                         <td>
                                             <span class="{{ $transaction->amount >= 0 ? 'ledger-amount-credit' : 'ledger-amount-debit' }}">
-                                                {{ $transaction->amount >= 0 ? '+' : '-' }}₦{{ number_format(abs($transaction->amount), 2) }}
+                                                {{ $transaction->amount >= 0 ? '+' : '-' }}₦{{ \App\Support\CompactNumber::format(abs($transaction->amount), 2) }}
                                             </span>
                                         </td>
-                                        <td>₦{{ number_format($runningBalance, 2) }}</td>
+                                        <td>₦{{ \App\Support\CompactNumber::format($runningBalance, 2) }}</td>
                                         <td class="text-end">
                                             <div class="dropdown">
                                                 <button class="btn btn-sm btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">

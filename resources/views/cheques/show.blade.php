@@ -67,7 +67,7 @@
                         </tr>
                         <tr>
                             <th>Amount</th>
-                            <td><strong>{{ number_format($cheque->amount, 2) }}</strong></td>
+                            <td><strong>{{ \App\Support\CompactNumber::format($cheque->amount, 2) }}</strong></td>
                         </tr>
                         <tr>
                             <th>Cheque Date</th>

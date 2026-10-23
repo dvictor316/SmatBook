@@ -82,8 +82,8 @@
                                         <td class="text-start">{{ $item->name }}</td>
                                         <td class="text-start">{{ $item->description }}</td>
                                         <td class="text-end">{{ $item->qty }}</td>
-                                        <td class="text-end">{{ $invoice->currency_symbol }}{{ number_format($item->price, 2) }}</td>
-                                        <td class="text-end">{{ $invoice->currency_symbol }}{{ number_format($item->qty * $item->price, 2) }}</td>
+                                        <td class="text-end">{{ $invoice->currency_symbol }}{{ \App\Support\CompactNumber::format($item->price, 2) }}</td>
+                                        <td class="text-end">{{ $invoice->currency_symbol }}{{ \App\Support\CompactNumber::format($item->qty * $item->price, 2) }}</td>
                                     </tr>
                                 @endforeach
 
@@ -94,14 +94,14 @@
                                         <span class="mt-2 d-inline-flex">{{ __('Sub Total') }}</span>
                                     </td>
                                     <td class="text-end">
-                                        {{ $invoice->currency_symbol }}{{ number_format($invoice->tax_amount, 2) }} <br>
-                                        <span class="mt-2 d-inline-flex">{{ $invoice->currency_symbol }}{{ number_format($invoice->subtotal, 2) }}</span>
+                                        {{ $invoice->currency_symbol }}{{ \App\Support\CompactNumber::format($invoice->tax_amount, 2) }} <br>
+                                        <span class="mt-2 d-inline-flex">{{ $invoice->currency_symbol }}{{ \App\Support\CompactNumber::format($invoice->subtotal, 2) }}</span>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td colspan="4"></td>
                                     <td class="text-end"><h4>{{ __('Total') }}</h4></td>
-                                    <td class="text-end"><h4>{{ $invoice->currency_symbol }}{{ number_format($invoice->total_amount, 2) }}</h4></td>
+                                    <td class="text-end"><h4>{{ $invoice->currency_symbol }}{{ \App\Support\CompactNumber::format($invoice->total_amount, 2) }}</h4></td>
                                 </tr>
                             </tbody>
                         </table>

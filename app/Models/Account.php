@@ -204,7 +204,7 @@ class Account extends Model
      */
     public function getFormattedBalanceAttribute()
     {
-        return number_format($this->current_balance, 2);
+        return \App\Support\CompactNumber::format($this->current_balance, 2);
     }
 
     /**

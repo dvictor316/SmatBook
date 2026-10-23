@@ -22,7 +22,7 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <div class="text-muted text-uppercase small fw-bold">Receivables</div>
-                        <div class="fs-4 fw-bold">₦{{ number_format((float) ($summary['receivable_total'] ?? 0), 2) }}</div>
+                        <div class="fs-4 fw-bold">₦{{ \App\Support\CompactNumber::format((float) ($summary['receivable_total'] ?? 0), 2) }}</div>
                     </div>
                 </div>
             </div>
@@ -38,7 +38,7 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <div class="text-muted text-uppercase small fw-bold">Payables</div>
-                        <div class="fs-4 fw-bold">₦{{ number_format((float) ($summary['payable_total'] ?? 0), 2) }}</div>
+                        <div class="fs-4 fw-bold">₦{{ \App\Support\CompactNumber::format((float) ($summary['payable_total'] ?? 0), 2) }}</div>
                     </div>
                 </div>
             </div>
@@ -79,12 +79,12 @@
                                                 <div class="fw-semibold">{{ $account['name'] }}</div>
                                                 <small class="text-muted">{{ $account['documents'] }} docs • Oldest {{ $account['oldest_date'] ?: 'N/A' }}</small>
                                             </td>
-                                            <td class="text-end fw-semibold">₦{{ number_format((float) $account['total_due'], 2) }}</td>
+                                            <td class="text-end fw-semibold">₦{{ \App\Support\CompactNumber::format((float) $account['total_due'], 2) }}</td>
                                             <td>
-                                                <div class="small">0-30: ₦{{ number_format((float) $account['bucket_current'], 2) }}</div>
-                                                <div class="small">31-60: ₦{{ number_format((float) $account['bucket_31_60'], 2) }}</div>
-                                                <div class="small">61-90: ₦{{ number_format((float) $account['bucket_61_90'], 2) }}</div>
-                                                <div class="small">90+: ₦{{ number_format((float) $account['bucket_90_plus'], 2) }}</div>
+                                                <div class="small">0-30: ₦{{ \App\Support\CompactNumber::format((float) $account['bucket_current'], 2) }}</div>
+                                                <div class="small">31-60: ₦{{ \App\Support\CompactNumber::format((float) $account['bucket_31_60'], 2) }}</div>
+                                                <div class="small">61-90: ₦{{ \App\Support\CompactNumber::format((float) $account['bucket_61_90'], 2) }}</div>
+                                                <div class="small">90+: ₦{{ \App\Support\CompactNumber::format((float) $account['bucket_90_plus'], 2) }}</div>
                                             </td>
                                             <td class="text-end">
                                                 @if(!empty($account['id']))
@@ -133,12 +133,12 @@
                                                 <div class="fw-semibold">{{ $account['name'] }}</div>
                                                 <small class="text-muted">{{ $account['documents'] }} docs • Oldest {{ $account['oldest_date'] ?: 'N/A' }}</small>
                                             </td>
-                                            <td class="text-end fw-semibold">₦{{ number_format((float) $account['total_due'], 2) }}</td>
+                                            <td class="text-end fw-semibold">₦{{ \App\Support\CompactNumber::format((float) $account['total_due'], 2) }}</td>
                                             <td>
-                                                <div class="small">0-30: ₦{{ number_format((float) $account['bucket_current'], 2) }}</div>
-                                                <div class="small">31-60: ₦{{ number_format((float) $account['bucket_31_60'], 2) }}</div>
-                                                <div class="small">61-90: ₦{{ number_format((float) $account['bucket_61_90'], 2) }}</div>
-                                                <div class="small">90+: ₦{{ number_format((float) $account['bucket_90_plus'], 2) }}</div>
+                                                <div class="small">0-30: ₦{{ \App\Support\CompactNumber::format((float) $account['bucket_current'], 2) }}</div>
+                                                <div class="small">31-60: ₦{{ \App\Support\CompactNumber::format((float) $account['bucket_31_60'], 2) }}</div>
+                                                <div class="small">61-90: ₦{{ \App\Support\CompactNumber::format((float) $account['bucket_61_90'], 2) }}</div>
+                                                <div class="small">90+: ₦{{ \App\Support\CompactNumber::format((float) $account['bucket_90_plus'], 2) }}</div>
                                             </td>
                                             <td class="text-end">
                                                 @if(!empty($account['id']))

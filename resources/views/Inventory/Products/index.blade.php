@@ -689,20 +689,20 @@
                                                 $hasActiveBranch = !empty($activeBranch['name'] ?? null);
                                             ?>
                                             <span class="badge <?php echo e($displayStock <= 5 ? 'bg-danger' : 'bg-success'); ?>">
-                                                <?php echo e(rtrim(rtrim(number_format((float) $displayStock, 2), '0'), '.')); ?>
+                                                <?php echo e(rtrim(rtrim(\App\Support\CompactNumber::format((float) $displayStock, 2), '0'), '.')); ?>
                                             </span>
                                             <?php if ($hasActiveBranch) { ?>
                                                 <div class="small text-muted mt-1"><?php echo e($activeBranch['name']); ?></div>
                                             <?php } ?>
                                         </td>
                                         <td>
-                                            <div><?php echo e(number_format((float) $product->price, 2)); ?></div>
+                                            <div><?php echo e(\App\Support\CompactNumber::format((float) $product->price, 2)); ?></div>
                                             <?php if (!is_null($product->wholesale_price) || !is_null($product->special_price)) { ?>
-                                                <small class="d-block text-muted">Wholesale: <?php echo e(!is_null($product->wholesale_price) ? number_format((float) $product->wholesale_price, 2) : '-'); ?></small>
-                                                <small class="d-block text-muted">Special: <?php echo e(!is_null($product->special_price) ? number_format((float) $product->special_price, 2) : '-'); ?></small>
+                                                <small class="d-block text-muted">Wholesale: <?php echo e(!is_null($product->wholesale_price) ? \App\Support\CompactNumber::format((float) $product->wholesale_price, 2) : '-'); ?></small>
+                                                <small class="d-block text-muted">Special: <?php echo e(!is_null($product->special_price) ? \App\Support\CompactNumber::format((float) $product->special_price, 2) : '-'); ?></small>
                                             <?php } ?>
                                         </td>
-                                        <td><?php echo e(number_format((float) $product->purchase_price, 2)); ?></td>
+                                        <td><?php echo e(\App\Support\CompactNumber::format((float) $product->purchase_price, 2)); ?></td>
                                         <td class="text-center no-print">
                                             <div class="dropdown">
                                                 <a href="#" class="product-action-trigger dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">

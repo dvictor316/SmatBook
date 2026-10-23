@@ -464,7 +464,7 @@
                                 <span class="coa-stat-dot" style="background:{{ $tc['dot'] }}"></span>
                                 {{ $summary['type'] }}
                             </div>
-                            <div class="coa-stat-value">{{ number_format($summary['balance'], 2) }}</div>
+                            <div class="coa-stat-value">{{ \App\Support\CompactNumber::format($summary['balance'], 2) }}</div>
                             <div class="coa-stat-sub">{{ $summary['count'] }} account{{ $summary['count'] != 1 ? 's' : '' }}</div>
                         </div>
                     @endforeach
@@ -537,8 +537,8 @@
                                                         @endif
                                                     </td>
                                                     <td><span class="coa-subtype">{{ $account->sub_type ?: 'General' }}</span></td>
-                                                    <td class="coa-balance">{{ number_format((float)($account->opening_balance ?? 0), 2) }}</td>
-                                                    <td class="coa-balance">{{ number_format((float)($account->current_balance ?? 0), 2) }}</td>
+                                                    <td class="coa-balance">{{ \App\Support\CompactNumber::format((float)($account->opening_balance ?? 0), 2) }}</td>
+                                                    <td class="coa-balance">{{ \App\Support\CompactNumber::format((float)($account->current_balance ?? 0), 2) }}</td>
                                                     <td><span class="coa-txn">{{ $account->transactions_count ?? 0 }}</span></td>
                                                     <td>
                                                         @if($account->is_active)
@@ -560,7 +560,7 @@
                                                             data-id="{{ $account->id }}"
                                                             data-name="{{ $account->name }}"
                                                             data-sub-type="{{ $account->sub_type }}"
-                                                            data-opening="{{ number_format((float)($account->opening_balance ?? 0), 2, '.', '') }}"
+                                                            data-opening="{{ \App\Support\CompactNumber::format((float)($account->opening_balance ?? 0), 2, '.', '') }}"
                                                             data-description="{{ $account->description }}"
                                                             data-active="{{ $account->is_active ? '1' : '0' }}"
                                                             data-type="{{ $account->type }}"
@@ -744,18 +744,18 @@ function coaBuildSubtypes(typeValue, selectId, preselect) {
                         </div>
                         <div style="text-align:right;">
                             <div style="font-size:.78rem;color:#64748b;">Ledger-derived balance</div>
-                            <div style="font-size:1.05rem;font-weight:800;color:#0f172a;">{{ number_format((float) ($bankDiagnostic['derived_ledger_balance'] ?? 0), 2) }}</div>
+                            <div style="font-size:1.05rem;font-weight:800;color:#0f172a;">{{ \App\Support\CompactNumber::format((float) ($bankDiagnostic['derived_ledger_balance'] ?? 0), 2) }}</div>
                         </div>
                     </div>
 
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px;">
                         <div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;">
                             <div style="font-size:.72rem;color:#94a3b8;text-transform:uppercase;font-weight:700;">Stored Current</div>
-                            <div style="font-size:.96rem;font-weight:800;color:#0f172a;">{{ number_format((float) ($bankDiagnostic['stored_current_balance'] ?? 0), 2) }}</div>
+                            <div style="font-size:.96rem;font-weight:800;color:#0f172a;">{{ \App\Support\CompactNumber::format((float) ($bankDiagnostic['stored_current_balance'] ?? 0), 2) }}</div>
                         </div>
                         <div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;">
                             <div style="font-size:.72rem;color:#94a3b8;text-transform:uppercase;font-weight:700;">Payment Channel</div>
-                            <div style="font-size:.96rem;font-weight:800;color:#0f172a;">{{ number_format((float) ($bankDiagnostic['linked_bank_balance'] ?? 0), 2) }}</div>
+                            <div style="font-size:.96rem;font-weight:800;color:#0f172a;">{{ \App\Support\CompactNumber::format((float) ($bankDiagnostic['linked_bank_balance'] ?? 0), 2) }}</div>
                         </div>
                         <div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;">
                             <div style="font-size:.72rem;color:#94a3b8;text-transform:uppercase;font-weight:700;">Transactions</div>
@@ -780,7 +780,7 @@ function coaBuildSubtypes(typeValue, selectId, preselect) {
                                 @foreach(($bankDiagnostic['sources'] ?? []) as $source)
                                     <tr>
                                         <td class="fw-semibold text-dark">{{ $source['label'] }}</td>
-                                        <td class="text-end">{{ number_format((float) ($source['value'] ?? 0), 2) }}</td>
+                                        <td class="text-end">{{ \App\Support\CompactNumber::format((float) ($source['value'] ?? 0), 2) }}</td>
                                         <td class="text-muted">{{ $source['detail'] }}</td>
                                     </tr>
                                 @endforeach

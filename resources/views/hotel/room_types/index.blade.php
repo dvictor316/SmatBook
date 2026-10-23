@@ -27,7 +27,7 @@
                                     <td>{{ $type->bed_type ?: 'N/A' }}</td>
                                     <td>{{ $type->beds }}</td>
                                     <td>{{ $type->max_occupancy }}</td>
-                                    <td>{{ number_format($type->base_rate,2) }}</td>
+                                    <td>{{ \App\Support\CompactNumber::format($type->base_rate,2) }}</td>
                                     <td><span class="badge {{ $type->is_active ? 'bg-success' : 'bg-secondary' }}">{{ $type->is_active ? 'Active' : 'Inactive' }}</span></td>
                                     <td>
                                         <a href="{{ route('hotel.room_types.edit', $type) }}" class="btn btn-sm btn-info">Edit</a>

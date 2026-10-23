@@ -49,7 +49,7 @@
                 <div class="room-show-status">
                     <div class="room-show-chip"><span>Status</span><strong>{{ ucfirst(str_replace('_', ' ', (string) $room->operational_status)) }}</strong></div>
                     <div class="room-show-chip"><span>Cleaning</span><strong>{{ ucfirst((string) $room->housekeeping_status) }}</strong></div>
-                    <div class="room-show-chip"><span>Rate</span><strong>{{ number_format((float)($room->base_rate_override ?: ($room->type?->base_rate ?? 0)), 2) }}</strong></div>
+                    <div class="room-show-chip"><span>Rate</span><strong>{{ \App\Support\CompactNumber::format((float)($room->base_rate_override ?: ($room->type?->base_rate ?? 0)), 2) }}</strong></div>
                     <div class="room-show-chip"><span>Gallery</span><strong>{{ $images->count() }}</strong></div>
                 </div>
                 <p class="text-muted">{{ $room->notes ?: 'No room notes recorded yet.' }}</p>

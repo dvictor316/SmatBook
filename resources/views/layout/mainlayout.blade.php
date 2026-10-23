@@ -112,6 +112,7 @@
 
     @include('layout.partials.head')
     @include('layout.partials.design-system')
+    @include('layout.partials.compact-number-script')
     @yield('style')
     @if($isHotelWorkspace)
         @php

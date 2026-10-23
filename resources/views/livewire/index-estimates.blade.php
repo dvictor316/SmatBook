@@ -127,7 +127,7 @@
                                         </td>
                                         <td>{{ optional($estimate->issue_date)->format('d M Y') ?? '-' }}</td>
                                         <td>{{ optional($estimate->expiry_date)->format('d M Y') ?? '-' }}</td>
-                                        <td class="fw-semibold">{{ $currencySymbol }}{{ number_format($estimate->amount ?? $estimate->total_amount ?? 0, 2) }}</td>
+                                        <td class="fw-semibold">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($estimate->amount ?? $estimate->total_amount ?? 0, 2) }}</td>
                                         <td>
                                             <span class="badge bg-soft-{{ $badge }} text-{{ $badge }}">
                                                 {{ ucfirst($status) }}

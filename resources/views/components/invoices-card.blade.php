@@ -13,7 +13,7 @@
                                 <div class="dash-counts">
                                     <h4 class="fw-bold">
                                         @if(($card['is_currency'] ?? true) && is_numeric($card['amount'] ?? null))
-                                            ₦{{ number_format($card['amount'], 2) }}
+                                            ₦{{ \App\Support\CompactNumber::format($card['amount'], 2) }}
                                         @else
                                             {{ $card['amount'] ?? '0' }}
                                         @endif

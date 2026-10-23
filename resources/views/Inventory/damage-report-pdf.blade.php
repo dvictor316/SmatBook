@@ -36,8 +36,8 @@
                     <td>{{ $damage->branch_name ?: ($activeBranch['name'] ?? '') }}</td>
                     <td>{{ $damage->reason }}</td>
                     <td>{{ $damage->remarks ?: '-' }}</td>
-                    <td class="number">{{ number_format((float) $damage->quantity, 2) }}</td>
-                    <td class="number">{{ number_format((float) $damage->line_value, 2) }}</td>
+                    <td class="number">{{ \App\Support\CompactNumber::format((float) $damage->quantity, 2) }}</td>
+                    <td class="number">{{ \App\Support\CompactNumber::format((float) $damage->line_value, 2) }}</td>
                 </tr>
             @empty
                 <tr><td colspan="8" class="empty">No damaged stock has been recorded for the selected criteria.</td></tr>
@@ -53,10 +53,10 @@
                 <tr>
                     <td>{{ $row->product_name }}</td>
                     <td>{{ $row->sku ?: 'N/A' }}</td>
-                    <td class="number">{{ number_format((float) $row->stock_before_damage, 2) }}</td>
-                    <td class="number">{{ number_format((float) $row->damaged_qty, 2) }}</td>
-                    <td class="number">{{ number_format((float) $row->current_stock, 2) }}</td>
-                    <td class="number">{{ number_format((float) $row->damage_value, 2) }}</td>
+                    <td class="number">{{ \App\Support\CompactNumber::format((float) $row->stock_before_damage, 2) }}</td>
+                    <td class="number">{{ \App\Support\CompactNumber::format((float) $row->damaged_qty, 2) }}</td>
+                    <td class="number">{{ \App\Support\CompactNumber::format((float) $row->current_stock, 2) }}</td>
+                    <td class="number">{{ \App\Support\CompactNumber::format((float) $row->damage_value, 2) }}</td>
                 </tr>
             @empty
                 <tr><td colspan="6" class="empty">No inventory stock status is available for the selected criteria.</td></tr>

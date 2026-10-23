@@ -217,7 +217,7 @@
                         <div class="text-dark">{{ $manager->email }}</div>
                         <div class="text-muted extra-small">{{ $manager->phone }}</div>
                     </td>
-                    <td class="fw-bold text-success small">₦{{ number_format($manager->commission_due ?? ($manager->commission ?? 0), 2) }}</td>
+                    <td class="fw-bold text-success small">₦{{ \App\Support\CompactNumber::format($manager->commission_due ?? ($manager->commission ?? 0), 2) }}</td>
                     <td>
                         @php
                             $pillClass = match($manager->status) {

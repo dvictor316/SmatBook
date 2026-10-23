@@ -92,7 +92,7 @@
                 <div class="card shadow-sm border-0 bg-primary-light">
                     <div class="card-body p-3">
                         <p class="small fw-bold text-uppercase text-primary mb-1">{{ __('Total Purchase Tax') }}</p>
-                        <h3 class="mb-0 text-primary">₦{{ number_format($totalTax, 2) }}</h3>
+                        <h3 class="mb-0 text-primary">₦{{ \App\Support\CompactNumber::format($totalTax, 2) }}</h3>
                     </div>
                 </div>
             </div>
@@ -136,15 +136,15 @@
                                     <td class="fw-bold text-dark">{{ $tax['Supplier'] }}</td>
                                     <td>{{ \Carbon\Carbon::parse($tax['Date'])->format('d M, Y') }}</td>
                                     <td><span class="text-muted">{{ $tax['RefNo'] }}</span></td>
-                                    <td class="fw-semibold">{{ number_format($tax['TotalAmount'], 2) }}</td>
+                                    <td class="fw-semibold">{{ \App\Support\CompactNumber::format($tax['TotalAmount'], 2) }}</td>
                                     <td>
                                         <span class="badge bg-light text-dark border">
                                             {{ $tax['PaymentMethod'] }}
                                         </span>
                                     </td>
-                                    <td class="text-danger">-{{ number_format($tax['Discount'], 2) }}</td>
+                                    <td class="text-danger">-{{ \App\Support\CompactNumber::format($tax['Discount'], 2) }}</td>
                                     <td class="text-primary fw-bold">
-                                        {{ number_format($tax['TaxAmount'], 2) }}
+                                        {{ \App\Support\CompactNumber::format($tax['TaxAmount'], 2) }}
                                     </td>
                                 </tr>
                             @empty
@@ -153,7 +153,7 @@
                         <tfoot class="bg-light fw-bold">
                             <tr>
                                 <td colspan="7" class="text-end">PAGE TOTAL TAX:</td>
-                                <td class="text-primary">₦{{ number_format($totalTax, 2) }}</td>
+                                <td class="text-primary">₦{{ \App\Support\CompactNumber::format($totalTax, 2) }}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -213,7 +213,7 @@ $(document).ready(function() {
         const body =
             "Purchase Tax Summary\n" +
             "Date Generated: {{ $reportDate }}\n" +
-            "Total Purchase Tax: ₦{{ number_format($totalTax, 2) }}\n\n" +
+            "Total Purchase Tax: ₦{{ \App\Support\CompactNumber::format($totalTax, 2) }}\n\n" +
             "Please log in to the portal to view full breakdown.";
         const token = '{{ csrf_token() }}';
         const recipient = prompt('Send report to email (leave blank to use your account email):') ?? null;

@@ -170,7 +170,7 @@
                 </div>
                 <div>
                     <small class="text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Sales Revenue · {{ $reportingPeriod->label() }}</small>
-                    <h4 class="fw-bold mb-0">₦{{ number_format((float) ($metrics['totalSales'] ?? 0), 2) }}</h4>
+                    <h4 class="fw-bold mb-0">₦{{ \App\Support\CompactNumber::format((float) ($metrics['totalSales'] ?? 0), 2) }}</h4>
                 </div>
             </div>
         </div>
@@ -189,7 +189,7 @@
                 </div>
                 <div>
                     <small class="text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Net Profit · {{ $reportingPeriod->label() }}</small>
-                    <h4 class="fw-bold mb-0">₦{{ number_format((float) ($metrics['netProfit'] ?? 0), 2) }}</h4>
+                    <h4 class="fw-bold mb-0">₦{{ \App\Support\CompactNumber::format((float) ($metrics['netProfit'] ?? 0), 2) }}</h4>
                 </div>
             </div>
         </div>
@@ -208,7 +208,7 @@
                 </div>
                 <div>
                     <small class="text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Expenses · {{ $reportingPeriod->label() }}</small>
-                    <h4 class="fw-bold mb-0">₦{{ number_format((float) ($metrics['totalExpenses'] ?? 0), 2) }}</h4>
+                    <h4 class="fw-bold mb-0">₦{{ \App\Support\CompactNumber::format((float) ($metrics['totalExpenses'] ?? 0), 2) }}</h4>
                 </div>
             </div>
         </div>
@@ -222,7 +222,7 @@
                 </div>
                 <div>
                     <small class="text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Inventory Value</small>
-                    <h4 class="fw-bold mb-0">₦{{ number_format((float) ($metrics['inventoryValue'] ?? 0), 2) }}</h4>
+                    <h4 class="fw-bold mb-0">₦{{ \App\Support\CompactNumber::format((float) ($metrics['inventoryValue'] ?? 0), 2) }}</h4>
                 </div>
             </div>
         </div>

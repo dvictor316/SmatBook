@@ -97,7 +97,7 @@
                     </div>
                     <div class="text-end">
                         <p class="mb-1 text-muted small text-uppercase">Total Applied</p>
-                        <h5 class="fw-bold mb-0">₦{{ number_format($appliedAmount, 2) }}</h5>
+                        <h5 class="fw-bold mb-0">₦{{ \App\Support\CompactNumber::format($appliedAmount, 2) }}</h5>
                     </div>
                 </div>
                 <div class="row mt-3">
@@ -105,7 +105,7 @@
                         <div class="col-md-4 mb-2">
                             <div class="border rounded p-3 h-100 bg-white">
                                 <p class="mb-1 text-muted small text-uppercase">{{ $splitLine['label'] }}</p>
-                                <h6 class="fw-bold mb-1">₦{{ number_format((float) $splitLine['amount'], 2) }}</h6>
+                                <h6 class="fw-bold mb-1">₦{{ \App\Support\CompactNumber::format((float) $splitLine['amount'], 2) }}</h6>
                                 @if(!empty($splitLine['account']))
                                     <p class="mb-0 text-muted small">{{ $splitLine['account'] }}</p>
                                 @endif
@@ -138,17 +138,17 @@
                                     'unit', 'pcs', 'piece', 'pieces', 'sachet' => 'pcs',
                                     default => $soldUnitType !== '' ? $soldUnitType : 'pcs',
                                 };
-                                $soldQuantity = rtrim(rtrim(number_format((float) ($item->qty ?? $item->quantity ?? 0), 2), '0'), '.');
+                                $soldQuantity = rtrim(rtrim(\App\Support\CompactNumber::format((float) ($item->qty ?? $item->quantity ?? 0), 2), '0'), '.');
                             @endphp
                             <tr style="background-color: #fcfcfc;">
                                 <td class="text-dark fw-bold">{{ $item->product->name ?? 'Product/Service' }}</td>
-                                <td>{{ number_format($item->unit_price, 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format($item->unit_price, 2) }}</td>
                                 <td>
                                     <span class="fw-bold">{{ $soldQuantity }}</span>
                                     <span class="text-muted text-uppercase ms-1">{{ $soldUnitLabel }}</span>
                                 </td>
-                                <td>{{ number_format($item->discount, 2) }}%</td>
-                                <td class="text-end fw-bold text-dark">{{ number_format($item->subtotal, 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format($item->discount, 2) }}%</td>
+                                <td class="text-end fw-bold text-dark">{{ \App\Support\CompactNumber::format($item->subtotal, 2) }}</td>
                             </tr>
                         @empty
                             <tr>
@@ -176,19 +176,19 @@
                 <div class="invoice-total-card p-3 border rounded bg-white shadow-sm">
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Subtotal</span>
-                        <span class="fw-bold">{{ number_format($sale->items->sum('subtotal'), 2) }}</span>
+                        <span class="fw-bold">{{ \App\Support\CompactNumber::format($sale->items->sum('subtotal'), 2) }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2 text-muted">
                         <span>Tax</span>
-                        <span>{{ number_format($sale->tax ?? 0, 2) }}</span>
+                        <span>{{ \App\Support\CompactNumber::format($sale->tax ?? 0, 2) }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2 text-muted">
                         <span>Amount Tendered</span>
-                        <span>{{ number_format($tenderedAmount, 2) }}</span>
+                        <span>{{ \App\Support\CompactNumber::format($tenderedAmount, 2) }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2 text-muted">
                         <span>Applied to Sale</span>
-                        <span>{{ number_format($appliedAmount, 2) }}</span>
+                        <span>{{ \App\Support\CompactNumber::format($appliedAmount, 2) }}</span>
                     </div>
                     @foreach($splitLines as $splitLine)
                         <div class="d-flex justify-content-between mb-2 text-muted">
@@ -198,21 +198,21 @@
                                     <small class="d-block">{{ $splitLine['account'] }}</small>
                                 @endif
                             </span>
-                            <span>{{ number_format((float) $splitLine['amount'], 2) }}</span>
+                            <span>{{ \App\Support\CompactNumber::format((float) $splitLine['amount'], 2) }}</span>
                         </div>
                     @endforeach
                     <div class="d-flex justify-content-between mb-2 text-muted">
                         <span>Change</span>
-                        <span>{{ number_format($changeAmount, 2) }}</span>
+                        <span>{{ \App\Support\CompactNumber::format($changeAmount, 2) }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2 text-muted">
                         <span>Balance Due</span>
-                        <span>{{ number_format($balanceDue, 2) }}</span>
+                        <span>{{ \App\Support\CompactNumber::format($balanceDue, 2) }}</span>
                     </div>
                     <hr class="my-2">
                     <div class="d-flex justify-content-between align-items-center">
                         <h4 class="text-primary fw-bold mb-0">Total</h4>
-                        <h4 class="text-primary fw-bold mb-0">{{ number_format($sale->total, 2) }}</h4>
+                        <h4 class="text-primary fw-bold mb-0">{{ \App\Support\CompactNumber::format($sale->total, 2) }}</h4>
                     </div>
                 </div>
             </div>

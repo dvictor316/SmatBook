@@ -50,7 +50,7 @@
                 <div class="card h-100">
                     <div class="card-body">
                         <p class="text-muted mb-1">Units On Hand</p>
-                        <h4 class="mb-0">{{ number_format($totalQuantity, 2) }}</h4>
+                        <h4 class="mb-0">{{ \App\Support\CompactNumber::format($totalQuantity, 2) }}</h4>
                     </div>
                 </div>
             </div>
@@ -58,7 +58,7 @@
                 <div class="card h-100">
                     <div class="card-body">
                         <p class="text-muted mb-1">Total Stock Value</p>
-                        <h4 class="mb-0">{{ number_format((float) $grandTotal, 2) }}</h4>
+                        <h4 class="mb-0">{{ \App\Support\CompactNumber::format((float) $grandTotal, 2) }}</h4>
                     </div>
                 </div>
             </div>
@@ -87,9 +87,9 @@
                                 <tr>
                                     <td>{{ $row['product']->name ?? 'N/A' }}</td>
                                     <td>{{ $row['product']->sku ?? 'N/A' }}</td>
-                                    <td class="text-end">{{ number_format((float) $row['quantity'], 2) }}</td>
-                                    <td class="text-end">{{ number_format((float) $row['unit_cost'], 2) }}</td>
-                                    <td class="text-end fw-semibold">{{ number_format((float) $row['total'], 2) }}</td>
+                                    <td class="text-end">{{ \App\Support\CompactNumber::format((float) $row['quantity'], 2) }}</td>
+                                    <td class="text-end">{{ \App\Support\CompactNumber::format((float) $row['unit_cost'], 2) }}</td>
+                                    <td class="text-end fw-semibold">{{ \App\Support\CompactNumber::format((float) $row['total'], 2) }}</td>
                                 </tr>
                             @empty
                                 <tr>

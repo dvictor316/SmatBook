@@ -80,7 +80,7 @@
                         Total Paid Out (All Time)
                     @endif
                 </div>
-                <div class="fw-bold fs-4 text-danger">₦{{ number_format($totalPayouts, 2) }}</div>
+                <div class="fw-bold fs-4 text-danger">₦{{ \App\Support\CompactNumber::format($totalPayouts, 2) }}</div>
             </div>
         </div>
     </div>
@@ -116,7 +116,7 @@
                                     <td class="fw-semibold">{{ $payout->recipient_name }}</td>
                                     <td><span class="badge bg-light text-dark border">{{ $payout->recipient_type_label ?? 'External' }}</span></td>
                                     <td><span class="badge bg-secondary text-capitalize">{{ $payout->payout_type }}</span></td>
-                                    <td class="text-danger fw-semibold">₦{{ number_format($payout->amount, 2) }}</td>
+                                    <td class="text-danger fw-semibold">₦{{ \App\Support\CompactNumber::format($payout->amount, 2) }}</td>
                                     <td class="text-muted small">{{ $payout->description ?: '—' }}</td>
                                     <td class="text-muted small">{{ $payout->paid_at ? $payout->paid_at->format('d M Y') : '—' }}</td>
                                     <td class="text-muted small">

@@ -94,7 +94,7 @@
                     </div>
                     <div>
                         <div class="text-muted small">Active Forecast</div>
-                        <div class="fs-6 fw-bold">{{ number_format($stats['forecast'] ?? 0, 2) }}</div>
+                        <div class="fs-6 fw-bold">{{ \App\Support\CompactNumber::format($stats['forecast'] ?? 0, 2) }}</div>
                     </div>
                 </div>
             </div>
@@ -189,7 +189,7 @@
                                 @endif
                             </td>
                             <td>{{ $t->last_run_on ? $t->last_run_on->format('d M Y') : '—' }}</td>
-                            <td>{{ $t->currency }} {{ number_format($t->total, 2) }}</td>
+                            <td>{{ $t->currency }} {{ \App\Support\CompactNumber::format($t->total, 2) }}</td>
                             <td>{{ $t->branch_name ?: ($t->branch_id ?: 'All') }}</td>
                             <td><span class="badge bg-secondary">{{ $t->automation_label }}</span></td>
                             <td><span class="badge {{ $t->status_badge }}">{{ ucfirst($t->status) }}</span></td>

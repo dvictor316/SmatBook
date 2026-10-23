@@ -24,7 +24,7 @@
                     <div class="col-xl-4 col-md-6"><strong>Status:</strong> {{ ucfirst(str_replace('_', ' ', $maintenanceLog->status)) }}</div>
                     <div class="col-xl-4 col-md-6"><strong>Date:</strong> {{ $maintenanceLog->maintenance_date->format('d M Y') }}</div>
                     <div class="col-xl-4 col-md-6"><strong>Next Date:</strong> {{ $maintenanceLog->next_maintenance_date?->format('d M Y') ?: '—' }}</div>
-                    <div class="col-xl-4 col-md-6"><strong>Cost:</strong> {{ number_format((float) ($maintenanceLog->cost ?? 0), 2) }}</div>
+                    <div class="col-xl-4 col-md-6"><strong>Cost:</strong> {{ \App\Support\CompactNumber::format((float) ($maintenanceLog->cost ?? 0), 2) }}</div>
                     <div class="col-12"><strong>Description:</strong> {{ $maintenanceLog->description }}</div>
                     <div class="col-lg-6"><strong>Findings:</strong> {{ $maintenanceLog->findings ?: '—' }}</div>
                     <div class="col-lg-6"><strong>Parts Replaced:</strong> {{ $maintenanceLog->parts_replaced ?: '—' }}</div>

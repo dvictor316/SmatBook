@@ -30,9 +30,9 @@
                 <div class="col-md-4"><strong>Employee:</strong> {{ $timesheet->employee->name ?? '—' }}</div>
                 <div class="col-md-4"><strong>Week Start:</strong> {{ $timesheet->week_start_date->format('d M Y') }}</div>
                 <div class="col-md-4"><strong>Status:</strong> {{ ucfirst($timesheet->status) }}</div>
-                <div class="col-md-4"><strong>Total Hours:</strong> {{ number_format((float) $timesheet->total_hours, 2) }}</div>
-                <div class="col-md-4"><strong>Billable Hours:</strong> {{ number_format((float) $timesheet->billable_hours, 2) }}</div>
-                <div class="col-md-4"><strong>Billable Amount:</strong> {{ number_format((float) $timesheet->billable_amount, 2) }}</div>
+                <div class="col-md-4"><strong>Total Hours:</strong> {{ \App\Support\CompactNumber::format((float) $timesheet->total_hours, 2) }}</div>
+                <div class="col-md-4"><strong>Billable Hours:</strong> {{ \App\Support\CompactNumber::format((float) $timesheet->billable_hours, 2) }}</div>
+                <div class="col-md-4"><strong>Billable Amount:</strong> {{ \App\Support\CompactNumber::format((float) $timesheet->billable_amount, 2) }}</div>
                 <div class="col-12"><strong>Notes:</strong> {{ $timesheet->notes ?: 'None' }}</div>
             </div>
         </div>
@@ -50,10 +50,10 @@
                             <tr>
                                 <td>{{ $entry->entry_date?->format('d M Y') ?: '—' }}</td>
                                 <td>{{ $entry->activity_description }}</td>
-                                <td>{{ number_format((float) $entry->hours, 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format((float) $entry->hours, 2) }}</td>
                                 <td>{{ $entry->is_billable ? 'Yes' : 'No' }}</td>
-                                <td>{{ number_format((float) ($entry->hourly_rate ?? 0), 2) }}</td>
-                                <td>{{ number_format((float) ($entry->line_total ?? 0), 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format((float) ($entry->hourly_rate ?? 0), 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format((float) ($entry->line_total ?? 0), 2) }}</td>
                             </tr>
                         @endforeach
                     </tbody>

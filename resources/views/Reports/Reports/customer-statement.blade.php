@@ -65,7 +65,7 @@
                         <div class="card-body">
                             <div class="inform-item">
                                 <h6 class="text-primary">Total Invoiced</h6>
-                                <h5>{{ $currencySymbol }}{{ number_format($totalInvoiced ?? 0, 2) }}</h5>
+                                <h5>{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($totalInvoiced ?? 0, 2) }}</h5>
                             </div>
                         </div>
                     </div>
@@ -75,7 +75,7 @@
                         <div class="card-body">
                             <div class="inform-item">
                                 <h6 class="text-success">Total Paid</h6>
-                                <h5>{{ $currencySymbol }}{{ number_format($totalPaid ?? 0, 2) }}</h5>
+                                <h5>{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($totalPaid ?? 0, 2) }}</h5>
                             </div>
                         </div>
                     </div>
@@ -85,7 +85,7 @@
                         <div class="card-body">
                             <div class="inform-item">
                                 <h6 class="text-warning">Balance Due</h6>
-                                <h5>{{ $currencySymbol }}{{ number_format($balanceDue ?? 0, 2) }}</h5>
+                                <h5>{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($balanceDue ?? 0, 2) }}</h5>
                             </div>
                         </div>
                     </div>
@@ -140,9 +140,9 @@
                                                 <td class="fw-semibold">{{ $entry['reference'] }}</td>
                                                 <td>{{ $entry['type'] }}</td>
                                                 <td>{{ $entry['description'] }}</td>
-                                                <td class="text-end">{{ $entry['debit'] > 0 ? $currencySymbol . number_format($entry['debit'], 2) : '-' }}</td>
-                                                <td class="text-end">{{ $entry['credit'] > 0 ? $currencySymbol . number_format($entry['credit'], 2) : '-' }}</td>
-                                                <td class="text-end fw-bold">{{ $currencySymbol }}{{ number_format($entry['balance'], 2) }}</td>
+                                                <td class="text-end">{{ $entry['debit'] > 0 ? $currencySymbol . \App\Support\CompactNumber::format($entry['debit'], 2) : '-' }}</td>
+                                                <td class="text-end">{{ $entry['credit'] > 0 ? $currencySymbol . \App\Support\CompactNumber::format($entry['credit'], 2) : '-' }}</td>
+                                                <td class="text-end fw-bold">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($entry['balance'], 2) }}</td>
                                             </tr>
                                         @empty
                                             <tr>

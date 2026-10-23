@@ -309,7 +309,7 @@
                     const unit = product.base_unit_name || product.unit || product.unit_type || '';
                     const price = product.purchase_price ?? product.price ?? 0;
                     options.push(
-                        `<option value="${product.id}" data-name="${escapeHtml(product.name)}" data-unit="${escapeHtml(unit)}" data-price="${price}">${escapeHtml(product.name)} - ₦${Number(price).toFixed(2)}</option>`
+                        `<option value="${product.id}" data-name="${escapeHtml(product.name)}" data-unit="${escapeHtml(unit)}" data-price="${price}">${escapeHtml(product.name)} - ₦${window.formatCompactAmount(price)}</option>`
                     );
                 });
                 return options.join('');
@@ -448,7 +448,7 @@
                 const discount = parseFloat(document.querySelector(`input[name="products[${rowIndex}][discount]"]`).value) || 0;
                 
                 const amount = (quantity * rate) - discount;
-                document.getElementById(`amount_${rowIndex}`).textContent = amount.toFixed(2);
+                document.getElementById(`amount_${rowIndex}`).textContent = window.formatCompactAmount(amount);
                 
                 updateTotals();
             };
@@ -518,11 +518,11 @@
                 }
                 
                 // Update UI
-                document.getElementById('taxableAmount').textContent = taxableAmount.toFixed(2);
-                document.getElementById('totalDiscount').textContent = (totalDiscount + globalDiscount).toFixed(2);
-                document.getElementById('vatAmount').textContent = vatAmount.toFixed(2);
-                document.getElementById('roundOffAmount').textContent = roundOffAmount.toFixed(2);
-                document.getElementById('totalAmount').textContent = totalAmount.toFixed(2);
+                document.getElementById('taxableAmount').textContent = window.formatCompactAmount(taxableAmount);
+                document.getElementById('totalDiscount').textContent = window.formatCompactAmount(totalDiscount + globalDiscount);
+                document.getElementById('vatAmount').textContent = window.formatCompactAmount(vatAmount);
+                document.getElementById('roundOffAmount').textContent = window.formatCompactAmount(roundOffAmount);
+                document.getElementById('totalAmount').textContent = window.formatCompactAmount(totalAmount);
             }
             
             // Event listeners for dynamic updates

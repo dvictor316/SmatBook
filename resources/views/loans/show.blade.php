@@ -52,7 +52,7 @@
                         </tr>
                         <tr><th>Lender</th><td>{{ $loan->lender_name }}</td></tr>
                         <tr><th>Bank Account</th><td>{{ $loan->bank?->name ?? '—' }}</td></tr>
-                        <tr><th>Principal</th><td><strong>{{ number_format($loan->principal_amount, 2) }}</strong></td></tr>
+                        <tr><th>Principal</th><td><strong>{{ \App\Support\CompactNumber::format($loan->principal_amount, 2) }}</strong></td></tr>
                         <tr><th>Interest Rate</th><td>{{ $loan->interest_rate }}% ({{ ucfirst($loan->interest_type) }})</td></tr>
                         <tr><th>Repayment</th><td>{{ ucfirst(str_replace('_', ' ', $loan->repayment_frequency)) }}</td></tr>
                         <tr><th>Disbursement</th><td>{{ $loan->disbursement_date?->format('d M Y') ?? '—' }}</td></tr>
@@ -74,15 +74,15 @@
                     <div class="row text-center">
                         <div class="col-4">
                             <div class="text-muted small">Principal</div>
-                            <div class="fs-5 fw-bold">{{ number_format($loan->principal_amount, 2) }}</div>
+                            <div class="fs-5 fw-bold">{{ \App\Support\CompactNumber::format($loan->principal_amount, 2) }}</div>
                         </div>
                         <div class="col-4">
                             <div class="text-muted small">Total Paid</div>
-                            <div class="fs-5 fw-bold text-success">{{ number_format($loan->repayments->sum(fn($r) => $r->principal_paid + $r->interest_paid), 2) }}</div>
+                            <div class="fs-5 fw-bold text-success">{{ \App\Support\CompactNumber::format($loan->repayments->sum(fn($r) => $r->principal_paid + $r->interest_paid), 2) }}</div>
                         </div>
                         <div class="col-4">
                             <div class="text-muted small">Outstanding</div>
-                            <div class="fs-5 fw-bold text-danger">{{ number_format($loan->outstanding_balance, 2) }}</div>
+                            <div class="fs-5 fw-bold text-danger">{{ \App\Support\CompactNumber::format($loan->outstanding_balance, 2) }}</div>
                         </div>
                     </div>
                 </div>
@@ -158,9 +158,9 @@
                         @forelse($loan->repayments->sortByDesc('payment_date') as $rep)
                         <tr>
                             <td>{{ $rep->payment_date?->format('d M Y') }}</td>
-                            <td>{{ number_format($rep->principal_paid, 2) }}</td>
-                            <td>{{ number_format($rep->interest_paid, 2) }}</td>
-                            <td><strong>{{ number_format($rep->principal_paid + $rep->interest_paid, 2) }}</strong></td>
+                            <td>{{ \App\Support\CompactNumber::format($rep->principal_paid, 2) }}</td>
+                            <td>{{ \App\Support\CompactNumber::format($rep->interest_paid, 2) }}</td>
+                            <td><strong>{{ \App\Support\CompactNumber::format($rep->principal_paid + $rep->interest_paid, 2) }}</strong></td>
                             <td>{{ ucfirst($rep->payment_method) }}</td>
                             <td>{{ $rep->reference ?? '—' }}</td>
                             <td>{{ $rep->notes ?? '—' }}</td>

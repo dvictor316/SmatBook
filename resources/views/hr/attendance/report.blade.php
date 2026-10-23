@@ -41,7 +41,7 @@
                             <tr>
                                 <td>{{ $first?->employee->name ?? '—' }}</td>
                                 <td>{{ $employeeRecords->count() }}</td>
-                                <td>{{ number_format((float) $employeeRecords->sum('hours_worked'), 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format((float) $employeeRecords->sum('hours_worked'), 2) }}</td>
                             </tr>
                         @empty
                             <tr><td colspan="3" class="text-center py-4 text-muted">No attendance data found for this period.</td></tr>

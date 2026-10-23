@@ -56,7 +56,7 @@
                                                 </td>
                                                 <td>{{ $vendor->phone }}</td>
                                                 <td>{{ $vendor->created_at->format('M d, Y') ?? 'N/A' }}</td>
-                                                <td>₦{{ number_format($vendor->current_balance ?? 0, 2) }}</td>
+                                                <td>₦{{ \App\Support\CompactNumber::format($vendor->current_balance ?? 0, 2) }}</td>
                                                 <td class="d-flex align-items-center">
 
                                                     <a href="{{ route('vendors.ledger', ['id' => $vendor->id]) }}" class="btn btn-greys me-2"><i

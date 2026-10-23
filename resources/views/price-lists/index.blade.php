@@ -35,7 +35,7 @@
                                     <td>{{ $priceList->currency }}</td>
                                     <td>
                                         @if($priceList->discount_type)
-                                            {{ $priceList->discount_type === 'percentage' ? number_format((float) $priceList->discount_value, 2) . '%' : number_format((float) $priceList->discount_value, 2) }}
+                                            {{ $priceList->discount_type === 'percentage' ? \App\Support\CompactNumber::format((float) $priceList->discount_value, 2) . '%' : \App\Support\CompactNumber::format((float) $priceList->discount_value, 2) }}
                                         @else
                                             N/A
                                         @endif

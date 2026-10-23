@@ -5,7 +5,7 @@
 @section('content')
 @php
     $selectedSubscription = $selectedSubscription ?? null;
-    $fmt = fn ($value) => number_format((float) $value, 2);
+    $fmt = fn ($value) => \App\Support\CompactNumber::format((float) $value, 2);
 @endphp
 
 <div class="sb-shell">

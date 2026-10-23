@@ -37,7 +37,7 @@
                     <div class="card shadow-sm border-0">
                         <div class="card-body">
                             <p class="text-muted mb-1 small fw-bold text-uppercase">{{ __('Total Refunded') }}</p>
-                            <h3 class="mb-0 fw-bold">₦{{ number_format($totalRefunded ?? 0, 2) }}</h3>
+                            <h3 class="mb-0 fw-bold">₦{{ \App\Support\CompactNumber::format($totalRefunded ?? 0, 2) }}</h3>
                         </div>
                     </div>
                 </div>
@@ -65,7 +65,7 @@
                                         <td><span class="text-primary fw-bold">{{ $note->PurchaseNo }}</span></td>
                                         <td>{{ $note->VendorName ?? 'N/A' }}</td>
                                         <td>{{ $note->Product }}</td>
-                                        <td class="fw-bold">₦{{ number_format($note->ReturnAmount, 2) }}</td>
+                                        <td class="fw-bold">₦{{ \App\Support\CompactNumber::format($note->ReturnAmount, 2) }}</td>
                                         <td><span class="badge bg-info-light">{{ $note->ReturnQty }}</span></td>
                                         <td>{{ \Carbon\Carbon::parse($note->ReturnDate)->format('d M, Y') }}</td>
                                     </tr>

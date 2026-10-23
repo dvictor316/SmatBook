@@ -112,13 +112,13 @@
             <div class="col-md-4">
                 <div class="card border shadow-none mb-0 report-metric-card"><div class="card-body p-3">
                     <p class="text-muted mb-1 fw-bold uppercase report-metric-label">Base Units On Hand</p>
-                    <h4 class="text-danger fw-bold mb-0 report-metric-value">{{ number_format($totalUnits, 2) }}</h4>
+                    <h4 class="text-danger fw-bold mb-0 report-metric-value">{{ \App\Support\CompactNumber::format($totalUnits, 2) }}</h4>
                 </div></div>
             </div>
             <div class="col-md-4">
                 <div class="card border shadow-none mb-0 report-metric-card"><div class="card-body p-3">
                     <p class="text-muted mb-1 fw-bold uppercase report-metric-label">Carton Equivalent</p>
-                    <h4 class="text-info fw-bold mb-0 report-metric-value">{{ number_format($totalCartonEquivalent, 2) }}</h4>
+                    <h4 class="text-info fw-bold mb-0 report-metric-value">{{ \App\Support\CompactNumber::format($totalCartonEquivalent, 2) }}</h4>
                 </div></div>
             </div>
             <div class="col-md-4">
@@ -173,12 +173,12 @@
                             <td class="py-2 text-end fw-bold {{ $report['QtyOnHand'] <= 0 ? 'text-danger' : 'text-dark' }}">
                                 @if($stockUnitView === 'carton')
                                     @if(is_numeric($report['CartonEquivalent']))
-                                        {{ number_format((float) $report['CartonEquivalent'], 2) }} ctn
+                                        {{ \App\Support\CompactNumber::format((float) $report['CartonEquivalent'], 2) }} ctn
                                     @else
                                         N/A
                                     @endif
                                 @else
-                                    {{ number_format($report['QtyOnHand'], 2) }} {{ $report['Unit'] }}
+                                    {{ \App\Support\CompactNumber::format($report['QtyOnHand'], 2) }} {{ $report['Unit'] }}
                                 @endif
                             </td>
                             @if($stockUnitView !== 'base')
@@ -186,14 +186,14 @@
                                     {{ $report['UnitsPerCarton'] > 0 ? number_format($report['CartonsOnHand'], 0) . ' ctn' : 'N/A' }}
                                 </td>
                                 <td class="py-2 text-end text-muted">
-                                    {{ $report['UnitsPerCarton'] > 0 ? number_format($report['LooseUnits'], 2) . ' ' . $report['Unit'] : 'Set pcs/ctn' }}
+                                    {{ $report['UnitsPerCarton'] > 0 ? \App\Support\CompactNumber::format($report['LooseUnits'], 2) . ' ' . $report['Unit'] : 'Set pcs/ctn' }}
                                 </td>
                             @endif
                             <td class="py-2 text-end text-success">{{ \App\Support\GeoCurrency::format($report['PurchasePrice'], 'NGN', $currencyCode, $currencyLocale) }}</td>
                             <td class="py-2 text-end text-primary">{{ \App\Support\GeoCurrency::format($report['SalesPrice'], 'NGN', $currencyCode, $currencyLocale) }}</td>
                             <td class="py-2 text-end text-success">{{ \App\Support\GeoCurrency::format($report['CostValue'], 'NGN', $currencyCode, $currencyLocale) }}</td>
                             <td class="py-2 text-end text-primary">{{ \App\Support\GeoCurrency::format($report['SalesValue'], 'NGN', $currencyCode, $currencyLocale) }}</td>
-                            <td class="py-2 text-end text-muted">{{ number_format($report['ReorderLevel'], 2) }}</td>
+                            <td class="py-2 text-end text-muted">{{ \App\Support\CompactNumber::format($report['ReorderLevel'], 2) }}</td>
                             <td class="pe-3 py-2 text-end fw-bold {{ $report['Status'] === 'Out of Stock' ? 'text-danger' : ($report['Status'] === 'Low Stock' ? 'text-warning' : 'text-indigo') }}">
                                 {{ $report['Status'] }}
                             </td>

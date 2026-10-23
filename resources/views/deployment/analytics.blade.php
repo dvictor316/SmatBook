@@ -128,7 +128,7 @@
                     <i class="fas fa-wallet"></i>
                 </div>
                 <h6 class="text-muted small text-uppercase fw-bold mb-1">Total Revenue</h6>
-                <h3 class="fw-bold mb-0">₦{{ number_format($totalRevenue ?? 0, 2) }}</h3>
+                <h3 class="fw-bold mb-0">₦{{ \App\Support\CompactNumber::format($totalRevenue ?? 0, 2) }}</h3>
                 <div class="mt-2 small">
                     <span class="text-muted">Accumulated earnings</span>
                 </div>
@@ -195,7 +195,7 @@
                                 {{ ucfirst($status) }} - {{ $company->subscription->plan_name ?? 'No Plan' }}
                             </span>
                         </td>
-                        <td class="text-end pe-3 fw-bold">₦{{ number_format($company->payments_sum_amount ?? 0, 2) }}</td>
+                        <td class="text-end pe-3 fw-bold">₦{{ \App\Support\CompactNumber::format($company->payments_sum_amount ?? 0, 2) }}</td>
                     </tr>
                     @empty
                     <tr>

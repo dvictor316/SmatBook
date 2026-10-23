@@ -34,10 +34,10 @@ public function index()
             'InvoiceTo'   => $sale->display_customer_name,
             'Email'       => $sale->customer?->email ?? 'No customer email',
             'Image'       => 'avatar-01.jpg',
-            'TotalAmount' => number_format($sale->total, 2),
-            'PaidAmount'  => number_format($sale->amount_paid, 2),
+            'TotalAmount' => \App\Support\CompactNumber::format($sale->total, 2),
+            'PaidAmount'  => \App\Support\CompactNumber::format($sale->amount_paid, 2),
             'PaymentMode' => $sale->payment_method,
-            'Balance'     => number_format($sale->balance, 2),
+            'Balance'     => \App\Support\CompactNumber::format($sale->balance, 2),
             'DueDate'     => date('d M Y', strtotime($sale->created_at . ' + 30 days')),
             'Status'      => ucfirst($sale->payment_status),
             'Class'       => ($sale->payment_status == 'paid') ? 'bg-success-light' : 'bg-danger-light',
@@ -47,9 +47,9 @@ public function index()
     // Cards remain the same...
     $invoicescards = [
         ['title' => 'All Invoices', 'amount' => $salesData->count(), 'count' => $salesData->count(), 'is_currency' => false, 'class' => 'bg-primary-light', 'icon' => 'fe fe-file-text'],
-        ['title' => 'Total Amount', 'amount' => '₦' . number_format($salesData->sum('total'), 2), 'class' => 'bg-success-light', 'icon' => 'fe fe-database'],
-        ['title' => 'Total Paid', 'amount' => '₦' . number_format($salesData->sum('amount_paid'), 2), 'class' => 'bg-info-light', 'icon' => 'fe fe-check-square'],
-        ['title' => 'Total Pending', 'amount' => '₦' . number_format($salesData->sum('balance'), 2), 'class' => 'bg-warning-light', 'icon' => 'fe fe-clock']
+        ['title' => 'Total Amount', 'amount' => '₦' . \App\Support\CompactNumber::format($salesData->sum('total'), 2), 'class' => 'bg-success-light', 'icon' => 'fe fe-database'],
+        ['title' => 'Total Paid', 'amount' => '₦' . \App\Support\CompactNumber::format($salesData->sum('amount_paid'), 2), 'class' => 'bg-info-light', 'icon' => 'fe fe-check-square'],
+        ['title' => 'Total Pending', 'amount' => '₦' . \App\Support\CompactNumber::format($salesData->sum('balance'), 2), 'class' => 'bg-warning-light', 'icon' => 'fe fe-clock']
     ];
 
     return view('Sales.recurring-invoices', compact('invoices', 'invoicescards'));
@@ -124,10 +124,10 @@ public function index()
                 'Order Number' => $sale->order_number ?? 'N/A',
                 'Invoice Date' => optional($sale->created_at)->format('d M Y h:i A') ?? now()->format('d M Y h:i A'),
                 'Payment Method' => $sale->payment_method ?? 'N/A',
-                'Total Amount' => 'NGN ' . number_format((float) ($sale->total ?? 0), 2),
-                'Amount Tendered' => 'NGN ' . number_format((float) (($sale->amount_paid ?? 0) + max(0, (float) ($sale->change_amount ?? 0))), 2),
-                'Applied to Sale' => 'NGN ' . number_format((float) ($sale->amount_paid ?? 0), 2),
-                'Change Returned' => 'NGN ' . number_format((float) ($sale->change_amount ?? 0), 2),
+                'Total Amount' => 'NGN ' . \App\Support\CompactNumber::format((float) ($sale->total ?? 0), 2),
+                'Amount Tendered' => 'NGN ' . \App\Support\CompactNumber::format((float) (($sale->amount_paid ?? 0) + max(0, (float) ($sale->change_amount ?? 0))), 2),
+                'Applied to Sale' => 'NGN ' . \App\Support\CompactNumber::format((float) ($sale->amount_paid ?? 0), 2),
+                'Change Returned' => 'NGN ' . \App\Support\CompactNumber::format((float) ($sale->change_amount ?? 0), 2),
                 'Company' => $companyName,
             ]
         );

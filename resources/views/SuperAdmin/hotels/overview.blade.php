@@ -307,7 +307,7 @@
     $rowArray = function ($row) {
         return $row instanceof \Illuminate\Database\Eloquent\Model ? $row->getAttributes() : (array) $row;
     };
-    $money = fn($value) => number_format((float) ($value ?? 0), 2);
+    $money = fn($value) => \App\Support\CompactNumber::format((float) ($value ?? 0), 2);
     $panelTitle = $panels[$panel] ?? ucfirst($panel);
     $statusBadge = function ($status) {
         return match((string) $status) {

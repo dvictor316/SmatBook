@@ -253,7 +253,7 @@
 
                 <div class="amount-display text-center">
                     <span class="info-label" style="display: block; margin-bottom: 5px;">Due After Free Trial</span>
-                    <div class="amount-value">₦{{ number_format($displayPrice, 2) }}</div>
+                    <div class="amount-value">₦{{ \App\Support\CompactNumber::format($displayPrice, 2) }}</div>
                     <div class="text-success fw-bold mt-2" style="font-size: 11px;">First month free. Payment starts after trial.</div>
                 </div>
                 <div class="text-center mt-3">

@@ -223,7 +223,7 @@
                                 <div class="recon-summary-tile">
                                     <small>Net Difference</small>
                                     <strong class="{{ abs($summary['difference_total']) > 0.009 ? 'recon-bad' : 'recon-good' }}">
-                                        {{ number_format((float) $summary['difference_total'], 2) }}
+                                        {{ \App\Support\CompactNumber::format((float) $summary['difference_total'], 2) }}
                                     </strong>
                                 </div>
                             </div>
@@ -286,7 +286,7 @@
                                                 </div>
                                                 <div class="small text-muted">
                                                     Closing balance:
-                                                    <strong>{{ $import->closing_balance !== null ? number_format((float) $import->closing_balance, 2) : 'N/A' }}</strong>
+                                                    <strong>{{ $import->closing_balance !== null ? \App\Support\CompactNumber::format((float) $import->closing_balance, 2) : 'N/A' }}</strong>
                                                 </div>
                                             </div>
                                         @empty
@@ -337,16 +337,16 @@
                                         </div>
                                         <div class="recon-balance-chip">
                                             <small>Bank Balance</small>
-                                            <strong>{{ number_format((float) $item['bank_balance'], 2) }}</strong>
+                                            <strong>{{ \App\Support\CompactNumber::format((float) $item['bank_balance'], 2) }}</strong>
                                         </div>
                                         <div class="recon-balance-chip">
                                             <small>Book Balance</small>
-                                            <strong>{{ number_format((float) $item['book_balance'], 2) }}</strong>
+                                            <strong>{{ \App\Support\CompactNumber::format((float) $item['book_balance'], 2) }}</strong>
                                         </div>
                                         <div class="recon-balance-chip">
                                             <small>Difference</small>
                                             <strong class="{{ abs($item['difference']) < 0.01 ? 'recon-good' : 'recon-bad' }}">
-                                                {{ number_format((float) $item['difference'], 2) }}
+                                                {{ \App\Support\CompactNumber::format((float) $item['difference'], 2) }}
                                             </strong>
                                         </div>
                                     </div>

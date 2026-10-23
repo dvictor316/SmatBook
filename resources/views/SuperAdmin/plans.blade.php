@@ -145,7 +145,7 @@
                         @endif
 
                         <div class="px-4">
-                            <h2 class="fw-bold">₦{{ number_format($plan->price, 2) }} <span class="fs-6 text-muted fw-normal">/year</span></h2>
+                            <h2 class="fw-bold">₦{{ \App\Support\CompactNumber::format($plan->price, 2) }} <span class="fs-6 text-muted fw-normal">/year</span></h2>
                             <p class="text-muted small mt-2">{{ $plan->description }}</p>
                         </div>
 

@@ -754,7 +754,7 @@ $(document).ready(function () {
         var pricePerKg = parseFloat($('input[name="price"]').val()) || 0;
         var calculated = kgPerCarton * pricePerKg;
         $('#carton_price_hint').text(calculated > 0
-            ? 'Automatic carton price: ' + calculated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            ? 'Automatic carton price: ' + window.formatCompactAmount(calculated)
             : 'Leave empty to calculate it automatically.');
     }
 
@@ -928,7 +928,7 @@ $(document).ready(function () {
             ? formatQuickQty(cartons) + ' ctn + ' + formatQuickQty(pieces) + ' kg'
             : formatQuickQty(cartons) + ' ctn + ' + formatQuickQty(rolls) + ' roll + ' + formatQuickQty(pieces) + ' ' + unitLabel;
         $('#quick_stock_mix_preview_text').text(stockMix);
-        $('#quick_stock_value_preview').text(stockValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        $('#quick_stock_value_preview').text(window.formatCompactAmount(stockValue));
         $('#quick_final_stock_input').val(Number(total.toFixed(6)));
     }
 
@@ -1243,7 +1243,7 @@ $(document).ready(function () {
                 ? formatQty(cartons) + ' ctn + ' + formatQty(pieces) + ' kg'
                 : formatQty(cartons) + ' ctn + ' + formatQty(rolls) + ' roll + ' + formatQty(pieces) + ' ' + unitLabel;
         }
-        if (valuePreview) valuePreview.textContent = (total * purchasePrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (valuePreview) valuePreview.textContent = window.formatCompactAmount(total * purchasePrice);
         if (finalStockInput) finalStockInput.value = Number(total.toFixed(6));
     }
 

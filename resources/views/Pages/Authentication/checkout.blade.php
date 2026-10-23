@@ -139,7 +139,7 @@
             <div class="mt-4 pt-4 border-top border-secondary">
                 <span class="gold-label">Total Due Now</span>
 
-                <div class="total-amount">₦{{ number_format($subscription->amount, 2) }}</div>
+                <div class="total-amount">₦{{ \App\Support\CompactNumber::format($subscription->amount, 2) }}</div>
             </div>
         </div>
 

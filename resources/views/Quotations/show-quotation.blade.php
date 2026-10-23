@@ -61,7 +61,7 @@
                             </div>
                         @endif
                         <div class="text-muted mt-2">Total</div>
-                        <div class="fw-bold">₦{{ number_format((float) ($quotation->total ?? 0), 2) }}</div>
+                        <div class="fw-bold">₦{{ \App\Support\CompactNumber::format((float) ($quotation->total ?? 0), 2) }}</div>
                     </div>
                 </div>
 
@@ -84,10 +84,10 @@
                                     <td>{{ $item['name'] ?? 'Item' }}</td>
                                     <td>{{ ucfirst($item['price_level'] ?? 'retail') }}</td>
                                     <td>{{ $item['qty'] ?? 0 }}</td>
-                                    <td>₦{{ number_format((float) ($item['rate'] ?? 0), 2) }}</td>
-                                    <td>₦{{ number_format((float) ($item['discount'] ?? 0), 2) }}</td>
-                                    <td>₦{{ number_format((float) ($item['tax'] ?? 0), 2) }}</td>
-                                    <td class="text-end">₦{{ number_format((float) ($item['amount'] ?? 0), 2) }}</td>
+                                    <td>₦{{ \App\Support\CompactNumber::format((float) ($item['rate'] ?? 0), 2) }}</td>
+                                    <td>₦{{ \App\Support\CompactNumber::format((float) ($item['discount'] ?? 0), 2) }}</td>
+                                    <td>₦{{ \App\Support\CompactNumber::format((float) ($item['tax'] ?? 0), 2) }}</td>
+                                    <td class="text-end">₦{{ \App\Support\CompactNumber::format((float) ($item['amount'] ?? 0), 2) }}</td>
                                 </tr>
                             @empty
                                 <tr>
@@ -107,19 +107,19 @@
                         <div class="border rounded p-3 bg-light">
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Subtotal</span>
-                                <strong>₦{{ number_format((float) ($quotation->subtotal ?? 0), 2) }}</strong>
+                                <strong>₦{{ \App\Support\CompactNumber::format((float) ($quotation->subtotal ?? 0), 2) }}</strong>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Discount</span>
-                                <strong>₦{{ number_format((float) ($quotation->discount ?? 0), 2) }}</strong>
+                                <strong>₦{{ \App\Support\CompactNumber::format((float) ($quotation->discount ?? 0), 2) }}</strong>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Tax</span>
-                                <strong>₦{{ number_format((float) ($quotation->tax ?? 0), 2) }}</strong>
+                                <strong>₦{{ \App\Support\CompactNumber::format((float) ($quotation->tax ?? 0), 2) }}</strong>
                             </div>
                             <div class="d-flex justify-content-between">
                                 <span>Total</span>
-                                <strong>₦{{ number_format((float) ($quotation->total ?? 0), 2) }}</strong>
+                                <strong>₦{{ \App\Support\CompactNumber::format((float) ($quotation->total ?? 0), 2) }}</strong>
                             </div>
                         </div>
                     </div>

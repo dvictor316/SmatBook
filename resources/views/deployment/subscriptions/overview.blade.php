@@ -122,7 +122,7 @@
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
                         <p class="text-muted fw-bold mb-1 small text-uppercase">Total Revenue</p>
-                        <h3 class="fw-bold mb-0 text-dark">${{ number_format($stats['total_revenue'] ?? 0, 2) }}</h3>
+                        <h3 class="fw-bold mb-0 text-dark">${{ \App\Support\CompactNumber::format($stats['total_revenue'] ?? 0, 2) }}</h3>
                         <small class="text-success fw-bold"><i class="fas fa-arrow-up"></i> Projected</small>
                     </div>
                     <div class="icon-box bg-primary text-white shadow-sm">
@@ -234,7 +234,7 @@
                                 @endif
                             </td>
                             <td class="fw-bold text-dark">
-                                ₦{{ number_format($sub->amount, 2) }} <span class="text-muted fw-normal small">/{{ strtolower((string) ($sub->billing_cycle ?? 'yearly')) }}</span>
+                                ₦{{ \App\Support\CompactNumber::format($sub->amount, 2) }} <span class="text-muted fw-normal small">/{{ strtolower((string) ($sub->billing_cycle ?? 'yearly')) }}</span>
                             </td>
                             <td>
                                 @if(!empty($sub->end_date))

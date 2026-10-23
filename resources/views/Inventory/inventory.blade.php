@@ -70,8 +70,8 @@
                                                         {{ method_exists($product, 'formatStockQuantity') ? $product->formatStockQuantity($product->stock) : (($product->stock ?? 0) . ' ' . ($product->unit_type ?? 'pcs')) }}
                                                     </span>
                                                 </td>
-                                                <td>{{ number_format($product->price, 2) }}</td>
-                                                <td>{{ number_format($product->purchase_price, 2) }}</td>
+                                                <td>{{ \App\Support\CompactNumber::format($product->price, 2) }}</td>
+                                                <td>{{ \App\Support\CompactNumber::format($product->purchase_price, 2) }}</td>
                                                 <td class="text-end">
                                                     <div class="d-flex justify-content-end align-items-center">
                                                         <a href="{{ route('inventory.history', $product->id) }}" class="btn btn-sm btn-white border me-2" title="View stock history">

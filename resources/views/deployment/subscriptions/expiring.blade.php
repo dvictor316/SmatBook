@@ -90,7 +90,7 @@
                                                 </h2>
                                             </td>
                                             <td>{{ $subscription->plan_name ?? $subscription->plan ?? 'N/A' }}</td>
-                                            <td>{{ number_format($subscription->amount, 2) }}</td>
+                                            <td>{{ \App\Support\CompactNumber::format($subscription->amount, 2) }}</td>
                                             @php $expiryDate = !empty($subscription->end_date) ? \Carbon\Carbon::parse($subscription->end_date) : null; @endphp
                                             <td>{{ $expiryDate ? $expiryDate->format('d M Y') : 'N/A' }}</td>
                                             <td>

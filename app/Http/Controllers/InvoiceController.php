@@ -1538,7 +1538,7 @@ class InvoiceController extends Controller
 
         return redirect()
             ->route('pay-online', ['id' => $id])
-            ->with('success', 'Payment of ₦' . number_format($amount, 2) . ' recorded successfully.');
+            ->with('success', 'Payment of ₦' . \App\Support\CompactNumber::format($amount, 2) . ' recorded successfully.');
     }
 
     public function updateStatus(Request $request, $id)

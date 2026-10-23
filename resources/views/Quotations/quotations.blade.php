@@ -73,7 +73,7 @@
                                                     </h2>
                                                 </td>
                                                 <td>{{ optional($quotation->created_at)->format('d M Y') }}</td>
-                                                <td class="fw-semibold">₦{{ number_format((float) ($quotation->total ?? 0), 2) }}</td>
+                                                <td class="fw-semibold">₦{{ \App\Support\CompactNumber::format((float) ($quotation->total ?? 0), 2) }}</td>
                                                 <td><span
                                                         class="badge {{ $statusBadgeClass }}">{{ $quotation->status }}</span>
                                                 </td>

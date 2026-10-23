@@ -47,7 +47,7 @@
         </section>
 
         <div class="hotel-op-kpis">
-            <div class="hotel-op-kpi"><span>Total Posted</span><strong>{{ number_format((float) $total, 2) }}</strong></div>
+            <div class="hotel-op-kpi"><span>Total Posted</span><strong>{{ \App\Support\CompactNumber::format((float) $total, 2) }}</strong></div>
             <div class="hotel-op-kpi"><span>Transactions</span><strong>{{ $items->total() }}</strong></div>
             <div class="hotel-op-kpi"><span>Open Folios</span><strong>{{ $activeFolios->count() }}</strong></div>
             <div class="hotel-op-kpi"><span>Posting Codes</span><strong>{{ implode(', ', $meta['codes']) }}</strong></div>
@@ -64,7 +64,7 @@
             <main class="service-workspace">
                 <section class="service-center-card p-3">
                     <h5 class="mb-3">{{ $meta['title'] }} Activity</h5>
-                    <div class="table-responsive"><table class="table table-sm service-table align-middle mb-0"><thead><tr><th>Guest</th><th>Room</th><th>Description</th><th>Qty</th><th>Amount</th><th>Date</th><th>Action</th></tr></thead><tbody>@forelse($items as $item)<tr><td>{{ $item->folio?->customer?->customer_name ?? $item->folio?->customer?->name ?? 'N/A' }}</td><td>Room {{ $item->folio?->stay?->room?->room_number ?? 'N/A' }}</td><td>{{ $item->description }}</td><td>{{ $item->quantity }}</td><td>{{ number_format((float) ($item->line_total ?? $item->amount ?? 0), 2) }}</td><td>{{ optional($item->service_date)->format('d M Y') }}</td><td>@include('hotel.partials.service-sale-actions', ['item' => $item])</td></tr>@empty<tr><td colspan="7" class="text-muted">No {{ strtolower($meta['title']) }} postings found yet.</td></tr>@endforelse</tbody></table></div><div class="mt-3">{{ $items->links() }}</div>
+                    <div class="table-responsive"><table class="table table-sm service-table align-middle mb-0"><thead><tr><th>Guest</th><th>Room</th><th>Description</th><th>Qty</th><th>Amount</th><th>Date</th><th>Action</th></tr></thead><tbody>@forelse($items as $item)<tr><td>{{ $item->folio?->customer?->customer_name ?? $item->folio?->customer?->name ?? 'N/A' }}</td><td>Room {{ $item->folio?->stay?->room?->room_number ?? 'N/A' }}</td><td>{{ $item->description }}</td><td>{{ $item->quantity }}</td><td>{{ \App\Support\CompactNumber::format((float) ($item->line_total ?? $item->amount ?? 0), 2) }}</td><td>{{ optional($item->service_date)->format('d M Y') }}</td><td>@include('hotel.partials.service-sale-actions', ['item' => $item])</td></tr>@empty<tr><td colspan="7" class="text-muted">No {{ strtolower($meta['title']) }} postings found yet.</td></tr>@endforelse</tbody></table></div><div class="mt-3">{{ $items->links() }}</div>
                 </section>
                 <aside class="service-center-card p-3">
                     <h5 class="mb-3">Post {{ $meta['title'] }} Charge</h5>
@@ -106,7 +106,7 @@
     const tax = form.querySelector('[data-service-tax]');
     const total = form.querySelector('[data-service-total]');
     function money(value) {
-        return Number.isFinite(value) ? value.toFixed(2) : '0.00';
+        return Number.isFinite(value) ? window.formatCompactAmount(value) : '0';
     }
     function recalc() {
         const amount = Math.max(0, (parseFloat(qty.value) || 0) * (parseFloat(unit.value) || 0) + (parseFloat(tax.value) || 0) - (parseFloat(discount.value) || 0));

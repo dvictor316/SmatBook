@@ -73,13 +73,13 @@
                                 <tr>
                                     <td>{{ $item->description }}</td>
                                     <td>{{ number_format((float) ($item->quantity ?? 1), 3) }}</td>
-                                    <td>{{ number_format((float) ($item->unit_price ?? $item->amount), 2) }}</td>
-                                    <td class="text-end">{{ number_format((float) $item->amount, 2) }}</td>
+                                    <td>{{ \App\Support\CompactNumber::format((float) ($item->unit_price ?? $item->amount), 2) }}</td>
+                                    <td class="text-end">{{ \App\Support\CompactNumber::format((float) $item->amount, 2) }}</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
-                    <div class="hotel-receipt-total"><span>Total</span><span>{{ number_format((float) $item->amount, 2) }}</span></div>
+                    <div class="hotel-receipt-total"><span>Total</span><span>{{ \App\Support\CompactNumber::format((float) $item->amount, 2) }}</span></div>
                 </div>
                 <div class="hotel-receipt-foot">
                     Posted by {{ $item->posted_by ? 'User #'.$item->posted_by : 'system' }}. This receipt is backed by the hotel folio ledger and posts into financial reporting through the accounting ledger.

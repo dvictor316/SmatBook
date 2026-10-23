@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Support\GeoCurrency;
+use App\Support\CompactNumber;
 use PHPUnit\Framework\TestCase;
 
 class GeoCurrencyFormattingTest extends TestCase
@@ -18,7 +19,13 @@ class GeoCurrencyFormattingTest extends TestCase
                             $formatter = new \NumberFormatter($locale, \NumberFormatter::DECIMAL);
                             $formatter->setAttribute(\NumberFormatter::MIN_FRACTION_DIGITS, 2);
                             $formatter->setAttribute(\NumberFormatter::MAX_FRACTION_DIGITS, 2);
-                            $expected = $formatter->format(abs($amount));
+                            $expected = CompactNumber::trimZeroFraction(
+                                $formatter->format(abs($amount)),
+                                $formatter->getSymbol(\NumberFormatter::DECIMAL_SEPARATOR_SYMBOL),
+                                2
+                            );
+                        } else {
+                            $expected = CompactNumber::format(abs($amount), 2);
                         }
                         $this->assertSame(
                             ($amount < 0 ? '-' : '').GeoCurrency::symbol($currency).$expected,
@@ -28,5 +35,15 @@ class GeoCurrencyFormattingTest extends TestCase
                 }
             }
         }
+    }
+
+    public function test_compact_number_removes_only_a_zero_fraction(): void
+    {
+        $this->assertSame('7,000', CompactNumber::format(7000, 2));
+        $this->assertSame('7,000.50', CompactNumber::format(7000.5, 2));
+        $this->assertSame('0.01', CompactNumber::format(0.01, 2));
+        $this->assertSame('-7,000', CompactNumber::format(-7000, 2));
+        $this->assertSame('7.000', CompactNumber::format(7000, 2, ',', '.'));
+        $this->assertSame('7,000.000', CompactNumber::format(7000, 3));
     }
 }

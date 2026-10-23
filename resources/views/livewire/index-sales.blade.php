@@ -8,7 +8,7 @@
                 <div class="card-body">
                     <span class="dash-widget-icon bg-primary"><i class="fas fa-sack-dollar text-white"></i></span>
                     <div class="dash-widget-info">
-                        <h3 class="h5 fw-bold">{{ $currencySymbol }}{{ number_format($salesStats['total_sales'], 2) }}</h3>
+                        <h3 class="h5 fw-bold">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($salesStats['total_sales'], 2) }}</h3>
                         <span class="fw-bold">Total Sales</span>
                     </div>
                 </div>
@@ -20,7 +20,7 @@
                 <div class="card-body">
                     <span class="dash-widget-icon bg-success"><i class="fas fa-hand-holding-usd text-white"></i></span>
                     <div class="dash-widget-info">
-                        <h3 class="h5 fw-bold">{{ $currencySymbol }}{{ number_format($salesStats['total_receipts'], 2) }}</h3>
+                        <h3 class="h5 fw-bold">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($salesStats['total_receipts'], 2) }}</h3>
                         <span class="fw-bold">Total Receipts</span>
                     </div>
                 </div>
@@ -32,7 +32,7 @@
                 <div class="card-body">
                     <span class="dash-widget-icon bg-warning"><i class="fas fa-file-invoice-dollar text-white"></i></span>
                     <div class="dash-widget-info">
-                        <h3 class="h5 fw-bold">{{ $currencySymbol }}{{ number_format($salesStats['total_expenses'], 2) }}</h3>
+                        <h3 class="h5 fw-bold">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($salesStats['total_expenses'], 2) }}</h3>
                         <span class="fw-bold">Total Expenses</span>
                     </div>
                 </div>
@@ -44,7 +44,7 @@
                 <div class="card-body">
                     <span class="dash-widget-icon bg-info"><i class="fas fa-coins text-white"></i></span>
                     <div class="dash-widget-info">
-                        <h3 class="h5 fw-bold">{{ $currencySymbol }}{{ number_format($salesStats['total_earnings'], 2) }}</h3>
+                        <h3 class="h5 fw-bold">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($salesStats['total_earnings'], 2) }}</h3>
                         <span class="fw-bold">Total Earnings</span>
                     </div>
                 </div>

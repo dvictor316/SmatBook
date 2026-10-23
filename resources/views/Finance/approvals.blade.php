@@ -78,7 +78,7 @@
                                         <small class="text-muted">{{ $approval->reference_no ?: 'No reference' }}</small>
                                     </td>
                                     <td><span class="badge bg-light text-dark text-uppercase">{{ $approval->approval_type }}</span></td>
-                                    <td>₦{{ number_format((float) ($approval->amount ?? 0), 2) }}</td>
+                                    <td>₦{{ \App\Support\CompactNumber::format((float) ($approval->amount ?? 0), 2) }}</td>
                                     <td>
                                         <div>{{ $approval->requester?->name ?? 'System' }}</div>
                                         <small class="text-muted">{{ $approval->branch_name ?: 'Current branch scope' }}</small>

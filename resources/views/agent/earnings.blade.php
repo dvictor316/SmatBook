@@ -124,7 +124,7 @@
                             <tr>
                                 <td><code>{{ $payout->payout_reference }}</code></td>
                                 <td>{{ ucfirst($payout->gateway ?: 'n/a') }}</td>
-                                <td><strong>₦{{ number_format((float) $payout->amount, 2) }}</strong></td>
+                                <td><strong>₦{{ \App\Support\CompactNumber::format((float) $payout->amount, 2) }}</strong></td>
                                 <td><span class="agent-pill">{{ str_replace('_', ' ', ucfirst($payout->status)) }}</span></td>
                                 <td>{{ optional($payout->processed_at ?? $payout->created_at)->format('M j, Y') }}</td>
                             </tr>
@@ -151,7 +151,7 @@
                             <tr>
                                 <td>#{{ $commission->company_id }}</td>
                                 <td><span class="agent-pill">{{ ucfirst($commission->status) }}</span></td>
-                                <td><strong>₦{{ number_format((float) ($commission->commission_amount ?? $commission->amount ?? 0), 2) }}</strong></td>
+                                <td><strong>₦{{ \App\Support\CompactNumber::format((float) ($commission->commission_amount ?? $commission->amount ?? 0), 2) }}</strong></td>
                                 <td>{{ \Carbon\Carbon::parse($commission->created_at)->format('M j, Y') }}</td>
                             </tr>
                         @empty

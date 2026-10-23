@@ -102,7 +102,7 @@
                                         <td>{{ ucfirst($subscription->billing_cycle) }}</td>
                                         <td>{{ $subscription->start_date ? $subscription->start_date->format('d M Y') : 'N/A' }}</td>
                                         <td><span class="text-danger font-weight-bold">{{ $subscription->end_date ? $subscription->end_date->format('d M Y') : 'N/A' }}</span></td>
-                                        <td class="text-right">₦{{ number_format($subscription->amount, 2) }}</td>
+                                        <td class="text-right">₦{{ \App\Support\CompactNumber::format($subscription->amount, 2) }}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -120,7 +120,7 @@
                                     <tbody>
                                         <tr>
                                             <th class="text-left bg-light">Subtotal</th>
-                                            <td>₦{{ number_format($subscription->amount, 2) }}</td>
+                                            <td>₦{{ \App\Support\CompactNumber::format($subscription->amount, 2) }}</td>
                                         </tr>
                                         <tr>
                                             <th class="text-left bg-light">Tax (0%)</th>
@@ -128,7 +128,7 @@
                                         </tr>
                                         <tr>
                                             <th class="text-left bg-primary text-white">Grand Total</th>
-                                            <td class="bg-primary text-white"><strong>₦{{ number_format($subscription->amount, 2) }}</strong></td>
+                                            <td class="bg-primary text-white"><strong>₦{{ \App\Support\CompactNumber::format($subscription->amount, 2) }}</strong></td>
                                         </tr>
                                     </tbody>
                                 </table>

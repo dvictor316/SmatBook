@@ -115,9 +115,9 @@
                         <h6 class="mb-3">Asset Summary</h6>
                         <div class="mb-2 d-flex justify-content-between"><span>Total Assets</span><strong>{{ number_format((int) ($summary['asset_count'] ?? 0)) }}</strong></div>
                         <div class="mb-2 d-flex justify-content-between"><span>Due for Depreciation</span><strong>{{ number_format((int) ($dueAssetsCount ?? 0)) }}</strong></div>
-                        <div class="mb-2 d-flex justify-content-between"><span>Gross Cost</span><strong>₦{{ number_format((float) ($summary['gross_cost'] ?? 0), 2) }}</strong></div>
-                        <div class="mb-2 d-flex justify-content-between"><span>Accum. Depreciation</span><strong>₦{{ number_format((float) ($summary['accumulated_depreciation'] ?? 0), 2) }}</strong></div>
-                        <div class="d-flex justify-content-between"><span>Book Value</span><strong>₦{{ number_format((float) ($summary['book_value'] ?? 0), 2) }}</strong></div>
+                        <div class="mb-2 d-flex justify-content-between"><span>Gross Cost</span><strong>₦{{ \App\Support\CompactNumber::format((float) ($summary['gross_cost'] ?? 0), 2) }}</strong></div>
+                        <div class="mb-2 d-flex justify-content-between"><span>Accum. Depreciation</span><strong>₦{{ \App\Support\CompactNumber::format((float) ($summary['accumulated_depreciation'] ?? 0), 2) }}</strong></div>
+                        <div class="d-flex justify-content-between"><span>Book Value</span><strong>₦{{ \App\Support\CompactNumber::format((float) ($summary['book_value'] ?? 0), 2) }}</strong></div>
                     </div>
                 </div>
             </div>
@@ -159,11 +159,11 @@
                                             <td>
                                                 <div class="fw-semibold">{{ ucwords($asset->depreciation_frequency ?? 'monthly') }}</div>
                                                 <small class="text-muted">Next {{ $asset->next_due_date ? \Carbon\Carbon::parse($asset->next_due_date)->format('d M Y') : 'N/A' }}</small>
-                                                <div><small class="text-muted">Due amount ₦{{ number_format((float) ($asset->scheduled_depreciation_amount ?? 0), 2) }}</small></div>
+                                                <div><small class="text-muted">Due amount ₦{{ \App\Support\CompactNumber::format((float) ($asset->scheduled_depreciation_amount ?? 0), 2) }}</small></div>
                                             </td>
-                                            <td>₦{{ number_format((float) $asset->cost, 2) }}</td>
-                                            <td>₦{{ number_format((float) $asset->accumulated_depreciation, 2) }}</td>
-                                            <td>₦{{ number_format((float) $asset->book_value, 2) }}</td>
+                                            <td>₦{{ \App\Support\CompactNumber::format((float) $asset->cost, 2) }}</td>
+                                            <td>₦{{ \App\Support\CompactNumber::format((float) $asset->accumulated_depreciation, 2) }}</td>
+                                            <td>₦{{ \App\Support\CompactNumber::format((float) $asset->book_value, 2) }}</td>
                                             <td>
                                                 <span class="badge {{ in_array($asset->status, ['active'], true) ? 'bg-success' : 'bg-secondary' }}">
                                                     {{ ucwords(str_replace('_', ' ', $asset->status)) }}
@@ -224,7 +224,7 @@
                                             </td>
                                             <td>{{ ucwords($run->depreciation_frequency ?? 'Monthly') }}</td>
                                             <td>{{ $run->reference_no }}</td>
-                                            <td class="text-end">₦{{ number_format((float) $run->amount, 2) }}</td>
+                                            <td class="text-end">₦{{ \App\Support\CompactNumber::format((float) $run->amount, 2) }}</td>
                                         </tr>
                                     @empty
                                         <tr>

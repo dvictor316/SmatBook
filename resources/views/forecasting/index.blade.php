@@ -44,7 +44,7 @@
                                 <td>{{ ucfirst(str_replace('_', ' ', $forecast->type ?? '—')) }}</td>
                                 <td>{{ $forecast->period_start->format('d M Y') }}</td>
                                 <td>{{ $forecast->period_end->format('d M Y') }}</td>
-                                <td>{{ number_format((float) ($forecast->total_forecast_amount ?? $forecast->items->sum('forecast_amount')), 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format((float) ($forecast->total_forecast_amount ?? $forecast->items->sum('forecast_amount')), 2) }}</td>
                                 <td>
                                     <span class="badge bg-{{ match($forecast->status) {
                                         'draft' => 'secondary', 'active' => 'success', 'archived' => 'warning', default => 'secondary'

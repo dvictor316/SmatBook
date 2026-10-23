@@ -74,10 +74,10 @@
                                     @forelse($purchaseRequisition->items as $item)
                                         <tr>
                                             <td>{{ $item->product_name ?: ($item->product?->name ?? 'N/A') }}</td>
-                                            <td>{{ number_format((float) $item->quantity, 2) }}</td>
+                                            <td>{{ \App\Support\CompactNumber::format((float) $item->quantity, 2) }}</td>
                                             <td>{{ $item->unit ?: 'N/A' }}</td>
-                                            <td>{{ number_format((float) ($item->estimated_unit_price ?? $item->estimated_unit_cost ?? 0), 2) }}</td>
-                                            <td>{{ number_format((float) ($item->estimated_total ?? $item->total_cost ?? 0), 2) }}</td>
+                                            <td>{{ \App\Support\CompactNumber::format((float) ($item->estimated_unit_price ?? $item->estimated_unit_cost ?? 0), 2) }}</td>
+                                            <td>{{ \App\Support\CompactNumber::format((float) ($item->estimated_total ?? $item->total_cost ?? 0), 2) }}</td>
                                             <td>{{ $item->specification ?? $item->specifications ?? 'N/A' }}</td>
                                         </tr>
                                     @empty

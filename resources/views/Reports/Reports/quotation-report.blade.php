@@ -94,7 +94,7 @@
                                 <td class="fw-bold">{{ $quotation->quotation_id }}</td>
                                 <td>{{ $customerName }}</td>
                                 <td>{{ \Carbon\Carbon::parse($quotation->created_at)->format('d M, Y') }}</td>
-                                <td class="fw-bold text-dark">₦{{ number_format($quotation->total, 2) }}</td>
+                                <td class="fw-bold text-dark">₦{{ \App\Support\CompactNumber::format($quotation->total, 2) }}</td>
                                 <td>
                                     <span class="badge {{ $quotation->status == 'Sent' ? 'bg-info-subtle text-info border border-info-subtle' : 'bg-secondary-subtle text-secondary border border-secondary-subtle' }}">
                                         {{ $quotation->status }}

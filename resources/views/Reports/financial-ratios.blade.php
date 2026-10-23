@@ -84,7 +84,7 @@
                     <div class="card ratio-summary-card text-center">
                         <div class="card-body">
                             <h6 class="card-subtitle text-muted mb-2">Current Ratio</h6>
-                            <h3 class="mb-1">{{ number_format((float) ($ratios['current_ratio'] ?? 0), 2) }}</h3>
+                            <h3 class="mb-1">{{ \App\Support\CompactNumber::format((float) ($ratios['current_ratio'] ?? 0), 2) }}</h3>
                             <small class="text-muted">Current Assets / Current Liabilities</small>
                         </div>
                     </div>
@@ -93,7 +93,7 @@
                     <div class="card ratio-summary-card text-center">
                         <div class="card-body">
                             <h6 class="card-subtitle text-muted mb-2">Quick Ratio</h6>
-                            <h3 class="mb-1">{{ number_format((float) ($ratios['quick_ratio'] ?? 0), 2) }}</h3>
+                            <h3 class="mb-1">{{ \App\Support\CompactNumber::format((float) ($ratios['quick_ratio'] ?? 0), 2) }}</h3>
                             <small class="text-muted">(Assets - Inventory) / Current Liabilities</small>
                         </div>
                     </div>
@@ -102,7 +102,7 @@
                     <div class="card ratio-summary-card text-center">
                         <div class="card-body">
                             <h6 class="card-subtitle text-muted mb-2">Cash Ratio</h6>
-                            <h3 class="mb-1">{{ number_format((float) ($ratios['cash_ratio'] ?? 0), 2) }}</h3>
+                            <h3 class="mb-1">{{ \App\Support\CompactNumber::format((float) ($ratios['cash_ratio'] ?? 0), 2) }}</h3>
                             <small class="text-muted">Cash / Current Liabilities</small>
                         </div>
                     </div>
@@ -111,7 +111,7 @@
                     <div class="card ratio-summary-card text-center">
                         <div class="card-body">
                             <h6 class="card-subtitle text-muted mb-2">Working Capital</h6>
-                            <h3 class="mb-1">{{ number_format((float) ($ratios['working_capital'] ?? 0), 2) }}</h3>
+                            <h3 class="mb-1">{{ \App\Support\CompactNumber::format((float) ($ratios['working_capital'] ?? 0), 2) }}</h3>
                             <small class="text-muted">Current Assets - Current Liabilities</small>
                         </div>
                     </div>
@@ -164,7 +164,7 @@
                     <div class="card ratio-summary-card text-center">
                         <div class="card-body">
                             <h6 class="card-subtitle text-muted mb-2">Debt to Equity</h6>
-                            <h3 class="mb-1">{{ number_format((float) ($ratios['debt_to_equity'] ?? 0), 2) }}</h3>
+                            <h3 class="mb-1">{{ \App\Support\CompactNumber::format((float) ($ratios['debt_to_equity'] ?? 0), 2) }}</h3>
                             <small class="text-muted">Debt / Equity</small>
                         </div>
                     </div>
@@ -173,7 +173,7 @@
                     <div class="card ratio-summary-card text-center">
                         <div class="card-body">
                             <h6 class="card-subtitle text-muted mb-2">Debt Ratio</h6>
-                            <h3 class="mb-1">{{ number_format((float) ($ratios['debt_ratio'] ?? 0), 2) }}</h3>
+                            <h3 class="mb-1">{{ \App\Support\CompactNumber::format((float) ($ratios['debt_ratio'] ?? 0), 2) }}</h3>
                             <small class="text-muted">Liabilities / Assets</small>
                         </div>
                     </div>
@@ -182,7 +182,7 @@
                     <div class="card ratio-summary-card text-center">
                         <div class="card-body">
                             <h6 class="card-subtitle text-muted mb-2">Interest Coverage</h6>
-                            <h3 class="mb-1">{{ number_format((float) ($ratios['interest_coverage'] ?? 0), 2) }}</h3>
+                            <h3 class="mb-1">{{ \App\Support\CompactNumber::format((float) ($ratios['interest_coverage'] ?? 0), 2) }}</h3>
                             <small class="text-muted">EBIT / Interest Expense</small>
                         </div>
                     </div>
@@ -191,7 +191,7 @@
                     <div class="card ratio-summary-card text-center">
                         <div class="card-body">
                             <h6 class="card-subtitle text-muted mb-2">Equity Multiplier</h6>
-                            <h3 class="mb-1">{{ number_format((float) ($ratios['equity_multiplier'] ?? 0), 2) }}</h3>
+                            <h3 class="mb-1">{{ \App\Support\CompactNumber::format((float) ($ratios['equity_multiplier'] ?? 0), 2) }}</h3>
                             <small class="text-muted">Assets / Equity</small>
                         </div>
                     </div>
@@ -204,7 +204,7 @@
                     <div class="card ratio-summary-card text-center">
                         <div class="card-body">
                             <h6 class="card-subtitle text-muted mb-2">Inventory Turnover</h6>
-                            <h3 class="mb-1">{{ number_format((float) ($ratios['inventory_turnover'] ?? 0), 2) }}</h3>
+                            <h3 class="mb-1">{{ \App\Support\CompactNumber::format((float) ($ratios['inventory_turnover'] ?? 0), 2) }}</h3>
                             <small class="text-muted">COGS / Inventory</small>
                         </div>
                     </div>
@@ -231,7 +231,7 @@
                     <div class="card ratio-summary-card text-center">
                         <div class="card-body">
                             <h6 class="card-subtitle text-muted mb-2">Asset Turnover</h6>
-                            <h3 class="mb-1">{{ number_format((float) ($ratios['asset_turnover'] ?? 0), 2) }}</h3>
+                            <h3 class="mb-1">{{ \App\Support\CompactNumber::format((float) ($ratios['asset_turnover'] ?? 0), 2) }}</h3>
                             <small class="text-muted">Revenue / Total Assets</small>
                         </div>
                     </div>
@@ -243,11 +243,11 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <h6 class="mb-1">Revenue</h6>
-                                    <div class="text-muted">{{ number_format((float) ($revenue ?? 0), 2) }}</div>
+                                    <div class="text-muted">{{ \App\Support\CompactNumber::format((float) ($revenue ?? 0), 2) }}</div>
                                 </div>
                                 <div class="col-md-6">
                                     <h6 class="mb-1">Net Income</h6>
-                                    <div class="text-muted">{{ number_format((float) ($netIncome ?? 0), 2) }}</div>
+                                    <div class="text-muted">{{ \App\Support\CompactNumber::format((float) ($netIncome ?? 0), 2) }}</div>
                                 </div>
                             </div>
                         </div>

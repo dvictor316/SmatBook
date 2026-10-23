@@ -70,13 +70,13 @@
 
         <div class="row mb-3">
             <div class="col-md-3">
-                <div class="card border-0 shadow-sm"><div class="card-body py-3"><div class="small text-muted">Total Debit</div><div class="h5 mb-0 ledger-summary-value">₦{{ number_format((float)($totals['debit'] ?? 0), 2) }}</div></div></div>
+                <div class="card border-0 shadow-sm"><div class="card-body py-3"><div class="small text-muted">Total Debit</div><div class="h5 mb-0 ledger-summary-value">₦{{ \App\Support\CompactNumber::format((float)($totals['debit'] ?? 0), 2) }}</div></div></div>
             </div>
             <div class="col-md-3">
-                <div class="card border-0 shadow-sm"><div class="card-body py-3"><div class="small text-muted">Total Credit</div><div class="h5 mb-0 ledger-summary-value">₦{{ number_format((float)($totals['credit'] ?? 0), 2) }}</div></div></div>
+                <div class="card border-0 shadow-sm"><div class="card-body py-3"><div class="small text-muted">Total Credit</div><div class="h5 mb-0 ledger-summary-value">₦{{ \App\Support\CompactNumber::format((float)($totals['credit'] ?? 0), 2) }}</div></div></div>
             </div>
             <div class="col-md-3">
-                <div class="card border-0 shadow-sm"><div class="card-body py-3"><div class="small text-muted">Difference</div><div class="h5 mb-0 ledger-summary-value">₦{{ number_format(abs((float)($totals['debit'] ?? 0) - (float)($totals['credit'] ?? 0)), 2) }}</div></div></div>
+                <div class="card border-0 shadow-sm"><div class="card-body py-3"><div class="small text-muted">Difference</div><div class="h5 mb-0 ledger-summary-value">₦{{ \App\Support\CompactNumber::format(abs((float)($totals['debit'] ?? 0) - (float)($totals['credit'] ?? 0)), 2) }}</div></div></div>
             </div>
         </div>
 
@@ -101,8 +101,8 @@
                                 <td>{{ $entry->reference ?? '-' }}</td>
                                 <td>{{ optional($entry->account)->code }} {{ optional($entry->account)->name }}</td>
                                 <td>{{ $entry->description ?? '-' }}</td>
-                                <td class="text-end">{{ number_format((float)$entry->debit, 2) }}</td>
-                                <td class="text-end">{{ number_format((float)$entry->credit, 2) }}</td>
+                                <td class="text-end">{{ \App\Support\CompactNumber::format((float)$entry->debit, 2) }}</td>
+                                <td class="text-end">{{ \App\Support\CompactNumber::format((float)$entry->credit, 2) }}</td>
                                 <td>{{ $entry->transaction_type ?? '-' }}</td>
                             </tr>
                         @empty

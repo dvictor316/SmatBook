@@ -110,7 +110,7 @@ class GeoCurrency
         $absoluteAmount = abs($converted);
 
         if (!class_exists(\NumberFormatter::class)) {
-            return ($isNegative ? '-' : '') . $symbol . number_format($absoluteAmount, 2);
+            return ($isNegative ? '-' : '') . $symbol . CompactNumber::format($absoluteAmount, 2);
         }
 
         if (!isset(self::$decimalFormatters[$displayLocale])) {
@@ -127,7 +127,10 @@ class GeoCurrency
         $result = $formatter->format($absoluteAmount);
 
         if ($result === false) {
-            $result = number_format($absoluteAmount, 2);
+            $result = CompactNumber::format($absoluteAmount, 2);
+        } else {
+            $decimalSeparator = $formatter->getSymbol(\NumberFormatter::DECIMAL_SEPARATOR_SYMBOL);
+            $result = CompactNumber::trimZeroFraction($result, $decimalSeparator, 2);
         }
 
         return ($isNegative ? '-' : '') . $symbol . $result;

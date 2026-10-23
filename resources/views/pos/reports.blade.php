@@ -271,7 +271,7 @@
                         <i class="fas fa-money-bill-wave"></i>
                     </div>
                     <div class="qb-kpi-label">Gross Sales</div>
-                    <div class="qb-kpi-value" style="color:#2563eb;">₦{{ number_format($totalSoldAmount, 2) }}</div>
+                    <div class="qb-kpi-value" style="color:#2563eb;">₦{{ \App\Support\CompactNumber::format($totalSoldAmount, 2) }}</div>
                     <div class="qb-kpi-sub">Combined POS revenue</div>
                 </div>
                 <div class="qb-kpi-cell">
@@ -279,7 +279,7 @@
                         <i class="fas fa-warehouse"></i>
                     </div>
                     <div class="qb-kpi-label">Stock Value</div>
-                    <div class="qb-kpi-value" style="color:#16a34a;">₦{{ number_format($grandTotalStockValue, 2) }}</div>
+                    <div class="qb-kpi-value" style="color:#16a34a;">₦{{ \App\Support\CompactNumber::format($grandTotalStockValue, 2) }}</div>
                     <div class="qb-kpi-sub">Remaining inventory value</div>
                 </div>
                 <div class="qb-kpi-cell">
@@ -319,13 +319,13 @@
                                 </td>
                                 <td style="color:#475569;">{{ $report->category_name ?? '—' }}</td>
                                 <td class="text-end" style="font-variant-numeric:tabular-nums;">
-                                    ₦{{ number_format((float) ($report->product_price ?? 0), 2) }}
+                                    ₦{{ \App\Support\CompactNumber::format((float) ($report->product_price ?? 0), 2) }}
                                 </td>
                                 <td class="text-end fw-semibold" style="color:#2563eb;font-variant-numeric:tabular-nums;">
                                     {{ number_format((float) ($report->total_sold_qty ?? 0)) }}
                                 </td>
                                 <td class="text-end fw-semibold" style="font-variant-numeric:tabular-nums;">
-                                    ₦{{ number_format((float) ($report->total_sold_amount ?? 0), 2) }}
+                                    ₦{{ \App\Support\CompactNumber::format((float) ($report->total_sold_amount ?? 0), 2) }}
                                 </td>
                                 <td class="text-center">
                                     <span class="qb-stock-badge {{ $stock > 5 ? 'qb-stock-ok' : 'qb-stock-low' }}">
@@ -349,7 +349,7 @@
                                 Page Totals ({{ $reports->count() }} items)
                             </td>
                             <td class="text-end" style="color:#2563eb;">{{ number_format($totalSoldUnits) }}</td>
-                            <td class="text-end" style="color:#2563eb;">₦{{ number_format($totalSoldAmount, 2) }}</td>
+                            <td class="text-end" style="color:#2563eb;">₦{{ \App\Support\CompactNumber::format($totalSoldAmount, 2) }}</td>
                             <td></td>
                         </tr>
                     </tfoot>

@@ -45,7 +45,7 @@
                                     <td>{{ $log->asset->name ?? $log->asset->asset_code ?? '—' }}</td>
                                     <td>{{ str_replace('_', ' ', ucfirst($log->maintenance_type)) }}</td>
                                     <td>{{ \Illuminate\Support\Str::limit($log->description, 50) }}</td>
-                                    <td>{{ $log->cost ? number_format($log->cost, 2) : '—' }}</td>
+                                    <td>{{ $log->cost ? \App\Support\CompactNumber::format($log->cost, 2) : '—' }}</td>
                                     <td>{{ $log->performed_by ?? '—' }}</td>
                                     <td>{{ $log->maintenance_date->format('d M Y') }}</td>
                                     <td>{{ $log->next_maintenance_date ? $log->next_maintenance_date->format('d M Y') : '—' }}</td>

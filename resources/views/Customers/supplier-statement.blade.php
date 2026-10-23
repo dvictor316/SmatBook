@@ -21,9 +21,9 @@
         </div>
 
         <div class="row g-3 mb-4">
-            <div class="col-md-4"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted mb-1">Total Billed</div><h4 class="mb-0">₦{{ number_format((float) ($summary['total_billed'] ?? 0), 2) }}</h4></div></div></div>
-            <div class="col-md-4"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted mb-1">Total Paid</div><h4 class="mb-0">₦{{ number_format((float) ($summary['total_paid'] ?? 0), 2) }}</h4></div></div></div>
-            <div class="col-md-4"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted mb-1">Balance Due</div><h4 class="mb-0">₦{{ number_format((float) ($summary['balance_due'] ?? 0), 2) }}</h4></div></div></div>
+            <div class="col-md-4"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted mb-1">Total Billed</div><h4 class="mb-0">₦{{ \App\Support\CompactNumber::format((float) ($summary['total_billed'] ?? 0), 2) }}</h4></div></div></div>
+            <div class="col-md-4"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted mb-1">Total Paid</div><h4 class="mb-0">₦{{ \App\Support\CompactNumber::format((float) ($summary['total_paid'] ?? 0), 2) }}</h4></div></div></div>
+            <div class="col-md-4"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted mb-1">Balance Due</div><h4 class="mb-0">₦{{ \App\Support\CompactNumber::format((float) ($summary['balance_due'] ?? 0), 2) }}</h4></div></div></div>
         </div>
 
         <div class="card border-0 shadow-sm">
@@ -48,9 +48,9 @@
                                     <td><span class="badge bg-light text-dark text-capitalize">{{ str_replace('_', ' ', $entry['type']) }}</span></td>
                                     <td>{{ $entry['reference'] }}</td>
                                     <td>{{ $entry['description'] }}</td>
-                                    <td class="text-end">₦{{ number_format((float) ($entry['debit'] ?? 0), 2) }}</td>
-                                    <td class="text-end">₦{{ number_format((float) ($entry['credit'] ?? 0), 2) }}</td>
-                                    <td class="text-end fw-semibold">₦{{ number_format((float) ($entry['balance'] ?? 0), 2) }}</td>
+                                    <td class="text-end">₦{{ \App\Support\CompactNumber::format((float) ($entry['debit'] ?? 0), 2) }}</td>
+                                    <td class="text-end">₦{{ \App\Support\CompactNumber::format((float) ($entry['credit'] ?? 0), 2) }}</td>
+                                    <td class="text-end fw-semibold">₦{{ \App\Support\CompactNumber::format((float) ($entry['balance'] ?? 0), 2) }}</td>
                                 </tr>
                             @empty
                                 <tr><td colspan="7" class="text-center text-muted py-4">No supplier statement entries available yet.</td></tr>

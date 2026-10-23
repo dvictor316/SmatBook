@@ -130,7 +130,7 @@
             <a href="{{ route('hotel.rooms.status') }}" class="hotel-panel hotel-kpi"><span>Occupancy</span><strong>{{ number_format($occupancyRate, 1) }}%</strong><small>{{ $occupiedRooms }} of {{ $totalRooms }} rooms occupied</small></a>
             <a href="{{ route('hotel.rooms.index', ['status' => 'available']) }}" class="hotel-panel hotel-kpi green"><span>Available Rooms</span><strong>{{ $availableRooms }}</strong><small>Ready to sell now</small></a>
             <a href="{{ route('hotel.in_house') }}" class="hotel-panel hotel-kpi gold"><span>In-House Guests</span><strong>{{ $inHouseGuests }}</strong><small>Checked-in guest stays</small></a>
-            <a href="{{ route('hotel.folios.index') }}" class="hotel-panel hotel-kpi red"><span>Outstanding Folios</span><strong>{{ number_format((float) $folioBalances, 2) }}</strong><small>Receivables linked to hotel accounting</small></a>
+            <a href="{{ route('hotel.folios.index') }}" class="hotel-panel hotel-kpi red"><span>Outstanding Folios</span><strong>{{ \App\Support\CompactNumber::format((float) $folioBalances, 2) }}</strong><small>Receivables linked to hotel accounting</small></a>
         </div>
 
         <div class="hotel-suite">
@@ -155,7 +155,7 @@
                     @endforelse
                     @forelse($departuresPanel->take(6) as $departure)
                         @php $depBalance = (float) ($departure->balance ?? 0); @endphp
-                        <div class="hotel-res-row"><span class="hotel-res-type departure">Departure</span><div><strong>{{ $departure->customer?->customer_name ?? 'Walk-In' }}</strong><div class="small text-muted">Checkout control</div></div><div><span class="hotel-room-pill">Room {{ $departure->room?->room_number ?? 'Unassigned' }}</span></div><div>{{ optional($departure->departure_date)->format('d M') }}</div><div class="{{ $depBalance > 0 ? 'text-danger' : 'text-success' }}">{{ $depBalance > 0 ? number_format($depBalance, 2).' due' : 'Clear' }}</div></div>
+                        <div class="hotel-res-row"><span class="hotel-res-type departure">Departure</span><div><strong>{{ $departure->customer?->customer_name ?? 'Walk-In' }}</strong><div class="small text-muted">Checkout control</div></div><div><span class="hotel-room-pill">Room {{ $departure->room?->room_number ?? 'Unassigned' }}</span></div><div>{{ optional($departure->departure_date)->format('d M') }}</div><div class="{{ $depBalance > 0 ? 'text-danger' : 'text-success' }}">{{ $depBalance > 0 ? \App\Support\CompactNumber::format($depBalance, 2).' due' : 'Clear' }}</div></div>
                     @empty
                     @endforelse
                 </div>
@@ -169,9 +169,9 @@
                     <div class="alert alert-light mb-0">No active alerts. Operations look clean.</div>
                 @endforelse
                 <hr>
-                <div class="hotel-finance-row"><span>Deposits Held</span><strong>{{ number_format((float) $reservationDeposits, 2) }}</strong></div>
-                <div class="hotel-finance-row"><span>ADR</span><strong>{{ number_format((float) $adr, 2) }}</strong></div>
-                <div class="hotel-finance-row"><span>RevPAR</span><strong>{{ number_format((float) $revpar, 2) }}</strong></div>
+                <div class="hotel-finance-row"><span>Deposits Held</span><strong>{{ \App\Support\CompactNumber::format((float) $reservationDeposits, 2) }}</strong></div>
+                <div class="hotel-finance-row"><span>ADR</span><strong>{{ \App\Support\CompactNumber::format((float) $adr, 2) }}</strong></div>
+                <div class="hotel-finance-row"><span>RevPAR</span><strong>{{ \App\Support\CompactNumber::format((float) $revpar, 2) }}</strong></div>
             </aside>
         </div>
 
@@ -198,7 +198,7 @@
         <div class="hotel-bottom">
             <div class="hotel-panel"><h5>Revenue by Department</h5><div id="hotel-revenue-department" style="min-height:230px"></div></div>
             <div class="hotel-panel"><h5>Daily Activity Log</h5>@foreach($todayActivity as $label => $value)<div class="hotel-finance-row"><span>{{ ucwords(str_replace('_', ' ', $label)) }}</span><strong>{{ is_numeric($value) ? number_format((float) $value, is_float($value + 0) ? 2 : 0) : $value }}</strong></div>@endforeach</div>
-            <div class="hotel-panel"><h5>Sources and Payments</h5>@forelse($reservationSourceRows as $source)<div class="hotel-source-chip"><span>{{ ucfirst((string) $source->source) }}</span><strong>{{ $source->total_count }}</strong></div>@empty<div class="text-muted">No reservation source data.</div>@endforelse<hr>@forelse($paymentMethodDistributionRows as $pay)<div class="hotel-source-chip"><span>{{ strtoupper((string) $pay->service_code) }}</span><strong>{{ number_format((float) $pay->total_amount, 2) }}</strong></div>@empty<div class="text-muted">No payment records.</div>@endforelse</div>
+            <div class="hotel-panel"><h5>Sources and Payments</h5>@forelse($reservationSourceRows as $source)<div class="hotel-source-chip"><span>{{ ucfirst((string) $source->source) }}</span><strong>{{ $source->total_count }}</strong></div>@empty<div class="text-muted">No reservation source data.</div>@endforelse<hr>@forelse($paymentMethodDistributionRows as $pay)<div class="hotel-source-chip"><span>{{ strtoupper((string) $pay->service_code) }}</span><strong>{{ \App\Support\CompactNumber::format((float) $pay->total_amount, 2) }}</strong></div>@empty<div class="text-muted">No payment records.</div>@endforelse</div>
         </div>
     </div>
 </div>

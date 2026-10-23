@@ -43,7 +43,7 @@
                                 <td>{{ $bom->bom_number }}</td>
                                 <td>{{ $bom->product->name ?? '—' }}</td>
                                 <td>{{ ucfirst($bom->bom_type ?? 'standard') }}</td>
-                                <td>{{ number_format((float) $bom->output_quantity, 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format((float) $bom->output_quantity, 2) }}</td>
                                 <td>{{ $bom->items->count() }}</td>
                                 <td>
                                     <span class="badge bg-{{ match($bom->status) {

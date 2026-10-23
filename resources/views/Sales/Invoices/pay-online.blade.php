@@ -32,15 +32,15 @@
                             </tr>
                             <tr>
                                 <td class="text-muted">Invoice Total</td>
-                                <td><strong>₦{{ number_format($invoice->total ?? 0, 2) }}</strong></td>
+                                <td><strong>₦{{ \App\Support\CompactNumber::format($invoice->total ?? 0, 2) }}</strong></td>
                             </tr>
                             <tr>
                                 <td class="text-muted">Amount Paid</td>
-                                <td class="text-success"><strong>₦{{ number_format($invoice->amount_paid ?? 0, 2) }}</strong></td>
+                                <td class="text-success"><strong>₦{{ \App\Support\CompactNumber::format($invoice->amount_paid ?? 0, 2) }}</strong></td>
                             </tr>
                             <tr>
                                 <td class="text-muted">Balance Due</td>
-                                <td class="text-danger"><strong>₦{{ number_format(max(0, ($invoice->total ?? 0) - ($invoice->amount_paid ?? 0)), 2) }}</strong></td>
+                                <td class="text-danger"><strong>₦{{ \App\Support\CompactNumber::format(max(0, ($invoice->total ?? 0) - ($invoice->amount_paid ?? 0)), 2) }}</strong></td>
                             </tr>
                             <tr>
                                 <td class="text-muted">Status</td>
@@ -74,8 +74,8 @@
                                             <tr>
                                                 <td>{{ optional($item->product)->name ?? $item->product_name ?? 'N/A' }}</td>
                                                 <td class="text-center">{{ $item->qty }}</td>
-                                                <td class="text-end">₦{{ number_format($item->unit_price ?? 0, 2) }}</td>
-                                                <td class="text-end">₦{{ number_format(($item->qty ?? 0) * ($item->unit_price ?? 0), 2) }}</td>
+                                                <td class="text-end">₦{{ \App\Support\CompactNumber::format($item->unit_price ?? 0, 2) }}</td>
+                                                <td class="text-end">₦{{ \App\Support\CompactNumber::format(($item->qty ?? 0) * ($item->unit_price ?? 0), 2) }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -116,12 +116,12 @@
                                            step="0.01"
                                            min="0.01"
                                            max="{{ $balance }}"
-                                           value="{{ old('amount', number_format($balance, 2, '.', '')) }}"
+                                           value="{{ old('amount', \App\Support\CompactNumber::format($balance, 2, '.', '')) }}"
                                            placeholder="Enter amount">
                                     @error('amount')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
-                                    <small class="text-muted">Balance due: ₦{{ number_format($balance, 2) }}</small>
+                                    <small class="text-muted">Balance due: ₦{{ \App\Support\CompactNumber::format($balance, 2) }}</small>
                                 </div>
 
                                 <div class="mb-3">

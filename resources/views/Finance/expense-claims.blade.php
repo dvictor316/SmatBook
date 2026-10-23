@@ -58,7 +58,7 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <div class="text-muted text-uppercase small fw-bold">Awaiting Reimbursement</div>
-                        <div class="fs-5 fw-bold">₦{{ number_format((float) ($stats['pending_amount'] ?? 0), 2) }}</div>
+                        <div class="fs-5 fw-bold">₦{{ \App\Support\CompactNumber::format((float) ($stats['pending_amount'] ?? 0), 2) }}</div>
                     </div>
                 </div>
             </div>
@@ -97,7 +97,7 @@
                                     </td>
                                     <td>{{ $claim->claimant?->name ?? 'Unknown user' }}</td>
                                     <td>{{ $claim->project?->name ?? 'Not linked' }}</td>
-                                    <td class="fw-semibold">₦{{ number_format((float) $claim->amount, 2) }}</td>
+                                    <td class="fw-semibold">₦{{ \App\Support\CompactNumber::format((float) $claim->amount, 2) }}</td>
                                     <td>
                                         <span class="badge bg-light text-dark text-capitalize">{{ str_replace('_', ' ', (string) $claim->status) }}</span>
                                     </td>
@@ -242,7 +242,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn btn-primary">Reimburse ₦{{ number_format((float) $claim->amount, 2) }}</button>
+                            <button type="submit" class="btn btn-primary">Reimburse ₦{{ \App\Support\CompactNumber::format((float) $claim->amount, 2) }}</button>
                         </div>
                     </form>
                 </div>

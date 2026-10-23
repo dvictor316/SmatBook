@@ -25,7 +25,7 @@
             <div class="hotel-op-kpis">
                 <div class="hotel-op-kpi"><span>Open Folios</span><strong>{{ $activeFolios->count() }}</strong></div>
                 <div class="hotel-op-kpi"><span>Today Orders</span><strong>{{ $todayItems->count() }}</strong></div>
-                <div class="hotel-op-kpi"><span>Visible Revenue</span><strong>{{ number_format($totalPosted, 2) }}</strong></div>
+                <div class="hotel-op-kpi"><span>Visible Revenue</span><strong>{{ \App\Support\CompactNumber::format($totalPosted, 2) }}</strong></div>
                 <div class="hotel-op-kpi"><span>Receipt Lines</span><strong>{{ $items->total() }}</strong></div>
             </div>
 
@@ -43,7 +43,7 @@
                                         <td>{{ $item->folio?->customer?->customer_name ?? $item->folio?->customer?->name ?? 'N/A' }}</td>
                                         <td>{{ $item->description }}</td>
                                         <td>{{ $item->quantity }}</td>
-                                        <td>{{ number_format((float) ($item->line_total ?? $item->amount ?? 0), 2) }}</td>
+                                        <td>{{ \App\Support\CompactNumber::format((float) ($item->line_total ?? $item->amount ?? 0), 2) }}</td>
                                         <td>@include('hotel.partials.service-sale-actions', ['item' => $item])</td>
                                     </tr>
                                 @empty

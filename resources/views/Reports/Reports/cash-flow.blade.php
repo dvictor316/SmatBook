@@ -142,17 +142,17 @@
         <div class="summary-grid">
             <div class="summary-card">
                 <span class="summary-label">Opening Balance</span>
-                <span class="summary-amount">₦{{ number_format($openingBalance, 2) }}</span>
+                <span class="summary-amount">₦{{ \App\Support\CompactNumber::format($openingBalance, 2) }}</span>
             </div>
             <div class="summary-card">
                 <span class="summary-label">Net Movement</span>
                 <span class="summary-amount {{ $netCashFlow >= 0 ? 'text-success' : 'text-danger' }}">
-                    {{ $netCashFlow >= 0 ? '+' : '' }}₦{{ number_format($netCashFlow, 2) }}
+                    {{ $netCashFlow >= 0 ? '+' : '' }}₦{{ \App\Support\CompactNumber::format($netCashFlow, 2) }}
                 </span>
             </div>
             <div class="summary-card" style="border-left: 4px solid #2563eb;">
                 <span class="summary-label text-primary">Closing Balance</span>
-                <span class="summary-amount">₦{{ number_format($closingBalance, 2) }}</span>
+                <span class="summary-amount">₦{{ \App\Support\CompactNumber::format($closingBalance, 2) }}</span>
             </div>
         </div>
 
@@ -163,14 +163,14 @@
             <tr>
                 <td>{{ \Carbon\Carbon::parse($inflow->transaction_date)->format('d M Y') }}</td>
                 <td>{{ $inflow->description ?? $inflow->account->name }}</td>
-                <td class="amt-col text-success">+{{ number_format($inflow->debit, 2) }}</td>
+                <td class="amt-col text-success">+{{ \App\Support\CompactNumber::format($inflow->debit, 2) }}</td>
             </tr>
             @empty
             <tr><td colspan="3" class="text-center text-muted py-3">No inflows recorded for this period.</td></tr>
             @endforelse
             <tr style="background: #f8fafc; font-weight: 700;">
                 <td colspan="2">Total Period Receipts</td>
-                <td class="amt-col text-success">₦{{ number_format($totalInflow, 2) }}</td>
+                <td class="amt-col text-success">₦{{ \App\Support\CompactNumber::format($totalInflow, 2) }}</td>
             </tr>
         </table>
         </div>
@@ -185,14 +185,14 @@
             <tr>
                 <td>{{ \Carbon\Carbon::parse($outflow->transaction_date)->format('d M Y') }}</td>
                 <td>{{ $outflow->description ?? $outflow->account->name }}</td>
-                <td class="amt-col text-danger">-{{ number_format($outflow->credit, 2) }}</td>
+                <td class="amt-col text-danger">-{{ \App\Support\CompactNumber::format($outflow->credit, 2) }}</td>
             </tr>
             @empty
             <tr><td colspan="3" class="text-center text-muted py-3">No outflows recorded for this period.</td></tr>
             @endforelse
             <tr style="background: #f8fafc; font-weight: 700;">
                 <td colspan="2">Total Period Payments</td>
-                <td class="amt-col text-danger">(₦{{ number_format($totalOutflow, 2) }})</td>
+                <td class="amt-col text-danger">(₦{{ \App\Support\CompactNumber::format($totalOutflow, 2) }})</td>
             </tr>
         </table>
         </div>
@@ -202,7 +202,7 @@
 
         <div class="total-row d-flex justify-content-between">
             <span class="text-uppercase">Net Cash Position at Period End</span>
-            <span>₦{{ number_format($closingBalance, 2) }}</span>
+            <span>₦{{ \App\Support\CompactNumber::format($closingBalance, 2) }}</span>
         </div>
 
     </div>

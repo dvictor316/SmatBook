@@ -81,7 +81,7 @@
                 ['l' => 'Active', 'v' => $metrics['active'] ?? 0, 'c' => 'm-success'],
                 ['l' => 'Inactive', 'v' => $metrics['inactive'] ?? 0, 'c' => 'm-danger'],
                 ['l' => 'Connected Domains', 'v' => $metrics['with_domains'] ?? 0, 'c' => 'm-warning'],
-                ['l' => 'Total Revenue', 'v' => '₦' . number_format($metrics['revenue'] ?? 0, 2), 'c' => 'm-slate'],
+                ['l' => 'Total Revenue', 'v' => '₦' . \App\Support\CompactNumber::format($metrics['revenue'] ?? 0, 2), 'c' => 'm-slate'],
             ];
         @endphp
         @foreach($stats as $s)
@@ -174,7 +174,7 @@
                                 <div class="text-dark">{{ $business->company_domain_prefix ?: '—' }}</div>
                                 <div class="text-muted small">{{ $business->company_plan ?: 'No plan label' }}</div>
                             </td>
-                            <td class="fw-bold text-success">₦{{ number_format((float) ($business->total_paid ?? 0), 2) }}</td>
+                            <td class="fw-bold text-success">₦{{ \App\Support\CompactNumber::format((float) ($business->total_paid ?? 0), 2) }}</td>
                             <td class="text-muted small">
                                 {{ $business->last_paid_at ? \Illuminate\Support\Carbon::parse($business->last_paid_at)->format('d M Y') : '—' }}
                             </td>

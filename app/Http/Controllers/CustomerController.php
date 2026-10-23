@@ -211,19 +211,19 @@ class CustomerController extends Controller
             ],
             [
                 'title'  => 'Total Sales',
-                'amount' => '₦' . number_format($customer->sales->sum('total'), 2),
+                'amount' => '₦' . \App\Support\CompactNumber::format($customer->sales->sum('total'), 2),
                 'icon'   => 'archive',
                 'class'  => 'bg-green-light',
             ],
             [
                 'title'  => 'Pending Balance',
-                'amount' => '₦' . number_format($customer->computed_balance, 2),
+                'amount' => '₦' . \App\Support\CompactNumber::format($customer->computed_balance, 2),
                 'icon'   => 'clock',
                 'class'  => 'bg-orange-light',
             ],
             [
                 'title'  => 'Total Paid',
-                'amount' => '₦' . number_format($customer->sales->sum('amount_paid'), 2),
+                'amount' => '₦' . \App\Support\CompactNumber::format($customer->sales->sum('amount_paid'), 2),
                 'icon'   => 'check-circle',
                 'class'  => 'bg-emerald-light',
             ]

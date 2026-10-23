@@ -52,13 +52,13 @@
                                     </td>
                                     <td>{{ $record->phone ?? '-' }}</td>
                                     @if($mode === 'customers')
-                                        <td class="text-end fw-semibold">₦{{ number_format((float) ($record->wallet_balance ?? 0), 2) }}</td>
-                                        <td class="text-end">₦{{ number_format((float) ($record->sales_balance_sum ?? 0), 2) }}</td>
+                                        <td class="text-end fw-semibold">₦{{ \App\Support\CompactNumber::format((float) ($record->wallet_balance ?? 0), 2) }}</td>
+                                        <td class="text-end">₦{{ \App\Support\CompactNumber::format((float) ($record->sales_balance_sum ?? 0), 2) }}</td>
                                         <td class="text-end">
                                             <a href="{{ route('customers.receive-payment', $record->id) }}" class="btn btn-sm btn-primary">Receive Advance</a>
                                         </td>
                                     @else
-                                        <td class="text-end fw-semibold">₦{{ number_format((float) ($record->opening_balance ?? 0), 2) }}</td>
+                                        <td class="text-end fw-semibold">₦{{ \App\Support\CompactNumber::format((float) ($record->opening_balance ?? 0), 2) }}</td>
                                         <td class="text-end">
                                             <a href="{{ route('suppliers.pay', $record->id) }}" class="btn btn-sm btn-primary">Pay Advance</a>
                                         </td>

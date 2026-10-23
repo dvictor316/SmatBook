@@ -127,7 +127,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="fw-bold text-dark">₦{{ number_format($payment->amount, 2) }}</td>
+                                <td class="fw-bold text-dark">₦{{ \App\Support\CompactNumber::format($payment->amount, 2) }}</td>
                                 <td>
                                     @if(strtolower((string)$payment->payment_status) == 'paid')
                                         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill">

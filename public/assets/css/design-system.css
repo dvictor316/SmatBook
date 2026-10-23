@@ -997,3 +997,47 @@ body:not(.landing-page-body) .select2-container--default .select2-results__optio
     box-shadow: inset 4px 0 0 var(--spb-theme-gold);
     font-weight: 750;
 }
+
+/* Give icons a warm accent on filled actions without changing label contrast. */
+body:not(.landing-page-body) :is(
+    .btn-primary, .btn-secondary, .btn-success, .btn-danger, .btn-dark, .btn-info,
+    .btn-upload, .sb-btn-primary, .btn-action, .btn-add-user, .btn-permissions,
+    .product-action-trigger, .hotel-command-actions a, .ew-iconbtn.primary, .ew-iconbtn.green
+):not(.btn-outline-primary):not(.btn-outline-secondary):not(.btn-outline-success):not(.btn-outline-danger):not(.btn-outline-dark):not(.btn-outline-info)
+:is(i, svg, .icon, .feather, .material-icons, .material-symbols-outlined, [data-feather], [data-lucide]) {
+    color: #f7d777 !important;
+    -webkit-text-fill-color: #f7d777 !important;
+}
+
+body:not(.landing-page-body) :is(
+    .btn-primary, .btn-secondary, .btn-success, .btn-danger, .btn-dark, .btn-info,
+    .btn-upload, .sb-btn-primary, .btn-action, .btn-add-user, .btn-permissions,
+    .product-action-trigger, .hotel-command-actions a, .ew-iconbtn.primary, .ew-iconbtn.green
+):not(.btn-outline-primary):not(.btn-outline-secondary):not(.btn-outline-success):not(.btn-outline-danger):not(.btn-outline-dark):not(.btn-outline-info)
+:is(i, .icon, .feather, .material-icons, .material-symbols-outlined, [data-feather], [data-lucide])::before {
+    color: #f7d777 !important;
+    -webkit-text-fill-color: #f7d777 !important;
+}
+
+body:not(.landing-page-body) :is(
+    .btn-primary, .btn-secondary, .btn-success, .btn-danger, .btn-dark, .btn-info,
+    .btn-upload, .sb-btn-primary, .btn-action, .btn-add-user, .btn-permissions,
+    .product-action-trigger, .hotel-command-actions a, .ew-iconbtn.primary, .ew-iconbtn.green
+):not(.btn-outline-primary):not(.btn-outline-secondary):not(.btn-outline-success):not(.btn-outline-danger):not(.btn-outline-dark):not(.btn-outline-info)
+svg:not([fill="none"]), svg [fill]:not([fill="none"]) {
+    fill: currentColor !important;
+}
+
+body:not(.landing-page-body) :is(
+    .btn-primary, .btn-secondary, .btn-success, .btn-danger, .btn-dark, .btn-info,
+    .btn-upload, .sb-btn-primary, .btn-action, .btn-add-user, .btn-permissions,
+    .product-action-trigger, .hotel-command-actions a, .ew-iconbtn.primary, .ew-iconbtn.green
+):not(.btn-outline-primary):not(.btn-outline-secondary):not(.btn-outline-success):not(.btn-outline-danger):not(.btn-outline-dark):not(.btn-outline-info)
+svg[stroke]:not([stroke="none"]), svg [stroke]:not([stroke="none"]) {
+    stroke: currentColor !important;
+}
+
+body:not(.landing-page-body) .btn-warning :is(i, svg, .icon, .feather, .material-icons, .material-symbols-outlined, [data-feather], [data-lucide]) {
+    color: #9f1239 !important;
+    -webkit-text-fill-color: #9f1239 !important;
+}

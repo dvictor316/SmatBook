@@ -31,7 +31,7 @@
                 <div class="hotel-ledger-strip">
                     <span>Available rooms: {{ $availableCount }}</span>
                     <span>Room types: {{ $roomTypes->count() }}</span>
-                    <span>Lowest visible rate: {{ number_format((float) $lowestRate, 2) }}</span>
+                    <span>Lowest visible rate: {{ \App\Support\CompactNumber::format((float) $lowestRate, 2) }}</span>
                 </div>
 
                 <form method="POST" action="{{ route('hotel.walkin.store') }}">
@@ -46,7 +46,7 @@
                                         <select class="form-control" disabled>
                                             <option>Use the room list to pick a room</option>
                                             @foreach($roomTypes as $type)
-                                                <option>{{ $type->name }} - {{ number_format((float) $type->base_rate, 2) }}</option>
+                                                <option>{{ $type->name }} - {{ \App\Support\CompactNumber::format((float) $type->base_rate, 2) }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -56,7 +56,7 @@
                                             <option value="">Select room</option>
                                             @foreach($rooms as $room)
                                                 <option value="{{ $room->id }}" @selected((int) old('room_id') === (int) $room->id)>
-                                                    {{ $room->room_number }} - {{ $room->type?->name ?? 'Room' }} - {{ number_format((float) ($room->type?->base_rate ?? 0), 2) }}
+                                                    {{ $room->room_number }} - {{ $room->type?->name ?? 'Room' }} - {{ \App\Support\CompactNumber::format((float) ($room->type?->base_rate ?? 0), 2) }}
                                                 </option>
                                             @endforeach
                                         </select>

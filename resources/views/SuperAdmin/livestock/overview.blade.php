@@ -68,14 +68,14 @@
 
     <div class="row g-3">
         @foreach([
-            ['Revenue this month', '₦'.number_format($metrics['revenue'], 2), 'green'],
+            ['Revenue this month', '₦'.\App\Support\CompactNumber::format($metrics['revenue'], 2), 'green'],
             ['Active farms', number_format($metrics['farms']), 'green'],
             ['Active flocks', number_format($metrics['active_flocks']), ''],
             ['Current birds', number_format($metrics['birds']), 'gold'],
             ['Good eggs this month', number_format($metrics['eggs']), 'green'],
-            ['Feed consumed (kg)', number_format($metrics['feed_kg'], 2), 'gold'],
+            ['Feed consumed (kg)', \App\Support\CompactNumber::format($metrics['feed_kg'], 2), 'gold'],
             ['Mortality this month', number_format($metrics['mortality']), 'red'],
-            ['Operating return', '₦'.number_format($metrics['operating_return'], 2), $metrics['operating_return'] >= 0 ? 'green' : 'red'],
+            ['Operating return', '₦'.\App\Support\CompactNumber::format($metrics['operating_return'], 2), $metrics['operating_return'] >= 0 ? 'green' : 'red'],
         ] as [$label, $value, $tone])
             <div class="col-6 col-lg-3">
                 <div class="metric-card {{ $tone }}">
@@ -87,9 +87,9 @@
     </div>
 
     <div class="row g-3 mt-0">
-        <div class="col-md-4"><div class="metric-card"><div class="metric-label">Capital expenditure</div><div class="metric-value">₦{{ number_format($metrics['capital'], 2) }}</div></div></div>
-        <div class="col-md-4"><div class="metric-card gold"><div class="metric-label">Working capital</div><div class="metric-value">₦{{ number_format($metrics['working_capital'], 2) }}</div></div></div>
-        <div class="col-md-4"><div class="metric-card red"><div class="metric-label">OPEX this month</div><div class="metric-value">₦{{ number_format($metrics['opex'], 2) }}</div></div></div>
+        <div class="col-md-4"><div class="metric-card"><div class="metric-label">Capital expenditure</div><div class="metric-value">₦{{ \App\Support\CompactNumber::format($metrics['capital'], 2) }}</div></div></div>
+        <div class="col-md-4"><div class="metric-card gold"><div class="metric-label">Working capital</div><div class="metric-value">₦{{ \App\Support\CompactNumber::format($metrics['working_capital'], 2) }}</div></div></div>
+        <div class="col-md-4"><div class="metric-card red"><div class="metric-label">OPEX this month</div><div class="metric-value">₦{{ \App\Support\CompactNumber::format($metrics['opex'], 2) }}</div></div></div>
     </div>
 
     <section class="data-panel">
@@ -115,13 +115,13 @@
                 <thead><tr><th>Date</th><th>Farm</th><th>Record</th><th>Description</th><th class="text-end">Amount / Output</th><th class="text-end">Action</th></tr></thead>
                 <tbody>
                     @foreach($management['investments']->take(15) as $record)
-                        <tr><td>{{ \Illuminate\Support\Carbon::parse($record->cost_date)->format('d M Y') }}</td><td>{{ $record->farm_name }}</td><td><span class="badge bg-primary">Investment</span> {{ \Illuminate\Support\Str::headline($record->category) }}</td><td>{{ $record->description }}</td><td class="text-end">₦{{ number_format($record->cost, 2) }}</td><td class="text-end">@include('SuperAdmin.livestock._delete-record', ['type' => 'investment', 'id' => $record->id])</td></tr>
+                        <tr><td>{{ \Illuminate\Support\Carbon::parse($record->cost_date)->format('d M Y') }}</td><td>{{ $record->farm_name }}</td><td><span class="badge bg-primary">Investment</span> {{ \Illuminate\Support\Str::headline($record->category) }}</td><td>{{ $record->description }}</td><td class="text-end">₦{{ \App\Support\CompactNumber::format($record->cost, 2) }}</td><td class="text-end">@include('SuperAdmin.livestock._delete-record', ['type' => 'investment', 'id' => $record->id])</td></tr>
                     @endforeach
                     @foreach($management['opex']->take(15) as $record)
-                        <tr><td>{{ \Illuminate\Support\Carbon::parse($record->expense_date)->format('d M Y') }}</td><td>{{ $record->farm_name }}</td><td><span class="badge bg-danger">OPEX</span> {{ \Illuminate\Support\Str::headline($record->category) }}</td><td>{{ $record->description ?: $record->vendor }}</td><td class="text-end">₦{{ number_format($record->amount, 2) }}</td><td class="text-end">@if(!$record->posted_at) @include('SuperAdmin.livestock._delete-record', ['type' => 'opex', 'id' => $record->id]) @else <span class="badge bg-secondary">Posted</span> @endif</td></tr>
+                        <tr><td>{{ \Illuminate\Support\Carbon::parse($record->expense_date)->format('d M Y') }}</td><td>{{ $record->farm_name }}</td><td><span class="badge bg-danger">OPEX</span> {{ \Illuminate\Support\Str::headline($record->category) }}</td><td>{{ $record->description ?: $record->vendor }}</td><td class="text-end">₦{{ \App\Support\CompactNumber::format($record->amount, 2) }}</td><td class="text-end">@if(!$record->posted_at) @include('SuperAdmin.livestock._delete-record', ['type' => 'opex', 'id' => $record->id]) @else <span class="badge bg-secondary">Posted</span> @endif</td></tr>
                     @endforeach
                     @foreach($management['revenue']->take(15) as $record)
-                        <tr><td>{{ \Illuminate\Support\Carbon::parse($record->revenue_date)->format('d M Y') }}</td><td>{{ $record->farm_name }}</td><td><span class="badge bg-success">Revenue</span> {{ \Illuminate\Support\Str::headline($record->source) }}</td><td>{{ $record->description ?: $record->customer }}</td><td class="text-end">₦{{ number_format($record->amount, 2) }}</td><td class="text-end">@if(!$record->posted_at) @include('SuperAdmin.livestock._delete-record', ['type' => 'revenue', 'id' => $record->id]) @else <span class="badge bg-secondary">Posted</span> @endif</td></tr>
+                        <tr><td>{{ \Illuminate\Support\Carbon::parse($record->revenue_date)->format('d M Y') }}</td><td>{{ $record->farm_name }}</td><td><span class="badge bg-success">Revenue</span> {{ \Illuminate\Support\Str::headline($record->source) }}</td><td>{{ $record->description ?: $record->customer }}</td><td class="text-end">₦{{ \App\Support\CompactNumber::format($record->amount, 2) }}</td><td class="text-end">@if(!$record->posted_at) @include('SuperAdmin.livestock._delete-record', ['type' => 'revenue', 'id' => $record->id]) @else <span class="badge bg-secondary">Posted</span> @endif</td></tr>
                     @endforeach
                     @if($management['investments']->isEmpty() && $management['opex']->isEmpty() && $management['revenue']->isEmpty())
                         <tr><td colspan="6" class="empty-state">No managed cost or return records yet.</td></tr>
@@ -172,7 +172,7 @@
                         <thead><tr><th>Date</th><th>Farm</th><th>Birds</th><th>Good eggs</th><th>Feed kg</th><th>Hen-day</th>@if($selectedCompany)<th class="text-end">Action</th>@endif</tr></thead>
                         <tbody>
                             @forelse($recentProduction as $row)
-                                <tr><td>{{ \Illuminate\Support\Carbon::parse($row->production_date)->format('d M Y') }}</td><td>{{ $row->farm_name }}</td><td>{{ number_format($row->closing_birds) }}</td><td>{{ number_format($row->total_good_eggs) }}</td><td>{{ number_format($row->feed_kg, 2) }}</td><td>{{ number_format($row->hen_day_percent, 2) }}%</td>@if($selectedCompany)<td class="text-end">@include('SuperAdmin.livestock._delete-record', ['type' => 'production', 'id' => $row->id])</td>@endif</tr>
+                                <tr><td>{{ \Illuminate\Support\Carbon::parse($row->production_date)->format('d M Y') }}</td><td>{{ $row->farm_name }}</td><td>{{ number_format($row->closing_birds) }}</td><td>{{ number_format($row->total_good_eggs) }}</td><td>{{ \App\Support\CompactNumber::format($row->feed_kg, 2) }}</td><td>{{ \App\Support\CompactNumber::format($row->hen_day_percent, 2) }}%</td>@if($selectedCompany)<td class="text-end">@include('SuperAdmin.livestock._delete-record', ['type' => 'production', 'id' => $row->id])</td>@endif</tr>
                             @empty
                                 <tr><td colspan="{{ $selectedCompany ? 7 : 6 }}" class="empty-state">No production entries found.</td></tr>
                             @endforelse
@@ -189,7 +189,7 @@
                         <thead><tr><th>Date</th><th>Type</th><th>Category</th><th class="text-end">Amount</th></tr></thead>
                         <tbody>
                             @forelse($recentTransactions as $row)
-                                <tr><td>{{ \Illuminate\Support\Carbon::parse($row->record_date)->format('d M') }}</td><td><span class="badge {{ $row->kind === 'Revenue' ? 'bg-success' : 'bg-danger' }}">{{ $row->kind }}</span></td><td>{{ \Illuminate\Support\Str::headline($row->category) }}</td><td class="text-end fw-bold">₦{{ number_format($row->amount, 2) }}</td></tr>
+                                <tr><td>{{ \Illuminate\Support\Carbon::parse($row->record_date)->format('d M') }}</td><td><span class="badge {{ $row->kind === 'Revenue' ? 'bg-success' : 'bg-danger' }}">{{ $row->kind }}</span></td><td>{{ \Illuminate\Support\Str::headline($row->category) }}</td><td class="text-end fw-bold">₦{{ \App\Support\CompactNumber::format($row->amount, 2) }}</td></tr>
                             @empty
                                 <tr><td colspan="4" class="empty-state">No cost or revenue entries found.</td></tr>
                             @endforelse

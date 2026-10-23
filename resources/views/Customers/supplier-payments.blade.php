@@ -133,7 +133,7 @@
                             <select name="payment_source" class="form-select">
                                 <option value="">Select bank or account</option>
                                 @foreach($paymentSources as $source)
-                                    <option value="{{ $source->value }}" data-balance="{{ number_format((float) ($source->balance ?? 0), 2) }}" @selected((string) $selectedPaymentSource === (string) $source->value)>
+                                    <option value="{{ $source->value }}" data-balance="{{ \App\Support\CompactNumber::format((float) ($source->balance ?? 0), 2) }}" @selected((string) $selectedPaymentSource === (string) $source->value)>
                                         {{ $source->label }} ({{ $source->type }}) — {{ \App\Support\GeoCurrency::format((float) ($source->balance ?? 0), 'NGN', $currencyCode, $currencyLocale) }}
                                     </option>
                                 @endforeach
@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const paymentForm = document.querySelector('#supplierPaymentForm');
 
     function formatCurrency(value) {
-        return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return window.formatCompactAmount(value);
     }
 
     function getSelectedBankBalance() {

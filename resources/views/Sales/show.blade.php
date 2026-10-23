@@ -168,31 +168,31 @@
                     <div class="col-6 col-md-3">
                         <div class="stat-box">
                             <div class="stat-label">Grand Total</div>
-                            <div class="stat-value">{{ $currencySymbol }}{{ number_format($sale->total, 2) }}</div>
+                            <div class="stat-value">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($sale->total, 2) }}</div>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="stat-box border-success" style="background-color: #f0fdf4;">
                             <div class="stat-label text-success">Tendered</div>
-                            <div class="stat-value text-success">{{ $currencySymbol }}{{ number_format($tenderedAmount, 2) }}</div>
+                            <div class="stat-value text-success">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($tenderedAmount, 2) }}</div>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="stat-box border-success" style="background-color: #ecfdf5;">
                             <div class="stat-label text-success">Applied</div>
-                            <div class="stat-value text-success">{{ $currencySymbol }}{{ number_format($appliedAmount, 2) }}</div>
+                            <div class="stat-value text-success">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($appliedAmount, 2) }}</div>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="stat-box border-danger" style="background-color: #fef2f2;">
                             <div class="stat-label text-danger">Balance</div>
-                            <div class="stat-value text-danger">{{ $currencySymbol }}{{ number_format($displayBalance, 2) }}</div>
+                            <div class="stat-value text-danger">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($displayBalance, 2) }}</div>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="stat-box border-info" style="background-color: #eff6ff;">
                             <div class="stat-label text-primary">Change</div>
-                            <div class="stat-value text-primary">{{ $currencySymbol }}{{ number_format($sale->change_amount ?? 0, 2) }}</div>
+                            <div class="stat-value text-primary">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($sale->change_amount ?? 0, 2) }}</div>
                         </div>
                     </div>
                 </div>
@@ -220,10 +220,10 @@
                             <tr>
                                 <td class="ps-3 fw-bold text-dark">{{ $item->product->name }}</td>
                                 <td class="text-center">
-                                    <span class="fw-bold">{{ rtrim(rtrim(number_format((float) $item->qty, 2), '0'), '.') }}</span>
+                                    <span class="fw-bold">{{ rtrim(rtrim(\App\Support\CompactNumber::format((float) $item->qty, 2), '0'), '.') }}</span>
                                     <span class="text-muted text-uppercase ms-1">{{ $soldUnitLabel }}</span>
                                 </td>
-                                <td class="text-end pe-3 fw-bold">{{ $currencySymbol }}{{ number_format($item->total_price, 2) }}</td>
+                                <td class="text-end pe-3 fw-bold">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($item->total_price, 2) }}</td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -241,7 +241,7 @@
                                     <span class="badge bg-light text-muted border" style="font-size: 9px;">{{ strtoupper($payment->method) }}</span>
                                 </div>
                                 <div class="d-flex align-items-center gap-3">
-                                    <span class="text-success fw-bold">{{ $currencySymbol }}{{ number_format($payment->amount, 2) }}</span>
+                                    <span class="text-success fw-bold">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($payment->amount, 2) }}</span>
                                     <form action="{{ route('payments.destroy', $payment->id) }}" method="POST" class="no-print">
                                         @csrf @method('DELETE')
                                         <button class="btn btn-link text-danger p-0" onclick="return confirm('Delete this log?')"><i class="fas fa-trash-alt fa-xs"></i></button>
@@ -277,7 +277,7 @@
                 <input type="hidden" name="sale_id" value="{{ $sale->id }}">
                 <div class="modal-body p-4 text-center">
                     <small class="text-muted d-block fw-bold text-uppercase mb-1" style="font-size: 0.65rem;">Remaining Due</small>
-                    <h4 class="fw-bold {{ $isFullyPaid ? 'text-success' : 'text-danger' }} mb-4">{{ $currencySymbol }}{{ number_format($displayBalance, 2) }}</h4>
+                    <h4 class="fw-bold {{ $isFullyPaid ? 'text-success' : 'text-danger' }} mb-4">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($displayBalance, 2) }}</h4>
 
                     @if($paymentFormHasErrors)
                         <div class="alert alert-danger text-start py-2 px-3 small mb-3">
@@ -299,15 +299,15 @@
                                 name="amount"
                                 step="0.01"
                                 min="0.01"
-                                max="{{ number_format($displayBalance, 2, '.', '') }}"
-                                value="{{ old('amount', number_format($displayBalance, 2, '.', '')) }}"
+                                max="{{ \App\Support\CompactNumber::format($displayBalance, 2, '.', '') }}"
+                                value="{{ old('amount', \App\Support\CompactNumber::format($displayBalance, 2, '.', '')) }}"
                                 class="form-control @error('amount') is-invalid @enderror"
                                 required
                             >
                             @if($errors->has('amount'))
                                 <div class="invalid-feedback">{{ $errors->first('amount') }}</div>
                             @else
-                                <small class="text-muted">Enter up to {{ $currencySymbol }}{{ number_format($displayBalance, 2) }}.</small>
+                                <small class="text-muted">Enter up to {{ $currencySymbol }}{{ \App\Support\CompactNumber::format($displayBalance, 2) }}.</small>
                             @endif
                         </div>
                         <div class="text-start mb-4">

@@ -506,12 +506,12 @@
                     </div>
                     <div class="insight-card">
                         <div class="label">Revenue Run Rate</div>
-                        <div class="value">₦{{ number_format($salesRunRate, 2) }}</div>
+                        <div class="value">₦{{ \App\Support\CompactNumber::format($salesRunRate, 2) }}</div>
                         <div class="note">Average monthly revenue represented on the chart.</div>
                     </div>
                     <div class="insight-card">
                         <div class="label">Profit Run Rate</div>
-                        <div class="value">₦{{ number_format($profitRunRate, 2) }}</div>
+                        <div class="value">₦{{ \App\Support\CompactNumber::format($profitRunRate, 2) }}</div>
                         <div class="note">Average monthly profit after expenses.</div>
                     </div>
                 </div>
@@ -598,7 +598,7 @@
                                 <tr>
                                     <td>{{ $customer->customer_name }}</td>
                                     <td class="text-end">{{ number_format($customer->invoices_count) }}</td>
-                                    <td class="text-end">₦{{ number_format($customer->total_spend, 2) }}</td>
+                                    <td class="text-end">₦{{ \App\Support\CompactNumber::format($customer->total_spend, 2) }}</td>
                                 </tr>
                             @empty
                                 <tr>
@@ -655,7 +655,7 @@
                                         <td>{{ $product->name }}</td>
                                         <td><span class="badge bg-danger text-white">Expired</span></td>
                                         <td>{{ optional($product->expiry_date)->format('d M Y') }}</td>
-                                        <td class="text-end">{{ number_format((float) ($product->stock ?? 0), 2) }}</td>
+                                        <td class="text-end">{{ \App\Support\CompactNumber::format((float) ($product->stock ?? 0), 2) }}</td>
                                     </tr>
                                 @endforeach
                                 @foreach($enterpriseExpiringSoonProducts->take(5) as $product)
@@ -663,7 +663,7 @@
                                         <td>{{ $product->name }}</td>
                                         <td><span class="badge bg-warning text-dark">Expiring Soon</span></td>
                                         <td>{{ optional($product->expiry_date)->format('d M Y') }}</td>
-                                        <td class="text-end">{{ number_format((float) ($product->stock ?? 0), 2) }}</td>
+                                        <td class="text-end">{{ \App\Support\CompactNumber::format((float) ($product->stock ?? 0), 2) }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -708,7 +708,7 @@
                                     <div class="text-muted small">{{ optional($activity->created_at)->diffForHumans() }}</div>
                                 </div>
                                 <div class="text-end">
-                                    <div class="small fw-bold" style="color: var(--deep-sapphire);">₦{{ number_format((float) ($activity->amount ?? 0), 2) }}</div>
+                                    <div class="small fw-bold" style="color: var(--deep-sapphire);">₦{{ \App\Support\CompactNumber::format((float) ($activity->amount ?? 0), 2) }}</div>
                                     <div class="text-muted small text-uppercase">{{ $activity->status ?? 'paid' }}</div>
                                 </div>
                             </div>

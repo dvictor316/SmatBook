@@ -323,8 +323,8 @@
                         <td class="ps-1"><span class="account-code">{{ $account->code }}</span></td>
                         <td class="fw-bold" style="color: var(--text-dark)">{{ $account->name }}</td>
                         <td class="text-muted" style="font-size: 0.65rem;">{{ $account->type }}</td>
-                        <td class="text-end fw-bold">{{ $account->debit_balance > 0 ? number_format($account->debit_balance, 2) : '0.00' }}</td>
-                        <td class="text-end fw-bold pe-1">{{ $account->credit_balance > 0 ? number_format($account->credit_balance, 2) : '0.00' }}</td>
+                        <td class="text-end fw-bold">{{ $account->debit_balance > 0 ? \App\Support\CompactNumber::format($account->debit_balance, 2) : '0.00' }}</td>
+                        <td class="text-end fw-bold pe-1">{{ $account->credit_balance > 0 ? \App\Support\CompactNumber::format($account->credit_balance, 2) : '0.00' }}</td>
                     </tr>
                     @empty
                     <tr><td colspan="5" class="text-center py-4">No ledger records found.</td></tr>

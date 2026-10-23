@@ -27,14 +27,14 @@
 
                                 <td>{{ $item->unit ?? 'Pcs' }}</td>
 
-                                <td>${{ number_format($item->price ?? $item->rate, 2) }}</td>
+                                <td>${{ \App\Support\CompactNumber::format($item->price ?? $item->rate, 2) }}</td>
 
                                 <td>{{ $item->discount ?? 0 }}{{ ($item->discount_type == 'percentage') ? '%' : '' }}</td>
 
                                 <td>{{ $item->tax_rate ?? $item->tax ?? 0 }}%</td>
 
                                 <td class="text-end">
-                                    ${{ number_format($item->total ?? ($item->quantity * ($item->price ?? $item->rate)), 2) }}
+                                    ${{ \App\Support\CompactNumber::format($item->total ?? ($item->quantity * ($item->price ?? $item->rate)), 2) }}
                                 </td>
                             </tr>
                         @empty

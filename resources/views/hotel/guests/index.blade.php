@@ -50,8 +50,8 @@
         <div class="crm-top">
             <div class="crm-profile-rail"><div class="crm-avatar">{{ strtoupper(substr((string)($leadGuest?->customer_name ?? $leadGuest?->name ?? 'G'),0,1)) }}</div><div><strong>{{ $leadGuest?->customer_name ?? $leadGuest?->name ?? 'Guest Profiles' }}</strong><div class="small text-muted">{{ $leadGuest?->email ?? 'CRM Directory' }}</div></div></div>
             <div class="crm-stat"><small>Lifetime Stays</small><h4 class="mb-0">{{ number_format($totalStays) }}</h4></div>
-            <div class="crm-stat"><small>Lifetime Spend</small><h4 class="mb-0">{{ number_format($totalSpend, 2) }}</h4></div>
-            <div class="crm-stat"><small>Outstanding</small><h4 class="mb-0 {{ $outstanding > 0 ? 'text-danger' : 'text-success' }}">{{ number_format($outstanding, 2) }}</h4></div>
+            <div class="crm-stat"><small>Lifetime Spend</small><h4 class="mb-0">{{ \App\Support\CompactNumber::format($totalSpend, 2) }}</h4></div>
+            <div class="crm-stat"><small>Outstanding</small><h4 class="mb-0 {{ $outstanding > 0 ? 'text-danger' : 'text-success' }}">{{ \App\Support\CompactNumber::format($outstanding, 2) }}</h4></div>
             <div class="crm-stat"><small>Profiles Loaded</small><h4 class="mb-0">{{ $guestCollection->count() }}</h4></div>
         </div>
 
@@ -81,7 +81,7 @@
                         <div><strong>{{ $last }}</strong><div class="small text-muted">{{ $guest->phone ?: 'No phone' }}</div></div>
                         <div>{{ $first }}<div class="small text-muted">{{ $guest->email ?: 'No email' }}</div></div>
                         <div><span class="guest-tag">{{ $guest->total_stays ?? 0 }} stays</span></div>
-                        <div>{{ number_format((float) ($guest->total_spend ?? 0), 2) }}<div class="small text-muted">Due {{ number_format((float) ($guest->outstanding_balance ?? 0), 2) }}</div></div>
+                        <div>{{ \App\Support\CompactNumber::format((float) ($guest->total_spend ?? 0), 2) }}<div class="small text-muted">Due {{ \App\Support\CompactNumber::format((float) ($guest->outstanding_balance ?? 0), 2) }}</div></div>
                         <div>
                             <div class="guest-alert">{{ (float)($guest->outstanding_balance ?? 0) > 0 ? 'Settle balance before next departure.' : (($guest->notes ?? null) ?: 'Good profile for repeat booking and loyalty follow-up.') }}</div>
                             <form method="POST" action="{{ route('hotel.guests.note', $guest) }}" class="guest-note-form">

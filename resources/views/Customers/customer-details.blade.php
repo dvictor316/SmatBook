@@ -481,8 +481,8 @@
                         <div class="customer-pill-label">Financials</div>
                         <div class="customer-pill-value">
                             <div>Currency: {{ $customer->currency ?: '₦' }}</div>
-                            <div>Outstanding: ₦{{ number_format($customer->computed_balance ?? $customer->balance ?? 0, 2) }}</div>
-                            <div>Credit Limit: ₦{{ number_format($customer->credit_limit ?? 0, 2) }}</div>
+                            <div>Outstanding: ₦{{ \App\Support\CompactNumber::format($customer->computed_balance ?? $customer->balance ?? 0, 2) }}</div>
+                            <div>Credit Limit: ₦{{ \App\Support\CompactNumber::format($customer->credit_limit ?? 0, 2) }}</div>
                             <div>Website:
                                 @if ($customer->website)
                                     <a href="{{ $customer->website }}" target="_blank" rel="noopener">{{ $customer->website }}</a>
@@ -547,7 +547,7 @@
                                         <tr>
                                             <td class="ps-4 fw-bold">#INV-{{ $invoice->id }}</td>
                                             <td>{{ $invoice->created_at->format('d M Y') }}</td>
-                                            <td>{{ $customer->currency ?: '₦' }}{{ number_format($invoice->total_amount, 2) }}</td>
+                                            <td>{{ $customer->currency ?: '₦' }}{{ \App\Support\CompactNumber::format($invoice->total_amount, 2) }}</td>
                                             <td>
                                                 <span class="badge rounded-pill {{ $invoice->status === 'paid' ? 'bg-success text-white' : 'bg-warning text-dark' }}">
                                                     {{ ucfirst($invoice->status) }}

@@ -24,7 +24,7 @@
                 <div class="col-md-3"><strong>Frequency:</strong> {{ ucfirst($forecast->frequency) }}</div>
                 <div class="col-md-3"><strong>Status:</strong> {{ ucfirst($forecast->status) }}</div>
                 <div class="col-md-6"><strong>Period:</strong> {{ $forecast->period_start->format('d M Y') }} - {{ $forecast->period_end->format('d M Y') }}</div>
-                <div class="col-md-6"><strong>Total Forecast:</strong> {{ number_format((float) $forecast->total_forecast_amount, 2) }}</div>
+                <div class="col-md-6"><strong>Total Forecast:</strong> {{ \App\Support\CompactNumber::format((float) $forecast->total_forecast_amount, 2) }}</div>
                 <div class="col-12"><strong>Assumptions:</strong> {{ $forecast->assumptions ?: 'None' }}</div>
             </div>
         </div>
@@ -49,8 +49,8 @@
                             <tr>
                                 <td>{{ $item->period_date?->format('d M Y') ?: '—' }}</td>
                                 <td>{{ $item->category ?: '—' }}</td>
-                                <td>{{ number_format((float) $item->forecast_amount, 2) }}</td>
-                                <td>{{ number_format((float) $item->actual_amount, 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format((float) $item->forecast_amount, 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format((float) $item->actual_amount, 2) }}</td>
                                 <td>{{ $item->notes ?: '—' }}</td>
                             </tr>
                         @empty

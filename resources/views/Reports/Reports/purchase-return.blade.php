@@ -58,7 +58,7 @@
                                 </div>
                                 <div class="ms-3">
                                     <p class="text-muted mb-1 small fw-bold text-uppercase">{{ __('Total Purchase Returns') }}</p>
-                                    <h3 class="mb-0 fw-bold">₦{{ number_format($totalRefunded ?? 0, 2) }}</h3>
+                                    <h3 class="mb-0 fw-bold">₦{{ \App\Support\CompactNumber::format($totalRefunded ?? 0, 2) }}</h3>
                                 </div>
                             </div>
                         </div>
@@ -110,7 +110,7 @@
                                         <td>{{ $report->Product }}</td>
                                         <td>{{ $report->VendorName ?? 'N/A' }}</td>
                                         <td>{{ number_format($report->ReturnQty) }}</td>
-                                        <td class="fw-bold">₦{{ number_format($report->ReturnAmount, 2) }}</td>
+                                        <td class="fw-bold">₦{{ \App\Support\CompactNumber::format($report->ReturnAmount, 2) }}</td>
                                         <td>{{ \Carbon\Carbon::parse($report->ReturnDate)->format('d M, Y') }}</td>
                                     </tr>
                                 @empty

@@ -93,7 +93,7 @@
                                                 <td>
                                                     <input type="number" name="items[{{ $idx }}][price]" class="form-control text-end" value="{{ $item->price }}" min="0" step="0.01" required>
                                                 </td>
-                                                <td class="text-end">{{ number_format($item->quantity * $item->price, 2) }}</td>
+                                                <td class="text-end">{{ \App\Support\CompactNumber::format($item->quantity * $item->price, 2) }}</td>
                                                 <td class="text-center">
                                                     <button type="button" class="btn btn-sm btn-danger" onclick="removeItemRow(this)"><i class="fa fa-trash"></i></button>
                                                 </td>

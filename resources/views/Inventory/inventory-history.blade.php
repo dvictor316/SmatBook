@@ -53,7 +53,7 @@
                         <div class="card-body py-3 px-4 d-flex align-items-center justify-content-between">
                             <div>
                                 <p class="mb-1 text-muted small text-uppercase">Current Stock</p>
-                                <h5 class="mb-0">{{ number_format($currentStock, 2) }} {{ $stockUnitLabel }}</h5>
+                                <h5 class="mb-0">{{ \App\Support\CompactNumber::format($currentStock, 2) }} {{ $stockUnitLabel }}</h5>
                             </div>
                             <span class="badge bg-primary px-3 py-2">Live</span>
                         </div>
@@ -64,7 +64,7 @@
                         <div class="card-body py-3 px-4 d-flex align-items-center justify-content-between">
                             <div>
                                 <p class="mb-1 text-muted small text-uppercase">Total Received</p>
-                                <h5 class="mb-0">{{ number_format($totalIn, 2) }} {{ $stockUnitLabel }}</h5>
+                                <h5 class="mb-0">{{ \App\Support\CompactNumber::format($totalIn, 2) }} {{ $stockUnitLabel }}</h5>
                             </div>
                             <span class="badge bg-success px-3 py-2">In</span>
                         </div>
@@ -75,7 +75,7 @@
                         <div class="card-body py-3 px-4 d-flex align-items-center justify-content-between">
                             <div>
                                 <p class="mb-1 text-muted small text-uppercase">Total Issued</p>
-                                <h5 class="mb-0">{{ number_format($totalOut, 2) }} {{ $stockUnitLabel }}</h5>
+                                <h5 class="mb-0">{{ \App\Support\CompactNumber::format($totalOut, 2) }} {{ $stockUnitLabel }}</h5>
                             </div>
                             <span class="badge bg-danger px-3 py-2">Out</span>
                         </div>
@@ -86,7 +86,7 @@
                         <div class="card-body py-3 px-4 d-flex align-items-center justify-content-between">
                             <div>
                                 <p class="mb-1 text-muted small text-uppercase">Damaged Stock</p>
-                                <h5 class="mb-0">{{ number_format($totalDamaged, 2) }} {{ $stockUnitLabel }}</h5>
+                                <h5 class="mb-0">{{ \App\Support\CompactNumber::format($totalDamaged, 2) }} {{ $stockUnitLabel }}</h5>
                             </div>
                             <span class="badge bg-warning px-3 py-2">Damage</span>
                         </div>
@@ -107,7 +107,7 @@
                                     <div class="col-sm-6">
                                         <div class="inventory-metric-card">
                                             <p class="text-muted small mb-1">Total Purchase</p>
-                                            <h5 class="mb-0">{{ number_format($totalIn, 2) }} <span class="text-muted metric-unit">{{ $stockUnitLabel }}</span></h5>
+                                            <h5 class="mb-0">{{ \App\Support\CompactNumber::format($totalIn, 2) }} <span class="text-muted metric-unit">{{ $stockUnitLabel }}</span></h5>
                                         </div>
                                     </div>
                                     <div class="col-sm-6">
@@ -141,7 +141,7 @@
                                     <div class="col-sm-6">
                                         <div class="inventory-metric-card">
                                             <p class="text-muted small mb-1">Total Sold</p>
-                                            <h5 class="mb-0">{{ number_format($totalOut, 2) }} <span class="text-muted metric-unit">{{ $stockUnitLabel }}</span></h5>
+                                            <h5 class="mb-0">{{ \App\Support\CompactNumber::format($totalOut, 2) }} <span class="text-muted metric-unit">{{ $stockUnitLabel }}</span></h5>
                                         </div>
                                     </div>
                                     <div class="col-sm-6">
@@ -191,7 +191,7 @@
                                 <div class="card-body py-3 px-4">
                                     <p class="text-muted small mb-1">Movement</p>
                                     <h6 class="fw-bold mb-2">Net Change</h6>
-                                    <h4 class="mb-0 {{ $currentStock >= 0 ? 'text-success' : 'text-danger' }}">{{ $currentStock >= 0 ? '+' : '' }}{{ number_format($currentStock, 2) }}</h4>
+                                    <h4 class="mb-0 {{ $currentStock >= 0 ? 'text-success' : 'text-danger' }}">{{ $currentStock >= 0 ? '+' : '' }}{{ \App\Support\CompactNumber::format($currentStock, 2) }}</h4>
                                 </div>
                             </div>
                         </div>
@@ -238,7 +238,7 @@
                                         <td>{{ $history->reference ?? 'System Movement' }}</td>
                                         <td class="text-end fw-bold {{ $isStockIn ? 'text-success' : 'text-danger' }}">
                                             @php
-                                                $movementQuantity = rtrim(rtrim(number_format((float) ($history->quantity ?? 0), 2), '0'), '.');
+                                                $movementQuantity = rtrim(rtrim(\App\Support\CompactNumber::format((float) ($history->quantity ?? 0), 2), '0'), '.');
                                             @endphp
                                             {{ $isStockIn ? '+' : '-' }}{{ $movementQuantity }}
                                             <span class="text-muted text-uppercase ms-1">{{ $stockUnitLabel }}</span>
@@ -268,7 +268,7 @@
                                             @endif
                                         </td>
                                         <td class="text-end fw-semibold {{ $currentStock >= 0 ? 'text-primary' : 'text-danger' }}">
-                                            {{ number_format($currentStock, 2) }} {{ $stockUnitLabel }}
+                                            {{ \App\Support\CompactNumber::format($currentStock, 2) }} {{ $stockUnitLabel }}
                                         </td>
                                         <td class="text-end">
                                             {{ \App\Support\GeoCurrency::format((float) ($history->stock_value ?? 0), 'NGN', $currencyCode, $currencyLocale) }}

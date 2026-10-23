@@ -332,7 +332,7 @@
         <div class="col-md-3">
             <div class="metric-card-basic metric-sky">
                 <div class="small fw-bold mb-1">TODAY'S REVENUE</div>
-                <h3 class="fw-bold mb-0">₦{{ number_format($metrics['todayRevenue'] ?? 0, 2) }}</h3>
+                <h3 class="fw-bold mb-0">₦{{ \App\Support\CompactNumber::format($metrics['todayRevenue'] ?? 0, 2) }}</h3>
                 <p class="small mb-0 mt-2"><i class="fas fa-arrow-up"></i> Live</p>
             </div>
         </div>
@@ -353,7 +353,7 @@
         <div class="col-md-3">
             <div class="metric-card-basic metric-amber">
                 <div class="small fw-bold mb-1">INVENTORY VALUE</div>
-                <h3 class="fw-bold mb-0">₦{{ number_format($inventoryValue, 2) }}</h3>
+                <h3 class="fw-bold mb-0">₦{{ \App\Support\CompactNumber::format($inventoryValue, 2) }}</h3>
                 <p class="small mb-0 mt-2">{{ number_format($metrics['activeStock'] ?? 0) }} units in inventory</p>
             </div>
         </div>
@@ -404,7 +404,7 @@
             <div class="col-sm-6 col-xl-3">
                 <div class="insight-item">
                     <div class="label">Pending Balance</div>
-                    <div class="value">₦{{ number_format($metrics['pendingBalance'] ?? 0, 2) }}</div>
+                    <div class="value">₦{{ \App\Support\CompactNumber::format($metrics['pendingBalance'] ?? 0, 2) }}</div>
                 </div>
             </div>
             <div class="col-sm-6 col-xl-3">
@@ -488,7 +488,7 @@
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
                         <span><span class="status-dot bg-primary"></span> Average invoice</span>
-                        <span class="badge bg-light text-dark">₦{{ number_format($metrics['avgOrderValue'] ?? 0, 2) }}</span>
+                        <span class="badge bg-light text-dark">₦{{ \App\Support\CompactNumber::format($metrics['avgOrderValue'] ?? 0, 2) }}</span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
                         <span><span class="status-dot bg-warning"></span> Low stock alerts</span>
@@ -547,7 +547,7 @@
                     </div>
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="text-muted small fw-bold">Pending Balance</span>
-                        <strong style="color: var(--deep-sapphire);">₦{{ number_format($metrics['pendingBalance'] ?? 0, 2) }}</strong>
+                        <strong style="color: var(--deep-sapphire);">₦{{ \App\Support\CompactNumber::format($metrics['pendingBalance'] ?? 0, 2) }}</strong>
                     </div>
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="text-muted small fw-bold">Sales Growth</span>
@@ -569,7 +569,7 @@
                             <div class="text-muted small">{{ optional($activity->created_at)->diffForHumans() }}</div>
                         </div>
                         <div class="text-end">
-                            <div class="small fw-bold" style="color: var(--deep-sapphire);">₦{{ number_format((float) ($activity->amount ?? 0), 2) }}</div>
+                            <div class="small fw-bold" style="color: var(--deep-sapphire);">₦{{ \App\Support\CompactNumber::format((float) ($activity->amount ?? 0), 2) }}</div>
                         </div>
                     </div>
                 @empty

@@ -94,12 +94,12 @@
         </section>
 
         <div class="report-kpis">
-            <div class="report-kpi"><span>Room Revenue</span><strong>{{ number_format((float) $kpis['room_revenue_month'], 2) }}</strong><small>{{ number_format((float) $kpis['room_revenue_today'], 2) }} today</small></div>
-            <div class="report-kpi"><span>Service Revenue</span><strong>{{ number_format((float) $kpis['service_revenue_month'], 2) }}</strong><small>{{ $serviceRevenue->sum('tx_count') }} service postings</small></div>
-            <div class="report-kpi"><span>Period Occupancy</span><strong>{{ number_format($occupancyRate,2) }}%</strong><small>{{ number_format($kpis['sold_room_nights']) }} of {{ number_format($kpis['available_room_nights']) }} room nights</small></div>
-            <div class="report-kpi"><span>Open Exposure</span><strong>{{ number_format((float) $kpis['folio_balance'], 2) }}</strong><small>{{ $kpis['open_folios'] }} open folios</small></div>
-            <div class="report-kpi"><span>ADR</span><strong>{{ number_format((float)$kpis['adr'],2) }}</strong><small>Average daily room rate</small></div>
-            <div class="report-kpi"><span>RevPAR</span><strong>{{ number_format((float)$kpis['revpar'],2) }}</strong><small>Revenue per available room</small></div>
+            <div class="report-kpi"><span>Room Revenue</span><strong>{{ \App\Support\CompactNumber::format((float) $kpis['room_revenue_month'], 2) }}</strong><small>{{ \App\Support\CompactNumber::format((float) $kpis['room_revenue_today'], 2) }} today</small></div>
+            <div class="report-kpi"><span>Service Revenue</span><strong>{{ \App\Support\CompactNumber::format((float) $kpis['service_revenue_month'], 2) }}</strong><small>{{ $serviceRevenue->sum('tx_count') }} service postings</small></div>
+            <div class="report-kpi"><span>Period Occupancy</span><strong>{{ \App\Support\CompactNumber::format($occupancyRate,2) }}%</strong><small>{{ number_format($kpis['sold_room_nights']) }} of {{ number_format($kpis['available_room_nights']) }} room nights</small></div>
+            <div class="report-kpi"><span>Open Exposure</span><strong>{{ \App\Support\CompactNumber::format((float) $kpis['folio_balance'], 2) }}</strong><small>{{ $kpis['open_folios'] }} open folios</small></div>
+            <div class="report-kpi"><span>ADR</span><strong>{{ \App\Support\CompactNumber::format((float)$kpis['adr'],2) }}</strong><small>Average daily room rate</small></div>
+            <div class="report-kpi"><span>RevPAR</span><strong>{{ \App\Support\CompactNumber::format((float)$kpis['revpar'],2) }}</strong><small>Revenue per available room</small></div>
             <div class="report-kpi"><span>Exceptions</span><strong>{{ $kpis['cancellations']+$kpis['no_shows'] }}</strong><small>{{ $kpis['cancellations'] }} cancelled | {{ $kpis['no_shows'] }} no-show</small></div>
             <div class="report-kpi"><span>30-Day Pickup</span><strong>{{ $kpis['forward_bookings_30d'] }}</strong><small>Confirmed and reserved arrivals</small></div>
         </div>
@@ -124,7 +124,7 @@
                 </section>
 
                 <section class="report-card">
-                    <div class="report-card__head"><div><div class="report-section-label">Revenue Trend</div><h5>Room vs Service Daily Revenue</h5></div><span class="metric-pill">{{ number_format((float) $kpis['room_revenue_month'] + $serviceTotal, 2) }}</span></div>
+                    <div class="report-card__head"><div><div class="report-section-label">Revenue Trend</div><h5>Room vs Service Daily Revenue</h5></div><span class="metric-pill">{{ \App\Support\CompactNumber::format((float) $kpis['room_revenue_month'] + $serviceTotal, 2) }}</span></div>
                     <div class="report-card__body">
                         <div class="chart-bars">
                             @forelse($dailyRevenue as $day)
@@ -133,7 +133,7 @@
                                     $serviceHeight = max(5, ((float) $day->service_total / $dailyMax) * 205);
                                     $dayLabel = $day->report_date ? \Illuminate\Support\Carbon::parse($day->report_date)->format('d M') : '-';
                                 @endphp
-                                <div class="chart-day" title="{{ $dayLabel }}: {{ number_format((float) $day->room_total + (float) $day->service_total, 2) }}"><div class="chart-stack"><div class="chart-seg service" style="height:{{ $serviceHeight }}px"></div><div class="chart-seg room" style="height:{{ $roomHeight }}px"></div></div><div class="chart-label">{{ $dayLabel }}</div></div>
+                                <div class="chart-day" title="{{ $dayLabel }}: {{ \App\Support\CompactNumber::format((float) $day->room_total + (float) $day->service_total, 2) }}"><div class="chart-stack"><div class="chart-seg service" style="height:{{ $serviceHeight }}px"></div><div class="chart-seg room" style="height:{{ $roomHeight }}px"></div></div><div class="chart-label">{{ $dayLabel }}</div></div>
                             @empty
                                 <div class="text-muted">No revenue postings found for this period.</div>
                             @endforelse
@@ -149,7 +149,7 @@
                             <tbody>
                                 @forelse($recentPostings as $posting)
                                     @php $postingDate = $posting->service_date ? \Illuminate\Support\Carbon::parse($posting->service_date)->format('d M Y') : '-'; @endphp
-                                    <tr><td><strong>{{ $posting->description ?: 'Hotel posting' }}</strong></td><td>{{ $posting->folio?->customer?->customer_name ?? $posting->folio?->customer?->name ?? 'Guest' }} · Room {{ $posting->folio?->stay?->room?->room_number ?? 'N/A' }}</td><td><span class="metric-pill">{{ strtoupper(str_replace('_', ' ', (string) ($posting->service_code ?: 'OTHER'))) }}</span></td><td>{{ ucfirst(str_replace('_', ' ', (string) $posting->type)) }}</td><td class="text-end fw-bold">{{ number_format((float) $posting->amount, 2) }}</td><td>{{ $postingDate }}</td></tr>
+                                    <tr><td><strong>{{ $posting->description ?: 'Hotel posting' }}</strong></td><td>{{ $posting->folio?->customer?->customer_name ?? $posting->folio?->customer?->name ?? 'Guest' }} · Room {{ $posting->folio?->stay?->room?->room_number ?? 'N/A' }}</td><td><span class="metric-pill">{{ strtoupper(str_replace('_', ' ', (string) ($posting->service_code ?: 'OTHER'))) }}</span></td><td>{{ ucfirst(str_replace('_', ' ', (string) $posting->type)) }}</td><td class="text-end fw-bold">{{ \App\Support\CompactNumber::format((float) $posting->amount, 2) }}</td><td>{{ $postingDate }}</td></tr>
                                 @empty
                                     <tr><td colspan="6" class="text-center text-muted py-4">No postings found for this period.</td></tr>
                                 @endforelse
@@ -161,8 +161,8 @@
 
             <aside class="reports-shell">
                 <section class="report-card">
-                    <div class="report-card__head"><h5>Service Revenue</h5><span class="metric-pill">{{ number_format($serviceTotal, 2) }}</span></div>
-                    <div class="report-card__body mini-list">@forelse($serviceRevenue as $row)<div class="mini-row"><div><strong>{{ strtoupper(str_replace('_', ' ', (string) $row->service_code)) }}</strong><br><small>{{ $row->tx_count }} postings</small></div><span class="fw-bold">{{ number_format((float) $row->total_amount, 2) }}</span></div>@empty<div class="text-muted">No service revenue posted in this period.</div>@endforelse</div>
+                    <div class="report-card__head"><h5>Service Revenue</h5><span class="metric-pill">{{ \App\Support\CompactNumber::format($serviceTotal, 2) }}</span></div>
+                    <div class="report-card__body mini-list">@forelse($serviceRevenue as $row)<div class="mini-row"><div><strong>{{ strtoupper(str_replace('_', ' ', (string) $row->service_code)) }}</strong><br><small>{{ $row->tx_count }} postings</small></div><span class="fw-bold">{{ \App\Support\CompactNumber::format((float) $row->total_amount, 2) }}</span></div>@empty<div class="text-muted">No service revenue posted in this period.</div>@endforelse</div>
                 </section>
 
                 <section class="report-card">
@@ -171,18 +171,18 @@
                 </section>
 
                 <section class="report-card">
-                    <div class="report-card__head"><h5>Folio Exposure</h5><span class="metric-pill">{{ number_format((float) $kpis['folio_balance'], 2) }}</span></div>
-                    <div class="report-card__body mini-list">@forelse($folioExposure as $folio)<div class="mini-row"><div><strong>{{ $folio->customer?->customer_name ?? $folio->customer?->name ?? 'Guest' }}</strong><br><small>Room {{ $folio->stay?->room?->room_number ?? 'N/A' }} · {{ $folio->folio_number ?? ('Folio #' . $folio->id) }}</small></div><span class="fw-bold text-danger">{{ number_format((float) $folio->balance, 2) }}</span></div>@empty<div class="text-muted">No open folio exposure for this period.</div>@endforelse</div>
+                    <div class="report-card__head"><h5>Folio Exposure</h5><span class="metric-pill">{{ \App\Support\CompactNumber::format((float) $kpis['folio_balance'], 2) }}</span></div>
+                    <div class="report-card__body mini-list">@forelse($folioExposure as $folio)<div class="mini-row"><div><strong>{{ $folio->customer?->customer_name ?? $folio->customer?->name ?? 'Guest' }}</strong><br><small>Room {{ $folio->stay?->room?->room_number ?? 'N/A' }} · {{ $folio->folio_number ?? ('Folio #' . $folio->id) }}</small></div><span class="fw-bold text-danger">{{ \App\Support\CompactNumber::format((float) $folio->balance, 2) }}</span></div>@empty<div class="text-muted">No open folio exposure for this period.</div>@endforelse</div>
                 </section>
 
                 <section class="report-card">
-                    <div class="report-card__head"><h5>Cashier Trace</h5><span class="metric-pill">{{ number_format($paymentTotal, 2) }}</span></div>
-                    <div class="report-card__body mini-list">@forelse($paymentRevenue as $row)<div class="mini-row"><div><strong>{{ strtoupper(str_replace('_', ' ', (string) $row->payment_code)) }}</strong><br><small>{{ $row->tx_count }} entries</small></div><span class="fw-bold">{{ number_format(abs((float) $row->total_amount), 2) }}</span></div>@empty<div class="text-muted">No cashier payments found for this period.</div>@endforelse</div>
+                    <div class="report-card__head"><h5>Cashier Trace</h5><span class="metric-pill">{{ \App\Support\CompactNumber::format($paymentTotal, 2) }}</span></div>
+                    <div class="report-card__body mini-list">@forelse($paymentRevenue as $row)<div class="mini-row"><div><strong>{{ strtoupper(str_replace('_', ' ', (string) $row->payment_code)) }}</strong><br><small>{{ $row->tx_count }} entries</small></div><span class="fw-bold">{{ \App\Support\CompactNumber::format(abs((float) $row->total_amount), 2) }}</span></div>@empty<div class="text-muted">No cashier payments found for this period.</div>@endforelse</div>
                 </section>
 
                 <section class="report-card">
                     <div class="report-card__head"><h5>Corporate Debtor Aging</h5><span class="metric-pill">City Ledger</span></div>
-                    <div class="report-card__body mini-list">@foreach(['current'=>'Current','1_30'=>'1-30 days','31_60'=>'31-60 days','61_90'=>'61-90 days','over_90'=>'Over 90 days'] as $key=>$name)<div class="mini-row"><strong>{{ $name }}</strong><span class="fw-bold {{ $key==='over_90'?'text-danger':'' }}">{{ number_format((float)$corporateAging[$key],2) }}</span></div>@endforeach</div>
+                    <div class="report-card__body mini-list">@foreach(['current'=>'Current','1_30'=>'1-30 days','31_60'=>'31-60 days','61_90'=>'61-90 days','over_90'=>'Over 90 days'] as $key=>$name)<div class="mini-row"><strong>{{ $name }}</strong><span class="fw-bold {{ $key==='over_90'?'text-danger':'' }}">{{ \App\Support\CompactNumber::format((float)$corporateAging[$key],2) }}</span></div>@endforeach</div>
                 </section>
 
                 <section class="report-card">

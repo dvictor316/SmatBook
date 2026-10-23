@@ -620,12 +620,12 @@ function recalc() {
         const line  = qty * price;
         const total = line + t - d;
         const rowTotal = tr.querySelector('.row-total');
-        if (rowTotal) rowTotal.textContent = total.toFixed(2);
+        if (rowTotal) rowTotal.textContent = window.formatCompactAmount(total);
         subtotal += line;
         tax      += t;
         discount += d;
     });
-    const setTotal = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value.toFixed(2); };
+    const setTotal = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = window.formatCompactAmount(value); };
     setTotal('sumSubtotal', subtotal);
     setTotal('sumTax', tax);
     setTotal('sumDiscount', discount);

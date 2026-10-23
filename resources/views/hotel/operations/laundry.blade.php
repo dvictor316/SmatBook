@@ -28,7 +28,7 @@
             <div class="hotel-op-kpis">
                 <div class="hotel-op-kpi"><span>Orders</span><strong>{{ $orders->total() }}</strong></div>
                 <div class="hotel-op-kpi"><span>Express</span><strong>{{ $expressOrders->count() }}</strong></div>
-                <div class="hotel-op-kpi"><span>Revenue</span><strong>{{ number_format($totalPosted, 2) }}</strong></div>
+                <div class="hotel-op-kpi"><span>Revenue</span><strong>{{ \App\Support\CompactNumber::format($totalPosted, 2) }}</strong></div>
                 <div class="hotel-op-kpi"><span>Open Folios</span><strong>{{ $activeFolios->count() }}</strong></div>
             </div>
 
@@ -50,7 +50,7 @@
                                 <thead><tr><th>Room</th><th>Guest</th><th>Item</th><th>Qty</th><th>Amount</th><th>Date</th><th>Action</th></tr></thead>
                                 <tbody>
                                     @forelse($orders as $item)
-                                        <tr><td><span class="hotel-status-chip">Room {{ $item->folio?->stay?->room?->room_number ?? 'N/A' }}</span></td><td>{{ $item->folio?->customer?->customer_name ?? $item->folio?->customer?->name ?? 'N/A' }}</td><td>{{ $item->description }}</td><td>{{ $item->quantity }}</td><td>{{ number_format((float) ($item->line_total ?? $item->amount ?? 0), 2) }}</td><td>{{ optional($item->created_at)->format('d M Y H:i') }}</td><td>@include('hotel.partials.service-sale-actions', ['item' => $item])</td></tr>
+                                        <tr><td><span class="hotel-status-chip">Room {{ $item->folio?->stay?->room?->room_number ?? 'N/A' }}</span></td><td>{{ $item->folio?->customer?->customer_name ?? $item->folio?->customer?->name ?? 'N/A' }}</td><td>{{ $item->description }}</td><td>{{ $item->quantity }}</td><td>{{ \App\Support\CompactNumber::format((float) ($item->line_total ?? $item->amount ?? 0), 2) }}</td><td>{{ optional($item->created_at)->format('d M Y H:i') }}</td><td>@include('hotel.partials.service-sale-actions', ['item' => $item])</td></tr>
                                     @empty
                                         <tr><td colspan="7" class="text-muted">No laundry charges found.</td></tr>
                                     @endforelse

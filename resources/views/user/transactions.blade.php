@@ -60,7 +60,7 @@
                         <td class="ps-4 small">{{ $trx->created_at->format('d M Y') }}</td>
                         <td class="fw-bold small text-uppercase">{{ $trx->reference }}</td>
                         <td class="small">{{ $trx->package_name ?? 'Subscription' }}</td>
-                        <td class="fw-bold">₦{{ number_format($trx->amount, 2) }}</td>
+                        <td class="fw-bold">₦{{ \App\Support\CompactNumber::format($trx->amount, 2) }}</td>
                         <td class="text-end pe-4">
                             @if($trx->status == 'success' || $trx->status == 'Successful')
                                 <span class="status-badge bg-success text-white">Confirmed</span>

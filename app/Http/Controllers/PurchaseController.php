@@ -1419,7 +1419,7 @@ public function show($id)
                 'PurchaseID' => $row->purchase_no ?? $row->purchase_id ?? ('PO-' . $id),
                 'Vendor' => $vendorName,
                 'Phone' => $vendorPhone,
-                'Amount' => number_format($amount, 2),
+                'Amount' => \App\Support\CompactNumber::format($amount, 2),
                 'PaymentMode' => $paymentMode,
                 'Date' => $rowDate ? \Carbon\Carbon::parse($rowDate)->format('d M Y') : 'N/A',
                 'Status' => ucfirst($status),

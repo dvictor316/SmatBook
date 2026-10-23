@@ -32,7 +32,7 @@
                                 <tr>
                                     <td>{{ $rfqSupplier->supplier_name ?: ($rfqSupplier->supplier?->name ?? 'N/A') }}</td>
                                     <td>{{ ucfirst($rfqSupplier->status ?? 'pending') }}</td>
-                                    <td>{{ $rfqSupplier->total_quoted_amount !== null ? number_format((float) $rfqSupplier->total_quoted_amount, 2) : 'N/A' }}</td>
+                                    <td>{{ $rfqSupplier->total_quoted_amount !== null ? \App\Support\CompactNumber::format((float) $rfqSupplier->total_quoted_amount, 2) : 'N/A' }}</td>
                                     <td>{{ $rfqSupplier->currency ?: 'N/A' }}</td>
                                     <td>{{ $rfqSupplier->notes ?: 'N/A' }}</td>
                                     <td class="text-end">

@@ -280,8 +280,8 @@
                                                     <tr>
                                                         <td>{{ optional($entry->account)->code }} - {{ optional($entry->account)->name ?: 'Account' }}</td>
                                                         <td>{{ $entry->description ?: '-' }}</td>
-                                                        <td class="text-end">{{ number_format((float) $entry->debit, 2) }}</td>
-                                                        <td class="text-end">{{ number_format((float) $entry->credit, 2) }}</td>
+                                                        <td class="text-end">{{ \App\Support\CompactNumber::format((float) $entry->debit, 2) }}</td>
+                                                        <td class="text-end">{{ \App\Support\CompactNumber::format((float) $entry->credit, 2) }}</td>
                                                     </tr>
                                                 @endforeach
                                             </tbody>

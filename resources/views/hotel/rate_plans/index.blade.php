@@ -34,7 +34,7 @@
                             <td>{{ $plan->code }}</td>
                             <td>{{ $plan->roomType?->name ?? 'N/A' }}</td>
                             <td>{{ ucfirst(str_replace('_',' ',(string)$plan->meal_plan)) }}</td>
-                            <td>{{ number_format((float)$plan->rate, 2) }}</td>
+                            <td>{{ \App\Support\CompactNumber::format((float)$plan->rate, 2) }}</td>
                             <td><span class="badge {{ $plan->is_active ? 'bg-success' : 'bg-secondary' }}">{{ $plan->is_active ? 'Active' : 'Inactive' }}</span></td>
                             <td>
                                 <div class="d-flex gap-1">

@@ -270,14 +270,14 @@ document.addEventListener('DOMContentLoaded', function () {
             var qty  = parseFloat(row.querySelector('.quantity-input') ? row.querySelector('.quantity-input').value : 0) || 0;
             var rate = parseFloat(row.querySelector('.rate-input') ? row.querySelector('.rate-input').value : 0) || 0;
             var line = qty * rate;
-            row.querySelector('.line-total-cell').textContent = line.toFixed(2);
+            row.querySelector('.line-total-cell').textContent = window.formatCompactAmount(line);
             if (row.querySelector('.product-select') && row.querySelector('.product-select').value) { lineCount++; }
             totalQty   += qty;
             grandTotal += line;
         });
         document.getElementById('summary-lines').textContent = String(lineCount);
         document.getElementById('summary-qty').textContent   = totalQty.toFixed(2);
-        document.getElementById('summary-total').textContent = grandTotal.toFixed(2);
+        document.getElementById('summary-total').textContent = window.formatCompactAmount(grandTotal);
     }
 
     addBtn.addEventListener('click', function () {

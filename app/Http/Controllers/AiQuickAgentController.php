@@ -473,7 +473,7 @@ class AiQuickAgentController extends Controller
             $data = $this->getSalesStats($request, $start, $end);
             return response()->json([
                 'ok' => true,
-                'answer' => "Total sales for {$label}: ₦" . number_format($data['amount'], 2) . " from {$data['count']} transaction(s).",
+                'answer' => "Total sales for {$label}: ₦" . \App\Support\CompactNumber::format($data['amount'], 2) . " from {$data['count']} transaction(s).",
                 'meta' => $data,
             ]);
         }
@@ -496,7 +496,7 @@ class AiQuickAgentController extends Controller
             $data = $this->getPurchaseStats($request, $start, $end);
             return response()->json([
                 'ok' => true,
-                'answer' => "Total purchases for {$label}: ₦" . number_format($data['amount'], 2) . " from {$data['count']} record(s).",
+                'answer' => "Total purchases for {$label}: ₦" . \App\Support\CompactNumber::format($data['amount'], 2) . " from {$data['count']} record(s).",
                 'meta' => $data,
             ]);
         }
@@ -506,7 +506,7 @@ class AiQuickAgentController extends Controller
             $status = $data['profit_or_loss'] >= 0 ? 'profit' : 'loss';
             return response()->json([
                 'ok' => true,
-                'answer' => "Profit/Loss for {$label}: ₦" . number_format($data['profit_or_loss'], 2) . " ({$status}). Sales: ₦" . number_format($data['sales'], 2) . ", Purchases: ₦" . number_format($data['purchases'], 2) . ".",
+                'answer' => "Profit/Loss for {$label}: ₦" . \App\Support\CompactNumber::format($data['profit_or_loss'], 2) . " ({$status}). Sales: ₦" . \App\Support\CompactNumber::format($data['sales'], 2) . ", Purchases: ₦" . \App\Support\CompactNumber::format($data['purchases'], 2) . ".",
                 'meta' => $data,
             ]);
         }
@@ -515,7 +515,7 @@ class AiQuickAgentController extends Controller
             $data = $this->getTaxStats($request, $start, $end);
             return response()->json([
                 'ok' => true,
-                'answer' => "Tax summary for {$label}: Sales Tax ₦" . number_format($data['sales_tax'], 2) . ", Purchase Tax ₦" . number_format($data['purchase_tax'], 2) . ", Total Tax ₦" . number_format($data['total_tax'], 2) . ".",
+                'answer' => "Tax summary for {$label}: Sales Tax ₦" . \App\Support\CompactNumber::format($data['sales_tax'], 2) . ", Purchase Tax ₦" . \App\Support\CompactNumber::format($data['purchase_tax'], 2) . ", Total Tax ₦" . \App\Support\CompactNumber::format($data['total_tax'], 2) . ".",
                 'meta' => $data,
             ]);
         }
@@ -524,7 +524,7 @@ class AiQuickAgentController extends Controller
             $data = $this->getExpenseStats($request, $start, $end);
             return response()->json([
                 'ok' => true,
-                'answer' => "Total expenses for {$label}: ₦" . number_format($data['amount'], 2) . " from {$data['count']} record(s).",
+                'answer' => "Total expenses for {$label}: ₦" . \App\Support\CompactNumber::format($data['amount'], 2) . " from {$data['count']} record(s).",
                 'meta' => $data,
             ]);
         }
@@ -533,7 +533,7 @@ class AiQuickAgentController extends Controller
             $data = $this->getInvoicesDueStats($request, $start, $end);
             return response()->json([
                 'ok' => true,
-                'answer' => "Invoices due for {$label}: ₦" . number_format($data['amount'], 2) . " across {$data['count']} invoice(s).",
+                'answer' => "Invoices due for {$label}: ₦" . \App\Support\CompactNumber::format($data['amount'], 2) . " across {$data['count']} invoice(s).",
                 'meta' => $data,
             ]);
         }
@@ -574,7 +574,7 @@ class AiQuickAgentController extends Controller
             $data = $this->getPaymentStats($request, $start, $end);
             return response()->json([
                 'ok' => true,
-                'answer' => "Payments for {$label}: ₦" . number_format($data['amount'], 2) . " across {$data['count']} record(s).",
+                'answer' => "Payments for {$label}: ₦" . \App\Support\CompactNumber::format($data['amount'], 2) . " across {$data['count']} record(s).",
                 'meta' => $data,
             ]);
         }
@@ -641,7 +641,7 @@ class AiQuickAgentController extends Controller
             $data = $this->getGeneralLedgerStats($request, $start, $end);
             return response()->json([
                 'ok' => true,
-                'answer' => "General Ledger summary for {$label}: Debits ₦" . number_format($data['debit'], 2) . ", Credits ₦" . number_format($data['credit'], 2) . " across {$data['count']} entries.",
+                'answer' => "General Ledger summary for {$label}: Debits ₦" . \App\Support\CompactNumber::format($data['debit'], 2) . ", Credits ₦" . \App\Support\CompactNumber::format($data['credit'], 2) . " across {$data['count']} entries.",
                 'meta' => $data,
             ]);
         }
@@ -650,7 +650,7 @@ class AiQuickAgentController extends Controller
             $data = $this->getTrialBalanceStats($request, $start, $end);
             return response()->json([
                 'ok' => true,
-                'answer' => "Trial Balance for {$label}: Debits ₦" . number_format($data['debit'], 2) . ", Credits ₦" . number_format($data['credit'], 2) . ", Difference ₦" . number_format($data['difference'], 2) . ".",
+                'answer' => "Trial Balance for {$label}: Debits ₦" . \App\Support\CompactNumber::format($data['debit'], 2) . ", Credits ₦" . \App\Support\CompactNumber::format($data['credit'], 2) . ", Difference ₦" . \App\Support\CompactNumber::format($data['difference'], 2) . ".",
                 'meta' => $data,
             ]);
         }
@@ -659,7 +659,7 @@ class AiQuickAgentController extends Controller
             $data = $this->getBalanceSheetStats($request, $end);
             return response()->json([
                 'ok' => true,
-                'answer' => "Balance Sheet as of {$end->toDateString()}: Assets ₦" . number_format($data['assets'], 2) . ", Liabilities ₦" . number_format($data['liabilities'], 2) . ", Equity ₦" . number_format($data['equity'], 2) . ".",
+                'answer' => "Balance Sheet as of {$end->toDateString()}: Assets ₦" . \App\Support\CompactNumber::format($data['assets'], 2) . ", Liabilities ₦" . \App\Support\CompactNumber::format($data['liabilities'], 2) . ", Equity ₦" . \App\Support\CompactNumber::format($data['equity'], 2) . ".",
                 'meta' => $data,
             ]);
         }
@@ -1496,7 +1496,7 @@ class AiQuickAgentController extends Controller
             $alerts[] = 'no major outlier from the current lightweight checks';
         }
 
-        return "AI anomaly scan: sales this month ₦" . number_format($sales['amount'], 2) . ", expenses ₦" . number_format($expenses['amount'], 2) . ", active alerts: " . implode('; ', $alerts) . ". Recommended next step: inspect the highest-spend transactions and any project where spend is rising faster than billed revenue.";
+        return "AI anomaly scan: sales this month ₦" . \App\Support\CompactNumber::format($sales['amount'], 2) . ", expenses ₦" . \App\Support\CompactNumber::format($expenses['amount'], 2) . ", active alerts: " . implode('; ', $alerts) . ". Recommended next step: inspect the highest-spend transactions and any project where spend is rising faster than billed revenue.";
     }
 
     private function buildProjectManagementAnswer(Request $request): string

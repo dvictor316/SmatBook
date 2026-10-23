@@ -42,7 +42,7 @@
                             <tr>
                                 <td>{{ $ms->project->name ?? '—' }}</td>
                                 <td>{{ $ms->name }}</td>
-                                <td>{{ number_format($ms->billing_amount ?? 0, 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format($ms->billing_amount ?? 0, 2) }}</td>
                                 <td>{{ $ms->due_date ? $ms->due_date->format('d M Y') : '—' }}</td>
                                 <td>
                                     <div class="progress" style="height:6px;">

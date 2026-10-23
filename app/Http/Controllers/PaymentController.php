@@ -155,7 +155,7 @@ class PaymentController extends Controller
                         return back()
                             ->withInput()
                             ->withErrors([
-                                'amount' => 'Amount cannot be more than the remaining balance of ' . number_format($remainingBalance, 2) . '.',
+                                'amount' => 'Amount cannot be more than the remaining balance of ' . \App\Support\CompactNumber::format($remainingBalance, 2) . '.',
                             ]);
                     }
                 }

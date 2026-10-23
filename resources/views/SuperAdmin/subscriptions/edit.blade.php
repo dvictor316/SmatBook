@@ -140,7 +140,7 @@
 
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Amount (NGN)</label>
-                                <input type="text" class="form-control" value="₦{{ number_format($subscription->amount, 2) }}" disabled>
+                                <input type="text" class="form-control" value="₦{{ \App\Support\CompactNumber::format($subscription->amount, 2) }}" disabled>
                             </div>
 
                             <div class="col-12"><hr class="my-3" style="border-top: 1px solid #eff2f7;"></div>

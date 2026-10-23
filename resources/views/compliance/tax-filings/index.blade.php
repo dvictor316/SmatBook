@@ -114,8 +114,8 @@
                                     {{ ucfirst($filing->status) }}
                                 </span>
                             </td>
-                            <td>{{ number_format((float)$filing->total_taxable, 2) }}</td>
-                            <td>{{ number_format((float)$filing->total_tax, 2) }}</td>
+                            <td>{{ \App\Support\CompactNumber::format((float)$filing->total_taxable, 2) }}</td>
+                            <td>{{ \App\Support\CompactNumber::format((float)$filing->total_tax, 2) }}</td>
                             <td>{{ $filing->reference_no ?? '-' }}</td>
                             <td class="text-end">
                                 <a href="{{ route('compliance.tax-filings.export', [$filing->id, 'pdf']) }}" class="btn btn-outline-secondary btn-sm" title="PDF workpaper">PDF</a>

@@ -88,7 +88,7 @@
                                     <td>{{ $row->customer_email ?: 'N/A' }}</td>
                                     <td>{{ $row->company_name ?: 'N/A' }}</td>
                                     <td>{{ $row->plan_name ?: $row->plan ?: 'N/A' }}</td>
-                                    <td>₦{{ number_format((float) ($row->amount ?? 0), 2) }}</td>
+                                    <td>₦{{ \App\Support\CompactNumber::format((float) ($row->amount ?? 0), 2) }}</td>
                                     <td>{{ $row->transfer_reference ?: $row->transaction_reference ?: 'N/A' }}</td>
                                     <td>{{ $row->transfer_submitted_at ? \Carbon\Carbon::parse($row->transfer_submitted_at)->format('d M Y, h:i A') : 'N/A' }}</td>
                                     <td><span class="badge {{ $badgeClass }}">{{ strtoupper($state) }}</span></td>

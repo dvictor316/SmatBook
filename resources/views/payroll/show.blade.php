@@ -122,17 +122,17 @@
                         <tbody>
                             <tr>
                                 <td>Basic Salary</td>
-                                <td style="text-align:right;font-weight:700;">{{ number_format($payroll->basic_salary, 2) }}</td>
+                                <td style="text-align:right;font-weight:700;">{{ \App\Support\CompactNumber::format($payroll->basic_salary, 2) }}</td>
                             </tr>
                             @foreach($payroll->allowanceDetails ?? [] as $allowance)
                             <tr>
                                 <td style="padding-left:24px;color:#6b7280;">{{ $allowance['name'] }}</td>
-                                <td style="text-align:right;color:#22c55e;font-weight:600;">{{ number_format($allowance['amount'], 2) }}</td>
+                                <td style="text-align:right;color:#22c55e;font-weight:600;">{{ \App\Support\CompactNumber::format($allowance['amount'], 2) }}</td>
                             </tr>
                             @endforeach
                             <tr>
                                 <td style="font-weight:800;">Gross Pay</td>
-                                <td style="text-align:right;font-weight:800;">{{ number_format($payroll->gross_pay ?? ($payroll->basic_salary + $payroll->total_allowances), 2) }}</td>
+                                <td style="text-align:right;font-weight:800;">{{ \App\Support\CompactNumber::format($payroll->gross_pay ?? ($payroll->basic_salary + $payroll->total_allowances), 2) }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -156,12 +156,12 @@
                             @foreach($payroll->deductionDetails ?? [] as $deduction)
                             <tr>
                                 <td>{{ $deduction['name'] }}</td>
-                                <td style="text-align:right;color:var(--red);font-weight:600;">{{ number_format($deduction['amount'], 2) }}</td>
+                                <td style="text-align:right;color:var(--red);font-weight:600;">{{ \App\Support\CompactNumber::format($deduction['amount'], 2) }}</td>
                             </tr>
                             @endforeach
                             <tr>
                                 <td style="font-weight:800;">Total Deductions</td>
-                                <td style="text-align:right;font-weight:800;color:var(--red);">{{ number_format($payroll->total_deductions, 2) }}</td>
+                                <td style="text-align:right;font-weight:800;color:var(--red);">{{ \App\Support\CompactNumber::format($payroll->total_deductions, 2) }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -175,7 +175,7 @@
             <div class="net-box">
                 <div>
                     <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:2px; color:rgba(255,255,255,0.65);">Net Pay</div>
-                    <div class="net-amount">₦{{ number_format($payroll->net_pay, 2) }}</div>
+                    <div class="net-amount">₦{{ \App\Support\CompactNumber::format($payroll->net_pay, 2) }}</div>
                     <div style="font-size:0.78rem; color:rgba(255,255,255,0.55);">{{ $payroll->net_pay_words ?? '' }}</div>
                 </div>
                 <div style="text-align:right;">

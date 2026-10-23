@@ -50,7 +50,7 @@
                 <div class="card border shadow-none mb-0 damage-metric-card">
                     <div class="card-body p-3">
                         <p class="text-muted mb-1 fw-bold damage-metric-label">Units Damaged</p>
-                        <h4 class="fw-bold text-warning mb-0">{{ number_format($totalDamagedQty, 2) }}</h4>
+                        <h4 class="fw-bold text-warning mb-0">{{ \App\Support\CompactNumber::format($totalDamagedQty, 2) }}</h4>
                     </div>
                 </div>
             </div>
@@ -120,7 +120,7 @@
                                 <td>{{ $damage->branch_name ?: ($activeBranch['name'] ?? 'Workspace Default') }}</td>
                                 <td><span class="badge bg-warning text-dark">{{ $reason !== '' ? $reason : 'Damage' }}</span></td>
                                 <td class="text-muted">{{ $damage->remarks ?: '-' }}</td>
-                                <td class="text-end fw-bold text-warning">{{ number_format((float) $damage->quantity, 2) }}</td>
+                                <td class="text-end fw-bold text-warning">{{ \App\Support\CompactNumber::format((float) $damage->quantity, 2) }}</td>
                                 <td class="pe-3 text-end fw-bold text-danger">{{ \App\Support\GeoCurrency::format($lineValue, 'NGN', $currencyCode, $currencyLocale) }}</td>
                             </tr>
                         @empty
@@ -160,9 +160,9 @@
                             <tr>
                                 <td class="ps-3 fw-bold text-dark">{{ $row->product_name }}</td>
                                 <td class="text-muted">{{ $row->sku ?: 'N/A' }}</td>
-                                <td class="text-end">{{ number_format((float) $row->stock_before_damage, 2) }}</td>
-                                <td class="text-end fw-bold text-warning">{{ number_format((float) $row->damaged_qty, 2) }}</td>
-                                <td class="text-end fw-bold text-success">{{ number_format((float) $row->current_stock, 2) }}</td>
+                                <td class="text-end">{{ \App\Support\CompactNumber::format((float) $row->stock_before_damage, 2) }}</td>
+                                <td class="text-end fw-bold text-warning">{{ \App\Support\CompactNumber::format((float) $row->damaged_qty, 2) }}</td>
+                                <td class="text-end fw-bold text-success">{{ \App\Support\CompactNumber::format((float) $row->current_stock, 2) }}</td>
                                 <td class="pe-3 text-end fw-bold text-danger">{{ \App\Support\GeoCurrency::format((float) $row->damage_value, 'NGN', $currencyCode, $currencyLocale) }}</td>
                             </tr>
                         @empty
@@ -209,7 +209,7 @@
                                     data-base-unit="{{ $product->stockUnitSymbol() }}"
                                     data-carton-factor="{{ (float) ($product->units_per_carton ?? 0) }}"
                                     data-roll-factor="{{ (float) ($product->units_per_roll ?? 0) }}">
-                                    {{ $product->name }}{{ $product->sku ? ' (' . $product->sku . ')' : '' }} - Stock: {{ number_format($availableStock, 2) }} {{ $product->stockUnitSymbol() }}
+                                    {{ $product->name }}{{ $product->sku ? ' (' . $product->sku . ')' : '' }} - Stock: {{ \App\Support\CompactNumber::format($availableStock, 2) }} {{ $product->stockUnitSymbol() }}
                                 </option>
                             @endforeach
                         </select>
@@ -368,7 +368,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         stockNote.textContent = 'Available stock in active branch: ' + Number(selected.dataset.stock || 0).toLocaleString(undefined, {
-            minimumFractionDigits: 2,
+            minimumFractionDigits: 0,
             maximumFractionDigits: 2
         }) + ' ' + String(selected.dataset.baseUnit || 'pcs');
         updateDamageUnitOptions(selected);

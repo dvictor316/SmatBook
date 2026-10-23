@@ -10,8 +10,8 @@
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-4"><strong>Product:</strong> {{ $manufacturingOrder->product->name ?? '—' }}</div>
-                <div class="col-md-4"><strong>Planned Quantity:</strong> {{ number_format((float) $manufacturingOrder->planned_quantity, 2) }}</div>
-                <div class="col-md-4"><strong>Produced Quantity:</strong> {{ number_format((float) $manufacturingOrder->produced_quantity, 2) }}</div>
+                <div class="col-md-4"><strong>Planned Quantity:</strong> {{ \App\Support\CompactNumber::format((float) $manufacturingOrder->planned_quantity, 2) }}</div>
+                <div class="col-md-4"><strong>Produced Quantity:</strong> {{ \App\Support\CompactNumber::format((float) $manufacturingOrder->produced_quantity, 2) }}</div>
                 <div class="col-md-4"><strong>Status:</strong> {{ ucfirst(str_replace('_', ' ', $manufacturingOrder->status)) }}</div>
                 <div class="col-md-4"><strong>Planned Start:</strong> {{ $manufacturingOrder->planned_start_date?->format('d M Y') ?: '—' }}</div>
                 <div class="col-md-4"><strong>Planned End:</strong> {{ $manufacturingOrder->planned_end_date?->format('d M Y') ?: '—' }}</div>
@@ -28,10 +28,10 @@
                         @foreach($manufacturingOrder->items as $item)
                             <tr>
                                 <td>{{ $item->product_name }}</td>
-                                <td>{{ number_format((float) $item->required_quantity, 2) }}</td>
-                                <td>{{ number_format((float) $item->consumed_quantity, 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format((float) $item->required_quantity, 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format((float) $item->consumed_quantity, 2) }}</td>
                                 <td>{{ $item->unit ?: '—' }}</td>
-                                <td>{{ number_format((float) $item->unit_cost, 2) }}</td>
+                                <td>{{ \App\Support\CompactNumber::format((float) $item->unit_cost, 2) }}</td>
                             </tr>
                         @endforeach
                     </tbody>

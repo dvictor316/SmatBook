@@ -164,7 +164,7 @@ body.mini-sidebar .report-page-wrapper { margin-left: 80px; }
     <div class="metric-grid">
         <div class="metric-node">
             <div class="metric-label">System Liquidity</div>
-            <div class="metric-value-money">₦{{ number_format($subscriptions->sum('amount'), 2) }}</div>
+            <div class="metric-value-money">₦{{ \App\Support\CompactNumber::format($subscriptions->sum('amount'), 2) }}</div>
         </div>
         <div class="metric-node" style="border-left-color: var(--brand-blue);">
             <div class="metric-label">Total Node Users</div>
@@ -218,7 +218,7 @@ body.mini-sidebar .report-page-wrapper { margin-left: 80px; }
                                 <span class="plan-node-badge">{{ $sub->plan->name ?? 'STANDARD' }}</span>
                             </td>
                             <td><span class="small fw-bold text-secondary text-uppercase">{{ $sub->billing_cycle }}</span></td>
-                            <td class="text-end table-money">₦{{ number_format($sub->amount, 2) }}</td>
+                            <td class="text-end table-money">₦{{ \App\Support\CompactNumber::format($sub->amount, 2) }}</td>
                             <td class="text-center small fw-bold">{{ \Carbon\Carbon::parse($sub->start_date)->format('d M Y') }}</td>
                             <td class="text-center">
                                 @php $isPast = \Carbon\Carbon::parse($sub->end_date)->isPast(); @endphp

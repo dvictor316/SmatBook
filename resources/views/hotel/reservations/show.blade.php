@@ -26,9 +26,9 @@
                             <div class="col-md-6"><strong>Room Type:</strong> {{ $reservation->roomType?->name ?? 'N/A' }}</div>
                             <div class="col-md-6"><strong>Arrival:</strong> {{ optional($reservation->arrival_date)->format('d M Y') }}</div>
                             <div class="col-md-6"><strong>Departure:</strong> {{ optional($reservation->departure_date)->format('d M Y') }}</div>
-                            <div class="col-md-6"><strong>Total:</strong> {{ number_format((float) $reservation->total, 2) }}</div>
-                            <div class="col-md-6"><strong>Deposit:</strong> {{ number_format((float) $reservation->deposit_received, 2) }}</div>
-                            <div class="col-md-6"><strong>Balance:</strong> {{ number_format((float) $reservation->balance, 2) }}</div>
+                            <div class="col-md-6"><strong>Total:</strong> {{ \App\Support\CompactNumber::format((float) $reservation->total, 2) }}</div>
+                            <div class="col-md-6"><strong>Deposit:</strong> {{ \App\Support\CompactNumber::format((float) $reservation->deposit_received, 2) }}</div>
+                            <div class="col-md-6"><strong>Balance:</strong> {{ \App\Support\CompactNumber::format((float) $reservation->balance, 2) }}</div>
                             <div class="col-md-6"><strong>Booking Source:</strong> {{ $reservation->bookingSource?->name ?? $reservation->source ?? 'Direct' }}</div>
                             <div class="col-md-6"><strong>Corporate Account:</strong> {{ $reservation->corporateAccount?->company_name ?? 'Individual' }}</div>
                             <div class="col-md-6"><strong>Group:</strong> {{ $reservation->groupBooking?->group_name ?? 'None' }}</div>
@@ -129,7 +129,7 @@
                             <div class="col-6"><input name="reference" class="form-control" placeholder="Reference"></div>
                         </form>
                         @endif
-                        <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Date</th><th>Type</th><th>Method</th><th>Reference</th><th class="text-end">Amount</th></tr></thead><tbody>@forelse($deposits as $deposit)<tr><td>{{ $deposit->transaction_date->format('d M Y') }}</td><td>{{ ucfirst($deposit->transaction_type) }}</td><td>{{ strtoupper($deposit->payment_method) }}</td><td>{{ $deposit->reference ?: '-' }}</td><td class="text-end {{ $deposit->transaction_type==='refund'?'text-danger':'text-success' }}">{{ number_format((float)$deposit->amount,2) }}</td></tr>@empty<tr><td colspan="5" class="text-muted">No deposit transactions.</td></tr>@endforelse</tbody></table></div>
+                        <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Date</th><th>Type</th><th>Method</th><th>Reference</th><th class="text-end">Amount</th></tr></thead><tbody>@forelse($deposits as $deposit)<tr><td>{{ $deposit->transaction_date->format('d M Y') }}</td><td>{{ ucfirst($deposit->transaction_type) }}</td><td>{{ strtoupper($deposit->payment_method) }}</td><td>{{ $deposit->reference ?: '-' }}</td><td class="text-end {{ $deposit->transaction_type==='refund'?'text-danger':'text-success' }}">{{ \App\Support\CompactNumber::format((float)$deposit->amount,2) }}</td></tr>@empty<tr><td colspan="5" class="text-muted">No deposit transactions.</td></tr>@endforelse</tbody></table></div>
                         @if((float)$reservation->deposit_received>0 && in_array((string)$reservation->status,['reserved','confirmed','cancelled']))<form method="POST" action="{{ route('hotel.reservations.deposits.refund',$reservation) }}" class="row g-2 border-top pt-2">@csrf<div class="col-4"><input type="number" step="0.01" min="0.01" max="{{ $reservation->deposit_received }}" name="deposit_amount" class="form-control" placeholder="Refund" required></div><div class="col-4"><input name="reference" class="form-control" placeholder="Reference" required></div><div class="col-4"><button class="btn btn-outline-danger w-100">Refund</button></div><div class="col-12"><input name="notes" class="form-control" placeholder="Refund reason" required></div></form>@endif
                     </div>
                 </div>

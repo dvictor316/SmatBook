@@ -79,11 +79,11 @@
                         </div>
                         <div class="col-4">
                             <div class="text-muted small">Total Qty Received</div>
-                            <div class="fs-5 fw-bold">{{ number_format($grn->items->sum('received_quantity'), 2) }}</div>
+                            <div class="fs-5 fw-bold">{{ \App\Support\CompactNumber::format($grn->items->sum('received_quantity'), 2) }}</div>
                         </div>
                         <div class="col-4">
                             <div class="text-muted small">Total Value</div>
-                            <div class="fs-5 fw-bold">{{ number_format($grn->items->sum(function ($item) { return ($item->received_quantity ?? 0) * ($item->unit_cost ?? 0); }), 2) }}</div>
+                            <div class="fs-5 fw-bold">{{ \App\Support\CompactNumber::format($grn->items->sum(function ($item) { return ($item->received_quantity ?? 0) * ($item->unit_cost ?? 0); }), 2) }}</div>
                         </div>
                     </div>
                 </div>
@@ -122,10 +122,10 @@
                                     <br><small class="text-muted">{{ $item->product->sku ?? '' }}</small>
                                 @endif
                             </td>
-                            <td>{{ $item->ordered_quantity ? number_format($item->ordered_quantity, 2) : '—' }}</td>
-                            <td><strong>{{ number_format($item->received_quantity, 2) }}</strong></td>
-                            <td>{{ $item->unit_cost ? number_format($item->unit_cost, 2) : '—' }}</td>
-                            <td>{{ $lineVal > 0 ? number_format($lineVal, 2) : '—' }}</td>
+                            <td>{{ $item->ordered_quantity ? \App\Support\CompactNumber::format($item->ordered_quantity, 2) : '—' }}</td>
+                            <td><strong>{{ \App\Support\CompactNumber::format($item->received_quantity, 2) }}</strong></td>
+                            <td>{{ $item->unit_cost ? \App\Support\CompactNumber::format($item->unit_cost, 2) : '—' }}</td>
+                            <td>{{ $lineVal > 0 ? \App\Support\CompactNumber::format($lineVal, 2) : '—' }}</td>
                             <td>{{ $item->lot_number ?? '—' }}</td>
                             <td>{{ $item->serial_number ?? '—' }}</td>
                             <td>{{ $item->expiry_date?->format('d M Y') ?? '—' }}</td>
@@ -133,7 +133,7 @@
                         @endforeach
                         <tr class="table-light fw-bold">
                             <td colspan="5" class="text-end">Grand Total Value:</td>
-                            <td>{{ number_format($grandTotal, 2) }}</td>
+                            <td>{{ \App\Support\CompactNumber::format($grandTotal, 2) }}</td>
                             <td colspan="3"></td>
                         </tr>
                     </tbody>

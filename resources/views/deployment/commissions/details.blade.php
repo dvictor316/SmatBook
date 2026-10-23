@@ -36,7 +36,7 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <div class="small text-uppercase text-muted fw-bold mb-2">Commission Amount</div>
-                        <h2 class="fw-bold text-success mb-3">₦{{ number_format((float) ($commission->commission_amount ?? $commission->amount ?? 0), 2) }}</h2>
+                        <h2 class="fw-bold text-success mb-3">₦{{ \App\Support\CompactNumber::format((float) ($commission->commission_amount ?? $commission->amount ?? 0), 2) }}</h2>
                         <div class="small text-muted mb-2">Created</div>
                         <div class="fw-semibold">{{ !empty($commission->created_at) ? \Illuminate\Support\Carbon::parse($commission->created_at)->format('d M Y, h:i A') : 'N/A' }}</div>
                         @if(!empty($commission->updated_at))

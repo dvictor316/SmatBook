@@ -46,7 +46,7 @@
                 <hr>
                 <div class="d-flex justify-content-between"><span>Master Folio</span><strong>{{ $folio->folio_number }}</strong></div>
                 <div class="d-flex justify-content-between"><span>Window</span><strong>{{ $folio->folio_label ?: 'Master' }}</strong></div>
-                <div class="d-flex justify-content-between"><span>Balance</span><strong class="{{ (float)$folio->balance > 0 ? 'text-danger' : 'text-success' }}">{{ number_format((float) $folio->balance,2) }}</strong></div>
+                <div class="d-flex justify-content-between"><span>Balance</span><strong class="{{ (float)$folio->balance > 0 ? 'text-danger' : 'text-success' }}">{{ \App\Support\CompactNumber::format((float) $folio->balance,2) }}</strong></div>
                 @if(in_array((string)$folio->status,['open','city_ledger']))<hr><form method="POST" action="{{ route('hotel.folios.sub_folios.store',$folio) }}">@csrf<label class="small fw-bold">Create Folio Window</label><div class="input-group"><input name="folio_label" class="form-control" placeholder="Company, Extras, Guest" required><button class="btn btn-outline-primary"><i class="fas fa-plus"></i></button></div></form>@endif
             </aside>
 
@@ -62,9 +62,9 @@
                                 <td>{{ optional($item->service_date)->format('d/m/Y') }}</td>
                                 <td>{{ $item->posting_key ?: ($item->service_code ?: '-') }}</td>
                                 <td>{{ $item->description }}</td>
-                                <td>{{ $item->ledger_charge > 0 ? number_format((float)$item->ledger_charge,2) : '-' }}</td>
-                                <td>{{ $item->ledger_payment > 0 ? number_format((float)$item->ledger_payment,2) : '-' }}</td>
-                                <td>{{ number_format((float)$item->ledger_running_balance,2) }}</td>
+                                <td>{{ $item->ledger_charge > 0 ? \App\Support\CompactNumber::format((float)$item->ledger_charge,2) : '-' }}</td>
+                                <td>{{ $item->ledger_payment > 0 ? \App\Support\CompactNumber::format((float)$item->ledger_payment,2) : '-' }}</td>
+                                <td>{{ \App\Support\CompactNumber::format((float)$item->ledger_running_balance,2) }}</td>
                                 <td><div class="d-flex gap-1"><a class="btn btn-sm btn-outline-dark" target="_blank" rel="noopener" href="{{ route('hotel.folios.items.receipt', $item) }}"><i class="fas fa-print"></i></a>@if($relatedFolios->isNotEmpty() && !in_array((string)$item->type,['payment','deposit_applied','refund']))<form method="POST" action="{{ route('hotel.folios.items.transfer',$item) }}" class="d-flex">@csrf<select name="target_folio_id" class="form-select form-select-sm" required><option value="">Move to...</option>@foreach($relatedFolios as $target)<option value="{{ $target->id }}">{{ $target->folio_label ?: $target->folio_number }}</option>@endforeach</select><button class="btn btn-sm btn-outline-primary" title="Transfer charge"><i class="fas fa-exchange-alt"></i></button></form>@endif</div></td>
                             </tr>
                         @empty
@@ -74,9 +74,9 @@
                     </table>
                 </div>
                 <div class="balance-strip px-3 pb-3">
-                    <div class="balance-box"><small>Guest Balance</small><h5 class="mb-0">{{ number_format((float) $folio->balance,2) }}</h5></div>
-                    <div class="balance-box"><small>Total Charges</small><h5 class="mb-0">{{ number_format((float) $folio->total_charges,2) }}</h5></div>
-                    <div class="balance-box"><small>Total Payments</small><h5 class="mb-0">{{ number_format((float) $folio->total_payments,2) }}</h5></div>
+                    <div class="balance-box"><small>Guest Balance</small><h5 class="mb-0">{{ \App\Support\CompactNumber::format((float) $folio->balance,2) }}</h5></div>
+                    <div class="balance-box"><small>Total Charges</small><h5 class="mb-0">{{ \App\Support\CompactNumber::format((float) $folio->total_charges,2) }}</h5></div>
+                    <div class="balance-box"><small>Total Payments</small><h5 class="mb-0">{{ \App\Support\CompactNumber::format((float) $folio->total_payments,2) }}</h5></div>
                 </div>
             </main>
 

@@ -58,7 +58,7 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <strong class="text-dark">₦{{ number_format((float) ($renewal->amount ?? 0), 2) }}</strong>
+                                    <strong class="text-dark">₦{{ \App\Support\CompactNumber::format((float) ($renewal->amount ?? 0), 2) }}</strong>
                                     <small class="d-block text-muted">
                                         Per {{ strtolower((string) ($renewal->billing_cycle ?? 'yearly')) }}@if(strtolower((string) ($renewal->billing_cycle ?? 'yearly')) === 'yearly'), including paid add-ons@endif
                                     </small>

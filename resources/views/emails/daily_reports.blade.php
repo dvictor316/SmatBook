@@ -5,15 +5,15 @@
     <table style="width: 100%; border-collapse: collapse;">
         <tr>
             <td style="padding: 10px; border: 1px solid #eee;">Total Inflow (Revenue)</td>
-            <td style="padding: 10px; border: 1px solid #eee; color: green; font-weight: bold;">₦{{ number_format($data['inflow'], 2) }}</td>
+            <td style="padding: 10px; border: 1px solid #eee; color: green; font-weight: bold;">₦{{ \App\Support\CompactNumber::format($data['inflow'], 2) }}</td>
         </tr>
         <tr>
             <td style="padding: 10px; border: 1px solid #eee;">Total Outflow (Expenses)</td>
-            <td style="padding: 10px; border: 1px solid #eee; color: red;">₦{{ number_format($data['outflow'], 2) }}</td>
+            <td style="padding: 10px; border: 1px solid #eee; color: red;">₦{{ \App\Support\CompactNumber::format($data['outflow'], 2) }}</td>
         </tr>
         <tr style="background: #f9f9f9;">
             <td style="padding: 10px; border: 1px solid #eee; font-weight: bold;">Net Profit</td>
-            <td style="padding: 10px; border: 1px solid #eee; font-weight: bold;">₦{{ number_format($data['profit'], 2) }}</td>
+            <td style="padding: 10px; border: 1px solid #eee; font-weight: bold;">₦{{ \App\Support\CompactNumber::format($data['profit'], 2) }}</td>
         </tr>
         <tr>
             <td style="padding: 10px; border: 1px solid #eee;">Net Profit Margin</td>

@@ -115,7 +115,7 @@
                                     <td><input type="number" name="items[{{ $index }}][quantity]" class="form-control form-control-sm qty" value="{{ $item->qty }}" min="1"></td>
                                     <td><input type="number" name="items[{{ $index }}][rate]" class="form-control form-control-sm rate" value="{{ $item->unit_price }}"></td>
                                     <td><input type="number" name="items[{{ $index }}][discount]" class="form-control form-control-sm discount" value="{{ $item->discount }}"></td>
-                                    <td class="text-end fw-bold text-dark row-total">₦{{ number_format($item->total_price, 2) }}</td>
+                                    <td class="text-end fw-bold text-dark row-total">₦{{ \App\Support\CompactNumber::format($item->total_price, 2) }}</td>
                                     <td class="text-center"><button type="button" class="btn btn-sm text-danger remove-row"><i class="fas fa-trash-alt"></i></button></td>
                                 </tr>
                                 @endforeach
@@ -130,7 +130,7 @@
                             <div class="grand-total-box">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span class="fw-bold text-muted">Grand Total:</span>
-                                <h3 class="fw-bold text-dark mb-0" id="grand-total">₦{{ number_format($sale->total, 2) }}</h3>
+                                <h3 class="fw-bold text-dark mb-0" id="grand-total">₦{{ \App\Support\CompactNumber::format($sale->total, 2) }}</h3>
                                 </div>
                                 <input type="hidden" name="final_total" id="final_total_input" value="{{ $sale->total }}">
                             </div>
@@ -223,7 +223,7 @@ $(document).ready(function() {
         let subtotal = q * r;
         let total = subtotal - (subtotal * (d / 100));
 
-        row.find('.row-total').text('₦' + total.toLocaleString(undefined, {minimumFractionDigits: 2}));
+        row.find('.row-total').text('₦' + window.formatCompactAmount(total));
         calculateGrandTotal();
     }
 
@@ -233,7 +233,7 @@ $(document).ready(function() {
             let val = $(this).text().replace('₦', '').replace(/,/g, '');
             gt += parseFloat(val) || 0; 
         });
-        $('#grand-total').text('₦' + gt.toLocaleString(undefined, {minimumFractionDigits: 2}));
+        $('#grand-total').text('₦' + window.formatCompactAmount(gt));
         $('#final_total_input').val(gt);
     }
 });

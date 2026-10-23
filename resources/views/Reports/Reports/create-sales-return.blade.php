@@ -108,9 +108,9 @@ $(document).ready(function() {
                             <td>
 	                                <input type="hidden" name="items[${item.product_id}][unit_price]" value="${item.unit_price}">
 	                                <input type="hidden" name="items[${item.product_id}][unit_type]" value="${item.unit_type || 'unit'}">
-                                ${parseFloat(item.unit_price).toLocaleString(undefined, {minimumFractionDigits: 2})}
+                                ${window.formatCompactAmount(item.unit_price)}
                             </td>
-                            <td class="row-total fw-bold text-primary">0.00</td>
+                            <td class="row-total fw-bold text-primary">0</td>
                         </tr>`;
                     });
                 }
@@ -144,7 +144,7 @@ $(document).ready(function() {
         }
 
         let rowTotal = qty * price;
-        $(this).closest('tr').find('.row-total').text(rowTotal.toLocaleString(undefined, {minimumFractionDigits: 2}));
+        $(this).closest('tr').find('.row-total').text(window.formatCompactAmount(rowTotal));
 
         updateGrandTotal();
     });
@@ -159,7 +159,7 @@ $(document).ready(function() {
             let rowPrice = parseFloat($(this).data('price')) || 0;
             grandTotal += (rowQty * rowPrice);
         });
-	        $('#credit_grand_total').text('₦' + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2}));
+	        $('#credit_grand_total').text('₦' + window.formatCompactAmount(grandTotal));
 	    }
 
 	    if ($('#invoice_select').val()) {

@@ -218,7 +218,7 @@
                     </div>
                     <div class="col-6 ps-3">
                         <span class="label-caps" style="font-size: 9px;">Due at Checkout</span>
-                        <div class="fw-bold text-dark" style="font-size: 15px;">₦{{ number_format($selectedPrice ?? ($subscription->amount ?? 0), 2) }}</div>
+                        <div class="fw-bold text-dark" style="font-size: 15px;">₦{{ \App\Support\CompactNumber::format($selectedPrice ?? ($subscription->amount ?? 0), 2) }}</div>
                         <div class="text-muted fw-bold mt-1" style="font-size:10px;">Payment required to activate</div>
                     </div>
                 </div>

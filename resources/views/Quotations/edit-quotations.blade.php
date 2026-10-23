@@ -144,7 +144,7 @@
                                                     <td><input type="number" name="items[{{ $index }}][rate]" class="form-control rate-input" value="{{ $item['rate'] ?? '0.00' }}" step="0.01" oninput="calculateQuotationRow(this)"></td>
                                                     <td><input type="number" name="items[{{ $index }}][discount]" class="form-control discount-input" value="{{ $item['discount'] ?? 0 }}" oninput="calculateQuotationRow(this)"></td>
                                                     <td><input type="number" name="items[{{ $index }}][tax]" class="form-control tax-input" value="{{ $item['tax'] ?? 0 }}" oninput="calculateQuotationRow(this)"></td>
-                                                    <td class="fw-bold"><span class="row-total-text">₦{{ number_format((float) ($item['amount'] ?? 0), 2) }}</span><input type="hidden" name="items[{{ $index }}][amount]" class="row-amount-hidden" value="{{ (float) ($item['amount'] ?? 0) }}"></td>
+                                                    <td class="fw-bold"><span class="row-total-text">₦{{ \App\Support\CompactNumber::format((float) ($item['amount'] ?? 0), 2) }}</span><input type="hidden" name="items[{{ $index }}][amount]" class="row-amount-hidden" value="{{ (float) ($item['amount'] ?? 0) }}"></td>
                                                     <td class="text-end"><button type="button" class="btn btn-sm btn-white text-danger delete-row"><i class="fas fa-trash-alt"></i></button></td>
                                                 </tr>
                                             @endforeach
@@ -259,7 +259,7 @@
         const totalText = row.querySelector('.row-total-text');
         const amountHidden = row.querySelector('.row-amount-hidden');
 
-        if (totalText) totalText.textContent = `₦${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        if (totalText) totalText.textContent = `₦${window.formatCompactAmount(total)}`;
         if (amountHidden) amountHidden.value = total.toFixed(2);
 
         calculateQuotationGrandTotal();
@@ -283,7 +283,7 @@
             total += Math.max(0, (qty * rate) - lineDiscount + lineTax);
         });
 
-        const fmt = (value) => `₦${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const fmt = (value) => `₦${window.formatCompactAmount(value)}`;
         const subtotalEl = document.getElementById('quotation-display-subtotal');
         const discountEl = document.getElementById('quotation-display-discount');
         const taxEl = document.getElementById('quotation-display-tax');

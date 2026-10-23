@@ -228,7 +228,7 @@
                         <div class="mb-2"><strong>Account Number:</strong> {{ $account->account_number }}</div>
                         <div class="mb-2"><strong>Branch:</strong> {{ $account->branch ?? 'N/A' }}</div>
                         <div class="mb-2"><strong>IFSC/SWIFT:</strong> {{ $account->ifsc_code ?? ($account->swift_code ?? 'N/A') }}</div>
-                        <div class="mb-0"><strong>Opening Balance:</strong> {{ number_format((float) ($account->balance ?? 0), 2) }}</div>
+                        <div class="mb-0"><strong>Opening Balance:</strong> {{ \App\Support\CompactNumber::format((float) ($account->balance ?? 0), 2) }}</div>
                     </div>
                 </div>
             </div>
@@ -268,7 +268,7 @@
                             </div>
                             <div class="mb-0">
                                 <label class="form-label">Opening Balance</label>
-                                <input type="text" inputmode="decimal" autocomplete="off" class="form-control js-bank-opening-balance" name="opening_balance" value="{{ old('opening_balance', number_format((float) ($account->balance ?? 0), 2, '.', '')) }}" placeholder="0.00">
+                                <input type="text" inputmode="decimal" autocomplete="off" class="form-control js-bank-opening-balance" name="opening_balance" value="{{ old('opening_balance', \App\Support\CompactNumber::format((float) ($account->balance ?? 0), 2, '.', '')) }}" placeholder="0.00">
                                 <small class="text-muted d-block mt-2">Enter the exact amount only. Large balances will be saved exactly as entered.</small>
                             </div>
                         </div>

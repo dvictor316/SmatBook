@@ -110,11 +110,11 @@
                                         @foreach($items as $item)
                                             <tr>
                                                 <td>{{ $item['name'] ?? 'Item' }}</td>
-                                                <td class="text-end">{{ number_format((float) ($item['quantity'] ?? 0), 2) }}</td>
-                                                <td class="text-end">{{ $currencySymbol }}{{ number_format((float) ($item['rate'] ?? 0), 2) }}</td>
-                                                <td class="text-end">{{ $currencySymbol }}{{ number_format((float) ($item['discount'] ?? 0), 2) }}</td>
-                                                <td class="text-end">{{ $currencySymbol }}{{ number_format((float) ($item['tax'] ?? 0), 2) }}</td>
-                                                <td class="text-end fw-semibold">{{ $currencySymbol }}{{ number_format((float) ($item['amount'] ?? 0), 2) }}</td>
+                                                <td class="text-end">{{ \App\Support\CompactNumber::format((float) ($item['quantity'] ?? 0), 2) }}</td>
+                                                <td class="text-end">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format((float) ($item['rate'] ?? 0), 2) }}</td>
+                                                <td class="text-end">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format((float) ($item['discount'] ?? 0), 2) }}</td>
+                                                <td class="text-end">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format((float) ($item['tax'] ?? 0), 2) }}</td>
+                                                <td class="text-end fw-semibold">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format((float) ($item['amount'] ?? 0), 2) }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -123,19 +123,19 @@
                         @endif
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Subtotal</span>
-                            <span class="fw-semibold">{{ $currencySymbol }}{{ number_format($subtotal, 2) }}</span>
+                            <span class="fw-semibold">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($subtotal, 2) }}</span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Tax</span>
-                            <span class="fw-semibold">{{ $currencySymbol }}{{ number_format($tax, 2) }}</span>
+                            <span class="fw-semibold">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($tax, 2) }}</span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Discount</span>
-                            <span class="fw-semibold">-{{ $currencySymbol }}{{ number_format($discount, 2) }}</span>
+                            <span class="fw-semibold">-{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($discount, 2) }}</span>
                         </div>
                         <div class="d-flex justify-content-between border-top pt-2">
                             <span class="fw-semibold">Total</span>
-                            <span class="fw-bold">{{ $currencySymbol }}{{ number_format($totalAmount, 2) }}</span>
+                            <span class="fw-bold">{{ $currencySymbol }}{{ \App\Support\CompactNumber::format($totalAmount, 2) }}</span>
                         </div>
                     </div>
                 </div>

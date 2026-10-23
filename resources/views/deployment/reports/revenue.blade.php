@@ -18,7 +18,7 @@
             <div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted small">Paid Subscriptions</div><div class="h3 mb-0">{{ $paidCount ?? 0 }}</div></div></div>
         </div>
         <div class="col-md-6">
-            <div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted small">Total Revenue</div><div class="h3 mb-0">₦{{ number_format((float)($totalRevenue ?? 0), 2) }}</div></div></div>
+            <div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted small">Total Revenue</div><div class="h3 mb-0">₦{{ \App\Support\CompactNumber::format((float)($totalRevenue ?? 0), 2) }}</div></div></div>
         </div>
     </div>
 
@@ -28,7 +28,7 @@
                 <thead><tr><th>Month</th><th class="text-end">Revenue</th></tr></thead>
                 <tbody>
                 @forelse(($rows ?? collect()) as $row)
-                    <tr><td>{{ $row->month }}</td><td class="text-end">₦{{ number_format((float)$row->total, 2) }}</td></tr>
+                    <tr><td>{{ $row->month }}</td><td class="text-end">₦{{ \App\Support\CompactNumber::format((float)$row->total, 2) }}</td></tr>
                 @empty
                     <tr><td colspan="2" class="text-center text-muted py-4">No paid revenue records yet.</td></tr>
                 @endforelse

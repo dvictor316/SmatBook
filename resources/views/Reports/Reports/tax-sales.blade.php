@@ -98,7 +98,7 @@
                 <div class="card shadow-sm border-0 bg-success-light">
                     <div class="card-body p-3">
                         <p class="small fw-bold text-uppercase text-success mb-1">{{ __('Total Sales Tax Collected') }}</p>
-                        <h3 class="mb-0 text-success">₦{{ number_format($totalTaxCollected, 2) }}</h3>
+                        <h3 class="mb-0 text-success">₦{{ \App\Support\CompactNumber::format($totalTaxCollected, 2) }}</h3>
                     </div>
                 </div>
             </div>
@@ -157,13 +157,13 @@
                                     </td>
                                     <td>{{ \Carbon\Carbon::parse($sale['Date'])->format('d M, Y') }}</td>
                                     <td><span class="badge bg-soft-info text-info">{{ $sale['InvoiceNo'] }}</span></td>
-                                    <td class="fw-semibold">{{ number_format($sale['TotalAmount'], 2) }}</td>
+                                    <td class="fw-semibold">{{ \App\Support\CompactNumber::format($sale['TotalAmount'], 2) }}</td>
                                     <td>
                                         <small class="text-muted"><i class="feather-credit-card me-1"></i> {{ $sale['PaymentMethod'] }}</small>
                                     </td>
-                                    <td class="text-muted">{{ number_format($sale['Discount'], 2) }}</td>
+                                    <td class="text-muted">{{ \App\Support\CompactNumber::format($sale['Discount'], 2) }}</td>
                                     <td class="text-success fw-bold">
-                                        {{ number_format($sale['TaxAmount'], 2) }}
+                                        {{ \App\Support\CompactNumber::format($sale['TaxAmount'], 2) }}
                                     </td>
                                 </tr>
                             @empty
@@ -172,7 +172,7 @@
                         <tfoot class="bg-light fw-bold">
                             <tr>
                                 <td colspan="7" class="text-end">TOTAL SALES TAX:</td>
-                                <td class="text-success">₦{{ number_format($totalTaxCollected, 2) }}</td>
+                                <td class="text-success">₦{{ \App\Support\CompactNumber::format($totalTaxCollected, 2) }}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -232,7 +232,7 @@ $(document).ready(function() {
         const body =
             "Sales Tax Summary Report\n" +
             "Generated: {{ $reportDate }}\n" +
-            "Total Sales Tax Collected: ₦{{ number_format($totalTaxCollected, 2) }}\n\n" +
+            "Total Sales Tax Collected: ₦{{ \App\Support\CompactNumber::format($totalTaxCollected, 2) }}\n\n" +
             "This report covers tax collected from customer invoices.";
         const token = '{{ csrf_token() }}';
         const recipient = prompt('Send report to email (leave blank to use your account email):') ?? null;

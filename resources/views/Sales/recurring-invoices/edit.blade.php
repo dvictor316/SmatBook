@@ -480,10 +480,10 @@ function recalc() {
         const d     = parseFloat(tr.querySelector('[name$="[discount]"]')?.value) || 0;
         const line  = qty * price;
         const rowTotal = tr.querySelector('.row-total');
-        if (rowTotal) rowTotal.textContent = (line + t - d).toFixed(2);
+        if (rowTotal) rowTotal.textContent = window.formatCompactAmount(line + t - d);
         subtotal += line; tax += t; discount += d;
     });
-    const setTotal = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value.toFixed(2); };
+    const setTotal = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = window.formatCompactAmount(value); };
     setTotal('sumSubtotal', subtotal);
     setTotal('sumTax', tax);
     setTotal('sumDiscount', discount);

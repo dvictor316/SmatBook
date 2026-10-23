@@ -161,7 +161,7 @@
                             <div class="mt-3">
                                 <span class="agent-pill">{{ ucwords(str_replace('_', ' ', $place['type'])) }}</span>
                                 <div class="agent-muted mt-2">
-                                    <div><i class="fa-solid fa-route"></i> {{ number_format($place['distance'], 2) }} km away</div>
+                                    <div><i class="fa-solid fa-route"></i> {{ \App\Support\CompactNumber::format($place['distance'], 2) }} km away</div>
                                     <div><i class="fa-solid fa-phone"></i> {{ $place['phone'] ?: 'Public number not listed' }}</div>
                                 </div>
                                 <div class="geo-place-actions">
