@@ -2310,13 +2310,15 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         line-height: 1.5;
     }
     .hero-h1 {
-        font-size: clamp(1.5rem, 4.2vw, 2.4rem) !important;
-        max-width: 100% !important;
-        line-height: 1.12 !important;
+        width: 100%;
+        font-size: clamp(1.25rem, 3.8vw, 2.1rem) !important;
+        max-width: 22ch !important;
+        line-height: 1.1 !important;
         margin-bottom: 16px !important;
     }
     .hero-title-line, .hero-h1 .gold-text {
         font-size: inherit !important;
+        max-width: 100%;
         white-space: normal !important;
         transform: none !important;
     }
