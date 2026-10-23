@@ -72,6 +72,15 @@ body.spb-dashboard :is(.card, .agent-card, .glass-card, .glass-card-pro, .metric
     min-width: 0;
     transition: box-shadow .18s ease, border-color .18s ease;
 }
+body.spb-dashboard :is(.executive-kpi, .metric-card-basic, .glass-card-pro[class*="metric-"], .enterprise-card, .starter-card, .agent-metric, .hotel-kpi, .farm-kpi, .metric-card) {
+    padding: 18px !important;
+}
+body.spb-dashboard :is(.executive-kpi, .metric-card-basic, .glass-card-pro[class*="metric-"], .enterprise-card, .starter-card, .agent-metric, .hotel-kpi, .farm-kpi, .metric-card) :is(h3, .value, .starter-value, .kpi-value, .metric-value, strong) {
+    font-weight: 800 !important;
+}
+body.spb-dashboard :is(.metric-title, .metric-label, .starter-label, .kpi-label, .mini-label, .agent-metric .label, .hotel-kpi span, .farm-kpi span) {
+    font-weight: 800 !important;
+}
 body.spb-dashboard :is(.agent-card, .glass-card, .glass-card-pro, .metric-card-basic, .enterprise-card, .starter-card, .starter-chart-card, .panel-card, .hotel-panel, .farm-kpi):hover {
     transform: none;
     box-shadow: 0 8px 26px rgba(24, 43, 76, .09) !important;
@@ -90,7 +99,7 @@ body.spb-dashboard :is(.agent-card h4, .panel-card h5, .starter-chart-card h3, .
     letter-spacing: -.02em;
 }
 body.spb-dashboard :is(.agent-card, .starter-card, .hotel-panel, .farm-kpi) small { line-height: 1.5; }
-body.spb-dashboard .agent-metric { padding: 22px; }
+body.spb-dashboard .agent-metric { padding: 18px !important; }
 body.spb-dashboard .agent-metric .label { font-size: .72rem; letter-spacing: .075em; }
 body.spb-dashboard .agent-metric .icon { border-radius: 13px; }
 body.spb-dashboard .agent-topline .agent-title p { color: var(--dashboard-muted); }
@@ -114,7 +123,9 @@ body.spb-dashboard .farm-kpi { padding: 20px; }
     body.spb-dashboard .spb-dashboard-heading { gap: 14px; border-radius: 16px; }
     body.spb-dashboard .spb-dashboard-heading > .d-flex { width: 100%; }
     body.spb-dashboard .spb-dashboard-heading :is(.basic-dashboard-actions, .pro-dashboard-actions, .enterprise-dashboard-actions) { width: 100%; justify-content: flex-start; }
-    body.spb-dashboard .agent-metric { padding: 18px; }
+    body.spb-dashboard :is(.executive-kpi, .metric-card-basic, .glass-card-pro[class*="metric-"], .enterprise-card, .starter-card, .agent-metric, .hotel-kpi, .farm-kpi, .metric-card) {
+        padding: 16px !important;
+    }
     body.spb-dashboard :is(.hotel-filter, .farm-filter) { justify-content: flex-start; }
     body.spb-dashboard :is(.hotel-filter, .farm-filter) > div { flex: 1 1 140px; min-width: 0; }
 }
