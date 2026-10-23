@@ -2310,15 +2310,13 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         line-height: 1.5;
     }
     .hero-h1 {
-        width: 100%;
-        font-size: clamp(1.2rem, 3.2vw, 1.85rem) !important;
-        max-width: 20ch !important;
-        line-height: 1.08 !important;
+        font-size: clamp(1.5rem, 4.2vw, 2.4rem) !important;
+        max-width: 100% !important;
+        line-height: 1.12 !important;
         margin-bottom: 16px !important;
     }
     .hero-title-line, .hero-h1 .gold-text {
         font-size: inherit !important;
-        max-width: 100%;
         white-space: normal !important;
         transform: none !important;
     }
@@ -2354,6 +2352,21 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     }
     .announce-msg.active { transform: translateY(0); }
     .announce-msg.exit { transform: translateY(-8px); }
+}
+
+@media (min-width: 992px) {
+    .hero-h1 {
+        width: 100%;
+        font-size: clamp(1.1rem, 1.3vw, 1.35rem) !important;
+        max-width: 20ch !important;
+        line-height: 1.08 !important;
+    }
+    .hero-title-line, .hero-h1 .gold-text {
+        font-size: .9em !important;
+        max-width: 100%;
+        white-space: normal !important;
+        transform: none !important;
+    }
 }
 </style>
 
