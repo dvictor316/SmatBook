@@ -2558,6 +2558,7 @@ body.pos-terminal-workspace .summary-panel {
 .pos-cashier-suspense-actions {
     display: flex;
     align-items: center;
+    justify-content: center;
     flex-wrap: wrap;
     gap: 6px;
     margin: 6px 0 10px;
