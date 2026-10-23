@@ -2311,9 +2311,9 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     }
     .hero-h1 {
         width: 100%;
-        font-size: clamp(1.25rem, 3.8vw, 2.1rem) !important;
-        max-width: 22ch !important;
-        line-height: 1.1 !important;
+        font-size: clamp(1.2rem, 3.2vw, 1.85rem) !important;
+        max-width: 20ch !important;
+        line-height: 1.08 !important;
         margin-bottom: 16px !important;
     }
     .hero-title-line, .hero-h1 .gold-text {
