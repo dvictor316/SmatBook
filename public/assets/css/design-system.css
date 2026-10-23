@@ -395,6 +395,7 @@ body.sidebar-icon-only .sidebar {
 
 .btn-outline-primary,
 .btn-outline-secondary,
+.btn-outline-info,
 .btn-outline-success,
 .btn-outline-danger,
 .btn-outline-warning,
@@ -408,8 +409,8 @@ body.sidebar-icon-only .sidebar {
     background: #1e40af !important;
     background-color: #1e40af !important;
     border-color: #1e40af !important;
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
+    color: #ffd700 !important;
+    -webkit-text-fill-color: #ffd700 !important;
 }
 
 .btn-outline-secondary:hover,
@@ -418,8 +419,18 @@ body.sidebar-icon-only .sidebar {
     background: #475569 !important;
     background-color: #475569 !important;
     border-color: #475569 !important;
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
+    color: #ffd700 !important;
+    -webkit-text-fill-color: #ffd700 !important;
+}
+
+.btn-outline-info:hover,
+.btn-outline-info:focus-visible,
+.btn-outline-info:active {
+    background: #087990 !important;
+    background-color: #087990 !important;
+    border-color: #087990 !important;
+    color: #ffd700 !important;
+    -webkit-text-fill-color: #ffd700 !important;
 }
 
 .btn-outline-success:hover,
@@ -428,8 +439,8 @@ body.sidebar-icon-only .sidebar {
     background: #15803d !important;
     background-color: #15803d !important;
     border-color: #15803d !important;
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
+    color: #ffd700 !important;
+    -webkit-text-fill-color: #ffd700 !important;
 }
 
 .btn-outline-danger:hover,
@@ -438,8 +449,8 @@ body.sidebar-icon-only .sidebar {
     background: #b91c1c !important;
     background-color: #b91c1c !important;
     border-color: #b91c1c !important;
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
+    color: #ffd700 !important;
+    -webkit-text-fill-color: #ffd700 !important;
 }
 
 .btn-outline-warning:hover,
@@ -448,8 +459,8 @@ body.sidebar-icon-only .sidebar {
     background: #b45309 !important;
     background-color: #b45309 !important;
     border-color: #b45309 !important;
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
+    color: #ffd700 !important;
+    -webkit-text-fill-color: #ffd700 !important;
 }
 
 .btn-outline-dark:hover,
@@ -458,8 +469,8 @@ body.sidebar-icon-only .sidebar {
     background: #111827 !important;
     background-color: #111827 !important;
     border-color: #111827 !important;
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
+    color: #ffd700 !important;
+    -webkit-text-fill-color: #ffd700 !important;
 }
 
 .btn-outline-primary:hover *,
@@ -468,6 +479,9 @@ body.sidebar-icon-only .sidebar {
 .btn-outline-secondary:hover *,
 .btn-outline-secondary:focus-visible *,
 .btn-outline-secondary:active *,
+.btn-outline-info:hover *,
+.btn-outline-info:focus-visible *,
+.btn-outline-info:active *,
 .btn-outline-success:hover *,
 .btn-outline-success:focus-visible *,
 .btn-outline-success:active *,
@@ -480,8 +494,8 @@ body.sidebar-icon-only .sidebar {
 .btn-outline-dark:hover *,
 .btn-outline-dark:focus-visible *,
 .btn-outline-dark:active * {
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
+    color: #ffd700 !important;
+    -webkit-text-fill-color: #ffd700 !important;
 }
 
 .btn-white,
@@ -887,8 +901,8 @@ body:not(.landing-page-body) .btn-action-icon:hover,
 body:not(.landing-page-body) .btn-action-icon:focus-visible {
     background: linear-gradient(135deg, var(--spb-theme-blue) 0%, var(--spb-theme-blue-bright) 100%) !important;
     border-color: var(--spb-theme-blue) !important;
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
+    color: #ffd700 !important;
+    -webkit-text-fill-color: #ffd700 !important;
 }
 
 body:not(.landing-page-body) .dropdown-menu .dropdown-item {
@@ -992,8 +1006,8 @@ body:not(.landing-page-body) .select2-container--default .select2-results__optio
 body:not(.landing-page-body) .select2-container--default .select2-results__option--highlighted[aria-selected=true],
 body:not(.landing-page-body) .select2-container--default .select2-results__option--highlighted[aria-selected=false] {
     background: linear-gradient(135deg, var(--spb-theme-blue) 0%, var(--spb-theme-blue-bright) 100%) !important;
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
+    color: #ffd700 !important;
+    -webkit-text-fill-color: #ffd700 !important;
     box-shadow: inset 4px 0 0 var(--spb-theme-gold);
     font-weight: 750;
 }

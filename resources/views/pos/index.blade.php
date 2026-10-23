@@ -2591,6 +2591,22 @@ body.pos-terminal-workspace .summary-panel {
     background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
 }
 
+.pos-cashier-suspense-actions .btn-suspend:hover,
+.pos-cashier-suspense-actions .btn-suspend:focus-visible,
+.pos-cashier-suspense-actions .btn-suspense:hover,
+.pos-cashier-suspense-actions .btn-suspense:focus-visible {
+    color: #ffd700 !important;
+    -webkit-text-fill-color: #ffd700 !important;
+}
+
+.pos-cashier-suspense-actions .btn-suspend:hover *,
+.pos-cashier-suspense-actions .btn-suspend:focus-visible *,
+.pos-cashier-suspense-actions .btn-suspense:hover *,
+.pos-cashier-suspense-actions .btn-suspense:focus-visible * {
+    color: #ffd700 !important;
+    -webkit-text-fill-color: #ffd700 !important;
+}
+
 .pos-cashier-suspense-actions .badge {
     min-width: 19px;
     padding: 3px 5px;
@@ -3860,6 +3876,15 @@ body.pos-terminal-workspace .pos-pay-tab.pos-pay-card {
 body.pos-terminal-workspace .pos-pay-tab:hover {
     filter: saturate(1.18) brightness(1.06);
     transform: translateY(-1px);
+    color: #ffd700 !important;
+    -webkit-text-fill-color: #ffd700 !important;
+}
+
+body.pos-terminal-workspace .pos-pay-tab:hover *,
+body.pos-terminal-workspace .pos-pay-tab:focus-visible,
+body.pos-terminal-workspace .pos-pay-tab:focus-visible * {
+    color: #ffd700 !important;
+    -webkit-text-fill-color: #ffd700 !important;
 }
 
 body.pos-terminal-workspace .pos-pay-tab.active,
