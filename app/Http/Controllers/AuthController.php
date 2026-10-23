@@ -751,6 +751,8 @@ class AuthController extends Controller
 
         $this->resetWorkspaceSessionState($request);
 
+        $this->restoreOwnedWorkspaceForLogin($user);
+
         if ($user?->isDemoUser()) {
             $this->forceDemoWorkspaceSession($request, $user);
         }
@@ -786,32 +788,41 @@ class AuthController extends Controller
             ]);
         }
 
-        app(ActiveBranchResolver::class)->ensureSession($user);
-
         Log::info('User logged in', [
             'user_id' => $user->id,
             'email' => $user->email,
             'role' => $user->role
         ]);
 
-        try {
-            SystemEventMailer::sendMessage(
-                $user->email,
-                'Login Alert: SmartProbook',
-                'Login Alert',
-                'A new login was detected on your account.',
-                [
-                    'User' => $user->name ?? $user->email,
-                    'Email' => $user->email,
-                    'IP Address' => $request->ip(),
-                    'Time' => now()->toDateTimeString(),
-                    'Device' => (string) $request->userAgent(),
-                ],
-                (int) ($user->company_id ?? 0)
-            );
-        } catch (\Throwable $mailError) {
-            Log::warning('Login alert email failed', ['error' => $mailError->getMessage()]);
-        }
+        $loginAlert = [
+            'email' => (string) $user->email,
+            'name' => (string) ($user->name ?? $user->email),
+            'ip' => (string) $request->ip(),
+            'user_agent' => (string) $request->userAgent(),
+            'company_id' => (int) ($user->company_id ?? 0),
+        ];
+
+        // Do not make an interactive login wait for SMTP to accept the alert.
+        app()->terminating(static function () use ($loginAlert): void {
+            try {
+                SystemEventMailer::sendMessage(
+                    $loginAlert['email'],
+                    'Login Alert: SmartProbook',
+                    'Login Alert',
+                    'A new login was detected on your account.',
+                    [
+                        'User' => $loginAlert['name'],
+                        'Email' => $loginAlert['email'],
+                        'IP Address' => $loginAlert['ip'],
+                        'Time' => now()->toDateTimeString(),
+                        'Device' => $loginAlert['user_agent'],
+                    ],
+                    $loginAlert['company_id']
+                );
+            } catch (\Throwable $mailError) {
+                Log::warning('Login alert email failed', ['error' => $mailError->getMessage()]);
+            }
+        });
 
         if ($this->isAssignedWorkspaceStaff($user)) {
             $this->forceAssignedWorkspaceSession($request, $user);
@@ -819,6 +830,8 @@ class AuthController extends Controller
 
             return redirect()->route('user.dashboard');
         }
+
+        app(ActiveBranchResolver::class)->ensureSession($user);
 
         $intended = (string) $request->session()->pull('url.intended', '');
         if ($this->isAllowedPostLoginRedirect($intended)) {
@@ -1037,6 +1050,8 @@ class AuthController extends Controller
     private function handlePostLoginRedirect()
     {
         $user = Auth::user();
+
+        $this->restoreOwnedWorkspaceForLogin($user);
 
         if ($user?->isDemoUser()) {
             $this->forceDemoWorkspaceSession(request(), $user);
@@ -1762,6 +1777,22 @@ class AuthController extends Controller
         $companyName = $user->company?->company_name ?? $user->company?->name ?? null;
         if ($companyName) {
             $request->session()->put('current_tenant_name', $companyName);
+        }
+    }
+
+    private function restoreOwnedWorkspaceForLogin(?User $user): void
+    {
+        if (! $user || (int) $user->company_id > 0
+            || $this->isSuperAdmin($user) || $this->isDeploymentManager($user) || $this->isAgent($user)) {
+            return;
+        }
+
+        // An owner may predate primary company assignments. Resolve verified
+        // ownership before rejecting login; never infer it from a staff role.
+        $resolver = app(\App\Support\BusinessWorkspaceResolver::class);
+        $company = $resolver->accessibleCompanies($user)->first();
+        if ($company) {
+            $resolver->activate($user, $company);
         }
     }
 

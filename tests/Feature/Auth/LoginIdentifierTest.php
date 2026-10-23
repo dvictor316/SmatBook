@@ -15,6 +15,48 @@ class LoginIdentifierTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_owner_without_primary_company_link_can_login_to_verified_owned_workspace(): void
+    {
+        $user = $this->makeUser();
+        $companyId = $user->company_id;
+        $user->update(['company_id' => null]);
+
+        $this->withSession(['current_tenant_id' => 999999])->post(route('saas-login.post'), [
+            'login' => $user->email, 'password' => 'Password123',
+        ])->assertRedirect(route('home'))->assertSessionHasNoErrors()
+            ->assertSessionHas('current_tenant_id', $companyId);
+        $this->assertAuthenticatedAs($user);
+        $this->assertDatabaseHas('users', ['id' => $user->id, 'company_id' => null]);
+
+        \Illuminate\Support\Facades\Route::middleware(['web', 'auth'])->get('/test-owner-workspace',
+            fn () => response()->json(['company_id' => auth()->user()->company_id]));
+        $this->getJson('/test-owner-workspace')->assertOk()->assertJson(['company_id' => $companyId]);
+    }
+
+    public function test_conflicting_ownership_does_not_restore_an_unassigned_admin_login(): void
+    {
+        $user = $this->makeUser();
+        $company = $user->company;
+        $other = User::factory()->create();
+        $company->update(['owner_id' => $other->id]);
+        $user->update(['company_id' => null]);
+
+        $this->post(route('saas-login.post'), [
+            'login' => $user->email, 'password' => 'Password123',
+        ])->assertRedirect(route('saas-login'))->assertSessionHasErrors('login');
+        $this->assertGuest();
+    }
+
+    public function test_owned_workspace_recovery_never_reenables_a_disabled_login(): void
+    {
+        $user = $this->makeUser();
+        $user->update(['company_id' => null, 'allow_login' => 0]);
+        $this->post(route('saas-login.post'), [
+            'login' => $user->email, 'password' => 'Password123',
+        ])->assertRedirect(route('saas-login'))->assertSessionHasErrors('login');
+        $this->assertGuest();
+    }
+
     public function test_user_can_login_with_email_or_formatted_phone_number(): void
     {
         $user = $this->makeUser();
