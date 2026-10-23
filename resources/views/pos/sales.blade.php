@@ -29,21 +29,21 @@
 @endphp
 <style>
     .pos-content-area {
-        padding: 24px;
+        padding: 16px;
         min-height: 100vh;
         background: #f6f8fc;
     }
 
     @media (max-width: 991.98px) {
-        .pos-content-area { padding: 16px; }
+        .pos-content-area { padding: 12px; }
     }
 
     .report-header {
         background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
         border: 1px solid #dfe7f3;
-        border-radius: 8px;
-        padding: 24px;
-        margin-bottom: 30px;
+        border-radius: 14px;
+        padding: 14px 18px;
+        margin-bottom: 16px;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -90,21 +90,21 @@
     .summary-card {
         background: linear-gradient(135deg, #d9f0ff 0%, #c5e6fb 48%, #acd7f5 100%);
         border: 1px solid #82bee7;
-        border-radius: 20px;
-        box-shadow: 0 16px 40px rgba(14, 116, 144, 0.18);
+        border-radius: 16px;
+        box-shadow: 0 8px 22px rgba(14, 116, 144, 0.12);
         color: #082f49;
     }
 
     .summary-card .summary-label {
         color: #073b63;
-        font-size: 0.75rem;
+        font-size: 0.68rem;
         font-weight: 800;
         letter-spacing: 0.08em;
         text-transform: uppercase;
     }
 
 .summary-card .summary-value {
-    font-size: 2rem;
+   font-size: 1.55rem;
     font-weight: 800;
     line-height: 1.1;
     color: #064f91;
@@ -113,7 +113,7 @@
 
     .summary-card .summary-subtle {
         color: #164e63;
-        font-size: 0.88rem;
+        font-size: 0.76rem;
         font-weight: 600;
     }
 
@@ -121,14 +121,14 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 16px;
+        gap: 10px;
         flex-wrap: wrap;
-        margin-bottom: 18px;
+        margin-bottom: 8px;
     }
 
     .summary-actions {
         display: flex;
-        gap: 10px;
+        gap: 8px;
         flex-wrap: wrap;
     }
 
@@ -140,8 +140,8 @@
         color: #063d6b;
         border: 1px solid #6faed8;
         border-radius: 12px;
-        padding: 10px 14px;
-        font-size: 0.85rem;
+        padding: 7px 10px;
+        font-size: 0.78rem;
         font-weight: 800;
         text-decoration: none;
         box-shadow: 0 8px 18px rgba(8, 47, 73, 0.08);
@@ -155,7 +155,7 @@
 
     .summary-filter-grid .form-label {
         color: #073b63;
-        font-size: 0.72rem;
+        font-size: 0.65rem;
         font-weight: 800;
         letter-spacing: 0.06em;
         text-transform: uppercase;
@@ -165,7 +165,11 @@
     .summary-filter-grid .input-group-text,
     .summary-filter-grid .btn {
         border-radius: 12px;
-        min-height: 42px;
+        min-height: 34px;
+        height: 34px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+        border-radius: 8px;
     }
 
     .summary-filter-grid .input-group-text,
@@ -208,16 +212,16 @@
     .payment-total-strip {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 12px;
-        margin-top: 18px;
+        gap: 8px;
+        margin-top: 10px;
     }
 
     .payment-total-card {
         display: block;
         background: rgba(255, 255, 255, 0.88);
         border: 1px solid #75b7df;
-        border-radius: 14px;
-        padding: 12px 14px;
+        border-radius: 12px;
+        padding: 8px 10px;
         box-shadow: 0 8px 18px rgba(8, 47, 73, 0.06);
         color: inherit;
         text-decoration: none;
@@ -239,7 +243,7 @@
 
     .payment-total-card .payment-label {
         color: #073b63;
-        font-size: 0.68rem;
+        font-size: 0.63rem;
         font-weight: 800;
         letter-spacing: 0.06em;
         text-transform: uppercase;
@@ -247,9 +251,63 @@
 
     .payment-total-card .payment-amount {
         color: #064f91;
-        font-size: 1.05rem;
+        font-size: 0.95rem;
         font-weight: 800;
+        margin-top: 2px;
+        line-height: 1.15;
+    }
+
+    .payment-total-card .summary-subtle {
+        margin-top: 2px;
+        font-size: 0.7rem;
+        line-height: 1.2;
+    }
+
+    .pos-sales-compact .summary-card .fs-2 {
+        font-size: 1.45rem !important;
+        line-height: 1.1;
+    }
+
+    .pos-sales-compact .summary-card .summary-subtle.mt-2 {
+        margin-top: 0.25rem !important;
+    }
+
+    .pos-sales-compact .summary-filter-grid {
+        --bs-gutter-x: 0.75rem;
+        --bs-gutter-y: 0.5rem;
+        margin-top: 0.25rem !important;
+    }
+
+    .pos-sales-compact .summary-filter-grid .form-label,
+    .pos-sales-compact .summary-filter-grid .spb-period-fields label {
+        margin-bottom: 3px;
+        font-size: 0.62rem;
+    }
+
+    .pos-sales-compact .summary-filter-grid > .spb-period-fields {
+        gap: 6px;
         margin-top: 4px;
+    }
+
+    .pos-sales-compact .summary-filter-grid .form-control,
+    .pos-sales-compact .summary-filter-grid .input-group-text,
+    .pos-sales-compact .summary-filter-grid .btn,
+    .pos-sales-compact .summary-filter-grid .spb-period-fields .form-control,
+    .pos-sales-compact .summary-filter-grid .spb-period-fields .form-select {
+        min-height: 34px;
+        height: 34px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+        border-radius: 8px;
+        font-size: 0.82rem;
+    }
+
+    .pos-sales-compact .summary-filter-grid .btn {
+        padding-inline: 12px !important;
+    }
+
+    .pos-sales-compact .summary-card {
+        margin-bottom: 0.75rem !important;
     }
 
     .sales-total-row td {
@@ -281,7 +339,7 @@
         color: #5b6b87;
         text-transform: uppercase;
         font-size: 11px;
-        padding: 15px;
+        padding: 10px;
         border: none;
         letter-spacing: 0.04em;
         font-weight: 800;
@@ -375,7 +433,7 @@
 
 @endphp
 
-<div class="pos-content-area">
+<div class="pos-content-area pos-sales-compact">
     <div class="report-header">
         <div>
                 <h3 class="fw-bold mb-0" style="color: #0f172a;">Sales Register</h3>
@@ -399,8 +457,8 @@
         </div>
     </div>
 
-    <div class="card summary-card mb-4">
-        <div class="card-body p-3 p-lg-4">
+    <div class="card summary-card mb-3">
+        <div class="card-body p-2 p-lg-3">
             <div class="summary-toolbar no-print">
                 <div class="summary-label mb-0">{{ $posReceiptLookupMode ? 'Receipt Lookup' : 'Sales Summary & Filters' }}</div>
                 <div class="summary-actions">
@@ -417,7 +475,7 @@
                 </div>
             </div>
 
-            <div class="row g-4 align-items-center">
+            <div class="row g-2 align-items-center">
                 <div class="col-lg-8">
                     <div class="summary-label">{{ $posReceiptLookupMode ? 'Receipt Search' : 'Gross POS Sales Amount' }}</div>
                     @if($posReceiptLookupMode)
@@ -439,7 +497,7 @@
                 </div>
             </div>
 
-            <form action="{{ route('pos.sales') }}" method="GET" data-reporting-period class="row g-3 align-items-end mt-1 summary-filter-grid no-print">
+            <form action="{{ route('pos.sales') }}" method="GET" data-reporting-period class="row g-2 align-items-end mt-1 summary-filter-grid no-print">
                 <div class="col-lg-3 col-md-6">
                     <label class="form-label">Business Location</label>
                     <select name="branch_id" class="form-control form-control-sm">

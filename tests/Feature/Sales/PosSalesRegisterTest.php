@@ -27,11 +27,15 @@ class PosSalesRegisterTest extends TestCase
             ]);
         }
 
-        $response = $this->actingAs($user)->withoutMiddleware()->get(route('pos.sales'));
+        $response = $this->actingAs($user)->withoutMiddleware()->get(route('pos.sales', ['per_page' => 10]));
 
-        $response->assertOk()->assertSee('Sales Register')->assertSee('Process Return');
+        $response->assertOk()
+            ->assertSee('Sales Register')
+            ->assertSee('Process Return')
+            ->assertSee('class="pos-content-area pos-sales-compact"', false)
+            ->assertSee('class="payment-total-strip"', false);
         $html = $response->getContent();
-        $this->assertSame(1, substr_count($html, '<nav class="d-flex justify-items-center justify-content-between"'), 'Expected one Laravel paginator navigation.');
+        $this->assertSame(1, substr_count($html, '<nav aria-label="Results pages"'), 'Expected one Laravel paginator navigation.');
         $this->assertFalse(str_contains($html, 'table-hover datatable'), 'The server-paginated table must not initialize DataTables.');
         $this->assertFalse(str_contains($html, '$posReturnUrl'), 'The obsolete undefined POS return variable leaked into the view.');
     }
