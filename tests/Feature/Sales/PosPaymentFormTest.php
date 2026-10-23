@@ -42,6 +42,12 @@ class PosPaymentFormTest extends TestCase
             ->assertSee('id="pos-cash-account-label">Payment Method', false)
             ->assertSee('id="rail-suspend-sale-btn"', false)
             ->assertSee('id="rail-sales-suspense-btn"', false)
+            ->assertSee('id="payment-suspend-sale-btn"', false)
+            ->assertSee('id="payment-sales-suspense-btn"', false)
+            ->assertSee('id="pos-pay-bank-shortcut"', false)
+            ->assertSee('id="split-transfer-account-wrap"', false)
+            ->assertSee('id="split-card-account-wrap"', false)
+            ->assertDontSee('id="pos-pay-transfer-shortcut"', false)
             ->assertSee('id="pos-suspense-modal"', false)
             ->assertSee('id="pos-cash-amount-label">Amount Paid', false)
             ->assertSee('id="deposit-account" value="'.$cashAccount->id.'"', false)
@@ -55,6 +61,7 @@ class PosPaymentFormTest extends TestCase
 
         $html = $response->getContent();
         $this->assertGreaterThan(strpos($html, 'id="grand-total"'), strpos($html, '<div class="pos-payment-tabs"'));
+        $this->assertLessThan(strpos($html, 'id="amount-paid"'), strpos($html, 'id="payment-suspend-sale-btn"'));
         $this->assertLessThan(strpos($html, 'id="amount-paid"'), strpos($html, '<div class="pos-payment-tabs"'));
 
         $cashAccount->update(['is_active' => false]);

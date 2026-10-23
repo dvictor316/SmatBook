@@ -16,38 +16,58 @@
     @if(isset($headerSalesMetrics))
         <div class="spb-header-metrics" aria-label="Sales summary">
             <div class="spb-header-metric spb-header-metric-customers">
-                <span><i class="fas fa-user-group" aria-hidden="true"></i> Unique customers</span>
-                <strong>{{ number_format($headerSalesMetrics['customers']) }}</strong>
-                <small>Made a purchase in this period</small>
+                <span class="spb-metric-icon"><i class="fas fa-user-group" aria-hidden="true"></i></span>
+                <div class="spb-metric-copy">
+                    <span class="spb-metric-label">Unique customers</span>
+                    <strong>{{ number_format($headerSalesMetrics['customers']) }}</strong>
+                    <small>Made a purchase in this period</small>
+                </div>
             </div>
             <div class="spb-header-metric spb-header-metric-average">
-                <span><i class="fas fa-chart-line" aria-hidden="true"></i> Average daily sales</span>
-                <strong>₦{{ \App\Support\CompactNumber::format($headerSalesMetrics['average_daily_sales'], 2) }}</strong>
-                <small>Across {{ number_format($headerSalesMetrics['days']) }} {{ \Illuminate\Support\Str::plural('day', $headerSalesMetrics['days']) }}</small>
+                <span class="spb-metric-icon"><i class="fas fa-chart-line" aria-hidden="true"></i></span>
+                <div class="spb-metric-copy">
+                    <span class="spb-metric-label">Average daily sales</span>
+                    <strong>₦{{ \App\Support\CompactNumber::format($headerSalesMetrics['average_daily_sales'], 2) }}</strong>
+                    <small>Across {{ number_format($headerSalesMetrics['days']) }} {{ \Illuminate\Support\Str::plural('day', $headerSalesMetrics['days']) }}</small>
+                </div>
             </div>
             <div class="spb-header-metric spb-header-metric-change">
-                <span><i class="fas fa-arrow-trend-up" aria-hidden="true"></i> Vs previous period</span>
-                <strong class="{{ ($headerSalesMetrics['change_percent'] ?? 0) >= 0 ? 'is-positive' : 'is-negative' }}">
-                    {{ is_null($headerSalesMetrics['change_percent']) ? '—' : (($headerSalesMetrics['change_percent'] > 0 ? '+' : '').number_format($headerSalesMetrics['change_percent'], 1).'%') }}
-                </strong>
-                <small>
-                    @if(is_null($headerSalesMetrics['previous_revenue']))
-                        No comparison available
-                    @elseif($headerSalesMetrics['previous_revenue'] <= 0)
-                        No previous-period sales
-                    @else
-                        Previous: ₦{{ \App\Support\CompactNumber::format($headerSalesMetrics['previous_revenue'], 2) }}
-                    @endif
-                </small>
+                <span class="spb-metric-icon"><i class="fas fa-arrow-trend-up" aria-hidden="true"></i></span>
+                <div class="spb-metric-copy">
+                    <span class="spb-metric-label">Vs previous period</span>
+                    <strong class="{{ ($headerSalesMetrics['change_percent'] ?? 0) >= 0 ? 'is-positive' : 'is-negative' }}">
+                        {{ is_null($headerSalesMetrics['change_percent']) ? '—' : (($headerSalesMetrics['change_percent'] > 0 ? '+' : '').number_format($headerSalesMetrics['change_percent'], 1).'%') }}
+                    </strong>
+                    <small>
+                        @if(is_null($headerSalesMetrics['previous_revenue']))
+                            No comparison available
+                        @elseif($headerSalesMetrics['previous_revenue'] <= 0)
+                            No previous-period sales
+                        @else
+                            Previous: ₦{{ \App\Support\CompactNumber::format($headerSalesMetrics['previous_revenue'], 2) }}
+                        @endif
+                    </small>
+                </div>
             </div>
         </div>
     @endif
     <div class="spb-period-cards">
         @foreach($periodSales as $key => $summary)
+            @php
+                $periodIcon = match ($key) {
+                    'today' => 'fa-calendar-day',
+                    'week_to_date' => 'fa-calendar-week',
+                    'month_to_date' => 'fa-calendar-alt',
+                    default => 'fa-calendar-check',
+                };
+            @endphp
             <a class="spb-period-card {{ $reportingPeriod->key === $key ? 'is-selected' : '' }}" href="{{ request()->fullUrlWithQuery(['period' => $key, 'date_from' => null, 'date_to' => null, 'date_time_from' => null, 'date_time_to' => null, 'sale_date' => null, 'page' => null]) }}" @if($reportingPeriod->key === $key) aria-current="true" @endif>
-                <span>{{ $summary['period']->label() }}</span>
-                <strong>₦{{ \App\Support\CompactNumber::format($summary['revenue'], 2) }}</strong>
-                <small>{{ number_format($summary['orders']) }} {{ \Illuminate\Support\Str::plural('sale', $summary['orders']) }} · {{ $summary['period']->dates() }}</small>
+                <span class="spb-metric-icon"><i class="fas {{ $periodIcon }}" aria-hidden="true"></i></span>
+                <span class="spb-period-copy">
+                    <span class="spb-period-title">{{ $summary['period']->label() }}</span>
+                    <strong>₦{{ \App\Support\CompactNumber::format($summary['revenue'], 2) }}</strong>
+                    <small>{{ number_format($summary['orders']) }} {{ \Illuminate\Support\Str::plural('sale', $summary['orders']) }} · {{ $summary['period']->dates() }}</small>
+                </span>
             </a>
         @endforeach
     </div>

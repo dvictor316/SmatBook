@@ -45,63 +45,93 @@
 
 .spb-header-metrics {
     display: grid;
-    grid-template-columns: repeat(3, minmax(145px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 9px;
     width: 100%;
     margin-bottom: 12px;
 }
 
-.spb-header-metric {
+.spb-header-metric,
+.spb-period-card {
     --metric-accent: #2563eb;
+    --metric-start: #2563eb;
+    --metric-end: #1d4ed8;
+    --metric-tint: #eef5ff;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+    min-height: 116px;
+    padding: 16px;
+    color: #0f172a;
+    background:
+        radial-gradient(circle at top right, color-mix(in srgb, var(--metric-accent) 10%, transparent), transparent 42%),
+        linear-gradient(180deg, #fff 0%, var(--metric-tint) 100%);
+    border: 1px solid var(--dashboard-line, #e2e8f2);
+    border-radius: 16px;
+    box-shadow: var(--dashboard-shadow, 0 4px 20px rgba(24, 43, 76, .055));
+}
+
+.spb-header-metric-customers { --metric-accent: #2563eb; --metric-start: #2563eb; --metric-end: #1d4ed8; --metric-tint: #eef5ff; }
+.spb-header-metric-average { --metric-accent: #059669; --metric-start: #10b981; --metric-end: #059669; --metric-tint: #eefcf6; }
+.spb-header-metric-change { --metric-accent: #ea580c; --metric-start: #f97316; --metric-end: #ea580c; --metric-tint: #fff5ed; }
+
+.spb-metric-icon {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    background: linear-gradient(135deg, var(--metric-start) 0%, var(--metric-end) 100%);
+    border-radius: 12px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .12);
+    font-size: 1.2rem;
+}
+
+.spb-metric-copy,
+.spb-period-copy {
+    min-width: 0;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    gap: 4px;
-    min-width: 0;
-    padding: 13px 14px;
-    background: #fff;
-    border: 1px solid color-mix(in srgb, var(--metric-accent) 24%, #e1e9f4);
-    border-inline-start: 4px solid var(--metric-accent);
-    border-radius: 12px;
-    box-shadow: 0 4px 14px rgba(18, 44, 83, 0.055);
+    gap: 5px;
 }
 
-.spb-header-metric-customers { --metric-accent: #2563eb; }
-.spb-header-metric-average { --metric-accent: #059669; }
-.spb-header-metric-change { --metric-accent: #7c3aed; }
-
-.spb-header-metric > span {
+.spb-metric-label,
+.spb-period-title {
     overflow: hidden;
-    color: var(--period-muted);
-    font-size: 10px;
+    color: #0f172a;
+    font-size: .65rem;
     font-weight: 800;
+    letter-spacing: .5px;
     text-overflow: ellipsis;
+    text-transform: uppercase;
     white-space: nowrap;
 }
 
-.spb-header-metric > span i {
-    margin-right: 4px;
-    color: var(--metric-accent);
-}
-
-.spb-header-metric > strong {
+.spb-metric-copy > strong,
+.spb-period-copy > strong {
     overflow: hidden;
     color: var(--metric-accent);
-    font-size: clamp(14px, 1.25vw, 18px);
+    font-size: 1.5rem;
     font-weight: 800;
+    font-variant-numeric: tabular-nums;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.spb-header-metric > strong.is-negative { color: #dc2626; }
-.spb-header-metric > strong.is-positive { color: #047857; }
+.spb-metric-copy > strong.is-negative { color: #dc2626; }
+.spb-metric-copy > strong.is-positive { color: #047857; }
 
-.spb-header-metric > small {
+.spb-metric-copy > small,
+.spb-period-copy > small {
     overflow: hidden;
     color: var(--period-muted);
-    font-size: 10px;
+    font-size: .75rem;
+    font-weight: 600;
+    line-height: 1.35;
     text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .spb-period-controls {
@@ -172,55 +202,30 @@
 }
 
 .spb-period-card {
-    --period-card-accent: #2563eb;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 0;
-    padding: 13px 14px;
-    color: var(--period-text);
-    background: #fff;
-    border: 1px solid color-mix(in srgb, var(--period-card-accent) 24%, #e1e9f4);
-    border-inline-start: 4px solid var(--period-card-accent);
-    border-radius: 12px;
-    box-shadow: 0 4px 14px rgba(18, 44, 83, 0.055);
+    --metric-accent: #2563eb;
+    --metric-start: #2563eb;
+    --metric-end: #1d4ed8;
+    --metric-tint: #eef5ff;
     text-decoration: none;
-    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 
-.spb-period-card:nth-child(4n + 2) { --period-card-accent: #059669; }
-.spb-period-card:nth-child(4n + 3) { --period-card-accent: #7c3aed; }
-.spb-period-card:nth-child(4n + 4) { --period-card-accent: #d97706; }
-
-.spb-period-card > span {
-    color: var(--period-muted);
-    font-size: 11px;
-    font-weight: 800;
-}
-
-.spb-period-card > strong {
-    overflow-wrap: anywhere;
-    color: var(--period-card-accent);
-    font-size: clamp(17px, 1.4vw, 22px);
-    font-weight: 800;
-}
-
-.spb-period-card > small {
-    color: var(--period-muted);
-    font-size: 10px;
-    font-weight: 600;
-}
+.spb-period-card:nth-child(4n + 2) { --metric-accent: #059669; --metric-start: #10b981; --metric-end: #059669; --metric-tint: #eefcf6; }
+.spb-period-card:nth-child(4n + 3) { --metric-accent: #ea580c; --metric-start: #f97316; --metric-end: #ea580c; --metric-tint: #fff5ed; }
+.spb-period-card:nth-child(4n + 4) { --metric-accent: #0f172a; --metric-start: #0f172a; --metric-end: #334155; --metric-tint: #f1f5f9; }
 
 .spb-period-card:hover,
 .spb-period-card:focus-visible,
 .spb-period-card.is-selected {
-    color: var(--period-text);
-    border-color: var(--period-card-accent);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--period-card-accent) 14%, transparent);
+    color: #0f172a;
+    border-color: var(--metric-accent);
+    box-shadow: 0 10px 28px color-mix(in srgb, var(--metric-accent) 18%, transparent);
 }
 
+.spb-period-card:hover { transform: translateY(-3px); }
+
 .spb-period-card:focus-visible {
-    outline: 2px solid var(--period-card-accent);
+    outline: 2px solid var(--metric-accent);
     outline-offset: 2px;
 }
 
@@ -294,24 +299,38 @@
 
     .spb-header-metrics {
         width: 100%;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 6px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
     }
+
+    .spb-header-metric:nth-child(3) { grid-column: 1 / -1; }
 
     .spb-header-metric {
-        padding: 8px 7px;
+        min-height: 100px;
+        padding: 12px;
+        gap: 10px;
     }
 
-    .spb-header-metric > span {
-        font-size: 9px;
+    .spb-metric-icon {
+        width: 40px;
+        height: 40px;
+        flex-basis: 40px;
+        font-size: 1rem;
     }
 
-    .spb-header-metric > strong {
-        font-size: 12px;
+    .spb-metric-label,
+    .spb-period-title {
+        font-size: .6rem;
     }
 
-    .spb-header-metric > small {
-        font-size: 8px;
+    .spb-metric-copy > strong,
+    .spb-period-copy > strong {
+        font-size: 1.2rem;
+    }
+
+    .spb-metric-copy > small,
+    .spb-period-copy > small {
+        font-size: .68rem;
     }
 
     .spb-period-fields,
@@ -325,11 +344,9 @@
     }
 
     .spb-period-card {
-        padding: 11px;
-    }
-
-    .spb-period-card > strong {
-        font-size: 17px;
+        min-height: 100px;
+        padding: 12px;
+        gap: 10px;
     }
 
     .spb-period-form > .btn {

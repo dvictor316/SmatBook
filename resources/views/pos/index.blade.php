@@ -2555,6 +2555,46 @@ body.pos-terminal-workspace .summary-panel {
     min-width: 0;
 }
 
+.pos-cashier-suspense-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 10px 0 14px;
+}
+
+.pos-cashier-suspense-actions .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 9px 12px;
+    border: 0;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    box-shadow: 0 5px 14px rgba(15, 23, 42, 0.14);
+}
+
+.pos-cashier-suspense-actions .btn-suspend {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+}
+
+.pos-cashier-suspense-actions .btn-suspense {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+}
+
+.pos-cashier-suspense-actions .badge {
+    min-width: 24px;
+    color: #1e3a8a;
+    background: #fff;
+    font-size: 0.78rem;
+    font-weight: 900;
+}
+
 .pos-pay-tab {
     min-width: 70px;
     min-height: 28px;
@@ -3772,7 +3812,7 @@ body.pos-terminal-workspace .receipt-toolbar-label {
 
 body.pos-terminal-workspace .pos-payment-tabs {
     display: grid !important;
-    grid-template-columns: repeat(4, minmax(68px, 1fr)) !important;
+    grid-template-columns: repeat(3, minmax(68px, 1fr)) !important;
     gap: 6px !important;
     justify-content: stretch !important;
     min-width: 0 !important;
@@ -3809,11 +3849,6 @@ body.pos-terminal-workspace .pos-pay-tab.pos-pay-split {
 body.pos-terminal-workspace .pos-pay-tab.pos-pay-card {
     border-color: #1e40af !important;
     background: linear-gradient(180deg, #2563eb 0%, #1e40af 100%) !important;
-}
-
-body.pos-terminal-workspace .pos-pay-tab.pos-pay-transfer {
-    border-color: #701a75 !important;
-    background: linear-gradient(180deg, #a21caf 0%, #701a75 100%) !important;
 }
 
 body.pos-terminal-workspace .pos-pay-tab:hover {
@@ -3865,7 +3900,7 @@ body.pos-terminal-workspace .pos-pay-tab span {
     }
 
     body.pos-terminal-workspace .pos-payment-tabs {
-        grid-template-columns: repeat(4, minmax(58px, 1fr)) !important;
+        grid-template-columns: repeat(3, minmax(58px, 1fr)) !important;
         gap: 5px !important;
     }
 
@@ -5769,10 +5804,20 @@ body.pos-terminal-workspace #pos-cash-account-name.is-unconfigured {
                         <div class="pos-payment-tabs" aria-label="Payment method">
                             <button type="button" class="pos-pay-tab pos-pay-cash active" data-payment-method="Cash"><span>Cash</span></button>
                             <button type="button" class="pos-pay-tab pos-pay-split" data-payment-method="Split"><span>Split</span></button>
-                            <button type="button" class="pos-pay-tab pos-pay-card" data-payment-method="Split" id="pos-pay-card-shortcut"><span>Bank /<br>POS</span></button>
-                            <button type="button" class="pos-pay-tab pos-pay-transfer" data-payment-method="Split" id="pos-pay-transfer-shortcut"><span>Bank<br>Transfer</span></button>
+                            <button type="button" class="pos-pay-tab pos-pay-card" data-payment-method="Split" id="pos-pay-bank-shortcut"><span>POS / Bank</span></button>
                         </div>
                     </div>
+                    @if($posCanSell)
+                        <div class="pos-cashier-suspense-actions" aria-label="Suspended sale actions">
+                            <button type="button" class="btn btn-suspend" id="payment-suspend-sale-btn">
+                                <i class="fas fa-pause-circle" aria-hidden="true"></i><span>Suspend Sale</span>
+                            </button>
+                            <button type="button" class="btn btn-suspense" id="payment-sales-suspense-btn">
+                                <i class="fas fa-rotate-left" aria-hidden="true"></i><span>Sales Suspense</span>
+                                <span class="badge rounded-pill" id="pos-suspense-count-checkout">0</span>
+                            </button>
+                        </div>
+                    @endif
 
                     <div class="row g-3">
                         <div class="col-12">
@@ -7314,10 +7359,13 @@ window.POS_ENABLE_FALLBACK = function () {
     const railClearCartBtn = document.getElementById('rail-clear-cart-btn');
     const railSuspendSaleBtn = document.getElementById('rail-suspend-sale-btn');
     const railSalesSuspenseBtn = document.getElementById('rail-sales-suspense-btn');
+    const paymentSuspendSaleBtn = document.getElementById('payment-suspend-sale-btn');
+    const paymentSalesSuspenseBtn = document.getElementById('payment-sales-suspense-btn');
     const railCheckoutBtn = document.getElementById('rail-checkout-btn');
     const railMessagesBtn = document.getElementById('rail-messages-btn');
     const suspenseList = document.getElementById('pos-suspense-list');
     const suspenseCount = document.getElementById('pos-suspense-count');
+    const paymentSuspenseCount = document.getElementById('pos-suspense-count-checkout');
     const suspenseStatus = document.getElementById('pos-suspense-status');
     const suspenseCurrentId = document.getElementById('pos-suspense-current-id');
     const suspenseModal = document.getElementById('pos-suspense-modal');
@@ -7960,6 +8008,8 @@ window.POS_ENABLE_FALLBACK = function () {
     railClearCartBtn?.addEventListener('click', confirmClearCart);
     railSuspendSaleBtn?.addEventListener('click', suspendCurrentSale);
     railSalesSuspenseBtn?.addEventListener('click', openPosSuspenseList);
+    paymentSuspendSaleBtn?.addEventListener('click', suspendCurrentSale);
+    paymentSalesSuspenseBtn?.addEventListener('click', openPosSuspenseList);
     railCheckoutBtn?.addEventListener('click', openCheckoutPanel);
     railMessagesBtn?.addEventListener('click', showPosMessages);
     suspenseRefreshBtn?.addEventListener('click', loadPosSuspendedSales);
@@ -8578,7 +8628,13 @@ window.POS_ENABLE_FALLBACK = function () {
     }
 
     function syncSplitCounterpart(changedField) {
-        if (splitAutoSync || paymentMethod?.value !== 'Split' || activePaymentTab !== 'Split') {
+        const isMixedSplit = activePaymentTab === 'Split';
+        const isBankShortcut = activePaymentTab === 'pos-pay-bank-shortcut';
+        if (
+            splitAutoSync
+            || paymentMethod?.value !== 'Split'
+            || (!isMixedSplit && !isBankShortcut)
+        ) {
             return;
         }
 
@@ -8588,7 +8644,7 @@ window.POS_ENABLE_FALLBACK = function () {
         const cardPaid = moneyValue(cardAmount);
 
         splitAutoSync = true;
-        const remainingBase = Math.max(0, total - cashPaid);
+        const remainingBase = Math.max(0, total - (isMixedSplit ? cashPaid : 0));
 
         if (changedField === 'transfer' && cardAmount) {
             cardAmount.value = Math.max(0, remainingBase - transferPaid).toFixed(2);
@@ -8605,9 +8661,10 @@ window.POS_ENABLE_FALLBACK = function () {
     function toggleSplitFields() {
         const isSplit = paymentMethod?.value === 'Split';
         const isMixed = activePaymentTab === 'Split';
+        const showsBankChannels = isMixed || activePaymentTab === 'pos-pay-bank-shortcut';
         const showCash = !isSplit || activePaymentTab === 'Split';
-        const showTransfer = isSplit && activePaymentTab !== 'pos-pay-card-shortcut';
-        const showCard = isSplit && activePaymentTab !== 'pos-pay-transfer-shortcut';
+        const showTransfer = isSplit && showsBankChannels;
+        const showCard = isSplit && showsBankChannels;
         paymentTabs.forEach((button) => {
             button.classList.toggle('active', (button.id || button.textContent.trim()) === activePaymentTab);
         });
@@ -8621,10 +8678,10 @@ window.POS_ENABLE_FALLBACK = function () {
         const labels = {
             'pos-cash-account-label': isMixed ? 'Cash payment account' : 'Payment Method',
             'pos-cash-amount-label': isMixed ? 'Cash Amount' : 'Amount Paid',
-            'pos-transfer-account-label': isMixed ? 'Transfer payment account' : 'Payment Method',
-            'pos-transfer-amount-label': isMixed ? 'Transfer Amount' : 'Amount Paid',
-            'pos-card-account-label': isMixed ? 'POS settlement account' : 'Payment Method',
-            'pos-card-amount-label': isMixed ? 'POS Amount' : 'Amount Paid',
+            'pos-transfer-account-label': showsBankChannels ? 'Transfer payment account' : 'Payment Method',
+            'pos-transfer-amount-label': showsBankChannels ? 'Transfer Amount' : 'Amount Paid',
+            'pos-card-account-label': showsBankChannels ? 'POS settlement account' : 'Payment Method',
+            'pos-card-amount-label': showsBankChannels ? 'POS Amount' : 'Amount Paid',
         };
         Object.entries(labels).forEach(([id, label]) => {
             const element = document.getElementById(id);
@@ -8634,14 +8691,15 @@ window.POS_ENABLE_FALLBACK = function () {
         if (isSplit && amountPaid) {
             const total = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount));
 
-            if (activePaymentTab === 'pos-pay-card-shortcut') {
+            if (activePaymentTab === 'pos-pay-bank-shortcut') {
                 amountPaid.value = '0.00';
-                if (transferAmount) transferAmount.value = '0.00';
-                if (cardAmount) cardAmount.value = total.toFixed(2);
-            } else if (activePaymentTab === 'pos-pay-transfer-shortcut') {
-                amountPaid.value = '0.00';
-                if (transferAmount) transferAmount.value = total.toFixed(2);
-                if (cardAmount) cardAmount.value = '0.00';
+                if (
+                    moneyValue(transferAmount) + moneyValue(cardAmount) <= 0
+                    && total > 0
+                    && cardAmount
+                ) {
+                    cardAmount.value = total.toFixed(2);
+                }
             } else {
                 if (transferAmount && !transferAmount.value) {
                     transferAmount.value = '0.00';
@@ -8662,14 +8720,14 @@ window.POS_ENABLE_FALLBACK = function () {
     }
 
     function syncSelectedPaymentAmount(previousDue) {
-        const input = activePaymentTab === 'pos-pay-transfer-shortcut'
-            ? transferAmount
-            : activePaymentTab === 'pos-pay-card-shortcut' ? cardAmount : null;
-        if (!input) return;
-
-        const current = moneyValue(input);
-        if (current <= 0 || Math.abs(current - previousDue) < 0.01) {
-            input.value = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount)).toFixed(2);
+        const due = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount));
+        if (activePaymentTab === 'pos-pay-bank-shortcut') {
+            const transferPaid = moneyValue(transferAmount);
+            const totalBankPaid = transferPaid + moneyValue(cardAmount);
+            if (totalBankPaid <= 0 || Math.abs(totalBankPaid - previousDue) < 0.01) {
+                if (cardAmount) cardAmount.value = Math.max(0, due - transferPaid).toFixed(2);
+            }
+            return;
         }
     }
 
@@ -8818,6 +8876,7 @@ window.POS_ENABLE_FALLBACK = function () {
             const result = await requestPosSuspense(`${posSuspenseUrl}${query}`);
             const sales = Array.isArray(result.sales) ? result.sales : [];
             if (suspenseCount) suspenseCount.textContent = String(sales.length);
+            if (paymentSuspenseCount) paymentSuspenseCount.textContent = String(sales.length);
 
             if (!sales.length) {
                 suspenseList.innerHTML = '<div class="text-center py-4 pos-suspense-empty">No suspended sales in this branch.</div>';
@@ -9385,13 +9444,8 @@ window.POS_ENABLE_FALLBACK = function () {
             }
             paymentMethod.dispatchEvent(new Event('change', { bubbles: true }));
 
-            if (button.id === 'pos-pay-card-shortcut' && cardAmount) {
+            if (button.id === 'pos-pay-bank-shortcut' && cardAmount) {
                 cardAmount.focus();
-                return;
-            }
-
-            if (button.id === 'pos-pay-transfer-shortcut' && transferAmount) {
-                transferAmount.focus();
                 return;
             }
 
