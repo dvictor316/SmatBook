@@ -4200,11 +4200,16 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
     }
 
     body.pos-terminal-workspace .unit-grid,
-    body.pos-terminal-workspace .pos-payment-tabs,
     body.pos-terminal-workspace .summary-panel .row.g-3 {
         display: grid !important;
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         gap: 8px !important;
+    }
+
+    body.pos-terminal-workspace .pos-payment-tabs {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 6px !important;
     }
 
     body.pos-terminal-workspace .pos-customer-compact {
