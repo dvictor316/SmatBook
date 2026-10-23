@@ -28,18 +28,10 @@ class DeviceSessionManager
 
         $companyId = $this->resolveCompanyId($user);
         $fingerprint = $this->fingerprint($request);
-        $this->pruneExpired($user->id, $companyId);
-        $this->pruneMissingBackedSessions($user->id, $companyId);
-        $this->pruneLegacySameBrowserSessions($request, $user->id, $sessionId);
-
-        ActiveUserSession::query()
-            ->where('user_id', $user->id)
-            ->where('device_fingerprint', $fingerprint)
-            ->where('session_id', '!=', $sessionId)
-            ->delete();
 
         $current = ActiveUserSession::query()
             ->where('session_id', $sessionId)
+            ->where('user_id', $user->id)
             ->first();
 
         if ($current) {
@@ -52,6 +44,18 @@ class DeviceSessionManager
 
             return ['allowed' => true];
         }
+
+        // Cleanup and duplicate-device checks are needed only when registering a
+        // new authenticated session, not on every page or asset request.
+        $this->pruneExpired($user->id, $companyId);
+        $this->pruneMissingBackedSessions($user->id);
+        $this->pruneLegacySameBrowserSessions($request, $user->id, $sessionId);
+
+        ActiveUserSession::query()
+            ->where('user_id', $user->id)
+            ->where('device_fingerprint', $fingerprint)
+            ->where('session_id', '!=', $sessionId)
+            ->delete();
 
         $userLimit = $this->allowedUserSessions($user);
         $activeUserSessions = ActiveUserSession::query()

@@ -51,8 +51,14 @@ class BusinessWorkspaceResolver
             ->get();
     }
 
-    public function canAccess(User $user, int $companyId): bool
+    public function canAccess(User $user, int $companyId, ?Collection $accessibleCompanies = null): bool
     {
+        if ($accessibleCompanies !== null) {
+            return $companyId > 0 && $accessibleCompanies->contains(
+                fn (Company $company) => (int) $company->id === $companyId
+            );
+        }
+
         if (! Schema::hasTable('companies')) {
             return $companyId > 0
                 && $companyId === (int) ($user->getRawOriginal('company_id') ?? 0);
@@ -63,19 +69,21 @@ class BusinessWorkspaceResolver
         );
     }
 
-    public function activeCompanyId(User $user): int
+    public function activeCompanyId(User $user, ?Collection $accessibleCompanies = null): int
     {
         $sessionCompanyId = (int) session('current_tenant_id', 0);
-        if ($this->canAccess($user, $sessionCompanyId)) {
+        if ($this->canAccess($user, $sessionCompanyId, $accessibleCompanies)) {
             return $sessionCompanyId;
         }
 
         $primaryCompanyId = (int) ($user->getRawOriginal('company_id') ?? 0);
-        if ($this->canAccess($user, $primaryCompanyId)) {
+        if ($this->canAccess($user, $primaryCompanyId, $accessibleCompanies)) {
             return $primaryCompanyId;
         }
 
-        return (int) ($this->accessibleCompanies($user)->first()?->id ?? 0);
+        $accessibleCompanies ??= $this->accessibleCompanies($user);
+
+        return (int) ($accessibleCompanies->first()?->id ?? 0);
     }
 
     public function clearContext(User $user): void
@@ -99,9 +107,13 @@ class BusinessWorkspaceResolver
         $user->setRelation('company', $company);
     }
 
-    public function activate(User $user, Company $company): void
+    public function activate(User $user, Company $company, ?Collection $accessibleCompanies = null): void
     {
-        abort_unless($this->canAccess($user, (int) $company->id), 403, 'You do not have access to this business workspace.');
+        abort_unless(
+            $this->canAccess($user, (int) $company->id, $accessibleCompanies),
+            403,
+            'You do not have access to this business workspace.'
+        );
 
         $subscription = Schema::hasTable('subscriptions')
             ? Subscription::withoutGlobalScope('tenant')

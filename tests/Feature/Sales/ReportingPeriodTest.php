@@ -98,7 +98,7 @@ class ReportingPeriodTest extends TestCase
             ->assertSee('spb-period-title" style="font-size: 0.65rem; letter-spacing: 0.5px;">Today</small>', false)
             ->assertSee('<div class="spb-period-controls">', false)
             ->assertDontSee('<details class="spb-period-menu">', false)
-            ->assertSee('reporting-period.css?v=8', false)
+            ->assertSee('reporting-period.css?v=9', false)
             ->assertSee('reporting-period.js?v=3', false)
             ->assertSeeInOrder(['class="spb-period-form"', 'class="spb-header-metrics"', 'class="spb-period-cards"'], false)
             ->assertDontSee('Weeks start on Monday');

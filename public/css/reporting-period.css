@@ -327,31 +327,51 @@
     .spb-header-metric:nth-child(3) { grid-column: 1 / -1; }
 
     .spb-header-metric {
-        min-height: 100px;
+        min-height: 132px;
         padding: 12px;
-        gap: 10px;
+    }
+
+    .spb-header-metric > .d-flex,
+    .spb-period-card > span {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 8px !important;
+    }
+
+    .spb-metric-copy,
+    .spb-period-copy {
+        width: 100%;
     }
 
     .spb-metric-icon {
-        width: 40px;
-        height: 40px;
-        flex-basis: 40px;
-        font-size: 1rem;
+        width: 36px;
+        height: 36px;
+        flex-basis: 36px;
+        font-size: .9rem;
     }
 
     .spb-metric-label,
     .spb-period-title {
         font-size: .6rem;
+        line-height: 1.25;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
     }
 
     .spb-metric-copy > h4,
     .spb-period-copy > h4 {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
+        white-space: normal;
     }
 
     .spb-metric-copy > small,
     .spb-period-copy > small {
         font-size: .68rem;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        overflow-wrap: anywhere;
     }
 
     .spb-period-fields,
@@ -365,9 +385,8 @@
     }
 
     .spb-period-card {
-        min-height: 100px;
+        min-height: 132px;
         padding: 12px;
-        gap: 10px;
     }
 
     .spb-period-form > .btn {

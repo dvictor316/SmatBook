@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Support\DeviceSessionManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class DeviceSessionManagerTest extends TestCase
@@ -38,5 +39,17 @@ class DeviceSessionManagerTest extends TestCase
         $this->assertSame($user->id, ActiveUserSession::query()
             ->where('session_id', $sessionId)
             ->value('user_id'));
+
+        ActiveUserSession::query()->create([
+            'user_id' => $user->id,
+            'session_id' => 'expired-other-session',
+            'last_seen_at' => Carbon::now()->subHours(3),
+        ]);
+
+        $manager->ensureCurrentSession($request, $user);
+
+        $this->assertDatabaseHas('active_user_sessions', [
+            'session_id' => 'expired-other-session',
+        ]);
     }
 }
