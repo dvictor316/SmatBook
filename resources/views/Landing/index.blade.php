@@ -2359,15 +2359,15 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         display: block;
     }
     .hero-h1 {
-        width: 100%;
-        font-size: clamp(2rem, 3.2vw, 2.8rem) !important;
+        width: 90%;
+        font-size: clamp(1.8rem, 2.9vw, 2.4rem) !important;
         max-width: 20ch !important;
         line-height: 1.08 !important;
     }
     .hero-title-line, .hero-h1 .gold-text {
         font-size: inherit !important;
         max-width: 100%;
-        white-space: normal !important;
+        white-space: nowrap !important;
         transform: none !important;
     }
 }
