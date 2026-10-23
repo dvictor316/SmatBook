@@ -71,6 +71,9 @@ class ReportingPeriodTest extends TestCase
             ->assertSee('Unique customers')
             ->assertSee('Average daily sales')
             ->assertSee('Vs previous period')
+            ->assertSee('metric-glass metric-theme-primary p-3 spb-header-metric', false)
+            ->assertSee('metric-icon-box spb-metric-icon', false)
+            ->assertSee('<h4 class="fw-bold mb-0 spb-metric-value">', false)
             ->assertViewHas('headerSalesMetrics', fn ($metrics) =>
                 $metrics['customers'] === 1
                 && $metrics['average_daily_sales'] === 75.0
@@ -91,9 +94,11 @@ class ReportingPeriodTest extends TestCase
         $response->assertOk()
             ->assertSee('Week to date')
             ->assertSee('Sales performance')
-            ->assertSee('<span class="spb-period-title">Today</span>', false)
+            ->assertSee('metric-glass metric-theme-dark p-3 spb-period-card', false)
+            ->assertSee('spb-period-title" style="font-size: 0.65rem; letter-spacing: 0.5px;">Today</small>', false)
             ->assertSee('<div class="spb-period-controls">', false)
             ->assertDontSee('<details class="spb-period-menu">', false)
+            ->assertSee('reporting-period.css?v=8', false)
             ->assertSee('reporting-period.js?v=3', false)
             ->assertSeeInOrder(['class="spb-period-form"', 'class="spb-header-metrics"', 'class="spb-period-cards"'], false)
             ->assertDontSee('Weeks start on Monday');
