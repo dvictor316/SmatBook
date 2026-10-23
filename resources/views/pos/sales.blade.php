@@ -128,29 +128,44 @@
 
     .summary-actions {
         display: flex;
-        gap: 8px;
+        align-items: center;
+        gap: 6px;
         flex-wrap: wrap;
     }
 
     .summary-btn {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        justify-content: center;
+        gap: 6px;
+        min-height: 32px;
         background: #ffffff;
         color: #063d6b;
         border: 1px solid #6faed8;
-        border-radius: 12px;
-        padding: 7px 10px;
-        font-size: 0.78rem;
-        font-weight: 800;
+        border-radius: 8px;
+        padding: 5px 10px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        line-height: 1.2;
         text-decoration: none;
-        box-shadow: 0 8px 18px rgba(8, 47, 73, 0.08);
+        box-shadow: 0 2px 6px rgba(8, 47, 73, 0.07);
+        white-space: nowrap;
+        transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
     }
 
-    .summary-btn:hover {
+    .summary-btn:hover,
+    .summary-btn:focus-visible {
         color: #022c4a;
         background: #f3fbff;
         border-color: #2f8dc7;
+        box-shadow: 0 3px 8px rgba(8, 47, 73, 0.12);
+    }
+
+    .summary-btn:focus-visible,
+    .summary-filter-grid .btn:focus-visible,
+    .sales-table-card .dropdown-toggle:focus-visible {
+        outline: 2px solid #1479b8;
+        outline-offset: 2px;
     }
 
     .summary-filter-grid .form-label {
@@ -164,12 +179,24 @@
     .summary-filter-grid .form-control,
     .summary-filter-grid .input-group-text,
     .summary-filter-grid .btn {
-        border-radius: 12px;
+        border-radius: 8px;
         min-height: 34px;
         height: 34px;
         padding-top: 4px;
         padding-bottom: 4px;
-        border-radius: 8px;
+    }
+
+    .summary-filter-grid .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        min-width: 104px;
+        padding-inline: 10px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        line-height: 1.2;
+        white-space: nowrap;
     }
 
     .summary-filter-grid .input-group-text,
@@ -303,11 +330,61 @@
     }
 
     .pos-sales-compact .summary-filter-grid .btn {
-        padding-inline: 12px !important;
+        min-width: 104px;
+        padding-inline: 10px !important;
     }
 
     .pos-sales-compact .summary-card {
         margin-bottom: 0.75rem !important;
+    }
+
+    .sales-table-card .dropdown-toggle {
+        min-height: 30px;
+        padding: 4px 8px;
+        border-radius: 7px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    @media (max-width: 991.98px) {
+        .summary-btn {
+            min-height: 34px;
+            padding: 6px 10px;
+        }
+
+        .summary-filter-grid .btn {
+            min-height: 36px;
+            height: 36px;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .summary-toolbar {
+            align-items: flex-start;
+        }
+
+        .summary-actions {
+            width: 100%;
+        }
+
+        .summary-btn {
+            flex: 0 0 auto;
+            min-height: 36px;
+            padding: 6px 10px;
+            font-size: 0.75rem;
+        }
+
+        .summary-filter-grid > .d-flex {
+            gap: 6px !important;
+        }
+
+        .summary-filter-grid .btn {
+            min-width: 0;
+            min-height: 38px;
+            height: 38px;
+            padding-inline: 12px;
+        }
     }
 
     .sales-total-row td {
