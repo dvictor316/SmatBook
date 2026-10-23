@@ -2556,27 +2556,30 @@ body.pos-terminal-workspace .summary-panel {
 }
 
 .pos-cashier-suspense-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    margin: 10px 0 14px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 6px 0 10px;
 }
 
 .pos-cashier-suspense-actions .btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    min-height: 48px;
-    padding: 9px 12px;
+    gap: 6px;
+    min-height: 30px;
+    padding: 4px 9px;
     border: 0;
-    border-radius: 10px;
+    border-radius: 7px;
     color: #fff;
-    font-size: 0.9rem;
-    font-weight: 900;
-    letter-spacing: 0.02em;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
     text-transform: uppercase;
-    box-shadow: 0 5px 14px rgba(15, 23, 42, 0.14);
+    line-height: 1.15;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+    white-space: nowrap;
 }
 
 .pos-cashier-suspense-actions .btn-suspend {
@@ -2588,10 +2591,11 @@ body.pos-terminal-workspace .summary-panel {
 }
 
 .pos-cashier-suspense-actions .badge {
-    min-width: 24px;
+    min-width: 19px;
+    padding: 3px 5px;
     color: #1e3a8a;
     background: #fff;
-    font-size: 0.78rem;
+    font-size: 0.68rem;
     font-weight: 900;
 }
 
@@ -3822,10 +3826,11 @@ body.pos-terminal-workspace .pos-payment-tabs {
 body.pos-terminal-workspace .pos-pay-tab {
     min-width: 0 !important;
     width: 100% !important;
-    min-height: 34px !important;
-    padding: 6px 8px !important;
+    min-height: 42px !important;
+    padding: 8px 8px !important;
+    border-radius: 8px !important;
     color: #ffffff !important;
-    font-size: 0.78rem !important;
+    font-size: 0.86rem !important;
     font-weight: 900 !important;
     letter-spacing: 0 !important;
     text-shadow: 0 1px 0 rgba(0, 0, 0, 0.22);
@@ -3905,9 +3910,9 @@ body.pos-terminal-workspace .pos-pay-tab span {
     }
 
     body.pos-terminal-workspace .pos-pay-tab {
-        min-height: 32px !important;
-        padding: 5px 6px !important;
-        font-size: 0.68rem !important;
+        min-height: 40px !important;
+        padding: 7px 6px !important;
+        font-size: 0.76rem !important;
     }
 }
 
@@ -4975,7 +4980,20 @@ body.pos-terminal-workspace #pos-cash-account-name.is-unconfigured {
 
 @media (max-width: 380px) {
     body.pos-terminal-workspace .pos-payment-methods .pos-payment-tabs {
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 4px !important;
+    }
+
+    body.pos-terminal-workspace .pos-payment-methods .pos-pay-tab {
+        min-height: 40px !important;
+        padding: 6px 3px !important;
+        font-size: 0.7rem !important;
+    }
+
+    body.pos-terminal-workspace .pos-cashier-suspense-actions .btn {
+        min-height: 30px;
+        padding: 4px 8px;
+        font-size: 0.68rem;
     }
 }
 
