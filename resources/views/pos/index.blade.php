@@ -5030,6 +5030,48 @@ body.pos-terminal-workspace #pos-cash-account-name.is-unconfigured {
     }
 }
 
+@media (max-width: 575.98px) {
+    body.pos-terminal-workspace .pos-cashier-suspense-actions {
+        display: flex !important;
+        flex-flow: row nowrap !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100%;
+        gap: 6px !important;
+        margin: 5px auto 8px !important;
+    }
+
+    body.pos-terminal-workspace .pos-cashier-suspense-actions .btn {
+        flex: 0 1 auto !important;
+        width: auto !important;
+        min-width: 0 !important;
+        min-height: 28px !important;
+        padding: 3px 8px !important;
+        border-radius: 7px !important;
+        font-size: 0.66rem !important;
+        line-height: 1.1 !important;
+        white-space: nowrap !important;
+    }
+
+    body.pos-terminal-workspace .pos-cashier-suspense-actions .badge {
+        min-width: 17px;
+        padding: 2px 4px;
+        font-size: 0.62rem;
+    }
+}
+
+@media (max-width: 380px) {
+    body.pos-terminal-workspace .pos-cashier-suspense-actions {
+        gap: 4px !important;
+    }
+
+    body.pos-terminal-workspace .pos-cashier-suspense-actions .btn {
+        min-height: 26px !important;
+        padding: 3px 6px !important;
+        font-size: 0.62rem !important;
+    }
+}
+
 @media (max-width: 991.98px) {
     body.pos-terminal-workspace .controls-card .pos-item-entry-fields {
         --bs-gutter-x: 0.5rem;
