@@ -136,6 +136,9 @@ class ProductMeasurementSetupTest extends TestCase
         $this->assertSame(100, (int) $product->reorder_quantity);
 
         $html = $this->get(route('sales.showPos'))->assertOk()->getContent();
+        $this->assertStringContainsString('aria-label="Cashier calculator"', $html);
+        $this->assertStringContainsString('data-calculator-key="+"', $html);
+        $this->assertStringContainsString('data-calculator-action="equals"', $html);
         $this->assertSame(2, substr_count($html, 'data-min-stock="6"'));
         $this->assertStringNotContainsString('data-min-stock="15"', $html);
 

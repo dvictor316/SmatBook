@@ -1404,13 +1404,61 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
 }
 
 .cart-empty-shell {
-    width: min(100%, 250px);
+    width: min(100%, 430px);
+    max-height: 100%;
+    overflow-y: auto;
     padding: 14px 16px;
     text-align: center;
     border: 1px dashed #bfdbfe;
     border-radius: 10px;
     background: linear-gradient(180deg, rgba(255, 253, 244, 0.98) 0%, rgba(255, 250, 236, 0.96) 100%);
     box-shadow: 0 14px 34px rgba(212, 175, 55, 0.10);
+}
+
+.pos-idle-calculator {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #d7e0ea;
+    text-align: left;
+}
+
+.pos-idle-calculator-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 7px;
+    color: #334155;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.pos-idle-calculator-header span {
+    color: #64748b;
+    font-size: 0.65rem;
+    font-weight: 500;
+}
+
+.pos-idle-calculator .pos-calculator-expression {
+    min-height: 40px;
+    padding: 6px 10px;
+    font-size: 1rem;
+}
+
+.pos-idle-calculator .pos-calculator-result {
+    min-height: 1.3em;
+    font-size: 1rem;
+}
+
+.pos-idle-calculator .pos-calculator-keys {
+    gap: 5px;
+    margin-top: 7px;
+}
+
+.pos-idle-calculator .pos-calculator-key {
+    min-height: 36px;
+    border-radius: 6px;
+    font-size: 0.88rem;
 }
 
 .cart-empty-icon {
@@ -3801,9 +3849,9 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-card-img img {
     }
 
     body.pos-terminal-workspace .cart-empty-shell {
-        width: min(320px, 48%) !important;
-        min-height: 132px !important;
-        padding: 18px 20px !important;
+        width: min(430px, 100%) !important;
+        min-height: 0 !important;
+        padding: 12px 14px !important;
     }
 
     body.pos-terminal-workspace .cart-empty-icon {
@@ -6031,15 +6079,50 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                 <div class="cart-wrapper">
                     <div id="cart-empty-state" class="cart-empty-state">
                         <div class="cart-empty-shell">
-                            <div class="cart-empty-icon">
-                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                    <path d="M3 4h2l1.4 7.2a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.75L19 7H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <circle cx="10" cy="18" r="1.6" fill="currentColor"/>
-                                    <circle cx="17" cy="18" r="1.6" fill="currentColor"/>
-                                </svg>
+                            <div class="cart-empty-message">
+                                <div class="cart-empty-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <path d="M3 4h2l1.4 7.2a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.75L19 7H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <circle cx="10" cy="18" r="1.6" fill="currentColor"/>
+                                        <circle cx="17" cy="18" r="1.6" fill="currentColor"/>
+                                    </svg>
+                                </div>
+                                <div class="cart-empty-title">Cart Empty</div>
+                                <p class="cart-empty-copy">Select products from the catalog and they will appear here in a smooth scrollable cart.</p>
                             </div>
-                            <div class="cart-empty-title">Cart Empty</div>
-                            <p class="cart-empty-copy">Select products from the catalog and they will appear here in a smooth scrollable cart.</p>
+                            <div class="pos-calculator pos-idle-calculator" id="pos-idle-calculator" aria-label="Cashier calculator">
+                                <div class="pos-idle-calculator-header">
+                                    <strong><i class="fas fa-calculator me-1"></i> Calculator</strong>
+                                    <span>Quick arithmetic</span>
+                                </div>
+                                <input class="form-control pos-calculator-expression" type="text" inputmode="decimal" autocomplete="off" aria-label="Calculator expression" placeholder="0" data-calculator-expression>
+                                <div class="rounded border bg-light px-2 py-1 mt-2">
+                                    <div class="small text-muted fw-semibold text-uppercase">Result</div>
+                                    <div class="pos-calculator-result" role="status" aria-live="polite" data-calculator-result>0</div>
+                                </div>
+                                <div class="pos-calculator-keys" aria-label="Calculator keypad">
+                                    <button type="button" class="pos-calculator-key is-clear" data-calculator-action="clear" aria-label="Clear">C</button>
+                                    <button type="button" class="pos-calculator-key is-operator" data-calculator-key="(">(</button>
+                                    <button type="button" class="pos-calculator-key is-operator" data-calculator-key=")">)</button>
+                                    <button type="button" class="pos-calculator-key is-operator" data-calculator-action="backspace" aria-label="Backspace">⌫</button>
+                                    <button type="button" class="pos-calculator-key" data-calculator-key="7">7</button>
+                                    <button type="button" class="pos-calculator-key" data-calculator-key="8">8</button>
+                                    <button type="button" class="pos-calculator-key" data-calculator-key="9">9</button>
+                                    <button type="button" class="pos-calculator-key is-operator" data-calculator-key="/">÷</button>
+                                    <button type="button" class="pos-calculator-key" data-calculator-key="4">4</button>
+                                    <button type="button" class="pos-calculator-key" data-calculator-key="5">5</button>
+                                    <button type="button" class="pos-calculator-key" data-calculator-key="6">6</button>
+                                    <button type="button" class="pos-calculator-key is-operator" data-calculator-key="*">×</button>
+                                    <button type="button" class="pos-calculator-key" data-calculator-key="1">1</button>
+                                    <button type="button" class="pos-calculator-key" data-calculator-key="2">2</button>
+                                    <button type="button" class="pos-calculator-key" data-calculator-key="3">3</button>
+                                    <button type="button" class="pos-calculator-key is-operator" data-calculator-key="-">−</button>
+                                    <button type="button" class="pos-calculator-key" data-calculator-key="0">0</button>
+                                    <button type="button" class="pos-calculator-key" data-calculator-key=".">.</button>
+                                    <button type="button" class="pos-calculator-key is-operator" data-calculator-key="+">+</button>
+                                    <button type="button" class="pos-calculator-key is-equals" data-calculator-action="equals" aria-label="Calculate">=</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <table class="table cart-table mb-0">
@@ -8137,6 +8220,65 @@ window.POS_ENABLE_FALLBACK = function () {
         });
     }
 
+    function bindPosCalculator(root) {
+        const input = root?.querySelector('[data-calculator-expression]');
+        const result = root?.querySelector('[data-calculator-result]');
+        if (!root || !input || !result || root.dataset.calculatorBound === 'true') return;
+        root.dataset.calculatorBound = 'true';
+
+        const update = () => {
+            const expression = String(input.value || '').trim();
+            if (!expression) {
+                result.textContent = '0';
+                return;
+            }
+            try {
+                const value = evaluatePosCalculatorExpression(expression);
+                result.textContent = new Intl.NumberFormat('en-NG', { maximumFractionDigits: 8 }).format(value);
+            } catch {
+                result.textContent = 'Enter a valid calculation';
+            }
+        };
+
+        input.addEventListener('input', update);
+        input.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                event.stopPropagation();
+                update();
+            }
+        });
+        root.querySelector('.pos-calculator-keys')?.addEventListener('click', (event) => {
+            const target = event.target instanceof Element ? event.target : null;
+            const button = target?.closest('button[data-calculator-key], button[data-calculator-action]');
+            if (!button) return;
+
+            const action = button.dataset.calculatorAction;
+            const start = input.selectionStart ?? input.value.length;
+            const end = input.selectionEnd ?? start;
+            let cursor = start;
+            if (action === 'clear') {
+                input.value = '';
+                cursor = 0;
+            } else if (action === 'backspace') {
+                if (start === end && start > 0) cursor = start - 1;
+                input.value = input.value.slice(0, cursor) + input.value.slice(end);
+            } else if (action !== 'equals') {
+                const key = button.dataset.calculatorKey;
+                input.value = input.value.slice(0, start) + key + input.value.slice(end);
+                cursor = start + key.length;
+            } else {
+                cursor = input.value.length;
+            }
+
+            update();
+            input.focus();
+            input.setSelectionRange(cursor, cursor);
+        });
+    }
+
+    bindPosCalculator(document.getElementById('pos-idle-calculator'));
+
     function openPosCalculator() {
         if (!window.Swal || typeof Swal.fire !== 'function') {
             alertFallback('Calculator is available when the POS alert panel is loaded.');
@@ -8148,10 +8290,10 @@ window.POS_ENABLE_FALLBACK = function () {
             html: `
                 <div class="pos-calculator" id="pos-calculator">
                     <label for="pos-calculator-expression" class="form-label fw-semibold mb-0">Calculation</label>
-                    <input id="pos-calculator-expression" class="form-control pos-calculator-expression" type="text" inputmode="decimal" autocomplete="off" aria-label="Calculator expression" placeholder="0">
+                    <input id="pos-calculator-expression" class="form-control pos-calculator-expression" type="text" inputmode="decimal" autocomplete="off" aria-label="Calculator expression" placeholder="0" data-calculator-expression>
                     <div class="rounded border bg-light px-3 py-2">
                         <div class="small text-muted fw-semibold text-uppercase">Result</div>
-                        <div id="pos-calculator-result" class="pos-calculator-result" role="status" aria-live="polite">0</div>
+                        <div id="pos-calculator-result" class="pos-calculator-result" role="status" aria-live="polite" data-calculator-result>0</div>
                     </div>
                     <div class="pos-calculator-keys" aria-label="Calculator keypad">
                         <button type="button" class="pos-calculator-key is-clear" data-calculator-action="clear" aria-label="Clear">C</button>
@@ -8180,53 +8322,9 @@ window.POS_ENABLE_FALLBACK = function () {
             confirmButtonText: 'Close',
             confirmButtonColor: '#0f3a8a',
             didOpen: (popup) => {
-                const input = document.getElementById('pos-calculator-expression');
-                const result = document.getElementById('pos-calculator-result');
-                const update = () => {
-                    const expression = String(input?.value || '').trim();
-                    if (!expression) {
-                        result.textContent = '0';
-                        return;
-                    }
-                    try {
-                        const value = evaluatePosCalculatorExpression(expression);
-                        result.textContent = new Intl.NumberFormat('en-NG', { maximumFractionDigits: 8 }).format(value);
-                    } catch {
-                        result.textContent = 'Enter a valid calculation';
-                    }
-                };
-                input?.addEventListener('input', update);
-                input?.addEventListener('keydown', (event) => {
-                    if (event.key === 'Enter') {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        update();
-                    }
-                });
-                popup.querySelector('.pos-calculator-keys')?.addEventListener('click', (event) => {
-                    const button = event.target.closest('button[data-calculator-key], button[data-calculator-action]');
-                    if (!button || !input) return;
-
-                    const action = button.dataset.calculatorAction;
-                    if (action === 'clear') {
-                        input.value = '';
-                    } else if (action === 'backspace') {
-                        input.value = input.value.slice(0, -1);
-                    } else if (action !== 'equals') {
-                        const key = button.dataset.calculatorKey;
-                        const start = input.selectionStart ?? input.value.length;
-                        const end = input.selectionEnd ?? start;
-                        input.value = input.value.slice(0, start) + key + input.value.slice(end);
-                    }
-
-                    update();
-                    input.focus();
-                    const cursor = action === 'backspace'
-                        ? Math.max(0, (input.selectionStart ?? input.value.length) - 1)
-                        : input.value.length;
-                    input.setSelectionRange(cursor, cursor);
-                });
-                window.setTimeout(() => input?.focus(), 80);
+                const calculator = popup.querySelector('.pos-calculator');
+                bindPosCalculator(calculator);
+                calculator?.querySelector('[data-calculator-expression]')?.focus();
             },
         });
     }
