@@ -1042,7 +1042,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     // Sales
     Route::controller(SaleController::class)->prefix('sales')->name('sales.')->group(function () {
         Route::get('/', 'index')->name('index');
-        Route::get('/create', 'create')->name('create');
+        Route::get('/create', [InvoiceController::class, 'create'])->name('create');
         Route::post('/', 'store')->name('store');
         Route::get('/chart-data', 'getChartData')->name('chart-data');
         Route::get('/return-to-pos', 'returnToPos')->name('returnToPos');
@@ -1212,6 +1212,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/add-purchases-order', 'createOrder')->name('add-purchases-order');
         Route::post('/purchase-orders/store', 'storeOrder')->name('purchase-orders.store');
         Route::get('/edit-purchases-order/{id}', 'editOrder')->name('edit-purchases-order');
+        Route::put('/purchase-orders/{id}', 'updateOrder')->name('purchase-orders.update');
         Route::get('/purchase-details/{id}', 'show')->name('purchase-details');
         Route::get('/purchases/{id}/pdf', 'downloadPDF')->name('purchases.pdf');
         Route::get('/purchases/{id}/excel', 'exportExcel')->name('purchases.excel');

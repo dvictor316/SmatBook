@@ -3,7 +3,14 @@
 
 @section('content')
 @php
-    $orderItems  = old('items', [['product_id' => '', 'description' => '', 'quantity' => 1, 'rate' => 0]]);
+    $orderItems = old('items', isset($order)
+        ? $order->items->map(fn ($item) => [
+            'product_id' => $item->product_id,
+            'description' => $item->description ?? '',
+            'quantity' => $item->qty,
+            'rate' => $item->unit_price,
+        ])->all()
+        : [['product_id' => '', 'description' => '', 'quantity' => 1, 'rate' => 0]]);
     $productsData = ($products ?? collect())->map(fn ($p) => [
         'id'   => (int) $p->id,
         'name' => (string) ($p->name ?? ''),
@@ -29,7 +36,7 @@
         <div class="page-header">
             <div class="row align-items-center">
                 <div class="col-lg-8">
-                    <h3 class="page-title">New Purchase Order</h3>
+                    <h3 class="page-title">{{ isset($order) ? 'Edit Purchase Order' : 'New Purchase Order' }}</h3>
                     <p class="text-muted mb-0">Use this when goods are not yet received. Inventory stays unchanged until a Goods Received Note is created against this order.</p>
                 </div>
                 <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
@@ -51,8 +58,11 @@
             </div>
         @endif
 
-        <form action="{{ route('purchase-orders.store') }}" method="POST" id="po-form">
+        <form action="{{ isset($order) ? route('purchase-orders.update', $order->id) : route('purchase-orders.store') }}" method="POST" id="po-form">
             @csrf
+            @if(isset($order))
+                @method('PUT')
+            @endif
             <div class="po-workspace">
 
                 {{-- LEFT: main form --}}
@@ -66,7 +76,7 @@
                             <div class="row g-3">
                                 <div class="col-md-4">
                                     <label class="form-label">Purchase Order ID</label>
-                                    <input type="text" class="form-control" name="purchase_id" value="{{ old('purchase_id') }}" placeholder="Auto-generated if empty">
+                                    <input type="text" class="form-control" name="purchase_id" value="{{ old('purchase_id', $order->purchase_no ?? '') }}" placeholder="Auto-generated if empty">
                                     @error('purchase_id') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                                 </div>
                                 <div class="col-md-4">
@@ -74,8 +84,8 @@
                                     <select class="form-select" name="supplier_id" required>
                                         <option value="">Select supplier</option>
                                         @foreach(($suppliers ?? collect()) as $supplier)
-                                            <option value="{{ $supplier->id }}" @selected((string) old('supplier_id') === (string) $supplier->id)>
-                                                {{ $supplier->name }}
+                                            <option value="{{ $supplier->id }}" @selected((string) old('supplier_id', $order->supplier_id ?? '') === (string) $supplier->id)>
+                                                {{ $supplier->name ?: ($supplier->supplier_name ?: ($supplier->company_name ?: 'Supplier #' . $supplier->id)) }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -83,12 +93,12 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Order Date <span class="text-danger">*</span></label>
-                                    <input type="date" class="form-control" name="purchase_date" value="{{ old('purchase_date', now()->toDateString()) }}" required>
+                                    <input type="date" class="form-control" name="purchase_date" value="{{ old('purchase_date', isset($order) && $order->purchase_date ? \Carbon\Carbon::parse($order->purchase_date)->toDateString() : now()->toDateString()) }}" required>
                                     @error('purchase_date') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Reference</label>
-                                    <input type="text" class="form-control" name="reference_no" value="{{ old('reference_no') }}" placeholder="Supplier quote, email, or internal reference">
+                                    <input type="text" class="form-control" name="reference_no" value="{{ old('reference_no', $order->reference_no ?? '') }}" placeholder="Supplier quote, email, or internal reference">
                                     @error('reference_no') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                                 </div>
                                 <div class="col-md-6">
@@ -96,7 +106,7 @@
                                     <select class="form-select" name="vendor_id">
                                         <option value="">Optional vendor mapping</option>
                                         @foreach(($vendors ?? collect()) as $vendor)
-                                            <option value="{{ $vendor->id }}" @selected((string) old('vendor_id') === (string) $vendor->id)>
+                                            <option value="{{ $vendor->id }}" @selected((string) old('vendor_id', $order->vendor_id ?? '') === (string) $vendor->id)>
                                                 {{ $vendor->name }}
                                             </option>
                                         @endforeach
@@ -105,7 +115,7 @@
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label">Notes</label>
-                                    <textarea name="notes" rows="3" class="form-control" placeholder="Delivery expectations, supplier commitments, or internal instructions">{{ old('notes') }}</textarea>
+                                    <textarea name="notes" rows="3" class="form-control" placeholder="Delivery expectations, supplier commitments, or internal instructions">{{ old('notes', $order->notes ?? '') }}</textarea>
                                     @error('notes') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                                 </div>
                             </div>
@@ -210,7 +220,7 @@
 
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">
-                            <i class="fe fe-check me-1"></i> Save Purchase Order
+                            <i class="fe fe-check me-1"></i> {{ isset($order) ? 'Update Purchase Order' : 'Save Purchase Order' }}
                         </button>
                         <a href="{{ route('purchase-orders') }}" class="btn btn-outline-secondary">Cancel</a>
                     </div>

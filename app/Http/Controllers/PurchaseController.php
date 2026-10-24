@@ -1438,43 +1438,93 @@ public function show($id)
      */
     public function createOrder()
     {
-        $vendors = Vendor::orderBy('name')->get();
-        $products = Product::orderBy('name')->get();
-        
-        return view('Purchases.add-purchases-order', compact('vendors', 'products'));
+        $suppliersQuery = Supplier::query();
+        $this->applyTenantScope($suppliersQuery, 'suppliers');
+        $this->applyBranchScope($suppliersQuery, 'suppliers');
+        $supplierNameColumn = collect(['name', 'supplier_name', 'company_name'])
+            ->first(fn ($column) => Schema::hasColumn('suppliers', $column));
+        $suppliers = $supplierNameColumn
+            ? $suppliersQuery->orderBy($supplierNameColumn)->get()
+            : collect();
+
+        $vendorsQuery = Vendor::query();
+        $this->applyTenantScope($vendorsQuery, 'vendors');
+        $vendors = Schema::hasColumn('vendors', 'name')
+            ? $vendorsQuery->orderBy('name')->get()
+            : collect();
+
+        $productsQuery = Product::query();
+        $this->applyTenantScope($productsQuery, 'products');
+        $this->applyBranchScope($productsQuery, 'products');
+        if (Schema::hasTable('product_units')) {
+            $productsQuery->with('activeProductUnits');
+        }
+        $products = $productsQuery->orderBy('name')->get();
+
+        return view('Purchases.add-purchases-order', compact('suppliers', 'vendors', 'products'));
     }
 
     public function storeOrder(Request $request)
     {
         $validated = $request->validate([
-            'purchase_id' => 'nullable|string|max:100',
-            'vendor_id' => 'nullable|exists:vendors,id',
-            'supplier_id' => 'nullable|exists:suppliers,id',
-            'purchase_date' => 'nullable|date',
+            'purchase_id' => 'nullable|string|max:100|unique:purchases,purchase_no',
+            'vendor_id' => 'nullable|integer|exists:vendors,id',
+            'supplier_id' => 'required|integer|exists:suppliers,id',
+            'purchase_date' => 'required|date',
             'reference_no' => 'nullable|string|max:100',
-            'product_id' => 'nullable|exists:products,id',
-            'quantity' => 'nullable|numeric|min:0',
-            'rate' => 'nullable|numeric|min:0',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|integer|exists:products,id',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.rate' => 'required|numeric|min:0',
+            'items.*.description' => 'nullable|string|max:1000',
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        $purchaseNo = $validated['purchase_id'] ?? ('PO-' . date('Ymd') . '-' . strtoupper(Str::random(5)));
-        $qty = (float) ($validated['quantity'] ?? 0);
-        $rate = (float) ($validated['rate'] ?? 0);
-        $total = max(0, $qty * $rate);
+        $supplierQuery = Supplier::query();
+        $this->applyTenantScope($supplierQuery, 'suppliers');
+        $this->applyBranchScope($supplierQuery, 'suppliers');
+        if (!$supplierQuery->whereKey($validated['supplier_id'])->exists()) {
+            return back()->withErrors([
+                'supplier_id' => 'The selected supplier does not belong to this workspace or branch.',
+            ])->withInput();
+        }
 
-        DB::beginTransaction();
+        $vendorQuery = Vendor::query();
+        $this->applyTenantScope($vendorQuery, 'vendors');
+        if (!empty($validated['vendor_id']) && !$vendorQuery->whereKey($validated['vendor_id'])->exists()) {
+            return back()->withErrors([
+                'vendor_id' => 'The selected vendor does not belong to this workspace.',
+            ])->withInput();
+        }
+
+        $productsQuery = Product::query();
+        $this->applyTenantScope($productsQuery, 'products');
+        $this->applyBranchScope($productsQuery, 'products');
+        $requestedProductIds = collect($validated['items'])->pluck('product_id')->unique();
+        $availableProductIds = $productsQuery->whereIn('id', $requestedProductIds)->pluck('id')->all();
+        if (count($availableProductIds) !== $requestedProductIds->count()) {
+            return back()->withErrors([
+                'items' => 'One or more selected products do not belong to this workspace or branch.',
+            ])->withInput();
+        }
+
+        $purchaseNo = $validated['purchase_id'] ?? ('PO-' . date('Ymd') . '-' . strtoupper(Str::random(5)));
+        $total = round(collect($validated['items'])->sum(
+            fn ($item) => (float) $item['quantity'] * (float) $item['rate']
+        ), 2);
+
         try {
+            DB::beginTransaction();
             $purchase = new Purchase();
             $purchase->purchase_no = $purchaseNo;
             if (Schema::hasColumn('purchases', 'vendor_id')) {
                 $purchase->vendor_id = $validated['vendor_id'] ?? null;
             }
             if (Schema::hasColumn('purchases', 'supplier_id')) {
-                $purchase->supplier_id = $validated['supplier_id'] ?? ($validated['vendor_id'] ?? null);
+                $purchase->supplier_id = $validated['supplier_id'];
             }
             if (Schema::hasColumn('purchases', 'purchase_date')) {
-                $purchase->purchase_date = $validated['purchase_date'] ?? now()->toDateString();
+                $purchase->purchase_date = $validated['purchase_date'];
             }
             if (Schema::hasColumn('purchases', 'reference_no')) {
                 $purchase->reference_no = $validated['reference_no'] ?? null;
@@ -1499,12 +1549,12 @@ public function show($id)
             $purchase->status = 'pending';
             $purchase->save();
 
-            if (!empty($validated['product_id']) && $qty > 0 && $rate >= 0) {
+            foreach ($validated['items'] as $item) {
                 $itemPayload = [
                     'purchase_id' => $purchase->id,
-                    'product_id' => $validated['product_id'],
-                    'qty' => $qty,
-                    'unit_price' => $rate,
+                    'product_id' => $item['product_id'],
+                    'qty' => $item['quantity'],
+                    'unit_price' => $item['rate'],
                 ];
                 if (Schema::hasColumn('purchase_items', 'company_id')) {
                     $itemPayload['company_id'] = $purchase->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id;
@@ -1515,6 +1565,12 @@ public function show($id)
                 if (Schema::hasColumn('purchase_items', 'branch_name')) {
                     $itemPayload['branch_name'] = $purchase->branch_name ?? $activeBranch['name'];
                 }
+                if (Schema::hasColumn('purchase_items', 'description')) {
+                    $itemPayload['description'] = $item['description'] ?? null;
+                }
+                if (Schema::hasColumn('purchase_items', 'line_total')) {
+                    $itemPayload['line_total'] = round((float) $item['quantity'] * (float) $item['rate'], 2);
+                }
                 PurchaseItem::create($itemPayload);
             }
 
@@ -1522,7 +1578,8 @@ public function show($id)
             return redirect()->route('purchase-orders')->with('success', 'Purchase order created successfully.');
         } catch (\Throwable $e) {
             DB::rollBack();
-            return back()->with('error', 'Failed to create purchase order: ' . $e->getMessage())->withInput();
+            report($e);
+            return back()->with('error', 'Failed to create purchase order. Please try again.')->withInput();
         }
     }
 
@@ -1531,11 +1588,149 @@ public function show($id)
      */
     public function editOrder($id)
     {
-        $vendors = Vendor::orderBy('name')->get();
-        $products = Product::orderBy('name')->get();
-        $order = Purchase::with(['vendor', 'items'])->find($id);
+        $order = $this->findScopedPurchase($id, ['vendor', 'supplier', 'items']);
+        abort_if(!$order, 404);
 
-        return view('Purchases.edit-purchases-order', compact('order', 'vendors', 'products'));
+        $suppliersQuery = Supplier::query();
+        $this->applyTenantScope($suppliersQuery, 'suppliers');
+        $this->applyBranchScope($suppliersQuery, 'suppliers');
+        $supplierNameColumn = collect(['name', 'supplier_name', 'company_name'])
+            ->first(fn ($column) => Schema::hasColumn('suppliers', $column));
+        $suppliers = $supplierNameColumn
+            ? $suppliersQuery->orderBy($supplierNameColumn)->get()
+            : collect();
+
+        $vendorsQuery = Vendor::query();
+        $this->applyTenantScope($vendorsQuery, 'vendors');
+        $vendors = Schema::hasColumn('vendors', 'name')
+            ? $vendorsQuery->orderBy('name')->get()
+            : collect();
+
+        $productsQuery = Product::query();
+        $this->applyTenantScope($productsQuery, 'products');
+        $this->applyBranchScope($productsQuery, 'products');
+        if (Schema::hasTable('product_units')) {
+            $productsQuery->with('activeProductUnits');
+        }
+        $products = $productsQuery->orderBy('name')->get();
+
+        return view('Purchases.add-purchases-order', compact('order', 'suppliers', 'vendors', 'products'));
+    }
+
+    public function updateOrder(Request $request, int $id)
+    {
+        $order = $this->findScopedPurchase($id, ['items']);
+        abort_if(!$order, 404);
+
+        $validated = $request->validate([
+            'purchase_id' => 'required|string|max:100|unique:purchases,purchase_no,' . $order->id,
+            'vendor_id' => 'nullable|integer|exists:vendors,id',
+            'supplier_id' => 'required|integer|exists:suppliers,id',
+            'purchase_date' => 'required|date',
+            'reference_no' => 'nullable|string|max:100',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|integer|exists:products,id',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.rate' => 'required|numeric|min:0',
+            'items.*.description' => 'nullable|string|max:1000',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        if (Schema::hasColumn('purchase_items', 'received_qty')
+            && $order->items->contains(fn ($item) => (float) ($item->received_qty ?? 0) > 0)) {
+            return back()->withErrors([
+                'items' => 'This purchase order cannot be changed after goods have been received.',
+            ])->withInput();
+        }
+
+        $supplierQuery = Supplier::query();
+        $this->applyTenantScope($supplierQuery, 'suppliers');
+        $this->applyBranchScope($supplierQuery, 'suppliers');
+        if (!$supplierQuery->whereKey($validated['supplier_id'])->exists()) {
+            return back()->withErrors([
+                'supplier_id' => 'The selected supplier does not belong to this workspace or branch.',
+            ])->withInput();
+        }
+
+        $vendorQuery = Vendor::query();
+        $this->applyTenantScope($vendorQuery, 'vendors');
+        if (!empty($validated['vendor_id']) && !$vendorQuery->whereKey($validated['vendor_id'])->exists()) {
+            return back()->withErrors([
+                'vendor_id' => 'The selected vendor does not belong to this workspace.',
+            ])->withInput();
+        }
+
+        $productsQuery = Product::query();
+        $this->applyTenantScope($productsQuery, 'products');
+        $this->applyBranchScope($productsQuery, 'products');
+        $requestedProductIds = collect($validated['items'])->pluck('product_id')->unique();
+        $availableProductIds = $productsQuery->whereIn('id', $requestedProductIds)->pluck('id')->all();
+        if (count($availableProductIds) !== $requestedProductIds->count()) {
+            return back()->withErrors([
+                'items' => 'One or more selected products do not belong to this workspace or branch.',
+            ])->withInput();
+        }
+
+        $total = round(collect($validated['items'])->sum(
+            fn ($item) => (float) $item['quantity'] * (float) $item['rate']
+        ), 2);
+
+        try {
+            DB::transaction(function () use ($validated, $order, $total) {
+                if (Schema::hasColumn('purchases', 'purchase_no')) {
+                    $order->purchase_no = $validated['purchase_id'];
+                }
+                if (Schema::hasColumn('purchases', 'supplier_id')) {
+                    $order->supplier_id = $validated['supplier_id'];
+                }
+                if (Schema::hasColumn('purchases', 'vendor_id')) {
+                    $order->vendor_id = $validated['vendor_id'] ?? null;
+                }
+                if (Schema::hasColumn('purchases', 'purchase_date')) {
+                    $order->purchase_date = $validated['purchase_date'];
+                }
+                if (Schema::hasColumn('purchases', 'reference_no')) {
+                    $order->reference_no = $validated['reference_no'] ?? null;
+                }
+                if (Schema::hasColumn('purchases', 'notes')) {
+                    $order->notes = $validated['notes'] ?? null;
+                }
+                $order->total_amount = $total;
+                $order->save();
+
+                $order->items()->delete();
+                $activeBranch = $this->getActiveBranchContext();
+                foreach ($validated['items'] as $item) {
+                    $itemPayload = [
+                        'purchase_id' => $order->id,
+                        'product_id' => $item['product_id'],
+                        'qty' => $item['quantity'],
+                        'unit_price' => $item['rate'],
+                    ];
+                    if (Schema::hasColumn('purchase_items', 'company_id')) {
+                        $itemPayload['company_id'] = $order->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id;
+                    }
+                    if (Schema::hasColumn('purchase_items', 'branch_id')) {
+                        $itemPayload['branch_id'] = $order->branch_id ?? $activeBranch['id'];
+                    }
+                    if (Schema::hasColumn('purchase_items', 'branch_name')) {
+                        $itemPayload['branch_name'] = $order->branch_name ?? $activeBranch['name'];
+                    }
+                    if (Schema::hasColumn('purchase_items', 'description')) {
+                        $itemPayload['description'] = $item['description'] ?? null;
+                    }
+                    if (Schema::hasColumn('purchase_items', 'line_total')) {
+                        $itemPayload['line_total'] = round((float) $item['quantity'] * (float) $item['rate'], 2);
+                    }
+                    PurchaseItem::create($itemPayload);
+                }
+            });
+
+            return redirect()->route('purchase-orders')->with('success', 'Purchase order updated successfully.');
+        } catch (\Throwable $e) {
+            report($e);
+            return back()->with('error', 'Failed to update purchase order. Please try again.')->withInput();
+        }
     }
 
     // ========== PURCHASE TRANSACTIONS (SUPER ADMIN) ==========
