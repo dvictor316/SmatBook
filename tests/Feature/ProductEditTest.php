@@ -142,4 +142,51 @@ class ProductEditTest extends TestCase
         $this->assertSame(1, substr_count($errorPage->getContent(), 'The kg per carton field must be greater than 0.'));
         $this->assertDatabaseHas('products', ['id' => $productId, 'stock' => 7.5]);
     }
+
+    public function test_product_edit_can_set_stock_by_cartons_rolls_and_loose_pieces(): void
+    {
+        $company = Company::create(['name' => 'Packaging Stock Business']);
+        $user = User::factory()->create(['company_id' => $company->id, 'role' => 'admin']);
+        $productId = DB::table('products')->insertGetId([
+            'company_id' => $company->id, 'user_id' => $user->id,
+            'name' => 'Packaged Stock', 'sku' => 'PACKAGED-STOCK-1',
+            'price' => 20, 'purchase_price' => 10,
+            'stock' => 5, 'stock_quantity' => 5,
+            'base_unit_name' => 'pcs', 'unit_type' => 'carton',
+            'units_per_carton' => 12, 'units_per_roll' => 5,
+            'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        DB::table('product_branch_stocks')->insert([
+            'company_id' => $company->id, 'product_id' => $productId,
+            'branch_id' => 'hq', 'branch_name' => 'Headquarters',
+            'quantity' => 5, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $this->actingAs($user)->withoutMiddleware([
+            SubscriptionActive::class, RequireActiveBranch::class, CheckPlanAccess::class,
+            ForceLogoutExpiredSession::class, EnforceDeviceSessionLimit::class, VerifyTenantSession::class,
+        ])->withSession([
+            'current_tenant_id' => $company->id,
+            'active_branch_id' => 'hq', 'active_branch_name' => 'Headquarters',
+        ]);
+
+        $page = $this->get(route('inventory.Products.edit', $productId));
+        $page->assertOk()->assertSee('Enter stock as cartons, rolls, and loose pieces');
+
+        $this->put(route('inventory.Products.update', $productId), [
+            'name' => 'Packaged Stock', 'sku' => 'PACKAGED-STOCK-1',
+            'price' => 20, 'purchase_price' => 10,
+            'stock_entry_mode' => 'packaging', 'stock' => 999,
+            'stock_cartons' => 2, 'stock_rolls' => 3, 'stock_units' => 4,
+            'base_unit_name' => 'pcs', 'unit_type' => 'carton',
+            'units_per_carton' => 12, 'units_per_roll' => 5, 'status' => 'active',
+        ])->assertRedirect(route('product-list'))->assertSessionHas('success');
+
+        $this->assertDatabaseHas('products', [
+            'id' => $productId, 'stock' => 43, 'stock_quantity' => 43,
+            'units_per_carton' => 12, 'units_per_roll' => 5,
+        ]);
+        $this->assertDatabaseHas('product_branch_stocks', [
+            'product_id' => $productId, 'branch_id' => 'hq', 'quantity' => 43,
+        ]);
+    }
 }

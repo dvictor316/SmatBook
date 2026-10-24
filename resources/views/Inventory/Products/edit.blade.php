@@ -110,10 +110,10 @@
                                     <input type="number" step="0.01" name="purchase_price" class="form-control" value="{{ old('purchase_price', $product->purchase_price) }}" required>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-4" id="edit_total_stock_field">
                                 <div class="form-group">
                                     <label class="field-label" id="edit_stock_label">Total Stock Quantity *</label>
-                                    <input type="number" step="0.000001" min="0" name="stock" class="form-control" value="{{ old('stock', $product->active_branch_stock ?? $product->stock) }}" required>
+                                    <input type="number" step="0.000001" min="0" name="stock" id="edit_total_stock" class="form-control" value="{{ old('stock', $product->active_branch_stock ?? $product->stock) }}" required>
                                     <small class="field-note">Updating this value will set the sellable stock for the current active branch{{ !empty($activeBranch['name'] ?? null) ? ' (' . $activeBranch['name'] . ')' : '' }}.</small>
                                 </div>
                             </div>
@@ -139,6 +139,38 @@
                                 <div class="form-group">
                                     <label class="field-label">Suggested Reorder Qty</label>
                                     <input type="number" name="reorder_quantity" min="0" class="form-control" value="{{ old('reorder_quantity', $product->reorder_quantity ?? 0) }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="edit_packaging_stock_toggle" @checked(old('stock_entry_mode') === 'packaging')>
+                                <label class="form-check-label" for="edit_packaging_stock_toggle">Enter stock as cartons, rolls, and loose pieces</label>
+                            </div>
+                            <input type="hidden" name="stock_entry_mode" id="edit_stock_entry_mode" value="{{ old('stock_entry_mode', 'total') }}">
+                            <input type="hidden" name="stock" id="edit_packaging_stock_value" value="" disabled>
+                            <div id="edit_packaging_stock_fields" class="row mt-2" style="display: none;">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label class="field-label">Full Cartons</label>
+                                        <input type="number" min="0" step="0.01" name="stock_cartons" class="form-control" value="{{ old('stock_cartons', 0) }}" disabled>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label class="field-label">Full Rolls</label>
+                                        <input type="number" min="0" step="0.01" name="stock_rolls" class="form-control" value="{{ old('stock_rolls', 0) }}" disabled>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label class="field-label" id="edit_loose_stock_label">Loose Pieces (pcs)</label>
+                                        <input type="number" min="0" step="0.01" name="stock_units" class="form-control" value="{{ old('stock_units', 0) }}" disabled>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <small class="field-note">Cartons and rolls are converted using the packaging quantities below. The total is saved as stock in the product's base unit.</small>
+                                    <div class="field-note fw-semibold" id="edit_packaging_stock_preview" aria-live="polite"></div>
                                 </div>
                             </div>
                         </div>
@@ -419,6 +451,39 @@
                 : 'Leave empty to calculate it automatically.');
         }
 
+        function refreshEditPackagingStock() {
+            const cartons = parseFloat($('input[name="stock_cartons"]').val()) || 0;
+            const rolls = parseFloat($('input[name="stock_rolls"]').val()) || 0;
+            const looseUnits = parseFloat($('input[name="stock_units"]').val()) || 0;
+            const unitsPerCarton = parseFloat($('input[name="units_per_carton"]').val()) || 0;
+            const unitsPerRoll = parseFloat($('input[name="units_per_roll"]').val()) || 0;
+            const baseUnit = ($('input[name="base_unit_name"]').val() || 'pcs').trim();
+            const total = (cartons * unitsPerCarton) + (rolls * (unitsPerRoll > 0 ? unitsPerRoll : 1)) + looseUnits;
+            $('#edit_packaging_stock_value').val(total);
+            $('#edit_loose_stock_label').text('Loose ' + (baseUnit || 'pieces') + (baseUnit === 'pcs' ? ' (pcs)' : ''));
+            $('#edit_packaging_stock_preview').text('Total: ' + total.toLocaleString(undefined, { maximumFractionDigits: 6 }) + ' ' + (baseUnit || 'base units'));
+        }
+
+        function setEditStockEntryMode(usePackaging) {
+            const packagingFields = $('#edit_packaging_stock_fields');
+            const totalStock = $('#edit_total_stock');
+            const packagingStock = $('#edit_packaging_stock_value');
+            const modeInput = $('#edit_stock_entry_mode');
+
+            modeInput.val(usePackaging ? 'packaging' : 'total');
+            packagingFields.toggle(usePackaging);
+            $('#edit_total_stock_field').toggle(!usePackaging);
+            totalStock.prop('disabled', usePackaging);
+            packagingStock.prop('disabled', !usePackaging);
+            $('input[name="stock_cartons"], input[name="stock_rolls"], input[name="stock_units"]').prop('disabled', !usePackaging);
+            if (usePackaging) refreshEditPackagingStock();
+        }
+
+        $('#edit_packaging_stock_toggle').on('change', function () {
+            setEditStockEntryMode(this.checked);
+        });
+        $('input[name="stock_cartons"], input[name="stock_rolls"], input[name="stock_units"], input[name="units_per_carton"], input[name="units_per_roll"], input[name="base_unit_name"]').on('input change', refreshEditPackagingStock);
+
         function setEditMeasurementMode(mode) {
             mode = mode === 'kg_carton' ? 'kg_carton' : 'custom';
             const isKgCarton = mode === 'kg_carton';
@@ -470,8 +535,10 @@
 
         refreshEditPackagingLabels();
         setEditMeasurementMode($('#edit_measurement_mode_input').val());
+        setEditStockEntryMode($('#edit_packaging_stock_toggle').is(':checked'));
         $('input[name="base_unit_name"], #edit_unit_total_per_carton, input[name="units_per_roll"]').on('input', function () {
             refreshEditPackagingLabels();
+            refreshEditPackagingStock();
         });
 
         $('#editAjaxAddCategoryForm').on('submit', function(e) {

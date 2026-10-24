@@ -1873,6 +1873,9 @@ public function inventory(Request $request)
     {
         $product = Product::findOrFail($id);
         $this->applyMeasurementPreset($request);
+        if ($request->input('stock_entry_mode') === 'packaging') {
+            $request->merge(['stock' => $this->calculateStockFromPackaging($request->all())]);
+        }
 
         $validated = $request->validate([
             'name'             => 'required|string|max:191',
@@ -1886,6 +1889,7 @@ public function inventory(Request $request)
             'stock_cartons'    => 'nullable|numeric|min:0',
             'stock_rolls'      => 'nullable|numeric|min:0',
             'stock_units'      => 'nullable|numeric|min:0',
+            'stock_entry_mode' => 'nullable|in:total,packaging',
             'units_per_carton' => 'nullable|numeric|min:0',
             'units_per_roll'   => 'nullable|numeric|min:0',
             'measurement_mode' => 'nullable|in:custom,pieces,pieces_carton,kg_carton',
@@ -1907,7 +1911,7 @@ public function inventory(Request $request)
         ]);
 
         $cartonSellingPrice = $validated['carton_selling_price'] ?? null;
-        unset($validated['measurement_mode'], $validated['kg_per_carton'], $validated['carton_selling_price']);
+        unset($validated['measurement_mode'], $validated['kg_per_carton'], $validated['carton_selling_price'], $validated['stock_entry_mode']);
         $validated['base_unit_name'] = trim((string) ($validated['base_unit_name'] ?? ''))
             ?: ($product->base_unit_name ?: 'pcs');
         $validated['unit_id'] = $validated['unit_id'] ?? $product->unit_id;
@@ -1916,6 +1920,18 @@ public function inventory(Request $request)
         $validated['stock_cartons'] = (float) ($validated['stock_cartons'] ?? $product->stock_cartons ?? 0);
         $validated['stock_rolls'] = (float) ($validated['stock_rolls'] ?? $product->stock_rolls ?? 0);
         $validated['stock_units'] = (float) ($validated['stock_units'] ?? $product->stock_units ?? 0);
+        if ($request->input('stock_entry_mode') === 'packaging') {
+            if ($validated['stock_cartons'] > 0 && $validated['units_per_carton'] <= 0) {
+                return back()->withErrors([
+                    'units_per_carton' => 'Set the base-unit quantity per carton before entering carton stock.',
+                ])->withInput();
+            }
+            if ($validated['stock_rolls'] > 0 && $validated['units_per_roll'] <= 0) {
+                return back()->withErrors([
+                    'units_per_roll' => 'Set the base-unit quantity per roll before entering roll stock.',
+                ])->withInput();
+            }
+        }
         $validated['reorder_level'] = max(0, (int) ($validated['reorder_level'] ?? 0));
         $validated['reorder_quantity'] = max(0, (int) ($validated['reorder_quantity'] ?? 0));
         $retailPrice = (float) ($validated['retail_price'] ?? $validated['price']);
