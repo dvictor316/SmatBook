@@ -102,6 +102,72 @@
     --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.pos-calculator {
+    display: grid;
+    gap: 12px;
+    text-align: left;
+}
+
+.pos-calculator-expression {
+    min-height: 56px;
+    text-align: right;
+    font-size: 1.45rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.pos-calculator-result {
+    min-height: 1.5em;
+    color: #0f3a8a;
+    font-size: 1.35rem;
+    font-weight: 700;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.pos-calculator-keys {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.pos-calculator-key {
+    min-height: 50px;
+    border: 1px solid #d7e0ea;
+    border-radius: 9px;
+    background: #f8fafc;
+    color: #1f2937;
+    font-size: 1.08rem;
+    font-weight: 600;
+    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.pos-calculator-key:hover,
+.pos-calculator-key:focus-visible {
+    border-color: #1464f4;
+    background: #eff6ff;
+}
+
+.pos-calculator-key:active {
+    transform: scale(0.97);
+}
+
+.pos-calculator-key.is-operator {
+    color: #1d4ed8;
+    background: #eff6ff;
+}
+
+.pos-calculator-key.is-clear {
+    color: #b42318;
+    background: #fff1f0;
+}
+
+.pos-calculator-key.is-equals {
+    color: #fff;
+    border-color: #0f3a8a;
+    background: #0f3a8a;
+}
+
 * {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -8080,18 +8146,40 @@ window.POS_ENABLE_FALLBACK = function () {
         Swal.fire({
             title: 'Calculator',
             html: `
-                <div class="text-start">
-                    <label class="form-label fw-bold">Calculation</label>
-                    <input id="pos-calculator-expression" class="form-control" inputmode="decimal" placeholder="Example: 3400 * 5">
-                    <div class="mt-3 p-3 rounded border bg-light">
-                        <div class="small text-muted fw-bold text-uppercase">Result</div>
-                        <div id="pos-calculator-result" class="fs-4 fw-bold">0</div>
+                <div class="pos-calculator" id="pos-calculator">
+                    <label for="pos-calculator-expression" class="form-label fw-semibold mb-0">Calculation</label>
+                    <input id="pos-calculator-expression" class="form-control pos-calculator-expression" type="text" inputmode="decimal" autocomplete="off" aria-label="Calculator expression" placeholder="0">
+                    <div class="rounded border bg-light px-3 py-2">
+                        <div class="small text-muted fw-semibold text-uppercase">Result</div>
+                        <div id="pos-calculator-result" class="pos-calculator-result" role="status" aria-live="polite">0</div>
+                    </div>
+                    <div class="pos-calculator-keys" aria-label="Calculator keypad">
+                        <button type="button" class="pos-calculator-key is-clear" data-calculator-action="clear" aria-label="Clear">C</button>
+                        <button type="button" class="pos-calculator-key is-operator" data-calculator-key="(">(</button>
+                        <button type="button" class="pos-calculator-key is-operator" data-calculator-key=")">)</button>
+                        <button type="button" class="pos-calculator-key is-operator" data-calculator-action="backspace" aria-label="Backspace">⌫</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key="7">7</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key="8">8</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key="9">9</button>
+                        <button type="button" class="pos-calculator-key is-operator" data-calculator-key="/">÷</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key="4">4</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key="5">5</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key="6">6</button>
+                        <button type="button" class="pos-calculator-key is-operator" data-calculator-key="*">×</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key="1">1</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key="2">2</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key="3">3</button>
+                        <button type="button" class="pos-calculator-key is-operator" data-calculator-key="-">−</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key="0">0</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key=".">.</button>
+                        <button type="button" class="pos-calculator-key is-operator" data-calculator-key="+">+</button>
+                        <button type="button" class="pos-calculator-key is-equals" data-calculator-action="equals" aria-label="Calculate">=</button>
                     </div>
                 </div>
             `,
             confirmButtonText: 'Close',
             confirmButtonColor: '#0f3a8a',
-            didOpen: () => {
+            didOpen: (popup) => {
                 const input = document.getElementById('pos-calculator-expression');
                 const result = document.getElementById('pos-calculator-result');
                 const update = () => {
@@ -8100,21 +8188,97 @@ window.POS_ENABLE_FALLBACK = function () {
                         result.textContent = '0';
                         return;
                     }
-                    if (!/^[0-9+\-*/().\s]+$/.test(expression)) {
-                        result.textContent = 'Use numbers and + - * / only';
-                        return;
-                    }
                     try {
-                        const value = Function(`"use strict"; return (${expression});`)();
-                        result.textContent = Number.isFinite(value) ? new Intl.NumberFormat('en-NG').format(value) : 'Invalid';
-                    } catch (error) {
-                        result.textContent = 'Invalid';
+                        const value = evaluatePosCalculatorExpression(expression);
+                        result.textContent = new Intl.NumberFormat('en-NG', { maximumFractionDigits: 8 }).format(value);
+                    } catch {
+                        result.textContent = 'Enter a valid calculation';
                     }
                 };
                 input?.addEventListener('input', update);
+                input?.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        update();
+                    }
+                });
+                popup.querySelector('.pos-calculator-keys')?.addEventListener('click', (event) => {
+                    const button = event.target.closest('button[data-calculator-key], button[data-calculator-action]');
+                    if (!button || !input) return;
+
+                    const action = button.dataset.calculatorAction;
+                    if (action === 'clear') {
+                        input.value = '';
+                    } else if (action === 'backspace') {
+                        input.value = input.value.slice(0, -1);
+                    } else if (action !== 'equals') {
+                        const key = button.dataset.calculatorKey;
+                        const start = input.selectionStart ?? input.value.length;
+                        const end = input.selectionEnd ?? start;
+                        input.value = input.value.slice(0, start) + key + input.value.slice(end);
+                    }
+
+                    update();
+                    input.focus();
+                    const cursor = action === 'backspace'
+                        ? Math.max(0, (input.selectionStart ?? input.value.length) - 1)
+                        : input.value.length;
+                    input.setSelectionRange(cursor, cursor);
+                });
                 window.setTimeout(() => input?.focus(), 80);
             },
         });
+    }
+
+    function evaluatePosCalculatorExpression(expression) {
+        const source = expression.replace(/\s+/g, '');
+        let position = 0;
+
+        function parseExpression() {
+            let value = parseTerm();
+            while (source[position] === '+' || source[position] === '-') {
+                const operator = source[position++];
+                const right = parseTerm();
+                value = operator === '+' ? value + right : value - right;
+            }
+            return value;
+        }
+
+        function parseTerm() {
+            let value = parseFactor();
+            while (source[position] === '*' || source[position] === '/') {
+                const operator = source[position++];
+                const right = parseFactor();
+                value = operator === '*' ? value * right : value / right;
+            }
+            return value;
+        }
+
+        function parseFactor() {
+            if (source[position] === '+' || source[position] === '-') {
+                const sign = source[position++] === '-' ? -1 : 1;
+                return sign * parseFactor();
+            }
+            if (source[position] === '(') {
+                position++;
+                const value = parseExpression();
+                if (source[position++] !== ')') throw new Error('Unmatched parenthesis');
+                return value;
+            }
+
+            const number = source.slice(position).match(/^(?:\d+(?:\.\d*)?|\.\d+)/);
+            if (!number) throw new Error('Expected a number');
+            position += number[0].length;
+            return Number(number[0]);
+        }
+
+        if (!source) return 0;
+        const value = parseExpression();
+        if (position !== source.length || !Number.isFinite(value)) {
+            throw new Error('Invalid calculation');
+        }
+        return value;
     }
 
     function openReprintLookup() {
