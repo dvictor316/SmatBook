@@ -1404,9 +1404,7 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
 }
 
 .cart-empty-shell {
-    width: min(100%, 430px);
-    max-height: 100%;
-    overflow-y: auto;
+    width: min(100%, 250px);
     padding: 14px 16px;
     text-align: center;
     border: 1px dashed #bfdbfe;
@@ -1416,9 +1414,14 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
 }
 
 .pos-idle-calculator {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #d7e0ea;
+    position: static;
+    width: min(220px, 100%);
+    margin: 10px 0 0;
+    padding: 8px;
+    border: 1px solid #c7d3df;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.97);
+    box-shadow: 0 5px 14px rgba(23, 43, 77, 0.13);
     text-align: left;
 }
 
@@ -1429,7 +1432,7 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
     gap: 8px;
     margin-bottom: 7px;
     color: #334155;
-    font-size: 0.75rem;
+    font-size: 0.68rem;
     font-weight: 700;
 }
 
@@ -1440,25 +1443,25 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
 }
 
 .pos-idle-calculator .pos-calculator-expression {
-    min-height: 40px;
-    padding: 6px 10px;
-    font-size: 1rem;
+    min-height: 34px;
+    padding: 4px 8px;
+    font-size: 0.9rem;
 }
 
 .pos-idle-calculator .pos-calculator-result {
-    min-height: 1.3em;
-    font-size: 1rem;
+    min-height: 1.1em;
+    font-size: 0.88rem;
 }
 
 .pos-idle-calculator .pos-calculator-keys {
-    gap: 5px;
-    margin-top: 7px;
+    gap: 4px;
+    margin-top: 6px;
 }
 
 .pos-idle-calculator .pos-calculator-key {
-    min-height: 36px;
-    border-radius: 6px;
-    font-size: 0.88rem;
+    min-height: 28px;
+    border-radius: 5px;
+    font-size: 0.78rem;
 }
 
 .cart-empty-icon {
@@ -3849,9 +3852,9 @@ body.pos-terminal-workspace .pos-product-shelf-card .product-card-img img {
     }
 
     body.pos-terminal-workspace .cart-empty-shell {
-        width: min(430px, 100%) !important;
-        min-height: 0 !important;
-        padding: 12px 14px !important;
+        width: min(320px, 48%) !important;
+        min-height: 132px !important;
+        padding: 18px 20px !important;
     }
 
     body.pos-terminal-workspace .cart-empty-icon {
@@ -6051,6 +6054,39 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                         <span id="quick-stock-health" class="stock-chip ok">OK</span>
                     </div>
                 </div>
+                <div class="pos-calculator pos-idle-calculator" id="pos-idle-calculator" aria-label="Cashier calculator">
+                    <div class="pos-idle-calculator-header">
+                        <strong><i class="fas fa-calculator me-1"></i> Calculator</strong>
+                        <span>Quick arithmetic</span>
+                    </div>
+                    <input class="form-control pos-calculator-expression" type="text" inputmode="decimal" autocomplete="off" aria-label="Calculator expression" placeholder="0" data-calculator-expression>
+                    <div class="rounded border bg-light px-2 py-1 mt-2">
+                        <div class="small text-muted fw-semibold text-uppercase">Result</div>
+                        <div class="pos-calculator-result" role="status" aria-live="polite" data-calculator-result>0</div>
+                    </div>
+                    <div class="pos-calculator-keys" aria-label="Calculator keypad">
+                        <button type="button" class="pos-calculator-key is-clear" data-calculator-action="clear" aria-label="Clear">C</button>
+                        <button type="button" class="pos-calculator-key is-operator" data-calculator-key="(">(</button>
+                        <button type="button" class="pos-calculator-key is-operator" data-calculator-key=")">)</button>
+                        <button type="button" class="pos-calculator-key is-operator" data-calculator-action="backspace" aria-label="Backspace">⌫</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key="7">7</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key="8">8</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key="9">9</button>
+                        <button type="button" class="pos-calculator-key is-operator" data-calculator-key="/">÷</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key="4">4</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key="5">5</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key="6">6</button>
+                        <button type="button" class="pos-calculator-key is-operator" data-calculator-key="*">×</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key="1">1</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key="2">2</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key="3">3</button>
+                        <button type="button" class="pos-calculator-key is-operator" data-calculator-key="-">−</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key="0">0</button>
+                        <button type="button" class="pos-calculator-key" data-calculator-key=".">.</button>
+                        <button type="button" class="pos-calculator-key is-operator" data-calculator-key="+">+</button>
+                        <button type="button" class="pos-calculator-key is-equals" data-calculator-action="equals" aria-label="Calculate">=</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -6079,50 +6115,15 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                 <div class="cart-wrapper">
                     <div id="cart-empty-state" class="cart-empty-state">
                         <div class="cart-empty-shell">
-                            <div class="cart-empty-message">
-                                <div class="cart-empty-icon">
-                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                        <path d="M3 4h2l1.4 7.2a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.75L19 7H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <circle cx="10" cy="18" r="1.6" fill="currentColor"/>
-                                        <circle cx="17" cy="18" r="1.6" fill="currentColor"/>
-                                    </svg>
-                                </div>
-                                <div class="cart-empty-title">Cart Empty</div>
-                                <p class="cart-empty-copy">Select products from the catalog and they will appear here in a smooth scrollable cart.</p>
+                            <div class="cart-empty-icon">
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M3 4h2l1.4 7.2a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.75L19 7H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <circle cx="10" cy="18" r="1.6" fill="currentColor"/>
+                                    <circle cx="17" cy="18" r="1.6" fill="currentColor"/>
+                                </svg>
                             </div>
-                            <div class="pos-calculator pos-idle-calculator" id="pos-idle-calculator" aria-label="Cashier calculator">
-                                <div class="pos-idle-calculator-header">
-                                    <strong><i class="fas fa-calculator me-1"></i> Calculator</strong>
-                                    <span>Quick arithmetic</span>
-                                </div>
-                                <input class="form-control pos-calculator-expression" type="text" inputmode="decimal" autocomplete="off" aria-label="Calculator expression" placeholder="0" data-calculator-expression>
-                                <div class="rounded border bg-light px-2 py-1 mt-2">
-                                    <div class="small text-muted fw-semibold text-uppercase">Result</div>
-                                    <div class="pos-calculator-result" role="status" aria-live="polite" data-calculator-result>0</div>
-                                </div>
-                                <div class="pos-calculator-keys" aria-label="Calculator keypad">
-                                    <button type="button" class="pos-calculator-key is-clear" data-calculator-action="clear" aria-label="Clear">C</button>
-                                    <button type="button" class="pos-calculator-key is-operator" data-calculator-key="(">(</button>
-                                    <button type="button" class="pos-calculator-key is-operator" data-calculator-key=")">)</button>
-                                    <button type="button" class="pos-calculator-key is-operator" data-calculator-action="backspace" aria-label="Backspace">⌫</button>
-                                    <button type="button" class="pos-calculator-key" data-calculator-key="7">7</button>
-                                    <button type="button" class="pos-calculator-key" data-calculator-key="8">8</button>
-                                    <button type="button" class="pos-calculator-key" data-calculator-key="9">9</button>
-                                    <button type="button" class="pos-calculator-key is-operator" data-calculator-key="/">÷</button>
-                                    <button type="button" class="pos-calculator-key" data-calculator-key="4">4</button>
-                                    <button type="button" class="pos-calculator-key" data-calculator-key="5">5</button>
-                                    <button type="button" class="pos-calculator-key" data-calculator-key="6">6</button>
-                                    <button type="button" class="pos-calculator-key is-operator" data-calculator-key="*">×</button>
-                                    <button type="button" class="pos-calculator-key" data-calculator-key="1">1</button>
-                                    <button type="button" class="pos-calculator-key" data-calculator-key="2">2</button>
-                                    <button type="button" class="pos-calculator-key" data-calculator-key="3">3</button>
-                                    <button type="button" class="pos-calculator-key is-operator" data-calculator-key="-">−</button>
-                                    <button type="button" class="pos-calculator-key" data-calculator-key="0">0</button>
-                                    <button type="button" class="pos-calculator-key" data-calculator-key=".">.</button>
-                                    <button type="button" class="pos-calculator-key is-operator" data-calculator-key="+">+</button>
-                                    <button type="button" class="pos-calculator-key is-equals" data-calculator-action="equals" aria-label="Calculate">=</button>
-                                </div>
-                            </div>
+                            <div class="cart-empty-title">Cart Empty</div>
+                            <p class="cart-empty-copy">Select products from the catalog and they will appear here in a smooth scrollable cart.</p>
                         </div>
                     </div>
                     <table class="table cart-table mb-0">
