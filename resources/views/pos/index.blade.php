@@ -1415,7 +1415,8 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
 
 .pos-idle-calculator {
     position: static;
-    width: min(220px, 100%);
+    width: 100%;
+    align-self: stretch;
     margin: 10px 0 0;
     padding: 8px;
     border: 1px solid #c7d3df;
