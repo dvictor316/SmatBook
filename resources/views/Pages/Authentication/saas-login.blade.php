@@ -635,24 +635,21 @@
 
             form.dataset.csrfRefreshBound = '1';
             let isRefreshingToken = false;
+            let refreshPromise = null;
+            let refreshTimer = null;
+            const refreshUrl = '{{ route('session.csrf-token') }}';
 
-            form.addEventListener('submit', async function (event) {
-                if (isRefreshingToken) {
-                    return;
-                }
-
+            const tokenAgeSeconds = function () {
                 const renderedAt = parseInt(form.dataset.renderedAt || '0', 10) || 0;
-                const tokenAgeSeconds = renderedAt ? ((Date.now() / 1000) - renderedAt) : 0;
+                return renderedAt ? ((Date.now() / 1000) - renderedAt) : 0;
+            };
 
-                if (tokenAgeSeconds > 0 && tokenAgeSeconds < 600) {
-                    return;
+            const refreshToken = function () {
+                if (refreshPromise) {
+                    return refreshPromise;
                 }
 
-                event.preventDefault();
-                isRefreshingToken = true;
-
-                try {
-                    const response = await fetch('{{ route('session.csrf-token') }}', {
+                refreshPromise = fetch(refreshUrl, {
                         method: 'GET',
                         credentials: 'same-origin',
                         cache: 'no-store',
@@ -660,22 +657,57 @@
                             'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest',
                         },
+                    })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error('Unable to refresh CSRF token.');
+                        }
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        const tokenInput = form.querySelector('input[name="_token"]');
+                        if (tokenInput && data.token) {
+                            tokenInput.value = data.token;
+                            form.dataset.renderedAt = String(Math.floor(Date.now() / 1000));
+                            scheduleTokenRefresh();
+                        }
+                    })
+                    .catch(function (error) {
+                        console.warn('CSRF refresh failed before login submit.', error);
+                    })
+                    .finally(function () {
+                        refreshPromise = null;
                     });
 
-                    if (!response.ok) {
-                        throw new Error('Unable to refresh CSRF token.');
-                    }
+                return refreshPromise;
+            };
 
-                    const data = await response.json();
-                    const tokenInput = form.querySelector('input[name="_token"]');
-
-                    if (tokenInput && data.token) {
-                        tokenInput.value = data.token;
+            const scheduleTokenRefresh = function () {
+                const refreshInMs = Math.max(0, (540 - tokenAgeSeconds()) * 1000);
+                window.clearTimeout(refreshTimer);
+                refreshTimer = window.setTimeout(function () {
+                    if (document.visibilityState === 'visible' && tokenAgeSeconds() >= 540) {
+                        refreshToken();
                     }
-                } catch (error) {
-                    console.warn('CSRF refresh failed before login submit.', error);
+                }, refreshInMs);
+            };
+
+            document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'visible' && tokenAgeSeconds() >= 540) {
+                    refreshToken();
+                }
+            });
+
+            scheduleTokenRefresh();
+
+            form.addEventListener('submit', async function (event) {
+                if (isRefreshingToken || tokenAgeSeconds() < 600) {
+                    return;
                 }
 
+                event.preventDefault();
+                isRefreshingToken = true;
+                await refreshToken();
                 form.submit();
             });
         };

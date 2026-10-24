@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\ActiveUserSession;
+use App\Models\Company;
 use App\Models\User;
 use App\Support\DeviceSessionManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -51,5 +52,41 @@ class DeviceSessionManagerTest extends TestCase
         $this->assertDatabaseHas('active_user_sessions', [
             'session_id' => 'expired-other-session',
         ]);
+    }
+
+    public function test_new_login_only_prunes_expired_sessions_for_its_own_workspace(): void
+    {
+        $company = Company::create(['name' => 'Current Workspace']);
+        $otherCompany = Company::create(['name' => 'Other Workspace']);
+        $user = User::factory()->create(['role' => 'admin', 'company_id' => $company->id]);
+        $otherUser = User::factory()->create(['role' => 'admin', 'company_id' => $otherCompany->id]);
+
+        ActiveUserSession::create([
+            'user_id' => $otherUser->id,
+            'company_id' => $otherCompany->id,
+            'session_id' => 'expired-unrelated-session',
+            'last_seen_at' => Carbon::now()->subHours(3),
+        ]);
+        ActiveUserSession::create([
+            'user_id' => $otherUser->id,
+            'company_id' => $company->id,
+            'session_id' => 'expired-workspace-session',
+            'last_seen_at' => Carbon::now()->subHours(3),
+        ]);
+
+        $session = app('session')->driver();
+        $session->setId('new-login-session');
+        $session->start();
+        $session->put('current_tenant_id', $company->id);
+        $request = Request::create('/login', 'POST', server: [
+            'REMOTE_ADDR' => '127.0.0.1',
+            'HTTP_USER_AGENT' => 'SmartProbook new login test',
+        ]);
+        $request->setLaravelSession($session);
+
+        $this->assertTrue(app(DeviceSessionManager::class)->ensureCurrentSession($request, $user)['allowed']);
+
+        $this->assertDatabaseMissing('active_user_sessions', ['session_id' => 'expired-workspace-session']);
+        $this->assertDatabaseHas('active_user_sessions', ['session_id' => 'expired-unrelated-session']);
     }
 }

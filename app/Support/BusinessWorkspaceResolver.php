@@ -72,11 +72,24 @@ class BusinessWorkspaceResolver
     public function activeCompanyId(User $user, ?Collection $accessibleCompanies = null): int
     {
         $sessionCompanyId = (int) session('current_tenant_id', 0);
+        $primaryCompanyId = (int) ($user->getRawOriginal('company_id') ?? 0);
+        $role = strtolower((string) $user->role);
+        $isSuperAdmin = in_array($role, ['super_admin', 'superadmin'], true);
+
+        if (
+            $sessionCompanyId > 0
+            && $sessionCompanyId === $primaryCompanyId
+            && !$isSuperAdmin
+            && (!Schema::hasTable('companies') || Company::withoutGlobalScope('tenant')->whereKey($sessionCompanyId)->exists())
+            && (!Schema::hasTable('settings') || !Setting::where('key', 'workspace_retired_company_'.$sessionCompanyId)->exists())
+        ) {
+            return $sessionCompanyId;
+        }
+
         if ($this->canAccess($user, $sessionCompanyId, $accessibleCompanies)) {
             return $sessionCompanyId;
         }
 
-        $primaryCompanyId = (int) ($user->getRawOriginal('company_id') ?? 0);
         if ($this->canAccess($user, $primaryCompanyId, $accessibleCompanies)) {
             return $primaryCompanyId;
         }

@@ -28,6 +28,9 @@ class DeviceSessionManager
 
         $companyId = $this->resolveCompanyId($user);
         $fingerprint = $this->fingerprint($request);
+        $subscription = $this->isSuperAdmin($user) || $this->isPlatformStaff($user)
+            ? null
+            : Subscription::resolveCurrentForUser($user);
 
         $current = ActiveUserSession::query()
             ->where('session_id', $sessionId)
@@ -57,7 +60,7 @@ class DeviceSessionManager
             ->where('session_id', '!=', $sessionId)
             ->delete();
 
-        $userLimit = $this->allowedUserSessions($user);
+        $userLimit = $this->allowedUserSessions($user, $subscription, $companyId);
         $activeUserSessions = ActiveUserSession::query()
             ->where('user_id', $user->id)
             ->count();
@@ -65,11 +68,11 @@ class DeviceSessionManager
         if ($userLimit !== null && $activeUserSessions >= $userLimit) {
             return [
                 'allowed' => false,
-                'message' => $this->userLimitMessage($user, $userLimit),
+                'message' => $this->userLimitMessage($user, $userLimit, $subscription, $companyId),
             ];
         }
 
-        $workspaceLimit = $this->allowedWorkspaceSessions($user, $companyId);
+        $workspaceLimit = $this->allowedWorkspaceSessions($user, $companyId, $subscription);
         if ($workspaceLimit !== null && $companyId) {
             $activeWorkspaceSessions = ActiveUserSession::query()
                 ->where('company_id', $companyId)
@@ -131,27 +134,26 @@ class DeviceSessionManager
 
     private function pruneExpired(?int $userId = null, ?int $companyId = null): void
     {
-        if (!Schema::hasTable('active_user_sessions')) {
+        if (!Schema::hasTable('active_user_sessions') || (!$userId && !$companyId)) {
             return;
         }
 
         $cutoff = now()->subMinutes((int) config('session.lifetime', 120));
 
-        $query = ActiveUserSession::query()->where('last_seen_at', '<', $cutoff);
+        ActiveUserSession::query()
+            ->where('last_seen_at', '<', $cutoff)
+            ->where(function ($scope) use ($userId, $companyId) {
+                if ($userId) {
+                    $scope->where('user_id', $userId);
+                }
 
-        if ($userId) {
-            $query->orWhere(function ($sub) use ($userId, $cutoff) {
-                $sub->where('user_id', $userId)->where('last_seen_at', '<', $cutoff);
-            });
-        }
-
-        if ($companyId) {
-            $query->orWhere(function ($sub) use ($companyId, $cutoff) {
-                $sub->where('company_id', $companyId)->where('last_seen_at', '<', $cutoff);
-            });
-        }
-
-        $query->delete();
+                if ($companyId) {
+                    $userId
+                        ? $scope->orWhere('company_id', $companyId)
+                        : $scope->where('company_id', $companyId);
+                }
+            })
+            ->delete();
     }
 
     private function pruneMissingBackedSessions(?int $userId = null, ?int $companyId = null): void
@@ -220,7 +222,7 @@ class DeviceSessionManager
             ->delete();
     }
 
-    private function allowedUserSessions(User $user): ?int
+    private function allowedUserSessions(User $user, ?Subscription $subscription, ?int $companyId): ?int
     {
         if ($this->isSuperAdmin($user)) {
             return 2;
@@ -234,16 +236,14 @@ class DeviceSessionManager
         // license: each account can only be active on one system at a time.
         // Paid plans, including paid custom licenses, return null here and are
         // controlled by the workspace seat limit below.
-        return $this->isFreeCustomOnlyAccount($user) ? 1 : null;
+        return $this->isFreeCustomOnlyAccount($user, $subscription, $companyId) ? 1 : null;
     }
 
-    private function allowedWorkspaceSessions(User $user, ?int $companyId): ?int
+    private function allowedWorkspaceSessions(User $user, ?int $companyId, ?Subscription $subscription): ?int
     {
         if ($this->isSuperAdmin($user) || !$companyId) {
             return null;
         }
-
-        $subscription = Subscription::resolveCurrentForUser($user);
 
         // Paid/custom paid licenses use the purchased user_limit as the normal
         // seat allowance. Example: a paid custom license for 15 users allows
@@ -289,15 +289,12 @@ class DeviceSessionManager
         ], true);
     }
 
-    private function isFreeCustomOnlyAccount(User $user): bool
+    private function isFreeCustomOnlyAccount(User $user, ?Subscription $subscription, ?int $companyId): bool
     {
-        $subscription = Subscription::resolveCurrentForUser($user);
-
         if (!$subscription) {
             return false;
         }
 
-        $companyId = $this->resolveCompanyId($user);
         $freeCurrentSubscription = strtolower((string) ($subscription->payment_status ?? '')) === 'free'
             && strtolower((string) ($subscription->status ?? '')) === 'active';
 
@@ -329,13 +326,13 @@ class DeviceSessionManager
             ->exists();
     }
 
-    private function userLimitMessage(User $user, int $limit): string
+    private function userLimitMessage(User $user, int $limit, ?Subscription $subscription, ?int $companyId): string
     {
         if ($this->isSuperAdmin($user)) {
             return "Super admin access is limited to {$limit} devices at a time. Log out from another device first.";
         }
 
-        if ($this->isFreeCustomOnlyAccount($user)) {
+        if ($this->isFreeCustomOnlyAccount($user, $subscription, $companyId)) {
             return 'This free custom account is already active on another system. Please log out from that system first.';
         }
 

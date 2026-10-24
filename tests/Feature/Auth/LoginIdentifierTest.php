@@ -100,6 +100,16 @@ class LoginIdentifierTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_login_csrf_refresh_does_not_rotate_tokens_for_other_open_login_pages(): void
+    {
+        $token = str_repeat('a', 40);
+
+        $this->withSession(['_token' => $token])
+            ->getJson(route('session.csrf-token'))
+            ->assertOk()
+            ->assertJson(['token' => $token]);
+    }
+
     public function test_linkedin_openid_can_create_a_verified_social_account(): void
     {
         Config::set('services.linkedin-openid', [
