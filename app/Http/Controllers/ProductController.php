@@ -764,8 +764,8 @@ class ProductController extends Controller
             'units_per_carton' => $mode === 'pieces' ? 0 : ($isKg
                 ? $request->input('kg_per_carton', 0)
                 : $request->input('units_per_carton', 0)),
-            'units_per_roll' => 0,
-            'stock_rolls' => 0,
+            'units_per_roll' => $mode === 'pieces_carton' ? $request->input('units_per_roll', 0) : 0,
+            'stock_rolls' => $mode === 'pieces_carton' ? $request->input('stock_rolls', 0) : 0,
             'unit_type' => $mode === 'pieces' ? 'unit' : 'carton',
         ];
 

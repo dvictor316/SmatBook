@@ -53,7 +53,9 @@ class ProductMeasurementSetupTest extends TestCase
             ->assertSee('Cartons containing pieces (pcs)')
             ->assertSee('Cartons measured in kilograms (kg)')
             ->assertSee('Selling Price Per Piece (pcs)')
-            ->assertSee('Opening Full Cartons');
+            ->assertSee('Opening Full Cartons')
+            ->assertSee('Opening Full Rolls')
+            ->assertSee('value="pieces_carton"', false);
     }
 
     public function test_piece_rice_stays_in_pieces_even_with_a_weight_in_its_name_and_stale_kg_fields(): void
@@ -77,9 +79,29 @@ class ProductMeasurementSetupTest extends TestCase
         $product = Product::sole();
         $this->assertSame('pcs', $product->base_unit_name);
         $this->assertSame('carton', $product->unit_type);
-        $this->assertSame(27.0, (float) $product->stock);
+        $this->assertSame(47.0, (float) $product->stock);
         $this->assertSame(12.0, (float) $product->units_per_carton);
+        $this->assertSame(5.0, (float) $product->units_per_roll);
         $this->assertDatabaseHas('product_units', ['product_id' => $product->id, 'unit_name' => 'carton', 'selling_price' => 1100]);
+    }
+
+    public function test_piece_carton_stock_accepts_cartons_rolls_and_loose_pieces_together(): void
+    {
+        $units = $this->workspace();
+        $payload = $this->payload($units, 'pieces_carton');
+        $payload['stock_cartons'] = 2;
+        $payload['stock_rolls'] = 3;
+        $payload['stock_units'] = 4;
+        $payload['units_per_carton'] = 12;
+        $payload['units_per_roll'] = 5;
+
+        $this->post(route('inventory.Products.store'), $payload)
+            ->assertSessionHasNoErrors()->assertSessionHas('success');
+
+        $product = Product::sole();
+        $this->assertSame(43.0, (float) $product->stock);
+        $this->assertSame(12.0, (float) $product->units_per_carton);
+        $this->assertSame(5.0, (float) $product->units_per_roll);
     }
 
     public function test_weight_cartons_still_convert_to_kilograms(): void

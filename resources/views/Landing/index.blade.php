@@ -2441,7 +2441,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                     <div class="hero-circle-orbit"></div>
                     <div class="hero-eyebrow"><span class="hero-eyebrow-line">Accounting</span> <span class="hero-eyebrow-line">Software</span></div>
                     <h1 class="hero-h1"><span class="hero-title-line">Run Your Business.</span><br><span class="gold-text">Know Your Money.</span></h1>
-                    <p class="hero-body">SmartProbook cloud accounting software brings invoicing, POS sales, inventory, expenses, payroll and tax reports into one platform for Nigerian businesses.</p>
+                    <p class="hero-body">SmartProbook cloud accounting software brings invoicing, POS sales, inventory, expenses, payroll and tax reports into one platform for businesses worldwide.</p>
                     <div class="hero-cta-stack">
                         <a href="{{ route('membership-plans') }}" class="hero-btn-red"><i class="fas fa-building"></i> Register Your Business Today</a>
                         <a href="{{ route('saas-register', ['type'=>'partner']) }}" class="hero-btn-ghost hero-btn-manager"><i class="fas fa-handshake"></i> Become a Partner</a>
@@ -2692,12 +2692,12 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             </div>
             <div class="col-lg-5">
                 <span class="sb-eyebrow">01 — Sales &amp; Revenue</span>
-                <h2 class="sb-h1">Know exactly <span class="accent">where every naira</span> is going</h2>
+                <h2 class="sb-h1">Know exactly <span class="accent">where your money</span> is going</h2>
                 <p class="sb-lead">Get a live, bird's-eye view of your business finances. SmartProbook's revenue dashboard gives you instant clarity on sales performance, outstanding invoices, and profit trends — all on one screen.</p>
                 <div class="d-flex flex-column gap-3 mt-4">
                     <div class="feat-card"><div class="d-flex align-items-start gap-3"><div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div><div><h6>Live Revenue Tracking</h6><p>See your sales totals update in real time as transactions happen across your business locations.</p></div></div></div>
                     <div class="feat-card"><div class="d-flex align-items-start gap-3"><div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div><h6>Instant Invoice Management</h6><p>Generate, send, and track invoices automatically. Get notified the moment a client pays or a payment goes overdue.</p></div></div></div>
-                    <div class="feat-card"><div class="d-flex align-items-start gap-3"><div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><div><h6>Multi-Currency Support</h6><p>Record and report in NGN, USD, GBP, EUR and more — perfect for businesses with international clients.</p></div></div></div>
+                    <div class="feat-card"><div class="d-flex align-items-start gap-3"><div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><div><h6>Multi-Currency Support</h6><p>Record and report in NGN, USD, GBP, EUR and more, with support for businesses serving customers and suppliers across borders.</p></div></div></div>
                 </div>
             </div>
         </div>
@@ -3184,18 +3184,18 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </div>
 </section>
 
-<section class="sb-section" id="accounting-software-nigeria" aria-labelledby="nigeria-accounting-title">
+<section class="sb-section" id="accounting-software-global" aria-labelledby="global-accounting-title">
     <div class="container">
-        <h2 class="sb-h1" id="nigeria-accounting-title">Accounting software for <span class="accent">Nigerian businesses</span></h2>
-        <p>SmartProbook helps shops, service businesses and growing teams bring their daily sales, stock and accounting records together in one cloud workspace.</p>
+        <h2 class="sb-h1" id="global-accounting-title">Accounting software for <span class="accent">businesses worldwide</span></h2>
+        <p>SmartProbook helps shops, service businesses and growing teams around the world bring their daily sales, stock and accounting records together in one cloud workspace.</p>
         <div class="row g-4 mt-2">
             <div class="col-md-6">
                 <h3>What can I manage with SmartProbook?</h3>
                 <p>Create invoices, record POS sales, track inventory and expenses, manage payroll, and review financial reports from the same platform.</p>
             </div>
             <div class="col-md-6">
-                <h3>Can I record transactions in Nigerian naira?</h3>
-                <p>Yes. Record naira sales, invoices and expenses, with multi-currency support for businesses that also work with international customers or suppliers.</p>
+                <h3>Can I record transactions in my local currency?</h3>
+                <p>Yes. Record transactions in the currencies your business uses, including NGN, with multi-currency support for international customers and suppliers.</p>
             </div>
             <div class="col-md-6">
                 <h3>Can my staff work across multiple branches?</h3>

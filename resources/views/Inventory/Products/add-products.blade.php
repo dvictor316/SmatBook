@@ -217,23 +217,23 @@ body:not(.login-body):not(.landing-page-body) #add-product-page > .content.conta
                                         @error('category_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-12 product-packaging-choice">
-                                        <input type="hidden" name="measurement_mode" id="measurement_mode_input" value="{{ old('measurement_mode', 'pieces') }}">
+                                        <input type="hidden" name="measurement_mode" id="measurement_mode_input" value="{{ old('measurement_mode', 'pieces_carton') }}">
                                         <div class="measurement-choice">
                                             <label class="form-label d-block">Packaging / measurement</label>
                                             <div class="measurement-mode-grid" role="group" aria-label="Measurement setup">
-                                                <button type="button" class="measurement-mode-button" data-measurement-mode="pieces" aria-pressed="{{ old('measurement_mode', 'pieces') === 'pieces' ? 'true' : 'false' }}">
+                                                <button type="button" class="measurement-mode-button" data-measurement-mode="pieces" aria-pressed="{{ old('measurement_mode', 'pieces_carton') === 'pieces' ? 'true' : 'false' }}">
                                                     <strong>Pieces only (pcs)</strong><small class="d-block">Count each item individually.</small>
                                                 </button>
-                                                <button type="button" class="measurement-mode-button" data-measurement-mode="pieces_carton" aria-pressed="{{ old('measurement_mode', 'pieces') === 'pieces_carton' ? 'true' : 'false' }}">
+                                                <button type="button" class="measurement-mode-button" data-measurement-mode="pieces_carton" aria-pressed="{{ old('measurement_mode', 'pieces_carton') === 'pieces_carton' ? 'true' : 'false' }}">
                                                     <strong>Cartons containing pieces (pcs)</strong><small class="d-block">Set the pieces in each carton.</small>
                                                 </button>
-                                                <button type="button" class="measurement-mode-button" data-measurement-mode="kg_carton" aria-pressed="{{ old('measurement_mode', 'pieces') === 'kg_carton' ? 'true' : 'false' }}">
+                                                <button type="button" class="measurement-mode-button" data-measurement-mode="kg_carton" aria-pressed="{{ old('measurement_mode', 'pieces_carton') === 'kg_carton' ? 'true' : 'false' }}">
                                                     <strong>Cartons measured in kilograms (kg)</strong><small class="d-block">Only for stock sold by kg.</small>
                                                 </button>
-                                                <div class="other-measurement-choice" id="other_measurement_choice" data-active="{{ old('measurement_mode', 'pieces') === 'custom' ? 'true' : 'false' }}">
+                                                <div class="other-measurement-choice" id="other_measurement_choice" data-active="{{ old('measurement_mode', 'pieces_carton') === 'custom' ? 'true' : 'false' }}">
                                                     <label for="other_measurement_unit">Other measurements</label>
                                                     <select id="other_measurement_unit" aria-label="Choose another measurement" class="form-select">
-                                                        <option value="" disabled @selected(old('measurement_mode', 'pieces') !== 'custom')>Choose a measurement…</option>
+                                                        <option value="" disabled @selected(old('measurement_mode', 'pieces_carton') !== 'custom')>Choose a measurement…</option>
                                                         @foreach(($units ?? collect()) as $unit)
                                                             <option value="{{ $unit->id }}" data-symbol="{{ $unit->symbol }}" @selected(old('measurement_mode') === 'custom' && (string) old('base_unit_id', old('unit_id')) === (string) $unit->id)>{{ $unit->name }} ({{ $unit->symbol }})</option>
                                                         @endforeach
@@ -767,7 +767,8 @@ $(document).ready(function () {
         var isCustom = mode === 'custom';
         $('#measurement_mode_input').val(mode);
         $('#kg_carton_fields').toggle(isKgCarton);
-        $('.measurement-technical-field, .custom-packaging-field, #custom_packaging_intro, .opening-roll-field').toggle(isCustom);
+        $('.measurement-technical-field, #custom_packaging_intro').toggle(isCustom);
+        $('.custom-packaging-field, .opening-roll-field').toggle(isCustom || isPiecesCarton);
         $('.pieces-carton-field').toggle(isCustom || isPiecesCarton);
         $('.packaging-custom-row').toggle(isCustom || isPiecesCarton);
         $('.carton-mode-field').toggle(isKgCarton || isPiecesCarton);
@@ -785,8 +786,10 @@ $(document).ready(function () {
             applyUnitSymbol(isKgCarton ? 'kg' : 'pcs');
             $('select[name="purchase_unit_id"]').val('');
             $('input[name="conversion_rate"]').val('');
-            $('#quick_rolls_per_carton_helper, #quick_pcs_per_roll_helper').val(0);
-            $('input[name="stock_rolls"]').val(0);
+            if (!isPiecesCarton) {
+                $('#quick_rolls_per_carton_helper, #quick_pcs_per_roll_helper').val(0);
+                $('input[name="stock_rolls"]').val(0);
+            }
             if (changed) {
                 $('#quick_pcs_per_carton_helper, #kg_per_carton_input').val('');
                 $('#carton_selling_price_input').val('');
@@ -923,7 +926,7 @@ $(document).ready(function () {
         $('#quick_stock_preview_text').text(formatQuickQty(total) + ' ' + unitLabel);
         $('#quick_total_opening_stock_display').val(formatQuickQty(total) + ' ' + unitLabel);
         var stockMix = $('#measurement_mode_input').val() === 'pieces' ? formatQuickQty(pieces) + ' pcs'
-            : $('#measurement_mode_input').val() === 'pieces_carton' ? formatQuickQty(cartons) + ' cartons + ' + formatQuickQty(pieces) + ' loose pcs'
+            : $('#measurement_mode_input').val() === 'pieces_carton' ? formatQuickQty(cartons) + ' cartons + ' + formatQuickQty(rolls) + ' rolls + ' + formatQuickQty(pieces) + ' loose pcs'
             : $('#measurement_mode_input').val() === 'kg_carton'
             ? formatQuickQty(cartons) + ' ctn + ' + formatQuickQty(pieces) + ' kg'
             : formatQuickQty(cartons) + ' ctn + ' + formatQuickQty(rolls) + ' roll + ' + formatQuickQty(pieces) + ' ' + unitLabel;
@@ -1238,7 +1241,7 @@ $(document).ready(function () {
         if (stockDisplay) stockDisplay.value = formatQty(total) + ' ' + unitLabel;
         if (mixPreview) {
             mixPreview.textContent = textValue('#measurement_mode_input', 'custom') === 'pieces' ? formatQty(pieces) + ' pcs'
-                : textValue('#measurement_mode_input', 'custom') === 'pieces_carton' ? formatQty(cartons) + ' cartons + ' + formatQty(pieces) + ' loose pcs'
+                : textValue('#measurement_mode_input', 'custom') === 'pieces_carton' ? formatQty(cartons) + ' cartons + ' + formatQty(rolls) + ' rolls + ' + formatQty(pieces) + ' loose pcs'
                 : textValue('#measurement_mode_input', 'custom') === 'kg_carton'
                 ? formatQty(cartons) + ' ctn + ' + formatQty(pieces) + ' kg'
                 : formatQty(cartons) + ' ctn + ' + formatQty(rolls) + ' roll + ' + formatQty(pieces) + ' ' + unitLabel;
