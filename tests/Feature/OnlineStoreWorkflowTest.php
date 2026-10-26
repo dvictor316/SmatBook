@@ -55,6 +55,7 @@ class OnlineStoreWorkflowTest extends TestCase
 
         $this->get(route('storefront.catalogue', 'fresh-market'))
             ->assertOk()
+            ->assertSee('About Us')
             ->assertSee('Orange Crate')
             ->assertSee('Fresh oranges packed in a sturdy crate.')
             ->assertSee('Seasonal Mangoes')
@@ -87,12 +88,18 @@ class OnlineStoreWorkflowTest extends TestCase
             'slug' => 'mapped-store',
             'custom_domain' => 'shop.mapped-store.test',
             'store_name' => 'Mapped Store',
+            'description' => 'A family business serving its customers.',
             'is_enabled' => true,
         ]);
 
         $this->get('http://shop.mapped-store.test/store')
             ->assertOk()
-            ->assertSee('Mapped Store');
+            ->assertSee('Mapped Store')
+            ->assertSee('About Us');
+        $this->get('http://shop.mapped-store.test/store/about')
+            ->assertOk()
+            ->assertSee('A family business serving its customers.')
+            ->assertSee('Product Gallery');
     }
 
     public function test_store_homepage_features_ten_products_and_gallery_shows_the_full_catalogue(): void
@@ -129,6 +136,17 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertOk()
             ->assertSee('Gallery Product 11')
             ->assertSee('Place Order');
+    }
+
+    public function test_business_owner_has_a_direct_online_store_sidebar_link(): void
+    {
+        [$user, $company] = $this->workspace('Sidebar Store');
+
+        $this->actingAs($user)
+            ->withSession(['current_tenant_id' => $company->id, 'active_branch_scope' => 'all'])
+            ->get(route('online-store.settings'))
+            ->assertOk()
+            ->assertSee('href="' . route('online-store.settings') . '"', false);
     }
 
     public function test_cancelling_an_online_order_restores_reserved_stock(): void

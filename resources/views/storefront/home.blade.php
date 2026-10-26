@@ -22,6 +22,7 @@
         .nav-links a{text-decoration:none;font-size:.9rem;font-weight:700;color:#52627a;transition:color .2s ease}
         .nav-links a:hover,.nav-links a[aria-current=page]{color:var(--navy)}
         .nav-gallery{padding:11px 16px;border-radius:4px;background:var(--gold);color:var(--navy)!important}
+        .nav-about{padding:10px 13px;border:1px solid rgba(215,169,40,.55);border-radius:4px}
         .hero{position:relative;overflow:hidden;background:radial-gradient(ellipse at 73% 28%,rgba(215,169,40,.18),transparent 34%),linear-gradient(116deg,var(--navy-deep),#082d61 70%,#123e78);color:#fff}
         .hero:after{content:"";position:absolute;width:440px;height:440px;right:-145px;top:-210px;border:1px solid rgba(215,169,40,.32);border-radius:50%;box-shadow:0 0 0 36px rgba(215,169,40,.04),0 0 0 78px rgba(215,169,40,.035);pointer-events:none}
         .hero-inner{position:relative;z-index:1;max-width:1380px;margin:auto;min-height:530px;padding:68px 26px;display:grid;grid-template-columns:1fr 1.02fr;align-items:center;gap:64px}
@@ -85,7 +86,7 @@
         .reveal{animation:rise-in .65s both}
         @keyframes rise-in{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
         @media(max-width:900px){.hero-inner{grid-template-columns:1fr;gap:30px;padding-top:54px}.hero-product{min-height:340px}.two-grid{grid-template-columns:1fr}.small-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-        @media(max-width:620px){.nav-inner{padding:10px 15px;gap:12px}.brand{font-size:.88rem}.brand img{width:34px;height:34px}.nav-links{gap:10px}.nav-links a{font-size:.78rem}.nav-gallery{padding:9px 10px}.nav-home{display:none}.hero-inner{min-height:0;padding:50px 17px 38px}.hero h1{font-size:clamp(2.7rem,13vw,4.3rem)}.hero-product{min-height:300px}.section{padding:50px 16px}.section-heading{align-items:flex-start;flex-direction:column}.tile{grid-template-columns:1fr}.tile-media{height:220px}.tile-body{padding:19px}.editorial,.editorial:nth-child(even){grid-template-columns:1fr}.editorial:nth-child(even) .editorial-media{order:0}.editorial-media{height:220px}.editorial-body{padding:22px}.small-grid{grid-template-columns:1fr}.small-media{height:250px}.collection-cta{margin:0 16px 50px;padding:38px 20px}.footer{padding:25px 17px}}
+        @media(max-width:620px){.nav-inner{padding:10px 15px;gap:10px;flex-wrap:wrap}.brand{max-width:46%;font-size:.88rem}.brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brand img{width:34px;height:34px}.nav-links{gap:7px}.nav-links a{font-size:.72rem}.nav-gallery{padding:9px 8px}.nav-about{padding:8px}.nav-home{display:none}.hero-inner{min-height:0;padding:50px 17px 38px}.hero h1{font-size:clamp(2.7rem,13vw,4.3rem)}.hero-product{min-height:300px}.section{padding:50px 16px}.section-heading{align-items:flex-start;flex-direction:column}.tile{grid-template-columns:1fr}.tile-media{height:220px}.tile-body{padding:19px}.editorial,.editorial:nth-child(even){grid-template-columns:1fr}.editorial:nth-child(even) .editorial-media{order:0}.editorial-media{height:220px}.editorial-body{padding:22px}.small-grid{grid-template-columns:1fr}.small-media{height:250px}.collection-cta{margin:0 16px 50px;padding:38px 20px}.footer{padding:25px 17px}}
         @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{animation:none!important}*,*:before,*:after{transition:none!important}}
     </style>
 </head>
@@ -94,6 +95,7 @@
     $customDomain = request()->routeIs('storefront.custom-domain*');
     $homeUrl = $customDomain ? route('storefront.custom-domain') : route('storefront.catalogue', $store->slug);
     $galleryUrl = $customDomain ? route('storefront.custom-domain.products') : route('storefront.products', $store->slug);
+    $aboutUrl = $customDomain ? route('storefront.custom-domain.about') : route('storefront.about', $store->slug);
     $featuredProduct = $products->first();
     $twoGridProducts = $products->slice(1, 4);
     $editorialProducts = $products->slice(5, 2);
@@ -108,6 +110,7 @@
         <div class="nav-links">
             <a class="nav-home" href="{{ $homeUrl }}" aria-current="page">Home</a>
             <a class="nav-gallery" href="{{ $galleryUrl }}">Product Gallery</a>
+            <a class="nav-about" href="{{ $aboutUrl }}">About Us</a>
         </div>
     </div>
 </nav>

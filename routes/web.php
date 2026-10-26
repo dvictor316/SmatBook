@@ -75,9 +75,11 @@ Route::get('/pricing', [SubscriptionController::class, 'plans'])->name('pricing'
 Route::get('/membership-plans', [SubscriptionController::class, 'plans'])->name('membership-plans');
 Route::get('/shop/{slug}', [\App\Http\Controllers\OnlineStoreController::class, 'catalogue'])->name('storefront.catalogue');
 Route::get('/shop/{slug}/products', [\App\Http\Controllers\OnlineStoreController::class, 'productGallery'])->name('storefront.products');
+Route::get('/shop/{slug}/about', [\App\Http\Controllers\OnlineStoreController::class, 'about'])->name('storefront.about');
 Route::post('/shop/{slug}/orders', [\App\Http\Controllers\OnlineStoreController::class, 'placeOrder'])->middleware('throttle:10,1')->name('storefront.orders.store');
 Route::get('/store', [\App\Http\Controllers\OnlineStoreController::class, 'catalogue'])->name('storefront.custom-domain');
 Route::get('/store/products', [\App\Http\Controllers\OnlineStoreController::class, 'productGallery'])->name('storefront.custom-domain.products');
+Route::get('/store/about', [\App\Http\Controllers\OnlineStoreController::class, 'about'])->name('storefront.custom-domain.about');
 Route::post('/store/orders', [\App\Http\Controllers\OnlineStoreController::class, 'placeOrder'])->middleware('throttle:10,1')->name('storefront.custom-domain.orders.store');
 Route::get('/deploy-infrastructure', function (\Illuminate\Http\Request $request) {
     // Always start deployment from a clean state (no stale plan/checkout context).

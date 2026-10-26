@@ -127,6 +127,14 @@ class OnlineStoreController extends Controller
         return view('storefront.catalogue', compact('store', 'company', 'products', 'search'));
     }
 
+    public function about(Request $request, ?string $slug = null): View
+    {
+        $store = $this->resolvePublicStore($request, $slug);
+        $company = Company::withoutGlobalScope('tenant')->findOrFail($store->company_id);
+
+        return view('storefront.about', compact('store', 'company'));
+    }
+
     public function placeOrder(Request $request, ?string $slug = null): RedirectResponse
     {
         $store = $this->resolvePublicStore($request, $slug);

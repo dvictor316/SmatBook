@@ -27,6 +27,7 @@
         .gallery-nav-links a{color:#52627a;font-size:.86rem;font-weight:750;text-decoration:none}
         .gallery-nav-links a:hover,.gallery-nav-links a[aria-current=page]{color:var(--navy)}
         .gallery-nav-links a[aria-current=page]{padding:10px 13px;background:var(--gold);color:var(--navy)}
+        .gallery-nav-about{padding:9px 12px;border:1px solid rgba(215,169,40,.6);border-radius:3px}
         .store-head{position:relative;overflow:hidden;padding:clamp(58px,9vw,116px) 24px;background:radial-gradient(ellipse at 82% 18%,rgba(215,169,40,.2),transparent 36%),linear-gradient(112deg,#041832,#062354 62%,#123e78);border-bottom:1px solid rgba(215,169,40,.4)}
         .store-head:after{content:"";position:absolute;width:34vw;height:34vw;min-width:260px;min-height:260px;border:1px solid rgba(210,170,105,.25);border-radius:50%;right:-10vw;bottom:-26vw;box-shadow:0 0 0 32px rgba(210,170,105,.04),0 0 0 68px rgba(210,170,105,.035)}
         .store-head-inner{position:relative;z-index:1}
@@ -40,7 +41,8 @@
         .catalogue-heading p{margin:7px 0 0;color:#77766f}
         .catalogue-count{color:#77766f;font-size:.83rem;white-space:nowrap}
         .product-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
-        .product{border:1px solid var(--line);border-radius:3px;background:#fff;transition:transform .2s ease,box-shadow .2s ease}
+        .product{border:1px solid var(--line);border-radius:3px;background:#fff;transition:transform .2s ease,box-shadow .2s ease;animation:storefront-rise .55s both}
+        .product:nth-child(3n + 2){animation-delay:.08s}.product:nth-child(3n){animation-delay:.16s}
         .product:hover{transform:translateY(-4px);box-shadow:0 18px 42px rgba(6,35,84,.1)}
         .product-media{aspect-ratio:1/1;background:#edf3fb}
         .product-media img{transition:transform .45s ease}
@@ -53,7 +55,7 @@
         .stock{color:#536984}
         .quantity{justify-content:space-between;margin-top:10px;padding-top:14px;border-top:1px solid #edf0f5}
         .quantity input{width:92px;border-color:#dbe4f0}
-        .checkout{margin-top:38px;padding:clamp(22px,4vw,38px);border:1px solid var(--line);border-top:3px solid var(--red);border-radius:3px;background:#fff}
+        .checkout{margin-top:38px;padding:clamp(22px,4vw,38px);border:1px solid var(--line);border-top:3px solid var(--red);border-radius:3px;background:#fff;animation:storefront-rise .65s .12s both}
         .checkout h2{color:var(--navy);font-family:Georgia,"Times New Roman",serif;font-size:1.8rem;font-weight:500}
         .checkout .form-control,.checkout .form-select{min-height:46px;border-color:var(--line);border-radius:3px}
         .checkout textarea.form-control{min-height:auto}
@@ -63,9 +65,10 @@
         .store-footer-inner{align-items:center}
         .store-footer-inner strong{color:#fff}
         .alert{border-radius:3px}
+        @keyframes storefront-rise{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
         @media(max-width:992px){.product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-        @media(max-width:576px){.store-nav-inner{align-items:center;flex-direction:row;flex-wrap:wrap;gap:10px}.brand{font-size:.98rem}.brand img{width:36px;height:36px}.gallery-nav-links{gap:8px;margin-left:auto}.gallery-nav-links a{font-size:.75rem}.gallery-nav-links a[aria-current=page]{padding:8px}.store-search{width:100%;order:3}.store-search input{min-width:0}.store-search button{padding-inline:.8rem}.store-head{padding:54px 18px}.store-main{padding:34px 16px 52px}.product-grid{grid-template-columns:1fr;gap:16px}.catalogue-heading{align-items:flex-start;flex-direction:column;gap:8px}.catalogue-count{white-space:normal}}
-        @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important}}
+        @media(max-width:576px){.store-nav-inner{align-items:center;flex-direction:row;flex-wrap:wrap;gap:10px}.brand{max-width:43%;min-width:0;font-size:.98rem}.brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brand img{width:36px;height:36px}.gallery-nav-links{gap:7px;margin-left:auto}.gallery-nav-links a{font-size:.7rem}.gallery-nav-links a[aria-current=page],.gallery-nav-about{padding:7px}.store-search{width:100%;order:3}.store-search input{min-width:0}.store-search button{padding-inline:.8rem}.store-head{padding:54px 18px}.store-main{padding:34px 16px 52px}.product-grid{grid-template-columns:1fr;gap:16px}.catalogue-heading{align-items:flex-start;flex-direction:column;gap:8px}.catalogue-count{white-space:normal}}
+        @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
     </style>
 </head>
 <body>
@@ -73,8 +76,9 @@
     $customDomain = request()->routeIs('storefront.custom-domain*');
     $homeUrl = $customDomain ? route('storefront.custom-domain') : route('storefront.catalogue', $store->slug);
     $galleryUrl = $customDomain ? route('storefront.custom-domain.products') : route('storefront.products', $store->slug);
+    $aboutUrl = $customDomain ? route('storefront.custom-domain.about') : route('storefront.about', $store->slug);
 @endphp
-<nav class="store-nav"><div class="store-nav-inner"><a class="brand" href="{{ $homeUrl }}"><img src="{{ $company->logo ? asset($company->logo) : asset('assets/img/logos.png') }}" alt=""><span>{{ $store->store_name }}</span></a><div class="gallery-nav-links"><a href="{{ $homeUrl }}">Home</a><a href="{{ $galleryUrl }}" aria-current="page">Product Gallery</a></div><form class="store-search" method="GET"><input class="form-control" name="q" value="{{ $search }}" placeholder="Search products"><button class="btn btn-primary" title="Search" aria-label="Search"><i class="fas fa-search"></i></button></form></div></nav>
+<nav class="store-nav"><div class="store-nav-inner"><a class="brand" href="{{ $homeUrl }}"><img src="{{ $company->logo ? asset($company->logo) : asset('assets/img/logos.png') }}" alt=""><span>{{ $store->store_name }}</span></a><div class="gallery-nav-links"><a href="{{ $homeUrl }}">Home</a><a href="{{ $galleryUrl }}" aria-current="page">Product Gallery</a><a class="gallery-nav-about" href="{{ $aboutUrl }}">About Us</a></div><form class="store-search" method="GET"><input class="form-control" name="q" value="{{ $search }}" placeholder="Search products"><button class="btn btn-primary" title="Search" aria-label="Search"><i class="fas fa-search"></i></button></form></div></nav>
 <header class="store-head"><div class="store-head-inner"><span class="store-eyebrow">The official online store</span><h1>{{ $store->store_name }}</h1><p>{{ $store->description ?: 'Explore our available collection and send an order request directly to our team.' }}</p></div></header>
 <main class="store-main">
     @if(session('store_order_success'))<div class="alert alert-success"><strong>Order received.</strong> Your reference is {{ session('store_order_success') }}. The business will contact you to confirm payment and fulfilment.</div>@endif
