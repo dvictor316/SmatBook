@@ -20,8 +20,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           sparse-checkout: |
-            apps/desktop
-          sparse-checkout-cone-mode: true
+            /apps/desktop/
+          sparse-checkout-cone-mode: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
