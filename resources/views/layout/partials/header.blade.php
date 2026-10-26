@@ -99,6 +99,12 @@
                 || (int) $workspace->owner_id === (int) $user->id
         );
     }
+    $isBusinessOwnerHeader = $user
+        && !$user->isSuperAdmin()
+        && !$isDeploymentManagerHeader
+        && !$isAgentHeader
+        && $headerCanAddBusiness;
+    $desktopAppReleaseUrl = 'https://github.com/dvictor316/SmatBook/releases/latest';
     $activeBranchId = session('active_branch_id');
     $activeBranchName = session('active_branch_name');
     $headerAllBranchesSelected = request()->boolean('all_branches')
@@ -754,6 +760,30 @@
         box-shadow: 0 10px 22px rgba(37, 99, 235, 0.22);
     }
 
+    .desktop-app-download {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        min-height: 38px;
+        padding: 0 12px;
+        border: 1px solid #bfdbfe;
+        border-radius: 10px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: 12px;
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .desktop-app-download:hover {
+        border-color: #93c5fd;
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
     .branch-pill {
         display: inline-flex;
         align-items: center;
@@ -1102,6 +1132,7 @@
         .country-currency { display: none; }
         .header-actions { margin-left: auto; gap: var(--header-action-gap); order: 4; }
         .workspace-switcher { display: none; }
+        .desktop-app-download { display: none; }
         .branch-pill { display: none; }
         .branch-pill-mobile {
             display: inline-flex;
@@ -1777,6 +1808,20 @@
             </div>
         @endif
 
+        @if($isBusinessOwnerHeader)
+            <a
+                href="{{ $desktopAppReleaseUrl }}"
+                class="desktop-app-download"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Download SmartProbook Desktop for Windows"
+                title="Download SmartProbook Desktop for Windows"
+            >
+                <i class="fas fa-download" aria-hidden="true"></i>
+                <span>Download Desktop</span>
+            </a>
+        @endif
+
         @if($headerBusinessWorkspaces->count() > 1 && !$isDeploymentManagerHeader && !$isAgentHeader)
             <div class="dropdown mobile-branch-dropdown">
                 @php
@@ -1974,6 +2019,11 @@
                 <a class="dropdown-item" href="{{ $settingsUrl }}">
                     <i class="fas fa-cog me-2"></i> Settings
                 </a>
+                @if($isBusinessOwnerHeader)
+                    <a class="dropdown-item" href="{{ $desktopAppReleaseUrl }}" target="_blank" rel="noopener noreferrer">
+                        <i class="fas fa-download me-2"></i> Download Windows Desktop
+                    </a>
+                @endif
                 @if($headerCanAddBusiness && $headerBusinessWorkspaces->count() <= 1 && !$isDeploymentManagerHeader && !$isAgentHeader)
                     <a class="dropdown-item" href="{{ route('workspace.businesses.create') }}">
                         <i class="fe fe-plus-circle me-2"></i>Add another business
