@@ -17,7 +17,7 @@ fn main() {
                 "nav_back" => "if (window.history.length > 1) window.history.back();",
                 "nav_forward" => "window.history.forward();",
                 "nav_reload" => "window.location.reload();",
-                "nav_home" => "window.location.href = 'https://smartprobook.com';",
+                "nav_home" => "window.location.href = 'https://smartprobook.com/pos';",
                 _ => return,
             };
 

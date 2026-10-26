@@ -9,6 +9,7 @@
         color-scheme: light;
         --navy: #061a44;
         --blue: #0f3a8a;
+        --red: #d7193f;
         --gold: #d7a928;
         --text: #ffffff;
       }
@@ -50,33 +51,98 @@
         line-height: 1.6;
       }
 
+      .status {
+        min-height: 24px;
+        margin: 0 0 20px;
+        color: #f2d986;
+        font: 700 13px/1.5 Arial, sans-serif;
+      }
+
+      .status[data-state="offline"] {
+        color: #ffd4da;
+      }
+
       a {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         min-height: 48px;
         padding: 0 24px;
-        border-radius: 999px;
+        border-radius: 6px;
         background: var(--gold);
         color: #071635;
         font-weight: 800;
         text-decoration: none;
+        transition: transform 160ms ease, background 160ms ease;
+      }
+
+      a:hover {
+        transform: translateY(-2px);
+        background: #ebc34f;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { transition: none !important; }
       }
     </style>
   </head>
   <body>
     <main>
       <h1>SmartProbook</h1>
-      <p>Opening your secure accounting workspace. Subscription, tenant, and device rules are handled by the live SmartProbook platform.</p>
-      <a id="open-link" href="https://smartprobook.com">Open SmartProbook</a>
+      <p id="launch-message">Connecting to your secure workspace. Your saved offline POS can still be opened if you have connected and synchronized this device before.</p>
+      <div class="status" id="connection-status" role="status" aria-live="polite">Checking connection…</div>
+      <a id="open-link" href="https://smartprobook.com/pos">Open POS</a>
     </main>
 
     <script>
       const SMARTPROBOOK_URL = 'https://smartprobook.com';
+      const POS_URL = new URL('/pos', SMARTPROBOOK_URL).href;
       const openLink = document.getElementById('open-link');
+      const status = document.getElementById('connection-status');
+      const message = document.getElementById('launch-message');
+      let launchInProgress = false;
 
-      openLink.href = SMARTPROBOOK_URL;
-      window.location.replace(SMARTPROBOOK_URL);
+      openLink.href = POS_URL;
+
+      function showOffline() {
+        status.dataset.state = 'offline';
+        status.textContent = 'You are offline. Trying the POS will use this device’s saved copy if available.';
+        message.textContent = 'Offline sales are available after you have signed in and synchronized this desktop while connected. New devices need an internet connection for the first sign-in and stock download.';
+        openLink.textContent = 'Try Offline POS';
+      }
+
+      async function launch() {
+        if (launchInProgress) return;
+        if (!navigator.onLine) {
+          showOffline();
+          return;
+        }
+
+        launchInProgress = true;
+        status.dataset.state = 'checking';
+        status.textContent = 'Checking the SmartProbook connection…';
+
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 7000);
+        try {
+          await fetch(POS_URL, {
+            method: 'HEAD',
+            mode: 'no-cors',
+            cache: 'no-store',
+            signal: controller.signal,
+          });
+          window.location.replace(POS_URL);
+        } catch {
+          showOffline();
+          launchInProgress = false;
+        } finally {
+          window.clearTimeout(timeout);
+        }
+      }
+
+      window.addEventListener('online', launch);
+      window.addEventListener('offline', showOffline);
+      launch();
     </script>
   </body>
 </html>

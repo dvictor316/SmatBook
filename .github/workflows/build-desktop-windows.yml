@@ -1,0 +1,59 @@
+name: Build SmartProbook Desktop for Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Installer release version
+        required: true
+        default: "0.1.0"
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install desktop dependencies
+        working-directory: apps/desktop
+        run: npm ci
+
+      - name: Build Windows MSI
+        working-directory: apps/desktop
+        run: npm run build -- --bundles msi
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartprobook-windows-${{ inputs.version }}
+          path: apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish Windows installer release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: desktop-v${{ inputs.version }}
+          name: SmartProbook Desktop v${{ inputs.version }} for Windows
+          body: |
+            Windows desktop installer for SmartProbook.
+
+            Sign in and synchronize the POS product catalogue while online before using offline sales.
+          files: apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+          overwrite_files: true
+          fail_on_unmatched_files: true

@@ -22,6 +22,7 @@
       "category": "Business",
       "copyright": "SmartProbook",
       "identifier": "com.smartprobook.desktop",
+      "icon": ["icons/icon.png"],
       "targets": "all"
     },
     "security": {
