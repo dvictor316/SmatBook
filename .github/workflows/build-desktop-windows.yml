@@ -13,15 +13,29 @@ permissions:
   contents: write
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
+  prepare-source:
+    runs-on: ubuntu-latest
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+
+      - name: Upload desktop source
+        uses: actions/upload-artifact@v4
         with:
-          sparse-checkout: |
-            /apps/desktop/
-          sparse-checkout-cone-mode: false
+          name: desktop-source
+          path: apps/desktop/
+          if-no-files-found: error
+          retention-days: 1
+
+  build-windows:
+    needs: prepare-source
+    runs-on: windows-latest
+    steps:
+      - name: Download desktop source
+        uses: actions/download-artifact@v4
+        with:
+          name: desktop-source
+          path: apps/desktop
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
