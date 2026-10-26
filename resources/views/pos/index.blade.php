@@ -58,8 +58,8 @@
     $posCanManagePriceEditSetting = (bool) ($posCanManagePriceEditSetting ?? $posIsAdmin);
     $posCanEditPrice = $posIsAdmin || $posAllowStaffPriceEdit;
 @endphp
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="{{ asset('assets/plugins/sweetalert/sweetalert2.all.min.js') }}"></script>
+<link href="{{ asset('assets/css/select2.min.css') }}" rel="stylesheet" />
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -6336,6 +6336,7 @@ window.POS_OFFLINE_CONFIG = {
     companyId: @json((string) (session('current_tenant_id') ?? auth()->user()?->company_id ?? '')),
     branchId: @json((string) ($activeBranch['id'] ?? '')),
     branchName: @json((string) ($activeBranch['name'] ?? '')),
+    inventorySnapshotVersion: @json(now()->format('Uu')),
 };
 </script>
 <script src="{{ asset('js/pos-offline.js') }}"></script>
