@@ -18,6 +18,10 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            apps/desktop
+          sparse-checkout-cone-mode: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
