@@ -89,7 +89,7 @@
   <body>
     <main>
       <h1>SmartProbook</h1>
-      <p id="launch-message">Connecting to your secure workspace. Your saved offline POS can still be opened if you have connected and synchronized this device before.</p>
+      <p id="launch-message">Connecting to your secure workspace. To use offline POS, sign in online on this desktop and open the POS once so its stock and account can be saved.</p>
       <div class="status" id="connection-status" role="status" aria-live="polite">Checking connection…</div>
       <a id="open-link" href="https://smartprobook.com/pos">Open POS</a>
     </main>
@@ -97,6 +97,8 @@
     <script>
       const SMARTPROBOOK_URL = 'https://smartprobook.com';
       const POS_URL = new URL('/pos', SMARTPROBOOK_URL).href;
+      const OFFLINE_POS_URL = new URL(POS_URL);
+      OFFLINE_POS_URL.searchParams.set('desktop_offline', '1');
       const openLink = document.getElementById('open-link');
       const status = document.getElementById('connection-status');
       const message = document.getElementById('launch-message');
@@ -106,9 +108,10 @@
 
       function showOffline() {
         status.dataset.state = 'offline';
-        status.textContent = 'You are offline. Trying the POS will use this device’s saved copy if available.';
-        message.textContent = 'Offline sales are available after you have signed in and synchronized this desktop while connected. New devices need an internet connection for the first sign-in and stock download.';
+        status.textContent = 'You are offline. The saved POS will ask for the account password before it opens.';
+        message.textContent = 'First connect, sign in on this desktop, open the POS, and let its product stock load. Offline access is limited to POS sales and saved stock; queued sales sync when you reconnect.';
         openLink.textContent = 'Try Offline POS';
+        openLink.href = OFFLINE_POS_URL.href;
       }
 
       async function launch() {

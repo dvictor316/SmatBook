@@ -1,13 +1,56 @@
-const SMARTPROBOOK_SW_VERSION = 'smartprobook-static-v3';
+const SMARTPROBOOK_SW_VERSION = 'smartprobook-static-v4';
 const STATIC_CACHE = `${SMARTPROBOOK_SW_VERSION}-assets`;
-const POS_PAGE_CACHE = 'smartprobook-pos-page-v1';
+const POS_PAGE_CACHE = 'smartprobook-pos-page-v2';
+const PREVIOUS_POS_PAGE_CACHE = 'smartprobook-pos-page-v1';
 const POS_CACHE_KEY = new Request(new URL('/pos', self.location.origin));
 const STATIC_ASSETS = [
     '/offline.html',
     '/manifest.webmanifest',
     '/assets/img/log-favicon.png',
     '/assets/img/logos.png',
+    '/js/pos-offline-auth.js',
 ];
+
+function clearOfflineCredentials() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open('smartprobook-pos', 3);
+        request.onupgradeneeded = () => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains('pending-sales')) {
+                db.createObjectStore('pending-sales', { keyPath: 'client_sale_id' });
+            }
+            if (!db.objectStoreNames.contains('inventory-snapshots')) {
+                db.createObjectStore('inventory-snapshots', { keyPath: 'key' });
+            }
+            if (!db.objectStoreNames.contains('offline-credentials')) {
+                db.createObjectStore('offline-credentials', { keyPath: 'key' });
+            }
+        };
+        request.onerror = () => reject(request.error || new Error('Offline POS credentials could not be opened.'));
+        request.onsuccess = () => {
+            const db = request.result;
+            const transaction = db.transaction('offline-credentials', 'readwrite');
+            transaction.objectStore('offline-credentials').clear();
+            transaction.oncomplete = () => {
+                db.close();
+                resolve();
+            };
+            transaction.onerror = () => {
+                db.close();
+                reject(transaction.error || new Error('Offline POS credentials could not be cleared.'));
+            };
+            transaction.onabort = () => {
+                db.close();
+                reject(transaction.error || new Error('Offline POS credentials could not be cleared.'));
+            };
+        };
+    });
+}
+
+async function notifyOfflineAuthCleared() {
+    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    clients.forEach((client) => client.postMessage({ type: 'offline-auth-cleared' }));
+}
 
 self.addEventListener('install', (event) => {
     event.waitUntil(caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC_ASSETS)));
@@ -18,7 +61,8 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys()
             .then((keys) => Promise.all(keys
-                .filter((key) => key.startsWith('smartprobook-static-') && key !== STATIC_CACHE)
+                .filter((key) => (key.startsWith('smartprobook-static-') && key !== STATIC_CACHE)
+                    || key === PREVIOUS_POS_PAGE_CACHE)
                 .map((key) => caches.delete(key))))
             .then(() => self.clients.claim())
     );
@@ -26,7 +70,14 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('message', (event) => {
     if (event.data?.type === 'clear-private-pos-cache') {
-        event.waitUntil(caches.delete(POS_PAGE_CACHE));
+        event.waitUntil(Promise.all([
+            caches.delete(POS_PAGE_CACHE),
+            clearOfflineCredentials(),
+            notifyOfflineAuthCleared(),
+        ]).catch((error) => {
+            console.error('Could not clear private offline POS data.', error);
+            throw error;
+        }));
     }
 });
 
@@ -35,12 +86,27 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(request.url);
 
     const isLogout = ['GET', 'POST'].includes(request.method)
-        && /(?:^|\/)(?:emergency\/)?logout\/?$/.test(url.pathname);
-    const isLogin = request.method === 'POST' && url.pathname.replace(/\/+$/, '') === '/login';
-    if (url.origin === self.location.origin && (isLogout || isLogin)) {
+        && /(?:^|\/)(?:emergency\/)?logout(?:-emergency)?\/?$/.test(url.pathname);
+    const normalizedPath = url.pathname.replace(/\/+$/, '');
+    const isLogin = request.method === 'POST'
+        && ['/login', '/saas-login', '/login-account'].includes(normalizedPath);
+    const isCredentialChange = ['POST', 'PUT', 'PATCH'].includes(request.method)
+        && /(?:^|\/)(?:reset-password|profile\/password|settings\/password)\/?$/.test(url.pathname);
+    if (url.origin === self.location.origin && (isLogout || isLogin || isCredentialChange)) {
         event.respondWith(fetch(request).then((response) => {
             if (response.ok || response.redirected) {
-                event.waitUntil(caches.delete(POS_PAGE_CACHE));
+                if (isLogout || isCredentialChange) {
+                    event.waitUntil(Promise.all([
+                        caches.delete(POS_PAGE_CACHE),
+                        clearOfflineCredentials(),
+                        notifyOfflineAuthCleared(),
+                    ]).catch((error) => {
+                        console.error('Could not clear private offline POS data.', error);
+                        throw error;
+                    }));
+                } else {
+                    event.waitUntil(caches.delete(POS_PAGE_CACHE));
+                }
             }
             return response;
         }));

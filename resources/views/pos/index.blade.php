@@ -6327,6 +6327,78 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
     </div>
 </div>
 
+<style>
+    #pos-offline-lock {
+        position: fixed;
+        inset: 0;
+        z-index: 30000;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: rgba(10, 18, 34, .84);
+        backdrop-filter: blur(8px);
+    }
+    #pos-offline-lock[hidden] { display: none !important; }
+    #pos-offline-lock .offline-lock-card {
+        width: min(100%, 440px);
+        padding: 30px;
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 24px 80px rgba(0, 0, 0, .3);
+    }
+    #pos-offline-lock .offline-lock-card h2 { color: #152238; font-size: 24px; }
+    #pos-offline-lock .offline-lock-card label { display: block; margin: 16px 0 6px; font-weight: 600; }
+    #pos-offline-lock .offline-lock-card input {
+        width: 100%;
+        min-height: 44px;
+        padding: 9px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+    }
+    #pos-offline-lock .offline-lock-card button {
+        width: 100%;
+        min-height: 46px;
+        margin-top: 18px;
+        border: 0;
+        border-radius: 8px;
+        background: #163b70;
+        color: #fff;
+        font-weight: 700;
+    }
+    #pos-offline-lock .offline-lock-card button:disabled { opacity: .55; }
+    #pos-offline-auth-notice {
+        position: fixed;
+        z-index: 25000;
+        top: 16px;
+        left: 50%;
+        max-width: min(92vw, 620px);
+        padding: 12px 18px;
+        transform: translateX(-50%);
+        border-radius: 10px;
+        background: #e7f5ec;
+        color: #14532d;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, .16);
+    }
+    #pos-offline-auth-notice[data-type="error"] { background: #fff0f0; color: #991b1b; }
+</style>
+<div id="pos-offline-auth-notice" hidden role="status" aria-live="polite"></div>
+<div id="pos-offline-lock" role="dialog" aria-modal="true" aria-labelledby="pos-offline-lock-title" aria-hidden="false">
+    <section class="offline-lock-card">
+        <p class="text-uppercase small fw-bold text-primary mb-2">Offline POS</p>
+        <h2 id="pos-offline-lock-title">Unlock SmartProbook</h2>
+        <p id="pos-offline-lock-message" role="status" aria-live="polite">Checking this device’s saved offline sign-in…</p>
+        <form id="pos-offline-lock-form">
+            <label for="pos-offline-lock-email">Account</label>
+            <input id="pos-offline-lock-email" type="email" readonly autocomplete="username">
+            <label for="pos-offline-lock-password">Password</label>
+            <input id="pos-offline-lock-password" type="password" autocomplete="current-password" required disabled>
+            <button id="pos-offline-lock-submit" type="submit" disabled>Unlock offline POS</button>
+        </form>
+        <p class="small text-muted mt-3 mb-0">Offline access is limited to this saved POS workspace. Reconnect to sign in or synchronize sales.</p>
+        <a href="{{ route('sales.showPos') }}" class="d-inline-block mt-3 fw-bold">Try the online POS</a>
+    </section>
+</div>
+
 <script src="{{ asset('assets/js/jquery-3.7.1.min.js') }}"></script>
 <script src="{{ asset('assets/js/select2.min.js') }}"></script>
 <script>
@@ -6334,6 +6406,9 @@ window.POS_OFFLINE_CONFIG = {
     saleUrl: @json($posSaleStoreUrl ?? url('/sales')),
     catalogueUrl: @json(route('sales.showPos')),
     csrfToken: @json(csrf_token()),
+    userId: @json((string) auth()->id()),
+    userEmail: @json((string) auth()->user()?->email),
+    userPhone: @json((string) auth()->user()?->phone),
     companyId: @json((string) (session('current_tenant_id') ?? auth()->user()?->company_id ?? '')),
     branchId: @json((string) ($activeBranch['id'] ?? '')),
     branchName: @json((string) ($activeBranch['name'] ?? '')),

@@ -701,13 +701,32 @@
             scheduleTokenRefresh();
 
             form.addEventListener('submit', async function (event) {
-                if (isRefreshingToken || tokenAgeSeconds() < 600) {
+                if (isRefreshingToken) {
                     return;
                 }
 
                 event.preventDefault();
                 isRefreshingToken = true;
-                await refreshToken();
+                if (tokenAgeSeconds() >= 600) {
+                    await refreshToken();
+                }
+
+                const offlineAuth = window.SmartProbookOfflineAuth;
+                const offlinePrepared = offlineAuth
+                    ? await offlineAuth.prepareLogin(form).catch(function (error) {
+                        console.error('Could not prepare offline sign-in.', error);
+                        return false;
+                    })
+                    : false;
+
+                if (!offlinePrepared) {
+                    const notice = document.getElementById('offline-login-setup-status');
+                    if (notice && !notice.textContent) {
+                        notice.textContent = 'Offline sign-in could not be prepared. You can still sign in online.';
+                        notice.classList.add('text-danger');
+                    }
+                }
+
                 form.submit();
             });
         };
@@ -770,7 +789,7 @@
             <span class="panel-kicker">Secure sign in</span>
             <h1 class="form-title">Sign in to SmartProbook</h1>
             <p class="form-subtitle">Access your business using your registered email address or phone number.</p>
-            <form action="{{ route('saas-login.post') }}" method="POST" class="form-shell" data-rendered-at="{{ now()->timestamp }}">
+            <form action="{{ route('saas-login.post') }}" method="POST" class="form-shell" data-rendered-at="{{ now()->timestamp }}" data-login-failed="{{ $errors->any() ? '1' : '0' }}">
                 @csrf
                 <div class="login-instruction-box">
                     Enter the same email address or phone number used when creating your account.
@@ -819,6 +838,7 @@
                 </div>
 
                 <button type="submit" class="btn-smat-navy"><i class="fas fa-right-to-bracket me-1"></i> Sign In</button>
+                <p id="offline-login-setup-status" class="small mt-2 text-center" role="status" aria-live="polite"></p>
 
                 <div class="divider">
                     <span>OR CONTINUE WITH</span>

@@ -41,10 +41,12 @@ To use a different Smartprobook host, update `SMARTPROBOOK_URL` in `shell/index.
 
 ## Offline POS
 
-- The first sign-in and product/stock download require an internet connection. Sign in and open the POS on this desktop at least once before relying on offline sales.
+- The first sign-in requires an internet connection. Sign in on this desktop with the account password, then open the POS online and let its product/stock snapshot load before relying on offline sales.
+- When offline, choose **Try Offline POS** and unlock it with the same account password used for the successful online sign-in. The password itself is not stored; a salted verifier is saved locally and tied to the account, business, and branch.
 - While connected, the POS refreshes product stock and synchronizes queued sales. When the connection drops, the desktop can reopen the last cached POS workspace and queue supported sales.
 - Cash and split sales can be queued offline. Wallet, room-charge, and converted-document sales still require an internet connection.
 - This is offline support for POS sales and the saved product-stock snapshot, not offline access to every accounting or administration screen.
 - Sales are synchronized to the server when connectivity returns. Staff should review any sale the server flags for stock or workspace conflicts.
+- Offline unlock is local convenience authentication, not a live check that the account is still enabled. Reconnect regularly; logout clears the saved offline sign-in, and the server remains authoritative for syncing.
 
 The desktop app is a client shell; authentication, subscriptions, tenant separation, and device limits continue to be enforced by the Laravel backend.

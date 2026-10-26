@@ -16,7 +16,7 @@
 
     function openDatabase() {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open(databaseName, 2);
+            const request = indexedDB.open(databaseName, 3);
             request.onupgradeneeded = () => {
                 const db = request.result;
                 if (!db.objectStoreNames.contains(storeName)) {
@@ -24,6 +24,9 @@
                 }
                 if (!db.objectStoreNames.contains(inventoryStoreName)) {
                     db.createObjectStore(inventoryStoreName, { keyPath: 'key' });
+                }
+                if (!db.objectStoreNames.contains('offline-credentials')) {
+                    db.createObjectStore('offline-credentials', { keyPath: 'key' });
                 }
             };
             request.onsuccess = () => resolve(request.result);

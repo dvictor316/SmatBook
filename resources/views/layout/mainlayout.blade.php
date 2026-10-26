@@ -620,6 +620,7 @@
     @stack('scripts')
 
     @include('layout.partials.pwa-install')
+    <script src="{{ asset('js/pos-offline-auth.js') }}"></script>
 
     @livewireScripts
 
