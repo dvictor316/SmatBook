@@ -139,7 +139,7 @@ class ProductMeasurementSetupTest extends TestCase
         $this->assertStringContainsString('aria-label="Cashier calculator"', $html);
         $this->assertStringContainsString('data-calculator-key="+"', $html);
         $this->assertStringContainsString('data-calculator-action="equals"', $html);
-        $this->assertStringContainsString('inventorySnapshotVersion', $html);
+        $this->assertStringContainsString('catalogueUrl', $html);
         $this->assertStringContainsString('assets/plugins/sweetalert/sweetalert2.all.min.js', $html);
         $this->assertStringContainsString('assets/css/select2.min.css', $html);
         $this->assertSame(2, substr_count($html, 'data-min-stock="6"'));

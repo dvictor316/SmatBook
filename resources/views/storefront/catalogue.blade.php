@@ -44,6 +44,7 @@
         .product-media i{color:#a97935}
         .product-body{gap:10px;padding:20px}
         .product h2{font-family:Georgia,"Times New Roman",serif;font-size:1.3rem;font-weight:500;line-height:1.25}
+        .product-description{margin:0;color:#77766f;font-size:.9rem;line-height:1.55}
         .price{color:#86612f;font-size:1.15rem}
         .stock{color:#75766e}
         .quantity{justify-content:space-between;margin-top:10px;padding-top:14px;border-top:1px solid #eeece5}
@@ -70,12 +71,12 @@
     @if(session('store_order_success'))<div class="alert alert-success"><strong>Order received.</strong> Your reference is {{ session('store_order_success') }}. The business will contact you to confirm payment and fulfilment.</div>@endif
     @if($errors->any())<div class="alert alert-danger"><strong>Your order needs attention.</strong><ul class="mb-0 mt-2">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     @php($orderAction = request()->routeIs('storefront.catalogue') ? route('storefront.orders.store', $store->slug) : route('storefront.custom-domain.orders.store'))
-    <div class="catalogue-heading"><div><h2>Available collection</h2><p>Choose the items and quantities you would like to request.</p></div><span class="catalogue-count">{{ $products->total() }} available {{ \Illuminate\Support\Str::plural('product', $products->total()) }}</span></div>
+    <div class="catalogue-heading"><div><h2>Available collection</h2><p>Choose in-stock items and quantities to request. Out-of-stock products are shown for reference.</p></div><span class="catalogue-count">{{ $products->total() }} {{ \Illuminate\Support\Str::plural('product', $products->total()) }}</span></div>
     <form method="POST" action="{{ $orderAction }}">@csrf
         <div class="product-grid">
             @forelse($products as $product)
                 @php($available = max((float)($product->stock ?? 0), (float)($product->stock_quantity ?? 0)))
-                <article class="product"><div class="product-media">@if($product->image_url)<img src="{{ $product->image_url }}" alt="{{ $product->name }}" loading="lazy">@else<i class="fas fa-box-open" aria-hidden="true"></i>@endif</div><div class="product-body"><h2>{{ $product->name }}</h2><div class="small text-muted">{{ $product->sku }}</div><div class="price">{{ \App\Support\GeoCurrency::format((float)$product->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</div><div class="stock">{{ $product->formatStockQuantity($available) }} available</div><div class="quantity"><label for="qty{{ $product->id }}" class="small fw-bold">Quantity</label><input id="qty{{ $product->id }}" class="form-control form-control-sm" type="number" name="items[{{ $product->id }}]" min="0" max="{{ $available }}" step="{{ in_array(strtolower($product->stockUnitSymbol()), ['kg','g','litre','liter','l','m']) ? '0.01' : '1' }}" value="0"></div></div></article>
+                <article class="product"><div class="product-media">@if($product->image_url)<img src="{{ $product->image_url }}" alt="{{ $product->name }}" loading="lazy">@else<i class="fas fa-box-open" aria-hidden="true"></i>@endif</div><div class="product-body"><h2>{{ $product->name }}</h2><div class="small text-muted">{{ $product->sku }}</div>@if(filled($product->description))<p class="product-description">{{ \Illuminate\Support\Str::limit(strip_tags($product->description), 150) }}</p>@endif<div class="price">{{ \App\Support\GeoCurrency::format((float)$product->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</div><div class="stock">{{ $available > 0 ? $product->formatStockQuantity($available) . ' available' : 'Out of stock' }}</div><div class="quantity"><label for="qty{{ $product->id }}" class="small fw-bold">Quantity</label><input id="qty{{ $product->id }}" class="form-control form-control-sm" type="number" name="items[{{ $product->id }}]" min="0" max="{{ $available }}" step="{{ in_array(strtolower($product->stockUnitSymbol()), ['kg','g','litre','liter','l','m']) ? '0.01' : '1' }}" value="0" @disabled($available <= 0)></div></div></article>
             @empty
                 <div class="alert alert-info grid-column-all">No products are currently available.</div>
             @endforelse

@@ -39,6 +39,12 @@ class OnlineStoreWorkflowTest extends TestCase
         [$foreignUser, $foreignCompany] = $this->workspace('Foreign Market');
         $categoryId = $this->category($user->id, $company->id, 'Fruit');
         $productId = $this->product($user->id, $company->id, $categoryId, 'Orange Crate', 'ORG-001', 10, 12500);
+        DB::table('products')->where('id', $productId)->update([
+            'description' => 'Fresh oranges packed in a sturdy crate.',
+        ]);
+        $outOfStockId = $this->product($user->id, $company->id, $categoryId, 'Seasonal Mangoes', 'MAN-001', 0, 5000);
+        $inactiveProductId = $this->product($user->id, $company->id, $categoryId, 'Archived Pears', 'PEA-001', 5, 4000);
+        DB::table('products')->where('id', $inactiveProductId)->update(['status' => 'inactive']);
         $this->product($foreignUser->id, $foreignCompany->id, $categoryId, 'Foreign Apples', 'APL-999', 8, 9000);
         StorefrontSetting::create([
             'company_id' => $company->id,
@@ -50,7 +56,12 @@ class OnlineStoreWorkflowTest extends TestCase
         $this->get(route('storefront.catalogue', 'fresh-market'))
             ->assertOk()
             ->assertSee('Orange Crate')
+            ->assertSee('Fresh oranges packed in a sturdy crate.')
+            ->assertSee('Seasonal Mangoes')
+            ->assertSee('Out of stock')
+            ->assertDontSee('Archived Pears')
             ->assertDontSee('Foreign Apples');
+        $this->assertDatabaseHas('products', ['id' => $outOfStockId, 'stock' => 0]);
 
         $this->post(route('storefront.orders.store', 'fresh-market'), [
             'customer_name' => 'Ada Buyer',

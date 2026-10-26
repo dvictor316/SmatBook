@@ -6332,11 +6332,11 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
 <script>
 window.POS_OFFLINE_CONFIG = {
     saleUrl: @json($posSaleStoreUrl ?? url('/sales')),
+    catalogueUrl: @json(route('sales.showPos')),
     csrfToken: @json(csrf_token()),
     companyId: @json((string) (session('current_tenant_id') ?? auth()->user()?->company_id ?? '')),
     branchId: @json((string) ($activeBranch['id'] ?? '')),
     branchName: @json((string) ($activeBranch['name'] ?? '')),
-    inventorySnapshotVersion: @json(now()->format('Uu')),
 };
 </script>
 <script src="{{ asset('js/pos-offline.js') }}"></script>
@@ -6827,6 +6827,10 @@ $(document).ready(function() {
             }).get();
         }
         let cache = buildCache();
+        window._posComboRefresh = function () {
+            cache = buildCache();
+            if (isOpen) renderList(filter($input.val()), String($input.val() || '').toLowerCase().trim());
+        };
 
         function esc(s) {
             return String(s)
@@ -7587,7 +7591,7 @@ window.POS_ENABLE_FALLBACK = function () {
         window.jQuery('#process-btn').off('click');
     }
 
-    const productCards = document.querySelectorAll('.product-card');
+    let productCards = document.querySelectorAll('.product-card');
     const categoryPills = document.querySelectorAll('.category-pill');
     const categoryToggle = document.getElementById('category-toggle');
     const categoryPillsWrap = document.getElementById('category-pills');
@@ -8945,16 +8949,24 @@ window.POS_ENABLE_FALLBACK = function () {
         updateItemTotal();
     }
 
-    productCards.forEach((card) => {
-        card.addEventListener('click', function () {
-            applyVanillaSelection(card);
+    const boundProductCards = new WeakSet();
+    function bindVanillaProductCards() {
+        productCards = document.querySelectorAll('.product-card');
+        productCards.forEach((card) => {
+            if (boundProductCards.has(card)) return;
+            boundProductCards.add(card);
+            card.addEventListener('click', function () {
+                applyVanillaSelection(card);
+            });
+            card.addEventListener('dblclick', function (event) {
+                event.preventDefault();
+                applyVanillaSelection(card);
+                window.setTimeout(() => addBtn?.click(), 0);
+            });
         });
-        card.addEventListener('dblclick', function (event) {
-            event.preventDefault();
-            applyVanillaSelection(card);
-            window.setTimeout(() => addBtn?.click(), 0);
-        });
-    });
+    }
+    window.POS_REFRESH_OFFLINE_PRODUCTS = bindVanillaProductCards;
+    bindVanillaProductCards();
 
     if (productSearch) {
         productSearch.addEventListener('change', function () {

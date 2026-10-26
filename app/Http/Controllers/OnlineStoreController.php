@@ -102,9 +102,6 @@ class OnlineStoreController extends Controller
         $products = Product::withoutGlobalScopes()
             ->where('company_id', $store->company_id)
             ->where('status', 'active')
-            ->where(function ($query) {
-                $query->where('stock', '>', 0)->orWhere('stock_quantity', '>', 0);
-            })
             ->when($search !== '', fn ($query) => $query->where(function ($inner) use ($search) {
                 $inner->where('name', 'like', "%{$search}%")
                     ->orWhere('sku', 'like', "%{$search}%")
