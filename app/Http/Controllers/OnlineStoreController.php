@@ -98,6 +98,20 @@ class OnlineStoreController extends Controller
     {
         $store = $this->resolvePublicStore($request, $slug);
         $company = Company::withoutGlobalScope('tenant')->findOrFail($store->company_id);
+        $products = Product::withoutGlobalScopes()
+            ->where('company_id', $store->company_id)
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->limit(10)
+            ->get();
+
+        return view('storefront.home', compact('store', 'company', 'products'));
+    }
+
+    public function productGallery(Request $request, ?string $slug = null): View
+    {
+        $store = $this->resolvePublicStore($request, $slug);
+        $company = Company::withoutGlobalScope('tenant')->findOrFail($store->company_id);
         $search = trim((string) $request->query('q'));
         $products = Product::withoutGlobalScopes()
             ->where('company_id', $store->company_id)

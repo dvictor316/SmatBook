@@ -95,6 +95,42 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertSee('Mapped Store');
     }
 
+    public function test_store_homepage_features_ten_products_and_gallery_shows_the_full_catalogue(): void
+    {
+        [$user, $company] = $this->workspace('Gallery Store');
+        $categoryId = $this->category($user->id, $company->id, 'Collection');
+        for ($number = 1; $number <= 11; $number++) {
+            $this->product(
+                $user->id,
+                $company->id,
+                $categoryId,
+                sprintf('Gallery Product %02d', $number),
+                sprintf('GAL-%03d', $number),
+                5,
+                1000 + $number
+            );
+        }
+        StorefrontSetting::create([
+            'company_id' => $company->id,
+            'slug' => 'gallery-store',
+            'store_name' => 'Gallery Store',
+            'is_enabled' => true,
+        ]);
+
+        $this->get(route('storefront.catalogue', 'gallery-store'))
+            ->assertOk()
+            ->assertSee('Product Gallery')
+            ->assertSee('Gallery Product 01')
+            ->assertSee('Gallery Product 10')
+            ->assertDontSee('Gallery Product 11')
+            ->assertSee(route('storefront.products', 'gallery-store'), false);
+
+        $this->get(route('storefront.products', 'gallery-store'))
+            ->assertOk()
+            ->assertSee('Gallery Product 11')
+            ->assertSee('Place Order');
+    }
+
     public function test_cancelling_an_online_order_restores_reserved_stock(): void
     {
         [$user, $company] = $this->workspace('Cancellation Store');
