@@ -52,6 +52,7 @@
     $posCanViewReports = $posCan(['reports.reports.view', 'sales.sales.view_all', 'sales.sales.view_own']);
     $posCanReturn = $posCan(['sales.sales.return', 'sales.sales.edit', 'sales.sales.view_all', 'sales.sales.view_own']);
     $posCanSell = $posCan(['sales.sales.create', 'sales.invoices.create', 'pos.sales.create']);
+    $posCanSuspendSales = (bool) ($posCanManageSuspense ?? $posCan('sales.pos.suspend'));
     $posCanDiscount = $posCan(['sales.sales.discount', 'sales.sales.edit', 'sales.invoices.edit']);
     $posCanManageCustomers = $posCan(['customers.customers.view', 'customers.customers.create', 'sales.sales.create']);
     $posAllowStaffPriceEdit = (bool) ($posAllowStaffPriceEdit ?? false);
@@ -5570,14 +5571,16 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                     <span>Clear Cart</span>
                 </button>
                 @if($posCanSell)
-                <button type="button" class="pos-rail-btn mt-2" id="rail-suspend-sale-btn">
-                    <i class="fas fa-pause-circle"></i>
-                    <span>Suspend Sale</span>
-                </button>
-                <button type="button" class="pos-rail-btn mt-2" id="rail-sales-suspense-btn">
-                    <i class="fas fa-rotate-left"></i>
-                    <span>Sales Suspense <span class="badge bg-primary ms-1" id="pos-suspense-count">0</span></span>
-                </button>
+                @if($posCanSuspendSales)
+                    <button type="button" class="pos-rail-btn mt-2" id="rail-suspend-sale-btn">
+                        <i class="fas fa-pause-circle"></i>
+                        <span>Suspend Sale</span>
+                    </button>
+                    <button type="button" class="pos-rail-btn mt-2" id="rail-sales-suspense-btn">
+                        <i class="fas fa-rotate-left"></i>
+                        <span>Sales Suspense <span class="badge bg-primary ms-1" id="pos-suspense-count">0</span></span>
+                    </button>
+                @endif
                 <button type="button" class="pos-rail-btn mt-2" id="rail-checkout-btn">
                     <i class="fas fa-cash-register"></i>
                     <span>Checkout</span>
@@ -5763,6 +5766,8 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                 $categoryName = $p->category->name ?? 'Uncategorized';
                 $minStockLevel = (int) ($p->reorder_level ?? 0) > 0 ? (int) $p->reorder_level : 15;
                 $availableStock = (float) ($p->available_stock ?? $p->stock ?? 0);
+                $variantLabel = $p->variantLabel();
+                $posProductName = trim($p->name . ($variantLabel !== '' ? ' · ' . $variantLabel : ''));
                 $isOutOfStock = $availableStock <= 0;
                 $barcodeList = collect($p->barcodes ?? [])
                     ->pluck('barcode')
@@ -5773,10 +5778,10 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                     ->implode('|');
             @endphp
             <div class="product-card"
-                title="{{ $p->name }}"
+                title="{{ $posProductName }}"
                 data-id="{{ $p->id }}"
-                data-name="{{ $p->name }}"
-                data-search-name="{{ strtolower($p->name) }}"
+                data-name="{{ $posProductName }}"
+                data-search-name="{{ strtolower($posProductName) }}"
                 data-sku="{{ strtolower($p->sku ?? '') }}"
                 data-barcode="{{ strtolower($p->barcode ?? '') }}"
                 data-barcodes="{{ $barcodeList }}"
@@ -5803,7 +5808,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                 @if($isOutOfStock) aria-disabled="true" style="opacity:.55; filter:grayscale(.15);" @endif>
                 <div class="product-card-img">
                     @if($p->image_url)
-                        <img src="{{ $p->image_url }}" alt="{{ $p->name }}" onerror="this.style.display='none'; var fallback = this.parentElement.querySelector('.product-fallback-icon'); if (fallback) fallback.classList.remove('d-none');">
+                        <img src="{{ $p->image_url }}" alt="{{ $posProductName }}" onerror="this.style.display='none'; var fallback = this.parentElement.querySelector('.product-fallback-icon'); if (fallback) fallback.classList.remove('d-none');">
                     @else
                         <div class="d-flex align-items-center justify-content-center h-100 w-100 text-primary bg-light product-fallback-icon">
                             <i class="fas fa-box-open"></i>
@@ -5813,7 +5818,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                         <i class="fas fa-box-open"></i>
                     </div>
                 </div>
-                <div class="product-card-name">{{ $p->name }}</div>
+                <div class="product-card-name">{{ $posProductName }}</div>
                 <div class="product-card-measure">{{ $measurementLabel }}</div>
             </div>
             @endforeach
@@ -6168,7 +6173,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                             <button type="button" class="pos-pay-tab pos-pay-card" data-payment-method="Split" id="pos-pay-bank-shortcut"><span>POS / Bank</span></button>
                         </div>
                     </div>
-                    @if($posCanSell)
+                    @if($posCanSuspendSales)
                         <div class="pos-cashier-suspense-actions" aria-label="Suspended sale actions">
                             <button type="button" class="btn btn-suspend" id="payment-suspend-sale-btn">
                                 <i class="fas fa-pause-circle" aria-hidden="true"></i><span>Suspend Sale</span>
@@ -6304,6 +6309,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
     </div>
 </div>
 
+@if($posCanSuspendSales)
 <div class="modal fade" id="pos-suspense-modal" tabindex="-1" aria-labelledby="pos-suspense-modal-title" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
@@ -6312,6 +6318,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                     <h5 class="modal-title mb-1" id="pos-suspense-modal-title">Sales Suspense</h5>
                     <p class="small text-muted mb-0">Suspended carts are available to authorized cashiers in this business branch.</p>
                 </div>
+                @endif
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">

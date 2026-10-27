@@ -33,14 +33,16 @@ class ProductController extends Controller
     public function __construct(private readonly BranchInventoryService $branchInventory)
     {
         $this->middleware('permission:inventory.products.view')->only(['index', 'inventory', 'show', 'exportStock', 'inventory_history']);
-        $this->middleware('permission:inventory.products.create')->only(['create', 'store', 'import']);
+        $this->middleware('permission:inventory.products.create')->only(['create', 'store', 'import', 'updateFashionSettings']);
         $this->middleware('permission:inventory.products.edit')->only(['edit', 'update']);
         $this->middleware('permission:inventory.products.delete')->only(['destroy', 'bulkDestroy', 'undoLastImport']);
         $this->middleware('permission:inventory.stock.edit')->only(['adjust_stock', 'update_history', 'delete_history', 'storeDamageStock', 'transferStock']);
         $this->middleware(function ($request, $next) {
             $hasStock = collect(['stock', 'stock_quantity', 'stock_cartons', 'stock_rolls', 'stock_units'])
                 ->contains(fn ($field) => (float) $request->input($field, 0) > 0);
-            if ($hasStock) {
+            $hasVariantStock = collect($request->input('variants', []))
+                ->contains(fn ($variant) => is_array($variant) && (float) ($variant['stock'] ?? 0) > 0);
+            if ($hasStock || $hasVariantStock) {
                 $this->authorizeStockPermission('inventory.products.add_opening_stock');
             }
             return $next($request);
@@ -1122,9 +1124,12 @@ class ProductController extends Controller
             if ($search) {
                 $hasNameColumn = Schema::hasColumn('products', 'name');
                 $hasSkuColumn = Schema::hasColumn('products', 'sku');
+                $hasFashionColumns = Schema::hasColumn('products', 'fashion_size')
+                    && Schema::hasColumn('products', 'fashion_color')
+                    && Schema::hasColumn('products', 'brand');
 
-                if ($hasNameColumn || $hasSkuColumn) {
-                    $query->where(function ($q) use ($search, $hasNameColumn, $hasSkuColumn) {
+                if ($hasNameColumn || $hasSkuColumn || $hasFashionColumns) {
+                    $query->where(function ($q) use ($search, $hasNameColumn, $hasSkuColumn, $hasFashionColumns) {
                         if ($hasNameColumn) {
                             $q->where('name', 'like', "%{$search}%");
                         }
@@ -1132,6 +1137,11 @@ class ProductController extends Controller
                         if ($hasSkuColumn) {
                             $method = $hasNameColumn ? 'orWhere' : 'where';
                             $q->{$method}('sku', 'like', "%{$search}%");
+                        }
+                        if ($hasFashionColumns) {
+                            $q->orWhere('brand', 'like', "%{$search}%")
+                                ->orWhere('fashion_size', 'like', "%{$search}%")
+                                ->orWhere('fashion_color', 'like', "%{$search}%");
                         }
                     });
                 }
@@ -1320,8 +1330,26 @@ class ProductController extends Controller
         $availableBranches = $this->getAvailableBranches();
         $units = $this->unitRows();
         $priceLists = app(PriceListUsage::class)->activeForCurrentContext($this->tenantCompanyId());
+        $fashionCatalogEnabled = Schema::hasColumn('companies', 'fashion_catalog_enabled')
+            && (bool) DB::table('companies')->where('id', $this->tenantCompanyId())->value('fashion_catalog_enabled');
 
-        return view('Inventory.Products.add-products', compact('categories', 'availableBranches', 'units', 'priceLists'));
+        return view('Inventory.Products.add-products', compact('categories', 'availableBranches', 'units', 'priceLists', 'fashionCatalogEnabled'));
+    }
+
+    public function updateFashionSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'fashion_catalog_enabled' => 'required|boolean',
+        ]);
+        $companyId = $this->tenantCompanyId();
+        abort_if($companyId < 1 || !Schema::hasColumn('companies', 'fashion_catalog_enabled'), 403);
+
+        DB::table('companies')->where('id', $companyId)->update([
+            'fashion_catalog_enabled' => (bool) $validated['fashion_catalog_enabled'],
+            'updated_at' => now(),
+        ]);
+
+        return back()->with('success', 'Fashion product options updated.');
     }
 
     private function syncProductPriceListItems(Product $product, array $priceListPrices): void
@@ -1413,20 +1441,65 @@ class ProductController extends Controller
                 'price_list_prices' => 'nullable|array',
                 'price_list_prices.*' => 'nullable|numeric|min:0',
             ];
+            $fashionCatalogEnabled = Schema::hasColumn('companies', 'fashion_catalog_enabled')
+                && (bool) DB::table('companies')->where('id', $this->tenantCompanyId())->value('fashion_catalog_enabled');
+            $rules['use_variants'] = $fashionCatalogEnabled ? 'nullable|boolean' : 'prohibited';
+            $rules['brand'] = $fashionCatalogEnabled ? 'nullable|string|max:191' : 'prohibited';
+            $rules['variants'] = $fashionCatalogEnabled
+                ? 'required_if:use_variants,1|array|min:1|max:100'
+                : 'prohibited';
+            $rules['variants.*.size'] = $fashionCatalogEnabled ? 'nullable|string|max:80' : 'prohibited';
+            $rules['variants.*.color'] = $fashionCatalogEnabled ? 'nullable|string|max:80' : 'prohibited';
+            $rules['variants.*.sku'] = $fashionCatalogEnabled ? 'nullable|string|max:191|unique:products,sku' : 'prohibited';
+            $rules['variants.*.stock'] = $fashionCatalogEnabled ? 'required_with:variants|numeric|min:0' : 'prohibited';
 
             $validator = Validator::make($request->except('image'), $rules);
-            $validator->after(function ($v) use ($request) {
+            $validator->after(function ($v) use ($request, $fashionCatalogEnabled) {
                 $price = trim((string) $request->input('price', ''));
                 $purchase = trim((string) $request->input('purchase_price', ''));
                 if ($price === '' && $purchase === '') {
                     $v->errors()->add('price', 'Enter a selling price or a purchase price before saving this product.');
                     $v->errors()->add('purchase_price', 'Enter a selling price or a purchase price before saving this product.');
                 }
+                if ($fashionCatalogEnabled && $request->boolean('use_variants')) {
+                    $combinations = [];
+                    $variantSkus = [];
+                    foreach ((array) $request->input('variants', []) as $index => $variant) {
+                        $size = mb_strtolower(trim((string) ($variant['size'] ?? '')));
+                        $color = mb_strtolower(trim((string) ($variant['color'] ?? '')));
+                        if ($size === '' && $color === '') {
+                            $v->errors()->add("variants.{$index}.size", 'Enter a size or colour for each variant.');
+                        }
+                        $combination = json_encode([$size, $color]);
+                        if (in_array($combination, $combinations, true)) {
+                            $v->errors()->add("variants.{$index}.size", 'Each size and colour combination must be unique.');
+                        }
+                        $combinations[] = $combination;
+                        $sku = strtoupper(trim((string) ($variant['sku'] ?? '')));
+                        if ($sku !== '' && in_array($sku, $variantSkus, true)) {
+                            $v->errors()->add("variants.{$index}.sku", 'Each variant SKU must be unique.');
+                        }
+                        if ($sku !== '') {
+                            $variantSkus[] = $sku;
+                        }
+                    }
+                }
             });
             $validated = $validator->validate();
             $cartonSellingPrice = $validated['carton_selling_price'] ?? null;
             $priceListPrices = $validated['price_list_prices'] ?? [];
-            unset($validated['price_list_prices'], $validated['measurement_mode'], $validated['kg_per_carton'], $validated['carton_selling_price']);
+            $useVariants = $fashionCatalogEnabled && (bool) ($validated['use_variants'] ?? false);
+            $brand = $fashionCatalogEnabled ? trim((string) ($validated['brand'] ?? '')) : '';
+            $variantRows = $useVariants ? $validated['variants'] : [];
+            unset(
+                $validated['price_list_prices'],
+                $validated['measurement_mode'],
+                $validated['kg_per_carton'],
+                $validated['carton_selling_price'],
+                $validated['use_variants'],
+                $validated['variants'],
+                $validated['brand']
+            );
 
             $uploadedImage = $request->file('image');
 
@@ -1515,40 +1588,76 @@ class ProductController extends Controller
             if (!Schema::hasColumn('products', 'reorder_quantity')) {
                 unset($validated['reorder_quantity']);
             }
-            $product = Product::create($validated);
-            $this->syncProductPriceListItems($product, $priceListPrices);
-            if (Schema::hasTable('product_branch_stocks')) {
-                $branchId = $selectedBranch['id'] ?? null;
-                if (!empty($branchId)) {
-                    $alreadyHasStock = DB::table('product_branch_stocks')
-                        ->where('product_id', $product->id)
-                        ->where('branch_id', $branchId)
-                        ->exists();
-                    if (!$alreadyHasStock) {
-                        DB::table('product_branch_stocks')->insert([
-                            'product_id' => $product->id,
-                            'branch_id' => $branchId,
-                            'branch_name' => $selectedBranch['name'] ?? null,
-                            'quantity' => (float) ($product->stock ?? 0),
-                            'company_id' => $product->company_id ?? ($resolvedCompanyId ?: null),
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                    }
-                }
-            }
-            $this->branchInventory->seedOpeningStock(
-                $product,
-                (float) $validated['stock'],
+            $groupId = $useVariants ? (string) Str::uuid() : null;
+            $definitions = $useVariants ? $variantRows : [[
+                'size' => null,
+                'color' => null,
+                'sku' => $validated['sku'],
+                'stock' => $validated['stock'],
+            ]];
+            $products = DB::transaction(function () use (
+                $definitions,
+                $validated,
+                $brand,
+                $groupId,
+                $useVariants,
+                $priceListPrices,
+                $cartonSellingPrice,
                 $selectedBranch,
-                $product->company_id ?: ($resolvedCompanyId ?: null)
-            );
-            $this->syncProductUnitRows($product->fresh(['unit', 'baseUnit', 'purchaseUnit']));
-            $this->applyCartonSellingPrice($product, $cartonSellingPrice);
+                $resolvedCompanyId
+            ) {
+                $created = [];
+                foreach ($definitions as $definition) {
+                    $variantStock = $useVariants ? (float) $definition['stock'] : (float) $validated['stock'];
+                    $label = collect([$brand, $definition['size'] ?? null, $definition['color'] ?? null])
+                        ->filter(fn ($value) => filled($value))
+                        ->implode(' ');
+                    $payload = $validated;
+                    $payload['sku'] = $this->generateUniqueSku(
+                        $definition['sku'] ?? null,
+                        trim($validated['name'] . ' ' . $label)
+                    );
+                    $payload['stock'] = $variantStock;
+                    $payload['stock_quantity'] = $variantStock;
+                    $payload['brand'] = $brand !== '' ? $brand : null;
+                    $payload['fashion_size'] = filled($definition['size'] ?? null) ? trim((string) $definition['size']) : null;
+                    $payload['fashion_color'] = filled($definition['color'] ?? null) ? trim((string) $definition['color']) : null;
+                    $payload['variant_group_id'] = $groupId;
+                    $product = Product::create($payload);
+                    $this->syncProductPriceListItems($product, $priceListPrices);
+
+                    if (Schema::hasTable('product_branch_stocks')) {
+                        $branchId = $selectedBranch['id'] ?? null;
+                        if (!empty($branchId)) {
+                            DB::table('product_branch_stocks')->insert([
+                                'product_id' => $product->id,
+                                'branch_id' => $branchId,
+                                'branch_name' => $selectedBranch['name'] ?? null,
+                                'quantity' => $variantStock,
+                                'company_id' => $product->company_id ?? ($resolvedCompanyId ?: null),
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    }
+
+                    $this->branchInventory->seedOpeningStock(
+                        $product,
+                        $variantStock,
+                        $selectedBranch,
+                        $product->company_id ?: ($resolvedCompanyId ?: null)
+                    );
+                    $this->syncProductUnitRows($product->fresh(['unit', 'baseUnit', 'purchaseUnit']));
+                    $this->applyCartonSellingPrice($product, $cartonSellingPrice);
+                    $created[] = $product;
+                }
+
+                return $created;
+            });
             $this->clearDashboardMetricsCache($selectedBranch['id'] ?? null);
 
             return redirect()->route('product-list')
-                ->with('success', 'Product added successfully.');
+                ->with('success', count($products) > 1 ? count($products) . ' product variants added successfully.' : 'Product added successfully.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             throw $e;
         } catch (\Throwable $e) {
@@ -1582,8 +1691,10 @@ class ProductController extends Controller
         $product->setAttribute('active_branch_stock', $this->branchInventory->getAvailableStock($product, $activeBranch));
         $categories = Category::orderBy('name')->get();
         $units = $this->unitRows();
+        $fashionCatalogEnabled = Schema::hasColumn('companies', 'fashion_catalog_enabled')
+            && (bool) DB::table('companies')->where('id', $this->tenantCompanyId())->value('fashion_catalog_enabled');
         
-        return view('Inventory.Products.edit', compact('product', 'categories', 'units', 'activeBranch'));
+        return view('Inventory.Products.edit', compact('product', 'categories', 'units', 'activeBranch', 'fashionCatalogEnabled'));
     }
 
 public function inventory(Request $request)
@@ -1877,6 +1988,8 @@ public function inventory(Request $request)
             $request->merge(['stock' => $this->calculateStockFromPackaging($request->all())]);
         }
 
+        $fashionCatalogEnabled = Schema::hasColumn('companies', 'fashion_catalog_enabled')
+            && (bool) DB::table('companies')->where('id', $this->tenantCompanyId())->value('fashion_catalog_enabled');
         $validated = $request->validate([
             'name'             => 'required|string|max:191',
             'sku'              => 'nullable|string|max:191|unique:products,sku,' . $id,
@@ -1908,6 +2021,9 @@ public function inventory(Request $request)
             'expiry_date'      => 'nullable|date',
             'reorder_level'    => 'nullable|integer|min:0',
             'reorder_quantity' => 'nullable|integer|min:0',
+            'brand'            => $fashionCatalogEnabled ? 'nullable|string|max:191' : 'prohibited',
+            'fashion_size'     => $fashionCatalogEnabled ? 'nullable|string|max:80' : 'prohibited',
+            'fashion_color'    => $fashionCatalogEnabled ? 'nullable|string|max:80' : 'prohibited',
         ]);
 
         $cartonSellingPrice = $validated['carton_selling_price'] ?? null;

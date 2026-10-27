@@ -13,7 +13,9 @@ use App\Models\OnlineStoreOrder;
 use App\Models\StorefrontSetting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request as ClientRequest;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class OnlineStoreWorkflowTest extends TestCase
@@ -76,6 +78,7 @@ class OnlineStoreWorkflowTest extends TestCase
             'customer_name' => 'Ada Buyer',
             'total_amount' => 25000,
             'status' => 'pending_confirmation',
+            'whatsapp_notification_status' => 'not_configured',
         ]);
         $this->assertDatabaseHas('products', ['id' => $productId, 'stock' => 8, 'stock_quantity' => 8]);
     }
@@ -135,7 +138,102 @@ class OnlineStoreWorkflowTest extends TestCase
         $this->get(route('storefront.products', 'gallery-store'))
             ->assertOk()
             ->assertSee('Gallery Product 11')
-            ->assertSee('Place Order');
+            ->assertSee('Place Order')
+            ->assertSee('Your Cart')
+            ->assertSee('add-to-cart', false)
+            ->assertSee('smartprobook-cart-gallery-store');
+    }
+
+    public function test_order_and_status_changes_send_whatsapp_cloud_template_notifications(): void
+    {
+        [$user, $company] = $this->workspace('WhatsApp Store');
+        $categoryId = $this->category($user->id, $company->id, 'Clothing');
+        $productId = $this->product($user->id, $company->id, $categoryId, 'Cotton Shirt', 'SHI-001', 8, 12000);
+        StorefrontSetting::create([
+            'company_id' => $company->id,
+            'slug' => 'whatsapp-store',
+            'store_name' => 'WhatsApp Store',
+            'owner_whatsapp_number' => '+2348012345678',
+            'is_enabled' => true,
+        ]);
+        config()->set('services.whatsapp.access_token', 'test-cloud-token');
+        config()->set('services.whatsapp.phone_number_id', '123456789');
+        config()->set('services.whatsapp.api_version', 'v21.0');
+        config()->set('services.whatsapp.order_template', 'smartprobook_order_notification');
+        config()->set('services.whatsapp.template_language', 'en');
+        Http::fake(['graph.facebook.com/*' => Http::response(['messages' => [['id' => 'wamid.test']]], 200)]);
+
+        $this->get(route('storefront.products', 'whatsapp-store'))
+            ->assertOk()
+            ->assertSee('Send purchase request to WhatsApp')
+            ->assertSee('does not reserve stock')
+            ->assertSee('wa.me/', false);
+
+        $this->post(route('storefront.orders.store', 'whatsapp-store'), [
+            'customer_name' => 'Ada Buyer',
+            'customer_phone' => '+2348099999999',
+            'payment_method' => 'pickup',
+            'items' => [$productId => 1],
+        ])->assertSessionHasNoErrors()
+            ->assertSessionHas('store_order_success')
+            ->assertSessionHas('store_whatsapp_link');
+
+        $order = OnlineStoreOrder::withoutGlobalScopes()->firstOrFail();
+        $this->assertDatabaseHas('online_store_orders', [
+            'id' => $order->id,
+            'whatsapp_notification_status' => 'sent',
+        ]);
+        $this->assertNotNull($order->fresh()->whatsapp_notified_at);
+
+        $this->actingAs($user)
+            ->withSession(['current_tenant_id' => $company->id, 'active_branch_scope' => 'all'])
+            ->patch(route('online-store.orders.update', $order), ['status' => 'confirmed'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('online_store_orders', [
+            'id' => $order->id,
+            'status' => 'confirmed',
+            'whatsapp_notification_status' => 'sent',
+        ]);
+        Http::assertSentCount(2);
+        Http::assertSent(fn (ClientRequest $request) =>
+            str_contains($request->url(), '/v21.0/123456789/messages')
+            && $request['template']['name'] === 'smartprobook_order_notification'
+            && count($request['template']['components'][0]['parameters']) === 6
+            && $request['to'] === '2348012345678'
+        );
+    }
+
+    public function test_whatsapp_api_failure_does_not_discard_customer_order(): void
+    {
+        [$user, $company] = $this->workspace('WhatsApp Failure Store');
+        $categoryId = $this->category($user->id, $company->id, 'Household');
+        $productId = $this->product($user->id, $company->id, $categoryId, 'Storage Basket', 'BAS-001', 5, 2500);
+        StorefrontSetting::create([
+            'company_id' => $company->id,
+            'slug' => 'whatsapp-failure-store',
+            'store_name' => 'WhatsApp Failure Store',
+            'owner_whatsapp_number' => '+2348012345678',
+            'is_enabled' => true,
+        ]);
+        config()->set('services.whatsapp.access_token', 'test-cloud-token');
+        config()->set('services.whatsapp.phone_number_id', '123456789');
+        config()->set('services.whatsapp.api_version', 'v21.0');
+        Http::fake(['graph.facebook.com/*' => Http::response(['error' => ['message' => 'Template unavailable']], 400)]);
+
+        $this->post(route('storefront.orders.store', 'whatsapp-failure-store'), [
+            'customer_name' => 'Grace Customer',
+            'customer_phone' => '+2348099999999',
+            'payment_method' => 'pickup',
+            'items' => [$productId => 1],
+        ])->assertSessionHasNoErrors()->assertSessionHas('store_order_success');
+
+        $this->assertDatabaseHas('online_store_orders', [
+            'company_id' => $company->id,
+            'customer_name' => 'Grace Customer',
+            'status' => 'pending_confirmation',
+            'whatsapp_notification_status' => 'failed',
+        ]);
     }
 
     public function test_business_owner_has_a_direct_online_store_sidebar_link(): void

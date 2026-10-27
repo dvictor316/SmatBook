@@ -171,6 +171,21 @@ class PosSuspendedSaleTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_users_with_the_sales_suspense_role_permission_can_access_sales_suspense(): void
+    {
+        $company = Company::create(['name' => 'Enabled Suspense', 'industry' => 'retail', 'plan' => 'Enterprise']);
+        $user = User::factory()->create([
+            'company_id' => $company->id,
+            'role' => 'staff',
+            'permissions_override' => ['sales.pos.suspend'],
+        ]);
+
+        $this->actingAs($user)->withoutMiddleware()
+            ->getJson(route('pos.suspense.index'))
+            ->assertOk()
+            ->assertJsonCount(0, 'sales');
+    }
+
     public function test_missing_suspense_installation_returns_an_actionable_error(): void
     {
         $company = Company::create(['name' => 'Suspense Setup', 'industry' => 'retail', 'plan' => 'Enterprise']);

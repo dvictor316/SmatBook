@@ -662,6 +662,7 @@
                                                 <?php } ?>
                                                 <div>
                                                     <div class="fw-bold text-dark"><?php echo e($product->name); ?></div>
+                                                    <?php if ($product->variantLabel() !== '') { ?><small class="text-primary"><?php echo e($product->variantLabel()); ?></small><?php } ?>
                                                     <small class="text-muted"><?php echo e($product->sku); ?></small>
                                                 </div>
                                             </div>
@@ -689,7 +690,7 @@
                                                 $hasActiveBranch = !empty($activeBranch['name'] ?? null);
                                             ?>
                                             <span class="badge <?php echo e($displayStock <= 5 ? 'bg-danger' : 'bg-success'); ?>">
-                                                <?php echo e(rtrim(rtrim(\App\Support\CompactNumber::format((float) $displayStock, 2), '0'), '.')); ?>
+                                                <?php echo e(\App\Support\CompactNumber::format((float) $displayStock, 2)); ?>
                                             </span>
                                             <?php if ($hasActiveBranch) { ?>
                                                 <div class="small text-muted mt-1"><?php echo e($activeBranch['name']); ?></div>

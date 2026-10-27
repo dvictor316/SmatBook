@@ -204,4 +204,66 @@ class ProductMeasurementSetupTest extends TestCase
             ]);
         }
     }
+
+    public function test_fashion_variants_are_saved_as_independent_products_with_separate_stock(): void
+    {
+        $units = $this->workspace();
+        $companyId = (int) auth()->user()->company_id;
+        DB::table('companies')->where('id', $companyId)->update(['fashion_catalog_enabled' => true]);
+        $payload = $this->payload($units, 'pieces');
+        $payload['name'] = 'Everyday Shirt';
+        $payload['brand'] = 'Threaded House';
+        $payload['use_variants'] = 1;
+        $payload['variants'] = [
+            ['size' => 'S', 'color' => 'Blue', 'sku' => '', 'stock' => 4],
+            ['size' => 'M', 'color' => 'Blue', 'sku' => '', 'stock' => 9],
+        ];
+
+        $this->post(route('inventory.Products.store'), $payload)
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success', '2 product variants added successfully.');
+
+        $products = Product::where('name', 'Everyday Shirt')->get()->keyBy('fashion_size');
+        $this->assertCount(2, $products);
+        $small = $products->get('S');
+        $medium = $products->get('M');
+        $this->assertNotSame($small->id, $medium->id);
+        $this->assertNotSame($small->sku, $medium->sku);
+        $this->assertSame($small->variant_group_id, $medium->variant_group_id);
+        $this->assertSame('Threaded House', $small->brand);
+        $this->assertSame('S', $small->fashion_size);
+        $this->assertSame('M', $medium->fashion_size);
+        $this->assertSame('Blue', $small->fashion_color);
+        $this->assertSame(4.0, (float) $small->stock);
+        $this->assertSame(9.0, (float) $medium->stock);
+        $this->assertSame('Threaded House · S · Blue', $small->variantLabel());
+    }
+
+    public function test_fashion_variant_combinations_must_be_unique(): void
+    {
+        $units = $this->workspace();
+        DB::table('companies')->where('id', auth()->user()->company_id)->update(['fashion_catalog_enabled' => true]);
+        $payload = $this->payload($units, 'pieces');
+        $payload['use_variants'] = 1;
+        $payload['variants'] = [
+            ['size' => 'M', 'color' => 'Navy', 'sku' => '', 'stock' => 2],
+            ['size' => 'm', 'color' => 'navy', 'sku' => '', 'stock' => 3],
+        ];
+
+        $this->post(route('inventory.Products.store'), $payload)
+            ->assertSessionHasErrors('variants.1.size');
+        $this->assertDatabaseMissing('products', ['name' => $payload['name']]);
+    }
+
+    public function test_inventory_stock_display_keeps_the_final_zero_of_twenty(): void
+    {
+        $units = $this->workspace();
+        $payload = $this->payload($units, 'pieces');
+        $payload['stock_units'] = 20;
+        $payload['stock'] = 20;
+        $this->post(route('inventory.Products.store'), $payload)->assertSessionHasNoErrors();
+
+        $content = $this->get(route('product-list'))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/<span class="badge bg-success">\s*20\s*<\/span>/', $content);
+    }
 }

@@ -55,7 +55,7 @@ class PostResetSeeder extends Seeder
             ],
             'sales'          => [
                 'invoices'   => ['view', 'view_all', 'view_own', 'create', 'edit', 'delete'],
-                'pos'        => ['view', 'create'],
+                'pos'        => ['view', 'create', 'suspend'],
                 'quotations' => ['view', 'view_all', 'view_own', 'create', 'edit', 'delete'],
             ],
             'purchases'      => [

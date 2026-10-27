@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\OnlineStoreOrder;
 use App\Models\Product;
 use App\Models\StorefrontSetting;
+use App\Services\WhatsAppOrderNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -40,6 +41,7 @@ class OnlineStoreController extends Controller
             'description' => 'nullable|string|max:1000',
             'contact_phone' => 'nullable|string|max:60',
             'contact_email' => 'nullable|email|max:191',
+            'owner_whatsapp_number' => ['nullable', 'string', 'regex:/^\+?[1-9][0-9]{7,14}$/'],
             'fulfilment_note' => 'nullable|string|max:191',
             'is_enabled' => 'nullable|boolean',
         ]);
@@ -59,6 +61,7 @@ class OnlineStoreController extends Controller
             'status' => 'required|in:pending_confirmation,confirmed,ready,fulfilled,cancelled',
         ]);
 
+        $previousStatus = $onlineStoreOrder->status;
         DB::transaction(function () use ($onlineStoreOrder, $validated) {
             $order = OnlineStoreOrder::query()
                 ->with('items')
@@ -91,6 +94,13 @@ class OnlineStoreController extends Controller
             $order->update(['status' => $validated['status']]);
         });
 
+        if ($previousStatus !== $validated['status']) {
+            $store = StorefrontSetting::where('company_id', $onlineStoreOrder->company_id)->first();
+            if ($store) {
+                $this->notifyOwner($store, OnlineStoreOrder::with('items')->findOrFail($onlineStoreOrder->id));
+            }
+        }
+
         return back()->with('success', 'Online order status updated.');
     }
 
@@ -119,7 +129,10 @@ class OnlineStoreController extends Controller
             ->when($search !== '', fn ($query) => $query->where(function ($inner) use ($search) {
                 $inner->where('name', 'like', "%{$search}%")
                     ->orWhere('sku', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('brand', 'like', "%{$search}%")
+                    ->orWhere('fashion_size', 'like', "%{$search}%")
+                    ->orWhere('fashion_color', 'like', "%{$search}%");
             }))
             ->orderBy('name')
             ->paginate(\App\Support\PageSize::resolve())->withQueryString();
@@ -190,7 +203,7 @@ class OnlineStoreController extends Controller
                 $product = $products->get((int) $productId);
                 $order->items()->create([
                     'product_id' => $product->id,
-                    'product_name' => $product->name,
+                    'product_name' => trim($product->name . ($product->variantLabel() !== '' ? ' · ' . $product->variantLabel() : '')),
                     'sku' => $product->sku,
                     'quantity' => $quantity,
                     'unit_price' => $product->price,
@@ -209,7 +222,33 @@ class OnlineStoreController extends Controller
             return $order;
         });
 
-        return back()->with('store_order_success', $order->order_number);
+        $this->notifyOwner($store, $order);
+        $order->loadMissing('items');
+        $recipient = preg_replace('/\D+/', '', (string) $store->owner_whatsapp_number);
+        $whatsappMessage = "Hello {$store->store_name}, I placed order {$order->order_number}:";
+        foreach ($order->items as $item) {
+            $whatsappMessage .= "\n{$item->product_name} x {$item->quantity} - " . number_format((float) $item->line_total, 2);
+        }
+        $whatsappMessage .= "\nTotal: " . number_format((float) $order->total_amount, 2) . '. Please confirm availability and fulfilment.';
+        $whatsappLink = strlen($recipient) >= 8
+            ? 'https://wa.me/' . $recipient . '?' . http_build_query([
+                'text' => $whatsappMessage,
+            ])
+            : null;
+
+        return back()
+            ->with('store_order_success', $order->order_number)
+            ->with('store_whatsapp_link', $whatsappLink);
+    }
+
+    private function notifyOwner(StorefrontSetting $store, OnlineStoreOrder $order): void
+    {
+        $result = app(WhatsAppOrderNotifier::class)->send($store, $order);
+        $order->update([
+            'whatsapp_notification_status' => $result['status'],
+            'whatsapp_notification_error' => $result['error'],
+            'whatsapp_notified_at' => $result['status'] === 'sent' ? now() : null,
+        ]);
     }
 
     private function resolvePublicStore(Request $request, ?string $slug): StorefrontSetting

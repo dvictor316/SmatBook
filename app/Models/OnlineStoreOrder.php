@@ -13,6 +13,7 @@ class OnlineStoreOrder extends Model
         'company_id', 'branch_id', 'branch_name', 'order_number', 'customer_name',
         'customer_email', 'customer_phone', 'delivery_address', 'payment_method',
         'status', 'subtotal', 'total_amount', 'customer_note',
+        'whatsapp_notification_status', 'whatsapp_notification_error', 'whatsapp_notified_at',
     ];
 
     protected $casts = ['subtotal' => 'decimal:2', 'total_amount' => 'decimal:2'];

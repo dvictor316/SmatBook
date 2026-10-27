@@ -232,6 +232,8 @@ class SaleController extends Controller
             'posExpiryAlertMonths' => in_array($expiryAlertMonths, [1, 2, 6], true) ? $expiryAlertMonths : 1,
             'posAllowStaffPriceEdit' => $allowStaffPriceEdit,
             'posCanManagePriceEditSetting' => $this->userIsPosAdmin(),
+            'posCanManageSuspense' => $this->userIsPosAdmin()
+                || (bool) auth()->user()?->hasPermissionTo('sales.pos.suspend'),
         ]);
     }
 
@@ -1639,19 +1641,11 @@ public function destroyPosSuspendedSale(Request $request, int $id)
 
 private function authorizePosSaleAccess(): void
 {
-    $user = auth()->user();
-    $role = strtolower(str_replace(' ', '_', (string) ($user?->role ?? '')));
-    $isAdmin = in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true)
-        || ($user && method_exists($user, 'hasRole') && (
-            $user->hasRole('super_admin') || $user->hasRole('administrator') || $user->hasRole('admin')
-        ));
-    $canSell = $user && collect([
-        'sales.sales.create',
-        'sales.invoices.create',
-        'pos.sales.create',
-    ])->contains(fn ($permission) => $user->can($permission));
-
-    abort_unless($isAdmin || $canSell, 403, 'You do not have permission to manage POS sales.');
+    abort_unless(
+        $this->userIsPosAdmin() || (bool) auth()->user()?->hasPermissionTo('sales.pos.suspend'),
+        403,
+        'You do not have permission to suspend or recall POS sales.'
+    );
 }
 
 private function posSuspenseWorkspaceQuery()

@@ -97,6 +97,29 @@
                             </div>
                         </div>
 
+                        @if($fashionCatalogEnabled)
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label class="field-label">Brand (optional)</label>
+                                        <input type="text" name="brand" maxlength="191" class="form-control" value="{{ old('brand', $product->brand) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label class="field-label">Size</label>
+                                        <input type="text" name="fashion_size" maxlength="80" class="form-control" value="{{ old('fashion_size', $product->fashion_size) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label class="field-label">Colour</label>
+                                        <input type="text" name="fashion_color" maxlength="80" class="form-control" value="{{ old('fashion_color', $product->fashion_color) }}">
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="form-group">

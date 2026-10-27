@@ -163,7 +163,7 @@
                                 @if($product->image_url)<img src="{{ $product->image_url }}" alt="{{ $product->name }}" loading="lazy">@else<div class="placeholder" aria-hidden="true">✦</div>@endif
                             </div>
                             <div class="tile-body">
-                                <h3>{{ $product->name }}</h3><p class="sku">{{ $product->sku }}</p>
+                                <h3>{{ trim($product->name . ($product->variantLabel() !== '' ? ' · ' . $product->variantLabel() : '')) }}</h3><p class="sku">{{ $product->sku }}</p>
                                 @if(filled($product->description))<p class="description">{{ \Illuminate\Support\Str::limit(strip_tags($product->description), 130) }}</p>@endif
                                 <p class="price">{{ \App\Support\GeoCurrency::format((float) $product->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</p>
                                 <p class="product-stock">{{ $productStock > 0 ? $product->formatStockQuantity($productStock) . ' available' : 'Out of stock' }}</p>
@@ -186,7 +186,7 @@
                                 @if($product->image_url)<img src="{{ $product->image_url }}" alt="{{ $product->name }}" loading="lazy">@else<div class="placeholder" aria-hidden="true">✦</div>@endif
                             </div>
                             <div class="editorial-body">
-                                <p class="eyebrow">From our collection</p><h3>{{ $product->name }}</h3><p class="sku">{{ $product->sku }}</p>
+                                <p class="eyebrow">From our collection</p><h3>{{ trim($product->name . ($product->variantLabel() !== '' ? ' · ' . $product->variantLabel() : '')) }}</h3><p class="sku">{{ $product->sku }}</p>
                                 <p class="description">{{ filled($product->description) ? \Illuminate\Support\Str::limit(strip_tags($product->description), 220) : 'Explore product details, current availability, and ordering options in our gallery.' }}</p>
                                 <p class="price">{{ \App\Support\GeoCurrency::format((float) $product->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</p>
                                 <p class="product-stock">{{ $productStock > 0 ? $product->formatStockQuantity($productStock) . ' available' : 'Out of stock' }}</p>
@@ -209,7 +209,7 @@
                                 @if($product->image_url)<img src="{{ $product->image_url }}" alt="{{ $product->name }}" loading="lazy">@else<div class="placeholder" aria-hidden="true">✦</div>@endif
                             </div>
                             <div class="small-card-body">
-                                <h3>{{ $product->name }}</h3><p class="sku">{{ $product->sku }}</p>
+                                <h3>{{ trim($product->name . ($product->variantLabel() !== '' ? ' · ' . $product->variantLabel() : '')) }}</h3><p class="sku">{{ $product->sku }}</p>
                                 @if(filled($product->description))<p class="description">{{ \Illuminate\Support\Str::limit(strip_tags($product->description), 100) }}</p>@endif
                                 <p class="price">{{ \App\Support\GeoCurrency::format((float) $product->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</p>
                                 <p class="product-stock">{{ $productStock > 0 ? $product->formatStockQuantity($productStock) . ' available' : 'Out of stock' }}</p>

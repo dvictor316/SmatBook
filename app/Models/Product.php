@@ -66,6 +66,10 @@ class Product extends Model
         'description',
         'barcode',
         'expiry_date',
+        'brand',
+        'fashion_size',
+        'fashion_color',
+        'variant_group_id',
     ];
 
     protected $casts = [
@@ -168,6 +172,13 @@ class Product extends Model
         $formatted = rtrim(rtrim(number_format($value, 2), '0'), '.');
 
         return $formatted . ' ' . $this->stockUnitSymbol();
+    }
+
+    public function variantLabel(): string
+    {
+        return collect([$this->brand, $this->fashion_size, $this->fashion_color])
+            ->filter(fn ($value) => filled($value))
+            ->implode(' · ');
     }
 
     public function purchaseQuantityToBase(float|int $quantity): float

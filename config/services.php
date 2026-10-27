@@ -28,6 +28,13 @@ return [
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],
+    'whatsapp' => [
+        'access_token' => env('WHATSAPP_CLOUD_ACCESS_TOKEN'),
+        'phone_number_id' => env('WHATSAPP_CLOUD_PHONE_NUMBER_ID'),
+        'api_version' => env('WHATSAPP_CLOUD_API_VERSION'),
+        'order_template' => env('WHATSAPP_ORDER_TEMPLATE', 'smartprobook_order_notification'),
+        'template_language' => env('WHATSAPP_ORDER_TEMPLATE_LANGUAGE', 'en'),
+    ],
 
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),

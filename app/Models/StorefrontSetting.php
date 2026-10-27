@@ -9,6 +9,7 @@ class StorefrontSetting extends Model
     protected $fillable = [
         'company_id', 'slug', 'custom_domain', 'store_name', 'description',
         'contact_phone', 'contact_email', 'fulfilment_note', 'is_enabled',
+        'owner_whatsapp_number',
     ];
 
     protected $casts = ['is_enabled' => 'boolean'];

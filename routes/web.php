@@ -1001,6 +1001,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/product-list', 'index')->name('product-list');
         Route::get('/inventory', 'inventory')->name('inventory.Products');
         Route::get('/add-products', 'create')->name('add-products');
+        Route::patch('/products/fashion-settings', 'updateFashionSettings')->name('inventory.Products.fashion-settings');
         Route::post('/products/store', 'store')->name('inventory.Products.store');
         Route::post('/products/import', 'import')->name('inventory.Products.import');
         Route::post('/products/import/undo', 'undoLastImport')->name('inventory.Products.import.undo');

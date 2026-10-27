@@ -78,28 +78,204 @@
     $galleryUrl = $customDomain ? route('storefront.custom-domain.products') : route('storefront.products', $store->slug);
     $aboutUrl = $customDomain ? route('storefront.custom-domain.about') : route('storefront.about', $store->slug);
 @endphp
-<nav class="store-nav"><div class="store-nav-inner"><a class="brand" href="{{ $homeUrl }}"><img src="{{ $company->logo ? asset($company->logo) : asset('assets/img/logos.png') }}" alt=""><span>{{ $store->store_name }}</span></a><div class="gallery-nav-links"><a href="{{ $homeUrl }}">Home</a><a href="{{ $galleryUrl }}" aria-current="page">Product Gallery</a><a class="gallery-nav-about" href="{{ $aboutUrl }}">About Us</a></div><form class="store-search" method="GET"><input class="form-control" name="q" value="{{ $search }}" placeholder="Search products"><button class="btn btn-primary" title="Search" aria-label="Search"><i class="fas fa-search"></i></button></form></div></nav>
+<nav class="store-nav"><div class="store-nav-inner"><a class="brand" href="{{ $homeUrl }}"><img src="{{ $company->logo ? asset($company->logo) : asset('assets/img/logos.png') }}" alt=""><span>{{ $store->store_name }}</span></a><div class="gallery-nav-links"><a href="{{ $homeUrl }}">Home</a><a href="{{ $galleryUrl }}" aria-current="page">Product Gallery</a><a class="gallery-nav-about" href="{{ $aboutUrl }}">About Us</a><a href="#store-cart" class="btn btn-sm btn-outline-primary">Cart <span class="badge bg-primary" id="cart-count">0</span></a></div><form class="store-search" method="GET"><input class="form-control" name="q" value="{{ $search }}" placeholder="Search products"><button class="btn btn-primary" title="Search" aria-label="Search"><i class="fas fa-search"></i></button></form></div></nav>
 <header class="store-head"><div class="store-head-inner"><span class="store-eyebrow">The official online store</span><h1>{{ $store->store_name }}</h1><p>{{ $store->description ?: 'Explore our available collection and send an order request directly to our team.' }}</p></div></header>
 <main class="store-main">
-    @if(session('store_order_success'))<div class="alert alert-success"><strong>Order received.</strong> Your reference is {{ session('store_order_success') }}. The business will contact you to confirm payment and fulfilment.</div>@endif
+    @if(session('store_order_success'))<div class="alert alert-success"><strong>Order received.</strong> Your reference is {{ session('store_order_success') }}. The business will contact you to confirm payment and fulfilment.@if(session('store_whatsapp_link'))<div class="mt-3"><a class="btn btn-success" href="{{ session('store_whatsapp_link') }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp me-2"></i>Send order by WhatsApp</a></div>@endif</div>@endif
     @if($errors->any())<div class="alert alert-danger"><strong>Your order needs attention.</strong><ul class="mb-0 mt-2">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-    @php($orderAction = $customDomain ? route('storefront.custom-domain.orders.store') : route('storefront.orders.store', $store->slug))
-    <div class="catalogue-heading"><div><h2>Available collection</h2><p>Choose in-stock items and quantities to request. Out-of-stock products are shown for reference.</p></div><span class="catalogue-count">{{ $products->total() }} {{ \Illuminate\Support\Str::plural('product', $products->total()) }}</span></div>
-    <form method="POST" action="{{ $orderAction }}">@csrf
-        <div class="product-grid">
-            @forelse($products as $product)
-                @php($available = max((float)($product->stock ?? 0), (float)($product->stock_quantity ?? 0)))
-                <article class="product"><div class="product-media">@if($product->image_url)<img src="{{ $product->image_url }}" alt="{{ $product->name }}" loading="lazy">@else<i class="fas fa-box-open" aria-hidden="true"></i>@endif</div><div class="product-body"><h2>{{ $product->name }}</h2><div class="small text-muted">{{ $product->sku }}</div>@if(filled($product->description))<p class="product-description">{{ \Illuminate\Support\Str::limit(strip_tags($product->description), 150) }}</p>@endif<div class="price">{{ \App\Support\GeoCurrency::format((float)$product->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</div><div class="stock">{{ $available > 0 ? $product->formatStockQuantity($available) . ' available' : 'Out of stock' }}</div><div class="quantity"><label for="qty{{ $product->id }}" class="small fw-bold">Quantity</label><input id="qty{{ $product->id }}" class="form-control form-control-sm" type="number" name="items[{{ $product->id }}]" min="0" max="{{ $available }}" step="{{ in_array(strtolower($product->stockUnitSymbol()), ['kg','g','litre','liter','l','m']) ? '0.01' : '1' }}" value="0" @disabled($available <= 0)></div></div></article>
-            @empty
-                <div class="alert alert-info grid-column-all">No products are currently available.</div>
-            @endforelse
-        </div>
-        @if($products->count())
-        <section class="checkout"><h2>Order Details</h2><p class="text-muted">Select quantities above, then provide the contact details for confirmation.</p><div class="row g-3"><div class="col-md-6"><label class="form-label">Full Name *</label><input class="form-control" name="customer_name" value="{{ old('customer_name') }}" required></div><div class="col-md-6"><label class="form-label">Phone *</label><input class="form-control" name="customer_phone" value="{{ old('customer_phone') }}" required></div><div class="col-md-6"><label class="form-label">Email</label><input class="form-control" type="email" name="customer_email" value="{{ old('customer_email') }}"></div><div class="col-md-6"><label class="form-label">Payment / Collection *</label><select class="form-select" name="payment_method" required><option value="pay_on_delivery">Pay on delivery</option><option value="bank_transfer">Bank transfer after confirmation</option><option value="pickup">Pay on pickup</option></select></div><div class="col-12"><label class="form-label">Delivery Address</label><textarea class="form-control" name="delivery_address" rows="2">{{ old('delivery_address') }}</textarea></div><div class="col-12"><label class="form-label">Order Note</label><textarea class="form-control" name="customer_note" rows="2">{{ old('customer_note') }}</textarea></div><div class="col-12 d-flex justify-content-between align-items-center gap-3 flex-wrap"><small class="text-muted">{{ $store->fulfilment_note ?: 'The business will confirm availability, payment, and delivery.' }}</small><button class="btn-order" type="submit"><i class="fas fa-paper-plane me-2"></i>Place Order</button></div></div></section>
-        @endif
-    </form>
+    @php
+        $orderAction = $customDomain
+            ? route('storefront.custom-domain.orders.store')
+            : route('storefront.orders.store', $store->slug);
+    @endphp
+    <div class="catalogue-heading"><div><h2>Available collection</h2><p>Add products to your cart, review quantities and total, then submit your order. Out-of-stock products are shown for reference.</p></div><span class="catalogue-count">{{ $products->total() }} {{ \Illuminate\Support\Str::plural('product', $products->total()) }}</span></div>
+    <div class="product-grid">
+        @forelse($products as $product)
+            @php
+                $available = max((float)($product->stock ?? 0), (float)($product->stock_quantity ?? 0));
+                $variantLabel = $product->variantLabel();
+                $displayName = trim($product->name . ($variantLabel !== '' ? ' · ' . $variantLabel : ''));
+                $quantityStep = in_array(strtolower($product->stockUnitSymbol()), ['kg','g','litre','liter','l','m']) ? 0.01 : 1;
+            @endphp
+            <article class="product" data-product-id="{{ $product->id }}" data-product-name="{{ $displayName }}" data-product-sku="{{ $product->sku }}" data-product-price="{{ (float) $product->price }}" data-product-max="{{ $available }}" data-product-step="{{ $quantityStep }}">
+                <div class="product-media">@if($product->image_url)<img src="{{ $product->image_url }}" alt="{{ $displayName }}" loading="lazy">@else<i class="fas fa-box-open" aria-hidden="true"></i>@endif</div>
+                <div class="product-body"><h2>{{ $displayName }}</h2><div class="small text-muted">{{ $product->sku }}</div>@if(filled($product->description))<p class="product-description">{{ \Illuminate\Support\Str::limit(strip_tags($product->description), 150) }}</p>@endif<div class="price">{{ \App\Support\GeoCurrency::format((float)$product->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</div><div class="stock">{{ $available > 0 ? $product->formatStockQuantity($available) . ' available' : 'Out of stock' }}</div><div class="quantity"><label for="qty{{ $product->id }}" class="small fw-bold">Quantity</label><input id="qty{{ $product->id }}" class="form-control form-control-sm product-quantity" type="number" min="{{ $quantityStep }}" step="{{ $quantityStep }}" max="{{ $available }}" value="1" @disabled($available <= 0)><button type="button" class="btn btn-outline-primary add-to-cart" @disabled($available <= 0)><i class="fas fa-cart-plus me-1"></i>Add</button></div></div>
+            </article>
+        @empty
+            <div class="alert alert-info grid-column-all">No products are currently available.</div>
+        @endforelse
+    </div>
+    @if($products->count())
+        <form method="POST" action="{{ $orderAction }}" id="store-order-form">
+            @csrf
+            <section class="checkout" id="store-cart">
+                <h2>Your Cart</h2>
+                <p class="text-muted">Review your items and total before providing contact details.</p>
+                <div id="cart-empty" class="text-muted py-2">Your cart is empty. Add products from the collection above.</div>
+                <div class="table-responsive"><table class="table align-middle" id="cart-table" hidden><thead><tr><th>Product</th><th>Unit price</th><th style="width:130px">Quantity</th><th>Subtotal</th><th></th></tr></thead><tbody id="cart-items"></tbody><tfoot><tr><th colspan="3" class="text-end">Estimated total</th><th id="cart-total"></th><th></th></tr></tfoot></table></div>
+                <div id="cart-hidden-items"></div>
+                <h3 class="mt-4">Order Details</h3>
+                <div class="row g-3">
+                    <div class="col-md-6"><label class="form-label">Full Name *</label><input class="form-control" name="customer_name" value="{{ old('customer_name') }}" required></div>
+                    <div class="col-md-6"><label class="form-label">Phone *</label><input class="form-control" name="customer_phone" value="{{ old('customer_phone') }}" required></div>
+                    <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" type="email" name="customer_email" value="{{ old('customer_email') }}"></div>
+                    <div class="col-md-6"><label class="form-label">Payment / Collection *</label><select class="form-select" name="payment_method" required><option value="pay_on_delivery">Pay on delivery</option><option value="bank_transfer">Bank transfer after confirmation</option><option value="pickup">Pay on pickup</option></select></div>
+                    <div class="col-12"><label class="form-label">Delivery Address</label><textarea class="form-control" name="delivery_address" rows="2">{{ old('delivery_address') }}</textarea></div>
+                    <div class="col-12"><label class="form-label">Order Note</label><textarea class="form-control" name="customer_note" rows="2">{{ old('customer_note') }}</textarea></div>
+                    <div class="col-12 d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                        <small class="text-muted">{{ $store->fulfilment_note ?: 'The business will confirm availability, payment, and delivery.' }}</small>
+                        <div class="d-flex gap-2 flex-wrap">
+                            @if(filled($store->owner_whatsapp_number))
+                                <button class="btn btn-success" id="send-cart-whatsapp" type="button" disabled><i class="fab fa-whatsapp me-2"></i>Send purchase request to WhatsApp</button>
+                            @endif
+                            <button class="btn-order" id="place-store-order" type="submit" disabled><i class="fas fa-paper-plane me-2"></i>Place Online Order</button>
+                        </div>
+                        @if(filled($store->owner_whatsapp_number))
+                            <small class="text-muted w-100">WhatsApp opens with your cart details. The business must confirm availability and price; this request does not reserve stock.</small>
+                        @endif
+                    </div>
+                </div>
+            </section>
+        </form>
+    @endif
     <div class="mt-4">{{ $products->links() }}</div>
 </main>
 <footer class="store-footer"><div class="store-footer-inner"><strong>{{ $store->store_name }}</strong><span>{{ $store->contact_phone }}{{ $store->contact_phone && $store->contact_email ? ' | ' : '' }}{{ $store->contact_email }}</span><span>Powered by SmartProbook</span></div></footer>
-<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/pwa-sw.js').catch(()=>{}));}</script>
+<script>
+    (() => {
+        const key = 'smartprobook-cart-{{ $store->slug }}';
+        const cart = new Map();
+        const rows = document.getElementById('cart-items');
+        const hiddenItems = document.getElementById('cart-hidden-items');
+        const table = document.getElementById('cart-table');
+        const empty = document.getElementById('cart-empty');
+        const submit = document.getElementById('place-store-order');
+        const whatsappButton = document.getElementById('send-cart-whatsapp');
+        const currency = @json($company->currency_code ?: 'NGN');
+        const whatsappNumber = @json(preg_replace('/\D+/', '', (string) $store->owner_whatsapp_number));
+        const storeName = @json($store->store_name);
+        const products = new Map(Array.from(document.querySelectorAll('[data-product-id]')).map((element) => [
+            element.dataset.productId,
+            {
+                id: element.dataset.productId,
+                name: element.dataset.productName,
+                sku: element.dataset.productSku,
+                price: Number(element.dataset.productPrice),
+                max: Number(element.dataset.productMax),
+                step: Number(element.dataset.productStep) || 1
+            }
+        ]));
+        const formatMoney = (value) => new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(value);
+
+        try {
+            const saved = JSON.parse(localStorage.getItem(key) || '[]');
+            saved.forEach((item) => {
+                const current = products.get(String(item.id));
+                if (current) item = { ...item, ...current };
+                item.step = Number(item.step) > 0 ? Number(item.step) : 1;
+                if (item.id && Number(item.quantity) > 0 && Number(item.max) > 0) {
+                    item.quantity = Math.min(Number(item.quantity), Number(item.max));
+                    cart.set(String(item.id), item);
+                }
+            });
+        } catch (error) {
+            localStorage.removeItem(key);
+        }
+
+        function renderCart() {
+            rows.replaceChildren();
+            hiddenItems.replaceChildren();
+            let total = 0;
+            let count = 0;
+            cart.forEach((item, id) => {
+                const lineTotal = item.price * item.quantity;
+                total += lineTotal;
+                count += item.quantity;
+                const row = document.createElement('tr');
+                row.innerHTML = '<td><strong></strong><div class="small text-muted"></div></td><td></td><td><input type="number" class="form-control form-control-sm cart-quantity" min="1" step="1"></td><td></td><td><button type="button" class="btn btn-sm btn-outline-danger remove-cart-item" aria-label="Remove item"><i class="fas fa-trash"></i></button></td>';
+                row.querySelector('strong').textContent = item.name;
+                row.querySelector('.small').textContent = item.sku || '';
+                row.children[1].textContent = formatMoney(item.price);
+                const quantityInput = row.querySelector('.cart-quantity');
+                quantityInput.min = item.step;
+                quantityInput.step = item.step;
+                quantityInput.max = item.max;
+                quantityInput.value = item.quantity;
+                row.children[3].textContent = formatMoney(lineTotal);
+                quantityInput.addEventListener('change', () => {
+                    const quantity = Math.min(item.max, Math.max(item.step, Number(quantityInput.value) || item.step));
+                    item.quantity = quantity;
+                    cart.set(id, item);
+                    persistAndRender();
+                });
+                row.querySelector('.remove-cart-item').addEventListener('click', () => {
+                    cart.delete(id);
+                    persistAndRender();
+                });
+                rows.append(row);
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = `items[${id}]`;
+                hidden.value = String(item.quantity);
+                hiddenItems.append(hidden);
+            });
+            table.hidden = cart.size === 0;
+            empty.hidden = cart.size > 0;
+            submit.disabled = cart.size === 0;
+            if (whatsappButton) whatsappButton.disabled = cart.size === 0;
+            document.getElementById('cart-total').textContent = formatMoney(total);
+            document.getElementById('cart-count').textContent = String(count);
+        }
+
+        function persistAndRender() {
+            localStorage.setItem(key, JSON.stringify(Array.from(cart.values())));
+            renderCart();
+        }
+
+        document.querySelectorAll('.add-to-cart').forEach((button) => {
+            button.addEventListener('click', () => {
+                const article = button.closest('[data-product-id]');
+                const item = products.get(article.dataset.productId);
+                const quantity = Math.max(item.step, Number(article.querySelector('.product-quantity').value) || item.step);
+                const existing = cart.get(item.id);
+                item.quantity = Math.min(item.max, (existing?.quantity || 0) + quantity);
+                cart.set(item.id, item);
+                persistAndRender();
+                document.getElementById('store-cart').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+
+        if (whatsappButton) {
+            whatsappButton.addEventListener('click', () => {
+                const customerName = document.querySelector('[name="customer_name"]');
+                const customerPhone = document.querySelector('[name="customer_phone"]');
+                customerName.value = customerName.value.trim();
+                customerPhone.value = customerPhone.value.trim();
+                if (!customerName.reportValidity() || !customerPhone.reportValidity()) return;
+
+                const total = Array.from(cart.values()).reduce((sum, item) => sum + item.price * item.quantity, 0);
+                const itemLines = Array.from(cart.values()).map((item) =>
+                    `- ${item.name} (${item.sku || 'no SKU'}) x ${item.quantity} = ${formatMoney(item.price * item.quantity)}`
+                ).join('\n');
+                const message = [
+                    `Hello ${storeName}, I would like to purchase these items:`,
+                    itemLines,
+                    `Estimated total: ${formatMoney(total)}`,
+                    `Name: ${customerName.value}`,
+                    `Phone: ${customerPhone.value}`,
+                    'Please confirm current stock, final price and fulfilment. I understand this request does not reserve stock.'
+                ].join('\n\n');
+                window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+            });
+        }
+
+        @if(session('store_order_success'))
+            localStorage.removeItem(key);
+            cart.clear();
+        @endif
+        renderCart();
+    })();
+
+    if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/pwa-sw.js').catch(()=>{}));}
+</script>
 </body></html>
