@@ -25,7 +25,7 @@ The Windows installer is built on a Windows GitHub Actions runner. After the wor
 3. When the workflow completes, download the `.msi` from the GitHub Release named `SmartProbook Desktop v<version> for Windows`.
 4. Share that release download link with Windows users. GitHub release assets are publicly downloadable only if this repository is public; for a private repository, upload the MSI to SmartProbook's customer download area instead.
 
-Business owners can also use **Download Desktop** in the SmartProbook app header. It opens the latest public Windows release so they can download the MSI.
+Business owners can use **Install offline app** on the business dashboard to download the MSI directly. After installing, **Open offline app** launches SmartProbook from the dashboard. Windows or the browser may ask for confirmation the first time the app link is opened.
 
 The installer is unsigned unless a Windows code-signing certificate is configured. Windows may show a SmartScreen warning until the application is signed and has established reputation.
 

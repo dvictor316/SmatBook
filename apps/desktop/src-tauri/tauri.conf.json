@@ -23,7 +23,13 @@
       "copyright": "SmartProbook",
       "identifier": "com.smartprobook.desktop",
       "icon": ["icons/icon.png", "icons/icon.ico"],
-      "targets": "all"
+      "targets": "all",
+      "windows": {
+        "wix": {
+          "fragmentPaths": ["wix/desktop-protocol.wxs"],
+          "componentRefs": ["SmartProbookProtocolRegistration"]
+        }
+      }
     },
     "security": {
       "csp": null
