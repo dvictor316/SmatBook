@@ -692,6 +692,16 @@
                 }, refreshInMs);
             };
 
+            const restoreSubmitButton = function (button) {
+                if (!button) {
+                    return;
+                }
+
+                button.disabled = false;
+                button.removeAttribute('aria-busy');
+                button.innerHTML = button.dataset.originalHtml || '<i class="fas fa-right-to-bracket me-1"></i> Sign In';
+            };
+
             document.addEventListener('visibilitychange', function () {
                 if (document.visibilityState === 'visible' && tokenAgeSeconds() >= 540) {
                     refreshToken();
@@ -705,45 +715,80 @@
                     return;
                 }
 
+                const offlineOptIn = form.querySelector('#prepare-offline-pos')?.checked === true;
+                const tokenNeedsRefresh = tokenAgeSeconds() >= 600;
+                if (!offlineOptIn && !tokenNeedsRefresh) {
+                    return;
+                }
+
                 event.preventDefault();
                 isRefreshingToken = true;
                 const submitButton = form.querySelector('button[type="submit"]');
                 if (submitButton) {
+                    submitButton.dataset.originalHtml = submitButton.innerHTML;
                     submitButton.disabled = true;
                     submitButton.setAttribute('aria-busy', 'true');
                     submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Signing in...';
                 }
 
-                if (tokenAgeSeconds() >= 600) {
-                    await refreshToken();
-                }
+                try {
+                    if (tokenNeedsRefresh) {
+                        await Promise.race([
+                            refreshToken(),
+                            new Promise(function (resolve) {
+                                window.setTimeout(resolve, 4000);
+                            }),
+                        ]);
+                    }
 
-                const offlineOptIn = form.querySelector('#prepare-offline-pos')?.checked === true;
-                const offlineAuth = window.SmartProbookOfflineAuth;
-                if (offlineOptIn && offlineAuth) {
-                    await offlineAuth.prepareLogin(form).catch(function (error) {
-                        console.error('Could not prepare offline sign-in.', error);
-                    });
-                } else {
-                    offlineAuth?.cancelLoginPreparation();
-                }
+                    const offlineAuth = window.SmartProbookOfflineAuth;
+                    if (offlineOptIn && offlineAuth) {
+                        await Promise.race([
+                            offlineAuth.prepareLogin(form).catch(function (error) {
+                                console.error('Could not prepare offline sign-in.', error);
+                            }),
+                            new Promise(function (resolve) {
+                                window.setTimeout(resolve, 3000);
+                            }),
+                        ]);
+                    } else {
+                        offlineAuth?.cancelLoginPreparation();
+                    }
 
-                if (offlineOptIn && !offlineAuth) {
+                    if (offlineOptIn && !offlineAuth) {
+                        const notice = document.getElementById('offline-login-setup-status');
+                        if (notice) {
+                            notice.textContent = 'Offline sign-in could not be prepared. You can still sign in online.';
+                            notice.classList.add('text-danger');
+                        }
+                    }
+
+                    const recoveryTimer = window.setTimeout(function () {
+                        if (document.visibilityState === 'visible') {
+                            isRefreshingToken = false;
+                            restoreSubmitButton(submitButton);
+                            const notice = document.getElementById('offline-login-setup-status');
+                            if (notice) {
+                                notice.textContent = 'Sign-in is taking longer than expected. Check your connection and try again.';
+                                notice.classList.add('text-danger');
+                            }
+                        }
+                    }, 15000);
+                    window.addEventListener('pagehide', function () {
+                        window.clearTimeout(recoveryTimer);
+                    }, { once: true });
+
+                    form.submit();
+                } catch (error) {
+                    console.error('Could not prepare sign-in.', error);
+                    isRefreshingToken = false;
+                    restoreSubmitButton(submitButton);
                     const notice = document.getElementById('offline-login-setup-status');
                     if (notice) {
-                        notice.textContent = 'Offline sign-in could not be prepared. You can still sign in online.';
+                        notice.textContent = 'Sign-in could not start. Please try again.';
                         notice.classList.add('text-danger');
                     }
                 }
-
-                await new Promise(function (resolve) {
-                    if (typeof window.requestAnimationFrame === 'function') {
-                        window.requestAnimationFrame(resolve);
-                    } else {
-                        window.setTimeout(resolve, 0);
-                    }
-                });
-                form.submit();
             });
         };
 

@@ -89,7 +89,7 @@
         @media(max-width:620px){.nav-inner{padding:10px 15px;gap:10px;flex-wrap:wrap}.brand{max-width:46%;font-size:.88rem}.brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brand img{width:34px;height:34px}.nav-links{gap:7px}.nav-links a{font-size:.72rem}.nav-gallery{padding:9px 8px}.nav-about{padding:8px}.nav-home{display:none}.hero-inner{min-height:0;padding:50px 17px 38px}.hero h1{font-size:clamp(2.7rem,13vw,4.3rem)}.hero-product{min-height:300px}.section{padding:50px 16px}.section-heading{align-items:flex-start;flex-direction:column}.tile{grid-template-columns:1fr}.tile-media{height:220px}.tile-body{padding:19px}.editorial,.editorial:nth-child(even){grid-template-columns:1fr}.editorial:nth-child(even) .editorial-media{order:0}.editorial-media{height:220px}.editorial-body{padding:22px}.small-grid{grid-template-columns:1fr}.small-media{height:250px}.collection-cta{margin:0 16px 50px;padding:38px 20px}.footer{padding:25px 17px}}
         @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{animation:none!important}*,*:before,*:after{transition:none!important}}
     </style>
-    <link rel="stylesheet" href="{{ asset('css/storefront-theme.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/storefront-theme.css') }}?v={{ filemtime(public_path('css/storefront-theme.css')) }}">
 </head>
 <body>
 @php
@@ -148,6 +148,31 @@
         @endif
     </div>
 </header>
+
+@if($featuredProduct)
+    <section class="section product-motion-section" aria-labelledby="product-motion-title">
+        <div class="product-motion-copy reveal">
+            <p class="eyebrow">Featured in motion</p>
+            <h2 id="product-motion-title">A closer look at {{ $featuredProduct->name }}</h2>
+            <p>Explore our featured product in a smooth, animated 3D-style display.</p>
+            <p class="product-motion-price">{{ \App\Support\GeoCurrency::format((float) $featuredProduct->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</p>
+            <div class="product-motion-actions">
+                <a class="button button-gold" href="{{ $galleryUrl }}?q={{ urlencode($featuredProduct->name) }}">Explore this product</a>
+                <a class="button button-navy" href="{{ $galleryUrl }}">Browse all products</a>
+            </div>
+        </div>
+        <div class="product-motion-stage">
+            <span class="product-motion-label">3D-style preview</span>
+            <div class="product-motion-card">
+                @if($featuredProduct->image_url)
+                    <img src="{{ $featuredProduct->image_url }}" alt="{{ $featuredProduct->name }}" loading="lazy">
+                @else
+                    <span class="product-motion-placeholder" aria-hidden="true">✦</span>
+                @endif
+            </div>
+        </div>
+    </section>
+@endif
 
 <main>
     @if($products->isEmpty())
