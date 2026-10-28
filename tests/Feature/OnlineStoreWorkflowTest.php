@@ -58,12 +58,16 @@ class OnlineStoreWorkflowTest extends TestCase
         $this->get(route('storefront.catalogue', 'fresh-market'))
             ->assertOk()
             ->assertSee('About Us')
+            ->assertSee(asset('css/storefront-theme.css'), false)
             ->assertSee('Orange Crate')
             ->assertSee('Fresh oranges packed in a sturdy crate.')
             ->assertSee('Seasonal Mangoes')
             ->assertSee('Out of stock')
             ->assertDontSee('Archived Pears')
             ->assertDontSee('Foreign Apples');
+        $this->get(route('storefront.about', 'fresh-market'))
+            ->assertOk()
+            ->assertSee(asset('css/storefront-theme.css'), false);
         $this->assertDatabaseHas('products', ['id' => $outOfStockId, 'stock' => 0]);
 
         $this->post(route('storefront.orders.store', 'fresh-market'), [
@@ -139,6 +143,7 @@ class OnlineStoreWorkflowTest extends TestCase
         $this->get(route('storefront.catalogue', 'gallery-store'))
             ->assertOk()
             ->assertSee('Product Gallery')
+            ->assertSee(asset('css/storefront-theme.css'), false)
             ->assertSee('Gallery Product 01')
             ->assertSee('Gallery Product 10')
             ->assertDontSee('Gallery Product 11')
@@ -147,7 +152,7 @@ class OnlineStoreWorkflowTest extends TestCase
         $this->get(route('storefront.products', 'gallery-store'))
             ->assertOk()
             ->assertSee('Gallery Product 11')
-            ->assertSee('Place Order')
+            ->assertSee('Place Online Order')
             ->assertSee('Your Cart')
             ->assertSee('product-media', false)
             ->assertSee('product-meta', false)

@@ -53,6 +53,7 @@
         @media(max-width:700px){.nav-inner{padding:10px 14px;flex-wrap:wrap}.brand{max-width:44%;font-size:.86rem}.brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brand img{width:34px;height:34px}.nav-links{gap:2px;margin-left:auto}.nav-links a{padding:8px;font-size:.74rem}.nav-links a:first-child{display:none}.hero-inner{min-height:340px;padding:62px 18px}.content{padding:46px 16px 60px}.about-card{margin:-80px 0 36px;padding:30px 25px}.contact-grid{grid-template-columns:1fr}.cta{padding:34px 18px}.footer{padding:25px 16px}}
         @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
     </style>
+    <link rel="stylesheet" href="{{ asset('css/storefront-theme.css') }}">
 </head>
 <body>
 @php

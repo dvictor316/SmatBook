@@ -1,0 +1,324 @@
+:root {
+    --navy: #334d40;
+    --navy-deep: #24382f;
+    --blue: #687f68;
+    --red: #b66b4f;
+    --gold: #d7bd8b;
+    --ink: #29352f;
+    --muted: #72766d;
+    --paper: #f5f2eb;
+    --soft: #f5f2eb;
+    --line: #e5dfd3;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background:
+        radial-gradient(ellipse at 8% 12%, rgba(215, 189, 139, .14), transparent 30%),
+        radial-gradient(ellipse at 92% 40%, rgba(104, 127, 104, .08), transparent 34%),
+        var(--paper);
+    color: var(--ink);
+}
+
+::selection {
+    background: #d7bd8b;
+    color: #24382f;
+}
+
+.store-nav {
+    background: rgba(250, 248, 243, .94) !important;
+    border-color: var(--line) !important;
+    box-shadow: 0 5px 24px rgba(44, 54, 46, .035);
+}
+
+.brand,
+.nav-links a,
+.gallery-nav-links a {
+    color: var(--navy);
+}
+
+.brand img {
+    border-radius: 50%;
+}
+
+.nav-links a,
+.gallery-nav-links a,
+.text-link,
+.small-button,
+.button {
+    transition: color .22s ease, background-color .22s ease, border-color .22s ease, transform .22s ease, box-shadow .22s ease;
+}
+
+.nav-gallery,
+.nav-links .active,
+.gallery-nav-links a[aria-current=page] {
+    background: var(--gold);
+    color: var(--navy) !important;
+}
+
+.nav-about,
+.gallery-nav-about {
+    border-color: rgba(182, 107, 79, .35);
+}
+
+.hero,
+.store-head {
+    background:
+        radial-gradient(ellipse at 76% 18%, rgba(215, 189, 139, .24), transparent 34%),
+        linear-gradient(118deg, #293d33 0%, #49634f 62%, #76836b 100%) !important;
+}
+
+.hero:after,
+.store-head:after {
+    border-color: rgba(240, 221, 177, .28);
+    box-shadow: 0 0 0 36px rgba(240, 221, 177, .045), 0 0 0 78px rgba(240, 221, 177, .035);
+}
+
+.eyebrow,
+.store-eyebrow,
+.hero-product-copy .hero-price {
+    color: #ead7a9;
+}
+
+.eyebrow:before,
+.store-eyebrow:before {
+    background: var(--red);
+}
+
+.button-gold,
+.button,
+.small-button {
+    background: var(--navy);
+    color: #fff;
+}
+
+.button-gold,
+.hero .button-gold {
+    background: var(--gold);
+    color: var(--navy);
+}
+
+.button-outline {
+    border-color: rgba(255, 255, 255, .64);
+}
+
+.button:hover,
+.small-button:hover {
+    background: var(--red);
+    color: #fff;
+}
+
+.hero-product {
+    border-color: rgba(255, 255, 255, .32);
+    border-radius: 6px;
+    box-shadow: 0 30px 75px rgba(21, 33, 25, .28);
+}
+
+.hero-product-placeholder {
+    background: linear-gradient(135deg, #7a8069, #384b3e);
+    color: #ead7a9;
+}
+
+.section-heading h2,
+.tile-body h3,
+.editorial-body h3,
+.small-card h3,
+.catalogue-heading h2 {
+    color: var(--navy);
+}
+
+.tile,
+.editorial,
+.small-card,
+.product {
+    border-color: var(--line) !important;
+    border-radius: 8px !important;
+    background: linear-gradient(145deg, #fffefa, #f8f5ee) !important;
+    box-shadow: 0 10px 32px rgba(51, 77, 64, .055);
+}
+
+.tile-media,
+.editorial-media,
+.small-media,
+.product-media {
+    background:
+        radial-gradient(circle at 75% 20%, rgba(215, 189, 139, .24), transparent 42%),
+        linear-gradient(145deg, #e9e6da, #eff0e8) !important;
+}
+
+.tile:hover,
+.editorial:hover,
+.small-card:hover,
+.product:hover,
+.contact-card:hover {
+    box-shadow: 0 20px 46px rgba(51, 77, 64, .14);
+}
+
+.price,
+.hero-price {
+    color: var(--red);
+}
+
+.text-link,
+.contact-card a:hover {
+    color: var(--red);
+}
+
+.product-meta span {
+    border-color: #e5dfd3;
+    background: #f1eee5;
+    color: #4e6254;
+}
+
+.product-purchase {
+    border-color: #e9e3d8;
+}
+
+.product .add-to-cart,
+.store-search button {
+    border-color: var(--navy);
+    background: var(--navy);
+    color: #fff;
+}
+
+.product .add-to-cart:hover,
+.store-search button:hover {
+    border-color: var(--red);
+    background: var(--red);
+    color: #fff;
+}
+
+.checkout {
+    border-color: var(--line);
+    border-top-color: var(--red);
+    border-radius: 8px;
+    background: linear-gradient(145deg, #fffefa, #f1f0e7);
+    box-shadow: 0 14px 36px rgba(51, 77, 64, .07);
+}
+
+.checkout h2 {
+    color: var(--navy);
+}
+
+.btn-order {
+    border-color: var(--red);
+    background: var(--red);
+}
+
+.btn-order:hover {
+    border-color: var(--navy);
+    background: var(--navy);
+}
+
+.collection-cta,
+.cta {
+    border-radius: 8px;
+    background:
+        radial-gradient(ellipse at 88% 10%, rgba(215, 189, 139, .25), transparent 38%),
+        linear-gradient(118deg, #293d33, #52674f 70%, #7a8069) !important;
+    box-shadow: 0 20px 50px rgba(41, 61, 51, .16);
+}
+
+.about-card,
+.contact-card {
+    border-color: var(--line);
+    border-radius: 8px;
+    background: linear-gradient(145deg, #fffefa, #f7f4ed);
+    box-shadow: 0 16px 42px rgba(51, 77, 64, .075);
+    transition: transform .24s ease, box-shadow .24s ease;
+}
+
+.about-card:before {
+    background: linear-gradient(var(--gold), var(--red));
+}
+
+.about-card h2,
+.contact-card h3 {
+    color: var(--navy);
+}
+
+.contact-card:nth-child(2) {
+    background: linear-gradient(145deg, #f8f3e7, #fffefa);
+}
+
+.contact-card:nth-child(3) {
+    background: linear-gradient(145deg, #eef1e8, #fffefa);
+}
+
+.contact-icon {
+    border-radius: 50%;
+    background: #f1e8d4;
+    color: var(--red);
+}
+
+.footer,
+.store-footer {
+    background: #263a30 !important;
+    color: #e7e4d9;
+}
+
+.footer strong,
+.store-footer strong {
+    color: #fff;
+}
+
+.reveal,
+.tile,
+.editorial,
+.small-card,
+.product,
+.contact-card,
+.about-card {
+    animation: storefront-soft-entry .62s cubic-bezier(.2, .7, .25, 1) both;
+}
+
+.tile:nth-child(2),
+.small-card:nth-child(2),
+.contact-card:nth-child(2) {
+    animation-delay: .08s;
+}
+
+.tile:nth-child(3),
+.small-card:nth-child(3),
+.contact-card:nth-child(3) {
+    animation-delay: .16s;
+}
+
+@keyframes storefront-soft-entry {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 700px) {
+    .hero,
+    .store-head {
+        background:
+            radial-gradient(ellipse at 90% 8%, rgba(215, 189, 139, .2), transparent 34%),
+            linear-gradient(145deg, #293d33, #52674f) !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto !important;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+    }
+}
