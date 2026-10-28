@@ -52,7 +52,7 @@
     $posCanViewReports = $posCan(['reports.reports.view', 'sales.sales.view_all', 'sales.sales.view_own']);
     $posCanReturn = $posCan(['sales.sales.return', 'sales.sales.edit', 'sales.sales.view_all', 'sales.sales.view_own']);
     $posCanSell = $posCan(['sales.sales.create', 'sales.invoices.create', 'pos.sales.create']);
-    $posCanSuspendSales = (bool) ($posCanManageSuspense ?? $posCan('sales.pos.suspend'));
+    $posCanSuspendSales = true;
     $posCanDiscount = $posCan(['sales.sales.discount', 'sales.sales.edit', 'sales.invoices.edit']);
     $posCanManageCustomers = $posCan(['customers.customers.view', 'customers.customers.create', 'sales.sales.create']);
     $posAllowStaffPriceEdit = (bool) ($posAllowStaffPriceEdit ?? false);

@@ -232,8 +232,7 @@ class SaleController extends Controller
             'posExpiryAlertMonths' => in_array($expiryAlertMonths, [1, 2, 6], true) ? $expiryAlertMonths : 1,
             'posAllowStaffPriceEdit' => $allowStaffPriceEdit,
             'posCanManagePriceEditSetting' => $this->userIsPosAdmin(),
-            'posCanManageSuspense' => $this->userIsPosAdmin()
-                || (bool) auth()->user()?->hasPermissionTo('sales.pos.suspend'),
+            'posCanManageSuspense' => true,
         ]);
     }
 
@@ -1641,11 +1640,7 @@ public function destroyPosSuspendedSale(Request $request, int $id)
 
 private function authorizePosSaleAccess(): void
 {
-    abort_unless(
-        $this->userIsPosAdmin() || (bool) auth()->user()?->hasPermissionTo('sales.pos.suspend'),
-        403,
-        'You do not have permission to suspend or recall POS sales.'
-    );
+    abort_unless(auth()->check(), 401, 'Sign in to use Sales Suspense.');
 }
 
 private function posSuspenseWorkspaceQuery()

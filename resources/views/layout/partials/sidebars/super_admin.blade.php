@@ -966,9 +966,6 @@
                 @if(Route::has('developer-api.index'))
                     <li><a href="{{ route('developer-api.index') }}"><i class="fas fa-code"></i><span>Developer API</span></a></li>
                 @endif
-                @if(Route::has('online-store.settings'))
-                    <li><a href="{{ route('online-store.settings') }}"><i class="fas fa-store"></i><span>Online Store</span></a></li>
-                @endif
                 @if(Route::has('bill-payments.index'))
                     <li><a href="{{ route('bill-payments.index') }}"><i class="fas fa-file-invoice-dollar"></i><span>Bill Payments</span></a></li>
                 @endif

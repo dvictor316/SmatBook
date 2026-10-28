@@ -273,7 +273,11 @@ class RoleController extends Controller
 
     private function permissionGroups(): array
     {
-        $permissions = Permission::query()->orderBy('name')->pluck('name')->all();
+        $permissions = Permission::query()
+            ->where('name', '!=', 'sales.pos.suspend')
+            ->orderBy('name')
+            ->pluck('name')
+            ->all();
         $grouped = [];
 
         foreach ($permissions as $permission) {
@@ -327,7 +331,7 @@ class RoleController extends Controller
             ],
             'sales' => [
                 'invoices'   => ['view', 'view_all', 'view_own', 'create', 'edit', 'delete'],
-                'pos'        => ['view', 'create', 'suspend'],
+                'pos'        => ['view', 'create'],
                 'quotations' => ['view', 'view_all', 'view_own', 'create', 'edit', 'delete'],
             ],
             'purchases' => [

@@ -161,14 +161,44 @@ class PosSuspendedSaleTest extends TestCase
         $this->postJson(route('pos.suspense.claim', $id), ['claim_token' => $token])->assertNotFound();
     }
 
-    public function test_users_without_pos_sale_permission_cannot_access_sales_suspense(): void
+    public function test_staff_without_a_special_permission_can_suspend_pos_sales(): void
     {
         $company = Company::create(['name' => 'Restricted Suspense', 'industry' => 'retail', 'plan' => 'Enterprise']);
-        $user = User::factory()->create(['company_id' => $company->id, 'role' => 'staff']);
+        $user = User::factory()->create([
+            'company_id' => $company->id,
+            'role' => 'staff',
+            'permissions_override' => [],
+        ]);
+        $product = Product::create([
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'name' => 'Staff Sale Product',
+            'sku' => 'STAFF-SUSPENSE-001',
+            'stock' => 3,
+            'price' => 10,
+            'purchase_price' => 5,
+        ]);
 
-        $this->actingAs($user)->withoutMiddleware()
+        $this->actingAs($user)->withoutMiddleware()->withSession([
+            'current_tenant_id' => $company->id,
+            'active_branch_id' => 'hq',
+            'active_branch_name' => 'Headquarters',
+        ])
             ->getJson(route('pos.suspense.index'))
-            ->assertForbidden();
+            ->assertOk()
+            ->assertJsonCount(0, 'sales');
+
+        $this->postJson(route('pos.suspense.store'), [
+            'claim_token' => (string) Str::uuid(),
+            'customer_name' => 'Walk-in Customer',
+            'items' => [[
+                'id' => $product->id,
+                'name' => 'Staff Sale Product',
+                'qty' => 1,
+                'price' => 10,
+            ]],
+        ])->assertOk()
+            ->assertJsonPath('message', 'Sale suspended.');
     }
 
     public function test_users_with_the_sales_suspense_role_permission_can_access_sales_suspense(): void

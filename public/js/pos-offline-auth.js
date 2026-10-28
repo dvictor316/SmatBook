@@ -8,6 +8,7 @@
     const PENDING_LOGIN_KEY = 'smartprobook-offline-login-pending';
     const PBKDF2_ITERATIONS = 310000;
     const encoder = new TextEncoder();
+    let noticeTimeout = null;
 
     function toHex(bytes) {
         return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
@@ -85,6 +86,10 @@
         } catch (error) {
             console.error('Could not clear pending offline sign-in data.', error);
         }
+    }
+
+    function cancelLoginPreparation() {
+        clearPendingLogin();
     }
 
     async function prepareLogin(form) {
@@ -186,12 +191,17 @@
     function setNotice(message, type = 'info', dismissAfter = 0) {
         const notice = document.getElementById('pos-offline-auth-notice');
         if (!notice) return;
+        if (noticeTimeout !== null) {
+            root.clearTimeout(noticeTimeout);
+            noticeTimeout = null;
+        }
         notice.textContent = message;
         notice.dataset.type = type;
         notice.hidden = false;
         if (dismissAfter > 0) {
-            root.setTimeout(() => {
+            noticeTimeout = root.setTimeout(() => {
                 notice.hidden = true;
+                noticeTimeout = null;
             }, dismissAfter);
         }
     }
@@ -251,7 +261,7 @@
         }
 
         if (saved) await deleteCredential();
-        setNotice('Sign in online with your password to enable offline POS access on this device.', 'info');
+        setNotice('Sign in online with your password to enable offline POS access on this device.', 'info', 30000);
     }
 
     function setBackgroundLocked(gate, locked) {
@@ -435,7 +445,7 @@
         });
     }
 
-    root.SmartProbookOfflineAuth = { prepareLogin };
+    root.SmartProbookOfflineAuth = { prepareLogin, cancelLoginPreparation };
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', start, { once: true });
     } else {

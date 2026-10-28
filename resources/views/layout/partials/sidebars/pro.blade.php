@@ -24,15 +24,6 @@
                     </a>
                 </li>
 
-                @if(Route::has('online-store.settings') && $user?->canManageRoles())
-                <li class="{{ Request::routeIs('online-store.settings') ? 'active' : '' }}">
-                    <a href="{{ route('online-store.settings') }}">
-                        <i class="fe fe-shopping-bag"></i>
-                        <span>Online Store</span>
-                    </a>
-                </li>
-                @endif
-
                 @if(\App\Support\HotelAccess::userIsHotelTenant(auth()->user()))
                 <li class="submenu {{ Request::is('hotel*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-briefcase"></i><span>Hotel</span><span class="menu-arrow"></span></a>
@@ -173,7 +164,7 @@
                     </ul>
                 </li>
 
-                <li class="submenu {{ request()->routeIs('branches.index') || Request::is('users*', 'settings*', 'roles*', 'activity-log*', 'audit*', 'profile*') ? 'active subdrop' : '' }}">
+                <li class="submenu {{ request()->routeIs('branches.index', 'online-store.settings') || Request::is('users*', 'settings*', 'roles*', 'activity-log*', 'audit*', 'profile*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-settings"></i><span>Settings</span><span class="menu-arrow"></span></a>
                     <ul>
                         @if(Route::has('users.index'))
@@ -181,6 +172,9 @@
                         @endif
                         <li><a href="{{ route('branches.index') }}">Branches</a></li>
                         <li><a href="{{ route('settings.index') }}">Settings</a></li>
+                        @if(Route::has('online-store.settings') && $user?->canManageRoles())
+                            <li><a href="{{ route('online-store.settings') }}">Online Store</a></li>
+                        @endif
 @if(auth()->user()?->canManageRoles())
                         <li><a href="{{ route('roles.index') }}">Roles & Permission</a></li>
 @endif

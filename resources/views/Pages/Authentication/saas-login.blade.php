@@ -711,17 +711,19 @@
                     await refreshToken();
                 }
 
+                const offlineOptIn = form.querySelector('#prepare-offline-pos')?.checked === true;
                 const offlineAuth = window.SmartProbookOfflineAuth;
-                const offlinePrepared = offlineAuth
-                    ? await offlineAuth.prepareLogin(form).catch(function (error) {
+                if (offlineOptIn && offlineAuth) {
+                    await offlineAuth.prepareLogin(form).catch(function (error) {
                         console.error('Could not prepare offline sign-in.', error);
-                        return false;
-                    })
-                    : false;
+                    });
+                } else {
+                    offlineAuth?.cancelLoginPreparation();
+                }
 
-                if (!offlinePrepared) {
+                if (offlineOptIn && !offlineAuth) {
                     const notice = document.getElementById('offline-login-setup-status');
-                    if (notice && !notice.textContent) {
+                    if (notice) {
                         notice.textContent = 'Offline sign-in could not be prepared. You can still sign in online.';
                         notice.classList.add('text-danger');
                     }
@@ -835,6 +837,12 @@
                         <input type="password" name="password" id="pass_input" class="form-control input-smat w-100" placeholder="Enter your password" autocomplete="current-password" required>
                         <i class="far fa-eye-slash toggle-eye" id="eye_toggle"></i>
                     </div>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" value="1" id="prepare-offline-pos">
+                    <label class="form-check-label" for="prepare-offline-pos">Prepare this device for offline POS</label>
+                    <div class="form-text">Optional. Leave unchecked for faster sign-in; select it when setting up offline sales on this device.</div>
                 </div>
 
                 <button type="submit" class="btn-smat-navy"><i class="fas fa-right-to-bracket me-1"></i> Sign In</button>

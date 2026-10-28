@@ -21,14 +21,6 @@
                     </a>
                 </li>
 
-                @if(Route::has('online-store.settings') && $user?->canManageRoles())
-                <li class="{{ Request::routeIs('online-store.settings') ? 'active' : '' }}">
-                    <a href="{{ route('online-store.settings') }}">
-                        <i class="fe fe-shopping-bag"></i><span>Online Store</span>
-                    </a>
-                </li>
-                @endif
-
                 @if(\App\Support\HotelAccess::userIsHotelTenant(auth()->user()))
                 <li class="submenu {{ Request::is('hotel*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-briefcase"></i><span>Hotel</span><span class="menu-arrow"></span></a>
@@ -234,7 +226,7 @@
                     </ul>
                 </li>
 
-                <li class="submenu {{ Request::is('users*', 'roles*', 'branches*', 'settings*', 'profile*') ? 'active subdrop' : '' }}">
+                <li class="submenu {{ Request::routeIs('online-store.settings') || Request::is('users*', 'roles*', 'branches*', 'settings*', 'profile*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-settings"></i><span>Settings</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('users.index') }}">Users</a></li>
@@ -243,6 +235,9 @@
 @endif
                         <li><a href="{{ route('branches.index') }}">Branches</a></li>
                         <li><a href="{{ route('settings.index') }}">Settings</a></li>
+                        @if(Route::has('online-store.settings') && $user?->canManageRoles())
+                            <li><a href="{{ route('online-store.settings') }}">Online Store</a></li>
+                        @endif
                         @if(Route::has('developer-api.index'))
                             <li><a href="{{ route('developer-api.index') }}">Developer API</a></li>
                         @endif
