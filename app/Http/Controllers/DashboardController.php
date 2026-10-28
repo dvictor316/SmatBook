@@ -597,13 +597,13 @@ class DashboardController extends Controller
                 $hasReorderLevel = $this->hasProductReorderLevelColumn();
                 $reorderExpr = $hasReorderLevel ? 'COALESCE(NULLIF(products.reorder_level, 0), 15)' : '15';
 
-                return (int) ($this->scopeByCompany(DB::table('products'), 'products', $company)
+                $lowStockProducts = $this->scopeByCompany(DB::table('products'), 'products', $company)
                     ->join('product_branch_stocks', 'product_branch_stocks.product_id', '=', 'products.id')
                     ->select('products.id')
                     ->groupBy('products.id')
-                    ->havingRaw("SUM(COALESCE(product_branch_stocks.quantity, 0)) <= {$reorderExpr}")
-                    ->get()
-                    ->count() ?? 0);
+                    ->havingRaw("SUM(COALESCE(product_branch_stocks.quantity, 0)) <= {$reorderExpr}");
+
+                return (int) DB::query()->fromSub($lowStockProducts, 'low_stock_products')->count();
             }
 
             if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
@@ -627,13 +627,13 @@ class DashboardController extends Controller
             ]);
 
             if (($activeBranch['scope'] ?? 'branch') === 'all' && Schema::hasTable('product_branch_stocks')) {
-                return (int) ($this->scopeByCompany(DB::table('products'), 'products', $company)
+                $lowStockProducts = $this->scopeByCompany(DB::table('products'), 'products', $company)
                     ->join('product_branch_stocks', 'product_branch_stocks.product_id', '=', 'products.id')
                     ->select('products.id')
                     ->groupBy('products.id')
-                    ->havingRaw('SUM(COALESCE(product_branch_stocks.quantity, 0)) <= 15')
-                    ->get()
-                    ->count() ?? 0);
+                    ->havingRaw('SUM(COALESCE(product_branch_stocks.quantity, 0)) <= 15');
+
+                return (int) DB::query()->fromSub($lowStockProducts, 'low_stock_products')->count();
             }
 
             if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
@@ -730,6 +730,7 @@ class DashboardController extends Controller
     private function getRecentActivity($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('sales')) return collect();
         return $this->scopePeriodSalesByContext(Sale::query(), $company, $activeBranch)
+            ->select('id', 'customer_name', 'invoice_no', 'order_number', 'payment_status', 'created_at', 'total')
             ->latest()
             ->limit(8)
             ->get()

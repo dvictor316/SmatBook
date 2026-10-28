@@ -138,7 +138,7 @@
         </ul>
     </li>
 
-    <li class="submenu {{ Request::is('users*', 'settings*', 'roles*', 'activity-log*', 'audit*', 'profile*') ? 'active subdrop' : '' }}">
+    <li class="submenu {{ Request::routeIs('offline-app.settings') || Request::is('users*', 'settings*', 'roles*', 'activity-log*', 'audit*', 'profile*') ? 'active subdrop' : '' }}">
         <a href="#"><i class="fe fe-settings"></i><span>Settings</span><span class="menu-arrow"></span></a>
         <ul>
             @if(Route::has('users.index'))
@@ -146,6 +146,9 @@
             @endif
             @if(Route::has('settings.index'))
                 <li><a href="{{ route('settings.index') }}">Settings</a></li>
+            @endif
+            @if(Route::has('offline-app.settings'))
+                <li><a href="{{ route('offline-app.settings') }}">Offline App</a></li>
             @endif
             @if(Route::has('roles.index'))
 @if(auth()->user()?->canManageRoles())

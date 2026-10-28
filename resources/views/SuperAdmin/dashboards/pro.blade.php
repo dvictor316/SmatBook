@@ -420,7 +420,6 @@
 
 <div class="pos-content-area">
     @include('SuperAdmin.partials._subscription_status_banner')
-    @include('SuperAdmin.partials._desktop_app_download')
     @php
         $inventoryValue = (float) ($metrics['inventoryValue'] ?? 0);
         $currentMonthSales = (float) ($metrics['currentMonthSales'] ?? 0);

@@ -865,6 +865,7 @@ Route::view('/remote-support', 'Support.remote-support')
 Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('user.dashboard');
+    Route::view('/offline-app', 'Settings.offline-app')->name('offline-app.settings');
     Route::get('/blank-page', [HomeController::class, 'blankpage'])->name('blank-page');
 
     // Profile

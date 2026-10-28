@@ -64,11 +64,17 @@
         </li>
     @endif
 
-    <li class="{{ Request::routeIs('profile') ? 'active' : '' }}">
-        <a href="{{ route('profile') }}">
-            <i class="fe fe-user"></i>
-            <span>Profile</span>
-        </a>
+    <li class="submenu {{ Request::routeIs('profile', 'offline-app.settings', 'settings.index') ? 'active subdrop' : '' }}">
+        <a href="#"><i class="fe fe-settings"></i><span>Settings</span><span class="menu-arrow"></span></a>
+        <ul>
+            <li><a href="{{ route('profile') }}">Profile</a></li>
+            @if(Route::has('settings.index'))
+                <li><a href="{{ route('settings.index') }}">Settings</a></li>
+            @endif
+            @if(Route::has('offline-app.settings'))
+                <li><a href="{{ route('offline-app.settings') }}">Offline App</a></li>
+            @endif
+        </ul>
     </li>
 
     <li class="{{ Request::routeIs('membership-plans') ? 'active' : '' }}">

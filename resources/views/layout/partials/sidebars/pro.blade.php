@@ -164,7 +164,7 @@
                     </ul>
                 </li>
 
-                <li class="submenu {{ request()->routeIs('branches.index', 'online-store.settings') || Request::is('users*', 'settings*', 'roles*', 'activity-log*', 'audit*', 'profile*') ? 'active subdrop' : '' }}">
+                <li class="submenu {{ request()->routeIs('branches.index', 'online-store.settings', 'offline-app.settings') || Request::is('users*', 'settings*', 'roles*', 'activity-log*', 'audit*', 'profile*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-settings"></i><span>Settings</span><span class="menu-arrow"></span></a>
                     <ul>
                         @if(Route::has('users.index'))
@@ -172,6 +172,9 @@
                         @endif
                         <li><a href="{{ route('branches.index') }}">Branches</a></li>
                         <li><a href="{{ route('settings.index') }}">Settings</a></li>
+                        @if(Route::has('offline-app.settings'))
+                            <li><a href="{{ route('offline-app.settings') }}">Offline App</a></li>
+                        @endif
                         @if(Route::has('online-store.settings') && $user?->canManageRoles())
                             <li><a href="{{ route('online-store.settings') }}">Online Store</a></li>
                         @endif

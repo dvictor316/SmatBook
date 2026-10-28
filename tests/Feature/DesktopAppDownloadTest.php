@@ -7,7 +7,7 @@ use Tests\TestCase;
 
 class DesktopAppDownloadTest extends TestCase
 {
-    public function test_business_dashboard_shows_install_and_open_actions(): void
+    public function test_offline_app_download_partial_renders_install_and_open_actions(): void
     {
         $html = view('SuperAdmin.partials._desktop_app_download', [
             'company' => new Company(),
