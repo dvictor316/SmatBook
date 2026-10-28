@@ -40,21 +40,28 @@
         .catalogue-heading h2{margin:0;color:var(--navy);font-family:Georgia,"Times New Roman",serif;font-size:clamp(1.8rem,3vw,2.5rem);font-weight:500}
         .catalogue-heading p{margin:7px 0 0;color:#77766f}
         .catalogue-count{color:#77766f;font-size:.83rem;white-space:nowrap}
-        .product-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
-        .product{border:1px solid var(--line);border-radius:3px;background:#fff;transition:transform .2s ease,box-shadow .2s ease;animation:storefront-rise .55s both}
-        .product:nth-child(3n + 2){animation-delay:.08s}.product:nth-child(3n){animation-delay:.16s}
-        .product:hover{transform:translateY(-4px);box-shadow:0 18px 42px rgba(6,35,84,.1)}
-        .product-media{aspect-ratio:1/1;background:#edf3fb}
+        .product-grid{grid-template-columns:minmax(0,1fr);gap:18px;max-width:1120px}
+        .product{display:grid;grid-template-columns:minmax(260px,38%) minmax(0,1fr);border:1px solid #e3eaf3;border-radius:12px;background:#fff;transition:transform .2s ease,box-shadow .2s ease;animation:storefront-rise .55s both}
+        .product:hover{transform:translateY(-3px);box-shadow:0 18px 42px rgba(6,35,84,.1)}
+        .product-media{aspect-ratio:auto;min-height:320px;height:100%;background:linear-gradient(145deg,#edf3fb,#f9fbfe)}
         .product-media img{transition:transform .45s ease}
         .product:hover .product-media img{transform:scale(1.035)}
         .product-media i{color:var(--blue)}
-        .product-body{gap:10px;padding:20px}
-        .product h2{font-family:Georgia,"Times New Roman",serif;font-size:1.3rem;font-weight:500;line-height:1.25}
-        .product-description{margin:0;color:#64748b;font-size:.9rem;line-height:1.55}
-        .price{color:var(--red);font-size:1.15rem}
-        .stock{color:#536984}
-        .quantity{justify-content:space-between;margin-top:10px;padding-top:14px;border-top:1px solid #edf0f5}
-        .quantity input{width:92px;border-color:#dbe4f0}
+        .product-body{gap:14px;padding:clamp(22px,3vw,38px)}
+        .product-eyebrow{color:#8a6a17;font-size:.72rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+        .product h2{font-family:Georgia,"Times New Roman",serif;font-size:clamp(1.55rem,2.4vw,2.1rem);font-weight:500;line-height:1.15}
+        .product-description{margin:0;color:#64748b;font-size:.95rem;line-height:1.7;white-space:pre-line}
+        .product-meta{display:flex;flex-wrap:wrap;gap:8px}
+        .product-meta span{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid #e7edf5;border-radius:999px;background:#f8fafc;color:#52627a;font-size:.78rem}
+        .product-purchase{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-top:auto;padding-top:18px;border-top:1px solid #edf0f5}
+        .product-price-label{margin-bottom:4px;color:#75849a;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+        .price{color:var(--red);font-size:clamp(1.35rem,2vw,1.8rem);line-height:1.15}
+        .stock{margin-top:7px;color:#536984}
+        .stock.in-stock{color:#16834b}
+        .stock.out-of-stock{color:#b4233b}
+        .quantity{justify-content:flex-end;gap:10px;margin:0;padding:0;border:0}
+        .quantity input{width:88px;min-height:44px;border-color:#dbe4f0}
+        .add-to-cart{min-height:44px;padding-inline:18px;border-radius:5px;font-weight:750}
         .checkout{margin-top:38px;padding:clamp(22px,4vw,38px);border:1px solid var(--line);border-top:3px solid var(--red);border-radius:3px;background:#fff;animation:storefront-rise .65s .12s both}
         .checkout h2{color:var(--navy);font-family:Georgia,"Times New Roman",serif;font-size:1.8rem;font-weight:500}
         .checkout .form-control,.checkout .form-select{min-height:46px;border-color:var(--line);border-radius:3px}
@@ -66,8 +73,8 @@
         .store-footer-inner strong{color:#fff}
         .alert{border-radius:3px}
         @keyframes storefront-rise{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
-        @media(max-width:992px){.product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-        @media(max-width:576px){.store-nav-inner{align-items:center;flex-direction:row;flex-wrap:wrap;gap:10px}.brand{max-width:43%;min-width:0;font-size:.98rem}.brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brand img{width:36px;height:36px}.gallery-nav-links{gap:7px;margin-left:auto}.gallery-nav-links a{font-size:.7rem}.gallery-nav-links a[aria-current=page],.gallery-nav-about{padding:7px}.store-search{width:100%;order:3}.store-search input{min-width:0}.store-search button{padding-inline:.8rem}.store-head{padding:54px 18px}.store-main{padding:34px 16px 52px}.product-grid{grid-template-columns:1fr;gap:16px}.catalogue-heading{align-items:flex-start;flex-direction:column;gap:8px}.catalogue-count{white-space:normal}}
+        @media(max-width:760px){.product{grid-template-columns:minmax(220px,36%) minmax(0,1fr)}.product-media{min-height:280px}.product-purchase{align-items:flex-start;flex-direction:column}.quantity{width:100%;justify-content:flex-start}}
+        @media(max-width:576px){.store-nav-inner{align-items:center;flex-direction:row;flex-wrap:wrap;gap:10px}.brand{max-width:43%;min-width:0;font-size:.98rem}.brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brand img{width:36px;height:36px}.gallery-nav-links{gap:7px;margin-left:auto}.gallery-nav-links a{font-size:.7rem}.gallery-nav-links a[aria-current=page],.gallery-nav-about{padding:7px}.store-search{width:100%;order:3}.store-search input{min-width:0}.store-search button{padding-inline:.8rem}.store-head{padding:54px 18px}.store-main{padding:34px 16px 52px}.product-grid{grid-template-columns:1fr;gap:16px}.product{grid-template-columns:1fr}.product-media{min-height:0;aspect-ratio:16/10}.product-body{gap:12px;padding:20px}.product-purchase{align-items:stretch}.quantity{justify-content:space-between}.quantity .add-to-cart{flex:1}.catalogue-heading{align-items:flex-start;flex-direction:column;gap:8px}.catalogue-count{white-space:normal}}
         @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
     </style>
 </head>
@@ -99,7 +106,31 @@
             @endphp
             <article class="product" data-product-id="{{ $product->id }}" data-product-name="{{ $displayName }}" data-product-sku="{{ $product->sku }}" data-product-price="{{ (float) $product->price }}" data-product-max="{{ $available }}" data-product-step="{{ $quantityStep }}">
                 <div class="product-media">@if($product->image_url)<img src="{{ $product->image_url }}" alt="{{ $displayName }}" loading="lazy">@else<i class="fas fa-box-open" aria-hidden="true"></i>@endif</div>
-                <div class="product-body"><h2>{{ $displayName }}</h2><div class="small text-muted">{{ $product->sku }}</div>@if(filled($product->description))<p class="product-description">{{ \Illuminate\Support\Str::limit(strip_tags($product->description), 150) }}</p>@endif<div class="price">{{ \App\Support\GeoCurrency::format((float)$product->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</div><div class="stock">{{ $available > 0 ? $product->formatStockQuantity($available) . ' available' : 'Out of stock' }}</div><div class="quantity"><label for="qty{{ $product->id }}" class="small fw-bold">Quantity</label><input id="qty{{ $product->id }}" class="form-control form-control-sm product-quantity" type="number" min="{{ $quantityStep }}" step="{{ $quantityStep }}" max="{{ $available }}" value="1" @disabled($available <= 0)><button type="button" class="btn btn-outline-primary add-to-cart" @disabled($available <= 0)><i class="fas fa-cart-plus me-1"></i>Add</button></div></div>
+                <div class="product-body">
+                    <span class="product-eyebrow">Product details</span>
+                    <h2>{{ $displayName }}</h2>
+                    @if(filled($product->description))
+                        <p class="product-description">{{ strip_tags($product->description) }}</p>
+                    @endif
+                    <div class="product-meta">
+                        @if(filled($product->sku))<span><i class="fas fa-barcode" aria-hidden="true"></i>SKU: {{ $product->sku }}</span>@endif
+                        @if(filled($product->brand))<span><i class="fas fa-tag" aria-hidden="true"></i>{{ $product->brand }}</span>@endif
+                        @if(filled($product->fashion_size))<span><i class="fas fa-ruler" aria-hidden="true"></i>Size: {{ $product->fashion_size }}</span>@endif
+                        @if(filled($product->fashion_color))<span><i class="fas fa-palette" aria-hidden="true"></i>Colour: {{ $product->fashion_color }}</span>@endif
+                    </div>
+                    <div class="product-purchase">
+                        <div>
+                            <div class="product-price-label">Price</div>
+                            <div class="price">{{ \App\Support\GeoCurrency::format((float)$product->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</div>
+                            <div class="stock {{ $available > 0 ? 'in-stock' : 'out-of-stock' }}">{{ $available > 0 ? $product->formatStockQuantity($available) . ' available' : 'Out of stock' }}</div>
+                        </div>
+                        <div class="quantity">
+                            <label for="qty{{ $product->id }}" class="small fw-bold">Quantity</label>
+                            <input id="qty{{ $product->id }}" class="form-control product-quantity" type="number" min="{{ $quantityStep }}" step="{{ $quantityStep }}" max="{{ $available }}" value="1" @disabled($available <= 0)>
+                            <button type="button" class="btn btn-outline-primary add-to-cart" aria-label="Add {{ $displayName }} to cart" @disabled($available <= 0)><i class="fas fa-cart-plus me-1" aria-hidden="true"></i>Add to cart</button>
+                        </div>
+                    </div>
+                </div>
             </article>
         @empty
             <div class="alert alert-info grid-column-all">No products are currently available.</div>

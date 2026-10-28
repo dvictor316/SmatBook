@@ -109,8 +109,9 @@ class OnlineStoreWorkflowTest extends TestCase
     {
         [$user, $company] = $this->workspace('Gallery Store');
         $categoryId = $this->category($user->id, $company->id, 'Collection');
+        $firstProductId = null;
         for ($number = 1; $number <= 11; $number++) {
-            $this->product(
+            $productId = $this->product(
                 $user->id,
                 $company->id,
                 $categoryId,
@@ -119,7 +120,15 @@ class OnlineStoreWorkflowTest extends TestCase
                 5,
                 1000 + $number
             );
+            if ($number === 1) {
+                $firstProductId = $productId;
+            }
         }
+        DB::table('products')->where('id', $firstProductId)->update([
+            'brand' => 'Gallery Brand',
+            'fashion_size' => 'Medium',
+            'fashion_color' => 'Navy',
+        ]);
         StorefrontSetting::create([
             'company_id' => $company->id,
             'slug' => 'gallery-store',
@@ -140,7 +149,14 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertSee('Gallery Product 11')
             ->assertSee('Place Order')
             ->assertSee('Your Cart')
+            ->assertSee('product-media', false)
+            ->assertSee('product-meta', false)
+            ->assertSee('Gallery Brand')
+            ->assertSee('Size: Medium')
+            ->assertSee('Colour: Navy')
+            ->assertSee('product-purchase', false)
             ->assertSee('add-to-cart', false)
+            ->assertSee('Add to cart')
             ->assertSee('smartprobook-cart-gallery-store');
     }
 
