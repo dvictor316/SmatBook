@@ -1598,17 +1598,10 @@ class SuperAdminDashboardController extends Controller
      */
     private function isSuperAdmin($user): bool
     {
-        $role = strtolower($user->role ?? '');
-
-        $validRoles = [
-            'super_admin',
-            'superadmin',
-        ];
-
-        $isValidRole = in_array($role, $validRoles, true);
-        $isVictorEmail = ($user->email === 'donvictorlive@gmail.com');
-
-        return $isValidRole || $isVictorEmail;
+        return $user && (
+            $user->isSuperAdmin()
+            || strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com'
+        );
     }
 
 

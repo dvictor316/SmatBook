@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Permission;
 use App\Models\Role;
+use App\Support\DefaultRolePermissions;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -139,82 +140,7 @@ class PostResetSeeder extends Seeder
 
     private function defaultPermissionsForRole(string $roleName): array
     {
-        $allPerms = Permission::query()->pluck('name')->all();
-
-        return match ($roleName) {
-            'Administrator' => $allPerms,
-
-            'Finance Manager' => array_filter($allPerms, fn ($p) => str_starts_with($p, 'finance.')
-                || str_starts_with($p, 'reports.')
-                || str_starts_with($p, 'payroll.')
-                || str_starts_with($p, 'tax.')
-                || str_starts_with($p, 'accounting.')
-                || str_starts_with($p, 'budgets.')
-                || str_starts_with($p, 'period_close.')
-                || str_starts_with($p, 'fixed_assets.')
-                || str_starts_with($p, 'expense_claims.')
-                || str_starts_with($p, 'approval_queue.')
-                || str_starts_with($p, 'payment_summary.')
-                || str_starts_with($p, 'dashboard.')
-                || str_starts_with($p, 'activity_log.')
-            ),
-
-            'Store Manager' => array_filter($allPerms, fn ($p) => str_starts_with($p, 'inventory.')
-                || str_starts_with($p, 'dashboard.')
-                || str_starts_with($p, 'reports.')
-                || str_starts_with($p, 'purchase_orders.')
-                || str_starts_with($p, 'purchases.')
-            ),
-
-            'Sales Manager' => array_filter($allPerms, fn ($p) => str_starts_with($p, 'sales.')
-                || str_starts_with($p, 'customers.')
-                || str_starts_with($p, 'estimates.')
-                || str_starts_with($p, 'quotations.')
-                || str_starts_with($p, 'collections_hub.')
-                || str_starts_with($p, 'follow_ups.')
-                || str_starts_with($p, 'dashboard.')
-                || str_starts_with($p, 'reports.')
-                || str_starts_with($p, 'recurring_invoices.')
-            ),
-
-            'Account Officer' => array_filter($allPerms, fn ($p) => in_array($p, [
-                'dashboard.overview.view',
-                'finance.expenses.view', 'finance.expenses.create', 'finance.expenses.edit',
-                'finance.payments.view', 'finance.payments.create', 'finance.payments.edit',
-                'finance.accounts.view',
-                'accounting.manual_journal.view', 'accounting.manual_journal.create',
-                'customers.customers.view', 'customers.customers.view_all',
-                'vendors.vendors.view',
-                'reports.reports.view',
-                'activity_log.activity_log.view',
-            ])),
-
-            'Cashier' => array_filter($allPerms, fn ($p) => in_array($p, [
-                'dashboard.overview.view',
-                'sales.pos.view', 'sales.pos.create',
-                'sales.invoices.view', 'sales.invoices.view_own', 'sales.invoices.create',
-                'customers.customers.view', 'customers.customers.create',
-                'finance.payments.view', 'finance.payments.create',
-                'inventory.products.view',
-            ])),
-
-            'State Manager' => array_filter($allPerms, fn ($p) => str_starts_with($p, 'deployment.')
-                || $p === 'dashboard.overview.view'
-                || in_array($p, [
-                    'customers.customers.view',
-                    'customers.customers.view_own',
-                    'customers.customers.create',
-                ], true)
-            ),
-
-            'Agent' => array_filter($allPerms, fn ($p) => str_starts_with($p, 'dashboard.')
-                || str_starts_with($p, 'customers.')
-                || str_starts_with($p, 'sales.')
-                || str_starts_with($p, 'follow_ups.')
-            ),
-
-            default => [],
-        };
+        return DefaultRolePermissions::forRole($roleName, Permission::query()->pluck('name')->all());
     }
 
     private function seedDefaultRoles(): void
@@ -235,7 +161,7 @@ class PostResetSeeder extends Seeder
                     ->whereIn('name', array_values($permissionNames))
                     ->pluck('id')
                     ->all();
-                $roleModel->permissions()->syncWithoutDetaching($permissionIds);
+                $roleModel->permissions()->sync($permissionIds);
             }
         }
     }

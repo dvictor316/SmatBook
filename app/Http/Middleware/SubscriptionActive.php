@@ -39,8 +39,12 @@ class SubscriptionActive
             return $next($request);
         }
 
-        $role = strtolower(trim((string) ($user?->role ?? '')));
-        if (in_array($role, ['super_admin', 'superadmin', 'state_manager', 'deployment_manager', 'agent'], true)) {
+        if ($user && (
+            $user->isSuperAdmin()
+            || $user->hasRole('state_manager')
+            || $user->hasRole('deployment_manager')
+            || $user->hasRole('agent')
+        )) {
             return $next($request);
         }
         

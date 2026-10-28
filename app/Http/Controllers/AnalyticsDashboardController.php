@@ -31,7 +31,7 @@ class AnalyticsDashboardController extends Controller
             return null;
         }
 
-        if (in_array(strtolower($user->role ?? ''), ['super_admin', 'superadmin'])) {
+        if ($user->isSuperAdmin()) {
             return null; // super admins get global analytics
         }
 

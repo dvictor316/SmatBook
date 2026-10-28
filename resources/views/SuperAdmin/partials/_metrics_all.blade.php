@@ -4,7 +4,7 @@
     // Super admin always gets full/enterprise access — no upgrade locks
     $_metricsUser = auth()->user();
     $_isSuperAdmin = $_metricsUser && (
-        in_array(strtolower((string) ($_metricsUser->role ?? '')), ['super_admin', 'superadmin'], true)
+        $_metricsUser->isSuperAdmin()
         || strtolower((string) ($_metricsUser->email ?? '')) === 'donvictorlive@gmail.com'
     );
 

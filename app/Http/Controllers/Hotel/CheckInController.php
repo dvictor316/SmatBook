@@ -419,7 +419,16 @@ class CheckInController extends Controller
 
     private function canOverrideDirtyCheckin(): bool
     {
-        $role = strtolower(str_replace([' ', '-'], '_', (string) (auth()->user()->role ?? '')));
-        return in_array($role, ['super_admin', 'administrator', 'admin', 'business_owner', 'owner', 'manager', 'hotel_manager', 'general_manager'], true);
+        $user = auth()->user();
+
+        return $user && (
+            $user->isSuperAdmin()
+            || $user->hasRole('administrator')
+            || $user->hasRole('business_owner')
+            || $user->hasRole('owner')
+            || $user->hasRole('manager')
+            || $user->hasRole('hotel_manager')
+            || $user->hasRole('general_manager')
+        );
     }
 }

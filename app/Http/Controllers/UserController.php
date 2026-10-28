@@ -98,7 +98,10 @@ class UserController extends Controller
      */
     public function create()
     {
-        $roles  = $this->getRoles();
+        $roles  = collect($this->getRoles())
+            ->reject(fn ($role) => RoleNames::key((string) $role) === 'administrator')
+            ->values()
+            ->all();
         $actor  = Auth::user();
         $suffix = $this->workspaceCompanyIdForActor($actor);
 
@@ -160,6 +163,11 @@ class UserController extends Controller
 
         $selectedRole = $this->resolveSelectedRole($request->role);
         $legacyRole = $selectedRole['legacy'];
+        if ($legacyRole === 'administrator') {
+            throw ValidationException::withMessages([
+                'role' => 'Administrator access is reserved for the business owner. Assign staff a job-specific role instead.',
+            ]);
+        }
         $creatingPlatformUser = $this->shouldCreatePlatformUser($actor, $legacyRole);
 
         if (!$creatingPlatformUser && $companyId <= 0) {
@@ -301,7 +309,13 @@ class UserController extends Controller
     public function edit($id)
     {
         $user = $this->findScopedUser($id);
-        $roles = collect($this->getRoles())->push($user->role_display_name)->unique()->sort()->values()->all();
+        $roles = collect($this->getRoles())
+            ->push($user->role_display_name)
+            ->unique(fn ($role) => RoleNames::key((string) $role))
+            ->reject(fn ($role) => RoleNames::key((string) $role) === 'administrator' && !$user->canManageRoles())
+            ->sort()
+            ->values()
+            ->all();
         $countryOptions = PartnerLocationRepository::countryOptions();
         $managerProfile = DeploymentManager::withoutGlobalScopes()->where('user_id', $user->id)->first();
         return view('UserManagement.edit', compact('user', 'roles', 'countryOptions', 'managerProfile'));
@@ -344,6 +358,11 @@ class UserController extends Controller
         $user->email = $request->email;
         $selectedRole = $this->resolveSelectedRole($request->role);
         abort_if($user->isProtectedSuperAdmin() && $selectedRole['legacy'] !== 'super_admin', 403, 'The protected super admin role cannot be changed.');
+        if ($selectedRole['legacy'] === 'administrator' && !$user->canManageRoles()) {
+            throw ValidationException::withMessages([
+                'role' => 'Administrator access is reserved for the business owner. Assign staff a job-specific role instead.',
+            ]);
+        }
 
         if ($selectedRole['legacy'] === 'state_manager') {
             if (!$this->isCentralAdmin(Auth::user())) {

@@ -9,9 +9,7 @@ class PlanAccess
 {
     public static function resolveTierForUser($user): string
     {
-        $role = strtolower(trim((string) ($user?->role ?? '')));
-
-        if (in_array($role, ['super_admin', 'superadmin'], true)
+        if (($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())
             || strtolower((string) ($user?->email ?? '')) === 'donvictorlive@gmail.com') {
             return 'full';
         }

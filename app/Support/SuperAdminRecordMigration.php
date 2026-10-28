@@ -37,7 +37,7 @@ class SuperAdminRecordMigration
         $source = Company::withoutGlobalScopes()->findOrFail($from);
         $target = Company::withoutGlobalScopes()->findOrFail($to);
         $owners = array_filter([(int) $target->user_id, (int) $target->owner_id]);
-        if ($from === $to || ! in_array(strtolower((string) $user->role), ['super_admin', 'superadmin'], true)
+        if ($from === $to || ! $user->isSuperAdmin()
             || $user->deleted_at || $source->deleted_at || $target->deleted_at || ! $owners
             || array_filter($owners, fn ($id) => $id !== $userId)
             || DB::table('settings')->where('key', 'workspace_retired_company_'.$to)->exists()) {

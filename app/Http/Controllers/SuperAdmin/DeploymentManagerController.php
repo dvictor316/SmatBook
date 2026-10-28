@@ -966,9 +966,7 @@ class DeploymentManagerController extends Controller
     public function usersList()
     {
         $actor = Auth::user();
-        $role = strtolower((string) ($actor->role ?? ''));
-        $isSuperAdmin = in_array($role, ['super_admin', 'superadmin'], true)
-            || in_array($role, ['administrator', 'admin'], true)
+        $isSuperAdmin = $actor->isSuperAdmin()
             || strtolower((string) ($actor->email ?? '')) === 'donvictorlive@gmail.com';
 
         if ($isSuperAdmin) {
@@ -1090,7 +1088,7 @@ public function store(Request $request)
     $validated['company_email'] = $validated['company_email'] ?? $validated['email'];
 
     $isSuperAdminDeployment = $request->routeIs('super_admin.custom_deployments.store')
-        && in_array(strtolower((string) ($manager?->role ?? '')), ['super_admin', 'superadmin'], true);
+        && $manager?->isSuperAdmin();
     $isFreeUnlimited = $isSuperAdminDeployment && $request->boolean('free_unlimited');
     $customUserLimit = $isFreeUnlimited && empty($validated['custom_user_limit'])
         ? self::UNLIMITED_USER_LIMIT
@@ -2089,7 +2087,7 @@ private function formatDeploymentAmount(float $amount): string
     public function usersIndex() 
     {
         $user = Auth::user();
-        if ($user->role === 'super_admin' || $user->hasRole('super_admin')) {
+        if ($user->isSuperAdmin()) {
             $users = DeploymentManager::with('user')->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
         } else {
             $users = User::whereIn('company_id', $this->managedCompanyIds())

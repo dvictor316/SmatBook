@@ -21,6 +21,8 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
+    private array $roleManagementAccessByCompany = [];
+
     /**
      * The attributes that are mass assignable.
      */
@@ -284,14 +286,22 @@ class User extends Authenticatable
 
     public function hasRole(string $roleName): bool
     {
-        if (RoleNames::key($roleName) === null) {
+        $roleKey = RoleNames::key($roleName);
+        if ($roleKey === null) {
             return false;
         }
         $assignedRole = $this->assignedRole();
         if ($this->role_id) {
-            return $assignedRole && RoleNames::key($assignedRole->name) === RoleNames::key($roleName);
+            $matches = $assignedRole && RoleNames::key($assignedRole->name) === $roleKey;
+        } else {
+            $matches = RoleNames::key($this->attributes['role'] ?? null) === $roleKey;
         }
-        return RoleNames::key($this->attributes['role'] ?? null) === RoleNames::key($roleName);
+
+        if (!$matches) {
+            return false;
+        }
+
+        return $roleKey !== 'administrator' || $this->canManageRoles();
     }
 
     public function isSuperAdmin(): bool
@@ -310,10 +320,10 @@ class User extends Authenticatable
             return false;
         }
 
-        return Company::withoutGlobalScope('tenant')->whereKey($companyId)
-            ->where(function ($query) {
-                $query->where('user_id', $this->id)->orWhere('owner_id', $this->id);
-            })->exists();
+        return $this->roleManagementAccessByCompany[$companyId] ??= Company::withoutGlobalScope('tenant')
+            ->whereKey($companyId)
+            ->where(fn ($query) => $query->where('user_id', $this->id)->orWhere('owner_id', $this->id))
+            ->exists();
     }
 
     public function isDemoUser(): bool
@@ -322,7 +332,12 @@ class User extends Authenticatable
             return $this->company->isDemo();
         }
 
-        return $this->company()->exists() && (bool) $this->company()->value('is_demo');
+        $company = (int) $this->company_id > 0
+            ? Company::withoutGlobalScope('tenant')->find((int) $this->company_id)
+            : $this->company()->first();
+        $this->setRelation('company', $company);
+
+        return $company?->isDemo() ?? false;
     }
 
     public function demoCompany(): ?Company
@@ -344,6 +359,14 @@ class User extends Authenticatable
     {
         $permissionName = strtolower(trim($permissionName));
 
+        $role = $this->role_id ? $this->assignedRole() : null;
+        $roleKey = $role
+            ? RoleNames::key($role->name)
+            : RoleNames::key($this->attributes['role'] ?? null);
+        if ($roleKey === 'administrator' && !$this->canManageRoles()) {
+            return false;
+        }
+
         // Per-user override takes full precedence over role permissions
         if ($this->permissions_override !== null) {
             return in_array($permissionName, array_map('strtolower', $this->permissions_override), true);
@@ -354,7 +377,8 @@ class User extends Authenticatable
         }
 
 
-        $role = $this->role_id ? $this->assignedRole() : RoleNames::find($this->attributes['role'] ?? null);
+        $role ??= RoleNames::find($this->attributes['role'] ?? null);
+
         return $role && $role->permissions()->whereRaw('LOWER(name) = ?', [$permissionName])->exists();
     }
 

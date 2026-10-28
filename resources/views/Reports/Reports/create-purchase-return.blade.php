@@ -82,7 +82,7 @@
                     <input type="hidden" name="total_amount" id="total_amount_input" value="0">
 
                     <div class="text-end mt-4">
-                        @if(in_array(auth()->user()->role, ['super_admin', 'administrator', 'store_manager', 'accountant']))
+                        @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('administrator') || auth()->user()->hasRole('store_manager') || auth()->user()->hasRole('accountant'))
                             <button type="submit" class="btn btn-primary btn-lg px-5 shadow-sm">
                                 <i class="fas fa-check-circle me-2"></i> Submit Return
                             </button>

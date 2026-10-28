@@ -21,8 +21,7 @@ trait Multitenantable {
             }
 
             $user = Auth::user();
-            $role = strtolower((string) ($user->role ?? ''));
-            $isSuperAdmin = in_array($role, ['super_admin', 'superadmin'], true);
+            $isSuperAdmin = method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin();
             $companyId = (int) (session('current_tenant_id') ?? $user->company_id ?? 0);
 
             if ($isSuperAdmin && request()->is('superadmin*') && $companyId === 0) {

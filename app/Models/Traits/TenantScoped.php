@@ -27,8 +27,7 @@ trait TenantScoped
                 return;
             }
 
-            $role = strtolower((string) ($user->role ?? ''));
-            $isSuperAdmin = in_array($role, ['super_admin', 'superadmin'], true);
+            $isSuperAdmin = method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin();
             $isSuperAdminArea = request()->is('superadmin*');
 
             /** @var Model $model */

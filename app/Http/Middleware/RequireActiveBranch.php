@@ -17,7 +17,11 @@ class RequireActiveBranch
     {
         // Platform users do not operate inside a tenant branch.
         $user = $request->user();
-        if ($user && in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin', 'state_manager', 'deployment_manager'], true)) {
+        if ($user && (
+            $user->isSuperAdmin()
+            || $user->hasRole('state_manager')
+            || $user->hasRole('deployment_manager')
+        )) {
             return $next($request);
         }
 

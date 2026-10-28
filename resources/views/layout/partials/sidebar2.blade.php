@@ -114,7 +114,8 @@
                         @php
                             $sidebarPlan = strtolower(trim((string) (session('user_plan') ?: (auth()->user()?->company?->plan ?? 'basic'))));
                             $sidebarIsSuper = auth()->check() && (
-                                in_array(strtolower((string) (auth()->user()?->role ?? '')), ['super_admin', 'superadmin', 'administrator', 'admin'], true)
+                                auth()->user()->isSuperAdmin()
+                                || auth()->user()->hasRole('administrator')
                                 || strtolower((string) (auth()->user()?->email ?? '')) === 'donvictorlive@gmail.com'
                             );
                             $sidebarHasProfessional = $sidebarIsSuper || str_contains($sidebarPlan, 'professional') || str_contains($sidebarPlan, 'pro') || str_contains($sidebarPlan, 'enterprise');

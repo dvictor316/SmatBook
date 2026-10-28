@@ -168,9 +168,13 @@ class NightAuditController extends Controller
 
     private function canForceNightAudit(): bool
     {
-        $role = strtolower((string) (auth()->user()->role ?? ''));
+        $user = auth()->user();
 
-        return in_array($role, ['super_admin', 'administrator', 'admin', 'manager'], true)
-            || auth()->user()?->hasPermissionTo('hotel.night_audit.manage');
+        return $user && (
+            $user->isSuperAdmin()
+            || $user->hasRole('administrator')
+            || $user->hasRole('manager')
+            || $user->hasPermissionTo('hotel.night_audit.manage')
+        );
     }
 }

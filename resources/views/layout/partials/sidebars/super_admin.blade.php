@@ -3,6 +3,11 @@
     $user = auth()->user();
     $userRole = $user?->role ?? 'guest';
     $roleNormalized = strtolower($userRole);
+    $isSidebarSuperAdmin = $user && $user->isSuperAdmin();
+    $isSidebarAdministrator = $user && $user->hasRole('administrator');
+    $isSidebarStateManager = $user && (
+        $user->hasRole('state_manager') || $user->hasRole('deployment_manager')
+    );
 
     // FIX: Determine subdomain to prevent 'Missing parameter: subdomain' error
     $currentSubdomain = request()->route('subdomain');
@@ -18,7 +23,7 @@
     $routeParams = ['subdomain' => $currentSubdomain];
 @endphp
 
-@if(in_array($roleNormalized, ['super_admin', 'superadmin', 'administrator', 'admin']))
+@if($isSidebarSuperAdmin || $isSidebarAdministrator)
 
 {{-- Super Admin sidebar: blue and gold theme --}}
 <style>
@@ -895,7 +900,7 @@
 
                 @php
                     $planNameForTax = strtolower((string) (optional($user->company)->plan ?? 'basic'));
-                    $canViewTaxation = in_array($roleNormalized, ['super_admin', 'superadmin'], true)
+                    $canViewTaxation = $isSidebarSuperAdmin
                         || $user?->email === 'donvictorlive@gmail.com'
                         || in_array($planNameForTax, ['enterprise'], true);
                 @endphp
@@ -1035,7 +1040,7 @@
 </div>
 @endif
 
-@if(in_array($roleNormalized, ['state_manager', 'deployment_manager']))
+@if($isSidebarStateManager)
 <style>
     .spb-deployment-sidebar .sidebar-menu ul li.submenu ul {
         background: #ffffff !important;
@@ -1155,7 +1160,7 @@
     $plan = $user?->company?->plan ?? 'Basic';
 @endphp
 
-@if($plan === 'Enterprise' && !in_array($roleNormalized, ['super_admin', 'superadmin', 'administrator', 'admin', 'state_manager', 'deployment_manager']))
+@if($plan === 'Enterprise' && !($isSidebarSuperAdmin || $isSidebarAdministrator || $isSidebarStateManager))
 <div class="sidebar" id="sidebar">
     <div class="sidebar-inner slimscroll">
         <div id="sidebar-menu" class="sidebar-menu">
@@ -1299,7 +1304,7 @@
 </div>
 @endif
 
-@if($plan === 'Professional' && !in_array($roleNormalized, ['super_admin', 'superadmin', 'administrator', 'admin', 'state_manager', 'deployment_manager']))
+@if($plan === 'Professional' && !($isSidebarSuperAdmin || $isSidebarAdministrator || $isSidebarStateManager))
 <div class="sidebar" id="sidebar">
     <div class="sidebar-inner slimscroll">
         <div id="sidebar-menu" class="sidebar-menu">
@@ -1496,7 +1501,7 @@ function showUpgradeModal(planName) {
 </script>
 @endif
 
-@if($plan === 'Basic' && !in_array($roleNormalized, ['super_admin', 'superadmin', 'administrator', 'admin', 'state_manager', 'deployment_manager']))
+@if($plan === 'Basic' && !($isSidebarSuperAdmin || $isSidebarAdministrator || $isSidebarStateManager))
 <div class="sidebar" id="sidebar">
     <div class="sidebar-inner slimscroll">
         <div id="sidebar-menu" class="sidebar-menu">

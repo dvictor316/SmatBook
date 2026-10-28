@@ -22,6 +22,7 @@ class CustomRoleIntegrityTest extends TestCase
     {
         $company = Company::create(['name' => 'Role Test Business', 'plan' => 'Enterprise']);
         $admin = User::factory()->create(['company_id' => $company->id, 'role' => 'admin']);
+        $company->update(['user_id' => $admin->id]);
         $this->actingAs($admin)->withoutMiddleware()->withSession(['current_tenant_id' => $company->id]);
         view()->share('errors', new ViewErrorBag);
 
@@ -196,5 +197,57 @@ class CustomRoleIntegrityTest extends TestCase
         $this->assertSame('cashier', $staff->fresh()->role);
         $this->putJson(route('users.update', $staff->id), ['name' => $staff->name, 'email' => $staff->email, 'role' => 'super_admin'])->assertForbidden();
         $this->postJson(route('roles.store'), ['name' => 'Super Admin'])->assertForbidden();
+    }
+
+    public function test_administrator_role_is_available_to_the_workspace_owner_only(): void
+    {
+        [$company, $owner] = $this->workspace();
+        $administrator = Role::firstOrCreate(['name' => 'Administrator']);
+        $permission = Permission::create(['name' => 'roles.roles.delete']);
+        $administrator->permissions()->attach($permission);
+
+        $this->assertTrue($owner->fresh()->hasRole('administrator'));
+        $owner->forceFill(['role_id' => $administrator->id, 'role' => 'administrator'])->save();
+        $this->assertTrue($owner->fresh()->hasRole('administrator'));
+        $this->assertTrue($owner->fresh()->hasPermissionTo('roles.roles.delete'));
+
+        $staff = User::factory()->create([
+            'company_id' => $company->id,
+            'role' => 'administrator',
+            'role_id' => $administrator->id,
+            'permissions_override' => ['roles.roles.delete'],
+        ]);
+        $this->assertFalse($staff->hasRole('administrator'));
+        $this->assertFalse($staff->hasPermissionTo('roles.roles.delete'));
+
+        $this->actingAs($staff);
+        $response = app(RoleMiddleware::class)->handle(
+            Request::create('/protected'),
+            fn () => response('allowed'),
+            'administrator'
+        );
+        $this->assertSame(302, $response->getStatusCode());
+    }
+
+    public function test_staff_cannot_be_created_or_changed_to_administrator(): void
+    {
+        [$company] = $this->workspace();
+        $staff = User::factory()->create(['company_id' => $company->id, 'role' => 'cashier']);
+
+        $this->put(route('users.update', $staff->id), [
+            'name' => $staff->name,
+            'email' => $staff->email,
+            'role' => 'Administrator',
+        ])->assertSessionHasErrors('role');
+        $this->assertSame('cashier', $staff->fresh()->role);
+
+        $this->post(route('users.store'), [
+            'first_name' => 'Blocked',
+            'email' => 'blocked.admin@example.test',
+            'role' => 'Administrator',
+            'password' => 'test-password',
+            'confirm_password' => 'test-password',
+        ])->assertSessionHasErrors('role');
+        $this->assertDatabaseMissing('users', ['email' => 'blocked.admin@example.test']);
     }
 }

@@ -59,8 +59,7 @@ class ActivityLogController extends Controller
             $modulesQuery->where('user_id', $user?->id);
             $this->applyTenantBranchScope($modulesQuery, 'activity_logs');
         } else {
-            $role = strtolower(trim((string) ($user?->role ?? '')));
-            $isCentralSuperAdmin = in_array($role, ['super_admin', 'superadmin'], true)
+            $isCentralSuperAdmin = $user?->isSuperAdmin()
                 || (string) $user?->email === 'donvictorlive@gmail.com';
 
             if (!$isCentralSuperAdmin) {
@@ -191,12 +190,11 @@ class ActivityLogController extends Controller
 
     private function canViewAll($user): bool
     {
-        $role = strtolower(trim((string) ($user?->role ?? '')));
-        $relatedRole = strtolower(trim((string) optional($user?->role)->name));
-
-        return in_array($role, ['super_admin', 'administrator', 'superadmin'], true)
-            || in_array($relatedRole, ['super_admin', 'administrator', 'superadmin'], true)
-            || (string) $user?->email === 'donvictorlive@gmail.com';
+        return $user && (
+            $user->isSuperAdmin()
+            || $user->hasRole('administrator')
+            || (string) $user?->email === 'donvictorlive@gmail.com'
+        );
     }
 
     private function baseQuery($user)
@@ -211,8 +209,7 @@ class ActivityLogController extends Controller
             return $this->applyTenantBranchScope($query, 'activity_logs');
         }
 
-        $role = strtolower(trim((string) ($user?->role ?? '')));
-        $isCentralSuperAdmin = in_array($role, ['super_admin', 'superadmin'], true)
+        $isCentralSuperAdmin = $user?->isSuperAdmin()
             || (string) $user?->email === 'donvictorlive@gmail.com';
 
         if (!$isCentralSuperAdmin) {

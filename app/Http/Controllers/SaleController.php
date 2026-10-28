@@ -239,19 +239,10 @@ class SaleController extends Controller
     private function userIsPosAdmin(): bool
     {
         $user = auth()->user();
-        $role = strtolower(str_replace(' ', '_', (string) ($user?->role ?? '')));
-
-        if (in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true)) {
-            return true;
-        }
-
-        return $user
-            && method_exists($user, 'hasRole')
-            && (
-                $user->hasRole('super_admin')
-                || $user->hasRole('administrator')
-                || $user->hasRole('admin')
-            );
+        return $user && (
+            $user->isSuperAdmin()
+            || $user->hasRole('administrator')
+        );
     }
 
     private function userCanEditPosPrices(): bool

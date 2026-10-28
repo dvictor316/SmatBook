@@ -1226,9 +1226,15 @@ public function show($id)
     public function createReturn()
     {
         // Check role-based access
-        $allowedRoles = ['super_admin', 'administrator', 'store_manager', 'accountant'];
+        $user = auth()->user();
+        $isAllowed = $user && (
+            $user->isSuperAdmin()
+            || $user->hasRole('administrator')
+            || $user->hasRole('store_manager')
+            || $user->hasRole('accountant')
+        );
 
-        if (!in_array(auth()->user()->role, $allowedRoles)) {
+        if (!$isAllowed) {
             return redirect()->back()->with('error', 'Unauthorized! Only authorized roles can process returns.');
         }
 

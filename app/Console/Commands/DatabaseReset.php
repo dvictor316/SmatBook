@@ -249,10 +249,13 @@ class DatabaseReset extends Command
 
     private function findSuperAdmin(): ?User
     {
-        return User::where('role', 'super_admin')
-            ->orWhere('role', 'super admin')
-            ->orWhere('role', 'superadmin')
-            ->first();
+        return User::query()->where(function ($query) {
+            $query->whereHas('roleModel', fn ($role) => $role->whereIn(DB::raw('LOWER(TRIM(name))'), ['super_admin', 'superadmin']))
+                ->orWhere(function ($legacy) {
+                    $legacy->whereNull('role_id')
+                        ->whereIn(DB::raw('LOWER(TRIM(role))'), ['super_admin', 'superadmin']);
+                });
+        })->first();
     }
 
     private function confirmReset(): bool

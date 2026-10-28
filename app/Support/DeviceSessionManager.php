@@ -271,22 +271,16 @@ class DeviceSessionManager
 
     private function isSuperAdmin(User $user): bool
     {
-        $role = strtolower(trim((string) ($user->role ?? '')));
-
-        return in_array($role, ['super_admin', 'superadmin'], true)
+        return $user->isSuperAdmin()
             || strtolower((string) $user->email) === 'donvictorlive@gmail.com';
     }
 
     private function isPlatformStaff(User $user): bool
     {
-        $role = strtolower(trim((string) ($user->role ?? '')));
-
-        return in_array($role, [
-            'state_manager',
-            'deployment_manager',
-            'agent',
-            'sales_agent',
-        ], true);
+        return $user->hasRole('state_manager')
+            || $user->hasRole('deployment_manager')
+            || $user->hasRole('agent')
+            || $user->hasRole('sales_agent');
     }
 
     private function isFreeCustomOnlyAccount(User $user, ?Subscription $subscription, ?int $companyId): bool

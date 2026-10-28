@@ -55,7 +55,7 @@ class DomainController extends Controller
     public function setup($domainId)
     {
         $user = Auth::user();
-        if ($user->role !== 'super_admin' && $user->role !== 'admin') {
+        if (! $user->isSuperAdmin() && ! $user->hasRole('administrator')) {
             return redirect()->route('login')->with('error', 'Unauthorized access');
         }
 

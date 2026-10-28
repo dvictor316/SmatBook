@@ -805,21 +805,21 @@ class HomeController extends Controller
     */
     private function isSuperAdmin($user): bool
     {
-        return $user && method_exists($user, 'isSuperAdmin')
-            ? $user->isSuperAdmin()
-            : in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true);
+        return $user && $user->isSuperAdmin();
     }
 
     private function isAgent($user): bool
     {
-        return in_array(strtolower(trim((string) ($user->role ?? ''))), ['agent', 'sales_agent', 'sales agent'], true);
+        return $user && method_exists($user, 'hasRole') && (
+            $user->hasRole('agent') || $user->hasRole('sales_agent')
+        );
     }
 
     private function isStateManager($user): bool
     {
-        $role = strtolower(trim((string) ($user->role ?? '')));
-
-        if (in_array($role, ['state_manager', 'deployment_manager'], true)) {
+        if ($user && method_exists($user, 'hasRole') && (
+            $user->hasRole('state_manager') || $user->hasRole('deployment_manager')
+        )) {
             return true;
         }
 

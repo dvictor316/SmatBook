@@ -32,7 +32,13 @@ class RecoverSuperAdminWorkspace extends Command
             $this->error('Applying requires both --user=ID and --company=ID. Nothing changed.');
             return self::FAILURE;
         }
-        $users = User::withoutGlobalScopes()->whereIn(DB::raw('LOWER(role)'), ['super_admin', 'superadmin'])
+        $users = User::withoutGlobalScopes()->where(function ($query) {
+            $query->whereHas('roleModel', fn ($role) => $role->whereIn(DB::raw('LOWER(TRIM(name))'), ['super_admin', 'superadmin']))
+                ->orWhere(function ($legacy) {
+                    $legacy->whereNull('role_id')
+                        ->whereIn(DB::raw('LOWER(TRIM(role))'), ['super_admin', 'superadmin']);
+                });
+        })
             ->when(Schema::hasColumn('users', 'deleted_at'), fn ($q) => $q->whereNull('deleted_at'))
             ->when($this->option('user'), fn ($q) => $q->where('id', (int) $this->option('user')))->get();
         if ($users->isEmpty()) {
@@ -97,7 +103,7 @@ class RecoverSuperAdminWorkspace extends Command
             DB::transaction(function () {
                 $user = User::withoutGlobalScopes()->lockForUpdate()->findOrFail((int) $this->option('user'));
                 $company = Company::withoutGlobalScopes()->lockForUpdate()->findOrFail((int) $this->option('company'));
-                if (! in_array(strtolower((string) $user->role), ['super_admin', 'superadmin'], true) || ! $this->owned($user, $company)
+                if (! $user->isSuperAdmin() || ! $this->owned($user, $company)
                     || $user->deleted_at || $company->deleted_at) {
                     throw new \RuntimeException('Ownership is not verified. Refusing to link another business or transfer any records.');
                 }

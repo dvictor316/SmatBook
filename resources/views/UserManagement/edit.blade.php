@@ -44,6 +44,11 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Role</label>
+                                @if(\App\Support\RoleNames::key($user->role_display_name) === 'administrator' && !$user->canManageRoles())
+                                    <div class="alert alert-warning py-2 small" role="alert">
+                                        Administrator access is reserved for the business owner. Select a job-specific role to restore this staff account's access.
+                                    </div>
+                                @endif
                                 <select name="role" id="roleSelect" class="form-select" required>
                                     <option value="" disabled @selected(!$hasSelectedRole)>Select a role</option>
                                     @foreach($roles as $role)
@@ -101,7 +106,7 @@
                                 @endif
                             </div>
 
-                            @if(!in_array(strtolower((string) $user->role), ['super_admin', 'superadmin', 'state_manager', 'agent'], true))
+                            @if(!$user->isSuperAdmin() && !$user->hasRole('state_manager') && !$user->hasRole('agent'))
                                 <details class="mb-3">
                                     <summary class="form-label">User permissions</summary>
                                     <input type="hidden" name="permissions_submitted" value="1">

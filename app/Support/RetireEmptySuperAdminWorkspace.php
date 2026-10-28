@@ -14,7 +14,7 @@ class RetireEmptySuperAdminWorkspace
     public function retire(User $user, Company $keep, int $retireId, bool $apply): void
     {
         $retire = Company::withoutGlobalScopes()->when($apply, fn ($q) => $q->lockForUpdate())->findOrFail($retireId);
-        if (! in_array(strtolower((string) $user->role), ['super_admin', 'superadmin'], true)
+        if (! $user->isSuperAdmin()
             || $retireId === (int) $keep->id || ! $this->owned($user, $keep) || ! $this->owned($user, $retire)
             || $user->deleted_at || $keep->deleted_at || $retire->deleted_at) {
             throw new \RuntimeException('Both workspaces must belong to this super admin, and the retained and retired IDs must differ.');

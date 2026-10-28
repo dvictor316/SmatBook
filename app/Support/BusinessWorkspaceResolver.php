@@ -40,7 +40,7 @@ class BusinessWorkspaceResolver
                     $query->orWhere(function ($assigned) use ($user, $primaryCompanyId) {
                         $assigned->where('id', $primaryCompanyId);
                         // Platform privileges do not confer ownership of a client's business.
-                        if (in_array(strtolower((string) $user->role), ['super_admin', 'superadmin'], true)) {
+                        if ($user->isSuperAdmin()) {
                             $assigned->where(fn ($q) => $q->whereNull('user_id')->orWhere('user_id', 0))
                                 ->where(fn ($q) => $q->whereNull('owner_id')->orWhere('owner_id', 0));
                         }
@@ -73,8 +73,7 @@ class BusinessWorkspaceResolver
     {
         $sessionCompanyId = (int) session('current_tenant_id', 0);
         $primaryCompanyId = (int) ($user->getRawOriginal('company_id') ?? 0);
-        $role = strtolower((string) $user->role);
-        $isSuperAdmin = in_array($role, ['super_admin', 'superadmin'], true);
+        $isSuperAdmin = $user->isSuperAdmin();
 
         if (
             $sessionCompanyId > 0

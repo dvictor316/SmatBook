@@ -48,7 +48,7 @@ class DashboardController extends Controller
     {
         $this->reportingPeriod = \App\Support\ReportingPeriod::fromRequest($request);
         $user = Auth::user();
-        if (in_array(strtolower((string) $user->role), ['super_admin', 'superadmin'], true)
+        if ($user->isSuperAdmin()
             && session('workspace_context') !== 'platform') {
             app(\App\Support\SuperAdminBusinessWorkspace::class)->activate($user);
         }
@@ -137,7 +137,7 @@ class DashboardController extends Controller
 
         if ($subdomain && $company) {
             $allowedUserIds = $this->companyUserIds($company);
-            if (!in_array((int) $user->id, $allowedUserIds, true) && !in_array($user->role, ['superadmin', 'admin'])) {
+            if (!in_array((int) $user->id, $allowedUserIds, true) && !$user->isSuperAdmin()) {
                 abort(403, 'Unauthorized workspace.');
             }
         }
@@ -152,7 +152,7 @@ class DashboardController extends Controller
 
                 return redirect()->route('saas.setup')->with('info', 'Handshake incomplete. Please set your URL.');
             }
-            if (!$company && !in_array(strtolower((string) $user->role), ['superadmin', 'super_admin', 'admin', 'administrator'], true)) {
+            if (!$company && !$user->isSuperAdmin()) {
                 if ($this->shouldShowMissingWorkspaceError($user, $currentSubscription)) {
                     return $this->missingWorkspaceLoginError();
                 }
@@ -321,7 +321,7 @@ class DashboardController extends Controller
     private function isSuperAdminUser(?User $user): bool
     {
         return $user && (
-            in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)
+            $user->isSuperAdmin()
             || strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com'
         );
     }
@@ -1108,8 +1108,7 @@ class DashboardController extends Controller
             return null;
         }
 
-        $role = strtolower(trim((string) ($user->role ?? '')));
-        if (in_array($role, ['super_admin', 'superadmin', 'state_manager', 'deployment_manager'], true)) {
+        if ($user->isSuperAdmin() || $user->hasRole('state_manager') || $user->hasRole('deployment_manager')) {
             return null;
         }
 
@@ -1155,7 +1154,10 @@ class DashboardController extends Controller
         }
 
         $user = Auth::user();
-        $isSuperAdmin = $user && (in_array(strtolower((string)$user->role), ['superadmin', 'super_admin'], true) || strtolower((string)$user->email) === 'donvictorlive@gmail.com');
+        $isSuperAdmin = $user && (
+            $user->isSuperAdmin()
+            || strtolower((string) $user->email) === 'donvictorlive@gmail.com'
+        );
 
         // Global Platform Dashboard for Super Admins bypasses all company scoping to show total metrics across all tenants
         if ($isSuperAdmin && session('workspace_context') === 'platform') {

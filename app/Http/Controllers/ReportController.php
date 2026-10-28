@@ -670,9 +670,9 @@ class ReportController extends Controller
     // ... rest of the code
     private function isSuperAdmin(): bool
     {
-        $role = strtolower((string) (optional(Auth::user())->role ?? ''));
+        $user = Auth::user();
 
-        return in_array($role, ['super_admin', 'superadmin'], true);
+        return $user && $user->isSuperAdmin();
     }
 
     private function getCurrentPlanTier(): string

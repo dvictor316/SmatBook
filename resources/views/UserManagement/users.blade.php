@@ -253,15 +253,13 @@
                                 $isActive   = ($user->is_active ?? $user->status ?? true);
                                 $initials   = strtoupper(substr($user->name ?? $user->first_name ?? '?', 0, 1));
                                 $actor = auth()->user();
-                                $actorRole = strtolower(str_replace([' ', '-'], '_', (string) ($actor->role ?? '')));
-                                $targetRole = strtolower(str_replace([' ', '-'], '_', (string) ($user->role ?? '')));
                                 $canDeleteUser = $actor
                                     && (int) $actor->id !== (int) $user->id
-                                    && !($targetRole === 'super_admin' && (bool) ($user->is_protected_super_admin ?? false))
+                                    && !$user->isProtectedSuperAdmin()
                                     && (
-                                        in_array($actorRole, ['super_admin', 'superadmin'], true)
+                                        $actor->isSuperAdmin()
                                         || (
-                                            in_array($actorRole, ['administrator', 'admin'], true)
+                                            $actor->hasRole('administrator')
                                             && (int) ($actor->company_id ?? session('current_tenant_id') ?? 0) > 0
                                             && (int) ($actor->company_id ?? session('current_tenant_id') ?? 0) === (int) ($user->company_id ?? 0)
                                         )
@@ -295,7 +293,7 @@
                                             <a href="{{ route($showRouteName, $user->id) }}" class="dropdown-item">
                                                 <i class="far fa-eye"></i> View
                                             </a>
-                                            @if(!in_array($user->role, ['super_admin']))
+                                            @if(!$user->isProtectedSuperAdmin() && (!$user->isSuperAdmin() || $actor?->isSuperAdmin()))
                                             <a href="{{ route($editRouteName, $user->id) }}" class="dropdown-item">
                                                 <i class="far fa-edit"></i> Edit
                                             </a>

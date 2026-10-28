@@ -5487,9 +5487,8 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                 ?? 'basic'
             )
         );
-        $role = strtolower((string) (auth()->user()->role ?? ''));
         $headerStagePlanClass = match (true) {
-            in_array($role, ['super_admin', 'administrator'], true) => 'plan-super',
+            auth()->user()->isSuperAdmin() || auth()->user()->hasRole('administrator') => 'plan-super',
             str_contains($rawPlan, 'starter') => 'plan-starter',
             str_contains($rawPlan, 'enterprise') => 'plan-enterprise',
             str_contains($rawPlan, 'pro') || str_contains($rawPlan, 'professional') => 'plan-pro',

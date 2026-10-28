@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\ActivityLog;
+use App\Models\User;
 use App\Support\DeploymentCommissionPayoutService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -46,9 +47,9 @@ class RecordExternalCommissionPayment extends Command
                 // Use the same profile lock as payout creation to prevent concurrent claims.
                 $profile = DB::table('deployment_managers')->where('user_id', $managerId)->lockForUpdate()->first();
                 $user = DB::table('users')->where('id', $managerId)->first();
-                $recorder = DB::table('users')->where('id', (int) $this->option('recorded-by'))->first();
+                $recorder = User::withoutGlobalScopes()->find((int) $this->option('recorded-by'));
                 if (! $profile || ! $user || ($user->deleted_at ?? null)) throw new \RuntimeException('Active manager account/profile not found.');
-                if (! $recorder || ($recorder->deleted_at ?? null) || ! in_array(strtolower((string) $recorder->role), ['super_admin', 'superadmin'], true)) throw new \RuntimeException('The recording user must be an active super admin.');
+                if (! $recorder || $recorder->deleted_at || ! $recorder->isSuperAdmin()) throw new \RuntimeException('The recording user must be an active super admin.');
                 $commissions = DB::table('deployment_commissions')->where('manager_id', $managerId)->orderBy('id')->lockForUpdate()->get();
                 $payouts = DB::table('deployment_manager_payouts')->where('manager_id', $managerId)->orderBy('id')->lockForUpdate()->get();
                 $commission = $commissions->firstWhere('id', $commissionId);

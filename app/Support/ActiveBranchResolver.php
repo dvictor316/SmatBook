@@ -13,7 +13,7 @@ class ActiveBranchResolver
     public function ensureSession(?Authenticatable $user = null): bool
     {
         $user ??= auth()->user();
-        if ($user && in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)
+        if ($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()
             && ! session()->has('active_branch_scope') && ! session('active_branch_id') && ! session('active_branch_name')) {
             $companyId = $this->resolveCompanyId($user);
             if ($companyId > 0 && Setting::where('key', 'workspace_default_branch_scope_company_'.$companyId)->value('value') === 'all') {

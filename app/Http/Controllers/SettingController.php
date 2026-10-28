@@ -2218,9 +2218,7 @@ class SettingController extends Controller
     private function authorizeBankBalanceManagement(): void
     {
         $user = Auth::user();
-        $role = strtolower(trim((string) ($user?->role ?? '')));
-
-        $allowedRole = in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true);
+        $allowedRole = $user && ($user->isSuperAdmin() || $user->hasRole('administrator'));
         $allowedPermission = $user?->hasPermissionTo('accounting.bank_reconciliation.edit')
             || $user?->hasPermissionTo('accounting.chart_of_accounts.edit');
 

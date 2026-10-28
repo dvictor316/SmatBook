@@ -46,7 +46,7 @@
         </a>
     </li>
 
-    @if(auth()->user()?->role === 'super_admin' || auth()->user()?->role === 'administrator')
+    @if(auth()->user()?->isSuperAdmin() || auth()->user()?->hasRole('administrator'))
         <li class="{{ Request::routeIs('users.index') ? 'active' : '' }}">
             <a href="{{ route('users.index') }}">
                 <i class="fe fe-user-plus"></i>

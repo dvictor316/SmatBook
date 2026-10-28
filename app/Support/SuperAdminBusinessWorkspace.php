@@ -11,7 +11,7 @@ class SuperAdminBusinessWorkspace
 {
     public function activate(User $user): Company
     {
-        abort_unless(in_array(strtolower((string) $user->role), ['super_admin', 'superadmin'], true), 403);
+        abort_unless($user->isSuperAdmin(), 403);
         $resolver = app(BusinessWorkspaceResolver::class);
 
         $company = DB::transaction(function () use ($user, $resolver) {

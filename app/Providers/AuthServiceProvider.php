@@ -17,61 +17,69 @@ class AuthServiceProvider extends ServiceProvider
 
         // SUPER ADMIN - Full Access
         Gate::define('view_financial_metrics', function ($user) {
-            return in_array($user->role, ['super_admin', 'administrator', 'accountant']);
+            return $user->isSuperAdmin() || $user->hasRole('administrator') || $user->hasRole('accountant');
         });
 
         Gate::define('view_sales_metrics', function ($user) {
-            return in_array($user->role, ['super_admin', 'administrator', 'store_manager']);
+            return $user->isSuperAdmin() || $user->hasRole('administrator') || $user->hasRole('store_manager');
         });
 
         Gate::define('view_inventory_metrics', function ($user) {
-            return in_array($user->role, ['super_admin', 'administrator', 'store_manager']);
+            return $user->isSuperAdmin() || $user->hasRole('administrator') || $user->hasRole('store_manager');
         });
 
         Gate::define('view_company_metrics', function ($user) {
-            return in_array($user->role, ['super_admin', 'administrator', 'state_manager', 'deployment_manager']);
+            return $user->isSuperAdmin()
+                || $user->hasRole('administrator')
+                || $user->hasRole('state_manager')
+                || $user->hasRole('deployment_manager');
         });
 
         // ROLE-BASED GATES
         Gate::define('is_super_admin', function ($user) {
-            return $user->role === 'super_admin';
+            return $user->isSuperAdmin();
         });
 
         Gate::define('is_administrator', function ($user) {
-            return $user->role === 'administrator';
+            return $user->hasRole('administrator');
         });
 
         Gate::define('is_store_manager', function ($user) {
-            return $user->role === 'store_manager';
+            return $user->hasRole('store_manager');
         });
 
         Gate::define('is_accountant', function ($user) {
-            return $user->role === 'accountant';
+            return $user->hasRole('accountant');
         });
 
         Gate::define('is_cashier', function ($user) {
-            return $user->role === 'cashier';
+            return $user->hasRole('cashier');
         });
 
         Gate::define('is_deployment_manager', function ($user) {
-            return in_array($user->role, ['state_manager', 'deployment_manager', 'manager'], true);
+            return $user->hasRole('state_manager')
+                || $user->hasRole('deployment_manager')
+                || $user->hasRole('manager');
         });
 
         // COMBINED PERMISSIONS
         Gate::define('manage_users', function ($user) {
-            return in_array($user->role, ['super_admin', 'administrator']);
+            return $user->isSuperAdmin() || $user->hasRole('administrator');
         });
 
         Gate::define('manage_invoices', function ($user) {
-            return in_array($user->role, ['super_admin', 'administrator', 'accountant', 'cashier']);
+            return $user->isSuperAdmin()
+                || $user->hasRole('administrator')
+                || $user->hasRole('accountant')
+                || $user->hasRole('cashier');
         });
 
         Gate::define('manage_products', function ($user) {
-            return in_array($user->role, ['super_admin', 'administrator', 'store_manager']);
+            return $user->isSuperAdmin() || $user->hasRole('administrator') || $user->hasRole('store_manager');
         });
 
         Gate::define('manage_reports', function ($user) {
-            return in_array($user->role, ['super_admin', 'administrator', 'accountant']);
+            return $user->isSuperAdmin() || $user->hasRole('administrator') || $user->hasRole('accountant');
         });
     }
 }

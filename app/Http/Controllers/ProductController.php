@@ -1668,7 +1668,7 @@ class ProductController extends Controller
             ]);
 
             $message = 'Product could not be added.';
-            $showDetail = config('app.debug') || (auth()->user()?->role === 'super_admin');
+            $showDetail = config('app.debug') || auth()->user()?->isSuperAdmin();
             if ($showDetail) {
                 $message .= ' ' . $e->getMessage();
             } else {

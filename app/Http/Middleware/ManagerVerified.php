@@ -29,19 +29,17 @@ class ManagerVerified
         $user->refresh();
 
         // 3. SuperAdmin & Role Bypass
-        $role = strtolower($user->role);
-        if (in_array($role, ['superadmin', 'super_admin'])) {
+        if ($user->isSuperAdmin()) {
             return $next($request);
         }
 
-        $role = strtolower((string) ($user->role ?? ''));
-        $allowedRoles = ['state_manager', 'deployment_manager'];
-        $agentRoles = ['agent', 'sales_agent', 'sales agent'];
+        $isPlatformManager = $user->hasRole('state_manager') || $user->hasRole('deployment_manager');
+        $isAgent = $user->hasRole('agent') || $user->hasRole('sales_agent');
         $manager = DeploymentManager::where('user_id', $user->id)->first();
         $hasManagerRecord = (bool) $manager;
 
-        if (!in_array($role, $allowedRoles, true) && !$hasManagerRecord) {
-            if (in_array($role, $agentRoles, true) && $request->routeIs('deployment.geo.*')) {
+        if (!$isPlatformManager && !$hasManagerRecord) {
+            if ($isAgent && $request->routeIs('deployment.geo.*')) {
                 return redirect()->route('agent.nearby-businesses')
                     ->with('info', 'Nearby businesses are available from the Agent Portal.');
             }

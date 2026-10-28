@@ -17,15 +17,13 @@
     // PRIORITY 2: Check if TRUE super admin (only specific emails/roles)
     $isSuperAdmin = false;
     if (!$isDeploymentManager) {
-        $role = strtolower($user->role ?? '');
-        // Only these are TRUE super admins (platform administrators)
-        $isSuperAdmin = in_array($role, ['super_admin', 'superadmin']) || 
+        $isSuperAdmin = $user->isSuperAdmin() ||
                        $user->email === 'donvictorlive@gmail.com';
     }
 
     // PRIORITY 3: Determine plan for regular tenants
     $plan = 'basic'; // default
-    $isAgentPortalUser = !$isDeploymentManager && !$isSuperAdmin && strtolower((string) ($user->role ?? '')) === 'agent';
+    $isAgentPortalUser = !$isDeploymentManager && !$isSuperAdmin && $user->hasRole('agent');
     $isDemoWorkspace = method_exists($user, 'isDemoUser') && $user->isDemoUser();
     $demoSidebarPlan = strtolower(trim((string) session('demo_customer_preview_plan', 'basic')));
 

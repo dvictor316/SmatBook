@@ -707,6 +707,13 @@
 
                 event.preventDefault();
                 isRefreshingToken = true;
+                const submitButton = form.querySelector('button[type="submit"]');
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.setAttribute('aria-busy', 'true');
+                    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Signing in...';
+                }
+
                 if (tokenAgeSeconds() >= 600) {
                     await refreshToken();
                 }
@@ -729,6 +736,13 @@
                     }
                 }
 
+                await new Promise(function (resolve) {
+                    if (typeof window.requestAnimationFrame === 'function') {
+                        window.requestAnimationFrame(resolve);
+                    } else {
+                        window.setTimeout(resolve, 0);
+                    }
+                });
                 form.submit();
             });
         };

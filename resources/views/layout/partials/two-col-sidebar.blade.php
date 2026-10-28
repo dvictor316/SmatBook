@@ -183,7 +183,8 @@
                         @php
                             $twoColPlan = strtolower(trim((string) (session('user_plan') ?: (auth()->user()?->company?->plan ?? 'basic'))));
                             $twoColIsSuper = auth()->check() && (
-                                in_array(strtolower((string) (auth()->user()?->role ?? '')), ['super_admin', 'superadmin', 'administrator', 'admin'], true)
+                                auth()->user()->isSuperAdmin()
+                                || auth()->user()->hasRole('administrator')
                                 || strtolower((string) (auth()->user()?->email ?? '')) === 'donvictorlive@gmail.com'
                             );
                             $twoColHasProfessional = $twoColIsSuper || str_contains($twoColPlan, 'professional') || str_contains($twoColPlan, 'pro') || str_contains($twoColPlan, 'enterprise');
@@ -660,4 +661,3 @@
         </div>
     </div>
 </div>
-

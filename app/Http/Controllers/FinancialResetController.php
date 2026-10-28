@@ -120,7 +120,7 @@ class FinancialResetController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user || ! in_array($user->role ?? '', ['super_admin', 'super admin', 'superadmin'], true)) {
+        if (! $user || ! $user->isSuperAdmin()) {
             abort(403, 'Super-admin access required.');
         }
     }

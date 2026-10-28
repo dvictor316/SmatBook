@@ -350,7 +350,7 @@ class StateManagerCrmController extends Controller
 
     private function abortUnlessManagedAgent(User $agent): void
     {
-        abort_unless(strtolower((string) $agent->role) === 'agent', 403);
+        abort_unless($agent->hasRole('agent'), 403);
 
         if (Schema::hasColumn('users', 'state_manager_id') && (int) ($agent->state_manager_id ?? 0) === (int) Auth::id()) {
             return;

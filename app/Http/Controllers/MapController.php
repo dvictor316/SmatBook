@@ -121,15 +121,14 @@ class MapController extends Controller
     private function accessibleCompanies()
     {
         $user = Auth::user();
-        $role = strtolower((string) ($user->role ?? ''));
 
         $query = Company::withoutGlobalScope('tenant')->orderBy('name');
 
-        if (in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true)) {
+        if ($user->isSuperAdmin() || $user->hasRole('administrator')) {
             return $query->get();
         }
 
-        if (in_array($role, ['state_manager', 'deployment_manager'], true)) {
+        if ($user->hasRole('state_manager') || $user->hasRole('deployment_manager')) {
             $mappedIds = Schema::hasTable('deployment_companies')
                 ? DB::table('deployment_companies')->where('manager_id', $user->id)->pluck('company_id')->all()
                 : [];

@@ -7,8 +7,7 @@
      * SUBDOMAIN & ROLE LOGIC
      */
     $sub = $routeParams['subdomain'] ?? request()->route('subdomain') ?? 'admin';
-    $role = strtolower((string) (auth()->user()->role ?? ''));
-    $isAdmin = in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true)
+    $isAdmin = auth()->user()->isSuperAdmin()
         || strtolower((string) (auth()->user()->email ?? '')) === 'donvictorlive@gmail.com';
 @endphp
 

@@ -5,7 +5,7 @@
 
     $route = Route::currentRouteName();
     $isPlatformAdminPage = auth()->check()
-        && in_array(strtolower((string) auth()->user()->role), ['super_admin', 'superadmin'], true)
+        && auth()->user()->isSuperAdmin()
         && request()->routeIs('super_admin.*');
     // Platform pages do not borrow a client's global company settings or cache.
     $layoutSettings = $isPlatformAdminPage ? [] : Setting::businessProfile();

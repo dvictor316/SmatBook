@@ -1427,7 +1427,7 @@
                         </div>
                     </div>
 
-                    @if(in_array(auth()->user()->role, ['state_manager', 'deployment_manager', 'manager'], true))
+                    @if(auth()->user()->hasRole('state_manager') || auth()->user()->hasRole('deployment_manager') || auth()->user()->hasRole('manager'))
                         @php
                             $isSynced = auth()->user()->is_verified == 1 && 
                                         auth()->user()->deploymentProfile?->status === 'active';

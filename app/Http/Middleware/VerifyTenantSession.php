@@ -18,8 +18,7 @@ class VerifyTenantSession
         if (Auth::check()) {
             $user = Auth::user();
             $sessionTenantId = (int) session('current_tenant_id', 0);
-            $role = strtolower((string) ($user->role ?? ''));
-            $isSuperAdmin = in_array($role, ['super_admin', 'superadmin'], true);
+            $isSuperAdmin = $user->isSuperAdmin();
 
             if ($isSuperAdmin && session('workspace_context') === 'platform') {
                 $this->workspaceResolver->clearContext($user);

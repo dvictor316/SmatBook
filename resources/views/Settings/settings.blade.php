@@ -174,8 +174,8 @@
                             <div class="col-lg-12 d-print-none">
                                 <div class="btn-path text-end">
                                     @php
-                                        $roleNormalized = strtolower((string) (auth()->user()->role ?? ''));
-                                        $canRunBackfill = in_array($roleNormalized, ['super_admin', 'superadmin', 'administrator', 'admin'], true);
+                                        $canRunBackfill = auth()->user()->isSuperAdmin()
+                                            || auth()->user()->hasRole('administrator');
                                     @endphp
                                     @if($canRunBackfill)
                                         <form action="{{ route('settings.ledger-backfill') }}" method="POST" class="d-inline me-2">

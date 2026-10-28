@@ -230,10 +230,10 @@ class ProjectManagementController extends Controller
 
     private function isSuperAdmin($user): bool
     {
-        $role = strtolower((string) ($user->role ?? ''));
-
-        return in_array($role, ['super_admin', 'superadmin', 'admin'], true)
-            || strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com';
+        return $user && (
+            $user->isSuperAdmin()
+            || strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com'
+        );
     }
 
     private function resolvePlanTier($user): string

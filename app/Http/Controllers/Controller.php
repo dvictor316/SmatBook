@@ -28,8 +28,7 @@ class Controller extends BaseController
         $table ??= $query->getModel()->getTable();
         $scope = $this->scopeContext();
         $user = Auth::user();
-        $role = strtolower((string) ($user?->role ?? ''));
-        $isSuperAdmin = in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true);
+        $isSuperAdmin = $user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin();
         $userId = (int) ($user?->id ?? 0);
         $hasCompany = Schema::hasColumn($table, 'company_id');
         $hasUser = Schema::hasColumn($table, 'user_id');
@@ -79,8 +78,7 @@ class Controller extends BaseController
         $scope = $this->scopeContext();
         $table = $model->getTable();
         $user = Auth::user();
-        $role = strtolower((string) ($user?->role ?? ''));
-        $isSuperAdmin = in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true);
+        $isSuperAdmin = $user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin();
         $userId = (int) ($user?->id ?? 0);
         $hasCompany = Schema::hasColumn($table, 'company_id');
         $hasUser = Schema::hasColumn($table, 'user_id');

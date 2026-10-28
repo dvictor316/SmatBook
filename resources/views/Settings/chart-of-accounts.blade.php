@@ -13,7 +13,8 @@
         'Expense'   => ['bg' => '#fee2e2', 'text' => '#991b1b', 'dot' => '#ef4444'],
     ];
 
-    $canManageBankBalance = in_array(strtolower(trim((string) (auth()->user()?->role ?? ''))), ['super_admin', 'superadmin', 'administrator', 'admin'], true)
+    $canManageBankBalance = auth()->user()?->isSuperAdmin()
+        || auth()->user()?->hasRole('administrator')
         || auth()->user()?->hasPermissionTo('accounting.bank_reconciliation.edit')
         || auth()->user()?->hasPermissionTo('accounting.chart_of_accounts.edit');
 @endphp

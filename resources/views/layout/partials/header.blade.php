@@ -78,7 +78,7 @@
     $routeParams = ['subdomain' => $currentSubdomain];
     $headerLogoUrl = asset('assets/img/logos.png');
     $isWorkspaceSwitcherVisible = $user && (
-        in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)
+        $user->isSuperAdmin()
         || $user->email === 'donvictorlive@gmail.com'
     );
     $workspaceContext = session('workspace_context', 'platform');
@@ -154,7 +154,7 @@
         ?: ($user?->company?->plan ?? 'basic')
     )));
     $headerIsSuperAdmin = $user && (
-        in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin', 'administrator', 'admin'], true)
+        $user->isSuperAdmin()
         || strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com'
     );
     $headerHasProfessional = $headerIsSuperAdmin

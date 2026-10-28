@@ -86,9 +86,12 @@ class SubscriptionController extends Controller
         }
 
         $user = Auth::user();
-        $role = strtolower((string) ($user?->role ?? ''));
-
-        if (in_array($role, ['super_admin', 'superadmin', 'state_manager', 'deployment_manager', 'agent'], true)) {
+        if ($user && (
+            $user->isSuperAdmin()
+            || $user->hasRole('state_manager')
+            || $user->hasRole('deployment_manager')
+            || $user->hasRole('agent')
+        )) {
             return true;
         }
 
@@ -106,7 +109,7 @@ class SubscriptionController extends Controller
         $user = Auth::user();
 
         // Super admin has no subscription — redirect to the platform dashboard.
-        if ($user && in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)) {
+        if ($user && $user->isSuperAdmin()) {
             return redirect()->route('super_admin.dashboard')
                 ->with('info', 'Super admin accounts do not require a subscription.');
         }
@@ -274,7 +277,7 @@ class SubscriptionController extends Controller
 
         // Super admin may also own a business workspace; only send to platform
         // when no business workspace context is active.
-        if ($user && ! $isBusinessWorkspace && in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)) {
+        if ($user && ! $isBusinessWorkspace && $user->isSuperAdmin()) {
             return redirect()->route('super_admin.dashboard');
         }
 
@@ -397,8 +400,10 @@ class SubscriptionController extends Controller
             return false;
         }
 
-        $role = strtolower(trim((string) ($user->role ?? '')));
-        if (in_array($role, ['super_admin', 'superadmin', 'state_manager', 'deployment_manager', 'agent'], true)) {
+        if ($user->isSuperAdmin()
+            || $user->hasRole('state_manager')
+            || $user->hasRole('deployment_manager')
+            || $user->hasRole('agent')) {
             return false;
         }
 
@@ -424,8 +429,7 @@ class SubscriptionController extends Controller
             return false;
         }
 
-        $role = strtolower(trim((string) ($user->role ?? '')));
-        if (in_array($role, ['super_admin', 'superadmin', 'state_manager', 'deployment_manager'], true)) {
+        if ($user->isSuperAdmin() || $user->hasRole('state_manager') || $user->hasRole('deployment_manager')) {
             return false;
         }
 
@@ -727,8 +731,7 @@ class SubscriptionController extends Controller
 
             $isDeploymentCheckout = $this->isDeploymentCheckout($subscription);
             $resolvedManagerId = $this->resolveDeploymentManagerId($subscription);
-            $isSuperAdminCheckout = $currentUser
-                && in_array(strtolower((string) ($currentUser->role ?? '')), ['super_admin', 'superadmin'], true);
+            $isSuperAdminCheckout = $currentUser && $currentUser->isSuperAdmin();
             $isManagerRecord = DeploymentManager::where('user_id', $currentUser->id)->exists();
             $isResolvedManager = $resolvedManagerId > 0 && (int) $currentUser->id === (int) $resolvedManagerId;
             $isSessionManager = $isDeploymentCheckout
@@ -866,8 +869,7 @@ class SubscriptionController extends Controller
                 ->with('error', 'Only the business owner can pay for the workspace subscription.');
         }
 
-        $isSuperAdminCheckout = $currentUser
-            && in_array(strtolower((string) ($currentUser->role ?? '')), ['super_admin', 'superadmin'], true);
+        $isSuperAdminCheckout = $currentUser && $currentUser->isSuperAdmin();
         $resolvedManagerId = $this->resolveDeploymentManagerId($subscription);
         $isDeploymentManager = $currentUser && (
             DeploymentManager::where('user_id', $currentUser->id)->exists()
@@ -2102,10 +2104,7 @@ class SubscriptionController extends Controller
 
     private function isAdmin(): bool
     {
-        return auth()->check() && in_array(
-            strtolower(auth()->user()->role ?? ''),
-            ['super_admin', 'superadmin']
-        );
+        return auth()->user()?->isSuperAdmin() ?? false;
     }
 
     private function verifyPayment(string $reference, string $gateway, ?Request $request = null, ?Subscription $subscription = null): array

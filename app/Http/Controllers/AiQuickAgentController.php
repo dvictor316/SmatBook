@@ -454,13 +454,7 @@ class AiQuickAgentController extends Controller
             return false;
         }
 
-        $role = strtolower((string) ($user->role ?? ''));
-        if (in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true)) {
-            return true;
-        }
-
-        return method_exists($user, 'hasRole')
-            && ($user->hasRole('super_admin') || $user->hasRole('administrator') || $user->hasRole('admin'));
+        return $user->isSuperAdmin() || $user->hasRole('administrator');
     }
 
     private function runIntent(Request $request, string $intent, array $period): JsonResponse
@@ -1551,9 +1545,11 @@ class AiQuickAgentController extends Controller
 
     private function isSuperAdmin(Request $request): bool
     {
-        $role = strtolower((string) optional($request->user())->role);
-        $email = strtolower((string) optional($request->user())->email);
-        return in_array($role, ['super_admin', 'superadmin', 'administrator'], true)
-            || $email === 'donvictorlive@gmail.com';
+        $user = $request->user();
+
+        return $user && (
+            $user->isSuperAdmin()
+            || strtolower((string) $user->email) === 'donvictorlive@gmail.com'
+        );
     }
 }

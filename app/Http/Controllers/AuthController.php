@@ -1635,23 +1635,23 @@ class AuthController extends Controller
 
     private function isSuperAdmin($user): bool
     {
-        $role = strtolower((string) ($user->role ?? ''));
-
-        if (strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com') {
-            return true;
-        }
-
-        return in_array($role, ['superadmin', 'super_admin'], true);
+        return $user && (
+            (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())
+            || strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com'
+        );
     }
 
     private function isDeploymentManager($user): bool
     {
-        return in_array(strtolower($user->role), ['state_manager', 'deployment_manager'], true);
+        return $user && (
+            $user->hasRole('state_manager')
+            || $user->hasRole('deployment_manager')
+        );
     }
 
     private function isAgent($user): bool
     {
-        return in_array(strtolower(trim((string) ($user->role ?? ''))), ['agent', 'sales_agent', 'sales agent'], true);
+        return $user && ($user->hasRole('agent') || $user->hasRole('sales_agent'));
     }
 
     private function isManagerRoleName(?string $role): bool
@@ -1821,10 +1821,13 @@ class AuthController extends Controller
             return false;
         }
 
-        $company = Company::withoutGlobalScope('tenant')->find((int) $user->company_id);
+        $company = $user->relationLoaded('company') && $user->company
+            ? $user->company
+            : Company::withoutGlobalScope('tenant')->find((int) $user->company_id);
         if (!$company) {
             return false;
         }
+        $user->setRelation('company', $company);
 
         return !in_array((int) $user->id, array_filter([
             (int) ($company->user_id ?? 0),
@@ -1834,10 +1837,13 @@ class AuthController extends Controller
 
     private function forceAssignedWorkspaceSession(Request $request, User $user): void
     {
-        $company = Company::withoutGlobalScope('tenant')->find((int) $user->company_id);
+        $company = $user->relationLoaded('company') && $user->company
+            ? $user->company
+            : Company::withoutGlobalScope('tenant')->find((int) $user->company_id);
         if (!$company) {
             return;
         }
+        $user->setRelation('company', $company);
 
         $request->session()->forget(['url.intended']);
         $request->session()->put('workspace_context', 'business');
