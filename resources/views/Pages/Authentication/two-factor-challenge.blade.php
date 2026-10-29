@@ -31,7 +31,6 @@
         <div class="factor-body">
             <h1 id="factor-title">Verify it is you</h1>
             <p>Enter the six-digit code from your authenticator app. You can also use one of your recovery codes.</p>
-            @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
             <form method="POST" action="{{ route('two-factor.challenge.verify') }}">
                 @csrf
                 <label for="code">Authentication or recovery code</label>

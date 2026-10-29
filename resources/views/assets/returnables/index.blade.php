@@ -8,17 +8,6 @@
             @slot('title') Returnable Assets @endslot
         @endcomponent
 
-        @include('layout.partials.flash-messages')
-
-        @if($errors->any())
-            <div class="alert alert-danger" role="alert">
-                <strong>Please correct the highlighted details.</strong>
-                <ul class="mb-0 mt-2 ps-3">
-                    @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
-                </ul>
-            </div>
-        @endif
-
         <div class="row g-3 mb-4">
             @foreach([
                 ['Asset Types', $summary['asset_types'], 'fa-boxes-stacked', '#2563eb'],

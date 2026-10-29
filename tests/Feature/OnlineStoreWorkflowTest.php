@@ -239,6 +239,27 @@ class OnlineStoreWorkflowTest extends TestCase
             ])
             ->assertSessionHasNoErrors();
 
+        $successPage = $this->get($settingsUrl)
+            ->assertOk()
+            ->assertSee('Online store settings updated.');
+        $successHtml = $successPage->getContent();
+        $this->assertSame(1, preg_match_all('/<div class="alert alert-success alert-dismissible fade show"[^>]*data-flash-message/', $successHtml));
+        $this->assertStringNotContainsString('spb-flash-popup-stack', $successHtml);
+
+        $singleFlashPage = $this->withSession([
+            'success' => 'Success alert marker',
+            'error' => 'Error alert marker',
+            'warning' => 'Warning alert marker',
+            'info' => 'Info alert marker',
+        ])->get($settingsUrl)
+            ->assertOk()
+            ->assertSee('Error alert marker');
+        $singleFlashHtml = $singleFlashPage->getContent();
+        $this->assertSame(1, preg_match_all('/<div class="alert alert-danger alert-dismissible fade show"[^>]*data-flash-message/', $singleFlashHtml));
+        $this->assertStringNotContainsString('class="alert alert-success alert-dismissible fade show"', $singleFlashHtml);
+        $this->assertStringNotContainsString('class="alert alert-warning alert-dismissible fade show"', $singleFlashHtml);
+        $this->assertStringNotContainsString('class="alert alert-info alert-dismissible fade show"', $singleFlashHtml);
+
         $this->assertDatabaseHas('storefront_settings', [
             'company_id' => $company->id,
             'store_theme' => 'ocean',

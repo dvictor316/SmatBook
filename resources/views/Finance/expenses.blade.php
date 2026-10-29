@@ -37,28 +37,6 @@
                 Expenses & Ledger Posting
             @endslot
         @endcomponent
-        @if (session('success'))
-            <div class="alert alert-success d-flex align-items-center mb-3" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                <span>{{ session('success') }}</span>
-            </div>
-        @endif
-        @if (session('error'))
-            <div class="alert alert-danger d-flex align-items-center mb-3" role="alert">
-                <i class="fas fa-exclamation-circle me-2"></i>
-                <span>{{ session('error') }}</span>
-            </div>
-        @endif
-        @if ($errors->any())
-            <div class="alert alert-danger mb-3" role="alert">
-                <div class="fw-semibold mb-1">Please fix the following and try again.</div>
-                <ul class="mb-0 ps-3">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
         <div class="mb-4 d-flex flex-wrap gap-2 justify-content-between align-items-center">
             <div class="d-flex flex-wrap gap-2">
                 <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#add_expenses">

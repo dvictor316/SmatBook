@@ -8,11 +8,6 @@
             @slot('title') Developer API @endslot
         @endcomponent
 
-        @include('layout.partials.flash-messages')
-        @if($errors->any())
-            <div class="alert alert-danger"><ul class="mb-0 ps-3">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
-        @endif
-
         @if($plainTextToken)
             <div class="alert alert-warning border-warning" role="alert">
                 <h5 class="alert-heading">Copy this token now</h5>

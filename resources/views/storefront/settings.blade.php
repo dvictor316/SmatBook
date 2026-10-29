@@ -4,8 +4,6 @@
 @section('content')
 <div class="page-wrapper"><div class="content container-fluid">
     @component('components.page-header') @slot('title') Online Store @endslot @endcomponent
-    @include('layout.partials.flash-messages')
-    @if($errors->any())<div class="alert alert-danger"><ul class="mb-0 ps-3">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 
     <div class="row g-4">
         <div class="col-xl-4">

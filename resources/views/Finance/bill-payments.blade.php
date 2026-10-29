@@ -4,8 +4,6 @@
 @section('content')
 <div class="page-wrapper"><div class="content container-fluid">
     @component('components.page-header') @slot('title') Bill Payments &amp; Commissions @endslot @endcomponent
-    @include('layout.partials.flash-messages')
-    @if($errors->any())<div class="alert alert-danger"><ul class="mb-0 ps-3">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     @unless($providerConfigured)<div class="alert alert-warning"><strong>Provider setup required.</strong> Add a valid Flutterwave secret key in Payment Settings after completing provider KYC, funding the source wallet, and whitelisting this server IP. Payments remain disabled until then.</div>@endunless
 
     <div class="row g-3 mb-4">
