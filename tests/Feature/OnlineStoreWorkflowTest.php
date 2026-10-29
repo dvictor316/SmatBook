@@ -120,7 +120,7 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertSee('Product Gallery');
     }
 
-    public function test_store_homepage_features_ten_products_and_gallery_shows_the_full_catalogue(): void
+    public function test_store_homepage_has_four_product_slides_and_two_product_showcase(): void
     {
         [$user, $company] = $this->workspace('Gallery Store');
         $categoryId = $this->category($user->id, $company->id, 'Collection');
@@ -151,7 +151,7 @@ class OnlineStoreWorkflowTest extends TestCase
             'is_enabled' => true,
         ]);
 
-        $this->get(route('storefront.catalogue', 'gallery-store'))
+        $homepage = $this->get(route('storefront.catalogue', 'gallery-store'))
             ->assertOk()
             ->assertSee('Product Gallery')
             ->assertSee(asset('css/storefront-theme.css'), false)
@@ -161,10 +161,18 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertSee('Pause preview')
             ->assertSee('product-motion-face--back', false)
             ->assertSee('product-motion-placeholder', false)
+            ->assertSee('Shop the collection')
+            ->assertSee('data-page-count="3"', false)
+            ->assertSee('data-products-per-page="4"', false)
+            ->assertSee('data-carousel-next', false)
+            ->assertSee('Two stand-out favourites')
+            ->assertSee('animated-products-grid', false)
             ->assertSee('Gallery Product 01')
             ->assertSee('Gallery Product 10')
-            ->assertDontSee('Gallery Product 11')
+            ->assertSee('Gallery Product 11')
             ->assertSee(route('storefront.products', 'gallery-store'), false);
+        $this->assertSame(3, substr_count($homepage->getContent(), 'data-carousel-slide role='));
+        $this->assertSame(2, substr_count($homepage->getContent(), 'class="animated-product-card"'));
 
         $this->get(route('storefront.products', 'gallery-store'))
             ->assertOk()

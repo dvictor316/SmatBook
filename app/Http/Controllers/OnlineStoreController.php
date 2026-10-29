@@ -116,7 +116,7 @@ class OnlineStoreController extends Controller
             ->where('company_id', $store->company_id)
             ->where('status', 'active')
             ->orderBy('name')
-            ->limit(10)
+            ->limit(40)
             ->get();
 
         return view('storefront.home', compact('store', 'company', 'products'));

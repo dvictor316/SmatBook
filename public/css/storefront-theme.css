@@ -226,6 +226,266 @@ body[data-store-theme] .store-footer {
     background: var(--theme-deep) !important;
 }
 
+.product-carousel-viewport {
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+.product-carousel-track {
+    display: flex;
+    width: 100%;
+    transform: translateX(0);
+    transition: transform 900ms cubic-bezier(.22, .72, .25, 1);
+    will-change: transform;
+}
+
+.product-carousel-slide {
+    display: grid;
+    flex: 0 0 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    padding: 3px;
+}
+
+.carousel-product-card {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--theme-line, var(--line));
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 12px 30px rgba(6, 35, 84, .08);
+}
+
+.carousel-product-image {
+    display: grid;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    place-items: center;
+    background: var(--theme-paper, var(--paper));
+}
+
+.carousel-product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 500ms ease;
+}
+
+.carousel-product-card:hover .carousel-product-image img {
+    transform: scale(1.06);
+}
+
+.carousel-product-copy {
+    padding: 16px;
+}
+
+.carousel-product-copy h3 {
+    display: -webkit-box;
+    min-height: 2.7em;
+    overflow: hidden;
+    margin: 0 0 12px;
+    color: var(--theme-primary, var(--navy));
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.12rem;
+    font-weight: 600;
+    line-height: 1.35;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.carousel-product-copy .price {
+    margin-bottom: 14px;
+    font-size: 1rem;
+}
+
+.product-carousel-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 20px;
+}
+
+.carousel-arrow,
+.carousel-toggle {
+    min-width: 42px;
+    min-height: 40px;
+    border: 1px solid var(--theme-line, var(--line));
+    border-radius: 999px;
+    background: #fff;
+    color: var(--theme-primary, var(--navy));
+    font: inherit;
+    font-weight: 750;
+}
+
+.carousel-arrow {
+    font-size: 1.1rem;
+}
+
+.carousel-toggle {
+    padding: 0 15px;
+    border-color: var(--theme-primary, var(--navy));
+    background: var(--theme-primary, var(--navy));
+    color: #fff;
+    font-size: .82rem;
+}
+
+.carousel-page-count {
+    min-width: 48px;
+    color: var(--theme-ink, var(--ink));
+    font-size: .86rem;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+.animated-products-section {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    border-radius: 18px;
+    background:
+        radial-gradient(ellipse at 86% 12%, var(--theme-glow, rgba(215, 169, 40, .25)), transparent 38%),
+        linear-gradient(125deg, var(--theme-deep, #041832), var(--theme-primary, #062354));
+    color: #fff;
+}
+
+.animated-products-section .section-heading h2 {
+    color: #fff !important;
+}
+
+.animated-products-section .section-heading .eyebrow {
+    color: var(--theme-highlight, #f0ca66);
+}
+
+.animated-products-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(18px, 4vw, 42px);
+}
+
+.animated-product-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, .28);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .96);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .2);
+    color: var(--theme-ink, #12233d);
+    animation: storefront-showcase-float 5.4s ease-in-out infinite;
+}
+
+.animated-product-card:nth-child(2) {
+    animation-delay: -2.7s;
+}
+
+.animated-product-image {
+    display: grid;
+    min-height: 245px;
+    overflow: hidden;
+    place-items: center;
+    background: var(--theme-paper, #f5f7fb);
+}
+
+.animated-product-image img {
+    width: 100%;
+    height: 100%;
+    min-height: 245px;
+    object-fit: contain;
+    filter: drop-shadow(0 16px 18px rgba(0, 0, 0, .15));
+    transition: transform 550ms ease;
+}
+
+.animated-product-card:hover .animated-product-image img {
+    transform: scale(1.07) rotate(-2deg);
+}
+
+.animated-product-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding: clamp(18px, 2.4vw, 30px);
+}
+
+.animated-product-copy .product-eyebrow {
+    margin-bottom: 10px;
+    color: var(--theme-primary, var(--navy));
+    font-size: .7rem;
+    font-weight: 850;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+}
+
+.animated-product-copy h3 {
+    margin: 0 0 15px;
+    color: var(--theme-primary, var(--navy));
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(1.2rem, 2vw, 1.7rem);
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.animated-product-copy .price {
+    margin-bottom: 18px;
+}
+
+@keyframes storefront-showcase-float {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    50% { transform: translateY(-9px) rotate(.35deg); }
+}
+
+@media (max-width: 900px) {
+    .product-carousel-slide {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .animated-products-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .store-product-carousel,
+    .animated-products-section {
+        padding-right: 16px;
+        padding-left: 16px;
+    }
+
+    .product-carousel-slide {
+        gap: 10px;
+        padding: 2px;
+    }
+
+    .carousel-product-copy {
+        padding: 11px;
+    }
+
+    .carousel-product-copy h3 {
+        font-size: .95rem;
+    }
+
+    .animated-product-card {
+        grid-template-columns: 1fr;
+    }
+
+    .animated-product-image,
+    .animated-product-image img {
+        min-height: 220px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .product-carousel-track {
+        transition: none !important;
+    }
+
+    .animated-product-card {
+        animation: none !important;
+    }
+}
+
 body[data-store-theme] .contact-icon {
     background: var(--theme-paper);
     color: var(--theme-primary);

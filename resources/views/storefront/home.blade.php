@@ -101,6 +101,8 @@
     $twoGridProducts = $products->slice(1, 4);
     $editorialProducts = $products->slice(5, 2);
     $finalProducts = $products->slice(7, 3);
+    $carouselPages = $products->chunk(4);
+    $animatedProducts = $products->take(2);
 @endphp
 <nav class="store-nav">
     <div class="nav-inner">
@@ -190,6 +192,74 @@
     @if($products->isEmpty())
         <section class="section"><div class="empty-state">Our collection is being prepared. Please check back soon.</div></section>
     @else
+        @if($carouselPages->isNotEmpty())
+            <section class="section store-product-carousel" data-product-carousel data-page-count="{{ $carouselPages->count() }}" data-products-per-page="4" aria-label="Featured products">
+                <div class="section-heading">
+                    <div><p class="eyebrow">On the shelves now</p><h2>Shop the collection</h2></div>
+                    <a class="text-link" href="{{ $galleryUrl }}">View the full gallery &rarr;</a>
+                </div>
+                <div class="product-carousel-viewport">
+                    <div class="product-carousel-track" data-carousel-track>
+                        @foreach($carouselPages as $page)
+                            <div class="product-carousel-slide" data-carousel-slide role="group" aria-roledescription="slide" aria-label="Product page {{ $loop->iteration }} of {{ $carouselPages->count() }}">
+                                @foreach($page as $product)
+                                    <article class="carousel-product-card">
+                                        <a class="carousel-product-image" href="{{ $galleryUrl }}?q={{ urlencode($product->name) }}" tabindex="0">
+                                            @if($product->image_url)
+                                                <img src="{{ $product->image_url }}" alt="{{ $product->name }}" loading="lazy">
+                                            @else
+                                                <span class="placeholder" aria-hidden="true">✦</span>
+                                            @endif
+                                        </a>
+                                        <div class="carousel-product-copy">
+                                            <h3>{{ trim($product->name . ($product->variantLabel() !== '' ? ' · ' . $product->variantLabel() : '')) }}</h3>
+                                            <p class="price">{{ \App\Support\GeoCurrency::format((float) $product->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</p>
+                                            <a class="small-button" href="{{ $galleryUrl }}?q={{ urlencode($product->name) }}">View product</a>
+                                        </div>
+                                    </article>
+                                @endforeach
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                @if($carouselPages->count() > 1)
+                    <div class="product-carousel-controls">
+                        <button class="carousel-arrow" type="button" data-carousel-previous aria-label="Previous products"><span aria-hidden="true">&larr;</span></button>
+                        <span class="carousel-page-count" data-carousel-count aria-live="polite">1 / {{ $carouselPages->count() }}</span>
+                        <button class="carousel-arrow" type="button" data-carousel-next aria-label="Next products"><span aria-hidden="true">&rarr;</span></button>
+                        <button class="carousel-toggle" type="button" data-carousel-toggle aria-pressed="false">Pause slides</button>
+                    </div>
+                @endif
+            </section>
+        @endif
+
+        @if($animatedProducts->count() === 2)
+            <section class="section animated-products-section" aria-labelledby="animated-products-title">
+                <div class="section-heading">
+                    <div><p class="eyebrow">Picked for you</p><h2 id="animated-products-title">Two stand-out favourites</h2></div>
+                </div>
+                <div class="animated-products-grid">
+                    @foreach($animatedProducts as $product)
+                        <article class="animated-product-card">
+                            <a class="animated-product-image" href="{{ $galleryUrl }}?q={{ urlencode($product->name) }}" aria-label="View {{ $product->name }}">
+                                @if($product->image_url)
+                                    <img src="{{ $product->image_url }}" alt="{{ $product->name }}" loading="lazy">
+                                @else
+                                    <span class="placeholder" aria-hidden="true">✦</span>
+                                @endif
+                            </a>
+                            <div class="animated-product-copy">
+                                <span class="product-eyebrow">Featured product</span>
+                                <h3>{{ trim($product->name . ($product->variantLabel() !== '' ? ' · ' . $product->variantLabel() : '')) }}</h3>
+                                <p class="price">{{ \App\Support\GeoCurrency::format((float) $product->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</p>
+                                <a class="small-button" href="{{ $galleryUrl }}?q={{ urlencode($product->name) }}">Explore product</a>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
         @if($twoGridProducts->isNotEmpty())
             <section class="section">
                 <div class="section-heading"><div><p class="eyebrow">A closer look</p><h2>Explore the collection</h2><p>Selected products, with the details that matter.</p></div><a class="text-link" href="{{ $galleryUrl }}">View the full gallery &rarr;</a></div>
@@ -309,6 +379,114 @@
         }
 
         updatePreview();
+    })();
+
+    (function () {
+        const carousel = document.querySelector('[data-product-carousel]');
+        const track = carousel?.querySelector('[data-carousel-track]');
+        const slides = track ? Array.from(track.querySelectorAll('[data-carousel-slide]')) : [];
+        if (!carousel || !track || slides.length < 2) return;
+
+        const previousButton = carousel.querySelector('[data-carousel-previous]');
+        const nextButton = carousel.querySelector('[data-carousel-next]');
+        const toggleButton = carousel.querySelector('[data-carousel-toggle]');
+        const pageCount = carousel.querySelector('[data-carousel-count]');
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const pageTotal = slides.length;
+        const lastClone = slides[pageTotal - 1].cloneNode(true);
+        const firstClone = slides[0].cloneNode(true);
+        lastClone.setAttribute('aria-hidden', 'true');
+        firstClone.setAttribute('aria-hidden', 'true');
+        lastClone.inert = true;
+        firstClone.inert = true;
+        track.prepend(lastClone);
+        track.append(firstClone);
+        track.style.transition = 'none';
+
+        let currentIndex = 1;
+        let timer = null;
+        let paused = reducedMotion.matches;
+        track.style.transform = 'translateX(-100%)';
+        window.requestAnimationFrame(() => {
+            if (!reducedMotion.matches) track.style.transition = '';
+        });
+
+        function updateCounter() {
+            const page = ((currentIndex - 1 + pageTotal) % pageTotal) + 1;
+            pageCount.textContent = `${page} / ${pageTotal}`;
+            slides.forEach((slide, index) => {
+                slide.setAttribute('aria-hidden', String(index !== page - 1));
+                slide.inert = index !== page - 1;
+            });
+        }
+
+        function moveTo(index, animate = true) {
+            currentIndex = index;
+            track.style.transition = animate && !reducedMotion.matches ? '' : 'none';
+            track.style.transform = `translateX(-${currentIndex * 100}%)`;
+            updateCounter();
+            if (!animate && !reducedMotion.matches) {
+                window.requestAnimationFrame(() => {
+                    track.style.transition = '';
+                });
+            }
+        }
+
+        function startTimer() {
+            if (paused || reducedMotion.matches || timer !== null
+                || carousel.matches(':hover') || carousel.contains(document.activeElement)) return;
+            timer = window.setInterval(() => moveTo(currentIndex + 1), 6500);
+        }
+
+        function stopTimer() {
+            if (timer !== null) {
+                window.clearInterval(timer);
+                timer = null;
+            }
+        }
+
+        track.addEventListener('transitionend', (event) => {
+            if (event.target !== track || event.propertyName !== 'transform') return;
+            if (currentIndex === 0) moveTo(pageTotal, false);
+            if (currentIndex === pageTotal + 1) moveTo(1, false);
+        });
+
+        previousButton.addEventListener('click', () => moveTo(currentIndex - 1));
+        nextButton.addEventListener('click', () => moveTo(currentIndex + 1));
+        toggleButton.addEventListener('click', () => {
+            paused = !paused;
+            toggleButton.setAttribute('aria-pressed', String(paused));
+            toggleButton.textContent = paused ? 'Play slides' : 'Pause slides';
+            if (paused) stopTimer();
+            else startTimer();
+        });
+        carousel.addEventListener('pointerenter', stopTimer);
+        carousel.addEventListener('pointerleave', startTimer);
+        carousel.addEventListener('focusin', stopTimer);
+        carousel.addEventListener('focusout', (event) => {
+            if (!carousel.contains(event.relatedTarget)) startTimer();
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) stopTimer();
+            else startTimer();
+        });
+        reducedMotion.addEventListener?.('change', () => {
+            if (reducedMotion.matches) {
+                paused = true;
+                toggleButton.setAttribute('aria-pressed', 'true');
+                toggleButton.textContent = 'Play slides';
+                stopTimer();
+                moveTo(currentIndex, false);
+            } else {
+                paused = false;
+                toggleButton.setAttribute('aria-pressed', 'false');
+                toggleButton.textContent = 'Pause slides';
+                startTimer();
+            }
+        });
+
+        updateCounter();
+        startTimer();
     })();
 </script>
 </body>
