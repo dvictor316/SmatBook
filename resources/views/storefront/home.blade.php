@@ -162,13 +162,25 @@
             </div>
         </div>
         <div class="product-motion-stage">
-            <span class="product-motion-label">3D-style preview</span>
-            <div class="product-motion-card">
-                @if($featuredProduct->image_url)
-                    <img src="{{ $featuredProduct->image_url }}" alt="{{ $featuredProduct->name }}" loading="lazy">
-                @else
-                    <span class="product-motion-placeholder" aria-hidden="true">✦</span>
-                @endif
+            <span class="product-motion-label">360-degree product preview</span>
+            <button class="product-motion-toggle" type="button" aria-controls="featured-product-preview" aria-pressed="false">
+                Pause preview
+            </button>
+            <div class="product-motion-card" id="featured-product-preview" role="img" aria-label="360-degree animated preview of {{ $featuredProduct->name }}">
+                <div class="product-motion-face product-motion-face--front">
+                    @if($featuredProduct->image_url)
+                        <img src="{{ $featuredProduct->image_url }}" alt="" loading="lazy">
+                    @else
+                        <span class="product-motion-placeholder" aria-hidden="true">✦</span>
+                    @endif
+                </div>
+                <div class="product-motion-face product-motion-face--back" aria-hidden="true">
+                    @if($featuredProduct->image_url)
+                        <img src="{{ $featuredProduct->image_url }}" alt="" loading="lazy">
+                    @else
+                        <span class="product-motion-placeholder">✦</span>
+                    @endif
+                </div>
             </div>
         </div>
     </section>
@@ -262,5 +274,42 @@
         <span>Powered by SmartProbook</span>
     </div>
 </footer>
+<script>
+    (function () {
+        const preview = document.getElementById('featured-product-preview');
+        const toggle = document.querySelector('.product-motion-toggle');
+        if (!preview || !toggle) return;
+
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        let paused = false;
+
+        function updatePreview() {
+            const motionDisabled = reducedMotion.matches;
+            toggle.hidden = motionDisabled;
+            preview.style.animation = motionDisabled ? 'none' : '';
+            preview.style.animationPlayState = motionDisabled || paused ? 'paused' : 'running';
+            toggle.setAttribute('aria-pressed', String(paused));
+            toggle.textContent = paused ? 'Play preview' : 'Pause preview';
+        }
+
+        toggle.addEventListener('click', function () {
+            paused = !paused;
+            updatePreview();
+        });
+
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) updatePreview();
+            else preview.style.animationPlayState = 'paused';
+        });
+
+        if (typeof reducedMotion.addEventListener === 'function') {
+            reducedMotion.addEventListener('change', updatePreview);
+        } else if (typeof reducedMotion.addListener === 'function') {
+            reducedMotion.addListener(updatePreview);
+        }
+
+        updatePreview();
+    })();
+</script>
 </body>
 </html>

@@ -215,12 +215,10 @@ body {
 .product-motion-card {
     position: relative;
     z-index: 1;
-    display: grid;
     width: min(68%, 390px);
     height: 300px;
-    place-items: center;
     transform-style: preserve-3d;
-    animation: storefront-product-orbit 7s ease-in-out infinite alternate;
+    animation: storefront-product-orbit 14s linear infinite;
 }
 
 .product-motion-card::before {
@@ -234,23 +232,41 @@ body {
     transform: translateZ(-24px);
 }
 
-.product-motion-card img {
+.product-motion-face {
+    position: absolute;
+    inset: 9%;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid rgba(215, 169, 40, .42);
+    background: linear-gradient(145deg, rgba(255, 255, 255, .96), rgba(232, 239, 249, .94));
+    backface-visibility: hidden;
+}
+
+.product-motion-face--front {
+    transform: translateZ(24px);
+}
+
+.product-motion-face--back {
+    transform: rotateY(180deg) translateZ(24px);
+}
+
+.product-motion-face img {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
     filter: drop-shadow(0 24px 18px rgba(4, 24, 50, .22));
-    transform: translateZ(42px);
+    transform: translateZ(3px);
 }
 
 .product-motion-placeholder {
     display: grid;
-    width: 72%;
-    height: 72%;
+    width: 100%;
+    height: 100%;
     place-items: center;
     background: linear-gradient(145deg, #123c75, #071c3c);
     color: #f0ca66;
     font-size: 4rem;
-    transform: translateZ(42px);
 }
 
 .product-motion-label {
@@ -266,21 +282,51 @@ body {
     font-weight: 800;
     letter-spacing: .1em;
     text-transform: uppercase;
+    pointer-events: none;
+}
+
+.product-motion-toggle {
+    position: absolute;
+    z-index: 3;
+    top: 14px;
+    right: 14px;
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 1px solid rgba(215, 169, 40, .65);
+    border-radius: 4px;
+    background: #fff;
+    color: var(--navy);
+    font: inherit;
+    font-size: .78rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.product-motion-toggle:hover,
+.product-motion-toggle:focus-visible {
+    background: var(--gold);
+    color: var(--navy);
 }
 
 @keyframes storefront-product-orbit {
-    from {
-        transform: rotateX(7deg) rotateY(-12deg) translateY(3px);
+    0% {
+        transform: rotateX(5deg) rotateY(0deg) translateY(0);
     }
 
-    to {
-        transform: rotateX(-5deg) rotateY(12deg) translateY(-9px);
+    25% {
+        transform: rotateX(2deg) rotateY(90deg) translateY(-7px);
     }
-}
 
-@media (hover: hover) {
-    .product-motion-stage:hover .product-motion-card {
-        animation-play-state: paused;
+    50% {
+        transform: rotateX(-4deg) rotateY(180deg) translateY(0);
+    }
+
+    75% {
+        transform: rotateX(2deg) rotateY(270deg) translateY(-7px);
+    }
+
+    100% {
+        transform: rotateX(5deg) rotateY(360deg) translateY(0);
     }
 }
 
@@ -505,6 +551,11 @@ body {
 @media (prefers-reduced-motion: reduce) {
     html {
         scroll-behavior: auto !important;
+    }
+
+    .product-motion-card {
+        animation: none !important;
+        transform: rotateX(4deg) rotateY(-12deg);
     }
 
     *,
