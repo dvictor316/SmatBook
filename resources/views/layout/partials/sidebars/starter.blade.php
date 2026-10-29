@@ -2,7 +2,7 @@
     <li class="menu-title"><span>Starter</span></li>
 
     <li class="{{ Request::is('home', 'dashboard') ? 'active' : '' }}">
-        <a href="{{ route('home') }}">
+        <a wire:navigate.hover href="{{ route('home') }}">
             <i class="fe fe-home"></i>
             <span>Dashboard</span>
         </a>
@@ -23,7 +23,7 @@
     </li>
 
     <li class="{{ Request::routeIs('product-list') ? 'active' : '' }}">
-        <a href="{{ route('product-list') }}">
+        <a wire:navigate.hover href="{{ route('product-list') }}">
             <i class="fe fe-package"></i>
             <span>Products</span>
         </a>
@@ -40,7 +40,7 @@
     @endif
 
     <li class="{{ Request::routeIs('inventory.Products', 'product-list') ? 'active' : '' }}">
-        <a href="{{ route('product-list') }}">
+        <a wire:navigate.hover href="{{ route('product-list') }}">
             <i class="fe fe-archive"></i>
             <span>Stock Overview</span>
         </a>
@@ -67,12 +67,12 @@
     <li class="submenu {{ Request::routeIs('profile', 'offline-app.settings', 'settings.index') ? 'active subdrop' : '' }}">
         <a href="#"><i class="fe fe-settings"></i><span>Settings</span><span class="menu-arrow"></span></a>
         <ul>
-            <li><a href="{{ route('profile') }}">Profile</a></li>
+            <li><a wire:navigate.hover href="{{ route('profile') }}">Profile</a></li>
             @if(Route::has('settings.index'))
-                <li><a href="{{ route('settings.index') }}">Settings</a></li>
+                <li><a wire:navigate.hover href="{{ route('settings.index') }}">Settings</a></li>
             @endif
             @if(Route::has('offline-app.settings'))
-                <li><a href="{{ route('offline-app.settings') }}">Offline App</a></li>
+                <li><a wire:navigate.hover href="{{ route('offline-app.settings') }}">Offline App</a></li>
             @endif
         </ul>
     </li>

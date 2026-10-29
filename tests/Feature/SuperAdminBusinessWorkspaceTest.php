@@ -50,6 +50,23 @@ class SuperAdminBusinessWorkspaceTest extends TestCase
         $this->assertDatabaseCount('companies', 1);
     }
 
+    public function test_business_sidebar_uses_livewire_navigation_for_safe_core_pages_only(): void
+    {
+        $admin = User::factory()->create(['role' => 'super_admin', 'company_id' => null]);
+
+        $response = $this->actingAs($admin)
+            ->withSession(['workspace_context' => 'business'])
+            ->get(route('workspace.business.dashboard'));
+
+        $response->assertOk()
+            ->assertSee('wire:navigate.hover href="'.route('home').'"', false)
+            ->assertSee('wire:navigate.hover href="'.route('invoices.index').'"', false)
+            ->assertSee('wire:navigate.hover href="'.route('product-list').'"', false)
+            ->assertSee('wire:navigate.hover href="'.route('settings.index').'"', false)
+            ->assertDontSee('wire:navigate.hover href="'.route('sales.showPos').'"', false)
+            ->assertSee("document.addEventListener('livewire:navigated'", false);
+    }
+
     public function test_stale_client_assignment_does_not_upgrade_or_reuse_the_clients_workspace(): void
     {
         $client = User::factory()->create(['role' => 'admin']);

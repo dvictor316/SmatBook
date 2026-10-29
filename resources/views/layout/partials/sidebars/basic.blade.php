@@ -3,7 +3,7 @@
     <li class="menu-title"><span>Main</span></li>
 
     <li class="{{ Request::is('home', 'dashboard') ? 'active' : '' }}">
-        <a href="{{ route('home') }}">
+        <a wire:navigate.hover href="{{ route('home') }}">
             <i class="fe fe-home"></i>
             <span>Dashboard</span>
         </a>
@@ -32,16 +32,16 @@
                 <li><a href="{{ route('pos.sales') }}">POS Sales</a></li>
             @endif
             @if(Route::has('invoices.index'))
-                <li><a href="{{ route('invoices.index') }}">Invoices</a></li>
+                <li><a wire:navigate.hover href="{{ route('invoices.index') }}">Invoices</a></li>
             @endif
             @if(Route::has('add-invoice'))
                 <li><a href="{{ route('add-invoice') }}">Create Invoice</a></li>
             @endif
             @if(Route::has('quotations'))
-                <li><a href="{{ route('quotations') }}">Quotations</a></li>
+                <li><a wire:navigate.hover href="{{ route('quotations') }}">Quotations</a></li>
             @endif
             @if(Route::has('customers.index'))
-                <li><a href="{{ route('customers.index') }}">Customers</a></li>
+                <li><a wire:navigate.hover href="{{ route('customers.index') }}">Customers</a></li>
             @endif
             @if(Route::has('customers.add'))
                 <li><a href="{{ route('customers.add') }}">Add Customer</a></li>
@@ -74,7 +74,7 @@
         <a href="#"><i class="fe fe-package"></i><span>Inventory</span><span class="menu-arrow"></span></a>
         <ul>
             @if(Route::has('product-list'))
-                <li><a href="{{ route('product-list') }}">Products</a></li>
+                <li><a wire:navigate.hover href="{{ route('product-list') }}">Products</a></li>
             @endif
             @if(Route::has('add-products'))
                 <li><a href="{{ route('add-products') }}">Add Product</a></li>
@@ -145,10 +145,10 @@
                 <li><a href="{{ route('users.index') }}">Users</a></li>
             @endif
             @if(Route::has('settings.index'))
-                <li><a href="{{ route('settings.index') }}">Settings</a></li>
+                <li><a wire:navigate.hover href="{{ route('settings.index') }}">Settings</a></li>
             @endif
             @if(Route::has('offline-app.settings'))
-                <li><a href="{{ route('offline-app.settings') }}">Offline App</a></li>
+                <li><a wire:navigate.hover href="{{ route('offline-app.settings') }}">Offline App</a></li>
             @endif
             @if(Route::has('roles.index'))
 @if(auth()->user()?->canManageRoles())
@@ -162,7 +162,7 @@
                 <li><a href="{{ route('audit.index') }}">Audit Trail</a></li>
             @endif
             @if(Route::has('profile'))
-                <li><a href="{{ route('profile') }}">Profile</a></li>
+                <li><a wire:navigate.hover href="{{ route('profile') }}">Profile</a></li>
             @endif
         </ul>
     </li>

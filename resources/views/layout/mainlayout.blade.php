@@ -137,6 +137,16 @@
     @if($dashboardVariant !== '')
         <link rel="stylesheet" href="{{ asset('assets/css/dashboard-polish.css') }}?v={{ filemtime(public_path('assets/css/dashboard-polish.css')) }}">
     @endif
+    <script>
+        if (!window.__spbNavigationBridgeRegistered) {
+            window.__spbNavigationBridgeRegistered = true;
+            document.addEventListener('livewire:navigated', function () {
+                document.dispatchEvent(new CustomEvent('smartprobook:page-loaded', {
+                    detail: { url: window.location.href }
+                }));
+            });
+        }
+    </script>
 </head>
 
 <body @if($dashboardVariant !== '') data-dashboard="{{ $dashboardVariant }}" @endif @if(!empty($bodyClasses)) class="{{ implode(' ', $bodyClasses) }}" @endif>

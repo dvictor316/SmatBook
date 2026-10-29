@@ -16,7 +16,7 @@
             <ul>
                 <li class="menu-title"><span>Main</span></li>
                 <li class="{{ Request::is('home', 'dashboard') ? 'active' : '' }}">
-                    <a href="{{ route('home') }}">
+                    <a wire:navigate.hover href="{{ route('home') }}">
                         <i class="fe fe-home"></i><span>Dashboard</span>
                     </a>
                 </li>
@@ -35,9 +35,9 @@
                     <ul>
                         <li><a href="{{ route('sales.showPos') }}">POS Terminal</a></li>
                         <li><a href="{{ route('pos.sales') }}">POS Sales</a></li>
-                        <li><a href="{{ route('quotations') }}">Quotations</a></li>
+                        <li><a wire:navigate.hover href="{{ route('quotations') }}">Quotations</a></li>
                         <li><a href="{{ route('estimates.index') }}">Sales Orders</a></li>
-                        <li><a href="{{ route('invoices.index') }}">Invoices</a></li>
+                        <li><a wire:navigate.hover href="{{ route('invoices.index') }}">Invoices</a></li>
                         <li><a href="{{ route('add-invoice') }}">Create Invoice</a></li>
                         <li><a href="{{ route('sales.recurring-invoices.index') }}">Recurring Invoices</a></li>
                         @if(Route::has('credit-notes.index'))
@@ -47,7 +47,7 @@
                             <li><a href="{{ route('customer-deposits.index') }}">Customer Deposits</a></li>
                         @endif
                         <li><a href="{{ route('price-lists.index') }}">Price Lists</a></li>
-                        <li><a href="{{ route('customers.index') }}">Customers</a></li>
+                        <li><a wire:navigate.hover href="{{ route('customers.index') }}">Customers</a></li>
                     </ul>
                 </li>
 
@@ -79,11 +79,11 @@
                 <li class="submenu {{ Request::is('product-list*', 'categories*', 'units*', 'inventory*', 'bom*', 'manufacturing*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-package"></i><span>Inventory</span><span class="menu-arrow"></span></a>
                     <ul>
-                        <li><a href="{{ route('product-list') }}">Products</a></li>
+                        <li><a wire:navigate.hover href="{{ route('product-list') }}">Products</a></li>
                         <li><a href="{{ route('add-products') }}">Add Product</a></li>
                         <li><a href="{{ route('categories.index') }}">Categories</a></li>
                         <li><a href="{{ route('units') }}">Units</a></li>
-                        <li><a href="{{ route('inventory.Products') }}">Stock Overview</a></li>
+                        <li><a wire:navigate.hover href="{{ route('inventory.Products') }}">Stock Overview</a></li>
                         <li><a href="{{ route('inventory.stock-valuation') }}">Stock Valuation</a></li>
                         @if(Route::has('inventory.damages'))
                             <li><a href="{{ route('inventory.damages') }}">Stock Damages</a></li>
@@ -234,9 +234,9 @@
                         <li><a href="{{ route('roles.index') }}">Roles & Permissions</a></li>
 @endif
                         <li><a href="{{ route('branches.index') }}">Branches</a></li>
-                        <li><a href="{{ route('settings.index') }}">Settings</a></li>
+                        <li><a wire:navigate.hover href="{{ route('settings.index') }}">Settings</a></li>
                         @if(Route::has('offline-app.settings'))
-                            <li><a href="{{ route('offline-app.settings') }}">Offline App</a></li>
+                            <li><a wire:navigate.hover href="{{ route('offline-app.settings') }}">Offline App</a></li>
                         @endif
                         @if(Route::has('online-store.settings') && $user?->canManageRoles())
                             <li><a href="{{ route('online-store.settings') }}">Online Store</a></li>
@@ -245,7 +245,7 @@
                             <li><a href="{{ route('developer-api.index') }}">Developer API</a></li>
                         @endif
                         @if(Route::has('profile'))
-                            <li><a href="{{ route('profile') }}">Profile</a></li>
+                            <li><a wire:navigate.hover href="{{ route('profile') }}">Profile</a></li>
                         @endif
                     </ul>
                 </li>
