@@ -89,7 +89,18 @@
 <nav class="store-nav"><div class="store-nav-inner"><a class="brand" href="{{ $homeUrl }}"><img src="{{ $company->logo ? asset($company->logo) : asset('assets/img/logos.png') }}" alt=""><span>{{ $store->store_name }}</span></a><div class="gallery-nav-links"><a href="{{ $homeUrl }}">Home</a><a href="{{ $galleryUrl }}" aria-current="page">Product Gallery</a><a class="gallery-nav-about" href="{{ $aboutUrl }}">About Us</a><a href="#store-cart" class="btn btn-sm btn-outline-primary">Cart <span class="badge bg-primary" id="cart-count">0</span></a></div><form class="store-search" method="GET"><input class="form-control" name="q" value="{{ $search }}" placeholder="Search products"><button class="btn btn-primary" title="Search" aria-label="Search"><i class="fas fa-search"></i></button></form></div></nav>
 <header class="store-head"><div class="store-head-inner"><span class="store-eyebrow">The official online store</span><h1>{{ $store->store_name }}</h1><p>{{ $store->description ?: 'Explore our available collection and send an order request directly to our team.' }}</p></div></header>
 <main class="store-main">
-    @if(session('store_order_success'))<div class="alert alert-success"><strong>Order received.</strong> Your reference is {{ session('store_order_success') }}. The business will contact you to confirm payment and fulfilment.@if(session('store_whatsapp_link'))<div class="mt-3"><a class="btn btn-success" href="{{ session('store_whatsapp_link') }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp me-2"></i>Send order by WhatsApp</a></div>@endif</div>@endif
+    @if(session('store_order_success'))
+        <div class="alert alert-success">
+            <strong>Order received.</strong> Your reference is {{ session('store_order_success') }}. The business will contact you to confirm payment and fulfilment.
+            @if(session('store_whatsapp_link') || session('store_sms_link') || session('store_email_link'))
+                <div class="mt-3 d-flex flex-wrap gap-2">
+                    @if(session('store_whatsapp_link'))<a class="btn btn-success" href="{{ session('store_whatsapp_link') }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp me-2"></i>Send order on WhatsApp</a>@endif
+                    @if(session('store_sms_link'))<a class="btn btn-primary" href="{{ session('store_sms_link') }}"><i class="fas fa-comment-sms me-2"></i>Send order by SMS</a>@endif
+                    @if(session('store_email_link'))<a class="btn btn-outline-primary" href="{{ session('store_email_link') }}"><i class="fas fa-envelope me-2"></i>Email order details</a>@endif
+                </div>
+            @endif
+        </div>
+    @endif
     @if($errors->any())<div class="alert alert-danger"><strong>Your order needs attention.</strong><ul class="mb-0 mt-2">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     @php
         $orderAction = $customDomain
@@ -157,13 +168,19 @@
                     <div class="col-12 d-flex justify-content-between align-items-center gap-3 flex-wrap">
                         <small class="text-muted">{{ $store->fulfilment_note ?: 'The business will confirm availability, payment, and delivery.' }}</small>
                         <div class="d-flex gap-2 flex-wrap">
-                            @if(filled($store->owner_whatsapp_number))
+                            @if($orderContact['whatsapp'])
                                 <button class="btn btn-success" id="send-cart-whatsapp" type="button" disabled><i class="fab fa-whatsapp me-2"></i>Send purchase request to WhatsApp</button>
+                            @endif
+                            @if($orderContact['sms'])
+                                <button class="btn btn-outline-primary" id="send-cart-sms" type="button" disabled><i class="fas fa-comment-sms me-2"></i>Send purchase request by SMS</button>
+                            @endif
+                            @if($orderContact['email'])
+                                <button class="btn btn-outline-primary" id="send-cart-email" type="button" disabled><i class="fas fa-envelope me-2"></i>Email purchase request</button>
                             @endif
                             <button class="btn-order" id="place-store-order" type="submit" disabled><i class="fas fa-paper-plane me-2"></i>Place Online Order</button>
                         </div>
-                        @if(filled($store->owner_whatsapp_number))
-                            <small class="text-muted w-100">WhatsApp opens with your cart details. The business must confirm availability and price; this request does not reserve stock.</small>
+                        @if($orderContact['whatsapp'] || $orderContact['sms'] || $orderContact['email'])
+                            <small class="text-muted w-100">Send a request directly to the business, or place an online order to reserve stock. The business must confirm availability and fulfilment.</small>
                         @endif
                     </div>
                 </div>
@@ -183,8 +200,12 @@
         const empty = document.getElementById('cart-empty');
         const submit = document.getElementById('place-store-order');
         const whatsappButton = document.getElementById('send-cart-whatsapp');
+        const smsButton = document.getElementById('send-cart-sms');
+        const emailButton = document.getElementById('send-cart-email');
         const currency = @json($company->currency_code ?: 'NGN');
-        const whatsappNumber = @json(preg_replace('/\D+/', '', (string) $store->owner_whatsapp_number));
+        const whatsappNumber = @json($orderContact['whatsapp']);
+        const smsNumber = @json($orderContact['sms']);
+        const orderEmail = @json($orderContact['email']);
         const storeName = @json($store->store_name);
         const products = new Map(Array.from(document.querySelectorAll('[data-product-id]')).map((element) => [
             element.dataset.productId,
@@ -255,6 +276,8 @@
             empty.hidden = cart.size > 0;
             submit.disabled = cart.size === 0;
             if (whatsappButton) whatsappButton.disabled = cart.size === 0;
+            if (smsButton) smsButton.disabled = cart.size === 0;
+            if (emailButton) emailButton.disabled = cart.size === 0;
             document.getElementById('cart-total').textContent = formatMoney(total);
             document.getElementById('cart-count').textContent = String(count);
         }
@@ -277,27 +300,47 @@
             });
         });
 
+        function purchaseRequestMessage() {
+            const customerName = document.querySelector('[name="customer_name"]');
+            const customerPhone = document.querySelector('[name="customer_phone"]');
+            customerName.value = customerName.value.trim();
+            customerPhone.value = customerPhone.value.trim();
+            if (!customerName.reportValidity() || !customerPhone.reportValidity()) return null;
+
+            const total = Array.from(cart.values()).reduce((sum, item) => sum + item.price * item.quantity, 0);
+            const itemLines = Array.from(cart.values()).map((item) =>
+                `- ${item.name} (${item.sku || 'no SKU'}) x ${item.quantity} = ${formatMoney(item.price * item.quantity)}`
+            ).join('\n');
+            return [
+                `Hello ${storeName}, I would like to purchase these items:`,
+                itemLines,
+                `Estimated total: ${formatMoney(total)}`,
+                `Name: ${customerName.value}`,
+                `Phone: ${customerPhone.value}`,
+                'Please confirm current stock, final price and fulfilment. I understand this request does not reserve stock.'
+            ].join('\n\n');
+        }
+
         if (whatsappButton) {
             whatsappButton.addEventListener('click', () => {
-                const customerName = document.querySelector('[name="customer_name"]');
-                const customerPhone = document.querySelector('[name="customer_phone"]');
-                customerName.value = customerName.value.trim();
-                customerPhone.value = customerPhone.value.trim();
-                if (!customerName.reportValidity() || !customerPhone.reportValidity()) return;
+                const message = purchaseRequestMessage();
+                if (message) window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+            });
+        }
 
-                const total = Array.from(cart.values()).reduce((sum, item) => sum + item.price * item.quantity, 0);
-                const itemLines = Array.from(cart.values()).map((item) =>
-                    `- ${item.name} (${item.sku || 'no SKU'}) x ${item.quantity} = ${formatMoney(item.price * item.quantity)}`
-                ).join('\n');
-                const message = [
-                    `Hello ${storeName}, I would like to purchase these items:`,
-                    itemLines,
-                    `Estimated total: ${formatMoney(total)}`,
-                    `Name: ${customerName.value}`,
-                    `Phone: ${customerPhone.value}`,
-                    'Please confirm current stock, final price and fulfilment. I understand this request does not reserve stock.'
-                ].join('\n\n');
-                window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+        if (smsButton) {
+            smsButton.addEventListener('click', () => {
+                const message = purchaseRequestMessage();
+                if (message) window.location.href = `sms:${smsNumber}?body=${encodeURIComponent(message)}`;
+            });
+        }
+
+        if (emailButton) {
+            emailButton.addEventListener('click', () => {
+                const message = purchaseRequestMessage();
+                if (message) {
+                    window.location.href = `mailto:${orderEmail}?subject=${encodeURIComponent(`Purchase request for ${storeName}`)}&body=${encodeURIComponent(message)}`;
+                }
             });
         }
 

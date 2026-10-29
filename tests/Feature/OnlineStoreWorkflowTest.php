@@ -231,6 +231,69 @@ class OnlineStoreWorkflowTest extends TestCase
         );
     }
 
+    public function test_orders_use_the_business_owners_international_phone_for_whatsapp_when_no_override_is_set(): void
+    {
+        [$user, $company] = $this->workspace('Owner Contact Store');
+        $user->forceFill(['phone' => '+2348012345678'])->save();
+        $categoryId = $this->category($user->id, $company->id, 'Accessories');
+        $productId = $this->product($user->id, $company->id, $categoryId, 'Travel Bag', 'BAG-001', 5, 8000);
+        StorefrontSetting::create([
+            'company_id' => $company->id,
+            'slug' => 'owner-contact-store',
+            'store_name' => 'Owner Contact Store',
+            'is_enabled' => true,
+        ]);
+        config()->set('services.whatsapp.access_token', 'test-cloud-token');
+        config()->set('services.whatsapp.phone_number_id', '123456789');
+        config()->set('services.whatsapp.api_version', 'v21.0');
+        Http::fake(['graph.facebook.com/*' => Http::response(['messages' => [['id' => 'wamid.owner']]], 200)]);
+
+        $this->post(route('storefront.orders.store', 'owner-contact-store'), [
+            'customer_name' => 'Owner Fallback Buyer',
+            'customer_phone' => '+2348099999999',
+            'payment_method' => 'pickup',
+            'items' => [$productId => 1],
+        ])->assertSessionHasNoErrors()
+            ->assertSessionHas('store_whatsapp_link', fn ($link) => str_contains($link, 'wa.me/2348012345678'));
+
+        Http::assertSent(fn (ClientRequest $request) => $request['to'] === '2348012345678');
+        $this->assertDatabaseHas('online_store_orders', [
+            'company_id' => $company->id,
+            'whatsapp_notification_status' => 'sent',
+        ]);
+    }
+
+    public function test_local_owner_phone_uses_sms_and_available_store_email_for_order_contact(): void
+    {
+        [$user, $company] = $this->workspace('Local Contact Store');
+        $user->forceFill(['phone' => '08012345678'])->save();
+        DB::table('companies')->where('id', $company->id)->update(['email' => 'orders@example.test']);
+        $categoryId = $this->category($user->id, $company->id, 'Household');
+        $productId = $this->product($user->id, $company->id, $categoryId, 'Storage Jar', 'JAR-001', 4, 3500);
+        StorefrontSetting::create([
+            'company_id' => $company->id,
+            'slug' => 'local-contact-store',
+            'store_name' => 'Local Contact Store',
+            'is_enabled' => true,
+        ]);
+
+        $this->get(route('storefront.products', 'local-contact-store'))
+            ->assertOk()
+            ->assertSee('Send purchase request by SMS')
+            ->assertSee('Email purchase request')
+            ->assertDontSee('Send purchase request to WhatsApp');
+
+        $this->post(route('storefront.orders.store', 'local-contact-store'), [
+            'customer_name' => 'Local Fallback Buyer',
+            'customer_phone' => '08000000000',
+            'payment_method' => 'pickup',
+            'items' => [$productId => 1],
+        ])->assertSessionHasNoErrors()
+            ->assertSessionMissing('store_whatsapp_link')
+            ->assertSessionHas('store_sms_link', fn ($link) => str_starts_with($link, 'sms:08012345678?body='))
+            ->assertSessionHas('store_email_link', fn ($link) => str_starts_with($link, 'mailto:orders@example.test?subject='));
+    }
+
     public function test_whatsapp_api_failure_does_not_discard_customer_order(): void
     {
         [$user, $company] = $this->workspace('WhatsApp Failure Store');

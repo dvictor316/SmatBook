@@ -26,8 +26,9 @@ class OnlineStoreController extends Controller
             'store_name' => $company->name ?: 'Online Store',
         ]);
         $orders = OnlineStoreOrder::with('items')->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
+        $orderContact = $setting->orderContact();
 
-        return view('storefront.settings', compact('setting', 'orders'));
+        return view('storefront.settings', compact('setting', 'orders', 'orderContact'));
     }
 
     public function updateSettings(Request $request): RedirectResponse
@@ -41,7 +42,7 @@ class OnlineStoreController extends Controller
             'description' => 'nullable|string|max:1000',
             'contact_phone' => 'nullable|string|max:60',
             'contact_email' => 'nullable|email|max:191',
-            'owner_whatsapp_number' => ['nullable', 'string', 'regex:/^\+?[1-9][0-9]{7,14}$/'],
+            'owner_whatsapp_number' => ['nullable', 'string', 'regex:/^\+[1-9][0-9]{7,14}$/'],
             'fulfilment_note' => 'nullable|string|max:191',
             'is_enabled' => 'nullable|boolean',
         ]);
@@ -122,6 +123,7 @@ class OnlineStoreController extends Controller
     {
         $store = $this->resolvePublicStore($request, $slug);
         $company = Company::withoutGlobalScope('tenant')->findOrFail($store->company_id);
+        $orderContact = $store->orderContact();
         $search = trim((string) $request->query('q'));
         $products = Product::withoutGlobalScopes()
             ->where('company_id', $store->company_id)
@@ -137,7 +139,7 @@ class OnlineStoreController extends Controller
             ->orderBy('name')
             ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
-        return view('storefront.catalogue', compact('store', 'company', 'products', 'search'));
+        return view('storefront.catalogue', compact('store', 'company', 'products', 'search', 'orderContact'));
     }
 
     public function about(Request $request, ?string $slug = null): View
@@ -222,28 +224,51 @@ class OnlineStoreController extends Controller
             return $order;
         });
 
-        $this->notifyOwner($store, $order);
+        $orderContact = $store->orderContact();
+        $this->notifyOwner($store, $order, $orderContact);
         $order->loadMissing('items');
-        $recipient = preg_replace('/\D+/', '', (string) $store->owner_whatsapp_number);
-        $whatsappMessage = "Hello {$store->store_name}, I placed order {$order->order_number}:";
-        foreach ($order->items as $item) {
-            $whatsappMessage .= "\n{$item->product_name} x {$item->quantity} - " . number_format((float) $item->line_total, 2);
+        $orderMessage = "Hello {$store->store_name}, I placed an online order.\n"
+            . "Order: {$order->order_number}\n"
+            . "Customer: {$order->customer_name}\n"
+            . "Phone: {$order->customer_phone}\n"
+            . "Payment: " . str($order->payment_method)->replace('_', ' ')->title();
+        if (filled($order->customer_email)) {
+            $orderMessage .= "\nEmail: {$order->customer_email}";
         }
-        $whatsappMessage .= "\nTotal: " . number_format((float) $order->total_amount, 2) . '. Please confirm availability and fulfilment.';
-        $whatsappLink = strlen($recipient) >= 8
-            ? 'https://wa.me/' . $recipient . '?' . http_build_query([
-                'text' => $whatsappMessage,
-            ])
+        if (filled($order->delivery_address)) {
+            $orderMessage .= "\nDelivery address: {$order->delivery_address}";
+        }
+        foreach ($order->items as $item) {
+            $orderMessage .= "\n{$item->product_name} x {$item->quantity} - " . number_format((float) $item->line_total, 2);
+        }
+        $orderMessage .= "\nTotal: " . number_format((float) $order->total_amount, 2)
+            . "\nPlease confirm availability and fulfilment.";
+        if (filled($order->customer_note)) {
+            $orderMessage .= "\nCustomer note: {$order->customer_note}";
+        }
+
+        $whatsappLink = $orderContact['whatsapp']
+            ? 'https://wa.me/' . $orderContact['whatsapp'] . '?text=' . rawurlencode($orderMessage)
+            : null;
+        $smsLink = $orderContact['sms']
+            ? 'sms:' . $orderContact['sms'] . '?body=' . rawurlencode($orderMessage)
+            : null;
+        $emailLink = $orderContact['email']
+            ? 'mailto:' . $orderContact['email']
+                . '?subject=' . rawurlencode('Online store order ' . $order->order_number)
+                . '&body=' . rawurlencode($orderMessage)
             : null;
 
         return back()
             ->with('store_order_success', $order->order_number)
-            ->with('store_whatsapp_link', $whatsappLink);
+            ->with('store_whatsapp_link', $whatsappLink)
+            ->with('store_sms_link', $smsLink)
+            ->with('store_email_link', $emailLink);
     }
 
-    private function notifyOwner(StorefrontSetting $store, OnlineStoreOrder $order): void
+    private function notifyOwner(StorefrontSetting $store, OnlineStoreOrder $order, ?array $orderContact = null): void
     {
-        $result = app(WhatsAppOrderNotifier::class)->send($store, $order);
+        $result = app(WhatsAppOrderNotifier::class)->send($store, $order, $orderContact);
         $order->update([
             'whatsapp_notification_status' => $result['status'],
             'whatsapp_notification_error' => $result['error'],

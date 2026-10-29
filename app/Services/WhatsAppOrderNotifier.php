@@ -10,16 +10,16 @@ use Illuminate\Support\Facades\Log;
 
 class WhatsAppOrderNotifier
 {
-    public function send(StorefrontSetting $store, OnlineStoreOrder $order): array
+    public function send(StorefrontSetting $store, OnlineStoreOrder $order, ?array $orderContact = null): array
     {
         $configuration = config('services.whatsapp');
-        $recipient = preg_replace('/\D+/', '', (string) $store->owner_whatsapp_number);
+        $recipient = ($orderContact ?? $store->orderContact())['whatsapp'] ?? null;
 
         if (
             empty($configuration['access_token'])
             || empty($configuration['phone_number_id'])
             || empty($configuration['api_version'])
-            || empty($store->owner_whatsapp_number)
+            || empty($recipient)
         ) {
             return ['status' => 'not_configured', 'error' => null];
         }
