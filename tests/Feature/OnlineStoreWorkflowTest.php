@@ -185,6 +185,16 @@ class OnlineStoreWorkflowTest extends TestCase
     public function test_business_owner_can_choose_one_of_ten_storefront_color_themes(): void
     {
         [$user, $company] = $this->workspace('Theme Store');
+        $this->assertCount(10, StorefrontSetting::themes());
+        $themeCss = file_get_contents(public_path('css/storefront-theme.css'));
+        $this->assertIsString($themeCss);
+        foreach (array_keys(StorefrontSetting::themes()) as $themeKey) {
+            $this->assertStringContainsString('body[data-store-theme="' . $themeKey . '"]', $themeCss);
+        }
+        $this->assertStringContainsString('--theme-accent: #3b82f6;', $themeCss);
+        $this->assertStringContainsString('--theme-accent: #ef4444;', $themeCss);
+        $this->assertStringContainsString('--theme-accent: #f4b400;', $themeCss);
+
         StorefrontSetting::create([
             'company_id' => $company->id,
             'slug' => 'theme-store',
@@ -198,7 +208,10 @@ class OnlineStoreWorkflowTest extends TestCase
 
         $this->get($settingsUrl)
             ->assertOk()
-            ->assertSee('Choose one of 10 background and color themes')
+            ->assertSee('id="storeTheme"', false)
+            ->assertSee('Golden')
+            ->assertSee('Blue')
+            ->assertSee('Red')
             ->assertSee('value="classic"', false)
             ->assertSee('value="ocean"', false)
             ->assertSee('value="forest"', false)
@@ -225,12 +238,15 @@ class OnlineStoreWorkflowTest extends TestCase
 
         $this->get(route('storefront.catalogue', 'theme-store'))
             ->assertOk()
+            ->assertSee(asset('css/storefront-theme.css'), false)
             ->assertSee('<body data-store-theme="ocean">', false);
         $this->get(route('storefront.products', 'theme-store'))
             ->assertOk()
+            ->assertSee(asset('css/storefront-theme.css'), false)
             ->assertSee('<body data-store-theme="ocean">', false);
         $this->get(route('storefront.about', 'theme-store'))
             ->assertOk()
+            ->assertSee(asset('css/storefront-theme.css'), false)
             ->assertSee('<body data-store-theme="ocean">', false);
 
         $this->put(route('online-store.settings.update'), [

@@ -28,10 +28,9 @@ class OnlineStoreController extends Controller
             'store_name' => $company->name ?: 'Online Store',
         ]);
         $orders = OnlineStoreOrder::with('items')->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
-        $orderContact = $setting->orderContact();
         $storeThemes = StorefrontSetting::themes();
 
-        return view('storefront.settings', compact('setting', 'orders', 'orderContact', 'storeThemes'));
+        return view('storefront.settings', compact('setting', 'orders', 'storeThemes'));
     }
 
     public function updateSettings(Request $request): RedirectResponse
