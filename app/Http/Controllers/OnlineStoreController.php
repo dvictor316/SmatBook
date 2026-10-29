@@ -6,6 +6,8 @@ use App\Models\Company;
 use App\Models\OnlineStoreOrder;
 use App\Models\Product;
 use App\Models\StorefrontSetting;
+use App\Models\User;
+use App\Notifications\OnlineStoreOrderPlaced;
 use App\Services\WhatsAppOrderNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -225,6 +227,7 @@ class OnlineStoreController extends Controller
         });
 
         $orderContact = $store->orderContact();
+        $this->notifyBusinessOwnerInApp($store, $order);
         $this->notifyOwner($store, $order, $orderContact);
         $order->loadMissing('items');
         $orderMessage = "Hello {$store->store_name}, I placed an online order.\n"
@@ -274,6 +277,20 @@ class OnlineStoreController extends Controller
             'whatsapp_notification_error' => $result['error'],
             'whatsapp_notified_at' => $result['status'] === 'sent' ? now() : null,
         ]);
+    }
+
+    private function notifyBusinessOwnerInApp(StorefrontSetting $store, OnlineStoreOrder $order): void
+    {
+        $company = Company::withoutGlobalScope('tenant')
+            ->select(['id', 'user_id', 'owner_id'])
+            ->find($store->company_id);
+        $ownerId = $company?->user_id ?: $company?->owner_id;
+        if (! $ownerId) {
+            return;
+        }
+
+        $owner = User::query()->find($ownerId);
+        $owner?->notify(new OnlineStoreOrderPlaced($order, $store->store_name));
     }
 
     private function resolvePublicStore(Request $request, ?string $slug): StorefrontSetting

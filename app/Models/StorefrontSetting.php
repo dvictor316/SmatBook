@@ -34,20 +34,25 @@ class StorefrontSetting extends Model
             ->values();
         $owners = $ownerIds->isEmpty()
             ? collect()
-            : User::query()->whereIn('id', $ownerIds)->get(['id', 'phone'])->keyBy('id');
+            : User::query()->whereIn('id', $ownerIds)->get(['id', 'phone', 'email'])->keyBy('id');
         $ownerPhone = $ownerIds
             ->map(fn ($id) => $owners->get($id)?->phone)
             ->first(fn ($phone) => filled($phone));
+        $ownerEmail = $ownerIds
+            ->map(fn ($id) => $owners->get($id)?->email)
+            ->first(fn ($email) => filled($email));
 
         $phone = collect([
-            $this->owner_whatsapp_number,
             $ownerPhone,
+            $this->owner_whatsapp_number,
             $company?->phone,
             $this->contact_phone,
         ])->first(fn ($value) => filled($value));
-        $whatsapp = $this->whatsappRecipient($this->owner_whatsapp_number);
+        $whatsapp = filled($ownerPhone)
+            ? $this->whatsappRecipient($ownerPhone)
+            : $this->whatsappRecipient($this->owner_whatsapp_number);
 
-        if (! $whatsapp) {
+        if (! $whatsapp && ! filled($ownerPhone)) {
             foreach ([$ownerPhone, $company?->phone, $this->contact_phone] as $candidate) {
                 $whatsapp = $this->whatsappRecipient($candidate);
                 if ($whatsapp) {
@@ -56,7 +61,7 @@ class StorefrontSetting extends Model
             }
         }
 
-        $email = collect([$this->contact_email, $company?->email])
+        $email = collect([$ownerEmail, $this->contact_email, $company?->email])
             ->map(fn ($value) => trim((string) $value))
             ->first(fn ($value) => filter_var($value, FILTER_VALIDATE_EMAIL) !== false);
 

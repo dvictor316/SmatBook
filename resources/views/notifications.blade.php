@@ -51,6 +51,9 @@
                                         <a href="{{ url('action/reject/'.$notification->id) }}" class="btn btn-outline-primary">Reject</a>
                                         </div>
                                     @endif
+                                    @if(($notification->data['type'] ?? null) === 'online_store_order')
+                                        <a href="{{ $notification->data['url'] ?? route('online-store.settings') }}" class="btn btn-sm btn-outline-primary mt-2">View Online Orders</a>
+                                    @endif
 
                                     <span class="time">{{ $notification->created_at->diffForHumans() }}</span>
                                 </div>

@@ -85,6 +85,17 @@ class OnlineStoreWorkflowTest extends TestCase
             'whatsapp_notification_status' => 'not_configured',
         ]);
         $this->assertDatabaseHas('products', ['id' => $productId, 'stock' => 8, 'stock_quantity' => 8]);
+        $notification = $user->notifications()->firstOrFail();
+        $order = OnlineStoreOrder::withoutGlobalScopes()->latest('id')->firstOrFail();
+        $this->assertSame('online_store_order', $notification->data['type']);
+        $this->assertSame((int) $order->id, (int) $notification->data['order_id']);
+        $this->assertSame($order->order_number, $notification->data['target_item']);
+        $this->actingAs($user)
+            ->withSession(['current_tenant_id' => $company->id, 'active_branch_scope' => 'all'])
+            ->get(route('notifications.index'))
+            ->assertOk()
+            ->assertSee('View Online Orders')
+            ->assertSee(route('online-store.settings'), false);
     }
 
     public function test_custom_domain_resolves_the_enabled_store(): void
@@ -241,6 +252,7 @@ class OnlineStoreWorkflowTest extends TestCase
             'company_id' => $company->id,
             'slug' => 'owner-contact-store',
             'store_name' => 'Owner Contact Store',
+            'owner_whatsapp_number' => '+15551234567',
             'is_enabled' => true,
         ]);
         config()->set('services.whatsapp.access_token', 'test-cloud-token');
@@ -274,6 +286,7 @@ class OnlineStoreWorkflowTest extends TestCase
             'company_id' => $company->id,
             'slug' => 'local-contact-store',
             'store_name' => 'Local Contact Store',
+            'owner_whatsapp_number' => '+15551234567',
             'is_enabled' => true,
         ]);
 
@@ -291,7 +304,7 @@ class OnlineStoreWorkflowTest extends TestCase
         ])->assertSessionHasNoErrors()
             ->assertSessionMissing('store_whatsapp_link')
             ->assertSessionHas('store_sms_link', fn ($link) => str_starts_with($link, 'sms:08012345678?body='))
-            ->assertSessionHas('store_email_link', fn ($link) => str_starts_with($link, 'mailto:orders@example.test?subject='));
+            ->assertSessionHas('store_email_link', fn ($link) => str_starts_with($link, 'mailto:' . $user->email . '?subject='));
     }
 
     public function test_whatsapp_api_failure_does_not_discard_customer_order(): void
