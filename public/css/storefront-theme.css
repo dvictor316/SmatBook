@@ -1100,6 +1100,10 @@ body[data-store-theme] .contact-card h3 {
     color: var(--theme-primary) !important;
 }
 
+body[data-store-theme] .animated-products-section .section-heading h2 {
+    color: #fff !important;
+}
+
 body[data-store-theme] .tile,
 body[data-store-theme] .editorial,
 body[data-store-theme] .small-card,

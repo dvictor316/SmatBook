@@ -405,7 +405,7 @@
 
         let currentIndex = 1;
         let timer = null;
-        let paused = reducedMotion.matches;
+        let paused = false;
         track.style.transform = 'translateX(-100%)';
         window.requestAnimationFrame(() => {
             if (!reducedMotion.matches) track.style.transition = '';
@@ -421,11 +421,16 @@
         }
 
         function moveTo(index, animate = true) {
+            const shouldAnimate = animate && !reducedMotion.matches;
+            if (!shouldAnimate) {
+                if (index <= 0) index = pageTotal;
+                else if (index > pageTotal) index = 1;
+            }
             currentIndex = index;
-            track.style.transition = animate && !reducedMotion.matches ? '' : 'none';
+            track.style.transition = shouldAnimate ? '' : 'none';
             track.style.transform = `translateX(-${currentIndex * 100}%)`;
             updateCounter();
-            if (!animate && !reducedMotion.matches) {
+            if (!shouldAnimate && !reducedMotion.matches) {
                 window.requestAnimationFrame(() => {
                     track.style.transition = '';
                 });
@@ -433,8 +438,7 @@
         }
 
         function startTimer() {
-            if (paused || reducedMotion.matches || timer !== null
-                || carousel.matches(':hover') || carousel.contains(document.activeElement)) return;
+            if (paused || timer !== null || document.hidden) return;
             timer = window.setInterval(() => moveTo(currentIndex + 1), 6500);
         }
 
@@ -460,29 +464,9 @@
             if (paused) stopTimer();
             else startTimer();
         });
-        carousel.addEventListener('pointerenter', stopTimer);
-        carousel.addEventListener('pointerleave', startTimer);
-        carousel.addEventListener('focusin', stopTimer);
-        carousel.addEventListener('focusout', (event) => {
-            if (!carousel.contains(event.relatedTarget)) startTimer();
-        });
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) stopTimer();
             else startTimer();
-        });
-        reducedMotion.addEventListener?.('change', () => {
-            if (reducedMotion.matches) {
-                paused = true;
-                toggleButton.setAttribute('aria-pressed', 'true');
-                toggleButton.textContent = 'Play slides';
-                stopTimer();
-                moveTo(currentIndex, false);
-            } else {
-                paused = false;
-                toggleButton.setAttribute('aria-pressed', 'false');
-                toggleButton.textContent = 'Pause slides';
-                startTimer();
-            }
         });
 
         updateCounter();
