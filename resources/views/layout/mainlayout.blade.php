@@ -630,7 +630,7 @@
     @stack('scripts')
 
     @include('layout.partials.pwa-install')
-    <script src="{{ asset('js/pos-offline-auth.js') }}"></script>
+    <script src="{{ asset('js/pos-offline-auth.js') }}?v={{ filemtime(public_path('js/pos-offline-auth.js')) }}"></script>
 
     @livewireScripts
 

@@ -9,10 +9,26 @@ class StorefrontSetting extends Model
     protected $fillable = [
         'company_id', 'slug', 'custom_domain', 'store_name', 'description',
         'contact_phone', 'contact_email', 'fulfilment_note', 'is_enabled',
-        'owner_whatsapp_number',
+        'owner_whatsapp_number', 'store_theme',
     ];
 
     protected $casts = ['is_enabled' => 'boolean'];
+
+    public static function themes(): array
+    {
+        return [
+            'classic' => ['label' => 'Classic Navy & Gold', 'primary' => '#062354', 'deep' => '#041832', 'accent' => '#d7a928'],
+            'ocean' => ['label' => 'Ocean Blue', 'primary' => '#075985', 'deep' => '#082f49', 'accent' => '#38bdf8'],
+            'forest' => ['label' => 'Forest Green', 'primary' => '#166534', 'deep' => '#052e16', 'accent' => '#84cc16'],
+            'sunset' => ['label' => 'Warm Sunset', 'primary' => '#9a3412', 'deep' => '#431407', 'accent' => '#fb923c'],
+            'royal' => ['label' => 'Royal Purple', 'primary' => '#5b21b6', 'deep' => '#2e1065', 'accent' => '#c4b5fd'],
+            'rose' => ['label' => 'Rose & Berry', 'primary' => '#9d174d', 'deep' => '#500724', 'accent' => '#fb7185'],
+            'sand' => ['label' => 'Desert Sand', 'primary' => '#854d0e', 'deep' => '#422006', 'accent' => '#eab308'],
+            'midnight' => ['label' => 'Midnight Slate', 'primary' => '#334155', 'deep' => '#0f172a', 'accent' => '#22d3ee'],
+            'teal' => ['label' => 'Lagoon Teal', 'primary' => '#0f766e', 'deep' => '#042f2e', 'accent' => '#2dd4bf'],
+            'crimson' => ['label' => 'Crimson & Blush', 'primary' => '#9f1239', 'deep' => '#4c0519', 'accent' => '#fda4af'],
+        ];
+    }
 
     public function company()
     {

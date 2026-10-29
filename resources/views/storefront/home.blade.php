@@ -91,7 +91,7 @@
     </style>
     <link rel="stylesheet" href="{{ asset('css/storefront-theme.css') }}?v={{ filemtime(public_path('css/storefront-theme.css')) }}">
 </head>
-<body>
+<body data-store-theme="{{ $store->store_theme ?: 'classic' }}">
 @php
     $customDomain = request()->routeIs('storefront.custom-domain*');
     $homeUrl = $customDomain ? route('storefront.custom-domain') : route('storefront.catalogue', $store->slug);

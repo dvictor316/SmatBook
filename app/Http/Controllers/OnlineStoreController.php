@@ -29,8 +29,9 @@ class OnlineStoreController extends Controller
         ]);
         $orders = OnlineStoreOrder::with('items')->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $orderContact = $setting->orderContact();
+        $storeThemes = StorefrontSetting::themes();
 
-        return view('storefront.settings', compact('setting', 'orders', 'orderContact'));
+        return view('storefront.settings', compact('setting', 'orders', 'orderContact', 'storeThemes'));
     }
 
     public function updateSettings(Request $request): RedirectResponse
@@ -41,6 +42,7 @@ class OnlineStoreController extends Controller
             'slug' => ['required', 'alpha_dash', 'min:3', 'max:100', Rule::unique('storefront_settings')->ignore($settingId)],
             'custom_domain' => ['nullable', 'string', 'max:191', Rule::unique('storefront_settings')->ignore($settingId)],
             'store_name' => 'required|string|max:191',
+            'store_theme' => ['required', Rule::in(array_keys(StorefrontSetting::themes()))],
             'description' => 'nullable|string|max:1000',
             'contact_phone' => 'nullable|string|max:60',
             'contact_email' => 'nullable|email|max:191',

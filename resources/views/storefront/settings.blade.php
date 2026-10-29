@@ -2,6 +2,15 @@
 @extends('layout.mainlayout')
 
 @section('content')
+<style>
+    .store-theme-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .store-theme-option{position:relative;display:flex;align-items:center;gap:10px;min-height:54px;padding:10px;border:1px solid #dbe3ee;border-radius:8px;cursor:pointer}
+    .store-theme-option:has(input:checked){border-color:#1463d6;box-shadow:0 0 0 2px rgba(20,99,214,.12)}
+    .store-theme-option input{margin:0}
+    .store-theme-swatch{display:flex;width:34px;height:34px;flex:0 0 auto;overflow:hidden;border:1px solid rgba(0,0,0,.12);border-radius:50%}
+    .store-theme-swatch span{flex:1}
+    .store-theme-option strong{font-size:.8rem;line-height:1.2}
+</style>
 <div class="page-wrapper"><div class="content container-fluid">
     @component('components.page-header') @slot('title') Online Store @endslot @endcomponent
     @include('layout.partials.flash-messages')
@@ -13,6 +22,23 @@
                 <div class="d-flex justify-content-between align-items-start gap-3 mb-3"><div><h4 class="mb-1">Store Settings</h4><p class="text-muted mb-0">Publish active stock to a customer-facing catalogue.</p></div><span class="badge {{ $setting->is_enabled ? 'bg-success' : 'bg-secondary' }}">{{ $setting->is_enabled ? 'Live' : 'Offline' }}</span></div>
                 <form method="POST" action="{{ route('online-store.settings.update') }}">@csrf @method('PUT')
                     <div class="mb-3"><label class="form-label">Store Name *</label><input class="form-control" name="store_name" value="{{ old('store_name', $setting->store_name) }}" required></div>
+                    <fieldset class="mb-3">
+                        <legend class="form-label fw-bold">Store design</legend>
+                        <p class="form-text mt-0">Choose one of 10 background and color themes. Your store text, products, and page layout stay the same.</p>
+                        <div class="store-theme-options">
+                            @foreach($storeThemes as $themeKey => $theme)
+                                <label class="store-theme-option">
+                                    <input type="radio" name="store_theme" value="{{ $themeKey }}" @checked(old('store_theme', $setting->store_theme ?: 'classic') === $themeKey)>
+                                    <span class="store-theme-swatch" aria-hidden="true">
+                                        <span style="background:{{ $theme['deep'] }}"></span>
+                                        <span style="background:{{ $theme['primary'] }}"></span>
+                                        <span style="background:{{ $theme['accent'] }}"></span>
+                                    </span>
+                                    <strong>{{ $theme['label'] }}</strong>
+                                </label>
+                            @endforeach
+                        </div>
+                    </fieldset>
                     <div class="mb-3"><label class="form-label">SmartProbook Store URL *</label><div class="input-group"><span class="input-group-text">{{ url('/shop') }}/</span><input class="form-control" name="slug" value="{{ old('slug', $setting->slug) }}" required></div></div>
                     <div class="mb-3"><label class="form-label">Custom Domain</label><input class="form-control" name="custom_domain" value="{{ old('custom_domain', $setting->custom_domain) }}" placeholder="shop.yourbusiness.com"><div class="form-text">Optional: enter a web address you own, such as shop.yourbusiness.com. To use it, ask the person who manages your website to connect it to SmartProbook and turn on secure access (HTTPS). If you are unsure, leave this blank and use the SmartProbook Store URL above.</div></div>
                     <div class="mb-3"><label class="form-label">About Your Business / Store Description</label><textarea class="form-control" name="description" rows="3" placeholder="Tell customers what your business does and what makes your store special.">{{ old('description', $setting->description) }}</textarea><div class="form-text">Customers will see this on your store homepage and About Us page.</div></div>

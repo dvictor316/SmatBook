@@ -6373,21 +6373,38 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
     }
     #pos-offline-lock .offline-lock-card button:disabled { opacity: .55; }
     #pos-offline-auth-notice {
-        position: fixed;
+        position: absolute;
         z-index: 25000;
         top: 16px;
         left: 50%;
         max-width: min(92vw, 620px);
-        padding: 12px 18px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px 14px 12px 18px;
         transform: translateX(-50%);
         border-radius: 10px;
         background: #e7f5ec;
         color: #14532d;
         box-shadow: 0 8px 28px rgba(0, 0, 0, .16);
     }
+    #pos-offline-auth-notice[hidden] { display: none !important; }
+    #pos-offline-auth-notice [data-notice-message] { flex: 1; }
+    #pos-offline-auth-notice [data-notice-dismiss] {
+        flex: 0 0 auto;
+        padding: 0 4px;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font-size: 20px;
+        line-height: 1;
+    }
     #pos-offline-auth-notice[data-type="error"] { background: #fff0f0; color: #991b1b; }
 </style>
-<div id="pos-offline-auth-notice" hidden role="status" aria-live="polite"></div>
+<div id="pos-offline-auth-notice" hidden role="status" aria-live="polite">
+    <span data-notice-message></span>
+    <button type="button" data-notice-dismiss aria-label="Dismiss notice">&times;</button>
+</div>
 <div id="pos-offline-lock" role="dialog" aria-modal="true" aria-labelledby="pos-offline-lock-title" aria-hidden="false">
     <section class="offline-lock-card">
         <p class="text-uppercase small fw-bold text-primary mb-2">Offline POS</p>

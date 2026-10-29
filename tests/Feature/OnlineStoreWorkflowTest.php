@@ -182,6 +182,70 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertSee('smartprobook-cart-gallery-store');
     }
 
+    public function test_business_owner_can_choose_one_of_ten_storefront_color_themes(): void
+    {
+        [$user, $company] = $this->workspace('Theme Store');
+        StorefrontSetting::create([
+            'company_id' => $company->id,
+            'slug' => 'theme-store',
+            'store_name' => 'Theme Store',
+            'is_enabled' => true,
+        ]);
+        $settingsUrl = route('online-store.settings');
+
+        $this->actingAs($user)
+            ->withSession(['current_tenant_id' => $company->id, 'active_branch_scope' => 'all']);
+
+        $this->get($settingsUrl)
+            ->assertOk()
+            ->assertSee('Choose one of 10 background and color themes')
+            ->assertSee('value="classic"', false)
+            ->assertSee('value="ocean"', false)
+            ->assertSee('value="forest"', false)
+            ->assertSee('value="sunset"', false)
+            ->assertSee('value="royal"', false)
+            ->assertSee('value="rose"', false)
+            ->assertSee('value="sand"', false)
+            ->assertSee('value="midnight"', false)
+            ->assertSee('value="teal"', false)
+            ->assertSee('value="crimson"', false);
+
+        $this->put(route('online-store.settings.update'), [
+                'slug' => 'theme-store',
+                'store_name' => 'Theme Store',
+                'store_theme' => 'ocean',
+                'is_enabled' => 1,
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('storefront_settings', [
+            'company_id' => $company->id,
+            'store_theme' => 'ocean',
+        ]);
+
+        $this->get(route('storefront.catalogue', 'theme-store'))
+            ->assertOk()
+            ->assertSee('<body data-store-theme="ocean">', false);
+        $this->get(route('storefront.products', 'theme-store'))
+            ->assertOk()
+            ->assertSee('<body data-store-theme="ocean">', false);
+        $this->get(route('storefront.about', 'theme-store'))
+            ->assertOk()
+            ->assertSee('<body data-store-theme="ocean">', false);
+
+        $this->put(route('online-store.settings.update'), [
+            'slug' => 'theme-store',
+            'store_name' => 'Theme Store',
+            'store_theme' => 'unsupported-theme',
+            'is_enabled' => 1,
+        ])->assertSessionHasErrors('store_theme');
+
+        $this->assertDatabaseHas('storefront_settings', [
+            'company_id' => $company->id,
+            'store_theme' => 'ocean',
+        ]);
+    }
+
     public function test_order_and_status_changes_send_whatsapp_cloud_template_notifications(): void
     {
         [$user, $company] = $this->workspace('WhatsApp Store');

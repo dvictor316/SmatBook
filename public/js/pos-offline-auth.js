@@ -188,14 +188,18 @@
         }
     }
 
-    function setNotice(message, type = 'info', dismissAfter = 0) {
+    function setNotice(message, type = 'info', dismissAfter = 6000) {
         const notice = document.getElementById('pos-offline-auth-notice');
-        if (!notice) return;
+        const messageElement = notice?.querySelector('[data-notice-message]');
+        if (!notice || !messageElement) return;
+        if (notice.parentElement !== document.body) {
+            document.body.appendChild(notice);
+        }
         if (noticeTimeout !== null) {
             root.clearTimeout(noticeTimeout);
             noticeTimeout = null;
         }
-        notice.textContent = message;
+        messageElement.textContent = message;
         notice.dataset.type = type;
         notice.hidden = false;
         if (dismissAfter > 0) {
@@ -203,6 +207,15 @@
                 notice.hidden = true;
                 noticeTimeout = null;
             }, dismissAfter);
+        }
+    }
+
+    function dismissNotice() {
+        const notice = document.getElementById('pos-offline-auth-notice');
+        if (notice) notice.hidden = true;
+        if (noticeTimeout !== null) {
+            root.clearTimeout(noticeTimeout);
+            noticeTimeout = null;
         }
     }
 
@@ -243,7 +256,7 @@
                 last_online_at: Date.now(),
             });
             clearPendingLogin();
-            setNotice('Offline sign-in is ready for this account and POS workspace.', 'success', 7000);
+            setNotice('Offline sign-in is ready for this account and POS workspace.', 'success', 6000);
             return;
         }
 
@@ -261,7 +274,7 @@
         }
 
         if (saved) await deleteCredential();
-        setNotice('Sign in online with your password to enable offline POS access on this device.', 'info', 30000);
+        setNotice('Sign in online with your password to enable offline POS access on this device.', 'info', 6000);
     }
 
     function setBackgroundLocked(gate, locked) {
@@ -359,7 +372,7 @@
                 await saveCredential(credential);
                 passwordInput.value = '';
                 setBackgroundLocked(gate, false);
-                setNotice('Offline POS unlocked. Saved sales will sync when internet returns.', 'success', 7000);
+                setNotice('Offline POS unlocked. Saved sales will sync when internet returns.', 'success', 6000);
             } catch (error) {
                 console.error('Offline sign-in verification failed.', error);
                 messageElement.textContent = 'Offline sign-in could not be verified. Reconnect and sign in online.';
@@ -421,6 +434,8 @@
     }
 
     function start() {
+        document.querySelector('#pos-offline-auth-notice [data-notice-dismiss]')
+            ?.addEventListener('click', dismissNotice);
         const loginForm = document.querySelector('form[action$="/saas-login"]');
         if (loginForm?.dataset.loginFailed === '1') {
             clearPendingLogin();
