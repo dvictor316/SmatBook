@@ -91,6 +91,8 @@
     $change = max(0, (float) ($sale->change_amount ?? 0));
     $tendered = $paid + $change;
     $balance = (float) ($sale->effective_balance ?? max(0, $total - $paid));
+    $previousCustomerBalance = max(0, (float) ($previousCustomerBalance ?? 0));
+    $customerBalanceDue = $previousCustomerBalance + $balance;
     $paymentDetails = is_array($sale->payment_details) ? $sale->payment_details : [];
     $split = is_array($paymentDetails['split'] ?? null) ? $paymentDetails['split'] : [];
     $receiptFooter = \App\Support\ReceiptCompanyProfile::footer($company);
@@ -160,6 +162,11 @@
     @if($tendered > $paid)<div class="total-row"><span>Tendered</span><span>{{ $money($tendered) }}</span></div>@endif
     <div class="total-row strong"><span>Paid</span><span>{{ $money($paid) }}</span></div>
     @if($balance > 0)<div class="total-row strong"><span>Balance</span><span>{{ $money($balance) }}</span></div>@endif
+    @if($customerBalanceDue > 0)
+        <div class="total-row"><span>Previous Balance</span><span>{{ $money($previousCustomerBalance) }}</span></div>
+        <div class="total-row"><span>Current Invoice Balance</span><span>{{ $money($balance) }}</span></div>
+        <div class="total-row grand-total"><span>Total Customer Balance</span><span>{{ $money($customerBalanceDue) }}</span></div>
+    @endif
     @if($change > 0)<div class="total-row strong"><span>Change</span><span>{{ $money($change) }}</span></div>@endif
 
     <div class="rule"></div>

@@ -35,25 +35,19 @@ class InvoiceController extends Controller
 
     private function customerOutstandingBalance(int $customerId, ?int $excludeSaleId = null): float
     {
-        if ($customerId <= 0 || !Schema::hasTable('sales') || !Schema::hasColumn('sales', 'balance')) {
-            return 0.0;
-        }
+        $customerQuery = Customer::query()->whereKey($customerId);
+        $this->applyTenantScope($customerQuery, 'customers');
+        $customer = $customerQuery->first();
 
-        $query = Sale::query()->where('customer_id', $customerId);
-        $this->applyTenantScope($query, 'sales');
+        $salesQuery = Sale::query();
+        $this->applyTenantScope($salesQuery, 'sales');
 
-        if ($excludeSaleId) {
-            $query->where('id', '!=', $excludeSaleId);
-        }
-
-        if (Schema::hasColumn('sales', 'order_status')) {
-            $query->where(function ($sub) {
-                $sub->whereNull('order_status')
-                    ->orWhere('order_status', '!=', 'draft');
-            });
-        }
-
-        return (float) $query->sum(DB::raw('GREATEST(COALESCE(balance, 0), 0)'));
+        return app(\App\Support\CustomerReceivables::class)->outstandingBalance(
+            $customerId,
+            $customer,
+            $salesQuery,
+            $excludeSaleId
+        );
     }
 
     private function creditLimitWarningResponse(Request $request, Customer $customer, float $newCreditAmount, ?int $excludeSaleId = null)

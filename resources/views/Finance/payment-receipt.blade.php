@@ -314,6 +314,12 @@
                             <span>Balance Remaining</span>
                             <strong>₦{{ \App\Support\CompactNumber::format($saleBalance, 2) }}</strong>
                         </div>
+                        @if($customerBalanceAfterPayment !== null)
+                            <div class="payment-summary-row balance">
+                                <span>Customer Balance After Payment</span>
+                                <strong>₦{{ \App\Support\CompactNumber::format($customerBalanceAfterPayment, 2) }}</strong>
+                            </div>
+                        @endif
                     </div>
 
                     @if(!empty($payment->note))

@@ -728,17 +728,29 @@ class PaymentController extends Controller
         return redirect()->route('payments.index')->with('info', 'Update is not enabled on this page yet.');
     }
 
-    public function receipt(Payment $payment)
+    public function receipt(int|string $payment)
     {
-        $payment = $this->findScopedPayment($payment->id);
+        $payment = $this->findScopedPayment($payment);
         abort_if(!$payment, 404);
         $payment->loadMissing(['sale.items', 'sale.customer', 'customer', 'creator', 'account']);
         $saleCompanyId = (int) ($payment->sale?->company_id ?? 0);
         $company = $saleCompanyId > 0
             ? Company::withoutGlobalScopes()->find($saleCompanyId)
             : auth()->user()?->company;
+        $customer = $payment->customer ?? $payment->sale?->customer;
+        $customerId = (int) ($payment->customer_id ?? $payment->sale?->customer_id ?? 0);
+        $customerBalanceAfterPayment = null;
+        if ($customerId > 0) {
+            $salesQuery = Sale::query();
+            $this->applyTenantScope($salesQuery, 'sales');
+            $customerBalanceAfterPayment = app(\App\Support\CustomerReceivables::class)->outstandingBalance(
+                $customerId,
+                $customer,
+                $salesQuery
+            );
+        }
 
-        return view('Finance.payment-receipt', compact('payment', 'company'));
+        return view('Finance.payment-receipt', compact('payment', 'company', 'customerBalanceAfterPayment'));
     }
 
     public function getBySale($saleId)

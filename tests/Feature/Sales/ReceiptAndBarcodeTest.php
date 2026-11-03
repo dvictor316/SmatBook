@@ -3,6 +3,8 @@
 namespace Tests\Feature\Sales;
 
 use App\Models\Company;
+use App\Models\Customer;
+use App\Models\Payment;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Setting;
@@ -14,6 +16,107 @@ use Tests\TestCase;
 class ReceiptAndBarcodeTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_invoice_prints_show_previous_debt_and_combined_customer_balance(): void
+    {
+        $company = Company::create(['name' => 'Balance Invoice Company', 'industry' => 'retail', 'plan' => 'Enterprise']);
+        $user = User::factory()->create(['company_id' => $company->id, 'role' => 'admin']);
+        $customer = Customer::create([
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'customer_name' => 'Balance Customer',
+            'balance' => 1000000,
+        ]);
+        $sale = Sale::create([
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'customer_id' => $customer->id,
+            'customer_name' => $customer->customer_name,
+            'invoice_no' => 'BALANCE-INVOICE-500K',
+            'subtotal' => 500000,
+            'total' => 500000,
+            'paid' => 0,
+            'amount_paid' => 0,
+            'balance' => 500000,
+            'payment_status' => 'unpaid',
+        ]);
+
+        $this->actingAs($user)->withoutMiddleware()
+            ->get(route('sales.invoice.print', $sale->id))
+            ->assertOk()
+            ->assertSee('Previous Customer Balance')
+            ->assertSee('1,000,000')
+            ->assertSee('Customer Balance Due')
+            ->assertSee('1,500,000');
+
+        $this->get(route('sales.invoice.print', ['id' => $sale->id, 'format' => 'thermal', 'paper' => 80]))
+            ->assertOk()
+            ->assertSee('Previous Balance')
+            ->assertSee('Current Invoice Balance')
+            ->assertSee('Total Customer Balance')
+            ->assertSee('1,500,000');
+
+        $this->get(route('invoice-details.print', ['id' => $sale->id]))
+            ->assertOk()
+            ->assertSee('Previous Customer Balance')
+            ->assertSee('Customer Balance Due')
+            ->assertSee('1,500,000');
+    }
+
+    public function test_payment_receipt_shows_customer_balance_after_payment_across_invoices(): void
+    {
+        $company = Company::create(['name' => 'Balance Receipt Company', 'industry' => 'retail', 'plan' => 'Enterprise']);
+        $user = User::factory()->create(['company_id' => $company->id, 'role' => 'admin']);
+        $customer = Customer::create([
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'customer_name' => 'Receipt Balance Customer',
+            'balance' => 200000,
+        ]);
+        $openingSale = Sale::create([
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'customer_id' => $customer->id,
+            'customer_name' => $customer->customer_name,
+            'invoice_no' => 'OPENING-BAL-' . $customer->id,
+            'subtotal' => 1000000,
+            'total' => 1000000,
+            'paid' => 800000,
+            'amount_paid' => 800000,
+            'balance' => 200000,
+            'payment_status' => 'partial',
+        ]);
+        Sale::create([
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'customer_id' => $customer->id,
+            'customer_name' => $customer->customer_name,
+            'invoice_no' => 'CURRENT-INVOICE-500K',
+            'subtotal' => 500000,
+            'total' => 500000,
+            'paid' => 0,
+            'amount_paid' => 0,
+            'balance' => 500000,
+            'payment_status' => 'unpaid',
+        ]);
+        $payment = Payment::create([
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'created_by' => $user->id,
+            'customer_id' => $customer->id,
+            'sale_id' => $openingSale->id,
+            'amount' => 800000,
+            'method' => 'Cash',
+            'status' => 'Completed',
+        ]);
+        $this->assertNotNull($payment->id);
+
+        $this->actingAs($user)->withoutMiddleware()
+            ->get(route('payments.receipt', $payment->id))
+            ->assertOk()
+            ->assertSee('Customer Balance After Payment')
+            ->assertSee('700,000');
+    }
 
     public function test_company_profile_address_is_used_for_standard_and_thermal_sales_receipts(): void
     {
