@@ -256,7 +256,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/thread/{user}', [MessageController::class, 'thread'])->name('messages.thread');
     });
 
-    Route::get('/chat/{id}', [MessageController::class, 'show'])->middleware('subscription.active')->name('messages.chat.show');
+    Route::get('/chat/{id}', [MessageController::class, 'show'])
+        ->whereNumber('id')
+        ->middleware('subscription.active')
+        ->name('messages.chat.show');
 
     // Project Management
     Route::controller(ProjectManagementController::class)->prefix('projects')->name('projects.')->middleware(['subscription.active', 'plan.access:pro,enterprise'])->group(function () {

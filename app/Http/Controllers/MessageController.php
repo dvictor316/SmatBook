@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Message;
-use App\Models\User;
+use App\Support\ChatParticipantAccess;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class MessageController extends Controller
 {
+    public function __construct(private readonly ChatParticipantAccess $chatParticipants) {}
+
     /**
      * Display a listing of messages.
      * Rewritten to support central and tenant indexing.
@@ -17,8 +19,10 @@ class MessageController extends Controller
     public function index()
     {
         $userId = Auth::id();
-        $messages = Message::where('user_id', $userId)
-            ->orWhere('receiver_id', $userId)
+        $messages = Message::where(function ($query) use ($userId) {
+            $query->where('user_id', $userId)
+                ->orWhere('receiver_id', $userId);
+        })
             ->with(['sender', 'receiver'])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -51,7 +55,7 @@ class MessageController extends Controller
     public function thread($userId)
     {
         $currentUserId = Auth::id();
-        $targetUser = User::findOrFail($userId);
+        $targetUser = $this->chatParticipants->findOrFail($userId);
 
         $messages = Message::where(function ($q) use ($currentUserId, $userId) {
                 $q->where('user_id', $currentUserId)->where('receiver_id', $userId);
@@ -76,14 +80,15 @@ class MessageController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'receiver_id' => 'required|exists:users,id',
             'subject'     => 'required|string|max:255',
             'content'     => 'required|string',
         ]);
 
         $senderId = Auth::id();
-        $receiverId = $request->receiver_id;
+        $receiver = $this->chatParticipants->findOrFail($validated['receiver_id']);
+        $receiverId = $receiver->id;
 
         // Find or Create a Chat ID to group these messages (Chat logic)
         $chatId = Message::where(function($q) use ($senderId, $receiverId) {
@@ -101,8 +106,8 @@ class MessageController extends Controller
             'sender_id'   => $senderId,
             'receiver_id' => $receiverId,
             'chat_id'     => $chatId,
-            'subject'     => $request->subject,
-            'content'     => $request->content,
+            'subject'     => $validated['subject'],
+            'content'     => $validated['content'],
             'read_at'     => null,
         ]);
 

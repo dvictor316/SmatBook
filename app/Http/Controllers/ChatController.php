@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Chat; 
 use App\Models\User;
+use App\Support\ChatParticipantAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -11,14 +11,16 @@ use Illuminate\Support\Facades\Schema;
 
 class ChatController extends Controller
 {
+    public function __construct(private readonly ChatParticipantAccess $chatParticipants) {}
+
     public function index($userId = null)
     {
         $currentUser = Auth::user();
-        $allUsers = User::where('id', '!=', $currentUser->id)->orderBy('name')->get();
+        $allUsers = $this->chatParticipants->query()->orderBy('name')->get();
         $contactIds = $this->contactIdsForUser($currentUser->id);
-        $contacts = User::whereIn('id', $contactIds)->orderBy('name')->get();
+        $contacts = $this->chatParticipants->query()->whereIn('id', $contactIds)->orderBy('name')->get();
 
-        $selectedUser = $userId ? User::find($userId) : null;
+        $selectedUser = $userId ? $this->chatParticipants->findOrFail($userId) : null;
         $messages = collect();
 
         if ($selectedUser) {
@@ -38,14 +40,15 @@ class ChatController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'receiver_id' => 'required|exists:users,id',
+        $validated = $request->validate([
+            'receiver_id' => 'required|integer|exists:users,id',
             'message' => 'required|string|max:2000',
         ]);
 
-        $this->insertChatMessage((int) auth()->id(), (int) $request->receiver_id, (string) $request->message);
+        $receiver = $this->chatParticipants->findOrFail($validated['receiver_id']);
+        $this->insertChatMessage((int) auth()->id(), (int) $receiver->id, (string) $validated['message']);
 
-        return redirect()->route('chat.index', $request->receiver_id)
+        return redirect()->route('chat.index', $receiver->id)
             ->with('success', 'Message sent successfully.');
     }
 
@@ -57,7 +60,8 @@ class ChatController extends Controller
     public function getContacts()
     {
         $currentUserId = (int) Auth::id();
-        $contacts = User::whereIn('id', $this->contactIdsForUser($currentUserId))
+        $contacts = $this->chatParticipants->query()
+            ->whereIn('id', $this->contactIdsForUser($currentUserId))
             ->orderBy('name')
             ->get()
             ->map(function (User $user) use ($currentUserId) {
@@ -77,7 +81,7 @@ class ChatController extends Controller
     public function getMessages($userId)
     {
         $currentUserId = (int) Auth::id();
-        User::findOrFail($userId);
+        $this->chatParticipants->findOrFail($userId);
         $this->markSelectedChatAsRead((int) $userId);
 
         return response()->json([
@@ -97,6 +101,7 @@ class ChatController extends Controller
     {
         $senderId = (int) ($request->input('user_id') ?? $request->input('sender_id') ?? 0);
         if ($senderId > 0) {
+            $this->chatParticipants->findOrFail($senderId);
             $this->markSelectedChatAsRead($senderId);
         }
 
@@ -112,8 +117,7 @@ class ChatController extends Controller
     {
         $search = trim((string) $request->input('q', ''));
 
-        $users = User::query()
-            ->where('id', '!=', Auth::id())
+        $users = $this->chatParticipants->query()
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($sub) use ($search) {
                     $sub->where('name', 'like', "%{$search}%")
