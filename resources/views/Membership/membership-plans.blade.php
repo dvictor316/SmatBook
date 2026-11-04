@@ -64,6 +64,34 @@
         .flex-between { display: flex; justify-content: space-between; align-items: center; }
         .brand-lockup { display: inline-flex; align-items: center; gap: 12px; min-width: 0; text-decoration: none; }
         .brand-logo { height: 48px; width: auto; display: block; flex-shrink: 0; }
+        .exit-setup-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex: 0 0 auto;
+            min-height: 42px;
+            padding: 0 14px;
+            border: 1px solid rgba(15, 58, 138, 0.16);
+            border-radius: 999px;
+            background: #f7faff;
+            color: #52647d;
+            font-size: 0.84rem;
+            font-weight: 700;
+            line-height: 1;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+        .exit-setup-link:hover {
+            color: var(--muji-blue-accent);
+            border-color: rgba(15, 58, 138, 0.34);
+            background: #eef4ff;
+        }
+        .exit-setup-link:focus-visible {
+            outline: 3px solid rgba(37, 99, 235, 0.28);
+            outline-offset: 2px;
+        }
         .spb-nav-wordmark {
             font-weight: 800;
             color: var(--muji-blue-deep);
@@ -364,17 +392,26 @@
             .membership-hero { padding: 22px 0 38px; }
             .hero-title { font-size: 2rem; }
             .hero-plan-note { align-items: flex-start; text-align: left; }
-            .brand-logo { height: 48px; }
-            .spb-nav-wordmark { font-size: 1.55rem; }
+            .spa-nav { padding: 0.45rem 0; }
+            .brand-lockup { gap: 8px; }
+            .brand-logo { height: 40px; }
+            .spb-nav-wordmark { font-size: clamp(1.15rem, 5vw, 1.4rem); }
+            .exit-setup-link { min-height: 40px; padding: 0 10px; gap: 6px; font-size: 0.76rem; }
         }
         @media (max-width: 420px) {
             .container { padding: 0 14px; }
             .brand-lockup { gap: 8px; }
-            .brand-logo { height: 46px; }
+            .brand-logo { height: 38px; max-width: 42px; object-fit: contain; }
             .spb-nav-wordmark {
-                font-size: 1.35rem;
+                font-size: clamp(1.05rem, 5vw, 1.25rem);
                 letter-spacing: -0.5px;
             }
+        }
+        @media (max-width: 360px) {
+            .container { padding: 0 10px; }
+            .brand-logo { display: none; }
+            .brand-lockup { gap: 0; }
+            .exit-setup-link { min-height: 38px; padding: 0 8px; gap: 5px; font-size: 0.72rem; }
         }
 
         /* Loader */
@@ -501,8 +538,8 @@
                 <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook Logo" class="brand-logo">
                 <span class="spb-nav-wordmark"><span class="smartpro">SmartPro</span><span class="book">book</span></span>
             </a>
-            <a href="{{ url()->previous() !== url()->current() ? url()->previous() : url('/') }}" onclick="return exitSetup(event)" style="text-decoration: none; color: #64748b; font-weight: 600; font-size: 0.85rem; transition: 0.3s;">
-                <i class="fas fa-arrow-left me-2"></i> Exit Setup
+            <a href="{{ url()->previous() !== url()->current() ? url()->previous() : url('/') }}" class="exit-setup-link" onclick="return exitSetup(event)">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i> <span>Exit Setup</span>
             </a>
         </div>
     </nav>
