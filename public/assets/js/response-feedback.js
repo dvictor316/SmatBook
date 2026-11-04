@@ -151,6 +151,33 @@
         hide();
     });
 
+    let livewireRequestHooksRegistered = false;
+    function registerLivewireRequestHooks() {
+        if (
+            livewireRequestHooksRegistered
+            || !window.Livewire
+            || typeof window.Livewire.hook !== 'function'
+        ) return;
+
+        livewireRequestHooksRegistered = true;
+        window.Livewire.hook('request', function ({ succeed, fail }) {
+            pendingAjaxRequests += 1;
+            show();
+            let requestFinished = false;
+            const finishRequest = function () {
+                if (requestFinished) return;
+                requestFinished = true;
+                pendingAjaxRequests = Math.max(0, pendingAjaxRequests - 1);
+                if (pendingAjaxRequests === 0) hide();
+            };
+            succeed(finishRequest);
+            fail(finishRequest);
+        });
+    }
+
+    document.addEventListener('livewire:init', registerLivewireRequestHooks);
+    registerLivewireRequestHooks();
+
     if (typeof window.fetch === 'function') {
         const nativeFetch = window.fetch.bind(window);
         window.fetch = function (input, init) {
