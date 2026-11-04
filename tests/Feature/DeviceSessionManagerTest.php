@@ -9,6 +9,7 @@ use App\Support\DeviceSessionManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class DeviceSessionManagerTest extends TestCase
@@ -52,6 +53,38 @@ class DeviceSessionManagerTest extends TestCase
         $this->assertDatabaseHas('active_user_sessions', [
             'session_id' => 'expired-other-session',
         ]);
+    }
+
+    public function test_existing_company_session_skips_subscription_and_session_count_queries(): void
+    {
+        $company = Company::create(['name' => 'Current Workspace']);
+        $user = User::factory()->create(['role' => 'admin', 'company_id' => $company->id]);
+        $session = app('session')->driver();
+        $session->setId('existing-company-session');
+        $session->start();
+        $request = Request::create('/dashboard', 'GET', server: [
+            'REMOTE_ADDR' => '127.0.0.1',
+            'HTTP_USER_AGENT' => 'SmartProbook existing session test',
+        ]);
+        $request->setLaravelSession($session);
+
+        ActiveUserSession::create([
+            'user_id' => $user->id,
+            'company_id' => $company->id,
+            'session_id' => $session->getId(),
+            'last_seen_at' => Carbon::now(),
+        ]);
+
+        $queries = [];
+        DB::listen(static function ($query) use (&$queries): void {
+            $queries[] = strtolower($query->sql);
+        });
+
+        $this->assertTrue(app(DeviceSessionManager::class)->ensureCurrentSession($request, $user)['allowed']);
+        $this->assertFalse(collect($queries)->contains(fn (string $sql) => str_contains($sql, 'subscriptions')));
+        $this->assertFalse(collect($queries)->contains(
+            fn (string $sql) => str_contains($sql, 'active_user_sessions') && str_contains($sql, 'count(')
+        ));
     }
 
     public function test_new_login_only_prunes_expired_sessions_for_its_own_workspace(): void

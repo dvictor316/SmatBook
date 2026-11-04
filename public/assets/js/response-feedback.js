@@ -34,31 +34,22 @@
         #spb-navigation-progress.is-active::before {
             animation: spb-navigation-progress 1.15s ease-in-out infinite;
         }
-        [data-spb-pending="true"]::after {
-            content: "";
-            display: inline-block;
-            width: .85em;
-            height: .85em;
-            margin-inline-start: .55em;
-            vertical-align: -.1em;
-            border: 2px solid currentColor;
-            border-right-color: transparent;
-            border-radius: 50%;
-            animation: spb-action-spin .7s linear infinite;
-        }
         a[data-spb-pending="true"] {
             cursor: progress;
             opacity: .78;
             pointer-events: none;
         }
+        button[data-spb-pending="true"],
+        input[data-spb-pending="true"] {
+            cursor: progress;
+            opacity: .78;
+        }
         @keyframes spb-navigation-progress {
             from { transform: translateX(-110%); }
             to { transform: translateX(310%); }
         }
-        @keyframes spb-action-spin { to { transform: rotate(360deg); } }
         @media (prefers-reduced-motion: reduce) {
-            #spb-navigation-progress.is-active::before,
-            [data-spb-pending="true"]::after { animation-duration: 2.5s; }
+            #spb-navigation-progress.is-active::before { animation-duration: 2.5s; }
         }
     `;
     document.head.appendChild(style);

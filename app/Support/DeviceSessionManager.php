@@ -28,9 +28,6 @@ class DeviceSessionManager
 
         $companyId = $this->resolveCompanyId($user);
         $fingerprint = $this->fingerprint($request);
-        $subscription = $this->isSuperAdmin($user) || $this->isPlatformStaff($user)
-            ? null
-            : Subscription::resolveCurrentForUser($user);
 
         $current = ActiveUserSession::query()
             ->where('session_id', $sessionId)
@@ -48,6 +45,10 @@ class DeviceSessionManager
             return ['allowed' => true];
         }
 
+        $subscription = $this->isSuperAdmin($user) || $this->isPlatformStaff($user)
+            ? null
+            : Subscription::resolveCurrentForUser($user);
+
         // Cleanup and duplicate-device checks are needed only when registering a
         // new authenticated session, not on every page or asset request.
         $this->pruneExpired($user->id, $companyId);
@@ -61,15 +62,17 @@ class DeviceSessionManager
             ->delete();
 
         $userLimit = $this->allowedUserSessions($user, $subscription, $companyId);
-        $activeUserSessions = ActiveUserSession::query()
-            ->where('user_id', $user->id)
-            ->count();
+        if ($userLimit !== null) {
+            $activeUserSessions = ActiveUserSession::query()
+                ->where('user_id', $user->id)
+                ->count();
 
-        if ($userLimit !== null && $activeUserSessions >= $userLimit) {
-            return [
-                'allowed' => false,
-                'message' => $this->userLimitMessage($user, $userLimit, $subscription, $companyId),
-            ];
+            if ($activeUserSessions >= $userLimit) {
+                return [
+                    'allowed' => false,
+                    'message' => $this->userLimitMessage($user, $userLimit, $subscription, $companyId),
+                ];
+            }
         }
 
         $workspaceLimit = $this->allowedWorkspaceSessions($user, $companyId, $subscription);

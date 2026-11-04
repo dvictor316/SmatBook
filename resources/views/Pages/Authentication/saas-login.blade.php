@@ -722,7 +722,7 @@
                     submitButton.dataset.originalHtml = submitButton.innerHTML;
                     submitButton.disabled = true;
                     submitButton.setAttribute('aria-busy', 'true');
-                    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Signing in...';
+                    submitButton.textContent = 'Signing in...';
                 }
 
                 const offlineOptIn = form.querySelector('#prepare-offline-pos')?.checked === true;
