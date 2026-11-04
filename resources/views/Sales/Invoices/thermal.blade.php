@@ -104,7 +104,7 @@
     <a href="{{ route('sales.invoice.print', $sale->id) }}?format=thermal&amp;paper=58">58mm</a>
     <a href="{{ route('sales.invoice.print', $sale->id) }}?format=thermal&amp;paper=80">80mm</a>
     <a href="{{ route('sales.invoice.print', $sale->id) }}">Standard</a>
-    <button type="button" onclick="window.close()">Close</button>
+    <button type="button" onclick="closePrintPage()">Close</button>
 </div>
 
 <main class="thermal-receipt">
@@ -189,7 +189,18 @@
 </main>
 
 <script>
+    const printReturnUrl = @json($backUrl ?? route('invoices.index'));
     let thermalPrintLocked = false;
+
+    function closePrintPage() {
+        window.close();
+        window.setTimeout(() => {
+            if (!window.closed) {
+                window.location.assign(printReturnUrl);
+            }
+        }, 100);
+    }
+
     function printThermalReceipt() {
         if (thermalPrintLocked) return;
         thermalPrintLocked = true;

@@ -498,7 +498,7 @@
                 >
                     <i class="bi bi-envelope me-1"></i> Email
                 </button>
-                <button type="button" class="btn btn-outline-secondary" onclick="window.close()">
+                <button type="button" class="btn btn-outline-secondary" onclick="closePrintPage()">
                     <i class="bi bi-x-lg me-1"></i> Close
                 </button>
             </div>
@@ -707,8 +707,18 @@
 </body>
 <script>
     const autoPrintReceipt = {{ request()->boolean('autoprint') ? 'true' : 'false' }};
+    const printReturnUrl = @json($backUrl ?? route('invoices.index'));
     let compactPrintLocked = false;
     let invoiceEmailInFlight = false;
+
+    function closePrintPage() {
+        window.close();
+        window.setTimeout(() => {
+            if (!window.closed) {
+                window.location.assign(printReturnUrl);
+            }
+        }, 100);
+    }
 
     function showEmailFeedback(message, type = 'success') {
         const feedback = document.getElementById('emailFeedback');

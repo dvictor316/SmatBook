@@ -83,6 +83,8 @@ class InvoiceCreditPaymentModeTest extends TestCase
         $this->get(route('sales.invoice.print', ['id' => $sale->id, 'autoprint' => 1]))
             ->assertOk()
             ->assertSee('const autoPrintReceipt = true;', false)
+            ->assertSee('function closePrintPage()', false)
+            ->assertSee('window.location.assign(printReturnUrl)', false)
             ->assertSee('Customer Balance Due');
     }
 
