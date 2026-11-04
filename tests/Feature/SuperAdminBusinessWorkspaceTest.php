@@ -50,7 +50,7 @@ class SuperAdminBusinessWorkspaceTest extends TestCase
         $this->assertDatabaseCount('companies', 1);
     }
 
-    public function test_business_sidebar_uses_livewire_navigation_for_safe_core_pages_only(): void
+    public function test_business_sidebar_exposes_profit_loss_and_app_navigation_uses_livewire(): void
     {
         $admin = User::factory()->create(['role' => 'super_admin', 'company_id' => null]);
 
@@ -63,8 +63,12 @@ class SuperAdminBusinessWorkspaceTest extends TestCase
             ->assertSee('wire:navigate.hover href="'.route('invoices.index').'"', false)
             ->assertSee('wire:navigate.hover href="'.route('product-list').'"', false)
             ->assertSee('wire:navigate.hover href="'.route('settings.index').'"', false)
+            ->assertSee('wire:navigate.hover href="'.route('reports.profit-loss').'"', false)
             ->assertDontSee('wire:navigate.hover href="'.route('sales.showPos').'"', false)
-            ->assertSee("document.addEventListener('livewire:navigated'", false);
+            ->assertSee("document.addEventListener('livewire:navigated'", false)
+            ->assertSee('window.Livewire.navigate(destination.href)', false);
+
+        $this->get(route('reports.profit-loss'))->assertOk();
     }
 
     public function test_stale_client_assignment_does_not_upgrade_or_reuse_the_clients_workspace(): void

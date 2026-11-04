@@ -634,6 +634,83 @@
 
     @livewireScripts
 
+    <script>
+        (function () {
+            if (window.__spbAppWideLivewireNavigation) {
+                return;
+            }
+
+            function enableInternalNavigation() {
+                if (window.__spbAppWideLivewireNavigation || typeof window.Livewire?.navigate !== 'function') {
+                    return;
+                }
+
+                window.__spbAppWideLivewireNavigation = true;
+
+                document.addEventListener('click', function (event) {
+                    if (
+                        event.defaultPrevented ||
+                        event.button !== 0 ||
+                        event.metaKey ||
+                        event.ctrlKey ||
+                        event.shiftKey ||
+                        event.altKey
+                    ) {
+                        return;
+                    }
+
+                    var target = event.target instanceof Element ? event.target : event.target?.parentElement;
+                    var link = target?.closest('a[href]');
+
+                    if (
+                        !link ||
+                        link.hasAttribute('wire:navigate') ||
+                        link.hasAttribute('wire:navigate.hover') ||
+                        link.hasAttribute('download') ||
+                        link.hasAttribute('target') ||
+                        link.hasAttribute('onclick') ||
+                        link.hasAttribute('wire:click') ||
+                        link.hasAttribute('x-on:click') ||
+                        link.hasAttribute('data-bs-toggle') ||
+                        link.hasAttribute('data-toggle') ||
+                        link.getAttribute('role') === 'button' ||
+                        link.closest('[data-no-livewire-navigate]')
+                    ) {
+                        return;
+                    }
+
+                    var href = link.getAttribute('href')?.trim();
+                    if (!href || href.startsWith('#') || /^(?:javascript|mailto|tel):/i.test(href)) {
+                        return;
+                    }
+
+                    var destination = new URL(link.href, window.location.href);
+                    if (
+                        destination.origin !== window.location.origin ||
+                        !['http:', 'https:'].includes(destination.protocol) ||
+                        /(?:^|\/)(?:pos|auth|oauth|logout|export|download|print)(?:\/|$)/i.test(destination.pathname) ||
+                        /\.(?:pdf|csv|xlsx?|zip|docx?|png|jpe?g|gif|webp|mp[34])$/i.test(destination.pathname)
+                    ) {
+                        return;
+                    }
+
+                    if (
+                        destination.pathname === window.location.pathname &&
+                        destination.search === window.location.search
+                    ) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    window.Livewire.navigate(destination.href);
+                }, true);
+            }
+
+            enableInternalNavigation();
+            document.addEventListener('livewire:init', enableInternalNavigation, { once: true });
+        })();
+    </script>
+
     {{-- GLOBAL SESSION EXPIRY HANDLER --}}
     {{-- Catches 401/419 from ALL requests (jQuery, fetch, Livewire) and redirects to login --}}
     @php

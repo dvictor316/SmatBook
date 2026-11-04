@@ -32,6 +32,14 @@
 @if(Route::has('reports.hub'))
     <li><a href="{{ route('reports.hub') }}?tab=standard" class="{{ request()->routeIs('reports.hub') && $currentTab === 'standard' ? 'active' : '' }}">Standard Reports</a></li>
 @endif
+@if(Route::has('reports.profit-loss'))
+    <li>
+        <a wire:navigate.hover href="{{ route('reports.profit-loss') }}"
+           class="{{ request()->routeIs('reports.profit-loss') ? 'active' : '' }}">
+            Profit &amp; Loss
+        </a>
+    </li>
+@endif
 
 @if($canManagement)
     <li class="reports-group-header">Management</li>
