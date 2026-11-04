@@ -766,7 +766,7 @@
                     <?php $transferErrors = isset($errors) ? $errors : session('errors'); ?>
                     <p class="text-muted mb-3">Add a product to another branch without re-entering it, or move stock from the selected source branch.</p>
                     <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" name="add_all_products" id="transfer-all-products" value="1">
+                        <input class="form-check-input" type="checkbox" name="add_all_products" id="transfer-all-products" value="1" <?php if (old('add_all_products')) { ?>checked<?php } ?>>
                         <label class="form-check-label fw-semibold" for="transfer-all-products">Add all company products to the destination with zero stock</label>
                         <div class="form-text">Existing destination stock is left unchanged. This adds catalog availability only.</div>
                     </div>
@@ -804,7 +804,7 @@
                     </div>
                     <div class="mb-0">
                         <label class="form-label">Quantity</label>
-                        <input type="number" step="0.01" min="0" name="quantity" value="<?php echo e(old('quantity')); ?>" class="form-control" required>
+                        <input type="number" step="0.01" min="0" name="quantity" value="<?php echo e(old('quantity')); ?>" class="form-control">
                         <div class="form-text">Enter 0 to add this product to the destination catalog without moving stock.</div>
                         <?php if ($transferErrors && $transferErrors->has('quantity')) { ?>
                             <div class="invalid-feedback d-block"><?php echo e($transferErrors->first('quantity')); ?></div>
@@ -1297,6 +1297,13 @@
             var productIdInput = productLookup.querySelector('.product-lookup-id');
             var quantityInput = transferForm.querySelector('[name="quantity"]');
             var transferSubmit = document.getElementById('transfer-stock-submit');
+            var syncTransferMode = function() {
+                productLookup.hidden = transferAllProducts.checked;
+                productIdInput.required = !transferAllProducts.checked;
+                quantityInput.closest('.mb-0').hidden = transferAllProducts.checked;
+                quantityInput.required = !transferAllProducts.checked;
+                transferSubmit.textContent = transferAllProducts.checked ? 'Add All Products' : 'Transfer / Add Product';
+            };
             transferForm.addEventListener('submit', function(event) {
                 if (transferAllProducts.checked) return;
 
@@ -1312,13 +1319,8 @@
                     quantityInput.reportValidity();
                 }
             });
-            transferAllProducts.addEventListener('change', function() {
-                productLookup.hidden = transferAllProducts.checked;
-                productLookup.querySelector('.product-lookup-id').required = !transferAllProducts.checked;
-                quantityInput.closest('.mb-0').hidden = transferAllProducts.checked;
-                quantityInput.required = !transferAllProducts.checked;
-                transferSubmit.textContent = transferAllProducts.checked ? 'Add All Products' : 'Transfer / Add Product';
-            });
+            transferAllProducts.addEventListener('change', syncTransferMode);
+            syncTransferMode();
         }
 
         <?php if (session('stock_transfer_validation_failed')) { ?>

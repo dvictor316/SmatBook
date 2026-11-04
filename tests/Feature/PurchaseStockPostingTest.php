@@ -233,6 +233,25 @@ class PurchaseStockPostingTest extends TestCase
                 && (float) $summary->quantity_total === 0.0);
     }
 
+    public function test_bulk_catalog_option_is_preserved_when_branch_validation_requires_correction(): void
+    {
+        [$product] = $this->workspace();
+        $this->configureTransferBranches($product);
+
+        $this->from(route('product-list'))
+            ->post(route('inventory.transfer'), ['add_all_products' => 1])
+            ->assertRedirect(route('product-list'))
+            ->assertSessionHasErrors(['from_branch_id', 'to_branch_id'])
+            ->assertSessionDoesntHaveErrors('quantity')
+            ->assertSessionHas('_old_input.add_all_products', 1);
+
+        $this->get(route('product-list'))
+            ->assertOk()
+            ->assertSee('transferAllProducts.addEventListener(\'change\', syncTransferMode);', false)
+            ->assertSee('quantityInput.required = !transferAllProducts.checked;', false)
+            ->assertSee('syncTransferMode();', false);
+    }
+
     public function test_invalid_transfer_inputs_show_actionable_errors_and_reopen_the_transfer_form(): void
     {
         [$product] = $this->workspace();
