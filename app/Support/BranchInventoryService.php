@@ -31,7 +31,7 @@ class BranchInventoryService
         if (Schema::hasTable('product_branch_stocks') && !empty($branch['id'])) {
             $branchStock = $product->relationLoaded('branchStocks')
                 ? $product->branchStocks->firstWhere('branch_id', (string) $branch['id'])
-                : $product->branchStocks()->where('branch_id', (string) $branch['id'])->first();
+                : $this->branchStockQuery($product, $branch)->first();
 
             if ($branchStock) {
                 // An existing zero balance is real stock information, not a missing row.
@@ -341,10 +341,11 @@ class BranchInventoryService
         $productModel = $product instanceof Product ? $product : Product::query()->findOrFail($product);
         $resolvedCompanyId = $companyId ?? (int) ($productModel->company_id ?? auth()->user()?->company_id ?? 0);
 
-        $branchStock = ProductBranchStock::query()->firstOrNew([
-            'product_id' => $productModel->id,
-            'branch_id' => (string) $branch['id'],
-        ]);
+        $branchStock = $this->branchStockQuery($productModel, $branch, $resolvedCompanyId)->first()
+            ?? new ProductBranchStock([
+                'product_id' => $productModel->id,
+                'branch_id' => (string) $branch['id'],
+            ]);
         $seededFromCurrentProductStock = false;
 
         if (!$branchStock->exists && $seedFromProductStock) {
@@ -400,10 +401,11 @@ class BranchInventoryService
         $productModel = $product instanceof Product ? $product : Product::query()->findOrFail($product);
         $resolvedCompanyId = $companyId ?? (int) ($productModel->company_id ?? auth()->user()?->company_id ?? 0);
 
-        $branchStock = ProductBranchStock::query()->firstOrNew([
-            'product_id' => $productModel->id,
-            'branch_id' => (string) $branch['id'],
-        ]);
+        $branchStock = $this->branchStockQuery($productModel, $branch, $resolvedCompanyId)->first()
+            ?? new ProductBranchStock([
+                'product_id' => $productModel->id,
+                'branch_id' => (string) $branch['id'],
+            ]);
 
         $branchStock->company_id = $resolvedCompanyId > 0 ? $resolvedCompanyId : null;
         $branchStock->branch_name = $branch['name'];
@@ -411,6 +413,24 @@ class BranchInventoryService
         $branchStock->save();
 
         return $branchStock;
+    }
+
+    private function branchStockQuery(Product $product, array $branch, ?int $companyId = null): Builder
+    {
+        $query = ProductBranchStock::query()
+            ->withoutGlobalScope('tenant')
+            ->where('product_id', $product->id)
+            ->where('branch_id', (string) $branch['id']);
+        $companyId ??= (int) ($product->company_id ?? auth()->user()?->company_id ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn('product_branch_stocks', 'company_id')) {
+            $query->where(function (Builder $tenant) use ($companyId) {
+                $tenant->where('company_id', $companyId)
+                    ->orWhereNull('company_id');
+            });
+        }
+
+        return $query;
     }
 
     public function seedOpeningStock(Product $product, float $quantity, ?array $branch = null, ?int $companyId = null): ?ProductBranchStock

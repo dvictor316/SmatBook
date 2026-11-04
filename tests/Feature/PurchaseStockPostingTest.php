@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\{Company, Product, ProductBranchStock, ProductUnit, Purchase, Supplier, User};
+use App\Models\{Company, Product, ProductBranchStock, ProductUnit, Purchase, Setting, Supplier, User};
 use App\Support\BranchInventoryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -115,6 +115,139 @@ class PurchaseStockPostingTest extends TestCase
         $this->post(route('purchases.store'), $payload)->assertSessionHas('error');
         $this->assertDatabaseMissing('purchases', ['purchase_no' => 'PUR-STOCK-TEST']);
         $this->assertStock($product, 5, 5);
+    }
+
+    public function test_zero_quantity_transfer_adds_branch_catalog_visibility_without_stock_history(): void
+    {
+        [$product] = $this->workspace();
+        $this->configureTransferBranches($product);
+        $historyCount = DB::table('inventory_history')->where('product_id', $product->id)->count();
+
+        $this->post(route('inventory.transfer'), [
+            'product_id' => $product->id,
+            'from_branch_id' => 'hq',
+            'to_branch_id' => 'branch-b',
+            'quantity' => 0,
+        ])->assertSessionHas('success');
+
+        $this->assertDatabaseHas('product_branch_stocks', [
+            'product_id' => $product->id,
+            'branch_id' => 'branch-b',
+            'quantity' => 0,
+        ]);
+        $this->assertSame($historyCount, DB::table('inventory_history')->where('product_id', $product->id)->count());
+        $this->get(route('inventory.transfer-products.search', ['q' => 'Ri']))
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $product->id);
+
+        $this->withSession(['active_branch_id' => 'branch-b', 'active_branch_name' => 'Branch B'])
+            ->get(route('product-list'))
+            ->assertOk()
+            ->assertViewHas('productRows', fn ($rows) => $rows->contains('id', $product->id));
+    }
+
+    public function test_positive_transfer_decreases_source_and_increases_destination_once(): void
+    {
+        [$product] = $this->workspace();
+        $this->configureTransferBranches($product);
+
+        $this->post(route('inventory.transfer'), [
+            'product_id' => $product->id,
+            'from_branch_id' => 'hq',
+            'to_branch_id' => 'branch-b',
+            'quantity' => 2,
+        ])->assertSessionHas('success');
+
+        $this->assertDatabaseHas('product_branch_stocks', [
+            'product_id' => $product->id,
+            'branch_id' => 'hq',
+            'quantity' => 3,
+        ]);
+        $this->assertDatabaseHas('product_branch_stocks', [
+            'product_id' => $product->id,
+            'branch_id' => 'branch-b',
+            'quantity' => 2,
+        ]);
+        $this->assertSame(2, DB::table('inventory_history')
+            ->where('product_id', $product->id)
+            ->where('reference', 'like', 'Branch Transfer%')
+            ->count());
+    }
+
+    public function test_positive_transfer_seeds_a_missing_source_branch_before_debiting_it(): void
+    {
+        [$product] = $this->workspace();
+        $this->configureTransferBranches($product);
+        ProductBranchStock::where('product_id', $product->id)->where('branch_id', 'hq')->delete();
+
+        $this->post(route('inventory.transfer'), [
+            'product_id' => $product->id,
+            'from_branch_id' => 'hq',
+            'to_branch_id' => 'branch-b',
+            'quantity' => 2,
+        ])->assertSessionHas('success');
+
+        $this->assertDatabaseHas('product_branch_stocks', [
+            'product_id' => $product->id,
+            'branch_id' => 'hq',
+            'quantity' => 3,
+        ]);
+        $this->assertDatabaseHas('product_branch_stocks', [
+            'product_id' => $product->id,
+            'branch_id' => 'branch-b',
+            'quantity' => 2,
+        ]);
+    }
+
+    public function test_bulk_catalog_add_is_idempotent_and_transfer_totals_cover_filtered_pages(): void
+    {
+        [$product] = $this->workspace();
+        $this->configureTransferBranches($product);
+        $secondProduct = Product::create([
+            'company_id' => $product->company_id,
+            'user_id' => auth()->id(),
+            'name' => 'Beans',
+            'sku' => 'BULK-CATALOG-TEST',
+            'stock' => 0,
+            'price' => 100,
+            'purchase_price' => 50,
+        ]);
+
+        $payload = [
+            'add_all_products' => 1,
+            'from_branch_id' => 'hq',
+            'to_branch_id' => 'branch-b',
+        ];
+        $this->post(route('inventory.transfer'), $payload)->assertSessionHas('success');
+        $this->post(route('inventory.transfer'), $payload)->assertSessionHas('success');
+
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $product->id, 'branch_id' => 'branch-b', 'quantity' => 0]);
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $secondProduct->id, 'branch_id' => 'branch-b', 'quantity' => 0]);
+        $this->assertSame(2, DB::table('stock_transfer_audits')->where('to_branch_id', 'branch-b')->count());
+
+        $this->get(route('inventory.transfer-audit', ['from_date' => now()->toDateString(), 'per_page' => 1]))
+            ->assertOk()
+            ->assertViewHas('audits', fn ($audits) => $audits->count() === 1 && $audits->total() === 2)
+            ->assertViewHas('summary', fn ($summary) => (int) $summary->transfer_count === 2
+                && (int) $summary->product_count === 2
+                && (float) $summary->quantity_total === 0.0);
+    }
+
+    private function configureTransferBranches(Product $product): void
+    {
+        Setting::create([
+            'key' => 'branches_json_company_' . $product->company_id,
+            'value' => json_encode([
+                ['id' => 'hq', 'name' => 'Headquarters', 'is_active' => true],
+                ['id' => 'branch-b', 'name' => 'Branch B', 'is_active' => true],
+            ]),
+        ]);
+        session([
+            'current_tenant_id' => $product->company_id,
+            'active_branch_id' => 'hq',
+            'active_branch_name' => 'Headquarters',
+            'user_plan' => 'professional',
+        ]);
     }
 
     public function test_purchase_cannot_add_stock_to_another_businesss_product(): void

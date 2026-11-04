@@ -36,7 +36,7 @@ class ProductController extends Controller
         $this->middleware('permission:inventory.products.create')->only(['create', 'store', 'import', 'updateFashionSettings']);
         $this->middleware('permission:inventory.products.edit')->only(['edit', 'update']);
         $this->middleware('permission:inventory.products.delete')->only(['destroy', 'bulkDestroy', 'undoLastImport']);
-        $this->middleware('permission:inventory.stock.edit')->only(['adjust_stock', 'update_history', 'delete_history', 'storeDamageStock', 'transferStock']);
+        $this->middleware('permission:inventory.stock.edit')->only(['adjust_stock', 'update_history', 'delete_history', 'storeDamageStock', 'transferStock', 'searchTransferProducts']);
         $this->middleware(function ($request, $next) {
             $hasStock = collect(['stock', 'stock_quantity', 'stock_cartons', 'stock_rolls', 'stock_units'])
                 ->contains(fn ($field) => (float) $request->input($field, 0) > 0);
@@ -94,7 +94,7 @@ class ProductController extends Controller
         return view('Inventory.Products.index', [
             'products' => collect(),
             'productRows' => collect(),
-            'transferProducts' => collect(),
+            'transferProductsSearchUrl' => route('inventory.transfer-products.search'),
             'categories' => collect(),
             'availableBranches' => $availableBranches,
             'stockTransferEnabled' => $stockTransferEnabled,
@@ -1088,7 +1088,7 @@ class ProductController extends Controller
             $hasBranchStocksBranchId = $hasBranchStocksTable && Schema::hasColumn('product_branch_stocks', 'branch_id');
             $hasProductBranchName = Schema::hasColumn('products', 'branch_name');
             $hasProductBranchId = Schema::hasColumn('products', 'branch_id');
-            $query = Product::query();
+            $query = Product::query()->withoutGlobalScope('company_id');
             $this->applyTenantScope($query, 'products');
 
             if ($hasCategories) {
@@ -1096,11 +1096,27 @@ class ProductController extends Controller
             }
 
             if (($activeBranch['scope'] ?? 'branch') !== 'all' && !empty($activeBranch['id']) && $hasBranchStocksBranchId) {
-                $query->where(function ($branchScoped) use ($activeBranch) {
-                    $branchScoped->whereHas('branchStocks', function ($branchQuery) use ($activeBranch) {
-                        $branchQuery->where('branch_id', $activeBranch['id']);
+                $companyId = $this->tenantCompanyId();
+                $branchId = (string) $activeBranch['id'];
+                $query->where(function ($branchScoped) use ($companyId, $branchId) {
+                    $branchScoped->whereExists(function ($branchStocks) use ($companyId, $branchId) {
+                        $branchStocks->selectRaw('1')
+                            ->from('product_branch_stocks as branch_membership')
+                            ->whereColumn('branch_membership.product_id', 'products.id')
+                            ->where('branch_membership.branch_id', $branchId)
+                            ->where(function ($tenant) use ($companyId) {
+                                $tenant->where('branch_membership.company_id', $companyId)
+                                    ->orWhereNull('branch_membership.company_id');
+                            });
+                    })->orWhereNotExists(function ($branchStocks) use ($companyId) {
+                        $branchStocks->selectRaw('1')
+                            ->from('product_branch_stocks as branch_membership')
+                            ->whereColumn('branch_membership.product_id', 'products.id')
+                            ->where(function ($tenant) use ($companyId) {
+                                $tenant->where('branch_membership.company_id', $companyId)
+                                    ->orWhereNull('branch_membership.company_id');
+                            });
                     });
-                    $branchScoped->orWhereDoesntHave('branchStocks');
                 });
             } elseif (($activeBranch['scope'] ?? 'branch') !== 'all' && !empty($activeBranch['name']) && $hasProductBranchName) {
                 $query->where('products.branch_name', $activeBranch['name']);
@@ -1157,11 +1173,6 @@ class ProductController extends Controller
             $productRows = $products instanceof \Illuminate\Pagination\AbstractPaginator
                 ? $products->getCollection()
                 : $products;
-            $transferProductsQuery = Product::query()->select('id', 'name', 'sku');
-            $this->applyTenantScope($transferProductsQuery, 'products');
-            $transferProducts = $transferProductsQuery
-                ->orderBy(Schema::hasColumn('products', 'name') ? 'name' : 'id')
-                ->get();
             $categories = Schema::hasTable('categories')
                 ? Category::orderBy(Schema::hasColumn('categories', 'name') ? 'name' : 'id')->get()
                 : collect();
@@ -1169,7 +1180,7 @@ class ProductController extends Controller
             return view('Inventory.Products.index', [
                 'products' => $products,
                 'productRows' => $productRows,
-                'transferProducts' => $transferProducts,
+                'transferProductsSearchUrl' => route('inventory.transfer-products.search'),
                 'categories' => $categories,
                 'availableBranches' => $this->getAvailableBranches(),
                 'stockTransferEnabled' => $this->planSupportsStockTransfer(),
@@ -2267,10 +2278,11 @@ public function inventory(Request $request)
         }
 
         $validated = $request->validate([
-            'product_id' => 'required|exists:products,id',
+            'add_all_products' => 'nullable|boolean',
+            'product_id' => 'required_unless:add_all_products,1|integer|min:1',
             'from_branch_id' => 'required|string',
             'to_branch_id' => 'required|string|different:from_branch_id',
-            'quantity' => 'required|numeric|min:0.01',
+            'quantity' => 'required_unless:add_all_products,1|numeric|min:0',
         ]);
 
         $branches = collect($this->getAvailableBranches());
@@ -2282,21 +2294,101 @@ public function inventory(Request $request)
         }
 
         try {
-            DB::transaction(function () use ($validated, $fromBranch, $toBranch) {
-                $product = Product::query()->lockForUpdate()->findOrFail($validated['product_id']);
-                $quantity = (float) $validated['quantity'];
+            if (!empty($validated['add_all_products'])) {
+                $companyId = $this->tenantCompanyId();
+                $destinationContext = ['id' => (string) $toBranch['id'], 'name' => (string) ($toBranch['name'] ?? '')];
+                $sourceContext = ['id' => (string) $fromBranch['id'], 'name' => (string) ($fromBranch['name'] ?? '')];
+                $products = Product::query()
+                    ->withoutGlobalScope('company_id')
+                    ->select('id')
+                    ->tap(fn ($query) => $this->applyTenantScope($query, 'products'))
+                    ->orderBy('products.id');
+                $addedCount = 0;
+
+                $products->chunkById(500, function ($productChunk) use ($companyId, $destinationContext, $sourceContext, &$addedCount) {
+                    $ids = $productChunk->pluck('id')->all();
+                    $existingIds = DB::table('product_branch_stocks')
+                        ->where('branch_id', $destinationContext['id'])
+                        ->whereIn('product_id', $ids)
+                        ->pluck('product_id')
+                        ->all();
+                    $newIds = array_values(array_diff($ids, $existingIds));
+
+                    if ($newIds === []) {
+                        return;
+                    }
+
+                    DB::transaction(function () use ($newIds, $companyId, $destinationContext, $sourceContext, &$addedCount) {
+                        $now = now();
+                        $stockRows = array_map(fn ($productId) => [
+                            'product_id' => $productId,
+                            'company_id' => $companyId > 0 ? $companyId : null,
+                            'branch_id' => $destinationContext['id'],
+                            'branch_name' => $destinationContext['name'],
+                            'quantity' => 0,
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ], $newIds);
+                        DB::table('product_branch_stocks')->insertOrIgnore($stockRows);
+
+                        if (Schema::hasTable('stock_transfer_audits')) {
+                            $auditRows = array_map(fn ($productId) => [
+                                'company_id' => $companyId > 0 ? $companyId : null,
+                                'product_id' => $productId,
+                                'from_branch_id' => $sourceContext['id'],
+                                'from_branch_name' => $sourceContext['name'],
+                                'to_branch_id' => $destinationContext['id'],
+                                'to_branch_name' => $destinationContext['name'],
+                                'quantity' => 0,
+                                'initiated_by' => auth()->id(),
+                                'notes' => 'Catalog product added to branch; no stock moved',
+                                'created_at' => $now,
+                                'updated_at' => $now,
+                            ], $newIds);
+                            DB::table('stock_transfer_audits')->insert($auditRows);
+                        }
+
+                        $addedCount += count($newIds);
+                    });
+                });
+
+                $this->clearDashboardMetricsCache($validated['from_branch_id']);
+                $this->clearDashboardMetricsCache($validated['to_branch_id']);
+
+                return redirect()->back()->with(
+                    'success',
+                    $addedCount . ' products added to the destination branch with zero stock; no quantities were moved.'
+                );
+            }
+
+            $quantity = round((float) $validated['quantity'], 2);
+            DB::transaction(function () use ($validated, $fromBranch, $toBranch, $quantity) {
+                $productQuery = Product::query()->withoutGlobalScope('company_id');
+                $this->applyTenantScope($productQuery, 'products');
+                $product = $productQuery->lockForUpdate()->findOrFail($validated['product_id']);
                 $sourceContext = ['id' => (string) $fromBranch['id'], 'name' => (string) ($fromBranch['name'] ?? '')];
                 $destinationContext = ['id' => (string) $toBranch['id'], 'name' => (string) ($toBranch['name'] ?? '')];
 
-                if ($this->branchInventory->getAvailableStock($product, $sourceContext) < $quantity) {
-                    throw new \RuntimeException("Insufficient stock in {$sourceContext['name']} for this transfer.");
+                if ($quantity > 0) {
+                    $sourceStock = $this->branchInventory->getAvailableStock($product, $sourceContext);
+                    if ($sourceStock < $quantity) {
+                        throw new \RuntimeException("Insufficient stock in {$sourceContext['name']} for this transfer.");
+                    }
+
+                    $sourceRowExists = DB::table('product_branch_stocks')
+                        ->where('product_id', $product->id)
+                        ->where('branch_id', $sourceContext['id'])
+                        ->exists();
+                    if (!$sourceRowExists) {
+                        $this->branchInventory->setBranchStock($product, $sourceStock, $sourceContext, (int) $product->company_id);
+                    }
+                    $this->branchInventory->adjustBranchStock($product, -1 * $quantity, $sourceContext, (int) $product->company_id, false);
                 }
 
                 $companyId = (int) ($product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
-                $this->branchInventory->adjustBranchStock($product, -1 * $quantity, $sourceContext, $companyId);
                 $this->branchInventory->adjustBranchStock($product, $quantity, $destinationContext, $companyId, false);
 
-                if (Schema::hasTable('inventory_history')) {
+                if ($quantity > 0 && Schema::hasTable('inventory_history')) {
                     $basePayload = [
                         'product_id' => $product->id,
                         'quantity' => $quantity,
@@ -2342,7 +2434,9 @@ public function inventory(Request $request)
                         'to_branch_name' => $destinationContext['name'],
                         'quantity' => $quantity,
                         'initiated_by' => auth()->id(),
-                        'notes' => 'Branch stock transfer',
+                        'notes' => $quantity === 0.0
+                            ? 'Catalog product added to branch; no stock moved'
+                            : 'Branch stock transfer',
                     ]);
                 }
             });
@@ -2353,18 +2447,53 @@ public function inventory(Request $request)
         $this->clearDashboardMetricsCache($validated['from_branch_id'] ?? null);
         $this->clearDashboardMetricsCache($validated['to_branch_id'] ?? null);
 
-        return redirect()->back()->with('success', 'Stock transferred successfully between branches.');
+        return redirect()->back()->with('success', $quantity === 0.0
+            ? 'Product added to the destination branch with zero stock.'
+            : 'Stock transferred successfully between branches.');
+    }
+
+    public function searchTransferProducts(Request $request)
+    {
+        $search = trim((string) $request->query('q', ''));
+        if (mb_strlen($search) < 2) {
+            return response()->json(['data' => []]);
+        }
+
+        $query = Product::query()
+            ->withoutGlobalScope('company_id')
+            ->select(['id', 'name', 'sku']);
+        $this->applyTenantScope($query, 'products');
+        $query->where(function ($products) use ($search) {
+            $products->where('name', 'like', $search . '%')
+                ->orWhere('sku', 'like', $search . '%');
+        });
+
+        return response()->json([
+            'data' => $query->orderBy('name')->limit(20)->get(),
+        ]);
     }
 
     public function transferAudit(Request $request)
     {
-        $search = trim((string) $request->string('q'));
-        $month = trim((string) $request->string('month'));
-        $fromDate = trim((string) $request->string('from_date'));
-        $toDate = trim((string) $request->string('to_date'));
+        $validated = $request->validate([
+            'q' => 'nullable|string|max:120',
+            'month' => 'nullable|date_format:Y-m',
+            'from_date' => 'nullable|date_format:Y-m-d',
+            'to_date' => 'nullable|date_format:Y-m-d|after_or_equal:from_date',
+        ]);
+        $search = trim((string) ($validated['q'] ?? ''));
+        $month = trim((string) ($validated['month'] ?? ''));
+        $fromDate = trim((string) ($validated['from_date'] ?? ''));
+        $toDate = trim((string) ($validated['to_date'] ?? ''));
 
         $auditsQuery = StockTransferAudit::query()
-            ->with(['product', 'initiator'])
+            ->with([
+                'product' => function ($query) {
+                    $query->withoutGlobalScope('company_id');
+                    $this->applyTenantScope($query, 'products');
+                },
+                'initiator',
+            ])
             ->latest();
 
         if ($search !== '') {
@@ -2372,27 +2501,34 @@ public function inventory(Request $request)
                 $query->where('from_branch_name', 'like', '%' . $search . '%')
                     ->orWhere('to_branch_name', 'like', '%' . $search . '%')
                     ->orWhere('notes', 'like', '%' . $search . '%')
-                    ->orWhereHas('product', fn ($sub) => $sub->where('name', 'like', '%' . $search . '%')->orWhere('sku', 'like', '%' . $search . '%'))
+                    ->orWhereHas('product', function ($sub) use ($search) {
+                        $sub->withoutGlobalScope('company_id');
+                        $this->applyTenantScope($sub, 'products');
+                        $sub->where('name', 'like', '%' . $search . '%')
+                            ->orWhere('sku', 'like', '%' . $search . '%');
+                    })
                     ->orWhereHas('initiator', fn ($sub) => $sub->where('name', 'like', '%' . $search . '%'));
             });
         }
         if ($month !== '') {
-            $auditsQuery->whereBetween('created_at', [
-                now()->parse($month . '-01')->startOfMonth()->toDateString(),
-                now()->parse($month . '-01')->endOfMonth()->toDateString(),
-            ]);
-        } else {
-            if ($fromDate !== '') {
-                $auditsQuery->whereDate('created_at', '>=', $fromDate);
-            }
-            if ($toDate !== '') {
-                $auditsQuery->whereDate('created_at', '<=', $toDate);
-            }
+            $monthStart = \Carbon\Carbon::createFromFormat('Y-m-d', $month . '-01')->startOfMonth();
+            $auditsQuery->where('created_at', '>=', $monthStart)
+                ->where('created_at', '<=', $monthStart->copy()->endOfMonth());
+        }
+        if ($fromDate !== '') {
+            $auditsQuery->where('created_at', '>=', \Carbon\Carbon::createFromFormat('Y-m-d', $fromDate)->startOfDay());
+        }
+        if ($toDate !== '') {
+            $auditsQuery->where('created_at', '<=', \Carbon\Carbon::createFromFormat('Y-m-d', $toDate)->endOfDay());
         }
 
+        $summary = (clone $auditsQuery)
+            ->reorder()
+            ->selectRaw('COUNT(*) AS transfer_count, COUNT(DISTINCT product_id) AS product_count, COALESCE(SUM(quantity), 0) AS quantity_total')
+            ->first();
         $audits = $auditsQuery->paginate(\App\Support\PageSize::resolve())->withQueryString()->appends($request->query());
 
-        return view('Inventory.transfer-audit', compact('audits', 'search', 'month', 'fromDate', 'toDate'));
+        return view('Inventory.transfer-audit', compact('audits', 'summary', 'search', 'month', 'fromDate', 'toDate'));
     }
 
     public function damageReport(Request $request)

@@ -5,7 +5,7 @@
 @php
     $products = $products ?? collect();
     $productRows = $productRows ?? collect();
-    $transferProducts = $transferProducts ?? $productRows;
+    $transferProductsSearchUrl = $transferProductsSearchUrl ?? route('inventory.transfer-products.search');
     $hasProductRows = isset($hasProductRows) ? (bool) $hasProductRows : ($productRows->count() > 0);
     $categories = $categories ?? collect();
     $availableBranches = $availableBranches ?? [];
@@ -14,7 +14,6 @@
     $branchOptions = $availableBranches;
     $showStockTransferModal = $stockTransferEnabled && count($branchOptions) > 1;
     $productRowsForView = collect($productRows)->values();
-    $transferProductsForView = collect($transferProducts)->values();
     $branchOptionsForView = array_values($branchOptions);
     $piecesPerCarton = 0;
     $piecesPerRoll = 0;
@@ -764,15 +763,20 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted mb-3">Move an existing company product to another branch without importing or creating the product again. Only branch stock changes; total company stock stays the same.</p>
+                    <p class="text-muted mb-3">Add a product to another branch without re-entering it, or move stock from the selected source branch.</p>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="add_all_products" id="transfer-all-products" value="1">
+                        <label class="form-check-label fw-semibold" for="transfer-all-products">Add all company products to the destination with zero stock</label>
+                        <div class="form-text">Existing destination stock is left unchanged. This adds catalog availability only.</div>
+                    </div>
                     <div class="mb-3">
                         <label class="form-label">Product</label>
-                        <select name="product_id" class="form-select" required>
-                            <option value="">Select product</option>
-                            <?php foreach ($transferProductsForView as $product) { ?>
-                                <option value="<?php echo e($product->id); ?>"><?php echo e($product->name); ?> (<?php echo e($product->sku); ?>)</option>
-                            <?php } ?>
-                        </select>
+                        <div class="product-lookup" data-search-url="<?php echo e($transferProductsSearchUrl); ?>">
+                            <input type="search" class="form-control product-lookup-input" placeholder="Type at least 2 characters to search" autocomplete="off">
+                            <input type="hidden" name="product_id" class="product-lookup-id" required>
+                            <div class="list-group product-lookup-results mt-1" role="listbox"></div>
+                            <small class="text-muted product-lookup-selected"></small>
+                        </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -796,12 +800,13 @@
                     </div>
                     <div class="mb-0">
                         <label class="form-label">Quantity</label>
-                        <input type="number" step="0.01" min="0.01" name="quantity" class="form-control" required>
+                        <input type="number" step="0.01" min="0" name="quantity" class="form-control" required>
+                        <div class="form-text">Enter 0 to add this product to the destination catalog without moving stock.</div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Transfer Stock</button>
+                    <button type="submit" class="btn btn-primary" id="transfer-stock-submit">Transfer / Add Product</button>
                 </div>
             </form>
         </div>
@@ -822,12 +827,12 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Product</label>
-                        <select name="product_id" class="form-select" id="damage-product-select" required>
-                            <option value="">Select product</option>
-                            <?php foreach ($transferProductsForView as $product) { ?>
-                                <option value="<?php echo e($product->id); ?>"><?php echo e($product->name); ?> (<?php echo e($product->sku); ?>)</option>
-                            <?php } ?>
-                        </select>
+                        <div class="product-lookup" data-search-url="<?php echo e($transferProductsSearchUrl); ?>">
+                            <input type="search" class="form-control product-lookup-input" placeholder="Type at least 2 characters to search" autocomplete="off">
+                            <input type="hidden" name="product_id" class="product-lookup-id" id="damage-product-select" required>
+                            <div class="list-group product-lookup-results mt-1" role="listbox"></div>
+                            <small class="text-muted product-lookup-selected"></small>
+                        </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -1216,8 +1221,79 @@
             var availableStock = String($(this).data('available-stock') || '0');
 
             $('#damage-product-select').val(productId);
+            $('#damage-product-select').closest('.product-lookup').find('.product-lookup-input').val(productName);
+            $('#damage-product-select').closest('.product-lookup').find('.product-lookup-selected').text(productName);
             $('#damage-stock-note').text(productName + ' has ' + availableStock + ' available in the active branch.');
         });
+
+        document.querySelectorAll('.product-lookup').forEach(function(lookup) {
+            var input = lookup.querySelector('.product-lookup-input');
+            var hidden = lookup.querySelector('.product-lookup-id');
+            var results = lookup.querySelector('.product-lookup-results');
+            var selected = lookup.querySelector('.product-lookup-selected');
+            var timer;
+            var requestNumber = 0;
+
+            input.addEventListener('input', function() {
+                hidden.value = '';
+                selected.textContent = '';
+                clearTimeout(timer);
+                var term = input.value.trim();
+                results.replaceChildren();
+                if (term.length < 2) return;
+
+                timer = setTimeout(function() {
+                    var currentRequest = ++requestNumber;
+                    var url = new URL(lookup.dataset.searchUrl, window.location.origin);
+                    url.searchParams.set('q', term);
+                    fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+                        .then(function(response) {
+                            if (!response.ok) throw new Error('Product search failed. Please try again.');
+                            return response.json();
+                        })
+                        .then(function(payload) {
+                            if (currentRequest !== requestNumber) return;
+                            results.replaceChildren();
+                            if (!payload.data.length) {
+                                results.textContent = 'No matching products found.';
+                                return;
+                            }
+                            payload.data.forEach(function(product) {
+                                var option = document.createElement('button');
+                                option.type = 'button';
+                                option.className = 'list-group-item list-group-item-action';
+                                option.textContent = product.name + (product.sku ? ' (' + product.sku + ')' : '');
+                                option.addEventListener('click', function() {
+                                    hidden.value = product.id;
+                                    input.value = option.textContent;
+                                    selected.textContent = 'Selected: ' + option.textContent;
+                                    results.replaceChildren();
+                                });
+                                results.appendChild(option);
+                            });
+                        })
+                        .catch(function(error) {
+                            if (currentRequest !== requestNumber) return;
+                            results.textContent = error.message || 'Product search failed. Please try again.';
+                        });
+                }, 250);
+            });
+        });
+
+        var transferAllProducts = document.getElementById('transfer-all-products');
+        if (transferAllProducts) {
+            var transferForm = transferAllProducts.closest('form');
+            var productLookup = transferForm.querySelector('.product-lookup');
+            var quantityInput = transferForm.querySelector('[name="quantity"]');
+            var transferSubmit = document.getElementById('transfer-stock-submit');
+            transferAllProducts.addEventListener('change', function() {
+                productLookup.hidden = transferAllProducts.checked;
+                productLookup.querySelector('.product-lookup-id').required = !transferAllProducts.checked;
+                quantityInput.closest('.mb-0').hidden = transferAllProducts.checked;
+                quantityInput.required = !transferAllProducts.checked;
+                transferSubmit.textContent = transferAllProducts.checked ? 'Add All Products' : 'Transfer / Add Product';
+            });
+        }
 
         if (!document.querySelector('[data-server-pagination]')) table.page.len(500).draw(false);
         table.on('draw', syncVisibleProductChecks);

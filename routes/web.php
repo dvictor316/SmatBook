@@ -1022,6 +1022,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
             ->name('inventory.damages.export');
         Route::post('/inventory/damage', 'storeDamageStock')->name('inventory.damage.store');
         Route::post('/inventory/transfer', 'transferStock')->name('inventory.transfer');
+        Route::get('/inventory/transfer-products/search', 'searchTransferProducts')->name('inventory.transfer-products.search');
         Route::get('/inventory-transfer-audit', 'transferAudit')->name('inventory.transfer-audit');
         Route::get('/units', 'units')->name('units');
         Route::post('/units/store', 'storeUnit')->name('units.store');
