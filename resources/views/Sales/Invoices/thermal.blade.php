@@ -189,14 +189,14 @@
 </main>
 
 <script>
-    const printReturnUrl = @json($backUrl ?? route('invoices.index'));
+    const printReturnUrl = @json(route('invoices.index'));
     let thermalPrintLocked = false;
 
     function closePrintPage() {
         window.close();
         window.setTimeout(() => {
             if (!window.closed) {
-                window.location.assign(printReturnUrl);
+                window.location.replace(printReturnUrl);
             }
         }, 100);
     }

@@ -707,7 +707,7 @@
 </body>
 <script>
     const autoPrintReceipt = {{ request()->boolean('autoprint') ? 'true' : 'false' }};
-    const printReturnUrl = @json($backUrl ?? route('invoices.index'));
+    const printReturnUrl = @json(route('invoices.index'));
     let compactPrintLocked = false;
     let invoiceEmailInFlight = false;
 
@@ -715,7 +715,7 @@
         window.close();
         window.setTimeout(() => {
             if (!window.closed) {
-                window.location.assign(printReturnUrl);
+                window.location.replace(printReturnUrl);
             }
         }, 100);
     }

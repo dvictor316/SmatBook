@@ -140,7 +140,7 @@
                                                                     <i class="far fa-eye me-2"></i>View
                                                                 </a>
 
-                                                                <a class="dropdown-item" href="{{ route('invoice-details-admin.print', ['id' => $invoice->id, 'autoprint' => 1]) }}" target="_blank" rel="noopener">
+                                                                <a class="dropdown-item" href="{{ route('invoice-details-admin.print', ['id' => $invoice->id, 'autoprint' => 1]) }}">
                                                                     <i class="fas fa-print me-2"></i>Print
                                                                 </a>
 

@@ -62,7 +62,8 @@ class InvoiceCreditPaymentModeTest extends TestCase
         $this->assertSame('Credit', $sale->payment_report_label);
         $this->get(route('invoices.index'))
             ->assertOk()
-            ->assertSee(route('invoice-details-admin.print', ['id' => $sale->id, 'autoprint' => 1]), false);
+            ->assertSee(route('invoice-details-admin.print', ['id' => $sale->id, 'autoprint' => 1]), false)
+            ->assertDontSee('target="_blank" rel="noopener"', false);
         $this->get(route('sales.invoice.print', $sale->id))->assertOk()->assertSee('Credit');
         $this->get(route('sales.invoice.print', ['id' => $sale->id, 'format' => 'thermal']))->assertOk()->assertSee('CREDIT');
         $this->assertDatabaseCount('payments', 0);
@@ -84,7 +85,7 @@ class InvoiceCreditPaymentModeTest extends TestCase
             ->assertOk()
             ->assertSee('const autoPrintReceipt = true;', false)
             ->assertSee('function closePrintPage()', false)
-            ->assertSee('window.location.assign(printReturnUrl)', false)
+            ->assertSee('window.location.replace(printReturnUrl)', false)
             ->assertSee('Customer Balance Due');
     }
 
