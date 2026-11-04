@@ -57,15 +57,32 @@
             }
 
             form.dataset.csrfRefreshBound = '1';
-            let isRefreshingToken = false;
+            let isSubmitting = false;
+            const tokenAgeSeconds = function () {
+                const renderedAt = parseInt(form.dataset.renderedAt || '0', 10) || 0;
+                return renderedAt ? ((Date.now() / 1000) - renderedAt) : 0;
+            };
 
             form.addEventListener('submit', async function (event) {
-                if (isRefreshingToken) {
+                if (isSubmitting) {
+                    event.preventDefault();
+                    return;
+                }
+
+                isSubmitting = true;
+                const submitButton = form.querySelector('button[type="submit"]');
+                if (submitButton) {
+                    submitButton.dataset.originalHtml = submitButton.innerHTML;
+                    submitButton.disabled = true;
+                    submitButton.setAttribute('aria-busy', 'true');
+                    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Signing in...';
+                }
+
+                if (tokenAgeSeconds() < 600) {
                     return;
                 }
 
                 event.preventDefault();
-                isRefreshingToken = true;
 
                 try {
                     const response = await fetch('{{ route('session.csrf-token') }}', {
@@ -87,6 +104,7 @@
 
                     if (tokenInput && data.token) {
                         tokenInput.value = data.token;
+                        form.dataset.renderedAt = String(Math.floor(Date.now() / 1000));
                     }
                 } catch (error) {
                     console.warn('CSRF refresh failed before login submit.', error);
@@ -150,7 +168,7 @@
                                 </div>
                             @endif
 
-                            <form method="POST" action="{{ route('saas-login.post') }}">
+                            <form method="POST" action="{{ route('saas-login.post') }}" data-rendered-at="{{ now()->timestamp }}">
                                 @csrf
 
                                 <div class="input-block mb-3">

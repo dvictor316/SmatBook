@@ -634,7 +634,7 @@
             }
 
             form.dataset.csrfRefreshBound = '1';
-            let isRefreshingToken = false;
+            let isSubmitting = false;
             let refreshPromise = null;
             let refreshTimer = null;
             const refreshUrl = '{{ route('session.csrf-token') }}';
@@ -711,8 +711,18 @@
             scheduleTokenRefresh();
 
             form.addEventListener('submit', async function (event) {
-                if (isRefreshingToken) {
+                if (isSubmitting) {
+                    event.preventDefault();
                     return;
+                }
+
+                isSubmitting = true;
+                const submitButton = form.querySelector('button[type="submit"]');
+                if (submitButton) {
+                    submitButton.dataset.originalHtml = submitButton.innerHTML;
+                    submitButton.disabled = true;
+                    submitButton.setAttribute('aria-busy', 'true');
+                    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Signing in...';
                 }
 
                 const offlineOptIn = form.querySelector('#prepare-offline-pos')?.checked === true;
@@ -722,14 +732,6 @@
                 }
 
                 event.preventDefault();
-                isRefreshingToken = true;
-                const submitButton = form.querySelector('button[type="submit"]');
-                if (submitButton) {
-                    submitButton.dataset.originalHtml = submitButton.innerHTML;
-                    submitButton.disabled = true;
-                    submitButton.setAttribute('aria-busy', 'true');
-                    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Signing in...';
-                }
 
                 try {
                     if (tokenNeedsRefresh) {
@@ -765,7 +767,7 @@
 
                     const recoveryTimer = window.setTimeout(function () {
                         if (document.visibilityState === 'visible') {
-                            isRefreshingToken = false;
+                            isSubmitting = false;
                             restoreSubmitButton(submitButton);
                             const notice = document.getElementById('offline-login-setup-status');
                             if (notice) {
@@ -781,7 +783,7 @@
                     form.submit();
                 } catch (error) {
                     console.error('Could not prepare sign-in.', error);
-                    isRefreshingToken = false;
+                    isSubmitting = false;
                     restoreSubmitButton(submitButton);
                     const notice = document.getElementById('offline-login-setup-status');
                     if (notice) {
