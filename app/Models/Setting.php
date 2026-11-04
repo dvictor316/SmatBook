@@ -126,7 +126,6 @@ class Setting extends Model
         $candidates = [
             (string) self::get('mail_from_name', ''),
             (string) config('mail.from.name', ''),
-            (string) (self::businessProfile()['company_name'] ?? ''),
             (string) env('MAIL_FROM_NAME', ''),
             (string) config('app.name', ''),
             (string) ($fallback ?? ''),
@@ -153,7 +152,6 @@ class Setting extends Model
         $candidates = [
             (string) self::get('mail_from_address', ''),
             $smtpUsername,
-            (string) (self::businessProfile()['company_email'] ?? ''),
             (string) config('mail.from.address', ''),
             (string) env('MAIL_FROM_ADDRESS', ''),
             (string) ($fallback ?? ''),

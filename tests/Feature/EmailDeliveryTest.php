@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\{EmailAuditLog, Setting, User};
+use App\Models\{Company, EmailAuditLog, Setting, User};
 use App\Support\{AppMailer, SystemEventMailer};
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Mail\Transport\ArrayTransport;
@@ -51,6 +51,38 @@ class EmailDeliveryTest extends TestCase
         Setting::updateOrCreate(['key' => 'mail_smtp_enabled'], ['value' => '0']);
         AppMailer::bootCurrentSettings();
         $this->assertSame('array', config('mail.default'));
+    }
+
+    public function test_tenant_business_profile_is_not_used_as_the_platform_email_sender(): void
+    {
+        $company = Company::create([
+            'name' => 'Tenant Mail Identity',
+            'email' => 'tenant@example.test',
+            'industry' => 'retail',
+            'plan' => 'Enterprise',
+        ]);
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $this->actingAs($user);
+        Setting::updateOrCreate(['key' => 'mail_from_address'], ['value' => 'platform@example.test']);
+        Config::set('mail.from.name', 'SmartProbook');
+        Config::set('mail.from.address', 'platform@example.test');
+
+        $this->assertSame('SmartProbook', Setting::mailFromName());
+        $this->assertSame('platform@example.test', Setting::mailFromAddress());
+    }
+
+    public function test_tenant_users_cannot_change_shared_system_email_settings(): void
+    {
+        $company = Company::create([
+            'name' => 'Tenant Mail Settings',
+            'industry' => 'retail',
+            'plan' => 'Enterprise',
+        ]);
+        $user = User::factory()->create(['company_id' => $company->id, 'role' => 'staff']);
+
+        $this->actingAs($user)->withoutExceptionHandling();
+        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $this->post(route('settings.update'), ['mail_from_address' => 'tenant@example.test']);
     }
 
     public function test_standard_laravel_mail_also_loads_saved_smtp_configuration(): void

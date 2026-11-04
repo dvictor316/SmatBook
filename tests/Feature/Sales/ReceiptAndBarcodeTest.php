@@ -9,6 +9,7 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Setting;
 use App\Models\User;
+use App\Support\ReceiptCompanyProfile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -16,6 +17,21 @@ use Tests\TestCase;
 class ReceiptAndBarcodeTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_tenant_receipts_never_fall_back_to_another_business_shared_address_or_footer(): void
+    {
+        $company = Company::create([
+            'name' => 'New Demo Workspace',
+            'industry' => 'retail',
+            'plan' => 'Enterprise',
+        ]);
+        Setting::updateOrCreate(['key' => 'address_line_1'], ['value' => 'Legacy Business Address']);
+        Setting::updateOrCreate(['key' => 'company_address'], ['value' => 'Legacy Business Address']);
+        Setting::updateOrCreate(['key' => 'receipt_footer'], ['value' => 'Legacy Business Footer']);
+
+        $this->assertSame('', ReceiptCompanyProfile::address($company));
+        $this->assertSame('Thank you for your patronage.', ReceiptCompanyProfile::footer($company));
+    }
 
     public function test_invoice_prints_show_previous_debt_and_combined_customer_balance(): void
     {

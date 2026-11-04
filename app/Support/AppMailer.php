@@ -103,7 +103,7 @@ class AppMailer
         // Reload once per send, including in long-running queue workers. Prefer
         // the current settings form's names over old legacy aliases.
         $settings = Setting::where(function ($query) {
-            $query->where('key', 'like', 'mail_%')->orWhere('key', 'company_name')->orWhere('key', 'company_email');
+            $query->where('key', 'like', 'mail_%');
         })->pluck('value', 'key')->all();
         $flag = fn ($key) => in_array(strtolower(trim((string) ($settings[$key] ?? '0'))), ['1', 'true', 'on', 'yes'], true);
         $value = function (array $keys, string $fallback = '') use ($settings): string {
@@ -144,7 +144,7 @@ class AppMailer
             if (filter_var($username, FILTER_VALIDATE_EMAIL)) $from = $username;
         }
         Config::set('mail.from.address', $from ?: config('mail.from.address'));
-        Config::set('mail.from.name', $value(['mail_from_name', 'company_name'], (string) config('mail.from.name', 'SmartProbook')));
+        Config::set('mail.from.name', $value(['mail_from_name'], (string) config('mail.from.name', 'SmartProbook')));
         $inbox = $value(['mail_admin_inbox', 'mail_activity_inbox', 'mail_notification_inbox']);
         if (filter_var($inbox, FILTER_VALIDATE_EMAIL)) Config::set('mail.admin_inbox', $inbox);
 

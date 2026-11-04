@@ -147,6 +147,15 @@ class SettingController extends Controller
         return Setting::where('key', $baseKey)->value('value') ?? $default;
     }
 
+    private function authorizeSystemEmailSettings(): void
+    {
+        abort_unless(
+            Auth::user()?->isSuperAdmin(),
+            403,
+            'Only platform administrators can manage system email delivery settings.'
+        );
+    }
+
     private function setCompanyScopedSettingValue(string $baseKey, mixed $value): void
     {
         Setting::updateOrCreate(
@@ -239,6 +248,14 @@ class SettingController extends Controller
      */
     public function update(Request $request)
     {
+        $mailSettingKeys = array_filter(
+            array_keys($request->except(['_token'])),
+            fn ($key) => str_starts_with((string) $key, 'mail_')
+        );
+        if ($mailSettingKeys !== []) {
+            $this->authorizeSystemEmailSettings();
+        }
+
         foreach (array_keys($request->except(['_token'])) as $key) {
             abort_if(preg_match('/_company_\d+$/', $key), 403, 'Business settings must use the active workspace.');
         }
@@ -383,11 +400,17 @@ class SettingController extends Controller
         ]);
     }
     public function company_settings() { return view('Settings.company-settings', ['settings' => $this->getSettings()]); }
-    public function email_settings()   { return view('Settings.email-settings', ['settings' => $this->getSettings()]); }
+    public function email_settings()
+    {
+        $this->authorizeSystemEmailSettings();
+
+        return view('Settings.email-settings', ['settings' => $this->getSettings()]);
+    }
     public function invoice_settings() { return view('Settings.invoice-settings', ['settings' => $this->getSettings()]); }
 
     public function sendTestEmail(Request $request)
     {
+        $this->authorizeSystemEmailSettings();
         $request->validate(['mail_test_address' => 'required|email']);
         $recipient = $request->input('mail_test_address');
 

@@ -29,6 +29,8 @@ class ReceiptCompanyProfile
             if ($scopedValues->isNotEmpty()) {
                 return self::formatAddress(self::ADDRESS_FIELDS, $scopedValues->all(), $companyId);
             }
+
+            return trim((string) $company?->address);
         }
 
         $legacyValues = Setting::query()
@@ -38,7 +40,7 @@ class ReceiptCompanyProfile
             return self::formatAddress(self::ADDRESS_FIELDS, $legacyValues->all());
         }
 
-        return trim((string) ($company?->address ?: Setting::get('company_address', '')));
+        return trim((string) Setting::get('company_address', ''));
     }
 
     public static function footer(?Company $company = null): string
@@ -46,8 +48,7 @@ class ReceiptCompanyProfile
         $companyId = (int) ($company?->id ?? auth()->user()?->company_id ?? 0);
         $footer = $companyId > 0
             ? Setting::where('key', "receipt_footer_company_{$companyId}")->value('value')
-            : null;
-        $footer ??= Setting::get('receipt_footer');
+            : Setting::get('receipt_footer');
 
         return trim((string) $footer) ?: 'Thank you for your patronage.';
     }
