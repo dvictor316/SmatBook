@@ -68,6 +68,62 @@ class ReportIntegrityTest extends TestCase
             ->assertViewHas('totalCount', 1);
     }
 
+    public function test_sales_by_product_lists_all_tenant_products_and_keeps_same_named_products_separate(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $otherCompany = Company::withoutGlobalScope('tenant')->create(['name' => 'Other Report Company']);
+        $productIds = [];
+        foreach (['Shared Name', 'Shared Name', 'Another Product', 'No Sales Product'] as $index => $name) {
+            $productIds[] = DB::table('products')->insertGetId([
+                'company_id' => $company->id,
+                'user_id' => $user->id,
+                'name' => $name,
+                'sku' => 'SALES-BY-PRODUCT-'.$index,
+                'price' => 100,
+                'purchase_price' => 50,
+                'stock' => 5,
+                'stock_quantity' => 5,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+        DB::table('products')->insert([
+            'company_id' => $otherCompany->id,
+            'user_id' => $user->id,
+            'name' => 'Other Tenant Product',
+            'sku' => 'SALES-BY-PRODUCT-OTHER',
+            'price' => 100,
+            'purchase_price' => 50,
+            'stock' => 5,
+            'stock_quantity' => 5,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $sale = $this->sale($user, $company, 'INV-SALES-BY-PRODUCT', 500, 'completed');
+        DB::table('sale_items')->insert([
+            ['sale_id' => $sale->id, 'product_id' => $productIds[0], 'qty' => 2, 'quantity' => 2, 'unit_price' => 100, 'total_price' => 200, 'created_at' => now(), 'updated_at' => now()],
+            ['sale_id' => $sale->id, 'product_id' => $productIds[1], 'qty' => 3, 'quantity' => 3, 'unit_price' => 100, 'total_price' => 300, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $response = $this->withoutReportAccessMiddleware()
+            ->actingAs($user)
+            ->withSession($this->branchSession($company))
+            ->get(route('reports.sales-by-product', [
+                'from_date' => now()->startOfMonth()->toDateString(),
+                'to_date' => now()->toDateString(),
+            ]));
+
+        $response->assertOk();
+        $rows = $response->viewData('rows');
+        $this->assertTrue($rows->count() === 4
+                && (float) $rows->firstWhere('product_id', $productIds[0])->qty_sold === 2.0
+                && (float) $rows->firstWhere('product_id', $productIds[1])->qty_sold === 3.0
+                && (float) $rows->firstWhere('product_id', $productIds[2])->qty_sold === 0.0
+                && (float) $rows->firstWhere('product_id', $productIds[3])->revenue === 0.0,
+            json_encode($rows->toArray(), JSON_PRETTY_PRINT));
+    }
+
     public function test_empty_branch_payment_summary_does_not_fall_back_to_company_wide_data(): void
     {
         $this->withoutExceptionHandling();

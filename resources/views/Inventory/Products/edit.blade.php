@@ -131,6 +131,42 @@
                                 </div>
                             </div>
                         @endif
+                        @if(($variantProducts ?? collect())->count() > 1)
+                            <div class="product-section">
+                                <h5 class="product-section-title">Product Variants</h5>
+                                <p class="field-note">Each size/colour variant is a separate product with its own SKU and stock. Edit a row to update that variant without combining its inventory history.</p>
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th>Size</th>
+                                                <th>Colour</th>
+                                                <th>SKU</th>
+                                                <th>Branch stock</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($variantProducts as $variant)
+                                                <tr>
+                                                    <td>{{ $variant->fashion_size ?: '-' }}</td>
+                                                    <td>{{ $variant->fashion_color ?: '-' }}</td>
+                                                    <td>{{ $variant->sku ?: '-' }}</td>
+                                                    <td>{{ number_format((float) $variant->active_branch_stock, 2) }}</td>
+                                                    <td>
+                                                        @if((int) $variant->id === (int) $product->id)
+                                                            <span class="text-muted">Current</span>
+                                                        @else
+                                                            <a class="btn btn-sm btn-outline-primary" href="{{ route('inventory.Products.edit', $variant->id) }}">Edit</a>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        @endif
 
                         <div class="row">
                             <div class="col-md-4">
@@ -177,6 +213,45 @@
                                 </div>
                             </div>
                         </div>
+                        @if(($priceLists ?? collect())->isNotEmpty())
+                            <details class="product-advanced" @if(old('price_list_prices') || $errors->has('price_list_prices')) open @endif>
+                                <summary>Price List Prices</summary>
+                                <div class="product-section">
+                                    <div class="row">
+                                        @foreach($priceLists as $priceList)
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label class="field-label">{{ $priceList->name }}</label>
+                                                    <input type="number" step="0.01" min="0"
+                                                        name="price_list_prices[{{ $priceList->id }}]"
+                                                        class="form-control @error('price_list_prices.' . $priceList->id) is-invalid @enderror"
+                                                        value="{{ old('price_list_prices.' . $priceList->id, $priceListPrices[$priceList->id] ?? '') }}"
+                                                        placeholder="Leave empty to use default price">
+                                                    <small class="field-note">{{ $priceList->currency ?? 'NGN' }}{{ $priceList->is_default ? ' - Default list' : '' }}</small>
+                                                    @error('price_list_prices.' . $priceList->id)<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </details>
+                        @endif
+
+                        @if(($availableBranches ?? []) !== [])
+                            <div class="form-group">
+                                <label class="field-label">Stock Branch</label>
+                                <select name="branch_id" class="form-control @error('branch_id') is-invalid @enderror">
+                                    <option value="">Use Active Branch</option>
+                                    @foreach($availableBranches as $branch)
+                                        <option value="{{ $branch['id'] }}" @selected((string) old('branch_id', $activeBranch['id'] ?? '') === (string) $branch['id'])>
+                                            {{ $branch['name'] }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('branch_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                <small class="field-note">Stock quantity below applies to the selected branch only.</small>
+                            </div>
+                        @endif
                         <div class="mt-2">
                             <div class="form-check">
                                 <input type="checkbox" class="form-check-input" id="edit_packaging_stock_toggle" @checked(old('stock_entry_mode') === 'packaging')>

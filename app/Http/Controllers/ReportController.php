@@ -4457,7 +4457,7 @@ class ReportController extends Controller
             $itemsTable = Schema::hasTable('sale_items') ? 'sale_items' : (Schema::hasTable('order_items') ? 'order_items' : 'invoice_items');
             $salesJoinCol = Schema::hasColumn($itemsTable, 'sale_id') ? 'sale_id' : 'order_id';
 
-            // Resolve product name column — only reference columns that actually exist
+            // Resolve optional product name and quantity columns without assuming one schema.
             $nameCol = Schema::hasColumn($itemsTable, 'product_name')
                 ? "{$itemsTable}.product_name"
                 : (Schema::hasColumn($itemsTable, 'name')
@@ -4472,18 +4472,23 @@ class ReportController extends Controller
 
             $lineTotalCol = Schema::hasColumn($itemsTable, 'line_total')
                 ? "{$itemsTable}.line_total"
-                : (Schema::hasColumn($itemsTable, 'total')
+                : (Schema::hasColumn($itemsTable, 'total_price')
+                    ? "{$itemsTable}.total_price"
+                    : (Schema::hasColumn($itemsTable, 'total')
                     ? "{$itemsTable}.total"
-                    : (Schema::hasColumn($itemsTable, 'amount') ? "{$itemsTable}.amount" : null));
+                    : (Schema::hasColumn($itemsTable, 'amount') ? "{$itemsTable}.amount" : null)));
 
             $priceCol = Schema::hasColumn($itemsTable, 'price')
                 ? "{$itemsTable}.price"
                 : (Schema::hasColumn($itemsTable, 'unit_price') ? "{$itemsTable}.unit_price" : null);
 
-            if (! $nameCol || ! $qtyCol) {
+            if (! $qtyCol) {
                 $rows = collect();
             } else {
-                $productExpr = "COALESCE({$nameCol}, 'Unknown')";
+                $productExpr = $nameCol ? "COALESCE({$nameCol}, 'Unknown')" : "'Unknown'";
+                $productIdCol = Schema::hasColumn($itemsTable, 'product_id')
+                    ? "{$itemsTable}.product_id"
+                    : null;
                 $lineRevenueExpr = $lineTotalCol
                     ? "NULLIF({$lineTotalCol}, 0)"
                     : 'NULL';
@@ -4491,23 +4496,62 @@ class ReportController extends Controller
                     ? "({$qtyCol} * COALESCE({$priceCol}, 0))"
                     : '0';
                 $revenueExpr = "SUM(COALESCE({$lineRevenueExpr}, {$unitRevenueExpr}, 0))";
+                $hasProductCatalog = $productIdCol && Schema::hasTable('products');
+
+                $selects = [];
+                if ($productIdCol) {
+                    $selects[] = DB::raw("{$productIdCol} as product_id");
+                }
+                if (!$hasProductCatalog) {
+                    $selects[] = DB::raw($productIdCol
+                        ? "MAX({$productExpr}) as product"
+                        : "{$productExpr} as product");
+                }
+                $selects = array_merge($selects, [
+                    DB::raw("SUM(COALESCE({$qtyCol}, 0)) as qty_sold"),
+                    DB::raw("{$revenueExpr} as revenue"),
+                ]);
 
                 $query = DB::table($itemsTable)
                     ->join('sales', "{$itemsTable}.{$salesJoinCol}", '=', 'sales.id')
-                    ->select(
-                        DB::raw("{$productExpr} as product"),
-                        DB::raw("SUM(COALESCE({$qtyCol}, 0)) as qty_sold"),
-                        DB::raw("{$revenueExpr} as revenue")
-                    )
+                    ->select($selects)
                     ->whereBetween("sales.{$dateCol}", [$from.' 00:00:00', $to.' 23:59:59'])
-                    ->groupBy(DB::raw($productExpr))
                     ->orderByDesc(DB::raw($revenueExpr));
+                if ($productIdCol) {
+                    $query->groupBy($productIdCol);
+                } else {
+                    $query->groupBy(DB::raw($productExpr));
+                }
 
                 // Scope via the sales table to prevent cross-tenant or cross-branch data leakage.
                 $this->applySalesScope($query, 'sales');
                 $this->applyReportableDocumentScope($query, 'sales');
 
-                $rows = $query->get();
+                $salesRows = $query->get();
+                if ($hasProductCatalog) {
+                    $salesByProductId = $salesRows->keyBy(fn ($row) => (string) $row->product_id);
+                    $productsQuery = DB::table('products')->select('id', 'name');
+                    $this->applyTenantScope($productsQuery, 'products');
+                    if (Schema::hasColumn('products', 'deleted_at')) {
+                        $productsQuery->whereNull('deleted_at');
+                    }
+
+                    $rows = $productsQuery->get()
+                        ->map(function ($product) use ($salesByProductId) {
+                            $sale = $salesByProductId->get((string) $product->id);
+
+                            return (object) [
+                                'product_id' => $product->id,
+                                'product' => $product->name ?? 'Unknown',
+                                'qty_sold' => (float) ($sale->qty_sold ?? 0),
+                                'revenue' => (float) ($sale->revenue ?? 0),
+                            ];
+                        })
+                        ->sortByDesc('revenue')
+                        ->values();
+                } else {
+                    $rows = $salesRows;
+                }
             }
         }
         $grandTotal = (float) $rows->sum('revenue');

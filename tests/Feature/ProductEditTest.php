@@ -90,6 +90,138 @@ class ProductEditTest extends TestCase
         $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $productId, 'quantity' => 3.125]);
     }
 
+    public function test_edit_form_updates_price_list_price_and_selected_branch_stock(): void
+    {
+        $company = Company::create(['name' => 'Price List Edit Business']);
+        $user = User::factory()->create([
+            'company_id' => $company->id,
+            'role' => 'super_admin',
+        ]);
+        $productId = DB::table('products')->insertGetId([
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'name' => 'Editable Price List Product',
+            'sku' => 'EDIT-PRICE-LIST-1',
+            'price' => 200,
+            'purchase_price' => 100,
+            'stock' => 5,
+            'stock_quantity' => 5,
+            'unit_type' => 'unit',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('companies')->where('id', $company->id)->update(['fashion_catalog_enabled' => true]);
+        $variantGroupId = 'edit-variant-family';
+        DB::table('products')->where('id', $productId)->update([
+            'brand' => 'Edit Test Brand',
+            'fashion_size' => 'M',
+            'fashion_color' => 'Black',
+            'variant_group_id' => $variantGroupId,
+        ]);
+        $siblingVariantId = DB::table('products')->insertGetId([
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'name' => 'Editable Price List Product',
+            'sku' => 'EDIT-PRICE-LIST-2',
+            'price' => 200,
+            'purchase_price' => 100,
+            'stock' => 3,
+            'stock_quantity' => 3,
+            'brand' => 'Edit Test Brand',
+            'fashion_size' => 'L',
+            'fashion_color' => 'Black',
+            'variant_group_id' => $variantGroupId,
+            'unit_type' => 'unit',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('product_branch_stocks')->insert([
+            ['company_id' => $company->id, 'product_id' => $productId, 'branch_id' => 'hq', 'branch_name' => 'Headquarters', 'quantity' => 5, 'created_at' => now(), 'updated_at' => now()],
+            ['company_id' => $company->id, 'product_id' => $productId, 'branch_id' => 'other', 'branch_name' => 'Other Branch', 'quantity' => 4, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+        $priceListId = DB::table('price_lists')->insertGetId([
+            'company_id' => $company->id,
+            'name' => 'Wholesale',
+            'type' => 'fixed',
+            'adjustment_value' => 0,
+            'currency' => 'NGN',
+            'is_active' => true,
+            'created_by' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('price_list_items')->insert([
+            'price_list_id' => $priceListId,
+            'product_id' => $productId,
+            'unit_price' => 75,
+            'min_quantity' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('settings')->insert([
+            'key' => 'branches_json_company_'.$company->id,
+            'value' => json_encode([
+                ['id' => 'hq', 'name' => 'Headquarters'],
+                ['id' => 'other', 'name' => 'Other Branch'],
+            ]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($user)->withoutMiddleware()->withViewErrors([])->withSession([
+            'current_tenant_id' => $company->id,
+            'active_branch_id' => 'hq',
+            'active_branch_name' => 'Headquarters',
+            'active_branch_scope' => 'branch',
+        ]);
+
+        $this->get(route('inventory.Products.edit', $productId))->assertOk()
+            ->assertSee('Price List Prices')
+            ->assertSee('price_list_prices['.$priceListId.']', false)
+            ->assertSee('name="branch_id"', false)
+            ->assertSee('Product Variants')
+            ->assertSee('EDIT-PRICE-LIST-2')
+            ->assertSee(route('inventory.Products.edit', $siblingVariantId), false);
+
+        $payload = [
+            'name' => 'Editable Price List Product',
+            'sku' => 'EDIT-PRICE-LIST-1',
+            'price' => 200,
+            'purchase_price' => 100,
+            'stock' => 2,
+            'unit_type' => 'unit',
+            'status' => 'active',
+            'branch_id' => 'other',
+            'price_list_prices' => [$priceListId => 90],
+        ];
+        $this->put(route('inventory.Products.update', $productId), $payload)
+            ->assertRedirect(route('product-list'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('price_list_items', [
+            'price_list_id' => $priceListId,
+            'product_id' => $productId,
+            'unit_price' => 90,
+        ]);
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $productId, 'branch_id' => 'other', 'quantity' => 2]);
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $productId, 'branch_id' => 'hq', 'quantity' => 5]);
+
+        $payload['price_list_prices'][$priceListId] = '';
+        $this->put(route('inventory.Products.update', $productId), $payload)
+            ->assertRedirect(route('product-list'))
+            ->assertSessionHas('success');
+        $this->assertDatabaseHas('price_list_items', [
+            'price_list_id' => $priceListId,
+            'product_id' => $productId,
+        ]);
+        $this->assertNotNull(DB::table('price_list_items')
+            ->where('price_list_id', $priceListId)
+            ->where('product_id', $productId)
+            ->value('deleted_at'));
+    }
+
     public function test_legacy_kg_product_can_edit_stock_without_setting_up_cartons(): void
     {
         $company = Company::create(['name' => 'Measured Stock Business']);

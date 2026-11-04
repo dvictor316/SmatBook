@@ -2159,7 +2159,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const serverDefault = @json($geoCountry ?? 'NG');
     const detectedCountry = timezoneCountry() || localeCountry();
     const persistedCountry = geoSaved || cookieCountry || '';
-    const initialCountry = detectedCountry || persistedCountry || serverDefault || 'NG';
+    const initialCountry = persistedCountry || detectedCountry || serverDefault || 'NG';
     applyGeoCountryUi(initialCountry);
 
     geoItems.forEach((item) => {
@@ -2215,7 +2215,7 @@ document.addEventListener('DOMContentLoaded', function () {
         markAllRead.addEventListener('click', async function (e) {
             e.preventDefault();
             try {
-                await fetch(@json(route('notifications.mark-all-read')), {
+                const response = await fetch(@json(route('notifications.mark-all-read')), {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': csrfToken,
@@ -2224,6 +2224,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
                     credentials: 'same-origin'
                 });
+                if (!response.ok) {
+                    throw new Error(`Mark-all-read failed with HTTP ${response.status}`);
+                }
                 await refreshHeaderAttention();
                 window.location.reload();
             } catch (error) {
@@ -2233,12 +2236,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     notificationItems.forEach((item) => {
-        item.addEventListener('click', async function () {
+        item.addEventListener('click', async function (event) {
             const notificationId = this.getAttribute('data-notification-id');
             if (!notificationId) return;
 
+            event.preventDefault();
+            const destination = this.href;
             try {
-                await fetch(@json(url('/notifications/mark-read')) + '/' + notificationId, {
+                const response = await fetch(@json(url('/notifications/mark-read')) + '/' + notificationId, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': csrfToken,
@@ -2247,9 +2252,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
                     credentials: 'same-origin'
                 });
+                if (!response.ok) {
+                    throw new Error(`Mark-read failed with HTTP ${response.status}`);
+                }
                 await refreshHeaderAttention();
             } catch (error) {
                 console.error('Notification mark-read failed', error);
+            } finally {
+                window.location.assign(destination);
             }
         });
     });

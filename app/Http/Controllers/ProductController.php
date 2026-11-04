@@ -1375,7 +1375,7 @@ class ProductController extends Controller
 
     private function syncProductPriceListItems(Product $product, array $priceListPrices): void
     {
-        if (!Schema::hasTable('price_list_items') || empty($priceListPrices)) {
+        if (!Schema::hasTable('price_list_items')) {
             return;
         }
 
@@ -1386,7 +1386,27 @@ class ProductController extends Controller
             ->all();
 
         foreach ($priceListPrices as $priceListId => $price) {
-            if ($price === null || $price === '' || !in_array((int) $priceListId, $activePriceListIds, true)) {
+            if (!in_array((int) $priceListId, $activePriceListIds, true)) {
+                continue;
+            }
+
+            $keys = [
+                'price_list_id' => (int) $priceListId,
+                'product_id' => $product->id,
+                'min_quantity' => 1,
+            ];
+            $existingItem = DB::table('price_list_items')->where($keys)->first();
+            if ($price === null || $price === '') {
+                if ($existingItem) {
+                    if (Schema::hasColumn('price_list_items', 'deleted_at')) {
+                        DB::table('price_list_items')->where('id', $existingItem->id)->update([
+                            'deleted_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    } else {
+                        DB::table('price_list_items')->where('id', $existingItem->id)->delete();
+                    }
+                }
                 continue;
             }
 
@@ -1406,13 +1426,6 @@ class ProductController extends Controller
             if (Schema::hasColumn('price_list_items', 'deleted_at')) {
                 $payload['deleted_at'] = null;
             }
-
-            $keys = [
-                'price_list_id' => (int) $priceListId,
-                'product_id' => $product->id,
-                'min_quantity' => 1,
-            ];
-            $existingItem = DB::table('price_list_items')->where($keys)->first();
 
             if ($existingItem) {
                 DB::table('price_list_items')->where('id', $existingItem->id)->update($payload);
@@ -1740,13 +1753,60 @@ class ProductController extends Controller
     {
         $product = Product::with('activeProductUnits')->findOrFail($id);
         $activeBranch = $this->getActiveBranchContext();
+        $availableBranches = $this->getAvailableBranches();
+        if (($activeBranch['scope'] ?? '') === 'all' && $availableBranches !== []) {
+            $activeBranch = $this->resolveBranchContext((string) $availableBranches[0]['id']);
+        }
         $product->setAttribute('active_branch_stock', $this->branchInventory->getAvailableStock($product, $activeBranch));
         $categories = Category::orderBy('name')->get();
         $units = $this->unitRows();
+        $priceLists = app(PriceListUsage::class)->activeForCurrentContext((int) ($product->company_id ?? $this->tenantCompanyId()));
+        $priceListPrices = [];
+        if (Schema::hasTable('price_list_items') && $priceLists->isNotEmpty()) {
+            $priceColumn = Schema::hasColumn('price_list_items', 'price') ? 'price' : 'unit_price';
+            $priceListPrices = DB::table('price_list_items')
+                ->where('product_id', $product->id)
+                ->where('min_quantity', 1)
+                ->whereIn('price_list_id', $priceLists->pluck('id'))
+                ->when(Schema::hasColumn('price_list_items', 'deleted_at'), fn ($query) => $query->whereNull('deleted_at'))
+                ->pluck($priceColumn, 'price_list_id')
+                ->all();
+        }
         $fashionCatalogEnabled = Schema::hasColumn('companies', 'fashion_catalog_enabled')
             && (bool) DB::table('companies')->where('id', $this->tenantCompanyId())->value('fashion_catalog_enabled');
+        $variantProducts = collect();
+        if (
+            $fashionCatalogEnabled
+            && Schema::hasColumn('products', 'variant_group_id')
+            && !empty($product->variant_group_id)
+        ) {
+            $variantQuery = Product::query()->where('variant_group_id', $product->variant_group_id);
+            if (Schema::hasColumn('products', 'company_id')) {
+                $variantQuery->where('company_id', $product->company_id ?: $this->tenantCompanyId());
+            } elseif (Schema::hasColumn('products', 'user_id')) {
+                $variantQuery->where('user_id', $product->user_id ?: auth()->id());
+            }
+            $variantProducts = $variantQuery->get()->map(function ($variant) use ($activeBranch) {
+                $variant->setAttribute(
+                    'active_branch_stock',
+                    $this->branchInventory->getAvailableStock($variant, $activeBranch)
+                );
+
+                return $variant;
+            });
+        }
         
-        return view('Inventory.Products.edit', compact('product', 'categories', 'units', 'activeBranch', 'fashionCatalogEnabled'));
+        return view('Inventory.Products.edit', compact(
+            'product',
+            'categories',
+            'units',
+            'activeBranch',
+            'availableBranches',
+            'priceLists',
+            'priceListPrices',
+            'fashionCatalogEnabled',
+            'variantProducts'
+        ));
     }
 
 public function inventory(Request $request)
@@ -2107,6 +2167,9 @@ public function inventory(Request $request)
             'status'           => 'required|in:active,inactive',
             'description'      => 'nullable|string',
             'barcode'          => 'nullable|string|max:191',
+            'branch_id'        => 'nullable|string|max:191',
+            'price_list_prices' => 'nullable|array',
+            'price_list_prices.*' => 'nullable|numeric|min:0',
             'expiry_date'      => 'nullable|date',
             'reorder_level'    => 'nullable|integer|min:0',
             'reorder_quantity' => 'nullable|integer|min:0',
@@ -2116,6 +2179,8 @@ public function inventory(Request $request)
         ]);
 
         $cartonSellingPrice = $validated['carton_selling_price'] ?? null;
+        $priceListPrices = $validated['price_list_prices'] ?? [];
+        $requestedBranchId = trim((string) ($validated['branch_id'] ?? ''));
         $salesUnitNames = !empty($validated['sales_unit_selection_enabled'])
             ? collect($validated['sales_units'])->map(fn ($unit) => Str::lower(trim((string) $unit)))->all()
             : null;
@@ -2125,8 +2190,20 @@ public function inventory(Request $request)
             $validated['carton_selling_price'],
             $validated['sales_unit_selection_enabled'],
             $validated['sales_units'],
-            $validated['stock_entry_mode']
+            $validated['stock_entry_mode'],
+            $validated['branch_id'],
+            $validated['price_list_prices']
         );
+        $availableBranches = collect($this->getAvailableBranches());
+        if ($requestedBranchId !== '' && !$availableBranches->contains(fn ($branch) => (string) ($branch['id'] ?? '') === $requestedBranchId)) {
+            return back()->withErrors(['branch_id' => 'Select a valid stock branch.'])->withInput();
+        }
+        $stockBranch = $requestedBranchId !== ''
+            ? $this->resolveBranchContext($requestedBranchId)
+            : $this->getActiveBranchContext();
+        if (($stockBranch['scope'] ?? '') === 'all' && $availableBranches->isNotEmpty()) {
+            $stockBranch = $this->resolveBranchContext((string) $availableBranches->first()['id']);
+        }
         $validated['base_unit_name'] = trim((string) ($validated['base_unit_name'] ?? ''))
             ?: ($product->base_unit_name ?: 'pcs');
         $validated['unit_id'] = $validated['unit_id'] ?? $product->unit_id;
@@ -2178,7 +2255,7 @@ public function inventory(Request $request)
             $calculatedStock = $this->calculateStockFromPackaging($validated);
         }
         $validated['stock'] = (float) ($calculatedStock ?? (float) $product->stock);
-        $existingBranchStock = $this->branchInventory->getAvailableStock($product, $this->getActiveBranchContext());
+        $existingBranchStock = $this->branchInventory->getAvailableStock($product, $stockBranch);
         if (abs($validated['stock'] - $existingBranchStock) > 0.00001) {
             $this->authorizeStockPermission('inventory.stock.edit');
             if ($validated['stock'] > $existingBranchStock) {
@@ -2222,11 +2299,12 @@ public function inventory(Request $request)
                 $validated['image'] = $newImagePath;
             }
 
-            DB::transaction(function () use ($product, $validated, $cartonSellingPrice, $salesUnitNames) {
+            DB::transaction(function () use ($product, $validated, $cartonSellingPrice, $salesUnitNames, $priceListPrices, $stockBranch) {
                 $product->update($validated);
-                $this->branchInventory->setBranchStock($product, (float) $validated['stock'], $this->getActiveBranchContext());
+                $this->branchInventory->setBranchStock($product, (float) $validated['stock'], $stockBranch);
                 $this->syncProductUnitRows($product->fresh(['unit', 'baseUnit', 'purchaseUnit']), $salesUnitNames);
                 $this->applyCartonSellingPrice($product, $cartonSellingPrice);
+                $this->syncProductPriceListItems($product, $priceListPrices);
             });
         } catch (\Throwable $e) {
             if ($newImagePath) {
@@ -2240,7 +2318,7 @@ public function inventory(Request $request)
         if ($newImagePath && $oldImagePath) {
             Storage::disk('public')->delete($oldImagePath);
         }
-        $this->clearDashboardMetricsCache();
+        $this->clearDashboardMetricsCache($stockBranch['id'] ?? null);
 
         return redirect()->route('product-list')->with('success', 'Product and stock details updated successfully.');
     }
