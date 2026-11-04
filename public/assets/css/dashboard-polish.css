@@ -35,7 +35,10 @@ body.spb-dashboard :is(.pos-content-area, .starter-dashboard, #deployment-wrappe
     background: linear-gradient(180deg, var(--dashboard-tint), #f5f7fb 340px) !important;
 }
 body.spb-dashboard :is(.pos-content-area, .starter-dashboard, #deployment-wrapper, #main-content-wrapper) {
-    padding: clamp(16px, 2.2vw, 32px);
+    padding: clamp(12px, 1.5vw, 22px) clamp(16px, 2.2vw, 32px);
+}
+body.spb-dashboard .starter-dashboard {
+    margin-top: 12px !important;
 }
 body.spb-dashboard .spb-dashboard-heading {
     min-width: 0;
@@ -44,7 +47,7 @@ body.spb-dashboard .spb-dashboard-heading {
     align-items: center;
     flex-wrap: wrap;
     gap: 18px;
-    margin-bottom: 24px !important;
+    margin-bottom: 18px !important;
     border-radius: 20px;
 }
 body.spb-dashboard .spb-dashboard-heading:not(.hotel-hero):not(.farm-hero):not(.starter-hero) {
@@ -77,6 +80,70 @@ body.spb-dashboard :is(.executive-kpi, .metric-card-basic, .glass-card-pro[class
 }
 body.spb-dashboard :is(.executive-kpi, .metric-card-basic, .glass-card-pro[class*="metric-"], .enterprise-card, .starter-card, .agent-metric, .hotel-kpi, .farm-kpi, .metric-card) :is(h3, .value, .starter-value, .kpi-value, .metric-value, strong) {
     font-weight: 800 !important;
+}
+body.spb-dashboard :is(.executive-kpi, .metric-card-basic.metric-sky, .metric-card-basic.metric-violet, .metric-card-basic.metric-cyan, .metric-card-basic.metric-amber, .glass-card-pro[class*="metric-"], .metric-glass, .starter-kpi, .agent-metric, .hotel-kpi, .farm-kpi, .metric-card) {
+    min-height: 142px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+}
+body.spb-dashboard .executive-kpi {
+    height: 100% !important;
+    max-height: none !important;
+    overflow: hidden;
+}
+body.spb-dashboard .executive-kpi .card-body {
+    width: 100%;
+    padding: 16px !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+}
+body.spb-dashboard .executive-kpi .card-body > .d-flex {
+    position: relative;
+    justify-content: center !important;
+}
+body.spb-dashboard .executive-kpi .kpi-badge {
+    position: absolute;
+    right: 0;
+}
+body.spb-dashboard .executive-kpi .card-body > .mt-3 {
+    margin-top: 0 !important;
+}
+body.spb-dashboard .executive-kpi .kpi-kicker {
+    font-size: .58rem;
+    line-height: 1.35;
+}
+body.spb-dashboard .executive-kpi .kpi-value {
+    font-size: clamp(1rem, 1.25vw, 1.4rem);
+    line-height: 1.15;
+    letter-spacing: -.035em;
+}
+body.spb-dashboard .executive-kpi .kpi-note {
+    max-width: 100%;
+    white-space: normal;
+    overflow: visible;
+    font-size: .64rem;
+    line-height: 1.4;
+}
+body.spb-dashboard .glass-card-pro[class*="metric-"] .stat-icon-circle {
+    margin: 0 auto 10px !important;
+}
+body.spb-dashboard .metric-glass > .d-flex {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+body.spb-dashboard .metric-glass .metric-icon-box {
+    margin: 0 auto 8px;
+}
+body.spb-dashboard .metric-glass h4 {
+    overflow-wrap: anywhere;
+}
+body.spb-dashboard .starter-kpi {
+    align-items: center;
 }
 body.spb-dashboard :is(.metric-title, .metric-label, .starter-label, .kpi-label, .mini-label, .agent-metric .label, .hotel-kpi span, .farm-kpi span) {
     font-weight: 800 !important;
@@ -125,6 +192,15 @@ body.spb-dashboard .farm-kpi { padding: 20px; }
     body.spb-dashboard .spb-dashboard-heading :is(.basic-dashboard-actions, .pro-dashboard-actions, .enterprise-dashboard-actions) { width: 100%; justify-content: flex-start; }
     body.spb-dashboard :is(.executive-kpi, .metric-card-basic, .glass-card-pro[class*="metric-"], .enterprise-card, .starter-card, .agent-metric, .hotel-kpi, .farm-kpi, .metric-card) {
         padding: 16px !important;
+    }
+    body.spb-dashboard :is(.executive-kpi, .metric-card-basic.metric-sky, .metric-card-basic.metric-violet, .metric-card-basic.metric-cyan, .metric-card-basic.metric-amber, .glass-card-pro[class*="metric-"], .metric-glass, .starter-kpi, .agent-metric, .hotel-kpi, .farm-kpi, .metric-card) {
+        min-height: 132px;
+    }
+    body.spb-dashboard .executive-kpi .card-body {
+        padding: 14px !important;
+    }
+    body.spb-dashboard .executive-kpi .kpi-value {
+        font-size: 1.05rem;
     }
     body.spb-dashboard :is(.hotel-filter, .farm-filter) { justify-content: flex-start; }
     body.spb-dashboard :is(.hotel-filter, .farm-filter) > div { flex: 1 1 140px; min-width: 0; }

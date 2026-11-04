@@ -353,22 +353,22 @@
         @include('SuperAdmin.partials._sales_reporting_period')
 
         <section class="starter-grid">
-            <article class="starter-card">
+            <article class="starter-card starter-kpi">
                 <div class="starter-label">Today's Sales</div>
                 <div class="starter-value">₦{{ number_format((float) ($metrics['todayRevenue'] ?? 0), 0) }}</div>
                 <p class="starter-meta">Live sales captured today in the current tenant scope.</p>
             </article>
-            <article class="starter-card">
+            <article class="starter-card starter-kpi">
                 <div class="starter-label">Total Transactions</div>
                 <div class="starter-value">{{ number_format((int) ($metrics['totalOrders'] ?? 0)) }}</div>
                 <p class="starter-meta">Completed POS transactions for today.</p>
             </article>
-            <article class="starter-card">
+            <article class="starter-card starter-kpi">
                 <div class="starter-label">Low Stock Products</div>
                 <div class="starter-value">{{ number_format((int) ($metrics['lowStockCount'] ?? 0)) }}</div>
                 <p class="starter-meta">Items close to depletion and needing attention.</p>
             </article>
-            <article class="starter-card">
+            <article class="starter-card starter-kpi">
                 <div class="starter-label">Inventory Summary</div>
                 <div class="starter-value">{{ number_format((float) ($metrics['activeStock'] ?? 0), 0) }}</div>
                 <p class="starter-meta">Units on hand. Value: ₦{{ number_format((float) ($metrics['inventoryValue'] ?? 0), 0) }}</p>

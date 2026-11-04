@@ -804,9 +804,9 @@
     .executive-kpi {
         border: none !important;
         border-radius: 16px !important;
-        min-height: 96px;
-        height: 96px !important;
-        max-height: 96px !important;
+        min-height: 142px;
+        height: 100% !important;
+        max-height: none !important;
         overflow: hidden;
         position: relative;
         box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1) !important;
@@ -1365,9 +1365,9 @@
             font-size: 0.88rem;
         }
         .executive-kpi {
-            min-height: 86px;
-            height: 86px !important;
-            max-height: 86px !important;
+            min-height: 132px;
+            height: 100% !important;
+            max-height: none !important;
         }
         .executive-kpi .kpi-value {
             font-size: 0.98rem;
