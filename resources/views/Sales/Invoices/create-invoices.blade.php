@@ -35,6 +35,8 @@
         ]];
     }
     $selectedCustomer = old('customer_id', $invoiceFormDefaults['customer_id'] ?? $quotationPrefill['customer_id'] ?? ($selected_customer ?? ''));
+    $selectedCustomerRecord = ($customers ?? collect())->firstWhere('id', $selectedCustomer);
+    $selectedCustomerBalance = (float) ($selectedCustomerRecord->outstanding_balance ?? 0);
     $selectedPriceListId = old('price_list_id', $invoiceFormDefaults['price_list_id'] ?? $quotationPrefill['price_list_id'] ?? optional(($priceLists ?? collect())->firstWhere('is_default', true))->id);
     $invoiceDate = old('invoice_date', $invoiceFormDefaults['invoice_date'] ?? $quotationPrefill['invoice_date'] ?? date('d-m-Y'));
     $dueDate = old('due_date', $invoiceFormDefaults['due_date'] ?? $quotationPrefill['due_date'] ?? '');
@@ -128,7 +130,7 @@
                                             <div id="invoice-customer-created-message" class="alert alert-success py-2 px-3 mt-2 mb-0 d-none" role="status"></div>
                                             <div id="customer-balance-summary" class="alert alert-warning py-2 px-3 mt-2 mb-0 d-none">
                                                 <span class="fw-semibold">Previous Customer Balance:</span>
-                                                <span id="customer-balance-amount">₦0.00</span>
+                                                <span id="customer-balance-amount">₦{{ \App\Support\CompactNumber::format($selectedCustomerBalance, 2) }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -297,7 +299,7 @@
                                                 <label class="mb-0">Additional Expenses</label>
                                                 <input type="number" step="0.01" name="expenses" id="input-expenses" class="form-control w-50 text-end" value="{{ $invoiceExpenses }}" oninput="calculateGrandTotal()">
                                             </div>
-                                            <p class="mb-0">Previous Customer Balance <span id="display-previous-customer-balance">₦0.00</span></p>
+                                            <p class="mb-0">Previous Customer Balance <span id="display-previous-customer-balance">₦{{ \App\Support\CompactNumber::format($selectedCustomerBalance, 2) }}</span></p>
                                         </div>
                                         <div class="invoice-total-footer">
                                             <h4>Total Amount <span id="display-grandtotal">₦0.00</span></h4>
@@ -506,10 +508,6 @@
         const balance = toInvoiceNumber(option?.dataset?.outstandingBalance);
         amount.textContent = '₦' + window.formatCompactAmount(balance);
         summary.classList.toggle('d-none', !customerSelect.value);
-        const previousBalance = document.getElementById('display-previous-customer-balance');
-        if (previousBalance) {
-            previousBalance.textContent = '₦' + window.formatCompactAmount(balance);
-        }
         updateInvoiceBalanceDue();
     }
 
@@ -520,6 +518,15 @@
         const previousBalance = toInvoiceNumber(selectedOption?.dataset?.outstandingBalance);
         const status = document.querySelector('[name="status"]')?.value?.toLowerCase();
         const currentInvoiceBalance = status === 'paid' ? 0 : totalAmount;
+        const formattedPreviousBalance = '₦' + window.formatCompactAmount(previousBalance);
+        const previousBalanceSummary = document.getElementById('customer-balance-amount');
+        const previousBalanceDisplay = document.getElementById('display-previous-customer-balance');
+        if (previousBalanceSummary) {
+            previousBalanceSummary.textContent = formattedPreviousBalance;
+        }
+        if (previousBalanceDisplay) {
+            previousBalanceDisplay.textContent = formattedPreviousBalance;
+        }
         const balanceDue = document.getElementById('display-customer-balance-due');
         if (balanceDue) {
             balanceDue.textContent = '₦' + window.formatCompactAmount(previousBalance + currentInvoiceBalance);
@@ -817,9 +824,14 @@
         calculateGrandTotal();
     }
 
-    document.querySelector('.customer-select')?.addEventListener('change', function() {
+    document.addEventListener('change', function(event) {
+        if (!event.target?.matches?.('.customer-select')) {
+            return;
+        }
+
+        const customerSelect = event.target;
         updateCustomerBalanceDisplay();
-        const selected = this.options[this.selectedIndex];
+        const selected = customerSelect.options[customerSelect.selectedIndex];
         const customerPriceListId = selected?.dataset?.priceListId || '';
         const priceListSelect = document.getElementById('invoice-price-list');
         if (customerPriceListId && invoicePriceListById.has(String(customerPriceListId)) && priceListSelect) {

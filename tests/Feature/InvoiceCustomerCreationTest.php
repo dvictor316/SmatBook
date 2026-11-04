@@ -99,9 +99,13 @@ class InvoiceCustomerCreationTest extends TestCase
         ]);
 
         view()->share('errors', new \Illuminate\Support\ViewErrorBag());
-        $this->withoutExceptionHandling()->get(route('add-invoice'))
+        $this->withoutExceptionHandling()->get(route('add-invoice', ['customer_id' => $customer->id]))
             ->assertOk()
             ->assertSee('data-outstanding-balance="4200"', false)
+            ->assertSee(
+                'id="display-previous-customer-balance">₦' . \App\Support\CompactNumber::format(4200, 2) . '</span>',
+                false
+            )
             ->assertSee('Previous Customer Balance', false)
             ->assertSee('Total Balance Due', false)
             ->assertSee('Previous balance plus this invoice', false)
