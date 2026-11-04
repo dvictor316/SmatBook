@@ -6405,7 +6405,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
     <span data-notice-message></span>
     <button type="button" data-notice-dismiss aria-label="Dismiss notice">&times;</button>
 </div>
-<div id="pos-offline-lock" role="dialog" aria-modal="true" aria-labelledby="pos-offline-lock-title" aria-hidden="false">
+<div id="pos-offline-lock" hidden role="dialog" aria-modal="true" aria-labelledby="pos-offline-lock-title" aria-hidden="true">
     <section class="offline-lock-card">
         <p class="text-uppercase small fw-bold text-primary mb-2">Offline POS</p>
         <h2 id="pos-offline-lock-title">Unlock SmartProbook</h2>
@@ -6421,6 +6421,17 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
         <a href="{{ route('sales.showPos') }}" class="d-inline-block mt-3 fw-bold">Try the online POS</a>
     </section>
 </div>
+<script>
+    (function () {
+        const gate = document.getElementById('pos-offline-lock');
+        const forcedOffline = new URLSearchParams(window.location.search).has('desktop_offline');
+
+        if (gate && (!navigator.onLine || forcedOffline)) {
+            gate.hidden = false;
+            gate.setAttribute('aria-hidden', 'false');
+        }
+    })();
+</script>
 
 <script src="{{ asset('assets/js/jquery-3.7.1.min.js') }}"></script>
 <script src="{{ asset('assets/js/select2.min.js') }}"></script>

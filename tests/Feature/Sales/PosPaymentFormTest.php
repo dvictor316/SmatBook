@@ -39,6 +39,8 @@ class PosPaymentFormTest extends TestCase
         ])
             ->get(route('sales.showPos'))
             ->assertOk()
+            ->assertSee('id="pos-offline-lock" hidden role="dialog"', false)
+            ->assertSee("new URLSearchParams(window.location.search).has('desktop_offline')", false)
             ->assertSee('id="pos-cash-account-label">Payment Method', false)
             ->assertSee('id="rail-suspend-sale-btn"', false)
             ->assertSee('id="rail-sales-suspense-btn"', false)
