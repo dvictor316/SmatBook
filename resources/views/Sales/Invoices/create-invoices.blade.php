@@ -857,9 +857,16 @@
         updateInvoiceBalanceDue();
     }
 
-    // Prevent double-submit (double-click or back+resubmit)
+    let invoiceFormSubmitting = false;
     document.getElementById('invoice-form').addEventListener('submit', function (event) {
+        if (invoiceFormSubmitting) {
+            event.preventDefault();
+            return;
+        }
+        invoiceFormSubmitting = true;
+
         const actionInput = this.querySelector('#invoice-submit-action');
+        const submitter = event.submitter;
         const requestedAction = event.submitter?.dataset?.invoiceAction;
         if (actionInput && requestedAction) {
             actionInput.value = requestedAction;
@@ -867,8 +874,13 @@
 
         this.querySelectorAll('[type="submit"]').forEach(function (btn) {
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
         });
+
+        if (submitter) {
+            const loadingLabel = requestedAction === 'print' ? 'Saving & printing...' : 'Saving...';
+            submitter.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>' + loadingLabel;
+            submitter.setAttribute('aria-busy', 'true');
+        }
     });
 </script>
 @endsection

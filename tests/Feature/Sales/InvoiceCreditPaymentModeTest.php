@@ -86,6 +86,23 @@ class InvoiceCreditPaymentModeTest extends TestCase
             ->assertSee('Customer Balance Due');
     }
 
+    public function test_invoice_print_posting_resolves_a_branch_when_all_branches_are_selected(): void
+    {
+        [$company, $user, $customer] = $this->workspace();
+        session()->forget(['active_branch_id', 'active_branch_name']);
+        session(['active_branch_scope' => 'all']);
+
+        $payload = $this->invoicePayload($customer, $this->product($company, $user));
+        $payload['action'] = 'print';
+        $response = $this->post(route('invoices.store'), $payload);
+        $this->assertNull(session('error'), (string) session('error'));
+        $sale = Sale::where('company_id', $company->id)->sole();
+
+        $response->assertSessionHasNoErrors()
+            ->assertRedirect(route('sales.invoice.print', ['id' => $sale->id, 'autoprint' => 1]));
+        $this->assertNotEmpty($sale->branch_id);
+    }
+
     public function test_existing_unpaid_manual_send_and_cash_rows_display_as_credit_without_rewriting_financial_data(): void
     {
         [$company, $user, $customer] = $this->workspace();

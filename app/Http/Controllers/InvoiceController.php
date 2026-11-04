@@ -442,6 +442,36 @@ class InvoiceController extends Controller
         ];
     }
 
+    private function resolveInvoicePostingBranchContext(): array
+    {
+        $resolver = app(\App\Support\ActiveBranchResolver::class);
+        $resolver->ensureSession(auth()->user());
+
+        $activeBranch = $this->getActiveBranchContext();
+        if ($activeBranch['id'] || $activeBranch['name']) {
+            return $activeBranch;
+        }
+
+        $branch = $resolver->resolveDefaultBranch(auth()->user());
+        $branchId = trim((string) ($branch['id'] ?? ''));
+        $branchName = trim((string) ($branch['name'] ?? ''));
+
+        if ($branchId === '' && $branchName === '') {
+            throw new \RuntimeException('A branch is required to post this invoice. Select an active branch and try again.');
+        }
+
+        $activeBranch = [
+            'id' => $branchId !== '' ? $branchId : null,
+            'name' => $branchName !== '' ? $branchName : null,
+        ];
+        session([
+            'active_branch_id' => $activeBranch['id'],
+            'active_branch_name' => $activeBranch['name'],
+        ]);
+
+        return $activeBranch;
+    }
+
     /**
      * Display a listing of invoices with statistics and company branding.
      */
@@ -635,7 +665,7 @@ class InvoiceController extends Controller
                 ->lockForUpdate()
                 ->findOrFail((int) $request->customer_id);
             $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
-            $activeBranch = $this->getActiveBranchContext();
+            $activeBranch = $this->resolveInvoicePostingBranchContext();
             $branchId = $activeBranch['id'];
             $branchName = $activeBranch['name'];
 
