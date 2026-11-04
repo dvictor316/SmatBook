@@ -62,7 +62,7 @@ class ReportController extends Controller
     {
         if ($this->resolveReportAccess() === 'starter') {
             return [
-                'standard' => ['sales', 'inventory'],
+                'standard' => ['sales', 'inventory', 'profit-loss'],
             ];
         }
 

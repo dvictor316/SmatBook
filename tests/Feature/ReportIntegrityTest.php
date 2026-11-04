@@ -443,6 +443,43 @@ class ReportIntegrityTest extends TestCase
         }
     }
 
+    public function test_basic_plan_can_find_and_open_the_profit_loss_report(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $this->withoutMiddleware([
+            SubscriptionActive::class,
+            RequireActiveBranch::class,
+            ForceLogoutExpiredSession::class,
+            EnforceDeviceSessionLimit::class,
+            VerifyTenantSession::class,
+        ])->actingAs($user)->withSession($this->branchSession($company));
+
+        $this->get(route('reports.hub'))
+            ->assertOk()
+            ->assertSee('Profit &amp; Loss', false);
+
+        $this->get(route('reports.profit-loss'))->assertOk();
+    }
+
+    public function test_starter_plan_can_find_and_open_the_profit_loss_report(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $company->forceFill(['plan' => 'Starter'])->save();
+        $this->withoutMiddleware([
+            SubscriptionActive::class,
+            RequireActiveBranch::class,
+            ForceLogoutExpiredSession::class,
+            EnforceDeviceSessionLimit::class,
+            VerifyTenantSession::class,
+        ])->actingAs($user)->withSession($this->branchSession($company));
+
+        $this->get(route('reports.hub'))
+            ->assertOk()
+            ->assertSee('Profit &amp; Loss', false);
+
+        $this->get(route('reports.profit-loss'))->assertOk();
+    }
+
     public function test_financial_ratios_are_calculated_from_scoped_ledger_balances(): void
     {
         [$user, $company] = $this->businessUser();

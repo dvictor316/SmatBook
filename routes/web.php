@@ -1248,6 +1248,13 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
 	    Route::delete('/payments/{id}', [ReportController::class, 'destroy'])->middleware('plan.access:basic,professional,enterprise')->name('payments.report-destroy');
 	    Route::get('/get-invoice-items/{id}', [ReportController::class, 'get_invoice_items'])->middleware('plan.access:basic,professional,enterprise')->name('get-invoice-items');
 
+    // Core P&L is available to every subscription tier; keep it outside the
+    // broader report group so Starter users can access it without opening
+    // other report routes.
+    Route::get('/reports/profit-loss-list', [ReportController::class, 'profit_loss_list'])
+        ->middleware('plan.access:starter,basic,professional,enterprise')
+        ->name('reports.profit-loss');
+
     // Reports
     Route::controller(ReportController::class)->prefix('reports')->name('reports.')->middleware('plan.access:basic,professional,enterprise')->group(function () {
         Route::get('/expense-report', 'expense_report')->middleware('plan.access:basic,professional,enterprise')->name('expense');
@@ -1260,9 +1267,6 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/accounts-receivable', 'accountsReceivable')->middleware('plan.access:basic,professional,enterprise')->name('accounts-receivable');
         Route::get('/customer-statement/{id}', 'customerStatement')->middleware('plan.access:basic,professional,enterprise')->name('customer-statement');
         Route::get('/quotation-report', 'quotation_report')->middleware('plan.access:basic,professional,enterprise')->name('quotation');
-        Route::get('/profit-loss-list', 'profit_loss_list')
-            ->middleware('plan.access:pro,enterprise')
-            ->name('profit-loss');
         Route::get('/tax-purchase', 'tax_purchase')
             ->middleware('plan.access:enterprise')
             ->name('tax-purchase');

@@ -207,6 +207,25 @@
                 </div>
             </div>
 
+            {{-- Starter gets the core statement without the other overview reports. --}}
+            @if(in_array('profit-loss', $visibleSections, true))
+            <div class="rh-section" data-section="profit-loss">
+                <div class="rh-sec-head" onclick="toggleSection(this)">
+                    <span class="rh-sec-icon pal-purple"><i class="fas fa-university"></i></span>
+                    <span class="rh-sec-title">Financial Statements</span>
+                    <span class="rh-sec-count">1 report</span>
+                    <i class="fas fa-chevron-down rh-sec-chevron"></i>
+                </div>
+                <div class="rh-col-grid">
+                    <div class="rl-row" data-section="profit-loss" data-tab="standard" data-id="profit-loss-starter" data-url="{{ route('reports.profit-loss') }}" data-keywords="profit loss p&l income statement net earnings">
+                        <button class="rl-star" data-id="profit-loss-starter" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.profit-loss') }}" class="rl-name">Profit &amp; Loss</a>
+                        <a href="{{ route('reports.profit-loss') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             {{-- ══ 1. BUSINESS OVERVIEW ════════════════════════════════════ --}}
             @if(in_array('overview', $visibleSections, true))
             <div class="rh-section" data-section="overview">
@@ -218,14 +237,11 @@
                 </div>
                 <div class="rh-col-grid">
 
-                    @if($canUseProfitLossReports)
-                        <div class="rl-row" data-section="overview" data-tab="overview" data-id="profit-loss" data-url="{{ route('reports.profit-loss') }}" data-keywords="profit loss p&l income statement net earnings">
-                            <button class="rl-star" data-id="profit-loss" title="Favourite"><i class="far fa-star"></i></button>
-                            <a href="{{ route('reports.profit-loss') }}" class="rl-name">Profit &amp; Loss</a>
-                            <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
-                            <a href="{{ route('reports.profit-loss') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
-                        </div>
-                    @endif
+                    <div class="rl-row" data-section="overview" data-tab="overview" data-id="profit-loss" data-url="{{ route('reports.profit-loss') }}" data-keywords="profit loss p&l income statement net earnings">
+                        <button class="rl-star" data-id="profit-loss" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.profit-loss') }}" class="rl-name">Profit &amp; Loss</a>
+                        <a href="{{ route('reports.profit-loss') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
 
                     @if($canUseCoreStatements)
                         <div class="rl-row" data-section="overview" data-tab="overview" data-id="balance-sheet" data-url="{{ route('balance-sheet') }}" data-keywords="balance sheet assets liabilities equity net worth">
