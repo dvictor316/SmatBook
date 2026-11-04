@@ -1769,9 +1769,7 @@
         };
     </script>
 
-    <script>
-        window.SPBPageLoader = { show: function () {}, hide: function () {} };
-    </script>
+    <script src="{{ asset('assets/js/response-feedback.js') }}?v={{ filemtime(public_path('assets/js/response-feedback.js')) }}"></script>
 
 </body>
 </html>
