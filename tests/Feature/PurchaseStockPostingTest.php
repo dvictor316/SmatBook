@@ -233,6 +233,32 @@ class PurchaseStockPostingTest extends TestCase
                 && (float) $summary->quantity_total === 0.0);
     }
 
+    public function test_invalid_transfer_inputs_show_actionable_errors_and_reopen_the_transfer_form(): void
+    {
+        [$product] = $this->workspace();
+        $this->configureTransferBranches($product);
+
+        $this->from(route('product-list'))
+            ->post(route('inventory.transfer'), [
+                'product_id' => 'not-a-product',
+                'from_branch_id' => 'hq',
+                'to_branch_id' => 'branch-b',
+                'quantity' => 'not-a-number',
+            ])
+            ->assertRedirect(route('product-list'))
+            ->assertSessionHas('stock_transfer_validation_failed', true)
+            ->assertSessionHasErrors([
+                'product_id' => 'Please select a product from the search results.',
+                'quantity' => 'Enter a valid numeric quantity (0 or more).',
+            ]);
+
+        $this->get(route('product-list'))
+            ->assertOk()
+            ->assertSee('Please select a product from the search results.')
+            ->assertSee('Enter a valid numeric quantity (0 or more).')
+            ->assertSee('bootstrap.Modal.getOrCreateInstance(transferModal).show()', false);
+    }
+
     private function configureTransferBranches(Product $product): void
     {
         Setting::create([

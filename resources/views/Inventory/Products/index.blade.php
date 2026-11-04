@@ -763,6 +763,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <?php $transferErrors = isset($errors) ? $errors : session('errors'); ?>
                     <p class="text-muted mb-3">Add a product to another branch without re-entering it, or move stock from the selected source branch.</p>
                     <div class="form-check mb-3">
                         <input class="form-check-input" type="checkbox" name="add_all_products" id="transfer-all-products" value="1">
@@ -772,10 +773,13 @@
                     <div class="mb-3">
                         <label class="form-label">Product</label>
                         <div class="product-lookup" data-search-url="<?php echo e($transferProductsSearchUrl); ?>">
-                            <input type="search" class="form-control product-lookup-input" placeholder="Type at least 2 characters to search" autocomplete="off">
-                            <input type="hidden" name="product_id" class="product-lookup-id" required>
+                            <input type="search" name="product_search" value="<?php echo e(old('product_search')); ?>" class="form-control product-lookup-input" placeholder="Type at least 2 characters, then select a result" autocomplete="off">
+                            <input type="hidden" name="product_id" class="product-lookup-id" value="<?php echo e(old('product_id')); ?>">
                             <div class="list-group product-lookup-results mt-1" role="listbox"></div>
-                            <small class="text-muted product-lookup-selected"></small>
+                            <small class="text-muted product-lookup-selected"><?php if (old('product_id')) { ?>Selected: <?php echo e(old('product_search')); ?><?php } ?></small>
+                            <?php if ($transferErrors && $transferErrors->has('product_id')) { ?>
+                                <div class="invalid-feedback d-block"><?php echo e($transferErrors->first('product_id')); ?></div>
+                            <?php } ?>
                         </div>
                     </div>
                     <div class="row">
@@ -800,8 +804,11 @@
                     </div>
                     <div class="mb-0">
                         <label class="form-label">Quantity</label>
-                        <input type="number" step="0.01" min="0" name="quantity" class="form-control" required>
+                        <input type="number" step="0.01" min="0" name="quantity" value="<?php echo e(old('quantity')); ?>" class="form-control" required>
                         <div class="form-text">Enter 0 to add this product to the destination catalog without moving stock.</div>
+                        <?php if ($transferErrors && $transferErrors->has('quantity')) { ?>
+                            <div class="invalid-feedback d-block"><?php echo e($transferErrors->first('quantity')); ?></div>
+                        <?php } ?>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -1235,6 +1242,7 @@
             var requestNumber = 0;
 
             input.addEventListener('input', function() {
+                input.setCustomValidity('');
                 hidden.value = '';
                 selected.textContent = '';
                 clearTimeout(timer);
@@ -1264,6 +1272,7 @@
                                 option.className = 'list-group-item list-group-item-action';
                                 option.textContent = product.name + (product.sku ? ' (' + product.sku + ')' : '');
                                 option.addEventListener('click', function() {
+                                    input.setCustomValidity('');
                                     hidden.value = product.id;
                                     input.value = option.textContent;
                                     selected.textContent = 'Selected: ' + option.textContent;
@@ -1284,8 +1293,25 @@
         if (transferAllProducts) {
             var transferForm = transferAllProducts.closest('form');
             var productLookup = transferForm.querySelector('.product-lookup');
+            var productLookupInput = productLookup.querySelector('.product-lookup-input');
+            var productIdInput = productLookup.querySelector('.product-lookup-id');
             var quantityInput = transferForm.querySelector('[name="quantity"]');
             var transferSubmit = document.getElementById('transfer-stock-submit');
+            transferForm.addEventListener('submit', function(event) {
+                if (transferAllProducts.checked) return;
+
+                if (!/^[1-9]\d*$/.test(productIdInput.value)) {
+                    event.preventDefault();
+                    productLookupInput.setCustomValidity('Select a product from the search results before submitting.');
+                    productLookupInput.reportValidity();
+                    return;
+                }
+
+                if (!quantityInput.value || !quantityInput.checkValidity()) {
+                    event.preventDefault();
+                    quantityInput.reportValidity();
+                }
+            });
             transferAllProducts.addEventListener('change', function() {
                 productLookup.hidden = transferAllProducts.checked;
                 productLookup.querySelector('.product-lookup-id').required = !transferAllProducts.checked;
@@ -1294,6 +1320,13 @@
                 transferSubmit.textContent = transferAllProducts.checked ? 'Add All Products' : 'Transfer / Add Product';
             });
         }
+
+        <?php if (session('stock_transfer_validation_failed')) { ?>
+            var transferModal = document.getElementById('transferStockModal');
+            if (transferModal && window.bootstrap) {
+                bootstrap.Modal.getOrCreateInstance(transferModal).show();
+            }
+        <?php } ?>
 
         if (!document.querySelector('[data-server-pagination]')) table.page.len(500).draw(false);
         table.on('draw', syncVisibleProductChecks);

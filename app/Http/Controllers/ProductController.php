@@ -2277,13 +2277,27 @@ public function inventory(Request $request)
             return redirect()->back()->with('error', 'Stock transfer is available on higher plans only.');
         }
 
-        $validated = $request->validate([
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'add_all_products' => 'nullable|boolean',
             'product_id' => 'required_unless:add_all_products,1|integer|min:1',
             'from_branch_id' => 'required|string',
             'to_branch_id' => 'required|string|different:from_branch_id',
             'quantity' => 'required_unless:add_all_products,1|numeric|min:0',
+        ], [
+            'product_id.required_unless' => 'Search for a product and select it from the results.',
+            'product_id.integer' => 'Please select a product from the search results.',
+            'product_id.min' => 'Please select a valid product.',
+            'quantity.required_unless' => 'Enter a quantity. Use 0 to add the product without moving stock.',
+            'quantity.numeric' => 'Enter a valid numeric quantity (0 or more).',
+            'quantity.min' => 'Quantity cannot be negative.',
         ]);
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('stock_transfer_validation_failed', true);
+        }
+        $validated = $validator->validated();
 
         $branches = collect($this->getAvailableBranches());
         $fromBranch = $branches->firstWhere('id', $validated['from_branch_id']);
