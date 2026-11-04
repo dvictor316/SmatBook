@@ -297,10 +297,13 @@
                                                 <label class="mb-0">Additional Expenses</label>
                                                 <input type="number" step="0.01" name="expenses" id="input-expenses" class="form-control w-50 text-end" value="{{ $invoiceExpenses }}" oninput="calculateGrandTotal()">
                                             </div>
+                                            <p class="mb-0">Previous Customer Balance <span id="display-previous-customer-balance">₦0.00</span></p>
                                         </div>
                                         <div class="invoice-total-footer">
                                             <h4>Total Amount <span id="display-grandtotal">₦0.00</span></h4>
                                             <input type="hidden" name="total_amount" id="hidden-total-amount" value="0.00">
+                                            <h4 class="mt-2">Total Balance Due <span id="display-customer-balance-due">₦0.00</span></h4>
+                                            <small class="text-muted">Previous balance plus this invoice</small>
                                         </div>
                                     </div>
                                 </div>
@@ -310,6 +313,11 @@
                                 <a href="{{ route('invoices.index') }}" class="btn btn-secondary me-2">Cancel</a>
                                 <button type="submit" name="action" value="save" class="btn btn-info me-2">{{ $isEditMode ? 'Save Changes' : 'Save Draft' }}</button>
                                 <button type="submit" name="action" value="send" class="btn btn-primary">{{ $isEditMode ? 'Update & Send' : 'Save & Send' }}</button>
+                                @unless($isEditMode)
+                                    <button type="submit" name="action" value="print" class="btn btn-outline-primary ms-2">
+                                        <i class="fas fa-print me-1" aria-hidden="true"></i>Save &amp; Print
+                                    </button>
+                                @endunless
                             </div>
                         </div>
                     </div>
@@ -498,6 +506,24 @@
         const balance = toInvoiceNumber(option?.dataset?.outstandingBalance);
         amount.textContent = '₦' + window.formatCompactAmount(balance);
         summary.classList.toggle('d-none', !customerSelect.value);
+        const previousBalance = document.getElementById('display-previous-customer-balance');
+        if (previousBalance) {
+            previousBalance.textContent = '₦' + window.formatCompactAmount(balance);
+        }
+        updateInvoiceBalanceDue();
+    }
+
+    function updateInvoiceBalanceDue() {
+        const totalAmount = toInvoiceNumber(document.getElementById('hidden-total-amount')?.value);
+        const customerSelect = document.querySelector('.customer-select');
+        const selectedOption = customerSelect?.options?.[customerSelect.selectedIndex];
+        const previousBalance = toInvoiceNumber(selectedOption?.dataset?.outstandingBalance);
+        const status = document.querySelector('[name="status"]')?.value?.toLowerCase();
+        const currentInvoiceBalance = status === 'paid' ? 0 : totalAmount;
+        const balanceDue = document.getElementById('display-customer-balance-due');
+        if (balanceDue) {
+            balanceDue.textContent = '₦' + window.formatCompactAmount(previousBalance + currentInvoiceBalance);
+        }
     }
 
     function getInvoiceUnitOptions(option) {
@@ -801,6 +827,7 @@
             priceListSelect.dispatchEvent(new Event('change', { bubbles: true }));
         }
     });
+    document.querySelector('[name="status"]')?.addEventListener('change', updateInvoiceBalanceDue);
 
     // Calculate Grand Total
     function calculateGrandTotal() {
@@ -814,6 +841,7 @@
         document.getElementById('display-subtotal').innerText = '₦' + subtotal.toLocaleString();
         document.getElementById('display-grandtotal').innerText = '₦' + grandTotal.toLocaleString();
         document.getElementById('hidden-total-amount').value = grandTotal.toFixed(2);
+        updateInvoiceBalanceDue();
     }
 
     // Prevent double-submit (double-click or back+resubmit)

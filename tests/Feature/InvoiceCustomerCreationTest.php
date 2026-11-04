@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Company;
 use App\Models\Customer;
+use App\Models\Sale;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -72,5 +73,38 @@ class InvoiceCustomerCreationTest extends TestCase
         $this->assertSame(1, $xpath->query('//form[@id="invoice-customer-form"]')->length);
         $this->assertSame(0, $xpath->query('//form[@id="invoice-form"]//a[contains(@href, "add-customer")]')->length);
         $this->assertSame(0, $xpath->query('//form[@id="invoice-form"]//form[@id="invoice-customer-form"]')->length);
+    }
+
+    public function test_invoice_form_includes_opening_balance_and_current_invoice_in_total_due(): void
+    {
+        [$company, $user] = $this->workspace();
+        $customer = Customer::create([
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'customer_name' => 'Outstanding Invoice Customer',
+            'balance' => 1200,
+        ]);
+        Sale::create([
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'customer_id' => $customer->id,
+            'customer_name' => $customer->customer_name,
+            'invoice_no' => 'PREVIOUS-UNPAID-001',
+            'subtotal' => 3000,
+            'total' => 3000,
+            'paid' => 0,
+            'amount_paid' => 0,
+            'balance' => 3000,
+            'payment_status' => 'unpaid',
+        ]);
+
+        view()->share('errors', new \Illuminate\Support\ViewErrorBag());
+        $this->withoutExceptionHandling()->get(route('add-invoice'))
+            ->assertOk()
+            ->assertSee('data-outstanding-balance="4200"', false)
+            ->assertSee('Previous Customer Balance', false)
+            ->assertSee('Total Balance Due', false)
+            ->assertSee('Previous balance plus this invoice', false)
+            ->assertSee('Save &amp; Print', false);
     }
 }

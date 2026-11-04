@@ -15,11 +15,48 @@ class CustomerReceivables
         Builder $salesQuery,
         ?int $excludeSaleId = null
     ): float {
-        if ($customerId <= 0 || !Schema::hasTable('sales') || !Schema::hasColumn('sales', 'balance')) {
+        if ($customerId <= 0) {
             return 0.0;
         }
 
-        $customerSales = (clone $salesQuery)->where('customer_id', $customerId);
+        if (! $customer) {
+            $customer = new Customer();
+            $customer->setAttribute('id', $customerId);
+        }
+
+        return $this->outstandingBalances([$customer], $salesQuery, $excludeSaleId)[$customerId] ?? 0.0;
+    }
+
+    /**
+     * Return customer receivables in batches for invoice forms and other lists.
+     *
+     * @param iterable<Customer> $customers
+     * @return array<int, float>
+     */
+    public function outstandingBalances(
+        iterable $customers,
+        Builder $salesQuery,
+        ?int $excludeSaleId = null
+    ): array {
+        $customersById = collect($customers)
+            ->filter(fn ($customer) => $customer instanceof Customer && (int) $customer->id > 0)
+            ->keyBy(fn (Customer $customer) => (int) $customer->id);
+
+        if ($customersById->isEmpty()) {
+            return [];
+        }
+
+        $balances = $customersById->mapWithKeys(fn (Customer $customer, $id) => [(int) $id => 0.0]);
+        if (
+            ! Schema::hasTable('sales')
+            || ! Schema::hasColumn('sales', 'customer_id')
+            || ! Schema::hasColumn('sales', 'balance')
+        ) {
+            return $balances->all();
+        }
+
+        $customerIds = $customersById->keys();
+        $customerSales = (clone $salesQuery)->whereIn('customer_id', $customerIds);
         if (Schema::hasColumn('sales', 'order_status')) {
             $customerSales->where(function ($query) {
                 $query->whereNull('order_status')
@@ -27,30 +64,45 @@ class CustomerReceivables
             });
         }
 
-        $openingSale = null;
-        $openingBalance = max(0, (float) ($customer?->balance ?? 0));
+        $openingSalesByCustomer = collect();
         if (Schema::hasColumn('sales', 'invoice_no')) {
-            $openingSale = (clone $customerSales)
-                ->where('invoice_no', 'OPENING-BAL-' . $customerId)
-                ->latest('id')
-                ->first(['id', 'balance']);
-
-            if ($openingSale) {
-                $openingBalance = max(0, (float) ($openingSale->balance ?? 0));
-            }
+            $openingReferences = $customerIds->map(fn ($customerId) => 'OPENING-BAL-' . $customerId);
+            $openingSalesByCustomer = (clone $customerSales)
+                ->whereIn('invoice_no', $openingReferences)
+                ->orderBy('id')
+                ->get(['id', 'customer_id', 'balance'])
+                ->groupBy('customer_id')
+                ->map(fn ($openingSales) => $openingSales->last());
         }
 
         $otherSales = (clone $customerSales)->where('balance', '>', 0);
-        if ($openingSale) {
-            $otherSales->where('id', '!=', $openingSale->id);
+        $openingSaleIds = $openingSalesByCustomer->pluck('id')->all();
+        if ($openingSaleIds !== []) {
+            $otherSales->whereNotIn('id', $openingSaleIds);
         }
         if ($excludeSaleId) {
             $otherSales->where('id', '!=', $excludeSaleId);
-            if ($openingSale && (int) $openingSale->id === $excludeSaleId) {
-                $openingBalance = 0.0;
-            }
         }
 
-        return round($openingBalance + (float) $otherSales->sum('balance'), 2);
+        $otherBalances = $otherSales
+            ->select('customer_id')
+            ->selectRaw('SUM(balance) as outstanding_balance')
+            ->groupBy('customer_id')
+            ->pluck('outstanding_balance', 'customer_id');
+
+        foreach ($customersById as $customerId => $customer) {
+            $openingSale = $openingSalesByCustomer->get((int) $customerId);
+            $openingBalance = max(0, (float) ($openingSale->balance ?? $customer->balance ?? 0));
+            if ($excludeSaleId && $openingSale && (int) $openingSale->id === $excludeSaleId) {
+                $openingBalance = 0.0;
+            }
+
+            $balances[(int) $customerId] = round(
+                $openingBalance + (float) ($otherBalances[$customerId] ?? 0),
+                2
+            );
+        }
+
+        return $balances->all();
     }
 }

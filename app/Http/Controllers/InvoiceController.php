@@ -572,23 +572,10 @@ class InvoiceController extends Controller
             }
         }
         $customers = $customersQuery->get();
-        $customerBalances = collect();
-        if ($customers->isNotEmpty() && Schema::hasColumn('sales', 'balance')) {
-            $balanceQuery = Sale::query()
-                ->whereIn('customer_id', $customers->pluck('id'));
-            if (Schema::hasColumn('sales', 'order_status')) {
-                $balanceQuery->where(function ($query) {
-                    $query->whereNull('order_status')
-                        ->orWhere('order_status', '!=', 'draft');
-                });
-            }
-            $this->applyTenantScope($balanceQuery, 'sales');
-            $customerBalances = $balanceQuery
-                ->select('customer_id')
-                ->selectRaw('SUM(GREATEST(COALESCE(balance, 0), 0)) as outstanding_balance')
-                ->groupBy('customer_id')
-                ->pluck('outstanding_balance', 'customer_id');
-        }
+        $customerBalances = app(\App\Support\CustomerReceivables::class)->outstandingBalances(
+            $customers,
+            $this->applyTenantScope(Sale::query(), 'sales')
+        );
         $customers->each(function ($customer) use ($customerBalances) {
             $customer->setAttribute('outstanding_balance', (float) ($customerBalances[$customer->id] ?? 0));
         });
@@ -869,6 +856,10 @@ class InvoiceController extends Controller
             $message = $action === 'send'
                 ? 'Invoice saved and marked ready to send.'
                 : ($isDraft ? 'Invoice draft saved successfully.' : 'Invoice created successfully.');
+
+            if ($action === 'print') {
+                return redirect()->route('sales.invoice.print', $sale->id);
+            }
 
             return redirect()->route('invoices.index')->with('success', $message);
 

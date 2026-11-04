@@ -65,6 +65,21 @@ class InvoiceCreditPaymentModeTest extends TestCase
         $this->assertDatabaseCount('payments', 0);
     }
 
+    public function test_invoice_can_be_saved_and_redirected_to_print_view(): void
+    {
+        [$company, $user, $customer] = $this->workspace();
+        $payload = $this->invoicePayload($customer, $this->product($company, $user));
+        $payload['action'] = 'print';
+
+        $response = $this->post(route('invoices.store'), $payload);
+        $sale = Sale::where('company_id', $company->id)->sole();
+
+        $response->assertSessionHasNoErrors()
+            ->assertRedirect(route('sales.invoice.print', $sale->id));
+        $this->assertSame(1000.0, (float) $sale->balance);
+        $this->get(route('sales.invoice.print', $sale->id))->assertOk()->assertSee('Customer Balance Due');
+    }
+
     public function test_existing_unpaid_manual_send_and_cash_rows_display_as_credit_without_rewriting_financial_data(): void
     {
         [$company, $user, $customer] = $this->workspace();
