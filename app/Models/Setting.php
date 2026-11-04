@@ -31,7 +31,12 @@ class Setting extends Model
             return $profile;
         }
 
-        $company = Company::withoutGlobalScope('tenant')->find($companyId);
+        $company = $user?->relationLoaded('company')
+            ? $user->getRelation('company')
+            : null;
+        if (! $company || (int) $company->id !== $companyId) {
+            $company = Company::withoutGlobalScope('tenant')->find($companyId);
+        }
         $profile = array_replace($profile, [
             'company_name' => $company?->name ?: $company?->company_name,
             'company_phone' => $company?->phone,

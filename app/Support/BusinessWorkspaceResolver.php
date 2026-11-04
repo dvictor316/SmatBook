@@ -76,7 +76,8 @@ class BusinessWorkspaceResolver
         $isSuperAdmin = $user->isSuperAdmin();
 
         if (
-            $sessionCompanyId > 0
+            $accessibleCompanies === null
+            && $sessionCompanyId > 0
             && $sessionCompanyId === $primaryCompanyId
             && !$isSuperAdmin
             && (!Schema::hasTable('companies') || Company::withoutGlobalScope('tenant')->whereKey($sessionCompanyId)->exists())
