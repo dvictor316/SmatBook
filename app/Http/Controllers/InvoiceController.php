@@ -352,6 +352,41 @@ class InvoiceController extends Controller
             ->all();
     }
 
+    private function assertInvoiceSalesUnitAvailable(Product $product, ?string $unitName): void
+    {
+        if (!Schema::hasColumn('product_units', 'is_sales_unit')) {
+            return;
+        }
+
+        $activeUnits = $product->productUnits()->where('status', 'active')->get();
+        if ($activeUnits->isEmpty()) {
+            return;
+        }
+
+        $requestedUnit = strtolower(trim((string) $unitName));
+        if (!$activeUnits->contains(fn ($unit) => (bool) ($unit->is_sales_unit ?? true))) {
+            throw new \RuntimeException("{$product->name} has no units enabled for sale.");
+        }
+        if (in_array($requestedUnit, ['unit', 'units'], true)) {
+            $requestedUnit = strtolower(trim((string) ($product->base_unit_name ?: $product->stockUnitSymbol())));
+        }
+        if ($requestedUnit === '') {
+            return;
+        }
+
+        $matchedUnit = $activeUnits->first(function ($unit) use ($requestedUnit) {
+            return strtolower(trim((string) $unit->unit_name)) === $requestedUnit
+                || strtolower(trim((string) $unit->unit_symbol)) === $requestedUnit;
+        });
+
+        if (!$matchedUnit) {
+            throw new \RuntimeException("The {$requestedUnit} unit is not configured for sale for {$product->name}.");
+        }
+        if ($matchedUnit && !($matchedUnit->is_sales_unit ?? true)) {
+            throw new \RuntimeException("The {$requestedUnit} unit is not enabled for sale for {$product->name}.");
+        }
+    }
+
     private function applyCustomerWalletToSale(Sale $sale, Customer $customer, array $activeBranch): float
     {
         if (!Schema::hasColumn('customers', 'wallet_balance') || !Schema::hasTable('payments')) {
@@ -709,6 +744,7 @@ class InvoiceController extends Controller
                     throw new \Exception('One of the selected products could not be found for this workspace.');
                 }
 
+                $this->assertInvoiceSalesUnitAvailable($product, $item['unit_type'] ?? $item['unitType'] ?? null);
                 $requestedQty = max(0, (float) ($item['qty'] ?? 0));
                 $requestedStockUnits = InventoryQuantity::resolveSaleStockUnits(
                     $product,
@@ -1150,6 +1186,7 @@ class InvoiceController extends Controller
                     throw new \Exception('One of the selected products could not be found for this workspace.');
                 }
 
+                $this->assertInvoiceSalesUnitAvailable($product, $item['unit_type'] ?? $item['unitType'] ?? null);
                 $requestedQty = max(0, (float) ($item['qty'] ?? 0));
                 $requestedStockUnits = InventoryQuantity::resolveSaleStockUnits(
                     $product,

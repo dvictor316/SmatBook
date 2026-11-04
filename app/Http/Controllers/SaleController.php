@@ -298,6 +298,28 @@ class SaleController extends Controller
     private function resolvePosSystemUnitPrice(Product $product, array $itemData, Collection $priceLists): float
     {
         $unitType = strtolower(trim((string) ($itemData['unitType'] ?? 'unit')));
+        if (Schema::hasColumn('product_units', 'is_sales_unit')) {
+            $activeUnits = $product->productUnits()->where('status', 'active')->get();
+            if ($activeUnits->isNotEmpty()) {
+                if (!$activeUnits->contains(fn ($unit) => (bool) ($unit->is_sales_unit ?? true))) {
+                    throw new \RuntimeException("{$product->name} has no units enabled for sale.");
+                }
+
+                $requestedUnit = in_array($unitType, ['unit', 'units'], true)
+                    ? strtolower(trim((string) ($product->base_unit_name ?: $product->stockUnitSymbol())))
+                    : $unitType;
+                $matchedUnit = $activeUnits->first(function ($unit) use ($requestedUnit) {
+                    return strtolower(trim((string) $unit->unit_name)) === $requestedUnit
+                        || strtolower(trim((string) $unit->unit_symbol)) === $requestedUnit;
+                });
+                if (!$matchedUnit) {
+                    throw new \RuntimeException("The {$requestedUnit} unit is not configured for sale for {$product->name}.");
+                }
+                if ($matchedUnit && !($matchedUnit->is_sales_unit ?? true)) {
+                    throw new \RuntimeException("The {$requestedUnit} unit is not enabled for sale for {$product->name}.");
+                }
+            }
+        }
         $unitConversion = $product->resolveUnitConversion($unitType);
         $multiplier = max(1, (float) ($unitConversion['conversion_factor'] ?? 1));
         $priceLevel = strtolower(trim((string) ($itemData['priceLevel'] ?? 'retail')));
@@ -323,6 +345,16 @@ class SaleController extends Controller
             $basePrice = $wholesalePrice;
         } elseif ($priceLevel === 'special' && $specialPrice > 0) {
             $basePrice = $specialPrice;
+        }
+
+        $unitPrice = match ($priceLevel) {
+            'retail' => $unitConversion['selling_price'] ?? null,
+            'wholesale' => $unitConversion['wholesale_price'] ?? null,
+            default => null,
+        };
+
+        if ($unitPrice !== null && is_numeric($unitPrice)) {
+            return round(max(0, (float) $unitPrice), 2);
         }
 
         return round(max(0, $basePrice * $multiplier), 2);

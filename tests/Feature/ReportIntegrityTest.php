@@ -11,6 +11,8 @@ use App\Http\Middleware\VerifyTenantSession;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\Payment;
+use App\Models\Product;
+use App\Models\ProductUnit;
 use App\Models\Sale;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -215,6 +217,7 @@ class ReportIntegrityTest extends TestCase
         foreach ([$cashAccount, $transferAccount, $cardAccount] as $account) {
             $account->forceFill(['branch_id' => 'hq', 'branch_name' => 'Headquarters'])->saveQuietly();
         }
+
         $categoryId = DB::table('categories')->insertGetId([
             'name' => 'POS Payment Test',
             'created_at' => now(),
@@ -346,6 +349,74 @@ class ReportIntegrityTest extends TestCase
             ]],
         ])->assertUnprocessable()->assertJsonPath('success', false)
             ->assertSee('No active cash account is configured');
+    }
+
+    public function test_pos_uses_the_configured_carton_price_instead_of_multiplying_the_kg_price(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $cashAccount = $this->account($company, 'POS Carton Cash', 'Asset', 'Cash');
+        $cashAccount->forceFill(['branch_id' => 'hq', 'branch_name' => 'Headquarters'])->saveQuietly();
+        $product = Product::create([
+        'company_id' => $company->id,
+        'user_id' => $user->id,
+        'branch_id' => 'hq',
+        'branch_name' => 'Headquarters',
+        'name' => 'Rice by weight',
+        'sku' => 'POS-KG-CARTON-PRICE',
+        'base_unit_name' => 'kg',
+        'unit_type' => 'carton',
+        'units_per_carton' => 25,
+        'stock' => 50,
+        'price' => 100,
+        'purchase_price' => 60,
+        ]);
+        ProductUnit::create([
+        'company_id' => $company->id,
+        'user_id' => $user->id,
+        'product_id' => $product->id,
+        'unit_name' => 'kg',
+        'unit_symbol' => 'kg',
+        'conversion_factor' => 1,
+        'is_base_unit' => true,
+        'is_default_sales_unit' => true,
+        'selling_price' => 100,
+        'status' => 'active',
+        ]);
+        ProductUnit::create([
+        'company_id' => $company->id,
+        'user_id' => $user->id,
+        'product_id' => $product->id,
+        'unit_name' => 'carton',
+        'unit_symbol' => 'ctn',
+        'conversion_factor' => 25,
+        'is_base_unit' => false,
+        'is_default_sales_unit' => false,
+        'selling_price' => 1800,
+        'status' => 'active',
+        ]);
+
+        $response = $this->withoutReportAccessMiddleware()
+        ->actingAs($user)
+        ->withSession($this->branchSession($company))
+        ->postJson(route('sales.store'), [
+            'payment_method' => 'Cash',
+            'total' => 1800,
+            'paid' => 1800,
+            'deposit_account_id' => $cashAccount->id,
+            'items' => [[
+                'id' => $product->id,
+                'qty' => 1,
+                'price' => 0,
+                'unitType' => 'carton',
+                'stockUnits' => 25,
+                'priceLevel' => 'retail',
+            ]],
+        ]);
+
+        $this->assertSame(200, $response->status(), $response->getContent());
+        $sale = Sale::query()->findOrFail($response->json('sale_id'));
+        $this->assertSame(1800.0, (float) $sale->items()->sole()->unit_price);
+        $this->assertSame(1800.0, (float) $sale->total);
     }
 
     public function test_general_ledger_includes_company_system_entries_with_no_user(): void

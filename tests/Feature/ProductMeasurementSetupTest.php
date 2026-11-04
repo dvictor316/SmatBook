@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Http\Middleware\{CheckPlanAccess, EnforceDeviceSessionLimit, ForceLogoutExpiredSession, RequireActiveBranch, SubscriptionActive, VerifyTenantSession};
 use App\Models\{Company, Product, User};
+use App\Http\Middleware\{CheckPermission, CheckPlanAccess, EnforceDeviceSessionLimit, ForceLogoutExpiredSession, RequireActiveBranch, SubscriptionActive, VerifyTenantSession};
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -15,9 +15,14 @@ class ProductMeasurementSetupTest extends TestCase
     private function workspace(): array
     {
         $company = Company::create(['name' => 'Explicit Units Business']);
-        $user = User::factory()->create(['company_id' => $company->id, 'role' => 'admin']);
+        $user = User::factory()->create([
+            'company_id' => $company->id,
+            'role' => 'super_admin',
+            'role_id' => null,
+            'permissions_override' => null,
+        ]);
         $this->actingAs($user)->withoutMiddleware([
-            SubscriptionActive::class, RequireActiveBranch::class, CheckPlanAccess::class,
+            CheckPermission::class, SubscriptionActive::class, RequireActiveBranch::class, CheckPlanAccess::class,
             ForceLogoutExpiredSession::class, EnforceDeviceSessionLimit::class, VerifyTenantSession::class,
         ])->withSession(['current_tenant_id' => $company->id, 'active_branch_id' => 'hq', 'active_branch_name' => 'Headquarters']);
 
@@ -53,6 +58,8 @@ class ProductMeasurementSetupTest extends TestCase
             ->assertSee('Cartons containing pieces (pcs)')
             ->assertSee('Cartons measured in kilograms (kg)')
             ->assertSee('Selling Price Per Piece (pcs)')
+            ->assertSee('set separately')
+            ->assertSee('not calculated from the price per kg')
             ->assertSee('Opening Full Cartons')
             ->assertSee('Opening Full Rolls')
             ->assertSee('value="pieces_carton"', false);
@@ -107,12 +114,123 @@ class ProductMeasurementSetupTest extends TestCase
     public function test_weight_cartons_still_convert_to_kilograms(): void
     {
         $units = $this->workspace();
-        $this->post(route('inventory.Products.store'), $this->payload($units, 'kg_carton'))
+        $payload = $this->payload($units, 'kg_carton') + ['carton_selling_price' => 1800];
+        $this->post(route('inventory.Products.store'), $payload)
             ->assertSessionHasNoErrors()->assertSessionHas('success');
         $product = Product::sole();
         $this->assertSame('kg', $product->base_unit_name);
         $this->assertSame(53.0, (float) $product->stock);
         $this->assertSame($units['kg'], (int) $product->base_unit_id);
+        $this->assertSame(100.0, (float) $product->price);
+        $this->assertDatabaseHas('product_units', [
+            'product_id' => $product->id,
+            'unit_name' => 'kg',
+            'conversion_factor' => 1,
+            'selling_price' => 100,
+        ]);
+        $this->assertDatabaseHas('product_units', [
+            'product_id' => $product->id,
+            'unit_name' => 'carton',
+            'conversion_factor' => 25,
+            'selling_price' => 1800,
+        ]);
+    }
+
+    public function test_weight_cartons_require_a_separate_carton_selling_price(): void
+    {
+        $units = $this->workspace();
+        $this->post(route('inventory.Products.store'), $this->payload($units, 'kg_carton'))
+            ->assertSessionHasErrors('carton_selling_price');
+        $this->assertDatabaseCount('products', 0);
+    }
+
+    public function test_kg_and_carton_sales_units_can_be_enabled_independently(): void
+    {
+        $units = $this->workspace();
+        $payload = $this->payload($units, 'kg_carton') + [
+            'sales_unit_selection_enabled' => 1,
+            'sales_units' => ['carton'],
+            'carton_selling_price' => 1800,
+        ];
+
+        $response = $this->post(route('inventory.Products.store'), $payload);
+        $response
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
+
+        $product = Product::sole();
+        $this->assertDatabaseHas('product_units', [
+            'product_id' => $product->id,
+            'unit_name' => 'kg',
+            'is_sales_unit' => false,
+        ]);
+        $this->assertDatabaseHas('product_units', [
+            'product_id' => $product->id,
+            'unit_name' => 'carton',
+            'is_sales_unit' => true,
+            'selling_price' => 1800,
+        ]);
+
+        $payload['sales_units'] = ['kg'];
+        $payload['carton_selling_price'] = '';
+        $payload['status'] = 'active';
+        $payload['stock'] = $product->stock;
+        unset($payload['stock_cartons'], $payload['stock_rolls'], $payload['stock_units']);
+        $this->put(route('inventory.Products.update', $product->id), $payload)
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('product_units', [
+            'product_id' => $product->id,
+            'unit_name' => 'kg',
+            'is_sales_unit' => true,
+        ]);
+        $this->assertDatabaseHas('product_units', [
+            'product_id' => $product->id,
+            'unit_name' => 'carton',
+            'is_sales_unit' => false,
+        ]);
+
+        $posHtml = $this->get(route('sales.showPos'))->assertOk()->getContent();
+        $document = new \DOMDocument();
+        $previousLibxmlErrorMode = libxml_use_internal_errors(true);
+        $document->loadHTML($posHtml);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previousLibxmlErrorMode);
+        $productOption = (new \DOMXPath($document))
+            ->query('//select[@id="product-select"]/option[@value="' . $product->id . '"]')
+            ->item(0);
+        $this->assertNotNull($productOption);
+        $unitOptions = json_decode($productOption->getAttribute('data-units'), true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame(['kg'], array_column($unitOptions, 'name'));
+    }
+
+    public function test_weight_carton_price_is_visible_and_editable_as_an_independent_price(): void
+    {
+        $units = $this->workspace();
+        $payload = $this->payload($units, 'kg_carton') + ['carton_selling_price' => 1800];
+        $this->post(route('inventory.Products.store'), $payload)->assertSessionHasNoErrors();
+        $product = Product::sole();
+
+        $this->get(route('inventory.Products.edit', $product->id))
+            ->assertOk()
+            ->assertSee('id="edit_measurement_mode_input" value="kg_carton"', false)
+            ->assertSee('value="1800"', false)
+            ->assertSee('not be calculated from the price per kg');
+
+        $payload['carton_selling_price'] = 1750;
+        $payload['status'] = 'active';
+        $payload['stock'] = $product->stock;
+        unset($payload['stock_cartons'], $payload['stock_rolls'], $payload['stock_units']);
+        $this->put(route('inventory.Products.update', $product->id), $payload)
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('product_units', [
+            'product_id' => $product->id,
+            'unit_name' => 'carton',
+            'selling_price' => 1750,
+        ]);
     }
 
     public function test_piece_cartons_require_a_conversion_before_creating_stock(): void

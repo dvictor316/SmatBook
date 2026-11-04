@@ -462,7 +462,7 @@ class ProductController extends Controller
         return $descriptor;
     }
 
-    private function syncProductUnitRows(Product $product): void
+    private function syncProductUnitRows(Product $product, ?array $salesUnitNames = null): void
     {
         if (!Schema::hasTable('product_units')) {
             return;
@@ -492,6 +492,7 @@ class ProductController extends Controller
             'barcode' => $product->barcode,
             'status' => 'active',
         ];
+        $basePayload = $this->applySalesUnitSelection($basePayload, $salesUnitNames, $baseUnit['symbol']);
 
         ProductUnit::updateOrCreate(
             ['product_id' => $product->id, 'unit_name' => $baseUnit['symbol']],
@@ -505,7 +506,7 @@ class ProductController extends Controller
         ) {
             ProductUnit::updateOrCreate(
                 ['product_id' => $product->id, 'unit_name' => $purchaseUnit['symbol']],
-                [
+                $this->applySalesUnitSelection([
                     'company_id' => $companyId,
                     'user_id' => $product->user_id ?? auth()->id(),
                     'unit_id' => $purchaseUnit['id'],
@@ -519,7 +520,7 @@ class ProductController extends Controller
                     'wholesale_price' => null,
                     'barcode' => null,
                     'status' => 'active',
-                ]
+                ], $salesUnitNames, $purchaseUnit['symbol'])
             );
         }
 
@@ -535,7 +536,7 @@ class ProductController extends Controller
 
             ProductUnit::updateOrCreate(
                 ['product_id' => $product->id, 'unit_name' => $unitName],
-                [
+                $this->applySalesUnitSelection([
                     'company_id' => $companyId,
                     'user_id' => $product->user_id ?? auth()->id(),
                     'unit_id' => null,
@@ -549,9 +550,18 @@ class ProductController extends Controller
                     'wholesale_price' => $product->wholesale_price ? round((float) $product->wholesale_price * $factor, 2) : null,
                     'barcode' => null,
                     'status' => 'active',
-                ]
+                ], $salesUnitNames, $unitName)
             );
         }
+    }
+
+    private function applySalesUnitSelection(array $payload, ?array $salesUnitNames, string $unitName): array
+    {
+        if ($salesUnitNames !== null && Schema::hasColumn('product_units', 'is_sales_unit')) {
+            $payload['is_sales_unit'] = in_array(Str::lower(trim($unitName)), $salesUnitNames, true);
+        }
+
+        return $payload;
     }
     private function clearDashboardMetricsCache(?string $branchId = null): void
     {
@@ -1420,6 +1430,14 @@ class ProductController extends Controller
         try {
             $this->applyMeasurementPreset($request);
 
+            $cartonPriceRequired = $request->input('measurement_mode') === 'kg_carton'
+                && (
+                    !$request->boolean('sales_unit_selection_enabled')
+                    || in_array('carton', (array) $request->input('sales_units', []), true)
+                );
+            $cartonSellingPriceRule = $cartonPriceRequired
+                    ? 'required|numeric|min:0'
+                    : 'nullable|numeric|min:0';
             $rules = [
                 'name'             => 'required|string|max:191',
                 'sku'              => 'nullable|string|max:191|unique:products,sku',
@@ -1436,7 +1454,10 @@ class ProductController extends Controller
                 'units_per_roll'   => 'nullable|numeric|min:0',
                 'measurement_mode' => 'nullable|in:custom,pieces,pieces_carton,kg_carton',
                 'kg_per_carton'    => 'exclude_unless:measurement_mode,kg_carton|required|numeric|gt:0',
-                'carton_selling_price' => 'nullable|numeric|min:0',
+                'carton_selling_price' => $cartonSellingPriceRule,
+                'sales_unit_selection_enabled' => 'nullable|boolean',
+                'sales_units' => 'required_if:sales_unit_selection_enabled,1|array|min:1|max:2',
+                'sales_units.*' => 'required|string|in:kg,carton',
                 'base_unit_name'   => 'required|string|max:100',
                 'category_id'      => 'nullable|exists:categories,id',
                 'unit_id'          => 'required|integer' . (Schema::hasTable('units') ? '|exists:units,id' : ''),
@@ -1472,6 +1493,20 @@ class ProductController extends Controller
                     $v->errors()->add('price', 'Enter a selling price or a purchase price before saving this product.');
                     $v->errors()->add('purchase_price', 'Enter a selling price or a purchase price before saving this product.');
                 }
+                if ($request->boolean('sales_unit_selection_enabled')) {
+                    if ($request->input('measurement_mode') !== 'kg_carton') {
+                        $v->errors()->add('sales_unit_selection_enabled', 'Choose the Kg + Carton measurement setup to configure these sales units.');
+                    }
+
+                    $selectedSalesUnits = collect($request->input('sales_units', []))
+                        ->map(fn ($unit) => Str::lower(trim((string) $unit)));
+                    if ($selectedSalesUnits->contains('kg') && $price === '') {
+                        $v->errors()->add('price', 'Enter the selling price per kg because kg is selected for sale.');
+                    }
+                    if ($selectedSalesUnits->contains('carton') && trim((string) $request->input('carton_selling_price', '')) === '') {
+                        $v->errors()->add('carton_selling_price', 'Enter a separate selling price for one carton.');
+                    }
+                }
                 if ($fashionCatalogEnabled && $request->boolean('use_variants')) {
                     $combinations = [];
                     $variantSkus = [];
@@ -1498,6 +1533,9 @@ class ProductController extends Controller
             });
             $validated = $validator->validate();
             $cartonSellingPrice = $validated['carton_selling_price'] ?? null;
+            $salesUnitNames = !empty($validated['sales_unit_selection_enabled'])
+                ? collect($validated['sales_units'])->map(fn ($unit) => Str::lower(trim((string) $unit)))->all()
+                : null;
             $priceListPrices = $validated['price_list_prices'] ?? [];
             $useVariants = $fashionCatalogEnabled && (bool) ($validated['use_variants'] ?? false);
             $brand = $fashionCatalogEnabled ? trim((string) ($validated['brand'] ?? '')) : '';
@@ -1507,6 +1545,8 @@ class ProductController extends Controller
                 $validated['measurement_mode'],
                 $validated['kg_per_carton'],
                 $validated['carton_selling_price'],
+                $validated['sales_unit_selection_enabled'],
+                $validated['sales_units'],
                 $validated['use_variants'],
                 $validated['variants'],
                 $validated['brand']
@@ -1614,6 +1654,7 @@ class ProductController extends Controller
                 $useVariants,
                 $priceListPrices,
                 $cartonSellingPrice,
+                $salesUnitNames,
                 $selectedBranch,
                 $resolvedCompanyId
             ) {
@@ -1658,7 +1699,7 @@ class ProductController extends Controller
                         $selectedBranch,
                         $product->company_id ?: ($resolvedCompanyId ?: null)
                     );
-                    $this->syncProductUnitRows($product->fresh(['unit', 'baseUnit', 'purchaseUnit']));
+                    $this->syncProductUnitRows($product->fresh(['unit', 'baseUnit', 'purchaseUnit']), $salesUnitNames);
                     $this->applyCartonSellingPrice($product, $cartonSellingPrice);
                     $created[] = $product;
                 }
@@ -1998,13 +2039,47 @@ public function inventory(Request $request)
         if ($request->input('stock_entry_mode') === 'packaging') {
             $request->merge(['stock' => $this->calculateStockFromPackaging($request->all())]);
         }
+        if ($request->boolean('sales_unit_selection_enabled')) {
+            $selectedSalesUnits = array_map(
+                fn ($unit) => Str::lower(trim((string) $unit)),
+                (array) $request->input('sales_units', [])
+            );
+            $salesUnitErrors = [];
+            if ($request->input('measurement_mode') !== 'kg_carton') {
+                $salesUnitErrors['sales_unit_selection_enabled'] = 'Choose the Kg + Carton measurement setup to configure these sales units.';
+            }
+            if (in_array('kg', $selectedSalesUnits, true) && trim((string) $request->input('price', '')) === '') {
+                $salesUnitErrors['price'] = 'Enter the selling price per kg because kg is selected for sale.';
+            }
+            if (in_array('carton', $selectedSalesUnits, true) && trim((string) $request->input('carton_selling_price', '')) === '') {
+                $salesUnitErrors['carton_selling_price'] = 'Enter a separate selling price for one carton.';
+            }
+            if ($salesUnitErrors !== []) {
+                return back()->withErrors($salesUnitErrors)->withInput();
+            }
+        }
 
         $fashionCatalogEnabled = Schema::hasColumn('companies', 'fashion_catalog_enabled')
             && (bool) DB::table('companies')->where('id', $this->tenantCompanyId())->value('fashion_catalog_enabled');
+        $cartonPriceRequired = $request->input('measurement_mode') === 'kg_carton'
+            && (
+                !$request->boolean('sales_unit_selection_enabled')
+                || in_array('carton', (array) $request->input('sales_units', []), true)
+            );
+        $cartonSellingPriceRule = $cartonPriceRequired
+                ? 'required|numeric|min:0'
+                : 'nullable|numeric|min:0';
+        $priceRule = 'required|numeric|min:0';
+        if (
+            $request->boolean('sales_unit_selection_enabled')
+            && !in_array('kg', (array) $request->input('sales_units', []), true)
+        ) {
+            $priceRule = 'nullable|numeric|min:0';
+        }
         $validated = $request->validate([
             'name'             => 'required|string|max:191',
             'sku'              => 'nullable|string|max:191|unique:products,sku,' . $id,
-            'price'            => 'required|numeric|min:0',
+            'price'            => $priceRule,
             'retail_price'     => 'nullable|numeric|min:0',
             'wholesale_price'  => 'nullable|numeric|min:0',
             'special_price'    => 'nullable|numeric|min:0',
@@ -2018,7 +2093,10 @@ public function inventory(Request $request)
             'units_per_roll'   => 'nullable|numeric|min:0',
             'measurement_mode' => 'nullable|in:custom,pieces,pieces_carton,kg_carton',
             'kg_per_carton'    => 'exclude_unless:measurement_mode,kg_carton|required|numeric|gt:0',
-            'carton_selling_price' => 'nullable|numeric|min:0',
+            'carton_selling_price' => $cartonSellingPriceRule,
+            'sales_unit_selection_enabled' => 'nullable|boolean',
+            'sales_units' => 'required_if:sales_unit_selection_enabled,1|array|min:1|max:2',
+            'sales_units.*' => 'required|string|in:kg,carton',
             'base_unit_name'   => 'nullable|string|max:100',
             'category_id'      => 'nullable|exists:categories,id',
             'unit_id'          => 'nullable|integer' . (Schema::hasTable('units') ? '|exists:units,id' : ''),
@@ -2038,7 +2116,17 @@ public function inventory(Request $request)
         ]);
 
         $cartonSellingPrice = $validated['carton_selling_price'] ?? null;
-        unset($validated['measurement_mode'], $validated['kg_per_carton'], $validated['carton_selling_price'], $validated['stock_entry_mode']);
+        $salesUnitNames = !empty($validated['sales_unit_selection_enabled'])
+            ? collect($validated['sales_units'])->map(fn ($unit) => Str::lower(trim((string) $unit)))->all()
+            : null;
+        unset(
+            $validated['measurement_mode'],
+            $validated['kg_per_carton'],
+            $validated['carton_selling_price'],
+            $validated['sales_unit_selection_enabled'],
+            $validated['sales_units'],
+            $validated['stock_entry_mode']
+        );
         $validated['base_unit_name'] = trim((string) ($validated['base_unit_name'] ?? ''))
             ?: ($product->base_unit_name ?: 'pcs');
         $validated['unit_id'] = $validated['unit_id'] ?? $product->unit_id;
@@ -2134,10 +2222,10 @@ public function inventory(Request $request)
                 $validated['image'] = $newImagePath;
             }
 
-            DB::transaction(function () use ($product, $validated, $cartonSellingPrice) {
+            DB::transaction(function () use ($product, $validated, $cartonSellingPrice, $salesUnitNames) {
                 $product->update($validated);
                 $this->branchInventory->setBranchStock($product, (float) $validated['stock'], $this->getActiveBranchContext());
-                $this->syncProductUnitRows($product->fresh(['unit', 'baseUnit', 'purchaseUnit']));
+                $this->syncProductUnitRows($product->fresh(['unit', 'baseUnit', 'purchaseUnit']), $salesUnitNames);
                 $this->applyCartonSellingPrice($product, $cartonSellingPrice);
             });
         } catch (\Throwable $e) {

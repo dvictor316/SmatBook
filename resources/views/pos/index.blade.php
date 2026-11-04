@@ -5715,7 +5715,10 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                 if (!empty($p->purchaseUnit?->symbol) && (float) ($p->conversion_rate ?? 0) > 0) {
                     $measurementParts[] = 'Buy ' . $p->purchaseUnit->symbol . ' = ' . rtrim(rtrim(\App\Support\CompactNumber::format((float) $p->conversion_rate, 2), '0'), '.') . ' ' . $baseUnitName;
                 }
+                $salesUnitSelectionConfigured = \Illuminate\Support\Facades\Schema::hasColumn('product_units', 'is_sales_unit')
+                    && collect($p->activeProductUnits ?? [])->isNotEmpty();
                 $unitOptions = collect($p->activeProductUnits ?? [])
+                    ->filter(fn ($unit) => !$salesUnitSelectionConfigured || (bool) ($unit->is_sales_unit ?? true))
                     ->map(function ($unit) use ($p) {
                         $unitName = strtolower(trim((string) ($unit->unit_name ?: $unit->unit_symbol)));
                         $factor = (float) $unit->conversion_factor;
@@ -5728,6 +5731,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                         'symbol' => (string) ($unit->unit_symbol ?: $unit->unit_name),
                         'conversion_factor' => max(1, $factor),
                         'selling_price' => $unit->selling_price,
+                        'wholesale_price' => $unit->wholesale_price,
                         'is_default_sales_unit' => (bool) $unit->is_default_sales_unit,
                         ];
                     })
@@ -5735,22 +5739,23 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                 if ($baseUnitName !== 'unit') {
                     $unitOptions = $unitOptions->reject(fn ($unit) => strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))) === 'unit');
                 }
-                if (!$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), [$baseUnitName, strtolower((string) ($p->baseUnit?->symbol ?? ''))], true))) {
+                if (!$salesUnitSelectionConfigured && !$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), [$baseUnitName, strtolower((string) ($p->baseUnit?->symbol ?? ''))], true))) {
                     $unitOptions->prepend([
                         'name' => $baseUnitName,
                         'symbol' => $baseUnitName,
                         'conversion_factor' => 1,
                         'selling_price' => $retailPrice,
+                        'wholesale_price' => $wholesalePrice,
                         'is_default_sales_unit' => true,
                     ]);
                 }
-                if ($unitsPerRoll > 1 && !$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), ['roll'], true))) {
+                if (!$salesUnitSelectionConfigured && $unitsPerRoll > 1 && !$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), ['roll'], true))) {
                     $unitOptions->push(['name' => 'roll', 'symbol' => 'roll', 'conversion_factor' => $unitsPerRoll, 'selling_price' => null, 'is_default_sales_unit' => $unitType === 'roll']);
                 }
-                if ($cartonUnitCount > 1 && !$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), ['carton', 'ctn'], true))) {
+                if (!$salesUnitSelectionConfigured && $cartonUnitCount > 1 && !$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), ['carton', 'ctn'], true))) {
                     $unitOptions->push(['name' => 'carton', 'symbol' => 'ctn', 'conversion_factor' => $cartonUnitCount, 'selling_price' => null, 'is_default_sales_unit' => $unitType === 'carton']);
                 }
-                if ($unitOptions->isEmpty()) {
+                if ($unitOptions->isEmpty() && !$salesUnitSelectionConfigured) {
                     $unitOptions = collect([
                         ['name' => $baseUnitName, 'symbol' => $baseUnitName, 'conversion_factor' => 1, 'selling_price' => $retailPrice, 'is_default_sales_unit' => $unitType === 'unit'],
                     ]);
@@ -5776,6 +5781,9 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                     ->unique()
                     ->implode('|');
             @endphp
+            @if($salesUnitSelectionConfigured && $unitOptions->isEmpty())
+                @continue
+            @endif
             <div class="product-card"
                 title="{{ $posProductName }}"
                 data-id="{{ $p->id }}"
@@ -5799,6 +5807,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                 data-conversion-rate="{{ (float) ($p->conversion_rate ?? 0) }}"
                 data-units='@json($unitOptions)'
                 data-unit-options='@json($unitOptions)'
+                data-sales-units-configured="{{ $salesUnitSelectionConfigured ? '1' : '0' }}"
                 data-measurement="{{ $measurementLabel }}"
                 data-min-stock="{{ $minStockLevel }}"
                 data-img="{{ $p->image_url }}"
@@ -5880,7 +5889,10 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                         if (!empty($p->purchaseUnit?->symbol) && (float) ($p->conversion_rate ?? 0) > 0) {
                             $measurementParts[] = 'Buy ' . $p->purchaseUnit->symbol . ' = ' . rtrim(rtrim(\App\Support\CompactNumber::format((float) $p->conversion_rate, 2), '0'), '.') . ' ' . $baseUnitName;
                         }
+                        $salesUnitSelectionConfigured = \Illuminate\Support\Facades\Schema::hasColumn('product_units', 'is_sales_unit')
+                            && collect($p->activeProductUnits ?? [])->isNotEmpty();
                         $unitOptions = collect($p->activeProductUnits ?? [])
+                            ->filter(fn ($unit) => !$salesUnitSelectionConfigured || (bool) ($unit->is_sales_unit ?? true))
                             ->map(function ($unit) use ($p) {
                                 $unitName = strtolower(trim((string) ($unit->unit_name ?: $unit->unit_symbol)));
                                 $factor = (float) $unit->conversion_factor;
@@ -5893,6 +5905,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                                 'symbol' => (string) ($unit->unit_symbol ?: $unit->unit_name),
                                 'conversion_factor' => max(1, $factor),
                                 'selling_price' => $unit->selling_price,
+                                'wholesale_price' => $unit->wholesale_price,
                                 'is_default_sales_unit' => (bool) $unit->is_default_sales_unit,
                                 ];
                             })
@@ -5900,22 +5913,23 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                         if ($baseUnitName !== 'unit') {
                             $unitOptions = $unitOptions->reject(fn ($unit) => strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))) === 'unit');
                         }
-                        if (!$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), [$baseUnitName, strtolower((string) ($p->baseUnit?->symbol ?? ''))], true))) {
+                        if (!$salesUnitSelectionConfigured && !$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), [$baseUnitName, strtolower((string) ($p->baseUnit?->symbol ?? ''))], true))) {
                             $unitOptions->prepend([
                                 'name' => $baseUnitName,
                                 'symbol' => $baseUnitName,
                                 'conversion_factor' => 1,
                                 'selling_price' => $retailPrice,
+                                'wholesale_price' => $wholesalePrice,
                                 'is_default_sales_unit' => true,
                             ]);
                         }
-                        if ($unitsPerRoll > 1 && !$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), ['roll'], true))) {
+                        if (!$salesUnitSelectionConfigured && $unitsPerRoll > 1 && !$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), ['roll'], true))) {
                             $unitOptions->push(['name' => 'roll', 'symbol' => 'roll', 'conversion_factor' => $unitsPerRoll, 'selling_price' => null, 'is_default_sales_unit' => $unitType === 'roll']);
                         }
-                        if ($cartonUnitCount > 1 && !$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), ['carton', 'ctn'], true))) {
+                        if (!$salesUnitSelectionConfigured && $cartonUnitCount > 1 && !$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), ['carton', 'ctn'], true))) {
                             $unitOptions->push(['name' => 'carton', 'symbol' => 'ctn', 'conversion_factor' => $cartonUnitCount, 'selling_price' => null, 'is_default_sales_unit' => $unitType === 'carton']);
                         }
-                        if ($unitOptions->isEmpty()) {
+                        if ($unitOptions->isEmpty() && !$salesUnitSelectionConfigured) {
                             $unitOptions = collect([
                                 ['name' => $baseUnitName, 'symbol' => $baseUnitName, 'conversion_factor' => 1, 'selling_price' => $retailPrice, 'is_default_sales_unit' => $unitType === 'unit'],
                             ]);
@@ -5937,7 +5951,8 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                             ->unique()
                             ->implode('|');
                     @endphp
-                    <option value="{{ $p->id }}" 
+                    <option value="{{ $p->id }}"
+                        @if($salesUnitSelectionConfigured && $unitOptions->isEmpty()) disabled @endif
                         data-sku="{{ $p->sku }}" 
                         data-barcode="{{ $p->barcode }}" 
                         data-barcodes="{{ $barcodeList }}"
@@ -5954,6 +5969,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                         data-purchase-unit="{{ $p->purchaseUnit->symbol ?? '' }}"
                         data-conversion-rate="{{ (float) ($p->conversion_rate ?? 0) }}"
                         data-units='@json($unitOptions)'
+                        data-sales-units-configured="{{ $salesUnitSelectionConfigured ? '1' : '0' }}"
                         data-measurement="{{ $measurementLabel }}"
                         data-category="{{ strtolower($categoryName) }}"
                         data-category-name="{{ $categoryName }}"
@@ -6646,6 +6662,7 @@ $(document).ready(function() {
         const hasProduct = !!selectedOption && !!selectedOption.val();
         const baseUnit = hasProduct ? String(selectedOption.data('base-unit') || 'unit') : 'unit';
         const rawUnits = readUnitOptions(selectedOption);
+        const salesUnitsConfigured = hasProduct && String(selectedOption.attr('data-sales-units-configured') || '0') === '1';
         const dynamicUnits = rawUnits.map((unit) => {
             const name = String(unit.name || unit.symbol || '').trim().toLowerCase();
             const isGenericBaseUnit = ['unit', 'units'].includes(name) && !['unit', 'units'].includes(baseUnit.toLowerCase());
@@ -6656,21 +6673,30 @@ $(document).ready(function() {
             const name = String(unit.name || unit.symbol || '').trim();
             return name !== '' && (parseFloat(unit.conversion_factor) || 0) > 0;
         });
+        if (salesUnitsConfigured && dynamicUnits.length === 0) {
+            $('.unit-grid').empty();
+            return;
+        }
         const hasBaseUnit = dynamicUnits.some((unit) => {
             const value = String(unit.name || unit.symbol || '').trim().toLowerCase();
             return value === baseUnit.toLowerCase();
         });
-        if (hasProduct && !hasBaseUnit) {
+        if (hasProduct && !hasBaseUnit && !salesUnitsConfigured) {
             dynamicUnits.unshift({
                 name: baseUnit,
                 symbol: baseUnit,
                 conversion_factor: 1,
                 selling_price: selectedOption.data('retail') || selectedOption.data('price') || 0,
+                wholesale_price: selectedOption.data('wholesale') || 0,
                 is_default_sales_unit: true,
             });
         }
-        const units = dynamicUnits.length ? dynamicUnits : [{ name: baseUnit, symbol: baseUnit, conversion_factor: 1, is_default_sales_unit: true }];
+        const units = dynamicUnits.length ? dynamicUnits : (salesUnitsConfigured ? [] : [{ name: baseUnit, symbol: baseUnit, conversion_factor: 1, is_default_sales_unit: true }]);
         const grid = $('.unit-grid');
+        if (units.length === 0) {
+            grid.empty();
+            return;
+        }
         const selectedKey = selectedUnitValue ? String(selectedUnitValue).toLowerCase() : null;
         const selectedExists = selectedKey
             ? units.some((unit) => String(unit.name || unit.symbol || 'unit').toLowerCase() === selectedKey)
@@ -6686,7 +6712,7 @@ $(document).ready(function() {
             const checked = shouldCheck ? 'checked' : '';
             const meta = factor > 1 ? `${factor.toLocaleString()} ${baseUnit}` : `1 ${baseUnit}`;
             return `
-                <input type="radio" class="btn-check" name="unit_type" id="unit-type-${value.replace(/[^a-z0-9_-]+/g, '-')}" value="${value}" data-factor="${factor}" data-selling-price="${unit.selling_price ?? ''}" ${checked}>
+                <input type="radio" class="btn-check" name="unit_type" id="unit-type-${value.replace(/[^a-z0-9_-]+/g, '-')}" value="${value}" data-factor="${factor}" data-selling-price="${unit.selling_price ?? ''}" data-wholesale-price="${unit.wholesale_price ?? ''}" ${checked}>
                 <label class="btn unit-btn" for="unit-type-${value.replace(/[^a-z0-9_-]+/g, '-')}">${label}<small>${meta}</small></label>
             `;
         }).join(''));
@@ -6696,6 +6722,16 @@ $(document).ready(function() {
         const hasProduct = !!selectedOption && !!selectedOption.val();
         const previouslySelectedUnit = $('input[name="unit_type"]:checked').val() || null;
         renderUnitButtons(selectedOption, previouslySelectedUnit);
+        const salesUnitsConfigured = hasProduct && String(selectedOption.attr('data-sales-units-configured') || '0') === '1';
+        if (salesUnitsConfigured) {
+            const unavailable = readUnitOptions(selectedOption).length === 0;
+            $('#add-btn').prop('disabled', unavailable);
+            $('#unit-helper-copy').text(unavailable
+                ? 'This product has no units enabled for sale. Enable a unit in the product settings before adding it.'
+                : 'Select the enabled selling unit and enter the quantity.');
+            return;
+        }
+        $('#add-btn').prop('disabled', false);
         if (readUnitOptions(selectedOption).length > 0) {
             return;
         }
@@ -6852,10 +6888,16 @@ $(document).ready(function() {
 
         const unitMeta = resolveUnitMetrics(selectedOption);
         const basePrice = getSelectedBasePrice(selectedOption);
-        const configuredPrice = parseFloat($('input[name="unit_type"]:checked').data('selling-price')) || 0;
-        const computedPrice = configuredPrice > 0
+        const selectedUnit = $('input[name="unit_type"]:checked');
+        const configuredPriceValue = basePrice.key === 'wholesale'
+            ? selectedUnit.attr('data-wholesale-price')
+            : basePrice.key === 'retail' ? selectedUnit.attr('data-selling-price') : null;
+        const configuredPrice = configuredPriceValue === undefined || configuredPriceValue === null || configuredPriceValue === ''
+            ? null
+            : parseFloat(configuredPriceValue);
+        const computedPrice = configuredPrice !== null && Number.isFinite(configuredPrice)
             ? configuredPrice
-            : (unitMeta.multiplier > 1 ? (basePrice.value * unitMeta.multiplier) : basePrice.value);
+            : basePrice.value * unitMeta.multiplier;
         $('#unit-price-input').val(computedPrice.toFixed(2));
 
         return { unitMeta, basePrice, computedPrice };
@@ -8867,6 +8909,7 @@ window.POS_ENABLE_FALLBACK = function () {
         }
 
         const baseUnit = String(data.baseUnit || 'unit').toLowerCase();
+        const salesUnitsConfigured = String(data.salesUnitsConfigured || '') === '1';
         units = (Array.isArray(units) ? units : []).map((unit) => {
             const name = String(unit.name || unit.symbol || '').toLowerCase();
             return ['unit', 'units'].includes(name) && !['unit', 'units'].includes(baseUnit)
@@ -8874,8 +8917,17 @@ window.POS_ENABLE_FALLBACK = function () {
                 : unit;
         }).filter((unit) => String(unit.name || unit.symbol || '').trim() !== '');
 
-        if (!units.some((unit) => String(unit.name || unit.symbol || '').toLowerCase() === baseUnit)) {
-            units.unshift({ name: baseUnit, symbol: baseUnit, conversion_factor: 1, selling_price: data.retail || data.price || 0, is_default_sales_unit: true });
+        if (salesUnitsConfigured && units.length === 0) {
+            grid.innerHTML = '';
+            const addButton = document.getElementById('add-btn');
+            if (addButton) addButton.disabled = true;
+            const helper = document.getElementById('unit-helper-copy');
+            if (helper) helper.textContent = 'This product has no units enabled for sale. Enable a unit in the product settings before adding it.';
+            return;
+        }
+
+        if (!salesUnitsConfigured && !units.some((unit) => String(unit.name || unit.symbol || '').toLowerCase() === baseUnit)) {
+            units.unshift({ name: baseUnit, symbol: baseUnit, conversion_factor: 1, selling_price: data.retail || data.price || 0, wholesale_price: data.wholesale || 0, is_default_sales_unit: true });
         }
 
         grid.innerHTML = units.map((unit, index) => {
@@ -8884,7 +8936,7 @@ window.POS_ENABLE_FALLBACK = function () {
             const factor = Math.max(parseFloat(unit.conversion_factor) || 1, 1);
             const inputId = `unit-type-${value.replace(/[^a-z0-9_-]+/g, '-')}`;
             const checked = selectedUnit === value || (!units.some((candidate) => String(candidate.name || candidate.symbol || baseUnit).toLowerCase() === selectedUnit) && (unit.is_default_sales_unit || index === 0)) ? ' checked' : '';
-            return `<input type="radio" class="btn-check" name="unit_type" id="${inputId}" value="${value}" data-factor="${factor}" data-selling-price="${unit.selling_price ?? ''}"${checked}><label class="btn unit-btn" for="${inputId}">${label}<small>${factor > 1 ? `${factor} ${baseUnit}` : `1 ${baseUnit}`}</small></label>`;
+            return `<input type="radio" class="btn-check" name="unit_type" id="${inputId}" value="${value}" data-factor="${factor}" data-selling-price="${unit.selling_price ?? ''}" data-wholesale-price="${unit.wholesale_price ?? ''}"${checked}><label class="btn unit-btn" for="${inputId}">${label}<small>${factor > 1 ? `${factor} ${baseUnit}` : `1 ${baseUnit}`}</small></label>`;
         }).join('');
 
         grid.querySelectorAll('input[name="unit_type"]').forEach((input) => {
@@ -9001,7 +9053,16 @@ window.POS_ENABLE_FALLBACK = function () {
 
         const unitMeta = getUnitMetrics(data);
         const basePrice = getBasePrice(data);
-        const computedPrice = basePrice.value * unitMeta.multiplier;
+        const selectedUnit = document.querySelector('input[name="unit_type"]:checked');
+        const configuredPriceValue = basePrice.key === 'wholesale'
+            ? selectedUnit?.dataset.wholesalePrice
+            : basePrice.key === 'retail' ? selectedUnit?.dataset.sellingPrice : null;
+        const configuredPrice = configuredPriceValue === undefined || configuredPriceValue === null || configuredPriceValue === ''
+            ? null
+            : parseFloat(configuredPriceValue);
+        const computedPrice = configuredPrice !== null && Number.isFinite(configuredPrice)
+            ? configuredPrice
+            : basePrice.value * unitMeta.multiplier;
         if (priceInput) priceInput.value = computedPrice.toFixed(2);
         if (qtyInput) {
             const currentQty = parseFloat(qtyInput.value || '0') || 0;

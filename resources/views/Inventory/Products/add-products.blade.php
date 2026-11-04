@@ -497,10 +497,26 @@ body:not(.login-body):not(.landing-page-body) #add-product-page > .content.conta
 
                                 <div class="row g-3 mb-4 carton-mode-field" style="display: none;">
                                     <div class="col-12">
-                                        <label class="form-label">Selling Price Per Full Carton <span class="text-muted">(optional)</span></label>
-                                        <input type="number" min="0" step="0.01" name="carton_selling_price" id="carton_selling_price_input" class="form-control @error('carton_selling_price') is-invalid @enderror" value="{{ old('carton_selling_price') }}" placeholder="Calculated from price per base unit">
-                                        <small class="field-hint" id="carton_price_hint">Leave empty to calculate it automatically.</small>
+                                        <label class="form-label" id="carton_selling_price_label">Selling Price Per Full Carton (set separately)</label>
+                                        <input type="number" min="0" step="0.01" name="carton_selling_price" id="carton_selling_price_input" class="form-control @error('carton_selling_price') is-invalid @enderror" value="{{ old('carton_selling_price') }}" placeholder="Enter a separate carton price">
+                                        <small class="field-hint" id="carton_price_hint">For kg/carton products, enter a separate carton price. It is not calculated from the price per kg.</small>
                                         @error('carton_selling_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
+                                    <input type="hidden" name="sales_unit_selection_enabled" id="sales_unit_selection_enabled" value="0">
+                                    <div class="col-12">
+                                        <label class="form-label d-block">Units available for sale</label>
+                                        <div class="d-flex flex-wrap gap-3">
+                                            <label class="form-check-label">
+                                                <input class="form-check-input sales-unit-choice" type="checkbox" name="sales_units[]" value="kg" @checked(in_array('kg', old('sales_units', ['kg', 'carton']), true))>
+                                                Kilograms (kg)
+                                            </label>
+                                            <label class="form-check-label">
+                                                <input class="form-check-input sales-unit-choice" type="checkbox" name="sales_units[]" value="carton" @checked(in_array('carton', old('sales_units', ['kg', 'carton']), true))>
+                                                Cartons (separate price)
+                                            </label>
+                                        </div>
+                                        <small class="field-hint">Only selected units will be offered for sale. Stock conversion and purchase settings are unchanged.</small>
+                                        @error('sales_units')<div class="text-danger small">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 </div>
@@ -814,13 +830,17 @@ $(document).ready(function () {
     }
 
     function refreshKgCartonPriceHint() {
-        var kgPerCarton = $('#measurement_mode_input').val() === 'kg_carton'
-            ? packagingValue('#kg_per_carton_input') : packagingValue('#quick_pcs_per_carton_helper');
-        var pricePerKg = parseFloat($('input[name="price"]').val()) || 0;
-        var calculated = kgPerCarton * pricePerKg;
-        $('#carton_price_hint').text(calculated > 0
-            ? 'Automatic carton price: ' + window.formatCompactAmount(calculated)
-            : 'Leave empty to calculate it automatically.');
+        var isKgCarton = $('#measurement_mode_input').val() === 'kg_carton';
+        var cartonSelected = $('.sales-unit-choice[value="carton"]').is(':checked');
+        $('#sales_unit_selection_enabled').val(isKgCarton ? '1' : '0');
+        $('.sales-unit-choice').prop('disabled', !isKgCarton);
+        $('#carton_selling_price_input').prop('required', isKgCarton && cartonSelected);
+        $('#carton_selling_price_label').text(isKgCarton
+            ? 'Selling Price Per Carton (set separately)'
+            : 'Selling Price Per Full Carton');
+        $('#carton_price_hint').text(isKgCarton
+            ? 'Enter the carton price separately. It will not be calculated from the price per kg.'
+            : 'Optional override. If left empty, the carton price uses the base-unit price and carton quantity.');
     }
 
     function setMeasurementMode(mode) {
@@ -883,6 +903,7 @@ $(document).ready(function () {
     $('.measurement-mode-button').on('click', function () {
         setMeasurementMode($(this).data('measurement-mode'));
     });
+    $('.sales-unit-choice').on('change', refreshKgCartonPriceHint);
 
     function selectOtherMeasurement() {
         var unitId = $('#other_measurement_unit').val();

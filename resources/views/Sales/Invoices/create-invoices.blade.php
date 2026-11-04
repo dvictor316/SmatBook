@@ -210,7 +210,11 @@
                                                                 <option value="">Custom item</option>
                                                                 @foreach($products as $product)
                                                                     @php
-                                                                        $invoiceUnitOptions = collect($product->activeProductUnits ?? [])->map(function ($unit) use ($product) {
+                                                                        $invoiceSalesUnitsConfigured = \Illuminate\Support\Facades\Schema::hasColumn('product_units', 'is_sales_unit')
+                                                                            && collect($product->activeProductUnits ?? [])->isNotEmpty();
+                                                                        $invoiceUnitOptions = collect($product->activeProductUnits ?? [])
+                                                                            ->filter(fn ($unit) => !$invoiceSalesUnitsConfigured || (bool) ($unit->is_sales_unit ?? true))
+                                                                            ->map(function ($unit) use ($product) {
                                                                             $unitName = strtolower(trim((string) ($unit->unit_name ?: $unit->unit_symbol)));
                                                                             $factor = (float) $unit->conversion_factor;
                                                                             if ($factor <= 1 && in_array($unitName, ['carton', 'ctn'], true)) {
@@ -225,7 +229,7 @@
                                                                                 'wholesale_price' => $unit->wholesale_price,
                                                                             ];
                                                                         })->values();
-                                                                        if ($invoiceUnitOptions->isEmpty()) {
+                                                                        if ($invoiceUnitOptions->isEmpty() && !$invoiceSalesUnitsConfigured) {
                                                                             $invoiceUnitOptions = collect([[
                                                                                 'name' => (string) ($product->base_unit_name ?: 'pcs'),
                                                                                 'symbol' => (string) ($product->base_unit_name ?: 'pcs'),
@@ -244,6 +248,7 @@
                                                                         data-wholesale="{{ $product->wholesale_price ?? 0 }}"
                                                                         data-special="{{ $product->special_price ?? 0 }}"
                                                                         data-units='@json($invoiceUnitOptions)'
+                                                                        data-sales-units-configured="{{ $invoiceSalesUnitsConfigured ? '1' : '0' }}"
                                                                         {{ (string) ($item['product_id'] ?? '') === (string) $product->id ? 'selected' : '' }}>
                                                                         {{ $product->name }}
                                                                     </option>
@@ -555,8 +560,15 @@
 
         const option = productSelect.options[productSelect.selectedIndex];
         const units = getInvoiceUnitOptions(option);
+        const salesUnitsConfigured = option?.dataset.salesUnitsConfigured === '1';
         const selected = String(selectedUnit || unitSelect.value || '').toLowerCase();
         unitSelect.innerHTML = '';
+        unitSelect.disabled = salesUnitsConfigured && units.length === 0;
+
+        if (unitSelect.disabled) {
+            unitSelect.add(new Option('No units enabled for sale', ''));
+            return null;
+        }
 
         units.forEach(function(unit, index) {
             const value = String(unit.name || unit.symbol || 'unit').toLowerCase();
@@ -627,7 +639,11 @@
                         <option value="">Custom item</option>
                         @foreach($products as $product)
                             @php
-                                $rowUnitOptions = collect($product->activeProductUnits ?? [])->map(function ($unit) use ($product) {
+                                $rowSalesUnitsConfigured = \Illuminate\Support\Facades\Schema::hasColumn('product_units', 'is_sales_unit')
+                                    && collect($product->activeProductUnits ?? [])->isNotEmpty();
+                                $rowUnitOptions = collect($product->activeProductUnits ?? [])
+                                    ->filter(fn ($unit) => !$rowSalesUnitsConfigured || (bool) ($unit->is_sales_unit ?? true))
+                                    ->map(function ($unit) use ($product) {
                                     $unitName = strtolower(trim((string) ($unit->unit_name ?: $unit->unit_symbol)));
                                     $factor = (float) $unit->conversion_factor;
                                     if ($factor <= 1 && in_array($unitName, ['carton', 'ctn'], true)) {
@@ -648,7 +664,8 @@
                                 data-retail="{{ $product->retail_price ?? $product->price ?? 0 }}"
                                 data-wholesale="{{ $product->wholesale_price ?? 0 }}"
                                 data-special="{{ $product->special_price ?? 0 }}"
-                                data-units='@json($rowUnitOptions)'>
+                                data-units='@json($rowUnitOptions)'
+                                data-sales-units-configured="{{ $rowSalesUnitsConfigured ? '1' : '0' }}">
                                 {{ $product->name }}
                             </option>
                         @endforeach
@@ -733,8 +750,13 @@
         }
 
         const unitFactor = toInvoiceNumber(unitOption?.dataset.factor) || 1;
-        const unitPrice = toInvoiceNumber(level === 'wholesale' ? unitOption?.dataset.wholesalePrice : unitOption?.dataset.sellingPrice);
-        if (unitPrice > 0) {
+        const unitPriceValue = level === 'wholesale'
+            ? unitOption?.dataset.wholesalePrice
+            : level === 'retail' ? unitOption?.dataset.sellingPrice : null;
+        const unitPrice = unitPriceValue === null || unitPriceValue === undefined || unitPriceValue === ''
+            ? null
+            : toInvoiceNumber(unitPriceValue);
+        if (unitPrice !== null) {
             rate = unitPrice;
         } else if (unitFactor > 1) {
             rate *= unitFactor;

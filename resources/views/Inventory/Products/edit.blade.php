@@ -2,10 +2,22 @@
 
 @section('content')
     @php
-        $editMeasurementMode = old('measurement_mode', 'custom');
+        $defaultMeasurementMode = strtolower(trim((string) ($product->base_unit_name ?: $product->stockUnitSymbol()))) === 'kg'
+            && (float) ($product->units_per_carton ?? 0) > 0
+                ? 'kg_carton'
+                : 'custom';
+        $editMeasurementMode = old('measurement_mode', $defaultMeasurementMode);
         $cartonProductUnit = $product->activeProductUnits->first(function ($productUnit) {
             return in_array(strtolower((string) ($productUnit->unit_name ?: $productUnit->unit_symbol)), ['carton', 'ctn'], true);
         });
+        $existingSalesUnits = $product->activeProductUnits
+            ->filter(fn ($productUnit) => (bool) ($productUnit->is_sales_unit ?? true))
+            ->map(function ($productUnit) {
+                $unitName = strtolower(trim((string) ($productUnit->unit_name ?: $productUnit->unit_symbol)));
+                return in_array($unitName, ['ctn', 'cartons'], true) ? 'carton' : $unitName;
+            })
+            ->all();
+        $editSalesUnits = old('sales_units', $existingSalesUnits ?: ['kg', 'carton']);
     @endphp
     <style>
         .product-form-shell { max-width: 900px; margin: 0 auto; }
@@ -213,6 +225,7 @@
                             </div>
                         </div>
                         <div id="edit_kg_carton_fields" class="row" style="display: none;">
+                            <input type="hidden" name="sales_unit_selection_enabled" id="edit_sales_unit_selection_enabled" value="0">
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label class="field-label">Kg Per Carton *</label>
@@ -222,9 +235,26 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="field-label">Carton Selling Price <span class="text-muted">(optional)</span></label>
-                                    <input type="number" min="0" step="0.01" name="carton_selling_price" id="edit_carton_selling_price" class="form-control" value="{{ old('carton_selling_price', $cartonProductUnit?->selling_price) }}" placeholder="Calculated from price per kg">
-                                    <small class="field-note" id="edit_carton_price_hint">Leave empty to calculate it automatically.</small>
+                                    <label class="field-label" id="edit_carton_selling_price_label">Carton Selling Price (set separately)</label>
+                                    <input type="number" min="0" step="0.01" name="carton_selling_price" id="edit_carton_selling_price" class="form-control" value="{{ old('carton_selling_price', $cartonProductUnit?->selling_price) }}" placeholder="Enter a separate carton price">
+                                    <small class="field-note" id="edit_carton_price_hint">Enter the carton price separately. It will not be calculated from the price per kg.</small>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label class="field-label d-block">Units available for sale</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <label class="form-check-label">
+                                            <input class="form-check-input edit-sales-unit-choice" type="checkbox" name="sales_units[]" value="kg" @checked(in_array('kg', $editSalesUnits, true))>
+                                            Kilograms (kg)
+                                        </label>
+                                        <label class="form-check-label">
+                                            <input class="form-check-input edit-sales-unit-choice" type="checkbox" name="sales_units[]" value="carton" @checked(in_array('carton', $editSalesUnits, true))>
+                                            Cartons (separate price)
+                                        </label>
+                                    </div>
+                                    <small class="field-note">Only selected units will be offered for sale. Stock conversion and purchase settings are unchanged.</small>
+                                    @error('sales_units')<div class="text-danger small">{{ $message }}</div>@enderror
                                 </div>
                             </div>
                         </div>
@@ -466,12 +496,17 @@
         }
 
         function refreshEditCartonPriceHint() {
-            const kgPerCarton = parseFloat($('#edit_kg_per_carton').val()) || 0;
-            const pricePerKg = parseFloat($('input[name="price"]').val()) || 0;
-            const calculated = kgPerCarton * pricePerKg;
-            $('#edit_carton_price_hint').text(calculated > 0
-                ? 'Automatic carton price: ' + window.formatCompactAmount(calculated)
-                : 'Leave empty to calculate it automatically.');
+            const isKgCarton = $('#edit_measurement_mode_input').val() === 'kg_carton';
+            const cartonSelected = $('.edit-sales-unit-choice[value="carton"]').is(':checked');
+            $('#edit_sales_unit_selection_enabled').val(isKgCarton ? '1' : '0');
+            $('.edit-sales-unit-choice').prop('disabled', !isKgCarton);
+            $('#edit_carton_selling_price').prop('required', isKgCarton && cartonSelected);
+            $('#edit_carton_selling_price_label').text(isKgCarton
+                ? 'Carton Selling Price (set separately)'
+                : 'Carton Selling Price');
+            $('#edit_carton_price_hint').text(isKgCarton
+                ? 'Enter the carton price separately. It will not be calculated from the price per kg.'
+                : 'Optional override. If left empty, the carton price uses the base-unit price and carton quantity.');
         }
 
         function refreshEditPackagingStock() {
@@ -545,6 +580,7 @@
         $('.edit-measurement-mode-button').on('click', function () {
             setEditMeasurementMode($(this).data('measurement-mode'));
         });
+        $('.edit-sales-unit-choice').on('change', refreshEditCartonPriceHint);
 
         $('#edit_kg_per_carton').on('input change', function () {
             if ($('#edit_measurement_mode_input').val() === 'kg_carton') {
