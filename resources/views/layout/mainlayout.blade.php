@@ -632,6 +632,55 @@
     @include('layout.partials.pwa-install')
     <script src="{{ asset('js/pos-offline-auth.js') }}?v={{ filemtime(public_path('js/pos-offline-auth.js')) }}"></script>
 
+    <script>
+        (function () {
+            if (window.__spbSidebarPrefetchRegistered) {
+                return;
+            }
+
+            window.__spbSidebarPrefetchRegistered = true;
+
+            function prefetchSafeSidebarLinks() {
+                document.querySelectorAll('#sidebar-menu a[href]').forEach(function (link) {
+                    if (
+                        link.hasAttribute('wire:navigate') ||
+                        link.hasAttribute('wire:navigate.hover') ||
+                        link.hasAttribute('download') ||
+                        link.hasAttribute('target') ||
+                        link.hasAttribute('onclick') ||
+                        link.hasAttribute('wire:click') ||
+                        link.hasAttribute('x-on:click') ||
+                        link.hasAttribute('data-bs-toggle') ||
+                        link.hasAttribute('data-toggle') ||
+                        link.getAttribute('role') === 'button'
+                    ) {
+                        return;
+                    }
+
+                    var href = link.getAttribute('href')?.trim();
+                    if (!href || href.startsWith('#') || /^(?:javascript|mailto|tel):/i.test(href)) {
+                        return;
+                    }
+
+                    var destination = new URL(link.href, window.location.href);
+                    if (
+                        destination.origin !== window.location.origin ||
+                        !['http:', 'https:'].includes(destination.protocol) ||
+                        /(?:^|\/)(?:pos|auth|oauth|logout|export|download|print)(?:\/|$)/i.test(destination.pathname) ||
+                        /\.(?:pdf|csv|xlsx?|zip|docx?|png|jpe?g|gif|webp|mp[34])$/i.test(destination.pathname)
+                    ) {
+                        return;
+                    }
+
+                    link.setAttribute('wire:navigate.hover', '');
+                });
+            }
+
+            prefetchSafeSidebarLinks();
+            document.addEventListener('livewire:navigated', prefetchSafeSidebarLinks);
+        })();
+    </script>
+
     @livewireScripts
 
     <script>

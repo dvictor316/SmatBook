@@ -66,6 +66,7 @@ class SuperAdminBusinessWorkspaceTest extends TestCase
             ->assertSee('wire:navigate.hover href="'.route('reports.profit-loss').'"', false)
             ->assertDontSee('wire:navigate.hover href="'.route('sales.showPos').'"', false)
             ->assertSee("document.addEventListener('livewire:navigated'", false)
+            ->assertSee("document.querySelectorAll('#sidebar-menu a[href]')", false)
             ->assertSee('window.Livewire.navigate(destination.href)', false);
 
         $this->get(route('reports.profit-loss'))->assertOk();

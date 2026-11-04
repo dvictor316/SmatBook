@@ -689,19 +689,20 @@ class AuthController extends Controller
                 ->withInput($request->except('password'));
         }
 
+        $schemaColumns = app(SchemaColumnCache::class);
         $attemptOk = false;
         if (filter_var($loginInput, FILTER_VALIDATE_EMAIL)) {
             $attemptOk = Auth::attempt(['email' => $this->normalizeEmailForAuth($loginInput), 'password' => $password], $remember);
         } else {
             $normalizedPhone = $this->normalizePhoneForAuth($loginInput);
-            if ($normalizedPhone && Schema::hasColumn('users', 'phone')) {
+            if ($normalizedPhone && $schemaColumns->hasColumn('users', 'phone')) {
                 $user = User::query()->where('phone', $normalizedPhone)->first();
                 if ($user) {
                     $attemptOk = Auth::attempt(['email' => $user->email, 'password' => $password], $remember);
                 }
             }
 
-            if (!$attemptOk && Schema::hasColumn('users', 'username')) {
+            if (!$attemptOk && $schemaColumns->hasColumn('users', 'username')) {
                 $user = User::query()
                     ->whereRaw('LOWER(username) = ?', [Str::lower($loginInput)])
                     ->first();
@@ -723,7 +724,7 @@ class AuthController extends Controller
         
         $user = Auth::user();
 
-        if (Schema::hasColumn('users', 'allow_login') && (int) ($user->allow_login ?? 1) !== 1) {
+        if (app(SchemaColumnCache::class)->hasColumn('users', 'allow_login') && (int) ($user->allow_login ?? 1) !== 1) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
@@ -742,7 +743,7 @@ class AuthController extends Controller
 
     public function completeAuthenticatedLogin(Request $request, User $user): RedirectResponse
     {
-        if (Schema::hasColumn('users', 'allow_login') && (int) ($user->allow_login ?? 1) !== 1) {
+        if (app(SchemaColumnCache::class)->hasColumn('users', 'allow_login') && (int) ($user->allow_login ?? 1) !== 1) {
             $this->clearClientAuthState($request, false);
 
             return redirect()->route('saas-login')->withErrors([
