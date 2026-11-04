@@ -48,6 +48,7 @@ class Kernel extends HttpKernel
         // String Processing
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+        \App\Http\Middleware\MeasureRequestPerformance::class,
     ];
 
     /**

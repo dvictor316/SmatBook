@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\{View, Schema, DB, Auth, Cache};
+use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use App\Models\{Company, User, Subscription, Customer}; 
 use App\Observers\UserObserver;
@@ -36,6 +38,25 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (config('performance.server_timing_enabled', false)) {
+            DB::listen(static function (QueryExecuted $query): void {
+                $request = app('request');
+                if (! $request instanceof Request || ! $request->attributes->has(\App\Http\Middleware\MeasureRequestPerformance::STARTED_AT)) {
+                    return;
+                }
+
+                $request->attributes->set(
+                    \App\Http\Middleware\MeasureRequestPerformance::QUERY_COUNT,
+                    (int) $request->attributes->get(\App\Http\Middleware\MeasureRequestPerformance::QUERY_COUNT, 0) + 1
+                );
+                $request->attributes->set(
+                    \App\Http\Middleware\MeasureRequestPerformance::QUERY_TIME,
+                    (float) $request->attributes->get(\App\Http\Middleware\MeasureRequestPerformance::QUERY_TIME, 0)
+                        + (float) $query->time
+                );
+            });
+        }
+
         \Illuminate\Support\Facades\Queue::before(function ($event) {
             if (in_array($event->job->resolveName(), [\Illuminate\Mail\SendQueuedMailable::class, \Illuminate\Notifications\SendQueuedNotifications::class], true)) {
                 \App\Support\AppMailer::bootCurrentSettings();
