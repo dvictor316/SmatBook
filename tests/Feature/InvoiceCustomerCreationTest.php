@@ -109,6 +109,8 @@ class InvoiceCustomerCreationTest extends TestCase
             ->assertSee('Previous Customer Balance', false)
             ->assertSee('Total Balance Due', false)
             ->assertSee('Previous balance plus this invoice', false)
-            ->assertSee('Save &amp; Print', false);
+            ->assertSee('Save &amp; Print', false)
+            ->assertSee('name="action" id="invoice-submit-action" value="save"', false)
+            ->assertSee('data-invoice-action="print"', false);
     }
 }

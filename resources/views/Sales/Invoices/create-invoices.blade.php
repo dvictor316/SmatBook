@@ -94,6 +94,7 @@
 
                 <form action="{{ $formAction }}" method="POST" enctype="multipart/form-data" id="invoice-form">
                     @csrf
+                    <input type="hidden" name="action" id="invoice-submit-action" value="save">
                     <input type="hidden" name="credit_limit_override" id="credit-limit-override" value="0">
                     @if($isEditMode)
                         @method('PUT')
@@ -313,10 +314,10 @@
 
                             <div class="add-customer-btns text-end mt-4">
                                 <a href="{{ route('invoices.index') }}" class="btn btn-secondary me-2">Cancel</a>
-                                <button type="submit" name="action" value="save" class="btn btn-info me-2">{{ $isEditMode ? 'Save Changes' : 'Save Draft' }}</button>
-                                <button type="submit" name="action" value="send" class="btn btn-primary">{{ $isEditMode ? 'Update & Send' : 'Save & Send' }}</button>
+                                <button type="submit" data-invoice-action="save" class="btn btn-info me-2">{{ $isEditMode ? 'Save Changes' : 'Save Draft' }}</button>
+                                <button type="submit" data-invoice-action="send" class="btn btn-primary">{{ $isEditMode ? 'Update & Send' : 'Save & Send' }}</button>
                                 @unless($isEditMode)
-                                    <button type="submit" name="action" value="print" class="btn btn-outline-primary ms-2">
+                                    <button type="submit" data-invoice-action="print" class="btn btn-outline-primary ms-2">
                                         <i class="fas fa-print me-1" aria-hidden="true"></i>Save &amp; Print
                                     </button>
                                 @endunless
@@ -857,7 +858,13 @@
     }
 
     // Prevent double-submit (double-click or back+resubmit)
-    document.getElementById('invoice-form').addEventListener('submit', function () {
+    document.getElementById('invoice-form').addEventListener('submit', function (event) {
+        const actionInput = this.querySelector('#invoice-submit-action');
+        const requestedAction = event.submitter?.dataset?.invoiceAction;
+        if (actionInput && requestedAction) {
+            actionInput.value = requestedAction;
+        }
+
         this.querySelectorAll('[type="submit"]').forEach(function (btn) {
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
