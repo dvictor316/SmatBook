@@ -7,12 +7,19 @@ use App\Models\Setting;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
 class BusinessWorkspaceResolver
 {
     public function accessibleCompanies(User $user): Collection
     {
+        $request = app(Request::class);
+        $cacheKey = self::class.'.accessible_companies.'.$user->id.'.'.(int) $user->getRawOriginal('company_id');
+        if ($request->isMethod('GET') && $request->attributes->get($cacheKey) instanceof Collection) {
+            return $request->attributes->get($cacheKey);
+        }
+
         if (! Schema::hasTable('companies')) {
             return collect();
         }
@@ -24,7 +31,7 @@ class BusinessWorkspaceResolver
                 ->map(fn ($key) => preg_match('/^workspace_retired_company_(\d+)$/', $key, $match) ? (int) $match[1] : 0)->filter()->all()
             : [];
 
-        return Company::withoutGlobalScope('tenant')
+        $companies = Company::withoutGlobalScope('tenant')
             ->whereNotIn('id', $retiredIds)
             ->where(function ($query) use ($user, $primaryCompanyId) {
                 // Disagreeing owner fields must not grant a second account access.
@@ -49,6 +56,12 @@ class BusinessWorkspaceResolver
             })
             ->orderBy('name')
             ->get();
+
+        if ($request->isMethod('GET')) {
+            $request->attributes->set($cacheKey, $companies);
+        }
+
+        return $companies;
     }
 
     public function canAccess(User $user, int $companyId, ?Collection $accessibleCompanies = null): bool

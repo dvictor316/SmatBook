@@ -318,11 +318,17 @@ class Plan extends Model
         $normalizedName = strtolower(trim($planName));
         $requiresSolo = str_contains($normalizedName, 'solo');
         $targetTier = static::normalizeTier($normalizedName);
+        $request = request();
+        $cacheKey = self::class.'.active_catalog.'.strtolower(trim($billingCycle));
 
-        return static::query()
-            ->whereRaw('LOWER(billing_cycle) = ?', [strtolower(trim($billingCycle))])
-            ->where('is_active', 1)
-            ->get()
+        if (! $request->attributes->has($cacheKey)) {
+            $request->attributes->set($cacheKey, static::query()
+                ->whereRaw('LOWER(billing_cycle) = ?', [strtolower(trim($billingCycle))])
+                ->where('is_active', 1)
+                ->get());
+        }
+
+        return $request->attributes->get($cacheKey)
             ->first(function (self $candidate) use ($normalizedName, $requiresSolo, $targetTier) {
                 $candidateName = strtolower(trim((string) $candidate->name));
 

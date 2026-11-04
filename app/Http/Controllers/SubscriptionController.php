@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Support\ActiveBranchResolver;
 use App\Support\AppMailer;
 use App\Support\DeploymentCommissionPayoutService;
+use App\Support\SchemaColumnCache;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -40,26 +41,28 @@ class SubscriptionController extends Controller
             return redirect()->route('home');
         }
 
+        $schemaColumns = app(SchemaColumnCache::class);
+        $planColumns = $schemaColumns->columns('plans');
         $plansQuery = Plan::query();
 
-        if (Schema::hasColumn('plans', 'status')) {
+        if (in_array('status', $planColumns ?? [], true)) {
             $plansQuery->where(function ($query) {
                 $query->where('status', 'active')
                     ->orWhere('status', 'Active');
             });
         }
 
-        if (Schema::hasColumn('plans', 'is_active')) {
+        if (in_array('is_active', $planColumns ?? [], true)) {
             $plansQuery->where('is_active', 1);
         }
 
-        if (Schema::hasColumn('plans', 'price')) {
+        if (in_array('price', $planColumns ?? [], true)) {
             $plansQuery->orderBy('price', 'asc');
         } else {
             $plansQuery->orderBy('id', 'asc');
         }
 
-        $plans = Schema::hasTable('plans') ? $plansQuery->get() : collect();
+        $plans = $planColumns !== null ? $plansQuery->get() : collect();
         $creatingAdditionalBusiness = Auth::check() && $request->boolean('new_business');
         $currentSubscription = Auth::check() && ! $creatingAdditionalBusiness
             ? Subscription::resolveCurrentForUser(Auth::user())
@@ -473,13 +476,7 @@ class SubscriptionController extends Controller
 
     private function filterPayloadForTable(string $table, array $payload): array
     {
-        if (! Schema::hasTable($table)) {
-            return $payload;
-        }
-
-        return collect($payload)
-            ->filter(fn ($_value, $column) => Schema::hasColumn($table, (string) $column))
-            ->all();
+        return app(SchemaColumnCache::class)->filterPayload($table, $payload);
     }
 
     private function normalizeDomainPrefix(string $value): string
@@ -2857,7 +2854,7 @@ class SubscriptionController extends Controller
         if (! $subscription->domain_prefix) {
             $subscriptionUpdates['domain_prefix'] = $prefix;
         }
-        if (Schema::hasColumn('subscriptions', 'initialized_at')) {
+        if (app(SchemaColumnCache::class)->hasColumn('subscriptions', 'initialized_at')) {
             $subscriptionUpdates['initialized_at'] = now();
         }
         if (! empty($subscriptionUpdates)) {
@@ -2870,7 +2867,7 @@ class SubscriptionController extends Controller
                 'subdomain' => $prefix,
                 'status' => 'active',
             ];
-            if (Schema::hasColumn('companies', 'domain')) {
+            if (app(SchemaColumnCache::class)->hasColumn('companies', 'domain')) {
                 $companyUpdates['domain'] = $prefix.'.'.$domain;
             }
             $subscription->company->update($companyUpdates);
@@ -2878,49 +2875,49 @@ class SubscriptionController extends Controller
 
         if (Schema::hasTable('domains')) {
             $lookup = [];
-            if (Schema::hasColumn('domains', 'subscription_id')) {
+            if (app(SchemaColumnCache::class)->hasColumn('domains', 'subscription_id')) {
                 $lookup['subscription_id'] = $subscription->id;
-            } elseif (Schema::hasColumn('domains', 'tenant_id')) {
+            } elseif (app(SchemaColumnCache::class)->hasColumn('domains', 'tenant_id')) {
                 $lookup['tenant_id'] = $subscription->user_id;
             } else {
                 $lookup['domain_name'] = $prefix;
             }
 
             $domainPayload = [];
-            if (Schema::hasColumn('domains', 'tenant_id')) {
+            if (app(SchemaColumnCache::class)->hasColumn('domains', 'tenant_id')) {
                 $domainPayload['tenant_id'] = $subscription->user_id;
             }
-            if (Schema::hasColumn('domains', 'subscription_id')) {
+            if (app(SchemaColumnCache::class)->hasColumn('domains', 'subscription_id')) {
                 $domainPayload['subscription_id'] = $subscription->id;
             }
-            if (Schema::hasColumn('domains', 'customer_name')) {
+            if (app(SchemaColumnCache::class)->hasColumn('domains', 'customer_name')) {
                 $domainPayload['customer_name'] = $subscription->user?->name ?? $subscription->company?->name;
             }
-            if (Schema::hasColumn('domains', 'email')) {
+            if (app(SchemaColumnCache::class)->hasColumn('domains', 'email')) {
                 $domainPayload['email'] = $subscription->user?->email ?? $subscription->company?->email;
             }
-            if (Schema::hasColumn('domains', 'domain_name')) {
+            if (app(SchemaColumnCache::class)->hasColumn('domains', 'domain_name')) {
                 $domainPayload['domain_name'] = $prefix;
             }
-            if (Schema::hasColumn('domains', 'package_name')) {
+            if (app(SchemaColumnCache::class)->hasColumn('domains', 'package_name')) {
                 $domainPayload['package_name'] = $subscription->plan_name ?? $subscription->plan;
             }
-            if (Schema::hasColumn('domains', 'package_type')) {
+            if (app(SchemaColumnCache::class)->hasColumn('domains', 'package_type')) {
                 $domainPayload['package_type'] = strtolower((string) $subscription->billing_cycle);
             }
-            if (Schema::hasColumn('domains', 'price')) {
+            if (app(SchemaColumnCache::class)->hasColumn('domains', 'price')) {
                 $domainPayload['price'] = $subscription->amount;
             }
-            if (Schema::hasColumn('domains', 'expiry_date')) {
+            if (app(SchemaColumnCache::class)->hasColumn('domains', 'expiry_date')) {
                 $domainPayload['expiry_date'] = $subscription->end_date;
             }
-            if (Schema::hasColumn('domains', 'status')) {
+            if (app(SchemaColumnCache::class)->hasColumn('domains', 'status')) {
                 $domainPayload['status'] = 'Active';
             }
-            if (Schema::hasColumn('domains', 'approved_at')) {
+            if (app(SchemaColumnCache::class)->hasColumn('domains', 'approved_at')) {
                 $domainPayload['approved_at'] = now();
             }
-            if (Schema::hasColumn('domains', 'setup_completed_at')) {
+            if (app(SchemaColumnCache::class)->hasColumn('domains', 'setup_completed_at')) {
                 $domainPayload['setup_completed_at'] = now();
             }
 
@@ -2960,8 +2957,8 @@ class SubscriptionController extends Controller
 
         $companyId = (int) ($subscription->company_id ?? 0);
         if (Schema::hasTable('companies')) {
-            $hasDomainPrefix = Schema::hasColumn('companies', 'domain_prefix');
-            $hasSubdomain = Schema::hasColumn('companies', 'subdomain');
+            $hasDomainPrefix = app(SchemaColumnCache::class)->hasColumn('companies', 'domain_prefix');
+            $hasSubdomain = app(SchemaColumnCache::class)->hasColumn('companies', 'subdomain');
 
             if ($hasDomainPrefix || $hasSubdomain) {
                 $existsInCompanies = Company::query()
@@ -2981,7 +2978,7 @@ class SubscriptionController extends Controller
             }
         }
 
-        if (Schema::hasTable('domains') && Schema::hasColumn('domains', 'domain_name')) {
+        if (Schema::hasTable('domains') && app(SchemaColumnCache::class)->hasColumn('domains', 'domain_name')) {
             return Domain::query()->where('domain_name', $prefix)->exists();
         }
 

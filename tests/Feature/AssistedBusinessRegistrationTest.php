@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class AssistedBusinessRegistrationTest extends TestCase
@@ -147,6 +148,29 @@ class AssistedBusinessRegistrationTest extends TestCase
             $this->assertSame(1, \DB::table('companies')->where('domain_prefix', $slug)->count());
             $this->assertSame(1, \DB::table('subscriptions')->where('deployed_by', $registrar->id)->count());
         }
+    }
+
+    public function test_business_registration_page_loads_plan_catalog_once(): void
+    {
+        $agent = User::factory()->create([
+            'role' => 'agent',
+            'is_verified' => 1,
+            'status' => 'active',
+        ]);
+        $planCatalogQueries = 0;
+
+        DB::listen(static function ($query) use (&$planCatalogQueries): void {
+            $sql = strtolower($query->sql);
+            if (str_contains($sql, 'plans') && str_contains($sql, 'billing_cycle') && str_contains($sql, 'is_active')) {
+                $planCatalogQueries++;
+            }
+        });
+
+        $this->actingAs($agent)
+            ->get(route('agent.registration.create'))
+            ->assertOk();
+
+        $this->assertSame(1, $planCatalogQueries);
     }
 
     public function test_approved_public_registration_configures_workspace_before_checkout_and_provisions_domain_after_payment(): void

@@ -14,6 +14,22 @@ class SystemEventMailer
 {
     private const ADMIN_INBOX = 'smartprobookoffice@gmail.com';
 
+    public static function notifyRegistrationAfterResponse(User $registrant, string $type = 'user', array $context = []): void
+    {
+        self::afterResponse(
+            static fn () => self::notifyRegistration($registrant, $type, $context),
+            'registration notification'
+        );
+    }
+
+    public static function notifyManagerApprovedAfterResponse(User $manager, ?User $approver = null): void
+    {
+        self::afterResponse(
+            static fn () => self::notifyManagerApproved($manager, $approver),
+            'manager approval notification'
+        );
+    }
+
     public static function notifyRegistration(User $registrant, string $type = 'user', array $context = []): void
     {
         $label = in_array($type, ['state_manager', 'deployment_manager'], true) ? 'State Manager Registration' : 'User Registration';
@@ -36,6 +52,20 @@ class SystemEventMailer
             ? self::uniqueEmails([$registrant->email, self::adminInbox()])
             : self::uniqueEmails([$registrant->email, self::adminInbox()]);
         self::send($recipients, $subject, $label, 'A new account has been created on the platform.', $details);
+    }
+
+    private static function afterResponse(callable $callback, string $event): void
+    {
+        app()->terminating(static function () use ($callback, $event): void {
+            try {
+                $callback();
+            } catch (\Throwable $error) {
+                Log::error('Deferred system notification failed', [
+                    'event' => $event,
+                    'error' => $error->getMessage(),
+                ]);
+            }
+        });
     }
 
     public static function notifyManagerApproved(User $manager, ?User $approver = null): void

@@ -391,7 +391,6 @@ class Subscription extends Model
 
         if ($subscription && in_array(strtolower((string) $subscription->status), ['active', 'trial'], true)) {
             $subscription->isExpired();
-            $subscription->refresh();
         }
 
         return $subscription;

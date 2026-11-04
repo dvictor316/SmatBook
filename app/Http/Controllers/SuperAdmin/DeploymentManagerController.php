@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 use App\Models\{Company, User, Subscription, ActivityLog, DeploymentManager, DeploymentCompany, Domain, Plan, Setting};
 use App\Models\DeploymentManagerPayout;
 use App\Models\Role;
-use App\Support\{AppMailer, SystemEventMailer, DeploymentCommissionPayoutService};
+use App\Support\{AppMailer, SystemEventMailer, DeploymentCommissionPayoutService, SchemaColumnCache};
 
 class DeploymentManagerController extends Controller
 {
@@ -46,7 +46,7 @@ class DeploymentManagerController extends Controller
         // Use DB::table to bypass TenantScoped — Company model scopes to current user's company,
         // which would exclude all client companies owned by different users.
         $legacyIds = [];
-        if (Schema::hasColumn('companies', 'deployed_by')) {
+        if (app(SchemaColumnCache::class)->hasColumn('companies', 'deployed_by')) {
             $legacyIds = DB::table('companies')
                 ->where('deployed_by', $managerId)
                 ->pluck('id')
@@ -449,7 +449,7 @@ class DeploymentManagerController extends Controller
                 $this->ensureManagerHasWorkspace($user);
 
                 DB::afterCommit(function () use ($user) {
-                    SystemEventMailer::notifyManagerApproved($user, Auth::user());
+                    SystemEventMailer::notifyManagerApprovedAfterResponse($user, Auth::user());
                 });
             });
 
@@ -1188,7 +1188,7 @@ public function store(Request $request)
             }
 
             DB::afterCommit(function () use ($customer, $validated, $manager) {
-                SystemEventMailer::notifyRegistration($customer, 'user', [
+                SystemEventMailer::notifyRegistrationAfterResponse($customer, 'user', [
                     'registered_by' => $manager->email ?? $manager->name ?? 'State Manager',
                     'plan' => $validated['plan_name'] ?? null,
                     'billing_cycle' => $validated['billing_cycle'] ?? null,
@@ -1544,7 +1544,7 @@ private function normalizePhoneForStorage(?string $phone): ?string
 private function resolveCompanySlugColumn(): ?string
 {
     foreach (['domain_prefix', 'subdomain', 'domain'] as $column) {
-        if (Schema::hasColumn('companies', $column)) {
+        if (app(SchemaColumnCache::class)->hasColumn('companies', $column)) {
             return $column;
         }
     }
@@ -1556,11 +1556,11 @@ private function companySubscriptionColumnsPayload(array $validated): array
 {
     $payload = [];
 
-    if (Schema::hasColumn('companies', 'subscription_start')) {
+    if (app(SchemaColumnCache::class)->hasColumn('companies', 'subscription_start')) {
         $payload['subscription_start'] = now();
     }
 
-    if (Schema::hasColumn('companies', 'subscription_end')) {
+    if (app(SchemaColumnCache::class)->hasColumn('companies', 'subscription_end')) {
         $payload['subscription_end'] = strtolower((string) $validated['billing_cycle']) === 'yearly'
             ? now()->addYear()
             : now()->addMonth();
@@ -1571,13 +1571,7 @@ private function companySubscriptionColumnsPayload(array $validated): array
 
 private function filterPayloadForTable(string $table, array $payload): array
 {
-    if (!Schema::hasTable($table)) {
-        return $payload;
-    }
-
-    return collect($payload)
-        ->filter(fn ($_value, $column) => Schema::hasColumn($table, (string) $column))
-        ->all();
+    return app(SchemaColumnCache::class)->filterPayload($table, $payload);
 }
 
 private function normalizeDeploymentPlanPayload(array $validated): array

@@ -9,6 +9,7 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class BusinessWorkspaceIsolationTest extends TestCase
@@ -67,6 +68,64 @@ class BusinessWorkspaceIsolationTest extends TestCase
         $response->assertForbidden();
 
         $this->assertNotSame($foreign->id, (int) session('current_tenant_id'));
+    }
+
+    public function test_accessible_businesses_are_reused_within_a_read_only_request(): void
+    {
+        $owner = User::factory()->create(['role' => 'admin']);
+        $company = $this->createBusiness($owner, 'Cached Business');
+        $owner->forceFill(['company_id' => $company->id])->save();
+        $companyQueries = 0;
+        $retiredWorkspaceQueries = 0;
+
+        DB::listen(static function ($query) use (&$companyQueries, &$retiredWorkspaceQueries): void {
+            $sql = strtolower($query->sql);
+            if (str_contains($sql, 'from "companies"')) {
+                $companyQueries++;
+            }
+            if (str_contains($sql, 'from "settings"')) {
+                $retiredWorkspaceQueries++;
+            }
+        });
+
+        $resolver = app(\App\Support\BusinessWorkspaceResolver::class);
+        $first = $resolver->accessibleCompanies($owner);
+        $second = $resolver->accessibleCompanies($owner);
+
+        $this->assertSame([$company->id], $first->modelKeys());
+        $this->assertSame($first->modelKeys(), $second->modelKeys());
+        $this->assertSame(1, $companyQueries);
+        $this->assertSame(1, $retiredWorkspaceQueries);
+    }
+
+    public function test_current_subscription_resolution_does_not_reload_the_same_record(): void
+    {
+        $owner = User::factory()->create(['role' => 'admin']);
+        $company = $this->createBusiness($owner, 'Subscription Lookup Business');
+        $owner->forceFill(['company_id' => $company->id])->save();
+        $subscription = Subscription::withoutGlobalScope('tenant')->create([
+            'user_id' => $owner->id,
+            'company_id' => $company->id,
+            'plan' => 'Basic',
+            'billing_cycle' => 'Yearly',
+            'amount' => 80000,
+            'status' => 'Active',
+            'payment_status' => 'paid',
+            'start_date' => now(),
+            'end_date' => now()->addYear(),
+        ]);
+        $subscriptionQueries = 0;
+
+        DB::listen(static function ($query) use (&$subscriptionQueries): void {
+            if (str_contains(strtolower($query->sql), 'subscriptions')) {
+                $subscriptionQueries++;
+            }
+        });
+
+        $resolved = Subscription::resolveCurrentForUser($owner);
+
+        $this->assertSame($subscription->id, $resolved?->id);
+        $this->assertSame(1, $subscriptionQueries);
     }
 
     public function test_additional_business_gets_a_separate_paid_subscription_before_setup(): void

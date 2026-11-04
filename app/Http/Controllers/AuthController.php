@@ -10,6 +10,7 @@ use App\Support\InternalTestAccess;
 use App\Support\ModuleCatalog;
 use App\Support\PartnerLocationRepository;
 use App\Support\SystemEventMailer;
+use App\Support\SchemaColumnCache;
 use Illuminate\Cookie\CookieJar;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -283,7 +284,7 @@ class AuthController extends Controller
                         $manager->save();
 
                         DB::afterCommit(function () use ($user) {
-                            SystemEventMailer::notifyRegistration($user, 'state_manager');
+                            SystemEventMailer::notifyRegistrationAfterResponse($user, 'state_manager');
                         });
 
                         return [
@@ -320,7 +321,7 @@ class AuthController extends Controller
 
                 if (strtolower((string) $role) === 'agent') {
                     DB::afterCommit(function () use ($user) {
-                        SystemEventMailer::notifyRegistration($user, 'agent');
+                        SystemEventMailer::notifyRegistrationAfterResponse($user, 'agent');
                     });
 
                     return [
@@ -393,7 +394,7 @@ class AuthController extends Controller
                 }
 
                 DB::afterCommit(function () use ($user, $planName, $planAmount, $billingCycle) {
-                    SystemEventMailer::notifyRegistration($user, 'user', [
+                    SystemEventMailer::notifyRegistrationAfterResponse($user, 'user', [
                         'plan' => $planName,
                         'amount' => (string) $planAmount,
                         'billing_cycle' => $billingCycle,
@@ -1215,7 +1216,7 @@ class AuthController extends Controller
 
         if ($createdNow) {
             DB::afterCommit(function () use ($user, $provider) {
-                \App\Support\SystemEventMailer::notifyRegistration($user, 'user', [
+                \App\Support\SystemEventMailer::notifyRegistrationAfterResponse($user, 'user', [
                     'auth_provider' => $this->socialProviderLabel($provider),
                 ]);
             });
@@ -2002,13 +2003,7 @@ class AuthController extends Controller
 
     private function filterPayloadForTable(string $table, array $payload): array
     {
-        if (!Schema::hasTable($table)) {
-            return $payload;
-        }
-
-        return collect($payload)
-            ->filter(fn ($_value, $column) => Schema::hasColumn($table, (string) $column))
-            ->all();
+        return app(SchemaColumnCache::class)->filterPayload($table, $payload);
     }
 
     private function isSocialProviderConfigured(string $provider): bool
