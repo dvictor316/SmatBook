@@ -60,6 +60,9 @@ class InvoiceCreditPaymentModeTest extends TestCase
         $this->assertSame(0.0, (float) $sale->amount_paid);
         $this->assertSame(1000.0, (float) $sale->balance);
         $this->assertSame('Credit', $sale->payment_report_label);
+        $this->get(route('invoices.index'))
+            ->assertOk()
+            ->assertSee(route('invoice-details-admin.print', ['id' => $sale->id, 'autoprint' => 1]), false);
         $this->get(route('sales.invoice.print', $sale->id))->assertOk()->assertSee('Credit');
         $this->get(route('sales.invoice.print', ['id' => $sale->id, 'format' => 'thermal']))->assertOk()->assertSee('CREDIT');
         $this->assertDatabaseCount('payments', 0);
@@ -75,9 +78,12 @@ class InvoiceCreditPaymentModeTest extends TestCase
         $sale = Sale::where('company_id', $company->id)->sole();
 
         $response->assertSessionHasNoErrors()
-            ->assertRedirect(route('sales.invoice.print', $sale->id));
+            ->assertRedirect(route('sales.invoice.print', ['id' => $sale->id, 'autoprint' => 1]));
         $this->assertSame(1000.0, (float) $sale->balance);
-        $this->get(route('sales.invoice.print', $sale->id))->assertOk()->assertSee('Customer Balance Due');
+        $this->get(route('sales.invoice.print', ['id' => $sale->id, 'autoprint' => 1]))
+            ->assertOk()
+            ->assertSee('const autoPrintReceipt = true;', false)
+            ->assertSee('Customer Balance Due');
     }
 
     public function test_existing_unpaid_manual_send_and_cash_rows_display_as_credit_without_rewriting_financial_data(): void

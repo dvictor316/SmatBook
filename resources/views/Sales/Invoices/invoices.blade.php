@@ -140,6 +140,10 @@
                                                                     <i class="far fa-eye me-2"></i>View
                                                                 </a>
 
+                                                                <a class="dropdown-item" href="{{ route('invoice-details-admin.print', ['id' => $invoice->id, 'autoprint' => 1]) }}" target="_blank" rel="noopener">
+                                                                    <i class="fas fa-print me-2"></i>Print
+                                                                </a>
+
                                                                 @php
                                                                     $payStatus = strtolower($invoice->effective_payment_status ?? $invoice->payment_status ?? $invoice->status);
                                                                 @endphp

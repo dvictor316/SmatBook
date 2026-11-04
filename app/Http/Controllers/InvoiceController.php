@@ -858,7 +858,10 @@ class InvoiceController extends Controller
                 : ($isDraft ? 'Invoice draft saved successfully.' : 'Invoice created successfully.');
 
             if ($action === 'print') {
-                return redirect()->route('sales.invoice.print', $sale->id);
+                return redirect()->route('sales.invoice.print', [
+                    'id' => $sale->id,
+                    'autoprint' => 1,
+                ]);
             }
 
             return redirect()->route('invoices.index')->with('success', $message);
