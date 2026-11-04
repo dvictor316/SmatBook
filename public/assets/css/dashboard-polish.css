@@ -82,24 +82,25 @@ body.spb-dashboard :is(.executive-kpi, .metric-card-basic, .glass-card-pro[class
     font-weight: 800 !important;
 }
 body.spb-dashboard :is(.executive-kpi, .metric-card-basic.metric-sky, .metric-card-basic.metric-violet, .metric-card-basic.metric-cyan, .metric-card-basic.metric-amber, .glass-card-pro[class*="metric-"], .metric-glass, .starter-kpi, .agent-metric, .hotel-kpi, .farm-kpi, .metric-card) {
-    min-height: 142px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     text-align: center;
 }
 body.spb-dashboard .executive-kpi {
-    height: 100% !important;
-    max-height: none !important;
+    min-height: 96px !important;
+    height: 96px !important;
+    max-height: 96px !important;
     overflow: hidden;
+    padding: 0 !important;
 }
 body.spb-dashboard .executive-kpi .card-body {
     width: 100%;
-    padding: 16px !important;
+    padding: 8px 10px !important;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 10px;
+    gap: 4px;
 }
 body.spb-dashboard .executive-kpi .card-body > .d-flex {
     position: relative;
@@ -108,36 +109,37 @@ body.spb-dashboard .executive-kpi .card-body > .d-flex {
 body.spb-dashboard .executive-kpi .kpi-badge {
     position: absolute;
     right: 0;
+    top: 0;
+    padding: .1rem .28rem;
+    font-size: .42rem;
 }
 body.spb-dashboard .executive-kpi .card-body > .mt-3 {
     margin-top: 0 !important;
 }
 body.spb-dashboard .executive-kpi .kpi-kicker {
-    font-size: .58rem;
-    line-height: 1.35;
+    font-size: .5rem;
+    line-height: 1.15;
+    margin-bottom: .15rem !important;
 }
 body.spb-dashboard .executive-kpi .kpi-value {
-    font-size: clamp(1rem, 1.25vw, 1.4rem);
-    line-height: 1.15;
-    letter-spacing: -.035em;
+    font-size: clamp(.88rem, 1.05vw, 1.18rem);
+    line-height: 1;
+    letter-spacing: -.05em;
 }
 body.spb-dashboard .executive-kpi .kpi-note {
-    max-width: 100%;
-    white-space: normal;
-    overflow: visible;
-    font-size: .64rem;
-    line-height: 1.4;
+    max-width: 95%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: .52rem;
+    line-height: 1.25;
+    margin-top: .2rem !important;
 }
 body.spb-dashboard .glass-card-pro[class*="metric-"] .stat-icon-circle {
     margin: 0 auto 10px !important;
 }
-body.spb-dashboard .metric-glass > .d-flex {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-}
 body.spb-dashboard .metric-glass .metric-icon-box {
-    margin: 0 auto 8px;
+    margin: 0;
 }
 body.spb-dashboard .metric-glass h4 {
     overflow-wrap: anywhere;
@@ -193,14 +195,23 @@ body.spb-dashboard .farm-kpi { padding: 20px; }
     body.spb-dashboard :is(.executive-kpi, .metric-card-basic, .glass-card-pro[class*="metric-"], .enterprise-card, .starter-card, .agent-metric, .hotel-kpi, .farm-kpi, .metric-card) {
         padding: 16px !important;
     }
-    body.spb-dashboard :is(.executive-kpi, .metric-card-basic.metric-sky, .metric-card-basic.metric-violet, .metric-card-basic.metric-cyan, .metric-card-basic.metric-amber, .glass-card-pro[class*="metric-"], .metric-glass, .starter-kpi, .agent-metric, .hotel-kpi, .farm-kpi, .metric-card) {
-        min-height: 132px;
+    body.spb-dashboard .executive-kpi {
+        min-height: 86px !important;
+        height: 86px !important;
+        max-height: 86px !important;
     }
     body.spb-dashboard .executive-kpi .card-body {
-        padding: 14px !important;
+        padding: 6px 8px !important;
+    }
+    body.spb-dashboard .executive-kpi .kpi-icon-shell {
+        width: 24px;
+        height: 24px;
     }
     body.spb-dashboard .executive-kpi .kpi-value {
-        font-size: 1.05rem;
+        font-size: .92rem;
+    }
+    body.spb-dashboard .executive-kpi .kpi-note {
+        font-size: .48rem;
     }
     body.spb-dashboard :is(.hotel-filter, .farm-filter) { justify-content: flex-start; }
     body.spb-dashboard :is(.hotel-filter, .farm-filter) > div { flex: 1 1 140px; min-width: 0; }
