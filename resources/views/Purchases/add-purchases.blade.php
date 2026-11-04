@@ -344,14 +344,19 @@
 </div>
 
 <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        function initializePurchaseForm() {
+            const tableBody = document.getElementById('productsTableBody');
+            const addBtn = document.getElementById('addProductBtn');
+            const purchaseForm = document.getElementById('purchaseForm');
+            if (!tableBody || !addBtn || !purchaseForm || addBtn.dataset.spbInitialized === 'true') {
+                return;
+            }
+            addBtn.dataset.spbInitialized = 'true';
+
             const products = @json($products);
             const initialRows = @json($initialPurchaseRows);
             const productsById = new Map(products.map((product) => [String(product.id), product]));
             let productCounter = 0;
-
-            const tableBody = document.getElementById('productsTableBody');
-            const addBtn = document.getElementById('addProductBtn');
 
             function buildProductOptions() {
                 const options = ['<option value="">Select Product</option>'];
@@ -588,7 +593,9 @@
             }
 
             addBtn.addEventListener('click', function() {
-                createEmptyRow();
+                const row = createEmptyRow();
+                row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                row.querySelector('.product-select')?.focus();
             });
 
             if (initialRows.length > 0) {
@@ -715,7 +722,20 @@
                     toggleRowInputs(row, rowHasSelectedProduct(row));
                 });
             });
-        });
+        }
+
+        window.__spbPurchasePageInit = initializePurchaseForm;
+        if (!window.__spbPurchasePageInitListener) {
+            window.__spbPurchasePageInitListener = true;
+            document.addEventListener('smartprobook:page-loaded', function() {
+                window.__spbPurchasePageInit?.();
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializePurchaseForm, { once: true });
+        } else {
+            initializePurchaseForm();
+        }
     </script>
 @endsection
 

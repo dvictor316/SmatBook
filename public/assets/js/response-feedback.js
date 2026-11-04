@@ -9,6 +9,7 @@
     let pendingAjaxRequests = 0;
     let navigationPending = false;
     let navigationFallbackTimer;
+    let pendingLinkTimer;
 
     const style = document.createElement('style');
     style.textContent = `
@@ -44,6 +45,11 @@
             border-right-color: transparent;
             border-radius: 50%;
             animation: spb-action-spin .7s linear infinite;
+        }
+        a[data-spb-pending="true"] {
+            cursor: progress;
+            opacity: .78;
+            pointer-events: none;
         }
         @keyframes spb-navigation-progress {
             from { transform: translateX(-110%); }
@@ -102,9 +108,24 @@
 
     document.addEventListener('click', function (event) {
         if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-        const link = event.target.closest('a[href]');
+        const target = event.target instanceof Element ? event.target : event.target?.parentElement;
+        const link = target?.closest('a[href]');
         if (!link || isSamePageNavigation(link)) return;
+        if (link.dataset.spbPending === 'true') {
+            event.preventDefault();
+            return;
+        }
+
         show();
+        link.dataset.spbPending = 'true';
+        link.setAttribute('aria-busy', 'true');
+        window.clearTimeout(pendingLinkTimer);
+        pendingLinkTimer = window.setTimeout(function () {
+            link.removeAttribute('data-spb-pending');
+            link.removeAttribute('aria-busy');
+            pendingLinkTimer = null;
+            hide();
+        }, 30000);
     });
 
     document.addEventListener('submit', function (event) {
@@ -132,6 +153,7 @@
     });
 
     document.addEventListener('livewire:navigate', function () {
+        window.clearTimeout(pendingLinkTimer);
         window.clearTimeout(navigationFallbackTimer);
         navigationPending = true;
         show();
@@ -141,11 +163,13 @@
         }, 30000);
     });
     document.addEventListener('livewire:navigated', function () {
+        window.clearTimeout(pendingLinkTimer);
         window.clearTimeout(navigationFallbackTimer);
         navigationPending = false;
         hide();
     });
     window.addEventListener('pageshow', function () {
+        window.clearTimeout(pendingLinkTimer);
         window.clearTimeout(navigationFallbackTimer);
         navigationPending = false;
         hide();

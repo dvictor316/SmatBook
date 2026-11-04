@@ -296,12 +296,17 @@
     <!-- JavaScript for dynamic product handling -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const products = @json($products);
-            let productCounter = 0;
-
+        function initializePurchaseForm() {
             const tableBody = document.getElementById('productsTableBody');
             const addBtn = document.getElementById('addProductBtn');
+            const purchaseForm = document.getElementById('purchaseForm');
+            if (!tableBody || !addBtn || !purchaseForm || addBtn.dataset.spbInitialized === 'true') {
+                return;
+            }
+            addBtn.dataset.spbInitialized = 'true';
+
+            const products = @json($products);
+            let productCounter = 0;
 
             function buildProductOptions() {
                 const options = ['<option value="">Select Product</option>'];
@@ -436,7 +441,9 @@
             }
 
             addBtn.addEventListener('click', function() {
-                createEmptyRow();
+                const row = createEmptyRow();
+                row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                row.querySelector('.product-select')?.focus();
             });
 
             createEmptyRow();
@@ -555,7 +562,20 @@
                     return;
                 }
             });
-        });
+        }
+
+        window.__spbPurchasePageInit = initializePurchaseForm;
+        if (!window.__spbPurchasePageInitListener) {
+            window.__spbPurchasePageInitListener = true;
+            document.addEventListener('smartprobook:page-loaded', function() {
+                window.__spbPurchasePageInit?.();
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializePurchaseForm, { once: true });
+        } else {
+            initializePurchaseForm();
+        }
     </script>
 </body>
 </html>
