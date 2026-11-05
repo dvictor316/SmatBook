@@ -17,6 +17,7 @@
     $branchOptionsForView = array_values($branchOptions);
     $transferSourceBranchId = (string) old('from_branch_id', $activeBranch['id'] ?? '');
     $transferDestinationBranchId = (string) old('to_branch_id', '');
+    $showBranchRemoveAction = ($activeBranch['scope'] ?? 'branch') !== 'all' && !empty($activeBranch['id']);
     if ($transferDestinationBranchId === $transferSourceBranchId) {
         $transferDestinationBranchId = '';
     }
@@ -287,7 +288,23 @@
     #products-table th:nth-child(9),
     #products-table td:nth-child(9) { width: 8%; }
     #products-table th:nth-child(10),
-    #products-table td:nth-child(10) { width: 9%; }
+    #products-table td:nth-child(10) {
+        width: 9%;
+        min-width: 108px;
+        position: sticky;
+        right: 0;
+        background: #fff;
+        box-shadow: -8px 0 12px -12px rgba(15, 23, 42, 0.8);
+    }
+
+    #products-table thead th:nth-child(10) {
+        z-index: 8;
+        background: #f8fafc;
+    }
+
+    #products-table tbody td:nth-child(10) {
+        z-index: 4;
+    }
 
     #products-table th:nth-child(1),
     #products-table td:nth-child(1),
@@ -307,6 +324,13 @@
     #products-table th:nth-child(9),
     #products-table td:nth-child(9) {
         text-align: right;
+    }
+
+    #products-table th:nth-child(4),
+    #products-table td:nth-child(4),
+    #products-table th:nth-child(5),
+    #products-table td:nth-child(5) {
+        text-align: center;
     }
 
     #products-table td:nth-child(3) > .d-flex {
@@ -763,9 +787,19 @@
                                                             <i class="fas fa-triangle-exclamation me-2"></i>Record Damage
                                                         </button>
                                                     <?php } ?>
-                                                    <form action="<?php echo e(route('inventory.Products.destroy', $product->id)); ?>" method="POST" onsubmit="return confirm('Delete this product?');">
+                                                    <?php if ($showBranchRemoveAction) { ?>
+                                                        <?php if ($displayStock <= 0) { ?>
+                                                            <form action="<?php echo e(route('inventory.branch-products.remove', $product->id)); ?>" method="POST" onsubmit="return confirm('Remove this product from <?php echo e($activeBranch['name']); ?>?');">
+                                                                <?php echo csrf_field(); ?><?php echo method_field('DELETE'); ?>
+                                                                <button type="submit" class="dropdown-item text-warning"><i class="fas fa-right-from-bracket me-2"></i>Remove from this branch</button>
+                                                            </form>
+                                                        <?php } else { ?>
+                                                            <span class="dropdown-item text-muted" title="Transfer remaining stock out first"><i class="fas fa-lock me-2"></i>Transfer stock out to remove</span>
+                                                        <?php } ?>
+                                                    <?php } ?>
+                                                    <form action="<?php echo e(route('inventory.Products.destroy', $product->id)); ?>" method="POST" onsubmit="return confirm('Permanently delete this company product from all branches?');">
                                                         <?php echo csrf_field(); ?><?php echo method_field('DELETE'); ?>
-                                                        <button type="submit" class="dropdown-item text-danger"><i class="far fa-trash-alt me-2"></i>Delete</button>
+                                                        <button type="submit" class="dropdown-item text-danger"><i class="far fa-trash-alt me-2"></i>Delete company product</button>
                                                     </form>
                                                 </div>
                                             </div>
@@ -811,6 +845,14 @@
                         <label class="form-check-label fw-semibold" for="transfer-all-products">Add all company products to the destination with zero stock</label>
                         <div class="form-text">Existing destination stock is left unchanged. This adds catalog availability only.</div>
                     </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="transfer_all_stock" id="transfer-all-stock" value="1" <?php if (old('transfer_all_stock')) { ?>checked<?php } ?>>
+                        <label class="form-check-label fw-semibold" for="transfer-all-stock">Transfer all available stock for all company products</label>
+                        <div class="form-text">Moves each product's full available quantity from the source branch. The business-wide total stays the same.</div>
+                    </div>
+                    <?php if ($transferErrors && $transferErrors->has('add_all_products')) { ?>
+                        <div class="invalid-feedback d-block mb-3"><?php echo e($transferErrors->first('add_all_products')); ?></div>
+                    <?php } ?>
                     <div class="mb-3">
                         <label class="form-label">Product</label>
                         <div class="product-lookup" data-search-url="<?php echo e($transferProductsSearchUrl); ?>">
@@ -1390,6 +1432,7 @@
         });
 
         var transferAllProducts = document.getElementById('transfer-all-products');
+        var transferAllStock = document.getElementById('transfer-all-stock');
         if (transferAllProducts) {
             var transferForm = transferAllProducts.closest('form');
             var productLookup = transferForm.querySelector('.product-lookup');
@@ -1400,11 +1443,16 @@
             var fromBranch = transferForm.querySelector('[name="from_branch_id"]');
             var toBranch = transferForm.querySelector('[name="to_branch_id"]');
             var syncTransferMode = function() {
-                productLookup.hidden = transferAllProducts.checked;
-                productIdInput.required = !transferAllProducts.checked;
-                quantityInput.closest('.mb-0').hidden = transferAllProducts.checked;
-                quantityInput.required = !transferAllProducts.checked;
-                transferSubmit.textContent = transferAllProducts.checked ? 'Add All Products' : 'Transfer / Add Product';
+                var bulkCatalogAdd = transferAllProducts.checked;
+                var bulkStockTransfer = transferAllStock.checked;
+                var bulkMode = bulkCatalogAdd || bulkStockTransfer;
+                productLookup.hidden = bulkMode;
+                productIdInput.required = !bulkMode;
+                quantityInput.closest('.mb-0').hidden = bulkMode;
+                quantityInput.required = !bulkMode;
+                transferSubmit.textContent = bulkStockTransfer
+                    ? 'Transfer All Stock'
+                    : (bulkCatalogAdd ? 'Add All Products' : 'Transfer / Add Product');
             };
             var syncDestinationBranches = function() {
                 if (fromBranch.value && fromBranch.value === toBranch.value) {
@@ -1415,6 +1463,15 @@
                 });
             };
             transferForm.addEventListener('submit', function(event) {
+                if (transferAllStock.checked) {
+                    var sourceName = fromBranch.options[fromBranch.selectedIndex]?.textContent || 'the source branch';
+                    var destinationName = toBranch.options[toBranch.selectedIndex]?.textContent || 'the destination branch';
+                    if (!window.confirm('Transfer the full available stock of all company products from ' + sourceName + ' to ' + destinationName + '?')) {
+                        event.preventDefault();
+                    }
+                    return;
+                }
+
                 if (transferAllProducts.checked) return;
 
                 if (!/^[1-9]\d*$/.test(productIdInput.value)) {
@@ -1429,7 +1486,14 @@
                     quantityInput.reportValidity();
                 }
             });
-            transferAllProducts.addEventListener('change', syncTransferMode);
+            transferAllProducts.addEventListener('change', function() {
+                if (transferAllProducts.checked) transferAllStock.checked = false;
+                syncTransferMode();
+            });
+            transferAllStock.addEventListener('change', function() {
+                if (transferAllStock.checked) transferAllProducts.checked = false;
+                syncTransferMode();
+            });
             fromBranch.addEventListener('change', syncDestinationBranches);
             syncDestinationBranches();
             syncTransferMode();

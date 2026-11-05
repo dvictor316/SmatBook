@@ -184,6 +184,9 @@ class PurchaseStockPostingTest extends TestCase
         $html = $response->getContent();
         $this->assertTrue(str_contains($html, 'Click to browse products or type a name / SKU'));
         $this->assertTrue(str_contains($html, 'Load more products'));
+        $this->assertTrue(str_contains($html, 'Transfer all available stock for all company products'));
+        $this->assertTrue(str_contains($html, 'position: sticky;'));
+        $this->assertTrue(str_contains($html, 'right: 0;'));
     }
 
     public function test_positive_transfer_decreases_source_and_increases_destination_once(): void
@@ -260,6 +263,10 @@ class PurchaseStockPostingTest extends TestCase
         ];
         $this->post(route('inventory.transfer'), $payload)->assertSessionHas('success');
         $this->post(route('inventory.transfer'), $payload)->assertSessionHas('success');
+        $this->post(route('inventory.transfer'), $payload + ['transfer_all_stock' => 1])
+            ->assertSessionHasErrors([
+                'add_all_products' => 'Choose either zero-stock catalog add or full-stock transfer, not both.',
+            ]);
 
         $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $product->id, 'branch_id' => 'branch-b', 'quantity' => 0]);
         $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $secondProduct->id, 'branch_id' => 'branch-b', 'quantity' => 0]);
@@ -271,6 +278,54 @@ class PurchaseStockPostingTest extends TestCase
             ->assertViewHas('summary', fn ($summary) => (int) $summary->transfer_count === 2
                 && (int) $summary->product_count === 2
                 && (float) $summary->quantity_total === 0.0);
+    }
+
+    public function test_full_stock_transfer_moves_every_company_product_between_branches(): void
+    {
+        [$firstProduct] = $this->workspace();
+        $this->configureTransferBranches($firstProduct);
+        $secondProduct = Product::create([
+            'company_id' => $firstProduct->company_id,
+            'user_id' => auth()->id(),
+            'name' => 'Beans',
+            'sku' => 'FULL-TRANSFER-BEANS',
+            'stock' => 7,
+            'stock_quantity' => 7,
+            'price' => 100,
+            'purchase_price' => 50,
+        ]);
+        ProductBranchStock::create([
+            'product_id' => $secondProduct->id,
+            'company_id' => $secondProduct->company_id,
+            'branch_id' => 'hq',
+            'branch_name' => 'Headquarters',
+            'quantity' => 7,
+        ]);
+        $zeroProduct = Product::create([
+            'company_id' => $firstProduct->company_id,
+            'user_id' => auth()->id(),
+            'name' => 'Empty Item',
+            'sku' => 'FULL-TRANSFER-EMPTY',
+            'stock' => 0,
+            'stock_quantity' => 0,
+            'price' => 100,
+            'purchase_price' => 50,
+        ]);
+
+        $this->post(route('inventory.transfer'), [
+            'transfer_all_stock' => 1,
+            'from_branch_id' => 'hq',
+            'to_branch_id' => 'branch-b',
+        ])->assertSessionHas('success', '2 product(s) transferred with 12 total stock moved. 1 product(s) had no source stock and were added with zero stock.');
+
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $firstProduct->id, 'branch_id' => 'hq', 'quantity' => 0]);
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $firstProduct->id, 'branch_id' => 'branch-b', 'quantity' => 5]);
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $secondProduct->id, 'branch_id' => 'hq', 'quantity' => 0]);
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $secondProduct->id, 'branch_id' => 'branch-b', 'quantity' => 7]);
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $zeroProduct->id, 'branch_id' => 'branch-b', 'quantity' => 0]);
+        $this->assertDatabaseHas('products', ['id' => $firstProduct->id, 'stock' => 5, 'stock_quantity' => 5]);
+        $this->assertSame(3, DB::table('stock_transfer_audits')->where('to_branch_id', 'branch-b')->count());
+        $this->assertSame(4, DB::table('inventory_history')->where('reference', 'like', 'Branch Transfer%')->count());
     }
 
     public function test_bulk_catalog_option_is_preserved_when_branch_validation_requires_correction(): void
@@ -285,11 +340,62 @@ class PurchaseStockPostingTest extends TestCase
             ->assertSessionDoesntHaveErrors('quantity')
             ->assertSessionHas('_old_input.add_all_products', 1);
 
-        $this->get(route('product-list'))
+        $response = $this->get(route('product-list'))->assertOk();
+        $html = $response->getContent();
+        $this->assertTrue(str_contains($html, 'transferAllProducts.addEventListener(\'change\', function()'));
+        $this->assertTrue(str_contains($html, 'quantityInput.required = !bulkMode;'));
+        $this->assertTrue(str_contains($html, 'syncTransferMode();'));
+    }
+
+    public function test_zero_stock_product_can_be_removed_from_one_branch_without_deleting_product(): void
+    {
+        [$product] = $this->workspace();
+        $this->configureTransferBranches($product);
+        ProductBranchStock::create([
+            'product_id' => $product->id,
+            'company_id' => $product->company_id,
+            'branch_id' => 'branch-b',
+            'branch_name' => 'Branch B',
+            'quantity' => 0,
+        ]);
+
+        $this->withSession(['active_branch_id' => 'branch-b', 'active_branch_name' => 'Branch B'])
+            ->delete(route('inventory.branch-products.remove', $product->id))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('product_branch_stocks', [
+            'product_id' => $product->id,
+            'branch_id' => 'branch-b',
+            'quantity' => 0,
+            'is_available' => 0,
+        ]);
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $product->id, 'branch_id' => 'hq', 'quantity' => 5]);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'company_id' => $product->company_id]);
+        $this->withSession(['active_branch_id' => 'branch-b', 'active_branch_name' => 'Branch B'])
+            ->get(route('product-list'))
             ->assertOk()
-            ->assertSee('transferAllProducts.addEventListener(\'change\', syncTransferMode);', false)
-            ->assertSee('quantityInput.required = !transferAllProducts.checked;', false)
-            ->assertSee('syncTransferMode();', false);
+            ->assertViewHas('productRows', fn ($rows) => !$rows->contains('id', $product->id));
+    }
+
+    public function test_product_with_branch_stock_cannot_be_removed_from_branch(): void
+    {
+        [$product] = $this->workspace();
+        $this->configureTransferBranches($product);
+        ProductBranchStock::create([
+            'product_id' => $product->id,
+            'company_id' => $product->company_id,
+            'branch_id' => 'branch-b',
+            'branch_name' => 'Branch B',
+            'quantity' => 2,
+        ]);
+
+        $this->withSession(['active_branch_id' => 'branch-b', 'active_branch_name' => 'Branch B'])
+            ->from(route('product-list'))
+            ->delete(route('inventory.branch-products.remove', $product->id))
+            ->assertRedirect(route('product-list'))
+            ->assertSessionHas('error', 'This product still has stock in Branch B. Transfer the remaining stock out before removing it from this branch.');
+
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $product->id, 'branch_id' => 'branch-b', 'quantity' => 2]);
     }
 
     public function test_invalid_transfer_inputs_show_actionable_errors_and_reopen_the_transfer_form(): void

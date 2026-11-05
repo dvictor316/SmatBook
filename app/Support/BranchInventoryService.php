@@ -34,6 +34,10 @@ class BranchInventoryService
                 : $this->branchStockQuery($product, $branch)->first();
 
             if ($branchStock) {
+                if (Schema::hasColumn('product_branch_stocks', 'is_available') && !$branchStock->is_available) {
+                    return 0.0;
+                }
+
                 // An existing zero balance is real stock information, not a missing row.
                 // Falling back here can display another branch's stock after a purchase is reversed.
                 return max(0.0, (float) ($branchStock->quantity ?? 0));
@@ -367,6 +371,9 @@ class BranchInventoryService
 
         $branchStock->company_id = $resolvedCompanyId > 0 ? $resolvedCompanyId : null;
         $branchStock->branch_name = $branch['name'];
+        if (Schema::hasColumn('product_branch_stocks', 'is_available')) {
+            $branchStock->is_available = true;
+        }
         $proposedQuantity = !$seededFromCurrentProductStock
             ? round(((float) ($branchStock->quantity ?? 0)) + $delta, 2)
             : round((float) ($branchStock->quantity ?? 0), 2);
@@ -410,6 +417,9 @@ class BranchInventoryService
         $branchStock->company_id = $resolvedCompanyId > 0 ? $resolvedCompanyId : null;
         $branchStock->branch_name = $branch['name'];
         $branchStock->quantity = round($quantity, 6);
+        if (Schema::hasColumn('product_branch_stocks', 'is_available')) {
+            $branchStock->is_available = true;
+        }
         $branchStock->save();
 
         return $branchStock;

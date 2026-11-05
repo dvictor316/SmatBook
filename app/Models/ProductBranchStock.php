@@ -17,10 +17,12 @@ class ProductBranchStock extends Model
         'branch_id',
         'branch_name',
         'quantity',
+        'is_available',
     ];
 
     protected $casts = [
         'quantity' => 'decimal:2',
+        'is_available' => 'boolean',
     ];
 
     public function product(): BelongsTo
