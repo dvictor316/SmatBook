@@ -75,6 +75,9 @@ class PartnerRegistrationTest extends TestCase
             $table->unsignedInteger('user_limit')->nullable();
             $table->string('status')->nullable();
             $table->string('payment_status')->nullable();
+            $table->dateTime('start_date')->nullable();
+            $table->dateTime('end_date')->nullable();
+            $table->dateTime('initialized_at')->nullable();
             $table->timestamps();
         });
     }
@@ -127,7 +130,7 @@ class PartnerRegistrationTest extends TestCase
         $this->assertSame(1, (int) $user->is_verified);
     }
 
-    public function test_regular_registration_waits_for_super_admin_approval(): void
+    public function test_regular_registration_starts_a_one_month_trial_immediately(): void
     {
         $response = $this->from(route('saas-register'))->post(route('saas-register.post'), [
             'role' => 'admin',
@@ -141,22 +144,25 @@ class PartnerRegistrationTest extends TestCase
             'field_of_operation' => 'general',
         ]);
 
-        $response->assertRedirect(route('registration.pending.notice'));
+        $subscription = \DB::table('subscriptions')->first();
+        $this->assertNotNull($subscription);
+        $response->assertRedirect(route('saas.setup', $subscription->id));
         $response->assertSessionDoesntHaveErrors();
 
         $user = User::firstOrFail();
 
         $this->assertAuthenticatedAs($user);
-        $this->assertSame('pending', $user->status);
-        $this->assertSame(0, (int) $user->is_verified);
+        $this->assertSame('active', $user->status);
+        $this->assertSame(1, (int) $user->is_verified);
         $this->assertDatabaseHas('subscriptions', [
             'user_id' => $user->id,
-            'status' => 'Pending',
-            'payment_status' => 'unpaid',
+            'status' => 'Trial',
+            'payment_status' => 'free',
         ]);
+        $this->assertTrue(\Illuminate\Support\Carbon::parse($subscription->end_date)->isSameDay(now()->addMonth()));
     }
 
-    public function test_incomplete_registration_can_be_retried_with_the_same_email_without_duplicate_records(): void
+    public function test_duplicate_registration_cannot_restart_a_trial_or_create_duplicate_records(): void
     {
         $payload = [
             'role' => 'admin',
@@ -170,24 +176,24 @@ class PartnerRegistrationTest extends TestCase
             'field_of_operation' => 'general',
         ];
 
-        $this->post(route('saas-register.post'), $payload)
-            ->assertRedirect(route('registration.pending.notice'));
+        $this->from(route('saas-register'))->post(route('saas-register.post'), $payload)
+            ->assertRedirect(route('saas.setup', \DB::table('subscriptions')->value('id')));
 
         $user = User::where('email', 'retry-owner@example.com')->firstOrFail();
-        $payload['name'] = 'Retry Owner';
+        $originalEndDate = \DB::table('subscriptions')->where('user_id', $user->id)->value('end_date');
 
         auth()->logout();
-        $this->post(route('saas-register.post'), $payload)
-            ->assertRedirect(route('registration.pending.notice'))
+        $this->from(route('saas-register'))->post(route('saas-register.post'), $payload)
+            ->assertRedirect(route('saas-register'))
             ->assertSessionDoesntHaveErrors();
 
         $this->assertSame(1, User::where('email', 'retry-owner@example.com')->count());
         $this->assertSame($user->id, User::where('email', 'retry-owner@example.com')->value('id'));
-        $this->assertSame('Retry Owner', $user->fresh()->name);
         $this->assertSame(1, \DB::table('subscriptions')->where('user_id', $user->id)->count());
+        $this->assertSame($originalEndDate, \DB::table('subscriptions')->where('user_id', $user->id)->value('end_date'));
     }
 
-    public function test_incomplete_phone_only_registration_can_be_retried_with_the_same_phone(): void
+    public function test_duplicate_phone_registration_cannot_restart_a_trial(): void
     {
         $payload = [
             'role' => 'admin',
@@ -200,21 +206,19 @@ class PartnerRegistrationTest extends TestCase
             'field_of_operation' => 'general',
         ];
 
-        $this->post(route('saas-register.post'), $payload)
-            ->assertRedirect(route('registration.pending.notice'));
+        $this->from(route('saas-register'))->post(route('saas-register.post'), $payload)
+            ->assertRedirect(route('saas.setup', \DB::table('subscriptions')->value('id')));
 
         $user = User::where('phone', '+2348012345678')->firstOrFail();
         $originalEmail = $user->email;
-        $payload['name'] = 'Phone Retry Owner';
 
         auth()->logout();
-        $this->post(route('saas-register.post'), $payload)
-            ->assertRedirect(route('registration.pending.notice'))
-            ->assertSessionDoesntHaveErrors();
+        $this->from(route('saas-register'))->post(route('saas-register.post'), $payload)
+            ->assertRedirect(route('saas-register'))
+            ->assertSessionHasErrors('phone');
 
         $this->assertSame(1, User::where('phone', '+2348012345678')->count());
         $this->assertSame($originalEmail, $user->fresh()->email);
-        $this->assertSame('Phone Retry Owner', $user->fresh()->name);
         $this->assertSame(1, \DB::table('subscriptions')->where('user_id', $user->id)->count());
     }
 
@@ -253,11 +257,14 @@ class PartnerRegistrationTest extends TestCase
             'field_of_operation' => 'general',
         ]);
 
-        $response->assertRedirect(route('home'));
+        $subscription = \DB::table('subscriptions')->where('user_id', $user->id)->first();
+        $response->assertRedirect(route('saas.setup', $subscription->id));
         $this->assertSame('active', $user->fresh()->status);
         $this->assertSame(1, (int) $user->fresh()->is_verified);
         $this->assertSame('Approved Owner Updated', $user->fresh()->name);
         $this->assertSame(1, \DB::table('subscriptions')->where('user_id', $user->id)->count());
+        $this->assertSame('Trial', $subscription->status);
+        $this->assertSame('free', $subscription->payment_status);
     }
 
     public function test_successfully_paid_registration_cannot_be_reused(): void

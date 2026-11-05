@@ -226,6 +226,7 @@ class SubscriptionController extends Controller
             'billing_cycle' => ucfirst($requestedCycle),
             'amount' => (float) $plan->price,
             'user_limit' => $plan->resolvedUserLimit(),
+            'deployed_by' => $currentSubscription?->deployed_by,
             'status' => 'Pending',
             'payment_status' => 'unpaid',
             'domain_prefix' => $domainPrefix !== '' ? $domainPrefix : null,
@@ -375,6 +376,7 @@ class SubscriptionController extends Controller
             'enterprise-solo' => ['label' => 'Enterprise Solo'],
             'enterprise' => ['label' => 'Enterprise'],
             'hotel' => ['label' => 'Hotel'],
+            'livestock' => ['label' => 'Livestock'],
         ];
     }
 
@@ -393,6 +395,7 @@ class SubscriptionController extends Controller
             in_array($value, ['enterprise-solo', 'institutional-solo'], true) => 'enterprise-solo',
             in_array($value, ['enterprise', 'institutional'], true) => 'enterprise',
             in_array($value, ['hotel', 'hospitality'], true) => 'hotel',
+            in_array($value, ['livestock', 'poultry'], true) => 'livestock',
             default => null,
         };
     }

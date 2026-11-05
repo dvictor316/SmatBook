@@ -236,7 +236,7 @@ class AuthController extends Controller
 
                 $normalizedRole = strtolower((string) $role);
                 $isAgentRegistration = $normalizedRole === 'agent';
-                $requiresSuperAdminApproval = !$this->isManagerRoleName($role) && !$isAgentRegistration;
+                $isCustomerRegistration = !$this->isManagerRoleName($role) && !$isAgentRegistration;
                 $isApprovedRetry = $retryableUser
                     && strtolower((string) $retryableUser->status) === 'active'
                     && (int) ($retryableUser->is_verified ?? 0) === 1;
@@ -247,9 +247,11 @@ class AuthController extends Controller
                     'phone' => $normalizedPhone ?? $retryableUser?->phone,
                     'password' => Hash::make($validated['password']),
                     'role' => $role,
-                    'is_verified' => ($isAgentRegistration || $isApprovedRetry) ? 1 : 0,
-                    'status' => ($requiresSuperAdminApproval && !$isApprovedRetry) ? 'pending' : 'active',
-                    'email_verified_at' => $isApprovedRetry ? ($retryableUser->email_verified_at ?? now()) : null,
+                    'is_verified' => ($isAgentRegistration || $isApprovedRetry || $isCustomerRegistration) ? 1 : 0,
+                    'status' => 'active',
+                    'email_verified_at' => ($isApprovedRetry && $retryableUser->email_verified_at)
+                        ? $retryableUser->email_verified_at
+                        : ($isCustomerRegistration ? now() : null),
                     'country' => $validated['country'] ?? null,
                     'state_region' => $validated['state_region'] ?? null,
                     'local_council' => $validated['local_council'] ?? null,
@@ -373,9 +375,7 @@ class AuthController extends Controller
                     'billing_cycle' => $billingCycle,
                     'amount' => $planAmount,
                     'user_limit' => $plan?->resolvedUserLimit(),
-                    'status' => 'Pending',
-                    'payment_status' => 'unpaid',
-                ]));
+                ], Subscription::trialPayload()));
                 $subscription = Subscription::withoutGlobalScope('tenant')
                     ->where('user_id', $user->id)
                     ->whereRaw("LOWER(COALESCE(payment_status, '')) NOT IN (?, ?)", ['paid', 'free'])
@@ -423,6 +423,11 @@ class AuthController extends Controller
             if (strtolower((string) $registrationResult['role']) === 'agent') {
                 return redirect()->route('agent.dashboard')
                     ->with('success', 'Agent registration successful. You can start using your agent dashboard.');
+            }
+
+            if ($registrationResult['subscription']?->isTrial()) {
+                return redirect()->route('saas.setup', ['id' => $registrationResult['subscription']->id])
+                    ->with('success', 'Your one-month free trial has started. Complete workspace setup to begin using the app.');
             }
 
             if (strtolower((string) $registrationResult['user']->status) === 'active'
@@ -1422,7 +1427,7 @@ class AuthController extends Controller
             'user_limit' => $plan?->resolvedUserLimit(),
             'status' => 'Pending',
             'payment_status' => 'unpaid',
-        ])));
+        ], Subscription::trialPayload())));
     }
 
     /*

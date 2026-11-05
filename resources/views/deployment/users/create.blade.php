@@ -10,7 +10,7 @@
     $formActionRoute = $formActionRoute ?? 'deployment.customers.store';
     $isSuperAdminDeployment = $isSuperAdminDeployment ?? false;
     $pageTitle = $pageTitle ?? 'Register New Customer';
-    $pageSubtitle = $pageSubtitle ?? 'Create account -> Select plan -> Set credentials -> SaaS checkout -> SaaS success';
+    $pageSubtitle = $pageSubtitle ?? 'Create account -> Select plan -> Set credentials -> Activate one-month trial';
     $previewMode = $isSuperAdminDeployment ? 'license' : 'commission';
     $planMeta = function (string $key, string $name, float $price, string $cycle, ?string $saveLabel = null) use ($deploymentPlans) {
         $commission = $price * 0.35;
@@ -429,8 +429,8 @@
                                 @if($isSuperAdminDeployment)
                                     <strong>Admin deployment:</strong> This creates and activates the customer's workspace instantly without payment.
                                 @else
-                                    <strong>Quick setup:</strong> Customer gets an instant subdomain workspace after payment.
-                                    You automatically earn <strong>35% commission</strong>.
+                                    <strong>Quick setup:</strong> Customer gets an active subdomain workspace and a one-month free trial immediately.
+                                    Payment is due after the trial.
                                 @endif
                             </div>
 
@@ -542,7 +542,7 @@
                                             <div class="plan-tier">Starter POS</div>
                                             <div class="plan-seat">{{ $seatLabel('starter-monthly') }}</div>
                                             <div class="plan-amount">₦{{ $starterMonthly['price_label'] }} <small>/mo</small></div>
-                                            <div class="plan-cycle">Billed monthly · Earn ₦{{ $starterMonthly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed monthly · Potential commission ₦{{ $starterMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> 1 user only</li>
                                                 <li><i class="fas fa-check-circle"></i> POS sales</li>
@@ -559,7 +559,7 @@
                                             <div class="plan-tier">Basic Core</div>
                                             <div class="plan-seat">{{ $seatLabel('basic-solo-monthly') }}</div>
                                             <div class="plan-amount">₦{{ $basicSoloMonthly['price_label'] }} <small>/mo</small></div>
-                                            <div class="plan-cycle">Billed monthly · Earn ₦{{ $basicSoloMonthly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed monthly · Potential commission ₦{{ $basicSoloMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> 1 user</li>
                                                 <li><i class="fas fa-check-circle"></i> 5 GB storage</li>
@@ -576,7 +576,7 @@
                                             <div class="plan-tier">Basic Core</div>
                                             <div class="plan-seat">{{ $seatLabel('basic-monthly') }}</div>
                                             <div class="plan-amount">₦{{ $basicMonthly['price_label'] }} <small>/mo</small></div>
-                                            <div class="plan-cycle">Billed monthly · Earn ₦{{ $basicMonthly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed monthly · Potential commission ₦{{ $basicMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> Up to 3 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 5 GB storage</li>
@@ -593,7 +593,7 @@
                                             <div class="plan-tier">Pro Engine</div>
                                             <div class="plan-seat">{{ $seatLabel('professional-solo-monthly') }}</div>
                                             <div class="plan-amount">₦{{ $proSoloMonthly['price_label'] }} <small>/mo</small></div>
-                                            <div class="plan-cycle">Billed monthly · Earn ₦{{ $proSoloMonthly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed monthly · Potential commission ₦{{ $proSoloMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> 2 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 50 GB storage</li>
@@ -611,7 +611,7 @@
                                             <div class="plan-tier">Pro Engine</div>
                                             <div class="plan-seat">{{ $seatLabel('professional-monthly') }}</div>
                                             <div class="plan-amount">₦{{ $proMonthly['price_label'] }} <small>/mo</small></div>
-                                            <div class="plan-cycle">Billed monthly · Earn ₦{{ $proMonthly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed monthly · Potential commission ₦{{ $proMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> Up to 5 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 50 GB storage</li>
@@ -628,7 +628,7 @@
                                             <div class="plan-tier">Institutional</div>
                                             <div class="plan-seat">{{ $seatLabel('enterprise-solo-monthly') }}</div>
                                             <div class="plan-amount">₦{{ $enterpriseSoloMonthly['price_label'] }} <small>/mo</small></div>
-                                            <div class="plan-cycle">Billed monthly · Earn ₦{{ $enterpriseSoloMonthly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed monthly · Potential commission ₦{{ $enterpriseSoloMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> 3 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 500 GB storage</li>
@@ -646,7 +646,7 @@
                                             <div class="plan-tier">Institutional</div>
                                             <div class="plan-seat">{{ $seatLabel('enterprise-monthly') }}</div>
                                             <div class="plan-amount">₦{{ $enterpriseMonthly['price_label'] }} <small>/mo</small></div>
-                                            <div class="plan-cycle">Billed monthly · Earn ₦{{ $enterpriseMonthly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed monthly · Potential commission ₦{{ $enterpriseMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> Up to 8 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 500 GB storage</li>
@@ -664,7 +664,7 @@
                                             <div class="plan-tier">Hotel Management</div>
                                             <div class="plan-seat">{{ $seatLabel('hotel-monthly') }}</div>
                                             <div class="plan-amount">₦{{ $hotelMonthly['price_label'] }} <small>/mo</small></div>
-                                            <div class="plan-cycle">Billed monthly · Earn ₦{{ $hotelMonthly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed monthly · Potential commission ₦{{ $hotelMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> Front desk and reservations</li>
                                                 <li><i class="fas fa-check-circle"></i> Room rack and availability</li>
@@ -687,7 +687,7 @@
                                             <div class="plan-tier">Starter POS</div>
                                             <div class="plan-seat">{{ $seatLabel('starter-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $starterYearly['price_label'] }} <small>/yr</small></div>
-                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $starterYearly['price_label'] }}/year · Earn ₦{{ $starterYearly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $starterYearly['price_label'] }}/year · Potential commission ₦{{ $starterYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> 1 user only</li>
                                                 <li><i class="fas fa-check-circle"></i> POS sales</li>
@@ -704,7 +704,7 @@
                                             <div class="plan-tier">Basic Core</div>
                                             <div class="plan-seat">{{ $seatLabel('basic-solo-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $basicSoloYearly['price_label'] }} <small>/yr</small></div>
-                                            <div class="plan-cycle">Billed annually · Earn ₦{{ $basicSoloYearly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed annually · Potential commission ₦{{ $basicSoloYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> 1 user</li>
                                                 <li><i class="fas fa-check-circle"></i> 5 GB storage</li>
@@ -721,7 +721,7 @@
                                             <div class="plan-tier">Basic Core</div>
                                             <div class="plan-seat">{{ $seatLabel('basic-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $basicYearly['price_label'] }} <small>/yr</small></div>
-                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $basicYearly['price_label'] }}/year · Earn ₦{{ $basicYearly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $basicYearly['price_label'] }}/year · Potential commission ₦{{ $basicYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> 2 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 5 GB storage</li>
@@ -738,7 +738,7 @@
                                             <div class="plan-tier">Pro Engine</div>
                                             <div class="plan-seat">{{ $seatLabel('professional-solo-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $proSoloYearly['price_label'] }} <small>/yr</small></div>
-                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $proSoloYearly['price_label'] }}/year · Earn ₦{{ $proSoloYearly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $proSoloYearly['price_label'] }}/year · Potential commission ₦{{ $proSoloYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> 3 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 50 GB storage</li>
@@ -756,7 +756,7 @@
                                             <div class="plan-tier">Pro Engine</div>
                                             <div class="plan-seat">{{ $seatLabel('professional-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $proYearly['price_label'] }} <small>/yr</small></div>
-                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $proYearly['price_label'] }}/year · Earn ₦{{ $proYearly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $proYearly['price_label'] }}/year · Potential commission ₦{{ $proYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> Up to 5 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 50 GB storage</li>
@@ -773,7 +773,7 @@
                                             <div class="plan-tier">Institutional</div>
                                             <div class="plan-seat">{{ $seatLabel('enterprise-solo-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $enterpriseSoloYearly['price_label'] }} <small>/yr</small></div>
-                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $enterpriseSoloYearly['price_label'] }}/year · Earn ₦{{ $enterpriseSoloYearly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $enterpriseSoloYearly['price_label'] }}/year · Potential commission ₦{{ $enterpriseSoloYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> 4 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 500 GB storage</li>
@@ -791,7 +791,7 @@
                                             <div class="plan-tier">Institutional</div>
                                             <div class="plan-seat">{{ $seatLabel('enterprise-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $enterpriseYearly['price_label'] }} <small>/yr</small></div>
-                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $enterpriseYearly['price_label'] }}/year · Earn ₦{{ $enterpriseYearly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $enterpriseYearly['price_label'] }}/year · Potential commission ₦{{ $enterpriseYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> Up to 10 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 500 GB storage</li>
@@ -809,7 +809,7 @@
                                             <div class="plan-tier">Hotel Management</div>
                                             <div class="plan-seat">{{ $seatLabel('hotel-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $hotelYearly['price_label'] }} <small>/yr</small></div>
-                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $hotelYearly['price_label'] }}/year · Earn ₦{{ $hotelYearly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $hotelYearly['price_label'] }}/year · Potential commission ₦{{ $hotelYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> Front desk and reservations</li>
                                                 <li><i class="fas fa-check-circle"></i> Room rack and availability</li>
@@ -827,7 +827,7 @@
                                             <div class="plan-tier">Livestock Management</div>
                                             <div class="plan-seat">{{ $seatLabel('livestock-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $livestockYearly['price_label'] }} <small>/yr</small></div>
-                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $livestockYearly['price_label'] }}/year · Earn ₦{{ $livestockYearly['commission_label'] }}</div>
+                                            <div class="plan-cycle">Billed annually · Renews at ₦{{ $livestockYearly['price_label'] }}/year · Potential commission ₦{{ $livestockYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> Layer farm cost-return centre</li>
                                                 <li><i class="fas fa-check-circle"></i> Daily eggs and flock production</li>
@@ -847,17 +847,18 @@
                             <div class="commission-banner mt-4">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                     <div>
-                                        <div class="fw-bold text-dark small mb-1">{{ $isSuperAdminDeployment ? 'Annual license value per user' : 'Your commission (35%)' }}</div>
+                                        <div class="fw-bold text-dark small mb-1">{{ $isSuperAdminDeployment ? 'Annual license value per user' : 'Potential commission (35%)' }}</div>
                                         <div class="big-num">₦<span id="commPreview">0</span></div>
                                         @unless($isSuperAdminDeployment)
-                                            <div class="text-muted small mt-1">Checkout total: ₦<span id="checkoutPreview">0</span></div>
+                                            <div class="text-muted small mt-1">Renewal after trial: ₦<span id="checkoutPreview">0</span></div>
+                                            <div class="text-muted small mt-1">Commission is earned after the customer pays.</div>
                                         @endunless
                                     </div>
                                     <div class="text-muted small">
                                         @if($isSuperAdminDeployment)
                                             Plan price divided by<br>custom seat count
                                         @else
-                                            Extra seats are added<br>before checkout
+                                            Extra seats are included<br>in post-trial renewal
                                         @endif
                                     </div>
                                 </div>
@@ -873,7 +874,7 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                                 <small class="text-muted">
-                                    {{ $isSuperAdminDeployment ? 'Leave empty to create the subscription as unlimited. If entered, this becomes the seat limit.' : 'If the customer asks for more users, enter the requested number. Extra seats are charged before checkout.' }}
+                                    {{ $isSuperAdminDeployment ? 'Leave empty to create the subscription as unlimited. If entered, this becomes the seat limit.' : 'If the customer asks for more users, enter the requested number. Extra seats are included in renewal after the trial.' }}
                                 </small>
                             </div>
 
@@ -911,9 +912,8 @@
                                     Clicking <strong>Activate Workspace</strong> creates the account, grants free access,
                                     and deploys the workspace immediately.
                                 @else
-                                    Clicking <strong>Proceed to Payment</strong> creates the account, takes you
-                                    to the <strong>SaaS checkout page</strong>, then to the
-                                    <strong>SaaS success page</strong> after payment where the workspace is deployed.
+                                    Clicking <strong>Activate Trial</strong> creates the account, starts one month of access,
+                                    and deploys the workspace immediately. Payment is requested after the trial ends.
                                 @endif
                             </div>
 
@@ -984,9 +984,8 @@
                                     <strong>No payment required:</strong>
                                     Super admin will activate this workspace instantly on submission.
                                 @else
-                                    <strong>Payment step follows:</strong>
-                                    After this, you'll be taken to the <strong>SaaS checkout page</strong>.
-                                    On successful payment, you'll land on <strong>SaaS success</strong> and the workspace is deployed.
+                                    <strong>No payment today:</strong>
+                                    The customer can start using the workspace immediately. The selected plan becomes payable after one month.
                                 @endif
                             </div>
 
@@ -996,7 +995,7 @@
                                 </button>
 
                                 <button type="submit" class="btn-submit" id="btnSubmit">
-                                    <i class="fas {{ $isSuperAdminDeployment ? 'fa-rocket' : 'fa-credit-card' }} me-2"></i>{{ $isSuperAdminDeployment ? 'Activate Workspace' : 'Proceed to Payment' }}
+                                    <i class="fas fa-rocket me-2"></i>{{ $isSuperAdminDeployment ? 'Activate Workspace' : 'Activate Trial' }}
                                 </button>
                             </div>
                         </div>
@@ -1042,16 +1041,15 @@
 
                     <div class="dm-card mt-3">
                         <div class="p-4 text-center">
-                            <div class="text-muted small mb-2">Flow after clicking <strong>Proceed to Payment</strong></div>
+                            <div class="text-muted small mb-2">Flow after clicking <strong>Activate Trial</strong></div>
                             <div class="d-flex flex-column gap-2 text-start">
                                 @foreach([
                                     ['fas fa-user-plus','Create account + company','success'],
                                     ['fas fa-file-invoice','Generate subscription','success'],
-                                    ['fas fa-credit-card','Redirect to SaaS checkout','primary'],
-                                    ['fas fa-star','Redirect to SaaS success','primary'],
-                                    ['fas fa-check-circle','Payment activates workspace','warning'],
-                                    ['fas fa-globe','Subdomain/workspace deployed','warning'],
-                                    ['fas fa-percentage','Commission credited to you','success'],
+                                    ['fas fa-clock','Start one-month free trial','primary'],
+                                    ['fas fa-check-circle','Workspace active immediately','success'],
+                                    ['fas fa-globe','Subdomain/workspace deployed','success'],
+                                    ['fas fa-credit-card','Customer pays after trial','warning'],
                                 ] as [$icon, $label, $colour])
                                 <div class="d-flex align-items-center gap-2 small">
                                     <i class="{{ $icon }} text-{{ $colour }}"></i>
@@ -1364,7 +1362,7 @@ document.getElementById('regForm').addEventListener('submit', function(e) {
     const btn = document.getElementById('btnSubmit');
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating account…';
-    // Form submits → store() → redirect to /saas/checkout/{id}
+    // Form submits → store() → activate the customer's one-month trial
 });
 
 /* ── Restore state after validation error ── */

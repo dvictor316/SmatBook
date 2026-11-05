@@ -327,6 +327,7 @@ class Subscription extends Model
             'professional' => $isSolo ? 'pro-solo' : 'pro',
             'enterprise' => $isSolo ? 'enterprise-solo' : 'enterprise',
             'hotel' => 'hotel',
+            'livestock' => 'livestock',
             default => 'basic',
         };
     }

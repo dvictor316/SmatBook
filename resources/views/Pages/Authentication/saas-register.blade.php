@@ -708,7 +708,7 @@
                 </div>
 
                 <div class="amount-display text-center">
-                    <span class="info-label" style="display: block; margin-bottom: 5px;">{{ $isManager ? 'Setup Status' : 'Due at Checkout' }}</span>
+                    <span class="info-label" style="display: block; margin-bottom: 5px;">{{ $isManager ? 'Setup Status' : 'Plan Price After Trial' }}</span>
                     <div class="amount-value" id="selectedAmountValue">
                         @if($isManager)
                             FREE <span style="font-size: 0.8rem; color: #94a3b8;">(Partner)</span>
@@ -791,7 +791,7 @@
 
                 <div class="info-banner">
                     <i class="fas fa-sparkles"></i>
-                    <span>{{ $isManager ? 'Partner registrations create agent profiles tied to a country, state/county, and local council. State managers are created only by super admin.' : 'Your business registration is reviewed by a super admin. After approval, configure your workspace and complete checkout to activate it.' }}</span>
+                    <span>{{ $isManager ? 'Partner registrations create agent profiles tied to a country, state/county, and local council. State managers are created only by super admin.' : 'Your one-month free trial starts after registration. Configure your workspace and start using your selected plan immediately; payment is due when the trial ends.' }}</span>
                 </div>
 
                 <div class="field-grid mb-3">

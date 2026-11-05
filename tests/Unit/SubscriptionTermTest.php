@@ -48,6 +48,7 @@ class SubscriptionTermTest extends TestCase
             'Enterprise Solo Yearly' => 'enterprise-solo',
             'Enterprise Yearly' => 'enterprise',
             'Hotel Yearly' => 'hotel',
+            'Livestock' => 'livestock',
         ];
 
         foreach ($plans as $planName => $expectedKey) {

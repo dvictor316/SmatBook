@@ -3,11 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\DeploymentManager;
+use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
+use Laravel\Socialite\Facades\Socialite;
 use Tests\TestCase;
 
 class AssistedBusinessRegistrationTest extends TestCase
@@ -20,7 +22,7 @@ class AssistedBusinessRegistrationTest extends TestCase
         Mail::fake();
     }
 
-    public function test_agent_state_manager_and_super_admin_can_register_a_business_for_checkout(): void
+    public function test_agent_state_manager_and_super_admin_can_activate_a_one_month_trial(): void
     {
         $registrars = [
             'agent' => ['route' => 'agent.registration.store', 'manager_record' => false],
@@ -79,74 +81,60 @@ class AssistedBusinessRegistrationTest extends TestCase
             $subscription = \DB::table('subscriptions')->where('deployed_by', $registrar->id)->first();
             $customer = User::where('email', $email)->first();
             $company = \DB::table('companies')->where('domain_prefix', $slug)->first();
+            $dashboardRoute = match ($role) {
+                'agent' => 'agent.dashboard',
+                'state_manager' => 'deployment.dashboard',
+                default => 'super_admin.dashboard',
+            };
 
             $this->assertNotNull($subscription, "{$role} registration did not create a subscription.");
-            $response->assertRedirect(route('saas.checkout', $subscription->id));
+            $response->assertRedirect(route($dashboardRoute));
             $response->assertSessionHasNoErrors();
             $this->assertNotNull($customer);
             $this->assertNotNull($company);
             $this->assertTrue(Hash::check($password, $customer->password));
             $this->assertSame((int) $company->id, (int) $customer->company_id);
-            $this->assertSame('pending', strtolower((string) $subscription->status));
-            $this->assertSame('unpaid', strtolower((string) $subscription->payment_status));
-            $this->assertDatabaseHas('deployment_companies', [
-                'manager_id' => $registrar->id,
-                'company_id' => $company->id,
-                'deployment_status' => 'pending',
-            ]);
-
-            User::factory()->create([
-                'phone' => $customerPhone,
-            ]);
-
-            $retryResponse = $this->actingAs($registrar)->post(route($registration['route']), $registrationPayload);
-            $retryResponse->assertRedirect(route('saas.checkout', $subscription->id));
-            $retryResponse->assertSessionHasNoErrors();
-            $this->assertSame(1, \DB::table('users')->where('email', $email)->count());
-            $this->assertSame(1, \DB::table('companies')->where('domain_prefix', $slug)->count());
-            $this->assertSame(1, \DB::table('subscriptions')->where('deployed_by', $registrar->id)->count());
-
-            $failedPaymentResponse = $this->get(route('saas.payment.callback', [
-                'sub_id' => $subscription->id,
-                'gateway' => 'unknown',
-                'reference' => 'UNVERIFIED-'.$subscription->id,
-            ]));
-            $failedPaymentResponse->assertRedirect(route('saas.checkout', [
-                'id' => $subscription->id,
-                'payment' => 'retry',
-            ]));
-            $failedPaymentResponse->assertSessionHas('payment_retry_available', true);
-
-            $this->get(route('saas.checkout', [
-                'id' => $subscription->id,
-                'payment' => 'retry',
-            ]))
-                ->assertOk()
-                ->assertSee('Your registration and workspace details')
-                ->assertSee('Continue to secure payment');
-            $this->assertSame('unpaid', strtolower((string) \DB::table('subscriptions')->where('id', $subscription->id)->value('payment_status')));
-            $this->assertSame(1, \DB::table('users')->where('email', $email)->count());
-            $this->assertSame(1, \DB::table('companies')->where('domain_prefix', $slug)->count());
-            $this->assertSame(1, \DB::table('subscriptions')->where('deployed_by', $registrar->id)->count());
-
-            $this->get(route('saas.payment.callback', [
-                'sub_id' => $subscription->id,
-                'gateway' => 'flutterwave',
-                'reference' => 'LOCAL-FLW-'.$subscription->id.'-TEST',
-            ]));
-
+            $this->assertSame('active', strtolower((string) $customer->status));
+            $this->assertSame(1, (int) $customer->is_verified);
+            $this->assertSame('active', strtolower((string) $company->status));
+            $this->assertSame('trial', strtolower((string) $subscription->status));
+            $this->assertSame('free', strtolower((string) $subscription->payment_status));
+            $this->assertTrue(\Illuminate\Support\Carbon::parse($subscription->end_date)->isSameDay(now()->addMonth()));
+            $this->assertSame(
+                'active',
+                strtolower((string) \DB::table('deployment_companies')->where('company_id', $company->id)->value('deployment_status'))
+            );
             $this->assertDatabaseHas('domains', [
                 'domain_name' => $slug,
                 'status' => 'Active',
             ]);
-            $this->assertSame('active', strtolower((string) \DB::table('companies')->where('id', $company->id)->value('status')));
-            $this->assertSame('paid', strtolower((string) \DB::table('subscriptions')->where('id', $subscription->id)->value('payment_status')));
+            $this->assertDatabaseHas('deployment_companies', [
+                'manager_id' => $registrar->id,
+                'company_id' => $company->id,
+                'deployment_status' => 'active',
+            ]);
 
-            $paidRetryResponse = $this->actingAs($registrar)->post(route($registration['route']), $registrationPayload);
-            $paidRetryResponse->assertSessionHasErrors('email');
+            $retryResponse = $this->actingAs($registrar)->post(route($registration['route']), $registrationPayload);
+            $retryResponse->assertSessionHasErrors('email');
             $this->assertSame(1, \DB::table('users')->where('email', $email)->count());
             $this->assertSame(1, \DB::table('companies')->where('domain_prefix', $slug)->count());
             $this->assertSame(1, \DB::table('subscriptions')->where('deployed_by', $registrar->id)->count());
+
+            $trial = Subscription::findOrFail($subscription->id);
+            $trial->update(['end_date' => now()->subDay()]);
+
+            $this->actingAs($customer)
+                ->withSession([
+                    'current_tenant_id' => $company->id,
+                    'workspace_context' => 'business',
+                ])
+                ->get(route('user.dashboard'))
+                ->assertRedirect(route('subscription.expired'));
+
+            $this->get(route('subscription.expired'))
+                ->assertRedirect(route('subscription.upgrade.redirect', [
+                    'plan' => $trial->renewalPlanKey(),
+                ]));
         }
     }
 
@@ -173,7 +161,7 @@ class AssistedBusinessRegistrationTest extends TestCase
         $this->assertSame(1, $planCatalogQueries);
     }
 
-    public function test_approved_public_registration_configures_workspace_before_checkout_and_provisions_domain_after_payment(): void
+    public function test_public_registration_starts_trial_and_activates_workspace_before_payment(): void
     {
         $response = $this->from(route('saas-register'))->post(route('saas-register.post'), [
             'role' => 'admin',
@@ -186,21 +174,16 @@ class AssistedBusinessRegistrationTest extends TestCase
             'field_of_operation' => 'general',
         ]);
 
-        $response->assertRedirect(route('registration.pending.notice'));
+        $response->assertRedirect(route('saas.setup', \DB::table('subscriptions')->value('id')));
 
         $owner = User::where('email', 'public-owner@example.test')->firstOrFail();
         $subscription = \DB::table('subscriptions')->where('user_id', $owner->id)->first();
         $this->assertNotNull($subscription);
 
-        $this->assertSame('pending', strtolower((string) $owner->status));
-        $this->assertSame('pending', strtolower((string) $subscription->status));
-        $this->assertSame('unpaid', strtolower((string) $subscription->payment_status));
-
-        $owner->forceFill(['status' => 'active', 'is_verified' => 1])->save();
-
-        $this->actingAs($owner)
-            ->get(route('home'))
-            ->assertRedirect(route('saas.setup', $subscription->id));
+        $this->assertSame('active', strtolower((string) $owner->status));
+        $this->assertSame('trial', strtolower((string) $subscription->status));
+        $this->assertSame('free', strtolower((string) $subscription->payment_status));
+        $this->assertTrue(\Illuminate\Support\Carbon::parse($subscription->end_date)->isSameDay(now()->addMonth()));
 
         $setupResponse = $this->post(route('saas.store'), [
             'subscription_id' => $subscription->id,
@@ -210,32 +193,63 @@ class AssistedBusinessRegistrationTest extends TestCase
             'employees' => '1-10',
         ]);
 
-        $setupResponse->assertRedirect(route('saas.checkout', $subscription->id));
-        $this->assertDatabaseHas('companies', [
-            'user_id' => $owner->id,
-            'domain_prefix' => 'public-business',
-        ]);
-
-        $this->get(route('saas.payment.callback', [
-            'sub_id' => $subscription->id,
-            'gateway' => 'flutterwave',
-            'reference' => 'LOCAL-FLW-'.$subscription->id.'-TEST',
-        ]));
-
-        $this->assertDatabaseHas('domains', [
-            'domain_name' => 'public-business',
-            'status' => 'Active',
-        ]);
+        $setupResponse->assertRedirect(route('user.dashboard'));
         $this->assertDatabaseHas('companies', [
             'user_id' => $owner->id,
             'domain_prefix' => 'public-business',
             'status' => 'active',
         ]);
-        $this->assertDatabaseHas('subscriptions', [
-            'id' => $subscription->id,
-            'payment_status' => 'paid',
+        $this->assertDatabaseHas('domains', [
+            'domain_name' => 'public-business',
             'status' => 'Active',
         ]);
+
+        $trial = Subscription::findOrFail($subscription->id);
+        $trial->update(['end_date' => now()->subDay()]);
+
+        $this->get(route('user.dashboard'))
+            ->assertRedirect(route('subscription.expired'));
+        $this->get(route('subscription.expired'))
+            ->assertRedirect(route('subscription.upgrade.redirect', [
+                'plan' => $trial->renewalPlanKey(),
+            ]));
+    }
+
+    public function test_social_registration_starts_a_one_month_trial(): void
+    {
+        $socialUser = \Mockery::mock();
+        $socialUser->shouldReceive('getId')->once()->andReturn('google-trial-user');
+        $socialUser->shouldReceive('getEmail')->once()->andReturn('google-trial@example.test');
+        $socialUser->shouldReceive('getName')->once()->andReturn('Google Trial User');
+
+        $driver = \Mockery::mock();
+        $driver->shouldReceive('redirectUrl')->once()->andReturnSelf();
+        $driver->shouldReceive('scopes')->once()->andReturnSelf();
+        $driver->shouldReceive('with')->once()->andReturnSelf();
+        $driver->shouldReceive('stateless')->once()->andReturnSelf();
+        $driver->shouldReceive('user')->once()->andReturn($socialUser);
+        Socialite::shouldReceive('driver')->once()->with('google')->andReturn($driver);
+
+        $this->withSession([
+            'social_auth_context' => [
+                'provider' => 'google',
+                'intent' => 'register',
+                'plan' => 'pro',
+                'cycle' => 'yearly',
+                'plan_id' => null,
+                'amount' => 150000,
+            ],
+        ])->get(route('social.callback', ['provider' => 'google']))
+            ->assertRedirect(route('saas.setup', \DB::table('subscriptions')->value('id')));
+
+        $customer = User::where('email', 'google-trial@example.test')->firstOrFail();
+        $trial = Subscription::where('user_id', $customer->id)->firstOrFail();
+
+        $this->assertSame('active', strtolower((string) $customer->status));
+        $this->assertSame(1, (int) $customer->is_verified);
+        $this->assertSame('trial', strtolower((string) $trial->status));
+        $this->assertSame('free', strtolower((string) $trial->payment_status));
+        $this->assertTrue($trial->end_date->isSameDay(now()->addMonth()));
     }
 
     public function test_super_admin_paid_registration_is_separate_from_free_custom_deployment(): void

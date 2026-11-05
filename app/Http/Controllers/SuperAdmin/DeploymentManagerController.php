@@ -730,8 +730,8 @@ class DeploymentManagerController extends Controller
         $pageSubtitle = $isSuperAdminDeployment
             ? 'Create tenant -> Select license -> Set custom seats -> Activate instantly without payment'
             : (($isAgentRegistration || $isSuperAdminAssistedRegistration)
-                ? 'Create business account -> Select plan -> Set credentials -> SaaS checkout -> SaaS success'
-                : 'Create account -> Select plan -> Set credentials -> SaaS checkout -> SaaS success');
+                ? 'Create business account -> Select plan -> Set credentials -> Activate one-month free trial'
+                : 'Create account -> Select plan -> Set credentials -> Activate one-month free trial');
 
         return view('deployment.users.create', compact(
             'limit',
@@ -1090,6 +1090,7 @@ public function store(Request $request)
     $isSuperAdminDeployment = $request->routeIs('super_admin.custom_deployments.store')
         && $manager?->isSuperAdmin();
     $isFreeUnlimited = $isSuperAdminDeployment && $request->boolean('free_unlimited');
+    $trialPayload = $isFreeUnlimited ? [] : Subscription::trialPayload();
     $customUserLimit = $isFreeUnlimited && empty($validated['custom_user_limit'])
         ? self::UNLIMITED_USER_LIMIT
         : $this->resolveCustomUserLimit($validated);
@@ -1102,7 +1103,7 @@ public function store(Request $request)
     // ── Run DB work inside transaction ──────────────────────
     // session() is NOT called inside — that was causing the bug
     try {
-        $result = DB::transaction(function () use ($validated, $manager, $isFreeUnlimited, $customUserLimit, $licenseUnitAmount, $retryableRegistration) {
+        $result = DB::transaction(function () use ($validated, $manager, $isFreeUnlimited, $trialPayload, $customUserLimit, $licenseUnitAmount, $retryableRegistration) {
 
             // 1. Create customer user
             $customer = $retryableRegistration
@@ -1121,10 +1122,10 @@ public function store(Request $request)
                 'email'             => $validated['email'],
                 'password'          => Hash::make($validated['password']),
                 'role'              => 'admin',
-                'is_verified'       => $isFreeUnlimited ? 1 : 0,
-                'status'            => $isFreeUnlimited ? 'active' : 'pending',
+                'is_verified'       => 1,
+                'status'            => 'active',
                 'phone'             => $validated['customer_phone'] ?? null,
-                'email_verified_at' => $isFreeUnlimited ? now() : null,
+                'email_verified_at' => now(),
             ]));
             $customer->save();
 
@@ -1141,12 +1142,15 @@ public function store(Request $request)
                 'email'         => $validated['company_email'],
                 'phone'         => $validated['phone'] ?? null,
                 'industry'      => $validated['industry'] ?? null,
-                'status'        => $isFreeUnlimited ? 'active' : 'pending',
+                'status'        => 'active',
                 'plan'          => $validated['plan_name'],
                 'user_id'       => $customer->id,
                 'owner_id'      => $customer->id,
                 'deployed_by'   => $manager->id,
-            ], $this->companySubscriptionColumnsPayload($validated))));
+            ], $this->companySubscriptionColumnsPayload(
+                $validated,
+                $isFreeUnlimited ? null : $trialPayload['end_date']
+            ))));
             $company->save();
 
             // 3. Link customer → company
@@ -1154,7 +1158,7 @@ public function store(Request $request)
 
             // 4. Create subscription
             // deployed_by is stored in DB — used as fallback if session is lost
-            $subscriptionPayload = $this->filterPayloadForTable('subscriptions', [
+            $subscriptionPayloadData = [
                 'user_id'         => $customer->id,
                 'company_id'      => $company->id,
                 'domain_prefix'   => $validated['subdomain'],
@@ -1164,8 +1168,8 @@ public function store(Request $request)
                 'subscriber_name' => $validated['name'],
                 'amount'          => $validated['plan_price'],
                 'billing_cycle'   => $validated['billing_cycle'],
-                'status'          => $isFreeUnlimited ? 'Active' : 'Pending',
-                'payment_status'  => $isFreeUnlimited ? 'free' : 'unpaid',
+                'status'          => $isFreeUnlimited ? 'Active' : 'Trial',
+                'payment_status'  => 'free',
                 'user_limit'      => $customUserLimit,
                 'employee_size'   => $customUserLimit,
                 'paid_at'         => $isFreeUnlimited ? now() : null,
@@ -1176,15 +1180,17 @@ public function store(Request $request)
                 'payment_gateway' => null,
                 'payment_reference' => null,
                 'transaction_reference' => null,
-            ]);
+            ];
+            $subscriptionPayloadData = array_merge($subscriptionPayloadData, $trialPayload);
+            $subscriptionPayload = $this->filterPayloadForTable('subscriptions', $subscriptionPayloadData);
             $subscription = $retryableRegistration
                 ? Subscription::withoutGlobalScopes()->whereKey($retryableRegistration['subscription']->id)->lockForUpdate()->firstOrFail()
                 : new Subscription();
             $subscription->fill($subscriptionPayload);
             $subscription->save();
 
-            if ($isFreeUnlimited) {
-                $this->activateFreeDeploymentWorkspace($subscription->fresh(['user']));
+            if ($isFreeUnlimited || $subscription->isTrial()) {
+                $this->activateDeploymentWorkspace($subscription->fresh(['user']));
             }
 
             DB::afterCommit(function () use ($customer, $validated, $manager) {
@@ -1205,8 +1211,8 @@ public function store(Request $request)
                 [
                     'manager_id'         => $manager->id,
                     'company_id'         => $company->id,
-                    'deployment_status'  => $isFreeUnlimited ? 'active' : 'pending',
-                    'manager_commission' => $isFreeUnlimited ? 0 : round(((float) $validated['plan_price']) * (self::COMMISSION_RATE / 100), 2),
+                    'deployment_status'  => 'active',
+                    'manager_commission' => 0,
                     'setup_config'       => json_encode([
                         'plan_id' => $validated['plan_id'],
                         'plan' => $validated['plan_name'],
@@ -1279,41 +1285,14 @@ public function store(Request $request)
             ->with('success', 'Custom unlimited workspace created and activated without payment.');
     }
 
-    // ── FIX: Set session AFTER transaction completes successfully ──
-    // This guarantees the session data is written and readable
-    // by the checkout and payment controllers.
-    session([
-        'checkout_from_deployment'   => true,
-        'deployment_customer_id'     => $result['customer_id'],
-        'deployment_company_id'      => $result['company_id'],
-        'deployment_manager_id'      => $manager->id,
-        'deployment_return_manager_id' => $manager->id,
-        'deployment_manager_email'   => $manager->email,
-        'deployment_commission_rate' => 35,
-        'deployment_plan_name'       => $validated['plan_name'],
-        'deployment_subscription_id' => $result['subscription_id'],
-    ]);
-    session()->save();
+    $dashboardRoute = match (strtolower((string) $manager->role)) {
+        'agent' => 'agent.dashboard',
+        'state_manager', 'deployment_manager' => 'deployment.dashboard',
+        default => 'super_admin.dashboard',
+    };
 
-    Log::info('Deployment session set', [
-        'manager_id'      => $manager->id,
-        'subscription_id' => $result['subscription_id'],
-        'session_id'      => session()->getId(),
-    ]);
-
-    // Keep deployment manager authenticated through checkout.
-    // This prevents identity/sidebar drift if checkout fails midway.
-    Log::info('Deployment manager remains authenticated for checkout handoff', [
-        'manager_id'      => $manager->id,
-        'customer_id'     => $result['customer_id'],
-        'subscription_id' => $result['subscription_id'],
-        'session_id'      => session()->getId(),
-    ]);
-
-    // ── Redirect directly to checkout — clean URL, no extra params ──
-    // Ensured checkout redirect for deployment manager registration (GitHub Copilot marker)
-    return redirect()->route('saas.checkout', ['id' => $result['subscription_id']])
-        ->with('success', 'Customer account created. Continue checkout to activate workspace.');
+    return redirect()->route($dashboardRoute)
+        ->with('success', 'Customer workspace activated. The customer can start using the selected plan immediately; payment is due after the one-month free trial.');
 }
 
 private function resolveCustomUserLimit(array $validated): int
@@ -1364,7 +1343,7 @@ private function resolveDeploymentAmountForSeats(array $validated, int $userLimi
     return round($baseAmount + ($extraUsers * $additionalUserPrice), 2);
 }
 
-private function activateFreeDeploymentWorkspace(Subscription $subscription): void
+private function activateDeploymentWorkspace(Subscription $subscription): void
 {
     $subscription->loadMissing(['user']);
     $company = Company::withoutGlobalScope('tenant')->find($subscription->company_id);
@@ -1385,8 +1364,9 @@ private function activateFreeDeploymentWorkspace(Subscription $subscription): vo
     ]));
 
     if ($company) {
-        // companies.subscription_end is a TIMESTAMP on older installs, so keep it below 2038.
-        $companySubscriptionEnd = now()->addYears(10);
+        $companySubscriptionEnd = $subscription->isTrial()
+            ? $subscription->end_date?->copy()->endOfDay()
+            : now()->addYears(10);
 
         $company->update($this->filterPayloadForTable('companies', [
             'domain_prefix' => $prefix,
@@ -1552,7 +1532,7 @@ private function resolveCompanySlugColumn(): ?string
     return null;
 }
 
-private function companySubscriptionColumnsPayload(array $validated): array
+private function companySubscriptionColumnsPayload(array $validated, $trialEndDate = null): array
 {
     $payload = [];
 
@@ -1561,9 +1541,10 @@ private function companySubscriptionColumnsPayload(array $validated): array
     }
 
     if (app(SchemaColumnCache::class)->hasColumn('companies', 'subscription_end')) {
-        $payload['subscription_end'] = strtolower((string) $validated['billing_cycle']) === 'yearly'
-            ? now()->addYear()
-            : now()->addMonth();
+        $payload['subscription_end'] = $trialEndDate
+            ?? (strtolower((string) $validated['billing_cycle']) === 'yearly'
+                ? now()->addYear()
+                : now()->addMonth());
     }
 
     return $payload;
