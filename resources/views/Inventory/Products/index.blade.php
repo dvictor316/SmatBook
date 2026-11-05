@@ -239,9 +239,10 @@
     }
 
     .inventory-table-shell {
-        max-height: none;
-        min-height: 0;
+        max-height: calc(100vh - 22rem);
+        min-height: 15rem;
         overflow: auto;
+        overscroll-behavior: contain;
     }
 
     .inventory-table-shell thead th {
@@ -326,10 +327,19 @@
         text-align: right;
     }
 
+    #products-table th:nth-child(3),
+    #products-table td:nth-child(3) {
+        text-align: left;
+    }
+
     #products-table th:nth-child(4),
     #products-table td:nth-child(4),
     #products-table th:nth-child(5),
-    #products-table td:nth-child(5) {
+    #products-table td:nth-child(5),
+    #products-table th:nth-child(6),
+    #products-table td:nth-child(6),
+    #products-table th:nth-child(7),
+    #products-table td:nth-child(7) {
         text-align: center;
     }
 
@@ -370,7 +380,6 @@
 
     @media (max-width: 991.98px) {
         #products-table {
-            table-layout: auto;
             min-width: 980px;
         }
 
@@ -379,11 +388,6 @@
             padding-left: 0.65rem;
             padding-right: 0.65rem;
         }
-    }
-
-    #products-table_wrapper .dataTables_scrollBody {
-        border: 0;
-        max-height: calc(100vh - 95px) !important;
     }
 
     #products-table_wrapper .dataTables_paginate,
@@ -1289,8 +1293,7 @@
             stateSave: false,
             stateLoadCallback: function() { return null; },
             deferRender: true,
-            scrollY: 'calc(100vh - 255px)',
-            scrollCollapse: false,
+            autoWidth: false,
             paging: true,
             lengthMenu: [[25, 50, 100, 250, 500], [25, 50, 100, 250, 500]],
             language: {
