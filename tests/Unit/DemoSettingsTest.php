@@ -36,8 +36,8 @@ class DemoSettingsTest extends TestCase
 
         $this->assertTrue($settings->isEnabled());
         $this->assertTrue($settings->autoResetOnSessionStart());
-        $this->assertSame(168, $settings->lifetimeHours());
         $this->assertContains('subscription.', $settings->blockedRoutePrefixes());
+        $this->assertArrayNotHasKey('lifetime_hours', $settings->asArray());
     }
 
     public function test_it_persists_updated_demo_configuration(): void
@@ -47,7 +47,6 @@ class DemoSettingsTest extends TestCase
         $settings->update([
             'enabled' => false,
             'auto_reset_on_session_start' => false,
-            'lifetime_hours' => 24,
             'blocked_route_prefixes' => 'super_admin.,reports.custom.',
             'blocked_routes' => 'account-settings.update,demo.custom',
         ]);
@@ -56,7 +55,6 @@ class DemoSettingsTest extends TestCase
 
         $this->assertFalse($fresh->isEnabled());
         $this->assertFalse($fresh->autoResetOnSessionStart());
-        $this->assertSame(24, $fresh->lifetimeHours());
         $this->assertSame(['super_admin.', 'reports.custom.'], $fresh->blockedRoutePrefixes());
         $this->assertSame(['account-settings.update', 'demo.custom'], $fresh->blockedRoutes());
     }

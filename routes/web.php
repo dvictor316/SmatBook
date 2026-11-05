@@ -686,7 +686,6 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
         Route::post('/{id}/approve', [AdminDemoRequestController::class, 'approve'])->name('approve');
         Route::post('/{id}/reject', [AdminDemoRequestController::class, 'reject'])->name('reject');
         Route::post('/{id}/reset', [AdminDemoRequestController::class, 'reset'])->name('reset');
-        Route::post('/{id}/extend', [AdminDemoRequestController::class, 'extend'])->name('extend');
         Route::post('/{id}/expire', [AdminDemoRequestController::class, 'expire'])->name('expire');
     });
 });

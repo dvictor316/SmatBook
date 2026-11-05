@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * Blocks login and access for demo users whose demo window has expired.
+ * Blocks login and access for demos explicitly deactivated by an administrator.
  * Also blocks demo users from reaching superadmin routes.
  */
 class BlockExpiredDemoUser
@@ -50,9 +50,9 @@ class BlockExpiredDemoUser
                 ->with('error', 'Demo access is temporarily disabled by the administrator.');
         }
 
-        // If demo has expired, log out and redirect
+        // Legacy expiry dates no longer control demo access; only explicit deactivation does.
         if ($company->demoIsExpired()) {
-            ActivityLog::record('Demo', 'blocked_expired', "Expired demo user {$user->email} attempted to access the system", [
+            ActivityLog::record('Demo', 'blocked_expired', "Deactivated demo user {$user->email} attempted to access the system", [
                 'user_id'    => $user->id,
                 'company_id' => $companyId,
             ]);
@@ -62,7 +62,7 @@ class BlockExpiredDemoUser
             $request->session()->regenerateToken();
 
             return redirect()->route('login')
-                ->with('error', 'Your SmartProbook demo access has expired. Please contact us to upgrade to a full account.');
+                ->with('error', 'Your SmartProbook demo access has been disabled. Please contact an administrator for assistance.');
         }
 
         if ($this->demoSettings->autoResetOnSessionStart() && ! $request->session()->has('demo_workspace_bootstrapped')) {

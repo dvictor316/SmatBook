@@ -10,7 +10,7 @@
         <h6 class="section-label">Demo Ready</h6>
         <h1 class="section-title">Your SmartProbook Demo Is <span>Ready Now.</span></h1>
         <p class="section-subtitle">
-            Your temporary demo workspace has been created instantly.
+            Your demo workspace has been created instantly and has no scheduled expiry.
             @if(session('demo_email_sent', true))
                 The login details have also been sent to your email.
             @else
@@ -31,9 +31,9 @@
             <p style="color:#555;font-size:1.05rem;margin-bottom:1.5rem;">
                 Your request has been automatically approved.
                 @if(session('demo_email_sent', true))
-                    Check your inbox for the same login details, or use the temporary credentials below to enter your demo immediately.
+                    Check your inbox for the same login details, or use the credentials below to enter your demo immediately.
                 @else
-                    Use the temporary credentials below to enter your demo immediately.
+                    Use the credentials below to enter your demo immediately.
                 @endif
             </p>
 
@@ -42,9 +42,6 @@
                     <strong>Your instant demo access</strong>
                     <div class="mt-2">Login email: <strong>{{ session('demo_login_email') }}</strong></div>
                     <div>Password: <strong>{{ session('demo_plain_password') }}</strong></div>
-                    @if(session('demo_expires_at'))
-                        <div>Access expires: <strong>{{ session('demo_expires_at') }}</strong></div>
-                    @endif
                 </div>
             @endif
 
@@ -53,7 +50,7 @@
                 <ul class="mt-2 mb-0">
                     <li>Your demo account has already been created.</li>
                     <li>You can log in now using the button below.</li>
-                    <li>Your demo environment will be active for <strong>7 days</strong>.</li>
+                    <li>Your demo environment has no scheduled expiry.</li>
                     <li>No payment or credit card is required.</li>
                 </ul>
             </div>

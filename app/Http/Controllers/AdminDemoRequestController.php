@@ -88,7 +88,7 @@ class AdminDemoRequestController extends Controller
                 'admin_note'      => $request->input('admin_note'),
                 'approved_by'     => Auth::id(),
                 'approved_at'     => now(),
-                'expires_at'      => $company->demo_expires_at,
+                'expires_at'      => null,
                 'demo_company_id' => $company->id,
                 'demo_user_id'    => $user->id,
             ]);
@@ -149,7 +149,6 @@ class AdminDemoRequestController extends Controller
         $validated = $request->validate([
             'enabled' => 'nullable|boolean',
             'auto_reset_on_session_start' => 'nullable|boolean',
-            'lifetime_hours' => 'required|integer|min:1|max:720',
             'blocked_route_prefixes' => 'nullable|string|max:2000',
             'blocked_routes' => 'nullable|string|max:2000',
         ]);
@@ -157,7 +156,6 @@ class AdminDemoRequestController extends Controller
         $this->demoSettings->update([
             'enabled' => $request->boolean('enabled'),
             'auto_reset_on_session_start' => $request->boolean('auto_reset_on_session_start'),
-            'lifetime_hours' => (int) $validated['lifetime_hours'],
             'blocked_route_prefixes' => $validated['blocked_route_prefixes'] ?? '',
             'blocked_routes' => $validated['blocked_routes'] ?? '',
         ]);
@@ -171,7 +169,7 @@ class AdminDemoRequestController extends Controller
         $demoRequest = DemoRequest::with('demoCompany')->findOrFail($id);
         $company = $demoRequest->demoCompany;
 
-        if (! $company || ! $company->isDemo()) {
+        if ($demoRequest->status !== 'approved' || ! $company || ! $company->isDemo()) {
             return back()->withErrors(['error' => 'No provisioned demo workspace was found for this request.']);
         }
 
@@ -181,28 +179,13 @@ class AdminDemoRequestController extends Controller
             ->with('success', 'Demo workspace reset and reseeded successfully.');
     }
 
-    public function extend(Request $request, int $id)
-    {
-        $demoRequest = DemoRequest::findOrFail($id);
-        $validated = $request->validate([
-            'hours' => 'required|integer|min:1|max:720',
-        ]);
-
-        $this->provisioner->extendDemo($demoRequest, (int) $validated['hours']);
-
-        ActivityLog::record('Demo', 'extended', "Demo request extended for {$demoRequest->email}", [
-            'user_id' => Auth::id(),
-            'company_id' => $demoRequest->demo_company_id,
-            'properties' => ['hours' => (int) $validated['hours']],
-        ]);
-
-        return redirect()->route('super_admin.demo_requests.show', $demoRequest->id)
-            ->with('success', 'Demo access extended successfully.');
-    }
-
     public function expire(int $id)
     {
         $demoRequest = DemoRequest::findOrFail($id);
+
+        if ($demoRequest->status !== 'approved') {
+            return back()->withErrors(['error' => 'Only active demo accounts can be manually deactivated.']);
+        }
 
         $this->provisioner->expireDemo($demoRequest);
 

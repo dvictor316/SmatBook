@@ -10,7 +10,6 @@ use App\Models\Subscription;
 use App\Models\User;
 use App\Models\ActivityLog;
 use App\Support\ActiveBranchResolver;
-use App\Support\DemoSettings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
@@ -20,7 +19,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class DemoProvisioningService
 {
     public function __construct(
-        private readonly DemoSettings $demoSettings,
         private readonly ActiveBranchResolver $activeBranchResolver
     ) {
     }
@@ -37,7 +35,6 @@ class DemoProvisioningService
             $plainPassword = Str::random(12);
             $slug = $this->generateUniqueDemoSlug($demoRequest->company_name);
             $loginEmail = $this->resolveDemoLoginEmail($demoRequest);
-            $demoExpiresAt = now()->addHours($this->demoSettings->lifetimeHours());
 
             // 1. Create the demo company
             $company = Company::create($this->onlyExistingColumns('companies', [
@@ -50,7 +47,7 @@ class DemoProvisioningService
                 'currency_symbol' => '₦',
                 'status'          => 'demo',
                 'is_demo'         => true,
-                'demo_expires_at' => $demoExpiresAt,
+                'demo_expires_at' => null,
                 'domain_prefix'   => $slug,
                 'domain'          => $slug,
                 'subdomain'       => $slug,
@@ -75,7 +72,7 @@ class DemoProvisioningService
             $company->update($this->onlyExistingColumns('companies', ['user_id' => $user->id, 'owner_id' => $user->id]));
 
             // 3. Make the workspace fully usable inside the normal tenant app.
-            $this->ensureDemoSubscription($company, $user, $slug, $demoExpiresAt);
+            $this->ensureDemoSubscription($company, $user, $slug);
             $this->ensureDemoBranch($company);
 
             // 4. Seed demo data (products, customers, transactions)
@@ -99,7 +96,7 @@ class DemoProvisioningService
 
     public function resetDemoWorkspace(Company $company, ?User $actor = null): void
     {
-        if (! $company->isDemo()) {
+        if (! $company->isDemo() || strtolower((string) $company->status) === 'expired') {
             return;
         }
 
@@ -115,13 +112,10 @@ class DemoProvisioningService
                 $this->seedDemoData($company->fresh(), $user);
             }
 
-            $company->forceFill([
-                'demo_expires_at' => now()->addHours($this->demoSettings->lifetimeHours()),
-                'status' => 'demo',
-            ])->save();
+            $company->forceFill(['demo_expires_at' => null])->save();
 
             if ($user) {
-                $this->ensureDemoSubscription($company->fresh(), $user, (string) ($company->domain_prefix ?? $company->subdomain ?? 'demo'), $company->demo_expires_at);
+                $this->ensureDemoSubscription($company->fresh(), $user, (string) ($company->domain_prefix ?? $company->subdomain ?? 'demo'));
             }
 
             ActivityLog::record('Demo', 'reset', "Demo workspace reset for company #{$companyId}", [
@@ -136,36 +130,11 @@ class DemoProvisioningService
         if ($demoRequest->demo_company_id && $company = Company::find($demoRequest->demo_company_id)) {
             $company->update($this->onlyExistingColumns('companies', [
                 'status' => 'expired',
-                'demo_expires_at' => now()->subMinute(),
+                'demo_expires_at' => null,
             ]));
         }
 
         $this->deactivateExpiredDemo($demoRequest);
-    }
-
-    public function extendDemo(DemoRequest $demoRequest, int $hours): void
-    {
-        $hours = max(1, min(168, $hours));
-        $expiresAt = now()->addHours($hours);
-
-        if ($demoRequest->demo_company_id) {
-            Company::where('id', $demoRequest->demo_company_id)->update($this->onlyExistingColumns('companies', [
-                'status' => 'demo',
-                'demo_expires_at' => $expiresAt,
-            ]));
-        }
-
-        if ($demoRequest->demo_user_id) {
-            User::where('id', $demoRequest->demo_user_id)->update($this->onlyExistingColumns('users', [
-                'status' => 'active',
-                'allow_login' => true,
-            ]));
-        }
-
-        $demoRequest->update([
-            'status' => 'approved',
-            'expires_at' => $expiresAt,
-        ]);
     }
 
     private function generateUniqueDemoSlug(string $companyName): string
@@ -584,7 +553,7 @@ class DemoProvisioningService
         return 'Demo Customer';
     }
 
-    private function ensureDemoSubscription(Company $company, User $user, string $slug, $expiresAt): void
+    private function ensureDemoSubscription(Company $company, User $user, string $slug): void
     {
         if (! Schema::hasTable('subscriptions')) {
             return;
@@ -616,7 +585,7 @@ class DemoProvisioningService
                 'billing_cycle' => 'Demo',
                 'user_limit' => 50,
                 'start_date' => now(),
-                'end_date' => $expiresAt,
+                'end_date' => null,
                 'status' => 'Active',
                 'payment_status' => 'free',
                 'payment_gateway' => 'demo',

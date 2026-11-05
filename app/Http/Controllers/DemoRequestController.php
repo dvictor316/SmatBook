@@ -61,30 +61,20 @@ class DemoRequestController extends Controller
             'purpose'         => 'required|string|max:1000',
         ]);
 
-        // A fresh public request should supersede any old pending/active demo
-        // for the same email, so the requester always receives current access.
+        // Never disable an existing account just because the same email submits again.
         $existing = DemoRequest::where('email', $validated['email'])
             ->whereIn('status', ['pending', 'approved'])
             ->first();
 
-        if ($existing) {
-            try {
-                $this->provisioner->expireDemo($existing);
-            } catch (\Throwable $e) {
-                logger()->warning('Previous demo request could not be expired before renewal: ' . $e->getMessage(), [
-                    'demo_request_id' => $existing->id,
-                    'email' => $validated['email'],
-                ]);
-            }
-
-            $existing->forceFill([
-                'status' => 'expired',
-                'admin_note' => trim((string) $existing->admin_note . "\nVoided by a newer public demo request on " . now()->toDateTimeString()),
-                'expires_at' => now(),
-            ])->save();
+        if ($existing?->status === 'approved' || $existing?->demo_company_id) {
+            return back()->withErrors([
+                'email' => 'A demo request or account already exists for this email. Existing demo access has not been changed; please use your existing login details or contact support.',
+            ])->withInput();
         }
 
-        $demoRequest = DemoRequest::create($validated);
+        $demoRequest = $existing ?? new DemoRequest();
+        $demoRequest->fill($validated);
+        $demoRequest->save();
 
         try {
             $result = $this->provisioner->provision($demoRequest);
@@ -101,7 +91,7 @@ class DemoRequestController extends Controller
                 'admin_note'      => 'Automatically approved and provisioned after public demo request.',
                 'approved_by'     => null,
                 'approved_at'     => now(),
-                'expires_at'      => $company->demo_expires_at,
+                'expires_at'      => null,
                 'demo_company_id' => $company->id,
                 'demo_user_id'    => $user->id,
             ]);
@@ -147,8 +137,7 @@ class DemoRequestController extends Controller
             ->with('demo_login_url', $loginUrl)
             ->with('demo_login_email', $loginEmail)
             ->with('demo_plain_password', $plainPassword)
-            ->with('demo_email_sent', $credentialEmailSent)
-            ->with('demo_expires_at', optional($company->demo_expires_at)->format('D, d M Y H:i'));
+            ->with('demo_email_sent', $credentialEmailSent);
     }
 
     /**

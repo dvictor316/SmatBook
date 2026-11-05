@@ -77,7 +77,7 @@ class DemoRequest extends Model
 
     public function isExpired(): bool
     {
-        return $this->expires_at && $this->expires_at->isPast();
+        return strtolower((string) $this->status) === 'expired';
     }
 
     public function isPending(): bool

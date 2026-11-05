@@ -148,7 +148,7 @@ class Company extends Model
 
     public function demoIsExpired(): bool
     {
-        return $this->isDemo() && $this->demo_expires_at?->isPast() === true;
+        return $this->isDemo() && strtolower((string) $this->status) === 'expired';
     }
 
     public static function businessTypeColumn(): ?string

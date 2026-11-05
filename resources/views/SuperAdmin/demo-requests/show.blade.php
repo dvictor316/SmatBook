@@ -216,7 +216,7 @@
                                 <tr><th>Number of Users</th><td>{{ $demoRequest->number_of_users ?? '—' }}</td></tr>
                                 <tr><th>Purpose</th><td style="white-space:pre-wrap">{{ $demoRequest->purpose }}</td></tr>
                                 <tr><th>Submitted</th><td>{{ $demoRequest->created_at->format('d M Y H:i') }}</td></tr>
-                                <tr><th>Expires</th><td>{{ $demoRequest->expires_at ? $demoRequest->expires_at->format('d M Y H:i') : '—' }}</td></tr>
+                                <tr><th>Access</th><td>{{ $demoRequest->status === 'approved' ? 'No scheduled expiry' : ($demoRequest->status === 'expired' ? 'Deactivated' : '—') }}</td></tr>
                                 <tr><th>Admin Note</th><td>{{ $demoRequest->admin_note ?? '—' }}</td></tr>
                                 @if($demoRequest->approved_at)
                                     <tr><th>Approved At</th><td>{{ \Carbon\Carbon::parse($demoRequest->approved_at)->format('d M Y H:i') }}</td></tr>
@@ -318,7 +318,7 @@
                         </div>
                     </div>
 
-                    @if($demoRequest->demo_company_id)
+                    @if($demoRequest->status === 'approved' && $demoRequest->demo_company_id)
                         <div class="card border-primary">
                             <div class="card-header">
                                 <h5 class="card-title mb-0">Workspace Controls</h5>
@@ -331,26 +331,12 @@
                                     </button>
                                 </form>
 
-                                <form method="POST" action="{{ route('super_admin.demo_requests.extend', $demoRequest->id) }}" class="mb-3">
+                                <form method="POST" action="{{ route('super_admin.demo_requests.expire', $demoRequest->id) }}" onsubmit="return confirm('Disable this demo workspace immediately?');">
                                     @csrf
-                                    <div class="form-group">
-                                        <label>Extend Access (hours)</label>
-                                        <input type="number" name="hours" min="1" max="720" value="{{ $demoConfig['lifetime_hours'] ?? 168 }}" class="form-control">
-                                        <small class="text-muted">168 hours = 7 days.</small>
-                                    </div>
-                                    <button type="submit" class="btn btn-success btn-block">
-                                        <i class="fas fa-clock mr-1"></i> Extend Demo Access
+                                    <button type="submit" class="btn btn-outline-danger btn-block">
+                                        <i class="fas fa-ban mr-1"></i> Disable Demo Access
                                     </button>
                                 </form>
-
-                                @if($demoRequest->status === 'approved')
-                                    <form method="POST" action="{{ route('super_admin.demo_requests.expire', $demoRequest->id) }}" onsubmit="return confirm('Expire this demo workspace immediately?');">
-                                        @csrf
-                                        <button type="submit" class="btn btn-outline-danger btn-block">
-                                            <i class="fas fa-ban mr-1"></i> Expire Demo Now
-                                        </button>
-                                    </form>
-                                @endif
                             </div>
                         </div>
                     @endif

@@ -124,13 +124,6 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Lifetime (hours)</label>
-                                <input type="number" min="1" max="720" name="lifetime_hours" class="form-control" value="{{ $demoConfig['lifetime_hours'] ?? 168 }}">
-                                <small class="text-muted">168 hours = 7 days.</small>
-                            </div>
-                        </div>
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label>Blocked Route Prefixes</label>
@@ -188,7 +181,7 @@
                                 <th>Country</th>
                                 <th>Status</th>
                                 <th>Submitted</th>
-                                <th>Expires</th>
+                                <th>Access</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -206,8 +199,10 @@
                                     </td>
                                     <td>{{ $req->created_at->format('d M Y') }}</td>
                                     <td>
-                                        @if($req->expires_at)
-                                            {{ $req->expires_at->format('d M Y H:i') }}
+                                        @if($req->status === 'approved')
+                                            No scheduled expiry
+                                        @elseif($req->status === 'expired')
+                                            Deactivated
                                         @else
                                             <span class="text-muted">—</span>
                                         @endif

@@ -396,9 +396,6 @@
                         @endif
                         <div class="demo-top-strip__line demo-top-strip__line--alert">
                             <strong>Demo Mode:</strong> Sample data only. Live billing, payouts, subscriptions, backups, and admin-only actions are disabled.
-                            @if($demoCompany->demo_expires_at)
-                                <strong class="ms-1">Expires {{ $demoCompany->demo_expires_at->diffForHumans() }}.</strong>
-                            @endif
                         </div>
                         @if (($isDemoWorkspace ?? false) && empty($demoPreviewCustomer))
                             <div class="demo-top-strip__line demo-top-strip__line--muted">
