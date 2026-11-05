@@ -375,6 +375,25 @@
         box-shadow: 0 28px 70px rgba(15, 23, 42, 0.24);
     }
 
+    #transferStockModal .modal-dialog {
+        max-height: calc(100vh - 2rem);
+    }
+
+    #transferStockModal .modal-content {
+        max-height: calc(100vh - 2rem);
+    }
+
+    #transferStockModal .modal-body {
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    #transferStockModal .product-lookup-results {
+        max-height: 15rem;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
     .import-guide-hero {
         background: linear-gradient(135deg, #0f3a8a 0%, #2563eb 68%, #d7a928 100%);
         color: #fff;
@@ -754,7 +773,7 @@
 
 <?php if ($showStockTransferModal) { ?>
 <div class="modal fade" id="transferStockModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <form method="POST" action="<?php echo e(route('inventory.transfer')); ?>">
                 <?php echo csrf_field(); ?>
@@ -788,18 +807,24 @@
                             <select name="from_branch_id" class="form-select" required>
                                 <option value="">Select source</option>
                                 <?php foreach ($branchOptionsForView as $branch) { ?>
-                                    <option value="<?php echo e($branch['id']); ?>"><?php echo e($branch['name']); ?></option>
+                                    <option value="<?php echo e($branch['id']); ?>" <?php if ((string) old('from_branch_id', $activeBranch['id'] ?? '') === (string) $branch['id']) { ?>selected<?php } ?>><?php echo e($branch['name']); ?></option>
                                 <?php } ?>
                             </select>
+                            <?php if ($transferErrors && $transferErrors->has('from_branch_id')) { ?>
+                                <div class="invalid-feedback d-block"><?php echo e($transferErrors->first('from_branch_id')); ?></div>
+                            <?php } ?>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">To Branch</label>
                             <select name="to_branch_id" class="form-select" required>
                                 <option value="">Select destination</option>
                                 <?php foreach ($branchOptionsForView as $branch) { ?>
-                                    <option value="<?php echo e($branch['id']); ?>"><?php echo e($branch['name']); ?></option>
+                                    <option value="<?php echo e($branch['id']); ?>" <?php if ((string) old('to_branch_id', '') === (string) $branch['id']) { ?>selected<?php } ?>><?php echo e($branch['name']); ?></option>
                                 <?php } ?>
                             </select>
+                            <?php if ($transferErrors && $transferErrors->has('to_branch_id')) { ?>
+                                <div class="invalid-feedback d-block"><?php echo e($transferErrors->first('to_branch_id')); ?></div>
+                            <?php } ?>
                         </div>
                     </div>
                     <div class="mb-0">
@@ -1297,12 +1322,22 @@
             var productIdInput = productLookup.querySelector('.product-lookup-id');
             var quantityInput = transferForm.querySelector('[name="quantity"]');
             var transferSubmit = document.getElementById('transfer-stock-submit');
+            var fromBranch = transferForm.querySelector('[name="from_branch_id"]');
+            var toBranch = transferForm.querySelector('[name="to_branch_id"]');
             var syncTransferMode = function() {
                 productLookup.hidden = transferAllProducts.checked;
                 productIdInput.required = !transferAllProducts.checked;
                 quantityInput.closest('.mb-0').hidden = transferAllProducts.checked;
                 quantityInput.required = !transferAllProducts.checked;
                 transferSubmit.textContent = transferAllProducts.checked ? 'Add All Products' : 'Transfer / Add Product';
+            };
+            var syncDestinationBranches = function() {
+                if (fromBranch.value && fromBranch.value === toBranch.value) {
+                    toBranch.value = '';
+                }
+                Array.from(toBranch.options).forEach(function(option) {
+                    option.disabled = option.value !== '' && option.value === fromBranch.value;
+                });
             };
             transferForm.addEventListener('submit', function(event) {
                 if (transferAllProducts.checked) return;
@@ -1320,6 +1355,8 @@
                 }
             });
             transferAllProducts.addEventListener('change', syncTransferMode);
+            fromBranch.addEventListener('change', syncDestinationBranches);
+            syncDestinationBranches();
             syncTransferMode();
         }
 

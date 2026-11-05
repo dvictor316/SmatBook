@@ -139,6 +139,12 @@ class PurchaseStockPostingTest extends TestCase
         $this->get(route('inventory.transfer-products.search', ['q' => 'Ri']))
             ->assertOk()
             ->assertJsonPath('data.0.id', $product->id);
+        $this->get(route('inventory.transfer-products.search', ['q' => 'ice']))
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $product->id);
+        $this->get(route('inventory.transfer-products.search', ['q' => 'CHASE-STOCK']))
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $product->id);
 
         $this->withSession(['active_branch_id' => 'branch-b', 'active_branch_name' => 'Branch B'])
             ->get(route('product-list'))
@@ -276,6 +282,32 @@ class PurchaseStockPostingTest extends TestCase
             ->assertSee('Please select a product from the search results.')
             ->assertSee('Enter a valid numeric quantity (0 or more).')
             ->assertSee('bootstrap.Modal.getOrCreateInstance(transferModal).show()', false);
+    }
+
+    public function test_transfer_modal_scrolls_and_same_branch_validation_is_actionable(): void
+    {
+        [$product] = $this->workspace();
+        $this->configureTransferBranches($product);
+
+        $this->from(route('product-list'))
+            ->post(route('inventory.transfer'), [
+                'product_id' => $product->id,
+                'from_branch_id' => 'hq',
+                'to_branch_id' => 'hq',
+                'quantity' => 1,
+            ])
+            ->assertRedirect(route('product-list'))
+            ->assertSessionHasErrors([
+                'to_branch_id' => 'Choose a destination branch different from the source branch.',
+            ])
+            ->assertSessionHas('_old_input.from_branch_id', 'hq')
+            ->assertSessionHas('_old_input.to_branch_id', 'hq');
+
+        $this->get(route('product-list'))
+            ->assertOk()
+            ->assertSee('modal-dialog-centered modal-dialog-scrollable', false)
+            ->assertSee('Choose a destination branch different from the source branch.')
+            ->assertSee('syncDestinationBranches();', false);
     }
 
     private function configureTransferBranches(Product $product): void

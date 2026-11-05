@@ -2456,6 +2456,7 @@ public function inventory(Request $request)
             'quantity.required_unless' => 'Enter a quantity. Use 0 to add the product without moving stock.',
             'quantity.numeric' => 'Enter a valid numeric quantity (0 or more).',
             'quantity.min' => 'Quantity cannot be negative.',
+            'to_branch_id.different' => 'Choose a destination branch different from the source branch.',
         ]);
         if ($validator->fails()) {
             return redirect()->back()
@@ -2634,7 +2635,8 @@ public function inventory(Request $request)
 
     public function searchTransferProducts(Request $request)
     {
-        $search = trim((string) $request->query('q', ''));
+        $validated = $request->validate(['q' => 'nullable|string|max:100']);
+        $search = trim((string) ($validated['q'] ?? ''));
         if (mb_strlen($search) < 2) {
             return response()->json(['data' => []]);
         }
@@ -2644,8 +2646,8 @@ public function inventory(Request $request)
             ->select(['id', 'name', 'sku']);
         $this->applyTenantScope($query, 'products');
         $query->where(function ($products) use ($search) {
-            $products->where('name', 'like', $search . '%')
-                ->orWhere('sku', 'like', $search . '%');
+            $products->where('name', 'like', '%' . $search . '%')
+                ->orWhere('sku', 'like', '%' . $search . '%');
         });
 
         return response()->json([
