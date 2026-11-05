@@ -15,6 +15,11 @@
     $showStockTransferModal = $stockTransferEnabled && count($branchOptions) > 1;
     $productRowsForView = collect($productRows)->values();
     $branchOptionsForView = array_values($branchOptions);
+    $transferSourceBranchId = (string) old('from_branch_id', $activeBranch['id'] ?? '');
+    $transferDestinationBranchId = (string) old('to_branch_id', '');
+    if ($transferDestinationBranchId === $transferSourceBranchId) {
+        $transferDestinationBranchId = '';
+    }
     $piecesPerCarton = 0;
     $piecesPerRoll = 0;
     $rollsPerCarton = 0;
@@ -380,10 +385,27 @@
     }
 
     #transferStockModal .modal-content {
+        display: flex;
+        flex-direction: column;
         max-height: calc(100vh - 2rem);
     }
 
+    #transferStockModal form {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    #transferStockModal .modal-header,
+    #transferStockModal .modal-footer {
+        flex: 0 0 auto;
+    }
+
     #transferStockModal .modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
         overflow-y: auto;
         overscroll-behavior: contain;
     }
@@ -807,7 +829,7 @@
                             <select name="from_branch_id" class="form-select" required>
                                 <option value="">Select source</option>
                                 <?php foreach ($branchOptionsForView as $branch) { ?>
-                                    <option value="<?php echo e($branch['id']); ?>" <?php if ((string) old('from_branch_id', $activeBranch['id'] ?? '') === (string) $branch['id']) { ?>selected<?php } ?>><?php echo e($branch['name']); ?></option>
+                                    <option value="<?php echo e($branch['id']); ?>" <?php if ($transferSourceBranchId === (string) $branch['id']) { ?>selected<?php } ?>><?php echo e($branch['name']); ?></option>
                                 <?php } ?>
                             </select>
                             <?php if ($transferErrors && $transferErrors->has('from_branch_id')) { ?>
@@ -819,7 +841,7 @@
                             <select name="to_branch_id" class="form-select" required>
                                 <option value="">Select destination</option>
                                 <?php foreach ($branchOptionsForView as $branch) { ?>
-                                    <option value="<?php echo e($branch['id']); ?>" <?php if ((string) old('to_branch_id', '') === (string) $branch['id']) { ?>selected<?php } ?>><?php echo e($branch['name']); ?></option>
+                                    <option value="<?php echo e($branch['id']); ?>" <?php if ($transferDestinationBranchId === (string) $branch['id']) { ?>selected<?php } ?> <?php if ($transferSourceBranchId === (string) $branch['id']) { ?>disabled<?php } ?>><?php echo e($branch['name']); ?></option>
                                 <?php } ?>
                             </select>
                             <?php if ($transferErrors && $transferErrors->has('to_branch_id')) { ?>

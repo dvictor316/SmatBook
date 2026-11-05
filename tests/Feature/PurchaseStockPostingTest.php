@@ -337,11 +337,14 @@ class PurchaseStockPostingTest extends TestCase
             ->assertSessionHas('_old_input.from_branch_id', 'hq')
             ->assertSessionHas('_old_input.to_branch_id', 'hq');
 
-        $this->get(route('product-list'))
-            ->assertOk()
-            ->assertSee('modal-dialog-centered modal-dialog-scrollable', false)
-            ->assertSee('Choose a destination branch different from the source branch.')
-            ->assertSee('syncDestinationBranches();', false);
+        $response = $this->get(route('product-list'))->assertOk();
+        $html = $response->getContent();
+        $this->assertTrue(str_contains($html, 'modal-dialog-centered modal-dialog-scrollable'));
+        $this->assertTrue(str_contains($html, 'Choose a destination branch different from the source branch.'));
+        $this->assertTrue(str_contains($html, 'min-height: 0;'));
+        preg_match('/<select name="to_branch_id".*?<\\/select>/s', $html, $destinationSelect);
+        $this->assertTrue(str_contains($destinationSelect[0] ?? '', 'disabled'), $destinationSelect[0] ?? 'Destination select was not rendered.');
+        $this->assertTrue(str_contains($html, 'syncDestinationBranches();'));
     }
 
     private function configureTransferBranches(Product $product): void
