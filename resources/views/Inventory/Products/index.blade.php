@@ -792,7 +792,7 @@
                     <div class="mb-3">
                         <label class="form-label">Product</label>
                         <div class="product-lookup" data-search-url="<?php echo e($transferProductsSearchUrl); ?>">
-                            <input type="search" name="product_search" value="<?php echo e(old('product_search')); ?>" class="form-control product-lookup-input" placeholder="Type at least 2 characters, then select a result" autocomplete="off">
+                            <input type="search" name="product_search" value="<?php echo e(old('product_search')); ?>" class="form-control product-lookup-input" placeholder="Click to browse products or type a name / SKU" autocomplete="off" aria-autocomplete="list">
                             <input type="hidden" name="product_id" class="product-lookup-id" value="<?php echo e(old('product_id')); ?>">
                             <div class="list-group product-lookup-results mt-1" role="listbox"></div>
                             <small class="text-muted product-lookup-selected"><?php if (old('product_id')) { ?>Selected: <?php echo e(old('product_search')); ?><?php } ?></small>
@@ -1265,6 +1265,95 @@
             var selected = lookup.querySelector('.product-lookup-selected');
             var timer;
             var requestNumber = 0;
+            var loading = false;
+            var currentPage = 0;
+            var hasMore = false;
+
+            var addProductOption = function(product) {
+                var option = document.createElement('button');
+                option.type = 'button';
+                option.className = 'list-group-item list-group-item-action';
+                option.setAttribute('role', 'option');
+                option.textContent = product.name + (product.sku ? ' (' + product.sku + ')' : '');
+                option.addEventListener('click', function() {
+                    input.setCustomValidity('');
+                    hidden.value = product.id;
+                    input.value = option.textContent;
+                    selected.textContent = 'Selected: ' + option.textContent;
+                    results.replaceChildren();
+                });
+                results.appendChild(option);
+            };
+
+            var addLoadMoreOption = function(term) {
+                if (!hasMore) return;
+                var loadMore = document.createElement('button');
+                loadMore.type = 'button';
+                loadMore.className = 'list-group-item list-group-item-action text-center';
+                loadMore.dataset.loadMore = 'true';
+                loadMore.textContent = 'Load more products';
+                loadMore.addEventListener('click', function() {
+                    loadProducts(term, false);
+                });
+                results.appendChild(loadMore);
+            };
+
+            var loadProducts = function(term, reset) {
+                if (loading && !reset) return;
+                if (reset) {
+                    currentPage = 0;
+                    hasMore = false;
+                    results.replaceChildren();
+                    results.textContent = 'Loading products...';
+                }
+
+                var currentRequest = ++requestNumber;
+                var requestedPage = reset ? 1 : currentPage + 1;
+                loading = true;
+                var url = new URL(lookup.dataset.searchUrl, window.location.origin);
+                if (term) url.searchParams.set('q', term);
+                url.searchParams.set('page', requestedPage);
+
+                fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+                    .then(function(response) {
+                        if (!response.ok) throw new Error('Product list failed to load. Please try again.');
+                        return response.json();
+                    })
+                    .then(function(payload) {
+                        if (currentRequest !== requestNumber) return;
+                        loading = false;
+                        if (reset) results.replaceChildren();
+                        var existingLoadMore = results.querySelector('[data-load-more]');
+                        if (existingLoadMore) existingLoadMore.remove();
+                        if (!Array.isArray(payload.data) || payload.data.length === 0) {
+                            if (reset) results.textContent = 'No matching products found.';
+                            hasMore = false;
+                            return;
+                        }
+
+                        payload.data.forEach(addProductOption);
+                        currentPage = Number(payload.current_page || requestedPage);
+                        hasMore = currentPage < Number(payload.last_page || currentPage);
+                        addLoadMoreOption(term);
+                    })
+                    .catch(function(error) {
+                        if (currentRequest !== requestNumber) return;
+                        loading = false;
+                        results.textContent = error.message || 'Product list failed to load. Please try again.';
+                    });
+            };
+
+            input.addEventListener('focus', function() {
+                if (hidden.value) return;
+                if (!results.childElementCount) loadProducts(input.value.trim(), true);
+            });
+
+            results.addEventListener('scroll', function() {
+                if (hasMore && !loading && results.scrollHeight - results.scrollTop - results.clientHeight < 32) {
+                    var loadMore = results.querySelector('[data-load-more]');
+                    if (loadMore) loadMore.click();
+                }
+            });
 
             input.addEventListener('input', function() {
                 input.setCustomValidity('');
@@ -1272,44 +1361,8 @@
                 selected.textContent = '';
                 clearTimeout(timer);
                 var term = input.value.trim();
-                results.replaceChildren();
-                if (term.length < 2) return;
-
                 timer = setTimeout(function() {
-                    var currentRequest = ++requestNumber;
-                    var url = new URL(lookup.dataset.searchUrl, window.location.origin);
-                    url.searchParams.set('q', term);
-                    fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
-                        .then(function(response) {
-                            if (!response.ok) throw new Error('Product search failed. Please try again.');
-                            return response.json();
-                        })
-                        .then(function(payload) {
-                            if (currentRequest !== requestNumber) return;
-                            results.replaceChildren();
-                            if (!payload.data.length) {
-                                results.textContent = 'No matching products found.';
-                                return;
-                            }
-                            payload.data.forEach(function(product) {
-                                var option = document.createElement('button');
-                                option.type = 'button';
-                                option.className = 'list-group-item list-group-item-action';
-                                option.textContent = product.name + (product.sku ? ' (' + product.sku + ')' : '');
-                                option.addEventListener('click', function() {
-                                    input.setCustomValidity('');
-                                    hidden.value = product.id;
-                                    input.value = option.textContent;
-                                    selected.textContent = 'Selected: ' + option.textContent;
-                                    results.replaceChildren();
-                                });
-                                results.appendChild(option);
-                            });
-                        })
-                        .catch(function(error) {
-                            if (currentRequest !== requestNumber) return;
-                            results.textContent = error.message || 'Product search failed. Please try again.';
-                        });
+                    loadProducts(term, true);
                 }, 250);
             });
         });

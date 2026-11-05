@@ -2635,24 +2635,24 @@ public function inventory(Request $request)
 
     public function searchTransferProducts(Request $request)
     {
-        $validated = $request->validate(['q' => 'nullable|string|max:100']);
+        $validated = $request->validate([
+            'q' => 'nullable|string|max:100',
+            'page' => 'nullable|integer|min:1',
+        ]);
         $search = trim((string) ($validated['q'] ?? ''));
-        if (mb_strlen($search) < 2) {
-            return response()->json(['data' => []]);
-        }
 
         $query = Product::query()
             ->withoutGlobalScope('company_id')
             ->select(['id', 'name', 'sku']);
         $this->applyTenantScope($query, 'products');
-        $query->where(function ($products) use ($search) {
-            $products->where('name', 'like', '%' . $search . '%')
-                ->orWhere('sku', 'like', '%' . $search . '%');
-        });
+        if ($search !== '') {
+            $query->where(function ($products) use ($search) {
+                $products->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('sku', 'like', '%' . $search . '%');
+            });
+        }
 
-        return response()->json([
-            'data' => $query->orderBy('name')->limit(20)->get(),
-        ]);
+        return response()->json($query->orderBy('name')->orderBy('id')->paginate(50));
     }
 
     public function transferAudit(Request $request)

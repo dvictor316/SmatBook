@@ -152,6 +152,40 @@ class PurchaseStockPostingTest extends TestCase
             ->assertViewHas('productRows', fn ($rows) => $rows->contains('id', $product->id));
     }
 
+    public function test_transfer_product_picker_browses_and_paginates_all_company_products(): void
+    {
+        [$product] = $this->workspace();
+        $this->configureTransferBranches($product);
+        for ($index = 1; $index <= 51; $index++) {
+            Product::create([
+                'company_id' => $product->company_id,
+                'user_id' => auth()->id(),
+                'name' => sprintf('Catalog item %02d', $index),
+                'sku' => sprintf('CATALOG-%02d', $index),
+                'stock' => 0,
+                'price' => 100,
+                'purchase_price' => 50,
+            ]);
+        }
+
+        $this->get(route('inventory.transfer-products.search'))
+            ->assertOk()
+            ->assertJsonCount(50, 'data')
+            ->assertJsonPath('current_page', 1)
+            ->assertJsonPath('last_page', 2);
+
+        $this->get(route('inventory.transfer-products.search', ['page' => 2]))
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('current_page', 2)
+            ->assertJsonPath('last_page', 2);
+
+        $response = $this->get(route('product-list'))->assertOk();
+        $html = $response->getContent();
+        $this->assertTrue(str_contains($html, 'Click to browse products or type a name / SKU'));
+        $this->assertTrue(str_contains($html, 'Load more products'));
+    }
+
     public function test_positive_transfer_decreases_source_and_increases_destination_once(): void
     {
         [$product] = $this->workspace();
