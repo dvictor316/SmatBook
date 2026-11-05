@@ -32,24 +32,24 @@
     .product-action-trigger {
         display: inline-flex;
         align-items: center;
-        gap: 0.45rem;
-        padding: 0.55rem 0.95rem;
-        border: 1px solid rgba(13, 110, 253, 0.25);
-        border-radius: 999px;
-        background: #eef4ff;
-        color: #0d4fd6;
+        justify-content: center;
+        padding: 0.2rem;
+        border: 1px solid transparent;
+        border-radius: 0.4rem;
+        background: transparent;
+        color: #475569;
         font-size: 0.875rem;
-        font-weight: 700;
+        font-weight: 600;
         text-decoration: none;
-        box-shadow: 0 8px 20px rgba(13, 110, 253, 0.12);
-        transition: all 0.2s ease;
+        box-shadow: none;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
     }
 
     .product-action-trigger:hover,
     .product-action-trigger:focus {
-        background: #0d6efd;
-        color: #fff;
-        border-color: #0d6efd;
+        background: #f1f5f9;
+        color: #1e293b;
+        border-color: #e2e8f0;
     }
 
     .product-action-menu {
@@ -284,6 +284,11 @@
         letter-spacing: 0.01em;
     }
 
+    #products-table th:nth-child(1),
+    #products-table th:nth-child(10) {
+        padding-right: 0.4rem;
+    }
+
     #products-table.dataTable > thead .sorting:before,
     #products-table.dataTable > thead .sorting:after,
     #products-table.dataTable > thead .sorting_asc:before,
@@ -334,7 +339,7 @@
     #products-table th:nth-child(2),
     #products-table td:nth-child(2) { width: 4%; }
     #products-table th:nth-child(3),
-    #products-table td:nth-child(3) { width: 22%; }
+    #products-table td:nth-child(3) { width: 23%; }
     #products-table th:nth-child(4),
     #products-table td:nth-child(4) { width: 10%; }
     #products-table th:nth-child(5),
@@ -349,12 +354,10 @@
     #products-table td:nth-child(9) { width: 8%; }
     #products-table th:nth-child(10),
     #products-table td:nth-child(10) {
-        width: 9%;
-        min-width: 108px;
+        width: 7%;
+        min-width: 56px;
         position: sticky;
         right: 0;
-        background: #fff;
-        box-shadow: -8px 0 12px -12px rgba(15, 23, 42, 0.8);
     }
 
     #products-table thead th:nth-child(10) {
@@ -431,12 +434,42 @@
     }
 
     #products-table .product-action-trigger {
-        width: 100%;
-        justify-content: center;
-        gap: 0.25rem;
-        padding: 0.2rem 0.3rem;
-        font-size: 0.72rem;
-        min-height: 29px;
+        width: 30px;
+        height: 30px;
+        min-height: 30px;
+        padding: 0;
+        font-size: 0.9rem;
+    }
+
+    #products-table .product-action-trigger,
+    #products-table .product-action-trigger:hover,
+    #products-table .product-action-trigger:focus,
+    #products-table .product-action-trigger:focus-visible,
+    #products-table .product-action-trigger[aria-expanded="true"] {
+        background: transparent !important;
+        border-color: transparent !important;
+        color: #475569 !important;
+        -webkit-text-fill-color: #475569 !important;
+        box-shadow: none !important;
+    }
+
+    #products-table .product-action-trigger:hover,
+    #products-table .product-action-trigger:focus-visible,
+    #products-table .product-action-trigger[aria-expanded="true"] {
+        background: #f1f5f9 !important;
+        border-color: #e2e8f0 !important;
+        color: #1e293b !important;
+        -webkit-text-fill-color: #1e293b !important;
+    }
+
+    #products-table .product-action-trigger:focus-visible {
+        outline: 2px solid #93c5fd;
+        outline-offset: 2px;
+    }
+
+    #products-table .product-action-trigger i {
+        color: inherit !important;
+        -webkit-text-fill-color: inherit !important;
     }
 
     @media (max-width: 991.98px) {
@@ -748,7 +781,7 @@
                     </button>
                 </form>
                 <div class="table-responsive inventory-table-shell">
-                    <table class="table table-hover" id="products-table">
+                    <table class="table table-hover table-striped" id="products-table">
                         <thead class="thead-light">
                             <tr>
                                 <th class="inventory-select-cell no-print">
@@ -829,10 +862,10 @@
                                         <td><?php echo e(\App\Support\CompactNumber::format((float) $product->purchase_price, 2)); ?></td>
                                         <td class="text-center no-print">
                                             <div class="dropdown">
-                                                <a href="#" class="product-action-trigger dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                                    <i class="fas fa-bolt"></i>
-                                                    <span>Manage</span>
-                                                </a>
+                                                <button type="button" class="btn product-action-trigger" data-bs-toggle="dropdown" aria-label="Manage <?php echo e($product->name); ?>" title="Manage product" aria-expanded="false">
+                                                    <i class="fas fa-ellipsis-v" aria-hidden="true"></i>
+                                                    <span class="visually-hidden">Manage</span>
+                                                </button>
                                                 <div class="dropdown-menu dropdown-menu-end product-action-menu">
                                                     <a class="dropdown-item" href="<?php echo e(route('inventory.history', $product->id)); ?>"><i class="fas fa-chart-line me-2"></i>Run Report</a>
                                                     <a class="dropdown-item" href="<?php echo e(route('inventory.Products.edit', $product->id)); ?>"><i class="far fa-edit me-2"></i>Edit</a>
