@@ -814,15 +814,16 @@
 
                 <div class="field-grid mb-3">
                     <div>
-                        <label class="label-caps" for="registration_email">Email Address (or use phone)</label>
+                        <label class="label-caps" for="registration_email">Email Address (required for verification)</label>
                         <input type="email" name="email" class="form-control input-smat w-100 @error('email') is-invalid @enderror"
-                               id="registration_email" placeholder="admin@company.com" value="{{ old('email') }}" autocomplete="email">
+                               id="registration_email" placeholder="admin@company.com" value="{{ old('email') }}" autocomplete="email" required>
+                        <small class="text-muted">A six-digit code will be sent to this address to verify your account.</small>
                         @error('email')
                             <span class="field-error">{{ $message }}</span>
                         @enderror
                     </div>
                     <div>
-                        <label class="label-caps" for="registration_phone">Phone Number (or use email)</label>
+                        <label class="label-caps" for="registration_phone">Phone Number (optional)</label>
                         <input type="tel" name="phone" class="form-control input-smat w-100 @error('phone') is-invalid @enderror"
                                id="registration_phone" placeholder="+2348012345678" value="{{ old('phone') }}" autocomplete="tel" inputmode="tel">
                         @error('phone')

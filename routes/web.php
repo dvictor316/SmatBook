@@ -20,6 +20,7 @@ use App\Http\Controllers\{
 };
 use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\SuperAdmin\DeploymentManagerController;
+use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\FinancialResetController;
 use App\Http\Controllers\DatabaseResetController;
 use App\Http\Controllers\DemoRequestController;
@@ -136,6 +137,13 @@ Route::middleware(['auth'])->group(function () {
 
 Route::get('/locations/states', [AuthController::class, 'registrationStates'])->name('locations.states');
 Route::get('/locations/councils', [AuthController::class, 'registrationCouncils'])->name('locations.councils');
+Route::get('/email/verify', [EmailVerificationController::class, 'show'])->name('email-verification.notice');
+Route::post('/email/verify', [EmailVerificationController::class, 'verify'])
+    ->middleware('throttle:6,1')
+    ->name('email-verification.verify');
+Route::post('/email/verify/resend', [EmailVerificationController::class, 'resend'])
+    ->middleware('throttle:3,1')
+    ->name('email-verification.resend');
 
 /*
 |--------------------------------------------------------------------------

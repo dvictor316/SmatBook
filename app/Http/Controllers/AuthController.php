@@ -86,8 +86,8 @@ class AuthController extends Controller
 
         $rules = [
             'name' => 'required|string|max:255',
-            'email' => 'nullable|required_without:phone|string|email|max:255',
-            'phone' => ['nullable', 'required_without:email', 'string', 'max:25', 'regex:/^\+?[0-9]{7,20}$/'],
+            'email' => 'required|string|email|max:255',
+            'phone' => ['nullable', 'string', 'max:25', 'regex:/^\+?[0-9]{7,20}$/'],
             'password' => [
                 'required',
                 'string',
@@ -98,8 +98,8 @@ class AuthController extends Controller
         ];
 
         if ($isPartnerAgent) {
-            $rules['email'] = 'nullable|required_without:phone|string|email|max:255';
-            $rules['phone'] = ['nullable', 'required_without:email', 'string', 'max:25', 'regex:/^\+?[0-9]{7,20}$/'];
+            $rules['email'] = 'required|string|email|max:255';
+            $rules['phone'] = ['nullable', 'string', 'max:25', 'regex:/^\+?[0-9]{7,20}$/'];
             $rules['country'] = 'required|string|max:120';
             $rules['state_region'] = 'required|string|max:120';
             $rules['local_council'] = 'nullable|string|max:120';
@@ -114,8 +114,7 @@ class AuthController extends Controller
 
         $validated = $request->validate($rules, [
             'password.*' => 'Password must be at least 8 characters and include letters and numbers.',
-            'phone.required_without' => 'Phone is required when email is not provided.',
-            'email.required_without' => 'Email is required when phone is not provided.',
+            'email.required' => 'A valid email address is required so we can send your verification code.',
             'phone.regex' => 'Phone format is invalid. Use digits with optional leading +.',
         ]);
 
@@ -189,24 +188,6 @@ class AuthController extends Controller
             }
         }
 
-        if (!$resolvedEmail && $normalizedPhone) {
-            $existingRetryEmail = $retryableUser
-                ? $this->normalizeEmailForAuth((string) $retryableUser->email)
-                : null;
-            if ($existingRetryEmail && str_ends_with($existingRetryEmail, '@phone.smartprobook.local')) {
-                $resolvedEmail = $existingRetryEmail;
-            }
-
-            $seed = preg_replace('/\D+/', '', $normalizedPhone) ?: Str::lower(Str::random(10));
-            $candidate = 'phone' . $seed . '@phone.smartprobook.local';
-            if (!$resolvedEmail) {
-                while (User::withTrashed()->where('email', $candidate)->where('id', '!=', $retryableUser?->id ?? 0)->exists()) {
-                    $candidate = 'phone' . $seed . Str::lower(Str::random(3)) . '@phone.smartprobook.local';
-                }
-                $resolvedEmail = $candidate;
-            }
-        }
-
         // Early connectivity check to avoid vague catch-all error messages.
         try {
             DB::connection()->getPdo();
@@ -249,9 +230,7 @@ class AuthController extends Controller
                     'role' => $role,
                     'is_verified' => ($isAgentRegistration || $isApprovedRetry || $isCustomerRegistration) ? 1 : 0,
                     'status' => 'active',
-                    'email_verified_at' => ($isApprovedRetry && $retryableUser->email_verified_at)
-                        ? $retryableUser->email_verified_at
-                        : ($isCustomerRegistration ? now() : null),
+                    'email_verified_at' => $retryableUser?->email_verified_at,
                     'country' => $validated['country'] ?? null,
                     'state_region' => $validated['state_region'] ?? null,
                     'local_council' => $validated['local_council'] ?? null,
@@ -404,11 +383,34 @@ class AuthController extends Controller
                 return ['user' => $user, 'role' => $role, 'subscription' => $subscription];
             });
 
-            // Login AFTER the transaction commits to ensure the user record exists in the DB.
-            // This prevents stale session state if the transaction were to roll back.
-            Auth::login($registrationResult['user']);
+            $registeredUser = $registrationResult['user']->fresh();
             $request->session()->regenerate();
             $this->clearRegistrationSession();
+
+            if (! $registeredUser->email_verified_at) {
+                $deliveryStatus = app(\App\Services\EmailVerificationService::class)->sendCode($registeredUser);
+                $redirectTo = match (strtolower((string) $registrationResult['role'])) {
+                    'agent' => route('agent.dashboard'),
+                    'state_manager', 'deployment_manager', 'manager' => route('manager.verification.form'),
+                    default => $registrationResult['subscription']?->isTrial()
+                        ? route('saas.setup', ['id' => $registrationResult['subscription']->id])
+                        : route('home'),
+                };
+                $request->session()->put([
+                    'email_verification_pending_user_id' => (int) $registeredUser->id,
+                    'email_verification_redirect' => $redirectTo,
+                ]);
+
+                [$message, $flash] = match ($deliveryStatus) {
+                    'sent' => ['We sent a six-digit verification code to your email. Verify it to continue.', 'success'],
+                    'cooldown' => ['A verification code was sent recently. Check your email or wait before requesting another.', 'warning'],
+                    default => ['Your account was created, but the code could not be sent. Use Resend code to try again.', 'error'],
+                };
+
+                return redirect()->route('email-verification.notice')->with($flash, $message);
+            }
+
+            Auth::login($registeredUser);
 
             if ($this->isManagerRoleName($registrationResult['role'])) {
                 return redirect()->route('manager.verification.form')
@@ -739,6 +741,18 @@ class AuthController extends Controller
             ]);
         }
 
+        if (app(\App\Services\EmailVerificationService::class)->hasPending($user)) {
+            Auth::logout();
+            $request->session()->regenerate();
+            $request->session()->put([
+                'email_verification_pending_user_id' => (int) $user->id,
+                'email_verification_remember' => $remember,
+            ]);
+
+            return redirect()->route('email-verification.notice')
+                ->with('info', 'Verify your email address with the code we sent before signing in.');
+        }
+
         if ($user->hasTwoFactorAuthenticationEnabled()) {
             return $this->beginTwoFactorLoginChallenge($request, $user, $remember);
         }
@@ -850,6 +864,15 @@ class AuthController extends Controller
         return redirect()->route('home');
     }
 
+    public function completeEmailVerifiedLogin(Request $request, User $user, bool $remember): RedirectResponse
+    {
+        if ($user->hasTwoFactorAuthenticationEnabled()) {
+            return $this->beginTwoFactorLoginChallenge($request, $user, $remember);
+        }
+
+        return $this->completeAuthenticatedLogin($request, $user);
+    }
+
     private function beginTwoFactorLoginChallenge(Request $request, User $user, bool $remember): RedirectResponse
     {
         Auth::logout();
@@ -928,6 +951,9 @@ class AuthController extends Controller
             'two_factor_login_remember',
             'two_factor_login_started_at',
             'two_factor_setup_authorized_until',
+            'email_verification_pending_user_id',
+            'email_verification_remember',
+            'email_verification_redirect',
             'last_activity',
         ]);
 
@@ -1172,13 +1198,22 @@ class AuthController extends Controller
         }
 
         $providerId = (string) $socialUser->getId();
-        $email = $socialUser->getEmail() ?: $provider . '_' . $providerId . '@social.local';
+        $providerEmail = trim((string) $socialUser->getEmail());
         $name = $socialUser->getName() ?: $socialUser->getNickname() ?: 'User';
         $providerColumn = $provider . '_id';
 
-        $user = User::where($providerColumn, $providerId)
-            ->orWhere('email', $email)
-            ->first();
+        $user = User::where($providerColumn, $providerId)->first();
+        if (! $user && filter_var($providerEmail, FILTER_VALIDATE_EMAIL)) {
+            $user = User::whereRaw('LOWER(email) = ?', [strtolower($providerEmail)])->first();
+        }
+
+        if (! $user && ! filter_var($providerEmail, FILTER_VALIDATE_EMAIL)) {
+            return redirect()->route('saas-login')->withErrors([
+                'login' => 'This provider did not share a valid email address. Use another sign-in method or update your provider permissions.',
+            ]);
+        }
+
+        $email = $user?->email ?: strtolower($providerEmail);
         $createdNow = false;
 
         if ($user) {
@@ -1194,7 +1229,8 @@ class AuthController extends Controller
             if (!$user->name) {
                 $payload['name'] = $name;
             }
-            if (!$user->email_verified_at) {
+            if (! $user->email_verified_at
+                && ! app(\App\Services\EmailVerificationService::class)->hasPending($user)) {
                 $payload['email_verified_at'] = now();
             }
 
@@ -1206,18 +1242,13 @@ class AuthController extends Controller
                 'password' => Hash::make(Str::random(32)),
                 'role' => 'admin',
                 'is_verified' => 1,
-                'email_verified_at' => now(),
+                'status' => 'active',
+                'email_verified_at' => null,
                 'provider_id' => $providerId,
                 'provider_name' => $provider,
                 $providerColumn => $providerId,
             ]);
             $createdNow = true;
-        }
-
-        Auth::login($user, true);
-
-        if ($user->hasTwoFactorAuthenticationEnabled()) {
-            return $this->beginTwoFactorLoginChallenge($request, $user, true);
         }
 
         if ($createdNow) {
@@ -1229,6 +1260,44 @@ class AuthController extends Controller
         }
 
         $subscription = $this->ensureSocialRegistrationSubscription($user, $socialContext);
+
+        if ($createdNow) {
+            $deliveryStatus = app(\App\Services\EmailVerificationService::class)->sendCode($user);
+            $request->session()->regenerate();
+            $request->session()->put([
+                'email_verification_pending_user_id' => (int) $user->id,
+                'email_verification_remember' => true,
+                'email_verification_redirect' => $subscription
+                    ? route('saas.setup', ['id' => $subscription->id])
+                    : route('pricing'),
+            ]);
+            [$message, $flash] = match ($deliveryStatus) {
+                'sent' => ['We sent a six-digit verification code to your email. Verify it to continue.', 'success'],
+                'cooldown' => ['A verification code was sent recently. Check your email or wait before requesting another.', 'warning'],
+                default => ['Your account was created, but the code could not be sent. Use Resend code to try again.', 'error'],
+            };
+
+            return redirect()->route('email-verification.notice')->with($flash, $message);
+        }
+
+        Auth::login($user, true);
+
+        if (app(\App\Services\EmailVerificationService::class)->hasPending($user)) {
+            Auth::logout();
+            $request->session()->regenerate();
+            $request->session()->put([
+                'email_verification_pending_user_id' => (int) $user->id,
+                'email_verification_remember' => true,
+            ]);
+
+            return redirect()->route('email-verification.notice')
+                ->with('info', 'Verify your email address with the code we sent before signing in.');
+        }
+
+        if ($user->hasTwoFactorAuthenticationEnabled()) {
+            return $this->beginTwoFactorLoginChallenge($request, $user, true);
+        }
+
         if ($subscription) {
             return redirect()->route('saas.setup', ['id' => $subscription->id]);
         }

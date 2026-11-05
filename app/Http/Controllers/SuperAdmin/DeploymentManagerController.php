@@ -1125,7 +1125,7 @@ public function store(Request $request)
                 'is_verified'       => 1,
                 'status'            => 'active',
                 'phone'             => $validated['customer_phone'] ?? null,
-                'email_verified_at' => now(),
+                'email_verified_at' => $retryableRegistration['user']->email_verified_at ?? null,
             ]));
             $customer->save();
 
@@ -1279,10 +1279,21 @@ public function store(Request $request)
         ])->withInput();
     }
 
+    $customer = User::withoutGlobalScopes()->findOrFail($result['customer_id']);
+    $verificationStatus = $customer->email_verified_at
+        ? 'verified'
+        : app(\App\Services\EmailVerificationService::class)->sendCode($customer);
+    [$verificationMessage, $verificationFlash] = match ($verificationStatus) {
+        'verified' => ['Customer email is already verified.', 'success'],
+        'sent' => ['Customer workspace is ready. A six-digit email code was sent; the customer must verify it before signing in.', 'success'],
+        'cooldown' => ['Customer workspace is ready. The verification code was sent recently; the customer should check their email.', 'warning'],
+        default => ['Customer workspace is ready, but the verification code could not be sent. Ask the customer to use Resend code after signing in.', 'error'],
+    };
+
     if ($isFreeUnlimited) {
         return redirect()
             ->route('super_admin.dashboard')
-            ->with('success', 'Custom unlimited workspace created and activated without payment.');
+            ->with($verificationFlash, 'Custom unlimited workspace created without payment. '.$verificationMessage);
     }
 
     $dashboardRoute = match (strtolower((string) $manager->role)) {
@@ -1292,7 +1303,7 @@ public function store(Request $request)
     };
 
     return redirect()->route($dashboardRoute)
-        ->with('success', 'Customer workspace activated. The customer can start using the selected plan immediately; payment is due after the one-month free trial.');
+        ->with($verificationFlash, 'Customer workspace activated. Payment is due after the one-month free trial. '.$verificationMessage);
 }
 
 private function resolveCustomUserLimit(array $validated): int
@@ -2097,7 +2108,7 @@ private function formatDeploymentAmount(float $amount): string
             'company_id' => $validated['company_id'],
             'status' => 'active',
             'is_verified' => 1,
-            'email_verified_at' => now(),
+            'email_verified_at' => null,
             'password' => Hash::make($tempPassword),
         ]);
 
@@ -2118,7 +2129,14 @@ private function formatDeploymentAmount(float $amount): string
             Log::error('Deployment user welcome email failed', ['error' => $e->getMessage(), 'user_id' => $user->id]);
         }
 
-        return redirect()->route('deployment.users.index')->with('success', 'User created and credentials sent by email.');
+        $verificationStatus = app(\App\Services\EmailVerificationService::class)->sendCode($user);
+        [$message, $flash] = match ($verificationStatus) {
+            'sent' => ['User created. Login credentials and a six-digit verification code were emailed; verify the address before signing in.', 'success'],
+            'cooldown' => ['User created. Login credentials were emailed; the verification code was sent recently.', 'warning'],
+            default => ['User created, but email verification could not be sent. Ask them to use Resend code after signing in.', 'error'],
+        };
+
+        return redirect()->route('deployment.users.index')->with($flash, $message);
     }
 
     public function viewUser($id) {

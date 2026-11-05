@@ -220,7 +220,7 @@ class UserController extends Controller
             $user->is_verified = 1;
         }
         if (Schema::hasColumn('users', 'email_verified_at')) {
-            $user->email_verified_at = now();
+            $user->email_verified_at = null;
         }
         if (Schema::hasColumn('users', 'verified_at')) {
             $user->verified_at = now();
@@ -267,6 +267,7 @@ class UserController extends Controller
         }
 
         $user->save();
+        $verificationStatus = app(\App\Services\EmailVerificationService::class)->sendCode($user);
         $this->syncStateManagerProfile($user);
 
         ActivityLog::record('users', 'create_user', 'Created user ' . $user->name, [
@@ -278,8 +279,13 @@ class UserController extends Controller
             ],
         ]);
         
-        return redirect()->route($this->usersIndexRoute())
-            ->with('success', 'User created successfully.');
+        [$message, $flash] = match ($verificationStatus) {
+            'sent' => ['User created. A six-digit verification code was sent to their email.', 'success'],
+            'cooldown' => ['User created. A verification code was sent recently; they should check their email.', 'warning'],
+            default => ['User created, but the verification code could not be sent. They can request another code after signing in.', 'error'],
+        };
+
+        return redirect()->route($this->usersIndexRoute())->with($flash, $message);
     }
 
     /**

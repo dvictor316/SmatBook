@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\EmailVerificationCodeMail;
 use App\Models\DeploymentManager;
 use App\Models\Subscription;
 use App\Models\User;
@@ -81,14 +82,12 @@ class AssistedBusinessRegistrationTest extends TestCase
             $subscription = \DB::table('subscriptions')->where('deployed_by', $registrar->id)->first();
             $customer = User::where('email', $email)->first();
             $company = \DB::table('companies')->where('domain_prefix', $slug)->first();
-            $dashboardRoute = match ($role) {
+            $this->assertNotNull($subscription, "{$role} registration did not create a subscription.");
+            $response->assertRedirect(route(match ($role) {
                 'agent' => 'agent.dashboard',
                 'state_manager' => 'deployment.dashboard',
                 default => 'super_admin.dashboard',
-            };
-
-            $this->assertNotNull($subscription, "{$role} registration did not create a subscription.");
-            $response->assertRedirect(route($dashboardRoute));
+            }));
             $response->assertSessionHasNoErrors();
             $this->assertNotNull($customer);
             $this->assertNotNull($company);
@@ -96,6 +95,7 @@ class AssistedBusinessRegistrationTest extends TestCase
             $this->assertSame((int) $company->id, (int) $customer->company_id);
             $this->assertSame('active', strtolower((string) $customer->status));
             $this->assertSame(1, (int) $customer->is_verified);
+            $this->assertNull($customer->email_verified_at);
             $this->assertSame('active', strtolower((string) $company->status));
             $this->assertSame('trial', strtolower((string) $subscription->status));
             $this->assertSame('free', strtolower((string) $subscription->payment_status));
@@ -121,7 +121,9 @@ class AssistedBusinessRegistrationTest extends TestCase
             $this->assertSame(1, \DB::table('subscriptions')->where('deployed_by', $registrar->id)->count());
 
             $trial = Subscription::findOrFail($subscription->id);
-            $trial->update(['end_date' => now()->subDay()]);
+            $verificationMail = Mail::sent(EmailVerificationCodeMail::class)
+                ->first(fn ($mail) => $mail->hasTo($email));
+            $this->assertNotNull($verificationMail);
 
             $this->actingAs($customer)
                 ->withSession([
@@ -129,7 +131,12 @@ class AssistedBusinessRegistrationTest extends TestCase
                     'workspace_context' => 'business',
                 ])
                 ->get(route('user.dashboard'))
-                ->assertRedirect(route('subscription.expired'));
+                ->assertRedirect(route('email-verification.notice'));
+
+            $this->post(route('email-verification.verify'), ['code' => $verificationMail->code])
+                ->assertRedirect(route('home'));
+            $this->assertNotNull($customer->fresh()->email_verified_at);
+            $trial->update(['end_date' => now()->subDay()]);
 
             $this->get(route('subscription.expired'))
                 ->assertRedirect(route('subscription.upgrade.redirect', [
@@ -174,13 +181,18 @@ class AssistedBusinessRegistrationTest extends TestCase
             'field_of_operation' => 'general',
         ]);
 
-        $response->assertRedirect(route('saas.setup', \DB::table('subscriptions')->value('id')));
+        $response->assertRedirect(route('email-verification.notice'));
 
         $owner = User::where('email', 'public-owner@example.test')->firstOrFail();
         $subscription = \DB::table('subscriptions')->where('user_id', $owner->id)->first();
         $this->assertNotNull($subscription);
+        $verificationMail = Mail::sent(EmailVerificationCodeMail::class)->first();
+        $this->assertNotNull($verificationMail);
+        $this->post(route('email-verification.verify'), ['code' => $verificationMail->code])
+            ->assertRedirect(route('saas.setup', $subscription->id));
 
         $this->assertSame('active', strtolower((string) $owner->status));
+        $this->assertNotNull($owner->fresh()->email_verified_at);
         $this->assertSame('trial', strtolower((string) $subscription->status));
         $this->assertSame('free', strtolower((string) $subscription->payment_status));
         $this->assertTrue(\Illuminate\Support\Carbon::parse($subscription->end_date)->isSameDay(now()->addMonth()));
@@ -240,6 +252,11 @@ class AssistedBusinessRegistrationTest extends TestCase
                 'amount' => 150000,
             ],
         ])->get(route('social.callback', ['provider' => 'google']))
+            ->assertRedirect(route('email-verification.notice'));
+
+        $verificationMail = Mail::sent(EmailVerificationCodeMail::class)->first();
+        $this->assertNotNull($verificationMail);
+        $this->post(route('email-verification.verify'), ['code' => $verificationMail->code])
             ->assertRedirect(route('saas.setup', \DB::table('subscriptions')->value('id')));
 
         $customer = User::where('email', 'google-trial@example.test')->firstOrFail();
@@ -247,6 +264,7 @@ class AssistedBusinessRegistrationTest extends TestCase
 
         $this->assertSame('active', strtolower((string) $customer->status));
         $this->assertSame(1, (int) $customer->is_verified);
+        $this->assertNotNull($customer->email_verified_at);
         $this->assertSame('trial', strtolower((string) $trial->status));
         $this->assertSame('free', strtolower((string) $trial->payment_status));
         $this->assertTrue($trial->end_date->isSameDay(now()->addMonth()));

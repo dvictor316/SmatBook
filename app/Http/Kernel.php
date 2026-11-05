@@ -67,6 +67,7 @@ class Kernel extends HttpKernel
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
             \App\Http\Middleware\IdentifyTenant::class,
+            \App\Http\Middleware\RequireRegistrationEmailVerification::class,
             \App\Http\Middleware\ForceLogoutExpiredSession::class,
             \App\Http\Middleware\EnforceDeviceSessionLimit::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
@@ -95,6 +96,7 @@ class Kernel extends HttpKernel
 
             // Tenant Identification (critical for multi-tenancy)
             \App\Http\Middleware\IdentifyTenant::class,
+            \App\Http\Middleware\RequireRegistrationEmailVerification::class,
             \App\Http\Middleware\ForceLogoutExpiredSession::class,
             \App\Http\Middleware\EnforceDeviceSessionLimit::class,
 

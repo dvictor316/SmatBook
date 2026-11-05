@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Mail\EmailVerificationCodeMail;
 use App\Models\User;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Tests\TestCase;
@@ -17,6 +19,7 @@ class PartnerRegistrationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Mail::fake();
 
         Config::set('database.default', 'sqlite');
         Config::set('database.connections.sqlite', [
@@ -33,6 +36,7 @@ class PartnerRegistrationTest extends TestCase
             $table->id();
             $table->string('name');
             $table->string('email')->nullable()->unique();
+            $table->timestamp('email_verified_at')->nullable();
             $table->string('phone')->nullable()->unique();
             $table->string('password');
             $table->string('role')->nullable();
@@ -44,6 +48,17 @@ class PartnerRegistrationTest extends TestCase
             $table->unsignedBigInteger('state_manager_id')->nullable();
             $table->string('remember_token', 100)->nullable();
             $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('email_verification_challenges', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id')->unique();
+            $table->string('email');
+            $table->string('code_hash');
+            $table->timestamp('expires_at');
+            $table->timestamp('sent_at')->nullable();
+            $table->unsignedTinyInteger('attempts')->default(0);
             $table->timestamps();
         });
 
@@ -95,18 +110,20 @@ class PartnerRegistrationTest extends TestCase
             'password_confirmation' => 'Secure123',
         ]);
 
-        $response->assertRedirect(route('agent.dashboard'));
+        $response->assertRedirect(route('email-verification.notice'));
         $response->assertSessionDoesntHaveErrors(['country', 'state_region', 'local_council']);
 
-        $this->assertAuthenticated();
+        $this->assertGuest();
         $user = User::firstOrFail();
         $this->assertSame('Nigeria', $user->country);
         $this->assertSame('agent', $user->role);
         $this->assertSame('active', $user->status);
         $this->assertSame(1, (int) $user->is_verified);
+        $this->assertNull($user->email_verified_at);
+        Mail::assertSent(EmailVerificationCodeMail::class, fn ($mail) => $mail->hasTo('agent@example.com'));
     }
 
-    public function test_partner_registration_allows_phone_without_email(): void
+    public function test_partner_registration_requires_a_real_email_address(): void
     {
         $response = $this->from(route('saas-register', ['type' => 'partner']))->post(route('saas-register.post'), [
             'role' => 'agent',
@@ -119,15 +136,9 @@ class PartnerRegistrationTest extends TestCase
             'password_confirmation' => 'Secure123',
         ]);
 
-        $response->assertRedirect(route('agent.dashboard'));
-        $response->assertSessionDoesntHaveErrors(['email', 'phone', 'country']);
-
-        $this->assertAuthenticated();
-        $user = User::firstOrFail();
-        $this->assertStringContainsString('@phone.smartprobook.local', $user->email);
-        $this->assertSame('agent', $user->role);
-        $this->assertSame('active', $user->status);
-        $this->assertSame(1, (int) $user->is_verified);
+        $response->assertRedirect(route('saas-register', ['type' => 'partner']));
+        $response->assertSessionHasErrors('email');
+        $this->assertSame(0, User::count());
     }
 
     public function test_regular_registration_starts_a_one_month_trial_immediately(): void
@@ -146,12 +157,13 @@ class PartnerRegistrationTest extends TestCase
 
         $subscription = \DB::table('subscriptions')->first();
         $this->assertNotNull($subscription);
-        $response->assertRedirect(route('saas.setup', $subscription->id));
+        $response->assertRedirect(route('email-verification.notice'));
         $response->assertSessionDoesntHaveErrors();
 
         $user = User::firstOrFail();
 
-        $this->assertAuthenticatedAs($user);
+        $this->assertGuest();
+        $this->assertNull($user->email_verified_at);
         $this->assertSame('active', $user->status);
         $this->assertSame(1, (int) $user->is_verified);
         $this->assertDatabaseHas('subscriptions', [
@@ -160,6 +172,22 @@ class PartnerRegistrationTest extends TestCase
             'payment_status' => 'free',
         ]);
         $this->assertTrue(\Illuminate\Support\Carbon::parse($subscription->end_date)->isSameDay(now()->addMonth()));
+
+        $mail = Mail::sent(EmailVerificationCodeMail::class)->first();
+        $this->assertNotNull($mail);
+        $incorrectCode = $mail->code === '000000' ? '000001' : '000000';
+        $this->from(route('email-verification.notice'))
+            ->post(route('email-verification.verify'), ['code' => $incorrectCode])
+            ->assertRedirect(route('email-verification.notice'))
+            ->assertSessionHasErrors('code');
+        $this->assertGuest();
+        $this->assertSame(1, (int) \DB::table('email_verification_challenges')->where('user_id', $user->id)->value('attempts'));
+
+        $this->post(route('email-verification.verify'), ['code' => $mail->code])
+            ->assertRedirect(route('saas.setup', $subscription->id));
+        $this->assertAuthenticatedAs($user->fresh());
+        $this->assertNotNull($user->fresh()->email_verified_at);
+        $this->assertDatabaseMissing('email_verification_challenges', ['user_id' => $user->id]);
     }
 
     public function test_duplicate_registration_cannot_restart_a_trial_or_create_duplicate_records(): void
@@ -177,7 +205,7 @@ class PartnerRegistrationTest extends TestCase
         ];
 
         $this->from(route('saas-register'))->post(route('saas-register.post'), $payload)
-            ->assertRedirect(route('saas.setup', \DB::table('subscriptions')->value('id')));
+            ->assertRedirect(route('email-verification.notice'));
 
         $user = User::where('email', 'retry-owner@example.com')->firstOrFail();
         $originalEndDate = \DB::table('subscriptions')->where('user_id', $user->id)->value('end_date');
@@ -191,6 +219,7 @@ class PartnerRegistrationTest extends TestCase
         $this->assertSame($user->id, User::where('email', 'retry-owner@example.com')->value('id'));
         $this->assertSame(1, \DB::table('subscriptions')->where('user_id', $user->id)->count());
         $this->assertSame($originalEndDate, \DB::table('subscriptions')->where('user_id', $user->id)->value('end_date'));
+        Mail::assertSent(EmailVerificationCodeMail::class, 1);
     }
 
     public function test_duplicate_phone_registration_cannot_restart_a_trial(): void
@@ -198,6 +227,7 @@ class PartnerRegistrationTest extends TestCase
         $payload = [
             'role' => 'admin',
             'name' => 'Phone First Attempt',
+            'email' => 'phone-first@example.com',
             'phone' => '+2348012345678',
             'password' => 'Secure123',
             'password_confirmation' => 'Secure123',
@@ -207,11 +237,12 @@ class PartnerRegistrationTest extends TestCase
         ];
 
         $this->from(route('saas-register'))->post(route('saas-register.post'), $payload)
-            ->assertRedirect(route('saas.setup', \DB::table('subscriptions')->value('id')));
+            ->assertRedirect(route('email-verification.notice'));
 
         $user = User::where('phone', '+2348012345678')->firstOrFail();
         $originalEmail = $user->email;
 
+        $payload['email'] = 'phone-second@example.com';
         auth()->logout();
         $this->from(route('saas-register'))->post(route('saas-register.post'), $payload)
             ->assertRedirect(route('saas-register'))
@@ -258,7 +289,7 @@ class PartnerRegistrationTest extends TestCase
         ]);
 
         $subscription = \DB::table('subscriptions')->where('user_id', $user->id)->first();
-        $response->assertRedirect(route('saas.setup', $subscription->id));
+        $response->assertRedirect(route('email-verification.notice'));
         $this->assertSame('active', $user->fresh()->status);
         $this->assertSame(1, (int) $user->fresh()->is_verified);
         $this->assertSame('Approved Owner Updated', $user->fresh()->name);
@@ -301,6 +332,7 @@ class PartnerRegistrationTest extends TestCase
             'billing_cycle' => 'yearly',
             'field_of_operation' => 'general',
         ])->assertRedirect(route('saas-register'));
+
 
         $this->assertSame('Paid Owner', $user->fresh()->name);
         $this->assertSame(1, \DB::table('subscriptions')->where('user_id', $user->id)->count());
