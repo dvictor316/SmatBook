@@ -246,8 +246,8 @@
     }
 
     .inventory-table-shell {
-        max-height: calc(100vh - 18rem);
-        min-height: 12rem;
+        max-height: calc(100vh - 13rem);
+        min-height: 16rem;
         overflow: auto;
         overscroll-behavior: contain;
     }
@@ -278,10 +278,10 @@
     }
 
     #products-table thead th {
-        padding: 0.38rem 1.25rem 0.38rem 0.4rem;
-        font-size: 0.7rem;
+        padding: 0.38rem 1.6rem 0.38rem 0.4rem;
+        font-size: 0.62rem;
         font-weight: 500;
-        letter-spacing: 0.015em;
+        letter-spacing: 0.01em;
     }
 
     #products-table.dataTable > thead .sorting:before,
@@ -295,10 +295,10 @@
     #products-table.dataTable > thead .sorting_desc_disabled:before,
     #products-table.dataTable > thead .sorting_desc_disabled:after {
         top: 50%;
-        right: 0.35rem;
+        right: 0.3rem;
         bottom: auto;
         color: #94a3b8;
-        font-size: 9px;
+        font-size: 8px;
         line-height: 1;
         opacity: 1;
     }
@@ -338,7 +338,7 @@
     #products-table th:nth-child(4),
     #products-table td:nth-child(4) { width: 10%; }
     #products-table th:nth-child(5),
-    #products-table td:nth-child(5) { width: 8%; }
+    #products-table td:nth-child(5) { width: 9%; }
     #products-table th:nth-child(6),
     #products-table td:nth-child(6) { width: 17%; }
     #products-table th:nth-child(7),
