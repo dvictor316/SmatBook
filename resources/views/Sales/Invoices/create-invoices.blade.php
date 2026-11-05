@@ -210,38 +210,10 @@
                                                                 <option value="">Custom item</option>
                                                                 @foreach($products as $product)
                                                                     @php
-                                                                        $invoiceSalesUnitsConfigured = \Illuminate\Support\Facades\Schema::hasColumn('product_units', 'is_sales_unit')
-                                                                            && collect($product->activeProductUnits ?? [])->isNotEmpty();
-                                                                        $invoiceUnitOptions = collect($product->activeProductUnits ?? [])
-                                                                            ->filter(fn ($unit) => !$invoiceSalesUnitsConfigured || (bool) ($unit->is_sales_unit ?? true))
-                                                                            ->map(function ($unit) use ($product) {
-                                                                            $unitName = strtolower(trim((string) ($unit->unit_name ?: $unit->unit_symbol)));
-                                                                            $factor = (float) $unit->conversion_factor;
-                                                                            if ($factor <= 1 && in_array($unitName, ['carton', 'ctn'], true)) {
-                                                                                $factor = (float) ($product->units_per_carton ?? 0);
-                                                                            }
-
-                                                                            return [
-                                                                                'name' => (string) ($unit->unit_name ?: $unit->unit_symbol),
-                                                                                'symbol' => (string) ($unit->unit_symbol ?: $unit->unit_name),
-                                                                                'conversion_factor' => max(1, $factor),
-                                                                                'selling_price' => $unit->selling_price,
-                                                                                'wholesale_price' => $unit->wholesale_price,
-                                                                            ];
-                                                                        })->values();
-                                                                        if ($invoiceUnitOptions->isEmpty() && !$invoiceSalesUnitsConfigured) {
-                                                                            $invoiceUnitOptions = collect([[
-                                                                                'name' => (string) ($product->base_unit_name ?: 'pcs'),
-                                                                                'symbol' => (string) ($product->base_unit_name ?: 'pcs'),
-                                                                                'conversion_factor' => 1,
-                                                                                'selling_price' => $product->retail_price ?? $product->price ?? 0,
-                                                                                'wholesale_price' => $product->wholesale_price ?? 0,
-                                                                            ]]);
-                                                                            if ((int) ($product->units_per_carton ?? 0) > 1) {
-                                                                                $invoiceUnitOptions->push(['name' => 'carton', 'symbol' => 'ctn', 'conversion_factor' => (float) $product->units_per_carton, 'selling_price' => null, 'wholesale_price' => null]);
-                                                                            }
-                                                                        }
-                                                                    @endphp
+                                                                    $invoiceUnitConfiguration = $product->salesUnitConfiguration();
+                                                                    $invoiceSalesUnitsConfigured = $invoiceUnitConfiguration['selection_configured'];
+                                                                    $invoiceUnitOptions = collect($invoiceUnitConfiguration['options']);
+                                                                @endphp
                                                                     <option value="{{ $product->id }}"
                                                                         data-name="{{ $product->name }}"
                                                                         data-retail="{{ $product->retail_price ?? $product->price ?? 0 }}"
@@ -639,25 +611,9 @@
                         <option value="">Custom item</option>
                         @foreach($products as $product)
                             @php
-                                $rowSalesUnitsConfigured = \Illuminate\Support\Facades\Schema::hasColumn('product_units', 'is_sales_unit')
-                                    && collect($product->activeProductUnits ?? [])->isNotEmpty();
-                                $rowUnitOptions = collect($product->activeProductUnits ?? [])
-                                    ->filter(fn ($unit) => !$rowSalesUnitsConfigured || (bool) ($unit->is_sales_unit ?? true))
-                                    ->map(function ($unit) use ($product) {
-                                    $unitName = strtolower(trim((string) ($unit->unit_name ?: $unit->unit_symbol)));
-                                    $factor = (float) $unit->conversion_factor;
-                                    if ($factor <= 1 && in_array($unitName, ['carton', 'ctn'], true)) {
-                                        $factor = (float) ($product->units_per_carton ?? 0);
-                                    }
-
-                                    return [
-                                        'name' => (string) ($unit->unit_name ?: $unit->unit_symbol),
-                                        'symbol' => (string) ($unit->unit_symbol ?: $unit->unit_name),
-                                        'conversion_factor' => max(1, $factor),
-                                        'selling_price' => $unit->selling_price,
-                                        'wholesale_price' => $unit->wholesale_price,
-                                    ];
-                                })->values();
+                                $rowUnitConfiguration = $product->salesUnitConfiguration();
+                                $rowSalesUnitsConfigured = $rowUnitConfiguration['selection_configured'];
+                                $rowUnitOptions = collect($rowUnitConfiguration['options']);
                             @endphp
                             <option value="{{ $product->id }}"
                                 data-name="{{ $product->name }}"

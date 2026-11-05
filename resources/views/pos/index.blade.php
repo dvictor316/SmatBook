@@ -5715,57 +5715,9 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                 if (!empty($p->purchaseUnit?->symbol) && (float) ($p->conversion_rate ?? 0) > 0) {
                     $measurementParts[] = 'Buy ' . $p->purchaseUnit->symbol . ' = ' . rtrim(rtrim(\App\Support\CompactNumber::format((float) $p->conversion_rate, 2), '0'), '.') . ' ' . $baseUnitName;
                 }
-                $salesUnitSelectionConfigured = \Illuminate\Support\Facades\Schema::hasColumn('product_units', 'is_sales_unit')
-                    && collect($p->activeProductUnits ?? [])->isNotEmpty();
-                $unitOptions = collect($p->activeProductUnits ?? [])
-                    ->filter(fn ($unit) => !$salesUnitSelectionConfigured || (bool) ($unit->is_sales_unit ?? true))
-                    ->map(function ($unit) use ($p) {
-                        $unitName = strtolower(trim((string) ($unit->unit_name ?: $unit->unit_symbol)));
-                        $factor = (float) $unit->conversion_factor;
-                        if ($factor <= 1 && in_array($unitName, ['carton', 'ctn'], true)) {
-                            $factor = (float) ($p->units_per_carton ?? 0);
-                        }
-
-                        return [
-                        'name' => (string) ($unit->unit_name ?: $unit->unit_symbol),
-                        'symbol' => (string) ($unit->unit_symbol ?: $unit->unit_name),
-                        'conversion_factor' => max(1, $factor),
-                        'selling_price' => $unit->selling_price,
-                        'wholesale_price' => $unit->wholesale_price,
-                        'is_default_sales_unit' => (bool) $unit->is_default_sales_unit,
-                        ];
-                    })
-                    ->values();
-                if ($baseUnitName !== 'unit') {
-                    $unitOptions = $unitOptions->reject(fn ($unit) => strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))) === 'unit');
-                }
-                if (!$salesUnitSelectionConfigured && !$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), [$baseUnitName, strtolower((string) ($p->baseUnit?->symbol ?? ''))], true))) {
-                    $unitOptions->prepend([
-                        'name' => $baseUnitName,
-                        'symbol' => $baseUnitName,
-                        'conversion_factor' => 1,
-                        'selling_price' => $retailPrice,
-                        'wholesale_price' => $wholesalePrice,
-                        'is_default_sales_unit' => true,
-                    ]);
-                }
-                if (!$salesUnitSelectionConfigured && $unitsPerRoll > 1 && !$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), ['roll'], true))) {
-                    $unitOptions->push(['name' => 'roll', 'symbol' => 'roll', 'conversion_factor' => $unitsPerRoll, 'selling_price' => null, 'is_default_sales_unit' => $unitType === 'roll']);
-                }
-                if (!$salesUnitSelectionConfigured && $cartonUnitCount > 1 && !$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), ['carton', 'ctn'], true))) {
-                    $unitOptions->push(['name' => 'carton', 'symbol' => 'ctn', 'conversion_factor' => $cartonUnitCount, 'selling_price' => null, 'is_default_sales_unit' => $unitType === 'carton']);
-                }
-                if ($unitOptions->isEmpty() && !$salesUnitSelectionConfigured) {
-                    $unitOptions = collect([
-                        ['name' => $baseUnitName, 'symbol' => $baseUnitName, 'conversion_factor' => 1, 'selling_price' => $retailPrice, 'is_default_sales_unit' => $unitType === 'unit'],
-                    ]);
-                    if ($unitsPerRoll > 1) {
-                        $unitOptions->push(['name' => 'roll', 'symbol' => 'roll', 'conversion_factor' => $unitsPerRoll, 'selling_price' => null, 'is_default_sales_unit' => $unitType === 'roll']);
-                    }
-                    if ($cartonUnitCount > 1) {
-                        $unitOptions->push(['name' => 'carton', 'symbol' => 'ctn', 'conversion_factor' => $cartonUnitCount, 'selling_price' => null, 'is_default_sales_unit' => $unitType === 'carton']);
-                    }
-                }
+                $salesUnitConfiguration = $p->salesUnitConfiguration();
+                $salesUnitSelectionConfigured = $salesUnitConfiguration['selection_configured'];
+                $unitOptions = collect($salesUnitConfiguration['options']);
                 $measurementLabel = implode(' | ', $measurementParts);
                 $categoryName = $p->category->name ?? 'Uncategorized';
                 $minStockLevel = (int) ($p->reorder_level ?? 0) > 0 ? (int) $p->reorder_level : 15;
@@ -5889,57 +5841,9 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                         if (!empty($p->purchaseUnit?->symbol) && (float) ($p->conversion_rate ?? 0) > 0) {
                             $measurementParts[] = 'Buy ' . $p->purchaseUnit->symbol . ' = ' . rtrim(rtrim(\App\Support\CompactNumber::format((float) $p->conversion_rate, 2), '0'), '.') . ' ' . $baseUnitName;
                         }
-                        $salesUnitSelectionConfigured = \Illuminate\Support\Facades\Schema::hasColumn('product_units', 'is_sales_unit')
-                            && collect($p->activeProductUnits ?? [])->isNotEmpty();
-                        $unitOptions = collect($p->activeProductUnits ?? [])
-                            ->filter(fn ($unit) => !$salesUnitSelectionConfigured || (bool) ($unit->is_sales_unit ?? true))
-                            ->map(function ($unit) use ($p) {
-                                $unitName = strtolower(trim((string) ($unit->unit_name ?: $unit->unit_symbol)));
-                                $factor = (float) $unit->conversion_factor;
-                                if ($factor <= 1 && in_array($unitName, ['carton', 'ctn'], true)) {
-                                    $factor = (float) ($p->units_per_carton ?? 0);
-                                }
-
-                                return [
-                                'name' => (string) ($unit->unit_name ?: $unit->unit_symbol),
-                                'symbol' => (string) ($unit->unit_symbol ?: $unit->unit_name),
-                                'conversion_factor' => max(1, $factor),
-                                'selling_price' => $unit->selling_price,
-                                'wholesale_price' => $unit->wholesale_price,
-                                'is_default_sales_unit' => (bool) $unit->is_default_sales_unit,
-                                ];
-                            })
-                            ->values();
-                        if ($baseUnitName !== 'unit') {
-                            $unitOptions = $unitOptions->reject(fn ($unit) => strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))) === 'unit');
-                        }
-                        if (!$salesUnitSelectionConfigured && !$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), [$baseUnitName, strtolower((string) ($p->baseUnit?->symbol ?? ''))], true))) {
-                            $unitOptions->prepend([
-                                'name' => $baseUnitName,
-                                'symbol' => $baseUnitName,
-                                'conversion_factor' => 1,
-                                'selling_price' => $retailPrice,
-                                'wholesale_price' => $wholesalePrice,
-                                'is_default_sales_unit' => true,
-                            ]);
-                        }
-                        if (!$salesUnitSelectionConfigured && $unitsPerRoll > 1 && !$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), ['roll'], true))) {
-                            $unitOptions->push(['name' => 'roll', 'symbol' => 'roll', 'conversion_factor' => $unitsPerRoll, 'selling_price' => null, 'is_default_sales_unit' => $unitType === 'roll']);
-                        }
-                        if (!$salesUnitSelectionConfigured && $cartonUnitCount > 1 && !$unitOptions->contains(fn ($unit) => in_array(strtolower(trim((string) ($unit['name'] ?? $unit['symbol'] ?? ''))), ['carton', 'ctn'], true))) {
-                            $unitOptions->push(['name' => 'carton', 'symbol' => 'ctn', 'conversion_factor' => $cartonUnitCount, 'selling_price' => null, 'is_default_sales_unit' => $unitType === 'carton']);
-                        }
-                        if ($unitOptions->isEmpty() && !$salesUnitSelectionConfigured) {
-                            $unitOptions = collect([
-                                ['name' => $baseUnitName, 'symbol' => $baseUnitName, 'conversion_factor' => 1, 'selling_price' => $retailPrice, 'is_default_sales_unit' => $unitType === 'unit'],
-                            ]);
-                            if ($unitsPerRoll > 1) {
-                                $unitOptions->push(['name' => 'roll', 'symbol' => 'roll', 'conversion_factor' => $unitsPerRoll, 'selling_price' => null, 'is_default_sales_unit' => $unitType === 'roll']);
-                            }
-                            if ($cartonUnitCount > 1) {
-                                $unitOptions->push(['name' => 'carton', 'symbol' => 'ctn', 'conversion_factor' => $cartonUnitCount, 'selling_price' => null, 'is_default_sales_unit' => $unitType === 'carton']);
-                            }
-                        }
+                        $salesUnitConfiguration = $p->salesUnitConfiguration();
+                        $salesUnitSelectionConfigured = $salesUnitConfiguration['selection_configured'];
+                        $unitOptions = collect($salesUnitConfiguration['options']);
                         $measurementLabel = implode(' | ', $measurementParts);
                         $categoryName = $p->category->name ?? 'Uncategorized';
                         $minStockLevel = (int) ($p->reorder_level ?? 0) > 0 ? (int) $p->reorder_level : 15;

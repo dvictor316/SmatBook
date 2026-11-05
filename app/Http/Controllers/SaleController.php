@@ -308,11 +308,24 @@ class SaleController extends Controller
                 $requestedUnit = in_array($unitType, ['unit', 'units'], true)
                     ? strtolower(trim((string) ($product->base_unit_name ?: $product->stockUnitSymbol())))
                     : $unitType;
+                $hasConfiguredCartonUnit = $activeUnits->contains(function ($unit) {
+                    $unitName = strtolower(trim((string) ($unit->unit_name ?: $unit->unit_symbol)));
+                    $unitSymbol = strtolower(trim((string) ($unit->unit_symbol ?: $unit->unit_name)));
+
+                    return in_array($unitName, ['carton', 'cartons', 'ctn'], true)
+                        || in_array($unitSymbol, ['carton', 'cartons', 'ctn'], true);
+                });
+                $isImplicitStandaloneCarton = in_array($requestedUnit, ['carton', 'cartons', 'ctn'], true)
+                    && $product->usesStandaloneCartonStockUnit()
+                    && !$hasConfiguredCartonUnit;
+                if ($isImplicitStandaloneCarton) {
+                    $activeUnits = collect();
+                }
                 $matchedUnit = $activeUnits->first(function ($unit) use ($requestedUnit) {
                     return strtolower(trim((string) $unit->unit_name)) === $requestedUnit
                         || strtolower(trim((string) $unit->unit_symbol)) === $requestedUnit;
                 });
-                if (!$matchedUnit) {
+                if (!$matchedUnit && !$isImplicitStandaloneCarton) {
                     throw new \RuntimeException("The {$requestedUnit} unit is not configured for sale for {$product->name}.");
                 }
                 if ($matchedUnit && !($matchedUnit->is_sales_unit ?? true)) {

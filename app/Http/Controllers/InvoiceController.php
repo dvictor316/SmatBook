@@ -374,6 +374,18 @@ class InvoiceController extends Controller
             return;
         }
 
+        $isCartonUnit = in_array($requestedUnit, ['carton', 'cartons', 'ctn'], true);
+        $hasConfiguredCartonUnit = $activeUnits->contains(function ($unit) {
+            $unitName = strtolower(trim((string) ($unit->unit_name ?: $unit->unit_symbol)));
+            $unitSymbol = strtolower(trim((string) ($unit->unit_symbol ?: $unit->unit_name)));
+
+            return in_array($unitName, ['carton', 'cartons', 'ctn'], true)
+                || in_array($unitSymbol, ['carton', 'cartons', 'ctn'], true);
+        });
+        if ($isCartonUnit && $product->usesStandaloneCartonStockUnit() && !$hasConfiguredCartonUnit) {
+            return;
+        }
+
         $matchedUnit = $activeUnits->first(function ($unit) use ($requestedUnit) {
             return strtolower(trim((string) $unit->unit_name)) === $requestedUnit
                 || strtolower(trim((string) $unit->unit_symbol)) === $requestedUnit;

@@ -102,6 +102,126 @@ class Product extends Model
         return max((float) ($this->units_per_carton ?? 0), 0);
     }
 
+    public static function isStandaloneCartonConfiguration(
+        ?string $unitType,
+        ?string $baseUnitName,
+        float $unitsPerCarton,
+        ?string $measurementMode = null
+    ): bool
+    {
+        $unitType = strtolower(trim((string) $unitType));
+        $baseUnitName = strtolower(trim((string) $baseUnitName));
+        $measurementMode = strtolower(trim((string) $measurementMode));
+
+        return in_array($unitType, ['carton', 'cartons', 'ctn'], true)
+            && ($measurementMode === '' || $measurementMode === 'custom')
+            && $unitsPerCarton <= 1
+            && in_array($baseUnitName, ['', 'unit', 'units', 'piece', 'pieces', 'pc', 'pcs', 'carton', 'cartons', 'ctn'], true);
+    }
+
+    public function usesStandaloneCartonStockUnit(): bool
+    {
+        return static::isStandaloneCartonConfiguration(
+            $this->unit_type,
+            $this->base_unit_name,
+            $this->unitsPerCarton()
+        );
+    }
+
+    public function salesUnitConfiguration(): array
+    {
+        $activeUnits = Schema::hasTable('product_units')
+            ? collect($this->activeProductUnits)
+            : collect();
+        $selectionConfigured = Schema::hasColumn('product_units', 'is_sales_unit') && $activeUnits->isNotEmpty();
+        $hasExplicitCartonUnit = $activeUnits->contains(function ($unit) {
+            $unitName = strtolower(trim((string) ($unit->unit_name ?: $unit->unit_symbol)));
+            $unitSymbol = strtolower(trim((string) ($unit->unit_symbol ?: $unit->unit_name)));
+
+            return in_array($unitName, ['carton', 'cartons', 'ctn'], true)
+                || in_array($unitSymbol, ['carton', 'cartons', 'ctn'], true);
+        });
+
+        if ($this->usesStandaloneCartonStockUnit() && !$hasExplicitCartonUnit) {
+            $hasEnabledUnit = !$selectionConfigured
+                || $activeUnits->contains(fn ($unit) => (bool) ($unit->is_sales_unit ?? true));
+            $options = $hasEnabledUnit
+                ? [[
+                    'name' => 'carton',
+                    'symbol' => 'ctn',
+                    'conversion_factor' => 1,
+                    'selling_price' => $this->retail_price ?? $this->price ?? 0,
+                    'wholesale_price' => $this->wholesale_price ?? 0,
+                    'is_default_sales_unit' => strtolower((string) $this->unit_type) === 'carton',
+                ]]
+                : [];
+
+            return [
+                'options' => $options,
+                'selection_configured' => $selectionConfigured,
+            ];
+        }
+
+        $options = $activeUnits
+            ->filter(fn ($unit) => !$selectionConfigured || (bool) ($unit->is_sales_unit ?? true))
+            ->map(function ($unit) {
+                $unitName = strtolower(trim((string) ($unit->unit_name ?: $unit->unit_symbol)));
+                $factor = (float) $unit->conversion_factor;
+                if ($factor <= 1 && in_array($unitName, ['carton', 'cartons', 'ctn'], true)) {
+                    $factor = $this->unitsPerCarton();
+                }
+
+                return [
+                    'name' => (string) ($unit->unit_name ?: $unit->unit_symbol),
+                    'symbol' => (string) ($unit->unit_symbol ?: $unit->unit_name),
+                    'conversion_factor' => max(1, $factor),
+                    'selling_price' => $unit->selling_price,
+                    'wholesale_price' => $unit->wholesale_price,
+                    'is_default_sales_unit' => (bool) ($unit->is_default_sales_unit ?? false),
+                ];
+            })
+            ->values();
+
+        if ($options->isEmpty() && !$selectionConfigured) {
+            $baseUnitName = (string) ($this->base_unit_name ?: 'pcs');
+            $options->push([
+                'name' => $baseUnitName,
+                'symbol' => $baseUnitName,
+                'conversion_factor' => 1,
+                'selling_price' => $this->retail_price ?? $this->price ?? 0,
+                'wholesale_price' => $this->wholesale_price ?? 0,
+                'is_default_sales_unit' => strtolower((string) $this->unit_type) === 'unit',
+            ]);
+
+            $baseUnitKey = strtolower(trim($baseUnitName));
+            if ($this->unitsPerRoll() > 1) {
+                $options->push([
+                    'name' => 'roll',
+                    'symbol' => 'roll',
+                    'conversion_factor' => $this->unitsPerRoll(),
+                    'selling_price' => null,
+                    'wholesale_price' => null,
+                    'is_default_sales_unit' => strtolower((string) $this->unit_type) === 'roll',
+                ]);
+            }
+            if ($this->unitsPerCarton() > 1 && !in_array($baseUnitKey, ['carton', 'cartons', 'ctn'], true)) {
+                $options->push([
+                    'name' => 'carton',
+                    'symbol' => 'ctn',
+                    'conversion_factor' => $this->unitsPerCarton(),
+                    'selling_price' => null,
+                    'wholesale_price' => null,
+                    'is_default_sales_unit' => strtolower((string) $this->unit_type) === 'carton',
+                ]);
+            }
+        }
+
+        return [
+            'options' => $options->all(),
+            'selection_configured' => $selectionConfigured,
+        ];
+    }
+
     public function stockBreakdown(?float $quantity = null): array
     {
         $remainingUnits = max(0, (float) ($quantity ?? ($this->stock ?? $this->stock_quantity ?? 0)));
@@ -153,6 +273,10 @@ class Product extends Model
 
     public function stockUnitSymbol(): string
     {
+        if ($this->usesStandaloneCartonStockUnit()) {
+            return 'ctn';
+        }
+
         $legacyLabel = strtolower(trim((string) ($this->base_unit_name ?? '')));
         if ($legacyLabel !== '' && !in_array($legacyLabel, ['unit', 'units'], true)) {
             return $legacyLabel;

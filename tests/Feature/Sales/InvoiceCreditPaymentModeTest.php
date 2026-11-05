@@ -5,9 +5,11 @@ namespace Tests\Feature\Sales;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Payment;
+use App\Models\Product;
 use App\Models\Sale;
 use App\Models\User;
 use App\Support\SalesPaymentModeFilter;
+use App\Support\StockValuation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -104,6 +106,78 @@ class InvoiceCreditPaymentModeTest extends TestCase
         $response->assertSessionHasNoErrors()
             ->assertRedirect(route('sales.invoice.print', ['id' => $sale->id, 'autoprint' => 1]));
         $this->assertNotEmpty($sale->branch_id);
+    }
+
+    public function test_invoice_sells_standalone_carton_and_values_remaining_stock_at_carton_cost(): void
+    {
+        [$company, $user, $customer] = $this->workspace();
+        $productId = $this->product($company, $user);
+        DB::table('products')->where('id', $productId)->update([
+            'base_unit_name' => 'pcs',
+            'unit_type' => 'carton',
+            'units_per_carton' => 0,
+            'stock' => 4,
+            'stock_quantity' => 4,
+        ]);
+        DB::table('settings')->insert([
+            'key' => 'branches_json_company_'.$company->id,
+            'value' => json_encode([['id' => 'hq', 'name' => 'Headquarters']]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('product_branch_stocks')->insert([
+            'company_id' => $company->id,
+            'product_id' => $productId,
+            'branch_id' => 'hq',
+            'branch_name' => 'Headquarters',
+            'quantity' => 4,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('product_units')->insert([
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'product_id' => $productId,
+            'unit_name' => 'pcs',
+            'unit_symbol' => 'pcs',
+            'conversion_factor' => 1,
+            'is_base_unit' => true,
+            'is_purchase_unit' => true,
+            'is_default_sales_unit' => true,
+            'is_sales_unit' => true,
+            'purchase_price' => 500,
+            'selling_price' => 1000,
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $product = Product::findOrFail($productId);
+        $this->assertSame('carton', $product->salesUnitConfiguration()['options'][0]['name']);
+        $this->assertDatabaseHas('products', ['id' => $productId, 'stock' => 4]);
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $productId, 'branch_id' => 'hq', 'quantity' => 4]);
+        $invoicePage = $this->withViewErrors([])->get(route('sales.create'))->assertOk();
+        $this->assertStringContainsString(
+            '"name":"carton"',
+            html_entity_decode($invoicePage->getContent(), ENT_QUOTES | ENT_HTML5)
+        );
+
+        $payload = $this->invoicePayload($customer, $productId);
+        $payload['items'][0]['unit_type'] = 'carton';
+        $response = $this->post(route('invoices.store'), $payload);
+        $this->assertNull(session('error'), (string) session('error'));
+        $response->assertSessionHasNoErrors()->assertSessionHas('success');
+
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $productId, 'branch_id' => 'hq', 'quantity' => 3]);
+        $this->assertDatabaseHas('products', ['id' => $productId, 'stock' => 3, 'stock_quantity' => 3]);
+        $valuation = app(StockValuation::class)->summary(
+            app(StockValuation::class)->rowsQuery($company->id, $user->id, [
+                'scope' => 'branch',
+                'id' => 'hq',
+                'name' => 'Headquarters',
+            ])
+        );
+        $this->assertSame(1500.0, $valuation['value']);
     }
 
     public function test_existing_unpaid_manual_send_and_cash_rows_display_as_credit_without_rewriting_financial_data(): void

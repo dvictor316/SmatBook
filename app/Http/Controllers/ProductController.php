@@ -736,7 +736,15 @@ class ProductController extends Controller
         $stockRolls = (float) ($validated['stock_rolls'] ?? 0);
         $stockUnits = (float) ($validated['stock_units'] ?? 0);
 
-        $cartonUnits = $stockCartons * $unitsPerCarton;
+        $cartonFactor = $unitsPerCarton > 0
+            ? $unitsPerCarton
+            : (Product::isStandaloneCartonConfiguration(
+                $validated['unit_type'] ?? null,
+                $validated['base_unit_name'] ?? null,
+                $unitsPerCarton,
+                $validated['measurement_mode'] ?? null
+            ) ? 1 : 0);
+        $cartonUnits = $stockCartons * $cartonFactor;
 
         $rollUnits = $unitsPerRoll > 0
             ? ($stockRolls * $unitsPerRoll)
@@ -1602,14 +1610,26 @@ class ProductController extends Controller
             $validated = $this->applyProductUnitFields($validated);
             $validated['sku'] = $this->generateUniqueSku($validated['sku'] ?? null, $validated['name']);
 
+            $hasPackagingQuantities = $request->has('stock_cartons')
+                || $request->has('stock_rolls')
+                || $request->has('stock_units');
             $calculatedStock = $validated['stock'] ?? null;
 
-            if ($calculatedStock === null) {
-                $calculatedStock = $this->calculateStockFromPackaging($validated);
+            if ($hasPackagingQuantities || $calculatedStock === null) {
+                $calculatedStock = $this->calculateStockFromPackaging(array_merge($validated, [
+                    'measurement_mode' => $request->input('measurement_mode'),
+                ]));
             }
             $validated['stock'] = (float) ($calculatedStock ?? 0);
 
-            if ($validated['unit_type'] === 'carton' && $validated['units_per_carton'] < 1) {
+            if ($validated['unit_type'] === 'carton'
+                && $validated['units_per_carton'] < 1
+                && !Product::isStandaloneCartonConfiguration(
+                    $validated['unit_type'],
+                    $validated['base_unit_name'] ?? null,
+                    $validated['units_per_carton'],
+                    $request->input('measurement_mode')
+                )) {
                 return back()->withErrors([
                     'units_per_carton' => 'Enter the number of rolls per carton or the number of loose pieces per carton before saving this carton product.'
                 ])->withInput();
@@ -2101,7 +2121,13 @@ public function inventory(Request $request)
         $product = Product::findOrFail($id);
         $this->applyMeasurementPreset($request);
         if ($request->input('stock_entry_mode') === 'packaging') {
-            $request->merge(['stock' => $this->calculateStockFromPackaging($request->all())]);
+            $stockPackaging = array_merge([
+                'base_unit_name' => $product->base_unit_name,
+                'unit_type' => $product->unit_type,
+                'units_per_carton' => $product->units_per_carton,
+                'units_per_roll' => $product->units_per_roll,
+            ], $request->all());
+            $request->merge(['stock' => $this->calculateStockFromPackaging($stockPackaging)]);
         }
         if ($request->boolean('sales_unit_selection_enabled')) {
             $selectedSalesUnits = array_map(
@@ -2217,7 +2243,14 @@ public function inventory(Request $request)
         $validated['stock_rolls'] = (float) ($validated['stock_rolls'] ?? $product->stock_rolls ?? 0);
         $validated['stock_units'] = (float) ($validated['stock_units'] ?? $product->stock_units ?? 0);
         if ($request->input('stock_entry_mode') === 'packaging') {
-            if ($validated['stock_cartons'] > 0 && $validated['units_per_carton'] <= 0) {
+            if ($validated['stock_cartons'] > 0
+                && $validated['units_per_carton'] <= 0
+                && !Product::isStandaloneCartonConfiguration(
+                    $validated['unit_type'],
+                    $validated['base_unit_name'],
+                    $validated['units_per_carton'],
+                    $validated['measurement_mode'] ?? null
+                )) {
                 return back()->withErrors([
                     'units_per_carton' => 'Set the base-unit quantity per carton before entering carton stock.',
                 ])->withInput();
@@ -2268,7 +2301,15 @@ public function inventory(Request $request)
         }
 
         $unitTypeChanged = $validated['unit_type'] !== (string) $product->unit_type;
-        if ($unitTypeChanged && $validated['unit_type'] === 'carton' && $validated['units_per_carton'] < 1) {
+        if ($unitTypeChanged
+            && $validated['unit_type'] === 'carton'
+            && $validated['units_per_carton'] < 1
+            && !Product::isStandaloneCartonConfiguration(
+                $validated['unit_type'],
+                $validated['base_unit_name'] ?? null,
+                $validated['units_per_carton'],
+                $validated['measurement_mode'] ?? null
+            )) {
             return back()->withErrors([
                 'units_per_carton' => 'Enter the number of rolls per carton or the number of loose pieces per carton before saving this carton product.'
             ])->withInput();

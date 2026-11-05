@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\{Company, Product, User};
+use App\Support\StockValuation;
 use App\Http\Middleware\{CheckPermission, CheckPlanAccess, EnforceDeviceSessionLimit, ForceLogoutExpiredSession, RequireActiveBranch, SubscriptionActive, VerifyTenantSession};
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -90,6 +91,101 @@ class ProductMeasurementSetupTest extends TestCase
         $this->assertSame(12.0, (float) $product->units_per_carton);
         $this->assertSame(5.0, (float) $product->units_per_roll);
         $this->assertDatabaseHas('product_units', ['product_id' => $product->id, 'unit_name' => 'carton', 'selling_price' => 1100]);
+    }
+
+    public function test_standalone_carton_stock_uses_one_carton_as_the_stock_unit_and_cost(): void
+    {
+        $units = $this->workspace();
+        $payload = $this->payload($units, 'custom');
+        $payload['name'] = 'Standalone Carton Product';
+        $payload['base_unit_name'] = 'pcs';
+        $payload['unit_id'] = $units['pcs'];
+        $payload['base_unit_id'] = $units['pcs'];
+        $payload['unit_type'] = 'carton';
+        $payload['units_per_carton'] = 0;
+        $payload['units_per_roll'] = 0;
+        $payload['stock_cartons'] = 3;
+        $payload['stock_rolls'] = 0;
+        $payload['stock_units'] = 0;
+        $payload['stock'] = 0;
+
+        $this->post(route('inventory.Products.store'), $payload)
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
+
+        $product = Product::sole();
+        $this->assertSame(3.0, (float) $product->stock);
+        $this->assertSame(0.0, (float) $product->units_per_carton);
+        $this->assertTrue($product->usesStandaloneCartonStockUnit());
+        $this->assertSame('ctn', $product->stockUnitSymbol());
+        $this->assertSame('carton', $product->salesUnitConfiguration()['options'][0]['name']);
+        $posHtml = $this->get(route('sales.showPos'))->assertOk()->getContent();
+        $this->assertStringContainsString(
+            '"name":"carton"',
+            html_entity_decode($posHtml, ENT_QUOTES | ENT_HTML5)
+        );
+        $valuation = app(StockValuation::class)->summary(
+            app(StockValuation::class)->rowsQuery($product->company_id, $product->user_id, [
+                'scope' => 'branch',
+                'id' => 'hq',
+                'name' => 'Headquarters',
+            ])
+        );
+        $this->assertSame(240.0, $valuation['value']);
+    }
+
+    public function test_existing_product_can_add_carton_stock_without_a_conversion_factor(): void
+    {
+        $this->workspace();
+        $company = Company::sole();
+        $user = auth()->user();
+        $productId = DB::table('products')->insertGetId([
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'name' => 'Carton Stock Update',
+            'sku' => 'CARTON-STOCK-UPDATE',
+            'price' => 100,
+            'purchase_price' => 80,
+            'stock' => 0,
+            'stock_quantity' => 0,
+            'base_unit_name' => 'pcs',
+            'unit_type' => 'unit',
+            'units_per_carton' => 0,
+            'units_per_roll' => 0,
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('product_branch_stocks')->insert([
+            'company_id' => $company->id,
+            'product_id' => $productId,
+            'branch_id' => 'hq',
+            'branch_name' => 'Headquarters',
+            'quantity' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->put(route('inventory.Products.update', $productId), [
+            'name' => 'Carton Stock Update',
+            'sku' => 'CARTON-STOCK-UPDATE',
+            'price' => 100,
+            'purchase_price' => 80,
+            'stock_entry_mode' => 'packaging',
+            'stock' => 999,
+            'stock_cartons' => 2,
+            'stock_rolls' => 0,
+            'stock_units' => 0,
+            'measurement_mode' => 'custom',
+            'base_unit_name' => 'pcs',
+            'unit_type' => 'carton',
+            'units_per_carton' => 0,
+            'units_per_roll' => 0,
+            'status' => 'active',
+        ])->assertRedirect(route('product-list'))->assertSessionHas('success');
+
+        $this->assertDatabaseHas('products', ['id' => $productId, 'stock' => 2, 'stock_quantity' => 2]);
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $productId, 'branch_id' => 'hq', 'quantity' => 2]);
     }
 
     public function test_piece_carton_stock_accepts_cartons_rolls_and_loose_pieces_together(): void
