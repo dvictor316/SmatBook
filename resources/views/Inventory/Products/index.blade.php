@@ -81,9 +81,9 @@
     }
 
     .product-thumb-empty {
-        width: 35px;
-        height: 35px;
-        border-radius: 10px;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
         background: #eef2ff;
         color: #4f46e5;
         display: inline-flex;
@@ -94,28 +94,35 @@
     }
 
     .product-thumb-img {
-        width: 35px;
-        height: 35px;
+        width: 28px;
+        height: 28px;
         object-fit: cover;
         background: #eef2ff;
     }
 
-
     .inventory-toolbar {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 0.8rem 1rem;
+        gap: 0.5rem 0.65rem;
         justify-content: stretch;
         align-items: center;
         max-width: 100%;
     }
 
+    .inventory-toolbar-card {
+        margin-bottom: 0.6rem !important;
+    }
+
+    .inventory-toolbar-card > .card-body {
+        padding: 0.6rem 0.75rem;
+    }
+
     .inventory-page-title {
-        margin: 0 0 0.65rem;
+        margin: 0 0 0.45rem;
     }
 
     .inventory-page-title h4 {
-        font-size: 1.08rem;
+        font-size: 1rem;
         white-space: nowrap;
     }
 
@@ -126,15 +133,15 @@
     }
 
     .inventory-search-form .form-control {
-        min-height: 44px;
-        font-size: 0.94rem;
+        min-height: 36px;
+        font-size: 0.86rem;
     }
 
     .inventory-search-form .btn {
-        min-width: 54px;
-        padding-left: 0.85rem;
-        padding-right: 0.85rem;
-        border-radius: 999px;
+        min-width: 40px;
+        min-height: 36px;
+        padding: 0.25rem 0.6rem;
+        border-radius: 0.55rem;
         margin-left: -1px;
     }
 
@@ -149,19 +156,19 @@
     }
 
     .inventory-tool-btn {
-        min-height: 46px;
-        font-weight: 800;
-        border-radius: 999px;
-        padding-left: 0.85rem;
-        padding-right: 0.85rem;
+        min-height: 36px;
+        font-weight: 600;
+        border-radius: 0.55rem;
+        padding: 0.25rem 0.65rem;
         width: 100%;
         justify-content: center;
         white-space: nowrap;
-        font-size: 0.96rem;
+        font-size: 0.83rem;
+        line-height: 1.2;
     }
 
     .inventory-toolbar .dropdown-toggle.inventory-tool-btn {
-        padding-right: 1.15rem;
+        padding-right: 0.9rem;
     }
 
     .inventory-toolbar .dropdown > .inventory-tool-btn,
@@ -239,8 +246,8 @@
     }
 
     .inventory-table-shell {
-        max-height: calc(100vh - 22rem);
-        min-height: 15rem;
+        max-height: calc(100vh - 18rem);
+        min-height: 12rem;
         overflow: auto;
         overscroll-behavior: contain;
     }
@@ -253,21 +260,73 @@
         box-shadow: inset 0 -1px 0 #e5e7eb;
         vertical-align: middle;
         white-space: nowrap;
-        line-height: 1.15;
+        line-height: 1.1;
     }
 
     #products-table {
         width: 100% !important;
         table-layout: fixed;
-        font-size: 0.84rem;
+        font-size: 0.77rem;
     }
 
     #products-table th,
     #products-table td {
-        padding: 0.72rem 0.55rem;
+        padding: 0.34rem 0.4rem;
         vertical-align: middle;
         overflow-wrap: anywhere;
-        line-height: 1.25;
+        line-height: 1.15;
+    }
+
+    #products-table thead th {
+        padding: 0.38rem 1.25rem 0.38rem 0.4rem;
+        font-size: 0.7rem;
+        font-weight: 500;
+        letter-spacing: 0.015em;
+    }
+
+    #products-table.dataTable > thead .sorting:before,
+    #products-table.dataTable > thead .sorting:after,
+    #products-table.dataTable > thead .sorting_asc:before,
+    #products-table.dataTable > thead .sorting_asc:after,
+    #products-table.dataTable > thead .sorting_desc:before,
+    #products-table.dataTable > thead .sorting_desc:after,
+    #products-table.dataTable > thead .sorting_asc_disabled:before,
+    #products-table.dataTable > thead .sorting_asc_disabled:after,
+    #products-table.dataTable > thead .sorting_desc_disabled:before,
+    #products-table.dataTable > thead .sorting_desc_disabled:after {
+        top: 50%;
+        right: 0.35rem;
+        bottom: auto;
+        color: #94a3b8;
+        font-size: 9px;
+        line-height: 1;
+        opacity: 1;
+    }
+
+    #products-table.dataTable > thead .sorting:before,
+    #products-table.dataTable > thead .sorting_asc:before,
+    #products-table.dataTable > thead .sorting_desc:before,
+    #products-table.dataTable > thead .sorting_asc_disabled:before,
+    #products-table.dataTable > thead .sorting_desc_disabled:before {
+        transform: translateY(-85%);
+    }
+
+    #products-table.dataTable > thead .sorting:after,
+    #products-table.dataTable > thead .sorting_asc:after,
+    #products-table.dataTable > thead .sorting_desc:after,
+    #products-table.dataTable > thead .sorting_asc_disabled:after,
+    #products-table.dataTable > thead .sorting_desc_disabled:after {
+        transform: translateY(15%);
+    }
+
+    #products-table.dataTable > thead .sorting_asc:before,
+    #products-table.dataTable > thead .sorting_desc:after {
+        color: #0f3a8a;
+    }
+
+    #products-table.dataTable > thead .sorting_asc:after,
+    #products-table.dataTable > thead .sorting_desc:before {
+        color: #cbd5e1;
     }
 
     #products-table th:nth-child(1),
@@ -362,31 +421,27 @@
 
     #products-table td:nth-child(6) small {
         white-space: normal !important;
-        line-height: 1.3;
+        line-height: 1.15;
     }
 
     #products-table td:nth-child(7) .badge {
-        min-width: 48px;
-        font-weight: 800;
+        min-width: 40px;
+        padding: 0.2rem 0.35rem;
+        font-weight: 700;
     }
 
     #products-table .product-action-trigger {
         width: 100%;
         justify-content: center;
-        padding: 0.45rem 0.35rem;
-        font-size: 0.78rem;
-        min-height: 36px;
+        gap: 0.25rem;
+        padding: 0.2rem 0.3rem;
+        font-size: 0.72rem;
+        min-height: 29px;
     }
 
     @media (max-width: 991.98px) {
         #products-table {
             min-width: 980px;
-        }
-
-        #products-table th,
-        #products-table td {
-            padding-left: 0.65rem;
-            padding-right: 0.65rem;
         }
     }
 
@@ -398,7 +453,7 @@
     }
 
     .inventory-table-card-body {
-        padding: 0.65rem 0.65rem 0.35rem;
+        padding: 0.4rem 0.45rem 0.25rem;
     }
 
     .import-guide-modal .modal-content {
@@ -612,7 +667,7 @@
         <div class="inventory-page-title no-print">
             <h4 class="mb-0 text-primary"><i class="fas fa-boxes me-2"></i>Inventory Management</h4>
         </div>
-        <div class="card shadow-sm mb-3 no-print">
+        <div class="card shadow-sm mb-3 no-print inventory-toolbar-card">
             <div class="card-body">
                 <div class="inventory-toolbar">
                     <form method="GET" action="<?php echo e(route('product-list')); ?>" class="d-flex inventory-search-form inventory-toolbar-primary" id="inventory-toolbar-search-form">
@@ -1294,6 +1349,9 @@
             stateLoadCallback: function() { return null; },
             deferRender: true,
             autoWidth: false,
+            columnDefs: [
+                { targets: [0, 9], orderable: false }
+            ],
             paging: true,
             lengthMenu: [[25, 50, 100, 250, 500], [25, 50, 100, 250, 500]],
             language: {
