@@ -5475,6 +5475,169 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
     }
 }
 
+@media (min-width: 768px) and (max-width: 1199.98px) and (orientation: portrait) {
+    html,
+    body.pos-terminal-workspace,
+    body.pos-terminal-workspace .pos-full-page-wrapper {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    body.pos-terminal-workspace .pos-full-page-wrapper {
+        padding: 0 10px 18px !important;
+    }
+
+    body.pos-terminal-workspace .pos-shell {
+        display: block !important;
+        width: 100%;
+        min-width: 0;
+        overflow: visible;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+        grid-template-areas:
+            "header"
+            "shelf"
+            "controls"
+            "receipt" !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 8px 0 !important;
+        gap: 10px !important;
+        overflow: visible !important;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage > .row.g-4 {
+        display: contents !important;
+    }
+
+    body.pos-terminal-workspace .pos-main-stage > .row.g-4 > .col-xl-4,
+    body.pos-terminal-workspace .pos-main-stage > .row.g-4 > .col-xl-8 {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        padding-inline: 0 !important;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card,
+    body.pos-terminal-workspace .controls-card,
+    body.pos-terminal-workspace .pos-card,
+    body.pos-terminal-workspace .summary-panel {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card {
+        height: 260px !important;
+        max-height: 260px !important;
+        margin-bottom: 0 !important;
+    }
+
+    body.pos-terminal-workspace .pos-product-shelf-card .product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)) !important;
+        height: 184px !important;
+        max-height: 184px !important;
+    }
+
+    body.pos-terminal-workspace .cart-wrapper {
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: clamp(220px, 32vh, 360px) !important;
+        max-height: 360px !important;
+        overflow: auto !important;
+    }
+
+    body.pos-terminal-workspace .cart-table {
+        width: 100% !important;
+        min-width: 0 !important;
+        table-layout: fixed !important;
+    }
+
+    body.pos-terminal-workspace .cart-table th,
+    body.pos-terminal-workspace .cart-table td {
+        min-width: 0 !important;
+        padding-inline: 6px !important;
+        overflow-wrap: anywhere !important;
+    }
+
+    body.pos-terminal-workspace .cart-table th:nth-child(1),
+    body.pos-terminal-workspace .cart-table td:nth-child(1) { width: 43% !important; }
+    body.pos-terminal-workspace .cart-table th:nth-child(2),
+    body.pos-terminal-workspace .cart-table td:nth-child(2) { width: 17% !important; }
+    body.pos-terminal-workspace .cart-table th:nth-child(3),
+    body.pos-terminal-workspace .cart-table td:nth-child(3) { width: 24% !important; }
+    body.pos-terminal-workspace .cart-table th:nth-child(4),
+    body.pos-terminal-workspace .cart-table td:nth-child(4) { width: 16% !important; }
+
+    body.pos-terminal-workspace .cart-qty-input {
+        width: min(100%, 58px) !important;
+        min-width: 0 !important;
+    }
+
+    body.pos-terminal-workspace .summary-row,
+    body.pos-terminal-workspace .summary-panel .d-flex {
+        min-width: 0 !important;
+        gap: 10px !important;
+    }
+
+    body.pos-terminal-workspace .summary-value,
+    body.pos-terminal-workspace .grand-total,
+    body.pos-terminal-workspace #change-amount {
+        min-width: 0 !important;
+        max-width: 60% !important;
+        overflow-wrap: anywhere !important;
+        text-align: right !important;
+    }
+
+    body.pos-terminal-workspace .summary-panel .grand-total {
+        font-size: clamp(1.2rem, 3.5vw, 1.8rem) !important;
+    }
+
+    body.pos-terminal-workspace .pos-payment-tabs {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        width: 100% !important;
+        gap: 8px !important;
+    }
+
+    body.pos-terminal-workspace .pos-pay-tab {
+        min-width: 0 !important;
+        padding-inline: 6px !important;
+        white-space: normal !important;
+    }
+
+    body.pos-terminal-workspace .pos-pay-tab span {
+        white-space: normal !important;
+    }
+
+    body.pos-terminal-workspace .summary-panel .row.g-3 {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        width: 100% !important;
+        margin: 0 !important;
+        gap: 10px !important;
+    }
+
+    body.pos-terminal-workspace .summary-panel .row.g-3 > [class*="col-"] {
+        width: auto !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+    }
+
+    body.pos-terminal-workspace .summary-panel .form-control,
+    body.pos-terminal-workspace .summary-panel .form-select {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+}
+
 </style>
 
 <div class="pos-full-page-wrapper">

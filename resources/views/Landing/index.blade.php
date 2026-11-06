@@ -2371,6 +2371,72 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         transform: none !important;
     }
 }
+
+@media (min-width: 768px) and (max-width: 1199.98px) and (orientation: landscape) {
+    .hero-wrap {
+        min-height: calc(100svh - var(--nav-h) - var(--announce-h));
+    }
+
+    .hero-content {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: clamp(12px, 2vw, 28px);
+        padding: 0 clamp(20px, 4vw, 48px) 24px;
+    }
+
+    .hero-left {
+        flex: 1 1 60%;
+        min-width: 0;
+    }
+
+    .hero-circle-wrapper {
+        width: 100%;
+        max-width: none;
+    }
+
+    .hero-circle {
+        width: clamp(350px, 43vw, 480px) !important;
+        height: clamp(350px, 43vw, 480px) !important;
+        min-height: 0 !important;
+        border-radius: 50% !important;
+        padding: clamp(34px, 4vw, 52px) !important;
+    }
+
+    .hero-right {
+        flex: 0 0 31%;
+        width: auto;
+        min-width: 0;
+        margin-left: 0;
+    }
+
+    .hero-phone {
+        width: clamp(220px, 25vw, 290px);
+    }
+
+    .hero-h1 {
+        font-size: clamp(1.45rem, 3vw, 2.1rem) !important;
+        max-width: 18ch !important;
+    }
+
+    .hero-body {
+        max-width: 34ch !important;
+        font-size: clamp(0.9rem, 1.5vw, 1.05rem) !important;
+    }
+
+    .hero-cta-stack {
+        width: min(100%, 360px) !important;
+    }
+
+    .circle-badge {
+        width: clamp(118px, 12vw, 148px);
+        padding: 7px 9px;
+        gap: 7px;
+    }
+
+    .pb-main { font-size: 9px; }
+    .pb-sub { font-size: 6.5px; }
+}
 </style>
 
 <nav class="navbar navbar-expand-xl fixed-top sb-nav" id="mainNav">
