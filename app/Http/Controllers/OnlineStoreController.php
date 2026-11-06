@@ -4,16 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\OnlineStoreOrder;
+use App\Models\Payment;
 use App\Models\Product;
+use App\Models\Sale;
 use App\Models\StorefrontSetting;
 use App\Models\User;
 use App\Notifications\OnlineStoreOrderPlaced;
 use App\Services\WhatsAppOrderNotifier;
 use App\Support\BranchInventoryService;
+use App\Support\LedgerService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -42,7 +46,7 @@ class OnlineStoreController extends Controller
             ?: $branches->first();
         $setting->stock_branch_id = $selectedBranch['id'] ?? null;
         $setting->stock_branch_name = $selectedBranch['name'] ?? null;
-        $orders = OnlineStoreOrder::with('items')->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
+        $orders = OnlineStoreOrder::with(['items', 'sale'])->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $storeThemes = StorefrontSetting::themes();
 
         return view('storefront.settings', compact('setting', 'orders', 'storeThemes', 'branches'));
@@ -105,6 +109,10 @@ class OnlineStoreController extends Controller
             abort_if($order->status === 'fulfilled' && $validated['status'] !== 'fulfilled', 422, 'A fulfilled order cannot be reopened.');
             abort_if($order->status === 'cancelled' && $validated['status'] !== 'cancelled', 422, 'A cancelled order cannot be reopened.');
 
+            if ($validated['status'] === 'fulfilled' && $order->status !== 'fulfilled') {
+                $this->postOnlineOrderSale($order);
+            }
+
             if ($validated['status'] === 'cancelled' && $order->status !== 'cancelled') {
                 foreach ($order->items as $line) {
                     $product = Product::withoutGlobalScopes()
@@ -149,6 +157,7 @@ class OnlineStoreController extends Controller
         });
 
         if ($previousStatus !== $validated['status']) {
+            $this->clearDashboardMetricsCache($onlineStoreOrder->branch_id);
             $store = StorefrontSetting::where('company_id', $onlineStoreOrder->company_id)->first();
             if ($store) {
                 $this->notifyOwner($store, OnlineStoreOrder::with('items')->findOrFail($onlineStoreOrder->id));
@@ -644,6 +653,150 @@ class OnlineStoreController extends Controller
         $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
         abort_if($companyId < 1, 403, 'An active business workspace is required.');
         return $companyId;
+    }
+
+    private function postOnlineOrderSale(OnlineStoreOrder $order): Sale
+    {
+        $existingSale = Sale::withoutGlobalScopes()
+            ->where('company_id', $order->company_id)
+            ->where('source_type', 'online_store_order')
+            ->where('source_id', $order->id)
+            ->lockForUpdate()
+            ->first();
+
+        if ($existingSale) {
+            return $existingSale;
+        }
+
+        abort_if($order->items->isEmpty(), 422, 'This online order has no items to post as a sale.');
+
+        $amount = round((float) $order->total_amount, 2);
+        $paymentMethod = $order->payment_method === 'bank_transfer' ? 'transfer' : 'cash';
+        $branchName = trim((string) $order->branch_name) ?: 'Online Store';
+        $userId = (int) (Auth::id() ?? Company::withoutGlobalScope('tenant')->whereKey($order->company_id)->value('user_id'));
+        abort_if($userId < 1, 422, 'A business user is required to post this online sale.');
+
+        $saleAttributes = [
+            'company_id' => $order->company_id,
+            'branch_id' => $order->branch_id,
+            'branch_name' => $branchName,
+            'order_number' => $order->order_number,
+            'invoice_no' => $order->order_number,
+            'customer_name' => $order->customer_name,
+            'user_id' => $userId,
+            'terminal_id' => 'WEB',
+            'source_type' => 'online_store_order',
+            'source_id' => $order->id,
+            'source_reference' => $order->order_number,
+            'order_date' => now(),
+            'subtotal' => $order->subtotal,
+            'discount' => 0,
+            'tax' => 0,
+            'total' => $amount,
+            'paid' => $amount,
+            'amount_paid' => $amount,
+            'balance' => 0,
+            'payment_method' => $paymentMethod,
+            'payment_status' => 'paid',
+            'payment_details' => [
+                'source' => 'web',
+                'online_store_order_id' => $order->id,
+                'online_store_order_number' => $order->order_number,
+                'online_payment_method' => $order->payment_method,
+                'branch_id' => $order->branch_id,
+                'branch_name' => $branchName,
+            ],
+        ];
+        if (Schema::hasColumn('sales', 'order_status')) {
+            $saleAttributes['order_status'] = 'completed';
+        }
+        $sale = Sale::create($saleAttributes);
+
+        foreach ($order->items as $line) {
+            $product = Product::withoutGlobalScopes()
+                ->where('company_id', $order->company_id)
+                ->find($line->product_id);
+            abort_if(! $product, 422, "Product {$line->product_name} is no longer available; the order was not fulfilled.");
+
+            $quantity = (float) $line->quantity;
+            $lineTotal = round((float) $line->line_total, 2);
+            $item = [
+                'sale_id' => $sale->id,
+                'product_id' => $product->id,
+                'unit_price' => $line->unit_price,
+                'subtotal' => $lineTotal,
+                'total_price' => $lineTotal,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+            if (Schema::hasColumn('sale_items', 'quantity')) {
+                $item['quantity'] = $quantity;
+            }
+            if (Schema::hasColumn('sale_items', 'qty')) {
+                $item['qty'] = $quantity;
+            }
+            if (Schema::hasColumn('sale_items', 'product_name')) {
+                $item['product_name'] = $line->product_name;
+            }
+            if (Schema::hasColumn('sale_items', 'unit_type')) {
+                $item['unit_type'] = $product->unit_type ?: 'unit';
+            }
+            if (Schema::hasColumn('sale_items', 'stock_units')) {
+                $item['stock_units'] = $quantity;
+            }
+            if (Schema::hasColumn('sale_items', 'company_id')) {
+                $item['company_id'] = $order->company_id;
+            }
+            if (Schema::hasColumn('sale_items', 'branch_id')) {
+                $item['branch_id'] = $order->branch_id;
+            }
+            if (Schema::hasColumn('sale_items', 'branch_name')) {
+                $item['branch_name'] = $branchName;
+            }
+
+            DB::table('sale_items')->insert($item);
+        }
+
+        if ($amount > 0) {
+            $payment = [
+                'sale_id' => $sale->id,
+                'amount' => $amount,
+                'method' => $paymentMethod === 'transfer' ? 'Bank Transfer' : 'Cash',
+                'status' => 'Completed',
+                'reference' => $order->order_number,
+                'note' => 'Online order paid when fulfilled.',
+                'created_by' => $userId,
+            ];
+            foreach ([
+                'company_id' => $order->company_id,
+                'user_id' => $userId,
+                'branch_id' => $order->branch_id,
+                'branch_name' => $branchName,
+                'source' => 'web',
+            ] as $column => $value) {
+                if (Schema::hasColumn('payments', $column)) {
+                    $payment[$column] = $value;
+                }
+            }
+            Payment::create($payment);
+        }
+
+        LedgerService::postSale($sale->fresh());
+
+        return $sale;
+    }
+
+    private function clearDashboardMetricsCache(?string $branchId): void
+    {
+        $companyId = $this->companyId();
+        Cache::forget('metrics_co_' . $companyId);
+        Cache::forget('metrics_co_' . $companyId . '_global');
+        Cache::forget('metrics_co_' . $companyId . '_branch_all');
+
+        $branchId = $branchId ?: session('active_branch_id');
+        if (filled($branchId)) {
+            Cache::forget('metrics_co_' . $companyId . '_branch_' . $branchId);
+        }
     }
 
     private function uniqueSlug(string $name, int $companyId): string

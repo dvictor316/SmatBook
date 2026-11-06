@@ -45,6 +45,11 @@
                 <div class="content-page-header">
                     <div>
                         <h5>{{ __('Sales Report') }}</h5>
+                        @if(request()->filled('source'))
+                            <span class="badge bg-info text-dark">
+                                {{ __('Channel:') }} {{ ['web' => __('Online / Web'), 'pos' => __('POS'), 'other' => __('Other')][request('source')] ?? '' }}
+                            </span>
+                        @endif
                     </div>
                     <div class="list-btn">
                         <ul class="filter-list">
@@ -131,7 +136,7 @@
                 <div class="card-body pb-0">
                     <form action="{{ route('reports.sales') }}" method="GET" class="pb-3">
                         <div class="row gx-2 align-items-end">
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="form-label small fw-bold">{{ __('Search Product / SKU') }}</label>
                                 <input type="text" name="search" class="form-control" placeholder="Search product or SKU" value="{{ request('search') }}">
                             </div>
@@ -143,7 +148,7 @@
                                 <label class="form-label small fw-bold">{{ __('To Date') }}</label>
                                 <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="form-label small fw-bold">{{ __('Payment Mode') }}</label>
                                 <select name="payment_method" class="form-select">
                                     <option value="">{{ __('All payment modes') }}</option>
@@ -153,6 +158,15 @@
                                     <option value="card" @selected(request('payment_method') === 'card')>{{ __('POS / Card') }}</option>
                                     <option value="wallet" @selected(request('payment_method') === 'wallet')>{{ __('Customer Wallet') }}</option>
                                     <option value="charge_to_room" @selected(request('payment_method') === 'charge_to_room')>{{ __('Charge to Room') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold">{{ __('Sales Channel') }}</label>
+                                <select name="source" class="form-select">
+                                    <option value="">{{ __('All channels') }}</option>
+                                    <option value="web" @selected(request('source') === 'web')>{{ __('Online / Web') }}</option>
+                                    <option value="pos" @selected(request('source') === 'pos')>{{ __('POS') }}</option>
+                                    <option value="other" @selected(request('source') === 'other')>{{ __('Other') }}</option>
                                 </select>
                             </div>
                             <div class="col-md-2">

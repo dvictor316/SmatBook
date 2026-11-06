@@ -10,13 +10,16 @@ use App\Http\Middleware\RequireActiveBranch;
 use App\Http\Middleware\SubscriptionActive;
 use App\Models\Company;
 use App\Models\OnlineStoreOrder;
+use App\Models\Sale;
 use App\Models\StorefrontSetting;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Notifications\OnlineStoreOrderPlaced;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request as ClientRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class OnlineStoreWorkflowTest extends TestCase
@@ -724,6 +727,122 @@ class OnlineStoreWorkflowTest extends TestCase
 
         $this->assertDatabaseHas('online_store_orders', ['id' => $order->id, 'status' => 'cancelled']);
         $this->assertDatabaseHas('products', ['id' => $productId, 'stock' => 10, 'stock_quantity' => 10]);
+    }
+
+    public function test_fulfilling_an_online_order_posts_one_paid_web_sale_without_deducting_stock_again(): void
+    {
+        [$user, $company] = $this->workspace('Web Sales Store');
+        $categoryId = $this->category($user->id, $company->id, 'Supplies');
+        $productId = $this->product($user->id, $company->id, $categoryId, 'Web Order Item', 'WEB-001', 10, 2500);
+        StorefrontSetting::create([
+            'company_id' => $company->id,
+            'slug' => 'web-sales-store',
+            'store_name' => 'Web Sales Store',
+            'is_enabled' => true,
+        ]);
+
+        $this->post(route('storefront.orders.store', 'web-sales-store'), [
+            'order_token' => '00000000-0000-4000-8000-000000000009',
+            'customer_name' => 'Web Buyer',
+            'customer_phone' => '08000000000',
+            'payment_method' => 'bank_transfer',
+            'items' => [$productId => 3],
+        ])->assertSessionHasNoErrors();
+
+        $order = OnlineStoreOrder::withoutGlobalScopes()->firstOrFail();
+        $this->actingAs($user)
+            ->withSession(['current_tenant_id' => $company->id, 'active_branch_scope' => 'all'])
+            ->patch(route('online-store.orders.update', $order), ['status' => 'fulfilled'])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Online order status updated.')
+            ->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('online_store_orders', ['id' => $order->id, 'status' => 'fulfilled']);
+        $this->patch(route('online-store.orders.update', $order), ['status' => 'fulfilled'])
+            ->assertSessionHasNoErrors();
+
+        $sale = Sale::withoutGlobalScopes()
+            ->where('source_type', 'online_store_order')
+            ->where('source_id', $order->id)
+            ->firstOrFail();
+        $this->assertSame('paid', $sale->payment_status);
+        $this->assertSame('transfer', $sale->payment_method);
+        $this->assertSame('web', $sale->payment_details['source']);
+        $this->assertSame(7500.0, (float) $sale->total);
+        $this->assertDatabaseCount('sales', 1);
+        $this->assertDatabaseCount('payments', 1);
+        $this->assertDatabaseHas('payments', [
+            'sale_id' => $sale->id,
+            'amount' => 7500,
+            'method' => 'Bank Transfer',
+            'status' => 'Completed',
+        ]);
+        $receiptEntries = DB::table('transactions')
+            ->where('related_id', $sale->id)
+            ->where('related_type', Sale::class)
+            ->where('transaction_type', Transaction::TYPE_RECEIPT)
+            ->get();
+        $this->assertCount(2, $receiptEntries);
+        $this->assertSame(7500.0, (float) $receiptEntries->sum('debit'));
+        $this->assertSame(7500.0, (float) $receiptEntries->sum('credit'));
+        $this->assertDatabaseHas('sale_items', [
+            'sale_id' => $sale->id,
+            'product_id' => $productId,
+            'qty' => 3,
+            'stock_units' => 3,
+            'total_price' => 7500,
+        ]);
+        $this->assertDatabaseHas('products', ['id' => $productId, 'stock' => 7, 'stock_quantity' => 7]);
+
+        $posSale = Sale::create([
+            'company_id' => $company->id,
+            'order_number' => 'POS-CHANNEL-TEST-001',
+            'invoice_no' => 'POS-CHANNEL-TEST-001',
+            'customer_name' => 'POS Buyer',
+            'user_id' => $user->id,
+            'terminal_id' => 'POS1',
+            'subtotal' => 1000,
+            'total' => 1000,
+            'paid' => 1000,
+            'amount_paid' => 1000,
+            'balance' => 0,
+            'payment_method' => 'cash',
+            'payment_status' => 'paid',
+            'payment_details' => ['source' => 'pos'],
+        ]);
+        $posItem = [
+            'sale_id' => $posSale->id,
+            'product_id' => $productId,
+            'quantity' => 1,
+            'qty' => 1,
+            'unit_price' => 1000,
+            'subtotal' => 1000,
+            'total_price' => 1000,
+            'stock_units' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+        if (Schema::hasColumn('sale_items', 'company_id')) {
+            $posItem['company_id'] = $company->id;
+        }
+        DB::table('sale_items')->insert($posItem);
+
+        $webReport = $this->get(route('reports.sales', ['source' => 'web', 'payment_method' => 'transfer']))
+            ->assertOk()
+            ->assertViewHas('reportSummary', fn ($summary) => (float) $summary->quantity === 3.0 && (float) $summary->revenue === 7500.0);
+        $webReport->assertSee('Channel: Online / Web');
+        $this->get(route('reports.sales', ['source' => 'pos']))
+            ->assertOk()
+            ->assertViewHas('reportSummary', fn ($summary) => (float) $summary->quantity === 1.0 && (float) $summary->revenue === 1000.0);
+        $this->get(route('reports.sales', ['source' => 'other']))
+            ->assertOk()
+            ->assertViewHas('reportSummary', fn ($summary) => (float) $summary->quantity === 0.0 && (float) $summary->revenue === 0.0);
+
+        $this->get(route('user.dashboard'))
+            ->assertOk()
+            ->assertViewHas('periodSales', fn ($periodSales) => (float) $periodSales['today']['revenue'] === 8500.0);
+        $this->get(route('online-store.settings'))
+            ->assertOk()
+            ->assertSee('Paid · Sale ' . $sale->invoice_no);
     }
 
     public function test_foreign_workspace_cannot_update_an_online_order(): void

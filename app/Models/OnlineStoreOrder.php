@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Traits\TenantScoped;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class OnlineStoreOrder extends Model
 {
@@ -21,6 +22,12 @@ class OnlineStoreOrder extends Model
     public function items()
     {
         return $this->hasMany(OnlineStoreOrderItem::class);
+    }
+
+    public function sale(): HasOne
+    {
+        return $this->hasOne(Sale::class, 'source_id')
+            ->where('source_type', 'online_store_order');
     }
 
     public function includesCompanyWideRecords(): bool

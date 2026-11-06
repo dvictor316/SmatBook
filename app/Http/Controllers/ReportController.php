@@ -2677,6 +2677,7 @@ class ReportController extends Controller
             'start_date' => 'nullable|date_format:Y-m-d', 'end_date' => 'nullable|date_format:Y-m-d',
             'from_date' => 'nullable|date_format:Y-m-d', 'to_date' => 'nullable|date_format:Y-m-d',
             'payment_method' => 'nullable|string|max:50',
+            'source' => 'nullable|in:web,pos,other',
         ]);
         $saleDateExpression = Schema::hasColumn('sales', 'order_date')
             ? 'COALESCE(sales.order_date, sales.created_at)' : 'sales.created_at';
@@ -2758,6 +2759,61 @@ class ReportController extends Controller
 
         if ($request->filled('payment_method')) {
             SalesPaymentModeFilter::apply($query, (string) $request->input('payment_method'));
+        }
+
+        if ($request->filled('source')) {
+            $source = (string) $request->input('source');
+            $hasPaymentDetails = Schema::hasColumn('sales', 'payment_details');
+            $hasTerminalId = Schema::hasColumn('sales', 'terminal_id');
+
+            $query->where(function ($channelQuery) use ($source, $hasPaymentDetails, $hasTerminalId) {
+                if ($source === 'web') {
+                    if ($hasPaymentDetails) {
+                        $channelQuery->where('sales.payment_details->source', 'web');
+                        if ($hasTerminalId) {
+                            $channelQuery->orWhere(function ($legacyQuery) {
+                                $legacyQuery->whereNull('sales.payment_details->source')
+                                    ->where('sales.terminal_id', 'WEB');
+                            });
+                        }
+                    } elseif ($hasTerminalId) {
+                        $channelQuery->where('sales.terminal_id', 'WEB');
+                    }
+                } elseif ($source === 'pos') {
+                    if ($hasPaymentDetails) {
+                        $channelQuery->where('sales.payment_details->source', 'pos');
+                        if ($hasTerminalId) {
+                            $channelQuery->orWhere(function ($legacyQuery) {
+                                $legacyQuery->whereNull('sales.payment_details->source')
+                                    ->where('sales.terminal_id', 'POS1');
+                            });
+                        }
+                    } elseif ($hasTerminalId) {
+                        $channelQuery->where('sales.terminal_id', 'POS1');
+                    }
+                } else {
+                    if ($hasPaymentDetails) {
+                        $channelQuery->where(function ($knownSourceQuery) {
+                            $knownSourceQuery->whereNotNull('sales.payment_details->source')
+                                ->whereNotIn('sales.payment_details->source', ['web', 'pos']);
+                        });
+                        $channelQuery->orWhere(function ($legacyQuery) use ($hasTerminalId) {
+                            $legacyQuery->whereNull('sales.payment_details->source');
+                            if ($hasTerminalId) {
+                                $legacyQuery->where(function ($terminalQuery) {
+                                    $terminalQuery->whereNull('sales.terminal_id')
+                                        ->orWhereNotIn('sales.terminal_id', ['WEB', 'POS1']);
+                                });
+                            }
+                        });
+                    } elseif ($hasTerminalId) {
+                        $channelQuery->where(function ($legacyQuery) {
+                            $legacyQuery->whereNull('sales.terminal_id')
+                                ->orWhereNotIn('sales.terminal_id', ['WEB', 'POS1']);
+                        });
+                    }
+                }
+            });
         }
 
         if ($startDate && $endDate && $startDate > $endDate) {

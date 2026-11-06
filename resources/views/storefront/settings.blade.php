@@ -70,7 +70,18 @@
                             </td>
                             <td>{{ str($order->payment_method)->replace('_', ' ')->title() }}</td>
                             <td class="fw-bold">{{ \App\Support\GeoCurrency::format((float) $order->total_amount) }}</td>
-                            <td><span class="badge {{ $statusClass }}">{{ str($order->status)->replace('_', ' ')->title() }}</span></td>
+                            <td>
+                                <span class="badge {{ $statusClass }}">{{ str($order->status)->replace('_', ' ')->title() }}</span>
+                                @if($order->status === 'fulfilled')
+                                    <div class="small {{ $order->sale ? 'text-success' : 'text-danger' }} mt-1">
+                                        @if($order->sale)
+                                            Paid · Sale {{ $order->sale->invoice_no }}
+                                        @else
+                                            Sale not posted
+                                        @endif
+                                    </div>
+                                @endif
+                            </td>
                             <td>
                                 <span class="badge {{ $order->whatsapp_notification_status === 'sent' ? 'bg-success' : ($order->whatsapp_notification_status === 'failed' ? 'bg-danger' : 'bg-secondary') }}">{{ str($order->whatsapp_notification_status ?: 'pending')->replace('_', ' ')->title() }}</span>
                                 @if($order->whatsapp_notification_error)<div class="small text-danger" title="{{ $order->whatsapp_notification_error }}">Delivery failed</div>@endif
