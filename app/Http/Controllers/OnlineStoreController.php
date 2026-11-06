@@ -19,6 +19,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -123,10 +124,19 @@ class OnlineStoreController extends Controller
                         continue;
                     }
 
-                    $restored = max(
-                        (float) ($product->stock ?? 0),
-                        (float) ($product->stock_quantity ?? 0)
-                    ) + (float) $line->quantity;
+                    $stockLevels = collect([$product->stock, $product->stock_quantity])
+                        ->filter(fn ($stock) => $stock !== null && is_numeric($stock))
+                        ->map(fn ($stock) => max(0, (float) $stock));
+                    $remainingStock = $stockLevels->isEmpty() ? 0 : (float) $stockLevels->min();
+                    if ($stockLevels->unique()->count() > 1) {
+                        Log::warning('Online order cancellation reconciled inconsistent product stock fields.', [
+                            'order_id' => $order->id,
+                            'product_id' => $product->id,
+                            'stock' => $product->stock,
+                            'stock_quantity' => $product->stock_quantity,
+                        ]);
+                    }
+                    $restored = $remainingStock + (float) $line->quantity;
                     Product::withoutGlobalScopes()->whereKey($product->id)->update([
                         'stock' => $restored,
                         'stock_quantity' => $restored,

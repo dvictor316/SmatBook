@@ -2,6 +2,12 @@
 @extends('layout.mainlayout')
 
 @section('content')
+<style>
+    @media print {
+        .no-print { display: none !important; }
+        .page-wrapper { margin: 0 !important; }
+    }
+</style>
 <div class="page-wrapper">
     <div class="content container-fluid">
         @component('components.page-header')
@@ -10,6 +16,12 @@
             @endslot
         @endcomponent
 
+        <div class="d-flex justify-content-end mb-3 no-print">
+            <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+                <i class="fas fa-print me-1"></i> Print transfers
+            </button>
+        </div>
+
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
@@ -17,7 +29,7 @@
             <div class="alert alert-danger">{{ session('error') }}</div>
         @endif
 
-        <form method="GET" action="{{ route('inventory.transfer-audit') }}" class="card border-0 shadow-sm mb-4">
+        <form method="GET" action="{{ route('inventory.transfer-audit') }}" class="card border-0 shadow-sm mb-4 no-print">
             <div class="card-body">
                 <div class="row g-2 align-items-end">
                     <div class="col-lg-3 col-md-6">
@@ -84,6 +96,7 @@
                                 <th>Quantity</th>
                                 <th>Details</th>
                                 <th>By</th>
+                                <th class="no-print">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -99,10 +112,29 @@
                                     <td class="fw-semibold">{{ \App\Support\CompactNumber::format((float) $audit->quantity, 2) }}</td>
                                     <td>{{ $audit->notes ?: 'Branch stock transfer' }}</td>
                                     <td>{{ $audit->initiator?->name ?? 'System' }}</td>
+                                    <td class="no-print">
+                                        <div class="d-flex flex-column gap-2">
+                                            @if($audit->product && $audit->quantity > 0 && $audit->from_branch_id && $audit->to_branch_id)
+                                                <form method="POST" action="{{ route('inventory.transfer') }}" class="d-flex align-items-center gap-1">
+                                                    @csrf
+                                                    <input type="hidden" name="product_id" value="{{ $audit->product_id }}">
+                                                    <input type="hidden" name="from_branch_id" value="{{ $audit->to_branch_id }}">
+                                                    <input type="hidden" name="to_branch_id" value="{{ $audit->from_branch_id }}">
+                                                    <input type="number" name="quantity" class="form-control form-control-sm" min="0.01" max="{{ $audit->quantity }}" step="0.01" value="{{ $audit->quantity }}" aria-label="Quantity to return">
+                                                    <button type="submit" class="btn btn-sm btn-outline-primary">Return</button>
+                                                </form>
+                                            @endif
+                                            <form method="POST" action="{{ route('inventory.transfer-audit.destroy', $audit->id) }}" onsubmit="return window.confirm('Delete this transfer and return its stock to the source branch?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete / reverse</button>
+                                            </form>
+                                        </div>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center text-muted py-4">No stock transfers logged yet.</td>
+                                    <td colspan="8" class="text-center text-muted py-4">No stock transfers logged yet.</td>
                                 </tr>
                             @endforelse
                         </tbody>

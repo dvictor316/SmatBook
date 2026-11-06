@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use App\Support\BranchInventoryService;
+use App\Support\InventoryQuantity;
 use App\Support\PriceListUsage;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -36,7 +37,7 @@ class ProductController extends Controller
         $this->middleware('permission:inventory.products.create')->only(['create', 'store', 'import', 'updateFashionSettings']);
         $this->middleware('permission:inventory.products.edit')->only(['edit', 'update']);
         $this->middleware('permission:inventory.products.delete')->only(['destroy', 'bulkDestroy', 'removeFromBranch', 'undoLastImport']);
-        $this->middleware('permission:inventory.stock.edit')->only(['adjust_stock', 'update_history', 'delete_history', 'storeDamageStock', 'transferStock', 'searchTransferProducts']);
+        $this->middleware('permission:inventory.stock.edit')->only(['adjust_stock', 'update_history', 'delete_history', 'storeDamageStock', 'transferStock', 'searchTransferProducts', 'deleteTransferAudit']);
         $this->middleware(function ($request, $next) {
             $hasStock = collect(['stock', 'stock_quantity', 'stock_cartons', 'stock_rolls', 'stock_units'])
                 ->contains(fn ($field) => (float) $request->input($field, 0) > 0);
@@ -2771,7 +2772,97 @@ public function inventory(Request $request)
         return response()->json($query->orderBy('name')->orderBy('id')->paginate(50));
     }
 
-    private function recordBranchTransferHistory(Product $product, float $quantity, array $sourceContext, array $destinationContext): void
+    public function deleteTransferAudit(int $id)
+    {
+        $companyId = $this->tenantCompanyId();
+        $quantity = 0.0;
+
+        try {
+            $quantity = DB::transaction(function () use ($id, $companyId) {
+                $audit = StockTransferAudit::query()
+                    ->where('company_id', $companyId)
+                    ->lockForUpdate()
+                    ->findOrFail($id);
+                $quantity = round((float) $audit->quantity, 2);
+
+                if ($quantity > 0) {
+                    if (! filled($audit->from_branch_id) || ! filled($audit->to_branch_id)) {
+                        throw new \RuntimeException('This transfer is missing branch details and cannot be reversed safely.');
+                    }
+
+                    $productQuery = Product::query()->withoutGlobalScope('company_id');
+                    $this->applyTenantScope($productQuery, 'products');
+                    $product = $productQuery->lockForUpdate()->findOrFail($audit->product_id);
+                    $sourceContext = [
+                        'id' => (string) $audit->from_branch_id,
+                        'name' => (string) ($audit->from_branch_name ?? ''),
+                    ];
+                    $destinationContext = [
+                        'id' => (string) $audit->to_branch_id,
+                        'name' => (string) ($audit->to_branch_name ?? ''),
+                    ];
+                    $productCompanyId = (int) ($product->company_id ?? $companyId);
+
+                    $this->branchInventory->adjustBranchStock(
+                        $product,
+                        -$quantity,
+                        $destinationContext,
+                        $productCompanyId,
+                        false
+                    );
+                    $this->branchInventory->adjustBranchStock(
+                        $product,
+                        $quantity,
+                        $sourceContext,
+                        $productCompanyId,
+                        false
+                    );
+                    $this->recordBranchTransferHistory(
+                        $product,
+                        $quantity,
+                        $destinationContext,
+                        $sourceContext,
+                        (int) $audit->id
+                    );
+
+                    StockTransferAudit::query()->create([
+                        'company_id' => $audit->company_id,
+                        'product_id' => $audit->product_id,
+                        'from_branch_id' => $destinationContext['id'],
+                        'from_branch_name' => $destinationContext['name'],
+                        'to_branch_id' => $sourceContext['id'],
+                        'to_branch_name' => $sourceContext['name'],
+                        'quantity' => $quantity,
+                        'initiated_by' => auth()->id(),
+                        'notes' => 'Reversal of transfer #' . $audit->id,
+                    ]);
+                }
+
+                $audit->delete();
+
+                return $quantity;
+            });
+        } catch (\RuntimeException $exception) {
+            return redirect()->back()->with('error', $exception->getMessage());
+        }
+
+        $this->clearDashboardMetricsCache();
+
+        return redirect()->back()->with(
+            'success',
+            $quantity > 0
+                ? 'Transfer deleted and stock returned to the source branch.'
+                : 'Zero-stock transfer record deleted.'
+        );
+    }
+
+    private function recordBranchTransferHistory(
+        Product $product,
+        float $quantity,
+        array $sourceContext,
+        array $destinationContext,
+        ?int $reversalOfTransferId = null
+    ): void
     {
         if ($quantity <= 0 || !Schema::hasTable('inventory_history')) {
             return;
@@ -2803,8 +2894,11 @@ public function inventory(Request $request)
             $destinationPayload['branch_name'] = $destinationContext['name'];
         }
         if (Schema::hasColumn('inventory_history', 'reference')) {
-            $sourcePayload['reference'] = 'Branch Transfer to ' . $destinationContext['name'];
-            $destinationPayload['reference'] = 'Branch Transfer from ' . $sourceContext['name'];
+            $referencePrefix = $reversalOfTransferId === null
+                ? 'Branch Transfer'
+                : 'Branch Transfer Reversal #' . $reversalOfTransferId;
+            $sourcePayload['reference'] = $referencePrefix . ' to ' . $destinationContext['name'];
+            $destinationPayload['reference'] = $referencePrefix . ' from ' . $sourceContext['name'];
         }
 
         DB::table('inventory_history')->insert($sourcePayload);
@@ -3345,8 +3439,9 @@ public function inventory(Request $request)
             ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
             ->findOrFail($id);
         $inventoryHistories = collect();
-        $branchId = trim((string) ($activeBranch['id'] ?? ''));
-        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+        $allBranches = ($activeBranch['scope'] ?? 'branch') === 'all';
+        $branchId = $allBranches ? '' : trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = $allBranches ? '' : trim((string) ($activeBranch['name'] ?? ''));
         $stockUnitLabel = $product->stockUnitSymbol();
         $currentStock = $this->branchInventory->getAvailableStock($product, $activeBranch);
 
@@ -3565,7 +3660,7 @@ public function inventory(Request $request)
                         sales.created_at as created_at,
                         'out' as type,
                         COALESCE(" . ($saleReferenceColumn ? "sales.{$saleReferenceColumn}" : 'NULL') . ", {$saleFallbackReference}) as reference,
-                        COALESCE(sale_items.{$saleQtyColumn}, 0) as quantity,
+                        " . InventoryQuantity::saleStockUnitsExpression('sale_items', 'products') . " as quantity,
                         products.name as name,
                         products.sku as sku,
                         products.purchase_price as purchase_price,
@@ -3574,6 +3669,13 @@ public function inventory(Request $request)
                     ->where('sale_items.product_id', $id)
                     ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
                     ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'));
+
+                if (Schema::hasColumn('sales', 'source_type')) {
+                    $saleHistoryQuery->where(function ($query) {
+                        $query->whereNull('sales.source_type')
+                            ->orWhere('sales.source_type', '<>', 'online_store_order');
+                    });
+                }
 
                 if ($branchId !== '' || $branchName !== '') {
                     $saleHistoryQuery->where(function ($sub) use ($branchId, $branchName) {
@@ -3638,6 +3740,129 @@ public function inventory(Request $request)
                 }
 
                 $inventoryHistories = $inventoryHistories->merge($saleHistoryQuery->get());
+            }
+        }
+
+        if (
+            Schema::hasTable('online_store_orders')
+            && Schema::hasTable('online_store_order_items')
+            && Schema::hasTable('products')
+        ) {
+            $onlineOrderHistoryQuery = DB::table('online_store_order_items as order_items')
+                ->join('online_store_orders as online_orders', 'order_items.online_store_order_id', '=', 'online_orders.id')
+                ->join('products', 'order_items.product_id', '=', 'products.id')
+                ->select(
+                    'order_items.id as item_id',
+                    'order_items.quantity',
+                    'online_orders.order_number',
+                    'online_orders.status',
+                    'online_orders.created_at as ordered_at',
+                    'online_orders.updated_at as order_updated_at',
+                    'products.name',
+                    'products.sku',
+                    'products.purchase_price',
+                    'products.unit_type'
+                )
+                ->where('order_items.product_id', $id)
+                ->tap(fn ($q) => $this->applyTenantScope($q, 'products'));
+
+            if (Schema::hasColumn('online_store_orders', 'company_id') && $product->company_id) {
+                $onlineOrderHistoryQuery->where('online_orders.company_id', $product->company_id);
+            }
+
+            if ($branchId !== '' || $branchName !== '') {
+                $onlineOrderBranchId = Schema::hasColumn('online_store_orders', 'branch_id');
+                $onlineOrderBranchName = Schema::hasColumn('online_store_orders', 'branch_name');
+                $productBranchId = Schema::hasColumn('products', 'branch_id');
+                $productBranchName = Schema::hasColumn('products', 'branch_name');
+
+                $onlineOrderHistoryQuery->where(function ($sub) use (
+                    $branchId,
+                    $branchName,
+                    $onlineOrderBranchId,
+                    $onlineOrderBranchName,
+                    $productBranchId,
+                    $productBranchName
+                ) {
+                    $matched = false;
+                    if ($branchId !== '' && $onlineOrderBranchId) {
+                        $sub->where('online_orders.branch_id', $branchId);
+                        $matched = true;
+                    }
+                    if ($branchName !== '' && $onlineOrderBranchName) {
+                        $method = $matched ? 'orWhere' : 'where';
+                        $sub->{$method}('online_orders.branch_name', $branchName);
+                        $matched = true;
+                    }
+
+                    if (($branchId !== '' && $productBranchId) || ($branchName !== '' && $productBranchName)) {
+                        $method = $matched ? 'orWhere' : 'where';
+                        $sub->{$method}(function ($fallback) use (
+                            $branchId,
+                            $branchName,
+                            $onlineOrderBranchId,
+                            $onlineOrderBranchName,
+                            $productBranchId,
+                            $productBranchName
+                        ) {
+                            if ($onlineOrderBranchId) {
+                                $fallback->whereNull('online_orders.branch_id');
+                            }
+                            if ($onlineOrderBranchName) {
+                                $fallback->whereNull('online_orders.branch_name');
+                            }
+                            if ($branchId !== '' && $productBranchId) {
+                                $fallback->where('products.branch_id', $branchId);
+                            }
+                            if ($branchName !== '' && $productBranchName) {
+                                $fallback->where('products.branch_name', $branchName);
+                            }
+                        });
+                    }
+                });
+            }
+
+            $existingReferences = $inventoryHistories
+                ->pluck('reference')
+                ->filter()
+                ->map(fn ($reference) => (string) $reference)
+                ->all();
+
+            foreach ($onlineOrderHistoryQuery->get() as $orderItem) {
+                $orderNumber = (string) $orderItem->order_number;
+                $outReference = 'Online Store Order: ' . $orderNumber;
+                if (! in_array($outReference, $existingReferences, true)) {
+                    $inventoryHistories->push((object) [
+                        'id' => 'online-store-out-' . $orderItem->item_id,
+                        'created_at' => $orderItem->ordered_at,
+                        'type' => 'out',
+                        'reference' => $outReference,
+                        'quantity' => $orderItem->quantity,
+                        'name' => $orderItem->name,
+                        'sku' => $orderItem->sku,
+                        'purchase_price' => $orderItem->purchase_price,
+                        'unit_type' => $orderItem->unit_type,
+                    ]);
+                    $existingReferences[] = $outReference;
+                }
+
+                if (strtolower((string) $orderItem->status) === 'cancelled') {
+                    $inReference = 'Online Store Order Cancelled: ' . $orderNumber;
+                    if (! in_array($inReference, $existingReferences, true)) {
+                        $inventoryHistories->push((object) [
+                            'id' => 'online-store-cancel-' . $orderItem->item_id,
+                            'created_at' => $orderItem->order_updated_at,
+                            'type' => 'in',
+                            'reference' => $inReference,
+                            'quantity' => $orderItem->quantity,
+                            'name' => $orderItem->name,
+                            'sku' => $orderItem->sku,
+                            'purchase_price' => $orderItem->purchase_price,
+                            'unit_type' => $orderItem->unit_type,
+                        ]);
+                        $existingReferences[] = $inReference;
+                    }
+                }
             }
         }
 

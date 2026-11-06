@@ -1038,6 +1038,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/inventory/transfer-products/search', 'searchTransferProducts')->name('inventory.transfer-products.search');
         Route::delete('/inventory/branch-products/{id}', 'removeFromBranch')->name('inventory.branch-products.remove');
         Route::get('/inventory-transfer-audit', 'transferAudit')->name('inventory.transfer-audit');
+        Route::delete('/inventory-transfer-audit/{id}', 'deleteTransferAudit')->name('inventory.transfer-audit.destroy');
         Route::get('/units', 'units')->name('units');
         Route::post('/units/store', 'storeUnit')->name('units.store');
         Route::put('/units/{id}', 'updateUnit')->name('units.update');

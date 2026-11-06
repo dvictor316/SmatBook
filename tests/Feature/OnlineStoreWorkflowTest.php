@@ -704,6 +704,16 @@ class OnlineStoreWorkflowTest extends TestCase
         [$user, $company] = $this->workspace('Cancellation Store');
         $categoryId = $this->category($user->id, $company->id, 'Supplies');
         $productId = $this->product($user->id, $company->id, $categoryId, 'Returnable Box', 'BOX-001', 10, 2500);
+        DB::table('inventory_history')->insert([
+            'user_id' => $user->id,
+            'company_id' => $company->id,
+            'product_id' => $productId,
+            'quantity' => 10,
+            'type' => 'in',
+            'reference' => 'Initial Stock',
+            'created_at' => now()->subMinutes(2),
+            'updated_at' => now()->subMinutes(2),
+        ]);
         StorefrontSetting::create([
             'company_id' => $company->id,
             'slug' => 'cancellation-store',
@@ -720,6 +730,13 @@ class OnlineStoreWorkflowTest extends TestCase
         ])->assertSessionHasNoErrors();
 
         $order = OnlineStoreOrder::withoutGlobalScopes()->firstOrFail();
+        DB::table('online_store_orders')->where('id', $order->id)->update([
+            'created_at' => now()->subMinute(),
+        ]);
+        DB::table('products')->where('id', $productId)->update([
+            'stock' => 10,
+            'stock_quantity' => 7,
+        ]);
         $this->actingAs($user)
             ->withSession(['current_tenant_id' => $company->id, 'active_branch_scope' => 'all'])
             ->patch(route('online-store.orders.update', $order), ['status' => 'cancelled'])
@@ -727,6 +744,25 @@ class OnlineStoreWorkflowTest extends TestCase
 
         $this->assertDatabaseHas('online_store_orders', ['id' => $order->id, 'status' => 'cancelled']);
         $this->assertDatabaseHas('products', ['id' => $productId, 'stock' => 10, 'stock_quantity' => 10]);
+        DB::table('inventory_history')
+            ->where('product_id', $productId)
+            ->where('reference', 'Online Store Order: ' . $order->order_number)
+            ->delete();
+
+        $this->get(route('inventory.history', $productId))
+            ->assertOk()
+            ->assertSee('Online Store Order: ' . $order->order_number)
+            ->assertSee('Online Store Order Cancelled: ' . $order->order_number)
+            ->assertViewHas('inventoryHistories', function ($histories) use ($order) {
+                $movements = $histories->keyBy('reference');
+                $outReference = 'Online Store Order: ' . $order->order_number;
+                $inReference = 'Online Store Order Cancelled: ' . $order->order_number;
+
+                return isset($movements[$outReference], $movements[$inReference])
+                    && $movements[$outReference]->type === 'out'
+                    && $movements[$inReference]->type === 'in'
+                    && (float) $movements[$inReference]->running_balance === 10.0;
+            });
     }
 
     public function test_fulfilling_an_online_order_posts_one_paid_web_sale_without_deducting_stock_again(): void
@@ -825,6 +861,16 @@ class OnlineStoreWorkflowTest extends TestCase
             $posItem['company_id'] = $company->id;
         }
         DB::table('sale_items')->insert($posItem);
+
+        $this->withSession(['current_tenant_id' => $company->id, 'active_branch_scope' => 'all'])
+            ->get(route('inventory.history', $productId))
+            ->assertOk()
+            ->assertViewHas('inventoryHistories', function ($histories) {
+                $references = $histories->pluck('reference');
+
+                return $references->contains('POS-CHANNEL-TEST-001')
+                    && $references->filter(fn ($reference) => str_starts_with((string) $reference, 'Online Store Order:'))->count() === 1;
+            });
 
         $webReport = $this->get(route('reports.sales', ['source' => 'web', 'payment_method' => 'transfer']))
             ->assertOk()
