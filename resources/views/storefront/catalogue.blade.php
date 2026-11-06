@@ -111,7 +111,7 @@
     <div class="product-grid">
         @forelse($products as $product)
             @php
-                $available = max((float)($product->stock ?? 0), (float)($product->stock_quantity ?? 0));
+                $available = (float) ($product->storefront_available_stock ?? max((float) ($product->stock ?? 0), (float) ($product->stock_quantity ?? 0)));
                 $variantLabel = $product->variantLabel();
                 $displayName = trim($product->name . ($variantLabel !== '' ? ' · ' . $variantLabel : ''));
                 $quantityStep = in_array(strtolower($product->stockUnitSymbol()), ['kg','g','litre','liter','l','m']) ? 0.01 : 1;

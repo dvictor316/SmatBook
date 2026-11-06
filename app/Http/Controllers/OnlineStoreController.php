@@ -9,39 +9,56 @@ use App\Models\StorefrontSetting;
 use App\Models\User;
 use App\Notifications\OnlineStoreOrderPlaced;
 use App\Services\WhatsAppOrderNotifier;
+use App\Support\BranchInventoryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class OnlineStoreController extends Controller
 {
+    public function __construct(private readonly BranchInventoryService $branchInventory)
+    {
+    }
+
     public function settings(): View
     {
         $companyId = $this->companyId();
         $company = Company::withoutGlobalScope('tenant')->findOrFail($companyId);
+        $branches = $this->branchesForCompany($companyId);
         $setting = StorefrontSetting::firstOrNew(['company_id' => $companyId], [
             'slug' => $this->uniqueSlug($company->name ?: 'store', $companyId),
             'store_name' => $company->name ?: 'Online Store',
         ]);
+        $selectedBranch = $branches->firstWhere('id', (string) $setting->stock_branch_id)
+            ?: $branches->firstWhere('id', trim((string) session('active_branch_id', '')))
+            ?: $branches->firstWhere('is_active', true)
+            ?: $branches->first();
+        $setting->stock_branch_id = $selectedBranch['id'] ?? null;
+        $setting->stock_branch_name = $selectedBranch['name'] ?? null;
         $orders = OnlineStoreOrder::with('items')->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $storeThemes = StorefrontSetting::themes();
 
-        return view('storefront.settings', compact('setting', 'orders', 'storeThemes'));
+        return view('storefront.settings', compact('setting', 'orders', 'storeThemes', 'branches'));
     }
 
     public function updateSettings(Request $request): RedirectResponse
     {
         $companyId = $this->companyId();
+        $branches = $this->branchesForCompany($companyId);
         $settingId = StorefrontSetting::where('company_id', $companyId)->value('id');
         $validated = $request->validate([
             'slug' => ['required', 'alpha_dash', 'min:3', 'max:100', Rule::unique('storefront_settings')->ignore($settingId)],
             'custom_domain' => ['nullable', 'string', 'max:191', Rule::unique('storefront_settings')->ignore($settingId)],
             'store_name' => 'required|string|max:191',
             'store_theme' => ['required', Rule::in(array_keys(StorefrontSetting::themes()))],
+            'stock_branch_id' => ['nullable', 'string', 'max:64', Rule::in($branches->pluck('id')->all())],
             'description' => 'nullable|string|max:1000',
             'contact_phone' => 'nullable|string|max:60',
             'contact_email' => 'nullable|email|max:191',
@@ -49,11 +66,25 @@ class OnlineStoreController extends Controller
             'fulfilment_note' => 'nullable|string|max:191',
             'is_enabled' => 'nullable|boolean',
         ]);
+        $stockBranch = $branches->firstWhere('id', (string) ($validated['stock_branch_id'] ?? ''));
+        if ($request->boolean('is_enabled') && $branches->isNotEmpty() && ! $stockBranch) {
+            return back()
+                ->withErrors(['stock_branch_id' => 'Select the branch that will fulfil online store orders.'])
+                ->withInput();
+        }
+
         $validated['slug'] = Str::slug($validated['slug']);
         $validated['custom_domain'] = $this->normaliseHost($validated['custom_domain'] ?? null);
         $validated['is_enabled'] = $request->boolean('is_enabled');
+        $validated['stock_branch_id'] = $stockBranch['id'] ?? null;
+        $validated['stock_branch_name'] = $stockBranch['name'] ?? null;
 
-        StorefrontSetting::updateOrCreate(['company_id' => $companyId], $validated);
+        DB::transaction(function () use ($companyId, $validated, $stockBranch) {
+            StorefrontSetting::updateOrCreate(['company_id' => $companyId], $validated);
+            if ($stockBranch) {
+                $this->reconcileUnassignedOrders($companyId, $stockBranch);
+            }
+        });
 
         return back()->with('success', 'Online store settings updated.');
     }
@@ -92,6 +123,15 @@ class OnlineStoreController extends Controller
                         'stock' => $restored,
                         'stock_quantity' => $restored,
                     ]);
+                    if (filled($order->branch_id) && Schema::hasTable('product_branch_stocks')) {
+                        $this->branchInventory->adjustBranchStock(
+                            $product,
+                            (float) $line->quantity,
+                            ['id' => (string) $order->branch_id, 'name' => (string) ($order->branch_name ?? '')],
+                            (int) $order->company_id,
+                            false
+                        );
+                    }
                 }
             }
 
@@ -118,6 +158,7 @@ class OnlineStoreController extends Controller
             ->orderBy('name')
             ->limit(40)
             ->get();
+        $this->attachStoreStock($products, $store);
 
         return view('storefront.home', compact('store', 'company', 'products'));
     }
@@ -141,6 +182,11 @@ class OnlineStoreController extends Controller
             }))
             ->orderBy('name')
             ->paginate(\App\Support\PageSize::resolve())->withQueryString();
+        $products->getCollection()->transform(function (Product $product) use ($store) {
+            $product->setAttribute('storefront_available_stock', $this->availableStoreStock($product, $store));
+
+            return $product;
+        });
 
         return view('storefront.catalogue', compact('store', 'company', 'products', 'search', 'orderContact'));
     }
@@ -171,8 +217,9 @@ class OnlineStoreController extends Controller
             ->map(fn ($quantity) => round((float) $quantity, 4))
             ->filter(fn ($quantity) => $quantity > 0);
         abort_if($quantities->isEmpty(), 422, 'Select at least one product quantity.');
+        $stockBranch = $this->storeStockBranch($store);
 
-        $order = DB::transaction(function () use ($store, $validated, $quantities) {
+        $order = DB::transaction(function () use ($store, $validated, $quantities, $stockBranch) {
             $products = Product::withoutGlobalScopes()
                 ->where('company_id', $store->company_id)
                 ->whereIn('id', $quantities->keys())
@@ -183,15 +230,19 @@ class OnlineStoreController extends Controller
             abort_if($products->count() !== $quantities->count(), 422, 'One or more selected products are unavailable.');
 
             $subtotal = 0.0;
+            $availableStockByProduct = [];
             foreach ($quantities as $productId => $quantity) {
                 $product = $products->get((int) $productId);
-                $available = max((float) ($product->stock ?? 0), (float) ($product->stock_quantity ?? 0));
+                $available = $this->availableStoreStock($product, $store, $stockBranch, true);
                 abort_if($quantity > $available, 422, "Only {$available} units of {$product->name} are available.");
+                $availableStockByProduct[$product->id] = $available;
                 $subtotal += $quantity * (float) ($product->price ?? 0);
             }
 
             $order = OnlineStoreOrder::withoutGlobalScopes()->create([
                 'company_id' => $store->company_id,
+                'branch_id' => $stockBranch['id'] ?? null,
+                'branch_name' => $stockBranch['name'] ?? null,
                 'order_number' => 'WEB-' . now()->format('ymdHis') . '-' . strtoupper(Str::random(4)),
                 'customer_name' => $validated['customer_name'],
                 'customer_email' => $validated['customer_email'] ?? null,
@@ -214,14 +265,33 @@ class OnlineStoreController extends Controller
                     'unit_price' => $product->price,
                     'line_total' => round($quantity * (float) $product->price, 2),
                 ]);
-                $remaining = max(0, max(
+                $globalRemaining = max(0, max(
                     (float) ($product->stock ?? 0),
                     (float) ($product->stock_quantity ?? 0)
                 ) - $quantity);
                 Product::withoutGlobalScopes()->whereKey($product->id)->update([
-                    'stock' => $remaining,
-                    'stock_quantity' => $remaining,
+                    'stock' => $globalRemaining,
+                    'stock_quantity' => $globalRemaining,
                 ]);
+
+                if ($stockBranch && Schema::hasTable('product_branch_stocks')) {
+                    if ($this->branchStockRow($product, $stockBranch, (int) $store->company_id)) {
+                        $this->branchInventory->adjustBranchStock(
+                            $product,
+                            -1 * (float) $quantity,
+                            $stockBranch,
+                            (int) $store->company_id,
+                            false
+                        );
+                    } else {
+                        $this->branchInventory->setBranchStock(
+                            $product,
+                            max(0, (float) $availableStockByProduct[$product->id] - (float) $quantity),
+                            $stockBranch,
+                            (int) $store->company_id
+                        );
+                    }
+                }
             }
 
             return $order;
@@ -292,6 +362,189 @@ class OnlineStoreController extends Controller
 
         $owner = User::query()->find($ownerId);
         $owner?->notify(new OnlineStoreOrderPlaced($order, $store->store_name));
+    }
+
+    private function branchesForCompany(int $companyId): Collection
+    {
+        if (! Schema::hasTable('settings')) {
+            return collect();
+        }
+
+        $raw = DB::table('settings')
+            ->where('key', 'branches_json_company_' . $companyId)
+            ->value('value');
+        $decoded = json_decode((string) $raw, true);
+
+        return collect(is_array($decoded) ? $decoded : [])
+            ->filter(fn ($branch) => is_array($branch))
+            ->map(fn (array $branch) => [
+                'id' => trim((string) ($branch['id'] ?? '')),
+                'name' => trim((string) ($branch['name'] ?? '')),
+                'is_active' => filter_var($branch['is_active'] ?? true, FILTER_VALIDATE_BOOLEAN),
+            ])
+            ->filter(fn (array $branch) => $branch['id'] !== '' && $branch['name'] !== '' && $branch['is_active'])
+            ->values();
+    }
+
+    private function storeStockBranch(StorefrontSetting $store): ?array
+    {
+        $branches = $this->branchesForCompany((int) $store->company_id);
+        $configuredBranchId = trim((string) $store->stock_branch_id);
+
+        if ($configuredBranchId !== '') {
+            $branch = $branches->firstWhere('id', $configuredBranchId);
+            abort_unless($branch, 503, 'The online store stock branch is unavailable. Please select an active branch in store settings.');
+
+            return $branch;
+        }
+
+        return $branches->firstWhere('is_active', true) ?? $branches->first();
+    }
+
+    private function attachStoreStock(Collection $products, StorefrontSetting $store): void
+    {
+        $stockBranch = $this->storeStockBranch($store);
+        foreach ($products as $product) {
+            $product->setAttribute(
+                'storefront_available_stock',
+                $this->availableStoreStock($product, $store, $stockBranch)
+            );
+        }
+    }
+
+    private function availableStoreStock(
+        Product $product,
+        StorefrontSetting $store,
+        ?array $stockBranch = null,
+        bool $lockForUpdate = false
+    ): float {
+        $productStock = max((float) ($product->stock ?? 0), (float) ($product->stock_quantity ?? 0));
+        if (! $stockBranch || ! Schema::hasTable('product_branch_stocks')) {
+            return max(0, $productStock);
+        }
+
+        $branchStockQuery = $this->branchStocksForProduct($product, (int) $store->company_id)
+            ->where('branch_id', $stockBranch['id']);
+        if ($lockForUpdate) {
+            $branchStockQuery->lockForUpdate();
+        }
+        $branchStock = $branchStockQuery->first();
+
+        if ($branchStock) {
+            if (Schema::hasColumn('product_branch_stocks', 'is_available') && ! $branchStock->is_available) {
+                return 0;
+            }
+
+            return max(0, (float) $branchStock->quantity);
+        }
+
+        return $this->branchStocksForProduct($product, (int) $store->company_id)->exists()
+            ? 0
+            : max(0, $productStock);
+    }
+
+    private function branchStockRow(Product $product, array $branch, int $companyId, bool $lockForUpdate = false): ?object
+    {
+        $query = $this->branchStocksForProduct($product, $companyId)
+            ->where('branch_id', $branch['id']);
+        if ($lockForUpdate) {
+            $query->lockForUpdate();
+        }
+
+        return $query->first();
+    }
+
+    private function branchStocksForProduct(Product $product, int $companyId): \Illuminate\Database\Query\Builder
+    {
+        $query = DB::table('product_branch_stocks')->where('product_id', $product->id);
+        if (Schema::hasColumn('product_branch_stocks', 'company_id')) {
+            $query->where(function ($tenant) use ($companyId) {
+                $tenant->where('company_id', $companyId)
+                    ->orWhereNull('company_id');
+            });
+        }
+
+        return $query;
+    }
+
+    private function reconcileUnassignedOrders(int $companyId, array $branch): void
+    {
+        if (! Schema::hasTable('online_store_orders') || ! Schema::hasTable('online_store_order_items')) {
+            return;
+        }
+
+        $orders = OnlineStoreOrder::withoutGlobalScopes()
+            ->where('company_id', $companyId)
+            ->where(function ($query) {
+                $query->whereNull('branch_id')->orWhere('branch_id', '');
+            })
+            ->where(function ($query) {
+                $query->whereNull('branch_name')->orWhere('branch_name', '');
+            })
+            ->whereRaw("LOWER(COALESCE(status, '')) <> 'cancelled'")
+            ->with('items')
+            ->lockForUpdate()
+            ->get();
+
+        if ($orders->isEmpty()) {
+            return;
+        }
+
+        $orderedByProduct = $orders
+            ->flatMap(fn (OnlineStoreOrder $order) => $order->items)
+            ->groupBy('product_id')
+            ->map(fn (Collection $items) => (float) $items->sum('quantity'));
+        $products = Product::withoutGlobalScopes()
+            ->where('company_id', $companyId)
+            ->whereIn('id', $orderedByProduct->keys())
+            ->lockForUpdate()
+            ->get()
+            ->keyBy('id');
+
+        foreach ($orderedByProduct as $productId => $orderedQuantity) {
+            $product = $products->get((int) $productId);
+            if (! $product) {
+                continue;
+            }
+
+            if (! Schema::hasTable('product_branch_stocks')) {
+                continue;
+            }
+
+            $branchStock = $this->branchStockRow($product, $branch, $companyId, true);
+            if ($branchStock) {
+                if (Schema::hasColumn('product_branch_stocks', 'is_available') && ! $branchStock->is_available) {
+                    throw ValidationException::withMessages([
+                        'stock_branch_id' => "The selected branch is unavailable for {$product->name}; review its inventory before assigning existing orders.",
+                    ]);
+                }
+
+                $remainingStock = (float) $branchStock->quantity - $orderedQuantity;
+                if ($remainingStock < 0) {
+                    throw ValidationException::withMessages([
+                        'stock_branch_id' => "The selected branch does not have enough recorded stock to reconcile existing {$product->name} orders.",
+                    ]);
+                }
+            } else {
+                if ($this->branchStocksForProduct($product, $companyId)->exists()) {
+                    throw ValidationException::withMessages([
+                        'stock_branch_id' => "{$product->name} has inventory in other branches but none in the selected branch. Assign its stock before linking the store.",
+                    ]);
+                }
+
+                $remainingStock = max((float) ($product->stock ?? 0), (float) ($product->stock_quantity ?? 0));
+            }
+
+            $this->branchInventory->setBranchStock($product, $remainingStock, $branch, $companyId);
+        }
+
+        OnlineStoreOrder::withoutGlobalScopes()
+            ->whereIn('id', $orders->pluck('id'))
+            ->update([
+                'branch_id' => $branch['id'],
+                'branch_name' => $branch['name'],
+                'updated_at' => now(),
+            ]);
     }
 
     private function resolvePublicStore(Request $request, ?string $slug): StorefrontSetting

@@ -130,7 +130,7 @@
             </div>
         </div>
         @if($featuredProduct)
-            @php($featuredStock = max((float) ($featuredProduct->stock ?? 0), (float) ($featuredProduct->stock_quantity ?? 0)))
+            @php($featuredStock = (float) ($featuredProduct->storefront_available_stock ?? max((float) ($featuredProduct->stock ?? 0), (float) ($featuredProduct->stock_quantity ?? 0))))
             <article class="hero-product reveal">
                 @if($featuredProduct->image_url)
                     <img src="{{ $featuredProduct->image_url }}" alt="{{ $featuredProduct->name }}" fetchpriority="high">
@@ -265,7 +265,7 @@
                 <div class="section-heading"><div><p class="eyebrow">A closer look</p><h2>Explore the collection</h2><p>Selected products, with the details that matter.</p></div><a class="text-link" href="{{ $galleryUrl }}">View the full gallery &rarr;</a></div>
                 <div class="two-grid">
                     @foreach($twoGridProducts as $product)
-                        @php($productStock = max((float) ($product->stock ?? 0), (float) ($product->stock_quantity ?? 0)))
+                        @php($productStock = (float) ($product->storefront_available_stock ?? max((float) ($product->stock ?? 0), (float) ($product->stock_quantity ?? 0))))
                         <article class="tile reveal">
                             <div class="tile-media">
                                 @if($product->image_url)<img src="{{ $product->image_url }}" alt="{{ $product->name }}" loading="lazy">@else<div class="placeholder" aria-hidden="true">✦</div>@endif
@@ -288,7 +288,7 @@
                 <div class="section-heading"><div><p class="eyebrow">Made to stand out</p><h2>Product stories</h2><p>Find the right fit for what you are looking for.</p></div></div>
                 <div class="editorial-list">
                     @foreach($editorialProducts as $product)
-                        @php($productStock = max((float) ($product->stock ?? 0), (float) ($product->stock_quantity ?? 0)))
+                        @php($productStock = (float) ($product->storefront_available_stock ?? max((float) ($product->stock ?? 0), (float) ($product->stock_quantity ?? 0))))
                         <article class="editorial reveal">
                             <div class="editorial-media">
                                 @if($product->image_url)<img src="{{ $product->image_url }}" alt="{{ $product->name }}" loading="lazy">@else<div class="placeholder" aria-hidden="true">✦</div>@endif
@@ -311,7 +311,7 @@
                 <div class="section-heading"><div><p class="eyebrow">More to discover</p><h2>More from the store</h2></div><a class="text-link" href="{{ $galleryUrl }}">Browse all products &rarr;</a></div>
                 <div class="small-grid">
                     @foreach($finalProducts as $product)
-                        @php($productStock = max((float) ($product->stock ?? 0), (float) ($product->stock_quantity ?? 0)))
+                        @php($productStock = (float) ($product->storefront_available_stock ?? max((float) ($product->stock ?? 0), (float) ($product->stock_quantity ?? 0))))
                         <article class="small-card reveal">
                             <div class="small-media">
                                 @if($product->image_url)<img src="{{ $product->image_url }}" alt="{{ $product->name }}" loading="lazy">@else<div class="placeholder" aria-hidden="true">✦</div>@endif

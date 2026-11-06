@@ -9,6 +9,7 @@ class StorefrontSetting extends Model
     protected $fillable = [
         'company_id', 'slug', 'custom_domain', 'store_name', 'description',
         'contact_phone', 'contact_email', 'fulfilment_note', 'is_enabled',
+        'stock_branch_id', 'stock_branch_name',
         'owner_whatsapp_number', 'store_theme',
     ];
 

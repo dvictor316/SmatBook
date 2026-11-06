@@ -12,6 +12,22 @@
                 <form method="POST" action="{{ route('online-store.settings.update') }}">@csrf @method('PUT')
                     <div class="mb-3"><label class="form-label">Store Name *</label><input class="form-control" name="store_name" value="{{ old('store_name', $setting->store_name) }}" required></div>
                     <div class="mb-3"><label class="form-label" for="storeTheme">Store theme</label><select class="form-select" name="store_theme" id="storeTheme" required>@foreach($storeThemes as $themeKey => $theme)<option value="{{ $themeKey }}" @selected(old('store_theme', $setting->store_theme ?: 'classic') === $themeKey)>{{ $theme['label'] }}</option>@endforeach</select></div>
+                    @if($branches->isNotEmpty())
+                        <div class="mb-3">
+                            <label class="form-label" for="storeStockBranch">Stock branch *</label>
+                            <select class="form-select" name="stock_branch_id" id="storeStockBranch" required>
+                                <option value="">Select a branch</option>
+                                @foreach($branches as $branch)
+                                    <option value="{{ $branch['id'] }}" @selected(old('stock_branch_id', $setting->stock_branch_id) === $branch['id'])>{{ $branch['name'] }}</option>
+                                @endforeach
+                            </select>
+                            <small class="form-text text-muted">Online orders and available quantities use this branch's inventory. Saving assigns existing non-cancelled, unassigned online orders to this branch.</small>
+                            @error('stock_branch_id')<div class="text-danger small">{{ $message }}</div>@enderror
+                        </div>
+                    @else
+                        <input type="hidden" name="stock_branch_id" value="">
+                        <div class="small text-muted mb-3">No branches are configured; the store uses the product's shared stock.</div>
+                    @endif
                     <div class="mb-3"><label class="form-label">SmartProbook Store URL *</label><div class="input-group"><span class="input-group-text">{{ url('/shop') }}/</span><input class="form-control" name="slug" value="{{ old('slug', $setting->slug) }}" required></div></div>
                     <div class="mb-3"><label class="form-label">Custom Domain</label><input class="form-control" name="custom_domain" value="{{ old('custom_domain', $setting->custom_domain) }}" placeholder="shop.yourbusiness.com"></div>
                     <div class="mb-3"><label class="form-label">Store Description</label><textarea class="form-control" name="description" rows="3">{{ old('description', $setting->description) }}</textarea></div>

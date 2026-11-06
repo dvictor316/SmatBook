@@ -12,6 +12,7 @@ use App\Models\Company;
 use App\Models\OnlineStoreOrder;
 use App\Models\StorefrontSetting;
 use App\Models\User;
+use App\Notifications\OnlineStoreOrderPlaced;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request as ClientRequest;
 use Illuminate\Support\Facades\DB;
@@ -90,12 +91,37 @@ class OnlineStoreWorkflowTest extends TestCase
         $this->assertSame('online_store_order', $notification->data['type']);
         $this->assertSame((int) $order->id, (int) $notification->data['order_id']);
         $this->assertSame($order->order_number, $notification->data['target_item']);
-        $this->actingAs($user)
+        $notificationPage = $this->actingAs($user)
             ->withSession(['current_tenant_id' => $company->id, 'active_branch_scope' => 'all'])
             ->get(route('notifications.index'))
             ->assertOk()
             ->assertSee('View Online Orders')
             ->assertSee(route('online-store.settings'), false);
+        $notificationPage->assertSee('id="headerNotificationBadge"', false)
+            ->assertSee('data-notification-id="'.$notification->id.'"', false)
+            ->assertSee($notification->data['message']);
+        $this->assertMatchesRegularExpression(
+            '/<span[^>]*id="headerNotificationBadge"[^>]*>\s*1\s*<\/span>/',
+            $notificationPage->getContent()
+        );
+        $this->getJson(route('notifications.summary'))
+            ->assertOk()
+            ->assertJsonPath('notification_count', 1);
+        $this->postJson(route('notifications.mark-read', $notification->id))
+            ->assertOk()
+            ->assertJsonPath('ok', true);
+        $this->assertNotNull($notification->fresh()->read_at);
+        $this->getJson(route('notifications.summary'))
+            ->assertOk()
+            ->assertJsonPath('notification_count', 0);
+
+        $user->notify(new OnlineStoreOrderPlaced($order, 'Fresh Market'));
+        $this->postJson(route('notifications.mark-all-read'))
+            ->assertOk()
+            ->assertJsonPath('ok', true);
+        $this->getJson(route('notifications.summary'))
+            ->assertOk()
+            ->assertJsonPath('notification_count', 0);
     }
 
     public function test_custom_domain_resolves_the_enabled_store(): void
@@ -448,6 +474,119 @@ class OnlineStoreWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_store_branch_stock_stays_in_sync_for_existing_and_new_orders(): void
+    {
+        [$user, $company] = $this->workspace('Dior Store');
+        $branch = ['id' => 'branch-a', 'name' => 'Main Branch', 'is_active' => true];
+        DB::table('settings')->insert([
+            'key' => 'branches_json_company_' . $company->id,
+            'value' => json_encode([$branch]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $categoryId = $this->category($user->id, $company->id, 'Fashion');
+        $productId = $this->product($user->id, $company->id, $categoryId, 'Dior', 'DIOR-001', 27, 15000);
+        DB::table('product_branch_stocks')->insert([
+            'product_id' => $productId,
+            'company_id' => $company->id,
+            'branch_id' => $branch['id'],
+            'branch_name' => $branch['name'],
+            'quantity' => 30,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $store = StorefrontSetting::create([
+            'company_id' => $company->id,
+            'slug' => 'dior-online',
+            'store_name' => 'Dior Store',
+            'is_enabled' => true,
+        ]);
+        $legacyOrder = OnlineStoreOrder::withoutGlobalScopes()->create([
+            'company_id' => $company->id,
+            'order_number' => 'WEB-OLD-DIOR-001',
+            'customer_name' => 'Previous Customer',
+            'customer_phone' => '08000000000',
+            'payment_method' => 'pickup',
+            'status' => 'pending_confirmation',
+            'subtotal' => 45000,
+            'total_amount' => 45000,
+        ]);
+        DB::table('online_store_order_items')->insert([
+            'online_store_order_id' => $legacyOrder->id,
+            'product_id' => $productId,
+            'product_name' => 'Dior',
+            'quantity' => 3,
+            'unit_price' => 15000,
+            'line_total' => 45000,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['current_tenant_id' => $company->id, 'active_branch_scope' => 'all'])
+            ->get(route('online-store.settings'))
+            ->assertOk()
+            ->assertSee('Main Branch');
+
+        $this->actingAs($user)
+            ->withSession(['current_tenant_id' => $company->id, 'active_branch_scope' => 'all'])
+            ->put(route('online-store.settings.update'), [
+                'slug' => $store->slug,
+                'store_name' => $store->store_name,
+                'store_theme' => 'classic',
+                'stock_branch_id' => $branch['id'],
+                'is_enabled' => 1,
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('storefront_settings', [
+            'id' => $store->id,
+            'stock_branch_id' => $branch['id'],
+            'stock_branch_name' => $branch['name'],
+        ]);
+        $this->assertDatabaseHas('online_store_orders', [
+            'id' => $legacyOrder->id,
+            'branch_id' => $branch['id'],
+            'branch_name' => $branch['name'],
+        ]);
+        $this->assertDatabaseHas('product_branch_stocks', [
+            'product_id' => $productId,
+            'branch_id' => $branch['id'],
+            'quantity' => 27,
+        ]);
+        $this->get(route('storefront.catalogue', $store->slug))
+            ->assertOk()
+            ->assertSee('Dior')
+            ->assertSee('27');
+
+        $this->post(route('storefront.orders.store', $store->slug), [
+            'customer_name' => 'New Customer',
+            'customer_phone' => '08000000001',
+            'payment_method' => 'pickup',
+            'items' => [$productId => 2],
+        ])->assertSessionHasNoErrors();
+
+        $newOrder = OnlineStoreOrder::withoutGlobalScopes()
+            ->where('customer_name', 'New Customer')
+            ->firstOrFail();
+        $this->assertSame($branch['id'], $newOrder->branch_id);
+        $this->assertDatabaseHas('product_branch_stocks', [
+            'product_id' => $productId,
+            'branch_id' => $branch['id'],
+            'quantity' => 25,
+        ]);
+        $this->assertDatabaseHas('products', ['id' => $productId, 'stock' => 25, 'stock_quantity' => 25]);
+
+        $this->patch(route('online-store.orders.update', $newOrder), ['status' => 'cancelled'])
+            ->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('product_branch_stocks', [
+            'product_id' => $productId,
+            'branch_id' => $branch['id'],
+            'quantity' => 27,
+        ]);
+        $this->assertDatabaseHas('products', ['id' => $productId, 'stock' => 27, 'stock_quantity' => 27]);
+    }
+
     public function test_business_owner_has_a_direct_online_store_sidebar_link(): void
     {
         [$user, $company] = $this->workspace('Sidebar Store');
@@ -457,6 +596,34 @@ class OnlineStoreWorkflowTest extends TestCase
             ->get(route('online-store.settings'))
             ->assertOk()
             ->assertSee('href="' . route('online-store.settings') . '"', false);
+    }
+
+    public function test_company_wide_online_orders_remain_visible_when_a_branch_is_selected(): void
+    {
+        [$user, $company] = $this->workspace('Branch Scoped Store');
+        $order = OnlineStoreOrder::withoutGlobalScopes()->create([
+            'company_id' => $company->id,
+            'order_number' => 'WEB-BRANCH-SCOPE-001',
+            'customer_name' => 'Branch Scope Customer',
+            'customer_phone' => '08000000000',
+            'payment_method' => 'pickup',
+            'status' => 'pending_confirmation',
+            'subtotal' => 1000,
+            'total_amount' => 1000,
+        ]);
+        config(['tenancy.enforce_scopes_in_console' => true]);
+
+        $this->actingAs($user)
+            ->withSession([
+                'current_tenant_id' => $company->id,
+                'active_branch_id' => 'branch-a',
+                'active_branch_name' => 'Branch A',
+                'active_branch_scope' => 'branch',
+            ])
+            ->get(route('online-store.settings'))
+            ->assertOk()
+            ->assertSee($order->order_number)
+            ->assertSee($order->customer_name);
     }
 
     public function test_cancelling_an_online_order_restores_reserved_stock(): void
