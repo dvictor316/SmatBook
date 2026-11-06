@@ -192,6 +192,7 @@ class PartnerRegistrationTest extends TestCase
         $this->assertGuest();
         $this->assertSame(1, (int) \DB::table('email_verification_challenges')->where('user_id', $user->id)->value('attempts'));
 
+        $this->withSession(['email_verification_redirect' => '']);
         $this->post(route('email-verification.verify'), ['code' => $mail->code])
             ->assertRedirect(route('saas.setup', $subscription->id));
         $this->assertAuthenticatedAs($user->fresh());

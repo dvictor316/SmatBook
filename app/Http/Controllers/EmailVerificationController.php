@@ -87,8 +87,8 @@ class EmailVerificationController extends Controller
             'user_id' => $user->id,
         ]);
 
-        if ($redirectTo !== '' && ! $user->hasTwoFactorAuthenticationEnabled()) {
-            return redirect()->to($redirectTo);
+        if (! $user->hasTwoFactorAuthenticationEnabled()) {
+            return redirect()->to($redirectTo !== '' ? $redirectTo : $this->registrationRedirect($user));
         }
 
         return app(AuthController::class)->completeEmailVerifiedLogin($request, $user, $remember);
@@ -135,7 +135,7 @@ class EmailVerificationController extends Controller
             return route('manager.verification.form');
         }
 
-        $subscription = Subscription::query()
+        $subscription = Subscription::withoutGlobalScope('tenant')
             ->where('user_id', $user->id)
             ->latest('id')
             ->first();
