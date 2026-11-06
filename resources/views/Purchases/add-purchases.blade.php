@@ -166,7 +166,17 @@
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
-                                <table class="table table-hover mb-0" id="productsTable">
+                                <table class="table table-hover mb-0" id="productsTable" style="table-layout: fixed; width: 100%; min-width: 900px;">
+                                    <colgroup>
+                                        <col style="width: 29%;">
+                                        <col style="width: 8%;">
+                                        <col style="width: 8%;">
+                                        <col style="width: 12%;">
+                                        <col style="width: 10%;">
+                                        <col style="width: 10%;">
+                                        <col style="width: 11%;">
+                                        <col style="width: 12%;">
+                                    </colgroup>
                                     <thead class="table-light">
                                         <tr>
                                             <th>Product / Service *</th>
