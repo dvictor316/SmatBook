@@ -172,7 +172,7 @@ class AuthController extends Controller
 
         $resolvedEmail = $this->normalizeEmailForAuth($validated['email'] ?? null);
         if ($resolvedEmail) {
-            $emailOwner = User::withTrashed()
+            $emailOwner = User::query()
                 ->whereRaw('LOWER(email) = ?', [$resolvedEmail])
                 ->first();
 
@@ -465,7 +465,7 @@ class AuthController extends Controller
             return null;
         }
 
-        $user = User::withTrashed()
+        $user = User::query()
             ->whereRaw('LOWER(email) = ?', [$email])
             ->first();
 
@@ -493,14 +493,14 @@ class AuthController extends Controller
         $matches = collect();
 
         if ($email !== '') {
-            $user = User::withTrashed()->whereRaw('LOWER(email) = ?', [$email])->first();
+            $user = User::query()->whereRaw('LOWER(email) = ?', [$email])->first();
             if ($user) {
                 $matches->put((int) $user->id, $user);
             }
         }
 
         if ($phone !== '' && Schema::hasColumn('users', 'phone')) {
-            $user = User::withTrashed()->where('phone', $phone)->first();
+            $user = User::query()->where('phone', $phone)->first();
             if ($user) {
                 $matches->put((int) $user->id, $user);
             }
@@ -1523,7 +1523,7 @@ class AuthController extends Controller
         $email = trim((string) $request->input('email'));
         Log::info('Password reset validation passed', ['email' => $email]);
 
-        $user = User::withTrashed()->where('email', $email)->first();
+        $user = User::query()->where('email', $email)->first();
         Log::info('Password reset user lookup completed', [
             'email' => $email,
             'user_found' => (bool) $user,

@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -124,7 +125,7 @@ class UserController extends Controller
         $request->validate([
             'first_name'     => 'required|string|max:255',
             'last_name'      => 'nullable|string|max:255',
-            'email'          => 'required|email|unique:users,email',
+            'email'          => ['required', 'email', Rule::unique('users', 'email')->whereNull('deleted_at')],
             'role'           => 'required|string|max:255',
             'permissions' => 'nullable|array',
             'permissions.*' => 'string|max:255',
@@ -346,7 +347,7 @@ class UserController extends Controller
 
         $request->validate([
             'name'  => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)->whereNull('deleted_at')],
             'role'  => 'required|string|max:255',
             'permissions' => 'nullable|array',
             'permissions.*' => 'string|max:255',

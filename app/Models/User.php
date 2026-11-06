@@ -72,6 +72,7 @@ class User extends Authenticatable
         'permissions_override',
         'two_factor_secret',
         'two_factor_recovery_codes',
+        'active_email',
         'two_factor_confirmed_at',
         'two_factor_last_used_timestep',
     ];

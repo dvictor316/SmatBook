@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\{
     Session,
     Storage
 };
+use Illuminate\Validation\Rule;
 use Laravel\Socialite\Facades\Socialite;
 use Carbon\Carbon;
 
@@ -138,7 +139,7 @@ class CustomAuthController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->whereNull('deleted_at')],
             'password' => [
                 'required',
                 'string',
@@ -668,7 +669,7 @@ class CustomAuthController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . Auth::id(),
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore(Auth::id())->whereNull('deleted_at')],
             'phone' => 'nullable|string|max:20',
             'bio' => 'nullable|string|max:500',
             'location' => 'nullable|string|max:255',

@@ -814,7 +814,7 @@ class DeploymentManagerController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($deployment->user_id)],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($deployment->user_id)->whereNull('deleted_at')],
             'company_name' => 'required|string|max:255',
             'domain_prefix' => ['required', 'string', 'max:50', 'alpha_dash'],
             'plan_name' => 'required|string|max:120',
@@ -1018,7 +1018,7 @@ public function store(Request $request)
     }
 
     $emailRules = ['required', 'email'];
-    $emailRule = Rule::unique('users', 'email');
+    $emailRule = Rule::unique('users', 'email')->whereNull('deleted_at');
     if ($retryableRegistration) {
         $emailRule->ignore($retryableRegistration['user']->id);
     }
@@ -2091,7 +2091,7 @@ private function formatDeploymentAmount(float $amount): string
     public function storeUser(Request $request) {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'email' => ['required', 'email', Rule::unique('users', 'email')->whereNull('deleted_at')],
             'role' => 'required|string|max:80',
             'company_id' => 'required|integer|exists:companies,id',
         ]);
@@ -2157,7 +2157,7 @@ private function formatDeploymentAmount(float $amount): string
         $user = User::whereIn('company_id', $this->managedCompanyIds())->findOrFail($id);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)->whereNull('deleted_at')],
             'role' => 'required|string|max:80',
         ]);
 
@@ -2724,7 +2724,7 @@ private function formatDeploymentAmount(float $amount): string
     public function updateProfile(Request $request) {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . Auth::id(),
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore(Auth::id())->whereNull('deleted_at')],
             'business_name' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:25',
             'address' => 'nullable|string|max:500',

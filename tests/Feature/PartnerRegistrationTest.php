@@ -35,7 +35,7 @@ class PartnerRegistrationTest extends TestCase
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('email')->nullable()->unique();
+            $table->string('email')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('phone')->nullable()->unique();
             $table->string('password');
@@ -50,6 +50,7 @@ class PartnerRegistrationTest extends TestCase
             $table->softDeletes();
             $table->timestamps();
         });
+        DB::statement('CREATE UNIQUE INDEX users_email_unique ON users (email) WHERE deleted_at IS NULL');
 
         Schema::create('email_verification_challenges', function (Blueprint $table) {
             $table->id();
@@ -198,6 +199,58 @@ class PartnerRegistrationTest extends TestCase
         $this->assertAuthenticatedAs($user->fresh());
         $this->assertNotNull($user->fresh()->email_verified_at);
         $this->assertDatabaseMissing('email_verification_challenges', ['user_id' => $user->id]);
+    }
+
+    public function test_registration_can_reuse_an_email_from_a_soft_deleted_account(): void
+    {
+        $deletedUser = User::create([
+            'name' => 'Deleted Account',
+            'email' => 'reused-email@example.com',
+            'password' => bcrypt('Secure123'),
+            'role' => 'admin',
+            'status' => 'active',
+            'is_verified' => 1,
+        ]);
+        \DB::table('subscriptions')->insert([
+            'user_id' => $deletedUser->id,
+            'plan' => 'Legacy',
+            'plan_name' => 'Legacy',
+            'billing_cycle' => 'yearly',
+            'domain_prefix' => 'legacy-workspace',
+            'status' => 'Active',
+            'payment_status' => 'paid',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $deletedUser->delete();
+
+        $response = $this->post(route('saas-register.post'), [
+            'role' => 'admin',
+            'name' => 'New Account',
+            'email' => 'reused-email@example.com',
+            'password' => 'Secure123',
+            'password_confirmation' => 'Secure123',
+            'plan' => 'pro',
+            'billing_cycle' => 'monthly',
+            'amount' => '19500',
+            'field_of_operation' => 'general',
+        ]);
+
+        $response->assertRedirect(route('email-verification.notice'));
+        $this->assertSame(2, User::withTrashed()->where('email', 'reused-email@example.com')->count());
+        $this->assertSame(1, User::query()->where('email', 'reused-email@example.com')->count());
+        $this->assertNotSame($deletedUser->id, User::query()->where('email', 'reused-email@example.com')->value('id'));
+        $this->assertDatabaseHas('subscriptions', [
+            'user_id' => User::query()->where('email', 'reused-email@example.com')->value('id'),
+            'status' => 'Trial',
+            'payment_status' => 'free',
+        ]);
+        $this->assertDatabaseHas('subscriptions', [
+            'user_id' => $deletedUser->id,
+            'domain_prefix' => 'legacy-workspace',
+            'status' => 'Active',
+            'payment_status' => 'paid',
+        ]);
     }
 
     public function test_duplicate_registration_cannot_restart_a_trial_or_create_duplicate_records(): void
