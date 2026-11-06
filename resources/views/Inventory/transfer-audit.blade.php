@@ -12,14 +12,20 @@
     <div class="content container-fluid">
         @component('components.page-header')
             @slot('title')
-                Stock Transfer Audit
+                Stock transfer documents
             @endslot
         @endcomponent
 
-        <div class="d-flex justify-content-end mb-3 no-print">
+        <div class="d-flex flex-wrap justify-content-end gap-2 mb-3 no-print">
+            <a href="{{ route('inventory.transfer.export', request()->query()) }}" class="btn btn-outline-success">
+                <i class="fas fa-file-csv me-1"></i> Export CSV
+            </a>
             <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
-                <i class="fas fa-print me-1"></i> Print transfers
+                <i class="fas fa-print me-1"></i> Print
             </button>
+            <a href="{{ route('inventory.transfer.create') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> New transfer
+            </a>
         </div>
 
         @if(session('success'))
@@ -32,24 +38,50 @@
         <form method="GET" action="{{ route('inventory.transfer-audit') }}" class="card border-0 shadow-sm mb-4 no-print">
             <div class="card-body">
                 <div class="row g-2 align-items-end">
-                    <div class="col-lg-3 col-md-6">
+                    <div class="col-xl-2 col-md-4">
                         <label class="form-label" for="transfer-search">Search</label>
-                        <input id="transfer-search" type="search" name="q" value="{{ $search }}" class="form-control" placeholder="Product, branch, or staff">
+                        <input id="transfer-search" type="search" name="q" value="{{ $search }}" class="form-control" placeholder="Reference, product, or staff">
                     </div>
-                    <div class="col-lg-2 col-md-6">
+                    <div class="col-xl-2 col-md-4">
+                        <label class="form-label" for="transfer-from-branch">From branch</label>
+                        <select id="transfer-from-branch" name="from_branch_id" class="form-select">
+                            <option value="">All source branches</option>
+                            @foreach($branches as $branch)
+                                <option value="{{ $branch['id'] }}" @selected(($validated['from_branch_id'] ?? '') === (string) $branch['id'])>{{ $branch['name'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-xl-2 col-md-4">
+                        <label class="form-label" for="transfer-to-branch">To branch</label>
+                        <select id="transfer-to-branch" name="to_branch_id" class="form-select">
+                            <option value="">All destination branches</option>
+                            @foreach($branches as $branch)
+                                <option value="{{ $branch['id'] }}" @selected(($validated['to_branch_id'] ?? '') === (string) $branch['id'])>{{ $branch['name'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-xl-1 col-md-4">
+                        <label class="form-label" for="transfer-status">Status</label>
+                        <select id="transfer-status" name="status" class="form-select">
+                            <option value="">All</option>
+                            <option value="completed" @selected(($validated['status'] ?? '') === 'completed')>Completed</option>
+                            <option value="reversed" @selected(($validated['status'] ?? '') === 'reversed')>Reversed</option>
+                        </select>
+                    </div>
+                    <div class="col-xl-1 col-md-4">
                         <label class="form-label" for="transfer-month">Month</label>
                         <input id="transfer-month" type="month" name="month" value="{{ $month }}" class="form-control">
                     </div>
-                    <div class="col-lg-2 col-md-6">
+                    <div class="col-xl-1 col-md-4">
                         <label class="form-label" for="transfer-from-date">From</label>
                         <input id="transfer-from-date" type="date" name="from_date" value="{{ $fromDate }}" class="form-control">
                     </div>
-                    <div class="col-lg-2 col-md-6">
+                    <div class="col-xl-1 col-md-4">
                         <label class="form-label" for="transfer-to-date">To</label>
                         <input id="transfer-to-date" type="date" name="to_date" value="{{ $toDate }}" class="form-control">
                     </div>
-                    <div class="col-lg-3 d-flex gap-2">
-                        <button class="btn btn-primary" type="submit">Apply filters</button>
+                    <div class="col-xl-2 col-md-4 d-flex gap-2">
+                        <button class="btn btn-primary" type="submit">Filter</button>
                         <a class="btn btn-light border" href="{{ route('inventory.transfer-audit') }}">Clear</a>
                     </div>
                 </div>
@@ -58,28 +90,22 @@
 
         <div class="row g-3 mb-4">
             <div class="col-md-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="text-muted text-uppercase small fw-bold">Transfers</div>
-                        <div class="fs-3 fw-bold">{{ $summary->transfer_count ?? 0 }}</div>
-                    </div>
-                </div>
+                <div class="card border-0 shadow-sm h-100"><div class="card-body">
+                    <div class="text-muted text-uppercase small fw-bold">Transfer documents</div>
+                    <div class="fs-3 fw-bold">{{ $summary->transfer_count ?? 0 }}</div>
+                </div></div>
             </div>
             <div class="col-md-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="text-muted text-uppercase small fw-bold">Products Affected</div>
-                        <div class="fs-3 fw-bold">{{ $summary->product_count ?? 0 }}</div>
-                    </div>
-                </div>
+                <div class="card border-0 shadow-sm h-100"><div class="card-body">
+                    <div class="text-muted text-uppercase small fw-bold">Distinct products</div>
+                    <div class="fs-3 fw-bold">{{ $summary->product_count ?? 0 }}</div>
+                </div></div>
             </div>
             <div class="col-md-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="text-muted text-uppercase small fw-bold">Total Quantity</div>
-                        <div class="fs-3 fw-bold">{{ \App\Support\CompactNumber::format((float) ($summary->quantity_total ?? 0), 2) }}</div>
-                    </div>
-                </div>
+                <div class="card border-0 shadow-sm h-100"><div class="card-body">
+                    <div class="text-muted text-uppercase small fw-bold">Total quantity moved</div>
+                    <div class="fs-3 fw-bold">{{ \App\Support\CompactNumber::format((float) ($summary->quantity_total ?? 0), 2) }}</div>
+                </div></div>
             </div>
         </div>
 
@@ -89,61 +115,57 @@
                     <table class="table align-middle">
                         <thead>
                             <tr>
-                                <th>Date</th>
-                                <th>Product</th>
-                                <th>From</th>
-                                <th>To</th>
-                                <th>Quantity</th>
-                                <th>Details</th>
-                                <th>By</th>
+                                <th>Reference / date</th>
+                                <th>Route</th>
+                                <th>Products</th>
+                                <th>Total quantity</th>
+                                <th>Status</th>
+                                <th>Created by</th>
                                 <th class="no-print">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($audits as $audit)
+                            @forelse($transfers as $transfer)
                                 <tr>
-                                    <td>{{ optional($audit->created_at)->format('d M Y, h:i A') }}</td>
                                     <td>
-                                        <div class="fw-semibold">{{ $audit->product?->name ?? 'Product deleted' }}</div>
-                                        <small class="text-muted">{{ $audit->product?->sku ?? 'No SKU' }}</small>
+                                        <a class="fw-semibold text-primary" href="{{ route('inventory.transfer.show', $transfer->id) }}">{{ $transfer->reference }}</a>
+                                        <div class="small text-muted">{{ $transfer->transfer_date?->format('d M Y, h:i A') }}</div>
                                     </td>
-                                    <td>{{ $audit->from_branch_name ?: 'Unknown source' }}</td>
-                                    <td>{{ $audit->to_branch_name ?: 'Unknown destination' }}</td>
-                                    <td class="fw-semibold">{{ \App\Support\CompactNumber::format((float) $audit->quantity, 2) }}</td>
-                                    <td>{{ $audit->notes ?: 'Branch stock transfer' }}</td>
-                                    <td>{{ $audit->initiator?->name ?? 'System' }}</td>
+                                    <td>
+                                        <span>{{ $transfer->from_branch_name ?: 'Unknown source' }}</span>
+                                        <i class="fas fa-arrow-right text-muted mx-1"></i>
+                                        <span>{{ $transfer->to_branch_name ?: 'Unknown destination' }}</span>
+                                    </td>
+                                    <td>{{ $transfer->items_count }}</td>
+                                    <td class="fw-semibold">{{ \App\Support\CompactNumber::format((float) ($transfer->items_sum_quantity ?? 0), 2) }}</td>
+                                    <td>
+                                        @if($transfer->status === 'reversed')
+                                            <span class="badge bg-secondary">Reversed</span>
+                                        @else
+                                            <span class="badge bg-success">Completed</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ $transfer->initiator?->name ?? 'System' }}</td>
                                     <td class="no-print">
-                                        <div class="d-flex flex-column gap-2">
-                                            @if($audit->product && $audit->quantity > 0 && $audit->from_branch_id && $audit->to_branch_id)
-                                                <form method="POST" action="{{ route('inventory.transfer') }}" class="d-flex align-items-center gap-1">
+                                        <div class="d-flex gap-2">
+                                            <a href="{{ route('inventory.transfer.show', $transfer->id) }}" class="btn btn-sm btn-outline-primary">View / Print</a>
+                                            @if($transfer->status === 'completed')
+                                                <form method="POST" action="{{ route('inventory.transfer.destroy', $transfer->id) }}" onsubmit="return window.confirm('Reverse every line in this transfer? This will proceed only if all stock is available at the destination.')">
                                                     @csrf
-                                                    <input type="hidden" name="product_id" value="{{ $audit->product_id }}">
-                                                    <input type="hidden" name="from_branch_id" value="{{ $audit->to_branch_id }}">
-                                                    <input type="hidden" name="to_branch_id" value="{{ $audit->from_branch_id }}">
-                                                    <input type="number" name="quantity" class="form-control form-control-sm" min="0.01" max="{{ $audit->quantity }}" step="0.01" value="{{ $audit->quantity }}" aria-label="Quantity to return">
-                                                    <button type="submit" class="btn btn-sm btn-outline-primary">Return</button>
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">Reverse</button>
                                                 </form>
                                             @endif
-                                            <form method="POST" action="{{ route('inventory.transfer-audit.destroy', $audit->id) }}" onsubmit="return window.confirm('Delete this transfer and return its stock to the source branch?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete / reverse</button>
-                                            </form>
                                         </div>
                                     </td>
                                 </tr>
                             @empty
-                                <tr>
-                                    <td colspan="8" class="text-center text-muted py-4">No stock transfers logged yet.</td>
-                                </tr>
+                                <tr><td colspan="7" class="text-center text-muted py-4">No stock transfers match these filters.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
-
-                <div class="mt-3">
-                    {{ $audits->links() }}
-                </div>
+                <div class="mt-3">{{ $transfers->links() }}</div>
             </div>
         </div>
     </div>

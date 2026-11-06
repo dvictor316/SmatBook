@@ -12,6 +12,8 @@ class StockTransferAudit extends Model
     use HasFactory, TenantScoped;
 
     protected $fillable = [
+        'transfer_id',
+        'reversal_of_audit_id',
         'company_id',
         'product_id',
         'from_branch_id',
@@ -35,5 +37,15 @@ class StockTransferAudit extends Model
     public function initiator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'initiated_by');
+    }
+
+    public function transfer(): BelongsTo
+    {
+        return $this->belongsTo(StockTransfer::class, 'transfer_id');
+    }
+
+    public function reversals(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(self::class, 'reversal_of_audit_id');
     }
 }

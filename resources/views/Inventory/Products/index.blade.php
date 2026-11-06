@@ -762,8 +762,11 @@
                     <?php } ?>
                     <?php if ($showStockTransferModal) { ?>
                         <button type="button" class="btn btn-outline-dark inventory-tool-btn inventory-toolbar-transfer" data-bs-toggle="modal" data-bs-target="#transferStockModal">
-                            <i class="fas fa-right-left"></i> Transfer Stock
+                            <i class="fas fa-right-left"></i> Quick transfer
                         </button>
+                        <a href="<?php echo e(route('inventory.transfer.create')); ?>" class="btn btn-primary inventory-tool-btn">
+                            <i class="fas fa-file-circle-plus"></i> New transfer document
+                        </a>
                     <?php } ?>
                 </div>
             </div>

@@ -252,13 +252,12 @@ class PurchaseStockPostingTest extends TestCase
             'to_branch_id' => 'branch-b',
             'quantity' => 2,
         ])->assertSessionHas('success');
+        $originalAudit = DB::table('stock_transfer_audits')
+            ->where('product_id', $product->id)
+            ->first();
 
-        $this->post(route('inventory.transfer'), [
-            'product_id' => $product->id,
-            'from_branch_id' => 'branch-b',
-            'to_branch_id' => 'hq',
-            'quantity' => 1,
-        ])->assertSessionHas('success');
+        $this->post(route('inventory.transfer-item.return', $originalAudit->id), ['quantity' => 1])
+            ->assertSessionHas('success');
 
         $this->assertDatabaseHas('product_branch_stocks', [
             'product_id' => $product->id,
@@ -273,12 +272,158 @@ class PurchaseStockPostingTest extends TestCase
 
         $this->get(route('inventory.transfer-audit'))
             ->assertOk()
-            ->assertSee('Print transfers')
-            ->assertSee('Return')
-            ->assertSee('Delete / reverse');
+            ->assertSee('Print')
+            ->assertSee('Stock transfer documents');
+        $this->get(route('inventory.transfer.show', $originalAudit->transfer_id))
+            ->assertOk()
+            ->assertSee('Return');
     }
 
-    public function test_deleting_a_transfer_audit_reverses_stock_and_records_the_reversal(): void
+    public function test_multi_product_transfer_posts_as_one_document_and_preserves_line_links(): void
+    {
+        [$firstProduct] = $this->workspace();
+        $this->configureTransferBranches($firstProduct);
+        $secondProduct = Product::create([
+            'company_id' => $firstProduct->company_id,
+            'user_id' => auth()->id(),
+            'name' => 'Beans',
+            'sku' => 'MULTI-TRANSFER-BEANS',
+            'stock' => 4,
+            'stock_quantity' => 4,
+            'price' => 100,
+            'purchase_price' => 50,
+        ]);
+        ProductBranchStock::create([
+            'product_id' => $secondProduct->id,
+            'company_id' => $secondProduct->company_id,
+            'branch_id' => 'hq',
+            'branch_name' => 'Headquarters',
+            'quantity' => 4,
+        ]);
+
+        $this->post(route('inventory.transfer.store'), [
+            'reference' => 'MULTI-TRANSFER-TEST',
+            'transfer_date' => now()->format('Y-m-d\TH:i'),
+            'from_branch_id' => 'hq',
+            'to_branch_id' => 'branch-b',
+            'items' => [
+                ['product_id' => $firstProduct->id, 'quantity' => 2],
+                ['product_id' => $secondProduct->id, 'quantity' => 3],
+            ],
+        ])->assertRedirect();
+
+        $transferId = DB::table('stock_transfers')->where('reference', 'MULTI-TRANSFER-TEST')->value('id');
+        $this->assertNotNull($transferId);
+        $this->assertSame(2, DB::table('stock_transfer_audits')->where('transfer_id', $transferId)->count());
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $firstProduct->id, 'branch_id' => 'hq', 'quantity' => 3]);
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $firstProduct->id, 'branch_id' => 'branch-b', 'quantity' => 2]);
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $secondProduct->id, 'branch_id' => 'hq', 'quantity' => 1]);
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $secondProduct->id, 'branch_id' => 'branch-b', 'quantity' => 3]);
+        $this->get(route('inventory.transfer.show', $transferId))
+            ->assertOk()
+            ->assertSee('MULTI-TRANSFER-TEST')
+            ->assertSee('Rice')
+            ->assertSee('Beans');
+    }
+
+    public function test_transfer_document_form_search_and_csv_export_are_available(): void
+    {
+        [$product] = $this->workspace();
+        $this->configureTransferBranches($product);
+
+        $this->get(route('inventory.transfer.create'))
+            ->assertOk()
+            ->assertSee('New stock transfer')
+            ->assertSee('Post transfer');
+        $searchResponse = $this->getJson(route('inventory.transfer-products.search', [
+            'q' => 'Rice',
+            'branch_id' => 'hq',
+        ]))->assertOk();
+        $this->assertSame($product->id, $searchResponse->json('data.0.id'));
+        $this->assertArrayHasKey('available_stock', $searchResponse->json('data.0'));
+
+        $this->post(route('inventory.transfer.store'), [
+            'transfer_date' => now()->format('Y-m-d\TH:i'),
+            'from_branch_id' => 'hq',
+            'to_branch_id' => 'branch-b',
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+        ])->assertRedirect();
+        $csvResponse = $this->get(route('inventory.transfer.export'));
+        $csvResponse->assertOk()->assertHeader('content-type', 'text/csv; charset=UTF-8');
+        $this->assertStringContainsString('TR-', $csvResponse->streamedContent());
+    }
+
+    public function test_multi_product_transfer_rolls_back_every_line_if_one_source_quantity_is_insufficient(): void
+    {
+        [$firstProduct] = $this->workspace();
+        $this->configureTransferBranches($firstProduct);
+        $secondProduct = Product::create([
+            'company_id' => $firstProduct->company_id,
+            'user_id' => auth()->id(),
+            'name' => 'Beans',
+            'sku' => 'MULTI-TRANSFER-LOW-STOCK',
+            'stock' => 1,
+            'stock_quantity' => 1,
+            'price' => 100,
+            'purchase_price' => 50,
+        ]);
+        ProductBranchStock::create([
+            'product_id' => $secondProduct->id,
+            'company_id' => $secondProduct->company_id,
+            'branch_id' => 'hq',
+            'branch_name' => 'Headquarters',
+            'quantity' => 1,
+        ]);
+
+        $this->post(route('inventory.transfer.store'), [
+            'reference' => 'MULTI-TRANSFER-ROLLBACK',
+            'transfer_date' => now()->format('Y-m-d\TH:i'),
+            'from_branch_id' => 'hq',
+            'to_branch_id' => 'branch-b',
+            'items' => [
+                ['product_id' => $firstProduct->id, 'quantity' => 2],
+                ['product_id' => $secondProduct->id, 'quantity' => 2],
+            ],
+        ])->assertSessionHas('error');
+
+        $this->assertDatabaseMissing('stock_transfers', ['reference' => 'MULTI-TRANSFER-ROLLBACK']);
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $firstProduct->id, 'branch_id' => 'hq', 'quantity' => 5]);
+        $this->assertDatabaseMissing('product_branch_stocks', ['product_id' => $firstProduct->id, 'branch_id' => 'branch-b']);
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $secondProduct->id, 'branch_id' => 'hq', 'quantity' => 1]);
+        $this->assertDatabaseMissing('product_branch_stocks', ['product_id' => $secondProduct->id, 'branch_id' => 'branch-b']);
+    }
+
+    public function test_partial_returns_are_capped_and_document_reversal_moves_only_the_remaining_quantity(): void
+    {
+        [$product] = $this->workspace();
+        $this->configureTransferBranches($product);
+        $this->post(route('inventory.transfer.store'), [
+            'transfer_date' => now()->format('Y-m-d\TH:i'),
+            'from_branch_id' => 'hq',
+            'to_branch_id' => 'branch-b',
+            'items' => [['product_id' => $product->id, 'quantity' => 3]],
+        ])->assertRedirect();
+        $original = DB::table('stock_transfer_audits')->where('product_id', $product->id)->first();
+
+        $this->post(route('inventory.transfer-item.return', $original->id), ['quantity' => 1])
+            ->assertSessionHas('success');
+        $this->post(route('inventory.transfer-item.return', $original->id), ['quantity' => 3])
+            ->assertSessionHas('error', 'Only 2 units remain available to return from this transfer line.');
+
+        $this->delete(route('inventory.transfer.destroy', $original->transfer_id))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('stock_transfer_audits', [
+            'transfer_id' => $original->transfer_id,
+            'product_id' => $product->id,
+            'quantity' => 3,
+        ]);
+        $this->assertDatabaseHas('stock_transfers', ['id' => $original->transfer_id, 'status' => 'reversed']);
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $product->id, 'branch_id' => 'hq', 'quantity' => 5]);
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $product->id, 'branch_id' => 'branch-b', 'quantity' => 0]);
+    }
+
+    public function test_deleting_a_transfer_audit_returns_stock_and_keeps_reversal_in_a_document(): void
     {
         [$product] = $this->workspace();
         $this->configureTransferBranches($product);
@@ -293,7 +438,7 @@ class PurchaseStockPostingTest extends TestCase
             ->value('id');
 
         $this->delete(route('inventory.transfer-audit.destroy', $transferId))
-            ->assertSessionHas('success', 'Transfer deleted and stock returned to the source branch.');
+            ->assertSessionHas('success');
 
         $this->assertDatabaseHas('product_branch_stocks', [
             'product_id' => $product->id,
@@ -305,13 +450,22 @@ class PurchaseStockPostingTest extends TestCase
             'branch_id' => 'branch-b',
             'quantity' => 0,
         ]);
-        $this->assertDatabaseMissing('stock_transfer_audits', ['id' => $transferId]);
+        $this->assertDatabaseHas('stock_transfer_audits', ['id' => $transferId]);
         $this->assertDatabaseHas('stock_transfer_audits', [
+            'reversal_of_audit_id' => $transferId,
             'product_id' => $product->id,
             'from_branch_id' => 'branch-b',
             'to_branch_id' => 'hq',
             'quantity' => 2,
-            'notes' => 'Reversal of transfer #' . $transferId,
+        ]);
+        $this->assertDatabaseHas('stock_transfers', [
+            'id' => DB::table('stock_transfer_audits')->where('id', $transferId)->value('transfer_id'),
+            'status' => 'completed',
+        ]);
+        $this->assertDatabaseHas('stock_transfers', [
+            'notes' => 'Partial return from ' . DB::table('stock_transfers')
+                ->where('id', DB::table('stock_transfer_audits')->where('id', $transferId)->value('transfer_id'))
+                ->value('reference'),
         ]);
         $this->assertSame(4, DB::table('inventory_history')
             ->where('product_id', $product->id)
@@ -337,7 +491,7 @@ class PurchaseStockPostingTest extends TestCase
             ->update(['quantity' => 1]);
 
         $this->delete(route('inventory.transfer-audit.destroy', $transferId))
-            ->assertSessionHas('error', 'Negative stock is not allowed for Rice in Branch B.');
+            ->assertSessionHas('error', 'The destination branch does not have enough available stock to complete this return.');
 
         $this->assertDatabaseHas('stock_transfer_audits', ['id' => $transferId]);
         $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $product->id, 'branch_id' => 'hq', 'quantity' => 3]);
@@ -401,8 +555,8 @@ class PurchaseStockPostingTest extends TestCase
 
         $this->get(route('inventory.transfer-audit', ['from_date' => now()->toDateString(), 'per_page' => 1]))
             ->assertOk()
-            ->assertViewHas('audits', fn ($audits) => $audits->count() === 1 && $audits->total() === 2)
-            ->assertViewHas('summary', fn ($summary) => (int) $summary->transfer_count === 2
+            ->assertViewHas('transfers', fn ($transfers) => $transfers->count() === 1 && $transfers->total() === 1)
+            ->assertViewHas('summary', fn ($summary) => (int) $summary->transfer_count === 1
                 && (int) $summary->product_count === 2
                 && (float) $summary->quantity_total === 0.0);
     }

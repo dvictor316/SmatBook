@@ -1036,6 +1036,12 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::post('/inventory/damage', 'storeDamageStock')->name('inventory.damage.store');
         Route::post('/inventory/transfer', 'transferStock')->name('inventory.transfer');
         Route::get('/inventory/transfer-products/search', 'searchTransferProducts')->name('inventory.transfer-products.search');
+        Route::get('/inventory/transfers/create', 'createTransferDocument')->name('inventory.transfer.create');
+        Route::post('/inventory/transfers', 'storeTransferDocument')->name('inventory.transfer.store');
+        Route::get('/inventory/transfers/export', 'exportTransferDocuments')->name('inventory.transfer.export');
+        Route::post('/inventory/transfers/items/{id}/return', 'returnTransferItem')->name('inventory.transfer-item.return');
+        Route::get('/inventory/transfers/{id}', 'showTransferDocument')->name('inventory.transfer.show');
+        Route::delete('/inventory/transfers/{id}', 'deleteTransferDocument')->name('inventory.transfer.destroy');
         Route::delete('/inventory/branch-products/{id}', 'removeFromBranch')->name('inventory.branch-products.remove');
         Route::get('/inventory-transfer-audit', 'transferAudit')->name('inventory.transfer-audit');
         Route::delete('/inventory-transfer-audit/{id}', 'deleteTransferAudit')->name('inventory.transfer-audit.destroy');

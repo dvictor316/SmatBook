@@ -9,6 +9,7 @@ use App\Models\PriceList;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Setting;
+use App\Models\StockTransfer;
 use App\Models\StockTransferAudit;
 use App\Models\Subscription;
 use Illuminate\Http\UploadedFile;
@@ -33,11 +34,32 @@ class ProductController extends Controller
 {
     public function __construct(private readonly BranchInventoryService $branchInventory)
     {
-        $this->middleware('permission:inventory.products.view')->only(['index', 'inventory', 'show', 'exportStock', 'inventory_history']);
+        $this->middleware('permission:inventory.products.view')->only([
+            'index',
+            'inventory',
+            'show',
+            'exportStock',
+            'inventory_history',
+            'transferAudit',
+            'showTransferDocument',
+            'exportTransferDocuments',
+        ]);
         $this->middleware('permission:inventory.products.create')->only(['create', 'store', 'import', 'updateFashionSettings']);
         $this->middleware('permission:inventory.products.edit')->only(['edit', 'update']);
         $this->middleware('permission:inventory.products.delete')->only(['destroy', 'bulkDestroy', 'removeFromBranch', 'undoLastImport']);
-        $this->middleware('permission:inventory.stock.edit')->only(['adjust_stock', 'update_history', 'delete_history', 'storeDamageStock', 'transferStock', 'searchTransferProducts', 'deleteTransferAudit']);
+        $this->middleware('permission:inventory.stock.edit')->only([
+            'adjust_stock',
+            'update_history',
+            'delete_history',
+            'storeDamageStock',
+            'transferStock',
+            'searchTransferProducts',
+            'createTransferDocument',
+            'storeTransferDocument',
+            'deleteTransferAudit',
+            'deleteTransferDocument',
+            'returnTransferItem',
+        ]);
         $this->middleware(function ($request, $next) {
             $hasStock = collect(['stock', 'stock_quantity', 'stock_cartons', 'stock_rolls', 'stock_units'])
                 ->contains(fn ($field) => (float) $request->input($field, 0) > 0);
@@ -2483,6 +2505,231 @@ public function inventory(Request $request)
         return redirect()->back()->with('success', 'Inventory state updated on ' . env('SESSION_DOMAIN'));
     }
 
+    public function createTransferDocument()
+    {
+        if (! $this->planSupportsStockTransfer()) {
+            return redirect()->back()->with('error', 'Stock transfer is available on higher plans only.');
+        }
+
+        $branches = $this->getAvailableBranches();
+        if (count($branches) < 2) {
+            return redirect()->route('inventory.transfer-audit')
+                ->with('error', 'Add at least two active branches before creating a stock transfer.');
+        }
+
+        $selectedProductIds = collect(old('items', []))->pluck('product_id')->filter()->map(fn ($id) => (int) $id);
+        $selectedProductsQuery = Product::query()->withoutGlobalScope('company_id');
+        $this->applyTenantScope($selectedProductsQuery, 'products');
+        $selectedProducts = $selectedProductsQuery
+            ->whereIn('products.id', $selectedProductIds)
+            ->get(['products.id', 'products.name', 'products.sku'])
+            ->keyBy('id');
+
+        return view('Inventory.transfer-create', [
+            'branches' => $branches,
+            'transferProductsSearchUrl' => route('inventory.transfer-products.search'),
+            'defaultTransferDate' => old('transfer_date', now()->format('Y-m-d\TH:i')),
+            'sourceBranchId' => (string) old('from_branch_id', $this->getActiveBranchContext()['id'] ?? ''),
+            'destinationBranchId' => (string) old('to_branch_id', ''),
+            'selectedProducts' => $selectedProducts,
+        ]);
+    }
+
+    public function storeTransferDocument(Request $request)
+    {
+        if (! $this->planSupportsStockTransfer()) {
+            return redirect()->back()->with('error', 'Stock transfer is available on higher plans only.');
+        }
+
+        $validated = $request->validate([
+            'from_branch_id' => 'required|string',
+            'to_branch_id' => 'required|string|different:from_branch_id',
+            'transfer_date' => 'required|date',
+            'reference' => 'nullable|string|max:80',
+            'notes' => 'nullable|string|max:2000',
+            'items' => 'required|array|min:1|max:100',
+            'items.*.product_id' => 'required|integer|distinct',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+        ], [
+            'items.required' => 'Add at least one product to this transfer.',
+            'items.min' => 'Add at least one product to this transfer.',
+            'items.*.product_id.distinct' => 'A product can only appear once in a transfer.',
+            'items.*.quantity.min' => 'Transfer quantities must be at least 0.01.',
+        ]);
+
+        $companyId = $this->tenantCompanyId();
+        $branches = collect($this->getAvailableBranches());
+        $fromBranch = $branches->firstWhere('id', $validated['from_branch_id']);
+        $toBranch = $branches->firstWhere('id', $validated['to_branch_id']);
+        if (! $fromBranch || ! $toBranch) {
+            return redirect()->back()->withInput()->withErrors([
+                'from_branch_id' => 'Select active source and destination branches.',
+            ]);
+        }
+
+        $reference = trim((string) ($validated['reference'] ?? ''));
+        if ($reference !== '' && DB::table('stock_transfers')
+            ->where('company_id', $companyId)
+            ->where('reference', $reference)
+            ->exists()) {
+            return redirect()->back()->withInput()->withErrors([
+                'reference' => 'This transfer reference is already in use.',
+            ]);
+        }
+
+        $sourceContext = ['id' => (string) $fromBranch['id'], 'name' => (string) $fromBranch['name']];
+        $destinationContext = ['id' => (string) $toBranch['id'], 'name' => (string) $toBranch['name']];
+
+        try {
+            $transfer = DB::transaction(function () use (
+                $validated,
+                $companyId,
+                $reference,
+                $sourceContext,
+                $destinationContext
+            ) {
+                $productIds = collect($validated['items'])
+                    ->pluck('product_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->all();
+                $productQuery = Product::query()->withoutGlobalScope('company_id');
+                $this->applyTenantScope($productQuery, 'products');
+                $products = $productQuery
+                    ->whereIn('products.id', $productIds)
+                    ->orderBy('products.id')
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('id');
+
+                if ($products->count() !== count($productIds)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'items' => 'One or more products are unavailable in this business.',
+                    ]);
+                }
+
+                $transfer = $this->createStockTransferDocument(
+                    $companyId,
+                    $sourceContext,
+                    $destinationContext,
+                    $reference,
+                    $validated['transfer_date'],
+                    $validated['notes'] ?? null
+                );
+
+                foreach ($validated['items'] as $line) {
+                    $product = $products->get((int) $line['product_id']);
+                    $quantity = round((float) $line['quantity'], 2);
+                    $sourceStock = $this->branchInventory->getAvailableStock($product, $sourceContext);
+                    if ($sourceStock < $quantity) {
+                        throw new \RuntimeException(
+                            "Only " . \App\Support\CompactNumber::format($sourceStock, 2)
+                            . " units of {$product->name} are available in {$sourceContext['name']}."
+                        );
+                    }
+
+                    $sourceRowExists = DB::table('product_branch_stocks')
+                        ->where('product_id', $product->id)
+                        ->where('branch_id', $sourceContext['id'])
+                        ->exists();
+                    if (! $sourceRowExists) {
+                        $this->branchInventory->setBranchStock(
+                            $product,
+                            $sourceStock,
+                            $sourceContext,
+                            (int) ($product->company_id ?? $companyId)
+                        );
+                    }
+
+                    $productCompanyId = (int) ($product->company_id ?? $companyId);
+                    $this->branchInventory->adjustBranchStock(
+                        $product,
+                        -$quantity,
+                        $sourceContext,
+                        $productCompanyId,
+                        false
+                    );
+                    $this->branchInventory->adjustBranchStock(
+                        $product,
+                        $quantity,
+                        $destinationContext,
+                        $productCompanyId,
+                        false
+                    );
+
+                    StockTransferAudit::query()->create([
+                        'transfer_id' => $transfer->id,
+                        'company_id' => $companyId,
+                        'product_id' => $product->id,
+                        'from_branch_id' => $sourceContext['id'],
+                        'from_branch_name' => $sourceContext['name'],
+                        'to_branch_id' => $destinationContext['id'],
+                        'to_branch_name' => $destinationContext['name'],
+                        'quantity' => $quantity,
+                        'initiated_by' => auth()->id(),
+                        'notes' => 'Included in transfer ' . $transfer->reference,
+                    ]);
+
+                    $this->recordBranchTransferHistory(
+                        $product,
+                        $quantity,
+                        $sourceContext,
+                        $destinationContext,
+                        null,
+                        $transfer->reference
+                    );
+                }
+
+                return $transfer;
+            });
+        } catch (\RuntimeException $exception) {
+            return redirect()->back()->withInput()->with('error', $exception->getMessage());
+        }
+
+        $this->clearDashboardMetricsCache($sourceContext['id']);
+        $this->clearDashboardMetricsCache($destinationContext['id']);
+
+        return redirect()
+            ->route('inventory.transfer.show', $transfer->id)
+            ->with('success', 'Transfer ' . $transfer->reference . ' was posted successfully.');
+    }
+
+    private function createStockTransferDocument(
+        int $companyId,
+        array $sourceContext,
+        array $destinationContext,
+        ?string $reference = null,
+        ?string $transferDate = null,
+        ?string $notes = null
+    ): StockTransfer {
+        $reference = trim((string) $reference);
+        if ($reference === '') {
+            do {
+                $reference = 'TR-' . now()->format('ymd') . '-' . Str::upper(Str::random(6));
+            } while (DB::table('stock_transfers')
+                ->where('company_id', $companyId)
+                ->where('reference', $reference)
+                ->exists());
+        } elseif (DB::table('stock_transfers')
+            ->where('company_id', $companyId)
+            ->where('reference', $reference)
+            ->exists()) {
+            throw new \RuntimeException('This transfer reference is already in use.');
+        }
+
+        return StockTransfer::query()->create([
+            'company_id' => $companyId,
+            'reference' => $reference,
+            'transfer_date' => $transferDate ? \Carbon\Carbon::parse($transferDate) : now(),
+            'from_branch_id' => $sourceContext['id'],
+            'from_branch_name' => $sourceContext['name'],
+            'to_branch_id' => $destinationContext['id'],
+            'to_branch_name' => $destinationContext['name'],
+            'status' => 'completed',
+            'notes' => $notes,
+            'initiated_by' => auth()->id(),
+        ]);
+    }
+
     public function transferStock(Request $request)
     {
         if (!$this->planSupportsStockTransfer()) {
@@ -2496,6 +2743,7 @@ public function inventory(Request $request)
             'transfer_all_stock' => 'nullable|boolean',
             'from_branch_id' => 'required|string',
             'to_branch_id' => 'required|string|different:from_branch_id',
+            'notes' => 'nullable|string|max:2000',
         ];
         if (! $isBulkCatalogAdd && ! $isBulkStockTransfer) {
             $rules['product_id'] = 'required|integer|min:1';
@@ -2552,13 +2800,22 @@ public function inventory(Request $request)
                 $productCount = 0;
                 $movedProductCount = 0;
                 $movedQuantity = 0.0;
+                $transferDocument = null;
 
-                DB::transaction(function () use ($products, $companyId, $sourceContext, $destinationContext, &$productCount, &$movedProductCount, &$movedQuantity) {
-                    $products->chunkById(100, function ($productChunk) use ($companyId, $sourceContext, $destinationContext, &$productCount, &$movedProductCount, &$movedQuantity) {
+                DB::transaction(function () use ($products, $companyId, $sourceContext, $destinationContext, &$productCount, &$movedProductCount, &$movedQuantity, &$transferDocument) {
+                    $products->chunkById(100, function ($productChunk) use ($companyId, $sourceContext, $destinationContext, &$productCount, &$movedProductCount, &$movedQuantity, &$transferDocument) {
                         $now = now();
                         $auditRows = [];
 
                         foreach ($productChunk as $product) {
+                            $transferDocument ??= $this->createStockTransferDocument(
+                                $companyId,
+                                $sourceContext,
+                                $destinationContext,
+                                null,
+                                null,
+                                'Full available stock transfer'
+                            );
                             $quantity = round($this->branchInventory->getAvailableStock($product, $sourceContext), 2);
                             $sourceRowExists = DB::table('product_branch_stocks')
                                 ->where('product_id', $product->id)
@@ -2572,7 +2829,14 @@ public function inventory(Request $request)
                                 $this->branchInventory->adjustBranchStock($product, -$quantity, $sourceContext, (int) ($product->company_id ?? $companyId), false);
                                 $movedProductCount++;
                                 $movedQuantity += $quantity;
-                                $this->recordBranchTransferHistory($product, $quantity, $sourceContext, $destinationContext);
+                                $this->recordBranchTransferHistory(
+                                    $product,
+                                    $quantity,
+                                    $sourceContext,
+                                    $destinationContext,
+                                    null,
+                                    $transferDocument->reference
+                                );
                             }
 
                             $this->branchInventory->adjustBranchStock($product, $quantity, $destinationContext, (int) ($product->company_id ?? $companyId), false);
@@ -2580,6 +2844,7 @@ public function inventory(Request $request)
 
                             if (Schema::hasTable('stock_transfer_audits')) {
                                 $auditRows[] = [
+                                    'transfer_id' => $transferDocument->id,
                                     'company_id' => $companyId > 0 ? $companyId : null,
                                     'product_id' => $product->id,
                                     'from_branch_id' => $sourceContext['id'],
@@ -2627,7 +2892,7 @@ public function inventory(Request $request)
                     ->orderBy('products.id');
                 $addedCount = 0;
 
-                $products                ->chunkById(100, function ($productChunk) use ($companyId, $destinationContext, $sourceContext, &$addedCount) {
+                $products->chunkById(100, function ($productChunk) use ($companyId, $destinationContext, $sourceContext, &$addedCount) {
                     $ids = $productChunk->pluck('id')->all();
                     $existingIds = DB::table('product_branch_stocks')
                         ->where('branch_id', $destinationContext['id'])
@@ -2642,6 +2907,14 @@ public function inventory(Request $request)
                     }
 
                     DB::transaction(function () use ($newIds, $companyId, $destinationContext, $sourceContext, &$addedCount) {
+                        $transferDocument = $this->createStockTransferDocument(
+                            $companyId,
+                            $sourceContext,
+                            $destinationContext,
+                            null,
+                            null,
+                            'Products added to branch without stock movement'
+                        );
                         $now = now();
                         $stockRows = array_map(fn ($productId) => [
                             'product_id' => $productId,
@@ -2663,6 +2936,7 @@ public function inventory(Request $request)
 
                         if (Schema::hasTable('stock_transfer_audits')) {
                             $auditRows = array_map(fn ($productId) => [
+                                'transfer_id' => $transferDocument->id,
                                 'company_id' => $companyId > 0 ? $companyId : null,
                                 'product_id' => $productId,
                                 'from_branch_id' => $sourceContext['id'],
@@ -2694,12 +2968,23 @@ public function inventory(Request $request)
             }
 
             $quantity = round((float) $validated['quantity'], 2);
-            DB::transaction(function () use ($validated, $fromBranch, $toBranch, $quantity) {
+            $reference = null;
+            DB::transaction(function () use ($validated, $fromBranch, $toBranch, $quantity, &$reference) {
                 $productQuery = Product::query()->withoutGlobalScope('company_id');
                 $this->applyTenantScope($productQuery, 'products');
                 $product = $productQuery->lockForUpdate()->findOrFail($validated['product_id']);
                 $sourceContext = ['id' => (string) $fromBranch['id'], 'name' => (string) ($fromBranch['name'] ?? '')];
                 $destinationContext = ['id' => (string) $toBranch['id'], 'name' => (string) ($toBranch['name'] ?? '')];
+                $companyId = (int) ($product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
+                $transferDocument = $this->createStockTransferDocument(
+                    $companyId,
+                    $sourceContext,
+                    $destinationContext,
+                    null,
+                    null,
+                    $validated['notes'] ?? ($quantity === 0.0 ? 'Product added to branch without stock movement' : null)
+                );
+                $reference = $transferDocument->reference;
 
                 if ($quantity > 0) {
                     $sourceStock = $this->branchInventory->getAvailableStock($product, $sourceContext);
@@ -2717,13 +3002,20 @@ public function inventory(Request $request)
                     $this->branchInventory->adjustBranchStock($product, -1 * $quantity, $sourceContext, (int) $product->company_id, false);
                 }
 
-                $companyId = (int) ($product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
                 $this->branchInventory->adjustBranchStock($product, $quantity, $destinationContext, $companyId, false);
 
-                $this->recordBranchTransferHistory($product, $quantity, $sourceContext, $destinationContext);
+                $this->recordBranchTransferHistory(
+                    $product,
+                    $quantity,
+                    $sourceContext,
+                    $destinationContext,
+                    null,
+                    $transferDocument->reference
+                );
 
                 if (Schema::hasTable('stock_transfer_audits')) {
                     StockTransferAudit::query()->create([
+                        'transfer_id' => $transferDocument->id,
                         'company_id' => session('current_tenant_id') ?? auth()->user()?->company_id,
                         'product_id' => $product->id,
                         'from_branch_id' => $sourceContext['id'],
@@ -2747,7 +3039,7 @@ public function inventory(Request $request)
 
         return redirect()->back()->with('success', $quantity === 0.0
             ? 'Product added to the destination branch with zero stock.'
-            : 'Stock transferred successfully between branches.');
+            : 'Stock transferred successfully between branches. Reference: ' . $reference);
     }
 
     public function searchTransferProducts(Request $request)
@@ -2755,6 +3047,7 @@ public function inventory(Request $request)
         $validated = $request->validate([
             'q' => 'nullable|string|max:100',
             'page' => 'nullable|integer|min:1',
+            'branch_id' => 'nullable|string|max:100',
         ]);
         $search = trim((string) ($validated['q'] ?? ''));
 
@@ -2769,91 +3062,139 @@ public function inventory(Request $request)
             });
         }
 
-        return response()->json($query->orderBy('name')->orderBy('id')->paginate(50));
+        $products = $query->orderBy('name')->orderBy('id')->paginate(50);
+        $branch = collect($this->getAvailableBranches())->firstWhere('id', $validated['branch_id'] ?? null);
+        if (! empty($validated['branch_id']) && ! $branch) {
+            return response()->json(['message' => 'Select an active source branch.'], 422);
+        }
+        if ($branch) {
+            $branchContext = ['id' => (string) $branch['id'], 'name' => (string) $branch['name']];
+            $products->getCollection()->transform(function ($product) use ($branchContext) {
+                $product->setAttribute(
+                    'available_stock',
+                    \App\Support\CompactNumber::format($this->branchInventory->getAvailableStock($product, $branchContext), 2)
+                );
+
+                return $product;
+            });
+        }
+
+        return response()->json($products);
     }
 
-    public function deleteTransferAudit(int $id)
+    public function deleteTransferAudit(Request $request, int $id)
     {
         $companyId = $this->tenantCompanyId();
-        $quantity = 0.0;
+        $audit = StockTransferAudit::query()
+            ->where('company_id', $companyId)
+            ->findOrFail($id);
+        $returnedQuantity = (float) StockTransferAudit::query()
+            ->where('reversal_of_audit_id', $audit->id)
+            ->sum('quantity');
+        $remainingQuantity = round((float) $audit->quantity - $returnedQuantity, 2);
+
+        if ($remainingQuantity <= 0) {
+            return redirect()->back()->with('error', 'This transfer line has already been fully returned.');
+        }
+
+        $request->merge(['quantity' => $remainingQuantity]);
+
+        return $this->returnTransferItem($request, $id);
+    }
+
+    public function returnTransferItem(Request $request, int $id)
+    {
+        $validated = $request->validate([
+            'quantity' => 'required|numeric|min:0.01',
+        ]);
+        $companyId = $this->tenantCompanyId();
 
         try {
-            $quantity = DB::transaction(function () use ($id, $companyId) {
-                $audit = StockTransferAudit::query()
+            $returnTransfer = DB::transaction(function () use ($validated, $id, $companyId) {
+                $originalItem = StockTransferAudit::query()
                     ->where('company_id', $companyId)
                     ->lockForUpdate()
                     ->findOrFail($id);
-                $quantity = round((float) $audit->quantity, 2);
-
-                if ($quantity > 0) {
-                    if (! filled($audit->from_branch_id) || ! filled($audit->to_branch_id)) {
-                        throw new \RuntimeException('This transfer is missing branch details and cannot be reversed safely.');
-                    }
-
-                    $productQuery = Product::query()->withoutGlobalScope('company_id');
-                    $this->applyTenantScope($productQuery, 'products');
-                    $product = $productQuery->lockForUpdate()->findOrFail($audit->product_id);
-                    $sourceContext = [
-                        'id' => (string) $audit->from_branch_id,
-                        'name' => (string) ($audit->from_branch_name ?? ''),
-                    ];
-                    $destinationContext = [
-                        'id' => (string) $audit->to_branch_id,
-                        'name' => (string) ($audit->to_branch_name ?? ''),
-                    ];
-                    $productCompanyId = (int) ($product->company_id ?? $companyId);
-
-                    $this->branchInventory->adjustBranchStock(
-                        $product,
-                        -$quantity,
-                        $destinationContext,
-                        $productCompanyId,
-                        false
-                    );
-                    $this->branchInventory->adjustBranchStock(
-                        $product,
-                        $quantity,
-                        $sourceContext,
-                        $productCompanyId,
-                        false
-                    );
-                    $this->recordBranchTransferHistory(
-                        $product,
-                        $quantity,
-                        $destinationContext,
-                        $sourceContext,
-                        (int) $audit->id
-                    );
-
-                    StockTransferAudit::query()->create([
-                        'company_id' => $audit->company_id,
-                        'product_id' => $audit->product_id,
-                        'from_branch_id' => $destinationContext['id'],
-                        'from_branch_name' => $destinationContext['name'],
-                        'to_branch_id' => $sourceContext['id'],
-                        'to_branch_name' => $sourceContext['name'],
-                        'quantity' => $quantity,
-                        'initiated_by' => auth()->id(),
-                        'notes' => 'Reversal of transfer #' . $audit->id,
-                    ]);
+                $originalTransfer = StockTransfer::query()
+                    ->where('company_id', $companyId)
+                    ->lockForUpdate()
+                    ->findOrFail($originalItem->transfer_id);
+                if ($originalTransfer->status !== 'completed') {
+                    throw new \RuntimeException('Only items from a completed transfer can be returned.');
                 }
 
-                $audit->delete();
+                $returnedQuantity = (float) StockTransferAudit::query()
+                    ->where('reversal_of_audit_id', $originalItem->id)
+                    ->sum('quantity');
+                $remainingQuantity = round((float) $originalItem->quantity - $returnedQuantity, 2);
+                $quantity = round((float) $validated['quantity'], 2);
+                if ($quantity > $remainingQuantity) {
+                    throw new \RuntimeException(
+                        'Only ' . \App\Support\CompactNumber::format(max(0, $remainingQuantity), 2)
+                        . ' units remain available to return from this transfer line.'
+                    );
+                }
 
-                return $quantity;
+                $productQuery = Product::query()->withoutGlobalScope('company_id');
+                $this->applyTenantScope($productQuery, 'products');
+                $product = $productQuery->lockForUpdate()->findOrFail($originalItem->product_id);
+                $sourceContext = [
+                    'id' => (string) $originalItem->to_branch_id,
+                    'name' => (string) ($originalItem->to_branch_name ?? ''),
+                ];
+                $destinationContext = [
+                    'id' => (string) $originalItem->from_branch_id,
+                    'name' => (string) ($originalItem->from_branch_name ?? ''),
+                ];
+                if ($this->branchInventory->getAvailableStock($product, $sourceContext) < $quantity) {
+                    throw new \RuntimeException('The destination branch does not have enough available stock to complete this return.');
+                }
+
+                $returnTransfer = $this->createStockTransferDocument(
+                    $companyId,
+                    $sourceContext,
+                    $destinationContext,
+                    null,
+                    null,
+                    'Partial return from ' . $originalTransfer->reference
+                );
+                $productCompanyId = (int) ($product->company_id ?? $companyId);
+                $this->branchInventory->adjustBranchStock($product, -$quantity, $sourceContext, $productCompanyId, false);
+                $this->branchInventory->adjustBranchStock($product, $quantity, $destinationContext, $productCompanyId, false);
+
+                StockTransferAudit::query()->create([
+                    'transfer_id' => $returnTransfer->id,
+                    'reversal_of_audit_id' => $originalItem->id,
+                    'company_id' => $companyId,
+                    'product_id' => $product->id,
+                    'from_branch_id' => $sourceContext['id'],
+                    'from_branch_name' => $sourceContext['name'],
+                    'to_branch_id' => $destinationContext['id'],
+                    'to_branch_name' => $destinationContext['name'],
+                    'quantity' => $quantity,
+                    'initiated_by' => auth()->id(),
+                    'notes' => 'Partial return from ' . $originalTransfer->reference,
+                ]);
+                $this->recordBranchTransferHistory(
+                    $product,
+                    $quantity,
+                    $sourceContext,
+                    $destinationContext,
+                    (int) $originalItem->id,
+                    $returnTransfer->reference
+                );
+
+                return $returnTransfer;
             });
         } catch (\RuntimeException $exception) {
-            return redirect()->back()->with('error', $exception->getMessage());
+            return redirect()->back()->withInput()->with('error', $exception->getMessage());
         }
 
         $this->clearDashboardMetricsCache();
 
-        return redirect()->back()->with(
-            'success',
-            $quantity > 0
-                ? 'Transfer deleted and stock returned to the source branch.'
-                : 'Zero-stock transfer record deleted.'
-        );
+        return redirect()
+            ->route('inventory.transfer.show', $returnTransfer->id)
+            ->with('success', 'Items returned successfully. Return reference: ' . $returnTransfer->reference);
     }
 
     private function recordBranchTransferHistory(
@@ -2861,7 +3202,8 @@ public function inventory(Request $request)
         float $quantity,
         array $sourceContext,
         array $destinationContext,
-        ?int $reversalOfTransferId = null
+        ?int $reversalOfTransferId = null,
+        ?string $transferReference = null
     ): void
     {
         if ($quantity <= 0 || !Schema::hasTable('inventory_history')) {
@@ -2897,6 +3239,9 @@ public function inventory(Request $request)
             $referencePrefix = $reversalOfTransferId === null
                 ? 'Branch Transfer'
                 : 'Branch Transfer Reversal #' . $reversalOfTransferId;
+            if ($transferReference !== null) {
+                $referencePrefix .= ' ' . $transferReference;
+            }
             $sourcePayload['reference'] = $referencePrefix . ' to ' . $destinationContext['name'];
             $destinationPayload['reference'] = $referencePrefix . ' from ' . $sourceContext['name'];
         }
@@ -2912,57 +3257,263 @@ public function inventory(Request $request)
             'month' => 'nullable|date_format:Y-m',
             'from_date' => 'nullable|date_format:Y-m-d',
             'to_date' => 'nullable|date_format:Y-m-d|after_or_equal:from_date',
+            'from_branch_id' => 'nullable|string|max:100',
+            'to_branch_id' => 'nullable|string|max:100',
+            'status' => 'nullable|in:completed,reversed',
         ]);
         $search = trim((string) ($validated['q'] ?? ''));
         $month = trim((string) ($validated['month'] ?? ''));
         $fromDate = trim((string) ($validated['from_date'] ?? ''));
         $toDate = trim((string) ($validated['to_date'] ?? ''));
 
-        $auditsQuery = StockTransferAudit::query()
-            ->with([
-                'product' => function ($query) {
-                    $query->withoutGlobalScope('company_id');
-                    $this->applyTenantScope($query, 'products');
-                },
-                'initiator',
-            ])
-            ->latest();
-
-        if ($search !== '') {
-            $auditsQuery->where(function ($query) use ($search) {
-                $query->where('from_branch_name', 'like', '%' . $search . '%')
-                    ->orWhere('to_branch_name', 'like', '%' . $search . '%')
-                    ->orWhere('notes', 'like', '%' . $search . '%')
-                    ->orWhereHas('product', function ($sub) use ($search) {
-                        $sub->withoutGlobalScope('company_id');
-                        $this->applyTenantScope($sub, 'products');
-                        $sub->where('name', 'like', '%' . $search . '%')
-                            ->orWhere('sku', 'like', '%' . $search . '%');
-                    })
-                    ->orWhereHas('initiator', fn ($sub) => $sub->where('name', 'like', '%' . $search . '%'));
-            });
-        }
-        if ($month !== '') {
-            $monthStart = \Carbon\Carbon::createFromFormat('Y-m-d', $month . '-01')->startOfMonth();
-            $auditsQuery->where('created_at', '>=', $monthStart)
-                ->where('created_at', '<=', $monthStart->copy()->endOfMonth());
-        }
-        if ($fromDate !== '') {
-            $auditsQuery->where('created_at', '>=', \Carbon\Carbon::createFromFormat('Y-m-d', $fromDate)->startOfDay());
-        }
-        if ($toDate !== '') {
-            $auditsQuery->where('created_at', '<=', \Carbon\Carbon::createFromFormat('Y-m-d', $toDate)->endOfDay());
-        }
-
-        $summary = (clone $auditsQuery)
+        $transfersQuery = $this->filteredStockTransfers($validated);
+        $summary = (clone $transfersQuery)
             ->reorder()
-            ->selectRaw('COUNT(*) AS transfer_count, COUNT(DISTINCT product_id) AS product_count, COALESCE(SUM(quantity), 0) AS quantity_total')
+            ->selectRaw('COUNT(*) AS transfer_count')
+            ->selectSub(function ($query) use ($transfersQuery) {
+                $query->from('stock_transfer_audits')
+                    ->selectRaw('COUNT(DISTINCT stock_transfer_audits.product_id)')
+                    ->whereIn('stock_transfer_audits.transfer_id', (clone $transfersQuery)->select('stock_transfers.id'));
+            }, 'product_count')
+            ->selectSub(function ($query) use ($transfersQuery) {
+                $query->from('stock_transfer_audits')
+                    ->selectRaw('COALESCE(SUM(stock_transfer_audits.quantity), 0)')
+                    ->whereIn('stock_transfer_audits.transfer_id', (clone $transfersQuery)->select('stock_transfers.id'));
+            }, 'quantity_total')
             ->first();
-        $audits = $auditsQuery->paginate(\App\Support\PageSize::resolve())->withQueryString()->appends($request->query());
+        $transfers = $transfersQuery
+            ->with(['initiator'])
+            ->withCount('items')
+            ->withSum('items', 'quantity')
+            ->orderByDesc('transfer_date')
+            ->orderByDesc('id')
+            ->paginate(\App\Support\PageSize::resolve())
+            ->withQueryString();
+        $branches = $this->getAvailableBranches();
 
-        return view('Inventory.transfer-audit', compact('audits', 'summary', 'search', 'month', 'fromDate', 'toDate'));
+        return view('Inventory.transfer-audit', compact(
+            'transfers',
+            'summary',
+            'search',
+            'month',
+            'fromDate',
+            'toDate',
+            'validated',
+            'branches'
+        ));
     }
 
+    private function filteredStockTransfers(array $filters)
+    {
+        $query = StockTransfer::query();
+        if (($filters['q'] ?? '') !== '') {
+            $search = trim((string) $filters['q']);
+            $query->where(function ($subQuery) use ($search) {
+                $subQuery->where('reference', 'like', '%' . $search . '%')
+                    ->orWhere('from_branch_name', 'like', '%' . $search . '%')
+                    ->orWhere('to_branch_name', 'like', '%' . $search . '%')
+                    ->orWhere('notes', 'like', '%' . $search . '%')
+                    ->orWhereHas('initiator', fn ($userQuery) => $userQuery->where('name', 'like', '%' . $search . '%'))
+                    ->orWhereHas('items.product', function ($productQuery) use ($search) {
+                        $productQuery->withoutGlobalScope('company_id');
+                        $this->applyTenantScope($productQuery, 'products');
+                        $productQuery->where('name', 'like', '%' . $search . '%')
+                            ->orWhere('sku', 'like', '%' . $search . '%');
+                    });
+            });
+        }
+        if (($filters['month'] ?? '') !== '') {
+            $monthStart = \Carbon\Carbon::createFromFormat('Y-m-d', $filters['month'] . '-01')->startOfMonth();
+            $query->whereBetween('transfer_date', [$monthStart, $monthStart->copy()->endOfMonth()]);
+        }
+        if (($filters['from_date'] ?? '') !== '') {
+            $query->where('transfer_date', '>=', \Carbon\Carbon::createFromFormat('Y-m-d', $filters['from_date'])->startOfDay());
+        }
+        if (($filters['to_date'] ?? '') !== '') {
+            $query->where('transfer_date', '<=', \Carbon\Carbon::createFromFormat('Y-m-d', $filters['to_date'])->endOfDay());
+        }
+        if (($filters['from_branch_id'] ?? '') !== '') {
+            $query->where('from_branch_id', $filters['from_branch_id']);
+        }
+        if (($filters['to_branch_id'] ?? '') !== '') {
+            $query->where('to_branch_id', $filters['to_branch_id']);
+        }
+        if (($filters['status'] ?? '') !== '') {
+            $query->where('status', $filters['status']);
+        }
+
+        return $query;
+    }
+
+    public function showTransferDocument(int $id)
+    {
+        $transfer = StockTransfer::query()
+            ->with([
+                'initiator',
+                'items' => function ($query) {
+                    $query->with([
+                        'product' => function ($productQuery) {
+                            $productQuery->withoutGlobalScope('company_id');
+                            $this->applyTenantScope($productQuery, 'products');
+                        },
+                        'initiator',
+                    ])->withSum('reversals', 'quantity')->orderBy('id');
+                },
+            ])
+            ->findOrFail($id);
+
+        return view('Inventory.transfer-show', compact('transfer'));
+    }
+
+    public function exportTransferDocuments(Request $request)
+    {
+        $validated = $request->validate([
+            'q' => 'nullable|string|max:120',
+            'month' => 'nullable|date_format:Y-m',
+            'from_date' => 'nullable|date_format:Y-m-d',
+            'to_date' => 'nullable|date_format:Y-m-d|after_or_equal:from_date',
+            'from_branch_id' => 'nullable|string|max:100',
+            'to_branch_id' => 'nullable|string|max:100',
+            'status' => 'nullable|in:completed,reversed',
+        ]);
+        $transfers = $this->filteredStockTransfers($validated)
+            ->withCount('items')
+            ->withSum('items', 'quantity')
+            ->orderBy('transfer_date')
+            ->orderBy('id')
+            ->get();
+
+        return response()->streamDownload(function () use ($transfers) {
+            $output = fopen('php://output', 'w');
+            fputcsv($output, ['Reference', 'Date', 'Status', 'From branch', 'To branch', 'Products', 'Total quantity', 'Notes']);
+            foreach ($transfers as $transfer) {
+                fputcsv($output, [
+                    $transfer->reference,
+                    $transfer->transfer_date?->format('Y-m-d H:i'),
+                    $transfer->status,
+                    $transfer->from_branch_name,
+                    $transfer->to_branch_name,
+                    $transfer->items_count,
+                    $transfer->items_sum_quantity ?? 0,
+                    $transfer->notes,
+                ]);
+            }
+            fclose($output);
+        }, 'stock-transfers-' . now()->format('Ymd-His') . '.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    public function deleteTransferDocument(int $id)
+    {
+        $companyId = $this->tenantCompanyId();
+        try {
+            $reversal = DB::transaction(function () use ($id, $companyId) {
+                $transfer = StockTransfer::query()
+                    ->where('company_id', $companyId)
+                    ->lockForUpdate()
+                    ->findOrFail($id);
+                if ($transfer->status !== 'completed') {
+                    throw new \RuntimeException('Only completed transfers can be reversed.');
+                }
+
+                $items = StockTransferAudit::query()
+                    ->where('transfer_id', $transfer->id)
+                    ->orderBy('product_id')
+                    ->lockForUpdate()
+                    ->get();
+                $returnedByItem = StockTransferAudit::query()
+                    ->whereIn('reversal_of_audit_id', $items->pluck('id'))
+                    ->selectRaw('reversal_of_audit_id, COALESCE(SUM(quantity), 0) AS returned_quantity')
+                    ->groupBy('reversal_of_audit_id')
+                    ->pluck('returned_quantity', 'reversal_of_audit_id');
+                $remainingByItem = $items->mapWithKeys(fn ($item) => [
+                    $item->id => max(0, round((float) $item->quantity - (float) ($returnedByItem[$item->id] ?? 0), 2)),
+                ]);
+                $quantitiesByProduct = $items->groupBy('product_id')
+                    ->map(fn ($productItems) => $productItems->sum(fn ($item) => $remainingByItem[$item->id]));
+                $productQuery = Product::query()->withoutGlobalScope('company_id');
+                $this->applyTenantScope($productQuery, 'products');
+                $products = $productQuery
+                    ->whereIn('products.id', $quantitiesByProduct->keys())
+                    ->orderBy('products.id')
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('id');
+
+                foreach ($quantitiesByProduct as $productId => $quantity) {
+                    if ($quantity <= 0) {
+                        continue;
+                    }
+                    $product = $products->get($productId);
+                    if (! $product) {
+                        throw new \RuntimeException('A product in this transfer no longer exists; the document cannot be reversed safely.');
+                    }
+                    $destination = ['id' => (string) $transfer->to_branch_id, 'name' => (string) $transfer->to_branch_name];
+                    if ($this->branchInventory->getAvailableStock($product, $destination) < $quantity) {
+                        throw new \RuntimeException(
+                            "There is not enough {$product->name} stock at {$destination['name']} to reverse the entire transfer."
+                        );
+                    }
+                }
+
+                $source = ['id' => (string) $transfer->to_branch_id, 'name' => (string) $transfer->to_branch_name];
+                $destination = ['id' => (string) $transfer->from_branch_id, 'name' => (string) $transfer->from_branch_name];
+                $reversal = $this->createStockTransferDocument(
+                    $companyId,
+                    $source,
+                    $destination,
+                    null,
+                    null,
+                    'Reversal of ' . $transfer->reference
+                );
+
+                foreach ($items as $item) {
+                    $quantity = $remainingByItem[$item->id];
+                    if ($quantity <= 0) {
+                        continue;
+                    }
+                    $product = $products->get($item->product_id);
+                    $productCompanyId = (int) ($product->company_id ?? $companyId);
+                    $this->branchInventory->adjustBranchStock($product, -$quantity, $source, $productCompanyId, false);
+                    $this->branchInventory->adjustBranchStock($product, $quantity, $destination, $productCompanyId, false);
+                    StockTransferAudit::query()->create([
+                        'transfer_id' => $reversal->id,
+                        'reversal_of_audit_id' => $item->id,
+                        'company_id' => $companyId,
+                        'product_id' => $item->product_id,
+                        'from_branch_id' => $source['id'],
+                        'from_branch_name' => $source['name'],
+                        'to_branch_id' => $destination['id'],
+                        'to_branch_name' => $destination['name'],
+                        'quantity' => $quantity,
+                        'initiated_by' => auth()->id(),
+                        'notes' => 'Reversal of ' . $transfer->reference,
+                    ]);
+                    $this->recordBranchTransferHistory(
+                        $product,
+                        $quantity,
+                        $source,
+                        $destination,
+                        (int) $item->id,
+                        $reversal->reference
+                    );
+                }
+
+                $transfer->update(['status' => 'reversed']);
+
+                return $reversal;
+            });
+        } catch (\RuntimeException $exception) {
+            return redirect()->back()->with('error', $exception->getMessage());
+        }
+
+        $this->clearDashboardMetricsCache();
+
+        return redirect()
+            ->route('inventory.transfer.show', $id)
+            ->with('success', 'Transfer reversed successfully. Reversal reference: ' . $reversal->reference);
+    }
     public function damageReport(Request $request)
     {
         $search = trim((string) $request->string('q'));
