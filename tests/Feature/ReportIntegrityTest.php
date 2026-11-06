@@ -332,7 +332,8 @@ class ReportIntegrityTest extends TestCase
         $this->assertEquals(300.0, (float) $payments['Bank Transfer']->amount);
         $this->assertEquals($transferAccount->id, (int) $payments['Bank Transfer']->account_id);
         $this->assertEquals(600.0, (float) $payments['POS/Card']->amount);
-        $this->assertEquals($cardAccount->id, (int) $payments['POS/Card']->account_id);
+        $this->assertEquals($transferAccount->id, (int) $payments['POS/Card']->account_id);
+        $this->assertSame($transferAccount->id, (int) $sale->payment_details['card_account_id']);
 
         $cashResponse = $this->postJson(route('sales.store'), [
             'payment_method' => 'Cash',

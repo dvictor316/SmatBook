@@ -58,6 +58,17 @@ class PosSalesBankFilterTest extends TestCase
             ->assertDontSee('Private Other Bank')->assertDontSee('Inventory Assets')->assertDontSee('Inactive Bank');
     }
 
+    public function test_pos_checkout_uses_one_shared_account_for_transfer_and_pos_payments(): void
+    {
+        [$company] = $this->workspace();
+        $this->account($company, 'Moniepoint');
+
+        $this->get(route('sales.showPos'))->assertOk()
+            ->assertSee('Transfer / POS payment account')
+            ->assertDontSee('id="card-account"', false)
+            ->assertDontSee('POS settlement account');
+    }
+
     public function test_bank_filter_matches_receiving_accounts_and_totals_only_the_selected_bank_share(): void
     {
         [$company, $user] = $this->workspace();

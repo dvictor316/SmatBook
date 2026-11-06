@@ -6135,8 +6135,8 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                             <input type="number" min="0" step="0.01" id="amount-paid" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--success-500);">
                         </div>
                             <div class="col-md-6 d-none" id="split-transfer-account-wrap">
-                                <label for="transfer-account" id="pos-transfer-account-label">Payment Method</label>
-                                <small class="text-muted d-block mb-1">Select a bank account created in Chart of Accounts.</small>
+                                <label for="transfer-account" id="pos-transfer-account-label">Transfer / POS payment account</label>
+                                <small class="text-muted d-block mb-1">Choose one account for both bank-transfer and POS payments.</small>
                                 <select id="transfer-account" class="form-select">
                                     <option value="">-- Select Account --</option>
                                     @foreach(($depositAccounts ?? []) as $acct)
@@ -6153,22 +6153,6 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                             <label for="transfer-amount" id="pos-transfer-amount-label">Amount Paid</label>
                             <input type="number" min="0" step="0.01" id="transfer-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
                         </div>
-	                        <div class="col-md-6 d-none" id="split-card-account-wrap">
-                                <label for="card-account" id="pos-card-account-label">Payment Method</label>
-                                <select id="card-account" class="form-select">
-                                    <option value="">-- Select Account --</option>
-                                    @foreach(($depositAccounts ?? []) as $acct)
-                                        <option value="{{ $acct->id }}">{{ $acct->name }}@if($acct->code) ({{ $acct->code }})@endif</option>
-                                    @endforeach
-                                </select>
-                                @if(collect($depositAccounts ?? [])->isEmpty())
-                                    <small class="text-danger d-block mt-2">
-                                        No bank account is configured. Contact your administrator to add one in Chart of Accounts.
-                                    </small>
-	                                @else
-	                                    <small class="text-muted d-block mt-2">Select where the POS funds settle, e.g. Opay or Moniepoint.</small>
-	                            @endif
-	                        </div>
                         <div class="col-md-6 d-none" id="split-card-wrap">
                             <label for="card-amount" id="pos-card-amount-label">Amount Paid</label>
                             <input type="number" min="0" step="0.01" id="card-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
@@ -7484,7 +7468,6 @@ $(document).ready(function() {
         $('#split-transfer-wrap').toggleClass('d-none', !isSplit);
         $('#split-transfer-account-wrap').toggleClass('d-none', !isSplit);
         $('#split-card-wrap').toggleClass('d-none', !isSplit);
-        $('#split-card-account-wrap').toggleClass('d-none', !isSplit);
         $('#pos-idle-illustration').toggleClass('is-split-compact', isSplit);
         updateChange();
     });
@@ -7517,12 +7500,10 @@ $(document).ready(function() {
         $('#transfer-amount').val('0.00');
         $('#transfer-account').val('');
         $('#card-amount').val('0.00');
-        $('#card-account').val('');
         $('#deposit-account').val('');
         $('#split-transfer-wrap').addClass('d-none');
         $('#split-transfer-account-wrap').addClass('d-none');
         $('#split-card-wrap').addClass('d-none');
-        $('#split-card-account-wrap').addClass('d-none');
 
         $('#product-select').val('');
         applyProductSelection($('#product-select').find(':selected'));
@@ -7568,7 +7549,7 @@ $(document).ready(function() {
                     transfer: parseFloat($('#transfer-amount').val()) || 0,
                     transfer_account_id: isStarterPos ? null : ($('#transfer-account').val() || null),
                     card: parseFloat($('#card-amount').val()) || 0,
-                    card_account_id: isStarterPos ? null : ($('#card-account').val() || null)
+                    card_account_id: isStarterPos ? null : ($('#transfer-account').val() || null)
                 }
             },
             success: function(res) {
@@ -7756,16 +7737,14 @@ window.POS_ENABLE_FALLBACK = function () {
     const transferAmount = document.getElementById('transfer-amount');
     const transferAccount = document.getElementById('transfer-account');
     const cardAmount = document.getElementById('card-amount');
-	    const cardAccount = document.getElementById('card-account');
 	    const walletAmount = document.getElementById('wallet-amount');
 	    const walletPaymentWrap = document.getElementById('wallet-payment-wrap');
 	    const walletBalanceHint = document.getElementById('wallet-balance-hint');
 	    const customerWalletHint = document.getElementById('customer-wallet-hint');
 	    const splitTransferWrap = document.getElementById('split-transfer-wrap');
-    const splitTransferAccountWrap = document.getElementById('split-transfer-account-wrap');
-    const splitCardWrap = document.getElementById('split-card-wrap');
-    const splitCardAccountWrap = document.getElementById('split-card-account-wrap');
-    const changeAmount = document.getElementById('change-amount');
+	    const splitTransferAccountWrap = document.getElementById('split-transfer-account-wrap');
+	    const splitCardWrap = document.getElementById('split-card-wrap');
+	    const changeAmount = document.getElementById('change-amount');
     const customerSelect = document.getElementById('customer-select');
     const customerSearchInput = document.getElementById('customer-search-input');
     const railWantBtn = document.getElementById('rail-want-btn');
@@ -9234,14 +9213,12 @@ window.POS_ENABLE_FALLBACK = function () {
         splitTransferWrap?.classList.toggle('d-none', !showTransfer);
         splitTransferAccountWrap?.classList.toggle('d-none', !showTransfer);
         splitCardWrap?.classList.toggle('d-none', !showCard);
-        splitCardAccountWrap?.classList.toggle('d-none', !showCard);
         idleIllustration?.classList.toggle('is-split-compact', isSplit);
         const labels = {
             'pos-cash-account-label': isMixed ? 'Cash payment account' : 'Payment Method',
             'pos-cash-amount-label': isMixed ? 'Cash Amount' : 'Amount Paid',
-            'pos-transfer-account-label': showsBankChannels ? 'Transfer payment account' : 'Payment Method',
+            'pos-transfer-account-label': showsBankChannels ? 'Transfer / POS payment account' : 'Payment Method',
             'pos-transfer-amount-label': showsBankChannels ? 'Transfer Amount' : 'Amount Paid',
-            'pos-card-account-label': showsBankChannels ? 'POS settlement account' : 'Payment Method',
             'pos-card-amount-label': showsBankChannels ? 'POS Amount' : 'Amount Paid',
         };
         Object.entries(labels).forEach(([id, label]) => {
@@ -9315,10 +9292,9 @@ window.POS_ENABLE_FALLBACK = function () {
         if (amountPaid) amountPaid.value = '0.00';
         if (transferAmount) transferAmount.value = '0.00';
         if (transferAccount) transferAccount.value = '';
-	        if (cardAmount) cardAmount.value = '0.00';
-	        if (cardAccount) cardAccount.value = '';
-	        if (walletAmount) walletAmount.value = '0.00';
-	        walletPaymentWrap?.classList.add('d-none');
+        if (cardAmount) cardAmount.value = '0.00';
+        if (walletAmount) walletAmount.value = '0.00';
+        walletPaymentWrap?.classList.add('d-none');
 
         if (productSelect) productSelect.value = '';
 	        syncProductSearchDropdown('');
@@ -10057,12 +10033,8 @@ window.POS_ENABLE_FALLBACK = function () {
         if (paymentMethod?.value === 'Split') {
             const transferValue = moneyValue(transferAmount);
             const cardValue = moneyValue(cardAmount);
-            if (transferValue > 0 && !transferAccount?.value) {
-                alertFallback('Choose the transfer account.');
-                return;
-            }
-            if (cardValue > 0 && !cardAccount?.value) {
-                alertFallback('Choose the bank account where the POS funds will settle, such as Opay or Moniepoint.');
+            if ((transferValue > 0 || cardValue > 0) && !transferAccount?.value) {
+                alertFallback('Choose the shared transfer / POS payment account.');
                 return;
             }
         }
@@ -10092,7 +10064,7 @@ window.POS_ENABLE_FALLBACK = function () {
                         transfer: moneyValue(transferAmount),
                         transfer_account_id: transferAccount?.value || null,
                         card: moneyValue(cardAmount),
-                        card_account_id: cardAccount?.value || null,
+                        card_account_id: transferAccount?.value || null,
                     },
 	                    ...(currentSuspendedSaleId !== null ? {
 	                        suspended_sale_id: currentSuspendedSaleId,
