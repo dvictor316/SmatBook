@@ -212,7 +212,7 @@
                                     <th>Reference</th>
                                     <th class="text-end">Quantity</th>
                                     <th class="text-center no-print">Action</th>
-                                    <th class="text-end">Current Stock Balance</th>
+                                    <th class="text-end">Balance After Movement</th>
                                     <th class="text-end">Stock Value</th>
                                     <th class="text-end">Purchase Price</th>
                                 </tr>
@@ -268,7 +268,7 @@
                                             @endif
                                         </td>
                                         <td class="text-end fw-semibold {{ $currentStock >= 0 ? 'text-primary' : 'text-danger' }}">
-                                            {{ \App\Support\CompactNumber::format($currentStock, 2) }} {{ $stockUnitLabel }}
+                                            {{ \App\Support\CompactNumber::format((float) ($history->running_balance ?? 0), 2) }} {{ $stockUnitLabel }}
                                         </td>
                                         <td class="text-end">
                                             {{ \App\Support\GeoCurrency::format((float) ($history->stock_value ?? 0), 'NGN', $currencyCode, $currencyLocale) }}

@@ -618,6 +618,13 @@ class OnlineStoreWorkflowTest extends TestCase
             'quantity' => 25,
         ]);
         $this->assertDatabaseHas('products', ['id' => $productId, 'stock' => 25, 'stock_quantity' => 25]);
+        $this->assertDatabaseHas('inventory_history', [
+            'product_id' => $productId,
+            'branch_id' => $branch['id'],
+            'type' => 'out',
+            'quantity' => 2,
+            'reference' => 'Online Store Order: ' . $newOrder->order_number,
+        ]);
 
         $this->patch(route('online-store.orders.update', $newOrder), ['status' => 'cancelled'])
             ->assertSessionHasNoErrors();
@@ -627,6 +634,13 @@ class OnlineStoreWorkflowTest extends TestCase
             'quantity' => 27,
         ]);
         $this->assertDatabaseHas('products', ['id' => $productId, 'stock' => 27, 'stock_quantity' => 27]);
+        $this->assertDatabaseHas('inventory_history', [
+            'product_id' => $productId,
+            'branch_id' => $branch['id'],
+            'type' => 'in',
+            'quantity' => 2,
+            'reference' => 'Online Store Order Cancelled: ' . $newOrder->order_number,
+        ]);
     }
 
     public function test_business_owner_has_a_direct_online_store_sidebar_link(): void

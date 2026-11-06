@@ -3367,6 +3367,17 @@ public function inventory(Request $request)
                 ->where('inventory_history.product_id', $id)
                 ->tap(fn ($q) => $this->applyTenantScope($q, 'products'));
 
+            if (
+                Schema::hasTable('sale_items')
+                && Schema::hasTable('sales')
+                && Schema::hasColumn('inventory_history', 'reference')
+            ) {
+                $historyQuery->where(function ($query) {
+                    $query->whereNull('inventory_history.reference')
+                        ->orWhereRaw("LOWER(TRIM(inventory_history.reference)) <> 'sales'");
+                });
+            }
+
             if ($branchId !== '' || $branchName !== '') {
                 $historyQuery->where(function ($sub) use ($branchId, $branchName) {
                     $matched = false;
@@ -3418,16 +3429,22 @@ public function inventory(Request $request)
             $purchaseReferenceColumn = Schema::hasColumn('purchases', 'reference_no')
                 ? 'reference_no'
                 : (Schema::hasColumn('purchases', 'purchase_no') ? 'purchase_no' : null);
+            $purchaseIdExpression = DB::connection()->getDriverName() === 'sqlite'
+                ? "'purchase-' || purchase_items.id"
+                : "CONCAT('purchase-', purchase_items.id)";
+            $purchaseFallbackReference = DB::connection()->getDriverName() === 'sqlite'
+                ? "'PUR-' || purchases.id"
+                : "CONCAT('PUR-', purchases.id)";
 
             if ($purchaseQtyColumn) {
                 $purchaseHistoryQuery = DB::table('purchase_items')
                     ->join('purchases', 'purchase_items.purchase_id', '=', 'purchases.id')
                     ->join('products', 'purchase_items.product_id', '=', 'products.id')
                     ->selectRaw("
-                        CONCAT('purchase-', purchase_items.id) as id,
+                        {$purchaseIdExpression} as id,
                         purchases.created_at as created_at,
                         'in' as type,
-                        COALESCE(" . ($purchaseReferenceColumn ? "purchases.{$purchaseReferenceColumn}" : 'NULL') . ", purchases.purchase_no, CONCAT('PUR-', purchases.id)) as reference,
+                        COALESCE(" . ($purchaseReferenceColumn ? "purchases.{$purchaseReferenceColumn}" : 'NULL') . ", purchases.purchase_no, {$purchaseFallbackReference}) as reference,
                         " . (
                             Schema::hasColumn('products', 'purchase_unit_id') && Schema::hasColumn('products', 'conversion_rate')
                                 ? "COALESCE(purchase_items.{$purchaseQtyColumn}, 0) *
@@ -3447,6 +3464,17 @@ public function inventory(Request $request)
                     ->where('purchase_items.product_id', $id)
                     ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
                     ->tap(fn ($q) => $this->applyTenantScope($q, 'purchases'));
+
+                if (Schema::hasColumn('purchases', 'purchase_no')) {
+                    $purchaseHistoryQuery->where(function ($query) {
+                        $query->whereNull('purchases.purchase_no')
+                            ->orWhere(function ($syntheticPurchases) {
+                                $syntheticPurchases
+                                    ->where('purchases.purchase_no', 'not like', 'AUTO-STK-%')
+                                    ->where('purchases.purchase_no', 'not like', 'HIST-INV-%');
+                            });
+                    });
+                }
 
                 if ($branchId !== '' || $branchName !== '') {
                     $purchaseHistoryQuery->where(function ($sub) use ($branchId, $branchName) {
@@ -3521,16 +3549,22 @@ public function inventory(Request $request)
             $saleReferenceColumn = Schema::hasColumn('sales', 'invoice_no')
                 ? 'invoice_no'
                 : (Schema::hasColumn('sales', 'order_number') ? 'order_number' : null);
+            $saleIdExpression = DB::connection()->getDriverName() === 'sqlite'
+                ? "'sale-' || sale_items.id"
+                : "CONCAT('sale-', sale_items.id)";
+            $saleFallbackReference = DB::connection()->getDriverName() === 'sqlite'
+                ? "'SALE-' || sales.id"
+                : "CONCAT('SALE-', sales.id)";
 
             if ($saleQtyColumn) {
                 $saleHistoryQuery = DB::table('sale_items')
                     ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
                     ->join('products', 'sale_items.product_id', '=', 'products.id')
                     ->selectRaw("
-                        CONCAT('sale-', sale_items.id) as id,
+                        {$saleIdExpression} as id,
                         sales.created_at as created_at,
                         'out' as type,
-                        COALESCE(" . ($saleReferenceColumn ? "sales.{$saleReferenceColumn}" : 'NULL') . ", CONCAT('SALE-', sales.id)) as reference,
+                        COALESCE(" . ($saleReferenceColumn ? "sales.{$saleReferenceColumn}" : 'NULL') . ", {$saleFallbackReference}) as reference,
                         COALESCE(sale_items.{$saleQtyColumn}, 0) as quantity,
                         products.name as name,
                         products.sku as sku,

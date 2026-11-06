@@ -132,6 +132,16 @@ class OnlineStoreController extends Controller
                             false
                         );
                     }
+                    $this->recordOnlineStockMovement(
+                        $product,
+                        (float) $line->quantity,
+                        'in',
+                        'Online Store Order Cancelled: ' . $order->order_number,
+                        filled($order->branch_id)
+                            ? ['id' => (string) $order->branch_id, 'name' => (string) ($order->branch_name ?? '')]
+                            : null,
+                        (int) $order->company_id
+                    );
                 }
             }
 
@@ -310,6 +320,14 @@ class OnlineStoreController extends Controller
                         );
                     }
                 }
+                $this->recordOnlineStockMovement(
+                    $product,
+                    (float) $quantity,
+                    'out',
+                    'Online Store Order: ' . $order->order_number,
+                    $stockBranch,
+                    (int) $store->company_id
+                );
             }
 
             return [$order, true];
@@ -434,6 +452,40 @@ class OnlineStoreController extends Controller
                 $this->availableStoreStock($product, $store, $stockBranch)
             );
         }
+    }
+
+    private function recordOnlineStockMovement(
+        Product $product,
+        float $quantity,
+        string $type,
+        string $reference,
+        ?array $branch,
+        int $companyId
+    ): void {
+        if (! Schema::hasTable('inventory_history')) {
+            return;
+        }
+
+        $row = [
+            'user_id' => (int) ($product->user_id ?: DB::table('users')->min('id')),
+            'product_id' => $product->id,
+            'quantity' => $quantity,
+            'type' => $type,
+            'reference' => $reference,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+        if (Schema::hasColumn('inventory_history', 'company_id')) {
+            $row['company_id'] = $companyId;
+        }
+        if ($branch && Schema::hasColumn('inventory_history', 'branch_id')) {
+            $row['branch_id'] = $branch['id'] ?? null;
+        }
+        if ($branch && Schema::hasColumn('inventory_history', 'branch_name')) {
+            $row['branch_name'] = $branch['name'] ?? null;
+        }
+
+        DB::table('inventory_history')->insert($row);
     }
 
     private function availableStoreStock(
