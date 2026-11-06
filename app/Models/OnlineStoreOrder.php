@@ -22,4 +22,9 @@ class OnlineStoreOrder extends Model
     {
         return $this->hasMany(OnlineStoreOrderItem::class);
     }
+
+    public function includesCompanyWideRecords(): bool
+    {
+        return true;
+    }
 }
