@@ -10,7 +10,7 @@ class OnlineStoreOrder extends Model
     use TenantScoped;
 
     protected $fillable = [
-        'company_id', 'branch_id', 'branch_name', 'order_number', 'customer_name',
+        'company_id', 'branch_id', 'branch_name', 'submission_token', 'order_number', 'customer_name',
         'customer_email', 'customer_phone', 'delivery_address', 'payment_method',
         'status', 'subtotal', 'total_amount', 'customer_note',
         'whatsapp_notification_status', 'whatsapp_notification_error', 'whatsapp_notified_at',

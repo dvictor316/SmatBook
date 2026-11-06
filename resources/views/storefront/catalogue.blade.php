@@ -91,7 +91,11 @@
 <main class="store-main">
     @if(session('store_order_success'))
         <div class="alert alert-success">
-            <strong>Order received.</strong> Your reference is {{ session('store_order_success') }}. The business will contact you to confirm payment and fulfilment.
+            @if(session('store_order_duplicate'))
+                <strong>This order was already received.</strong> No duplicate was created. Your reference is {{ session('store_order_success') }}.
+            @else
+                <strong>Order received.</strong> Your reference is {{ session('store_order_success') }}. The business will contact you to confirm payment and fulfilment.
+            @endif
             @if(session('store_whatsapp_link') || session('store_sms_link') || session('store_email_link'))
                 <div class="mt-3 d-flex flex-wrap gap-2">
                     @if(session('store_whatsapp_link'))<a class="btn btn-success" href="{{ session('store_whatsapp_link') }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp me-2"></i>Send order on WhatsApp</a>@endif
@@ -151,6 +155,7 @@
     @if($products->count())
         <form method="POST" action="{{ $orderAction }}" id="store-order-form">
             @csrf
+            <input type="hidden" name="order_token" value="{{ $orderToken }}">
             <section class="checkout" id="store-cart">
                 <h2>Your Cart</h2>
                 <p class="text-muted">Review your items and total before providing contact details.</p>
@@ -199,6 +204,7 @@
         const table = document.getElementById('cart-table');
         const empty = document.getElementById('cart-empty');
         const submit = document.getElementById('place-store-order');
+        const orderForm = document.getElementById('store-order-form');
         const whatsappButton = document.getElementById('send-cart-whatsapp');
         const smsButton = document.getElementById('send-cart-sms');
         const emailButton = document.getElementById('send-cart-email');
@@ -207,6 +213,10 @@
         const smsNumber = @json($orderContact['sms']);
         const orderEmail = @json($orderContact['email']);
         const storeName = @json($store->store_name);
+        orderForm?.addEventListener('submit', () => {
+            submit.disabled = true;
+            submit.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting order...';
+        });
         const products = new Map(Array.from(document.querySelectorAll('[data-product-id]')).map((element) => [
             element.dataset.productId,
             {

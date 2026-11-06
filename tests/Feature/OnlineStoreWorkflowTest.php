@@ -72,6 +72,7 @@ class OnlineStoreWorkflowTest extends TestCase
         $this->assertDatabaseHas('products', ['id' => $outOfStockId, 'stock' => 0]);
 
         $this->post(route('storefront.orders.store', 'fresh-market'), [
+            'order_token' => '00000000-0000-4000-8000-000000000001',
             'customer_name' => 'Ada Buyer',
             'customer_phone' => '08000000000',
             'payment_method' => 'pickup',
@@ -122,6 +123,42 @@ class OnlineStoreWorkflowTest extends TestCase
         $this->getJson(route('notifications.summary'))
             ->assertOk()
             ->assertJsonPath('notification_count', 0);
+    }
+
+    public function test_repeated_store_order_submission_creates_one_order_and_reserves_stock_once(): void
+    {
+        [$user, $company] = $this->workspace('Idempotent Store');
+        $categoryId = $this->category($user->id, $company->id, 'Supplies');
+        $productId = $this->product($user->id, $company->id, $categoryId, 'Reusable Bag', 'BAG-002', 10, 1000);
+        StorefrontSetting::create([
+            'company_id' => $company->id,
+            'slug' => 'idempotent-store',
+            'store_name' => 'Idempotent Store',
+            'is_enabled' => true,
+        ]);
+        $orderData = [
+            'order_token' => '00000000-0000-4000-8000-000000000008',
+            'customer_name' => 'Repeat Buyer',
+            'customer_phone' => '08000000000',
+            'payment_method' => 'pickup',
+            'items' => [$productId => 2],
+        ];
+
+        $this->get(route('storefront.products', 'idempotent-store'))
+            ->assertOk()
+            ->assertSee('name="order_token"', false);
+
+        $this->post(route('storefront.orders.store', 'idempotent-store'), $orderData)
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('store_order_success');
+        $this->post(route('storefront.orders.store', 'idempotent-store'), $orderData)
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('store_order_success')
+            ->assertSessionHas('store_order_duplicate', true);
+
+        $this->assertDatabaseCount('online_store_orders', 1);
+        $this->assertDatabaseCount('online_store_order_items', 1);
+        $this->assertDatabaseHas('products', ['id' => $productId, 'stock' => 8, 'stock_quantity' => 8]);
     }
 
     public function test_custom_domain_resolves_the_enabled_store(): void
@@ -343,6 +380,7 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertSee('wa.me/', false);
 
         $this->post(route('storefront.orders.store', 'whatsapp-store'), [
+            'order_token' => '00000000-0000-4000-8000-000000000002',
             'customer_name' => 'Ada Buyer',
             'customer_phone' => '+2348099999999',
             'payment_method' => 'pickup',
@@ -396,6 +434,7 @@ class OnlineStoreWorkflowTest extends TestCase
         Http::fake(['graph.facebook.com/*' => Http::response(['messages' => [['id' => 'wamid.owner']]], 200)]);
 
         $this->post(route('storefront.orders.store', 'owner-contact-store'), [
+            'order_token' => '00000000-0000-4000-8000-000000000003',
             'customer_name' => 'Owner Fallback Buyer',
             'customer_phone' => '+2348099999999',
             'payment_method' => 'pickup',
@@ -432,6 +471,7 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertDontSee('Send purchase request to WhatsApp');
 
         $this->post(route('storefront.orders.store', 'local-contact-store'), [
+            'order_token' => '00000000-0000-4000-8000-000000000004',
             'customer_name' => 'Local Fallback Buyer',
             'customer_phone' => '08000000000',
             'payment_method' => 'pickup',
@@ -460,6 +500,7 @@ class OnlineStoreWorkflowTest extends TestCase
         Http::fake(['graph.facebook.com/*' => Http::response(['error' => ['message' => 'Template unavailable']], 400)]);
 
         $this->post(route('storefront.orders.store', 'whatsapp-failure-store'), [
+            'order_token' => '00000000-0000-4000-8000-000000000005',
             'customer_name' => 'Grace Customer',
             'customer_phone' => '+2348099999999',
             'payment_method' => 'pickup',
@@ -560,6 +601,7 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertSee('27');
 
         $this->post(route('storefront.orders.store', $store->slug), [
+            'order_token' => '00000000-0000-4000-8000-000000000006',
             'customer_name' => 'New Customer',
             'customer_phone' => '08000000001',
             'payment_method' => 'pickup',
@@ -601,6 +643,8 @@ class OnlineStoreWorkflowTest extends TestCase
     public function test_company_wide_online_orders_remain_visible_when_a_branch_is_selected(): void
     {
         [$user, $company] = $this->workspace('Branch Scoped Store');
+        $categoryId = $this->category($user->id, $company->id, 'Supplies');
+        $productId = $this->product($user->id, $company->id, $categoryId, 'Branch Scope Item', 'BSI-001', 5, 500);
         $order = OnlineStoreOrder::withoutGlobalScopes()->create([
             'company_id' => $company->id,
             'order_number' => 'WEB-BRANCH-SCOPE-001',
@@ -610,6 +654,14 @@ class OnlineStoreWorkflowTest extends TestCase
             'status' => 'pending_confirmation',
             'subtotal' => 1000,
             'total_amount' => 1000,
+        ]);
+        $order->items()->create([
+            'product_id' => $productId,
+            'product_name' => 'Branch Scope Item',
+            'sku' => 'BSI-001',
+            'quantity' => 2,
+            'unit_price' => 500,
+            'line_total' => 1000,
         ]);
         config(['tenancy.enforce_scopes_in_console' => true]);
 
@@ -623,7 +675,11 @@ class OnlineStoreWorkflowTest extends TestCase
             ->get(route('online-store.settings'))
             ->assertOk()
             ->assertSee($order->order_number)
-            ->assertSee($order->customer_name);
+            ->assertSee($order->customer_name)
+            ->assertSee('View ordered items')
+            ->assertSee('Branch Scope Item')
+            ->assertSee('Quantity: 2')
+            ->assertSee('Line total');
     }
 
     public function test_cancelling_an_online_order_restores_reserved_stock(): void
@@ -639,6 +695,7 @@ class OnlineStoreWorkflowTest extends TestCase
         ]);
 
         $this->post(route('storefront.orders.store', 'cancellation-store'), [
+            'order_token' => '00000000-0000-4000-8000-000000000007',
             'customer_name' => 'Buyer One',
             'customer_phone' => '08000000000',
             'payment_method' => 'pickup',

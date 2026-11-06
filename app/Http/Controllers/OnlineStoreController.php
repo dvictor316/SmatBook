@@ -188,7 +188,9 @@ class OnlineStoreController extends Controller
             return $product;
         });
 
-        return view('storefront.catalogue', compact('store', 'company', 'products', 'search', 'orderContact'));
+        $orderToken = (string) Str::uuid();
+
+        return view('storefront.catalogue', compact('store', 'company', 'products', 'search', 'orderContact', 'orderToken'));
     }
 
     public function about(Request $request, ?string $slug = null): View
@@ -209,6 +211,7 @@ class OnlineStoreController extends Controller
             'delivery_address' => 'nullable|string|max:1000',
             'payment_method' => 'required|in:pay_on_delivery,bank_transfer,pickup',
             'customer_note' => 'nullable|string|max:1000',
+            'order_token' => ['required', 'uuid'],
             'items' => 'required|array|min:1',
             'items.*' => 'nullable|numeric|min:0|max:1000000',
         ]);
@@ -218,8 +221,22 @@ class OnlineStoreController extends Controller
             ->filter(fn ($quantity) => $quantity > 0);
         abort_if($quantities->isEmpty(), 422, 'Select at least one product quantity.');
         $stockBranch = $this->storeStockBranch($store);
+        $orderToken = $validated['order_token'];
 
-        $order = DB::transaction(function () use ($store, $validated, $quantities, $stockBranch) {
+        [$order, $created] = DB::transaction(function () use ($store, $validated, $quantities, $stockBranch, $orderToken) {
+            StorefrontSetting::withoutGlobalScopes()
+                ->whereKey($store->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $existingOrder = OnlineStoreOrder::withoutGlobalScopes()
+                ->where('company_id', $store->company_id)
+                ->where('submission_token', $orderToken)
+                ->lockForUpdate()
+                ->first();
+            if ($existingOrder) {
+                return [$existingOrder, false];
+            }
+
             $products = Product::withoutGlobalScopes()
                 ->where('company_id', $store->company_id)
                 ->whereIn('id', $quantities->keys())
@@ -243,6 +260,7 @@ class OnlineStoreController extends Controller
                 'company_id' => $store->company_id,
                 'branch_id' => $stockBranch['id'] ?? null,
                 'branch_name' => $stockBranch['name'] ?? null,
+                'submission_token' => $orderToken,
                 'order_number' => 'WEB-' . now()->format('ymdHis') . '-' . strtoupper(Str::random(4)),
                 'customer_name' => $validated['customer_name'],
                 'customer_email' => $validated['customer_email'] ?? null,
@@ -294,8 +312,14 @@ class OnlineStoreController extends Controller
                 }
             }
 
-            return $order;
+            return [$order, true];
         });
+
+        if (! $created) {
+            return back()
+                ->with('store_order_success', $order->order_number)
+                ->with('store_order_duplicate', true);
+        }
 
         $orderContact = $store->orderContact();
         $this->notifyBusinessOwnerInApp($store, $order);

@@ -46,7 +46,49 @@
                 <div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Payment</th><th>Total</th><th>Status</th><th>WhatsApp</th><th>Update</th></tr></thead><tbody>
                     @forelse($orders as $order)
                         @php($statusClass = match($order->status){'fulfilled'=>'bg-success','cancelled'=>'bg-danger','confirmed','ready'=>'bg-primary',default=>'bg-warning text-dark'})
-                        <tr><td><strong>{{ $order->order_number }}</strong><div class="small text-muted">{{ $order->created_at->format('d M Y H:i') }}</div></td><td>{{ $order->customer_name }}<div class="small text-muted">{{ $order->customer_phone }}</div></td><td>{{ $order->items->sum('quantity') }}</td><td>{{ str($order->payment_method)->replace('_', ' ')->title() }}</td><td class="fw-bold">{{ \App\Support\GeoCurrency::format((float) $order->total_amount) }}</td><td><span class="badge {{ $statusClass }}">{{ str($order->status)->replace('_', ' ')->title() }}</span></td><td><span class="badge {{ $order->whatsapp_notification_status === 'sent' ? 'bg-success' : ($order->whatsapp_notification_status === 'failed' ? 'bg-danger' : 'bg-secondary') }}">{{ str($order->whatsapp_notification_status ?: 'pending')->replace('_', ' ')->title() }}</span>@if($order->whatsapp_notification_error)<div class="small text-danger" title="{{ $order->whatsapp_notification_error }}">Delivery failed</div>@endif</td><td>@if(in_array($order->status, ['fulfilled','cancelled']))<span class="text-muted small">Closed</span>@else<form class="d-flex gap-2" method="POST" action="{{ route('online-store.orders.update', $order) }}">@csrf @method('PATCH')<select class="form-select form-select-sm" name="status" aria-label="Order status"><option value="confirmed">Confirmed</option><option value="ready">Ready</option><option value="fulfilled">Fulfilled</option><option value="cancelled">Cancelled</option></select><button class="btn btn-sm btn-outline-primary" type="submit" title="Update order"><i class="fas fa-check"></i></button></form>@endif</td></tr>
+                        <tr>
+                            <td><strong>{{ $order->order_number }}</strong><div class="small text-muted">{{ $order->created_at->format('d M Y H:i') }}</div></td>
+                            <td>{{ $order->customer_name }}<div class="small text-muted">{{ $order->customer_phone }}</div></td>
+                            <td>
+                                <div>{{ $order->items->sum('quantity') }}</div>
+                                <details class="mt-1">
+                                    <summary class="small text-primary" aria-label="View ordered items for {{ $order->order_number }}">View ordered items</summary>
+                                    <div class="mt-2 p-2 bg-light rounded">
+                                        @forelse($order->items as $item)
+                                            <div @class(['py-2', 'border-top' => ! $loop->first])>
+                                                <div class="fw-semibold">{{ $item->product_name }}</div>
+                                                @if($item->sku)<div class="small text-muted">SKU: {{ $item->sku }}</div>@endif
+                                                <div class="small">Quantity: {{ (float) $item->quantity }}</div>
+                                                <div class="small text-muted">Unit price: {{ \App\Support\GeoCurrency::format((float) $item->unit_price) }}</div>
+                                                <div class="small fw-semibold">Line total: {{ \App\Support\GeoCurrency::format((float) $item->line_total) }}</div>
+                                            </div>
+                                        @empty
+                                            <span class="small text-muted">No item details available.</span>
+                                        @endforelse
+                                    </div>
+                                </details>
+                            </td>
+                            <td>{{ str($order->payment_method)->replace('_', ' ')->title() }}</td>
+                            <td class="fw-bold">{{ \App\Support\GeoCurrency::format((float) $order->total_amount) }}</td>
+                            <td><span class="badge {{ $statusClass }}">{{ str($order->status)->replace('_', ' ')->title() }}</span></td>
+                            <td>
+                                <span class="badge {{ $order->whatsapp_notification_status === 'sent' ? 'bg-success' : ($order->whatsapp_notification_status === 'failed' ? 'bg-danger' : 'bg-secondary') }}">{{ str($order->whatsapp_notification_status ?: 'pending')->replace('_', ' ')->title() }}</span>
+                                @if($order->whatsapp_notification_error)<div class="small text-danger" title="{{ $order->whatsapp_notification_error }}">Delivery failed</div>@endif
+                            </td>
+                            <td>
+                                @if(in_array($order->status, ['fulfilled','cancelled']))
+                                    <span class="text-muted small">Closed</span>
+                                @else
+                                    <form class="d-flex gap-2" method="POST" action="{{ route('online-store.orders.update', $order) }}">
+                                        @csrf @method('PATCH')
+                                        <select class="form-select form-select-sm" name="status" aria-label="Order status">
+                                            <option value="confirmed">Confirmed</option><option value="ready">Ready</option><option value="fulfilled">Fulfilled</option><option value="cancelled">Cancelled</option>
+                                        </select>
+                                        <button class="btn btn-sm btn-outline-primary" type="submit" title="Update order"><i class="fas fa-check"></i></button>
+                                    </form>
+                                @endif
+                            </td>
+                        </tr>
                     @empty<tr><td colspan="8" class="text-center text-muted py-5">No online orders have been placed.</td></tr>@endforelse
                 </tbody></table></div>
                 <div class="mt-3">{{ $orders->links() }}</div>
