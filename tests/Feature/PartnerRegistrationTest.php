@@ -175,6 +175,15 @@ class PartnerRegistrationTest extends TestCase
 
         $mail = Mail::sent(EmailVerificationCodeMail::class)->first();
         $this->assertNotNull($mail);
+        $this->assertStringContainsString('signature=', $mail->verificationUrl);
+        $this->withSession([
+            'email_verification_pending_user_id' => 0,
+            'email_verification_redirect' => '',
+        ])->get($mail->verificationUrl)
+            ->assertOk()
+            ->assertSee('Six-digit email code')
+            ->assertSee('Enter the six-digit code from this email');
+
         $incorrectCode = $mail->code === '000000' ? '000001' : '000000';
         $this->from(route('email-verification.notice'))
             ->post(route('email-verification.verify'), ['code' => $incorrectCode])

@@ -11,7 +11,8 @@ class EmailVerificationCodeMail extends Mailable
 
     public function __construct(
         public readonly string $code,
-        public readonly string $expiresAt
+        public readonly string $expiresAt,
+        public readonly string $verificationUrl
     ) {
     }
 

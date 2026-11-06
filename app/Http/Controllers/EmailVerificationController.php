@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Models\Subscription;
 use App\Models\User;
 use App\Services\EmailVerificationService;
 use Illuminate\Http\Request;
@@ -29,6 +30,29 @@ class EmailVerificationController extends Controller
         return $this->noStore(response()->view('Pages.Authentication.email-verification', [
             'email' => $this->maskEmail((string) $user->email),
         ]));
+    }
+
+    public function continueFromEmail(Request $request, int $user)
+    {
+        if (! $request->hasValidSignature()) {
+            return redirect()->route('saas-login')
+                ->withErrors(['login' => 'This verification link has expired or is invalid. Sign in to request a new code.']);
+        }
+
+        $pendingUser = User::withoutGlobalScopes()->find($user);
+        if (! $pendingUser || ! $this->verification->hasPending($pendingUser)) {
+            return redirect()->route('saas-login')
+                ->with('success', 'This email is already verified, or the verification request has expired. Sign in to continue.');
+        }
+
+        $request->session()->put([
+            'email_verification_pending_user_id' => (int) $pendingUser->id,
+            'email_verification_remember' => false,
+            'email_verification_redirect' => $this->registrationRedirect($pendingUser),
+        ]);
+        $request->session()->flash('info', 'Enter the six-digit code from this email to verify your account and continue setup.');
+
+        return $this->show($request);
     }
 
     public function verify(Request $request)
@@ -99,6 +123,28 @@ class EmailVerificationController extends Controller
         $id = (int) $request->session()->get('email_verification_pending_user_id', 0);
 
         return $id > 0 ? User::withoutGlobalScopes()->find($id) : null;
+    }
+
+    private function registrationRedirect(User $user): string
+    {
+        $role = strtolower((string) $user->role);
+        if ($role === 'agent') {
+            return route('agent.dashboard');
+        }
+        if (in_array($role, ['state_manager', 'deployment_manager', 'manager'], true)) {
+            return route('manager.verification.form');
+        }
+
+        $subscription = Subscription::query()
+            ->where('user_id', $user->id)
+            ->latest('id')
+            ->first();
+
+        if ($subscription?->isTrial() && ! $subscription->company_id) {
+            return route('saas.setup', ['id' => $subscription->id]);
+        }
+
+        return route('home');
     }
 
     private function maskEmail(string $email): string

@@ -1475,6 +1475,9 @@
                 fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
                     .then(function(response) {
                         if (!response.ok) throw new Error('Product list failed to load. Please try again.');
+                        if (!(response.headers.get('content-type') || '').includes('application/json')) {
+                            throw new Error('Could not load products. Refresh the page and sign in again, then retry.');
+                        }
                         return response.json();
                     })
                     .then(function(payload) {
@@ -1505,6 +1508,13 @@
                 if (hidden.value) return;
                 if (!results.childElementCount) loadProducts(input.value.trim(), true);
             });
+
+            var transferModal = lookup.closest('#transferStockModal');
+            if (transferModal) {
+                transferModal.addEventListener('shown.bs.modal', function() {
+                    if (!hidden.value) loadProducts(input.value.trim(), true);
+                });
+            }
 
             results.addEventListener('scroll', function() {
                 if (hasMore && !loading && results.scrollHeight - results.scrollTop - results.clientHeight < 32) {

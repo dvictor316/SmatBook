@@ -9,6 +9,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 use Throwable;
 
 class EmailVerificationService
@@ -70,7 +71,12 @@ class EmailVerificationService
                 $email,
                 new EmailVerificationCodeMail(
                     $code,
-                    $now->copy()->addMinutes(self::CODE_LIFETIME_MINUTES)->format('g:i A')
+                    $now->copy()->addMinutes(self::CODE_LIFETIME_MINUTES)->format('g:i A'),
+                    URL::temporarySignedRoute(
+                        'email-verification.continue',
+                        $now->copy()->addDay(),
+                        ['user' => $user->id]
+                    )
                 )
             );
         } catch (Throwable $error) {

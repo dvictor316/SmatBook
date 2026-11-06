@@ -2488,18 +2488,24 @@ public function inventory(Request $request)
             return redirect()->back()->with('error', 'Stock transfer is available on higher plans only.');
         }
 
-        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+        $isBulkCatalogAdd = $request->boolean('add_all_products');
+        $isBulkStockTransfer = $request->boolean('transfer_all_stock');
+        $rules = [
             'add_all_products' => 'nullable|boolean',
             'transfer_all_stock' => 'nullable|boolean',
-            'product_id' => 'required_without_all:add_all_products,transfer_all_stock|integer|min:1',
             'from_branch_id' => 'required|string',
             'to_branch_id' => 'required|string|different:from_branch_id',
-            'quantity' => 'required_without_all:add_all_products,transfer_all_stock|numeric|min:0',
-        ], [
-            'product_id.required_without_all' => 'Search for a product and select it from the results.',
+        ];
+        if (! $isBulkCatalogAdd && ! $isBulkStockTransfer) {
+            $rules['product_id'] = 'required|integer|min:1';
+            $rules['quantity'] = 'required|numeric|min:0';
+        }
+
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), $rules, [
+            'product_id.required' => 'Search for a product and select it from the results.',
             'product_id.integer' => 'Please select a product from the search results.',
             'product_id.min' => 'Please select a valid product.',
-            'quantity.required_without_all' => 'Enter a quantity. Use 0 to add the product without moving stock.',
+            'quantity.required' => 'Enter a quantity. Use 0 to add the product without moving stock.',
             'quantity.numeric' => 'Enter a valid numeric quantity (0 or more).',
             'quantity.min' => 'Quantity cannot be negative.',
             'to_branch_id.different' => 'Choose a destination branch different from the source branch.',

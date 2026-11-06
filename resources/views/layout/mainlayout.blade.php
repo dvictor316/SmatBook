@@ -450,7 +450,8 @@
             'invoice-four-a', 'invoice-one-a', 'invoice-three', 'invoice-two', 'forgot-password', 'reset-password', 'password.request', 'password.email', 'password.reset', 'password.update', 'lock-screen', 'login', 'register',
             'saas-login', 'saas-register', 'saas-register-initial', 'contact-messages',
             'manager.verification.form', 'manager.pending.notice', 'submit.verification', 'manager.submit.verification',
-        ]) && !str_starts_with((string) $route, 'deployment.')
+        ]) && !str_starts_with((string) $route, 'email-verification.')
+           && !str_starts_with((string) $route, 'deployment.')
            && !str_starts_with((string) $route, 'agent.')
            && !str_starts_with((string) $route, 'reports.')
            && !str_starts_with((string) $route, 'saas.')

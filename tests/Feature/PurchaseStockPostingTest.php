@@ -152,6 +152,30 @@ class PurchaseStockPostingTest extends TestCase
             ->assertViewHas('productRows', fn ($rows) => $rows->contains('id', $product->id));
     }
 
+    public function test_transfer_product_search_returns_company_products_for_the_picker(): void
+    {
+        [$product] = $this->workspace();
+        $otherCompany = Company::create(['name' => 'Another transfer tenant']);
+        Product::create([
+            'company_id' => $otherCompany->id,
+            'user_id' => auth()->id(),
+            'name' => 'Other tenant product',
+            'sku' => 'OTHER-TENANT-TRANSFER',
+            'stock' => 5,
+            'price' => 100,
+            'purchase_price' => 50,
+        ]);
+
+        $this->getJson(route('inventory.transfer-products.search'))
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $product->id)
+            ->assertJsonMissing(['name' => 'Other tenant product']);
+
+        $this->getJson(route('inventory.transfer-products.search', ['q' => 'PURCHASE-STOCK']))
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $product->id);
+    }
+
     public function test_transfer_product_picker_browses_and_paginates_all_company_products(): void
     {
         [$product] = $this->workspace();

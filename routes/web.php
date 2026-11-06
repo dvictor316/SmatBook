@@ -138,6 +138,9 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/locations/states', [AuthController::class, 'registrationStates'])->name('locations.states');
 Route::get('/locations/councils', [AuthController::class, 'registrationCouncils'])->name('locations.councils');
 Route::get('/email/verify', [EmailVerificationController::class, 'show'])->name('email-verification.notice');
+Route::get('/email/verify/{user}/continue', [EmailVerificationController::class, 'continueFromEmail'])
+    ->middleware('throttle:10,1')
+    ->name('email-verification.continue');
 Route::post('/email/verify', [EmailVerificationController::class, 'verify'])
     ->middleware('throttle:6,1')
     ->name('email-verification.verify');
