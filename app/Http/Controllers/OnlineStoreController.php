@@ -163,6 +163,35 @@ class OnlineStoreController extends Controller
                 }
             }
 
+            if (
+                $order->status !== $validated['status']
+                && ! in_array($validated['status'], ['pending_confirmation', 'cancelled'], true)
+            ) {
+                foreach ($order->items as $line) {
+                    $product = Product::withoutGlobalScopes()
+                        ->where('company_id', $order->company_id)
+                        ->find($line->product_id);
+                    if (! $product) {
+                        continue;
+                    }
+
+                    $statusReference = $validated['status'] === 'fulfilled'
+                        ? 'Online Store Order Fulfilled: ' . $order->order_number
+                        : 'Online Store Order Status: ' . str_replace('_', ' ', ucfirst($validated['status']))
+                            . ' - ' . $order->order_number;
+                    $this->recordOnlineStockMovement(
+                        $product,
+                        0,
+                        'status',
+                        $statusReference,
+                        filled($order->branch_id)
+                            ? ['id' => (string) $order->branch_id, 'name' => (string) ($order->branch_name ?? '')]
+                            : null,
+                        (int) $order->company_id
+                    );
+                }
+            }
+
             $order->update(['status' => $validated['status']]);
         });
 

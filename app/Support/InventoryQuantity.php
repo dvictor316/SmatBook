@@ -89,4 +89,45 @@ class InventoryQuantity
             ELSE {$qtyExpression}
         END";
     }
+
+    public static function purchaseStockUnitsExpression(string $purchaseItemsTable = 'purchase_items', string $productsTable = 'products'): string
+    {
+        $quantityColumn = Schema::hasColumn($purchaseItemsTable, 'qty')
+            ? 'qty'
+            : (Schema::hasColumn($purchaseItemsTable, 'quantity') ? 'quantity' : null);
+        $quantity = $quantityColumn
+            ? "COALESCE({$purchaseItemsTable}.{$quantityColumn}, 0)"
+            : '0';
+        $stockUnits = Schema::hasColumn($purchaseItemsTable, 'stock_units')
+            ? "COALESCE({$purchaseItemsTable}.stock_units, 0)"
+            : '0';
+        $conversionFactor = Schema::hasColumn($purchaseItemsTable, 'conversion_factor')
+            ? "COALESCE({$purchaseItemsTable}.conversion_factor, 0)"
+            : '0';
+        $unitColumn = Schema::hasColumn($purchaseItemsTable, 'unit_type')
+            ? "{$purchaseItemsTable}.unit_type"
+            : (Schema::hasColumn($purchaseItemsTable, 'unit')
+                ? "{$purchaseItemsTable}.unit"
+                : "{$productsTable}.unit_type");
+        $unitType = "LOWER(COALESCE({$unitColumn}, {$productsTable}.unit_type, 'unit'))";
+        $unitsPerCarton = static::productUnitsPerCartonExpression($productsTable);
+        $unitsPerRoll = static::productUnitsPerRollExpression($productsTable);
+        $purchaseUnitConversion = Schema::hasColumn($productsTable, 'purchase_unit_id')
+            && Schema::hasColumn($productsTable, 'conversion_rate')
+            ? "({$productsTable}.purchase_unit_id IS NOT NULL AND COALESCE({$productsTable}.conversion_rate, 0) > 0)"
+            : '0 = 1';
+        $purchaseUnitRate = Schema::hasColumn($productsTable, 'conversion_rate')
+            ? "COALESCE({$productsTable}.conversion_rate, 1)"
+            : '1';
+
+        return "CASE
+            WHEN {$stockUnits} > 0 THEN {$stockUnits}
+            WHEN {$conversionFactor} > 0 AND {$conversionFactor} <> 1 THEN {$quantity} * {$conversionFactor}
+            WHEN {$unitType} = 'carton' AND {$unitsPerCarton} > 1 THEN {$quantity} * {$unitsPerCarton}
+            WHEN {$unitType} = 'roll' AND {$unitsPerRoll} > 1 THEN {$quantity} * {$unitsPerRoll}
+            WHEN {$purchaseUnitConversion} THEN {$quantity} * {$purchaseUnitRate}
+            WHEN {$conversionFactor} > 0 THEN {$quantity} * {$conversionFactor}
+            ELSE {$quantity}
+        END";
+    }
 }

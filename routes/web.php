@@ -1284,6 +1284,9 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/purchase-report', 'purchase_report')->middleware('plan.access:basic,professional,enterprise')->name('purchase');
         Route::get('/sales-report', 'sales_report')->middleware('plan.access:basic,professional,enterprise')->name('sales');
         Route::get('/stock-report', 'stock_report')->name('stock');
+        Route::get('/stock-movements/{format?}', 'stockMovementReport')
+            ->whereIn('format', ['csv'])
+            ->name('stock-movements');
         Route::get('/low-stock-report', 'low_stock_report')->middleware('plan.access:basic,professional,enterprise')->name('low-stock');
         Route::get('/accounts-receivable', 'accountsReceivable')->middleware('plan.access:basic,professional,enterprise')->name('accounts-receivable');
         Route::get('/customer-statement/{id}', 'customerStatement')->middleware('plan.access:basic,professional,enterprise')->name('customer-statement');

@@ -2871,11 +2871,184 @@ class ReportController extends Controller
         return $this->renderReportView('sales-return-report', compact('salesreturnreports', 'totalRefunded'));
     }
 
+    public function stockMovementReport(Request $request, ?string $format = null)
+    {
+        $validated = $request->validate([
+            'from_date' => 'nullable|date',
+            'to_date' => 'nullable|date|after_or_equal:from_date',
+            'product_id' => 'nullable|integer',
+            'movement_type' => 'nullable|in:all,in,out,damage,status',
+            'search' => 'nullable|string|max:100',
+        ]);
+        $fromDate = $validated['from_date'] ?? now()->startOfMonth()->toDateString();
+        $toDate = $validated['to_date'] ?? now()->toDateString();
+        $productId = $validated['product_id'] ?? null;
+        $movementType = $validated['movement_type'] ?? 'all';
+        $search = trim((string) ($validated['search'] ?? ''));
+        $activeBranch = $this->getActiveBranchContext();
+        $products = DB::table('products')
+            ->select('id', 'name', 'base_unit_name', 'unit_type')
+            ->tap(fn ($productsQuery) => $this->applyTenantScope($productsQuery, 'products'))
+            ->orderBy('name')
+            ->get();
+
+        abort_unless(Schema::hasTable('inventory_history'), 503, 'Inventory movement history is not available.');
+
+        $query = DB::table('inventory_history')
+            ->join('products', 'inventory_history.product_id', '=', 'products.id')
+            ->select([
+                'inventory_history.id',
+                'inventory_history.created_at',
+                'inventory_history.type',
+                'inventory_history.reference',
+                'inventory_history.remarks',
+                'inventory_history.quantity',
+                'inventory_history.branch_id',
+                'inventory_history.branch_name',
+                'products.id as product_id',
+                'products.name as product_name',
+                'products.sku',
+                'products.base_unit_name',
+                'products.unit_type',
+                'products.units_per_carton',
+            ]);
+        $this->applyTenantScope($query, 'products');
+
+        if (Schema::hasColumn('inventory_history', 'company_id')) {
+            $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
+            if ($companyId > 0) {
+                $query->where(function ($tenant) use ($companyId) {
+                    $tenant->whereNull('inventory_history.company_id')
+                        ->orWhere('inventory_history.company_id', $companyId);
+                });
+            }
+        }
+
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+        if (($activeBranch['scope'] ?? 'branch') !== 'all' && ($branchId !== '' || $branchName !== '')) {
+            $query->where(function ($branch) use ($branchId, $branchName) {
+                $hasDirectMatch = false;
+                if ($branchId !== '' && Schema::hasColumn('inventory_history', 'branch_id')) {
+                    $branch->where('inventory_history.branch_id', $branchId);
+                    $hasDirectMatch = true;
+                }
+                if ($branchName !== '' && Schema::hasColumn('inventory_history', 'branch_name')) {
+                    $branch->{$hasDirectMatch ? 'orWhere' : 'where'}('inventory_history.branch_name', $branchName);
+                    $hasDirectMatch = true;
+                }
+
+                if ($branchId !== '' && Schema::hasColumn('products', 'branch_id')) {
+                    $branch->orWhere(function ($fallback) use ($branchId) {
+                        $fallback->whereNull('inventory_history.branch_id')
+                            ->whereNull('inventory_history.branch_name')
+                            ->where('products.branch_id', $branchId);
+                    });
+                    $hasDirectMatch = true;
+                }
+                if ($branchName !== '' && Schema::hasColumn('products', 'branch_name')) {
+                    $branch->orWhere(function ($fallback) use ($branchName) {
+                        $fallback->whereNull('inventory_history.branch_id')
+                            ->whereNull('inventory_history.branch_name')
+                            ->where('products.branch_name', $branchName);
+                    });
+                }
+            });
+        }
+
+        $query->whereBetween('inventory_history.created_at', [
+            Carbon::parse($fromDate)->startOfDay(),
+            Carbon::parse($toDate)->endOfDay(),
+        ]);
+        if ($productId) {
+            $query->where('products.id', $productId);
+        }
+        if ($search !== '') {
+            $query->where(function ($matches) use ($search) {
+                $matches->where('products.name', 'like', '%' . $search . '%')
+                    ->orWhere('products.sku', 'like', '%' . $search . '%')
+                    ->orWhere('inventory_history.reference', 'like', '%' . $search . '%')
+                    ->orWhere('inventory_history.remarks', 'like', '%' . $search . '%');
+            });
+        }
+
+        $inTypes = ['in', 'stock in'];
+        $outTypes = ['out', 'stock out'];
+        $damageTypes = ['damage', 'damaged', 'waste', 'spoilage', 'write_off'];
+        if ($movementType === 'in') {
+            $query->whereIn(DB::raw('LOWER(inventory_history.type)'), $inTypes);
+        } elseif ($movementType === 'out') {
+            $query->whereIn(DB::raw('LOWER(inventory_history.type)'), $outTypes);
+        } elseif ($movementType === 'damage') {
+            $query->whereIn(DB::raw('LOWER(inventory_history.type)'), $damageTypes);
+        } elseif ($movementType === 'status') {
+            $query->whereRaw("LOWER(COALESCE(inventory_history.type, '')) = 'status'");
+        }
+
+        $summary = (clone $query)
+            ->select([])
+            ->selectRaw("
+                COUNT(*) AS movement_count,
+                COUNT(DISTINCT products.id) AS product_count,
+                SUM(CASE WHEN LOWER(inventory_history.type) IN ('in', 'stock in') THEN COALESCE(inventory_history.quantity, 0) ELSE 0 END) AS total_in,
+                SUM(CASE WHEN LOWER(inventory_history.type) IN ('out', 'stock out') THEN COALESCE(inventory_history.quantity, 0) ELSE 0 END) AS total_out,
+                SUM(CASE WHEN LOWER(inventory_history.type) IN ('damage', 'damaged', 'waste', 'spoilage', 'write_off') THEN COALESCE(inventory_history.quantity, 0) ELSE 0 END) AS total_damaged
+            ")
+            ->first();
+
+        if ($format === 'csv') {
+            $exportQuery = (clone $query)->orderBy('inventory_history.created_at')->orderBy('inventory_history.id');
+
+            return response()->streamDownload(function () use ($exportQuery) {
+                $output = fopen('php://output', 'w');
+                fputcsv($output, ['Date', 'Product', 'SKU', 'Branch', 'Type', 'Reference', 'Quantity', 'Unit', 'Remarks']);
+                foreach ($exportQuery->cursor() as $movement) {
+                    $type = strtolower((string) $movement->type);
+                    $quantity = (float) $movement->quantity;
+                    if (in_array($type, ['out', 'stock out', 'damage', 'damaged', 'waste', 'spoilage', 'write_off'], true)) {
+                        $quantity *= -1;
+                    }
+                    fputcsv($output, [
+                        $movement->created_at,
+                        $movement->product_name,
+                        $movement->sku,
+                        $movement->branch_name,
+                        $movement->type,
+                        $movement->reference,
+                        $quantity,
+                        $movement->base_unit_name ?: $movement->unit_type ?: 'pcs',
+                        $movement->remarks,
+                    ]);
+                }
+                fclose($output);
+            }, 'stock-movements-' . now()->format('Ymd-His') . '.csv', [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+            ]);
+        }
+
+        $movements = $query
+            ->orderByDesc('inventory_history.created_at')
+            ->orderByDesc('inventory_history.id')
+            ->paginate(\App\Support\PageSize::resolve())
+            ->withQueryString();
+
+        return view('Reports.Reports.stock-movements', compact(
+            'movements',
+            'summary',
+            'fromDate',
+            'toDate',
+            'productId',
+            'movementType',
+            'search',
+            'products',
+            'activeBranch'
+        ));
+    }
+
     public function stock_report(Request $request)
     {
         $activeBranch = $this->getActiveBranchContext();
-        $fromDate = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
-        $toDate = $request->input('to_date') ?: now()->toDateString();
+        $toDate = now()->toDateString();
         $productId = $request->input('product_id');
         $stockUnitView = in_array($request->input('stock_unit_view'), ['base', 'carton', 'both'], true)
             ? $request->input('stock_unit_view')
@@ -3001,7 +3174,7 @@ class ReportController extends Controller
                 ];
             });
 
-        return view('Reports.Reports.stock-report', compact('stockreports', 'fromDate', 'toDate', 'products', 'productId', 'activeBranch', 'stockUnitView'));
+        return view('Reports.Reports.stock-report', compact('stockreports', 'toDate', 'products', 'productId', 'activeBranch', 'stockUnitView'));
     }
 
     public function email_low_stock_report(Request $request)

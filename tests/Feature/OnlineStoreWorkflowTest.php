@@ -828,6 +828,23 @@ class OnlineStoreWorkflowTest extends TestCase
             'total_price' => 7500,
         ]);
         $this->assertDatabaseHas('products', ['id' => $productId, 'stock' => 7, 'stock_quantity' => 7]);
+        $this->assertDatabaseHas('inventory_history', [
+            'product_id' => $productId,
+            'type' => 'status',
+            'quantity' => 0,
+            'reference' => 'Online Store Order Fulfilled: ' . $order->order_number,
+        ]);
+        $this->withSession(['current_tenant_id' => $company->id, 'active_branch_scope' => 'all'])
+            ->get(route('inventory.history', $productId))
+            ->assertOk()
+            ->assertViewHas('inventoryHistories', function ($histories) use ($order) {
+                $fulfilled = $histories->firstWhere('reference', 'Online Store Order Fulfilled: ' . $order->order_number);
+
+                return $fulfilled
+                    && $fulfilled->type === 'status'
+                    && (float) $fulfilled->quantity === 0.0
+                    && (float) $fulfilled->running_balance === 7.0;
+            });
 
         $posSale = Sale::create([
             'company_id' => $company->id,

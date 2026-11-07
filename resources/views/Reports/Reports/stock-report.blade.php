@@ -18,6 +18,9 @@
                 </div>
                 <div class="col-auto">
                     <div class="btn-group btn-group-sm shadow-sm">
+                        <a href="{{ route('reports.stock-movements') }}" class="btn btn-white border text-primary report-action-btn">
+                            <i class="feather-activity me-1"></i> Stock Movements
+                        </a>
                         <button onclick="window.print()" class="btn btn-white border report-action-btn">
                             <i class="feather-printer me-1"></i> Print
                         </button>
@@ -33,22 +36,14 @@
         </div>
         @include('Reports.partials.context-strip', [
             'reportLabel' => 'Warehouse Inventory Report',
-            'periodLabel' => 'As At: ' . $toDate,
+            'periodLabel' => 'Live snapshot as at ' . $toDate,
         ])
 
         <div class="card shadow-none border mb-3 no-print">
             <div class="card-body p-2">
                 <form action="{{ route('reports.stock') }}" method="GET">
                     <div class="row gx-2 align-items-end">
-                        <div class="col-md-2">
-                            <label class="report-filter-label">From Date</label>
-                            <input type="date" name="from_date" class="form-control form-control-sm border-0 bg-light" value="{{ $fromDate }}">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="report-filter-label">To Date</label>
-                            <input type="date" name="to_date" class="form-control form-control-sm border-0 bg-light" value="{{ $toDate }}">
-                        </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label class="report-filter-label">Product Filter</label>
                             <select name="product_id" class="form-select form-select-sm border-0 bg-light">
                                 <option value="">All Inventory Items</option>
@@ -57,7 +52,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <label class="report-filter-label">Stock View</label>
                             <select name="stock_unit_view" class="form-select form-select-sm border-0 bg-light">
                                 <option value="base" @selected($stockUnitView === 'base')>Base Units</option>

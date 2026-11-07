@@ -4091,17 +4091,7 @@ public function inventory(Request $request)
                         purchases.created_at as created_at,
                         'in' as type,
                         COALESCE(" . ($purchaseReferenceColumn ? "purchases.{$purchaseReferenceColumn}" : 'NULL') . ", purchases.purchase_no, {$purchaseFallbackReference}) as reference,
-                        " . (
-                            Schema::hasColumn('products', 'purchase_unit_id') && Schema::hasColumn('products', 'conversion_rate')
-                                ? "COALESCE(purchase_items.{$purchaseQtyColumn}, 0) *
-                                    CASE
-                                        WHEN products.purchase_unit_id IS NOT NULL
-                                            AND COALESCE(products.conversion_rate, 0) > 0
-                                        THEN products.conversion_rate
-                                        ELSE 1
-                                    END"
-                                : "COALESCE(purchase_items.{$purchaseQtyColumn}, 0)"
-                        ) . " as quantity,
+                        " . InventoryQuantity::purchaseStockUnitsExpression('purchase_items', 'products') . " as quantity,
                         products.name as name,
                         products.sku as sku,
                         products.purchase_price as purchase_price,
@@ -4184,7 +4174,34 @@ public function inventory(Request $request)
                     });
                 }
 
-                $inventoryHistories = $inventoryHistories->merge($purchaseHistoryQuery->get());
+                $purchaseEvents = $purchaseHistoryQuery->get();
+                $matchedHistoryIds = [];
+                foreach ($purchaseEvents as $purchaseEvent) {
+                    $purchaseTime = strtotime((string) $purchaseEvent->created_at);
+                    $matchingHistory = $inventoryHistories->first(function ($history) use ($purchaseTime, $matchedHistoryIds) {
+                        $reference = strtolower(trim((string) ($history->reference ?? '')));
+                        $historyTime = strtotime((string) ($history->created_at ?? ''));
+
+                        return is_numeric($history->id)
+                            && ! in_array((int) $history->id, $matchedHistoryIds, true)
+                            && in_array(strtolower((string) ($history->type ?? '')), ['in', 'stock in'], true)
+                            && ($reference === '' || $reference === 'stock in')
+                            && $purchaseTime !== false
+                            && $historyTime !== false
+                            && abs($purchaseTime - $historyTime) <= 5;
+                    });
+                    if ($matchingHistory) {
+                        $matchedHistoryIds[] = (int) $matchingHistory->id;
+                    }
+                }
+
+                if ($matchedHistoryIds !== []) {
+                    $inventoryHistories = $inventoryHistories->reject(
+                        fn ($history) => is_numeric($history->id)
+                            && in_array((int) $history->id, $matchedHistoryIds, true)
+                    );
+                }
+                $inventoryHistories = $inventoryHistories->merge($purchaseEvents);
             }
         }
 
@@ -4414,6 +4431,27 @@ public function inventory(Request $request)
                         $existingReferences[] = $inReference;
                     }
                 }
+
+                $status = strtolower((string) $orderItem->status);
+                if (! in_array($status, ['pending_confirmation', 'cancelled'], true)) {
+                    $statusReference = $status === 'fulfilled'
+                        ? 'Online Store Order Fulfilled: ' . $orderNumber
+                        : 'Online Store Order Status: ' . str_replace('_', ' ', ucfirst($status)) . ' - ' . $orderNumber;
+                    if (! in_array($statusReference, $existingReferences, true)) {
+                        $inventoryHistories->push((object) [
+                            'id' => 'online-store-status-' . $orderItem->item_id,
+                            'created_at' => $orderItem->order_updated_at,
+                            'type' => 'status',
+                            'reference' => $statusReference,
+                            'quantity' => 0,
+                            'name' => $orderItem->name,
+                            'sku' => $orderItem->sku,
+                            'purchase_price' => $orderItem->purchase_price,
+                            'unit_type' => $orderItem->unit_type,
+                        ]);
+                        $existingReferences[] = $statusReference;
+                    }
+                }
             }
         }
 
@@ -4429,27 +4467,53 @@ public function inventory(Request $request)
             ->filter(fn ($row) => in_array(strtolower((string) ($row->type ?? '')), $damageMovementTypes, true))
             ->sum(fn ($row) => (float) ($row->quantity ?? 0));
 
-        $runningBalance = 0.0;
-        $inventoryHistories = $inventoryHistories
-            ->sortBy(fn ($row) => strtotime((string) ($row->created_at ?? '1970-01-01 00:00:00')))
-            ->values()
-            ->map(function ($row) use (&$runningBalance) {
-                $isStockIn = in_array(strtolower((string) ($row->type ?? '')), ['in', 'stock in'], true);
-                $quantity = (float) ($row->quantity ?? 0);
-                $runningBalance += $isStockIn ? $quantity : -$quantity;
-                $row->running_balance = $runningBalance;
-                $row->stock_value = $runningBalance * (float) ($row->purchase_price ?? 0);
+        $orderedHistories = $inventoryHistories->sort(function ($left, $right) {
+            $dateOrder = strcmp((string) ($left->created_at ?? ''), (string) ($right->created_at ?? ''));
+            if ($dateOrder !== 0) {
+                return $dateOrder;
+            }
 
-                return $row;
-            })
-            ->sortByDesc(fn ($row) => strtotime((string) ($row->created_at ?? '1970-01-01 00:00:00')))
-            ->values();
+            if (is_numeric($left->id) && is_numeric($right->id)) {
+                return (int) $left->id <=> (int) $right->id;
+            }
+
+            return strcasecmp((string) $left->id, (string) $right->id);
+        })->values();
+        $netMovement = (float) $orderedHistories->sum(function ($row) {
+            $type = strtolower((string) ($row->type ?? ''));
+            $quantity = (float) ($row->quantity ?? 0);
+
+            if (in_array($type, ['in', 'stock in'], true)) {
+                return $quantity;
+            }
+            if (in_array($type, ['out', 'stock out', 'damage', 'damaged', 'waste', 'spoilage', 'write_off'], true)) {
+                return -$quantity;
+            }
+
+            return 0;
+        });
+        $openingBalance = round($currentStock - $netMovement, 6);
+        $runningBalance = $openingBalance;
+        $inventoryHistories = $orderedHistories->map(function ($row) use (&$runningBalance) {
+            $type = strtolower((string) ($row->type ?? ''));
+            $quantity = (float) ($row->quantity ?? 0);
+            if (in_array($type, ['in', 'stock in'], true)) {
+                $runningBalance += $quantity;
+            } elseif (in_array($type, ['out', 'stock out', 'damage', 'damaged', 'waste', 'spoilage', 'write_off'], true)) {
+                $runningBalance -= $quantity;
+            }
+            $row->running_balance = round($runningBalance, 6);
+            $row->stock_value = $runningBalance * (float) ($row->purchase_price ?? 0);
+
+            return $row;
+        })->reverse()->values();
 
         return view('Inventory.inventory-history', compact(
             'inventoryHistories',
             'activeBranch',
             'product',
             'currentStock',
+            'openingBalance',
             'totalIn',
             'totalOut',
             'totalDamaged',
@@ -4459,110 +4523,18 @@ public function inventory(Request $request)
 
     public function update_history(Request $request)
     {
-        $validated = $request->validate([
-            'id' => 'required|integer',
-            'quantity' => 'required|numeric|min:0.01',
-            'type' => 'required|in:in,out',
-        ]);
-
-        if (!Schema::hasTable('inventory_history')) {
-            return redirect()->back()->with('error', 'Inventory history table is not available.');
-        }
-
-        $history = $this->findEditableInventoryHistoryRecord((int) $validated['id']);
-        if (!$history) {
-            return redirect()->back()->with('error', 'Inventory history record not found for the active branch.');
-        }
-
-        DB::table('inventory_history')
-            ->where('id', (int) $validated['id'])
-            ->update([
-                'quantity' => (float) $validated['quantity'],
-                'type' => $validated['type'],
-                'updated_at' => now(),
-            ]);
-
-        $this->clearDashboardMetricsCache();
-
-        return redirect()->back()->with('success', 'Inventory history record updated successfully.');
+        return redirect()->back()->with(
+            'error',
+            'Stock history is read-only to preserve an accurate audit trail. Use a stock adjustment to correct the actual balance.'
+        );
     }
 
     public function delete_history(Request $request)
     {
-        $validated = $request->validate([
-            'id' => 'required|integer',
-        ]);
-
-        if (!Schema::hasTable('inventory_history')) {
-            return redirect()->back()->with('error', 'Inventory history table is not available.');
-        }
-
-        $history = $this->findEditableInventoryHistoryRecord((int) $validated['id']);
-        if (!$history) {
-            return redirect()->back()->with('error', 'Inventory history record not found for the active branch.');
-        }
-
-        DB::table('inventory_history')->where('id', (int) $validated['id'])->delete();
-        $this->clearDashboardMetricsCache();
-
-        return redirect()->back()->with('success', 'Inventory history record deleted successfully.');
-    }
-
-    private function findEditableInventoryHistoryRecord(int $historyId): ?object
-    {
-        $activeBranch = $this->getActiveBranchContext();
-        $branchId = trim((string) ($activeBranch['id'] ?? ''));
-        $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-        $query = DB::table('inventory_history')
-            ->join('products', 'inventory_history.product_id', '=', 'products.id')
-            ->select('inventory_history.*')
-            ->where('inventory_history.id', $historyId);
-
-        $this->applyTenantScope($query, 'inventory_history');
-        $this->applyTenantScope($query, 'products');
-
-        if ($branchId !== '' || $branchName !== '') {
-            $query->where(function ($sub) use ($branchId, $branchName) {
-                $matched = false;
-                if ($branchId !== '' && Schema::hasColumn('inventory_history', 'branch_id')) {
-                    $sub->where('inventory_history.branch_id', $branchId);
-                    $matched = true;
-                }
-                if ($branchName !== '' && Schema::hasColumn('inventory_history', 'branch_name')) {
-                    $method = $matched ? 'orWhere' : 'where';
-                    $sub->{$method}('inventory_history.branch_name', $branchName);
-                    $matched = true;
-                }
-                if ($branchId !== '' && Schema::hasColumn('products', 'branch_id')) {
-                    $method = $matched ? 'orWhere' : 'where';
-                    $sub->{$method}(function ($fallback) use ($branchId) {
-                        if (Schema::hasColumn('inventory_history', 'branch_id')) {
-                            $fallback->whereNull('inventory_history.branch_id');
-                        }
-                        if (Schema::hasColumn('inventory_history', 'branch_name')) {
-                            $fallback->whereNull('inventory_history.branch_name');
-                        }
-                        $fallback->where('products.branch_id', $branchId);
-                    });
-                    $matched = true;
-                }
-                if ($branchName !== '' && Schema::hasColumn('products', 'branch_name')) {
-                    $method = $matched ? 'orWhere' : 'where';
-                    $sub->{$method}(function ($fallback) use ($branchName) {
-                        if (Schema::hasColumn('inventory_history', 'branch_id')) {
-                            $fallback->whereNull('inventory_history.branch_id');
-                        }
-                        if (Schema::hasColumn('inventory_history', 'branch_name')) {
-                            $fallback->whereNull('inventory_history.branch_name');
-                        }
-                        $fallback->where('products.branch_name', $branchName);
-                    });
-                }
-            });
-        }
-
-        return $query->first();
+        return redirect()->back()->with(
+            'error',
+            'Stock history is read-only to preserve an accurate audit trail. Use a stock adjustment to correct the actual balance.'
+        );
     }
 
     public function exportStock(Request $request, string $format = 'csv')

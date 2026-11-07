@@ -6,6 +6,7 @@
         $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
         $stockUnitLabel = $stockUnitLabel ?? ($product->base_unit_name ?? $product->unit_type ?? 'pcs');
         $currentStock = (float) ($currentStock ?? 0);
+        $openingBalance = (float) ($openingBalance ?? 0);
         $totalIn = (float) ($totalIn ?? 0);
         $totalOut = (float) ($totalOut ?? 0);
         $totalDamaged = (float) ($totalDamaged ?? 0);
@@ -41,6 +42,9 @@
                                 <button id="export_excel_btn" class="btn btn-white border text-success btn-sm px-3">
                                     <i class="feather-file me-1"></i> Excel
                                 </button>
+                                <a href="{{ route('reports.stock-movements', ['product_id' => $product->id]) }}" class="btn btn-white border text-primary btn-sm px-3">
+                                    <i class="feather-activity me-1"></i> Movement Report
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -96,104 +100,16 @@
 
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-body p-4">
-                    <div class="row g-4">
-                        <div class="col-xl-6">
-                            <div class="inventory-section-card h-100">
-                                <div class="d-flex align-items-center justify-content-between mb-3">
-                                    <h6 class="fw-bold text-dark mb-0">Quantities In</h6>
-                                    <span class="badge bg-light text-success border">Inbound</span>
-                                </div>
-                                <div class="row g-3">
-                                    <div class="col-sm-6">
-                                        <div class="inventory-metric-card">
-                                            <p class="text-muted small mb-1">Total Purchase</p>
-                                            <h5 class="mb-0">{{ \App\Support\CompactNumber::format($totalIn, 2) }} <span class="text-muted metric-unit">{{ $stockUnitLabel }}</span></h5>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <div class="inventory-metric-card">
-                                            <p class="text-muted small mb-1">Stock Adjustment (In)</p>
-                                            <h5 class="mb-0">0.00 <span class="text-muted metric-unit">{{ $stockUnitLabel }}</span></h5>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <div class="inventory-metric-card">
-                                            <p class="text-muted small mb-1">Reconciliation (In)</p>
-                                            <h5 class="mb-0">0.00 <span class="text-muted metric-unit">{{ $stockUnitLabel }}</span></h5>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <div class="inventory-metric-card">
-                                            <p class="text-muted small mb-1">Opening Stock</p>
-                                            <h5 class="mb-0">0.00 <span class="text-muted metric-unit">{{ $stockUnitLabel }}</span></h5>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                    <div class="row align-items-center g-3">
+                        <div class="col-lg-7">
+                            <h6 class="fw-bold mb-1">Opening balance used for this timeline</h6>
+                            <div class="fs-5 fw-semibold">{{ \App\Support\CompactNumber::format($openingBalance, 2) }} {{ $stockUnitLabel }}</div>
+                            <p class="small text-muted mb-0">Calculated from live stock less the recorded movements, so the final running balance reconciles to current stock.</p>
                         </div>
-                        <div class="col-xl-6">
-                            <div class="inventory-section-card h-100">
-                                <div class="d-flex align-items-center justify-content-between mb-3">
-                                    <h6 class="fw-bold text-dark mb-0">Quantities Out</h6>
-                                    <span class="badge bg-light text-danger border">Outbound</span>
-                                </div>
-                                <div class="row g-3">
-                                    <div class="col-sm-6">
-                                        <div class="inventory-metric-card">
-                                            <p class="text-muted small mb-1">Total Sold</p>
-                                            <h5 class="mb-0">{{ \App\Support\CompactNumber::format($totalOut, 2) }} <span class="text-muted metric-unit">{{ $stockUnitLabel }}</span></h5>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <div class="inventory-metric-card">
-                                            <p class="text-muted small mb-1">Stock Adjustment (Out)</p>
-                                            <h5 class="mb-0">0.00 <span class="text-muted metric-unit">{{ $stockUnitLabel }}</span></h5>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <div class="inventory-metric-card">
-                                            <p class="text-muted small mb-1">Reconciliation (Out)</p>
-                                            <h5 class="mb-0">0.00 <span class="text-muted metric-unit">{{ $stockUnitLabel }}</span></h5>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <div class="inventory-metric-card">
-                                            <p class="text-muted small mb-1">Sell Returns</p>
-                                            <h5 class="mb-0">0.00 <span class="text-muted metric-unit">{{ $stockUnitLabel }}</span></h5>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row g-3 mt-1">
-                        <div class="col-xl-4 col-md-6">
-                            <div class="card border bg-light h-100">
-                                <div class="card-body py-3 px-4">
-                                    <p class="text-muted small mb-1">Stock Value</p>
-                                    <h6 class="fw-bold mb-2">Current Value</h6>
-                                    <h4 class="mb-0 text-success">{{ \App\Support\GeoCurrency::format((float) ($currentStock * ($product->purchase_price ?? 0)), 'NGN', $currencyCode, $currencyLocale) }}</h4>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-4 col-md-6">
-                            <div class="card border bg-light h-100">
-                                <div class="card-body py-3 px-4">
-                                    <p class="text-muted small mb-1">Valuation</p>
-                                    <h6 class="fw-bold mb-2">Unit Value</h6>
-                                    <h4 class="mb-0 text-info">{{ \App\Support\GeoCurrency::format((float) $product->purchase_price, 'NGN', $currencyCode, $currencyLocale) }}</h4>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-4 col-md-6">
-                            <div class="card border bg-light h-100">
-                                <div class="card-body py-3 px-4">
-                                    <p class="text-muted small mb-1">Movement</p>
-                                    <h6 class="fw-bold mb-2">Net Change</h6>
-                                    <h4 class="mb-0 {{ $currentStock >= 0 ? 'text-success' : 'text-danger' }}">{{ $currentStock >= 0 ? '+' : '' }}{{ \App\Support\CompactNumber::format($currentStock, 2) }}</h4>
-                                </div>
-                            </div>
+                        <div class="col-lg-5 text-lg-end">
+                            <div class="small text-muted">Estimated current cost value</div>
+                            <div class="fs-5 fw-semibold text-success">{{ \App\Support\GeoCurrency::format((float) ($currentStock * ($product->purchase_price ?? 0)), 'NGN', $currencyCode, $currencyLocale) }}</div>
+                            <div class="small text-muted">Uses the current purchase price, not historical valuation.</div>
                         </div>
                     </div>
                 </div>
@@ -210,16 +126,13 @@
                                     <th>Code</th>
                                     <th class="text-center">Type</th>
                                     <th>Reference</th>
-                                    <th class="text-end">Quantity</th>
-                                    <th class="text-center no-print">Action</th>
+                                    <th class="text-end">Quantity ({{ $stockUnitLabel }})</th>
                                     <th class="text-end">Balance After Movement</th>
-                                    <th class="text-end">Stock Value</th>
-                                    <th class="text-end">Purchase Price</th>
+                                    <th class="text-end">Estimated Value at Current Cost</th>
                                 </tr>
                             </thead>
                             <tbody style="font-size: 12px;">
                                 @forelse ($inventoryHistories as $history)
-                                    @php $isEditableHistoryRow = is_numeric($history->id); @endphp
                                     <tr>
                                         <td class="ps-4 text-muted">{{ $history->id }}</td>
                                         <td>{{ \Carbon\Carbon::parse($history->created_at)->format('d M Y, H:i') }}</td>
@@ -230,41 +143,22 @@
                                                 $movementType = strtolower((string) $history->type);
                                                 $isStockIn = in_array($movementType, ['in', 'stock in']);
                                                 $isDamage = in_array($movementType, ['damage', 'damaged', 'waste', 'spoilage', 'write_off']);
+                                                $isStockOut = in_array($movementType, ['out', 'stock out']) || $isDamage;
+                                                $isStatus = $movementType === 'status';
                                             @endphp
-                                            <span class="badge {{ $isStockIn ? 'bg-light-success text-success' : ($isDamage ? 'bg-light-warning text-warning' : 'bg-light-danger text-danger') }} px-2">
-                                                {{ $isStockIn ? 'Stock In' : ($isDamage ? 'Damaged' : 'Stock Out') }}
+                                            <span class="badge {{ $isStockIn ? 'bg-light-success text-success' : ($isDamage ? 'bg-light-warning text-warning' : ($isStatus ? 'bg-light text-primary' : 'bg-light-danger text-danger')) }} px-2">
+                                                {{ $isStockIn ? 'Stock In' : ($isDamage ? 'Damaged' : ($isStatus ? 'Order Status' : ($isStockOut ? 'Stock Out' : ucfirst($movementType)))) }}
                                             </span>
                                         </td>
                                         <td>{{ $history->reference ?? 'System Movement' }}</td>
-                                        <td class="text-end fw-bold {{ $isStockIn ? 'text-success' : 'text-danger' }}">
+                                        <td class="text-end fw-bold {{ $isStockIn ? 'text-success' : ($isStockOut ? 'text-danger' : 'text-muted') }}">
                                             @php
                                                 $movementQuantity = rtrim(rtrim(\App\Support\CompactNumber::format((float) ($history->quantity ?? 0), 2), '0'), '.');
                                             @endphp
-                                            {{ $isStockIn ? '+' : '-' }}{{ $movementQuantity }}
-                                            <span class="text-muted text-uppercase ms-1">{{ $stockUnitLabel }}</span>
-                                        </td>
-                                        <td class="text-center no-print inventory-action-cell">
-                                            @if($isEditableHistoryRow)
-                                                <div class="d-inline-flex align-items-center gap-2 flex-wrap justify-content-center">
-                                                    <button type="button"
-                                                        class="btn btn-sm btn-outline-primary edit-btn inventory-action-btn"
-                                                        data-id="{{ $history->id }}"
-                                                        data-qty="{{ $history->quantity }}"
-                                                        data-type="{{ $history->type }}"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#edit_history_modal">
-                                                        <i class="far fa-edit me-1"></i>Edit
-                                                    </button>
-                                                    <button type="button"
-                                                        class="btn btn-sm btn-outline-danger delete-btn inventory-action-btn"
-                                                        data-id="{{ $history->id }}"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#delete_history_modal">
-                                                        <i class="far fa-trash-alt me-1"></i>Delete
-                                                    </button>
-                                                </div>
+                                            @if($movementQuantity === '0' || $movementQuantity === '0.00')
+                                                No quantity change
                                             @else
-                                                <span class="text-muted small">System-generated entry</span>
+                                                {{ $isStockIn ? '+' : ($isStockOut ? '-' : '') }}{{ $movementQuantity }}
                                             @endif
                                         </td>
                                         <td class="text-end fw-semibold {{ $currentStock >= 0 ? 'text-primary' : 'text-danger' }}">
@@ -273,11 +167,10 @@
                                         <td class="text-end">
                                             {{ \App\Support\GeoCurrency::format((float) ($history->stock_value ?? 0), 'NGN', $currencyCode, $currencyLocale) }}
                                         </td>
-                                        <td class="text-end">{{ \App\Support\GeoCurrency::format((float) ($history->purchase_price ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="11" class="text-center p-5 text-muted">
+                                        <td colspan="9" class="text-center p-5 text-muted">
                                             No movement history found for this item.
                                         </td>
                                     </tr>
@@ -285,59 +178,6 @@
                             </tbody>
                         </table>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="edit_history_modal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Movement Record</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form action="{{ route('inventory.history.update') }}" method="POST">
-                    @csrf
-                    <div class="modal-body">
-                        <input type="hidden" name="id" id="modal_edit_id">
-                        <div class="mb-3">
-                            <label class="form-label">Adjustment Quantity</label>
-                            <input type="number" step="0.01" min="0.01" name="quantity" id="modal_edit_qty" class="form-control" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Movement Type</label>
-                            <select name="type" id="modal_edit_type" class="form-control">
-                                <option value="in">Stock In</option>
-                                <option value="out">Stock Out</option>
-                            </select>
-                        </div>
-                        <small class="text-muted">This updates the history record only. It does not recalculate current stock.</small>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Update Record</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="delete_history_modal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-sm">
-            <div class="modal-content text-center p-4">
-                <div class="modal-body">
-                    <i class="far fa-trash-alt text-danger mb-3" style="font-size: 40px;"></i>
-                    <h5>Are you sure?</h5>
-                    <p class="text-muted small">This only removes the log entry. It does not change current stock.</p>
-                    <form action="{{ route('inventory.history.delete') }}" method="POST">
-                        @csrf
-                        <input type="hidden" name="id" id="modal_delete_id">
-                        <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-danger">Delete Log</button>
-                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        </div>
-                    </form>
                 </div>
             </div>
         </div>
@@ -365,13 +205,6 @@
             background: #f8fafc;
         }
         .metric-unit { font-size: 12px; }
-        .inventory-action-cell {
-            min-width: 180px;
-        }
-        .inventory-action-btn {
-            min-width: 78px;
-            border-radius: 8px;
-        }
         .table-responsive { overflow-x: auto; overflow-y: visible; }
         .table { position: relative; }
         tr { position: relative; } 
@@ -397,28 +230,12 @@
 
 <script>
     $(document).ready(function() {
-        $('.edit-btn').on('click', function() {
-            $('#modal_edit_id').val($(this).data('id'));
-            $('#modal_edit_qty').val($(this).data('qty'));
-            $('#modal_edit_type').val($(this).data('type'));
-        });
-
-        $('.delete-btn').on('click', function() {
-            $('#modal_delete_id').val($(this).data('id'));
-        });
-
         // PDF Export
         $('#export_pdf_btn').on('click', function() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('l', 'pt', 'a4');
             doc.text("Inventory Movement History", 40, 40);
-            doc.autoTable({ 
-                html: '#inventoryHistoryTable', 
-                startY: 60,
-                didParseCell: function(data) {
-                    if (data.column.index === 7) { data.cell.styles.fontSize = 0; } // Hide Actions
-                }
-            });
+            doc.autoTable({ html: '#inventoryHistoryTable', startY: 60 });
             doc.save("Inventory_History.pdf");
         });
 
