@@ -126,8 +126,8 @@
                                     <th>Code</th>
                                     <th class="text-center">Type</th>
                                     <th>Reference</th>
-                                    <th class="text-end">Quantity ({{ $stockUnitLabel }})</th>
-                                    <th class="text-end">Balance After Movement</th>
+                                    <th class="text-end">Quantity (transaction unit)</th>
+                                    <th class="text-end">Balance After Movement ({{ $stockUnitLabel }})</th>
                                     <th class="text-end">Estimated Value at Current Cost</th>
                                 </tr>
                             </thead>
@@ -153,12 +153,14 @@
                                         <td>{{ $history->reference ?? 'System Movement' }}</td>
                                         <td class="text-end fw-bold {{ $isStockIn ? 'text-success' : ($isStockOut ? 'text-danger' : 'text-muted') }}">
                                             @php
-                                                $movementQuantity = rtrim(rtrim(\App\Support\CompactNumber::format((float) ($history->quantity ?? 0), 2), '0'), '.');
+                                                $movementQuantityValue = (float) ($history->display_quantity ?? $history->quantity ?? 0);
+                                                $movementQuantity = \App\Support\CompactNumber::format($movementQuantityValue, 2);
                                             @endphp
-                                            @if($movementQuantity === '0' || $movementQuantity === '0.00')
+                                            @if(abs($movementQuantityValue) < 0.000001)
                                                 No quantity change
                                             @else
                                                 {{ $isStockIn ? '+' : ($isStockOut ? '-' : '') }}{{ $movementQuantity }}
+                                                <span class="text-muted text-uppercase ms-1">{{ $history->display_unit_label ?? $stockUnitLabel }}</span>
                                             @endif
                                         </td>
                                         <td class="text-end fw-semibold {{ $currentStock >= 0 ? 'text-primary' : 'text-danger' }}">

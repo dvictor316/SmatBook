@@ -4083,6 +4083,11 @@ public function inventory(Request $request)
                 : "CONCAT('PUR-', purchases.id)";
 
             if ($purchaseQtyColumn) {
+                $purchaseUnitColumn = Schema::hasColumn('purchase_items', 'unit_type')
+                    ? 'purchase_items.unit_type'
+                    : (Schema::hasColumn('purchase_items', 'unit')
+                        ? 'purchase_items.unit'
+                        : 'products.base_unit_name');
                 $purchaseHistoryQuery = DB::table('purchase_items')
                     ->join('purchases', 'purchase_items.purchase_id', '=', 'purchases.id')
                     ->join('products', 'purchase_items.product_id', '=', 'products.id')
@@ -4092,6 +4097,8 @@ public function inventory(Request $request)
                         'in' as type,
                         COALESCE(" . ($purchaseReferenceColumn ? "purchases.{$purchaseReferenceColumn}" : 'NULL') . ", purchases.purchase_no, {$purchaseFallbackReference}) as reference,
                         " . InventoryQuantity::purchaseStockUnitsExpression('purchase_items', 'products') . " as quantity,
+                        COALESCE(purchase_items.{$purchaseQtyColumn}, 0) as display_quantity,
+                        COALESCE(NULLIF({$purchaseUnitColumn}, ''), products.base_unit_name, products.unit_type, 'pcs') as display_unit_label,
                         products.name as name,
                         products.sku as sku,
                         products.purchase_price as purchase_price,
@@ -4454,6 +4461,13 @@ public function inventory(Request $request)
                 }
             }
         }
+
+        $inventoryHistories = $inventoryHistories->map(function ($row) use ($stockUnitLabel) {
+            $row->display_quantity ??= $row->quantity;
+            $row->display_unit_label ??= $stockUnitLabel;
+
+            return $row;
+        });
 
         $totalIn = (float) $inventoryHistories
             ->filter(fn ($row) => in_array(strtolower((string) ($row->type ?? '')), ['in', 'stock in'], true))

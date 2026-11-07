@@ -155,15 +155,20 @@ class StockAdjustmentTest extends TestCase
             'updated_at' => $purchaseTime,
         ], array_flip(Schema::getColumnListing('inventory_history'))));
 
-        $this->actingAs($user)->withoutMiddleware()
+        $historyResponse = $this->actingAs($user)->withoutMiddleware()
             ->withSession(['current_tenant_id' => $company->id])
             ->get(route('inventory.history', $product->id))
-            ->assertOk()
-            ->assertViewHas('inventoryHistories', function ($histories) {
+            ->assertOk();
+        $historyResponse->assertSee('Quantity (transaction unit)')
+            ->assertSee('+1,000')
+            ->assertSee('carton');
+        $historyResponse->assertViewHas('inventoryHistories', function ($histories) {
                 $purchaseMovements = $histories->where('reference', 'PUR-CONVERSION-1000');
 
                 return $purchaseMovements->count() === 1
                     && (float) $purchaseMovements->first()->quantity === 1000.0
+                    && (float) $purchaseMovements->first()->display_quantity === 1.0
+                    && strtolower((string) $purchaseMovements->first()->display_unit_label) === 'carton'
                     && (float) $histories->first()->running_balance === 2000.0;
             });
 
