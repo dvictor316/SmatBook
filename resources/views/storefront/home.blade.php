@@ -473,5 +473,6 @@
         startTimer();
     })();
 </script>
+@include('storefront.partials.enquiry-chat')
 </body>
 </html>

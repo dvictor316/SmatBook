@@ -116,5 +116,6 @@
         <span>Powered by SmartProbook</span>
     </div>
 </footer>
+@include('storefront.partials.enquiry-chat')
 </body>
 </html>

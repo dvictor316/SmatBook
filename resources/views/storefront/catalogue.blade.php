@@ -363,4 +363,5 @@
 
     if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/pwa-sw.js').catch(()=>{}));}
 </script>
+@include('storefront.partials.enquiry-chat')
 </body></html>
