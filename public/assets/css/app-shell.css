@@ -98,11 +98,16 @@ body.pos-terminal-workspace .spb-desktop-backbar {
     transform: none;
 }
 
-@media (max-width: 991.98px) {
+@media (max-width: 1199.98px) {
     .spb-desktop-backbar {
-        top: calc(var(--sb-header-h, 64px) + 10px);
-        left: 50%;
-        transform: translateX(-50%);
+        position: relative;
+        top: auto;
+        left: auto;
+        bottom: auto;
+        transform: none;
+        justify-content: flex-start;
+        margin: 0 12px 8px;
+        z-index: auto;
     }
 }
 

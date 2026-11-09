@@ -33,9 +33,23 @@ const publicDir = path.resolve(__dirname, '../../public');
     await page.waitForTimeout(80); await page.keyboard.press('Escape');
     const geometry=await page.evaluate(()=>({viewport:innerWidth,scroll:document.documentElement.scrollWidth}));
     assert(geometry.scroll <= width+1,`${name} ${width}: horizontal overflow ${geometry.scroll}`);
+    if (name === 'home' && width < 992) {
+     assert(!(await page.locator('.spb-support-floating').isVisible()), `home ${width}: support prompt covers page content`);
+    }
     if (['dashboard','manager','dashboard-storage'].includes(name)) {
      const content = await page.locator('.page-wrapper').first().boundingBox();
      assert(content.x >= -1 && content.x + content.width <= width + 1, `${name} ${width}: content is outside viewport`);
+     const backbar = page.locator('#spbDesktopBackbar');
+     const heading = page.locator('.spb-dashboard-heading');
+     if (await backbar.isVisible() && await heading.count()) {
+      const backbarRect = await backbar.boundingBox();
+      const headingRect = await heading.first().boundingBox();
+      const overlaps = backbarRect.x < headingRect.x + headingRect.width
+       && backbarRect.x + backbarRect.width > headingRect.x
+       && backbarRect.y < headingRect.y + headingRect.height
+       && backbarRect.y + backbarRect.height > headingRect.y;
+      assert(!overlaps, `${name} ${width}: back button overlaps dashboard heading`);
+     }
     }
     if(name!=='pricing') {
      const toggle=page.locator(['dashboard','manager','dashboard-storage'].includes(name)?'#mobile_btn':'[data-public-menu-toggle]');
@@ -65,7 +79,7 @@ const publicDir = path.resolve(__dirname, '../../public');
      }
     }
     checks.push(`${name} ${width}`);
-   }catch(e){failures.push(e.message);}
+   }catch(e){failures.push(`${name} ${width}: ${e.message}`);}
   }
   await page.setViewportSize({width:800,height:1024});
   await page.screenshot({path:path.join(fixtureDir, `${name}-tablet.png`),fullPage:false});

@@ -1703,6 +1703,9 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .spb-support-floating { width: min(300px, calc(100vw - 16px)); }
     .spb-support-panel { right: 0; bottom: 76px; width: min(360px, calc(100vw - 16px)); }
 }
+@media (max-width: 991.98px) {
+    .spb-support-floating { display: none; }
+}
 
 /* ═══════════════════════════════════════════════════════════
    RESPONSIVE
