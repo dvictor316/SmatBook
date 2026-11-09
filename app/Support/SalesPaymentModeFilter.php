@@ -68,6 +68,22 @@ class SalesPaymentModeFilter
                 } else {
                     $builder->whereRaw('1 = 0');
                 }
+            } elseif (in_array($paymentMode, ['web', 'online', 'online_store'], true)) {
+                $hasPaymentDetails = Schema::hasColumn($table, 'payment_details');
+                $hasTerminalId = Schema::hasColumn($table, 'terminal_id');
+                if ($hasPaymentDetails) {
+                    $builder->where("{$detailsColumn}->source", 'web');
+                    if ($hasTerminalId) {
+                        $builder->orWhere(function ($legacyQuery) use ($detailsColumn, $table) {
+                            $legacyQuery->whereNull("{$detailsColumn}->source")
+                                ->where($table.'.terminal_id', 'WEB');
+                        });
+                    }
+                } elseif ($hasTerminalId) {
+                    $builder->where($table.'.terminal_id', 'WEB');
+                } else {
+                    $builder->whereRaw('1 = 0');
+                }
             } elseif (in_array($paymentMode, ['charge_to_room', 'chargetoroom', 'charge-room'], true)) {
                 $builder->whereIn(DB::raw("LOWER({$methodColumn})"), ['charge_to_room', 'chargetoroom', 'charge-room']);
             } else {

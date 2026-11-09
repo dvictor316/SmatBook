@@ -158,6 +158,7 @@
                                     <option value="card" @selected(request('payment_method') === 'card')>{{ __('POS / Card') }}</option>
                                     <option value="wallet" @selected(request('payment_method') === 'wallet')>{{ __('Customer Wallet') }}</option>
                                     <option value="charge_to_room" @selected(request('payment_method') === 'charge_to_room')>{{ __('Charge to Room') }}</option>
+                                    <option value="web" @selected(request('payment_method') === 'web')>{{ __('Online / Web') }}</option>
                                 </select>
                             </div>
                             <div class="col-md-2">

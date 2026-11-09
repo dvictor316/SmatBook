@@ -40,6 +40,59 @@ class PosPaymentModesTest extends TestCase
             ->assertDontSee('POS-CARD-1');
     }
 
+    public function test_pos_sales_register_filters_and_labels_online_web_sales(): void
+    {
+        [$company, $user] = $this->createCompanyAndSales();
+
+        Sale::create([
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'terminal_id' => 'WEB',
+            'source_type' => 'online_store_order',
+            'invoice_no' => 'WEB-ONLINE-1',
+            'customer_name' => 'Online Customer',
+            'subtotal' => 1500,
+            'total' => 1500,
+            'paid' => 1500,
+            'amount_paid' => 1500,
+            'balance' => 0,
+            'payment_method' => 'transfer',
+            'payment_status' => 'paid',
+            'payment_details' => ['source' => 'web'],
+        ]);
+        Sale::create([
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'terminal_id' => 'WEB',
+            'invoice_no' => 'WEB-LEGACY-1',
+            'customer_name' => 'Legacy Online Customer',
+            'subtotal' => 500,
+            'total' => 500,
+            'paid' => 500,
+            'amount_paid' => 500,
+            'balance' => 0,
+            'payment_method' => 'cash',
+            'payment_status' => 'paid',
+        ]);
+
+        $onlineSales = DB::table('sales')->where('company_id', $company->id);
+        SalesPaymentModeFilter::apply($onlineSales, 'web');
+        $this->assertEqualsCanonicalizing(
+            ['WEB-ONLINE-1', 'WEB-LEGACY-1'],
+            $onlineSales->pluck('invoice_no')->all()
+        );
+
+        $this->actingAs($user)->withoutMiddleware()
+            ->get(route('pos.sales', ['payment_method' => 'web']))
+            ->assertOk()
+            ->assertSee('WEB-ONLINE-1')
+            ->assertSee('WEB-LEGACY-1')
+            ->assertSee('Online / Web · Bank Transfer')
+            ->assertSee('<option value="web" selected', false)
+            ->assertDontSee('POS-TRANSFER-1')
+            ->assertDontSee('POS-CARD-1');
+    }
+
     public function test_sales_report_exposes_the_payment_mode_filter(): void
     {
         $this->createCompanyAndSales(false);
@@ -48,6 +101,10 @@ class PosPaymentModesTest extends TestCase
             ->assertOk()
             ->assertSee('name="payment_method"', false)
             ->assertSee('<option value="transfer" selected', false);
+
+        $this->get(route('reports.sales', ['payment_method' => 'web']))
+            ->assertOk()
+            ->assertSee('<option value="web" selected', false);
     }
 
     private function createCompanyAndSales(bool $disableMiddleware = true): array

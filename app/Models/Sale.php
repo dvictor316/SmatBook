@@ -139,10 +139,15 @@ class Sale extends Model
     public function getPaymentReportLabelAttribute(): string
     {
         $mode = $this->payment_mode_label;
-        if (in_array($mode, ['Credit', 'Charge to Room'], true)) {
-            return $mode;
-        }
         $details = is_array($this->payment_details) ? $this->payment_details : [];
+        $prefix = (($details['source'] ?? null) === 'web'
+            || strtoupper((string) $this->terminal_id) === 'WEB'
+            || $this->source_type === 'online_store_order')
+            ? 'Online / Web · '
+            : '';
+        if (in_array($mode, ['Credit', 'Charge to Room'], true)) {
+            return $prefix.$mode;
+        }
         $split = is_array($details['split'] ?? null) ? $details['split'] : [];
         $channels = [
             'cash' => ['Cash', 'payment_account_name'],
@@ -156,7 +161,7 @@ class Sale extends Model
             }
         }
         if ($labels !== []) {
-            return implode(' / ', array_unique($labels));
+            return $prefix.implode(' / ', array_unique($labels));
         }
         $method = strtolower((string) $this->payment_method);
         $accountKey = match ($method) {
@@ -164,13 +169,13 @@ class Sale extends Model
             'card', 'pos', 'pos/card' => 'card_account_name',
             default => 'payment_account_name',
         };
-        return trim((string) ($details[$accountKey] ?? $details['payment_account_name'] ?? '')) ?: match ($method) {
+        return $prefix.(trim((string) ($details[$accountKey] ?? $details['payment_account_name'] ?? '')) ?: match ($method) {
             'transfer', 'bank_transfer', 'bank transfer' => 'Bank Transfer',
             'card', 'pos', 'pos/card' => 'POS/Card',
             'split' => 'Split Payment',
             'charge_to_room' => 'Charge to Room',
             default => $mode,
-        };
+        });
     }
 
     public function payments(): HasMany

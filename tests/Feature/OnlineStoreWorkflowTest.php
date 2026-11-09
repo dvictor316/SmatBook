@@ -893,6 +893,9 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertOk()
             ->assertViewHas('reportSummary', fn ($summary) => (float) $summary->quantity === 3.0 && (float) $summary->revenue === 7500.0);
         $webReport->assertSee('Channel: Online / Web');
+        $this->get(route('reports.sales', ['payment_method' => 'web']))
+            ->assertOk()
+            ->assertViewHas('reportSummary', fn ($summary) => (float) $summary->quantity === 3.0 && (float) $summary->revenue === 7500.0);
         $this->get(route('reports.sales', ['source' => 'pos']))
             ->assertOk()
             ->assertViewHas('reportSummary', fn ($summary) => (float) $summary->quantity === 1.0 && (float) $summary->revenue === 1000.0);

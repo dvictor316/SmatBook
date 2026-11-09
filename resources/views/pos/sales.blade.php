@@ -501,6 +501,7 @@
         'card' => 'POS / Card',
         'wallet' => 'Customer Wallet',
         'charge_to_room' => 'Charge to Room',
+        'web' => 'Online / Web',
     ];
     foreach (($paymentAccountOptions ?? collect()) as $account) {
         $paymentMethodOptions['account:'.$account->id] = $account->name;
