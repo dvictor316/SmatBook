@@ -1316,6 +1316,7 @@
         <ul class="nav-links" id="mainMenu">
             <li><a href="{{ url('/') }}" class="{{ Route::is('landing.index') ? 'active' : '' }}">Home</a></li>
             <li><a href="{{ route('landing.about') }}" class="{{ Route::is('landing.about') ? 'active' : '' }}">About</a></li>
+            <li><a href="{{ route('blog.index') }}" class="{{ Route::is('blog.*') ? 'active' : '' }}">Blog</a></li>
             <li><a href="{{ route('landing.team') }}" class="{{ Route::is('landing.team') ? 'active' : '' }}">Projects</a></li>
             <li><a href="{{ route('landing.contact') }}" class="{{ Route::is('landing.contact') ? 'active' : '' }}">Contact</a></li>
             <li><a href="{{ route('membership-plans') }}" class="{{ Route::is('membership-plans', 'pricing') ? 'active' : '' }}">Pricing</a></li>

@@ -13,8 +13,9 @@ if ($app->configurationIsCached()) {
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 config(['database.default' => 'sqlite', 'database.connections.sqlite.database' => ':memory:', 'cache.default' => 'array', 'session.driver' => 'array', 'mail.default' => 'array', 'queue.default' => 'sync', 'app.url' => 'http://localhost', 'app.domain' => 'localhost', 'app.key' => 'base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=']);
 Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+App\Models\BlogPost::create(['title' => 'Inventory insights', 'slug' => 'inventory-insights', 'category' => 'Inventory', 'summary' => 'Practical ideas for managing stock.', 'content' => 'Count stock regularly and review your records.', 'status' => 'published', 'published_at' => now()]);
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
-foreach (['home' => '/', 'about' => '/about-us', 'pricing' => '/membership-plans'] as $file => $path) {
+foreach (['home' => '/', 'about' => '/about-us', 'pricing' => '/membership-plans', 'blog' => '/blog', 'blog-article' => '/blog/inventory-insights'] as $file => $path) {
     $request = Illuminate\Http\Request::create('http://localhost'.$path);
     $response = $kernel->handle($request);
     file_put_contents($output.'/'.$file.'.html', $response->getContent());

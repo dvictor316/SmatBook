@@ -8,7 +8,7 @@ const publicDir = path.resolve(__dirname, '../../public');
 (async () => {
  const browser = await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE || undefined, headless:true});
  const checks=[]; const failures=[];
- for (const [name,url,fixture,blocked] of [['home','/','home'],['about','/about-us','about'],['pricing','/membership-plans','pricing'],['dashboard','/agent/dashboard','dashboard'],['manager','/agent/dashboard','manager'],['dashboard-storage','/agent/dashboard','dashboard',true]]) {
+ for (const [name,url,fixture,blocked] of [['home','/','home'],['about','/about-us','about'],['pricing','/membership-plans','pricing'],['blog','/blog','blog'],['blog-article','/blog/inventory-insights','blog-article'],['dashboard','/agent/dashboard','dashboard'],['manager','/agent/dashboard','manager'],['dashboard-storage','/agent/dashboard','dashboard',true]]) {
   const context=await browser.newContext({viewport:{width:800,height:1024},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
   await context.route('**/*',async route=>{
    const u=new URL(route.request().url());

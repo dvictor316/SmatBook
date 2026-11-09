@@ -2455,6 +2455,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <ul class="navbar-nav ms-auto align-items-center gap-1">
                 <li class="nav-item"><a class="sb-nav-link {{ request()->routeIs('landing.index') ? 'active' : '' }}" href="{{ route('landing.index') }}#home">Home</a></li>
                 <li class="nav-item"><a class="sb-nav-link {{ request()->routeIs('landing.about') ? 'active' : '' }}" href="{{ route('landing.about') }}">About</a></li>
+                <li class="nav-item"><a class="sb-nav-link" href="{{ route('blog.index') }}">Blog</a></li>
                 <li class="nav-item"><a class="sb-nav-link" href="{{ route('landing.index') }}#team">Projects</a></li>
                 <li class="nav-item"><a class="sb-nav-link {{ request()->routeIs('landing.contact') ? 'active' : '' }}" href="{{ route('landing.contact') }}">Contact</a></li>
                 <li class="nav-item"><a class="sb-nav-link {{ request()->routeIs('membership-plans', 'pricing') ? 'active' : '' }}" href="{{ route('membership-plans') }}">Pricing</a></li>

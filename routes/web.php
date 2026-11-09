@@ -55,6 +55,9 @@ Route::get('/about-us', [LandingController::class, 'about'])->name('landing.abou
 Route::get('/contact-us', [LandingController::class, 'contact'])->name('landing.contact');
 Route::get('/demo', [LandingController::class, 'demo'])->name('landing.demo');
 Route::post('/contact-us', [LandingController::class, 'storeContact'])->middleware('throttle:5,1')->name('contact.store');
+Route::get('/blog', [\App\Http\Controllers\BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [\App\Http\Controllers\BlogController::class, 'show'])->name('blog.show');
+Route::post('/blog/{slug}/comments', [\App\Http\Controllers\BlogController::class, 'comment'])->middleware('throttle:5,1')->name('blog.comments.store');
 
 // Demo request (public — controlled access, NOT a free-for-all demo)
 Route::get('/request-demo', [DemoRequestController::class, 'create'])->name('demo.request.form');
@@ -503,6 +506,15 @@ Route::middleware(['auth', 'role:agent,state_manager,super_admin'])
 Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('super_admin.')->group(function () {
 
     Route::get('/dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/blog/comments', [\App\Http\Controllers\SuperAdmin\BlogController::class, 'comments'])->name('blog.comments.index');
+    Route::patch('/blog/comments/{comment}', [\App\Http\Controllers\SuperAdmin\BlogController::class, 'updateComment'])->name('blog.comments.update');
+    Route::delete('/blog/comments/{comment}', [\App\Http\Controllers\SuperAdmin\BlogController::class, 'destroyComment'])->name('blog.comments.destroy');
+    Route::get('/blog', [\App\Http\Controllers\SuperAdmin\BlogController::class, 'index'])->name('blog.index');
+    Route::get('/blog/create', [\App\Http\Controllers\SuperAdmin\BlogController::class, 'create'])->name('blog.create');
+    Route::post('/blog', [\App\Http\Controllers\SuperAdmin\BlogController::class, 'store'])->name('blog.store');
+    Route::get('/blog/{post}/edit', [\App\Http\Controllers\SuperAdmin\BlogController::class, 'edit'])->name('blog.edit');
+    Route::put('/blog/{post}', [\App\Http\Controllers\SuperAdmin\BlogController::class, 'update'])->name('blog.update');
+    Route::delete('/blog/{post}', [\App\Http\Controllers\SuperAdmin\BlogController::class, 'destroy'])->name('blog.destroy');
     Route::get('/modules/{module}', [SuperAdminDashboardController::class, 'openModule'])
         ->where('module', '[a-z0-9-]+')
         ->name('modules.open');

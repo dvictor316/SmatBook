@@ -1,6 +1,6 @@
 # Responsive navigation checks
 
-These checks render public pages and authenticated agent/manager dashboard layouts using an in-memory SQLite test database. They do not access the production database or send payouts. Playwright intercepts requests and serves the fixtures and repository assets locally; external downloads are blocked during browser tests.
+These checks render public pages (including blog listing and article pages) and authenticated agent/manager dashboard layouts using an in-memory SQLite test database. They do not access the production database or send payouts. Playwright intercepts requests and serves the fixtures and repository assets locally; external downloads are blocked during browser tests.
 
 Run from the project root with PHP, SQLite and Node installed:
 

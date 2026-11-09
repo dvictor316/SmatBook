@@ -9,7 +9,7 @@ class SearchVisibility
     public const PUBLIC_PAGES = [
         'landing.index', 'landing.about', 'landing.contact', 'landing.team', 'landing.policy',
         'landing.projects.lahome', 'landing.projects.master-jamb', 'landing.projects.payplus',
-        'membership-plans', 'demo.request.form',
+        'membership-plans', 'demo.request.form', 'blog.index',
     ];
 
     public static function baseUrl(): string
@@ -23,7 +23,7 @@ class SearchVisibility
         $canonicalHost = preg_replace('/^www\./i', '', (string) parse_url(self::baseUrl(), PHP_URL_HOST));
 
         return strcasecmp($host, $canonicalHost) === 0
-            && in_array($request->route()?->getName(), array_merge(self::PUBLIC_PAGES, ['pricing']), true);
+            && in_array($request->route()?->getName(), array_merge(self::PUBLIC_PAGES, ['pricing', 'blog.show']), true);
     }
 
     public static function isIndexablePage(Request $request): bool

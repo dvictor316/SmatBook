@@ -619,6 +619,9 @@
                         <li><a href="{{ route('super_admin.subscription', $routeParams) }}" class="{{ Request::is('superadmin/subscription*') ? 'active' : '' }}">Subscriptions</a></li>
                         <li><a href="{{ route('super_admin.packages.index', $routeParams) }}" class="{{ Request::is('superadmin/packages*') ? 'active' : '' }}">Packages</a></li>
                         <li><a href="{{ route('super_admin.domains.index', $routeParams) }}" class="{{ Request::is('superadmin/domains*') ? 'active' : '' }}">Domains</a></li>
+                        @if($isSidebarSuperAdmin)
+                            <li><a href="{{ route('super_admin.blog.index') }}" class="{{ request()->routeIs('super_admin.blog.*') ? 'active' : '' }}">Blog Posts &amp; Comments</a></li>
+                        @endif
                         <li class="{{ Request::is('superadmin/demo-requests*') ? 'active' : '' }}">
                             <a href="{{ route('super_admin.demo_requests.index') }}">
                                 Demo Requests
