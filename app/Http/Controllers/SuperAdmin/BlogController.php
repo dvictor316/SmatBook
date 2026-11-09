@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use RuntimeException;
 
 class BlogController extends Controller
@@ -16,9 +17,7 @@ class BlogController extends Controller
     public function index()
     {
         $posts = BlogPost::withCount('comments')->latest()->orderByDesc('id')->paginate(20);
-        $pendingComments = BlogComment::where('approved', false)->count();
-
-        return view('SuperAdmin.blog.index', compact('posts', 'pendingComments'));
+        return view('SuperAdmin.blog.index', compact('posts'));
     }
 
     public function create()
@@ -29,7 +28,7 @@ class BlogController extends Controller
     public function store(Request $request)
     {
         $data = $this->validated($request);
-        $data['slug'] = (Str::limit(Str::slug($data['title']) ?: 'post', 180, '') . '-' . Str::uuid());
+        $data['slug'] = $data['slug'] ?? (Str::limit(Str::slug($data['title']) ?: 'post', 180, '') . '-' . Str::uuid());
         $data['author_id'] = $request->user()->id;
         $data['published_at'] = $data['status'] === 'published' ? now() : null;
         $data['cover_path'] = $this->storeCover($request);
@@ -52,7 +51,8 @@ class BlogController extends Controller
 
     public function update(Request $request, BlogPost $post)
     {
-        $data = $this->validated($request);
+        $data = $this->validated($request, $post);
+        $data['slug'] = $data['slug'] ?? $post->slug;
         $data['published_at'] = $data['status'] === 'published' ? ($post->published_at ?? now()) : null;
         $oldCover = $post->cover_path;
         $newCover = $this->storeCover($request);
@@ -98,7 +98,7 @@ class BlogController extends Controller
         $comment->approved = $data['approved'];
         $comment->save();
 
-        return back()->with('success', $comment->approved ? 'Comment approved.' : 'Comment hidden.');
+        return back()->with('success', $comment->approved ? 'Comment visible.' : 'Comment hidden.');
     }
 
     public function destroyComment(BlogComment $comment)
@@ -108,16 +108,20 @@ class BlogController extends Controller
         return back()->with('success', 'Comment deleted.');
     }
 
-    private function validated(Request $request): array
+    private function validated(Request $request, ?BlogPost $post = null): array
     {
         return $request->validate([
             'title' => 'required|string|max:200',
+            'slug' => ['nullable', 'string', 'max:200', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('blog_posts', 'slug')->ignore($post?->id)],
             'category' => 'required|string|max:100',
             'summary' => 'required|string|max:500',
             'content' => 'required|string|max:100000',
             'status' => 'required|in:draft,published',
             'cover' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'remove_cover' => 'nullable|boolean',
+            'meta_title' => 'nullable|string|max:200',
+            'meta_description' => 'nullable|string|max:500',
+            'meta_keywords' => 'nullable|string|max:500',
         ]);
     }
 

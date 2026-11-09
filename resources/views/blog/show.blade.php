@@ -1,8 +1,5 @@
 @extends('layout.landing_nav')
 
-@section('title', $post->title)
-@section('meta_description', $post->summary)
-
 @section('content')
 <style>
     .blog-article { max-width: 850px; margin: 0 auto; padding: 120px 20px 70px; color: #172a4a; }
@@ -13,6 +10,7 @@
     .blog-article .blog-content { line-height: 1.8; margin: 30px 0; }
     .blog-comments { border-top: 1px solid #dbe3ee; padding-top: 28px; }
     .blog-comment { border-bottom: 1px solid #e2e8f0; padding: 16px 0; }
+    .blog-reply { margin: 14px 0 0 20px; padding: 12px 0 0 16px; border-left: 2px solid #dbe3ee; }
     .blog-comment-form { display: grid; gap: 10px; margin-top: 25px; }
     .blog-comment-form input, .blog-comment-form textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; }
     .blog-comment-form button { justify-self: start; border: 0; border-radius: 8px; background: #123b79; color: white; padding: 11px 18px; cursor: pointer; }
@@ -29,10 +27,30 @@
     <section class="blog-comments">
         <h2>Comments</h2>
         @forelse($comments as $comment)
-            <div class="blog-comment">
+            <div class="blog-comment" id="comment-{{ $comment->id }}">
                 <strong>{{ $comment->name }}</strong>
                 <small class="blog-meta">{{ $comment->created_at->format('d M Y') }}</small>
                 <div class="comment-body">{{ $comment->body }}</div>
+                @foreach($comment->replies as $reply)
+                    <div class="blog-reply">
+                        <strong>{{ $reply->name }}</strong>
+                        <small class="blog-meta">{{ $reply->created_at->format('d M Y') }}</small>
+                        <div class="comment-body">{{ $reply->body }}</div>
+                    </div>
+                @endforeach
+                <details @if((string) old('parent_id') === (string) $comment->id) open @endif>
+                    <summary>Reply</summary>
+                    <form class="blog-comment-form" method="POST" action="{{ route('blog.comments.store', $post->slug) }}">
+                        @csrf
+                        <input type="hidden" name="parent_id" value="{{ $comment->id }}">
+                        <input type="hidden" name="page" value="{{ $comments->currentPage() }}">
+                        <label for="reply-name-{{ $comment->id }}">Name</label>
+                        <input id="reply-name-{{ $comment->id }}" name="name" value="{{ (string) old('parent_id') === (string) $comment->id ? old('name') : '' }}" maxlength="100" required>
+                        <label for="reply-body-{{ $comment->id }}">Reply</label>
+                        <textarea id="reply-body-{{ $comment->id }}" name="body" rows="3" maxlength="2000" required>{{ (string) old('parent_id') === (string) $comment->id ? old('body') : '' }}</textarea>
+                        <button type="submit">Post reply</button>
+                    </form>
+                </details>
             </div>
         @empty
             <p>No comments yet.</p>
@@ -47,11 +65,11 @@
         <form class="blog-comment-form" method="POST" action="{{ route('blog.comments.store', $post->slug) }}">
             @csrf
             <h3>Leave a comment</h3>
-            <p>Comments are reviewed before appearing publicly.</p>
+            <p>Comments appear publicly when submitted.</p>
             <label for="comment-name">Name</label>
-            <input id="comment-name" name="name" value="{{ old('name') }}" maxlength="100" required>
+            <input id="comment-name" name="name" value="{{ old('parent_id') ? '' : old('name') }}" maxlength="100" required>
             <label for="comment-body">Comment</label>
-            <textarea id="comment-body" name="body" rows="5" maxlength="2000" required>{{ old('body') }}</textarea>
+            <textarea id="comment-body" name="body" rows="5" maxlength="2000" required>{{ old('parent_id') ? '' : old('body') }}</textarea>
             <button type="submit">Submit comment</button>
         </form>
     </section>

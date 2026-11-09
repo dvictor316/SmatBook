@@ -15,9 +15,15 @@
             @csrf
             @if($post->exists) @method('PUT') @endif
             <div class="mb-3"><label class="form-label" for="title">Title</label><input class="form-control" id="title" name="title" maxlength="200" value="{{ old('title', $post->title) }}" required></div>
+            <div class="mb-3"><label class="form-label" for="slug">URL slug (optional)</label><input class="form-control" id="slug" name="slug" maxlength="200" value="{{ old('slug', $post->slug) }}" pattern="[a-z0-9]+(-[a-z0-9]+)*"><div class="form-text">Use lowercase letters, numbers and hyphens. Leave blank to generate a slug for a new post. Changing an existing slug changes its link.</div></div>
             <div class="mb-3"><label class="form-label" for="category">Category</label><input class="form-control" id="category" name="category" maxlength="100" value="{{ old('category', $post->category) }}" required></div>
             <div class="mb-3"><label class="form-label" for="summary">Summary</label><textarea class="form-control" id="summary" name="summary" maxlength="500" rows="3" required>{{ old('summary', $post->summary) }}</textarea></div>
             <div class="mb-3"><label class="form-label" for="content">Article content (plain text)</label><textarea class="form-control" id="content" name="content" maxlength="100000" rows="14" required>{{ old('content', $post->content) }}</textarea></div>
+            <fieldset class="mb-3"><legend class="fs-5">Search and social sharing (optional)</legend>
+                <div class="mb-3"><label class="form-label" for="meta-title">Meta title</label><input class="form-control" id="meta-title" name="meta_title" maxlength="200" value="{{ old('meta_title', $post->meta_title) }}"><div class="form-text">Defaults to the article title.</div></div>
+                <div class="mb-3"><label class="form-label" for="meta-description">Meta description</label><textarea class="form-control" id="meta-description" name="meta_description" maxlength="500" rows="3">{{ old('meta_description', $post->meta_description) }}</textarea><div class="form-text">Defaults to the article summary.</div></div>
+                <div><label class="form-label" for="meta-keywords">Meta keywords</label><input class="form-control" id="meta-keywords" name="meta_keywords" maxlength="500" value="{{ old('meta_keywords', $post->meta_keywords) }}"><div class="form-text">Separate keywords with commas.</div></div>
+            </fieldset>
             <div class="mb-3"><label class="form-label" for="cover">Cover image (optional, JPG, PNG or WebP, up to 5 MB)</label><input class="form-control" id="cover" type="file" name="cover" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
                 @if($post->cover_path)
                     <img src="{{ route('media.public', ['path' => $post->cover_path]) }}" alt="Current cover" class="img-thumbnail mt-2" style="max-width:180px">

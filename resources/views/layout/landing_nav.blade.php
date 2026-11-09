@@ -65,14 +65,14 @@
         ];
         $publicSeo = $publicSeoMap[$routeName] ?? [];
         $seoNoIndex = $seoNoIndex ?? !\App\Support\SearchVisibility::isIndexablePage(request());
-        $seoType = 'website';
+        $seoType = $seoType ?? 'website';
         $seoTitle = $seoTitle ?? (trim($__env->yieldContent('title')) ?: ($publicSeo['title'] ?? 'SmartProbook'));
-        $seoDescription = trim($__env->yieldContent('meta_description')) !== ''
+        $seoDescription = $seoDescription ?? (trim($__env->yieldContent('meta_description')) !== ''
             ? $__env->yieldContent('meta_description')
-            : ($publicSeo['description'] ?? 'SmartProbook provides AI-powered accounting, enterprise reporting, global deployment workflows, and institutional-grade financial operations.');
-        $seoKeywords = trim($__env->yieldContent('meta_keywords')) !== ''
+            : ($publicSeo['description'] ?? 'SmartProbook provides AI-powered accounting, enterprise reporting, global deployment workflows, and institutional-grade financial operations.'));
+        $seoKeywords = $seoKeywords ?? (trim($__env->yieldContent('meta_keywords')) !== ''
             ? $__env->yieldContent('meta_keywords')
-            : ($publicSeo['keywords'] ?? 'SmartProbook, accounting software, ERP software, invoicing, inventory, reporting');
+            : ($publicSeo['keywords'] ?? 'SmartProbook, accounting software, ERP software, invoicing, inventory, reporting'));
     @endphp
     @include('layout.partials.seo-meta')
     @include('layout.partials.pwa-head')
