@@ -1591,49 +1591,64 @@
         :root { --spb-header-offset: 70px; }
 
         .header {
-            display: grid;
-            grid-template-columns: 36px auto minmax(0, 1fr);
+            display: flex;
             height: 70px;
             align-items: center;
-            gap: clamp(6px, 1.2vw, 14px);
+            gap: clamp(6px, 1vw, 12px);
+            padding: 0 12px;
+            margin-bottom: 0;
+            overflow: visible;
         }
 
         #mobile_btn {
             position: relative !important;
             top: 0 !important;
             left: auto !important;
-            grid-column: 1;
-            flex: 0 0 36px;
+            order: 0;
+            flex: 0 0 44px;
+            width: 44px;
+            height: 44px;
         }
 
         .header-logo {
             position: static;
             display: flex;
-            grid-column: 2;
+            order: 1;
             flex: 0 0 auto;
             align-items: center;
             gap: 5px;
             width: auto;
-            max-width: min(220px, 40vw);
+            min-width: 0;
+            max-width: min(220px, 34vw);
             overflow: hidden;
         }
+        .header-logo img { height: 40px; }
 
         .header-actions {
-            grid-column: 3;
+            order: 4;
             position: static;
-            flex: 1 1 auto;
+            display: flex;
+            flex: 0 0 auto;
             width: auto;
             min-width: 0;
             height: auto;
             padding: 0;
-            margin: 0;
+            margin: 0 0 0 auto;
             transform: none;
             align-items: center;
-            display: flex;
-            justify-content: space-between;
-            gap: clamp(8px, 1.5vw, 18px);
+            justify-content: flex-end;
+            gap: clamp(5px, 0.8vw, 10px);
             border: 0;
             background: transparent;
+        }
+
+        .header-search-container {
+            display: none !important;
+            order: 3;
+            flex: 1 1 auto;
+            max-width: none;
+            min-width: 0;
+            margin: 0;
         }
 
         .header-actions > .profile-dropdown {
@@ -1642,6 +1657,10 @@
             right: auto;
             margin: 0;
             transform: none;
+            flex: 0 0 36px;
+            width: 36px;
+            min-width: 36px;
+            max-width: 36px;
         }
 
         .header-actions > * {
@@ -1651,19 +1670,21 @@
         .header-actions > .mobile-country-dropdown,
         .header-actions > #headerChatIndicator,
         .header-actions > .mobile-notification-dropdown,
+        .header-actions > .mobile-search-btn,
         .header-actions > .profile-dropdown {
             display: flex !important;
         }
 
         .header-actions .country-selector,
         .header-actions #headerChatIndicator,
-        .header-actions .notification-bell {
+        .header-actions .notification-bell,
+        .header-actions .mobile-search-btn {
             display: inline-flex !important;
             align-items: center;
             justify-content: center;
-            width: 30px;
-            height: 30px;
-            min-width: 30px;
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
             padding: 0;
             font-size: 14px;
         }
@@ -1675,6 +1696,13 @@
         .header-actions .country-selector img {
             width: 20px;
             height: 14px;
+        }
+
+        .header-actions .user-profile,
+        .header-actions .user-avatar {
+            width: 34px;
+            height: 34px;
+            min-width: 34px;
         }
 
         body.sidebar-collapsed .spb-wordmark,
@@ -1695,31 +1723,39 @@
         }
     }
 
-    @media (max-width: 767px) {
-        :root { --spb-header-offset: 68px; }
-        .header { height: 68px; }
-        .header-actions > .profile-dropdown { right: auto; }
+    @media (min-width: 768px) and (max-width: 1199.98px) {
+        .header {
+            padding: 0 clamp(14px, 2.5vw, 28px);
+            gap: clamp(8px, 1.2vw, 14px);
+        }
+        .header-search-container {
+            display: flex !important;
+            min-width: 140px;
+            flex: 1 1 220px;
+        }
+        .header-search {
+            max-width: none;
+        }
+        .header-search input {
+            height: 42px;
+            border-radius: 999px;
+            background: #f5f7fa;
+        }
+        .header-actions > .mobile-search-btn {
+            display: none !important;
+        }
     }
 
-    @media (min-width: 768px) and (max-width: 991px) {
+    @media (min-width: 768px) and (max-width: 991.98px) {
         .header-actions {
-            grid-template-columns: none;
-            margin-right: 0;
-            gap: clamp(8px, 1.4vw, 16px);
+            gap: 7px;
         }
-
         .header-actions > .mobile-branch-dropdown,
-        .header-actions > .mobile-search-btn,
         .header-actions > #headerMailIndicator {
             display: flex !important;
         }
-
         .header-actions .branch-pill-mobile,
-        .header-actions .mobile-search-btn,
-        .header-actions .country-selector,
-        .header-actions #headerChatIndicator,
-        .header-actions #headerMailIndicator,
-        .header-actions .notification-bell {
+        .header-actions #headerMailIndicator {
             display: inline-flex !important;
             align-items: center;
             justify-content: center;
@@ -1730,29 +1766,103 @@
         }
     }
 
-    @media (max-width: 430px) {
-        .header { gap: 3px; }
-        .header { grid-template-columns: 32px auto minmax(0, 1fr); }
-        .header-logo { gap: 3px; }
-        .spb-wordmark { font-size: 0.78rem; }
-        .header-actions {
-            grid-template-columns: none;
-            gap: clamp(6px, 1.6vw, 9px);
-            margin-right: 0;
+    @media (max-width: 767px) {
+        :root { --spb-header-offset: 68px; }
+        .header {
+            height: 68px;
+            padding: 0 10px;
+            gap: 5px;
         }
-        .header-actions > .profile-dropdown { right: auto; }
-        .header-actions .country-selector,
+        .header-logo {
+            max-width: min(220px, 40vw);
+            gap: 4px;
+        }
+        body.sidebar-collapsed .header-logo,
+        body.mini-sidebar .header-logo {
+            width: auto;
+            flex: 0 0 auto;
+        }
+        .header-logo img { height: 36px; }
+        .header-actions {
+            gap: clamp(4px, 1.2vw, 8px);
+        }
+        .header-actions > .mobile-country-dropdown {
+            display: none !important;
+        }
+        .header-actions .mobile-search-btn,
         .header-actions #headerChatIndicator,
         .header-actions .notification-bell {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .header {
+            padding: 0 8px;
+            gap: 4px;
+        }
+        .header-logo {
+            max-width: min(180px, 40vw);
+        }
+        .header-logo img { height: 32px; }
+        .spb-wordmark {
+            font-size: 0.76rem;
+            letter-spacing: -0.15px;
+        }
+        .header-actions {
+            gap: 4px;
+        }
+        .header-actions > .profile-dropdown {
+            flex-basis: 32px;
+            width: 32px;
+            min-width: 32px;
+            max-width: 32px;
+        }
+        .header-actions .mobile-search-btn,
+        .header-actions #headerChatIndicator,
+        .header-actions .notification-bell,
+        .header-actions .user-profile,
+        .header-actions .user-avatar {
+            width: 30px;
+            height: 30px;
+            min-width: 30px;
+        }
+    }
+
+    @media (max-width: 380px) {
+        .header {
+            padding: 0 6px;
+            gap: 3px;
+        }
+        .header-logo {
+            max-width: min(150px, 34vw);
+            gap: 3px;
+        }
+        .header-logo img { height: 28px; }
+        .spb-wordmark {
+            font-size: 0.62rem;
+            letter-spacing: -0.1px;
+        }
+        .header-actions {
+            gap: 2px;
+        }
+        .header-actions > .profile-dropdown {
+            flex-basis: 30px;
+            width: 30px;
+            min-width: 30px;
+            max-width: 30px;
+        }
+        .header-actions .mobile-search-btn,
+        .header-actions #headerChatIndicator,
+        .header-actions .notification-bell,
+        .header-actions .user-profile,
+        .header-actions .user-avatar {
             width: 28px;
             height: 28px;
             min-width: 28px;
         }
-    }
-
-    @media (max-width: 360px) {
-        .spb-wordmark { font-size: 0.72rem; }
-        .header-actions > .profile-dropdown { right: auto; }
     }
 
     @media (prefers-reduced-motion: reduce) {

@@ -37,6 +37,34 @@ const publicDir = path.resolve(__dirname, '../../public');
      assert(!(await page.locator('.spb-support-floating').isVisible()), `home ${width}: support prompt covers page content`);
     }
     if (['dashboard','manager','dashboard-storage'].includes(name)) {
+     const header = page.locator('.header').first();
+     const headerRect = await header.boundingBox();
+     const brand = page.locator('.header-logo');
+     const brandRect = await brand.boundingBox();
+     const brandOverflow = await brand.evaluate(element => element.scrollWidth - element.clientWidth);
+     const actionsRect = await page.locator('.header-actions').boundingBox();
+     assert(brandRect.x + brandRect.width <= actionsRect.x + 1, `${name} ${width}: brand overlaps navbar actions`);
+     assert(brandOverflow <= 1, `${name} ${width}: brand is clipped`);
+     const inlineSearch = page.locator('.header-search-container');
+     const mobileSearch = page.locator('#mobileSearchToggle');
+     if (width >= 768 && width < 1200) {
+      assert(await inlineSearch.isVisible(), `${name} ${width}: tablet search is not in the navbar`);
+      assert(!(await mobileSearch.isVisible()), `${name} ${width}: duplicate mobile search button is visible`);
+      const searchRect = await inlineSearch.boundingBox();
+      assert(searchRect.x >= headerRect.x && searchRect.x + searchRect.width <= actionsRect.x, `${name} ${width}: inline search is outside the navbar or overlaps actions`);
+     } else if (width < 768) {
+      assert(await mobileSearch.isVisible(), `${name} ${width}: mobile search button is missing from the navbar`);
+      const searchRect = await mobileSearch.boundingBox();
+      assert(searchRect.x >= headerRect.x && searchRect.x + searchRect.width <= headerRect.x + headerRect.width, `${name} ${width}: mobile search button is outside the navbar`);
+      if (width === 390) {
+       await mobileSearch.tap();
+       const overlay = page.locator('#mobileSearchOverlay');
+       assert(await overlay.isVisible(), `${name} ${width}: mobile search panel did not open`);
+       const overlayRect = await overlay.boundingBox();
+       assert(overlayRect.y >= headerRect.y + headerRect.height - 1, `${name} ${width}: mobile search panel overlaps navbar`);
+       await mobileSearch.tap();
+      }
+     }
      const content = await page.locator('.page-wrapper').first().boundingBox();
      assert(content.x >= -1 && content.x + content.width <= width + 1, `${name} ${width}: content is outside viewport`);
      const backbar = page.locator('#spbDesktopBackbar');
