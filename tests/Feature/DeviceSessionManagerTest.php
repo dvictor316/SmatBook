@@ -55,6 +55,40 @@ class DeviceSessionManagerTest extends TestCase
         ]);
     }
 
+    public function test_new_session_on_the_same_device_replaces_its_previous_session(): void
+    {
+        config(['session.driver' => 'array']);
+        $user = User::factory()->create(['role' => 'admin']);
+        $manager = app(DeviceSessionManager::class);
+        $sessionIds = [];
+
+        foreach (['same-device-old-session', 'same-device-new-session'] as $sessionId) {
+            $session = app('session')->driver();
+            $session->setId($sessionId);
+            $session->start();
+            $sessionIds[] = $session->getId();
+
+            $request = Request::create('/dashboard', 'GET', cookies: [
+                'spb_device_id' => 'same-device-id',
+            ], server: [
+                'REMOTE_ADDR' => '127.0.0.1',
+                'HTTP_USER_AGENT' => 'SmartProbook same-device session test',
+            ]);
+            $request->setLaravelSession($session);
+
+            $this->assertTrue($manager->ensureCurrentSession($request, $user)['allowed']);
+        }
+
+        $this->assertNotSame($sessionIds[0], $sessionIds[1]);
+        $this->assertDatabaseMissing('active_user_sessions', [
+            'session_id' => $sessionIds[0],
+        ]);
+        $this->assertDatabaseHas('active_user_sessions', [
+            'session_id' => $sessionIds[1],
+        ]);
+        $this->assertSame(1, ActiveUserSession::query()->where('user_id', $user->id)->count());
+    }
+
     public function test_existing_company_session_skips_subscription_and_session_count_queries(): void
     {
         $company = Company::create(['name' => 'Current Workspace']);
@@ -121,5 +155,48 @@ class DeviceSessionManagerTest extends TestCase
 
         $this->assertDatabaseMissing('active_user_sessions', ['session_id' => 'expired-workspace-session']);
         $this->assertDatabaseHas('active_user_sessions', ['session_id' => 'expired-unrelated-session']);
+    }
+
+    public function test_super_admin_can_use_four_devices_but_not_a_fifth(): void
+    {
+        config(['session.driver' => 'array']);
+        $user = User::factory()->create(['role' => 'super_admin']);
+        $manager = app(DeviceSessionManager::class);
+
+        foreach (range(1, 4) as $deviceNumber) {
+            $session = app('session')->driver();
+            $session->setId("super-admin-device-{$deviceNumber}");
+            $session->start();
+
+            $request = Request::create('/dashboard', 'GET', cookies: [
+                'spb_device_id' => "device-{$deviceNumber}",
+            ], server: [
+                'REMOTE_ADDR' => '127.0.0.1',
+                'HTTP_USER_AGENT' => 'SmartProbook super admin session test',
+            ]);
+            $request->setLaravelSession($session);
+
+            $this->assertTrue($manager->ensureCurrentSession($request, $user)['allowed']);
+        }
+
+        $session = app('session')->driver();
+        $session->setId('super-admin-device-5');
+        $session->start();
+        $request = Request::create('/dashboard', 'GET', cookies: [
+            'spb_device_id' => 'device-5',
+        ], server: [
+            'REMOTE_ADDR' => '127.0.0.1',
+            'HTTP_USER_AGENT' => 'SmartProbook super admin session test',
+        ]);
+        $request->setLaravelSession($session);
+
+        $result = $manager->ensureCurrentSession($request, $user);
+
+        $this->assertFalse($result['allowed']);
+        $this->assertSame(
+            'Super admin access is limited to 4 devices at a time. Log out from another device first.',
+            $result['message']
+        );
+        $this->assertSame(4, ActiveUserSession::query()->where('user_id', $user->id)->count());
     }
 }

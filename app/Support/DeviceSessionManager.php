@@ -53,7 +53,6 @@ class DeviceSessionManager
         // new authenticated session, not on every page or asset request.
         $this->pruneExpired($user->id, $companyId);
         $this->pruneMissingBackedSessions($user->id);
-        $this->pruneLegacySameBrowserSessions($request, $user->id, $sessionId);
 
         ActiveUserSession::query()
             ->where('user_id', $user->id)
@@ -208,27 +207,10 @@ class DeviceSessionManager
         return true;
     }
 
-    private function pruneLegacySameBrowserSessions(Request $request, int $userId, string $sessionId): void
-    {
-        $userAgent = substr((string) $request->userAgent(), 0, 1000);
-        if ($userAgent === '') {
-            return;
-        }
-
-        // Older fingerprints included the IP address. Store/branch switching can
-        // regenerate sessions or move between host contexts, leaving a stale
-        // active-session row that blocks the same browser from logging back in.
-        ActiveUserSession::query()
-            ->where('user_id', $userId)
-            ->where('session_id', '!=', $sessionId)
-            ->where('user_agent', $userAgent)
-            ->delete();
-    }
-
     private function allowedUserSessions(User $user, ?Subscription $subscription, ?int $companyId): ?int
     {
         if ($this->isSuperAdmin($user)) {
-            return 2;
+            return 4;
         }
 
         if ($this->isPlatformStaff($user)) {
