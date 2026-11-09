@@ -1592,10 +1592,10 @@
 
         .header {
             display: grid;
-            grid-template-columns: 36px minmax(0, 1fr) auto;
+            grid-template-columns: 36px auto minmax(0, 1fr);
             height: 70px;
             align-items: center;
-            gap: 5px;
+            gap: clamp(6px, 1.2vw, 14px);
         }
 
         #mobile_btn {
@@ -1610,39 +1610,38 @@
             position: static;
             display: flex;
             grid-column: 2;
-            flex: 0 1 auto;
+            flex: 0 0 auto;
             align-items: center;
             gap: 5px;
-            width: 100%;
-            max-width: 100%;
+            width: auto;
+            max-width: min(220px, 40vw);
             overflow: hidden;
         }
 
         .header-actions {
-            display: grid;
-            grid-template-columns: repeat(3, 30px);
             grid-column: 3;
             position: static;
-            flex: 0 0 auto;
+            flex: 1 1 auto;
             width: auto;
             min-width: 0;
             height: auto;
             padding: 0;
-            margin: 0 44px 0 0;
+            margin: 0;
             transform: none;
             align-items: center;
-            justify-content: end;
-            gap: 10px;
+            display: flex;
+            justify-content: space-between;
+            gap: clamp(8px, 1.5vw, 18px);
             border: 0;
             background: transparent;
         }
 
         .header-actions > .profile-dropdown {
-            position: absolute;
-            top: 50%;
-            right: 10px;
+            position: relative;
+            top: auto;
+            right: auto;
             margin: 0;
-            transform: translateY(-50%);
+            transform: none;
         }
 
         .header-actions > * {
@@ -1699,14 +1698,14 @@
     @media (max-width: 767px) {
         :root { --spb-header-offset: 68px; }
         .header { height: 68px; }
-        .header-actions > .profile-dropdown { right: 8px; }
+        .header-actions > .profile-dropdown { right: auto; }
     }
 
     @media (min-width: 768px) and (max-width: 991px) {
         .header-actions {
-            grid-template-columns: repeat(6, 32px);
-            margin-right: 72px;
-            gap: 8px;
+            grid-template-columns: none;
+            margin-right: 0;
+            gap: clamp(8px, 1.4vw, 16px);
         }
 
         .header-actions > .mobile-branch-dropdown,
@@ -1733,15 +1732,15 @@
 
     @media (max-width: 430px) {
         .header { gap: 3px; }
-        .header { grid-template-columns: 32px minmax(0, 1fr) auto; }
+        .header { grid-template-columns: 32px auto minmax(0, 1fr); }
         .header-logo { gap: 3px; }
         .spb-wordmark { font-size: 0.78rem; }
         .header-actions {
-            grid-template-columns: repeat(3, 28px);
-            gap: 7px;
-            margin-right: 42px;
+            grid-template-columns: none;
+            gap: clamp(6px, 1.6vw, 9px);
+            margin-right: 0;
         }
-        .header-actions > .profile-dropdown { right: 7px; }
+        .header-actions > .profile-dropdown { right: auto; }
         .header-actions .country-selector,
         .header-actions #headerChatIndicator,
         .header-actions .notification-bell {
@@ -1753,7 +1752,7 @@
 
     @media (max-width: 360px) {
         .spb-wordmark { font-size: 0.72rem; }
-        .header-actions > .profile-dropdown { right: 6px; }
+        .header-actions > .profile-dropdown { right: auto; }
     }
 
     @media (prefers-reduced-motion: reduce) {
