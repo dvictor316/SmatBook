@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+  <rect width="1200" height="675" fill="#f7f1ff"/>
+  <circle cx="1090" cy="560" r="230" fill="#e7d9ff"/>
+  <rect x="72" y="84" width="1056" height="507" rx="34" fill="#123b79"/>
+  <rect x="106" y="116" width="988" height="443" rx="22" fill="#fff"/>
+  <text x="150" y="190" font-family="Arial,sans-serif" font-size="30" font-weight="bold" fill="#123b79">SELL BEYOND THE COUNTER</text>
+  <text x="150" y="234" font-family="Arial,sans-serif" font-size="20" fill="#526987">Bring your catalogue and online orders together</text>
+  <rect x="185" y="282" width="470" height="238" rx="18" fill="#e9f1fb"/>
+  <rect x="210" y="305" width="420" height="44" rx="8" fill="#123b79"/>
+  <path d="M233 320h180" stroke="#fff" stroke-width="10" stroke-linecap="round"/>
+  <rect x="229" y="371" width="105" height="112" rx="9" fill="#8bbaf0"/><rect x="367" y="371" width="105" height="112" rx="9" fill="#f4c66e"/><rect x="505" y="371" width="105" height="112" rx="9" fill="#a9dacc"/>
+  <rect x="776" y="304" width="166" height="198" rx="23" fill="#6b4bb8"/><rect x="790" y="320" width="138" height="165" rx="14" fill="#f8f6ff"/>
+  <path d="M820 370h80l-8 43h-60zM838 370l6-15h31l6 15" fill="none" stroke="#6b4bb8" stroke-width="8" stroke-linejoin="round"/>
+  <circle cx="845" cy="430" r="6" fill="#6b4bb8"/><circle cx="880" cy="430" r="6" fill="#6b4bb8"/>
+</svg>

@@ -6,7 +6,10 @@
     .blog-article h1 { font-size: clamp(2rem, 5vw, 3rem); margin: 14px 0; overflow-wrap: anywhere; }
     .blog-article .blog-meta { color: #52637d; }
     .blog-article .blog-cover { width: 100%; max-height: 480px; object-fit: cover; border-radius: 14px; margin: 24px 0; }
-    .blog-article .blog-content, .blog-article .comment-body { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .blog-article .blog-content, .blog-article .comment-body { overflow-wrap: anywhere; }
+    .blog-article .blog-content-text, .blog-article .comment-body { white-space: pre-wrap; }
+    .blog-article .blog-content table { max-width: 100%; }
+    .blog-article .blog-content { overflow-x: auto; }
     .blog-article .blog-content { line-height: 1.8; margin: 30px 0; }
     .blog-comments { border-top: 1px solid #dbe3ee; padding-top: 28px; }
     .blog-comment { border-bottom: 1px solid #e2e8f0; padding: 16px 0; }
@@ -23,7 +26,7 @@
     @if($post->cover_path)
         <img class="blog-cover" src="{{ route('media.public', ['path' => $post->cover_path]) }}" alt="">
     @endif
-    <div class="blog-content">{{ $post->content }}</div>
+    <div class="blog-content {{ $post->content_format === 'html' ? '' : 'blog-content-text' }}">@if($post->content_format === 'html'){!! app(\App\Support\BlogHtml::class)->clean($post->content) !!}@else{{ $post->content }}@endif</div>
     <section class="blog-comments">
         <h2>Comments</h2>
         @forelse($comments as $comment)

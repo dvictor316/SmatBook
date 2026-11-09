@@ -21,6 +21,18 @@ Laravel is a web application framework with expressive, elegant syntax. We belie
 
 Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
+## SmartProbook blog
+
+Super admins can create and edit blog posts using the rich-text editor. Existing plain-text articles remain plain text until edited, and formatted articles are sanitized before saving and display. The cover image field supplies the article's main image.
+
+After running migrations, the optional starter-post seeder creates four illustrated drafts for review:
+
+```bash
+php artisan db:seed --class=BlogStarterPostsSeeder --force
+```
+
+The public storage disk must be writable. The seeder skips existing starter slugs without overwriting posts or covers; super admins can edit and publish the drafts from Blog Posts & Comments.
+
 ## Learning Laravel
 
 Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.

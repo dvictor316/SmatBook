@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class BlogPost extends Model
 {
-    protected $fillable = ['author_id', 'title', 'slug', 'category', 'summary', 'content', 'cover_path', 'status', 'published_at', 'meta_title', 'meta_description', 'meta_keywords'];
+    protected $fillable = ['author_id', 'title', 'slug', 'category', 'summary', 'content', 'content_format', 'cover_path', 'status', 'published_at', 'meta_title', 'meta_description', 'meta_keywords'];
 
     protected $casts = ['published_at' => 'datetime'];
 

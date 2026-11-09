@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+  <rect width="1200" height="675" fill="#eef5ff"/>
+  <circle cx="1020" cy="90" r="220" fill="#dbeafe"/>
+  <rect x="72" y="84" width="1056" height="507" rx="34" fill="#123b79"/>
+  <rect x="106" y="116" width="988" height="443" rx="22" fill="#fff"/>
+  <text x="150" y="190" font-family="Arial,sans-serif" font-size="30" font-weight="bold" fill="#123b79">SMARTER STOCK CONTROL</text>
+  <text x="150" y="234" font-family="Arial,sans-serif" font-size="20" fill="#526987">Know what is on hand and what needs attention</text>
+  <rect x="150" y="282" width="424" height="220" rx="18" fill="#eff6ff"/>
+  <path d="M209 369l75-40 75 40v84l-75 40-75-40z" fill="#f3b34a"/>
+  <path d="M209 369l75 40 75-40M284 409v84" fill="none" stroke="#ad7120" stroke-width="5"/>
+  <path d="M358 350l65-34 65 34v72l-65 34-65-34z" fill="#7ab5f4"/>
+  <path d="M358 350l65 34 65-34M423 384v72" fill="none" stroke="#397cc0" stroke-width="5"/>
+  <rect x="624" y="282" width="402" height="58" rx="12" fill="#edf3fb"/><rect x="650" y="299" width="135" height="13" rx="6" fill="#90a6c4"/><rect x="907" y="296" width="85" height="20" rx="10" fill="#66c9ac"/>
+  <rect x="624" y="357" width="402" height="58" rx="12" fill="#edf3fb"/><rect x="650" y="374" width="170" height="13" rx="6" fill="#90a6c4"/><rect x="907" y="371" width="85" height="20" rx="10" fill="#f1bd61"/>
+  <rect x="624" y="432" width="402" height="58" rx="12" fill="#edf3fb"/><rect x="650" y="449" width="151" height="13" rx="6" fill="#90a6c4"/><rect x="907" y="446" width="85" height="20" rx="10" fill="#66c9ac"/>
+</svg>

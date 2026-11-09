@@ -1,6 +1,9 @@
 @extends('layout.mainlayout')
 
 @section('title', $post->exists ? 'Edit Blog Post' : 'New Blog Post')
+@section('style')
+<link rel="stylesheet" href="{{ asset('assets/plugins/summernote/summernote-lite.min.css') }}">
+@endsection
 @section('content')
 <style>
     .blog-editor-form .form-control, .blog-editor-form .form-select, .blog-editor-form .form-check-input { border: 2px solid #8295ad; }
@@ -25,7 +28,12 @@
             <div class="mb-3"><label class="form-label" for="slug">URL slug (optional)</label><input class="form-control" id="slug" name="slug" maxlength="200" value="{{ old('slug', $post->slug) }}" pattern="[a-z0-9]+(-[a-z0-9]+)*"><div class="form-text">Use lowercase letters, numbers and hyphens. Leave blank to generate a slug for a new post. Changing an existing slug changes its link.</div></div>
             <div class="mb-3"><label class="form-label" for="category">Category</label><input class="form-control" id="category" name="category" maxlength="100" value="{{ old('category', $post->category) }}" required></div>
             <div class="mb-3"><label class="form-label" for="summary">Summary</label><textarea class="form-control" id="summary" name="summary" maxlength="500" rows="3" required>{{ old('summary', $post->summary) }}</textarea></div>
-            <div class="mb-3"><label class="form-label" for="content">Article content (plain text)</label><textarea class="form-control" id="content" name="content" maxlength="100000" rows="14" required>{{ old('content', $post->content) }}</textarea></div>
+            <div class="mb-3"><label class="form-label" for="content">Article content</label>
+                <input type="hidden" name="content_format" id="content-format" value="{{ old('content_format', $post->content_format ?? 'text') }}">
+                <textarea class="form-control" id="content" name="content" maxlength="100000" rows="14" required>{{ old('content', $post->content) }}</textarea>
+                <div class="form-text">Use the toolbar to format your article. Add the main image with the cover image field below.</div>
+                <div id="blog-editor-error" class="alert alert-warning mt-2" role="alert" hidden></div>
+            </div>
             <fieldset class="mb-3"><legend class="fs-5">Search and social sharing (optional)</legend>
                 <div class="mb-3"><label class="form-label" for="meta-title">Meta title</label><input class="form-control" id="meta-title" name="meta_title" maxlength="200" value="{{ old('meta_title', $post->meta_title) }}"><div class="form-text">Defaults to the article title.</div></div>
                 <div class="mb-3"><label class="form-label" for="meta-description">Meta description</label><textarea class="form-control" id="meta-description" name="meta_description" maxlength="500" rows="3">{{ old('meta_description', $post->meta_description) }}</textarea><div class="form-text">Defaults to the article summary.</div></div>
@@ -50,4 +58,9 @@
         @include('SuperAdmin.blog.posts-table')
     </section>
 </div></div>
+@endsection
+
+@section('script')
+<script src="{{ asset('assets/plugins/summernote/summernote-lite.min.js') }}"></script>
+<script src="{{ asset('assets/js/blog-editor.js') }}?v={{ filemtime(public_path('assets/js/blog-editor.js')) }}"></script>
 @endsection

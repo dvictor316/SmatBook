@@ -5,12 +5,14 @@ namespace App\Http\Controllers\SuperAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\BlogComment;
 use App\Models\BlogPost;
+use App\Support\BlogHtml;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
 class BlogController extends Controller
@@ -117,12 +119,13 @@ class BlogController extends Controller
 
     private function validated(Request $request, ?BlogPost $post = null): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'title' => 'required|string|max:200',
             'slug' => ['nullable', 'string', 'max:200', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('blog_posts', 'slug')->ignore($post?->id)],
             'category' => 'required|string|max:100',
             'summary' => 'required|string|max:500',
             'content' => 'required|string|max:100000',
+            'content_format' => 'nullable|in:text,html',
             'status' => 'required|in:draft,published',
             'cover' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'remove_cover' => 'nullable|boolean',
@@ -130,6 +133,17 @@ class BlogController extends Controller
             'meta_description' => 'nullable|string|max:500',
             'meta_keywords' => 'nullable|string|max:500',
         ]);
+
+        $data['content_format'] = $data['content_format'] ?? $post?->content_format ?? 'text';
+        if ($data['content_format'] === 'html') {
+            $data['content'] = app(BlogHtml::class)->clean($data['content']);
+            $text = html_entity_decode(strip_tags($data['content']), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            if (preg_replace('/[\s\x{00a0}\x{200b}]+/u', '', $text) === '') {
+                throw ValidationException::withMessages(['content' => 'Article content cannot be empty.']);
+            }
+        }
+
+        return $data;
     }
 
     private function storeCover(Request $request): ?string

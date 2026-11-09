@@ -8,6 +8,7 @@ use App\Http\Middleware\VerifyTenantSession;
 use App\Models\BlogComment;
 use App\Models\BlogPost;
 use App\Models\User;
+use Database\Seeders\BlogStarterPostsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -262,5 +263,69 @@ class BlogWorkflowTest extends TestCase
             ->post(route('super_admin.blog.store'), ['title' => 'Bad', 'status' => 'published', 'cover' => UploadedFile::fake()->create('file.txt', 10)])
             ->assertSessionHasErrors(['category', 'summary', 'content', 'cover']);
         $this->assertDatabaseCount('blog_posts', 1);
+    }
+
+    public function test_formatted_content_is_sanitized_and_legacy_plain_text_is_preserved(): void
+    {
+        $admin = User::factory()->create(['role' => 'super_admin']);
+        $data = [
+            'title' => 'Formatted article', 'slug' => 'formatted-article', 'category' => 'News',
+            'summary' => 'Summary', 'status' => 'published', 'content_format' => 'html',
+            'content' => '<h2>Heading</h2><p style="text-align:center;color:#ff0000;font-size:18px"><strong>Bold</strong> <a href="https://example.com">safe link</a> <a href="javascript:alert(1)" onclick="alert(2)">link</a></p><table><tr><td>Cell</td></tr></table><script>alert(3)</script>',
+        ];
+        $this->actingAs($admin)->post(route('super_admin.blog.store'), $data)->assertRedirect();
+        $post = BlogPost::where('slug', 'formatted-article')->firstOrFail();
+        $this->assertSame('html', $post->content_format);
+        $this->assertStringContainsString('<strong>Bold</strong>', $post->content);
+        $this->assertStringContainsString('text-align:center', $post->content);
+        $this->assertStringContainsString('font-size:18px', $post->content);
+        $this->assertStringContainsString('href="https://example.com"', $post->content);
+        $this->assertStringContainsString('<table>', $post->content);
+        $this->assertStringNotContainsString('javascript:', $post->content);
+        $this->assertStringNotContainsString('onclick', $post->content);
+        $this->assertStringNotContainsString('<script>', $post->content);
+        $this->get(route('blog.show', $post->slug))->assertOk()
+            ->assertSee('<h2>Heading</h2>', false)->assertSee('<strong>Bold</strong>', false)
+            ->assertDontSee('javascript:alert(1)', false);
+        $this->get(route('super_admin.blog.edit', $post))->assertOk()
+            ->assertSee('summernote-lite.min.js')->assertSee('blog-editor.js');
+
+        $data['content'] = '<p>&nbsp;</p><script>alert(1)</script>';
+        $this->put(route('super_admin.blog.update', $post), $data)->assertSessionHasErrors('content');
+        $this->assertStringContainsString('<strong>Bold</strong>', $post->fresh()->content);
+
+        $legacy = BlogPost::create([
+            'title' => 'Legacy', 'slug' => 'legacy-text', 'category' => 'News',
+            'summary' => 'Summary', 'content' => "<strong>Literal</strong>\nSecond line",
+            'status' => 'published', 'published_at' => now(),
+        ]);
+        $this->get(route('blog.show', $legacy->slug))->assertOk()
+            ->assertSee('&lt;strong&gt;Literal&lt;/strong&gt;', false)->assertDontSee('<strong>Literal</strong>', false)
+            ->assertSee('Second line');
+
+        $post->update(['content' => '<p>Safe</p><img src=x onerror=alert(9)>']);
+        $this->get(route('blog.show', $post->slug))->assertOk()->assertDontSee('onerror=alert(9)', false);
+    }
+
+    public function test_starter_articles_are_drafts_with_covers_and_seeding_never_overwrites_edits(): void
+    {
+        $this->seed(BlogStarterPostsSeeder::class);
+        $this->assertDatabaseCount('blog_posts', 4);
+        foreach (BlogPost::all() as $post) {
+            $this->assertSame('draft', $post->status);
+            $this->assertSame('html', $post->content_format);
+            $this->assertNull($post->published_at);
+            Storage::disk('public')->assertExists($post->cover_path);
+            $this->assertStringContainsString('<svg', Storage::disk('public')->get($post->cover_path));
+            $this->get(route('media.public', ['path' => $post->cover_path]))->assertOk();
+            $this->get(route('blog.show', $post->slug))->assertNotFound();
+        }
+        $post = BlogPost::firstOrFail();
+        $cover = $post->cover_path;
+        $post->update(['title' => 'Edited by an administrator']);
+        $this->seed(BlogStarterPostsSeeder::class);
+        $this->assertDatabaseCount('blog_posts', 4);
+        $this->assertSame('Edited by an administrator', $post->fresh()->title);
+        $this->assertSame($cover, $post->fresh()->cover_path);
     }
 }
