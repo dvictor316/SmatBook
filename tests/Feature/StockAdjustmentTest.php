@@ -160,6 +160,7 @@ class StockAdjustmentTest extends TestCase
             ->get(route('inventory.history', $product->id))
             ->assertOk();
         $historyResponse->assertSee('Quantity (transaction unit)')
+            ->assertSee('Stock change (pcs)')
             ->assertSee('+1,000')
             ->assertSee('carton');
         $historyResponse->assertViewHas('inventoryHistories', function ($histories) {

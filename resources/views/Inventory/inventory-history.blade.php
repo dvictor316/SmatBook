@@ -127,6 +127,7 @@
                                     <th class="text-center">Type</th>
                                     <th>Reference</th>
                                     <th class="text-end">Quantity (transaction unit)</th>
+                                    <th class="text-end">Stock change ({{ $stockUnitLabel }})</th>
                                     <th class="text-end">Balance After Movement ({{ $stockUnitLabel }})</th>
                                     <th class="text-end">Estimated Value at Current Cost</th>
                                 </tr>
@@ -163,6 +164,18 @@
                                                 <span class="text-muted text-uppercase ms-1">{{ $history->display_unit_label ?? $stockUnitLabel }}</span>
                                             @endif
                                         </td>
+                                        <td class="text-end fw-semibold {{ $isStockIn ? 'text-success' : ($isStockOut ? 'text-danger' : 'text-muted') }}">
+                                            @php
+                                                $stockChange = (float) ($history->quantity ?? 0);
+                                                $stockChangeDisplay = \App\Support\CompactNumber::format($stockChange, 2);
+                                            @endphp
+                                            @if(abs($stockChange) < 0.000001)
+                                                No quantity change
+                                            @else
+                                                {{ $isStockIn ? '+' : ($isStockOut ? '-' : '') }}{{ $stockChangeDisplay }}
+                                                <span class="text-muted text-uppercase ms-1">{{ $stockUnitLabel }}</span>
+                                            @endif
+                                        </td>
                                         <td class="text-end fw-semibold {{ $currentStock >= 0 ? 'text-primary' : 'text-danger' }}">
                                             {{ \App\Support\CompactNumber::format((float) ($history->running_balance ?? 0), 2) }} {{ $stockUnitLabel }}
                                         </td>
@@ -172,7 +185,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="9" class="text-center p-5 text-muted">
+                                        <td colspan="10" class="text-center p-5 text-muted">
                                             No movement history found for this item.
                                         </td>
                                     </tr>
