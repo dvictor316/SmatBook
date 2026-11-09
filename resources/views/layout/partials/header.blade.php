@@ -721,7 +721,7 @@
     .header-actions > * {
         flex-shrink: 0;
     }
-    .header-actions > .dropdown:last-child {
+    .header-actions > .dropdown:last-child:not(.profile-dropdown) {
         min-width: 0;
         flex: 0 0 clamp(138px, 11vw, 180px);
         margin-left: 0;
@@ -1039,7 +1039,7 @@
             margin-right: 0;
         }
 
-        .header-actions > .dropdown:last-child {
+        .header-actions > .dropdown:last-child:not(.profile-dropdown) {
             min-width: 0;
             flex: 0 0 clamp(138px, 11vw, 180px);
             max-width: clamp(138px, 11vw, 180px);
@@ -1795,6 +1795,52 @@
             width: 32px;
             height: 32px;
             min-width: 32px;
+        }
+    }
+
+    @media (min-width: 600px) and (max-width: 767px) {
+        .header-search-container {
+            display: flex !important;
+            order: 3;
+            flex: 1 1 130px;
+            min-width: 100px;
+            max-width: none;
+            margin: 0;
+        }
+        .header-search,
+        .header-search input {
+            min-width: 0;
+            max-width: none;
+        }
+        .header-search input {
+            height: 38px;
+            padding: 8px 34px 8px 12px;
+            font-size: 12px;
+        }
+        .header-actions {
+            flex: 0 0 auto;
+            width: auto;
+            min-width: 0;
+            margin: 0 0 0 auto;
+            gap: 4px;
+        }
+        .header-actions > .mobile-search-btn {
+            display: none !important;
+        }
+        .header-actions > .mobile-country-dropdown,
+        .header-actions > .mobile-branch-dropdown,
+        .header-actions > #headerMailIndicator {
+            display: flex !important;
+        }
+        .header-actions .branch-pill-mobile,
+        .header-actions #headerMailIndicator {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            min-width: 30px;
+            padding: 0;
         }
     }
 

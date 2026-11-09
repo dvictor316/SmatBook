@@ -27,7 +27,7 @@ const publicDir = path.resolve(__dirname, '../../public');
   const page=await context.newPage(); page.setDefaultTimeout(4000); page.setDefaultNavigationTimeout(30000);
   const errors=[]; page.on('pageerror', e=>errors.push(e.message));
   await page.goto('http://localhost'+url,{waitUntil:'load'});
-  for(const width of [320,360,390,600,768,800,820,991,992,1024,1180,1199,1200,1280,1440,1920]) {
+  for(const width of [320,360,390,599,600,750,768,800,820,991,992,1024,1180,1199,1200,1280,1440,1920]) {
    try {
     await page.setViewportSize({width,height:1024});
     await page.waitForTimeout(80); await page.keyboard.press('Escape');
@@ -43,16 +43,20 @@ const publicDir = path.resolve(__dirname, '../../public');
      const brandRect = await brand.boundingBox();
      const brandOverflow = await brand.evaluate(element => element.scrollWidth - element.clientWidth);
      const actionsRect = await page.locator('.header-actions').boundingBox();
+     const profileRect = await page.locator('.profile-dropdown').boundingBox();
      assert(brandRect.x + brandRect.width <= actionsRect.x + 1, `${name} ${width}: brand overlaps navbar actions`);
      assert(brandOverflow <= 1, `${name} ${width}: brand is clipped`);
+     assert(headerRect.x + headerRect.width - profileRect.x - profileRect.width <= 32, `${name} ${width}: profile is not aligned to the navbar's right edge`);
      const inlineSearch = page.locator('.header-search-container');
      const mobileSearch = page.locator('#mobileSearchToggle');
-     if (width >= 768 && width < 1200) {
+     if (width >= 600 && width < 1200) {
       assert(await inlineSearch.isVisible(), `${name} ${width}: tablet search is not in the navbar`);
       assert(!(await mobileSearch.isVisible()), `${name} ${width}: duplicate mobile search button is visible`);
       const searchRect = await inlineSearch.boundingBox();
+      assert(brandRect.x + brandRect.width <= searchRect.x, `${name} ${width}: search overlaps the brand`);
       assert(searchRect.x >= headerRect.x && searchRect.x + searchRect.width <= actionsRect.x, `${name} ${width}: inline search is outside the navbar or overlaps actions`);
-     } else if (width < 768) {
+      assert(actionsRect.x - searchRect.x - searchRect.width >= 4, `${name} ${width}: search and menu controls have no visual separation`);
+     } else if (width < 600) {
       assert(await mobileSearch.isVisible(), `${name} ${width}: mobile search button is missing from the navbar`);
       const searchRect = await mobileSearch.boundingBox();
       assert(searchRect.x >= headerRect.x && searchRect.x + searchRect.width <= headerRect.x + headerRect.width, `${name} ${width}: mobile search button is outside the navbar`);
@@ -109,7 +113,7 @@ const publicDir = path.resolve(__dirname, '../../public');
     checks.push(`${name} ${width}`);
    }catch(e){failures.push(`${name} ${width}: ${e.message}`);}
   }
-  await page.setViewportSize({width:800,height:1024});
+  await page.setViewportSize({width:750,height:1024});
   await page.screenshot({path:path.join(fixtureDir, `${name}-tablet.png`),fullPage:false});
   await page.setViewportSize({width:390,height:844});
   await page.screenshot({path:path.join(fixtureDir, `${name}-phone.png`),fullPage:false});
