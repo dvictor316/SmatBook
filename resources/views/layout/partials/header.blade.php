@@ -2551,8 +2551,6 @@ document.addEventListener('DOMContentLoaded', function () {
         restoreSidebarScrollPosition();
     }
 
-    const overlay      = document.getElementById('sidebar-overlay');
-    const mobileBtn    = document.getElementById('mobile_btn');
     const desktopBtn   = document.getElementById('toggle_btn');
 
     /* ── Open sidebar on mobile ── */
@@ -2560,11 +2558,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const sb = getSidebar();
         if (!sb) return;
         sb.classList.add('mobile-open');
-        overlay?.classList.add('active');
+        document.getElementById('sidebar-overlay')?.classList.add('active');
         document.body.classList.add('sidebar-mobile-open');
         document.querySelector('.main-wrapper')?.classList.add('slide-nav');
         document.documentElement.classList.add('menu-opened');
         document.querySelector('.sidebar-overlay')?.classList.add('opened');
+        const mobileBtn = document.getElementById('mobile_btn');
         mobileBtn?.setAttribute('aria-expanded', 'true');
         mobileBtn?.setAttribute('aria-label', 'Close menu');
         // Animate hamburger → X
@@ -2576,36 +2575,63 @@ document.addEventListener('DOMContentLoaded', function () {
         const sb = getSidebar();
         if (!sb) return;
         sb.classList.remove('mobile-open');
-        overlay?.classList.remove('active');
+        document.getElementById('sidebar-overlay')?.classList.remove('active');
         document.body.classList.remove('sidebar-mobile-open');
         document.querySelector('.main-wrapper')?.classList.remove('slide-nav');
         document.documentElement.classList.remove('menu-opened');
         document.querySelector('.sidebar-overlay')?.classList.remove('opened');
+        const mobileBtn = document.getElementById('mobile_btn');
         mobileBtn?.setAttribute('aria-expanded', 'false');
         mobileBtn?.setAttribute('aria-label', 'Open menu');
         mobileBtn?.classList.remove('is-open');
     }
 
-    /* ── Hamburger click ── */
-    if (mobileBtn) {
-        mobileBtn.dataset.sidebarManaged = 'true';
-        mobileBtn.addEventListener('click', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            const sb = getSidebar();
-            if (!sb) return;
-            if (sb.classList.contains('mobile-open')) {
-                closeMobileSidebar();
-            } else {
+    if (document.documentElement.dataset.sidebarControlsBound !== 'true') {
+        document.documentElement.dataset.sidebarControlsBound = 'true';
+
+        document.addEventListener('click', function (event) {
+            const target = event.target instanceof Element ? event.target : null;
+            target?.closest('#mobile_btn, #toggle_btn')?.setAttribute('data-sidebar-managed', 'true');
+        }, true);
+
+        document.addEventListener('click', function (event) {
+            const target = event.target instanceof Element ? event.target : null;
+            const mobileBtn = target?.closest('#mobile_btn');
+            const desktopBtn = target?.closest('#toggle_btn');
+            const button = mobileBtn || desktopBtn;
+            if (!button) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+
+            if (mobileBtn) {
+                const sidebar = getSidebar();
+                if (!sidebar) return;
+                sidebar.classList.contains('mobile-open') ? closeMobileSidebar() : openMobileSidebar();
+                return;
+            }
+
+            if (compactSidebar.matches) {
                 openMobileSidebar();
+                return;
+            }
+
+            const isCollapsed = document.body.classList.contains('sidebar-collapsed');
+            if (isCollapsed) {
+                document.body.classList.remove('sidebar-collapsed', 'mini-sidebar', 'sidebar-icon-only', 'expand-menu');
+                writePreference('sidebarCollapsed', 'false');
+            } else {
+                document.body.classList.add('sidebar-collapsed');
+                document.body.classList.remove('mini-sidebar', 'sidebar-icon-only', 'expand-menu');
+                writePreference('sidebarCollapsed', 'true');
             }
         });
-    }
 
-    /* ── Overlay click → close ── */
-    if (overlay) {
-        overlay.addEventListener('click', closeMobileSidebar);
+        document.addEventListener('click', function (event) {
+            const target = event.target instanceof Element ? event.target : null;
+            if (target?.closest('#sidebar-overlay')) closeMobileSidebar();
+        });
     }
 
     /* ── Close on ESC ── */
@@ -2631,30 +2657,6 @@ document.addEventListener('DOMContentLoaded', function () {
        DESKTOP SIDEBAR COLLAPSE TOGGLE
        ════════════════════════════════════════════ */
     if (desktopBtn) {
-        desktopBtn.dataset.sidebarManaged = 'true';
-        desktopBtn.addEventListener('click', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (typeof e.stopImmediatePropagation === 'function') {
-                e.stopImmediatePropagation();
-            }
-            if (compactSidebar.matches) {
-                openMobileSidebar();
-                return;
-            }
-            const isCollapsed = document.body.classList.contains('sidebar-collapsed');
-            if (isCollapsed) {
-                document.body.classList.remove('sidebar-collapsed', 'mini-sidebar', 'sidebar-icon-only');
-                document.body.classList.remove('expand-menu');
-                writePreference('sidebarCollapsed', 'false');
-            } else {
-                document.body.classList.add('sidebar-collapsed');
-                document.body.classList.remove('mini-sidebar', 'sidebar-icon-only');
-                document.body.classList.remove('expand-menu');
-                writePreference('sidebarCollapsed', 'true');
-            }
-        });
-
         // Restore desktop collapsed state on load
         if (!compactSidebar.matches && readPreference('sidebarCollapsed') === 'true') {
             document.body.classList.add('sidebar-collapsed');
@@ -2692,6 +2694,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('click', function (e) {
         const sb = getSidebar();
         if (!sb || !sb.classList.contains('mobile-open')) return;
+        const mobileBtn = document.getElementById('mobile_btn');
         if (mobileBtn && (e.target === mobileBtn || mobileBtn.contains(e.target))) return;
         if (sb.contains(e.target)) return;
         closeMobileSidebar();

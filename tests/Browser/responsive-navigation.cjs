@@ -27,7 +27,7 @@ const publicDir = path.resolve(__dirname, '../../public');
   const page=await context.newPage(); page.setDefaultTimeout(4000); page.setDefaultNavigationTimeout(30000);
   const errors=[]; page.on('pageerror', e=>errors.push(e.message));
   await page.goto('http://localhost'+url,{waitUntil:'load'});
-  for(const width of [320,360,390,599,600,750,768,800,820,991,992,1024,1180,1199,1200,1280,1440,1920]) {
+  for(const width of [320,360,390,599,600,750,768,800,820,862,991,992,1024,1180,1199,1200,1280,1440,1920]) {
    try {
     await page.setViewportSize({width,height:1024});
     await page.waitForTimeout(80); await page.keyboard.press('Escape');
@@ -83,6 +83,11 @@ const publicDir = path.resolve(__dirname, '../../public');
       assert(!overlaps, `${name} ${width}: back button overlaps dashboard heading`);
      }
     }
+    if (name === 'dashboard' && width === 862) {
+     await page.setViewportSize({width:1280,height:1024});
+     await page.setViewportSize({width:862,height:1024});
+     await page.locator('#mobile_btn').evaluate(button => button.replaceWith(button.cloneNode(true)));
+    }
     if(name!=='pricing') {
      const toggle=page.locator(['dashboard','manager','dashboard-storage'].includes(name)?'#mobile_btn':'[data-public-menu-toggle]');
      if(width<1200) {
@@ -108,6 +113,17 @@ const publicDir = path.resolve(__dirname, '../../public');
        const after=await page.locator('body').evaluate(el=>el.classList.contains('sidebar-collapsed'));
        assert.notEqual(after,before,`${name} ${width}: desktop toggle failed`);
       }
+     }
+    }
+    if (name === 'dashboard' && width === 862) {
+     for (const selector of ['#geoCountryToggle', '#headerNotificationIndicator', '#headerProfileMenu']) {
+      const trigger = page.locator(selector);
+      const menu = trigger.locator('xpath=..').locator('.dropdown-menu');
+      assert(await trigger.isVisible(), `dashboard ${width}: ${selector} is not visible`);
+      await trigger.tap();
+      assert(await menu.isVisible(), `dashboard ${width}: ${selector} menu did not open`);
+      await trigger.tap();
+      assert(!(await menu.isVisible()), `dashboard ${width}: ${selector} menu did not close`);
      }
     }
     checks.push(`${name} ${width}`);

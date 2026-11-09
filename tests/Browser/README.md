@@ -13,7 +13,7 @@ PLAYWRIGHT_MODULE=/tmp/smat-browser-tests/node_modules/playwright node tests/Bro
 
 Set `CHROMIUM_EXECUTABLE` if using an existing Chromium binary. `RESPONSIVE_FIXTURES` overrides the default temporary fixture and screenshot directory.
 
-The matrix covers 320, 360, 390, 599, 600, 750, 768, 800, 820, 991, 992, 1024, 1180, 1199, 1200, 1280, 1440 and 1920 CSS pixels. It checks horizontal page overflow, touch opening/closing, menu position, Escape, height-only viewport changes, orientation/breakpoint transitions, desktop sidebar collapse, and denied localStorage access. Screenshots are saved for the 750px tablet and 390px phone layouts.
+The matrix covers 320, 360, 390, 599, 600, 750, 768, 800, 820, 862, 991, 992, 1024, 1180, 1199, 1200, 1280, 1440 and 1920 CSS pixels. It checks horizontal page overflow, touch opening/closing, menu position, Escape, height-only viewport changes, orientation/breakpoint transitions, desktop sidebar collapse, and denied localStorage access. The 862px check resizes down from desktop width, replaces the header control as during navigation, and verifies the navbar menus still work. Screenshots are saved for the 750px tablet and 390px phone layouts.
 
 Chromium touch emulation is a regression check, not a replacement for testing a physical Android tablet. After deployment, refresh the tablet browser and verify both the public menu and signed-in drawer in portrait and landscape.
 
