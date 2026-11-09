@@ -2,16 +2,23 @@
 
 @section('title', $post->exists ? 'Edit Blog Post' : 'New Blog Post')
 @section('content')
+<style>
+    .blog-editor-form .form-control, .blog-editor-form .form-select, .blog-editor-form .form-check-input { border: 2px solid #8295ad; }
+    .blog-editor-form .form-control:focus, .blog-editor-form .form-select:focus, .blog-editor-form .form-check-input:focus { border-color: #2563a6; }
+</style>
 <div class="page-wrapper"><div class="content container-fluid">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
         <h4 class="fw-bold mb-0">{{ $post->exists ? 'Edit Blog Post' : 'New Blog Post' }}</h4>
-        <a href="{{ route('super_admin.blog.index') }}" class="btn btn-outline-secondary">Back to posts</a>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="#manage-blog-posts" class="btn btn-outline-primary">Manage posts below</a>
+            <a href="{{ route('super_admin.blog.index') }}" class="btn btn-outline-secondary">All posts</a>
+        </div>
     </div>
     @if($errors->any())
         <div class="alert alert-danger" role="alert"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
     @endif
     <div class="card"><div class="card-body">
-        <form method="POST" enctype="multipart/form-data" action="{{ $post->exists ? route('super_admin.blog.update', $post) : route('super_admin.blog.store') }}">
+        <form class="blog-editor-form" method="POST" enctype="multipart/form-data" action="{{ $post->exists ? route('super_admin.blog.update', $post) : route('super_admin.blog.store') }}">
             @csrf
             @if($post->exists) @method('PUT') @endif
             <div class="mb-3"><label class="form-label" for="title">Title</label><input class="form-control" id="title" name="title" maxlength="200" value="{{ old('title', $post->title) }}" required></div>
@@ -34,5 +41,13 @@
             <button class="btn btn-primary" type="submit">Save post</button>
         </form>
     </div></div>
+    <section id="manage-blog-posts" aria-labelledby="manage-blog-posts-heading">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <h4 class="fw-bold mb-0" id="manage-blog-posts-heading">Manage Blog Posts</h4>
+            <a href="{{ route('super_admin.blog.index') }}" class="btn btn-outline-secondary">View all posts</a>
+        </div>
+        <p class="text-muted">Save your changes before opening another post or page.</p>
+        @include('SuperAdmin.blog.posts-table')
+    </section>
 </div></div>
 @endsection

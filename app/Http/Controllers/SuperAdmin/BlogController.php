@@ -5,6 +5,7 @@ namespace App\Http\Controllers\SuperAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\BlogComment;
 use App\Models\BlogPost;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -16,13 +17,13 @@ class BlogController extends Controller
 {
     public function index()
     {
-        $posts = BlogPost::withCount('comments')->latest()->orderByDesc('id')->paginate(20);
+        $posts = $this->postsForManagement();
         return view('SuperAdmin.blog.index', compact('posts'));
     }
 
     public function create()
     {
-        return view('SuperAdmin.blog.form', ['post' => new BlogPost()]);
+        return view('SuperAdmin.blog.form', ['post' => new BlogPost(), 'posts' => $this->postsForManagement()]);
     }
 
     public function store(Request $request)
@@ -46,7 +47,7 @@ class BlogController extends Controller
 
     public function edit(BlogPost $post)
     {
-        return view('SuperAdmin.blog.form', compact('post'));
+        return view('SuperAdmin.blog.form', ['post' => $post, 'posts' => $this->postsForManagement()]);
     }
 
     public function update(Request $request, BlogPost $post)
@@ -106,6 +107,12 @@ class BlogController extends Controller
         $comment->delete();
 
         return back()->with('success', 'Comment deleted.');
+    }
+
+    private function postsForManagement(): LengthAwarePaginator
+    {
+        return BlogPost::withCount('comments')->latest()->orderByDesc('id')->paginate(20)
+            ->withPath(route('super_admin.blog.index'));
     }
 
     private function validated(Request $request, ?BlogPost $post = null): array

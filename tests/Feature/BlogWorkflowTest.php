@@ -40,7 +40,15 @@ class BlogWorkflowTest extends TestCase
         Storage::disk('public')->assertExists($post->cover_path);
         $this->get(route('super_admin.blog.index'))->assertOk()->assertSee('Managing stock');
         $this->get(route('super_admin.blog.index'))->assertSee('Blog Posts &amp; Comments', false);
-        $this->get(route('super_admin.blog.edit', $post))->assertOk()->assertSee('First line');
+        foreach (['super_admin.blog.create', 'super_admin.blog.edit'] as $name) {
+            $parameters = $name === 'super_admin.blog.edit' ? [$post] : [];
+            $this->get(route($name, $parameters))->assertOk()
+                ->assertSee('Manage Blog Posts')->assertSee('Managing stock')
+                ->assertSee(route('super_admin.blog.edit', $post))
+                ->assertSee(route('super_admin.blog.destroy', $post))
+                ->assertSee('border: 2px solid #8295ad', false);
+        }
+        $this->get(route('super_admin.blog.edit', $post))->assertSee('First line');
         $this->getJson(route('blog.show', $post->slug))->assertNotFound();
 
         unset($data['cover']);
@@ -112,6 +120,8 @@ class BlogWorkflowTest extends TestCase
 
         $this->actingAs(User::factory()->create(['role' => 'super_admin']));
         $this->get(route('super_admin.blog.index'))->assertOk()->assertSee('page=2')->assertDontSee('Rows per page');
+        $this->get(route('super_admin.blog.create'))->assertOk()
+            ->assertSee(route('super_admin.blog.index', ['page' => 2]), false);
         $this->get(route('super_admin.blog.comments.index'))->assertOk()->assertSee('page=2')->assertDontSee('Rows per page');
     }
 
@@ -223,6 +233,8 @@ class BlogWorkflowTest extends TestCase
         $this->get(route('super_admin.blog.index'))->assertRedirect();
         $this->actingAs(User::factory()->create(['role' => 'admin']));
         $this->getJson(route('super_admin.blog.index'))->assertForbidden();
+        $this->getJson(route('super_admin.blog.create'))->assertForbidden();
+        $this->getJson(route('super_admin.blog.edit', $post))->assertForbidden();
         $this->postJson(route('super_admin.blog.store'), [])->assertForbidden();
         $this->putJson(route('super_admin.blog.update', $post), [])->assertForbidden();
         $this->deleteJson(route('super_admin.blog.destroy', $post))->assertForbidden();

@@ -9,6 +9,7 @@
     .blog-page h1 { font-size: clamp(2rem, 5vw, 3rem); margin-bottom: 12px; }
     .blog-filters { display: flex; flex-wrap: wrap; gap: 10px; margin: 28px 0; }
     .blog-filters input, .blog-filters select, .blog-filters button { padding: 11px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; }
+    .blog-filters input, .blog-filters select { border: 2px solid #8295ad; }
     .blog-filters input { flex: 1 1 220px; min-width: 0; }
     .blog-filters button { background: #123b79; color: white; cursor: pointer; }
     .blog-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: 20px; }

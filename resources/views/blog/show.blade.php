@@ -12,7 +12,7 @@
     .blog-comment { border-bottom: 1px solid #e2e8f0; padding: 16px 0; }
     .blog-reply { margin: 14px 0 0 20px; padding: 12px 0 0 16px; border-left: 2px solid #dbe3ee; }
     .blog-comment-form { display: grid; gap: 10px; margin-top: 25px; }
-    .blog-comment-form input, .blog-comment-form textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; }
+    .blog-comment-form input, .blog-comment-form textarea { width: 100%; border: 2px solid #8295ad; border-radius: 8px; padding: 10px; }
     .blog-comment-form button { justify-self: start; border: 0; border-radius: 8px; background: #123b79; color: white; padding: 11px 18px; cursor: pointer; }
 </style>
 <article class="blog-article">
