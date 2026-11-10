@@ -255,7 +255,7 @@
                         <p>Let us know how to reach you and where to send your order.</p>
                     </div>
                     <div class="checkout-fields">
-                        <label class="checkout-field">Full Name <span class="text-muted fw-normal">(optional)</span><input class="form-control" name="customer_name" value="{{ old('customer_name') }}" autocomplete="name"></label>
+                        <label class="checkout-field">Full Name<input class="form-control" name="customer_name" value="{{ old('customer_name') }}" placeholder="Enter full name (optional)" autocomplete="name"></label>
                         <label class="checkout-field">Phone *<input class="form-control" name="customer_phone" value="{{ old('customer_phone') }}" type="tel" autocomplete="tel" required></label>
                         <label class="checkout-field">Payment / Collection<select class="form-select" name="payment_method"><option value="pay_on_delivery" @selected(old('payment_method', 'pay_on_delivery') === 'pay_on_delivery')>Pay on delivery</option><option value="bank_transfer" @selected(old('payment_method') === 'bank_transfer')>Bank transfer after confirmation</option><option value="pickup" @selected(old('payment_method') === 'pickup')>Pay on pickup</option></select></label>
                         <label class="checkout-field checkout-field--wide">Delivery Address<textarea class="form-control" name="delivery_address" rows="3" autocomplete="street-address">{{ old('delivery_address') }}</textarea></label>

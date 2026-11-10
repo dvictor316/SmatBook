@@ -204,6 +204,7 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertDontSee('SKU:')
             ->assertSee('product-options-row', false)
             ->assertSee('data-product-meta="size"', false)
+            ->assertSee('placeholder="Enter full name (optional)"', false)
             ->assertSee('Phone *')
             ->assertDontSee('name="customer_email"', false)
             ->assertDontSee('Email purchase request')
