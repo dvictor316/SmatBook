@@ -76,10 +76,11 @@
         .small-media{height:230px}
         .small-card-body{padding:19px}
         .small-card h3{font-size:1.3rem}
-        .store-category-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
-        .store-category-link{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;background:#fff;border:1px solid var(--line);color:var(--navy);font-weight:800;text-decoration:none;transition:transform .2s ease,border-color .2s ease}
-        .store-category-link:hover{transform:translateY(-3px);border-color:var(--gold);color:var(--navy)}
-        .store-category-count{color:var(--muted);font-size:.78rem;font-weight:600;white-space:nowrap}
+        .store-category-section{padding-top:30px;padding-bottom:30px}
+        .store-category-form{display:flex;align-items:center;gap:10px;max-width:560px;padding:14px;background:#fff;border:1px solid var(--line)}
+        .store-category-form select{flex:1;min-width:0;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:4px;background:#fff;color:var(--ink);font:inherit}
+        .store-category-form button{min-height:44px;padding:0 18px;border:0;border-radius:4px;background:var(--navy);color:#fff;font:inherit;font-weight:800;cursor:pointer}
+        .store-category-form button:hover{background:var(--red)}
         .collection-cta{margin:10px 26px 80px;padding:50px 28px;text-align:center;background:linear-gradient(110deg,var(--navy),#0b3979);color:#fff}
         .collection-cta h2{margin:0 0 11px;font-family:Georgia,"Times New Roman",serif;font-size:clamp(1.8rem,4vw,3rem);font-weight:500}
         .collection-cta p{margin:0 0 23px;color:#d5dfed}
@@ -157,18 +158,20 @@
 </header>
 
 @if($categories->isNotEmpty())
-    <section class="section" id="store-categories" aria-labelledby="store-categories-title">
+    <section class="section store-category-section" id="store-categories" aria-labelledby="store-categories-title">
         <div class="section-heading">
-            <div><p class="eyebrow">Find your fit</p><h2 id="store-categories-title">Shop by category</h2><p>Choose a category to see the products in it.</p></div>
+            <div><p class="eyebrow">Find your fit</p><h2 id="store-categories-title">Shop by category</h2></div>
         </div>
-        <div class="store-category-grid">
-            @foreach($categories as $category)
-                <a class="store-category-link" href="{{ $galleryUrl }}?category_id={{ $category->id }}">
-                    <span>{{ $category->name }}</span>
-                    <span class="store-category-count">{{ $category->products_count }} {{ \Illuminate\Support\Str::plural('item', (int) $category->products_count) }} &rarr;</span>
-                </a>
-            @endforeach
-        </div>
+        <form class="store-category-form" action="{{ $galleryUrl }}" method="GET">
+            <label class="visually-hidden" for="home-store-category">Choose a category</label>
+            <select id="home-store-category" name="category_id" required>
+                <option value="" selected disabled>Choose a category</option>
+                @foreach($categories as $category)
+                    <option value="{{ $category->id }}">{{ $category->name }} ({{ $category->products_count }} {{ \Illuminate\Support\Str::plural('item', (int) $category->products_count) }})</option>
+                @endforeach
+            </select>
+            <button type="submit">Browse</button>
+        </form>
     </section>
 @endif
 

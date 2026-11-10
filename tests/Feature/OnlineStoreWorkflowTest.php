@@ -132,9 +132,13 @@ class OnlineStoreWorkflowTest extends TestCase
     {
         [$user, $company] = $this->workspace('Shoe Store');
         $sneakersCategoryId = $this->category($user->id, $company->id, 'Sneakers');
+        $duplicateSneakersCategoryId = $this->category($user->id, $company->id, 'sneakers');
         $sandalsCategoryId = $this->category($user->id, $company->id, 'Sandals');
-        $this->product($user->id, $company->id, $sneakersCategoryId, 'Everyday Sneaker', 'SHOE-001', 8, 25000);
+        $olderSneakerId = $this->product($user->id, $company->id, $sneakersCategoryId, 'Older Sneaker', 'SHOE-001', 8, 25000);
+        $newestSneakerId = $this->product($user->id, $company->id, $duplicateSneakersCategoryId, 'Newest Sneaker', 'SHOE-003', 6, 30000);
         $this->product($user->id, $company->id, $sandalsCategoryId, 'Leather Sandal', 'SHOE-002', 5, 18000);
+        DB::table('products')->where('id', $olderSneakerId)->update(['created_at' => now()->subDay()]);
+        DB::table('products')->where('id', $newestSneakerId)->update(['created_at' => now()]);
         StorefrontSetting::create([
             'company_id' => $company->id,
             'slug' => 'shoe-store',
@@ -147,13 +151,18 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertSee('Shop by category')
             ->assertSee('Sneakers')
             ->assertSee('Sandals')
-            ->assertSee(route('storefront.products', 'shoe-store') . '?category_id=' . $sneakersCategoryId, false);
+            ->assertSee('name="category_id"', false)
+            ->assertViewHas('categories', fn ($categories) => $categories->count() === 2);
 
         $this->get(route('storefront.products', 'shoe-store') . '?category_id=' . $sneakersCategoryId)
             ->assertOk()
-            ->assertSee('Everyday Sneaker')
+            ->assertSee('Newest Sneaker')
+            ->assertSee('Older Sneaker')
             ->assertDontSee('Leather Sandal')
-            ->assertSee('All categories');
+            ->assertSee('All categories')
+            ->assertViewHas('products', function ($products) use ($newestSneakerId) {
+                return (int) $products->first()->id === $newestSneakerId;
+            });
     }
 
     public function test_repeated_store_order_submission_creates_one_order_and_reserves_stock_once(): void

@@ -214,7 +214,8 @@ class OnlineStoreController extends Controller
         $products = Product::withoutGlobalScopes()
             ->where('company_id', $store->company_id)
             ->where('status', 'active')
-            ->orderBy('name')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->limit(40)
             ->get();
         $this->attachStoreStock($products, $store);
@@ -232,14 +233,13 @@ class OnlineStoreController extends Controller
         ]);
         $categories = $this->storeCategories((int) $store->company_id);
         $selectedCategoryId = isset($validated['category_id']) ? (int) $validated['category_id'] : null;
-        if ($selectedCategoryId !== null) {
-            abort_unless($categories->contains(fn ($category) => (int) $category->id === $selectedCategoryId), 404);
-        }
+        $selectedCategory = $categories->first(fn ($category) => (int) $category->id === $selectedCategoryId);
+        abort_if($selectedCategoryId !== null && !$selectedCategory, 404);
         $search = trim((string) $request->query('q'));
         $products = Product::withoutGlobalScopes()
             ->where('company_id', $store->company_id)
             ->where('status', 'active')
-            ->when($selectedCategoryId !== null, fn ($query) => $query->where('category_id', $selectedCategoryId))
+            ->when($selectedCategory, fn ($query) => $query->whereIn('category_id', $selectedCategory->category_ids))
             ->when($search !== '', fn ($query) => $query->where(function ($inner) use ($search) {
                 $inner->where('name', 'like', "%{$search}%")
                     ->orWhere('sku', 'like', "%{$search}%")
@@ -248,7 +248,8 @@ class OnlineStoreController extends Controller
                     ->orWhere('fashion_size', 'like', "%{$search}%")
                     ->orWhere('fashion_color', 'like', "%{$search}%");
             }))
-            ->orderBy('name')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $products->getCollection()->transform(function (Product $product) use ($store) {
             $product->setAttribute('storefront_available_stock', $this->availableStoreStock($product, $store));
@@ -257,8 +258,6 @@ class OnlineStoreController extends Controller
         });
 
         $orderToken = (string) Str::uuid();
-
-        $selectedCategory = $categories->first(fn ($category) => (int) $category->id === $selectedCategoryId);
 
         return view('storefront.catalogue', compact(
             'store',
@@ -283,11 +282,26 @@ class OnlineStoreController extends Controller
             ->join('products', 'products.category_id', '=', 'categories.id')
             ->where('products.company_id', $companyId)
             ->where('products.status', 'active')
+            ->whereNotNull('categories.name')
+            ->where('categories.name', '<>', '')
             ->select('categories.id', 'categories.name')
             ->selectRaw('COUNT(DISTINCT products.id) as products_count')
             ->groupBy('categories.id', 'categories.name')
             ->orderBy('categories.name')
-            ->get();
+            ->get()
+            ->groupBy(fn ($category) => mb_strtolower(trim((string) $category->name)))
+            ->map(function (Collection $matches) {
+                $first = $matches->first();
+
+                return (object) [
+                    'id' => (int) $matches->min('id'),
+                    'name' => trim((string) $first->name),
+                    'category_ids' => $matches->pluck('id')->map(fn ($id) => (int) $id)->all(),
+                    'products_count' => (int) $matches->sum('products_count'),
+                ];
+            })
+            ->sortBy(fn ($category) => mb_strtolower($category->name))
+            ->values();
     }
 
     public function about(Request $request, ?string $slug = null): View
