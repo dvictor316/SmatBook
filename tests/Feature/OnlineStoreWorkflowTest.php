@@ -202,6 +202,7 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertSee('Size EU 42')
             ->assertSee('Brand: Stride')
             ->assertDontSee('SKU:')
+            ->assertSee('product-options-row', false)
             ->assertSee('data-product-meta="size"', false)
             ->assertSee('Phone *')
             ->assertDontSee('name="customer_email"', false)

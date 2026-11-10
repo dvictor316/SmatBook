@@ -50,11 +50,12 @@
         .product-body{gap:14px;padding:clamp(22px,3vw,38px)}
         .product-eyebrow{color:#8a6a17;font-size:.72rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
         .product h2{font-family:Georgia,"Times New Roman",serif;font-size:clamp(1.55rem,2.4vw,2.1rem);font-weight:500;line-height:1.15}
-        .product-size-picker{display:grid;grid-template-columns:1fr;gap:7px;width:min(100%,260px);max-width:260px}
+        .product-options-row{display:flex;align-items:flex-end;gap:10px;max-width:100%;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+        .product-size-picker{display:grid;flex:0 0 190px;grid-template-columns:1fr;gap:7px;width:190px;max-width:190px}
         .product-size-picker label{color:var(--navy);font-size:.82rem;font-weight:800}
         .product-size-picker select{width:100%;min-width:0;min-height:44px;border:1px solid var(--gold);border-radius:8px;background:var(--paper);font-weight:700}
         .product-description{margin:0;color:#64748b;font-size:.95rem;line-height:1.7;white-space:pre-line}
-        .product-meta{display:flex;flex-wrap:nowrap;gap:8px;max-width:100%;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+        .product-meta{display:flex;flex:0 0 auto;flex-wrap:nowrap;gap:8px;max-width:none;overflow:visible;padding-bottom:0}
         .product-meta span{display:inline-flex;flex:0 0 auto;align-items:center;gap:6px;padding:7px 10px;border:1px solid #e7edf5;border-radius:999px;background:#f8fafc;color:#52627a;font-size:.78rem;white-space:nowrap}
         .product-purchase{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-top:auto;padding-top:18px;border-top:1px solid #edf0f5}
         .product-price-label{margin-bottom:4px;color:#75849a;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
@@ -176,41 +177,43 @@
                     @if(filled($product->description))
                         <p class="product-description">{{ strip_tags($product->description) }}</p>
                     @endif
-                    @if($hasSizeOptions)
-                        <div class="product-size-picker">
-                            <label for="variant{{ $product->id }}">{{ $variants->contains(fn ($variant) => filled($variant->fashion_size)) ? 'Choose size' : 'Choose option' }}</label>
-                            <select class="form-select product-variant-select" id="variant{{ $product->id }}" aria-label="Choose a size for {{ $product->name }}">
-                                @foreach($variants as $variant)
-                                    @php
-                                        $variantStock = (float) ($variant->storefront_available_stock ?? max((float) ($variant->stock ?? 0), (float) ($variant->stock_quantity ?? 0)));
-                                        $variantName = trim($variant->name . ($variant->variantLabel() !== '' ? ' · ' . $variant->variantLabel() : ''));
-                                        $variantOptionLabel = collect([
-                                            filled($variant->fashion_size) ? 'Size ' . $variant->fashion_size : null,
-                                            $variant->fashion_color,
-                                        ])->filter()->implode(' · ');
-                                        $variantStep = in_array(strtolower($variant->stockUnitSymbol()), ['kg','g','litre','liter','l','m']) ? 0.01 : 1;
-                                    @endphp
-                                    <option
-                                        value="{{ $variant->id }}"
-                                        data-product-name="{{ $variantName }}"
-                                        data-product-sku="{{ $variant->sku }}"
-                                        data-product-price="{{ (float) $variant->price }}"
-                                        data-product-max="{{ $variantStock }}"
-                                        data-product-step="{{ $variantStep }}"
-                                        data-product-stock-label="{{ $variantStock > 0 ? $variant->formatStockQuantity($variantStock) . ' available' : 'Out of stock' }}"
-                                        data-product-brand="{{ $variant->brand }}"
-                                        data-product-size="{{ $variant->fashion_size }}"
-                                        data-product-color="{{ $variant->fashion_color }}"
-                                        @selected((int) $variant->id === (int) $product->id)
-                                    >{{ $variantOptionLabel ?: 'Standard option' }}{{ $variantStock <= 0 ? ' - Out of stock' : '' }}</option>
-                                @endforeach
-                            </select>
+                    <div class="product-options-row">
+                        @if($hasSizeOptions)
+                            <div class="product-size-picker">
+                                <label for="variant{{ $product->id }}">{{ $variants->contains(fn ($variant) => filled($variant->fashion_size)) ? 'Choose size' : 'Choose option' }}</label>
+                                <select class="form-select product-variant-select" id="variant{{ $product->id }}" aria-label="Choose a size for {{ $product->name }}">
+                                    @foreach($variants as $variant)
+                                        @php
+                                            $variantStock = (float) ($variant->storefront_available_stock ?? max((float) ($variant->stock ?? 0), (float) ($variant->stock_quantity ?? 0)));
+                                            $variantName = trim($variant->name . ($variant->variantLabel() !== '' ? ' · ' . $variant->variantLabel() : ''));
+                                            $variantOptionLabel = collect([
+                                                filled($variant->fashion_size) ? 'Size ' . $variant->fashion_size : null,
+                                                $variant->fashion_color,
+                                            ])->filter()->implode(' · ');
+                                            $variantStep = in_array(strtolower($variant->stockUnitSymbol()), ['kg','g','litre','liter','l','m']) ? 0.01 : 1;
+                                        @endphp
+                                        <option
+                                            value="{{ $variant->id }}"
+                                            data-product-name="{{ $variantName }}"
+                                            data-product-sku="{{ $variant->sku }}"
+                                            data-product-price="{{ (float) $variant->price }}"
+                                            data-product-max="{{ $variantStock }}"
+                                            data-product-step="{{ $variantStep }}"
+                                            data-product-stock-label="{{ $variantStock > 0 ? $variant->formatStockQuantity($variantStock) . ' available' : 'Out of stock' }}"
+                                            data-product-brand="{{ $variant->brand }}"
+                                            data-product-size="{{ $variant->fashion_size }}"
+                                            data-product-color="{{ $variant->fashion_color }}"
+                                            @selected((int) $variant->id === (int) $product->id)
+                                        >{{ $variantOptionLabel ?: 'Standard option' }}{{ $variantStock <= 0 ? ' - Out of stock' : '' }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+                        <div class="product-meta">
+                            @if($hasBrand)<span data-product-meta="brand"><i class="fas fa-tag" aria-hidden="true"></i>Brand: {{ $product->brand }}</span>@endif
+                            @if($hasSize)<span data-product-meta="size"><i class="fas fa-ruler" aria-hidden="true"></i>Size: {{ $product->fashion_size }}</span>@endif
+                            @if($hasColor)<span data-product-meta="color"><i class="fas fa-palette" aria-hidden="true"></i>Colour: {{ $product->fashion_color }}</span>@endif
                         </div>
-                    @endif
-                    <div class="product-meta">
-                        @if($hasBrand)<span data-product-meta="brand"><i class="fas fa-tag" aria-hidden="true"></i>Brand: {{ $product->brand }}</span>@endif
-                        @if($hasSize)<span data-product-meta="size"><i class="fas fa-ruler" aria-hidden="true"></i>Size: {{ $product->fashion_size }}</span>@endif
-                        @if($hasColor)<span data-product-meta="color"><i class="fas fa-palette" aria-hidden="true"></i>Colour: {{ $product->fashion_color }}</span>@endif
                     </div>
                     <div class="product-purchase">
                         <div>
