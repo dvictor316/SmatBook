@@ -236,23 +236,72 @@ class OnlineStoreController extends Controller
         $selectedCategory = $categories->first(fn ($category) => (int) $category->id === $selectedCategoryId);
         abort_if($selectedCategoryId !== null && !$selectedCategory, 404);
         $search = trim((string) $request->query('q'));
-        $products = Product::withoutGlobalScopes()
+        $productQuery = Product::withoutGlobalScopes()
             ->where('company_id', $store->company_id)
-            ->where('status', 'active')
-            ->when($selectedCategory, fn ($query) => $query->whereIn('category_id', $selectedCategory->category_ids))
-            ->when($search !== '', fn ($query) => $query->where(function ($inner) use ($search) {
-                $inner->where('name', 'like', "%{$search}%")
-                    ->orWhere('sku', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%")
-                    ->orWhere('brand', 'like', "%{$search}%")
-                    ->orWhere('fashion_size', 'like', "%{$search}%")
-                    ->orWhere('fashion_color', 'like', "%{$search}%");
-            }))
+            ->where('status', 'active');
+        $applyCatalogFilters = function ($query, string $table) use ($selectedCategory, $search): void {
+            if ($selectedCategory) {
+                $query->whereIn("{$table}.category_id", $selectedCategory->category_ids);
+            }
+            if ($search !== '') {
+                $query->where(function ($inner) use ($search, $table) {
+                    $inner->where("{$table}.name", 'like', "%{$search}%")
+                        ->orWhere("{$table}.sku", 'like', "%{$search}%")
+                        ->orWhere("{$table}.description", 'like', "%{$search}%")
+                        ->orWhere("{$table}.brand", 'like', "%{$search}%")
+                        ->orWhere("{$table}.fashion_size", 'like', "%{$search}%")
+                        ->orWhere("{$table}.fashion_color", 'like', "%{$search}%");
+                });
+            }
+        };
+        $applyCatalogFilters($productQuery, 'products');
+        if (Schema::hasColumn('products', 'variant_group_id')) {
+            $productQuery->where(function ($query) use ($applyCatalogFilters) {
+                $query->whereNull('products.variant_group_id')
+                    ->orWhereNotExists(function ($newerVariant) use ($applyCatalogFilters) {
+                        $newerVariant->selectRaw('1')
+                            ->from('products as newer')
+                            ->whereColumn('newer.variant_group_id', 'products.variant_group_id')
+                            ->whereColumn('newer.company_id', 'products.company_id')
+                            ->where('newer.status', 'active')
+                            ->where(function ($newerThan) {
+                                $newerThan->whereColumn('newer.created_at', '>', 'products.created_at')
+                                    ->orWhere(function ($sameTimestamp) {
+                                        $sameTimestamp->whereColumn('newer.created_at', '=', 'products.created_at')
+                                            ->whereColumn('newer.id', '>', 'products.id');
+                                    });
+                            });
+                        $applyCatalogFilters($newerVariant, 'newer');
+                    });
+            });
+        }
+        $products = $productQuery
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->paginate(\App\Support\PageSize::resolve())->withQueryString();
-        $products->getCollection()->transform(function (Product $product) use ($store) {
+        $variantGroupIds = $products->getCollection()
+            ->pluck('variant_group_id')
+            ->filter()
+            ->unique()
+            ->values();
+        $variantProducts = $variantGroupIds->isEmpty()
+            ? collect()
+            : Product::withoutGlobalScopes()
+                ->where('company_id', $store->company_id)
+                ->where('status', 'active')
+                ->whereIn('variant_group_id', $variantGroupIds)
+                ->orderBy('fashion_size')
+                ->orderBy('fashion_color')
+                ->orderBy('id')
+                ->get();
+        $this->attachStoreStock($variantProducts, $store);
+        $variantsByGroup = $variantProducts->groupBy('variant_group_id');
+        $products->getCollection()->transform(function (Product $product) use ($store, $variantsByGroup) {
             $product->setAttribute('storefront_available_stock', $this->availableStoreStock($product, $store));
+            $variants = filled($product->variant_group_id)
+                ? $variantsByGroup->get($product->variant_group_id, collect())
+                : collect([$product]);
+            $product->setAttribute('storefront_variants', $variants);
 
             return $product;
         });
@@ -316,11 +365,10 @@ class OnlineStoreController extends Controller
     {
         $store = $this->resolvePublicStore($request, $slug);
         $validated = $request->validate([
-            'customer_name' => 'required|string|max:191',
-            'customer_email' => 'nullable|email|max:191',
+            'customer_name' => 'nullable|string|max:191',
             'customer_phone' => 'required|string|max:60',
             'delivery_address' => 'nullable|string|max:1000',
-            'payment_method' => 'required|in:pay_on_delivery,bank_transfer,pickup',
+            'payment_method' => 'nullable|in:pay_on_delivery,bank_transfer,pickup',
             'customer_note' => 'nullable|string|max:1000',
             'order_token' => ['required', 'uuid'],
             'items' => 'required|array|min:1',
@@ -373,11 +421,12 @@ class OnlineStoreController extends Controller
                 'branch_name' => $stockBranch['name'] ?? null,
                 'submission_token' => $orderToken,
                 'order_number' => 'WEB-' . now()->format('ymdHis') . '-' . strtoupper(Str::random(4)),
-                'customer_name' => $validated['customer_name'],
-                'customer_email' => $validated['customer_email'] ?? null,
+                'customer_name' => filled($validated['customer_name'] ?? null)
+                    ? trim((string) $validated['customer_name'])
+                    : $validated['customer_phone'],
                 'customer_phone' => $validated['customer_phone'],
                 'delivery_address' => $validated['delivery_address'] ?? null,
-                'payment_method' => $validated['payment_method'],
+                'payment_method' => $validated['payment_method'] ?? 'pay_on_delivery',
                 'status' => 'pending_confirmation',
                 'subtotal' => round($subtotal, 2),
                 'total_amount' => round($subtotal, 2),
@@ -449,9 +498,6 @@ class OnlineStoreController extends Controller
             . "Customer: {$order->customer_name}\n"
             . "Phone: {$order->customer_phone}\n"
             . "Payment: " . str($order->payment_method)->replace('_', ' ')->title();
-        if (filled($order->customer_email)) {
-            $orderMessage .= "\nEmail: {$order->customer_email}";
-        }
         if (filled($order->delivery_address)) {
             $orderMessage .= "\nDelivery address: {$order->delivery_address}";
         }
@@ -467,20 +513,12 @@ class OnlineStoreController extends Controller
         $whatsappLink = $orderContact['whatsapp']
             ? 'https://wa.me/' . $orderContact['whatsapp'] . '?text=' . rawurlencode($orderMessage)
             : null;
-        $smsLink = $orderContact['sms']
-            ? 'sms:' . $orderContact['sms'] . '?body=' . rawurlencode($orderMessage)
-            : null;
-        $emailLink = $orderContact['email']
-            ? 'mailto:' . $orderContact['email']
-                . '?subject=' . rawurlencode('Online store order ' . $order->order_number)
-                . '&body=' . rawurlencode($orderMessage)
-            : null;
+        $response = back()->with('store_order_success', $order->order_number);
+        if ($whatsappLink) {
+            $response->with('store_whatsapp_link', $whatsappLink);
+        }
 
-        return back()
-            ->with('store_order_success', $order->order_number)
-            ->with('store_whatsapp_link', $whatsappLink)
-            ->with('store_sms_link', $smsLink)
-            ->with('store_email_link', $emailLink);
+        return $response;
     }
 
     private function notifyOwner(StorefrontSetting $store, OnlineStoreOrder $order, ?array $orderContact = null): void

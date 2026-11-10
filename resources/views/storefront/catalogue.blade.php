@@ -50,6 +50,9 @@
         .product-body{gap:14px;padding:clamp(22px,3vw,38px)}
         .product-eyebrow{color:#8a6a17;font-size:.72rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
         .product h2{font-family:Georgia,"Times New Roman",serif;font-size:clamp(1.55rem,2.4vw,2.1rem);font-weight:500;line-height:1.15}
+        .product-size-picker{display:grid;grid-template-columns:1fr;gap:7px;max-width:320px}
+        .product-size-picker label{color:var(--navy);font-size:.82rem;font-weight:800}
+        .product-size-picker select{min-height:44px;border:1px solid var(--gold);border-radius:8px;background:var(--paper);font-weight:700}
         .product-description{margin:0;color:#64748b;font-size:.95rem;line-height:1.7;white-space:pre-line}
         .product-meta{display:flex;flex-wrap:wrap;gap:8px}
         .product-meta span{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid #e7edf5;border-radius:999px;background:#f8fafc;color:#52627a;font-size:.78rem}
@@ -96,11 +99,9 @@
             @else
                 <strong>Order received.</strong> Your reference is {{ session('store_order_success') }}. The business will contact you to confirm payment and fulfilment.
             @endif
-            @if(session('store_whatsapp_link') || session('store_sms_link') || session('store_email_link'))
+            @if(session('store_whatsapp_link'))
                 <div class="mt-3 d-flex flex-wrap gap-2">
-                    @if(session('store_whatsapp_link'))<a class="btn btn-success" href="{{ session('store_whatsapp_link') }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp me-2"></i>Send order on WhatsApp</a>@endif
-                    @if(session('store_sms_link'))<a class="btn btn-primary" href="{{ session('store_sms_link') }}"><i class="fas fa-comment-sms me-2"></i>Send order by SMS</a>@endif
-                    @if(session('store_email_link'))<a class="btn btn-outline-primary" href="{{ session('store_email_link') }}"><i class="fas fa-envelope me-2"></i>Email order details</a>@endif
+                    <a class="btn btn-success" href="{{ session('store_whatsapp_link') }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp me-2"></i>Send order on WhatsApp</a>
                 </div>
             @endif
         </div>
@@ -134,29 +135,65 @@
         @forelse($products as $product)
             @php
                 $available = (float) ($product->storefront_available_stock ?? max((float) ($product->stock ?? 0), (float) ($product->stock_quantity ?? 0)));
-                $variantLabel = $product->variantLabel();
-                $displayName = trim($product->name . ($variantLabel !== '' ? ' · ' . $variantLabel : ''));
+                $variants = $product->storefront_variants ?? collect([$product]);
+                $hasSizeOptions = $variants->count() > 1;
+                $displayName = trim($product->name . ($product->variantLabel() !== '' ? ' · ' . $product->variantLabel() : ''));
                 $quantityStep = in_array(strtolower($product->stockUnitSymbol()), ['kg','g','litre','liter','l','m']) ? 0.01 : 1;
+                $hasSku = $variants->contains(fn ($variant) => filled($variant->sku));
+                $hasBrand = $variants->contains(fn ($variant) => filled($variant->brand));
+                $hasSize = $variants->contains(fn ($variant) => filled($variant->fashion_size));
+                $hasColor = $variants->contains(fn ($variant) => filled($variant->fashion_color));
             @endphp
-            <article class="product" data-product-id="{{ $product->id }}" data-product-name="{{ $displayName }}" data-product-sku="{{ $product->sku }}" data-product-price="{{ (float) $product->price }}" data-product-max="{{ $available }}" data-product-step="{{ $quantityStep }}">
+            <article class="product" data-product-id="{{ $product->id }}" data-product-name="{{ $displayName }}" data-product-sku="{{ $product->sku }}" data-product-price="{{ (float) $product->price }}" data-product-max="{{ $available }}" data-product-step="{{ $quantityStep }}" data-product-stock-label="{{ $available > 0 ? $product->formatStockQuantity($available) . ' available' : 'Out of stock' }}" data-product-brand="{{ $product->brand }}" data-product-size="{{ $product->fashion_size }}" data-product-color="{{ $product->fashion_color }}">
                 <div class="product-media">@if($product->image_url)<img src="{{ $product->image_url }}" alt="{{ $displayName }}" loading="lazy">@else<i class="fas fa-box-open" aria-hidden="true"></i>@endif</div>
                 <div class="product-body">
                     <span class="product-eyebrow">Product details</span>
-                    <h2>{{ $displayName }}</h2>
+                    <h2>{{ $product->name }}</h2>
                     @if(filled($product->description))
                         <p class="product-description">{{ strip_tags($product->description) }}</p>
                     @endif
+                    @if($hasSizeOptions)
+                        <div class="product-size-picker">
+                            <label for="variant{{ $product->id }}">{{ $variants->contains(fn ($variant) => filled($variant->fashion_size)) ? 'Choose size' : 'Choose option' }}</label>
+                            <select class="form-select product-variant-select" id="variant{{ $product->id }}" aria-label="Choose a size for {{ $product->name }}">
+                                @foreach($variants as $variant)
+                                    @php
+                                        $variantStock = (float) ($variant->storefront_available_stock ?? max((float) ($variant->stock ?? 0), (float) ($variant->stock_quantity ?? 0)));
+                                        $variantName = trim($variant->name . ($variant->variantLabel() !== '' ? ' · ' . $variant->variantLabel() : ''));
+                                        $variantOptionLabel = collect([
+                                            filled($variant->fashion_size) ? 'Size ' . $variant->fashion_size : null,
+                                            $variant->fashion_color,
+                                        ])->filter()->implode(' · ');
+                                        $variantStep = in_array(strtolower($variant->stockUnitSymbol()), ['kg','g','litre','liter','l','m']) ? 0.01 : 1;
+                                    @endphp
+                                    <option
+                                        value="{{ $variant->id }}"
+                                        data-product-name="{{ $variantName }}"
+                                        data-product-sku="{{ $variant->sku }}"
+                                        data-product-price="{{ (float) $variant->price }}"
+                                        data-product-max="{{ $variantStock }}"
+                                        data-product-step="{{ $variantStep }}"
+                                        data-product-stock-label="{{ $variantStock > 0 ? $variant->formatStockQuantity($variantStock) . ' available' : 'Out of stock' }}"
+                                        data-product-brand="{{ $variant->brand }}"
+                                        data-product-size="{{ $variant->fashion_size }}"
+                                        data-product-color="{{ $variant->fashion_color }}"
+                                        @selected((int) $variant->id === (int) $product->id)
+                                    >{{ $variantOptionLabel ?: 'Standard option' }}{{ $variantStock <= 0 ? ' - Out of stock' : '' }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
                     <div class="product-meta">
-                        @if(filled($product->sku))<span><i class="fas fa-barcode" aria-hidden="true"></i>SKU: {{ $product->sku }}</span>@endif
-                        @if(filled($product->brand))<span><i class="fas fa-tag" aria-hidden="true"></i>{{ $product->brand }}</span>@endif
-                        @if(filled($product->fashion_size))<span><i class="fas fa-ruler" aria-hidden="true"></i>Size: {{ $product->fashion_size }}</span>@endif
-                        @if(filled($product->fashion_color))<span><i class="fas fa-palette" aria-hidden="true"></i>Colour: {{ $product->fashion_color }}</span>@endif
+                        @if($hasSku)<span data-product-meta="sku"><i class="fas fa-barcode" aria-hidden="true"></i>SKU: {{ $product->sku }}</span>@endif
+                        @if($hasBrand)<span data-product-meta="brand"><i class="fas fa-tag" aria-hidden="true"></i>{{ $product->brand }}</span>@endif
+                        @if($hasSize)<span data-product-meta="size"><i class="fas fa-ruler" aria-hidden="true"></i>Size: {{ $product->fashion_size }}</span>@endif
+                        @if($hasColor)<span data-product-meta="color"><i class="fas fa-palette" aria-hidden="true"></i>Colour: {{ $product->fashion_color }}</span>@endif
                     </div>
                     <div class="product-purchase">
                         <div>
                             <div class="product-price-label">Price</div>
-                            <div class="price">{{ \App\Support\GeoCurrency::format((float)$product->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</div>
-                            <div class="stock {{ $available > 0 ? 'in-stock' : 'out-of-stock' }}">{{ $available > 0 ? $product->formatStockQuantity($available) . ' available' : 'Out of stock' }}</div>
+                            <div class="price product-price">{{ \App\Support\GeoCurrency::format((float)$product->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</div>
+                            <div class="stock product-stock {{ $available > 0 ? 'in-stock' : 'out-of-stock' }}">{{ $available > 0 ? $product->formatStockQuantity($available) . ' available' : 'Out of stock' }}</div>
                         </div>
                         <div class="quantity">
                             <label for="qty{{ $product->id }}" class="small fw-bold">Quantity</label>
@@ -182,28 +219,21 @@
                 <div id="cart-hidden-items"></div>
                 <h3 class="mt-4">Order Details</h3>
                 <div class="row g-3">
-                    <div class="col-md-6"><label class="form-label">Full Name *</label><input class="form-control" name="customer_name" value="{{ old('customer_name') }}" required></div>
+                    <div class="col-md-6"><label class="form-label">Full Name (optional)</label><input class="form-control" name="customer_name" value="{{ old('customer_name') }}"></div>
                     <div class="col-md-6"><label class="form-label">Phone *</label><input class="form-control" name="customer_phone" value="{{ old('customer_phone') }}" required></div>
-                    <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" type="email" name="customer_email" value="{{ old('customer_email') }}"></div>
-                    <div class="col-md-6"><label class="form-label">Payment / Collection *</label><select class="form-select" name="payment_method" required><option value="pay_on_delivery">Pay on delivery</option><option value="bank_transfer">Bank transfer after confirmation</option><option value="pickup">Pay on pickup</option></select></div>
+                    <div class="col-md-6"><label class="form-label">Payment / Collection</label><select class="form-select" name="payment_method"><option value="pay_on_delivery" @selected(old('payment_method', 'pay_on_delivery') === 'pay_on_delivery')>Pay on delivery</option><option value="bank_transfer" @selected(old('payment_method') === 'bank_transfer')>Bank transfer after confirmation</option><option value="pickup" @selected(old('payment_method') === 'pickup')>Pay on pickup</option></select></div>
                     <div class="col-12"><label class="form-label">Delivery Address</label><textarea class="form-control" name="delivery_address" rows="2">{{ old('delivery_address') }}</textarea></div>
                     <div class="col-12"><label class="form-label">Order Note</label><textarea class="form-control" name="customer_note" rows="2">{{ old('customer_note') }}</textarea></div>
                     <div class="col-12 d-flex justify-content-between align-items-center gap-3 flex-wrap">
-                        <small class="text-muted">{{ $store->fulfilment_note ?: 'The business will confirm availability, payment, and delivery.' }}</small>
+                        <small class="text-muted">{{ $store->fulfilment_note ?: 'Phone number is the only required detail. The business will confirm availability, payment, and delivery.' }}</small>
                         <div class="d-flex gap-2 flex-wrap">
                             @if($orderContact['whatsapp'])
                                 <button class="btn btn-success" id="send-cart-whatsapp" type="button" disabled><i class="fab fa-whatsapp me-2"></i>Send purchase request to WhatsApp</button>
                             @endif
-                            @if($orderContact['sms'])
-                                <button class="btn btn-outline-primary" id="send-cart-sms" type="button" disabled><i class="fas fa-comment-sms me-2"></i>Send purchase request by SMS</button>
-                            @endif
-                            @if($orderContact['email'])
-                                <button class="btn btn-outline-primary" id="send-cart-email" type="button" disabled><i class="fas fa-envelope me-2"></i>Email purchase request</button>
-                            @endif
-                            <button class="btn-order" id="place-store-order" type="submit" disabled><i class="fas fa-paper-plane me-2"></i>Place Online Order</button>
+                            <button class="btn-order" id="place-store-order" type="submit" disabled><i class="fas fa-paper-plane me-2"></i>Place Order &amp; Reserve Stock</button>
                         </div>
-                        @if($orderContact['whatsapp'] || $orderContact['sms'] || $orderContact['email'])
-                            <small class="text-muted w-100">Send a request directly to the business, or place an online order to reserve stock. The business must confirm availability and fulfilment.</small>
+                        @if($orderContact['whatsapp'])
+                            <small class="text-muted w-100">WhatsApp requests do not reserve stock. Use “Place Order &amp; Reserve Stock” to save the order and reserve the items in the store.</small>
                         @endif
                     </div>
                 </div>
@@ -224,29 +254,94 @@
         const submit = document.getElementById('place-store-order');
         const orderForm = document.getElementById('store-order-form');
         const whatsappButton = document.getElementById('send-cart-whatsapp');
-        const smsButton = document.getElementById('send-cart-sms');
-        const emailButton = document.getElementById('send-cart-email');
         const currency = @json($company->currency_code ?: 'NGN');
         const whatsappNumber = @json($orderContact['whatsapp']);
-        const smsNumber = @json($orderContact['sms']);
-        const orderEmail = @json($orderContact['email']);
         const storeName = @json($store->store_name);
         orderForm?.addEventListener('submit', () => {
             submit.disabled = true;
             submit.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting order...';
         });
-        const products = new Map(Array.from(document.querySelectorAll('[data-product-id]')).map((element) => [
-            element.dataset.productId,
-            {
-                id: element.dataset.productId,
-                name: element.dataset.productName,
-                sku: element.dataset.productSku,
-                price: Number(element.dataset.productPrice),
-                max: Number(element.dataset.productMax),
-                step: Number(element.dataset.productStep) || 1
-            }
-        ]));
+        const products = new Map();
+        function productData(element) {
+            return {
+                id: element.dataset.productId || element.value,
+                name: element.dataset.productName || '',
+                sku: element.dataset.productSku || '',
+                price: Number(element.dataset.productPrice) || 0,
+                max: Number(element.dataset.productMax) || 0,
+                step: Number(element.dataset.productStep) || 1,
+                stockLabel: element.dataset.productStockLabel || '',
+                brand: element.dataset.productBrand || '',
+                size: element.dataset.productSize || '',
+                color: element.dataset.productColor || ''
+            };
+        }
+        document.querySelectorAll('[data-product-id]').forEach((article) => {
+            const product = productData(article);
+            products.set(String(product.id), product);
+            article.querySelectorAll('.product-variant-select option').forEach((option) => {
+                const variant = productData(option);
+                products.set(String(variant.id), variant);
+            });
+        });
         const formatMoney = (value) => new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(value);
+
+        function updateVariantCard(article, product) {
+            article.dataset.productId = product.id;
+            article.dataset.productName = product.name;
+            article.dataset.productSku = product.sku;
+            article.dataset.productPrice = String(product.price);
+            article.dataset.productMax = String(product.max);
+            article.dataset.productStep = String(product.step);
+            article.dataset.productStockLabel = product.stockLabel;
+            article.dataset.productBrand = product.brand;
+            article.dataset.productSize = product.size;
+            article.dataset.productColor = product.color;
+
+            const price = article.querySelector('.product-price');
+            const stock = article.querySelector('.product-stock');
+            const quantity = article.querySelector('.product-quantity');
+            const addButton = article.querySelector('.add-to-cart');
+            if (price) price.textContent = formatMoney(product.price);
+            if (stock) {
+                stock.textContent = product.stockLabel;
+                stock.classList.toggle('in-stock', product.max > 0);
+                stock.classList.toggle('out-of-stock', product.max <= 0);
+            }
+            if (quantity) {
+                quantity.min = String(product.step);
+                quantity.step = String(product.step);
+                quantity.max = String(product.max);
+                quantity.value = String(Math.min(product.max || product.step, Math.max(product.step, Number(quantity.value) || product.step)));
+                quantity.disabled = product.max <= 0;
+            }
+            if (addButton) {
+                addButton.disabled = product.max <= 0;
+                addButton.setAttribute('aria-label', `Add ${product.name} to cart`);
+            }
+            article.querySelectorAll('[data-product-meta]').forEach((meta) => {
+                const labels = {
+                    sku: product.sku ? `SKU: ${product.sku}` : '',
+                    brand: product.brand,
+                    size: product.size ? `Size: ${product.size}` : '',
+                    color: product.color ? `Colour: ${product.color}` : ''
+                };
+                const label = labels[meta.dataset.productMeta] || '';
+                const icon = meta.querySelector('i');
+                meta.hidden = !label;
+                meta.replaceChildren(...(icon ? [icon, document.createTextNode(` ${label}`)] : [document.createTextNode(label)]));
+            });
+        }
+
+        document.querySelectorAll('.product-variant-select').forEach((select) => {
+            const article = select.closest('[data-product-id]');
+            const initialProduct = products.get(String(select.value));
+            if (article && initialProduct) updateVariantCard(article, initialProduct);
+            select.addEventListener('change', () => {
+                const product = products.get(String(select.value));
+                if (article && product) updateVariantCard(article, product);
+            });
+        });
 
         try {
             const saved = JSON.parse(localStorage.getItem(key) || '[]');
@@ -304,8 +399,6 @@
             empty.hidden = cart.size > 0;
             submit.disabled = cart.size === 0;
             if (whatsappButton) whatsappButton.disabled = cart.size === 0;
-            if (smsButton) smsButton.disabled = cart.size === 0;
-            if (emailButton) emailButton.disabled = cart.size === 0;
             document.getElementById('cart-total').textContent = formatMoney(total);
             document.getElementById('cart-count').textContent = String(count);
         }
@@ -333,42 +426,27 @@
             const customerPhone = document.querySelector('[name="customer_phone"]');
             customerName.value = customerName.value.trim();
             customerPhone.value = customerPhone.value.trim();
-            if (!customerName.reportValidity() || !customerPhone.reportValidity()) return null;
+            if (!customerPhone.reportValidity()) return null;
 
             const total = Array.from(cart.values()).reduce((sum, item) => sum + item.price * item.quantity, 0);
             const itemLines = Array.from(cart.values()).map((item) =>
                 `- ${item.name} (${item.sku || 'no SKU'}) x ${item.quantity} = ${formatMoney(item.price * item.quantity)}`
             ).join('\n');
-            return [
+            const lines = [
                 `Hello ${storeName}, I would like to purchase these items:`,
                 itemLines,
                 `Estimated total: ${formatMoney(total)}`,
-                `Name: ${customerName.value}`,
                 `Phone: ${customerPhone.value}`,
                 'Please confirm current stock, final price and fulfilment. I understand this request does not reserve stock.'
-            ].join('\n\n');
+            ];
+            if (customerName.value) lines.splice(3, 0, `Name: ${customerName.value}`);
+            return lines.join('\n\n');
         }
 
         if (whatsappButton) {
             whatsappButton.addEventListener('click', () => {
                 const message = purchaseRequestMessage();
                 if (message) window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
-            });
-        }
-
-        if (smsButton) {
-            smsButton.addEventListener('click', () => {
-                const message = purchaseRequestMessage();
-                if (message) window.location.href = `sms:${smsNumber}?body=${encodeURIComponent(message)}`;
-            });
-        }
-
-        if (emailButton) {
-            emailButton.addEventListener('click', () => {
-                const message = purchaseRequestMessage();
-                if (message) {
-                    window.location.href = `mailto:${orderEmail}?subject=${encodeURIComponent(`Purchase request for ${storeName}`)}&body=${encodeURIComponent(message)}`;
-                }
             });
         }
 

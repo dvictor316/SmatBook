@@ -166,6 +166,74 @@ class OnlineStoreWorkflowTest extends TestCase
             });
     }
 
+    public function test_storefront_shoe_group_displays_sizes_and_orders_the_selected_variant_with_phone_only(): void
+    {
+        [$user, $company] = $this->workspace('Shoe Sizes Store');
+        $categoryId = $this->category($user->id, $company->id, 'Sneakers');
+        $groupId = 'c198b544-5f5c-4aeb-ae35-f323e95e40e1';
+        $sizeFortyOneId = $this->product($user->id, $company->id, $categoryId, 'Everyday Sneaker', 'SNE-041', 4, 25000);
+        $sizeFortyTwoId = $this->product($user->id, $company->id, $categoryId, 'Everyday Sneaker', 'SNE-042', 7, 27000);
+        DB::table('products')->where('id', $sizeFortyOneId)->update([
+            'variant_group_id' => $groupId,
+            'brand' => 'Stride',
+            'fashion_size' => 'EU 41',
+            'fashion_color' => 'White',
+            'created_at' => now()->subMinute(),
+        ]);
+        DB::table('products')->where('id', $sizeFortyTwoId)->update([
+            'variant_group_id' => $groupId,
+            'brand' => 'Stride',
+            'fashion_size' => 'EU 42',
+            'fashion_color' => 'White',
+            'created_at' => now(),
+        ]);
+        StorefrontSetting::create([
+            'company_id' => $company->id,
+            'slug' => 'shoe-sizes-store',
+            'store_name' => 'Shoe Sizes Store',
+            'owner_whatsapp_number' => '+2348012345678',
+            'is_enabled' => true,
+        ]);
+
+        $this->get(route('storefront.products', 'shoe-sizes-store'))
+            ->assertOk()
+            ->assertSee('Choose size')
+            ->assertSee('Size EU 41')
+            ->assertSee('Size EU 42')
+            ->assertSee('Phone *')
+            ->assertDontSee('name="customer_email"', false)
+            ->assertDontSee('Email purchase request')
+            ->assertDontSee('purchase request by SMS')
+            ->assertDontSee('Full Name *')
+            ->assertDontSee('Payment / Collection *')
+            ->assertViewHas('products', fn ($products) => $products->total() === 1
+                && $products->first()->storefront_variants->count() === 2);
+
+        $this->post(route('storefront.orders.store', 'shoe-sizes-store'), [
+            'order_token' => '00000000-0000-4000-8000-000000000010',
+            'items' => [$sizeFortyTwoId => 1],
+        ])->assertSessionHasErrors('customer_phone');
+
+        $this->post(route('storefront.orders.store', 'shoe-sizes-store'), [
+            'order_token' => '00000000-0000-4000-8000-000000000011',
+            'customer_phone' => '+2348099999999',
+            'items' => [$sizeFortyTwoId => 1],
+        ])->assertSessionHasNoErrors()
+            ->assertSessionHas('store_whatsapp_link');
+
+        $order = OnlineStoreOrder::withoutGlobalScopes()->firstOrFail();
+        $this->assertSame('+2348099999999', $order->customer_name);
+        $this->assertSame('+2348099999999', $order->customer_phone);
+        $this->assertSame('pay_on_delivery', $order->payment_method);
+        $this->assertDatabaseHas('online_store_order_items', [
+            'online_store_order_id' => $order->id,
+            'product_id' => $sizeFortyTwoId,
+            'sku' => 'SNE-042',
+        ]);
+        $this->assertDatabaseHas('products', ['id' => $sizeFortyTwoId, 'stock' => 6]);
+        $this->assertDatabaseHas('products', ['id' => $sizeFortyOneId, 'stock' => 4]);
+    }
+
     public function test_repeated_store_order_submission_creates_one_order_and_reserves_stock_once(): void
     {
         [$user, $company] = $this->workspace('Idempotent Store');
@@ -281,7 +349,7 @@ class OnlineStoreWorkflowTest extends TestCase
         $this->get(route('storefront.products', 'gallery-store'))
             ->assertOk()
             ->assertSee('Gallery Product 11')
-            ->assertSee('Place Online Order')
+            ->assertSee('Place Order & Reserve Stock')
             ->assertSee('Your Cart')
             ->assertSee('product-media', false)
             ->assertSee('product-meta', false)
@@ -490,7 +558,7 @@ class OnlineStoreWorkflowTest extends TestCase
         ]);
     }
 
-    public function test_local_owner_phone_uses_sms_and_available_store_email_for_order_contact(): void
+    public function test_storefront_offers_whatsapp_only_when_owner_phone_is_local(): void
     {
         [$user, $company] = $this->workspace('Local Contact Store');
         $user->forceFill(['phone' => '08012345678'])->save();
@@ -507,20 +575,19 @@ class OnlineStoreWorkflowTest extends TestCase
 
         $this->get(route('storefront.products', 'local-contact-store'))
             ->assertOk()
-            ->assertSee('Send purchase request by SMS')
-            ->assertSee('Email purchase request')
-            ->assertDontSee('Send purchase request to WhatsApp');
+            ->assertSee('Send purchase request to WhatsApp')
+            ->assertDontSee('Send purchase request by SMS')
+            ->assertDontSee('Email purchase request')
+            ->assertDontSee('name="customer_email"', false);
 
         $this->post(route('storefront.orders.store', 'local-contact-store'), [
             'order_token' => '00000000-0000-4000-8000-000000000004',
-            'customer_name' => 'Local Fallback Buyer',
             'customer_phone' => '08000000000',
-            'payment_method' => 'pickup',
             'items' => [$productId => 1],
         ])->assertSessionHasNoErrors()
-            ->assertSessionMissing('store_whatsapp_link')
-            ->assertSessionHas('store_sms_link', fn ($link) => str_starts_with($link, 'sms:08012345678?body='))
-            ->assertSessionHas('store_email_link', fn ($link) => str_starts_with($link, 'mailto:' . $user->email . '?subject='));
+            ->assertSessionHas('store_whatsapp_link', fn ($link) => str_starts_with($link, 'https://wa.me/15551234567?text='))
+            ->assertSessionMissing('store_sms_link')
+            ->assertSessionMissing('store_email_link');
     }
 
     public function test_whatsapp_api_failure_does_not_discard_customer_order(): void

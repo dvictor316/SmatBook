@@ -65,12 +65,11 @@ class StorefrontSetting extends Model
             $company?->phone,
             $this->contact_phone,
         ])->first(fn ($value) => filled($value));
-        $whatsapp = filled($ownerPhone)
-            ? $this->whatsappRecipient($ownerPhone)
-            : $this->whatsappRecipient($this->owner_whatsapp_number);
+        $whatsapp = $this->whatsappRecipient($ownerPhone)
+            ?: $this->whatsappRecipient($this->owner_whatsapp_number);
 
-        if (! $whatsapp && ! filled($ownerPhone)) {
-            foreach ([$ownerPhone, $company?->phone, $this->contact_phone] as $candidate) {
+        if (! $whatsapp) {
+            foreach ([$company?->phone, $this->contact_phone] as $candidate) {
                 $whatsapp = $this->whatsappRecipient($candidate);
                 if ($whatsapp) {
                     break;
