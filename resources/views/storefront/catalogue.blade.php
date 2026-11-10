@@ -71,8 +71,8 @@
         .checkout-kicker{display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px;padding:7px 13px;border:1px solid var(--theme-line,#dbe4f0);border-radius:999px;background:#fff;color:var(--theme-primary,var(--blue));font-size:.7rem;font-weight:850;letter-spacing:.14em;text-transform:uppercase}
         .checkout-heading h2{margin:0;color:var(--navy);font-family:Georgia,"Times New Roman",serif;font-size:clamp(2rem,4vw,2.7rem);font-weight:500;line-height:1.1}
         .checkout-heading p{max-width:600px;margin:12px auto 0;color:#65748b;font-size:1rem;line-height:1.65}
-        .checkout-content{padding:clamp(20px,4vw,40px);background:linear-gradient(145deg,#201b3d,#28234b 58%,#1d2944)}
-        .checkout-cart-box{margin-bottom:34px;padding:clamp(16px,3vw,26px);border:1px solid rgba(255,255,255,.18);border-radius:15px;background:rgba(255,255,255,.075)}
+        .checkout-content{padding:clamp(20px,4vw,40px);background:linear-gradient(120deg,#5b21b6 0%,#6722c7 56%,#7624db 100%)}
+        .checkout-cart-box{margin-bottom:34px;padding:clamp(16px,3vw,26px);border:1px solid rgba(255,255,255,.28);border-radius:15px;background:rgba(255,255,255,.14)}
         .checkout-cart-box .table-responsive{margin:0}
         .checkout-cart-box .table{margin:0;color:#f5f6fb}
         .checkout-cart-box .table thead th{padding:13px 12px;border-bottom-color:rgba(255,255,255,.22);color:#d5d9e8;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase}
