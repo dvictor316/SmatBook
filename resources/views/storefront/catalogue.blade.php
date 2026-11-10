@@ -65,12 +65,37 @@
         .quantity{justify-content:flex-end;gap:10px;margin:0;padding:0;border:0}
         .quantity input{width:88px;min-height:44px;border-color:#dbe4f0}
         .add-to-cart{min-height:44px;padding-inline:18px;border-radius:5px;font-weight:750}
-        .checkout{margin-top:38px;padding:clamp(22px,4vw,38px);border:1px solid var(--line);border-top:3px solid var(--red);border-radius:3px;background:#fff;animation:storefront-rise .65s .12s both}
-        .checkout h2{color:var(--navy);font-family:Georgia,"Times New Roman",serif;font-size:1.8rem;font-weight:500}
-        .checkout .form-control,.checkout .form-select{min-height:46px;border-color:var(--line);border-radius:3px}
-        .checkout textarea.form-control{min-height:auto}
-        .btn-order{background:var(--red);border:1px solid var(--red);border-radius:3px;padding:14px 24px;letter-spacing:.03em}
+        .checkout{max-width:1060px;margin:42px auto 0;padding:0;overflow:hidden;border:1px solid var(--theme-line,#dbe4f0);border-radius:20px;background:#fff;box-shadow:0 24px 70px rgba(10,30,66,.13);animation:storefront-rise .65s .12s both}
+        .checkout-heading{padding:clamp(30px,5vw,54px) 24px 30px;text-align:center;background:radial-gradient(ellipse at 50% 0,var(--theme-wash,rgba(20,99,214,.12)),transparent 68%),linear-gradient(180deg,#fff,#fbfcff);border-bottom:1px solid #e8edf5}
+        .checkout-kicker{display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px;padding:7px 13px;border:1px solid var(--theme-line,#dbe4f0);border-radius:999px;background:#fff;color:var(--theme-primary,var(--blue));font-size:.7rem;font-weight:850;letter-spacing:.14em;text-transform:uppercase}
+        .checkout-heading h2{margin:0;color:var(--navy);font-family:Georgia,"Times New Roman",serif;font-size:clamp(2rem,4vw,2.7rem);font-weight:500;line-height:1.1}
+        .checkout-heading p{max-width:600px;margin:12px auto 0;color:#65748b;font-size:1rem;line-height:1.65}
+        .checkout-content{padding:clamp(20px,4vw,40px)}
+        .checkout-cart-box{margin-bottom:34px;padding:clamp(16px,3vw,26px);border:1px solid #e3eaf3;border-radius:15px;background:linear-gradient(145deg,#f8faff,#f4f7fc)}
+        .checkout-cart-box .table-responsive{margin:0}
+        .checkout-cart-box .table{margin:0;color:#26364d}
+        .checkout-cart-box .table thead th{padding:13px 12px;border-bottom-color:#dbe4f0;color:#61718a;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase}
+        .checkout-cart-box .table td,.checkout-cart-box .table tfoot th{padding:14px 12px;border-color:#e3eaf3}
+        .checkout-cart-box #cart-empty{padding:18px 20px!important;border:1px dashed #cbd6e5;border-radius:11px;background:#fff;color:#65748b!important;text-align:center}
+        .checkout-details-heading{margin:0 0 22px;text-align:center}
+        .checkout-details-heading .checkout-kicker{margin-bottom:10px}
+        .checkout-details-heading h3{margin:0;color:var(--navy);font-family:Georgia,"Times New Roman",serif;font-size:clamp(1.65rem,3vw,2.1rem);font-weight:500}
+        .checkout-details-heading p{margin:8px 0 0;color:#718096;font-size:.92rem}
+        .checkout-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+        .checkout-field{display:flex;min-width:0;flex-direction:column;gap:8px;color:#273852;font-size:.88rem;font-weight:750}
+        .checkout-field--wide{grid-column:1/-1}
+        .checkout .form-control,.checkout .form-select{min-height:50px;border:1px solid #d5deeb;border-radius:10px;background-color:#fff;box-shadow:0 2px 6px rgba(20,40,70,.025);color:#26364d;font-weight:500;transition:border-color .18s ease,box-shadow .18s ease}
+        .checkout textarea.form-control{min-height:104px;resize:vertical}
+        .checkout .form-control:focus,.checkout .form-select:focus{border-color:var(--theme-primary,var(--blue));box-shadow:0 0 0 4px var(--theme-wash,rgba(20,99,214,.12))}
+        .checkout-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:24px;margin-top:26px;padding-top:22px;border-top:1px solid #e6ebf2}
+        .checkout-actions-copy{display:grid;gap:8px}
+        .checkout-actions-copy small{color:#68778d;line-height:1.55}
+        .checkout-buttons{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+        .checkout-buttons .btn{min-height:48px;padding:12px 17px;border-radius:10px;font-weight:750}
+        .btn-order{background:var(--theme-primary,var(--red));border:1px solid var(--theme-primary,var(--red));border-radius:10px;padding:13px 20px;color:#fff;font-weight:800;letter-spacing:.01em;box-shadow:0 8px 18px var(--theme-wash,rgba(20,99,214,.16))}
         .btn-order:hover{background:var(--navy);border-color:var(--navy);color:#fff}
+        @media(max-width:760px){.checkout-actions{grid-template-columns:1fr}.checkout-buttons{justify-content:stretch}.checkout-buttons .btn,.checkout-buttons .btn-order{flex:1}}
+        @media(max-width:576px){.checkout{margin-top:30px;border-radius:15px}.checkout-heading{padding:30px 18px 24px}.checkout-content{padding:18px 14px}.checkout-fields{grid-template-columns:1fr;gap:15px}.checkout-field--wide{grid-column:auto}.checkout-cart-box{margin-bottom:26px;padding:12px;border-radius:12px}.checkout-cart-box .table-responsive{font-size:.84rem}.checkout-actions{gap:16px}.checkout-buttons{flex-direction:column}.checkout-buttons .btn,.checkout-buttons .btn-order{width:100%}}
         .store-footer{background:var(--navy);color:#d9e5f8;padding:32px 24px}
         .store-footer-inner{align-items:center}
         .store-footer-inner strong{color:#fff}
@@ -210,29 +235,42 @@
             @csrf
             <input type="hidden" name="order_token" value="{{ $orderToken }}">
             <section class="checkout" id="store-cart">
-                <h2>Your Cart</h2>
-                <p class="text-muted">Review your items and total before providing contact details.</p>
-                <div id="cart-empty" class="text-muted py-2">Your cart is empty. Add products from the collection above.</div>
-                <div class="table-responsive"><table class="table align-middle" id="cart-table" hidden><thead><tr><th>Product</th><th>Unit price</th><th style="width:130px">Quantity</th><th>Subtotal</th><th></th></tr></thead><tbody id="cart-items"></tbody><tfoot><tr><th colspan="3" class="text-end">Estimated total</th><th id="cart-total"></th><th></th></tr></tfoot></table></div>
-                <div id="cart-hidden-items"></div>
-                <h3 class="mt-4">Order Details</h3>
-                <div class="row g-3">
-                    <div class="col-md-6"><label class="form-label">Full Name (optional)</label><input class="form-control" name="customer_name" value="{{ old('customer_name') }}"></div>
-                    <div class="col-md-6"><label class="form-label">Phone *</label><input class="form-control" name="customer_phone" value="{{ old('customer_phone') }}" required></div>
-                    <div class="col-md-6"><label class="form-label">Payment / Collection</label><select class="form-select" name="payment_method"><option value="pay_on_delivery" @selected(old('payment_method', 'pay_on_delivery') === 'pay_on_delivery')>Pay on delivery</option><option value="bank_transfer" @selected(old('payment_method') === 'bank_transfer')>Bank transfer after confirmation</option><option value="pickup" @selected(old('payment_method') === 'pickup')>Pay on pickup</option></select></div>
-                    <div class="col-12"><label class="form-label">Delivery Address</label><textarea class="form-control" name="delivery_address" rows="2">{{ old('delivery_address') }}</textarea></div>
-                    <div class="col-12"><label class="form-label">Order Note</label><textarea class="form-control" name="customer_note" rows="2">{{ old('customer_note') }}</textarea></div>
-                    <div class="col-12 d-flex justify-content-between align-items-center gap-3 flex-wrap">
-                        <small class="text-muted">{{ $store->fulfilment_note ?: 'Phone number is the only required detail. The business will confirm availability, payment, and delivery.' }}</small>
-                        <div class="d-flex gap-2 flex-wrap">
+                <header class="checkout-heading">
+                    <span class="checkout-kicker">Simple, secure ordering</span>
+                    <h2>Your Cart</h2>
+                    <p>Review your items, add your contact details, and send your order in one simple step.</p>
+                </header>
+                <div class="checkout-content">
+                    <div class="checkout-cart-box">
+                        <div id="cart-empty" class="text-muted py-2">Your cart is empty. Add products from the collection above.</div>
+                        <div class="table-responsive"><table class="table align-middle" id="cart-table" hidden><thead><tr><th>Product</th><th>Unit price</th><th style="width:130px">Quantity</th><th>Subtotal</th><th></th></tr></thead><tbody id="cart-items"></tbody><tfoot><tr><th colspan="3" class="text-end">Estimated total</th><th id="cart-total"></th><th></th></tr></tfoot></table></div>
+                    </div>
+                    <div id="cart-hidden-items"></div>
+                    <div class="checkout-details-heading">
+                        <span class="checkout-kicker">Almost there</span>
+                        <h3>Order Details</h3>
+                        <p>Let us know how to reach you and where to send your order.</p>
+                    </div>
+                    <div class="checkout-fields">
+                        <label class="checkout-field">Full Name <span class="text-muted fw-normal">(optional)</span><input class="form-control" name="customer_name" value="{{ old('customer_name') }}" autocomplete="name"></label>
+                        <label class="checkout-field">Phone *<input class="form-control" name="customer_phone" value="{{ old('customer_phone') }}" type="tel" autocomplete="tel" required></label>
+                        <label class="checkout-field">Payment / Collection<select class="form-select" name="payment_method"><option value="pay_on_delivery" @selected(old('payment_method', 'pay_on_delivery') === 'pay_on_delivery')>Pay on delivery</option><option value="bank_transfer" @selected(old('payment_method') === 'bank_transfer')>Bank transfer after confirmation</option><option value="pickup" @selected(old('payment_method') === 'pickup')>Pay on pickup</option></select></label>
+                        <label class="checkout-field checkout-field--wide">Delivery Address<textarea class="form-control" name="delivery_address" rows="3" autocomplete="street-address">{{ old('delivery_address') }}</textarea></label>
+                        <label class="checkout-field checkout-field--wide">Order Note<textarea class="form-control" name="customer_note" rows="3">{{ old('customer_note') }}</textarea></label>
+                    </div>
+                    <div class="checkout-actions">
+                        <div class="checkout-actions-copy">
+                            <small>{{ $store->fulfilment_note ?: 'Phone number is the only required detail. The business will confirm availability, payment, and delivery.' }}</small>
+                            @if($orderContact['whatsapp'])
+                                <small>WhatsApp requests do not reserve stock. Place an order to reserve the items in the store.</small>
+                            @endif
+                        </div>
+                        <div class="checkout-buttons">
                             @if($orderContact['whatsapp'])
                                 <button class="btn btn-success" id="send-cart-whatsapp" type="button" disabled><i class="fab fa-whatsapp me-2"></i>Send purchase request to WhatsApp</button>
                             @endif
                             <button class="btn-order" id="place-store-order" type="submit" disabled><i class="fas fa-paper-plane me-2"></i>Place Order &amp; Reserve Stock</button>
                         </div>
-                        @if($orderContact['whatsapp'])
-                            <small class="text-muted w-100">WhatsApp requests do not reserve stock. Use “Place Order &amp; Reserve Stock” to save the order and reserve the items in the store.</small>
-                        @endif
                     </div>
                 </div>
             </section>
