@@ -77,10 +77,6 @@
         .small-card-body{padding:19px}
         .small-card h3{font-size:1.3rem}
         .store-category-section{padding-top:30px;padding-bottom:30px}
-        .store-category-form{display:flex;align-items:center;gap:10px;max-width:560px;padding:14px;background:#fff;border:1px solid var(--line)}
-        .store-category-form select{flex:1;min-width:0;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:4px;background:#fff;color:var(--ink);font:inherit}
-        .store-category-form button{min-height:44px;padding:0 18px;border:0;border-radius:4px;background:var(--navy);color:#fff;font:inherit;font-weight:800;cursor:pointer}
-        .store-category-form button:hover{background:var(--red)}
         .collection-cta{margin:10px 26px 80px;padding:50px 28px;text-align:center;background:linear-gradient(110deg,var(--navy),#0b3979);color:#fff}
         .collection-cta h2{margin:0 0 11px;font-family:Georgia,"Times New Roman",serif;font-size:clamp(1.8rem,4vw,3rem);font-weight:500}
         .collection-cta p{margin:0 0 23px;color:#d5dfed}
@@ -162,16 +158,19 @@
         <div class="section-heading">
             <div><p class="eyebrow">Find your fit</p><h2 id="store-categories-title">Shop by category</h2></div>
         </div>
-        <form class="store-category-form" action="{{ $galleryUrl }}" method="GET">
-            <label class="visually-hidden" for="home-store-category">Choose a category</label>
-            <select id="home-store-category" name="category_id" required>
-                <option value="" selected disabled>Choose a category</option>
-                @foreach($categories as $category)
-                    <option value="{{ $category->id }}">{{ $category->name }} ({{ $category->products_count }} {{ \Illuminate\Support\Str::plural('item', (int) $category->products_count) }})</option>
-                @endforeach
-            </select>
-            <button type="submit">Browse</button>
-        </form>
+        <div class="store-category-dropdown">
+            <details>
+                <summary>Choose a category</summary>
+                <div class="store-category-dropdown-options" aria-label="All product categories">
+                    @foreach($categories as $category)
+                        <a href="{{ $galleryUrl }}?category_id={{ $category->id }}">
+                            <span>{{ $category->name }}</span>
+                            <span class="store-category-count">{{ $category->products_count }} {{ \Illuminate\Support\Str::plural('item', (int) $category->products_count) }}</span>
+                        </a>
+                    @endforeach
+                </div>
+            </details>
+        </div>
     </section>
 @endif
 

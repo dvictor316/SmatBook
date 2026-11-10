@@ -151,7 +151,8 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertSee('Shop by category')
             ->assertSee('Sneakers')
             ->assertSee('Sandals')
-            ->assertSee('name="category_id"', false)
+            ->assertSee('store-category-dropdown-options', false)
+            ->assertSee('category_id=' . $sneakersCategoryId, false)
             ->assertViewHas('categories', fn ($categories) => $categories->count() === 2);
 
         $this->get(route('storefront.products', 'shoe-store') . '?category_id=' . $sneakersCategoryId)

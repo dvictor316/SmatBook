@@ -40,9 +40,6 @@
         .catalogue-heading h2{margin:0;color:var(--navy);font-family:Georgia,"Times New Roman",serif;font-size:clamp(1.8rem,3vw,2.5rem);font-weight:500}
         .catalogue-heading p{margin:7px 0 0;color:#77766f}
         .catalogue-count{color:#77766f;font-size:.83rem;white-space:nowrap}
-        .store-category-nav{display:flex;align-items:center;gap:10px;margin:0 0 28px}
-        .store-category-nav select{width:min(100%,360px);min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:5px;background:#fff;color:var(--ink);font:inherit}
-        .store-category-nav button{min-height:44px;padding:0 16px;border:0;border-radius:5px;background:var(--navy);color:#fff;font-weight:750}
         .product-grid{grid-template-columns:minmax(0,1fr);gap:18px;max-width:1120px}
         .product{display:grid;grid-template-columns:minmax(260px,38%) minmax(0,1fr);border:1px solid #e3eaf3;border-radius:12px;background:#fff;transition:transform .2s ease,box-shadow .2s ease;animation:storefront-rise .55s both}
         .product:hover{transform:translateY(-3px);box-shadow:0 18px 42px rgba(6,35,84,.1)}
@@ -115,19 +112,22 @@
             : route('storefront.orders.store', $store->slug);
     @endphp
     @if($categories->isNotEmpty())
-        <form class="store-category-nav" method="GET" action="{{ $galleryUrl }}">
-            @if($search !== '')<input type="hidden" name="q" value="{{ $search }}">@endif
-            <label class="visually-hidden" for="gallery-store-category">Choose a category</label>
-            <select id="gallery-store-category" name="category_id">
-                <option value="">All categories</option>
-                @foreach($categories as $category)
-                    <option value="{{ $category->id }}" @selected($selectedCategoryId === (int) $category->id)>
-                        {{ $category->name }} ({{ $category->products_count }} {{ \Illuminate\Support\Str::plural('item', (int) $category->products_count) }})
-                    </option>
-                @endforeach
-            </select>
-            <button type="submit">Show products</button>
-        </form>
+        <div class="store-category-dropdown">
+            <details>
+                <summary>{{ $selectedCategory?->name ?? 'All categories' }}</summary>
+                <div class="store-category-dropdown-options" aria-label="All product categories">
+                    <a href="{{ $galleryUrl }}@if($search !== '')?{{ http_build_query(['q' => $search]) }}@endif">
+                        <span>All categories</span>
+                    </a>
+                    @foreach($categories as $category)
+                        <a href="{{ $galleryUrl }}?{{ http_build_query(array_filter(['category_id' => $category->id, 'q' => $search])) }}" @if($selectedCategoryId === (int) $category->id) aria-current="page" @endif>
+                            <span>{{ $category->name }}</span>
+                            <span class="store-category-count">{{ $category->products_count }} {{ \Illuminate\Support\Str::plural('item', (int) $category->products_count) }}</span>
+                        </a>
+                    @endforeach
+                </div>
+            </details>
+        </div>
     @endif
     <div class="catalogue-heading"><div><h2>{{ $selectedCategory ? $selectedCategory->name : 'Available collection' }}</h2><p>Add products to your cart, review quantities and total, then submit your order. Out-of-stock products are shown for reference.</p></div><span class="catalogue-count">{{ $products->total() }} {{ \Illuminate\Support\Str::plural('product', $products->total()) }}</span></div>
     <div class="product-grid">

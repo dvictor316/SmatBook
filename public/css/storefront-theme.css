@@ -1248,6 +1248,159 @@ body[data-store-theme] .contact-icon {
     background: var(--theme-paper);
 }
 
+body[data-store-theme] .product-meta span {
+    border-color: transparent;
+    border-radius: 999px;
+    font-weight: 700;
+}
+
+body[data-store-theme] .product-meta span:nth-child(3n + 1) {
+    background: var(--theme-primary);
+    color: #fff;
+}
+
+body[data-store-theme] .product-meta span:nth-child(3n + 2) {
+    background: var(--theme-accent);
+    color: var(--theme-deep);
+}
+
+body[data-store-theme] .product-meta span:nth-child(3n) {
+    background: var(--theme-highlight);
+    color: var(--theme-deep);
+}
+
+body[data-store-theme] .product {
+    box-shadow: 0 14px 36px var(--theme-wash);
+}
+
+body[data-store-theme] .product-eyebrow {
+    display: inline-flex;
+    align-self: flex-start;
+    padding: 6px 10px;
+    border: 1px solid var(--theme-line);
+    border-radius: 999px;
+    background: var(--theme-wash);
+    color: var(--theme-primary);
+}
+
+body[data-store-theme] .product .quantity input {
+    border: 1px solid var(--theme-accent);
+    border-radius: 8px;
+    background: var(--theme-paper);
+    color: var(--theme-ink);
+    font-weight: 700;
+}
+
+body[data-store-theme] .product .quantity input:focus {
+    border-color: var(--theme-primary);
+    box-shadow: 0 0 0 3px var(--theme-glow);
+}
+
+body[data-store-theme] .store-category-dropdown {
+    position: relative;
+    z-index: 5;
+    width: min(100%, 560px);
+    margin-bottom: 28px;
+}
+
+body[data-store-theme] .store-category-dropdown details {
+    position: relative;
+}
+
+body[data-store-theme] .store-category-dropdown summary {
+    display: flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 10px 16px;
+    border: 1px solid var(--theme-accent);
+    border-radius: 8px;
+    background: linear-gradient(120deg, var(--theme-wash), var(--theme-paper));
+    color: var(--theme-primary);
+    cursor: pointer;
+    font-weight: 800;
+    list-style: none;
+}
+
+body[data-store-theme] .store-category-dropdown summary::-webkit-details-marker {
+    display: none;
+}
+
+body[data-store-theme] .store-category-dropdown summary::after {
+    width: 9px;
+    height: 9px;
+    flex: 0 0 9px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    content: "";
+    transform: rotate(45deg) translateY(-2px);
+    transition: transform .18s ease;
+}
+
+body[data-store-theme] .store-category-dropdown details[open] summary::after {
+    transform: rotate(225deg) translate(-2px, -1px);
+}
+
+body[data-store-theme] .store-category-dropdown-options {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    left: 0;
+    max-height: min(340px, 60vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--theme-line);
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 16px 34px var(--theme-wash);
+    scrollbar-color: var(--theme-primary) var(--theme-paper);
+    scrollbar-width: thin;
+}
+
+body[data-store-theme] .store-category-dropdown-options::-webkit-scrollbar {
+    width: 10px;
+}
+
+body[data-store-theme] .store-category-dropdown-options::-webkit-scrollbar-track {
+    background: var(--theme-paper);
+}
+
+body[data-store-theme] .store-category-dropdown-options::-webkit-scrollbar-thumb {
+    border: 2px solid var(--theme-paper);
+    border-radius: 999px;
+    background: var(--theme-primary);
+}
+
+body[data-store-theme] .store-category-dropdown-options a {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--theme-line);
+    color: var(--theme-ink);
+    text-decoration: none;
+}
+
+body[data-store-theme] .store-category-dropdown-options a:last-child {
+    border-bottom: 0;
+}
+
+body[data-store-theme] .store-category-dropdown-options a:hover,
+body[data-store-theme] .store-category-dropdown-options a[aria-current="page"] {
+    background: var(--theme-wash);
+    color: var(--theme-primary);
+}
+
+body[data-store-theme] .store-category-dropdown-options .store-category-count {
+    color: var(--theme-primary);
+    font-size: .78rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
 body[data-store-theme] .product-purchase {
     border-color: var(--theme-line);
 }
