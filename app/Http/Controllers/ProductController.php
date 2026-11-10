@@ -4097,7 +4097,12 @@ public function inventory(Request $request)
                         'in' as type,
                         COALESCE(" . ($purchaseReferenceColumn ? "purchases.{$purchaseReferenceColumn}" : 'NULL') . ", purchases.purchase_no, {$purchaseFallbackReference}) as reference,
                         " . InventoryQuantity::purchaseStockUnitsExpression('purchase_items', 'products') . " as quantity,
-                        COALESCE(purchase_items.{$purchaseQtyColumn}, 0) as display_quantity,
+                        CASE
+                            WHEN COALESCE(purchase_items.stock_units, 0) > 0
+                                AND COALESCE(purchase_items.conversion_factor, 0) > 0
+                                THEN COALESCE(purchase_items.stock_units, 0) / purchase_items.conversion_factor
+                            ELSE COALESCE(purchase_items.{$purchaseQtyColumn}, 0)
+                        END as display_quantity,
                         COALESCE(NULLIF({$purchaseUnitColumn}, ''), products.base_unit_name, products.unit_type, 'pcs') as display_unit_label,
                         products.name as name,
                         products.sku as sku,

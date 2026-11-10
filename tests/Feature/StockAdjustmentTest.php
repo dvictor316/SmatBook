@@ -139,7 +139,7 @@ class StockAdjustmentTest extends TestCase
             'unit_price' => 100,
             'unit_type' => 'carton',
             'conversion_factor' => 1000,
-            'stock_units' => 1000,
+            'stock_units' => 2000,
             'company_id' => $company->id,
             'created_at' => $purchaseTime,
             'updated_at' => $purchaseTime,
@@ -148,7 +148,7 @@ class StockAdjustmentTest extends TestCase
             'user_id' => $user->id,
             'company_id' => $company->id,
             'product_id' => $product->id,
-            'quantity' => 1000,
+            'quantity' => 2000,
             'type' => 'in',
             'reference' => 'Stock In',
             'created_at' => $purchaseTime,
@@ -161,14 +161,14 @@ class StockAdjustmentTest extends TestCase
             ->assertOk();
         $historyResponse->assertSee('Quantity (transaction unit)')
             ->assertSee('Stock change (pcs)')
-            ->assertSee('+1,000')
+            ->assertSee('+2')
             ->assertSee('carton');
         $historyResponse->assertViewHas('inventoryHistories', function ($histories) {
                 $purchaseMovements = $histories->where('reference', 'PUR-CONVERSION-1000');
 
                 return $purchaseMovements->count() === 1
-                    && (float) $purchaseMovements->first()->quantity === 1000.0
-                    && (float) $purchaseMovements->first()->display_quantity === 1.0
+                    && (float) $purchaseMovements->first()->quantity === 2000.0
+                    && (float) $purchaseMovements->first()->display_quantity === 2.0
                     && strtolower((string) $purchaseMovements->first()->display_unit_label) === 'carton'
                     && (float) $histories->first()->running_balance === 2000.0;
             });
@@ -184,7 +184,7 @@ class StockAdjustmentTest extends TestCase
         $reportResponse->assertOk()->assertSee('Stock Movement Report');
         $summary = $reportResponse->viewData('summary');
         $this->assertSame(1, (int) $summary->movement_count, json_encode($summary));
-        $this->assertSame(1000.0, (float) $summary->total_in, json_encode($summary));
+        $this->assertSame(2000.0, (float) $summary->total_in, json_encode($summary));
         $csvResponse = $this->get(route('reports.stock-movements', [
             'format' => 'csv',
             'from_date' => now()->subDay()->toDateString(),
