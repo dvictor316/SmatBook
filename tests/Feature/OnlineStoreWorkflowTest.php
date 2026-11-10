@@ -128,6 +128,34 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertJsonPath('notification_count', 0);
     }
 
+    public function test_storefront_categories_link_to_products_in_that_category(): void
+    {
+        [$user, $company] = $this->workspace('Shoe Store');
+        $sneakersCategoryId = $this->category($user->id, $company->id, 'Sneakers');
+        $sandalsCategoryId = $this->category($user->id, $company->id, 'Sandals');
+        $this->product($user->id, $company->id, $sneakersCategoryId, 'Everyday Sneaker', 'SHOE-001', 8, 25000);
+        $this->product($user->id, $company->id, $sandalsCategoryId, 'Leather Sandal', 'SHOE-002', 5, 18000);
+        StorefrontSetting::create([
+            'company_id' => $company->id,
+            'slug' => 'shoe-store',
+            'store_name' => 'Shoe Store',
+            'is_enabled' => true,
+        ]);
+
+        $this->get(route('storefront.catalogue', 'shoe-store'))
+            ->assertOk()
+            ->assertSee('Shop by category')
+            ->assertSee('Sneakers')
+            ->assertSee('Sandals')
+            ->assertSee(route('storefront.products', 'shoe-store') . '?category_id=' . $sneakersCategoryId, false);
+
+        $this->get(route('storefront.products', 'shoe-store') . '?category_id=' . $sneakersCategoryId)
+            ->assertOk()
+            ->assertSee('Everyday Sneaker')
+            ->assertDontSee('Leather Sandal')
+            ->assertSee('All categories');
+    }
+
     public function test_repeated_store_order_submission_creates_one_order_and_reserves_stock_once(): void
     {
         [$user, $company] = $this->workspace('Idempotent Store');

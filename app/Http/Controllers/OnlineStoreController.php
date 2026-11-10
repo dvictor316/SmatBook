@@ -210,6 +210,7 @@ class OnlineStoreController extends Controller
     {
         $store = $this->resolvePublicStore($request, $slug);
         $company = Company::withoutGlobalScope('tenant')->findOrFail($store->company_id);
+        $categories = $this->storeCategories((int) $store->company_id);
         $products = Product::withoutGlobalScopes()
             ->where('company_id', $store->company_id)
             ->where('status', 'active')
@@ -218,7 +219,7 @@ class OnlineStoreController extends Controller
             ->get();
         $this->attachStoreStock($products, $store);
 
-        return view('storefront.home', compact('store', 'company', 'products'));
+        return view('storefront.home', compact('store', 'company', 'products', 'categories'));
     }
 
     public function productGallery(Request $request, ?string $slug = null): View
@@ -226,10 +227,19 @@ class OnlineStoreController extends Controller
         $store = $this->resolvePublicStore($request, $slug);
         $company = Company::withoutGlobalScope('tenant')->findOrFail($store->company_id);
         $orderContact = $store->orderContact();
+        $validated = $request->validate([
+            'category_id' => 'nullable|integer|min:1',
+        ]);
+        $categories = $this->storeCategories((int) $store->company_id);
+        $selectedCategoryId = isset($validated['category_id']) ? (int) $validated['category_id'] : null;
+        if ($selectedCategoryId !== null) {
+            abort_unless($categories->contains(fn ($category) => (int) $category->id === $selectedCategoryId), 404);
+        }
         $search = trim((string) $request->query('q'));
         $products = Product::withoutGlobalScopes()
             ->where('company_id', $store->company_id)
             ->where('status', 'active')
+            ->when($selectedCategoryId !== null, fn ($query) => $query->where('category_id', $selectedCategoryId))
             ->when($search !== '', fn ($query) => $query->where(function ($inner) use ($search) {
                 $inner->where('name', 'like', "%{$search}%")
                     ->orWhere('sku', 'like', "%{$search}%")
@@ -248,7 +258,36 @@ class OnlineStoreController extends Controller
 
         $orderToken = (string) Str::uuid();
 
-        return view('storefront.catalogue', compact('store', 'company', 'products', 'search', 'orderContact', 'orderToken'));
+        $selectedCategory = $categories->first(fn ($category) => (int) $category->id === $selectedCategoryId);
+
+        return view('storefront.catalogue', compact(
+            'store',
+            'company',
+            'products',
+            'categories',
+            'selectedCategory',
+            'selectedCategoryId',
+            'search',
+            'orderContact',
+            'orderToken'
+        ));
+    }
+
+    private function storeCategories(int $companyId): Collection
+    {
+        if (!Schema::hasTable('categories') || !Schema::hasColumn('products', 'category_id')) {
+            return collect();
+        }
+
+        return DB::table('categories')
+            ->join('products', 'products.category_id', '=', 'categories.id')
+            ->where('products.company_id', $companyId)
+            ->where('products.status', 'active')
+            ->select('categories.id', 'categories.name')
+            ->selectRaw('COUNT(DISTINCT products.id) as products_count')
+            ->groupBy('categories.id', 'categories.name')
+            ->orderBy('categories.name')
+            ->get();
     }
 
     public function about(Request $request, ?string $slug = null): View

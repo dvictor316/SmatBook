@@ -40,6 +40,10 @@
         .catalogue-heading h2{margin:0;color:var(--navy);font-family:Georgia,"Times New Roman",serif;font-size:clamp(1.8rem,3vw,2.5rem);font-weight:500}
         .catalogue-heading p{margin:7px 0 0;color:#77766f}
         .catalogue-count{color:#77766f;font-size:.83rem;white-space:nowrap}
+        .store-category-nav{display:flex;flex-wrap:wrap;gap:9px;margin:0 0 30px}
+        .store-category-nav a{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--navy);font-size:.84rem;font-weight:750;text-decoration:none}
+        .store-category-nav a:hover,.store-category-nav a[aria-current=page]{border-color:var(--navy);background:var(--navy);color:#fff}
+        .store-category-nav small{font-size:.73rem;opacity:.75}
         .product-grid{grid-template-columns:minmax(0,1fr);gap:18px;max-width:1120px}
         .product{display:grid;grid-template-columns:minmax(260px,38%) minmax(0,1fr);border:1px solid #e3eaf3;border-radius:12px;background:#fff;transition:transform .2s ease,box-shadow .2s ease;animation:storefront-rise .55s both}
         .product:hover{transform:translateY(-3px);box-shadow:0 18px 42px rgba(6,35,84,.1)}
@@ -86,7 +90,7 @@
     $galleryUrl = $customDomain ? route('storefront.custom-domain.products') : route('storefront.products', $store->slug);
     $aboutUrl = $customDomain ? route('storefront.custom-domain.about') : route('storefront.about', $store->slug);
 @endphp
-<nav class="store-nav"><div class="store-nav-inner"><a class="brand" href="{{ $homeUrl }}"><img src="{{ $company->logo ? asset($company->logo) : asset('assets/img/logos.png') }}" alt=""><span>{{ $store->store_name }}</span></a><div class="gallery-nav-links"><a href="{{ $homeUrl }}">Home</a><a href="{{ $galleryUrl }}" aria-current="page">Product Gallery</a><a class="gallery-nav-about" href="{{ $aboutUrl }}">About Us</a><a href="#store-cart" class="btn btn-sm btn-outline-primary">Cart <span class="badge bg-primary" id="cart-count">0</span></a></div><form class="store-search" method="GET"><input class="form-control" name="q" value="{{ $search }}" placeholder="Search products"><button class="btn btn-primary" title="Search" aria-label="Search"><i class="fas fa-search"></i></button></form></div></nav>
+<nav class="store-nav"><div class="store-nav-inner"><a class="brand" href="{{ $homeUrl }}"><img src="{{ $company->logo ? asset($company->logo) : asset('assets/img/logos.png') }}" alt=""><span>{{ $store->store_name }}</span></a><div class="gallery-nav-links"><a href="{{ $homeUrl }}">Home</a><a href="{{ $galleryUrl }}" aria-current="page">Product Gallery</a><a class="gallery-nav-about" href="{{ $aboutUrl }}">About Us</a><a href="#store-cart" class="btn btn-sm btn-outline-primary">Cart <span class="badge bg-primary" id="cart-count">0</span></a></div><form class="store-search" method="GET">@if($selectedCategoryId)<input type="hidden" name="category_id" value="{{ $selectedCategoryId }}">@endif<input class="form-control" name="q" value="{{ $search }}" placeholder="Search products"><button class="btn btn-primary" title="Search" aria-label="Search"><i class="fas fa-search"></i></button></form></div></nav>
 <header class="store-head"><div class="store-head-inner"><span class="store-eyebrow">The official online store</span><h1>{{ $store->store_name }}</h1><p>{{ $store->description ?: 'Explore our available collection and send an order request directly to our team.' }}</p></div></header>
 <main class="store-main">
     @if(session('store_order_success'))
@@ -111,7 +115,17 @@
             ? route('storefront.custom-domain.orders.store')
             : route('storefront.orders.store', $store->slug);
     @endphp
-    <div class="catalogue-heading"><div><h2>Available collection</h2><p>Add products to your cart, review quantities and total, then submit your order. Out-of-stock products are shown for reference.</p></div><span class="catalogue-count">{{ $products->total() }} {{ \Illuminate\Support\Str::plural('product', $products->total()) }}</span></div>
+    @if($categories->isNotEmpty())
+        <nav class="store-category-nav" aria-label="Shop by category">
+            <a href="{{ $galleryUrl }}" @if(!$selectedCategoryId) aria-current="page" @endif>All categories</a>
+            @foreach($categories as $category)
+                <a href="{{ $galleryUrl }}?category_id={{ $category->id }}" @if($selectedCategoryId === (int) $category->id) aria-current="page" @endif>
+                    {{ $category->name }} <small>{{ $category->products_count }}</small>
+                </a>
+            @endforeach
+        </nav>
+    @endif
+    <div class="catalogue-heading"><div><h2>{{ $selectedCategory ? $selectedCategory->name : 'Available collection' }}</h2><p>Add products to your cart, review quantities and total, then submit your order. Out-of-stock products are shown for reference.</p></div><span class="catalogue-count">{{ $products->total() }} {{ \Illuminate\Support\Str::plural('product', $products->total()) }}</span></div>
     <div class="product-grid">
         @forelse($products as $product)
             @php

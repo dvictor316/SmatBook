@@ -76,6 +76,10 @@
         .small-media{height:230px}
         .small-card-body{padding:19px}
         .small-card h3{font-size:1.3rem}
+        .store-category-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+        .store-category-link{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;background:#fff;border:1px solid var(--line);color:var(--navy);font-weight:800;text-decoration:none;transition:transform .2s ease,border-color .2s ease}
+        .store-category-link:hover{transform:translateY(-3px);border-color:var(--gold);color:var(--navy)}
+        .store-category-count{color:var(--muted);font-size:.78rem;font-weight:600;white-space:nowrap}
         .collection-cta{margin:10px 26px 80px;padding:50px 28px;text-align:center;background:linear-gradient(110deg,var(--navy),#0b3979);color:#fff}
         .collection-cta h2{margin:0 0 11px;font-family:Georgia,"Times New Roman",serif;font-size:clamp(1.8rem,4vw,3rem);font-weight:500}
         .collection-cta p{margin:0 0 23px;color:#d5dfed}
@@ -112,6 +116,7 @@
         </a>
         <div class="nav-links">
             <a class="nav-home" href="{{ $homeUrl }}" aria-current="page">Home</a>
+            @if($categories->isNotEmpty())<a href="#store-categories">Categories</a>@endif
             <a class="nav-gallery" href="{{ $galleryUrl }}">Product Gallery</a>
             <a class="nav-about" href="{{ $aboutUrl }}">About Us</a>
         </div>
@@ -150,6 +155,22 @@
         @endif
     </div>
 </header>
+
+@if($categories->isNotEmpty())
+    <section class="section" id="store-categories" aria-labelledby="store-categories-title">
+        <div class="section-heading">
+            <div><p class="eyebrow">Find your fit</p><h2 id="store-categories-title">Shop by category</h2><p>Choose a category to see the products in it.</p></div>
+        </div>
+        <div class="store-category-grid">
+            @foreach($categories as $category)
+                <a class="store-category-link" href="{{ $galleryUrl }}?category_id={{ $category->id }}">
+                    <span>{{ $category->name }}</span>
+                    <span class="store-category-count">{{ $category->products_count }} {{ \Illuminate\Support\Str::plural('item', (int) $category->products_count) }} &rarr;</span>
+                </a>
+            @endforeach
+        </div>
+    </section>
+@endif
 
 @if($featuredProduct)
     <section class="section product-motion-section" aria-labelledby="product-motion-title">
