@@ -71,26 +71,26 @@
         .checkout-kicker{display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px;padding:7px 13px;border:1px solid var(--theme-line,#dbe4f0);border-radius:999px;background:#fff;color:var(--theme-primary,var(--blue));font-size:.7rem;font-weight:850;letter-spacing:.14em;text-transform:uppercase}
         .checkout-heading h2{margin:0;color:var(--navy);font-family:Georgia,"Times New Roman",serif;font-size:clamp(2rem,4vw,2.7rem);font-weight:500;line-height:1.1}
         .checkout-heading p{max-width:600px;margin:12px auto 0;color:#65748b;font-size:1rem;line-height:1.65}
-        .checkout-content{padding:clamp(20px,4vw,40px)}
-        .checkout-cart-box{margin-bottom:34px;padding:clamp(16px,3vw,26px);border:1px solid #e3eaf3;border-radius:15px;background:linear-gradient(145deg,#f8faff,#f4f7fc)}
+        .checkout-content{padding:clamp(20px,4vw,40px);background:linear-gradient(145deg,#201b3d,#28234b 58%,#1d2944)}
+        .checkout-cart-box{margin-bottom:34px;padding:clamp(16px,3vw,26px);border:1px solid rgba(255,255,255,.18);border-radius:15px;background:rgba(255,255,255,.075)}
         .checkout-cart-box .table-responsive{margin:0}
-        .checkout-cart-box .table{margin:0;color:#26364d}
-        .checkout-cart-box .table thead th{padding:13px 12px;border-bottom-color:#dbe4f0;color:#61718a;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase}
-        .checkout-cart-box .table td,.checkout-cart-box .table tfoot th{padding:14px 12px;border-color:#e3eaf3}
+        .checkout-cart-box .table{margin:0;color:#f5f6fb}
+        .checkout-cart-box .table thead th{padding:13px 12px;border-bottom-color:rgba(255,255,255,.22);color:#d5d9e8;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase}
+        .checkout-cart-box .table td,.checkout-cart-box .table tfoot th{padding:14px 12px;border-color:rgba(255,255,255,.16);color:#f5f6fb}
         .checkout-cart-box #cart-empty{padding:18px 20px!important;border:1px dashed #cbd6e5;border-radius:11px;background:#fff;color:#65748b!important;text-align:center}
         .checkout-details-heading{margin:0 0 22px;text-align:center}
         .checkout-details-heading .checkout-kicker{margin-bottom:10px}
-        .checkout-details-heading h3{margin:0;color:var(--navy);font-family:Georgia,"Times New Roman",serif;font-size:clamp(1.65rem,3vw,2.1rem);font-weight:500}
-        .checkout-details-heading p{margin:8px 0 0;color:#718096;font-size:.92rem}
+        .checkout-details-heading h3{margin:0;color:#fff;font-family:Georgia,"Times New Roman",serif;font-size:clamp(1.65rem,3vw,2.1rem);font-weight:500}
+        .checkout-details-heading p{margin:8px 0 0;color:#d0d4e4;font-size:.92rem}
         .checkout-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
-        .checkout-field{display:flex;min-width:0;flex-direction:column;gap:8px;color:#273852;font-size:.88rem;font-weight:750}
+        .checkout-field{display:flex;min-width:0;flex-direction:column;gap:8px;color:#f3f2fa;font-size:.88rem;font-weight:750}
         .checkout-field--wide{grid-column:1/-1}
         .checkout .form-control,.checkout .form-select{min-height:50px;border:1px solid #d5deeb;border-radius:10px;background-color:#fff;box-shadow:0 2px 6px rgba(20,40,70,.025);color:#26364d;font-weight:500;transition:border-color .18s ease,box-shadow .18s ease}
         .checkout textarea.form-control{min-height:104px;resize:vertical}
         .checkout .form-control:focus,.checkout .form-select:focus{border-color:var(--theme-primary,var(--blue));box-shadow:0 0 0 4px var(--theme-wash,rgba(20,99,214,.12))}
-        .checkout-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:24px;margin-top:26px;padding-top:22px;border-top:1px solid #e6ebf2}
+        .checkout-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:24px;margin-top:26px;padding-top:22px;border-top:1px solid rgba(255,255,255,.2)}
         .checkout-actions-copy{display:grid;gap:8px}
-        .checkout-actions-copy small{color:#68778d;line-height:1.55}
+        .checkout-actions-copy small{color:#d0d4e4;line-height:1.55}
         .checkout-buttons{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
         .checkout-buttons .btn{min-height:48px;padding:12px 17px;border-radius:10px;font-weight:750}
         .btn-order{background:var(--theme-primary,var(--red));border:1px solid var(--theme-primary,var(--red));border-radius:10px;padding:13px 20px;color:#fff;font-weight:800;letter-spacing:.01em;box-shadow:0 8px 18px var(--theme-wash,rgba(20,99,214,.16))}
