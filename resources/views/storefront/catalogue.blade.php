@@ -139,7 +139,6 @@
                 $hasSizeOptions = $variants->count() > 1;
                 $displayName = trim($product->name . ($product->variantLabel() !== '' ? ' · ' . $product->variantLabel() : ''));
                 $quantityStep = in_array(strtolower($product->stockUnitSymbol()), ['kg','g','litre','liter','l','m']) ? 0.01 : 1;
-                $hasSku = $variants->contains(fn ($variant) => filled($variant->sku));
                 $hasBrand = $variants->contains(fn ($variant) => filled($variant->brand));
                 $hasSize = $variants->contains(fn ($variant) => filled($variant->fashion_size));
                 $hasColor = $variants->contains(fn ($variant) => filled($variant->fashion_color));
@@ -184,8 +183,7 @@
                         </div>
                     @endif
                     <div class="product-meta">
-                        @if($hasSku)<span data-product-meta="sku"><i class="fas fa-barcode" aria-hidden="true"></i>SKU: {{ $product->sku }}</span>@endif
-                        @if($hasBrand)<span data-product-meta="brand"><i class="fas fa-tag" aria-hidden="true"></i>{{ $product->brand }}</span>@endif
+                        @if($hasBrand)<span data-product-meta="brand"><i class="fas fa-tag" aria-hidden="true"></i>Brand: {{ $product->brand }}</span>@endif
                         @if($hasSize)<span data-product-meta="size"><i class="fas fa-ruler" aria-hidden="true"></i>Size: {{ $product->fashion_size }}</span>@endif
                         @if($hasColor)<span data-product-meta="color"><i class="fas fa-palette" aria-hidden="true"></i>Colour: {{ $product->fashion_color }}</span>@endif
                     </div>
@@ -321,8 +319,7 @@
             }
             article.querySelectorAll('[data-product-meta]').forEach((meta) => {
                 const labels = {
-                    sku: product.sku ? `SKU: ${product.sku}` : '',
-                    brand: product.brand,
+                    brand: product.brand ? `Brand: ${product.brand}` : '',
                     size: product.size ? `Size: ${product.size}` : '',
                     color: product.color ? `Colour: ${product.color}` : ''
                 };

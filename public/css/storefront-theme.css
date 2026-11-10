@@ -1269,6 +1269,10 @@ body[data-store-theme] .product-meta span:nth-child(3n) {
     color: var(--theme-deep);
 }
 
+body[data-store-theme] .product-meta span[data-product-meta="size"] {
+    color: #fff;
+}
+
 body[data-store-theme] .product {
     box-shadow: 0 14px 36px var(--theme-wash);
 }
