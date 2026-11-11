@@ -142,6 +142,7 @@
                                                 <th>Size</th>
                                                 <th>Colour</th>
                                                 <th>SKU</th>
+                                                <th>Selling price</th>
                                                 <th>Branch stock</th>
                                                 <th></th>
                                             </tr>
@@ -152,6 +153,7 @@
                                                     <td>{{ $variant->fashion_size ?: '-' }}</td>
                                                     <td>{{ $variant->fashion_color ?: '-' }}</td>
                                                     <td>{{ $variant->sku ?: '-' }}</td>
+                                                    <td>{{ number_format((float) ($variant->retail_price ?? $variant->price), 2) }}</td>
                                                     <td>{{ number_format((float) $variant->active_branch_stock, 2) }}</td>
                                                     <td>
                                                         @if((int) $variant->id === (int) $product->id)

@@ -205,6 +205,8 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertSee('Choose size')
             ->assertSee('Size EU 41')
             ->assertSee('Size EU 42')
+            ->assertSee('data-product-price="25000"', false)
+            ->assertSee('data-product-price="27000"', false)
             ->assertSee('Available sizes:')
             ->assertSee('data-available-size', false)
             ->assertSee('Brand: Stride')

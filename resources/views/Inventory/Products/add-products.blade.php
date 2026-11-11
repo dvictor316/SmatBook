@@ -248,28 +248,39 @@ body:not(.login-body):not(.landing-page-body) #add-product-page > .content.conta
                                             <small class="field-hint">Add one row for each size/colour combination. Each row becomes a separately stocked POS and storefront item.</small>
                                             @error('variants')<div class="text-danger small">{{ $message }}</div>@enderror
                                             <div id="fashionVariantsFields" class="mt-3" @unless(old('use_variants')) hidden @endunless>
+                                                <div class="form-check form-switch mb-2">
+                                                    <input type="hidden" name="variant_prices_enabled" value="0">
+                                                    <input class="form-check-input" type="checkbox" role="switch" name="variant_prices_enabled" value="1" id="variantPricesEnabled" @checked(old('variant_prices_enabled'))>
+                                                    <label class="form-check-label fw-semibold" for="variantPricesEnabled">Set a different selling price for each size/colour</label>
+                                                </div>
+                                                <small class="field-hint d-block mb-3">When enabled, enter a price for any size/colour that differs from the standard selling price.</small>
                                                 <div id="fashionVariantRows">
-                                                    @foreach(old('variants', [['size' => '', 'color' => '', 'sku' => '', 'stock' => '0']]) as $index => $variant)
+                                                    @foreach(old('variants', [['size' => '', 'color' => '', 'sku' => '', 'stock' => '0', 'price' => '']]) as $index => $variant)
                                                         <div class="row g-2 align-items-end border rounded p-2 mb-2 fashion-variant-row">
-                                                            <div class="col-sm-3">
+                                                            <div class="col-sm-2">
                                                                 <label class="form-label">Size</label>
-                                                                <input class="form-control" name="variants[{{ $index }}][size]" value="{{ $variant['size'] ?? '' }}" maxlength="80" placeholder="e.g. M">
+                                                                <input class="form-control variant-size-input" name="variants[{{ $index }}][size]" value="{{ $variant['size'] ?? '' }}" maxlength="80" placeholder="e.g. M">
                                                                 @error("variants.$index.size")<div class="text-danger small">{{ $message }}</div>@enderror
                                                             </div>
-                                                            <div class="col-sm-3">
+                                                            <div class="col-sm-2">
                                                                 <label class="form-label">Colour</label>
-                                                                <input class="form-control" name="variants[{{ $index }}][color]" value="{{ $variant['color'] ?? '' }}" maxlength="80" placeholder="e.g. Navy">
+                                                                <input class="form-control variant-color-input" name="variants[{{ $index }}][color]" value="{{ $variant['color'] ?? '' }}" maxlength="80" placeholder="e.g. Navy">
                                                                 @error("variants.$index.color")<div class="text-danger small">{{ $message }}</div>@enderror
                                                             </div>
                                                             <div class="col-sm-3">
                                                                 <label class="form-label">SKU (optional)</label>
-                                                                <input class="form-control" name="variants[{{ $index }}][sku]" value="{{ $variant['sku'] ?? '' }}" maxlength="191" placeholder="Auto-generated">
+                                                                <input class="form-control variant-sku-input" name="variants[{{ $index }}][sku]" value="{{ $variant['sku'] ?? '' }}" maxlength="191" placeholder="Auto-generated">
                                                                 @error("variants.$index.sku")<div class="text-danger small">{{ $message }}</div>@enderror
                                                             </div>
                                                             <div class="col-sm-2">
                                                                 <label class="form-label">Opening stock</label>
-                                                                <input type="number" class="form-control" name="variants[{{ $index }}][stock]" value="{{ $variant['stock'] ?? 0 }}" min="0" step="0.01" required>
+                                                                <input type="number" class="form-control variant-stock-input" name="variants[{{ $index }}][stock]" value="{{ $variant['stock'] ?? 0 }}" min="0" step="0.01" required>
                                                                 @error("variants.$index.stock")<div class="text-danger small">{{ $message }}</div>@enderror
+                                                            </div>
+                                                            <div class="col-sm-2 variant-selling-price-field" @unless(old('variant_prices_enabled')) hidden @endunless>
+                                                                <label class="form-label">Selling price</label>
+                                                                <input type="number" class="form-control variant-selling-price" name="variants[{{ $index }}][price]" value="{{ $variant['price'] ?? '' }}" min="0" step="0.01" placeholder="Standard price">
+                                                                @error("variants.$index.price")<div class="text-danger small">{{ $message }}</div>@enderror
                                                             </div>
                                                             <div class="col-sm-1">
                                                                 <button type="button" class="btn btn-outline-danger w-100 remove-fashion-variant" aria-label="Remove variant"><i class="fas fa-trash"></i></button>
@@ -1220,18 +1231,26 @@ $(document).ready(function () {
     });
 
     var variantIndex = $('#fashionVariantRows .fashion-variant-row').length;
+    function syncVariantSellingPrices() {
+        var enabled = $('#useProductVariants').is(':checked') && $('#variantPricesEnabled').is(':checked');
+        $('.variant-selling-price-field').prop('hidden', !enabled);
+        $('.variant-selling-price').prop('disabled', !enabled);
+    }
+
     function setVariantInputsEnabled(enabled) {
         $('#fashionVariantsFields').prop('hidden', !enabled);
         $('#fashionVariantsFields').find('input').prop('disabled', !enabled);
         $('#product-opening-stock-sheet').toggle(!enabled);
         $('#product-opening-stock-sheet').find('input, select, textarea').prop('disabled', enabled);
         $('.product-packaging-choice').toggle(!enabled);
+        syncVariantSellingPrices();
         if (enabled) setMeasurementMode('pieces');
     }
 
     $('#useProductVariants').on('change', function () {
         setVariantInputsEnabled(this.checked);
     });
+    $('#variantPricesEnabled').on('change', syncVariantSellingPrices);
     if ($('#useProductVariants').length) {
         setVariantInputsEnabled($('#useProductVariants').is(':checked'));
     }
@@ -1239,17 +1258,20 @@ $(document).ready(function () {
     $('#addFashionVariant').on('click', function () {
         var index = variantIndex++;
         var row = $('<div class="row g-2 align-items-end border rounded p-2 mb-2 fashion-variant-row">' +
-            '<div class="col-sm-3"><label class="form-label">Size</label><input class="form-control" maxlength="80" placeholder="e.g. M"></div>' +
-            '<div class="col-sm-3"><label class="form-label">Colour</label><input class="form-control" maxlength="80" placeholder="e.g. Navy"></div>' +
-            '<div class="col-sm-3"><label class="form-label">SKU (optional)</label><input class="form-control" maxlength="191" placeholder="Auto-generated"></div>' +
-            '<div class="col-sm-2"><label class="form-label">Opening stock</label><input type="number" class="form-control" min="0" step="0.01" value="0" required></div>' +
+            '<div class="col-sm-2"><label class="form-label">Size</label><input class="form-control variant-size-input" maxlength="80" placeholder="e.g. M"></div>' +
+            '<div class="col-sm-2"><label class="form-label">Colour</label><input class="form-control variant-color-input" maxlength="80" placeholder="e.g. Navy"></div>' +
+            '<div class="col-sm-3"><label class="form-label">SKU (optional)</label><input class="form-control variant-sku-input" maxlength="191" placeholder="Auto-generated"></div>' +
+            '<div class="col-sm-2"><label class="form-label">Opening stock</label><input type="number" class="form-control variant-stock-input" min="0" step="0.01" value="0" required></div>' +
+            '<div class="col-sm-2 variant-selling-price-field" hidden><label class="form-label">Selling price</label><input type="number" class="form-control variant-selling-price" min="0" step="0.01" placeholder="Standard price"></div>' +
             '<div class="col-sm-1"><button type="button" class="btn btn-outline-danger w-100 remove-fashion-variant" aria-label="Remove variant"><i class="fas fa-trash"></i></button></div>' +
             '</div>');
-        row.find('input').eq(0).attr('name', 'variants[' + index + '][size]');
-        row.find('input').eq(1).attr('name', 'variants[' + index + '][color]');
-        row.find('input').eq(2).attr('name', 'variants[' + index + '][sku]');
-        row.find('input').eq(3).attr('name', 'variants[' + index + '][stock]');
+        row.find('.variant-size-input').attr('name', 'variants[' + index + '][size]');
+        row.find('.variant-color-input').attr('name', 'variants[' + index + '][color]');
+        row.find('.variant-sku-input').attr('name', 'variants[' + index + '][sku]');
+        row.find('.variant-stock-input').attr('name', 'variants[' + index + '][stock]');
+        row.find('.variant-selling-price').attr('name', 'variants[' + index + '][price]');
         $('#fashionVariantRows').append(row);
+        syncVariantSellingPrices();
     });
     $(document).on('click', '.remove-fashion-variant', function () {
         if ($('#fashionVariantRows .fashion-variant-row').length > 1) {

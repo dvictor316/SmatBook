@@ -182,6 +182,7 @@ class ProductEditTest extends TestCase
             ->assertSee('price_list_prices['.$priceListId.']', false)
             ->assertSee('name="branch_id"', false)
             ->assertSee('Product Variants')
+            ->assertSee('Selling price')
             ->assertSee('EDIT-PRICE-LIST-2')
             ->assertSee(route('inventory.Products.edit', $siblingVariantId), false);
 

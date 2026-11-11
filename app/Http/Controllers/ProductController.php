@@ -1524,6 +1524,7 @@ class ProductController extends Controller
             $fashionCatalogEnabled = Schema::hasColumn('companies', 'fashion_catalog_enabled')
                 && (bool) DB::table('companies')->where('id', $this->tenantCompanyId())->value('fashion_catalog_enabled');
             $rules['use_variants'] = $fashionCatalogEnabled ? 'nullable|boolean' : 'prohibited';
+            $rules['variant_prices_enabled'] = $fashionCatalogEnabled ? 'nullable|boolean' : 'prohibited';
             $rules['brand'] = $fashionCatalogEnabled ? 'nullable|string|max:191' : 'prohibited';
             $rules['variants'] = $fashionCatalogEnabled
                 ? 'required_if:use_variants,1|array|min:1|max:100'
@@ -1532,9 +1533,17 @@ class ProductController extends Controller
             $rules['variants.*.color'] = $fashionCatalogEnabled ? 'nullable|string|max:80' : 'prohibited';
             $rules['variants.*.sku'] = $fashionCatalogEnabled ? 'nullable|string|max:191|unique:products,sku' : 'prohibited';
             $rules['variants.*.stock'] = $fashionCatalogEnabled ? 'required_with:variants|numeric|min:0' : 'prohibited';
+            $rules['variants.*.price'] = $fashionCatalogEnabled
+                && $request->boolean('use_variants')
+                && $request->boolean('variant_prices_enabled')
+                    ? 'nullable|numeric|min:0'
+                    : 'prohibited';
 
             $validator = Validator::make($request->except('image'), $rules);
             $validator->after(function ($v) use ($request, $fashionCatalogEnabled) {
+                if ($request->boolean('variant_prices_enabled') && !$request->boolean('use_variants')) {
+                    $v->errors()->add('variant_prices_enabled', 'Enable size/colour variants before setting prices per variant.');
+                }
                 $price = trim((string) $request->input('price', ''));
                 $purchase = trim((string) $request->input('purchase_price', ''));
                 if ($price === '' && $purchase === '') {
@@ -1586,6 +1595,7 @@ class ProductController extends Controller
                 : null;
             $priceListPrices = $validated['price_list_prices'] ?? [];
             $useVariants = $fashionCatalogEnabled && (bool) ($validated['use_variants'] ?? false);
+            $variantPricesEnabled = $useVariants && (bool) ($validated['variant_prices_enabled'] ?? false);
             $brand = $fashionCatalogEnabled ? trim((string) ($validated['brand'] ?? '')) : '';
             $variantRows = $useVariants ? $validated['variants'] : [];
             unset(
@@ -1596,6 +1606,7 @@ class ProductController extends Controller
                 $validated['sales_unit_selection_enabled'],
                 $validated['sales_units'],
                 $validated['use_variants'],
+                $validated['variant_prices_enabled'],
                 $validated['variants'],
                 $validated['brand']
             );
@@ -1712,6 +1723,7 @@ class ProductController extends Controller
                 $brand,
                 $groupId,
                 $useVariants,
+                $variantPricesEnabled,
                 $priceListPrices,
                 $cartonSellingPrice,
                 $salesUnitNames,
@@ -1731,6 +1743,12 @@ class ProductController extends Controller
                     );
                     $payload['stock'] = $variantStock;
                     $payload['stock_quantity'] = $variantStock;
+                    if ($variantPricesEnabled && filled($definition['price'] ?? null)) {
+                        $payload['price'] = (float) $definition['price'];
+                        if (Schema::hasColumn('products', 'retail_price')) {
+                            $payload['retail_price'] = (float) $definition['price'];
+                        }
+                    }
                     $payload['brand'] = $brand !== '' ? $brand : null;
                     $payload['fashion_size'] = filled($definition['size'] ?? null) ? trim((string) $definition['size']) : null;
                     $payload['fashion_color'] = filled($definition['color'] ?? null) ? trim((string) $definition['color']) : null;

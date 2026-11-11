@@ -59,6 +59,7 @@ class ProductMeasurementSetupTest extends TestCase
             ->assertSee('Cartons containing pieces (pcs)')
             ->assertSee('Cartons measured in kilograms (kg)')
             ->assertSee('Selling Price Per Piece (pcs)')
+            ->assertDontSee('name="variant_prices_enabled"', false)
             ->assertSee('set separately')
             ->assertSee('not calculated from the price per kg')
             ->assertSee('Opening Full Cartons')
@@ -424,13 +425,19 @@ class ProductMeasurementSetupTest extends TestCase
         $units = $this->workspace();
         $companyId = (int) auth()->user()->company_id;
         DB::table('companies')->where('id', $companyId)->update(['fashion_catalog_enabled' => true]);
+        $this->get(route('add-products'))
+            ->assertOk()
+            ->assertSee('name="variant_prices_enabled"', false)
+            ->assertSee('name="variants[0][price]"', false)
+            ->assertSee('Set a different selling price for each size/colour');
         $payload = $this->payload($units, 'pieces');
         $payload['name'] = 'Everyday Shirt';
         $payload['brand'] = 'Threaded House';
         $payload['use_variants'] = 1;
+        $payload['variant_prices_enabled'] = 1;
         $payload['variants'] = [
-            ['size' => 'S', 'color' => 'Blue', 'sku' => '', 'stock' => 4],
-            ['size' => 'M', 'color' => 'Blue', 'sku' => '', 'stock' => 9],
+            ['size' => 'S', 'color' => 'Blue', 'sku' => '', 'stock' => 4, 'price' => 2500],
+            ['size' => 'M', 'color' => 'Blue', 'sku' => '', 'stock' => 9, 'price' => 2800],
         ];
 
         $this->post(route('inventory.Products.store'), $payload)
@@ -450,6 +457,10 @@ class ProductMeasurementSetupTest extends TestCase
         $this->assertSame('Blue', $small->fashion_color);
         $this->assertSame(4.0, (float) $small->stock);
         $this->assertSame(9.0, (float) $medium->stock);
+        $this->assertSame(2500.0, (float) $small->price);
+        $this->assertSame(2500.0, (float) $small->retail_price);
+        $this->assertSame(2800.0, (float) $medium->price);
+        $this->assertSame(2800.0, (float) $medium->retail_price);
         $this->assertSame('Threaded House · S · Blue', $small->variantLabel());
     }
 
@@ -466,6 +477,21 @@ class ProductMeasurementSetupTest extends TestCase
 
         $this->post(route('inventory.Products.store'), $payload)
             ->assertSessionHasErrors('variants.1.size');
+        $this->assertDatabaseMissing('products', ['name' => $payload['name']]);
+    }
+
+    public function test_per_variant_prices_are_rejected_when_fashion_options_are_disabled(): void
+    {
+        $units = $this->workspace();
+        $payload = $this->payload($units, 'pieces');
+        $payload['use_variants'] = 1;
+        $payload['variant_prices_enabled'] = 1;
+        $payload['variants'] = [
+            ['size' => '42', 'color' => 'Black', 'sku' => '', 'stock' => 3, 'price' => 2500],
+        ];
+
+        $this->post(route('inventory.Products.store'), $payload)
+            ->assertSessionHasErrors(['use_variants', 'variant_prices_enabled', 'variants']);
         $this->assertDatabaseMissing('products', ['name' => $payload['name']]);
     }
 
