@@ -150,7 +150,7 @@
                         <span>All categories</span>
                     </a>
                     @foreach($categories as $category)
-                        <a href="{{ $galleryUrl }}?{{ http_build_query(array_filter(['category_id' => $category->id, 'q' => $search])) }}" @if($selectedCategoryId === (int) $category->id) aria-current="page" @endif>
+                        <a href="{{ $galleryUrl }}?{{ http_build_query(['category_id' => $category->id]) }}" @if($selectedCategoryId === (int) $category->id) aria-current="page" @endif>
                             <span>{{ $category->name }}</span>
                             <span class="store-category-count">{{ $category->products_count }} {{ \Illuminate\Support\Str::plural('item', (int) $category->products_count) }}</span>
                         </a>

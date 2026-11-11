@@ -164,6 +164,11 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertViewHas('products', function ($products) use ($newestSneakerId) {
                 return (int) $products->first()->id === $newestSneakerId;
             });
+
+        $this->get(route('storefront.products', 'shoe-store') . '?q=unrelated-search')
+            ->assertOk()
+            ->assertSee('href="' . route('storefront.products', 'shoe-store') . '?category_id=' . $sneakersCategoryId . '"', false)
+            ->assertDontSee('category_id=' . $sneakersCategoryId . '&amp;q=unrelated-search', false);
     }
 
     public function test_storefront_shoe_group_displays_sizes_and_orders_the_selected_variant_with_phone_only(): void
