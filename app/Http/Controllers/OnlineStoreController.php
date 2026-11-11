@@ -290,6 +290,7 @@ class OnlineStoreController extends Controller
                 ->where('company_id', $store->company_id)
                 ->where('status', 'active')
                 ->whereIn('variant_group_id', $variantGroupIds)
+                ->when($selectedCategory, fn ($query) => $query->whereIn('category_id', $selectedCategory->category_ids))
                 ->orderBy('fashion_size')
                 ->orderBy('fashion_color')
                 ->orderBy('id')
@@ -333,20 +334,21 @@ class OnlineStoreController extends Controller
             ->where('products.status', 'active')
             ->whereNotNull('categories.name')
             ->where('categories.name', '<>', '')
-            ->select('categories.id', 'categories.name')
-            ->selectRaw('COUNT(DISTINCT products.id) as products_count')
-            ->groupBy('categories.id', 'categories.name')
+            ->select('categories.id', 'categories.name', 'products.id as product_id', 'products.variant_group_id')
             ->orderBy('categories.name')
             ->get()
             ->groupBy(fn ($category) => mb_strtolower(trim((string) $category->name)))
             ->map(function (Collection $matches) {
                 $first = $matches->first();
+                $productKeys = $matches->map(fn ($category) => filled($category->variant_group_id)
+                    ? 'variant:' . $category->variant_group_id
+                    : 'product:' . $category->product_id);
 
                 return (object) [
                     'id' => (int) $matches->min('id'),
                     'name' => trim((string) $first->name),
-                    'category_ids' => $matches->pluck('id')->map(fn ($id) => (int) $id)->all(),
-                    'products_count' => (int) $matches->sum('products_count'),
+                    'category_ids' => $matches->pluck('id')->map(fn ($id) => (int) $id)->unique()->values()->all(),
+                    'products_count' => $productKeys->unique()->count(),
                 ];
             })
             ->sortBy(fn ($category) => mb_strtolower($category->name))

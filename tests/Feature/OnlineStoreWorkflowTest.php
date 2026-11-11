@@ -195,11 +195,13 @@ class OnlineStoreWorkflowTest extends TestCase
             'is_enabled' => true,
         ]);
 
-        $this->get(route('storefront.products', 'shoe-sizes-store'))
+        $this->get(route('storefront.products', 'shoe-sizes-store') . '?category_id=' . $categoryId)
             ->assertOk()
             ->assertSee('Choose size')
             ->assertSee('Size EU 41')
             ->assertSee('Size EU 42')
+            ->assertSee('Available sizes:')
+            ->assertSee('data-available-size', false)
             ->assertSee('Brand: Stride')
             ->assertDontSee('SKU:')
             ->assertSee('product-options-row', false)
@@ -212,7 +214,8 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertDontSee('Full Name *')
             ->assertDontSee('Payment / Collection *')
             ->assertViewHas('products', fn ($products) => $products->total() === 1
-                && $products->first()->storefront_variants->count() === 2);
+                && $products->first()->storefront_variants->count() === 2)
+            ->assertViewHas('categories', fn ($categories) => $categories->firstWhere('id', $categoryId)->products_count === 1);
 
         $this->post(route('storefront.orders.store', 'shoe-sizes-store'), [
             'order_token' => '00000000-0000-4000-8000-000000000010',

@@ -57,6 +57,9 @@
         .product-description{margin:0;color:#64748b;font-size:.95rem;line-height:1.7;white-space:pre-line}
         .product-meta{display:flex;flex:0 0 auto;flex-wrap:nowrap;gap:8px;max-width:none;overflow:visible;padding-bottom:0}
         .product-meta span{display:inline-flex;flex:0 0 auto;align-items:center;gap:6px;padding:7px 10px;border:1px solid #e7edf5;border-radius:999px;background:#f8fafc;color:#52627a;font-size:.78rem;white-space:nowrap}
+        .product-available-sizes{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
+        .product-available-sizes-label{color:#64748b;font-size:.78rem;font-weight:800}
+        .product-available-sizes span[data-available-size]{padding:5px 9px;border:1px solid var(--theme-line,#dbe4f0);border-radius:999px;background:var(--theme-wash,rgba(20,99,214,.12));color:var(--theme-primary,var(--blue));font-size:.76rem;font-weight:800}
         .product-purchase{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-top:auto;padding-top:18px;border-top:1px solid #edf0f5}
         .product-price-label{margin-bottom:4px;color:#75849a;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
         .price{color:var(--red);font-size:clamp(1.35rem,2vw,1.8rem);line-height:1.15}
@@ -168,6 +171,7 @@
                 $hasBrand = $variants->contains(fn ($variant) => filled($variant->brand));
                 $hasSize = $variants->contains(fn ($variant) => filled($variant->fashion_size));
                 $hasColor = $variants->contains(fn ($variant) => filled($variant->fashion_color));
+                $availableSizes = $variants->pluck('fashion_size')->filter()->unique()->values();
             @endphp
             <article class="product" data-product-id="{{ $product->id }}" data-product-name="{{ $displayName }}" data-product-sku="{{ $product->sku }}" data-product-price="{{ (float) $product->price }}" data-product-max="{{ $available }}" data-product-step="{{ $quantityStep }}" data-product-stock-label="{{ $available > 0 ? $product->formatStockQuantity($available) . ' available' : 'Out of stock' }}" data-product-brand="{{ $product->brand }}" data-product-size="{{ $product->fashion_size }}" data-product-color="{{ $product->fashion_color }}">
                 <div class="product-media">@if($product->image_url)<img src="{{ $product->image_url }}" alt="{{ $displayName }}" loading="lazy">@else<i class="fas fa-box-open" aria-hidden="true"></i>@endif</div>
@@ -215,6 +219,14 @@
                             @if($hasColor)<span data-product-meta="color"><i class="fas fa-palette" aria-hidden="true"></i>Colour: {{ $product->fashion_color }}</span>@endif
                         </div>
                     </div>
+                    @if($hasSizeOptions && $availableSizes->isNotEmpty())
+                        <div class="product-available-sizes" aria-label="Available sizes">
+                            <span class="product-available-sizes-label">Available sizes:</span>
+                            @foreach($availableSizes as $size)
+                                <span data-available-size>{{ $size }}</span>
+                            @endforeach
+                        </div>
+                    @endif
                     <div class="product-purchase">
                         <div>
                             <div class="product-price-label">Price</div>
