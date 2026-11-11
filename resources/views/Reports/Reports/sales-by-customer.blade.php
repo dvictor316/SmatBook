@@ -20,7 +20,7 @@
         <div class="content-page-header">
             <div>
                 <h5>Sales by Customer</h5>
-                <p class="text-muted mb-0">Revenue breakdown per customer for the selected period.</p>
+                <p class="text-muted mb-0">Purchases, balances, and product gross profit by customer for the selected period.</p>
             </div>
             <div class="list-btn"><ul class="filter-list">
                 <li><a class="btn btn-secondary w-auto" href="javascript:void(0);" onclick="window.print()"><i class="feather-printer me-1"></i> Print</a></li>
@@ -39,6 +39,12 @@
         </div>
     </div>
 
+    <div class="alert alert-info py-2 small">
+        Gross profit uses product sales after discounts and excludes tax. Older sales without a saved cost use the product's current cost; lines with no cost are excluded.
+        @if($estimatedCostLines > 0) {{ number_format($estimatedCostLines) }} line(s) use estimated current costs.@endif
+        @if($missingCostLines > 0) {{ number_format($missingCostLines) }} line(s) have no cost and are excluded from profit.@endif
+    </div>
+
     <div class="card shadow-none border">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -50,6 +56,7 @@
                         <th class="text-end">Total Amount</th>
                         <th class="text-end">Paid</th>
                         <th class="text-end">Balance</th>
+                        <th class="text-end">Gross Profit</th>
                         <th style="min-width:100px">Share</th>
                     </tr></thead>
                     <tbody>
@@ -62,6 +69,7 @@
                             <td class="text-end fw-bold">{{ $fmt($row->total_amount) }}</td>
                             <td class="text-end text-success">{{ $fmt($row->total_paid) }}</td>
                             <td class="text-end text-danger">{{ $fmt($row->total_balance) }}</td>
+                            <td class="text-end fw-bold {{ $row->gross_profit >= 0 ? 'text-success' : 'text-danger' }}">{{ $fmt($row->gross_profit) }}</td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
                                     <div class="sbc-bar" style="width:{{ $pct }}%"></div>
@@ -70,7 +78,7 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="7" class="text-center text-muted py-4">No data available for this period.</td></tr>
+                        <tr><td colspan="8" class="text-center text-muted py-4">No data available for this period.</td></tr>
                         @endforelse
                     </tbody>
                     @if(count($rows))
@@ -79,6 +87,7 @@
                         <td class="text-end">{{ $fmt($grandTotal) }}</td>
                         <td class="text-end text-success">{{ $fmt(collect($rows)->sum('total_paid')) }}</td>
                         <td class="text-end text-danger">{{ $fmt(collect($rows)->sum('total_balance')) }}</td>
+                        <td class="text-end text-success">{{ $fmt($grandProfit) }}</td>
                         <td></td>
                     </tr></tfoot>
                     @endif

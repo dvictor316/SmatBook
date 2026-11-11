@@ -12,6 +12,7 @@ use App\Support\SalesPaymentModeFilter;
 use App\Support\StockValuation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class InvoiceCreditPaymentModeTest extends TestCase
@@ -61,6 +62,7 @@ class InvoiceCreditPaymentModeTest extends TestCase
         $this->assertSame('credit', $sale->payment_method);
         $this->assertSame(0.0, (float) $sale->amount_paid);
         $this->assertSame(1000.0, (float) $sale->balance);
+        $this->assertSame(500.0, (float) $sale->items()->sole()->unit_cost);
         $this->assertSame('Credit', $sale->payment_report_label);
         $this->get(route('invoices.index'))
             ->assertOk()
@@ -69,6 +71,38 @@ class InvoiceCreditPaymentModeTest extends TestCase
         $this->get(route('sales.invoice.print', $sale->id))->assertOk()->assertSee('Credit');
         $this->get(route('sales.invoice.print', ['id' => $sale->id, 'format' => 'thermal']))->assertOk()->assertSee('CREDIT');
         $this->assertDatabaseCount('payments', 0);
+    }
+
+    public function test_invoice_at_the_customer_credit_limit_is_allowed(): void
+    {
+        [$company, $user, $customer] = $this->workspace();
+        $customer->update(['credit_limit' => 1000]);
+        $payload = $this->invoicePayload($customer, $this->product($company, $user));
+
+        $this->post(route('invoices.store'), $payload)
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success')
+            ->assertSessionMissing('credit_limit_warning');
+
+        $this->assertDatabaseCount('sales', 1);
+        $this->assertSame(1000.0, (float) Sale::query()->sole()->balance);
+    }
+
+    public function test_invoice_that_would_exceed_customer_credit_limit_is_blocked(): void
+    {
+        [$company, $user, $customer] = $this->workspace();
+        Notification::fake();
+        $customer->update(['credit_limit' => 1000]);
+        $this->sale($company, $user, $customer, 'credit');
+        $payload = $this->invoicePayload($customer, $this->product($company, $user));
+        $payload['total_amount'] = 1;
+        $payload['items'][0]['rate'] = 1;
+
+        $this->post(route('invoices.store'), $payload)
+            ->assertSessionHas('credit_limit_warning', fn (array $warning) => $warning['blocked'] === true
+                && (float) $warning['projected_outstanding'] === 1001.0);
+
+        $this->assertDatabaseCount('sales', 1);
     }
 
     public function test_invoice_can_be_saved_and_redirected_to_print_view(): void

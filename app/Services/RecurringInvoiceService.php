@@ -7,11 +7,13 @@ use App\Models\RecurringInvoiceLog;
 use App\Models\RecurringInvoiceTemplate;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use App\Models\Product;
 use App\Support\LedgerService;
 use App\Support\SystemEventMailer;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Throwable;
@@ -187,8 +189,11 @@ class RecurringInvoiceService
                 $itemDisc  = (float) ($item['discount'] ?? 0);
                 $subtotal  = round($qty * $unitPrice, 2);
                 $total     = round($subtotal + $itemTax - $itemDisc, 2);
+                $product = !empty($item['product_id'])
+                    ? Product::query()->where('company_id', $template->company_id)->find((int) $item['product_id'])
+                    : null;
 
-                SaleItem::create([
+                $saleItemAttributes = [
                     'company_id'   => $template->company_id,
                     'branch_id'    => $template->branch_id,
                     'branch_name'  => $template->branch_name,
@@ -201,7 +206,16 @@ class RecurringInvoiceService
                     'tax'          => $itemTax,
                     'subtotal'     => $subtotal,
                     'total_price'  => $total,
-                ]);
+                ];
+                if (Schema::hasColumn('sale_items', 'unit_cost')) {
+                    $saleItemAttributes['unit_cost'] = SaleItem::costPerSaleUnit(
+                        $product,
+                        $qty,
+                        $item['unit_type'] ?? null
+                    );
+                }
+
+                SaleItem::create($saleItemAttributes);
             }
 
             // Draft recurring invoices follow the same rule as manual invoice drafts:

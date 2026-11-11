@@ -2105,6 +2105,14 @@ $sale = Sale::create([
                 'subtotal'    => $itemSubtotal,
                 'total_price' => $itemTotal, 
             ];
+            if (Schema::hasColumn('sale_items', 'unit_cost')) {
+                $itemPayload['unit_cost'] = SaleItem::costPerSaleUnit(
+                    $product,
+                    $qty,
+                    $itemData['unitType'] ?? null,
+                    $requestedStockUnits
+                );
+            }
             if (Schema::hasColumn('sale_items', 'unit_type')) {
                 $itemPayload['unit_type'] = strtolower((string) ($itemData['unitType'] ?? $product->unit_type ?? 'unit'));
             }

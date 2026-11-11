@@ -873,6 +873,9 @@ class OnlineStoreController extends Controller
             if (Schema::hasColumn('sale_items', 'unit_type')) {
                 $item['unit_type'] = $product->unit_type ?: 'unit';
             }
+            if (Schema::hasColumn('sale_items', 'unit_cost')) {
+                $item['unit_cost'] = \App\Models\SaleItem::costPerSaleUnit($product, $quantity);
+            }
             if (Schema::hasColumn('sale_items', 'stock_units')) {
                 $item['stock_units'] = $quantity;
             }

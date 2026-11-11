@@ -13,7 +13,8 @@ class CustomerReceivables
         int $customerId,
         ?Customer $customer,
         Builder $salesQuery,
-        ?int $excludeSaleId = null
+        ?int $excludeSaleId = null,
+        bool $lockForUpdate = false
     ): float {
         if ($customerId <= 0) {
             return 0.0;
@@ -24,7 +25,7 @@ class CustomerReceivables
             $customer->setAttribute('id', $customerId);
         }
 
-        return $this->outstandingBalances([$customer], $salesQuery, $excludeSaleId)[$customerId] ?? 0.0;
+        return $this->outstandingBalances([$customer], $salesQuery, $excludeSaleId, $lockForUpdate)[$customerId] ?? 0.0;
     }
 
     /**
@@ -36,7 +37,8 @@ class CustomerReceivables
     public function outstandingBalances(
         iterable $customers,
         Builder $salesQuery,
-        ?int $excludeSaleId = null
+        ?int $excludeSaleId = null,
+        bool $lockForUpdate = false
     ): array {
         $customersById = collect($customers)
             ->filter(fn ($customer) => $customer instanceof Customer && (int) $customer->id > 0)
@@ -67,9 +69,13 @@ class CustomerReceivables
         $openingSalesByCustomer = collect();
         if (Schema::hasColumn('sales', 'invoice_no')) {
             $openingReferences = $customerIds->map(fn ($customerId) => 'OPENING-BAL-' . $customerId);
-            $openingSalesByCustomer = (clone $customerSales)
+            $openingSalesQuery = (clone $customerSales)
                 ->whereIn('invoice_no', $openingReferences)
-                ->orderBy('id')
+                ->orderBy('id');
+            if ($lockForUpdate) {
+                $openingSalesQuery->lockForUpdate();
+            }
+            $openingSalesByCustomer = $openingSalesQuery
                 ->get(['id', 'customer_id', 'balance'])
                 ->groupBy('customer_id')
                 ->map(fn ($openingSales) => $openingSales->last());
@@ -84,11 +90,19 @@ class CustomerReceivables
             $otherSales->where('id', '!=', $excludeSaleId);
         }
 
-        $otherBalances = $otherSales
-            ->select('customer_id')
-            ->selectRaw('SUM(balance) as outstanding_balance')
-            ->groupBy('customer_id')
-            ->pluck('outstanding_balance', 'customer_id');
+        if ($lockForUpdate) {
+            $otherBalances = $otherSales
+                ->lockForUpdate()
+                ->get(['id', 'customer_id', 'balance'])
+                ->groupBy('customer_id')
+                ->map(fn ($sales) => (float) $sales->sum('balance'));
+        } else {
+            $otherBalances = $otherSales
+                ->select('customer_id')
+                ->selectRaw('SUM(balance) as outstanding_balance')
+                ->groupBy('customer_id')
+                ->pluck('outstanding_balance', 'customer_id');
+        }
 
         foreach ($customersById as $customerId => $customer) {
             $openingSale = $openingSalesByCustomer->get((int) $customerId);

@@ -4643,41 +4643,69 @@ class ReportController extends Controller
     /** Sales by Customer */
     public function salesByCustomer(Request $request)
     {
-        $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
-        $to = $request->input('to_date') ?: now()->toDateString();
+        $filters = $request->validate([
+            'from_date' => 'nullable|date',
+            'to_date' => 'nullable|date|after_or_equal:from_date',
+        ]);
+        $from = $filters['from_date'] ?? now()->startOfMonth()->toDateString();
+        $to = $filters['to_date'] ?? now()->toDateString();
         $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
             : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
 
         $query = Sale::with('payments')
-            ->whereBetween($dateCol, [$from.' 00:00:00', $to.' 23:59:59']);
+            ->whereDate($dateCol, '>=', $from)
+            ->whereDate($dateCol, '<=', $to);
         $this->applySalesScope($query, 'sales');
         $this->applyReportableDocumentScope($query, 'sales');
 
-        $rows = $query->get()
-            ->groupBy(fn (Sale $sale) => trim((string) ($sale->customer_name ?: 'Walk-in')))
-            ->map(function ($sales, string $customer) {
-                $financials = $sales->map(fn (Sale $sale) => $this->normalizeInvoiceFinancials($sale));
+        $sales = $query->get();
+        $profitBySaleId = $this->productSalesProfitBySaleIds($sales->pluck('id')->map(fn ($id) => (int) $id)->all());
+        $rows = $sales
+            ->groupBy(fn (Sale $sale) => (int) ($sale->customer_id ?? 0) > 0
+                ? 'customer:'.$sale->customer_id
+                : 'name:'.trim((string) ($sale->customer_name ?: 'Walk-in')))
+            ->map(function ($customerSales) use ($profitBySaleId) {
+                $financials = $customerSales->map(fn (Sale $sale) => $this->normalizeInvoiceFinancials($sale));
+                $itemProfit = $customerSales->map(fn (Sale $sale) => $profitBySaleId->get((int) $sale->id));
 
                 return (object) [
-                    'customer' => $customer,
-                    'invoice_count' => $sales->count(),
+                    'customer' => trim((string) ($customerSales->last()->customer_name ?: 'Walk-in')),
+                    'invoice_count' => $customerSales->count(),
                     'total_amount' => (float) $financials->sum('total'),
                     'total_paid' => (float) $financials->sum('paid'),
                     'total_balance' => (float) $financials->sum('balance'),
+                    'gross_profit' => (float) $itemProfit->sum(fn ($row) => (float) ($row->gross_profit ?? 0)),
+                    'estimated_cost_lines' => (int) $itemProfit->sum(fn ($row) => (int) ($row->estimated_cost_lines ?? 0)),
+                    'missing_cost_lines' => (int) $itemProfit->sum(fn ($row) => (int) ($row->missing_cost_lines ?? 0)),
                 ];
             })
             ->sortByDesc('total_amount')
             ->values();
         $grandTotal = (float) $rows->sum('total_amount');
+        $grandProfit = (float) $rows->sum('gross_profit');
+        $estimatedCostLines = (int) $rows->sum('estimated_cost_lines');
+        $missingCostLines = (int) $rows->sum('missing_cost_lines');
 
-        return view('Reports.Reports.sales-by-customer', compact('rows', 'grandTotal', 'from', 'to'));
+        return view('Reports.Reports.sales-by-customer', compact(
+            'rows',
+            'grandTotal',
+            'grandProfit',
+            'estimatedCostLines',
+            'missingCostLines',
+            'from',
+            'to'
+        ));
     }
 
     /** Sales by Product */
     public function salesByProduct(Request $request)
     {
-        $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
-        $to = $request->input('to_date') ?: now()->toDateString();
+        $filters = $request->validate([
+            'from_date' => 'nullable|date',
+            'to_date' => 'nullable|date|after_or_equal:from_date',
+        ]);
+        $from = $filters['from_date'] ?? now()->startOfMonth()->toDateString();
+        $to = $filters['to_date'] ?? now()->toDateString();
         $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
             : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
 
@@ -4699,18 +4727,6 @@ class ReportController extends Controller
                 ? "{$itemsTable}.qty"
                 : (Schema::hasColumn($itemsTable, 'quantity') ? "{$itemsTable}.quantity" : null);
 
-            $lineTotalCol = Schema::hasColumn($itemsTable, 'line_total')
-                ? "{$itemsTable}.line_total"
-                : (Schema::hasColumn($itemsTable, 'total_price')
-                    ? "{$itemsTable}.total_price"
-                    : (Schema::hasColumn($itemsTable, 'total')
-                    ? "{$itemsTable}.total"
-                    : (Schema::hasColumn($itemsTable, 'amount') ? "{$itemsTable}.amount" : null)));
-
-            $priceCol = Schema::hasColumn($itemsTable, 'price')
-                ? "{$itemsTable}.price"
-                : (Schema::hasColumn($itemsTable, 'unit_price') ? "{$itemsTable}.unit_price" : null);
-
             if (! $qtyCol) {
                 $rows = collect();
             } else {
@@ -4718,14 +4734,11 @@ class ReportController extends Controller
                 $productIdCol = Schema::hasColumn($itemsTable, 'product_id')
                     ? "{$itemsTable}.product_id"
                     : null;
-                $lineRevenueExpr = $lineTotalCol
-                    ? "NULLIF({$lineTotalCol}, 0)"
-                    : 'NULL';
-                $unitRevenueExpr = $priceCol
-                    ? "({$qtyCol} * COALESCE({$priceCol}, 0))"
-                    : '0';
-                $revenueExpr = "SUM(COALESCE({$lineRevenueExpr}, {$unitRevenueExpr}, 0))";
                 $hasProductCatalog = $productIdCol && Schema::hasTable('products');
+                $profitExpressions = $this->saleItemProfitExpressions($itemsTable);
+                $revenueExpr = "SUM({$profitExpressions['revenue']})";
+                $costExpr = "SUM(CASE WHEN {$profitExpressions['known_cost']} THEN {$profitExpressions['cost']} ELSE 0 END)";
+                $profitExpr = "SUM(CASE WHEN {$profitExpressions['known_cost']} THEN {$profitExpressions['revenue']} - {$profitExpressions['cost']} ELSE 0 END)";
 
                 $selects = [];
                 if ($productIdCol) {
@@ -4739,13 +4752,21 @@ class ReportController extends Controller
                 $selects = array_merge($selects, [
                     DB::raw("SUM(COALESCE({$qtyCol}, 0)) as qty_sold"),
                     DB::raw("{$revenueExpr} as revenue"),
+                    DB::raw("{$costExpr} as cost"),
+                    DB::raw("{$profitExpr} as gross_profit"),
+                    DB::raw("SUM(CASE WHEN {$profitExpressions['estimated_cost']} THEN 1 ELSE 0 END) as estimated_cost_lines"),
+                    DB::raw("SUM(CASE WHEN {$profitExpressions['missing_cost']} THEN 1 ELSE 0 END) as missing_cost_lines"),
                 ]);
 
                 $query = DB::table($itemsTable)
                     ->join('sales', "{$itemsTable}.{$salesJoinCol}", '=', 'sales.id')
                     ->select($selects)
-                    ->whereBetween("sales.{$dateCol}", [$from.' 00:00:00', $to.' 23:59:59'])
+                    ->whereDate("sales.{$dateCol}", '>=', $from)
+                    ->whereDate("sales.{$dateCol}", '<=', $to)
                     ->orderByDesc(DB::raw($revenueExpr));
+                if ($hasProductCatalog) {
+                    $query->leftJoin('products', "{$itemsTable}.product_id", '=', 'products.id');
+                }
                 if ($productIdCol) {
                     $query->groupBy($productIdCol);
                 } else {
@@ -4774,6 +4795,10 @@ class ReportController extends Controller
                                 'product' => $product->name ?? 'Unknown',
                                 'qty_sold' => (float) ($sale->qty_sold ?? 0),
                                 'revenue' => (float) ($sale->revenue ?? 0),
+                                'cost' => (float) ($sale->cost ?? 0),
+                                'gross_profit' => (float) ($sale->gross_profit ?? 0),
+                                'estimated_cost_lines' => (int) ($sale->estimated_cost_lines ?? 0),
+                                'missing_cost_lines' => (int) ($sale->missing_cost_lines ?? 0),
                             ];
                         })
                         ->sortByDesc('revenue')
@@ -4784,8 +4809,123 @@ class ReportController extends Controller
             }
         }
         $grandTotal = (float) $rows->sum('revenue');
+        $grandCost = (float) $rows->sum('cost');
+        $grandProfit = (float) $rows->sum('gross_profit');
+        $estimatedCostLines = (int) $rows->sum('estimated_cost_lines');
+        $missingCostLines = (int) $rows->sum('missing_cost_lines');
 
-        return view('Reports.Reports.sales-by-product', compact('rows', 'grandTotal', 'from', 'to'));
+        return view('Reports.Reports.sales-by-product', compact(
+            'rows',
+            'grandTotal',
+            'grandCost',
+            'grandProfit',
+            'estimatedCostLines',
+            'missingCostLines',
+            'from',
+            'to'
+        ));
+    }
+
+    private function productSalesProfitBySaleIds(array $saleIds)
+    {
+        if (
+            $saleIds === []
+            || !Schema::hasTable('sale_items')
+            || !Schema::hasColumn('sale_items', 'sale_id')
+            || !Schema::hasColumn('sale_items', 'product_id')
+        ) {
+            return collect();
+        }
+
+        $expressions = $this->saleItemProfitExpressions('sale_items');
+        if ($expressions['quantity'] === '0') {
+            return collect();
+        }
+
+        $query = DB::table('sale_items')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->whereIn('sales.id', $saleIds)
+            ->whereNotNull('sale_items.product_id')
+            ->select('sale_items.sale_id')
+            ->selectRaw(
+                'SUM(CASE WHEN '.$expressions['known_cost'].' THEN '.$expressions['revenue'].' - '.$expressions['cost'].' ELSE 0 END) as gross_profit'
+            )
+            ->selectRaw(
+                'SUM(CASE WHEN '.$expressions['estimated_cost'].' THEN 1 ELSE 0 END) as estimated_cost_lines'
+            )
+            ->selectRaw(
+                'SUM(CASE WHEN '.$expressions['missing_cost'].' THEN 1 ELSE 0 END) as missing_cost_lines'
+            )
+            ->groupBy('sale_items.sale_id');
+        if (Schema::hasTable('products')) {
+            $query->leftJoin('products', 'sale_items.product_id', '=', 'products.id');
+        }
+        $this->applySalesScope($query, 'sales');
+        $this->applyReportableDocumentScope($query, 'sales');
+
+        return $query->get()->keyBy(fn ($row) => (int) $row->sale_id);
+    }
+
+    private function saleItemProfitExpressions(string $itemsTable): array
+    {
+        $qtyColumn = Schema::hasColumn($itemsTable, 'qty')
+            ? 'qty'
+            : (Schema::hasColumn($itemsTable, 'quantity') ? 'quantity' : null);
+        $quantity = $qtyColumn ? "COALESCE({$itemsTable}.{$qtyColumn}, 0)" : '0';
+        $unitPrice = Schema::hasColumn($itemsTable, 'unit_price')
+            ? "COALESCE({$itemsTable}.unit_price, 0)"
+            : '0';
+        $base = Schema::hasColumn($itemsTable, 'subtotal')
+            ? "COALESCE(NULLIF({$itemsTable}.subtotal, 0), ({$quantity} * {$unitPrice}), 0)"
+            : "({$quantity} * {$unitPrice})";
+
+        if (Schema::hasColumn($itemsTable, 'discount_type') && Schema::hasColumn($itemsTable, 'discount_value')) {
+            $discount = "CASE
+                WHEN LOWER(COALESCE({$itemsTable}.discount_type, '')) = 'fixed'
+                    THEN CASE WHEN COALESCE({$itemsTable}.discount_value, 0) > {$base} THEN {$base} ELSE COALESCE({$itemsTable}.discount_value, 0) END
+                ELSE {$base} * COALESCE({$itemsTable}.discount, 0) / 100
+            END";
+        } elseif (Schema::hasColumn($itemsTable, 'discount')) {
+            $discount = "{$base} * COALESCE({$itemsTable}.discount, 0) / 100";
+        } else {
+            $discount = '0';
+        }
+        $revenue = "CASE WHEN ({$base} - {$discount}) > 0 THEN ({$base} - {$discount}) ELSE 0 END";
+        $hasProductReference = Schema::hasColumn($itemsTable, 'product_id');
+        $productCostColumn = $hasProductReference && Schema::hasTable('products') && Schema::hasColumn('products', 'purchase_price')
+            ? 'purchase_price'
+            : ($hasProductReference && Schema::hasTable('products') && Schema::hasColumn('products', 'cost_price') ? 'cost_price' : null);
+        $fallbackCost = '0';
+        $legacyCostKnown = '0 = 1';
+        $legacyCostEstimated = '0 = 1';
+        if ($productCostColumn) {
+            $stockUnits = InventoryQuantity::saleStockUnitsExpression($itemsTable, 'products');
+            $saleUnitRatio = "CASE WHEN {$quantity} > 0 THEN ({$stockUnits}) / {$quantity} ELSE 0 END";
+            $fallbackCost = "COALESCE(products.{$productCostColumn}, 0) * ({$saleUnitRatio})";
+            $legacyCostKnown = "COALESCE(products.{$productCostColumn}, 0) > 0";
+            $legacyCostEstimated = $legacyCostKnown;
+        }
+
+        $hasCostSnapshot = Schema::hasColumn($itemsTable, 'unit_cost');
+        $unitCost = $hasCostSnapshot
+            ? "CASE WHEN {$itemsTable}.unit_cost IS NOT NULL THEN {$itemsTable}.unit_cost ELSE {$fallbackCost} END"
+            : $fallbackCost;
+        $cost = "({$unitCost} * {$quantity})";
+        $snapshotCostKnown = $hasCostSnapshot ? "{$itemsTable}.unit_cost IS NOT NULL" : '0 = 1';
+        $knownCost = "({$snapshotCostKnown} OR {$legacyCostKnown})";
+        $estimatedCost = $hasCostSnapshot
+            ? "({$itemsTable}.unit_cost IS NULL AND {$legacyCostEstimated})"
+            : $legacyCostEstimated;
+        $missingCost = "NOT {$knownCost}";
+
+        return [
+            'quantity' => $quantity,
+            'revenue' => $revenue,
+            'cost' => $cost,
+            'known_cost' => $knownCost,
+            'estimated_cost' => $estimatedCost,
+            'missing_cost' => $missingCost,
+        ];
     }
 
     /** Sales Summary */

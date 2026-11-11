@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sale;
+use App\Models\SaleItem;
 use App\Models\Account;
 use App\Models\Bank;
 use App\Models\Customer;
@@ -46,12 +47,16 @@ class InvoiceController extends Controller
             $customerId,
             $customer,
             $salesQuery,
-            $excludeSaleId
+            $excludeSaleId,
+            true
         );
     }
 
     private function creditLimitWarningResponse(Request $request, Customer $customer, float $newCreditAmount, ?int $excludeSaleId = null)
     {
+        $customerQuery = Customer::query()->whereKey($customer->id);
+        $this->applyTenantScope($customerQuery, 'customers');
+        $customer = $customerQuery->lockForUpdate()->firstOrFail();
         $creditLimit = (float) ($customer->credit_limit ?? 0);
 
         if ($creditLimit <= 0 || $newCreditAmount <= 0) {
@@ -61,7 +66,7 @@ class InvoiceController extends Controller
         $currentOutstanding = $this->customerOutstandingBalance((int) $customer->id, $excludeSaleId);
         $projectedOutstanding = round($currentOutstanding + $newCreditAmount, 2);
 
-        if ($projectedOutstanding < $creditLimit) {
+        if ($projectedOutstanding <= $creditLimit) {
             return null;
         }
 
@@ -887,6 +892,14 @@ class InvoiceController extends Controller
                     'subtotal' => $lineBase,
                     'total_price' => $lineAmount,
                 ];
+                if (Schema::hasColumn('sale_items', 'unit_cost')) {
+                    $saleItemPayload['unit_cost'] = SaleItem::costPerSaleUnit(
+                        $product,
+                        $qty,
+                        $item['unit_type'] ?? $item['unitType'] ?? null,
+                        $stockUnits
+                    );
+                }
                 if (Schema::hasColumn('sale_items', 'unit_type')) {
                     $saleItemPayload['unit_type'] = strtolower((string) ($item['unit_type'] ?? $item['unitType'] ?? $product?->unit_type ?? 'unit'));
                 }
@@ -1323,6 +1336,14 @@ class InvoiceController extends Controller
                     'subtotal' => $lineBase,
                     'total_price' => $lineAmount,
                 ];
+                if (Schema::hasColumn('sale_items', 'unit_cost')) {
+                    $saleItemPayload['unit_cost'] = SaleItem::costPerSaleUnit(
+                        $product,
+                        $qty,
+                        $item['unit_type'] ?? $item['unitType'] ?? null,
+                        $stockUnits
+                    );
+                }
                 if (Schema::hasColumn('sale_items', 'unit_type')) {
                     $saleItemPayload['unit_type'] = strtolower((string) ($item['unit_type'] ?? $item['unitType'] ?? $product?->unit_type ?? 'unit'));
                 }

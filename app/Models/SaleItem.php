@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Traits\TenantScoped;
+use App\Models\Product;
+use App\Support\InventoryQuantity;
 
 class SaleItem extends Model
 {
@@ -23,6 +25,7 @@ class SaleItem extends Model
     'unit_type',
     'stock_units',
     'unit_price',
+    'unit_cost',
     'discount',
     'tax',
     'subtotal',    // Added
@@ -32,6 +35,7 @@ class SaleItem extends Model
         'qty'        => 'float',
         'stock_units'=> 'float',
         'unit_price' => 'float',
+        'unit_cost' => 'float',
         'discount'   => 'float',
         'tax'        => 'float',
     ];
@@ -44,6 +48,18 @@ class SaleItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public static function costPerSaleUnit(?Product $product, float $qty, ?string $unitType = null, ?float $stockUnits = null): ?float
+    {
+        $baseUnitCost = (float) ($product?->purchase_price ?? 0);
+        if (!$product || $baseUnitCost <= 0) {
+            return null;
+        }
+
+        $stockUnits ??= InventoryQuantity::resolveSaleStockUnits($product, $qty, $unitType);
+
+        return round($baseUnitCost * ($qty > 0 ? $stockUnits / $qty : 1), 4);
     }
 
     /**

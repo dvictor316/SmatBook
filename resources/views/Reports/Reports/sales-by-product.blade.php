@@ -20,7 +20,7 @@
         <div class="content-page-header">
             <div>
                 <h5>Sales by Product</h5>
-                <p class="text-muted mb-0">Revenue and quantity sold per product for the period.</p>
+                <p class="text-muted mb-0">Quantity, revenue, cost, and gross profit per product for the period.</p>
             </div>
             <div class="list-btn"><ul class="filter-list">
                 <li><a class="btn btn-secondary w-auto" href="javascript:void(0);" onclick="window.print()"><i class="feather-printer me-1"></i> Print</a></li>
@@ -39,6 +39,12 @@
         </div>
     </div>
 
+    <div class="alert alert-info py-2 small">
+        Gross profit is sales after discounts (tax excluded) minus recorded cost. Older sales without a saved cost use the product's current cost; lines with no cost are excluded.
+        @if($estimatedCostLines > 0) {{ number_format($estimatedCostLines) }} line(s) use estimated current costs.@endif
+        @if($missingCostLines > 0) {{ number_format($missingCostLines) }} line(s) have no cost and are excluded from profit.@endif
+    </div>
+
     <div class="card shadow-none border">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -48,6 +54,8 @@
                         <th>Product</th>
                         <th class="text-end">Qty Sold</th>
                         <th class="text-end">Revenue</th>
+                        <th class="text-end">Cost</th>
+                        <th class="text-end">Gross Profit</th>
                         <th style="min-width:120px">Revenue Share</th>
                     </tr></thead>
                     <tbody>
@@ -58,6 +66,8 @@
                             <td class="fw-bold">{{ $row->product ?? 'Unknown' }}</td>
                             <td class="text-end">{{ number_format($row->qty_sold, 0) }}</td>
                             <td class="text-end fw-bold text-success">{{ $fmt($row->revenue) }}</td>
+                            <td class="text-end">{{ $fmt($row->cost) }}</td>
+                            <td class="text-end fw-bold {{ $row->gross_profit >= 0 ? 'text-success' : 'text-danger' }}">{{ $fmt($row->gross_profit) }}</td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
                                     <div class="sbp-bar" style="width:{{ $pct }}%"></div>
@@ -66,7 +76,7 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="5" class="text-center text-muted py-4">No sales data available for this period.</td></tr>
+                        <tr><td colspan="7" class="text-center text-muted py-4">No sales data available for this period.</td></tr>
                         @endforelse
                     </tbody>
                     @if(count($rows))
@@ -74,6 +84,8 @@
                         <td colspan="2" class="text-end">Total</td>
                         <td class="text-end">{{ number_format(collect($rows)->sum('qty_sold'), 0) }}</td>
                         <td class="text-end text-success">{{ $fmt($grandTotal) }}</td>
+                        <td class="text-end">{{ $fmt($grandCost) }}</td>
+                        <td class="text-end text-success">{{ $fmt($grandProfit) }}</td>
                         <td></td>
                     </tr></tfoot>
                     @endif

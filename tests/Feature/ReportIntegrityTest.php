@@ -124,6 +124,77 @@ class ReportIntegrityTest extends TestCase
             json_encode($rows->toArray(), JSON_PRETTY_PRINT));
     }
 
+    public function test_customer_and_product_sales_reports_show_date_filtered_gross_profit(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $productId = DB::table('products')->insertGetId([
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'name' => 'Profit Report Product',
+            'sku' => 'PROFIT-REPORT-1',
+            'price' => 200,
+            'purchase_price' => 70,
+            'stock' => 10,
+            'stock_quantity' => 10,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $sale = $this->sale($user, $company, 'INV-PROFIT-REPORT', 550, 'completed');
+        DB::table('sales')->where('id', $sale->id)->update([
+            'customer_name' => 'Profit Customer',
+            'order_date' => now()->toDateString(),
+        ]);
+        DB::table('sale_items')->insert([
+            [
+                'sale_id' => $sale->id,
+                'product_id' => $productId,
+                'qty' => 2,
+                'quantity' => 2,
+                'unit_price' => 200,
+                'subtotal' => 400,
+                'total_price' => 400,
+                'unit_cost' => 125,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'sale_id' => $sale->id,
+                'product_id' => $productId,
+                'qty' => 1,
+                'quantity' => 1,
+                'unit_price' => 100,
+                'subtotal' => 100,
+                'total_price' => 100,
+                'unit_cost' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+        $filters = [
+            'from_date' => now()->toDateString(),
+            'to_date' => now()->toDateString(),
+        ];
+        $this->withoutReportAccessMiddleware()->actingAs($user)->withSession($this->branchSession($company));
+
+        $customerResponse = $this->get(route('reports.sales-by-customer', $filters));
+        $customerResponse->assertOk();
+        $customerRow = $customerResponse->viewData('rows')->firstWhere('customer', 'Profit Customer');
+        $this->assertNotNull($customerRow);
+        $this->assertSame(550.0, (float) $customerRow->total_amount);
+        $this->assertSame(180.0, (float) $customerRow->gross_profit);
+        $this->assertSame(1, $customerRow->estimated_cost_lines);
+
+        $productResponse = $this->get(route('reports.sales-by-product', $filters));
+        $productResponse->assertOk();
+        $productRow = $productResponse->viewData('rows')->firstWhere('product_id', $productId);
+        $this->assertNotNull($productRow);
+        $this->assertSame(3.0, (float) $productRow->qty_sold);
+        $this->assertSame(500.0, (float) $productRow->revenue);
+        $this->assertSame(320.0, (float) $productRow->cost);
+        $this->assertSame(180.0, (float) $productRow->gross_profit);
+        $this->assertSame(1, $productRow->estimated_cost_lines);
+    }
+
     public function test_empty_branch_payment_summary_does_not_fall_back_to_company_wide_data(): void
     {
         $this->withoutExceptionHandling();
