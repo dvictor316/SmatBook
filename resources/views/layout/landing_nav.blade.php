@@ -152,7 +152,7 @@
         .skip-link:focus { transform: translateY(0); }
 
         /* ===== NAVIGATION ===== */
-        nav {
+        .landing-navigation {
             position: fixed; 
             width: 100%; 
             top: 0; 
@@ -1131,7 +1131,7 @@
                 --landing-nav-height: 60px;
             }
 
-            nav {
+            .landing-navigation {
                 padding: 0 15px;
             }
 
@@ -1302,7 +1302,7 @@
 
 
 @unless($hideLandingChrome)
-<nav>
+<nav class="landing-navigation">
     <div class="nav-container">
         <a href="{{ url('/') }}" class="logo-container">
             <img src="{{ asset('assets/img/logos.png') }}" class="brand-img" alt="SmartProbook"> 
