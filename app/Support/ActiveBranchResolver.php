@@ -108,9 +108,7 @@ class ActiveBranchResolver
         $key = "branches_json_company_{$companyId}";
         $raw = Setting::where('key', $key)->value('value');
         $decoded = json_decode((string) $raw, true);
-        $branches = collect(is_array($decoded) ? $decoded : [])
-            ->filter(fn ($branch) => ! empty($branch['id']) && ! empty($branch['name']))
-            ->values();
+        $branches = collect(BranchDirectory::unique(is_array($decoded) ? $decoded : []));
 
         if ($branches->isNotEmpty()) {
             $existing = $branches->firstWhere('is_active', true) ?: $branches->first();
@@ -169,7 +167,7 @@ class ActiveBranchResolver
             $branches = collect($decoded)
                 ->map(fn ($branch) => $this->normalizeBranch($branch))
                 ->filter(fn (array $branch) => $branch['id'] !== '' && $branch['name'] !== '')
-                ->values();
+                ->pipe(fn (Collection $branches) => collect(BranchDirectory::unique($branches->all())));
 
             if ($branches->isNotEmpty()) {
                 return $branches;

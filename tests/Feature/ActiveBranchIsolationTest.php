@@ -105,6 +105,40 @@ class ActiveBranchIsolationTest extends TestCase
             ]);
     }
 
+    public function test_resolver_deduplicates_branches_by_normalized_name(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Tenant User',
+            'email' => 'duplicate-branch@example.com',
+            'password' => bcrypt('password'),
+            'company_id' => 9,
+        ]);
+
+        Setting::query()->create([
+            'key' => 'branches_json_company_9',
+            'value' => json_encode([
+                ['id' => 'hq-primary', 'name' => 'Headquarters', 'is_active' => true],
+                ['id' => 'hq-duplicate', 'name' => ' headquarters ', 'is_active' => true],
+                ['id' => 'branch-west', 'name' => 'West Branch', 'is_active' => true],
+            ]),
+        ]);
+
+        $this->actingAs($user);
+        $this->withSession([
+            'current_tenant_id' => 9,
+            'active_branch_id' => 'hq-duplicate',
+            'active_branch_name' => 'headquarters',
+        ]);
+
+        $resolved = app(ActiveBranchResolver::class)->ensureSession($user);
+
+        $this->assertTrue($resolved);
+        $this->assertSame('hq-primary', session('active_branch_id'));
+        $this->assertSame('Headquarters', session('active_branch_name'));
+        $this->assertNull(app(ActiveBranchResolver::class)->resolveBranchById('hq-duplicate', $user));
+        $this->assertSame('branch-west', app(ActiveBranchResolver::class)->resolveBranchById('branch-west', $user)['id']);
+    }
+
     private function setUpSchema(): void
     {
         Schema::dropIfExists('settings');

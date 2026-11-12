@@ -13,10 +13,12 @@ use App\Models\Transaction;
 use App\Models\Subscription;
 use App\Services\BankBalanceManagementService;
 use App\Support\ActiveBranchResolver;
+use App\Support\BranchDirectory;
 use App\Support\DeviceSessionManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
@@ -640,7 +642,7 @@ class SettingController extends Controller
     public function branches()
     {
         $settings = $this->getSettings();
-        $branches = collect($this->getCompanyScopedJsonSettingArray('branches_json'))
+        $branches = collect(BranchDirectory::unique($this->getCompanyScopedJsonSettingArray('branches_json')))
             ->map(function ($branch) {
                 return [
                     'id' => (string) ($branch['id'] ?? ''),
@@ -1644,7 +1646,7 @@ class SettingController extends Controller
         $branchLimit = $branchContext['branchLimit'];
         $planLabel = ucfirst(trim((string) $branchContext['planLabel']));
 
-        if ($branchLimit !== null && $branches->count() >= $branchLimit) {
+        if ($branchLimit !== null && count(BranchDirectory::unique($branches->all())) >= $branchLimit) {
             $branchLabel = $branchLimit === 1 ? 'branch' : 'branches';
             return redirect()->back()->withInput()->with(
                 'error',
@@ -1654,7 +1656,8 @@ class SettingController extends Controller
 
         $name = trim((string) $validated['name']);
         $duplicateByName = $branches->first(function ($branch) use ($name) {
-            return (string) ($branch['name'] ?? '') === $name;
+            return BranchDirectory::normalizeName((string) ($branch['name'] ?? ''))
+                === BranchDirectory::normalizeName($name);
         });
         if ($duplicateByName) {
             return redirect()->back()->withInput()->with('error', 'A branch with this name already exists.');
@@ -1677,6 +1680,7 @@ class SettingController extends Controller
         ]);
 
         $this->setCompanyScopedJsonSettingArray('branches_json', $branches->all());
+        $this->forgetHeaderBranchOptionsCache();
 
         return redirect()->route('branches.index')->with('success', 'Branch added successfully.');
     }
@@ -1698,7 +1702,8 @@ class SettingController extends Controller
             if ((string) ($branch['id'] ?? '') === $branchId) {
                 return false;
             }
-            return (string) ($branch['name'] ?? '') === $name;
+            return BranchDirectory::normalizeName((string) ($branch['name'] ?? ''))
+                === BranchDirectory::normalizeName($name);
         });
         if ($duplicateByName) {
             return redirect()->back()->withInput()->with('error', 'A branch with this name already exists.');
@@ -1720,6 +1725,7 @@ class SettingController extends Controller
         })->values();
 
         $this->setCompanyScopedJsonSettingArray('branches_json', $branches->all());
+        $this->forgetHeaderBranchOptionsCache();
 
         if (session('active_branch_id') === $branchId) {
             $active = $branches->firstWhere('id', $branchId);
@@ -1736,6 +1742,7 @@ class SettingController extends Controller
             ->values();
 
         $this->setCompanyScopedJsonSettingArray('branches_json', $branches->all());
+        $this->forgetHeaderBranchOptionsCache();
 
         if (session('active_branch_id') === $branchId) {
             $nextBranch = $branches->first();
@@ -1746,6 +1753,14 @@ class SettingController extends Controller
         }
 
         return redirect()->route('branches.index')->with('success', 'Branch removed successfully.');
+    }
+
+    private function forgetHeaderBranchOptionsCache(): void
+    {
+        $companyId = (int) (Auth::user()?->company_id ?? 0);
+        if ($companyId > 0) {
+            Cache::forget('ui:header:branches:v2:' . $companyId);
+        }
     }
 
     public function activateBranch(Request $request)

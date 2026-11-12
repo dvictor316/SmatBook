@@ -128,12 +128,12 @@
     if ($user && !empty($user->company_id)) {
         $branchKey = 'branches_json_company_' . $user->company_id;
         $headerBranchOptions = \Illuminate\Support\Facades\Cache::remember(
-            'ui:header:branches:' . $user->company_id,
+            'ui:header:branches:v2:' . $user->company_id,
             now()->addMinutes(5),
             function () use ($branchKey) {
-                return collect(json_decode((string) \App\Models\Setting::where('key', $branchKey)->value('value'), true) ?: [])
-                    ->filter(fn ($branch) => !empty($branch['id']) && !empty($branch['name']))
-                    ->values();
+                $branches = json_decode((string) \App\Models\Setting::where('key', $branchKey)->value('value'), true) ?: [];
+
+                return collect(\App\Support\BranchDirectory::unique($branches));
             }
         );
 
