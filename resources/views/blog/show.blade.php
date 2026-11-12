@@ -1,80 +1,132 @@
 @extends('layout.landing_nav')
 
+@section('title', $seoTitle)
+@section('meta_description', $seoDescription)
+@section('meta_keywords', $seoKeywords)
+@section('style')
+    <link rel="stylesheet" href="{{ asset('assets/css/blog.css') }}?v={{ filemtime(public_path('assets/css/blog.css')) }}">
+@endsection
+
 @section('content')
-<style>
-    .blog-article { max-width: 850px; margin: 0 auto; padding: 120px 20px 70px; color: #172a4a; }
-    .blog-article h1 { font-size: clamp(2rem, 5vw, 3rem); margin: 14px 0; overflow-wrap: anywhere; }
-    .blog-article .blog-meta { color: #52637d; }
-    .blog-article .blog-cover { width: 100%; max-height: 480px; object-fit: cover; border-radius: 14px; margin: 24px 0; }
-    .blog-article .blog-content, .blog-article .comment-body { overflow-wrap: anywhere; }
-    .blog-article .blog-content-text, .blog-article .comment-body { white-space: pre-wrap; }
-    .blog-article .blog-content table { max-width: 100%; }
-    .blog-article .blog-content { overflow-x: auto; }
-    .blog-article .blog-content { line-height: 1.8; margin: 30px 0; }
-    .blog-comments { border-top: 1px solid #dbe3ee; padding-top: 28px; }
-    .blog-comment { border-bottom: 1px solid #e2e8f0; padding: 16px 0; }
-    .blog-reply { margin: 14px 0 0 20px; padding: 12px 0 0 16px; border-left: 2px solid #dbe3ee; }
-    .blog-comment-form { display: grid; gap: 10px; margin-top: 25px; }
-    .blog-comment-form input, .blog-comment-form textarea { width: 100%; border: 2px solid #8295ad; border-radius: 8px; padding: 10px; }
-    .blog-comment-form button { justify-self: start; border: 0; border-radius: 8px; background: #123b79; color: white; padding: 11px 18px; cursor: pointer; }
-</style>
-<article class="blog-article">
-    <a href="{{ route('blog.index') }}">&larr; All posts</a>
-    <h1>{{ $post->title }}</h1>
-    <p class="blog-meta">{{ $post->category }} &middot; {{ $post->published_at->format('d M Y') }}</p>
-    <p>{{ $post->summary }}</p>
-    @if($post->cover_path)
-        <img class="blog-cover" src="{{ route('media.public', ['path' => $post->cover_path]) }}" alt="">
+@php
+    $articleUrl = route('blog.show', $post->slug);
+    $shareUrl = urlencode($articleUrl);
+    $shareTitle = urlencode($post->title);
+    $authorName = $post->author?->name ?: 'SmartProbook Editorial';
+@endphp
+<main class="blog-site blog-article-page">
+    <article class="blog-article">
+        <a class="blog-breadcrumb" href="{{ route('blog.index') }}"><i class="fas fa-arrow-left" aria-hidden="true"></i> All insights</a>
+        <header class="blog-article-header">
+            <a class="blog-card-category" href="{{ route('blog.index', ['category' => $post->category]) }}">{{ $post->category }}</a>
+            <h1>{{ $post->title }}</h1>
+            <p class="blog-article-summary">{{ $post->summary }}</p>
+            <div class="blog-meta-row">
+                <span><i class="far fa-user" aria-hidden="true"></i>{{ $authorName }}</span>
+                <span><i class="far fa-calendar" aria-hidden="true"></i>{{ $post->published_at->format('d M Y') }}</span>
+                <span><i class="far fa-clock" aria-hidden="true"></i>{{ $post->reading_time_minutes }} min read</span>
+            </div>
+        </header>
+
+        @if($post->cover_path)
+            <img class="blog-article-cover" src="{{ route('media.public', ['path' => $post->cover_path]) }}" alt="{{ $post->title }}" fetchpriority="high">
+        @endif
+
+        <div class="blog-prose {{ $post->content_format === 'html' ? '' : 'blog-content-text' }}">
+            @if($post->content_format === 'html')
+                {!! app(\App\Support\BlogHtml::class)->clean($post->content) !!}
+            @else
+                {{ $post->content }}
+            @endif
+        </div>
+
+        <nav class="blog-share" aria-label="Share this article">
+            <strong>Share this article</strong>
+            <a href="https://www.facebook.com/sharer/sharer.php?u={{ $shareUrl }}" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook-f" aria-hidden="true"></i> Facebook</a>
+            <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ $shareUrl }}" target="_blank" rel="noopener noreferrer"><i class="fab fa-linkedin-in" aria-hidden="true"></i> LinkedIn</a>
+            <a href="https://twitter.com/intent/tweet?url={{ $shareUrl }}&text={{ $shareTitle }}" target="_blank" rel="noopener noreferrer"><i class="fab fa-x-twitter" aria-hidden="true"></i> X</a>
+            <a href="https://wa.me/?text={{ $shareTitle }}%20{{ $shareUrl }}" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp" aria-hidden="true"></i> WhatsApp</a>
+            <a href="mailto:?subject={{ $shareTitle }}&body={{ $shareUrl }}"><i class="far fa-envelope" aria-hidden="true"></i> Email</a>
+        </nav>
+    </article>
+
+    @if($relatedPosts->isNotEmpty())
+        <section class="blog-related" aria-labelledby="related-articles-title">
+            <div class="blog-section-heading">
+                <div>
+                    <span class="blog-section-eyebrow">Keep exploring</span>
+                    <h2 id="related-articles-title">More ideas for you</h2>
+                </div>
+                <a class="blog-read-link" href="{{ route('blog.index', ['category' => $post->category]) }}">More in {{ $post->category }} <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+            </div>
+            <div class="blog-grid">
+                @foreach($relatedPosts as $relatedPost)
+                    @include('blog.partials.post-card', ['post' => $relatedPost])
+                @endforeach
+            </div>
+        </section>
     @endif
-    <div class="blog-content {{ $post->content_format === 'html' ? '' : 'blog-content-text' }}">@if($post->content_format === 'html'){!! app(\App\Support\BlogHtml::class)->clean($post->content) !!}@else{{ $post->content }}@endif</div>
-    <section class="blog-comments">
-        <h2>Comments</h2>
+
+    <section class="blog-comments" aria-labelledby="blog-comments-title">
+        <span class="blog-section-eyebrow">Join the conversation</span>
+        <h2 id="blog-comments-title">Comments</h2>
+        <p class="text-muted">Share a helpful thought or question with the community.</p>
+
         @forelse($comments as $comment)
-            <div class="blog-comment" id="comment-{{ $comment->id }}">
-                <strong>{{ $comment->name }}</strong>
-                <small class="blog-meta">{{ $comment->created_at->format('d M Y') }}</small>
-                <div class="comment-body">{{ $comment->body }}</div>
+            <article class="blog-comment" id="comment-{{ $comment->id }}">
+                <div class="blog-comment-heading">
+                    <strong>{{ $comment->name }}</strong>
+                    <span class="blog-comment-date">{{ $comment->created_at->format('d M Y') }}</span>
+                </div>
+                <div class="blog-comment-body">{{ $comment->body }}</div>
                 @foreach($comment->replies as $reply)
                     <div class="blog-reply">
-                        <strong>{{ $reply->name }}</strong>
-                        <small class="blog-meta">{{ $reply->created_at->format('d M Y') }}</small>
-                        <div class="comment-body">{{ $reply->body }}</div>
+                        <div class="blog-comment-heading">
+                            <strong>{{ $reply->name }}</strong>
+                            <span class="blog-comment-date">{{ $reply->created_at->format('d M Y') }}</span>
+                        </div>
+                        <div class="blog-comment-body">{{ $reply->body }}</div>
                     </div>
                 @endforeach
-                <details @if((string) old('parent_id') === (string) $comment->id) open @endif>
+                <details class="blog-reply">
                     <summary>Reply</summary>
                     <form class="blog-comment-form" method="POST" action="{{ route('blog.comments.store', $post->slug) }}">
                         @csrf
                         <input type="hidden" name="parent_id" value="{{ $comment->id }}">
                         <input type="hidden" name="page" value="{{ $comments->currentPage() }}">
-                        <label for="reply-name-{{ $comment->id }}">Name</label>
+                        <label for="reply-name-{{ $comment->id }}">Your name</label>
                         <input id="reply-name-{{ $comment->id }}" name="name" value="{{ (string) old('parent_id') === (string) $comment->id ? old('name') : '' }}" maxlength="100" required>
-                        <label for="reply-body-{{ $comment->id }}">Reply</label>
+                        <label for="reply-body-{{ $comment->id }}">Your reply</label>
                         <textarea id="reply-body-{{ $comment->id }}" name="body" rows="3" maxlength="2000" required>{{ (string) old('parent_id') === (string) $comment->id ? old('body') : '' }}</textarea>
                         <button type="submit">Post reply</button>
                     </form>
                 </details>
-            </div>
+            </article>
         @empty
-            <p>No comments yet.</p>
+            <p class="blog-empty-state">No comments yet. Start the conversation.</p>
         @endforelse
-        {{ $comments->links('pagination::simple-bootstrap-5') }}
+
+        @if($comments->hasPages())
+            <div class="blog-pagination">{{ $comments->links('pagination::simple-bootstrap-5') }}</div>
+        @endif
         @if(session('comment_success'))
-            <div class="alert alert-success" role="status">{{ session('comment_success') }}</div>
+            <div class="blog-alert blog-alert-success" role="status">{{ session('comment_success') }}</div>
         @endif
         @if($errors->any())
-            <div class="alert alert-danger" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+            <div class="blog-alert blog-alert-error" role="alert">
+                <ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+            </div>
         @endif
+
         <form class="blog-comment-form" method="POST" action="{{ route('blog.comments.store', $post->slug) }}">
             @csrf
             <h3>Leave a comment</h3>
-            <p>Comments appear publicly when submitted.</p>
-            <label for="comment-name">Name</label>
+            <label for="comment-name">Your name</label>
             <input id="comment-name" name="name" value="{{ old('parent_id') ? '' : old('name') }}" maxlength="100" required>
-            <label for="comment-body">Comment</label>
+            <label for="comment-body">Your comment</label>
             <textarea id="comment-body" name="body" rows="5" maxlength="2000" required>{{ old('parent_id') ? '' : old('body') }}</textarea>
-            <button type="submit">Submit comment</button>
+            <button type="submit">Post comment</button>
         </form>
     </section>
-</article>
+</main>
 @endsection

@@ -1,59 +1,105 @@
 @extends('layout.landing_nav')
 
 @section('title', 'SmartProbook Blog')
-@section('meta_description', 'Read business insights and SmartProbook updates.')
+@section('meta_description', 'Practical business insights, product guidance, and SmartProbook updates for growing teams.')
+@section('style')
+    <link rel="stylesheet" href="{{ asset('assets/css/blog.css') }}?v={{ filemtime(public_path('assets/css/blog.css')) }}">
+@endsection
 
 @section('content')
-<style>
-    .blog-page { max-width: 1150px; margin: 0 auto; padding: 120px 20px 70px; color: #172a4a; }
-    .blog-page h1 { font-size: clamp(2rem, 5vw, 3rem); margin-bottom: 12px; }
-    .blog-filters { display: flex; flex-wrap: wrap; gap: 10px; margin: 28px 0; }
-    .blog-filters input, .blog-filters select, .blog-filters button { padding: 11px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; }
-    .blog-filters input, .blog-filters select { border: 2px solid #8295ad; }
-    .blog-filters input { flex: 1 1 220px; min-width: 0; }
-    .blog-filters button { background: #123b79; color: white; cursor: pointer; }
-    .blog-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: 20px; }
-    .blog-card { border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; background: white; }
-    .blog-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
-    .blog-card-body { padding: 22px; }
-    .blog-card h2 { font-size: 1.3rem; margin: 10px 0; overflow-wrap: anywhere; }
-    .blog-card p { color: #52637d; overflow-wrap: anywhere; }
-    .blog-meta { color: #496183; font-size: .88rem; }
-    .blog-pagination { margin-top: 30px; }
-</style>
-<div class="blog-page">
-    <h1>SmartProbook Blog</h1>
-    <p>Insights and updates for your business.</p>
-    <form class="blog-filters" method="GET" action="{{ route('blog.index') }}">
-        <label class="visually-hidden" for="blog-search">Search blog posts</label>
-        <input id="blog-search" type="search" name="search" value="{{ request('search') }}" maxlength="100" placeholder="Search posts">
-        <label class="visually-hidden" for="blog-category">Category</label>
-        <select id="blog-category" name="category">
-            <option value="">All categories</option>
-            @foreach($categories as $category)
-                <option value="{{ $category }}" @selected(request('category') === $category)>{{ $category }}</option>
-            @endforeach
-        </select>
-        <button type="submit">Search</button>
-        <a href="{{ route('blog.index') }}">Clear</a>
-    </form>
-    <div class="blog-grid">
-        @forelse($posts as $post)
-            <article class="blog-card">
-                @if($post->cover_path)
-                    <a href="{{ route('blog.show', $post->slug) }}"><img src="{{ route('media.public', ['path' => $post->cover_path]) }}" alt="" loading="lazy"></a>
-                @endif
-                <div class="blog-card-body">
-                    <div class="blog-meta">{{ $post->category }} &middot; {{ $post->published_at->format('d M Y') }}</div>
-                    <h2><a href="{{ route('blog.show', $post->slug) }}">{{ $post->title }}</a></h2>
-                    <p>{{ $post->summary }}</p>
-                    <a href="{{ route('blog.show', $post->slug) }}">Read article &rarr;</a>
+<main class="blog-site blog-index">
+    <header class="blog-hero">
+        <div class="blog-hero-copy">
+            <span class="blog-eyebrow">The SmartProbook Journal</span>
+            <h1>Ideas for your next stage of growth.</h1>
+            <p>Clear advice, practical guides, and product insights to help you run a stronger business.</p>
+            <form class="blog-search" method="GET" action="{{ route('blog.index') }}" role="search">
+                <label class="visually-hidden" for="blog-search">Search articles</label>
+                <input id="blog-search" type="search" name="search" value="{{ request('search') }}" maxlength="100" placeholder="Search business insights">
+                <label class="visually-hidden" for="blog-category">Filter by category</label>
+                <select id="blog-category" name="category">
+                    <option value="">All topics</option>
+                    @foreach($categories as $category)
+                        <option value="{{ $category }}" @selected(request('category') === $category)>{{ $category }}</option>
+                    @endforeach
+                </select>
+                <button type="submit"><i class="fas fa-search" aria-hidden="true"></i> Search</button>
+            </form>
+        </div>
+        <aside class="blog-hero-aside">
+            <i class="fas fa-lightbulb" aria-hidden="true"></i>
+            <strong>Built for business owners</strong>
+            <span>Fresh thinking on finance, operations, inventory, and the tools that help your team do more.</span>
+        </aside>
+    </header>
+
+    <nav class="blog-categories" aria-label="Article categories">
+        <a class="blog-category-chip {{ request('category') ? '' : 'is-active' }}" href="{{ route('blog.index') }}">All insights</a>
+        @foreach($categories as $category)
+            <a class="blog-category-chip {{ request('category') === $category ? 'is-active' : '' }}" href="{{ route('blog.index', array_filter(['category' => $category, 'search' => request('search')])) }}">
+                {{ $category }}
+            </a>
+        @endforeach
+    </nav>
+
+    @if($featuredPost)
+        <section aria-labelledby="featured-article-title">
+            <div class="blog-section-heading">
+                <div>
+                    <span class="blog-section-eyebrow">Editor's pick</span>
+                    <h2 id="featured-article-title">A good place to start</h2>
+                </div>
+            </div>
+            <article class="blog-featured">
+                <a class="blog-featured-media" href="{{ route('blog.show', $featuredPost->slug) }}" aria-label="Read {{ $featuredPost->title }}">
+                    @if($featuredPost->cover_path)
+                        <img src="{{ route('media.public', ['path' => $featuredPost->cover_path]) }}" alt="{{ $featuredPost->title }}" fetchpriority="high">
+                    @else
+                        <i class="fas fa-book-open" aria-hidden="true"></i>
+                    @endif
+                </a>
+                <div class="blog-featured-body">
+                    <span class="blog-section-eyebrow">{{ $featuredPost->category }}</span>
+                    <h2><a href="{{ route('blog.show', $featuredPost->slug) }}">{{ $featuredPost->title }}</a></h2>
+                    <p>{{ $featuredPost->summary }}</p>
+                    <div class="blog-meta-row">
+                        <span><i class="far fa-calendar" aria-hidden="true"></i>{{ $featuredPost->published_at->format('d M Y') }}</span>
+                        <span><i class="far fa-clock" aria-hidden="true"></i>{{ $featuredPost->reading_time_minutes }} min read</span>
+                        <span><i class="far fa-user" aria-hidden="true"></i>{{ $featuredPost->author?->name ?: 'SmartProbook Editorial' }}</span>
+                    </div>
+                    <a class="blog-primary-link" href="{{ route('blog.show', $featuredPost->slug) }}">Read the featured article <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
                 </div>
             </article>
-        @empty
-            <p>No published posts found.</p>
-        @endforelse
-    </div>
-    <div class="blog-pagination">{{ $posts->links('pagination::simple-bootstrap-5') }}</div>
-</div>
+        </section>
+    @endif
+
+    <section aria-labelledby="latest-articles-title">
+        <div class="blog-section-heading">
+            <div>
+                <span class="blog-section-eyebrow">{{ request('search') || request('category') ? 'Your results' : 'From the journal' }}</span>
+                <h2 id="latest-articles-title">{{ request('search') || request('category') ? 'Articles for you' : 'Latest articles' }}</h2>
+            </div>
+            @if(request('search') || request('category'))
+                <a class="blog-read-link" href="{{ route('blog.index') }}">Clear filters <i class="fas fa-times" aria-hidden="true"></i></a>
+            @else
+                <p>{{ $posts->total() }} {{ \Illuminate\Support\Str::plural('article', $posts->total()) }}</p>
+            @endif
+        </div>
+
+        <div class="blog-grid">
+            @forelse($posts as $post)
+                @include('blog.partials.post-card', ['post' => $post])
+            @empty
+                <div class="blog-empty-state">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <strong>No articles found</strong>
+                    <p class="mb-0">Try a different search or browse all insights.</p>
+                </div>
+            @endforelse
+        </div>
+        @if($posts->hasPages())
+            <div class="blog-pagination">{{ $posts->links('pagination::simple-bootstrap-5') }}</div>
+        @endif
+    </section>
+</main>
 @endsection

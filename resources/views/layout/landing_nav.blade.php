@@ -1293,6 +1293,7 @@
     @include('layout.partials.responsive-guardrails')
     <script src="{{ asset('assets/js/public-navigation.js') }}?v={{ filemtime(public_path('assets/js/public-navigation.js')) }}" defer></script>
     @include('layout.partials.contrast-adaptation')
+    @yield('style')
 
 </head>
 <body>

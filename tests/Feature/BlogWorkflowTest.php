@@ -44,10 +44,11 @@ class BlogWorkflowTest extends TestCase
         foreach (['super_admin.blog.create', 'super_admin.blog.edit'] as $name) {
             $parameters = $name === 'super_admin.blog.edit' ? [$post] : [];
             $this->get(route($name, $parameters))->assertOk()
-                ->assertSee('Manage Blog Posts')->assertSee('Managing stock')
+                ->assertSee('Manage articles')->assertSee('Managing stock')
                 ->assertSee(route('super_admin.blog.edit', $post))
                 ->assertSee(route('super_admin.blog.destroy', $post))
-                ->assertSee('border: 2px solid #8295ad', false);
+                ->assertSee('assets/css/blog-admin.css')
+                ->assertSee('name="content_format"', false);
         }
         $this->get(route('super_admin.blog.edit', $post))->assertSee('First line');
         $this->getJson(route('blog.show', $post->slug))->assertNotFound();
@@ -327,5 +328,71 @@ class BlogWorkflowTest extends TestCase
         $this->assertDatabaseCount('blog_posts', 4);
         $this->assertSame('Edited by an administrator', $post->fresh()->title);
         $this->assertSame($cover, $post->fresh()->cover_path);
+    }
+
+    public function test_public_blog_has_featured_related_articles_metadata_and_share_links(): void
+    {
+        $author = User::factory()->create(['role' => 'super_admin', 'name' => 'Editorial Author']);
+        $featured = BlogPost::create([
+            'title' => 'Featured guide', 'slug' => 'featured-guide', 'category' => 'Operations',
+            'summary' => 'A featured summary.', 'content' => str_repeat('useful words ', 220),
+            'status' => 'published', 'published_at' => now(),
+        ]);
+        $featured->author()->associate($author);
+        $featured->save();
+        foreach ([
+            ['Related guide one', now()->subDay()],
+            ['Related guide two', now()->subDays(2)],
+            ['Related guide three', now()->subDays(3)],
+        ] as [$title, $publishedAt]) {
+            BlogPost::create([
+                'title' => $title, 'slug' => \Illuminate\Support\Str::slug($title), 'category' => 'Operations',
+                'summary' => 'Related summary.', 'content' => 'Related article body.',
+                'status' => 'published', 'published_at' => $publishedAt,
+            ]);
+        }
+        BlogPost::create([
+            'title' => 'Unrelated guide', 'slug' => 'unrelated-guide', 'category' => 'Finance',
+            'summary' => 'Unrelated summary.', 'content' => 'Unrelated article body.',
+            'status' => 'published', 'published_at' => now()->subHours(2),
+        ]);
+
+        $this->get(route('blog.index'))->assertOk()
+            ->assertSee('Featured guide')->assertSee('Editorial Author')
+            ->assertSee('2 min read')->assertSee('Latest articles');
+        $this->get(route('blog.show', $featured->slug))->assertOk()
+            ->assertSee('Editorial Author')->assertSee('2 min read')
+            ->assertSee('Related guide one')->assertSee('Related guide two')->assertSee('Related guide three')
+            ->assertDontSee('Unrelated guide')
+            ->assertSee('linkedin.com/sharing/share-offsite')
+            ->assertSee('twitter.com/intent/tweet')
+            ->assertSee('wa.me/');
+    }
+
+    public function test_super_admin_can_filter_blog_posts_by_search_status_and_category(): void
+    {
+        BlogPost::create([
+            'title' => 'Operations playbook', 'slug' => 'operations-playbook', 'category' => 'Operations',
+            'summary' => 'Planning for teams.', 'content' => 'Content', 'status' => 'published', 'published_at' => now(),
+        ]);
+        BlogPost::create([
+            'title' => 'Operations draft', 'slug' => 'operations-draft', 'category' => 'Operations',
+            'summary' => 'Planning draft.', 'content' => 'Content', 'status' => 'draft',
+        ]);
+        BlogPost::create([
+            'title' => 'Finance playbook', 'slug' => 'finance-playbook', 'category' => 'Finance',
+            'summary' => 'Planning for finance.', 'content' => 'Content', 'status' => 'published', 'published_at' => now(),
+        ]);
+
+        $this->actingAs(User::factory()->create(['role' => 'super_admin']))
+            ->get(route('super_admin.blog.index', [
+                'search' => 'playbook',
+                'status' => 'published',
+                'category' => 'Operations',
+            ]))
+            ->assertOk()
+            ->assertSee('Operations playbook')
+            ->assertDontSee('Operations draft')
+            ->assertDontSee('Finance playbook');
     }
 }

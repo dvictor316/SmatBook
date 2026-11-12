@@ -17,15 +17,32 @@ use RuntimeException;
 
 class BlogController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $posts = $this->postsForManagement();
-        return view('SuperAdmin.blog.index', compact('posts'));
+        $filters = $request->validate([
+            'search' => 'nullable|string|max:100',
+            'status' => 'nullable|in:draft,published',
+            'category' => 'nullable|string|max:100',
+        ]);
+        $posts = $this->postsForManagement($filters);
+        $categories = $this->categoriesForManagement();
+        $stats = [
+            'total' => BlogPost::count(),
+            'published' => BlogPost::where('status', 'published')->count(),
+            'drafts' => BlogPost::where('status', 'draft')->count(),
+            'comments' => BlogComment::count(),
+        ];
+
+        return view('SuperAdmin.blog.index', compact('posts', 'categories', 'filters', 'stats'));
     }
 
     public function create()
     {
-        return view('SuperAdmin.blog.form', ['post' => new BlogPost(), 'posts' => $this->postsForManagement()]);
+        return view('SuperAdmin.blog.form', [
+            'post' => new BlogPost(),
+            'posts' => $this->postsForManagement(),
+            'categories' => $this->categoriesForManagement(),
+        ]);
     }
 
     public function store(Request $request)
@@ -49,7 +66,11 @@ class BlogController extends Controller
 
     public function edit(BlogPost $post)
     {
-        return view('SuperAdmin.blog.form', ['post' => $post, 'posts' => $this->postsForManagement()]);
+        return view('SuperAdmin.blog.form', [
+            'post' => $post,
+            'posts' => $this->postsForManagement(),
+            'categories' => $this->categoriesForManagement(),
+        ]);
     }
 
     public function update(Request $request, BlogPost $post)
@@ -111,10 +132,26 @@ class BlogController extends Controller
         return back()->with('success', 'Comment deleted.');
     }
 
-    private function postsForManagement(): LengthAwarePaginator
+    private function postsForManagement(array $filters = []): LengthAwarePaginator
     {
-        return BlogPost::withCount('comments')->latest()->orderByDesc('id')->paginate(20)
+        return BlogPost::withCount('comments')
+            ->when(filled($filters['search'] ?? null), function ($query) use ($filters) {
+                $search = $filters['search'];
+                $query->where(function ($query) use ($search) {
+                    $query->where('title', 'like', "%{$search}%")
+                        ->orWhere('summary', 'like', "%{$search}%");
+                });
+            })
+            ->when(filled($filters['status'] ?? null), fn ($query) => $query->where('status', $filters['status']))
+            ->when(filled($filters['category'] ?? null), fn ($query) => $query->where('category', $filters['category']))
+            ->orderByDesc('updated_at')->orderByDesc('id')->paginate(20)
             ->withPath(route('super_admin.blog.index'));
+    }
+
+    private function categoriesForManagement()
+    {
+        return BlogPost::query()->whereNotNull('category')->where('category', '!=', '')
+            ->select('category')->distinct()->orderBy('category')->pluck('category');
     }
 
     private function validated(Request $request, ?BlogPost $post = null): array

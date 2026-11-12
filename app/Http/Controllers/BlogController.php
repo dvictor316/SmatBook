@@ -14,8 +14,12 @@ class BlogController extends Controller
             'search' => 'nullable|string|max:100',
             'category' => 'nullable|string|max:100',
         ]);
-        $posts = BlogPost::published()
-            ->when(isset($filters['search']), function ($query) use ($filters) {
+        $hasFilters = filled($filters['search'] ?? null) || filled($filters['category'] ?? null);
+        $featuredPost = $hasFilters
+            ? null
+            : BlogPost::published()->with('author')->orderByDesc('published_at')->orderByDesc('id')->first();
+        $postsQuery = BlogPost::published()->with('author')
+            ->when(filled($filters['search'] ?? null), function ($query) use ($filters) {
                 $search = $filters['search'];
                 $query->where(function ($query) use ($search) {
                     $query->where('title', 'like', "%{$search}%")
@@ -23,16 +27,22 @@ class BlogController extends Controller
                         ->orWhere('content', 'like', "%{$search}%");
                 });
             })
-            ->when(isset($filters['category']), fn ($query) => $query->where('category', $filters['category']))
-            ->orderByDesc('published_at')->orderByDesc('id')->paginate(9)->withQueryString();
-        $categories = BlogPost::published()->select('category')->distinct()->orderBy('category')->pluck('category');
+            ->when(filled($filters['category'] ?? null), fn ($query) => $query->where('category', $filters['category']))
+            ->when($featuredPost, fn ($query) => $query->whereKeyNot($featuredPost->id))
+            ->orderByDesc('published_at')->orderByDesc('id');
+        $posts = $postsQuery->paginate(9)->withQueryString();
+        $categories = BlogPost::published()->whereNotNull('category')->where('category', '!=', '')
+            ->select('category')->distinct()->orderBy('category')->pluck('category');
 
-        return view('blog.index', compact('posts', 'categories'));
+        return view('blog.index', compact('posts', 'categories', 'featuredPost'));
     }
 
     public function show(string $slug)
     {
-        $post = BlogPost::published()->where('slug', $slug)->firstOrFail();
+        $post = BlogPost::published()->with('author')->where('slug', $slug)->firstOrFail();
+        $relatedPosts = BlogPost::published()->with('author')->whereKeyNot($post->id)
+            ->orderByRaw('CASE WHEN category = ? THEN 0 ELSE 1 END', [$post->category])
+            ->orderByDesc('published_at')->orderByDesc('id')->limit(3)->get();
         $comments = $post->comments()->whereNull('parent_id')->where('approved', true)
             ->with(['replies' => fn ($query) => $query->where('approved', true)->orderBy('created_at')->orderBy('id')])
             ->orderBy('created_at')->orderBy('id')->paginate(20);
@@ -42,7 +52,7 @@ class BlogController extends Controller
         $seoDescription = $post->meta_description ?: $post->summary;
         $seoKeywords = $post->meta_keywords;
 
-        return view('blog.show', compact('post', 'comments', 'seoType', 'seoImage', 'seoTitle', 'seoDescription', 'seoKeywords'));
+        return view('blog.show', compact('post', 'relatedPosts', 'comments', 'seoType', 'seoImage', 'seoTitle', 'seoDescription', 'seoKeywords'));
     }
 
     public function comment(Request $request, string $slug)
