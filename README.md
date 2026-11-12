@@ -31,7 +31,18 @@ After running migrations, the optional starter-post seeder creates six illustrat
 php artisan db:seed --class=BlogStarterPostsSeeder --force
 ```
 
-The public storage disk must be writable. The seeder preserves existing article content and covers; if a starter article already exists as a draft, rerunning the seeder publishes it. Super admins can continue editing the articles from Blog Posts & Comments.
+The public storage disk must be writable. The seeder preserves existing article content and custom covers, replaces starter-owned covers with these photos, and publishes existing starter drafts. Super admins can continue editing the articles from Blog Posts & Comments.
+
+The six article cover photos are sourced from Unsplash, cropped to 1200 x 675 and stored locally. They are used under the [Unsplash License](https://unsplash.com/license); image attribution is appreciated but not required.
+
+| Article | Photo source |
+|---|---|
+| Inventory management | [Unsplash photo](https://images.unsplash.com/photo-1664382953403-fc1ac77073a0) |
+| POS checkout | [Unsplash photo](https://images.unsplash.com/photo-1556740772-1a741367b93e) |
+| Online orders | [Unsplash photo](https://images.unsplash.com/photo-1770013413878-2530e2c3d82b) |
+| Business reports | [Unsplash photo](https://images.unsplash.com/photo-1628348068343-c6a848d2b6dd) |
+| Expense tracking | [Unsplash photo](https://images.unsplash.com/photo-1649209979970-f01d950cc5ed) |
+| Invoice management | [Unsplash photo](https://images.unsplash.com/photo-1735825764485-93a381fd5779) |
 
 ## Learning Laravel
 

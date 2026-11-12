@@ -7,7 +7,6 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use RuntimeException;
 use Throwable;
 
@@ -19,23 +18,36 @@ class BlogStarterPostsSeeder extends Seeder
         try {
             DB::transaction(function () use (&$createdCovers) {
                 foreach ($this->articles() as $article) {
-                    $existingPost = BlogPost::where('slug', $article['slug'])->first();
-                    if ($existingPost) {
-                        $existingPost->update([
-                            'status' => 'published',
-                            'published_at' => $existingPost->published_at?->isPast()
-                                ? $existingPost->published_at
-                                : now(),
-                        ]);
-                        continue;
-                    }
-
                     $source = public_path('assets/blog-covers/' . $article['image']);
                     $image = is_file($source) ? file_get_contents($source) : false;
                     if ($image === false) {
                         throw new RuntimeException("Unable to read blog cover: {$source}");
                     }
-                    $path = 'blog/covers/starter-' . Str::uuid() . '.svg';
+
+                    $extension = pathinfo($source, PATHINFO_EXTENSION);
+                    $path = 'blog/covers/starter-' . $article['slug'] . '.' . $extension;
+                    $existingPost = BlogPost::where('slug', $article['slug'])->first();
+                    if ($existingPost) {
+                        $attributes = [
+                            'status' => 'published',
+                            'published_at' => $existingPost->published_at?->isPast()
+                                ? $existingPost->published_at
+                                : now(),
+                        ];
+                        $coverPath = (string) $existingPost->cover_path;
+                        if ($coverPath === '' || str_starts_with($coverPath, 'blog/covers/starter-')) {
+                            if (!Storage::disk('public')->exists($path)) {
+                                if (!Storage::disk('public')->put($path, $image)) {
+                                    throw new RuntimeException("Unable to store blog cover: {$path}");
+                                }
+                                $createdCovers[] = $path;
+                            }
+                            $attributes['cover_path'] = $path;
+                        }
+                        $existingPost->update($attributes);
+                        continue;
+                    }
+
                     if (!Storage::disk('public')->put($path, $image)) {
                         throw new RuntimeException("Unable to store blog cover: {$path}");
                     }
@@ -70,7 +82,7 @@ class BlogStarterPostsSeeder extends Seeder
                 'meta_title' => 'Practical Stock Control for Growing Businesses',
                 'meta_description' => 'Learn practical stock control habits for product records, stock counts, sales and branch movements.',
                 'meta_keywords' => 'stock control, inventory management, stock movements, branch transfers',
-                'image' => 'inventory.svg',
+                'image' => 'inventory-management.jpg',
                 'content' => <<<'HTML'
 <p>Good stock control begins with a simple question: do your records match what is actually on the shelf? When purchases, sales, returns and branch transfers are recorded consistently, it becomes easier to investigate differences and plan the next purchase.</p>
 <h2>Start with clear product records</h2>
@@ -91,7 +103,7 @@ HTML,
                 'meta_title' => 'Better Daily Sales Habits With Your POS',
                 'meta_description' => 'Practical checkout and daily reconciliation tips for businesses using a point-of-sale system.',
                 'meta_keywords' => 'POS sales, checkout, payment methods, sales reporting',
-                'image' => 'pos.svg',
+                'image' => 'pos-checkout.jpg',
                 'content' => <<<'HTML'
 <p>A point-of-sale system is most useful when the team follows a reliable routine. From selecting the right product to checking the day's payments, a few consistent steps can make sales records easier to understand.</p>
 <h2>Before the first sale</h2>
@@ -112,7 +124,7 @@ HTML,
                 'meta_title' => 'Organizing Online Orders and Stock',
                 'meta_description' => 'Prepare product listings and manage online orders with a clear fulfilment and cancellation routine.',
                 'meta_keywords' => 'online store, ecommerce orders, order fulfilment, inventory',
-                'image' => 'online-store.svg',
+                'image' => 'online-orders.jpg',
                 'content' => <<<'HTML'
 <p>Online selling adds convenience for customers, but it also introduces another channel for your team to monitor. A clear catalogue and a shared order process help customers understand what they are buying and help staff know what to do next.</p>
 <h2>Prepare the catalogue</h2>
@@ -133,7 +145,7 @@ HTML,
                 'meta_title' => 'Using Business Reports to Plan Your Next Steps',
                 'meta_description' => 'Use regular sales, inventory and financial reports to spot questions and plan business decisions.',
                 'meta_keywords' => 'business reports, sales reports, inventory insights, financial reporting',
-                'image' => 'reports.svg',
+                'image' => 'business-reports.jpg',
                 'content' => <<<'HTML'
 <p>Reports are more useful when they lead to a question or a decision. A short, regular review of sales, stock and financial records can help you understand what changed and where your team should look next.</p>
 <h2>Choose a consistent period</h2>
@@ -154,7 +166,7 @@ HTML,
                 'meta_title' => 'How to Track Business Expenses | SmartProbook',
                 'meta_description' => 'Learn how small businesses can record expenses, organize receipts, reconcile transactions and review spending with a simple routine.',
                 'meta_keywords' => 'how to track business expenses, small business expense tracking, expense records, business receipts, expense management',
-                'image' => 'expense-tracking.svg',
+                'image' => 'expense-tracking.jpg',
                 'content' => <<<'HTML'
 <p>Knowing where business money goes starts with complete, consistent records. A practical expense-tracking routine helps you review spending, prepare for conversations with an accountant and spot missing transactions. It does not need to be complicated, but it does need to happen regularly.</p>
 <h2>Record each expense while it is fresh</h2>
@@ -185,7 +197,7 @@ HTML,
                 'meta_title' => 'Small Business Invoice Management Guide | SmartProbook',
                 'meta_description' => 'Learn how to create clear invoices, set payment terms, track due dates and follow up while keeping customer and payment records organized.',
                 'meta_keywords' => 'small business invoice management, how to create an invoice, invoice tracking, payment terms, unpaid invoices',
-                'image' => 'invoice-management.svg',
+                'image' => 'invoice-management.jpg',
                 'content' => <<<'HTML'
 <p>A clear invoicing process helps customers understand what they owe and helps your team know what needs follow-up. Whether you send a few invoices or manage them every day, consistent details and timely status updates make the payment trail easier to review.</p>
 <h2>Include the details customers need</h2>

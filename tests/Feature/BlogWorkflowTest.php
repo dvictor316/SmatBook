@@ -320,17 +320,20 @@ class BlogWorkflowTest extends TestCase
             $this->assertNotEmpty($post->meta_description);
             $this->assertNotEmpty($post->meta_keywords);
             Storage::disk('public')->assertExists($post->cover_path);
-            $this->assertStringContainsString('<svg', Storage::disk('public')->get($post->cover_path));
+            $this->assertStringStartsWith("\xFF\xD8\xFF", Storage::disk('public')->get($post->cover_path));
             $this->get(route('media.public', ['path' => $post->cover_path]))->assertOk();
             $this->get(route('blog.show', $post->slug))->assertOk();
         }
         $post = BlogPost::firstOrFail();
         $cover = $post->cover_path;
-        $post->update(['title' => 'Edited by an administrator']);
+        $oldCover = 'blog/covers/starter-old.svg';
+        Storage::disk('public')->put($oldCover, '<svg xmlns="http://www.w3.org/2000/svg"></svg>');
+        $post->update(['title' => 'Edited by an administrator', 'cover_path' => $oldCover]);
         $this->seed(BlogStarterPostsSeeder::class);
         $this->assertDatabaseCount('blog_posts', 6);
         $this->assertSame('Edited by an administrator', $post->fresh()->title);
         $this->assertSame($cover, $post->fresh()->cover_path);
+        $this->assertNotSame($oldCover, $post->fresh()->cover_path);
     }
 
     public function test_public_blog_has_featured_related_articles_metadata_and_share_links(): void
