@@ -209,6 +209,23 @@ class AiQuickAgentController extends Controller
         }
 
         if (
+            str_contains($message, 'resource capacity') ||
+            str_contains($message, 'capacity planning') ||
+            str_contains($message, 'team availability') ||
+            str_contains($message, 'overloaded team')
+        ) {
+            return ['type' => 'resource_capacity_planning', 'required_plan' => 'enterprise'];
+        }
+
+        if (
+            str_contains($message, 'change order') ||
+            str_contains($message, 'scope change') ||
+            str_contains($message, 'scope drift')
+        ) {
+            return ['type' => 'change_order_control', 'required_plan' => 'enterprise'];
+        }
+
+        if (
             str_contains($message, 'project management ai') ||
             str_contains($message, 'milestone planning') ||
             str_contains($message, 'workload balancing') ||
@@ -349,6 +366,8 @@ class AiQuickAgentController extends Controller
             'proposals' => ['type' => 'proposals', 'required_plan' => 'enterprise'],
             'ai_anomaly_detection' => ['type' => 'ai_anomaly_detection', 'required_plan' => 'enterprise'],
             'project_management_ai' => ['type' => 'project_management_ai', 'required_plan' => 'enterprise'],
+            'resource_capacity_planning' => ['type' => 'resource_capacity_planning', 'required_plan' => 'enterprise'],
+            'change_order_control' => ['type' => 'change_order_control', 'required_plan' => 'enterprise'],
             default => null,
         };
     }
@@ -416,7 +435,8 @@ class AiQuickAgentController extends Controller
             ],
             'reputation_management', 'lead_management', 'appointment_scheduling',
             'contract_esignature', 'proposals', 'ai_anomaly_detection',
-            'project_management_ai' => [
+            'project_management_ai', 'resource_capacity_planning',
+            'change_order_control' => [
                 'reports.reports.view',
                 'projects.projects.view',
             ],
@@ -631,6 +651,20 @@ class AiQuickAgentController extends Controller
             ]);
         }
 
+        if ($intent === 'resource_capacity_planning') {
+            return response()->json([
+                'ok' => true,
+                'answer' => $this->buildResourceCapacityAnswer($request),
+            ]);
+        }
+
+        if ($intent === 'change_order_control') {
+            return response()->json([
+                'ok' => true,
+                'answer' => $this->buildChangeOrderControlAnswer($request),
+            ]);
+        }
+
         if ($intent === 'general_ledger') {
             $data = $this->getGeneralLedgerStats($request, $start, $end);
             return response()->json([
@@ -794,7 +828,7 @@ class AiQuickAgentController extends Controller
         $baseUrl = rtrim((string) config('services.openai.base_url', 'https://api.openai.com/v1'), '/');
 
         $instruction = "Return only JSON with keys: intent, period. ".
-            "intent must be one of: sales,purchases,profit_loss,tax,expenses,invoices_due,general_ledger,trial_balance,balance_sheet,customers_count,vendors_count,products_count,payments,online_users,assistant_intro,assistant_help,reputation_management,lead_management,appointment_scheduling,contract_esignature,proposals,ai_anomaly_detection,project_management_ai,unknown. ".
+            "intent must be one of: sales,purchases,profit_loss,tax,expenses,invoices_due,general_ledger,trial_balance,balance_sheet,customers_count,vendors_count,products_count,payments,online_users,assistant_intro,assistant_help,reputation_management,lead_management,appointment_scheduling,contract_esignature,proposals,ai_anomaly_detection,project_management_ai,resource_capacity_planning,change_order_control,unknown. ".
             "period must be one of: today,yesterday,this week,last week,this month,last month,this year,this quarter,last quarter,last 7 days,last 30 days,all time. ".
             "If uncertain, set intent to unknown and period to today.";
 
@@ -1498,6 +1532,67 @@ class AiQuickAgentController extends Controller
         $projects = $this->getProjectWorkspaceStats($request);
 
         return "Project management AI summary: {$projects['projects_total']} project(s), {$projects['tasks_total']} task(s), {$projects['tasks_overdue']} overdue item(s), and {$projects['projects_over_budget']} over-budget project(s). Recommended next action: recover overdue tasks first, rebalance work from overloaded owners, and review scope on any project that is spending ahead of plan.";
+    }
+
+    private function buildResourceCapacityAnswer(Request $request): string
+    {
+        if (
+            !Schema::hasTable('projects')
+            || !Schema::hasTable('project_tasks')
+            || !Schema::hasColumn('project_tasks', 'assignee')
+            || !Schema::hasColumn('project_tasks', 'estimated_hours')
+            || !Schema::hasColumn('project_tasks', 'status')
+        ) {
+            return 'Resource capacity planning needs project tasks with assignees and estimated hours. Add or update project tasks before running this review.';
+        }
+
+        $tasks = ProjectTask::query()
+            ->join('projects', 'project_tasks.project_id', '=', 'projects.id')
+            ->where('project_tasks.status', '!=', 'done');
+
+        if (!$this->isSuperAdmin($request)) {
+            if (Schema::hasColumn('projects', 'company_id') && optional($request->user())->company_id) {
+                $tasks->where('projects.company_id', $request->user()->company_id);
+            } elseif (Schema::hasColumn('projects', 'created_by')) {
+                $tasks->where('projects.created_by', $request->user()->id);
+            }
+        }
+
+        $workloads = $tasks
+            ->selectRaw("COALESCE(NULLIF(TRIM(project_tasks.assignee), ''), 'Unassigned') as assignee_name")
+            ->selectRaw('COUNT(*) as active_tasks')
+            ->selectRaw('COALESCE(SUM(project_tasks.estimated_hours), 0) as estimated_hours')
+            ->groupBy('assignee_name')
+            ->orderByDesc('estimated_hours')
+            ->get();
+
+        $taskCount = (int) $workloads->sum('active_tasks');
+        if ($taskCount === 0) {
+            return 'Resource capacity review found no active project tasks to balance.';
+        }
+
+        $unassignedTasks = (int) data_get($workloads->firstWhere('assignee_name', 'Unassigned'), 'active_tasks', 0);
+        $assignedWorkloads = $workloads->reject(fn ($workload) => $workload->assignee_name === 'Unassigned');
+        $hours = (float) $workloads->sum('estimated_hours');
+        $busiest = $assignedWorkloads->first();
+        $busiestSummary = $busiest
+            ? "{$busiest->assignee_name} has the highest estimate at " . number_format((float) $busiest->estimated_hours, 1) . ' hours'
+            : 'no active tasks currently have an assignee';
+
+        return 'Resource capacity snapshot: ' . $taskCount . ' active task(s) across ' . $assignedWorkloads->count()
+            . ' assigned team member(s), totaling ' . number_format($hours, 1) . ' estimated hours; '
+            . $unassignedTasks . ' task(s) are unassigned. ' . $busiestSummary
+            . '. Assign unowned tasks and review due dates before redistributing work.';
+    }
+
+    private function buildChangeOrderControlAnswer(Request $request): string
+    {
+        $projects = $this->getProjectWorkspaceStats($request);
+
+        return 'Change-order risk review: ' . $projects['projects_over_budget'] . ' project(s) are over budget and '
+            . $projects['tasks_overdue'] . ' task(s) are overdue. This workspace has no dedicated change-order log, '
+            . 'so these are scope-risk indicators rather than recorded change requests. Review the affected project '
+            . 'budgets and overdue work, then document any approved scope, cost, or schedule changes.';
     }
 
     private function hasPlanAccess(string $currentPlan, string $requiredPlan, Request $request): bool

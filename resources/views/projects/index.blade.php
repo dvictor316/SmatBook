@@ -483,26 +483,6 @@
     </div>
 </div>
 
-<div class="modal fade" id="moduleAiModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="moduleAiModalTitle">AI Module Assistant</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-muted mb-2" id="moduleAiModalNote">Use AI assistant to analyze this module with guided actions.</p>
-                <label class="form-label small mb-1">Assistant Prompt</label>
-                <textarea id="moduleAiPrompt" class="form-control" rows="4" placeholder="Type what you need..."></textarea>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-light" type="button" data-bs-dismiss="modal">Close</button>
-                <button class="btn btn-primary" type="button" id="moduleAiOpenAssistant">Run In AI Assistant</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="modal fade" id="newProjectModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
@@ -584,16 +564,7 @@
 
         const runButtons = document.querySelectorAll('.js-run-module');
         const projectModalEl = document.getElementById('newProjectModal');
-        const modalEl = document.getElementById('moduleAiModal');
-        const modalTitle = document.getElementById('moduleAiModalTitle');
-        const modalNote = document.getElementById('moduleAiModalNote');
-        const promptInput = document.getElementById('moduleAiPrompt');
-        const openAssistantBtn = document.getElementById('moduleAiOpenAssistant');
-        let activeModuleTitle = '';
 
-        const aiModal = (modalEl && window.bootstrap && bootstrap.Modal)
-            ? bootstrap.Modal.getOrCreateInstance(modalEl)
-            : null;
         const projectModal = (projectModalEl && window.bootstrap && bootstrap.Modal)
             ? bootstrap.Modal.getOrCreateInstance(projectModalEl)
             : null;
@@ -648,10 +619,9 @@
             if (label && nextLabel) {
                 label.textContent = nextLabel;
             }
-        }
+        };
 
         function launchModule(button, moduleId, moduleTitle, isAi, mode) {
-            activeModuleTitle = moduleTitle || 'Module';
             setButtonRunning(button, true, 'Launching...');
             setModuleFocus(moduleId);
 
@@ -681,21 +651,15 @@
             }
 
             if (mode === 'assistant' || isAi) {
-                if (!aiModal) {
-                    setButtonRunning(button, false, buttonLabels[moduleId] || 'Run Module');
-                    alert('Module assistant is currently unavailable. Please refresh the page and try again.');
-                    return;
-                }
+                const prompt = modulePrompts[moduleId]
+                    || ('Review ' + (moduleTitle || 'this module') + ' for my workspace and recommend next actions.');
+                const opened = typeof window.openSmartProbookAiAssistant === 'function'
+                    && window.openSmartProbookAiAssistant(prompt);
 
-                modalTitle.textContent = (moduleTitle || 'Module') + ' Assistant';
-                modalNote.textContent = isAi
-                    ? 'AI will scan your live workspace and return actionable exceptions, risks, and next steps.'
-                    : 'AI will review your current workspace data for this module and suggest the best next actions.';
-                promptInput.value = modulePrompts[moduleId] || ('Run ' + (moduleTitle || 'this module') + ' for my current projects and suggest the next actions.');
-                setTimeout(function () {
-                    setButtonRunning(button, false, buttonLabels[moduleId] || 'Open Assistant');
-                }, 250);
-                aiModal.show();
+                setButtonRunning(button, false, buttonLabels[moduleId] || 'Run Module');
+                if (!opened) {
+                    alert('The AI assistant could not be opened. Please refresh the page and try again.');
+                }
                 return;
             }
 
@@ -729,30 +693,6 @@
             }
         }
 
-        if (openAssistantBtn) {
-            openAssistantBtn.addEventListener('click', function () {
-                const prompt = (promptInput?.value || '').trim();
-                const trigger = document.getElementById('ai-agent-trigger');
-                const openAiBtn = document.getElementById('open-ai-chat-btn');
-                const aiInput = document.getElementById('ai-agent-input');
-                const aiSend = document.getElementById('ai-agent-send');
-
-                if (window.bootstrap && bootstrap.Modal && modalEl) {
-                    bootstrap.Modal.getOrCreateInstance(modalEl)?.hide();
-                }
-                trigger?.click();
-
-                setTimeout(function () {
-                    openAiBtn?.click();
-                }, 250);
-
-                setTimeout(function () {
-                    if (!aiInput || !aiSend) return;
-                    aiInput.value = prompt || ('Run ' + activeModuleTitle + ' for my workspace.');
-                    aiSend.click();
-                }, 850);
-            });
-        }
     });
 </script>
 @endpush

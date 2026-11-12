@@ -337,12 +337,33 @@
                     setTimeout(() => input?.focus(), 250);
                 });
             }
-            window.openSmartProbookAiAssistant = function () {
+            window.openSmartProbookAiAssistant = function (message) {
                 const introModal = introModalEl ? bootstrap.Modal.getOrCreateInstance(introModalEl) : null;
                 introModal?.hide();
                 const offcanvas = offcanvasEl ? bootstrap.Offcanvas.getOrCreateInstance(offcanvasEl) : null;
-                offcanvas?.show();
-                setTimeout(() => input?.focus(), 250);
+                if (!offcanvas || !offcanvasEl) return false;
+
+                const prompt = typeof message === 'string' ? message.trim() : '';
+                if (prompt && !input) return false;
+
+                const prepareAssistant = function () {
+                    if (!prompt) {
+                        input?.focus();
+                        return;
+                    }
+
+                    input.value = prompt;
+                    runQuery();
+                };
+
+                if (offcanvasEl.classList.contains('show')) {
+                    prepareAssistant();
+                } else {
+                    offcanvasEl.addEventListener('shown.bs.offcanvas', prepareAssistant, { once: true });
+                    offcanvas.show();
+                }
+
+                return true;
             };
         });
     })();
