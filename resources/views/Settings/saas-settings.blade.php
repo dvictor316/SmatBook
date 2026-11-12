@@ -95,6 +95,7 @@
                                             <label for="rating_1" class="checktoggle checkbox-bg">checkbox</label>
                                         </div>
                                     </div>
+                                    <small class="text-muted">When disabled, users can sign in without entering an email verification code, including accounts with a pending code.</small>
                                 </div>
                                 <div class="col-12 mb-4">
                                     <div class="payment-toggle d-flex align-items-center justify-content-between">

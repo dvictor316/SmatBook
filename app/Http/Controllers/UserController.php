@@ -281,6 +281,7 @@ class UserController extends Controller
         ]);
         
         [$message, $flash] = match ($verificationStatus) {
+            'disabled' => ['User created. Email verification is disabled, so they can sign in without a code.', 'success'],
             'sent' => ['User created. A six-digit verification code was sent to their email.', 'success'],
             'cooldown' => ['User created. A verification code was sent recently; they should check their email.', 'warning'],
             default => ['User created, but the verification code could not be sent. They can request another code after signing in.', 'error'],

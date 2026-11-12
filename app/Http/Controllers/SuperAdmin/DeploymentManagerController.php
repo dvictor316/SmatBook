@@ -1298,6 +1298,7 @@ public function store(Request $request)
         ? 'Customer workspace is ready.'
         : 'Customer account is created; payment is required before workspace activation.';
     [$verificationMessage, $verificationFlash] = match ($verificationStatus) {
+        'disabled' => ['Email verification is disabled; the customer can sign in without a code.', 'success'],
         'verified' => ['Customer email is already verified.', 'success'],
         'sent' => [$accountStatusMessage.' A six-digit email code was sent; the customer must verify it before signing in.', 'success'],
         'cooldown' => [$accountStatusMessage.' The verification code was sent recently; the customer should check their email.', 'warning'],
@@ -2152,6 +2153,7 @@ private function formatDeploymentAmount(float $amount): string
 
         $verificationStatus = app(\App\Services\EmailVerificationService::class)->sendCode($user);
         [$message, $flash] = match ($verificationStatus) {
+            'disabled' => ['User created. Email verification is disabled, so they can sign in without a code.', 'success'],
             'sent' => ['User created. Login credentials and a six-digit verification code were emailed; verify the address before signing in.', 'success'],
             'cooldown' => ['User created. Login credentials were emailed; the verification code was sent recently.', 'warning'],
             default => ['User created, but email verification could not be sent. Ask them to use Resend code after signing in.', 'error'],

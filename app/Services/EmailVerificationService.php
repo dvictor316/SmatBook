@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Mail\EmailVerificationCodeMail;
+use App\Models\Setting;
 use App\Models\User;
 use App\Support\AppMailer;
 use Illuminate\Support\Carbon;
@@ -19,13 +20,26 @@ class EmailVerificationService
     private const RESEND_COOLDOWN_SECONDS = 60;
     private const MAX_ATTEMPTS = 5;
 
+    public function isEnabled(): bool
+    {
+        return filter_var(Setting::get('saas_email_verification', '0'), FILTER_VALIDATE_BOOLEAN);
+    }
+
     public function hasPending(User $user): bool
     {
+        if (! $this->isEnabled()) {
+            return false;
+        }
+
         return DB::table(self::TABLE)->where('user_id', $user->id)->exists();
     }
 
     public function sendCode(User $user): string
     {
+        if (! $this->isEnabled()) {
+            return 'disabled';
+        }
+
         $email = trim((string) $user->email);
         if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return 'invalid_email';

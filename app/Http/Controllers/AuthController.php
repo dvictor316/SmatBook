@@ -387,8 +387,9 @@ class AuthController extends Controller
             $request->session()->regenerate();
             $this->clearRegistrationSession();
 
-            if (! $registeredUser->email_verified_at) {
-                $deliveryStatus = app(\App\Services\EmailVerificationService::class)->sendCode($registeredUser);
+            $emailVerification = app(\App\Services\EmailVerificationService::class);
+            if (! $registeredUser->email_verified_at && $emailVerification->isEnabled()) {
+                $deliveryStatus = $emailVerification->sendCode($registeredUser);
                 $redirectTo = match (strtolower((string) $registrationResult['role'])) {
                     'agent' => route('agent.dashboard'),
                     'state_manager', 'deployment_manager', 'manager' => route('manager.verification.form'),
@@ -1261,8 +1262,9 @@ class AuthController extends Controller
 
         $subscription = $this->ensureSocialRegistrationSubscription($user, $socialContext);
 
-        if ($createdNow) {
-            $deliveryStatus = app(\App\Services\EmailVerificationService::class)->sendCode($user);
+        $emailVerification = app(\App\Services\EmailVerificationService::class);
+        if ($createdNow && $emailVerification->isEnabled()) {
+            $deliveryStatus = $emailVerification->sendCode($user);
             $request->session()->regenerate();
             $request->session()->put([
                 'email_verification_pending_user_id' => (int) $user->id,

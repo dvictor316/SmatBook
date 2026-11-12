@@ -69,6 +69,12 @@ class PartnerRegistrationTest extends TestCase
             $table->text('value')->nullable();
             $table->timestamps();
         });
+        DB::table('settings')->insert([
+            'key' => 'saas_email_verification',
+            'value' => '1',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
         Schema::create('plans', function (Blueprint $table) {
             $table->id();
@@ -206,6 +212,63 @@ class PartnerRegistrationTest extends TestCase
         $this->assertAuthenticatedAs($user->fresh());
         $this->assertNotNull($user->fresh()->email_verified_at);
         $this->assertDatabaseMissing('email_verification_challenges', ['user_id' => $user->id]);
+    }
+
+    public function test_disabling_email_verification_allows_new_registrations_to_continue_without_a_code(): void
+    {
+        DB::table('settings')->where('key', 'saas_email_verification')->update(['value' => '0']);
+
+        $response = $this->from(route('saas-register'))->post(route('saas-register.post'), [
+            'role' => 'admin',
+            'name' => 'No Code Admin',
+            'email' => 'no-code-admin@example.com',
+            'password' => 'Secure123',
+            'password_confirmation' => 'Secure123',
+            'plan' => 'pro',
+            'billing_cycle' => 'monthly',
+            'amount' => '19500',
+            'field_of_operation' => 'general',
+        ]);
+
+        $user = User::where('email', 'no-code-admin@example.com')->firstOrFail();
+        $subscriptionId = DB::table('subscriptions')->where('user_id', $user->id)->value('id');
+
+        $response->assertRedirect(route('saas.setup', $subscriptionId));
+        $this->assertAuthenticatedAs($user);
+        $this->assertDatabaseMissing('email_verification_challenges', ['user_id' => $user->id]);
+        Mail::assertNotSent(EmailVerificationCodeMail::class);
+    }
+
+    public function test_disabling_email_verification_allows_users_with_pending_codes_to_log_in(): void
+    {
+        DB::table('settings')->where('key', 'saas_email_verification')->update(['value' => '0']);
+        $user = User::create([
+            'name' => 'Pending Code Agent',
+            'email' => 'pending-code-agent@example.com',
+            'password' => bcrypt('Secure123'),
+            'role' => 'agent',
+            'status' => 'active',
+            'is_verified' => 1,
+        ]);
+        DB::table('email_verification_challenges')->insert([
+            'user_id' => $user->id,
+            'email' => $user->email,
+            'code_hash' => bcrypt('123456'),
+            'expires_at' => now()->addMinutes(5),
+            'sent_at' => now(),
+            'attempts' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->post(route('saas-login.post'), [
+            'login' => $user->email,
+            'password' => 'Secure123',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertNotSame(route('email-verification.notice'), $response->headers->get('Location'));
+        $this->assertAuthenticatedAs($user);
     }
 
     public function test_registration_can_reuse_an_email_from_a_soft_deleted_account(): void

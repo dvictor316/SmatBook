@@ -21,6 +21,10 @@ class AssistedBusinessRegistrationTest extends TestCase
     {
         parent::setUp();
         Mail::fake();
+        \App\Models\Setting::updateOrCreate(
+            ['key' => 'saas_email_verification'],
+            ['value' => '1']
+        );
     }
 
     public function test_agent_state_manager_and_super_admin_can_activate_a_one_month_trial(): void
