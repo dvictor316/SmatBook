@@ -56,6 +56,23 @@ class BusinessWorkspaceIsolationTest extends TestCase
         $this->assertSame($second->id, (int) Subscription::resolveCurrentForUser($owner)->company_id);
     }
 
+    public function test_company_suffix_duplicate_is_retired_from_business_access(): void
+    {
+        $owner = User::factory()->create(['role' => 'admin']);
+        $primary = $this->createBusiness($owner, 'BLINQIT ROYAL SUCCESS');
+        $duplicate = $this->createBusiness($owner, 'BLINQIT ROYAL SUCCESS Company');
+        $owner->forceFill(['company_id' => $primary->id])->save();
+        $resolver = app(\App\Support\BusinessWorkspaceResolver::class);
+        $accessibleCompanies = $resolver->accessibleCompanies($owner);
+
+        session(['current_tenant_id' => $duplicate->id]);
+
+        $this->assertSame([$primary->id], $accessibleCompanies->modelKeys());
+        $this->assertFalse($resolver->canAccess($owner, (int) $duplicate->id, $accessibleCompanies));
+        $this->assertSame((int) $primary->id, $resolver->activeCompanyId($owner, $accessibleCompanies));
+        $this->assertDatabaseHas('companies', ['id' => $duplicate->id]);
+    }
+
     public function test_switching_from_a_tenant_subdomain_returns_to_the_canonical_app_host(): void
     {
         config(['app.url' => 'https://smartprobook.com']);

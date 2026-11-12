@@ -1977,43 +1977,56 @@
             </a>
         @endif
 
-        @if($headerBusinessWorkspaces->count() > 1 && !$isDeploymentManagerHeader && !$isAgentHeader)
+        @if($headerBusinessWorkspaces->isNotEmpty() && !$isDeploymentManagerHeader && !$isAgentHeader)
             <div class="dropdown mobile-branch-dropdown">
                 @php
                     $activeBusiness = $headerBusinessWorkspaces->firstWhere('id', $activeBusinessId)
                         ?: $headerBusinessWorkspaces->first();
                     $activeBusinessName = $activeBusiness?->name ?: $activeBusiness?->company_name ?: 'Business';
                 @endphp
-                <a href="#" class="branch-pill" data-bs-toggle="dropdown" aria-label="Switch business">
-                    <i class="fe fe-briefcase"></i>
-                    <span>
-                        <small>Active Business</small>
-                        {{ \Illuminate\Support\Str::limit($activeBusinessName, 22) }}
+                @if($headerBusinessWorkspaces->count() > 1)
+                    <a href="#" class="branch-pill" data-bs-toggle="dropdown" aria-label="Switch business">
+                        <i class="fe fe-briefcase"></i>
+                        <span>
+                            <small>Active Business</small>
+                            {{ \Illuminate\Support\Str::limit($activeBusinessName, 22) }}
+                        </span>
+                    </a>
+                    <a href="#" class="branch-pill-mobile" data-bs-toggle="dropdown" aria-label="Switch business" title="{{ $activeBusinessName }}">
+                        <i class="fe fe-briefcase"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end">
+                        <h6 class="dropdown-header">Business Workspaces</h6>
+                        @foreach($headerBusinessWorkspaces as $businessWorkspace)
+                            <form method="POST" action="{{ route('workspace.businesses.activate', ['companyId' => $businessWorkspace->id]) }}">
+                                @csrf
+                                <button type="submit" class="dropdown-item d-flex justify-content-between align-items-center">
+                                    <span>{{ $businessWorkspace->name ?: $businessWorkspace->company_name }}</span>
+                                    @if((int) $businessWorkspace->id === $activeBusinessId)
+                                        <i class="fe fe-check text-success"></i>
+                                    @endif
+                                </button>
+                            </form>
+                        @endforeach
+                        @if($headerCanAddBusiness)
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item text-primary" href="{{ route('workspace.businesses.create') }}">
+                                <i class="fe fe-plus-circle me-2"></i>Add another business
+                            </a>
+                        @endif
+                    </div>
+                @else
+                    <span class="branch-pill" aria-label="Active business">
+                        <i class="fe fe-briefcase"></i>
+                        <span>
+                            <small>Active Business</small>
+                            {{ \Illuminate\Support\Str::limit($activeBusinessName, 22) }}
+                        </span>
                     </span>
-                </a>
-                <a href="#" class="branch-pill-mobile" data-bs-toggle="dropdown" aria-label="Switch business" title="{{ $activeBusinessName }}">
-                    <i class="fe fe-briefcase"></i>
-                </a>
-                <div class="dropdown-menu dropdown-menu-end">
-                    <h6 class="dropdown-header">Business Workspaces</h6>
-                    @foreach($headerBusinessWorkspaces as $businessWorkspace)
-                        <form method="POST" action="{{ route('workspace.businesses.activate', ['companyId' => $businessWorkspace->id]) }}">
-                            @csrf
-                            <button type="submit" class="dropdown-item d-flex justify-content-between align-items-center">
-                                <span>{{ $businessWorkspace->name ?: $businessWorkspace->company_name }}</span>
-                                @if((int) $businessWorkspace->id === $activeBusinessId)
-                                    <i class="fe fe-check text-success"></i>
-                                @endif
-                            </button>
-                        </form>
-                    @endforeach
-                    @if($headerCanAddBusiness)
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item text-primary" href="{{ route('workspace.businesses.create') }}">
-                            <i class="fe fe-plus-circle me-2"></i>Add another business
-                        </a>
-                    @endif
-                </div>
+                    <span class="branch-pill-mobile" aria-label="Active business" title="{{ $activeBusinessName }}">
+                        <i class="fe fe-briefcase"></i>
+                    </span>
+                @endif
             </div>
         @endif
 

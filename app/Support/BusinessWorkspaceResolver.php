@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class BusinessWorkspaceResolver
 {
@@ -56,12 +57,39 @@ class BusinessWorkspaceResolver
             })
             ->orderBy('name')
             ->get();
+        $companies = $this->withoutDuplicateCompanySuffixes($companies, $primaryCompanyId);
 
         if ($request->isMethod('GET')) {
             $request->attributes->set($cacheKey, $companies);
         }
 
         return $companies;
+    }
+
+    private function withoutDuplicateCompanySuffixes(Collection $companies, int $primaryCompanyId): Collection
+    {
+        return $companies
+            ->groupBy(fn (Company $company) => $this->normalizedCompanyName($company) ?: 'unnamed-'.$company->id)
+            ->map(function (Collection $matches) use ($primaryCompanyId): Company {
+                return $matches
+                    ->sortBy(fn (Company $company) => [
+                        preg_match('/\s+company\s*$/i', trim((string) ($company->name ?: $company->company_name))) ? 1 : 0,
+                        (int) $company->id === $primaryCompanyId ? 0 : 1,
+                        (int) $company->id,
+                    ])
+                    ->first();
+            })
+            ->sortBy('name')
+            ->values();
+    }
+
+    private function normalizedCompanyName(Company $company): string
+    {
+        return Str::of($company->name ?: $company->company_name ?: '')
+            ->lower()
+            ->replaceMatches('/\s+company\s*$/i', '')
+            ->squish()
+            ->toString();
     }
 
     public function canAccess(User $user, int $companyId, ?Collection $accessibleCompanies = null): bool
