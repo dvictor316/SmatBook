@@ -121,6 +121,36 @@ class DeviceSessionManagerTest extends TestCase
         ));
     }
 
+    public function test_existing_session_heartbeat_writes_at_most_once_per_minute(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-11-12 12:00:00'));
+        $user = User::factory()->create(['role' => 'admin']);
+        $session = app('session')->driver();
+        $session->setId('heartbeat-session');
+        $session->start();
+        $sessionId = $session->getId();
+        $request = Request::create('/dashboard', 'GET', server: [
+            'REMOTE_ADDR' => '127.0.0.1',
+            'HTTP_USER_AGENT' => 'SmartProbook heartbeat test',
+        ]);
+        $request->setLaravelSession($session);
+        $manager = app(DeviceSessionManager::class);
+
+        $manager->ensureCurrentSession($request, $user);
+        Carbon::setTestNow(Carbon::parse('2026-11-12 12:00:30'));
+        $manager->ensureCurrentSession($request, $user);
+
+        $sessionRecord = ActiveUserSession::query()->where('session_id', $sessionId)->firstOrFail();
+        $this->assertSame(Carbon::parse('2026-11-12 12:00:00')->timestamp, $sessionRecord->last_seen_at->timestamp);
+
+        Carbon::setTestNow(Carbon::parse('2026-11-12 12:01:01'));
+        $manager->ensureCurrentSession($request, $user);
+
+        $sessionRecord->refresh();
+        $this->assertSame(Carbon::parse('2026-11-12 12:01:01')->timestamp, $sessionRecord->last_seen_at->timestamp);
+        Carbon::setTestNow();
+    }
+
     public function test_new_login_only_prunes_expired_sessions_for_its_own_workspace(): void
     {
         $company = Company::create(['name' => 'Current Workspace']);

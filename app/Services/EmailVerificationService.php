@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Http\Request;
 use Throwable;
 
 class EmailVerificationService
@@ -22,7 +23,17 @@ class EmailVerificationService
 
     public function isEnabled(): bool
     {
-        return filter_var(Setting::get('saas_email_verification', '0'), FILTER_VALIDATE_BOOLEAN);
+        $request = app(Request::class);
+        $cacheKey = self::class.'.email_verification_enabled';
+
+        if ($request->attributes->has($cacheKey)) {
+            return (bool) $request->attributes->get($cacheKey);
+        }
+
+        $enabled = filter_var(Setting::get('saas_email_verification', '0'), FILTER_VALIDATE_BOOLEAN);
+        $request->attributes->set($cacheKey, $enabled);
+
+        return $enabled;
     }
 
     public function hasPending(User $user): bool

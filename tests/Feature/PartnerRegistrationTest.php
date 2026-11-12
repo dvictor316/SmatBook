@@ -3,8 +3,11 @@
 namespace Tests\Feature;
 
 use App\Mail\EmailVerificationCodeMail;
+use App\Http\Middleware\RequireRegistrationEmailVerification;
 use App\Models\User;
+use App\Services\EmailVerificationService;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -102,6 +105,42 @@ class PartnerRegistrationTest extends TestCase
             $table->dateTime('initialized_at')->nullable();
             $table->timestamps();
         });
+    }
+
+    public function test_email_verification_setting_is_loaded_once_per_request(): void
+    {
+        $settingQueries = 0;
+        DB::listen(static function ($query) use (&$settingQueries): void {
+            if (str_contains(strtolower($query->sql), 'from "settings"')) {
+                $settingQueries++;
+            }
+        });
+
+        $verification = app(EmailVerificationService::class);
+
+        $this->assertTrue($verification->isEnabled());
+        $this->assertTrue($verification->isEnabled());
+        $this->assertSame(1, $settingQueries);
+    }
+
+    public function test_verified_user_skips_registration_verification_database_lookups(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $queries = [];
+        DB::listen(static function ($query) use (&$queries): void {
+            $queries[] = strtolower($query->sql);
+        });
+        $request = Request::create('/dashboard', 'GET');
+        $request->setUserResolver(static fn () => $user);
+
+        $response = app(RequireRegistrationEmailVerification::class)->handle(
+            $request,
+            static fn () => response('ok')
+        );
+
+        $this->assertSame('ok', $response->getContent());
+        $this->assertFalse(collect($queries)->contains(fn (string $sql) => str_contains($sql, 'email_verification_challenges')));
+        $this->assertFalse(collect($queries)->contains(fn (string $sql) => str_contains($sql, '"settings"')));
     }
 
     public function test_partner_registration_accepts_a_valid_selected_country(): void

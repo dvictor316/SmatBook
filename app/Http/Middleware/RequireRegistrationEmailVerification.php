@@ -17,7 +17,11 @@ class RequireRegistrationEmailVerification
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        if (! $user instanceof User || ! $this->verification->hasPending($user)) {
+        if (
+            ! $user instanceof User
+            || $user->email_verified_at
+            || ! $this->verification->hasPending($user)
+        ) {
             return $next($request);
         }
 

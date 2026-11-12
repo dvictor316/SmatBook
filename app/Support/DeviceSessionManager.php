@@ -35,12 +35,20 @@ class DeviceSessionManager
             ->first();
 
         if ($current) {
-            $current->forceFill([
-                'last_seen_at' => now(),
-                'ip_address' => $request->ip(),
-                'user_agent' => substr((string) $request->userAgent(), 0, 1000),
-                'company_id' => $companyId,
-            ])->save();
+            $now = now();
+            if (
+                ! $current->last_seen_at
+                || $current->last_seen_at->lte($now->copy()->subMinute())
+            ) {
+                $current->last_seen_at = $now;
+            }
+            $current->ip_address = $request->ip();
+            $current->user_agent = substr((string) $request->userAgent(), 0, 1000);
+            $current->company_id = $companyId;
+
+            if ($current->isDirty()) {
+                $current->save();
+            }
 
             return ['allowed' => true];
         }
