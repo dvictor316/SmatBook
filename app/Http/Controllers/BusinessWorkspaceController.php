@@ -20,7 +20,10 @@ class BusinessWorkspaceController extends Controller
         $workspaceResolver->activate($request->user(), $company);
         $branchResolver->ensureSession($request->user());
 
-        return redirect()->route('user.dashboard')
+        $dashboardPath = route('user.dashboard', [], false);
+        $appUrl = rtrim((string) (config('app.url') ?: url('/')), '/');
+
+        return redirect()->to($appUrl.$dashboardPath)
             ->with('success', 'Switched to '.($company->name ?? $company->company_name ?? 'business workspace').'.');
     }
 

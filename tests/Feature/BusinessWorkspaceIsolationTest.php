@@ -10,6 +10,7 @@ use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class BusinessWorkspaceIsolationTest extends TestCase
@@ -53,6 +54,82 @@ class BusinessWorkspaceIsolationTest extends TestCase
         $this->assertSame('enterprise yearly', session('user_plan'));
         $this->assertSame($first->id, (int) $owner->fresh()->company_id);
         $this->assertSame($second->id, (int) Subscription::resolveCurrentForUser($owner)->company_id);
+    }
+
+    public function test_switching_from_a_tenant_subdomain_returns_to_the_canonical_app_host(): void
+    {
+        config(['app.url' => 'https://smartprobook.com']);
+        $owner = User::factory()->create(['role' => 'admin']);
+        $first = $this->createBusiness($owner, 'First Business');
+        $second = $this->createBusiness($owner, 'Second Business');
+        $owner->forceFill(['company_id' => $first->id])->save();
+        $this->actingAs($owner);
+        session(['current_tenant_id' => $first->id]);
+
+        $request = \Illuminate\Http\Request::create(
+            'https://first-business.smartprobook.com/workspace/businesses/'.$second->id.'/activate',
+            'POST'
+        );
+        $request->setUserResolver(fn () => $owner);
+        $response = app(\App\Http\Controllers\BusinessWorkspaceController::class)->activate(
+            $request,
+            $second->id,
+            app(\App\Support\BusinessWorkspaceResolver::class),
+            app(\App\Support\ActiveBranchResolver::class)
+        );
+
+        $this->assertSame('https://smartprobook.com/dashboard', $response->getTargetUrl());
+        $this->assertSame($second->id, (int) session('current_tenant_id'));
+    }
+
+    public function test_pending_additional_workspace_redirects_to_checkout_without_a_plans_redirect_loop(): void
+    {
+        $owner = User::factory()->create(['role' => 'admin']);
+        $first = $this->createBusiness($owner, 'First Business');
+        $second = $this->createBusiness($owner, 'Second Business');
+        $owner->forceFill(['company_id' => $first->id])->save();
+        Subscription::withoutGlobalScope('tenant')->create([
+            'user_id' => $owner->id,
+            'company_id' => $first->id,
+            'plan' => 'Enterprise Yearly',
+            'amount' => 300000,
+            'status' => 'Active',
+            'payment_status' => 'paid',
+        ]);
+        $pending = Subscription::withoutGlobalScope('tenant')->create([
+            'user_id' => $owner->id,
+            'company_id' => $second->id,
+            'plan' => 'Enterprise Yearly',
+            'amount' => 300000,
+            'status' => 'Pending',
+            'payment_status' => 'unpaid',
+        ]);
+        Route::middleware(['web', 'auth', 'subscription.active'])
+            ->get('/__workspace/subscription-gate', fn () => response('ok'));
+
+        $response = $this->actingAs($owner)
+            ->withSession(['current_tenant_id' => $second->id])
+            ->get('/__workspace/subscription-gate');
+
+        $response->assertRedirect(route('saas.checkout', $pending->id));
+    }
+
+    public function test_unsubscribed_workspace_stays_on_plans_instead_of_redirecting_back_to_dashboard(): void
+    {
+        $owner = User::factory()->create(['role' => 'admin']);
+        $first = $this->createBusiness($owner, 'First Business');
+        $second = $this->createBusiness($owner, 'Second Business');
+        $second->update(['status' => 'pending']);
+        $owner->forceFill(['company_id' => $first->id])->save();
+        Route::middleware(['web', 'auth', 'subscription.active'])
+            ->get('/__workspace/unsubscribed-gate', fn () => response('ok'));
+
+        $response = $this->actingAs($owner)
+            ->withSession(['current_tenant_id' => $second->id])
+            ->get('/__workspace/unsubscribed-gate');
+
+        $response->assertRedirect(route('membership-plans', ['stay' => 1]));
+        $this->get(route('membership-plans', ['stay' => 1]))->assertOk();
     }
 
     public function test_user_cannot_switch_to_an_unowned_business(): void

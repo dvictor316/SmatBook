@@ -95,7 +95,8 @@ class SubscriptionActive
                 return response()->json(['message' => 'An active subscription is required.'], 402);
             }
 
-            return redirect()->route('membership-plans');
+            return redirect()->route('membership-plans', ['stay' => 1])
+                ->with('warning', 'Choose a plan to activate this business workspace.');
         }
 
         if (strtolower((string) $subscription->plan_name) === 'custom' && !$subscription->isValid()) {
@@ -114,6 +115,11 @@ class SubscriptionActive
             return redirect()->route('subscription.expired');
         }
 
+        if (in_array(strtolower((string) $subscription->status), ['pending', 'awaiting payment'], true)) {
+            return redirect()->route('saas.checkout', $subscription->id)
+                ->with('info', 'Complete payment to activate this business workspace.');
+        }
+
         if (!$subscription->isValid()) {
             if (strtolower((string) $subscription->plan_name) === 'custom') {
                 if ($this->shouldReturnJson($request)) {
@@ -127,7 +133,8 @@ class SubscriptionActive
                 return response()->json(['message' => 'An active subscription is required.'], 402);
             }
 
-            return redirect()->route('membership-plans');
+            return redirect()->route('membership-plans', ['stay' => 1])
+                ->with('warning', 'Choose a plan to activate this business workspace.');
         }
 
         return $next($request);
