@@ -3,6 +3,7 @@
     var resetClass = 'spb-auto-contrast-reset';
     var originalColorProperty = '--spb-contrast-original-color';
     var whiteTextMaxLuminance = 0.179;
+    var buttonWhiteTextMaxLuminance = 0.4;
     var scanScheduled = false;
     var observer;
 
@@ -56,8 +57,29 @@
 
     function isFontAwesomeIcon(element) {
         return Array.prototype.some.call(element.classList, function (className) {
-            return /^fa(?:$|-)|^(?:fas|far|fal|fab|fad|fat|fass)$/.test(className);
+            return /^fa(?:$|-)|^(?:fas|far|fal|fab|fad|fat|fass|svg-inline--fa|bi(?:-|$)|material-icons?|material-symbols-outlined|feather(?:-|$)|lucide(?:-|$))$/.test(className)
+                || className === 'icon'
+                || className === 'icons';
         });
+    }
+
+    function isButtonLike(element) {
+        if (/^(BUTTON|INPUT)$/.test(element.tagName) || element.getAttribute('role') === 'button') return true;
+        if (Array.prototype.some.call(element.classList, function (className) {
+            return /(^|-)btn(?:-|$)|(^|-)button(?:-|$)/.test(className);
+        })) return true;
+
+        if (element.tagName !== 'A') return false;
+        var background = parseColor(window.getComputedStyle(element).backgroundColor);
+        return background !== null && background.alpha > 0;
+    }
+
+    function hasButtonLikeAncestor(element) {
+        for (var node = element; node; node = node.parentElement) {
+            if (isButtonLike(node)) return true;
+        }
+
+        return false;
     }
 
     function hasVisibleText(element) {
@@ -70,6 +92,7 @@
         if (/^(SCRIPT|STYLE|TEMPLATE|NOSCRIPT)$/.test(element.tagName)) return false;
         return hasVisibleText(element)
             || /^(BUTTON|INPUT|OPTION|SELECT|TEXTAREA)$/.test(element.tagName)
+            || element.tagName === 'SVG'
             || isFontAwesomeIcon(element);
     }
 
@@ -89,7 +112,10 @@
         Array.prototype.forEach.call(document.body.querySelectorAll('*'), function (element) {
             if (!isTextElement(element)) return;
 
-            var darkBackground = getBackgroundLuminance(element) <= whiteTextMaxLuminance;
+            var whiteTextThreshold = hasButtonLikeAncestor(element)
+                ? buttonWhiteTextMaxLuminance
+                : whiteTextMaxLuminance;
+            var darkBackground = getBackgroundLuminance(element) <= whiteTextThreshold;
             var result = {
                 element: element,
                 darkBackground: darkBackground,

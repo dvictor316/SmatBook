@@ -3,6 +3,14 @@
     -webkit-text-fill-color: #fff !important;
 }
 
+html body .spb-auto-contrast-white,
+html body .spb-auto-contrast-white svg,
+body[data-store-theme] .spb-auto-contrast-white,
+body[data-store-theme] .spb-auto-contrast-white svg {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+}
+
 .spb-auto-contrast-reset {
     color: var(--spb-contrast-original-color) !important;
     -webkit-text-fill-color: var(--spb-contrast-original-color) !important;

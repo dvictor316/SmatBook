@@ -110,6 +110,7 @@
         @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
     </style>
     <link rel="stylesheet" href="{{ asset('css/storefront-theme.css') }}?v={{ filemtime(public_path('css/storefront-theme.css')) }}">
+    @include('layout.partials.contrast-adaptation')
 </head>
 <body data-store-theme="{{ $store->store_theme ?: 'classic' }}">
 @php
