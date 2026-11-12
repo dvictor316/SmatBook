@@ -19,7 +19,14 @@ class BlogStarterPostsSeeder extends Seeder
         try {
             DB::transaction(function () use (&$createdCovers) {
                 foreach ($this->articles() as $article) {
-                    if (BlogPost::where('slug', $article['slug'])->exists()) {
+                    $existingPost = BlogPost::where('slug', $article['slug'])->first();
+                    if ($existingPost) {
+                        $existingPost->update([
+                            'status' => 'published',
+                            'published_at' => $existingPost->published_at?->isPast()
+                                ? $existingPost->published_at
+                                : now(),
+                        ]);
                         continue;
                     }
 
@@ -36,7 +43,8 @@ class BlogStarterPostsSeeder extends Seeder
                     unset($article['image']);
                     BlogPost::create($article + [
                         'cover_path' => $path,
-                        'status' => 'draft',
+                        'status' => 'published',
+                        'published_at' => now(),
                         'content_format' => 'html',
                     ]);
                 }
@@ -136,6 +144,68 @@ HTML,
 <p>Look at payment methods, expenses and the underlying transactions rather than relying on a single headline total. Follow up on missing information or unusual entries with the people who handled them. Where financial or tax decisions require specialist advice, consult a qualified professional.</p>
 <h2>Turn findings into actions</h2>
 <p>Write down a few practical next steps: count a product, confirm an outstanding order, review a price or reconcile a payment. Assign an owner and revisit the action at the next review. SmartProbook reports are most valuable when they support a consistent business routine.</p>
+HTML,
+            ],
+            [
+                'slug' => 'how-to-track-business-expenses-small-business',
+                'title' => 'How to Track Business Expenses: A Practical Small Business Guide',
+                'category' => 'Finance',
+                'summary' => 'Build a reliable expense-tracking routine with clear categories, supporting records and regular reconciliation.',
+                'meta_title' => 'How to Track Business Expenses | SmartProbook',
+                'meta_description' => 'Learn how small businesses can record expenses, organize receipts, reconcile transactions and review spending with a simple routine.',
+                'meta_keywords' => 'how to track business expenses, small business expense tracking, expense records, business receipts, expense management',
+                'image' => 'expense-tracking.svg',
+                'content' => <<<'HTML'
+<p>Knowing where business money goes starts with complete, consistent records. A practical expense-tracking routine helps you review spending, prepare for conversations with an accountant and spot missing transactions. It does not need to be complicated, but it does need to happen regularly.</p>
+<h2>Record each expense while it is fresh</h2>
+<p>Enter the date, supplier, amount, payment method and business purpose as soon as possible after a purchase. Add a useful description instead of relying on a vague note such as “supplies.” If a receipt or invoice is available, keep it with the transaction so you can explain the entry later.</p>
+<h2>Use consistent expense categories</h2>
+<p>Agree on a short list of categories that reflects how your business operates, such as transport, utilities, rent, supplies or payment fees. Apply the same category to similar purchases each time. If you are unsure how an item should be treated for accounting or tax purposes, ask a qualified local professional rather than guessing.</p>
+<h2>Keep business and personal spending distinct</h2>
+<p>Use designated business accounts and payment methods where possible. If a business expense is paid personally, document the details and follow your accountant’s guidance for recording it. Clear separation makes the records easier to review and reduces uncertainty when reconciling balances.</p>
+<h2>Reconcile expenses against actual payments</h2>
+<p>At a regular interval, compare recorded expenses with bank, card, cash and mobile-payment records that apply to your business. Check for duplicate entries, missing receipts, incorrect amounts and transactions assigned to the wrong account. Correct mistakes through your normal adjustment process so the history remains understandable.</p>
+<h2>Turn the records into a useful review</h2>
+<p>Look at spending by category and period, then ask practical questions: has a recurring cost changed, is a supplier charge unexpected, or is an important receipt missing? Assign follow-up actions and review them again. Avoid making a decision from one total without checking the underlying transactions and the period covered.</p>
+<h2>A simple weekly expense checklist</h2>
+<ul>
+<li>Enter new expenses and attach available supporting documents.</li>
+<li>Check the payment method, category and business purpose.</li>
+<li>Compare recorded transactions with the payment records available.</li>
+<li>Follow up on missing information and unusual entries.</li>
+</ul>
+<p>SmartProbook expense and transaction records can help keep this routine in one workspace. Consistent entry and review by your team are what make those records dependable.</p>
+HTML,
+            ],
+            [
+                'slug' => 'small-business-invoice-management-guide',
+                'title' => 'Small Business Invoice Management: Create, Send and Track Invoices',
+                'category' => 'Invoicing',
+                'summary' => 'Use a consistent invoicing process to make payment terms clear, monitor due dates and follow up on unpaid invoices.',
+                'meta_title' => 'Small Business Invoice Management Guide | SmartProbook',
+                'meta_description' => 'Learn how to create clear invoices, set payment terms, track due dates and follow up while keeping customer and payment records organized.',
+                'meta_keywords' => 'small business invoice management, how to create an invoice, invoice tracking, payment terms, unpaid invoices',
+                'image' => 'invoice-management.svg',
+                'content' => <<<'HTML'
+<p>A clear invoicing process helps customers understand what they owe and helps your team know what needs follow-up. Whether you send a few invoices or manage them every day, consistent details and timely status updates make the payment trail easier to review.</p>
+<h2>Include the details customers need</h2>
+<p>Use a unique invoice number and include the issue date, your business details, the customer details, a description of the goods or services, quantities and agreed prices. Show any applicable charges and the total clearly. Invoice rules differ by location and business type, so confirm required fields with a qualified local adviser.</p>
+<h2>Make payment terms easy to find</h2>
+<p>State the due date, accepted payment methods and the contact point for questions. Agree on the terms with the customer before work begins where possible. If a deposit, milestone or partial payment applies, spell out the amount and when it is due rather than relying on an informal message.</p>
+<h2>Send invoices promptly and keep a record</h2>
+<p>Send the invoice to the correct contact after the agreed delivery or milestone. Keep a copy and record when it was sent. Check that the customer can open the document and knows how to ask about a discrepancy. A short, professional message with the invoice number and due date makes later follow-up more straightforward.</p>
+<h2>Track status and follow up consistently</h2>
+<p>Maintain a simple status for each invoice, such as draft, sent, partially paid, paid or overdue. Review upcoming and overdue due dates on a schedule. Send a courteous reminder with the invoice reference and outstanding amount, and record any agreed new date or payment plan. If a customer disputes an item, investigate the original order or service record before changing the invoice.</p>
+<h2>Match payments to the right invoice</h2>
+<p>When money arrives, verify the amount and reference against the payment record before marking an invoice paid. Record partial payments accurately and keep the remaining balance visible. At regular intervals, compare invoice statuses with your bank or payment-provider records so that an unpaid invoice is not mistaken for received cash.</p>
+<h2>Build a repeatable invoicing routine</h2>
+<ul>
+<li>Check customer and item details before sending.</li>
+<li>Set clear due dates and payment terms.</li>
+<li>Review due and overdue invoices at a consistent time.</li>
+<li>Update invoice status only after checking the payment record.</li>
+</ul>
+<p>SmartProbook invoicing and payment records can help your team keep customer balances and follow-ups organized. For tax treatment, statutory invoice requirements or debt-recovery questions, get advice from a qualified professional in your jurisdiction.</p>
 HTML,
             ],
         ];

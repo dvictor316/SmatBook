@@ -25,13 +25,13 @@ Laravel is accessible, powerful, and provides tools required for large, robust a
 
 Super admins can create and edit blog posts using the rich-text editor. Existing plain-text articles remain plain text until edited, and formatted articles are sanitized before saving and display. The cover image field supplies the article's main image.
 
-After running migrations, the optional starter-post seeder creates four illustrated drafts for review:
+After running migrations, the optional starter-post seeder creates six illustrated, SEO-ready articles and publishes them:
 
 ```bash
 php artisan db:seed --class=BlogStarterPostsSeeder --force
 ```
 
-The public storage disk must be writable. The seeder skips existing starter slugs without overwriting posts or covers; super admins can edit and publish the drafts from Blog Posts & Comments.
+The public storage disk must be writable. The seeder preserves existing article content and covers; if a starter article already exists as a draft, rerunning the seeder publishes it. Super admins can continue editing the articles from Blog Posts & Comments.
 
 ## Learning Laravel
 

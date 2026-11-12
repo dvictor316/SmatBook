@@ -308,24 +308,27 @@ class BlogWorkflowTest extends TestCase
         $this->get(route('blog.show', $post->slug))->assertOk()->assertDontSee('onerror=alert(9)', false);
     }
 
-    public function test_starter_articles_are_drafts_with_covers_and_seeding_never_overwrites_edits(): void
+    public function test_six_starter_articles_are_published_with_seo_metadata_and_covers(): void
     {
         $this->seed(BlogStarterPostsSeeder::class);
-        $this->assertDatabaseCount('blog_posts', 4);
+        $this->assertDatabaseCount('blog_posts', 6);
         foreach (BlogPost::all() as $post) {
-            $this->assertSame('draft', $post->status);
+            $this->assertSame('published', $post->status);
             $this->assertSame('html', $post->content_format);
-            $this->assertNull($post->published_at);
+            $this->assertNotNull($post->published_at);
+            $this->assertNotEmpty($post->meta_title);
+            $this->assertNotEmpty($post->meta_description);
+            $this->assertNotEmpty($post->meta_keywords);
             Storage::disk('public')->assertExists($post->cover_path);
             $this->assertStringContainsString('<svg', Storage::disk('public')->get($post->cover_path));
             $this->get(route('media.public', ['path' => $post->cover_path]))->assertOk();
-            $this->get(route('blog.show', $post->slug))->assertNotFound();
+            $this->get(route('blog.show', $post->slug))->assertOk();
         }
         $post = BlogPost::firstOrFail();
         $cover = $post->cover_path;
         $post->update(['title' => 'Edited by an administrator']);
         $this->seed(BlogStarterPostsSeeder::class);
-        $this->assertDatabaseCount('blog_posts', 4);
+        $this->assertDatabaseCount('blog_posts', 6);
         $this->assertSame('Edited by an administrator', $post->fresh()->title);
         $this->assertSame($cover, $post->fresh()->cover_path);
     }
