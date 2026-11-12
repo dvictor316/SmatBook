@@ -1,0 +1,9 @@
+.spb-auto-contrast-white {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+}
+
+.spb-auto-contrast-reset {
+    color: var(--spb-contrast-original-color) !important;
+    -webkit-text-fill-color: var(--spb-contrast-original-color) !important;
+}

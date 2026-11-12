@@ -137,6 +137,7 @@
     @if($dashboardVariant !== '')
         <link rel="stylesheet" href="{{ asset('assets/css/dashboard-polish.css') }}?v={{ filemtime(public_path('assets/css/dashboard-polish.css')) }}">
     @endif
+    @include('layout.partials.contrast-adaptation')
     <script>
         if (!window.__spbNavigationBridgeRegistered) {
             window.__spbNavigationBridgeRegistered = true;

@@ -97,6 +97,7 @@
 
     </style>
     @include('layout.partials.responsive-guardrails')
+    @include('layout.partials.contrast-adaptation')
 </head>
 <body class="{{ ($domainRecord && $daysRemaining <= 7 && $daysRemaining >= 0) ? 'has-banner' : '' }}">
     <div class="main-wrapper">
