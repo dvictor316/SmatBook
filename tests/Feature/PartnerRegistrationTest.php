@@ -177,13 +177,20 @@ class PartnerRegistrationTest extends TestCase
         $mail = Mail::sent(EmailVerificationCodeMail::class)->first();
         $this->assertNotNull($mail);
         $this->assertStringContainsString('signature=', $mail->verificationUrl);
+        $challenge = \DB::table('email_verification_challenges')->where('user_id', $user->id)->first();
+        $this->assertSame(
+            300,
+            \Illuminate\Support\Carbon::parse($challenge->expires_at)->timestamp
+                - \Illuminate\Support\Carbon::parse($challenge->sent_at)->timestamp
+        );
         $this->withSession([
             'email_verification_pending_user_id' => 0,
             'email_verification_redirect' => '',
         ])->get($mail->verificationUrl)
             ->assertOk()
             ->assertSee('Six-digit email code')
-            ->assertSee('Enter the six-digit code from this email');
+            ->assertSee('this page will not redirect automatically')
+            ->assertDontSee('GLOBAL SESSION EXPIRY HANDLER');
 
         $incorrectCode = $mail->code === '000000' ? '000001' : '000000';
         $this->from(route('email-verification.notice'))

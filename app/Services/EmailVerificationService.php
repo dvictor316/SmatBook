@@ -15,7 +15,7 @@ use Throwable;
 class EmailVerificationService
 {
     private const TABLE = 'email_verification_challenges';
-    private const CODE_LIFETIME_MINUTES = 10;
+    private const CODE_LIFETIME_MINUTES = 5;
     private const RESEND_COOLDOWN_SECONDS = 60;
     private const MAX_ATTEMPTS = 5;
 
