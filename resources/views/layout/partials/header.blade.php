@@ -614,10 +614,12 @@
         position: relative;
         width: 100%;
         max-width: 600px;
+        min-width: 0;
     }
 
     .header-search input {
         width: 100%;
+        min-width: 0;
         padding: 10px 40px 10px 16px;
         border: 1px solid #e2e8f0;
         border-radius: 8px;
@@ -1026,7 +1028,7 @@
         .header-search-container {
             flex: 0 1 clamp(240px, 18vw, 340px);
             max-width: 340px;
-            min-width: 220px;
+            min-width: 0;
         }
 
         .header-search {
@@ -1034,7 +1036,7 @@
         }
 
         .header-actions {
-            flex: 1 1 0;
+            flex: 0 0 auto;
             margin-left: auto;
             margin-right: 0;
         }
@@ -1073,7 +1075,7 @@
             display: flex !important;
             flex: 0 1 clamp(170px, 20vw, 280px);
             max-width: 280px;
-            min-width: 120px;
+            min-width: 0;
         }
 
         .header-search {

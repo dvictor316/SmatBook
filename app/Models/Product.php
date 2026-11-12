@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\SchemaColumnCache;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -130,10 +131,11 @@ class Product extends Model
 
     public function salesUnitConfiguration(): array
     {
-        $activeUnits = Schema::hasTable('product_units')
+        $unitColumns = app(SchemaColumnCache::class)->columns('product_units');
+        $activeUnits = $unitColumns !== null
             ? collect($this->activeProductUnits)
             : collect();
-        $selectionConfigured = Schema::hasColumn('product_units', 'is_sales_unit') && $activeUnits->isNotEmpty();
+        $selectionConfigured = in_array('is_sales_unit', $unitColumns ?? [], true) && $activeUnits->isNotEmpty();
         $hasExplicitCartonUnit = $activeUnits->contains(function ($unit) {
             $unitName = strtolower(trim((string) ($unit->unit_name ?: $unit->unit_symbol)));
             $unitSymbol = strtolower(trim((string) ($unit->unit_symbol ?: $unit->unit_name)));

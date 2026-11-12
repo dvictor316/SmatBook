@@ -28,13 +28,16 @@ class BranchInventoryService
         // product_branch_stocks.quantity is kept up-to-date by adjustBranchStock()
         // after every purchase, sale, return, and stock adjustment, so it is
         // always the correct figure for a given branch.
-        if (Schema::hasTable('product_branch_stocks') && !empty($branch['id'])) {
+        $stockColumns = !empty($branch['id'])
+            ? app(SchemaColumnCache::class)->columns('product_branch_stocks')
+            : null;
+        if ($stockColumns !== null) {
             $branchStock = $product->relationLoaded('branchStocks')
                 ? $product->branchStocks->firstWhere('branch_id', (string) $branch['id'])
                 : $this->branchStockQuery($product, $branch)->first();
 
             if ($branchStock) {
-                if (Schema::hasColumn('product_branch_stocks', 'is_available') && !$branchStock->is_available) {
+                if (in_array('is_available', $stockColumns, true) && !$branchStock->is_available) {
                     return 0.0;
                 }
 

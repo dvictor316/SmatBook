@@ -51,6 +51,64 @@ class ProductMeasurementSetupTest extends TestCase
         ];
     }
 
+    public function test_pos_product_shelf_queries_do_not_grow_per_product(): void
+    {
+        $units = $this->workspace();
+        $company = Company::sole();
+        $user = auth()->user();
+        $addProduct = function (int $number) use ($company, $user, $units): void {
+            $productId = DB::table('products')->insertGetId([
+                'company_id' => $company->id,
+                'user_id' => $user->id,
+                'name' => 'Shelf Perf '.$number,
+                'sku' => 'SHELF-PERF-'.$number,
+                'stock' => 10,
+                'price' => 100,
+                'purchase_price' => 80,
+                'base_unit_name' => 'unit',
+                'unit_id' => $units['pcs'],
+                'base_unit_id' => $units['kg'],
+                'purchase_unit_id' => $units['pcs'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            DB::table('product_branch_stocks')->insert([
+                'product_id' => $productId,
+                'company_id' => $company->id,
+                'branch_id' => 'hq',
+                'branch_name' => 'Headquarters',
+                'quantity' => 10,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        };
+        $addProduct(1);
+
+        DB::enableQueryLog();
+        try {
+            DB::flushQueryLog();
+            $this->get(route('sales.showPos'))->assertOk()->assertSee('Shelf Perf 1');
+            $singleProductQueries = count(DB::getQueryLog());
+
+            DB::disableQueryLog();
+            foreach (range(2, 21) as $number) {
+                $addProduct($number);
+            }
+            DB::enableQueryLog();
+            DB::flushQueryLog();
+            $this->get(route('sales.showPos'))->assertOk()->assertSee('Shelf Perf 21');
+            $manyProductQueries = count(DB::getQueryLog());
+        } finally {
+            DB::disableQueryLog();
+        }
+
+        $this->assertLessThanOrEqual(
+            $singleProductQueries + 10,
+            $manyProductQueries,
+            "POS queries grew from {$singleProductQueries} to {$manyProductQueries} for 20 additional products."
+        );
+    }
+
     public function test_add_form_offers_separate_counted_and_weighted_carton_choices(): void
     {
         $this->workspace();

@@ -1119,6 +1119,9 @@ public function customerDetails($id = null)
                 if (Schema::hasTable('product_units')) {
                     $productsQuery->with('activeProductUnits');
                 }
+                if (Schema::hasTable('units')) {
+                    $productsQuery->with(['unit', 'baseUnit', 'purchaseUnit']);
+                }
 
                 $salesRankingQuery = $this->posProductShelfRankingQuery($activeBranch);
                 if ($salesRankingQuery) {

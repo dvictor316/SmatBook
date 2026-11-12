@@ -50,6 +50,28 @@ class SuperAdminBusinessWorkspaceTest extends TestCase
         $this->assertDatabaseCount('companies', 1);
     }
 
+    public function test_business_dashboard_does_not_load_an_unused_list_of_all_permissions(): void
+    {
+        $admin = User::factory()->create(['role' => 'super_admin', 'company_id' => null]);
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        try {
+            $this->actingAs($admin)
+                ->withSession(['workspace_context' => 'business'])
+                ->get(route('workspace.business.dashboard'))
+                ->assertOk();
+
+            $queries = DB::getQueryLog();
+        } finally {
+            DB::disableQueryLog();
+        }
+
+        $this->assertFalse(collect($queries)->contains(fn (array $query) =>
+            preg_match('/^select\s+[`"]?name[`"]?\s+from\s+[`"]?permissions[`"]?\s*$/i', $query['query']) === 1
+        ));
+    }
+
     public function test_business_sidebar_exposes_profit_loss_and_app_navigation_uses_livewire(): void
     {
         $admin = User::factory()->create(['role' => 'super_admin', 'company_id' => null]);

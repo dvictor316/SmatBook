@@ -162,11 +162,6 @@ class DashboardController extends Controller
         }
 
         $userRole = $user->role;
-        // Resolve current grants on every request so revocations apply immediately.
-        $permissions = Schema::hasTable('permissions')
-            ? \App\Models\Permission::pluck('name')->filter(fn ($name) => $user->hasPermissionTo($name))->values()->all()
-            : [];
-
         $plan = ($isSuperAdmin && $isBusinessWorkspace)
             ? 'enterprise'
             : ($demoPreviewPlan ?: Plan::normalizeTier(
@@ -268,7 +263,6 @@ class DashboardController extends Controller
             'activities'         => $this->getRecentActivity($company, $activeBranch),
             'dashboardHealth'  => $this->getDashboardHealth($metrics),
             'userRole'         => $userRole,
-            'permissions'      => $permissions,
             'currentSubscription' => $currentSubscription,
             'subscriptionStatus' => $this->subscriptionStatusPayload($currentSubscription, $seatCount, $seatLimit),
             'activeBranch'     => $activeBranch,
