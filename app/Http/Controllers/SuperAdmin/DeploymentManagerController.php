@@ -711,6 +711,7 @@ class DeploymentManagerController extends Controller
 
         $deploymentPlans = $this->deploymentPlanOptions();
         $isAgentRegistration = request()->routeIs('agent.registration.create');
+        $supportsTrialChoice = $isAgentRegistration || request()->routeIs('deployment.customers.create');
         $dashboardRoute = ($isSuperAdminDeployment || $isSuperAdminAssistedRegistration)
             ? 'super_admin.dashboard'
             : ($isAgentRegistration ? 'agent.dashboard' : 'deployment.dashboard');
@@ -730,8 +731,8 @@ class DeploymentManagerController extends Controller
         $pageSubtitle = $isSuperAdminDeployment
             ? 'Create tenant -> Select license -> Set custom seats -> Activate instantly without payment'
             : (($isAgentRegistration || $isSuperAdminAssistedRegistration)
-                ? 'Create business account -> Select plan -> Set credentials -> Activate one-month free trial'
-                : 'Create account -> Select plan -> Set credentials -> Activate one-month free trial');
+                ? 'Create business account -> Select plan -> choose a free trial or standard paid registration'
+                : 'Create account -> Select plan -> choose a free trial or standard paid registration');
 
         return view('deployment.users.create', compact(
             'limit',
@@ -742,7 +743,8 @@ class DeploymentManagerController extends Controller
             'formActionRoute',
             'pageTitle',
             'pageSubtitle',
-            'isSuperAdminDeployment'
+            'isSuperAdminDeployment',
+            'supportsTrialChoice'
         ));
     }
 
@@ -1034,6 +1036,7 @@ public function store(Request $request)
         'plan_name'       => 'required|string',
         'plan_price'      => 'required|numeric|min:0',
         'billing_cycle'   => 'required|in:yearly',
+        'registration_type' => 'nullable|in:trial,standard',
         'custom_user_limit' => 'nullable|integer|min:1|max:100000',
         'free_unlimited'  => 'nullable|boolean',
         'email'           => $emailRules,
@@ -1090,7 +1093,13 @@ public function store(Request $request)
     $isSuperAdminDeployment = $request->routeIs('super_admin.custom_deployments.store')
         && $manager?->isSuperAdmin();
     $isFreeUnlimited = $isSuperAdminDeployment && $request->boolean('free_unlimited');
-    $trialPayload = $isFreeUnlimited ? [] : Subscription::trialPayload();
+    $supportsTrialChoice = $request->routeIs(
+        'agent.registration.store',
+        'deployment.customers.store'
+    );
+    $isTrialRegistration = !$isFreeUnlimited
+        && (!$supportsTrialChoice || ($validated['registration_type'] ?? 'trial') === 'trial');
+    $trialPayload = $isTrialRegistration ? Subscription::trialPayload() : [];
     $customUserLimit = $isFreeUnlimited && empty($validated['custom_user_limit'])
         ? self::UNLIMITED_USER_LIMIT
         : $this->resolveCustomUserLimit($validated);
@@ -1103,7 +1112,7 @@ public function store(Request $request)
     // ── Run DB work inside transaction ──────────────────────
     // session() is NOT called inside — that was causing the bug
     try {
-        $result = DB::transaction(function () use ($validated, $manager, $isFreeUnlimited, $trialPayload, $customUserLimit, $licenseUnitAmount, $retryableRegistration) {
+        $result = DB::transaction(function () use ($validated, $manager, $isFreeUnlimited, $isTrialRegistration, $trialPayload, $customUserLimit, $licenseUnitAmount, $retryableRegistration) {
 
             // 1. Create customer user
             $customer = $retryableRegistration
@@ -1142,14 +1151,15 @@ public function store(Request $request)
                 'email'         => $validated['company_email'],
                 'phone'         => $validated['phone'] ?? null,
                 'industry'      => $validated['industry'] ?? null,
-                'status'        => 'active',
+                'status'        => ($isFreeUnlimited || $isTrialRegistration) ? 'active' : 'pending',
                 'plan'          => $validated['plan_name'],
                 'user_id'       => $customer->id,
                 'owner_id'      => $customer->id,
                 'deployed_by'   => $manager->id,
             ], $this->companySubscriptionColumnsPayload(
                 $validated,
-                $isFreeUnlimited ? null : $trialPayload['end_date']
+                $isTrialRegistration ? $trialPayload['end_date'] : null,
+                $isFreeUnlimited || $isTrialRegistration
             ))));
             $company->save();
 
@@ -1168,8 +1178,8 @@ public function store(Request $request)
                 'subscriber_name' => $validated['name'],
                 'amount'          => $validated['plan_price'],
                 'billing_cycle'   => $validated['billing_cycle'],
-                'status'          => $isFreeUnlimited ? 'Active' : 'Trial',
-                'payment_status'  => 'free',
+                'status'          => $isFreeUnlimited ? 'Active' : ($isTrialRegistration ? 'Trial' : 'Pending'),
+                'payment_status'  => ($isFreeUnlimited || $isTrialRegistration) ? 'free' : 'unpaid',
                 'user_limit'      => $customUserLimit,
                 'employee_size'   => $customUserLimit,
                 'paid_at'         => $isFreeUnlimited ? now() : null,
@@ -1211,7 +1221,7 @@ public function store(Request $request)
                 [
                     'manager_id'         => $manager->id,
                     'company_id'         => $company->id,
-                    'deployment_status'  => 'active',
+                    'deployment_status'  => ($isFreeUnlimited || $isTrialRegistration) ? 'active' : 'pending',
                     'manager_commission' => 0,
                     'setup_config'       => json_encode([
                         'plan_id' => $validated['plan_id'],
@@ -1220,6 +1230,7 @@ public function store(Request $request)
                         'custom_user_limit' => $customUserLimit,
                         'license_unit_amount' => $licenseUnitAmount,
                         'free_unlimited' => $isFreeUnlimited,
+                        'registration_type' => $isTrialRegistration ? 'trial' : 'standard',
                     ]),
                     'created_at'         => now(),
                     'updated_at'         => now(),
@@ -1283,11 +1294,14 @@ public function store(Request $request)
     $verificationStatus = $customer->email_verified_at
         ? 'verified'
         : app(\App\Services\EmailVerificationService::class)->sendCode($customer);
+    $accountStatusMessage = ($isTrialRegistration || $isFreeUnlimited)
+        ? 'Customer workspace is ready.'
+        : 'Customer account is created; payment is required before workspace activation.';
     [$verificationMessage, $verificationFlash] = match ($verificationStatus) {
         'verified' => ['Customer email is already verified.', 'success'],
-        'sent' => ['Customer workspace is ready. A six-digit email code was sent; the customer must verify it before signing in.', 'success'],
-        'cooldown' => ['Customer workspace is ready. The verification code was sent recently; the customer should check their email.', 'warning'],
-        default => ['Customer workspace is ready, but the verification code could not be sent. Ask the customer to use Resend code after signing in.', 'error'],
+        'sent' => [$accountStatusMessage.' A six-digit email code was sent; the customer must verify it before signing in.', 'success'],
+        'cooldown' => [$accountStatusMessage.' The verification code was sent recently; the customer should check their email.', 'warning'],
+        default => [$accountStatusMessage.' The verification code could not be sent. Ask the customer to use Resend code after signing in.', 'error'],
     };
 
     if ($isFreeUnlimited) {
@@ -1301,6 +1315,11 @@ public function store(Request $request)
         'state_manager', 'deployment_manager' => 'deployment.dashboard',
         default => 'super_admin.dashboard',
     };
+
+    if (!$isTrialRegistration) {
+        return redirect()->route('saas.checkout', $result['subscription_id'])
+            ->with($verificationFlash, 'Customer registered without a free trial. Payment is required now to activate the workspace. '.$verificationMessage);
+    }
 
     return redirect()->route($dashboardRoute)
         ->with($verificationFlash, 'Customer workspace activated. Payment is due after the one-month free trial. '.$verificationMessage);
@@ -1543,19 +1562,21 @@ private function resolveCompanySlugColumn(): ?string
     return null;
 }
 
-private function companySubscriptionColumnsPayload(array $validated, $trialEndDate = null): array
+private function companySubscriptionColumnsPayload(array $validated, $trialEndDate = null, bool $hasActiveTerm = true): array
 {
     $payload = [];
 
     if (app(SchemaColumnCache::class)->hasColumn('companies', 'subscription_start')) {
-        $payload['subscription_start'] = now();
+        $payload['subscription_start'] = $hasActiveTerm ? now() : null;
     }
 
     if (app(SchemaColumnCache::class)->hasColumn('companies', 'subscription_end')) {
-        $payload['subscription_end'] = $trialEndDate
-            ?? (strtolower((string) $validated['billing_cycle']) === 'yearly'
-                ? now()->addYear()
-                : now()->addMonth());
+        $payload['subscription_end'] = $hasActiveTerm
+            ? ($trialEndDate
+                ?? (strtolower((string) $validated['billing_cycle']) === 'yearly'
+                    ? now()->addYear()
+                    : now()->addMonth()))
+            : null;
     }
 
     return $payload;

@@ -9,8 +9,9 @@
     $listingRoute = $listingRoute ?? 'deployment.users.index';
     $formActionRoute = $formActionRoute ?? 'deployment.customers.store';
     $isSuperAdminDeployment = $isSuperAdminDeployment ?? false;
+    $supportsTrialChoice = $supportsTrialChoice ?? !$isSuperAdminDeployment;
     $pageTitle = $pageTitle ?? 'Register New Customer';
-    $pageSubtitle = $pageSubtitle ?? 'Create account -> Select plan -> Set credentials -> Activate one-month trial';
+    $pageSubtitle = $pageSubtitle ?? 'Create account -> Select plan -> choose a free trial or standard paid registration';
     $previewMode = $isSuperAdminDeployment ? 'license' : 'commission';
     $planMeta = function (string $key, string $name, float $price, string $cycle, ?string $saveLabel = null) use ($deploymentPlans) {
         $commission = $price * 0.35;
@@ -370,6 +371,18 @@
     }
     .btn-submit:hover { background: linear-gradient(135deg, #047857, #059669); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(16,185,129,0.4); }
     .btn-submit:disabled { background: #94a3b8; cursor: not-allowed; transform: none; box-shadow: none; }
+    .registration-choice {
+        display: block;
+        height: 100%;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        cursor: pointer;
+    }
+    .registration-choice:has(input:checked) {
+        border-color: var(--blue);
+        background: #eff6ff;
+    }
 </style>
 
 <div class="sb-shell" id="register-wrapper">
@@ -429,8 +442,7 @@
                                 @if($isSuperAdminDeployment)
                                     <strong>Admin deployment:</strong> This creates and activates the customer's workspace instantly without payment.
                                 @else
-                                    <strong>Quick setup:</strong> Customer gets an active subdomain workspace and a one-month free trial immediately.
-                                    Payment is due after the trial.
+                                    <strong>Choose how to register:</strong> Activate a one-month free trial now, or require payment before activating the workspace.
                                 @endif
                             </div>
 
@@ -850,7 +862,7 @@
                                         <div class="fw-bold text-dark small mb-1">{{ $isSuperAdminDeployment ? 'Annual license value per user' : 'Potential commission (35%)' }}</div>
                                         <div class="big-num">₦<span id="commPreview">0</span></div>
                                         @unless($isSuperAdminDeployment)
-                                            <div class="text-muted small mt-1">Renewal after trial: ₦<span id="checkoutPreview">0</span></div>
+                                            <div class="text-muted small mt-1"><span id="checkoutPreviewLabel">Trial renewal</span>: ₦<span id="checkoutPreview">0</span></div>
                                             <div class="text-muted small mt-1">Commission is earned after the customer pays.</div>
                                         @endunless
                                     </div>
@@ -874,7 +886,7 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                                 <small class="text-muted">
-                                    {{ $isSuperAdminDeployment ? 'Leave empty to create the subscription as unlimited. If entered, this becomes the seat limit.' : 'If the customer asks for more users, enter the requested number. Extra seats are included in renewal after the trial.' }}
+                                    {{ $isSuperAdminDeployment ? 'Leave empty to create the subscription as unlimited. If entered, this becomes the seat limit.' : 'If the customer asks for more users, enter the requested number. Extra seats are included in the annual plan price.' }}
                                 </small>
                             </div>
 
@@ -911,11 +923,41 @@
                                 @if($isSuperAdminDeployment)
                                     Clicking <strong>Activate Workspace</strong> creates the account, grants free access,
                                     and deploys the workspace immediately.
+                                @elseif($supportsTrialChoice)
+                                    Choose a one-month free trial to activate the workspace immediately, or standard registration
+                                    to require payment before workspace activation.
                                 @else
                                     Clicking <strong>Activate Trial</strong> creates the account, starts one month of access,
                                     and deploys the workspace immediately. Payment is requested after the trial ends.
                                 @endif
                             </div>
+
+                            @if($supportsTrialChoice)
+                                <fieldset class="mb-4">
+                                    <legend class="form-label">Registration option <span class="text-danger">*</span></legend>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="registration-choice">
+                                                <input type="radio" name="registration_type" value="trial"
+                                                    {{ old('registration_type', 'trial') === 'trial' ? 'checked' : '' }}>
+                                                <strong class="ms-1">One-month free trial</strong>
+                                                <small class="d-block text-muted mt-1">Activate the workspace now. Payment is due after the trial.</small>
+                                            </label>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="registration-choice">
+                                                <input type="radio" name="registration_type" value="standard"
+                                                    {{ old('registration_type', 'trial') === 'standard' ? 'checked' : '' }}>
+                                                <strong class="ms-1">Standard registration — no trial</strong>
+                                                <small class="d-block text-muted mt-1">Collect payment now. The workspace activates after payment.</small>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    @error('registration_type')
+                                        <div class="text-danger small mt-2 fw-semibold">{{ $message }}</div>
+                                    @enderror
+                                </fieldset>
+                            @endif
 
                             <div class="mb-3">
                                 <label class="form-label">Full Name <span class="text-danger">*</span></label>
@@ -978,11 +1020,14 @@
                                     value="{{ old('customer_phone') }}">
                             </div>
 
-                            <div class="warn-box mt-4">
+                            <div class="warn-box mt-4" id="paymentTimingNotice">
                                 <i class="fas fa-credit-card me-2"></i>
                                 @if($isSuperAdminDeployment)
                                     <strong>No payment required:</strong>
                                     Super admin will activate this workspace instantly on submission.
+                                @elseif($supportsTrialChoice)
+                                    <strong>{{ old('registration_type', 'trial') === 'standard' ? 'Payment required now:' : 'No payment today:' }}</strong>
+                                    {{ old('registration_type', 'trial') === 'standard' ? 'The customer must pay before the workspace is activated.' : 'The customer can use the workspace immediately. Payment is due after the one-month trial.' }}
                                 @else
                                     <strong>No payment today:</strong>
                                     The customer can start using the workspace immediately. The selected plan becomes payable after one month.
@@ -995,7 +1040,7 @@
                                 </button>
 
                                 <button type="submit" class="btn-submit" id="btnSubmit">
-                                    <i class="fas fa-rocket me-2"></i>{{ $isSuperAdminDeployment ? 'Activate Workspace' : 'Activate Trial' }}
+                                    <i class="fas fa-rocket me-2"></i><span id="submitButtonLabel">{{ $isSuperAdminDeployment ? 'Activate Workspace' : (old('registration_type', 'trial') === 'standard' ? 'Register and collect payment' : 'Activate Trial') }}</span>
                                 </button>
                             </div>
                         </div>
@@ -1041,15 +1086,13 @@
 
                     <div class="dm-card mt-3">
                         <div class="p-4 text-center">
-                            <div class="text-muted small mb-2">Flow after clicking <strong>Activate Trial</strong></div>
+                            <div class="text-muted small mb-2">Registration paths</div>
                             <div class="d-flex flex-column gap-2 text-start">
                                 @foreach([
-                                    ['fas fa-user-plus','Create account + company','success'],
-                                    ['fas fa-file-invoice','Generate subscription','success'],
-                                    ['fas fa-clock','Start one-month free trial','primary'],
-                                    ['fas fa-check-circle','Workspace active immediately','success'],
-                                    ['fas fa-globe','Subdomain/workspace deployed','success'],
-                                    ['fas fa-credit-card','Customer pays after trial','warning'],
+                                    ['fas fa-user-plus','Create customer account and subscription','success'],
+                                    ['fas fa-clock','Trial option: activate workspace immediately','primary'],
+                                    ['fas fa-credit-card','Standard option: collect payment before activation','warning'],
+                                    ['fas fa-calendar','Trial payment is due after one month','warning'],
                                 ] as [$icon, $label, $colour])
                                 <div class="d-flex align-items-center gap-2 small">
                                     <i class="{{ $icon }} text-{{ $colour }}"></i>
@@ -1214,6 +1257,7 @@ window.pickPlan = function(id, name, price, cycle) {
 function refreshPlanPreview() {
     const preview = document.getElementById('commPreview');
     const checkoutPreview = document.getElementById('checkoutPreview');
+    const checkoutPreviewLabel = document.getElementById('checkoutPreviewLabel');
     const seatsInput = document.getElementById('customUserLimit');
     if (!preview) return;
 
@@ -1227,6 +1271,34 @@ function refreshPlanPreview() {
     preview.textContent = fmt(total * 0.35);
     if (checkoutPreview) {
         checkoutPreview.textContent = fmt(total);
+    }
+    if (checkoutPreviewLabel) {
+        checkoutPreviewLabel.textContent = registrationType() === 'standard' ? 'Due before activation' : 'Trial renewal';
+    }
+}
+
+function registrationType() {
+    return document.querySelector('input[name="registration_type"]:checked')?.value || 'trial';
+}
+
+function updateRegistrationType() {
+    if (!@js($supportsTrialChoice)) return;
+
+    const selectedType = registrationType();
+    const buttonLabel = document.getElementById('submitButtonLabel');
+    const notice = document.getElementById('paymentTimingNotice');
+    const previewLabel = document.getElementById('checkoutPreviewLabel');
+
+    if (buttonLabel) {
+        buttonLabel.textContent = selectedType === 'standard' ? 'Register and collect payment' : 'Activate Trial';
+    }
+    if (notice) {
+        notice.innerHTML = selectedType === 'standard'
+            ? '<i class="fas fa-credit-card me-2"></i><strong>Payment required now:</strong> The customer must pay before the workspace is activated.'
+            : '<i class="fas fa-credit-card me-2"></i><strong>No payment today:</strong> The customer can use the workspace immediately. Payment is due after the one-month trial.';
+    }
+    if (previewLabel) {
+        previewLabel.textContent = selectedType === 'standard' ? 'Due before activation' : 'Trial renewal';
     }
 }
 
@@ -1254,6 +1326,9 @@ function normalizePlanTier(name) {
 }
 
 document.getElementById('customUserLimit')?.addEventListener('input', refreshPlanPreview);
+document.querySelectorAll('input[name="registration_type"]').forEach(input => {
+    input.addEventListener('change', updateRegistrationType);
+});
 
 /* ── Step navigation ─────────────────────── */
 window.toStep = function(n) {
@@ -1362,7 +1437,7 @@ document.getElementById('regForm').addEventListener('submit', function(e) {
     const btn = document.getElementById('btnSubmit');
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating account…';
-    // Form submits → store() → activate the customer's one-month trial
+    // Form submits → store() → activate a trial or create a standard unpaid subscription
 });
 
 /* ── Restore state after validation error ── */
@@ -1381,5 +1456,6 @@ document.getElementById('regForm').addEventListener('submit', function(e) {
     pickPlan('{{ old("plan_id") }}','{{ old("plan_name") }}',{{ (int)old("plan_price",0) }},'yearly');
 @endif
 syncHotelPlanCards();
+updateRegistrationType();
 </script>
 @endsection

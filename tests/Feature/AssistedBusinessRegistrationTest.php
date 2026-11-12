@@ -168,6 +168,87 @@ class AssistedBusinessRegistrationTest extends TestCase
         $this->assertSame(1, $planCatalogQueries);
     }
 
+    public function test_agent_and_state_manager_can_register_customers_without_a_trial(): void
+    {
+        $registrars = [
+            'agent' => [
+                'create_route' => 'agent.registration.create',
+                'store_route' => 'agent.registration.store',
+            ],
+            'state_manager' => [
+                'create_route' => 'deployment.customers.create',
+                'store_route' => 'deployment.customers.store',
+            ],
+        ];
+
+        foreach ($registrars as $role => $routes) {
+            $registrar = User::factory()->create([
+                'role' => $role,
+                'is_verified' => 1,
+                'status' => 'active',
+            ]);
+
+            if ($role === 'state_manager') {
+                DeploymentManager::withoutGlobalScopes()->create([
+                    'user_id' => $registrar->id,
+                    'business_name' => 'State Manager Office',
+                    'status' => 'active',
+                    'deployment_limit' => 100,
+                    'commission_rate' => 35,
+                ]);
+            }
+
+            $slug = $role.'-standard-client';
+            $email = $slug.'@example.test';
+            $this->actingAs($registrar)
+                ->get(route($routes['create_route']))
+                ->assertOk()
+                ->assertSee('name="registration_type"', false)
+                ->assertSee('Standard registration', false);
+
+            $response = $this->post(route($routes['store_route']), [
+                'company_name' => ucfirst($slug).' Limited',
+                'subdomain' => $slug,
+                'company_email' => $email,
+                'phone' => '+2348012345678',
+                'industry' => 'retail',
+                'plan_id' => 'starter-yearly',
+                'plan_name' => 'Starter',
+                'plan_price' => 20000,
+                'billing_cycle' => 'yearly',
+                'registration_type' => 'standard',
+                'name' => ucfirst($role).' Standard Client',
+                'email' => $email,
+                'password' => 'ClientPass123',
+                'password_confirmation' => 'ClientPass123',
+                'customer_phone' => '+2348098765432',
+            ]);
+
+            $subscription = Subscription::withoutGlobalScopes()
+                ->where('deployed_by', $registrar->id)
+                ->firstOrFail();
+            $company = \App\Models\Company::withoutGlobalScopes()->findOrFail($subscription->company_id);
+
+            $response->assertRedirect(route('saas.checkout', $subscription->id));
+            $response->assertSessionHasNoErrors();
+            $this->assertSame('pending', strtolower((string) $subscription->status));
+            $this->assertSame('unpaid', strtolower((string) $subscription->payment_status));
+            $this->assertNull($subscription->start_date);
+            $this->assertNull($subscription->end_date);
+            $this->assertSame('pending', strtolower((string) $company->status));
+            $this->assertNull($company->subscription_start);
+            $this->assertNull($company->subscription_end);
+            $this->assertDatabaseMissing('domains', ['domain_name' => $slug]);
+            $this->assertDatabaseHas('deployment_companies', [
+                'manager_id' => $registrar->id,
+                'company_id' => $company->id,
+                'deployment_status' => 'pending',
+            ]);
+
+            $this->get(route('saas.checkout', $subscription->id))->assertOk();
+        }
+    }
+
     public function test_public_registration_starts_trial_and_activates_workspace_before_payment(): void
     {
         $response = $this->from(route('saas-register'))->post(route('saas-register.post'), [
