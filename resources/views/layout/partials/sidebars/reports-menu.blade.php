@@ -34,7 +34,7 @@
 @endif
 @if(Route::has('reports.profit-loss'))
     <li>
-        <a wire:navigate.hover href="{{ route('reports.profit-loss') }}"
+        <a href="{{ route('reports.profit-loss') }}"
            class="{{ request()->routeIs('reports.profit-loss') ? 'active' : '' }}">
             Profit &amp; Loss
         </a>

@@ -100,6 +100,19 @@ class LoginIdentifierTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_saas_login_uses_the_lightweight_auth_shell(): void
+    {
+        $this->get(route('saas-login'))
+            ->assertOk()
+            ->assertSee('Email or Phone Number')
+            ->assertSee('response-feedback.js')
+            ->assertSee('pos-offline-auth.js')
+            ->assertDontSee('jquery-3.7.1.min.js')
+            ->assertDontSee('livewire/livewire.js')
+            ->assertDontSee('enableInternalNavigation')
+            ->assertDontSee('wire:navigate');
+    }
+
     public function test_login_csrf_refresh_does_not_rotate_tokens_for_other_open_login_pages(): void
     {
         $token = str_repeat('a', 40);

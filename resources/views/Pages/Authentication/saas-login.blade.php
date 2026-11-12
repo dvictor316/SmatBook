@@ -2,7 +2,7 @@
     $page = 'saas-login';
 @endphp
 
-@extends('layout.mainlayout')
+@extends('layout.auth')
 
 @section('content')
 @php
@@ -738,7 +738,7 @@
                         await Promise.race([
                             refreshToken(),
                             new Promise(function (resolve) {
-                                window.setTimeout(resolve, 4000);
+                                window.setTimeout(resolve, 1000);
                             }),
                         ]);
                     }

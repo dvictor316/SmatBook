@@ -31,6 +31,8 @@ class PlatformDashboardRecoveryTest extends TestCase
             ->assertOk()
             ->assertSee('Platform Module Catalogue')
             ->assertSee('<title>SmartProbook Dashboard</title>', false)
+            ->assertSee('response-feedback.js')
+            ->assertDontSee('Livewire.navigate(destination.href)')
             ->assertDontSee('Please complete setup and select a branch')
             ->assertDontSee('Foreign Cached Branding');
         $this->assertNull(session('current_tenant_id'));

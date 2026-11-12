@@ -7,8 +7,6 @@
     const pendingForms = new WeakSet();
     let hideTimer;
     let pendingAjaxRequests = 0;
-    let navigationPending = false;
-    let navigationFallbackTimer;
     let pendingLinkTimer;
 
     const style = document.createElement('style');
@@ -70,7 +68,7 @@
     }
 
     function hide() {
-        if (pendingAjaxRequests > 0 || navigationPending) return;
+        if (pendingAjaxRequests > 0) return;
         window.clearTimeout(hideTimer);
         progress.classList.remove('is-active');
         progress.hidden = true;
@@ -116,7 +114,7 @@
             link.removeAttribute('aria-busy');
             pendingLinkTimer = null;
             hide();
-        }, 30000);
+        }, 10000);
     });
 
     document.addEventListener('submit', function (event) {
@@ -143,26 +141,8 @@
         }
     });
 
-    document.addEventListener('livewire:navigate', function () {
-        window.clearTimeout(pendingLinkTimer);
-        window.clearTimeout(navigationFallbackTimer);
-        navigationPending = true;
-        show();
-        navigationFallbackTimer = window.setTimeout(function () {
-            navigationPending = false;
-            hide();
-        }, 30000);
-    });
-    document.addEventListener('livewire:navigated', function () {
-        window.clearTimeout(pendingLinkTimer);
-        window.clearTimeout(navigationFallbackTimer);
-        navigationPending = false;
-        hide();
-    });
     window.addEventListener('pageshow', function () {
         window.clearTimeout(pendingLinkTimer);
-        window.clearTimeout(navigationFallbackTimer);
-        navigationPending = false;
         hide();
     });
 
