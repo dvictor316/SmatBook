@@ -15,6 +15,8 @@ use App\Support\BranchInventoryService;
 use App\Support\LedgerService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -210,15 +212,18 @@ class OnlineStoreController extends Controller
     {
         $store = $this->resolvePublicStore($request, $slug);
         $company = Company::withoutGlobalScope('tenant')->findOrFail($store->company_id);
-        $categories = $this->storeCategories((int) $store->company_id);
-        $products = Product::withoutGlobalScopes()
+        $stockBranch = $this->storeStockBranch($store);
+        $categories = $this->storeCategories($store, $stockBranch);
+        $productQuery = Product::withoutGlobalScopes()
             ->where('company_id', $store->company_id)
-            ->where('status', 'active')
+            ->where('status', 'active');
+        $this->filterAvailableStoreProducts($productQuery, $store, $stockBranch, 'products');
+        $products = $productQuery
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->limit(40)
             ->get();
-        $this->attachStoreStock($products, $store);
+        $this->attachStoreStock($products, $store, $stockBranch);
 
         return view('storefront.home', compact('store', 'company', 'products', 'categories'));
     }
@@ -228,10 +233,11 @@ class OnlineStoreController extends Controller
         $store = $this->resolvePublicStore($request, $slug);
         $company = Company::withoutGlobalScope('tenant')->findOrFail($store->company_id);
         $orderContact = $store->orderContact();
+        $stockBranch = $this->storeStockBranch($store);
         $validated = $request->validate([
             'category_id' => 'nullable|integer|min:1',
         ]);
-        $categories = $this->storeCategories((int) $store->company_id);
+        $categories = $this->storeCategories($store, $stockBranch);
         $selectedCategoryId = isset($validated['category_id']) ? (int) $validated['category_id'] : null;
         $selectedCategory = $categories->first(fn ($category) => (int) $category->id === $selectedCategoryId);
         abort_if($selectedCategoryId !== null && !$selectedCategory, 404);
@@ -239,6 +245,7 @@ class OnlineStoreController extends Controller
         $productQuery = Product::withoutGlobalScopes()
             ->where('company_id', $store->company_id)
             ->where('status', 'active');
+        $this->filterAvailableStoreProducts($productQuery, $store, $stockBranch, 'products');
         $applyCatalogFilters = function ($query, string $table) use ($selectedCategory, $search): void {
             if ($selectedCategory) {
                 $query->whereIn("{$table}.category_id", $selectedCategory->category_ids);
@@ -256,9 +263,9 @@ class OnlineStoreController extends Controller
         };
         $applyCatalogFilters($productQuery, 'products');
         if (Schema::hasColumn('products', 'variant_group_id')) {
-            $productQuery->where(function ($query) use ($applyCatalogFilters) {
+            $productQuery->where(function ($query) use ($applyCatalogFilters, $store, $stockBranch) {
                 $query->whereNull('products.variant_group_id')
-                    ->orWhereNotExists(function ($newerVariant) use ($applyCatalogFilters) {
+                    ->orWhereNotExists(function ($newerVariant) use ($applyCatalogFilters, $store, $stockBranch) {
                         $newerVariant->selectRaw('1')
                             ->from('products as newer')
                             ->whereColumn('newer.variant_group_id', 'products.variant_group_id')
@@ -272,6 +279,7 @@ class OnlineStoreController extends Controller
                                     });
                             });
                         $applyCatalogFilters($newerVariant, 'newer');
+                        $this->filterAvailableStoreProducts($newerVariant, $store, $stockBranch, 'newer');
                     });
             });
         }
@@ -284,21 +292,24 @@ class OnlineStoreController extends Controller
             ->filter()
             ->unique()
             ->values();
-        $variantProducts = $variantGroupIds->isEmpty()
-            ? collect()
-            : Product::withoutGlobalScopes()
+        $variantProducts = collect();
+        if ($variantGroupIds->isNotEmpty()) {
+            $variantQuery = Product::withoutGlobalScopes()
                 ->where('company_id', $store->company_id)
                 ->where('status', 'active')
                 ->whereIn('variant_group_id', $variantGroupIds)
-                ->when($selectedCategory, fn ($query) => $query->whereIn('category_id', $selectedCategory->category_ids))
+                ->when($selectedCategory, fn ($query) => $query->whereIn('category_id', $selectedCategory->category_ids));
+            $this->filterAvailableStoreProducts($variantQuery, $store, $stockBranch, 'products');
+            $variantProducts = $variantQuery
                 ->orderBy('fashion_size')
                 ->orderBy('fashion_color')
                 ->orderBy('id')
                 ->get();
-        $this->attachStoreStock($variantProducts, $store);
+        }
+        $this->attachStoreStock($variantProducts, $store, $stockBranch);
+        $this->attachStoreStock($products->getCollection(), $store, $stockBranch);
         $variantsByGroup = $variantProducts->groupBy('variant_group_id');
-        $products->getCollection()->transform(function (Product $product) use ($store, $variantsByGroup) {
-            $product->setAttribute('storefront_available_stock', $this->availableStoreStock($product, $store));
+        $products->getCollection()->transform(function (Product $product) use ($variantsByGroup) {
             $variants = filled($product->variant_group_id)
                 ? $variantsByGroup->get($product->variant_group_id, collect())
                 : collect([$product]);
@@ -322,25 +333,30 @@ class OnlineStoreController extends Controller
         ));
     }
 
-    private function storeCategories(int $companyId): Collection
+    private function storeCategories(StorefrontSetting $store, ?array $stockBranch): Collection
     {
         if (!Schema::hasTable('categories') || !Schema::hasColumn('products', 'category_id')) {
             return collect();
         }
 
-        return DB::table('categories')
+        $query = DB::table('categories')
             ->join('products', 'products.category_id', '=', 'categories.id')
-            ->where('products.company_id', $companyId)
+            ->where('products.company_id', $store->company_id)
             ->where('products.status', 'active')
             ->whereNotNull('categories.name')
             ->where('categories.name', '<>', '')
             ->select('categories.id', 'categories.name', 'products.id as product_id', 'products.variant_group_id')
-            ->orderBy('categories.name')
-            ->get()
+            ->orderBy('categories.name');
+        $availableQuery = clone $query;
+        $this->filterAvailableStoreProducts($availableQuery, $store, $stockBranch, 'products');
+        $availableIds = $availableQuery->select('products.id')->pluck('products.id')->flip();
+
+        return $query->get()
             ->groupBy(fn ($category) => mb_strtolower(trim((string) $category->name)))
-            ->map(function (Collection $matches) {
+            ->map(function (Collection $matches) use ($availableIds) {
                 $first = $matches->first();
-                $productKeys = $matches->map(fn ($category) => filled($category->variant_group_id)
+                $productKeys = $matches->filter(fn ($category) => $availableIds->has($category->product_id))
+                    ->map(fn ($category) => filled($category->variant_group_id)
                     ? 'variant:' . $category->variant_group_id
                     : 'product:' . $category->product_id);
 
@@ -584,9 +600,51 @@ class OnlineStoreController extends Controller
         return $branches->firstWhere('is_active', true) ?? $branches->first();
     }
 
-    private function attachStoreStock(Collection $products, StorefrontSetting $store): void
+    private function filterAvailableStoreProducts(
+        EloquentBuilder|QueryBuilder $query,
+        StorefrontSetting $store,
+        ?array $stockBranch,
+        string $table
+    ): void {
+        // Match availableStoreStock() before pagination and variant grouping.
+        $hasBranchStock = $stockBranch && Schema::hasTable('product_branch_stocks');
+        $hasCompanyColumn = $hasBranchStock && Schema::hasColumn('product_branch_stocks', 'company_id');
+        $hasAvailabilityColumn = $hasBranchStock && Schema::hasColumn('product_branch_stocks', 'is_available');
+        $sharedStock = static function ($stock) use ($table): void {
+            $stock->where("{$table}.stock", '>', 0)
+                ->orWhere("{$table}.stock_quantity", '>', 0);
+        };
+        $branchRows = static function (QueryBuilder $stocks) use ($table, $store, $hasCompanyColumn): void {
+            $stocks->selectRaw('1')
+                ->from('product_branch_stocks as store_stock')
+                ->whereColumn('store_stock.product_id', "{$table}.id");
+            if ($hasCompanyColumn) {
+                $stocks->where(fn ($tenant) => $tenant->where('store_stock.company_id', $store->company_id)
+                    ->orWhereNull('store_stock.company_id'));
+            }
+        };
+
+        $query->where(function ($available) use ($hasBranchStock, $hasAvailabilityColumn, $stockBranch, $sharedStock, $branchRows): void {
+            if (! $hasBranchStock) {
+                $available->where($sharedStock);
+                return;
+            }
+
+            $available->whereExists(function (QueryBuilder $stocks) use ($branchRows, $stockBranch, $hasAvailabilityColumn): void {
+                $branchRows($stocks);
+                $stocks->where('store_stock.branch_id', $stockBranch['id'])
+                    ->where('store_stock.quantity', '>', 0);
+                if ($hasAvailabilityColumn) {
+                    $stocks->where('store_stock.is_available', true);
+                }
+            })->orWhere(function ($fallback) use ($branchRows, $sharedStock): void {
+                $fallback->whereNotExists($branchRows)->where($sharedStock);
+            });
+        });
+    }
+
+    private function attachStoreStock(Collection $products, StorefrontSetting $store, ?array $stockBranch): void
     {
-        $stockBranch = $this->storeStockBranch($store);
         foreach ($products as $product) {
             $product->setAttribute(
                 'storefront_available_stock',

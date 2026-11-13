@@ -162,7 +162,7 @@
             </details>
         </div>
     @endif
-    <div class="catalogue-heading"><div><h2>{{ $selectedCategory ? $selectedCategory->name : 'Available collection' }}</h2><p>Add products to your cart, review quantities and total, then submit your order. Out-of-stock products are shown for reference.</p></div><span class="catalogue-count">{{ $products->total() }} {{ \Illuminate\Support\Str::plural('product', $products->total()) }}</span></div>
+    <div class="catalogue-heading"><div><h2>{{ $selectedCategory ? $selectedCategory->name : 'Available collection' }}</h2><p>Add products to your cart, review quantities and total, then submit your order. Only available products are shown.</p></div><span class="catalogue-count">{{ $products->total() }} {{ \Illuminate\Support\Str::plural('product', $products->total()) }}</span></div>
     <div class="product-grid">
         @forelse($products as $product)
             @php

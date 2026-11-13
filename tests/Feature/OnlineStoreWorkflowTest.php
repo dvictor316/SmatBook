@@ -65,14 +65,21 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertSee(asset('css/storefront-theme.css'), false)
             ->assertSee('Orange Crate')
             ->assertSee('Fresh oranges packed in a sturdy crate.')
-            ->assertSee('Seasonal Mangoes')
-            ->assertSee('Out of stock')
+            ->assertDontSee('Seasonal Mangoes')
+            ->assertDontSee('Out of stock')
             ->assertDontSee('Archived Pears')
             ->assertDontSee('Foreign Apples');
         $this->get(route('storefront.about', 'fresh-market'))
             ->assertOk()
             ->assertSee(asset('css/storefront-theme.css'), false);
         $this->assertDatabaseHas('products', ['id' => $outOfStockId, 'stock' => 0]);
+
+        $this->post(route('storefront.orders.store', 'fresh-market'), [
+            'order_token' => '00000000-0000-4000-8000-000000000020',
+            'customer_phone' => '08000000000',
+            'items' => [$outOfStockId => 1],
+        ])->assertStatus(422);
+        $this->assertDatabaseCount('online_store_orders', 0);
 
         $this->post(route('storefront.orders.store', 'fresh-market'), [
             'order_token' => '00000000-0000-4000-8000-000000000001',
@@ -126,6 +133,103 @@ class OnlineStoreWorkflowTest extends TestCase
         $this->getJson(route('notifications.summary'))
             ->assertOk()
             ->assertJsonPath('notification_count', 0);
+    }
+
+    public function test_available_products_are_filtered_before_homepage_limit_and_gallery_pagination(): void
+    {
+        [$user, $company] = $this->workspace('Availability Pagination');
+        $category = $this->category($user->id, $company->id, 'Items');
+        $available = $this->product($user->id, $company->id, $category, 'Available Item', 'AVAILABLE', 0, 1000);
+        DB::table('products')->where('id', $available)->update([
+            'stock_quantity' => 3, 'created_at' => now()->subDay(),
+        ]);
+        for ($i = 0; $i < 41; $i++) {
+            $this->product($user->id, $company->id, $category, 'Unavailable Item ' . $i, 'EMPTY-' . $i, 0, 1000);
+        }
+        StorefrontSetting::create([
+            'company_id' => $company->id, 'slug' => 'availability-pagination',
+            'store_name' => 'Availability Pagination', 'is_enabled' => true,
+        ]);
+
+        $this->get(route('storefront.catalogue', 'availability-pagination'))
+            ->assertOk()->assertSee('Available Item')->assertDontSee('Unavailable Item')
+            ->assertViewHas('products', fn ($products) => $products->count() === 1);
+        $this->get(route('storefront.products', 'availability-pagination') . '?per_page=1')
+            ->assertOk()->assertSee('Available Item')->assertDontSee('Unavailable Item')
+            ->assertViewHas('products', fn ($products) => $products->total() === 1 && $products->count() === 1);
+    }
+
+    public function test_store_hides_unavailable_branch_stock_and_variants_until_restocked(): void
+    {
+        [$user, $company] = $this->workspace('Branch Availability');
+        $branch = ['id' => 'branch-a', 'name' => 'Main Branch', 'is_active' => true];
+        DB::table('settings')->insert([
+            'key' => 'branches_json_company_' . $company->id,
+            'value' => json_encode([$branch]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $category = $this->category($user->id, $company->id, 'Footwear');
+        $emptyCategory = $this->category($user->id, $company->id, 'Unavailable');
+        $sharedId = $this->product($user->id, $company->id, $category, 'Shared Stock', 'SHARED-1', 4, 1000);
+        $branchId = $this->product($user->id, $company->id, $category, 'Branch Stock', 'BRANCH-1', 0, 1000);
+        $zeroId = $this->product($user->id, $company->id, $emptyCategory, 'Sold Out', 'ZERO-1', 9, 1000);
+        $disabledId = $this->product($user->id, $company->id, $emptyCategory, 'Unavailable Branch', 'DISABLED-1', 9, 1000);
+        $otherId = $this->product($user->id, $company->id, $emptyCategory, 'Other Branch Only', 'OTHER-1', 9, 1000);
+        $availableVariant = $this->product($user->id, $company->id, $category, 'Running Shoe', 'SHOE-40', 3, 2000);
+        $soldVariant = $this->product($user->id, $company->id, $category, 'Running Shoe', 'SHOE-41', 0, 2500);
+        $group = 'c198b544-5f5c-4aeb-ae35-f323e95e40e1';
+        DB::table('products')->where('id', $availableVariant)->update([
+            'variant_group_id' => $group, 'fashion_size' => '40', 'created_at' => now()->subMinute(),
+        ]);
+        DB::table('products')->where('id', $soldVariant)->update([
+            'variant_group_id' => $group, 'fashion_size' => '41', 'created_at' => now(),
+        ]);
+        foreach ([
+            [$branchId, 'branch-a', 5, true],
+            [$zeroId, 'branch-a', 0, true],
+            [$disabledId, 'branch-a', 5, false],
+            [$otherId, 'branch-b', 5, true],
+        ] as [$productId, $branchIdValue, $quantity, $isAvailable]) {
+            DB::table('product_branch_stocks')->insert([
+                'product_id' => $productId, 'company_id' => $company->id,
+                'branch_id' => $branchIdValue, 'branch_name' => 'Branch',
+                'quantity' => $quantity, 'is_available' => $isAvailable,
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+        StorefrontSetting::create([
+            'company_id' => $company->id, 'slug' => 'branch-availability',
+            'store_name' => 'Branch Availability', 'stock_branch_id' => $branch['id'],
+            'stock_branch_name' => $branch['name'], 'is_enabled' => true,
+        ]);
+
+        foreach (['storefront.catalogue', 'storefront.products'] as $route) {
+            $this->get(route($route, 'branch-availability'))
+                ->assertOk()->assertSee('Shared Stock')->assertSee('Branch Stock')->assertSee('Running Shoe')
+                ->assertDontSee('Sold Out')->assertDontSee('Unavailable Branch')->assertDontSee('Other Branch Only');
+        }
+        $this->get(route('storefront.products', 'branch-availability'))
+            ->assertOk()->assertDontSee('SHOE-41')->assertDontSee('Out of stock')
+            ->assertSee('data-product-max="5"', false)
+            ->assertViewHas('products', fn ($products) => $products->total() === 3
+                && (int) $products->getCollection()->firstWhere('name', 'Running Shoe')->id === $availableVariant)
+            ->assertViewHas('categories', fn ($categories) => $categories->firstWhere('name', 'Footwear')->products_count === 3
+                && $categories->firstWhere('name', 'Unavailable')->products_count === 0);
+        $this->get(route('storefront.products', 'branch-availability') . '?q=SHOE-41')
+            ->assertOk()->assertDontSee('Running Shoe')
+            ->assertViewHas('products', fn ($products) => $products->total() === 0);
+        $this->get(route('storefront.products', 'branch-availability') . '?per_page=2')
+            ->assertOk()->assertViewHas('products', fn ($products) => $products->total() === 3 && $products->count() === 2);
+
+        DB::table('product_branch_stocks')->where('product_id', $zeroId)->update(['quantity' => 2]);
+        DB::table('products')->where('id', $soldVariant)->update(['stock' => 2, 'stock_quantity' => 2]);
+        $this->get(route('storefront.products', 'branch-availability'))
+            ->assertOk()->assertSee('Sold Out')->assertSee('SHOE-41')
+            ->assertViewHas('products', fn ($products) => $products->getCollection()
+                ->firstWhere('name', 'Running Shoe')->storefront_variants->count() === 2)
+            ->assertViewHas('categories', fn ($categories) => $categories->firstWhere('name', 'Unavailable')->products_count === 1);
+        $this->assertDatabaseHas('products', ['id' => $sharedId, 'stock' => 4]);
     }
 
     public function test_storefront_categories_link_to_products_in_that_category(): void
@@ -288,6 +392,9 @@ class OnlineStoreWorkflowTest extends TestCase
     public function test_custom_domain_resolves_the_enabled_store(): void
     {
         [$user, $company] = $this->workspace('Mapped Store');
+        $category = $this->category($user->id, $company->id, 'Items');
+        $this->product($user->id, $company->id, $category, 'Mapped Available', 'MAP-1', 2, 1000);
+        $this->product($user->id, $company->id, $category, 'Mapped Sold Out', 'MAP-2', 0, 1000);
         StorefrontSetting::create([
             'company_id' => $company->id,
             'slug' => 'mapped-store',
@@ -300,7 +407,13 @@ class OnlineStoreWorkflowTest extends TestCase
         $this->get('http://shop.mapped-store.test/store')
             ->assertOk()
             ->assertSee('Mapped Store')
-            ->assertSee('About Us');
+            ->assertSee('About Us')
+            ->assertSee('Mapped Available')
+            ->assertDontSee('Mapped Sold Out');
+        $this->get('http://shop.mapped-store.test/store/products')
+            ->assertOk()
+            ->assertSee('Mapped Available')
+            ->assertDontSee('Mapped Sold Out');
         $this->get('http://shop.mapped-store.test/store/about')
             ->assertOk()
             ->assertSee('A family business serving its customers.')
