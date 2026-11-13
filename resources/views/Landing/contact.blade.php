@@ -46,6 +46,8 @@
                     </div>
                 </div>
 
+                <img class="contact-market-image" src="{{ asset('images/landing/nigerian-market-street.jpg') }}" alt="A market street in Nigeria" width="800" height="1067" loading="lazy">
+
                 <div class="support-status">
                     <h6>Technical Support Status</h6>
                     <div class="status-indicator">
@@ -311,6 +313,15 @@
 
     .contact-item a:hover {
         color: var(--accent-gold);
+    }
+
+    .contact-market-image {
+        display: block;
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        border-radius: 20px;
+        margin: 0 0 24px;
     }
 
     /* ===== SUPPORT STATUS ===== */

@@ -2979,7 +2979,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                 </div>
                 <div class="impact-story-media">
                     <div class="impact-story-image-wrap">
-                        <img src="https://images.pexels.com/photos/30677714/pexels-photo-30677714.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Nigerian business team in a strategy meeting" loading="lazy">
+                        <img src="{{ asset('images/landing/lagos-market-vendor.jpg') }}" alt="A vendor selling produce at a Lagos market" width="1200" height="801" loading="lazy">
                     </div>
                     <div class="impact-story-badge">
                         <i class="fas fa-warehouse"></i>

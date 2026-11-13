@@ -551,6 +551,36 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertSee('id="place-store-order" type="submit" disabled', false);
     }
 
+    public function test_empty_store_hero_does_not_cover_welcome_content(): void
+    {
+        [$user, $company] = $this->workspace('Empty Hero Store');
+        StorefrontSetting::create([
+            'company_id' => $company->id,
+            'slug' => 'empty-hero-store',
+            'store_name' => 'Empty Hero Store',
+            'is_enabled' => true,
+        ]);
+
+        $empty = $this->get(route('storefront.catalogue', 'empty-hero-store'))
+            ->assertOk()
+            ->assertSee('hero-inner hero-inner--empty', false)
+            ->assertSee('Explore Product Gallery')
+            ->assertSee('Our collection is being prepared')
+            ->assertDontSee('<div class="hero-product-placeholder"', false);
+
+        $this->assertSame(1, preg_match('/<header class="hero">.*?<\/header>/s', $empty->getContent(), $emptyHero));
+        $this->assertStringNotContainsString('hero-product-placeholder', $emptyHero[0]);
+
+        $category = $this->category($user->id, $company->id, 'Available');
+        $this->product($user->id, $company->id, $category, 'Available Product', 'HERO-001', 2, 1000);
+        $this->get(route('storefront.catalogue', 'empty-hero-store'))
+            ->assertOk()
+            ->assertDontSee('hero-inner hero-inner--empty', false)
+            ->assertSee('Featured product')
+            ->assertSee('<div class="hero-product-placeholder"', false)
+            ->assertSee('Available Product');
+    }
+
     public function test_business_owner_can_choose_one_of_ten_storefront_color_themes(): void
     {
         [$user, $company] = $this->workspace('Theme Store');

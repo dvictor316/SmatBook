@@ -46,7 +46,7 @@
     <div class="container">
         <div class="row align-items-center g-5">
             <div class="col-lg-6">
-                <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1000" class="about-image" alt="Mission">
+                <img src="{{ asset('images/landing/jos-fruit-stall.jpg') }}" class="about-image" alt="A fruit stall at a market in Jos, Nigeria" width="1000" height="668" loading="lazy">
             </div>
             <div class="col-lg-6">
                 <div class="about-label">01. Our Mission</div>

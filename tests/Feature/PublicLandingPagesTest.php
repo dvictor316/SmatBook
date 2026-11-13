@@ -40,6 +40,27 @@ class PublicLandingPagesTest extends TestCase
         $this->assertSame(0, substr_count($html, 'class="sb-footer"'));
     }
 
+    public function test_public_pages_show_local_market_photos_and_keep_the_contact_form(): void
+    {
+        foreach ([
+            'landing.index' => 'lagos-market-vendor.jpg',
+            'landing.about' => 'jos-fruit-stall.jpg',
+            'landing.contact' => 'nigerian-market-street.jpg',
+        ] as $routeName => $image) {
+            $this->assertFileExists(public_path('images/landing/'.$image));
+            $this->get(route($routeName))
+                ->assertOk()
+                ->assertSee(asset('images/landing/'.$image), false);
+        }
+
+        $this->get(route('landing.contact'))
+            ->assertOk()
+            ->assertSee('action="'.route('contact.store').'"', false)
+            ->assertSee('name="fullname"', false)
+            ->assertSee('name="email"', false)
+            ->assertSee('name="message"', false);
+    }
+
     public function test_public_and_pricing_pages_include_the_branded_footer(): void
     {
         foreach (['landing.index', 'landing.about', 'blog.index', 'membership-plans'] as $routeName) {

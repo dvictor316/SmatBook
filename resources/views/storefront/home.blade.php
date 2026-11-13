@@ -27,6 +27,7 @@
         .hero{position:relative;overflow:hidden;background:radial-gradient(ellipse at 73% 28%,rgba(215,169,40,.18),transparent 34%),linear-gradient(116deg,var(--navy-deep),#082d61 70%,#123e78);color:#fff}
         .hero:after{content:"";position:absolute;width:440px;height:440px;right:-145px;top:-210px;border:1px solid rgba(215,169,40,.32);border-radius:50%;box-shadow:0 0 0 36px rgba(215,169,40,.04),0 0 0 78px rgba(215,169,40,.035);pointer-events:none}
         .hero-inner{position:relative;z-index:1;max-width:1380px;margin:auto;min-height:530px;padding:68px 26px;display:grid;grid-template-columns:1fr 1.02fr;align-items:center;gap:64px}
+        .hero-inner--empty{grid-template-columns:minmax(0,1fr)}
         .eyebrow{display:flex;align-items:center;gap:10px;margin:0 0 20px;color:#f0ca66;font-size:.73rem;font-weight:850;letter-spacing:.19em;text-transform:uppercase}
         .eyebrow:before{content:"";width:28px;height:2px;background:var(--red)}
         .hero h1{max-width:650px;margin:0 0 20px;font-family:Georgia,"Times New Roman",serif;font-size:clamp(3rem,6.4vw,6rem);font-weight:500;line-height:.98;letter-spacing:-.045em}
@@ -128,7 +129,7 @@
 @include('storefront.partials.mobile-menu-script')
 
 <header class="hero">
-    <div class="hero-inner">
+    <div class="hero-inner{{ $featuredProduct ? '' : ' hero-inner--empty' }}">
         <div class="reveal">
             <p class="eyebrow">Welcome to our store</p>
             <h1>{{ $store->store_name }}</h1>
@@ -154,8 +155,6 @@
                     <span class="d-block small mt-1">{{ $featuredStock > 0 ? $featuredProduct->formatStockQuantity($featuredStock) . ' available' : 'Out of stock' }}</span>
                 </div>
             </article>
-        @else
-            <div class="hero-product-placeholder" aria-hidden="true">✦</div>
         @endif
     </div>
 </header>

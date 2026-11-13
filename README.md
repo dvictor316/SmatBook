@@ -47,6 +47,17 @@ apply. A functioning email configuration is required for these verification code
 Social-only users can set an optional password through “Forgot Password” if they
 need to manage two-factor settings, which currently require a password.
 
+## Public page photos
+
+The locally hosted market photos on the home, About and Contact pages are from
+Pexels and used under the [Pexels License](https://www.pexels.com/license/):
+
+- [Lagos market vendor](https://www.pexels.com/photo/woman-selling-vegetables-on-a-market-on-a-street-14881680/)
+- [Jos fruit stall](https://www.pexels.com/photo/colorful-fruit-stall-in-jos-nigeria-market-37126238/)
+- [Nigerian market street](https://www.pexels.com/photo/vibrant-street-market-scene-in-nigeria-35855576/)
+
+The street photo is resized for the site. These are illustrative photos, not endorsements.
+
 ## SmartProbook blog
 
 Super admins can create and edit blog posts using the rich-text editor. Existing plain-text articles remain plain text until edited, and formatted articles are sanitized before saving and display. The cover image field supplies the article's main image.
