@@ -331,6 +331,15 @@ class OnlineStoreController extends Controller
             return $product;
         });
 
+        $bannerProduct = Product::withoutGlobalScopes()
+            ->where('company_id', $store->company_id)
+            ->where('status', 'active')
+            ->whereNotNull('image')
+            ->where('image', '<>', '')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->first();
+
         $orderToken = (string) Str::uuid();
 
         return view('storefront.catalogue', compact(
@@ -342,7 +351,8 @@ class OnlineStoreController extends Controller
             'selectedCategoryId',
             'search',
             'orderContact',
-            'orderToken'
+            'orderToken',
+            'bannerProduct'
         ));
     }
 

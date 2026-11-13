@@ -29,8 +29,10 @@
         .gallery-nav-links a:hover,.gallery-nav-links a[aria-current=page]{color:var(--navy)}
         .gallery-nav-links a[aria-current=page]{padding:10px 13px;background:var(--gold);color:var(--navy)}
         .gallery-nav-about{padding:9px 12px;border:1px solid rgba(215,169,40,.6);border-radius:3px}
-        .store-head{position:relative;overflow:hidden;padding:clamp(58px,9vw,116px) 24px;background:radial-gradient(ellipse at 82% 18%,rgba(215,169,40,.2),transparent 36%),linear-gradient(112deg,#041832,#062354 62%,#123e78);border-bottom:1px solid rgba(215,169,40,.4)}
-        .store-head:after{content:"";position:absolute;width:34vw;height:34vw;min-width:260px;min-height:260px;border:1px solid rgba(210,170,105,.25);border-radius:50%;right:-10vw;bottom:-26vw;box-shadow:0 0 0 32px rgba(210,170,105,.04),0 0 0 68px rgba(210,170,105,.035)}
+        .store-head{position:relative;isolation:isolate;overflow:hidden;padding:clamp(58px,9vw,116px) 24px;background:#062354;border-bottom:1px solid rgba(215,169,40,.4)}
+        .store-head-product-image{position:absolute;z-index:-2;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 42%;opacity:.2;filter:saturate(.72) contrast(.88)}
+        .store-head:before{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(90deg,rgba(4,24,50,.97) 0%,rgba(6,35,84,.93) 54%,rgba(6,35,84,.84) 100%),linear-gradient(0deg,rgba(6,35,84,.25),rgba(6,35,84,.25))}
+        .store-head:after{content:"";position:absolute;z-index:0;pointer-events:none;width:34vw;height:34vw;min-width:260px;min-height:260px;border:1px solid rgba(210,170,105,.25);border-radius:50%;right:-10vw;bottom:-26vw;box-shadow:0 0 0 32px rgba(210,170,105,.04),0 0 0 68px rgba(210,170,105,.035)}
         .store-head-inner{position:relative;z-index:1}
         .store-eyebrow{display:inline-flex;align-items:center;gap:10px;margin-bottom:20px;color:#f0ca66;font-size:.72rem;font-weight:800;letter-spacing:.2em;text-transform:uppercase}
         .store-eyebrow:before{content:"";width:30px;height:2px;background:var(--red)}
@@ -139,7 +141,10 @@
 @endphp
 <nav class="store-nav"><div class="store-nav-inner"><a class="brand" href="{{ $homeUrl }}"><img src="{{ $company->logo ? asset($company->logo) : asset('assets/img/logos.png') }}" alt=""><span>{{ $store->store_name }}</span></a><div class="store-menu">@include('storefront.partials.mobile-menu-button')<div class="gallery-nav-links" id="store-navigation"><a href="{{ $homeUrl }}">Home</a><a href="{{ $galleryUrl }}" aria-current="page">Product Gallery</a><a class="gallery-nav-about" href="{{ $aboutUrl }}">About Us</a><a href="#store-cart" class="btn btn-sm btn-outline-primary">Cart <span class="badge bg-primary" id="cart-count">0</span></a></div></div><form class="store-search" method="GET">@if($selectedCategoryId)<input type="hidden" name="category_id" value="{{ $selectedCategoryId }}">@endif<input class="form-control" name="q" value="{{ $search }}" placeholder="Search products"><button class="btn btn-primary" title="Search" aria-label="Search"><i class="fas fa-search"></i></button></form></div></nav>
 @include('storefront.partials.mobile-menu-script')
-<header class="store-head"><div class="store-head-inner"><span class="store-eyebrow">The official online store</span><h1>{{ $store->store_name }}</h1><p>{{ $store->description ?: 'Explore our available collection and send an order request directly to our team.' }}</p></div></header>
+<header class="store-head">
+    @if($bannerProduct?->image_url)<img class="store-head-product-image" src="{{ $bannerProduct->image_url }}" alt="" aria-hidden="true" fetchpriority="low">@endif
+    <div class="store-head-inner"><span class="store-eyebrow">The official online store</span><h1>{{ $store->store_name }}</h1><p>{{ $store->description ?: 'Explore our full collection and send an order request directly to our team.' }}</p></div>
+</header>
 <main class="store-main">
     @if(session('store_order_success'))
         <div class="alert alert-success">
