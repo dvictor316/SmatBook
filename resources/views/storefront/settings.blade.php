@@ -12,12 +12,9 @@
                 @if($invalidStockBranch)
                     <div class="alert alert-warning">The saved stock branch is no longer active. Select an active branch and save the store settings.</div>
                 @elseif($stockSummary !== null)
-                    <div class="alert {{ $stockSummary['active'] > 0 && $stockSummary['available'] === 0 ? 'alert-warning' : 'alert-info' }}">
-                        <strong>Online stock: {{ $stockSummary['available'] }} of {{ $stockSummary['active'] }} active product records available</strong>
-                        <div>Stock source: {{ $selectedBranch['name'] ?? 'Shared stock' }}. Variants are counted separately.</div>
-                        @if($stockSummary['active'] > 0 && $stockSummary['available'] === 0)
-                            <div>Check the selected stock branch and its product quantities and availability. Products stocked only in another branch are not shown online.</div>
-                        @endif
+                    <div class="alert alert-info">
+                        <strong>{{ $stockSummary['active'] }} active product records listed in the online store</strong>
+                        <div>Stock source: {{ $selectedBranch['name'] ?? 'Shared stock' }}. Variants are counted separately. Products with zero stock stay visible, but cannot be ordered until replenished.</div>
                     </div>
                 @endif
                 <form method="POST" action="{{ route('online-store.settings.update') }}">@csrf @method('PUT')
@@ -45,7 +42,7 @@
                     <div class="row g-3 mb-3"><div class="col-6"><label class="form-label">Phone</label><input class="form-control" name="contact_phone" value="{{ old('contact_phone', $setting->contact_phone) }}"></div><div class="col-6"><label class="form-label">Email</label><input class="form-control" type="email" name="contact_email" value="{{ old('contact_email', $setting->contact_email) }}"></div></div>
                     <div class="mb-3"><label class="form-label">WhatsApp number for order messages</label><input class="form-control" type="tel" name="owner_whatsapp_number" value="{{ old('owner_whatsapp_number', $setting->owner_whatsapp_number) }}" placeholder="+2348012345678"></div>
                     <div class="mb-3"><label class="form-label">Fulfilment Note</label><input class="form-control" name="fulfilment_note" value="{{ old('fulfilment_note', $setting->fulfilment_note) }}" placeholder="Orders confirmed within one business day"></div>
-                    <div class="alert alert-info small mb-3"><strong>Stock visibility:</strong> Products with no available stock at the selected branch are hidden from the public store.</div>
+                    <div class="alert alert-info small mb-3"><strong>Stock visibility:</strong> All active products are listed. Their selected branch stock quantity is shown, and ordering is disabled when the quantity is zero.</div>
                     <div class="form-check form-switch mb-4"><input type="hidden" name="is_enabled" value="0"><input class="form-check-input" type="checkbox" role="switch" name="is_enabled" value="1" id="storeEnabled" @checked(old('is_enabled', $setting->is_enabled))><label class="form-check-label fw-bold" for="storeEnabled">Publish store</label></div>
                     <button class="btn btn-primary w-100" type="submit"><i class="fas fa-floppy-disk me-1"></i> Save Store</button>
                     @if($setting->exists && $setting->is_enabled)<a class="btn btn-outline-primary w-100 mt-2" href="{{ route('storefront.catalogue', $setting->slug) }}" target="_blank"><i class="fas fa-arrow-up-right-from-square me-1"></i> Open Store</a>@endif

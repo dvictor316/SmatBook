@@ -620,42 +620,8 @@ class OnlineStoreController extends Controller
         ?array $stockBranch,
         string $table
     ): void {
-        // Match availableStoreStock() before pagination and variant grouping.
-        $columns = $stockBranch ? app(SchemaColumnCache::class)->columns('product_branch_stocks') : null;
-        $hasBranchStock = $columns !== null;
-        $hasCompanyColumn = $hasBranchStock && in_array('company_id', $columns, true);
-        $hasAvailabilityColumn = $hasBranchStock && in_array('is_available', $columns, true);
-        $sharedStock = static function ($stock) use ($table): void {
-            $stock->where("{$table}.stock", '>', 0)
-                ->orWhere("{$table}.stock_quantity", '>', 0);
-        };
-        $branchRows = static function (QueryBuilder $stocks) use ($table, $store, $hasCompanyColumn): void {
-            $stocks->selectRaw('1')
-                ->from('product_branch_stocks as store_stock')
-                ->whereColumn('store_stock.product_id', "{$table}.id");
-            if ($hasCompanyColumn) {
-                $stocks->where(fn ($tenant) => $tenant->where('store_stock.company_id', $store->company_id)
-                    ->orWhereNull('store_stock.company_id'));
-            }
-        };
-
-        $query->where(function ($available) use ($hasBranchStock, $hasAvailabilityColumn, $stockBranch, $sharedStock, $branchRows): void {
-            if (! $hasBranchStock) {
-                $available->where($sharedStock);
-                return;
-            }
-
-            $available->whereExists(function (QueryBuilder $stocks) use ($branchRows, $stockBranch, $hasAvailabilityColumn): void {
-                $branchRows($stocks);
-                $stocks->where('store_stock.branch_id', $stockBranch['id'])
-                    ->where('store_stock.quantity', '>', 0);
-                if ($hasAvailabilityColumn) {
-                    $stocks->where('store_stock.is_available', true);
-                }
-            })->orWhere(function ($fallback) use ($branchRows, $sharedStock): void {
-                $fallback->whereNotExists($branchRows)->where($sharedStock);
-            });
-        });
+        // Keep zero stock products visible in the public catalogue; checkout
+        // still validates the selected branch's quantity before accepting orders.
     }
 
     private function attachStoreStock(Collection $products, StorefrontSetting $store, ?array $stockBranch): void
@@ -680,7 +646,7 @@ class OnlineStoreController extends Controller
             $sharedStock = max(0, (float) ($product->stock ?? 0), (float) ($product->stock_quantity ?? 0));
             $available = $branchStock
                 ? ((! in_array('is_available', $columns, true) || $branchStock->is_available) ? max(0, (float) $branchStock->quantity) : 0)
-                : (($stockBranch && $columns !== null && $productStocks->isNotEmpty()) ? 0 : $sharedStock);
+                : $sharedStock;
             $product->setAttribute('storefront_available_stock', $available);
         }
     }
@@ -745,9 +711,7 @@ class OnlineStoreController extends Controller
             return max(0, (float) $branchStock->quantity);
         }
 
-        return $this->branchStocksForProduct($product, (int) $store->company_id)->exists()
-            ? 0
-            : max(0, $productStock);
+        return max(0, $productStock);
     }
 
     private function branchStockRow(Product $product, array $branch, int $companyId, bool $lockForUpdate = false): ?object

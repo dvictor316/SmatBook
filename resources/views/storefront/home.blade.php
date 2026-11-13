@@ -152,7 +152,7 @@
                     <h2>{{ $featuredProduct->name }}</h2>
                     @if(filled($featuredProduct->description))<p>{{ \Illuminate\Support\Str::limit(strip_tags($featuredProduct->description), 135) }}</p>@endif
                     <span class="hero-price">{{ \App\Support\GeoCurrency::format((float) $featuredProduct->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</span>
-                    <span class="d-block small mt-1">{{ $featuredStock > 0 ? $featuredProduct->formatStockQuantity($featuredStock) . ' available' : 'Unavailable online' }}</span>
+                    <span class="d-block small mt-1">{{ $featuredProduct->formatStockQuantity($featuredStock) }} in stock</span>
                 </div>
             </article>
         @endif
@@ -187,6 +187,7 @@
             <h2 id="product-motion-title">A closer look at {{ $featuredProduct->name }}</h2>
             <p>Explore our featured product in a smooth, animated 3D-style display.</p>
             <p class="product-motion-price">{{ \App\Support\GeoCurrency::format((float) $featuredProduct->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</p>
+            <p class="product-stock">{{ $featuredProduct->formatStockQuantity($featuredStock) }} in stock</p>
             <div class="product-motion-actions">
                 <a class="button button-gold" href="{{ $galleryUrl }}?q={{ urlencode($featuredProduct->name) }}">Explore this product</a>
                 <a class="button button-navy" href="{{ $galleryUrl }}">Browse all products</a>
@@ -224,7 +225,7 @@
         @if($carouselPages->isNotEmpty())
             <section class="section store-product-carousel" data-product-carousel data-page-count="{{ $carouselPages->count() }}" data-products-per-page="4" aria-label="Featured products">
                 <div class="section-heading">
-                    <div><p class="eyebrow">In stock now</p><h2>Shop the collection</h2></div>
+                    <div><p class="eyebrow">Our catalogue</p><h2>Shop the collection</h2></div>
                     <a class="text-link" href="{{ $galleryUrl }}">View the full gallery &rarr;</a>
                 </div>
                 <div class="product-carousel-viewport">
@@ -232,6 +233,7 @@
                         @foreach($carouselPages as $page)
                             <div class="product-carousel-slide" data-carousel-slide role="group" aria-roledescription="slide" aria-label="Product page {{ $loop->iteration }} of {{ $carouselPages->count() }}">
                                 @foreach($page as $product)
+                                    @php($carouselStock = (float) ($product->storefront_available_stock ?? max((float) ($product->stock ?? 0), (float) ($product->stock_quantity ?? 0))))
                                     <article class="carousel-product-card">
                                         <a class="carousel-product-image" href="{{ $galleryUrl }}?q={{ urlencode($product->name) }}" tabindex="0">
                                             @if($product->image_url)
@@ -243,6 +245,7 @@
                                         <div class="carousel-product-copy">
                                             <h3>{{ trim($product->name . ($product->variantLabel() !== '' ? ' · ' . $product->variantLabel() : '')) }}</h3>
                                             <p class="price">{{ \App\Support\GeoCurrency::format((float) $product->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</p>
+                                            <p class="product-stock">{{ $product->formatStockQuantity($carouselStock) }} in stock</p>
                                             <a class="small-button" href="{{ $galleryUrl }}?q={{ urlencode($product->name) }}">View product</a>
                                         </div>
                                     </article>
@@ -269,6 +272,7 @@
                 </div>
                 <div class="animated-products-grid">
                     @foreach($animatedProducts as $product)
+                        @php($animatedStock = (float) ($product->storefront_available_stock ?? max((float) ($product->stock ?? 0), (float) ($product->stock_quantity ?? 0))))
                         <article class="animated-product-card">
                             <a class="animated-product-image" href="{{ $galleryUrl }}?q={{ urlencode($product->name) }}" aria-label="View {{ $product->name }}">
                                 @if($product->image_url)
@@ -281,6 +285,7 @@
                                 <span class="product-eyebrow">Featured product</span>
                                 <h3>{{ trim($product->name . ($product->variantLabel() !== '' ? ' · ' . $product->variantLabel() : '')) }}</h3>
                                 <p class="price">{{ \App\Support\GeoCurrency::format((float) $product->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</p>
+                                <p class="product-stock">{{ $product->formatStockQuantity($animatedStock) }} in stock</p>
                                 <a class="small-button" href="{{ $galleryUrl }}?q={{ urlencode($product->name) }}">Explore product</a>
                             </div>
                         </article>
@@ -303,7 +308,7 @@
                                 <h3>{{ trim($product->name . ($product->variantLabel() !== '' ? ' · ' . $product->variantLabel() : '')) }}</h3><p class="sku">{{ $product->sku }}</p>
                                 @if(filled($product->description))<p class="description">{{ \Illuminate\Support\Str::limit(strip_tags($product->description), 130) }}</p>@endif
                                 <p class="price">{{ \App\Support\GeoCurrency::format((float) $product->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</p>
-                                <p class="product-stock">{{ $productStock > 0 ? $product->formatStockQuantity($productStock) . ' available' : 'Unavailable online' }}</p>
+                                <p class="product-stock">{{ $product->formatStockQuantity($productStock) }} in stock</p>
                                 <a class="small-button" href="{{ $galleryUrl }}?q={{ urlencode($product->name) }}">See product</a>
                             </div>
                         </article>
@@ -326,7 +331,7 @@
                                 <p class="eyebrow">From our collection</p><h3>{{ trim($product->name . ($product->variantLabel() !== '' ? ' · ' . $product->variantLabel() : '')) }}</h3><p class="sku">{{ $product->sku }}</p>
                                 <p class="description">{{ filled($product->description) ? \Illuminate\Support\Str::limit(strip_tags($product->description), 220) : 'Explore product details, current availability, and ordering options in our gallery.' }}</p>
                                 <p class="price">{{ \App\Support\GeoCurrency::format((float) $product->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</p>
-                                <p class="product-stock">{{ $productStock > 0 ? $product->formatStockQuantity($productStock) . ' available' : 'Unavailable online' }}</p>
+                                <p class="product-stock">{{ $product->formatStockQuantity($productStock) }} in stock</p>
                                 <a class="small-button" href="{{ $galleryUrl }}?q={{ urlencode($product->name) }}">View details</a>
                             </div>
                         </article>
@@ -349,7 +354,7 @@
                                 <h3>{{ trim($product->name . ($product->variantLabel() !== '' ? ' · ' . $product->variantLabel() : '')) }}</h3><p class="sku">{{ $product->sku }}</p>
                                 @if(filled($product->description))<p class="description">{{ \Illuminate\Support\Str::limit(strip_tags($product->description), 100) }}</p>@endif
                                 <p class="price">{{ \App\Support\GeoCurrency::format((float) $product->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</p>
-                                <p class="product-stock">{{ $productStock > 0 ? $product->formatStockQuantity($productStock) . ' available' : 'Unavailable online' }}</p>
+                                <p class="product-stock">{{ $product->formatStockQuantity($productStock) }} in stock</p>
                                 <a class="small-button" href="{{ $galleryUrl }}?q={{ urlencode($product->name) }}">See product</a>
                             </div>
                         </article>
