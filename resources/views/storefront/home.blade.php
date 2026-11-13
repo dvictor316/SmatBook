@@ -24,8 +24,10 @@
         .nav-links a:hover,.nav-links a[aria-current=page]{color:var(--navy)}
         .nav-gallery{padding:11px 16px;border-radius:4px;background:var(--gold);color:var(--navy)!important}
         .nav-about{padding:10px 13px;border:1px solid rgba(215,169,40,.55);border-radius:4px}
-        .hero{position:relative;overflow:hidden;background:radial-gradient(ellipse at 73% 28%,rgba(215,169,40,.18),transparent 34%),linear-gradient(116deg,var(--navy-deep),#082d61 70%,#123e78);color:#fff}
-        .hero:after{content:"";position:absolute;width:440px;height:440px;right:-145px;top:-210px;border:1px solid rgba(215,169,40,.32);border-radius:50%;box-shadow:0 0 0 36px rgba(215,169,40,.04),0 0 0 78px rgba(215,169,40,.035);pointer-events:none}
+        .hero{position:relative;isolation:isolate;overflow:hidden;background:#062354;color:#fff}
+        .hero-background-image{position:absolute;z-index:-2;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 42%;opacity:.48;filter:saturate(.78) contrast(.94) brightness(1.08)}
+        .hero:before{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(90deg,rgba(4,24,50,.8) 0%,rgba(6,35,84,.72) 58%,rgba(6,35,84,.62) 100%),linear-gradient(0deg,rgba(6,35,84,.12),rgba(6,35,84,.12))}
+        .hero:after{content:"";position:absolute;z-index:0;width:440px;height:440px;right:-145px;top:-210px;border:1px solid rgba(215,169,40,.32);border-radius:50%;box-shadow:0 0 0 36px rgba(215,169,40,.04),0 0 0 78px rgba(215,169,40,.035);pointer-events:none}
         .hero-inner{position:relative;z-index:1;max-width:1380px;margin:auto;min-height:530px;padding:68px 26px;display:grid;grid-template-columns:1fr 1.02fr;align-items:center;gap:64px}
         .hero-inner--empty{grid-template-columns:minmax(0,1fr)}
         .eyebrow{display:flex;align-items:center;gap:10px;margin:0 0 20px;color:#f0ca66;font-size:.73rem;font-weight:850;letter-spacing:.19em;text-transform:uppercase}
@@ -129,6 +131,7 @@
 @include('storefront.partials.mobile-menu-script')
 
 <header class="hero">
+    @if($featuredProduct?->image_url)<img class="hero-background-image" src="{{ $featuredProduct->image_url }}" alt="" aria-hidden="true" fetchpriority="low">@endif
     <div class="hero-inner{{ $featuredProduct ? '' : ' hero-inner--empty' }}">
         <div class="reveal">
             <p class="eyebrow">Welcome to our store</p>
