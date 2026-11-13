@@ -9,6 +9,17 @@
         <div class="col-xl-4">
             <section class="border rounded bg-white shadow-sm p-4">
                 <div class="d-flex justify-content-between align-items-start gap-3 mb-3"><div><h4 class="mb-1">Store Settings</h4></div><span class="badge {{ $setting->is_enabled ? 'bg-success' : 'bg-secondary' }}">{{ $setting->is_enabled ? 'Live' : 'Offline' }}</span></div>
+                @if($invalidStockBranch)
+                    <div class="alert alert-warning">The saved stock branch is no longer active. Select an active branch and save the store settings.</div>
+                @elseif($stockSummary !== null)
+                    <div class="alert {{ $stockSummary['active'] > 0 && $stockSummary['available'] === 0 ? 'alert-warning' : 'alert-info' }}">
+                        <strong>Online stock: {{ $stockSummary['available'] }} of {{ $stockSummary['active'] }} active product records available</strong>
+                        <div>Stock source: {{ $selectedBranch['name'] ?? 'Shared stock' }}. Variants are counted separately.</div>
+                        @if($stockSummary['active'] > 0 && $stockSummary['available'] === 0)
+                            <div>Check the selected stock branch and its product quantities and availability. Products stocked only in another branch are not shown online.</div>
+                        @endif
+                    </div>
+                @endif
                 <form method="POST" action="{{ route('online-store.settings.update') }}">@csrf @method('PUT')
                     <div class="mb-3"><label class="form-label">Store Name *</label><input class="form-control" name="store_name" value="{{ old('store_name', $setting->store_name) }}" required></div>
                     <div class="mb-3"><label class="form-label" for="storeTheme">Store theme</label><select class="form-select" name="store_theme" id="storeTheme" required>@foreach($storeThemes as $themeKey => $theme)<option value="{{ $themeKey }}" @selected(old('store_theme', $setting->store_theme ?: 'classic') === $themeKey)>{{ $theme['label'] }}</option>@endforeach</select></div>

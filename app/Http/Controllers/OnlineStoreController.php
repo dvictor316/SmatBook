@@ -13,6 +13,7 @@ use App\Notifications\OnlineStoreOrderPlaced;
 use App\Services\WhatsAppOrderNotifier;
 use App\Support\BranchInventoryService;
 use App\Support\LedgerService;
+use App\Support\SchemaColumnCache;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
@@ -43,16 +44,26 @@ class OnlineStoreController extends Controller
             'slug' => $this->uniqueSlug($company->name ?: 'store', $companyId),
             'store_name' => $company->name ?: 'Online Store',
         ]);
-        $selectedBranch = $branches->firstWhere('id', (string) $setting->stock_branch_id)
-            ?: $branches->firstWhere('id', trim((string) session('active_branch_id', '')))
-            ?: $branches->firstWhere('is_active', true)
-            ?: $branches->first();
+        $configuredBranchId = trim((string) $setting->stock_branch_id);
+        $selectedBranch = $configuredBranchId !== ''
+            ? $branches->firstWhere('id', $configuredBranchId)
+            : ($setting->exists
+                ? $branches->first()
+                : ($branches->firstWhere('id', trim((string) session('active_branch_id', ''))) ?: $branches->first()));
+        $invalidStockBranch = $configuredBranchId !== '' && ! $selectedBranch;
         $setting->stock_branch_id = $selectedBranch['id'] ?? null;
         $setting->stock_branch_name = $selectedBranch['name'] ?? null;
+        $stockSummary = null;
+        if ($setting->exists && $setting->is_enabled && ! $invalidStockBranch) {
+            $products = Product::withoutGlobalScopes()->where('company_id', $companyId)->where('status', 'active');
+            $activeCount = (clone $products)->count();
+            $this->filterAvailableStoreProducts($products, $setting, $selectedBranch, 'products');
+            $stockSummary = ['active' => $activeCount, 'available' => $products->count()];
+        }
         $orders = OnlineStoreOrder::with(['items', 'sale'])->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $storeThemes = StorefrontSetting::themes();
 
-        return view('storefront.settings', compact('setting', 'orders', 'storeThemes', 'branches'));
+        return view('storefront.settings', compact('setting', 'orders', 'storeThemes', 'branches', 'stockSummary', 'selectedBranch', 'invalidStockBranch'));
     }
 
     public function updateSettings(Request $request): RedirectResponse
@@ -306,8 +317,7 @@ class OnlineStoreController extends Controller
                 ->orderBy('id')
                 ->get();
         }
-        $this->attachStoreStock($variantProducts, $store, $stockBranch);
-        $this->attachStoreStock($products->getCollection(), $store, $stockBranch);
+        $this->attachStoreStock($variantProducts->concat($products->getCollection()), $store, $stockBranch);
         $variantsByGroup = $variantProducts->groupBy('variant_group_id');
         $products->getCollection()->transform(function (Product $product) use ($variantsByGroup) {
             $variants = filled($product->variant_group_id)
@@ -607,9 +617,10 @@ class OnlineStoreController extends Controller
         string $table
     ): void {
         // Match availableStoreStock() before pagination and variant grouping.
-        $hasBranchStock = $stockBranch && Schema::hasTable('product_branch_stocks');
-        $hasCompanyColumn = $hasBranchStock && Schema::hasColumn('product_branch_stocks', 'company_id');
-        $hasAvailabilityColumn = $hasBranchStock && Schema::hasColumn('product_branch_stocks', 'is_available');
+        $columns = $stockBranch ? app(SchemaColumnCache::class)->columns('product_branch_stocks') : null;
+        $hasBranchStock = $columns !== null;
+        $hasCompanyColumn = $hasBranchStock && in_array('company_id', $columns, true);
+        $hasAvailabilityColumn = $hasBranchStock && in_array('is_available', $columns, true);
         $sharedStock = static function ($stock) use ($table): void {
             $stock->where("{$table}.stock", '>', 0)
                 ->orWhere("{$table}.stock_quantity", '>', 0);
@@ -645,11 +656,28 @@ class OnlineStoreController extends Controller
 
     private function attachStoreStock(Collection $products, StorefrontSetting $store, ?array $stockBranch): void
     {
+        $columns = $stockBranch ? app(SchemaColumnCache::class)->columns('product_branch_stocks') : null;
+        $stocks = collect();
+        if ($columns !== null && $products->isNotEmpty()) {
+            $productIds = $products->pluck('id')->unique()->values();
+            foreach ($productIds->chunk(500) as $ids) {
+                $query = DB::table('product_branch_stocks')->whereIn('product_id', $ids->all());
+                if (in_array('company_id', $columns, true)) {
+                    $query->where(fn ($tenant) => $tenant->where('company_id', $store->company_id)->orWhereNull('company_id'));
+                }
+                $stocks = $stocks->concat($query->get());
+            }
+        }
+        $stocksByProduct = $stocks->groupBy('product_id');
+
         foreach ($products as $product) {
-            $product->setAttribute(
-                'storefront_available_stock',
-                $this->availableStoreStock($product, $store, $stockBranch)
-            );
+            $productStocks = $stocksByProduct->get($product->id, collect());
+            $branchStock = $stockBranch ? $productStocks->firstWhere('branch_id', $stockBranch['id']) : null;
+            $sharedStock = max(0, (float) ($product->stock ?? 0), (float) ($product->stock_quantity ?? 0));
+            $available = $branchStock
+                ? ((! in_array('is_available', $columns, true) || $branchStock->is_available) ? max(0, (float) $branchStock->quantity) : 0)
+                : (($stockBranch && $columns !== null && $productStocks->isNotEmpty()) ? 0 : $sharedStock);
+            $product->setAttribute('storefront_available_stock', $available);
         }
     }
 

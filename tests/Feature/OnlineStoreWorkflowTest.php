@@ -259,6 +259,85 @@ class OnlineStoreWorkflowTest extends TestCase
         $this->assertDatabaseHas('products', ['id' => $sharedId, 'stock' => 4]);
     }
 
+    public function test_store_settings_report_actual_online_stock_and_default_branch(): void
+    {
+        [$user, $company] = $this->workspace('Stock Diagnostics');
+        $branches = [
+            ['id' => 'branch-a', 'name' => 'Headquarters', 'is_active' => true],
+            ['id' => 'branch-b', 'name' => 'Other Branch', 'is_active' => true],
+        ];
+        DB::table('settings')->insert([
+            'key' => 'branches_json_company_' . $company->id,
+            'value' => json_encode($branches),
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $category = $this->category($user->id, $company->id, 'Items');
+        $product = $this->product($user->id, $company->id, $category, 'Other Branch Item', 'OTHER', 5, 1000);
+        DB::table('product_branch_stocks')->insert([
+            'product_id' => $product, 'company_id' => $company->id,
+            'branch_id' => 'branch-b', 'branch_name' => 'Other Branch', 'quantity' => 5,
+            'is_available' => true, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $store = StorefrontSetting::create([
+            'company_id' => $company->id, 'slug' => 'stock-diagnostics',
+            'store_name' => 'Stock Diagnostics', 'is_enabled' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['current_tenant_id' => $company->id, 'active_branch_id' => 'branch-b', 'active_branch_name' => 'Other Branch'])
+            ->get(route('online-store.settings'))
+            ->assertOk()
+            ->assertSee('Online stock: 0 of 1 active product records available')
+            ->assertSee('Stock source: Headquarters')
+            ->assertSee('Products stocked only in another branch are not shown online.');
+
+        $this->get(route('storefront.catalogue', $store->slug))->assertOk()->assertDontSee('Other Branch Item');
+        $store->update(['stock_branch_id' => 'branch-b', 'stock_branch_name' => 'Other Branch']);
+        $this->get(route('online-store.settings'))->assertOk()
+            ->assertSee('Online stock: 1 of 1 active product records available')
+            ->assertSee('Stock source: Other Branch');
+        $this->get(route('storefront.catalogue', $store->slug))->assertOk()->assertSee('Other Branch Item');
+
+        $store->update(['stock_branch_id' => 'missing', 'stock_branch_name' => 'Old Branch']);
+        $this->get(route('online-store.settings'))->assertOk()
+            ->assertSee('The saved stock branch is no longer active.')
+            ->assertDontSee('Online stock:');
+    }
+
+    public function test_store_batches_branch_stock_queries_for_product_cards(): void
+    {
+        [$user, $company] = $this->workspace('Stock Batch');
+        DB::table('settings')->insert([
+            'key' => 'branches_json_company_' . $company->id,
+            'value' => json_encode([['id' => 'branch-a', 'name' => 'Main', 'is_active' => true]]),
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $category = $this->category($user->id, $company->id, 'Items');
+        for ($i = 1; $i <= 15; $i++) {
+            $id = $this->product($user->id, $company->id, $category, 'Item ' . $i, 'BATCH-' . $i, 5, 1000);
+            DB::table('product_branch_stocks')->insert([
+                'product_id' => $id, 'company_id' => $company->id,
+                'branch_id' => 'branch-a', 'branch_name' => 'Main', 'quantity' => 5,
+                'is_available' => true, 'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+        StorefrontSetting::create([
+            'company_id' => $company->id, 'slug' => 'stock-batch', 'store_name' => 'Stock Batch',
+            'stock_branch_id' => 'branch-a', 'is_enabled' => true,
+        ]);
+
+        foreach (['storefront.catalogue', 'storefront.products'] as $route) {
+            DB::flushQueryLog();
+            DB::enableQueryLog();
+            $response = $this->get(route($route, 'stock-batch'));
+            $queries = DB::getQueryLog();
+            DB::disableQueryLog();
+            $response->assertOk()->assertSee('Item 1')->assertSee('Item 15');
+            $stockQueries = collect($queries)->filter(fn ($query) => preg_match('/^select \* from [`"]?product_branch_stocks[`"]? /i', $query['query']));
+            $this->assertCount(1, $stockQueries, 'Stock cards should be loaded in one batch.');
+        }
+    }
+
     public function test_storefront_categories_link_to_products_in_that_category(): void
     {
         [$user, $company] = $this->workspace('Shoe Store');
