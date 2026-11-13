@@ -242,7 +242,7 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertViewHas('products', fn ($products) => $products->total() === 3
                 && (int) $products->getCollection()->firstWhere('name', 'Running Shoe')->id === $availableVariant)
             ->assertViewHas('categories', fn ($categories) => $categories->firstWhere('name', 'Footwear')->products_count === 3
-                && $categories->firstWhere('name', 'Unavailable')->products_count === 0);
+                && !$categories->contains(fn ($category) => $category->name === 'Unavailable'));
         $this->get(route('storefront.products', 'branch-availability') . '?q=SHOE-41')
             ->assertOk()->assertDontSee('Running Shoe')
             ->assertViewHas('products', fn ($products) => $products->total() === 0);
@@ -304,7 +304,7 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertDontSee('Online stock:');
     }
 
-    public function test_store_can_opt_in_to_show_unavailable_products_without_allowing_orders(): void
+    public function test_store_hides_unavailable_products_even_when_legacy_visibility_flag_is_set(): void
     {
         [$user, $company] = $this->workspace('Restore Catalogue');
         $category = $this->category($user->id, $company->id, 'Items');
@@ -334,16 +334,15 @@ class OnlineStoreWorkflowTest extends TestCase
             ->put(route('online-store.settings.update'), $settings)->assertSessionHasNoErrors();
 
         $this->get(route('storefront.catalogue', 'restore-catalogue'))->assertOk()
-            ->assertSee('Unavailable Item')->assertDontSee('Inactive Item')
-            ->assertViewHas('categories', fn ($categories) => $categories->first()->products_count === 2);
+            ->assertDontSee('Unavailable Item')->assertDontSee('Inactive Item')
+            ->assertViewHas('categories', fn ($categories) => $categories->first()->products_count === 1);
         $gallery = $this->get(route('storefront.products', 'restore-catalogue'))->assertOk()
-            ->assertSee('Unavailable Item')->assertSee('Unavailable online')
-            ->assertSee('SIZE-2')->assertDontSee('Inactive Item')
-            ->assertViewHas('products', fn ($products) => $products->total() === 2
+            ->assertDontSee('Unavailable Item')->assertDontSee('Unavailable online')
+            ->assertDontSee('SIZE-2')->assertDontSee('Inactive Item')
+            ->assertViewHas('products', fn ($products) => $products->total() === 1
                 && (int) $products->getCollection()->firstWhere('name', 'Variant Item')->id === $availableVariant);
-        $this->assertMatchesRegularExpression('/<button[^>]*aria-label="Add Unavailable Item to cart"[^>]*disabled/', $gallery->getContent());
         $this->get(route('storefront.products', 'restore-catalogue') . '?q=SIZE-2')
-            ->assertOk()->assertSee('SIZE-2')->assertSee('Unavailable online');
+            ->assertOk()->assertDontSee('SIZE-2')->assertDontSee('Unavailable online');
         $this->post(route('storefront.orders.store', 'restore-catalogue'), [
             'order_token' => '00000000-0000-4000-8000-000000000033',
             'customer_phone' => '08000000000',
@@ -415,12 +414,12 @@ class OnlineStoreWorkflowTest extends TestCase
         $this->assertFalse($otherStore->fresh()->show_unavailable_products);
         $this->assertDatabaseHas('products', ['id' => $productId, 'stock' => 0, 'stock_quantity' => 0]);
         $this->get(route('storefront.catalogue', $store->slug))->assertOk()
-            ->assertSee('Blinqit Item')->assertDontSee('Our collection is being prepared')
-            ->assertViewHas('categories', fn ($categories) => $categories->first()->products_count === 1);
-        $this->get(route('storefront.products', $store->slug))->assertOk()->assertSee('Blinqit Item');
+            ->assertDontSee('Blinqit Item')->assertSee('Our collection is being prepared')
+            ->assertViewHas('categories', fn ($categories) => $categories->isEmpty());
+        $this->get(route('storefront.products', $store->slug))->assertOk()->assertDontSee('Blinqit Item');
     }
 
-    public function test_store_can_display_catalogue_when_every_product_is_unavailable(): void
+    public function test_store_hides_products_and_categories_when_every_product_is_unavailable(): void
     {
         [$user, $company] = $this->workspace('Empty Stock Catalogue');
         $category = $this->category($user->id, $company->id, 'Essentials');
@@ -433,12 +432,11 @@ class OnlineStoreWorkflowTest extends TestCase
         ]);
 
         $this->get(route('storefront.catalogue', 'empty-stock-catalogue'))
-            ->assertOk()->assertSee('Flour')->assertSee('Cereal')->assertSee('Unavailable online')
-            ->assertDontSee('Our collection is being prepared')
-            ->assertViewHas('categories', fn ($categories) => $categories->first()->products_count === 2);
+            ->assertOk()->assertDontSee('Flour')->assertDontSee('Cereal')->assertSee('Our collection is being prepared')
+            ->assertViewHas('categories', fn ($categories) => $categories->isEmpty());
         $this->get(route('storefront.products', 'empty-stock-catalogue') . '?per_page=1')
-            ->assertOk()->assertSee('Unavailable online')
-            ->assertViewHas('products', fn ($products) => $products->total() === 2 && $products->count() === 1);
+            ->assertOk()->assertDontSee('Flour')->assertDontSee('Cereal')->assertDontSee('Unavailable online')
+            ->assertViewHas('products', fn ($products) => $products->total() === 0 && $products->count() === 0);
     }
 
     public function test_storefront_categories_link_to_products_in_that_category(): void

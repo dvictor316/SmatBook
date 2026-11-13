@@ -224,7 +224,7 @@
         @if($carouselPages->isNotEmpty())
             <section class="section store-product-carousel" data-product-carousel data-page-count="{{ $carouselPages->count() }}" data-products-per-page="4" aria-label="Featured products">
                 <div class="section-heading">
-                    <div><p class="eyebrow">{{ $store->show_unavailable_products ? 'Explore our products' : 'On the shelves now' }}</p><h2>Shop the collection</h2></div>
+                    <div><p class="eyebrow">In stock now</p><h2>Shop the collection</h2></div>
                     <a class="text-link" href="{{ $galleryUrl }}">View the full gallery &rarr;</a>
                 </div>
                 <div class="product-carousel-viewport">
