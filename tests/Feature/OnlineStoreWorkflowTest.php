@@ -396,6 +396,8 @@ class OnlineStoreWorkflowTest extends TestCase
                 ->assertSeeInOrder([
                     "document.documentElement.classList.add('store-nav-enhanced')",
                     'css/storefront-theme.css',
+                    'class="store-menu"',
+                    'aria-controls="store-navigation"',
                     'id="store-navigation"',
                 ], false)
                 ->assertSee("document.documentElement.classList.remove('store-nav-enhanced')", false);
