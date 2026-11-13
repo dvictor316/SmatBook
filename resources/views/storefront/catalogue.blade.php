@@ -338,14 +338,9 @@
                     <div class="checkout-actions">
                         <div class="checkout-actions-copy">
                             <small>{{ $store->fulfilment_note ?: 'Phone number is the only required detail. The business will confirm availability, payment, and delivery.' }}</small>
-                            @if($orderContact['whatsapp'])
-                                <small>WhatsApp requests do not reserve stock. Place an order to reserve the items in the store.</small>
-                            @endif
+                            <small>Placing your order reserves the selected stock. After your order is received, you can send its reference to the store on WhatsApp.</small>
                         </div>
                         <div class="checkout-buttons">
-                            @if($orderContact['whatsapp'])
-                                <button class="btn btn-success" id="send-cart-whatsapp" type="button" disabled><i class="fab fa-whatsapp me-2"></i>Send purchase request to WhatsApp</button>
-                            @endif
                             <button class="btn-order" id="place-store-order" type="submit" disabled><i class="fas fa-paper-plane me-2"></i>Place Order &amp; Reserve Stock</button>
                         </div>
                     </div>
@@ -364,10 +359,7 @@
         const empty = document.getElementById('cart-empty');
         const submit = document.getElementById('place-store-order');
         const orderForm = document.getElementById('store-order-form');
-        const whatsappButton = document.getElementById('send-cart-whatsapp');
         const currency = @json($company->currency_code ?: 'NGN');
-        const whatsappNumber = @json($orderContact['whatsapp']);
-        const storeName = @json($store->store_name);
         const storageWarning = document.getElementById('cart-storage-warning');
         function warnStorage(error) {
             console.warn('Store cart could not access browser storage.', error);
@@ -515,7 +507,6 @@
             table.hidden = cart.size === 0;
             empty.hidden = cart.size > 0;
             submit.disabled = cart.size === 0;
-            if (whatsappButton) whatsappButton.disabled = cart.size === 0;
             document.getElementById('cart-total').textContent = formatMoney(total);
             document.getElementById('cart-count').textContent = String(count);
         }
@@ -541,35 +532,6 @@
                 document.getElementById('store-cart').scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
         });
-
-        function purchaseRequestMessage() {
-            const customerName = document.querySelector('[name="customer_name"]');
-            const customerPhone = document.querySelector('[name="customer_phone"]');
-            customerName.value = customerName.value.trim();
-            customerPhone.value = customerPhone.value.trim();
-            if (!customerPhone.reportValidity()) return null;
-
-            const total = Array.from(cart.values()).reduce((sum, item) => sum + item.price * item.quantity, 0);
-            const itemLines = Array.from(cart.values()).map((item) =>
-                `- ${item.name} (${item.sku || 'no SKU'}) x ${item.quantity} = ${formatMoney(item.price * item.quantity)}`
-            ).join('\n');
-            const lines = [
-                `Hello ${storeName}, I would like to purchase these items:`,
-                itemLines,
-                `Estimated total: ${formatMoney(total)}`,
-                `Phone: ${customerPhone.value}`,
-                'Please confirm current stock, final price and fulfilment. I understand this request does not reserve stock.'
-            ];
-            if (customerName.value) lines.splice(3, 0, `Name: ${customerName.value}`);
-            return lines.join('\n\n');
-        }
-
-        if (whatsappButton) {
-            whatsappButton.addEventListener('click', () => {
-                const message = purchaseRequestMessage();
-                if (message) window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
-            });
-        }
 
         @if(session('store_order_success'))
             try {
