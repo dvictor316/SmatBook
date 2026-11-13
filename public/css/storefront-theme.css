@@ -164,14 +164,19 @@ body[data-store-theme] .store-nav {
     line-height: 1.5;
 }
 
+.product-meta span[hidden],
+.checkout-cart-box .table[hidden] {
+    display: none !important;
+}
+
 .store-menu-toggle:focus-visible {
     outline: 3px solid var(--theme-accent);
     outline-offset: 2px;
 }
 
 @media (max-width: 767px) {
-    body.store-nav-enhanced .store-nav .nav-inner,
-    body.store-nav-enhanced .store-nav .store-nav-inner {
+    html.store-nav-enhanced .store-nav .nav-inner,
+    html.store-nav-enhanced .store-nav .store-nav-inner {
         position: relative;
         display: flex;
         flex-direction: row;
@@ -180,19 +185,19 @@ body[data-store-theme] .store-nav {
         gap: 10px;
     }
 
-    body.store-nav-enhanced .store-nav .brand {
+    html.store-nav-enhanced .store-nav .brand {
         flex: 1 1 0;
         min-width: 0;
         max-width: none;
     }
 
-    body.store-nav-enhanced .store-nav .brand span {
+    html.store-nav-enhanced .store-nav .brand span {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
 
-    body.store-nav-enhanced .store-menu-toggle {
+    html.store-nav-enhanced .store-menu-toggle {
         display: inline-flex;
         width: 44px;
         height: 44px;
@@ -216,7 +221,7 @@ body[data-store-theme] .store-nav {
         background: currentColor;
     }
 
-    body.store-nav-enhanced .store-nav #store-navigation {
+    html.store-nav-enhanced .store-nav #store-navigation {
         position: absolute;
         top: 100%;
         right: 12px;
@@ -231,14 +236,14 @@ body[data-store-theme] .store-nav {
         box-shadow: 0 12px 30px rgba(6, 35, 84, .16);
     }
 
-    body.store-nav-enhanced .store-nav #store-navigation.is-open {
+    html.store-nav-enhanced .store-nav #store-navigation.is-open {
         display: flex;
         flex-direction: column;
         align-items: stretch;
         gap: 4px;
     }
 
-    body.store-nav-enhanced .store-nav #store-navigation a {
+    html.store-nav-enhanced .store-nav #store-navigation a {
         display: flex;
         min-height: 44px;
         align-items: center;
@@ -247,9 +252,119 @@ body[data-store-theme] .store-nav {
         font-size: .9rem;
     }
 
-    body.store-nav-enhanced .store-nav .store-search {
+    html.store-nav-enhanced .store-nav .store-search {
         order: 3;
         width: 100%;
+    }
+}
+
+@media (max-width: 760px) {
+    .product .product-body,
+    .product .product-purchase,
+    .product .quantity,
+    .product .product-options-row {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .product .product-options-row {
+        flex-direction: column;
+        align-items: stretch;
+        overflow: visible;
+    }
+
+    .product .product-size-picker {
+        flex: 0 1 auto;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .product .product-meta {
+        flex-wrap: wrap;
+        max-width: 100%;
+    }
+
+    .product .product-meta span {
+        min-width: 0;
+        max-width: 100%;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .product .quantity {
+        flex-wrap: wrap;
+    }
+
+    .product .quantity input {
+        flex: 0 1 88px;
+        min-width: 0;
+    }
+
+    .product .quantity .add-to-cart {
+        flex: 1 1 140px;
+        min-width: 0;
+        white-space: normal;
+    }
+}
+
+@media (max-width: 760px) {
+    .checkout-cart-box .table-responsive {
+        overflow: visible;
+    }
+
+    .checkout-cart-box .table,
+    .checkout-cart-box .table tbody,
+    .checkout-cart-box .table tfoot,
+    .checkout-cart-box .table tr {
+        display: block;
+        width: 100%;
+    }
+
+    .checkout-cart-box .table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    .checkout-cart-box .table tbody tr {
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255,255,255,.22);
+    }
+
+    .checkout-cart-box .table tbody td {
+        display: grid;
+        grid-template-columns: minmax(75px, 1fr) minmax(0, 1.5fr);
+        align-items: center;
+        gap: 8px;
+        padding: 8px 4px;
+        border: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .checkout-cart-box .table tbody td:first-child {
+        display: block;
+    }
+
+    .checkout-cart-box .table tbody td:nth-child(2)::before { content: "Unit price"; }
+    .checkout-cart-box .table tbody td:nth-child(3)::before { content: "Quantity"; }
+    .checkout-cart-box .table tbody td:nth-child(4)::before { content: "Subtotal"; }
+
+    .checkout-cart-box .table tbody td:last-child {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .checkout-cart-box .table tfoot tr {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+
+    .checkout-cart-box .table tfoot th {
+        padding: 12px 4px;
     }
 }
 

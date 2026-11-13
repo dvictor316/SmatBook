@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    @include('storefront.partials.mobile-menu-bootstrap')
     <meta name="theme-color" content="#062354">
     <title>About {{ $store->store_name }} | Online Store</title>
     <meta name="description" content="{{ str($store->description ?: 'Learn more about ' . $store->store_name . '.')->limit(155) }}">

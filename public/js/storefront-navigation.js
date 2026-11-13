@@ -3,7 +3,10 @@
 
     const button = document.querySelector('.store-menu-toggle');
     const menu = document.getElementById('store-navigation');
-    if (!button || !menu) return;
+    if (!button || !menu) {
+        document.documentElement.classList.remove('store-nav-enhanced');
+        return;
+    }
 
     const compact = window.matchMedia('(max-width: 767px)');
     const setOpen = (open) => {
@@ -28,5 +31,4 @@
     });
     compact.addEventListener('change', () => setOpen(false));
     window.addEventListener('pageshow', () => setOpen(false));
-    document.body.classList.add('store-nav-enhanced');
 })();

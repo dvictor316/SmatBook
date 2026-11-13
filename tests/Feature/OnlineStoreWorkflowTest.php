@@ -392,7 +392,13 @@ class OnlineStoreWorkflowTest extends TestCase
                 ->assertOk()
                 ->assertSee('aria-controls="store-navigation"', false)
                 ->assertSee('id="store-navigation"', false)
-                ->assertSee('js/storefront-navigation.js');
+                ->assertSee('js/storefront-navigation.js')
+                ->assertSeeInOrder([
+                    "document.documentElement.classList.add('store-nav-enhanced')",
+                    'css/storefront-theme.css',
+                    'id="store-navigation"',
+                ], false)
+                ->assertSee("document.documentElement.classList.remove('store-nav-enhanced')", false);
         }
 
         $this->get(route('storefront.products', 'mobile-store'))

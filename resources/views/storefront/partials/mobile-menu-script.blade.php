@@ -1,1 +1,1 @@
-<script defer src="{{ asset('js/storefront-navigation.js') }}?v={{ filemtime(public_path('js/storefront-navigation.js')) }}"></script>
+<script defer src="{{ asset('js/storefront-navigation.js') }}?v={{ filemtime(public_path('js/storefront-navigation.js')) }}" onerror="document.documentElement.classList.remove('store-nav-enhanced')"></script>
