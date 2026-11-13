@@ -47,6 +47,14 @@ apply. A functioning email configuration is required for these verification code
 Social-only users can set an optional password through “Forgot Password” if they
 need to manage two-factor settings, which currently require a password.
 
+## Online store product visibility
+
+By default, the online store hides products without available stock in its
+fulfilment branch. A business owner can enable **Show unavailable products in the
+catalogue** in Online Store settings to list them as well. These products remain
+unavailable for cart and online orders; update the branch inventory to make them
+orderable. The setting affects only that business's store.
+
 ## Public page photos
 
 The locally hosted market photos on the home, About and Contact pages are from

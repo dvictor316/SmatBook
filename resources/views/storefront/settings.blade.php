@@ -45,6 +45,12 @@
                     <div class="row g-3 mb-3"><div class="col-6"><label class="form-label">Phone</label><input class="form-control" name="contact_phone" value="{{ old('contact_phone', $setting->contact_phone) }}"></div><div class="col-6"><label class="form-label">Email</label><input class="form-control" type="email" name="contact_email" value="{{ old('contact_email', $setting->contact_email) }}"></div></div>
                     <div class="mb-3"><label class="form-label">WhatsApp number for order messages</label><input class="form-control" type="tel" name="owner_whatsapp_number" value="{{ old('owner_whatsapp_number', $setting->owner_whatsapp_number) }}" placeholder="+2348012345678"></div>
                     <div class="mb-3"><label class="form-label">Fulfilment Note</label><input class="form-control" name="fulfilment_note" value="{{ old('fulfilment_note', $setting->fulfilment_note) }}" placeholder="Orders confirmed within one business day"></div>
+                    <div class="form-check form-switch mb-3">
+                        <input type="hidden" name="show_unavailable_products" value="0">
+                        <input class="form-check-input" type="checkbox" role="switch" name="show_unavailable_products" value="1" id="showUnavailableProducts" @checked(old('show_unavailable_products', $setting->show_unavailable_products))>
+                        <label class="form-check-label fw-bold" for="showUnavailableProducts">Show unavailable products in the catalogue</label>
+                        <div class="small text-muted">Products without available stock will be visible but cannot be added to the cart or ordered.</div>
+                    </div>
                     <div class="form-check form-switch mb-4"><input type="hidden" name="is_enabled" value="0"><input class="form-check-input" type="checkbox" role="switch" name="is_enabled" value="1" id="storeEnabled" @checked(old('is_enabled', $setting->is_enabled))><label class="form-check-label fw-bold" for="storeEnabled">Publish store</label></div>
                     <button class="btn btn-primary w-100" type="submit"><i class="fas fa-floppy-disk me-1"></i> Save Store</button>
                     @if($setting->exists && $setting->is_enabled)<a class="btn btn-outline-primary w-100 mt-2" href="{{ route('storefront.catalogue', $setting->slug) }}" target="_blank"><i class="fas fa-arrow-up-right-from-square me-1"></i> Open Store</a>@endif

@@ -163,7 +163,7 @@
             </details>
         </div>
     @endif
-    <div class="catalogue-heading"><div><h2>{{ $selectedCategory ? $selectedCategory->name : 'Available collection' }}</h2><p>Add products to your cart, review quantities and total, then submit your order. Only available products are shown.</p></div><span class="catalogue-count">{{ $products->total() }} {{ \Illuminate\Support\Str::plural('product', $products->total()) }}</span></div>
+    <div class="catalogue-heading"><div><h2>{{ $selectedCategory ? $selectedCategory->name : 'Our collection' }}</h2><p>{{ $store->show_unavailable_products ? 'Browse the collection. Unavailable products cannot be ordered online.' : 'Add products to your cart, review quantities and total, then submit your order. Only available products are shown.' }}</p></div><span class="catalogue-count">{{ $products->total() }} {{ \Illuminate\Support\Str::plural('product', $products->total()) }}</span></div>
     <div class="product-grid">
         @forelse($products as $product)
             @php
@@ -175,9 +175,9 @@
                 $hasBrand = $variants->contains(fn ($variant) => filled($variant->brand));
                 $hasSize = $variants->contains(fn ($variant) => filled($variant->fashion_size));
                 $hasColor = $variants->contains(fn ($variant) => filled($variant->fashion_color));
-                $availableSizes = $variants->pluck('fashion_size')->filter()->unique()->values();
+                $availableSizes = $variants->filter(fn ($variant) => (float) $variant->storefront_available_stock > 0)->pluck('fashion_size')->filter()->unique()->values();
             @endphp
-            <article class="product" data-product-id="{{ $product->id }}" data-product-name="{{ $displayName }}" data-product-sku="{{ $product->sku }}" data-product-price="{{ (float) $product->price }}" data-product-max="{{ $available }}" data-product-step="{{ $quantityStep }}" data-product-stock-label="{{ $available > 0 ? $product->formatStockQuantity($available) . ' available' : 'Out of stock' }}" data-product-brand="{{ $product->brand }}" data-product-size="{{ $product->fashion_size }}" data-product-color="{{ $product->fashion_color }}">
+            <article class="product" data-product-id="{{ $product->id }}" data-product-name="{{ $displayName }}" data-product-sku="{{ $product->sku }}" data-product-price="{{ (float) $product->price }}" data-product-max="{{ $available }}" data-product-step="{{ $quantityStep }}" data-product-stock-label="{{ $available > 0 ? $product->formatStockQuantity($available) . ' available' : 'Unavailable online' }}" data-product-brand="{{ $product->brand }}" data-product-size="{{ $product->fashion_size }}" data-product-color="{{ $product->fashion_color }}">
                 <div class="product-media">@if($product->image_url)<img src="{{ $product->image_url }}" alt="{{ $displayName }}" loading="lazy">@else<i class="fas fa-box-open" aria-hidden="true"></i>@endif</div>
                 <div class="product-body">
                     <span class="product-eyebrow">Product details</span>
@@ -207,12 +207,12 @@
                                             data-product-price="{{ (float) $variant->price }}"
                                             data-product-max="{{ $variantStock }}"
                                             data-product-step="{{ $variantStep }}"
-                                            data-product-stock-label="{{ $variantStock > 0 ? $variant->formatStockQuantity($variantStock) . ' available' : 'Out of stock' }}"
+                                            data-product-stock-label="{{ $variantStock > 0 ? $variant->formatStockQuantity($variantStock) . ' available' : 'Unavailable online' }}"
                                             data-product-brand="{{ $variant->brand }}"
                                             data-product-size="{{ $variant->fashion_size }}"
                                             data-product-color="{{ $variant->fashion_color }}"
                                             @selected((int) $variant->id === (int) $product->id)
-                                        >{{ $variantOptionLabel ?: 'Standard option' }}{{ $variantStock <= 0 ? ' - Out of stock' : '' }}</option>
+                                        >{{ $variantOptionLabel ?: 'Standard option' }}{{ $variantStock <= 0 ? ' - Unavailable online' : '' }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -235,7 +235,7 @@
                         <div>
                             <div class="product-price-label">Price</div>
                             <div class="price product-price">{{ \App\Support\GeoCurrency::format((float)$product->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</div>
-                            <div class="stock product-stock {{ $available > 0 ? 'in-stock' : 'out-of-stock' }}">{{ $available > 0 ? $product->formatStockQuantity($available) . ' available' : 'Out of stock' }}</div>
+                            <div class="stock product-stock {{ $available > 0 ? 'in-stock' : 'out-of-stock' }}">{{ $available > 0 ? $product->formatStockQuantity($available) . ' available' : 'Unavailable online' }}</div>
                         </div>
                         <div class="quantity">
                             <label for="qty{{ $product->id }}" class="small fw-bold">Quantity</label>

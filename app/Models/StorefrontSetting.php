@@ -10,10 +10,10 @@ class StorefrontSetting extends Model
         'company_id', 'slug', 'custom_domain', 'store_name', 'description',
         'contact_phone', 'contact_email', 'fulfilment_note', 'is_enabled',
         'stock_branch_id', 'stock_branch_name',
-        'owner_whatsapp_number', 'store_theme',
+        'owner_whatsapp_number', 'store_theme', 'show_unavailable_products',
     ];
 
-    protected $casts = ['is_enabled' => 'boolean'];
+    protected $casts = ['is_enabled' => 'boolean', 'show_unavailable_products' => 'boolean'];
 
     public static function themes(): array
     {

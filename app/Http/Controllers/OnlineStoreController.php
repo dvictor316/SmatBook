@@ -83,6 +83,7 @@ class OnlineStoreController extends Controller
             'owner_whatsapp_number' => ['nullable', 'string', 'regex:/^\+[1-9][0-9]{7,14}$/'],
             'fulfilment_note' => 'nullable|string|max:191',
             'is_enabled' => 'nullable|boolean',
+            'show_unavailable_products' => 'nullable|boolean',
         ]);
         $stockBranch = $branches->firstWhere('id', (string) ($validated['stock_branch_id'] ?? ''));
         if ($request->boolean('is_enabled') && $branches->isNotEmpty() && ! $stockBranch) {
@@ -94,6 +95,7 @@ class OnlineStoreController extends Controller
         $validated['slug'] = Str::slug($validated['slug']);
         $validated['custom_domain'] = $this->normaliseHost($validated['custom_domain'] ?? null);
         $validated['is_enabled'] = $request->boolean('is_enabled');
+        $validated['show_unavailable_products'] = $request->boolean('show_unavailable_products');
         $validated['stock_branch_id'] = $stockBranch['id'] ?? null;
         $validated['stock_branch_name'] = $stockBranch['name'] ?? null;
 
@@ -228,7 +230,9 @@ class OnlineStoreController extends Controller
         $productQuery = Product::withoutGlobalScopes()
             ->where('company_id', $store->company_id)
             ->where('status', 'active');
-        $this->filterAvailableStoreProducts($productQuery, $store, $stockBranch, 'products');
+        if (! $store->show_unavailable_products) {
+            $this->filterAvailableStoreProducts($productQuery, $store, $stockBranch, 'products');
+        }
         $products = $productQuery
             ->orderByDesc('created_at')
             ->orderByDesc('id')
@@ -256,7 +260,9 @@ class OnlineStoreController extends Controller
         $productQuery = Product::withoutGlobalScopes()
             ->where('company_id', $store->company_id)
             ->where('status', 'active');
-        $this->filterAvailableStoreProducts($productQuery, $store, $stockBranch, 'products');
+        if (! $store->show_unavailable_products) {
+            $this->filterAvailableStoreProducts($productQuery, $store, $stockBranch, 'products');
+        }
         $applyCatalogFilters = function ($query, string $table) use ($selectedCategory, $search): void {
             if ($selectedCategory) {
                 $query->whereIn("{$table}.category_id", $selectedCategory->category_ids);
@@ -290,7 +296,9 @@ class OnlineStoreController extends Controller
                                     });
                             });
                         $applyCatalogFilters($newerVariant, 'newer');
-                        $this->filterAvailableStoreProducts($newerVariant, $store, $stockBranch, 'newer');
+                        if (! $store->show_unavailable_products) {
+                            $this->filterAvailableStoreProducts($newerVariant, $store, $stockBranch, 'newer');
+                        }
                     });
             });
         }
@@ -310,7 +318,9 @@ class OnlineStoreController extends Controller
                 ->where('status', 'active')
                 ->whereIn('variant_group_id', $variantGroupIds)
                 ->when($selectedCategory, fn ($query) => $query->whereIn('category_id', $selectedCategory->category_ids));
-            $this->filterAvailableStoreProducts($variantQuery, $store, $stockBranch, 'products');
+            if (! $store->show_unavailable_products) {
+                $this->filterAvailableStoreProducts($variantQuery, $store, $stockBranch, 'products');
+            }
             $variantProducts = $variantQuery
                 ->orderBy('fashion_size')
                 ->orderBy('fashion_color')
@@ -319,10 +329,13 @@ class OnlineStoreController extends Controller
         }
         $this->attachStoreStock($variantProducts->concat($products->getCollection()), $store, $stockBranch);
         $variantsByGroup = $variantProducts->groupBy('variant_group_id');
-        $products->getCollection()->transform(function (Product $product) use ($variantsByGroup) {
+        $products->getCollection()->transform(function (Product $product) use ($variantsByGroup, $search) {
             $variants = filled($product->variant_group_id)
                 ? $variantsByGroup->get($product->variant_group_id, collect())
                 : collect([$product]);
+            if ($search === '' && (float) $product->storefront_available_stock <= 0) {
+                $product = $variants->first(fn (Product $variant) => (float) $variant->storefront_available_stock > 0) ?? $product;
+            }
             $product->setAttribute('storefront_variants', $variants);
 
             return $product;
@@ -357,15 +370,18 @@ class OnlineStoreController extends Controller
             ->where('categories.name', '<>', '')
             ->select('categories.id', 'categories.name', 'products.id as product_id', 'products.variant_group_id')
             ->orderBy('categories.name');
-        $availableQuery = clone $query;
-        $this->filterAvailableStoreProducts($availableQuery, $store, $stockBranch, 'products');
-        $availableIds = $availableQuery->select('products.id')->pluck('products.id')->flip();
+        $availableIds = null;
+        if (! $store->show_unavailable_products) {
+            $availableQuery = clone $query;
+            $this->filterAvailableStoreProducts($availableQuery, $store, $stockBranch, 'products');
+            $availableIds = $availableQuery->select('products.id')->pluck('products.id')->flip();
+        }
 
         return $query->get()
             ->groupBy(fn ($category) => mb_strtolower(trim((string) $category->name)))
             ->map(function (Collection $matches) use ($availableIds) {
                 $first = $matches->first();
-                $productKeys = $matches->filter(fn ($category) => $availableIds->has($category->product_id))
+                $productKeys = $matches->filter(fn ($category) => $availableIds === null || $availableIds->has($category->product_id))
                     ->map(fn ($category) => filled($category->variant_group_id)
                     ? 'variant:' . $category->variant_group_id
                     : 'product:' . $category->product_id);
