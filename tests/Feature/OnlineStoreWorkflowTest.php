@@ -391,6 +391,35 @@ class OnlineStoreWorkflowTest extends TestCase
         }
     }
 
+    public function test_restore_blinqit_catalogue_affects_only_that_store_and_does_not_change_stock(): void
+    {
+        [$user, $company] = $this->workspace('Blinqit');
+        [, $otherCompany] = $this->workspace('Another Store');
+        $category = $this->category($user->id, $company->id, 'Essentials');
+        $productId = $this->product($user->id, $company->id, $category, 'Blinqit Item', 'BLINQIT-1', 0, 1000);
+        $store = StorefrontSetting::create([
+            'company_id' => $company->id, 'slug' => 'blinqit-royal-success',
+            'store_name' => 'Blinqit', 'is_enabled' => true,
+        ]);
+        $otherStore = StorefrontSetting::create([
+            'company_id' => $otherCompany->id, 'slug' => 'another-store',
+            'store_name' => 'Another Store', 'is_enabled' => true,
+        ]);
+
+        $this->get(route('storefront.catalogue', $store->slug))->assertOk()->assertDontSee('Blinqit Item');
+        $migration = require database_path('migrations/2026_11_13_000002_restore_blinqit_store_catalogue.php');
+        $migration->up();
+        $migration->up();
+
+        $this->assertTrue($store->fresh()->show_unavailable_products);
+        $this->assertFalse($otherStore->fresh()->show_unavailable_products);
+        $this->assertDatabaseHas('products', ['id' => $productId, 'stock' => 0, 'stock_quantity' => 0]);
+        $this->get(route('storefront.catalogue', $store->slug))->assertOk()
+            ->assertSee('Blinqit Item')->assertDontSee('Our collection is being prepared')
+            ->assertViewHas('categories', fn ($categories) => $categories->first()->products_count === 1);
+        $this->get(route('storefront.products', $store->slug))->assertOk()->assertSee('Blinqit Item');
+    }
+
     public function test_store_can_display_catalogue_when_every_product_is_unavailable(): void
     {
         [$user, $company] = $this->workspace('Empty Stock Catalogue');
