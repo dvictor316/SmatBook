@@ -135,7 +135,7 @@ class LoginIdentifierTest extends TestCase
             ->assertJson(['token' => $token]);
     }
 
-    public function test_linkedin_openid_can_create_a_verified_social_account(): void
+    public function test_linkedin_openid_can_sign_in_to_a_linked_account(): void
     {
         Config::set('services.linkedin-openid', [
             'client_id' => 'linkedin-client-id',
@@ -150,6 +150,8 @@ class LoginIdentifierTest extends TestCase
             'avatar' => null,
         ]);
         Socialite::fake('linkedin-openid', $socialUser);
+        $user = $this->makeUser();
+        $user->update(['linkedin_id' => 'linkedin-member-123']);
 
         $this->get(route('social.login', ['provider' => 'linkedin']))
             ->assertRedirect('https://socialite.fake/linkedin-openid/authorize');
@@ -158,12 +160,10 @@ class LoginIdentifierTest extends TestCase
             ->assertRedirect(route('home'));
 
         $this->assertDatabaseHas('users', [
-            'email' => 'linkedin.member@example.test',
+            'id' => $user->id,
             'linkedin_id' => 'linkedin-member-123',
-            'provider_name' => 'linkedin',
-            'is_verified' => 1,
         ]);
-        $this->assertAuthenticatedAs(User::where('email', 'linkedin.member@example.test')->firstOrFail());
+        $this->assertAuthenticatedAs($user);
     }
 
     public function test_installed_app_uses_an_adaptive_non_blue_titlebar(): void

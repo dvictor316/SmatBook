@@ -38,16 +38,18 @@ class EmailVerificationService
 
     public function hasPending(User $user): bool
     {
-        if (! $this->isEnabled()) {
+        $socialRegistration = ! $user->email_verified_at
+            && (filled($user->google_id) || filled($user->facebook_id) || filled($user->linkedin_id));
+        if (! $socialRegistration && ! $this->isEnabled()) {
             return false;
         }
 
         return DB::table(self::TABLE)->where('user_id', $user->id)->exists();
     }
 
-    public function sendCode(User $user): string
+    public function sendCode(User $user, bool $force = false): string
     {
-        if (! $this->isEnabled()) {
+        if (! $force && ! $this->isEnabled()) {
             return 'disabled';
         }
 
@@ -154,13 +156,18 @@ class EmailVerificationService
                 return $attempts >= self::MAX_ATTEMPTS ? 'locked' : 'invalid';
             }
 
-            DB::table('users')->where('id', $user->id)->update([
-                'email_verified_at' => now(),
-                'updated_at' => now(),
-            ]);
-            DB::table(self::TABLE)->where('user_id', $user->id)->delete();
+            $this->markVerified($user);
 
             return 'verified';
         });
+    }
+
+    public function markVerified(User $user): void
+    {
+        DB::table('users')->where('id', $user->id)->update([
+            'email_verified_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table(self::TABLE)->where('user_id', $user->id)->delete();
     }
 }

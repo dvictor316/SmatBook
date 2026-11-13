@@ -34,8 +34,11 @@ class AuthController extends Controller
             return $this->handlePostLoginRedirect();
         }
 
-        $isPartner = in_array($request->query('type'), ['partner', 'manager'], true);
-        $planParam = strtolower($request->query('plan', 'pro'));
+        $socialRegistration = $this->pendingSocialRegistration($request);
+        $isPartner = $socialRegistration
+            ? $socialRegistration['role'] === 'agent'
+            : in_array($request->query('type'), ['partner', 'manager'], true);
+        $planParam = strtolower((string) ($socialRegistration['plan'] ?? $request->query('plan', 'pro')));
         $cycleParam = 'yearly';
         $catalog = $this->registrationPlanCatalog();
         $selectedCatalog = $catalog[$planParam] ?? $catalog['pro'];
@@ -68,11 +71,27 @@ class AuthController extends Controller
             'isManager' => $isPartner,
             'countryOptions' => PartnerLocationRepository::countryOptions(),
             'operationOptions' => ModuleCatalog::registrationOperations(),
+            'socialRegistration' => $socialRegistration,
         ]);
     }
 
     public function register(Request $request)
     {
+        $socialRegistration = $this->pendingSocialRegistration($request);
+        if ($socialRegistration) {
+            $password = Str::random(40).'a1';
+            $request->merge([
+                'email' => $socialRegistration['email'],
+                'role' => $socialRegistration['role'],
+                'password' => $password,
+                'password_confirmation' => $password,
+            ]);
+            if (User::query()->whereRaw('LOWER(email) = ?', [$socialRegistration['email']])->exists()) {
+                return redirect()->route('saas-login')->withErrors([
+                    'login' => 'An account already uses this email. Sign in with your provider to verify and connect it.',
+                ]);
+            }
+        }
         $requestedRole = $request->role ?? session('reg_role', 'admin');
         if ($this->isManagerRoleName($requestedRole) && !Auth::check()) {
             $requestedRole = 'agent';
@@ -203,7 +222,7 @@ class AuthController extends Controller
         }
 
         try {
-            $registrationResult = DB::transaction(function () use ($validated, $request, $resolvedEmail, $normalizedPhone, $retryableUser) {
+            $registrationResult = DB::transaction(function () use ($validated, $request, $resolvedEmail, $normalizedPhone, $retryableUser, $socialRegistration) {
                 $role = $request->role ?? session('reg_role', 'admin');
                 if ($this->isManagerRoleName($role) && !Auth::check()) {
                     $role = 'agent';
@@ -236,6 +255,11 @@ class AuthController extends Controller
                     'local_council' => $validated['local_council'] ?? null,
                     'state_manager_id' => $stateManagerId,
                 ]);
+                if ($socialRegistration) {
+                    $userPayload[$socialRegistration['provider'].'_id'] = $socialRegistration['provider_id'];
+                    $userPayload['provider_id'] = $socialRegistration['provider_id'];
+                    $userPayload['provider_name'] = $socialRegistration['provider'];
+                }
 
                 $user = $retryableUser ?: new User();
                 if ($user->exists && method_exists($user, 'trashed') && $user->trashed()) {
@@ -386,10 +410,11 @@ class AuthController extends Controller
             $registeredUser = $registrationResult['user']->fresh();
             $request->session()->regenerate();
             $this->clearRegistrationSession();
+            $request->session()->forget('social_registration');
 
             $emailVerification = app(\App\Services\EmailVerificationService::class);
-            if (! $registeredUser->email_verified_at && $emailVerification->isEnabled()) {
-                $deliveryStatus = $emailVerification->sendCode($registeredUser);
+            if (! $registeredUser->email_verified_at && ($socialRegistration || $emailVerification->isEnabled())) {
+                $deliveryStatus = $emailVerification->sendCode($registeredUser, (bool) $socialRegistration);
                 $redirectTo = match (strtolower((string) $registrationResult['role'])) {
                     'agent' => route('agent.dashboard'),
                     'state_manager', 'deployment_manager', 'manager' => route('manager.verification.form'),
@@ -400,6 +425,7 @@ class AuthController extends Controller
                 $request->session()->put([
                     'email_verification_pending_user_id' => (int) $registeredUser->id,
                     'email_verification_redirect' => $redirectTo,
+                    'email_verification_forced' => (bool) $socialRegistration,
                 ]);
 
                 [$message, $flash] = match ($deliveryStatus) {
@@ -457,6 +483,16 @@ class AuthController extends Controller
 
             return back()->withErrors(['error' => $message])->withInput();
         }
+    }
+
+    public function cancelSocialRegistration(Request $request): RedirectResponse
+    {
+        $socialRegistration = $this->pendingSocialRegistration($request);
+        $request->session()->forget('social_registration');
+
+        return redirect()->route('saas-register', ($socialRegistration['role'] ?? '') === 'agent'
+            ? ['type' => 'partner']
+            : ['plan' => $socialRegistration['plan'] ?? 'pro']);
     }
 
     private function findRetryableDeploymentManager(string $email): ?User
@@ -728,6 +764,7 @@ class AuthController extends Controller
 
         RateLimiter::clear($throttleKey);
 
+        $request->session()->forget(['social_link_pending', 'social_link_challenge']);
         $request->session()->regenerate();
         
         $user = Auth::user();
@@ -1137,6 +1174,7 @@ class AuthController extends Controller
     public function redirectToProvider(Request $request, $provider = 'google')
     {
         $provider = strtolower((string) $provider);
+        $request->session()->forget(['social_link_pending', 'social_link_challenge', 'social_registration', 'email_verification_forced']);
 
         if (!in_array($provider, ['google', 'facebook', 'linkedin'], true)) {
             return redirect()->route('saas-login')->with('error', 'Unsupported login provider.');
@@ -1154,7 +1192,6 @@ class AuthController extends Controller
                 'redirect_url' => $redirectUrl,
             ]);
 
-            // Stateless avoids "Invalid state" errors from cookie/session mismatch across domains.
             return $this->socialiteDriver($provider, $redirectUrl)
                 ->redirect();
         } catch (\Exception $e) {
@@ -1198,132 +1235,98 @@ class AuthController extends Controller
             return redirect()->route('saas-login')->with('error', $this->socialProviderLabel($provider) . ' login failed. Please try again.');
         }
 
-        $providerId = (string) $socialUser->getId();
+        $providerId = trim((string) $socialUser->getId());
         $providerEmail = trim((string) $socialUser->getEmail());
         $name = $socialUser->getName() ?: $socialUser->getNickname() ?: 'User';
         $providerColumn = $provider . '_id';
 
-        $user = User::where($providerColumn, $providerId)->first();
-        if (! $user && filter_var($providerEmail, FILTER_VALIDATE_EMAIL)) {
-            $user = User::whereRaw('LOWER(email) = ?', [strtolower($providerEmail)])->first();
-        }
-
-        if (! $user && ! filter_var($providerEmail, FILTER_VALIDATE_EMAIL)) {
+        if ($providerId === '') {
             return redirect()->route('saas-login')->withErrors([
-                'login' => 'This provider did not share a valid email address. Use another sign-in method or update your provider permissions.',
+                'login' => 'The provider did not return an account identifier. Please try again.',
             ]);
         }
 
-        $email = $user?->email ?: strtolower($providerEmail);
-        $createdNow = false;
-
-        if ($user) {
-            $payload = [
-                'provider_id' => $providerId,
-                'provider_name' => $provider,
-                'is_verified' => 1,
-            ];
-
-            if (empty($user->{$providerColumn})) {
-                $payload[$providerColumn] = $providerId;
-            }
-            if (!$user->name) {
-                $payload['name'] = $name;
-            }
-            if (! $user->email_verified_at
-                && ! app(\App\Services\EmailVerificationService::class)->hasPending($user)) {
-                $payload['email_verified_at'] = now();
-            }
-
-            $user->update($payload);
-        } else {
-            $user = User::create([
-                'name' => $name,
-                'email' => $email,
-                'password' => Hash::make(Str::random(32)),
-                'role' => 'admin',
-                'is_verified' => 1,
-                'status' => 'active',
-                'email_verified_at' => null,
-                'provider_id' => $providerId,
-                'provider_name' => $provider,
-                $providerColumn => $providerId,
-            ]);
-            $createdNow = true;
-        }
-
-        if ($createdNow) {
-            DB::afterCommit(function () use ($user, $provider) {
-                \App\Support\SystemEventMailer::notifyRegistrationAfterResponse($user, 'user', [
-                    'auth_provider' => $this->socialProviderLabel($provider),
-                ]);
-            });
-        }
-
-        $subscription = $this->ensureSocialRegistrationSubscription($user, $socialContext);
-
+        $user = User::where($providerColumn, $providerId)->first();
         $emailVerification = app(\App\Services\EmailVerificationService::class);
-        if ($createdNow && $emailVerification->isEnabled()) {
-            $deliveryStatus = $emailVerification->sendCode($user);
+        if (! $user) {
+            if (! filter_var($providerEmail, FILTER_VALIDATE_EMAIL)) {
+                return redirect()->route('saas-login')->withErrors([
+                    'login' => 'This provider did not share a valid email address. Use another sign-in method or update your provider permissions.',
+                ]);
+            }
+
+            $providerEmail = strtolower($providerEmail);
+            $user = User::whereRaw('LOWER(email) = ?', [$providerEmail])->first();
+            if (! $user) {
+                $request->session()->put('social_registration', [
+                    'provider' => $provider,
+                    'provider_id' => $providerId,
+                    'email' => $providerEmail,
+                    'name' => $name,
+                    'role' => $socialContext['role'],
+                    'plan' => $socialContext['plan'] ?: 'pro',
+                    'started_at' => now()->timestamp,
+                ]);
+
+                return redirect()->route('saas-register', $socialContext['role'] === 'agent'
+                    ? ['type' => 'partner']
+                    : ['plan' => $socialContext['plan'] ?: 'pro'])
+                    ->with('info', 'Your provider account is connected. Complete the remaining registration details.');
+            }
+
+            if (filled($user->{$providerColumn})) {
+                return redirect()->route('saas-login')->withErrors([
+                    'login' => 'A different '.$this->socialProviderLabel($provider).' account is already connected. Use that account or another sign-in method.',
+                ]);
+            }
+
+            if ((int) ($user->allow_login ?? 1) !== 1) {
+                return redirect()->route('saas-login')->withErrors([
+                    'login' => 'This user account is not allowed to login. Please contact your workspace administrator.',
+                ]);
+            }
+
             $request->session()->regenerate();
             $request->session()->put([
                 'email_verification_pending_user_id' => (int) $user->id,
                 'email_verification_remember' => true,
-                'email_verification_redirect' => $subscription
-                    ? route('saas.setup', ['id' => $subscription->id])
-                    : route('pricing'),
+                'social_link_pending' => [
+                    'user_id' => (int) $user->id,
+                    'provider' => $provider,
+                    'provider_id' => $providerId,
+                ],
             ]);
+            $deliveryStatus = app(\App\Services\SocialAccountLinkService::class)->sendCode($request, $user);
             [$message, $flash] = match ($deliveryStatus) {
-                'sent' => ['We sent a six-digit verification code to your email. Verify it to continue.', 'success'],
+                'sent' => ['We sent a six-digit code to confirm your existing account before connecting it.', 'success'],
                 'cooldown' => ['A verification code was sent recently. Check your email or wait before requesting another.', 'warning'],
-                default => ['Your account was created, but the code could not be sent. Use Resend code to try again.', 'error'],
+                default => ['The code could not be sent. Use Resend code to try again.', 'error'],
             };
 
             return redirect()->route('email-verification.notice')->with($flash, $message);
         }
 
-        Auth::login($user, true);
+        if ((int) ($user->allow_login ?? 1) !== 1) {
+            return redirect()->route('saas-login')->withErrors([
+                'login' => 'This user account is not allowed to login. Please contact your workspace administrator.',
+            ]);
+        }
 
-        if (app(\App\Services\EmailVerificationService::class)->hasPending($user)) {
-            Auth::logout();
+        if ($emailVerification->hasPending($user)) {
             $request->session()->regenerate();
             $request->session()->put([
                 'email_verification_pending_user_id' => (int) $user->id,
                 'email_verification_remember' => true,
+                'email_verification_forced' => true,
             ]);
 
             return redirect()->route('email-verification.notice')
                 ->with('info', 'Verify your email address with the code we sent before signing in.');
         }
 
-        if ($user->hasTwoFactorAuthenticationEnabled()) {
-            return $this->beginTwoFactorLoginChallenge($request, $user, true);
-        }
-
-        if ($subscription) {
-            return redirect()->route('saas.setup', ['id' => $subscription->id]);
-        }
-
-        if (($socialContext['intent'] ?? 'login') === 'register') {
-            $existingSubscription = Subscription::query()
-                ->where('user_id', $user->id)
-                ->latest('id')
-                ->first();
-
-            if ($existingSubscription) {
-                if (!in_array(strtolower((string) $existingSubscription->payment_status), ['paid', 'free'], true)) {
-                    return redirect()->route('saas.checkout', ['id' => $existingSubscription->id])
-                        ->with('success', $this->socialProviderLabel($provider) . ' account connected. Complete your checkout to continue.');
-                }
-
-                if (!in_array(strtolower((string) $existingSubscription->status), ['active', 'trial'], true) || empty($existingSubscription->company_id)) {
-                    return redirect()->route('saas.setup', ['id' => $existingSubscription->id])
-                        ->with('success', $this->socialProviderLabel($provider) . ' account connected. Complete your workspace setup to continue.');
-                }
-            }
-        }
-
-        return redirect()->route('home');
+        Auth::login($user, true);
+        $request->session()->regenerate();
+        return $this->completeEmailVerifiedLogin($request, $user, true);
     }
 
     /**
@@ -1360,11 +1363,12 @@ class AuthController extends Controller
                 ->scopes(['openid', 'profile', 'email'])
                 ->with([
                     'prompt' => 'select_account',
-                    'access_type' => 'offline',
                 ]);
+        } elseif ($provider === 'facebook') {
+            $driver = $driver->fields(['id', 'name', 'email']);
         }
 
-        return $driver->stateless();
+        return $driver;
     }
 
     private function rememberSocialContext(Request $request, string $provider): void
@@ -1412,6 +1416,7 @@ class AuthController extends Controller
                 'cycle' => $cycle,
                 'plan_id' => $planId ? (int) $planId : null,
                 'amount' => $amount !== null ? (float) $amount : null,
+                'role' => $intent === 'register' && ($request->query('type') === 'partner' || session('reg_role') === 'agent') ? 'agent' : 'admin',
             ],
         ]);
     }
@@ -1438,67 +1443,24 @@ class AuthController extends Controller
             'cycle' => 'yearly',
             'plan_id' => isset($context['plan_id']) ? (int) $context['plan_id'] : (session('selected_plan_id') ?: null),
             'amount' => isset($context['amount']) ? (float) $context['amount'] : (session('selected_amount') ?: null),
+            'role' => ($context['role'] ?? 'admin') === 'agent' ? 'agent' : 'admin',
         ];
     }
 
-    private function ensureSocialRegistrationSubscription(User $user, array $context): ?Subscription
+    private function pendingSocialRegistration(Request $request): ?array
     {
-        if (($context['intent'] ?? 'login') !== 'register') {
+        $data = $request->session()->get('social_registration');
+        if (! is_array($data)
+            || ! in_array($data['provider'] ?? null, ['google', 'facebook', 'linkedin'], true)
+            || ! in_array($data['role'] ?? null, ['admin', 'agent'], true)
+            || empty($data['provider_id'])
+            || ! filter_var($data['email'] ?? '', FILTER_VALIDATE_EMAIL)
+            || (int) ($data['started_at'] ?? 0) < now()->subMinutes(15)->timestamp) {
+            $request->session()->forget('social_registration');
             return null;
         }
 
-        $existingSubscription = Subscription::query()
-            ->where('user_id', $user->id)
-            ->latest('id')
-            ->first();
-
-        if ($existingSubscription) {
-            return null;
-        }
-
-        $catalog = $this->registrationPlanCatalog();
-        $planKey = $this->resolveRegistrationPlanKey((string) ($context['plan'] ?? ''), $catalog);
-        $cycle = 'yearly';
-
-        if (!$planKey || !isset($catalog[$planKey])) {
-            return null;
-        }
-
-        $entry = $catalog[$planKey];
-        $plan = !empty($context['plan_id'])
-            ? Plan::find((int) $context['plan_id'])
-            : Plan::findByCatalogName($entry['label'], $cycle);
-        if ($plan && (
-            strtolower((string) $plan->billing_cycle) !== 'yearly'
-            || (Schema::hasColumn('plans', 'is_active') && ! $plan->is_active)
-        )) {
-            $plan = Plan::findByCatalogName($entry['label'], 'yearly');
-        }
-
-        $amount = (float) ($plan?->price ?? ($entry['prices'][$cycle] ?? 0));
-        $billingCycle = ucfirst($cycle);
-        $planName = $plan?->name ?? $entry['label'];
-
-        session([
-            'selected_plan_id' => $plan?->id,
-            'selected_plan' => $planName,
-            'selected_cycle' => $billingCycle,
-            'selected_amount' => $amount,
-            'billing_cycle' => $billingCycle,
-            'reg_role' => 'admin',
-        ]);
-
-        return Subscription::create($this->filterPayloadForTable('subscriptions', array_merge([
-            'user_id' => $user->id,
-            'plan_id' => $plan?->id,
-            'plan' => $planName,
-            'plan_name' => $planName,
-            'billing_cycle' => $billingCycle,
-            'amount' => $amount,
-            'user_limit' => $plan?->resolvedUserLimit(),
-            'status' => 'Pending',
-            'payment_status' => 'unpaid',
-        ], Subscription::trialPayload())));
+        return $data;
     }
 
     /*

@@ -323,7 +323,6 @@ class AssistedBusinessRegistrationTest extends TestCase
         $driver->shouldReceive('redirectUrl')->once()->andReturnSelf();
         $driver->shouldReceive('scopes')->once()->andReturnSelf();
         $driver->shouldReceive('with')->once()->andReturnSelf();
-        $driver->shouldReceive('stateless')->once()->andReturnSelf();
         $driver->shouldReceive('user')->once()->andReturn($socialUser);
         Socialite::shouldReceive('driver')->once()->with('google')->andReturn($driver);
 
@@ -337,7 +336,15 @@ class AssistedBusinessRegistrationTest extends TestCase
                 'amount' => 150000,
             ],
         ])->get(route('social.callback', ['provider' => 'google']))
-            ->assertRedirect(route('email-verification.notice'));
+            ->assertRedirect(route('saas-register', ['plan' => 'pro']));
+
+        $this->get(route('saas-register', ['plan' => 'pro']))->assertOk();
+        $this->post(route('saas-register.post'), [
+            'name' => 'Google Trial User',
+            'plan' => 'pro',
+            'billing_cycle' => 'yearly',
+            'field_of_operation' => 'general',
+        ])->assertRedirect(route('email-verification.notice'));
 
         $verificationMail = Mail::sent(EmailVerificationCodeMail::class)->first();
         $this->assertNotNull($verificationMail);

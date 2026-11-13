@@ -23,6 +23,7 @@
         'cycle' => strtolower((string) $finalCycle),
         'plan_id' => $plan_id ?? session('selected_plan_id'),
         'amount' => $displayPrice,
+        'type' => $isManager ? 'partner' : 'business',
     ]);
     $facebookAuthUrl = route('social.login', [
         'provider' => 'facebook',
@@ -31,6 +32,7 @@
         'cycle' => strtolower((string) $finalCycle),
         'plan_id' => $plan_id ?? session('selected_plan_id'),
         'amount' => $displayPrice,
+        'type' => $isManager ? 'partner' : 'business',
     ]);
     $linkedinAuthUrl = route('social.login', [
         'provider' => 'linkedin',
@@ -39,6 +41,7 @@
         'cycle' => strtolower((string) $finalCycle),
         'plan_id' => $plan_id ?? session('selected_plan_id'),
         'amount' => $displayPrice,
+        'type' => $isManager ? 'partner' : 'business',
     ]);
 @endphp
 
@@ -782,6 +785,13 @@
                 </div>
             @endif
 
+            @if($socialRegistration)
+                <form action="{{ route('social.register.cancel') }}" method="POST" class="mb-3">
+                    @csrf
+                    <button type="submit" class="btn btn-link p-0">Use a different sign-up method</button>
+                </form>
+            @endif
+
             <form action="{{ route('saas-register.post') }}" method="POST" enctype="multipart/form-data" class="form-shell">
                 @csrf
                 <input type="hidden" name="role" value="{{ $isManager ? 'agent' : 'admin' }}">
@@ -798,7 +808,7 @@
                     <div>
                         <label class="label-caps">{{ $isManager ? 'Agent / Partner Name' : 'Full Name / Entity' }}</label>
                         <input type="text" name="name" class="form-control input-smat w-100 @error('name') is-invalid @enderror"
-                               placeholder="{{ $isManager ? 'Agent Full Name' : 'Institutional Name' }}" value="{{ old('name') }}" required autofocus>
+                               placeholder="{{ $isManager ? 'Agent Full Name' : 'Institutional Name' }}" value="{{ old('name', $socialRegistration['name'] ?? '') }}" required autofocus>
                         @error('name')
                             <span class="field-error">{{ $message }}</span>
                         @enderror
@@ -816,7 +826,7 @@
                     <div>
                         <label class="label-caps" for="registration_email">Email Address (required for verification)</label>
                         <input type="email" name="email" class="form-control input-smat w-100 @error('email') is-invalid @enderror"
-                               id="registration_email" placeholder="admin@company.com" value="{{ old('email') }}" autocomplete="email" required>
+                               id="registration_email" placeholder="admin@company.com" value="{{ $socialRegistration['email'] ?? old('email') }}" autocomplete="email" @if($socialRegistration) readonly @endif required>
                         <small class="text-muted">A six-digit code will be sent to this address to verify your account.</small>
                         @error('email')
                             <span class="field-error">{{ $message }}</span>
@@ -899,6 +909,7 @@
                     </div>
                 @endif
 
+                @unless($socialRegistration)
                 <div class="row g-2 mb-4">
                     <div class="col-md-6">
                         <label class="label-caps" for="p1">Password</label>
@@ -922,12 +933,15 @@
                         @enderror
                     </div>
                 </div>
+                @else
+                    <p class="text-muted mb-4">You will sign in with {{ ucfirst($socialRegistration['provider']) }}; no SmartProbook password is required.</p>
+                @endunless
 
                 <button type="submit" class="btn-smat-red">
                     {{ $isManager ? 'Submit Partner Profile' : 'Create Account' }} <i class="fas fa-shield-check ms-1"></i>
                 </button>
 
-                @if(!$isManager)
+                @if(!$socialRegistration)
                     <div class="divider"><span>or sign up with</span></div>
                     <div class="row g-2">
                         <div class="col-12 col-sm-4">

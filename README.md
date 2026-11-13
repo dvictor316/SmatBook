@@ -21,6 +21,32 @@ Laravel is a web application framework with expressive, elegant syntax. We belie
 
 Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
+## Social sign-in and registration
+
+Google, Facebook and LinkedIn use Laravel Socialite. Configure the provider client IDs,
+client secrets and exact callback URLs in the server environment (see `.env.example`);
+never commit secrets. For `https://smartprobook.com`, the callback URLs are:
+
+```text
+https://smartprobook.com/auth/google/callback
+https://smartprobook.com/auth/facebook/callback
+https://smartprobook.com/auth/linkedin/callback
+```
+
+Register the same URLs with each provider, enable the required email/profile access,
+and enable LinkedIn's OpenID Connect sign-in product. Facebook must grant email
+access and allow the intended users to use the application. Provider and browser
+sessions must return to the same configured host so OAuth state can be verified.
+After changing server environment values, clear Laravel's configuration cache.
+
+Social registration does not require a separate SmartProbook password. Users complete
+the remaining business or partner details and verify their email with the six-digit
+code. Matching an existing account also requires an email code in the browser that
+started the connection. Existing two-factor and account-access restrictions still
+apply. A functioning email configuration is required for these verification codes.
+Social-only users can set an optional password through “Forgot Password” if they
+need to manage two-factor settings, which currently require a password.
+
 ## SmartProbook blog
 
 Super admins can create and edit blog posts using the rich-text editor. Existing plain-text articles remain plain text until edited, and formatted articles are sanitized before saving and display. The cover image field supplies the article's main image.

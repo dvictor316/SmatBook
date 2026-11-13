@@ -6,8 +6,11 @@ use App\Models\ActivityLog;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Services\EmailVerificationService;
+use App\Services\SocialAccountLinkService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
 
 class EmailVerificationController extends Controller
 {
@@ -23,7 +26,7 @@ class EmailVerificationController extends Controller
                 ->withErrors(['login' => 'Sign in to verify the email address on your account.']);
         }
 
-        if (! $this->verification->hasPending($user)) {
+        if (! $request->session()->has('social_link_pending') && ! $this->verification->hasPending($user)) {
             return redirect()->route('home');
         }
 
@@ -64,12 +67,51 @@ class EmailVerificationController extends Controller
                 ->withErrors(['login' => 'Your email verification session expired. Sign in again to continue.']);
         }
 
-        $result = $this->verification->verify($user, $data['code']);
+        $socialLink = $request->session()->get('social_link_pending');
+        if ($socialLink && ((int) ($socialLink['user_id'] ?? 0) !== (int) $user->id
+            || ! in_array($socialLink['provider'] ?? null, ['google', 'facebook', 'linkedin'], true)
+            || empty($socialLink['provider_id']))) {
+            $request->session()->forget('social_link_pending');
+            return redirect()->route('saas-login')->withErrors(['login' => 'The account connection session expired. Please try again.']);
+        }
+
+        try {
+            $result = DB::transaction(function () use ($request, $user, $data, $socialLink) {
+                if ($socialLink) {
+                    $user = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+                    $column = $socialLink['provider'].'_id';
+                    if ((int) ($user->allow_login ?? 1) !== 1 || filled($user->{$column})
+                        || User::where($column, $socialLink['provider_id'])->exists()) {
+                        return 'link_unavailable';
+                    }
+                }
+
+                $result = $socialLink
+                    ? app(SocialAccountLinkService::class)->verify($request, $user, $data['code'])
+                    : $this->verification->verify($user, $data['code']);
+                if ($result === 'verified' && $socialLink) {
+                    $user->update([
+                        $column => $socialLink['provider_id'],
+                        'provider_id' => $socialLink['provider_id'],
+                        'provider_name' => $socialLink['provider'],
+                    ]);
+                    $this->verification->markVerified($user);
+                }
+
+                return $result;
+            });
+        } catch (QueryException $error) {
+            report($error);
+            return back()->withErrors(['code' => 'The account could not be connected. Please try again.']);
+        }
         if ($result !== 'verified') {
             $message = match ($result) {
                 'expired' => 'That code has expired. Request a new code and try again.',
-                'locked' => 'Too many incorrect codes. Request a new code to continue.',
+                'locked' => $socialLink
+                    ? 'Too many incorrect codes. Wait a few minutes before trying again.'
+                    : 'Too many incorrect codes. Request a new code to continue.',
                 'not_sent' => 'The code was not delivered. Request a new code and try again.',
+                'link_unavailable' => 'This account cannot be connected. Sign in with an existing method or contact support.',
                 default => 'The code is incorrect. Check your email and try again.',
             };
 
@@ -80,12 +122,17 @@ class EmailVerificationController extends Controller
         $redirectTo = (string) $request->session()->pull('email_verification_redirect', '');
         $remember = (bool) $request->session()->pull('email_verification_remember', false);
         $request->session()->forget('email_verification_pending_user_id');
+        $request->session()->forget(['email_verification_forced', 'social_link_pending', 'social_link_challenge']);
         Auth::login($user, $remember);
         $request->session()->regenerate();
 
         ActivityLog::record('security', 'registration_email_verified', 'Registration email address verified.', [
             'user_id' => $user->id,
         ]);
+
+        if ($socialLink) {
+            return app(AuthController::class)->completeEmailVerifiedLogin($request, $user, $remember);
+        }
 
         if (! $user->hasTwoFactorAuthenticationEnabled()) {
             return redirect()->to($redirectTo !== '' ? $redirectTo : $this->registrationRedirect($user));
@@ -97,12 +144,14 @@ class EmailVerificationController extends Controller
     public function resend(Request $request)
     {
         $user = $this->pendingUser($request);
-        if (! $user || ! $this->verification->hasPending($user)) {
+        if (! $user || (! $request->session()->has('social_link_pending') && ! $this->verification->hasPending($user))) {
             return redirect()->route('saas-login')
                 ->withErrors(['login' => 'Sign in to request an email verification code.']);
         }
 
-        $result = $this->verification->sendCode($user);
+        $result = $request->session()->has('social_link_pending')
+            ? app(SocialAccountLinkService::class)->sendCode($request, $user)
+            : $this->verification->sendCode($user, true);
         [$message, $flash] = match ($result) {
             'sent' => ['A new six-digit code has been sent to your email.', 'success'],
             'cooldown' => ['A code was sent recently. Wait one minute before requesting another.', 'warning'],

@@ -168,6 +168,7 @@ Route::middleware('guest')->group(function () {
 
     Route::get('/saas-register', [AuthController::class, 'showRegister'])->name('saas-register');
     Route::post('/saas-register', [AuthController::class, 'register'])->name('saas-register.post');
+    Route::post('/saas-register/social/cancel', [AuthController::class, 'cancelSocialRegistration'])->name('social.register.cancel');
     Route::get('/saas-register/location/states', [AuthController::class, 'registrationStates'])->name('saas-register.location.states');
     Route::get('/saas-register/location/councils', [AuthController::class, 'registrationCouncils'])->name('saas-register.location.councils');
     Route::get('/register-account', [AuthController::class, 'showRegister'])->name('saas-register-initial');
