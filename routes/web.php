@@ -46,6 +46,14 @@ Route::get('/robots.txt', function () {
 Route::get('/sitemap.xml', function () {
     $urls = collect(\App\Support\SearchVisibility::PUBLIC_PAGES)
         ->map(fn ($name) => ['loc' => \App\Support\SearchVisibility::canonical(route($name))]);
+    $blogUrls = \App\Models\BlogPost::published()
+        ->orderByDesc('published_at')
+        ->get(['slug', 'updated_at'])
+        ->map(fn ($post) => [
+            'loc' => \App\Support\SearchVisibility::canonical(route('blog.show', $post->slug)),
+            'lastmod' => $post->updated_at?->toAtomString(),
+        ]);
+    $urls = $urls->concat($blogUrls);
     $xml = view('sitemap.xml', compact('urls'));
     return response($xml, 200)->header('Content-Type', 'application/xml; charset=UTF-8');
 })->name('sitemap.xml');

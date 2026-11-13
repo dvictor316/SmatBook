@@ -3,6 +3,7 @@
 @foreach($urls as $entry)
     <url>
         <loc>{{ $entry['loc'] }}</loc>
+        @if(!empty($entry['lastmod']))<lastmod>{{ $entry['lastmod'] }}</lastmod>@endif
     </url>
 @endforeach
 </urlset>

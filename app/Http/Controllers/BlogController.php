@@ -34,7 +34,15 @@ class BlogController extends Controller
         $categories = BlogPost::published()->whereNotNull('category')->where('category', '!=', '')
             ->select('category')->distinct()->orderBy('category')->pluck('category');
 
-        return view('blog.index', compact('posts', 'categories', 'featuredPost'));
+        $seoTitle = 'SmartProbook Blog';
+        $seoDescription = 'Practical business insights, product guidance, and SmartProbook updates for growing teams.';
+        $seoKeywords = 'business insights, accounting, inventory management, business growth, SmartProbook';
+        $seoImage = $featuredPost?->cover_path
+            ? route('media.public', ['path' => $featuredPost->cover_path])
+            : asset('assets/img/logos.png');
+        $seoCanonical = route('blog.index');
+
+        return view('blog.index', compact('posts', 'categories', 'featuredPost', 'seoTitle', 'seoDescription', 'seoKeywords', 'seoImage', 'seoCanonical'));
     }
 
     public function show(string $slug)
@@ -49,10 +57,15 @@ class BlogController extends Controller
         $seoType = 'article';
         $seoImage = $post->cover_path ? route('media.public', ['path' => $post->cover_path]) : null;
         $seoTitle = $post->meta_title ?: $post->title;
-        $seoDescription = $post->meta_description ?: $post->summary;
+        $seoDescription = \Illuminate\Support\Str::limit(
+            trim(strip_tags($post->meta_description ?: $post->summary)),
+            160,
+            ''
+        );
         $seoKeywords = $post->meta_keywords;
+        $seoCanonical = route('blog.show', $post->slug);
 
-        return view('blog.show', compact('post', 'relatedPosts', 'comments', 'seoType', 'seoImage', 'seoTitle', 'seoDescription', 'seoKeywords'));
+        return view('blog.show', compact('post', 'relatedPosts', 'comments', 'seoType', 'seoImage', 'seoTitle', 'seoDescription', 'seoKeywords', 'seoCanonical'));
     }
 
     public function comment(Request $request, string $slug)

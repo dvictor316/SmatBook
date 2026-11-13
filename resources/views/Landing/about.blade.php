@@ -6,7 +6,7 @@
 <div id="intelligenceCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel">
     <div class="carousel-inner">
         <div class="carousel-item active">
-            <img src="https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=2070&q=85" alt="Business professionals meeting in a Lagos office">
+            <img src="https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=2070&q=85" alt="Nigerian business professionals coordinating work in a Lagos office">
             <div class="carousel-caption">
                 <h6 class="text-uppercase mb-3">SmartProbook Overview</h6>
                 <h1>Defining <span class="text-accent">Financial Clarity.</span></h1>
@@ -14,7 +14,7 @@
             </div>
         </div>
         <div class="carousel-item">
-            <img src="https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=2072&q=85" alt="Nigerian colleagues reviewing plans in their office">
+            <img src="https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=2072&q=85" alt="Nigerian colleagues reviewing plans in their office">
             <div class="carousel-caption">
                 <h6 class="text-uppercase mb-3">Global Infrastructure</h6>
                 <h1>The Future of <span class="text-accent">Governance.</span></h1>

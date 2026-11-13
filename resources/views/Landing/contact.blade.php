@@ -46,7 +46,7 @@
                     </div>
                 </div>
 
-                <img class="contact-office-image" src="https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=1000&h=700&q=85" alt="A Lagos office team meeting in a modern Nigerian workspace" width="1000" height="700" loading="lazy">
+                <img class="contact-office-image" src="https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=1000&h=700&q=85" alt="Nigerian colleagues collaborating in a modern office" width="1000" height="700" loading="lazy">
 
                 <div class="support-status">
                     <h6>Technical Support Status</h6>

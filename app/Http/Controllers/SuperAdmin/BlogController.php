@@ -48,7 +48,7 @@ class BlogController extends Controller
     public function store(Request $request)
     {
         $data = $this->validated($request);
-        $data['slug'] = $data['slug'] ?? (Str::limit(Str::slug($data['title']) ?: 'post', 180, '') . '-' . Str::uuid());
+        $data['slug'] = $data['slug'] ?: $this->uniqueSlug($data['title']);
         $data['author_id'] = $request->user()->id;
         $data['published_at'] = $data['status'] === 'published' ? now() : null;
         $data['cover_path'] = $this->storeCover($request);
@@ -152,6 +152,20 @@ class BlogController extends Controller
     {
         return BlogPost::query()->whereNotNull('category')->where('category', '!=', '')
             ->select('category')->distinct()->orderBy('category')->pluck('category');
+    }
+
+    private function uniqueSlug(string $title): string
+    {
+        $base = Str::limit(Str::slug($title) ?: 'post', 180, '');
+        $slug = $base;
+        $suffix = 2;
+
+        while (BlogPost::where('slug', $slug)->exists()) {
+            $slug = Str::limit($base, 180 - strlen((string) $suffix) - 1, '') . '-' . $suffix;
+            $suffix++;
+        }
+
+        return $slug;
     }
 
     private function validated(Request $request, ?BlogPost $post = null): array

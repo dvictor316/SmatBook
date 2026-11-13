@@ -14,7 +14,26 @@
     $shareUrl = urlencode($articleUrl);
     $shareTitle = urlencode($post->title);
     $authorName = $post->author?->name ?: 'SmartProbook Editorial';
+    $articleStructuredData = [
+        '@context' => 'https://schema.org',
+        '@type' => 'BlogPosting',
+        'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $seoCanonical],
+        'headline' => $post->title,
+        'description' => $seoDescription,
+        'image' => [$seoImage],
+        'datePublished' => $post->published_at?->toIso8601String(),
+        'dateModified' => $post->updated_at?->toIso8601String(),
+        'author' => ['@type' => 'Person', 'name' => $authorName],
+        'publisher' => [
+            '@type' => 'Organization',
+            'name' => 'SmartProbook',
+            'logo' => ['@type' => 'ImageObject', 'url' => asset('assets/img/logos.png')],
+        ],
+        'articleSection' => $post->category,
+        'keywords' => $seoKeywords ?: $post->category,
+    ];
 @endphp
+<script type="application/ld+json">{!! json_encode($articleStructuredData, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}</script>
 <main class="blog-site blog-article-page">
     <article class="blog-article">
         <a class="blog-breadcrumb" href="{{ route('blog.index') }}"><i class="fas fa-arrow-left" aria-hidden="true"></i> All insights</a>

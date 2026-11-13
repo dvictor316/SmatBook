@@ -53,7 +53,7 @@
                 </div>
             </div>
             <div class="col-lg-6">
-                <img src="https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=1200&q=85" alt="Nigerian business professionals meeting in a modern office" class="img-fluid rounded-4 shadow">
+                <img src="https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=1200&q=85" alt="Nigerian business professionals coordinating work in a modern office" class="img-fluid rounded-4 shadow">
             </div>
         </div>
     </div>

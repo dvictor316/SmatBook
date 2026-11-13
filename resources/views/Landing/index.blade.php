@@ -1546,7 +1546,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     min-height: 350px;
     background:
         linear-gradient(rgba(3, 18, 45, 0.58), rgba(3, 18, 45, 0.58)),
-        url('https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=1200&q=85') center/cover;
+        url('https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=1200&q=85') center/cover;
     flex: 1;
 }
 .product-video-window video {
@@ -3155,7 +3155,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <div class="col-lg-4 col-md-6">
                 <div class="project-card" role="link" tabindex="0" data-project-url="{{ $m['link'] }}" onclick="if (!event.target.closest('a')) window.location.href=this.dataset.projectUrl;" onkeydown="if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a')) { event.preventDefault(); window.location.href=this.dataset.projectUrl; }">
                     <a href="{{ $m['link'] }}" class="project-card-link" aria-label="View {{ $m['name'] }} project">
-                        <div class="project-img"><img src="{{ $m['img'] }}" alt="{{ $m['alt'] ?? $m['name'] }}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=1200&q=85';"></div>
+                        <div class="project-img"><img src="{{ $m['img'] }}" alt="{{ $m['alt'] ?? $m['name'] }}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=1200&q=85';"></div>
                     </a>
                     <div class="p-4 text-center">
                         <a href="{{ $m['link'] }}" class="project-card-link">
@@ -3206,7 +3206,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 <section class="sb-section" id="capabilities">
     <div class="container">
         <div class="row align-items-center g-5 mb-5 pb-5">
-            <div class="col-lg-6"><div class="cap-img"><img src="https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=800&q=85" alt="Lagos finance team reviewing business figures together" class="img-fluid" loading="lazy"></div></div>
+            <div class="col-lg-6"><div class="cap-img"><img src="https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=800&q=85" alt="Nigerian colleagues reviewing finance figures together in their office" class="img-fluid" loading="lazy"></div></div>
             <div class="col-lg-6">
                 <span class="sb-eyebrow">01 — Engine Depth</span>
                 <h2 class="sb-h1">Strategic <span class="accent">Liquidity</span> Ecosystem</h2>

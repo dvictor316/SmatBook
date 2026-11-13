@@ -483,7 +483,7 @@
         <div class="swiper-wrapper">
             @foreach([
                 [
-                    'img' => 'https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=1200&q=85',
+                    'img' => 'https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=1200&q=85',
                     'name' => 'Operations Dashboard',
                     'role' => 'Control Center',
                     'description' => 'Business operators coordinating daily KPIs, account position tracking, and rapid operational decisions.'
@@ -501,7 +501,7 @@
                     'description' => 'Implementation teams coordinating provisioned clients, lifecycle milestones, and infrastructure state.'
                 ],
                 [
-                    'img' => 'https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=1200&q=85',
+                    'img' => 'https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=1200&q=85',
                     'name' => 'Audit & Compliance',
                     'role' => 'Governance Panel',
                     'description' => 'Governance teams reviewing controls, documents, and policy-driven approval checkpoints.'
@@ -563,7 +563,7 @@
                     'description' => 'Performance intelligence workspace where teams review trends, margins, and executive reports on shared screens.'
                 ],
                 [
-                    'img' => 'https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=1200&q=85',
+                    'img' => 'https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=1200&q=85',
                     'name' => 'Deployment Overview',
                     'role' => 'Infrastructure Ops',
                     'description' => 'Deployment teams planning provisioning status, role workflows, and regional infrastructure readiness.'
@@ -581,7 +581,7 @@
                     'description' => 'Sales professionals using laptops and tablets to manage invoices, approvals, and customer payments.'
                 ],
                 [
-                    'img' => 'https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=1200&q=85',
+                    'img' => 'https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=1200&q=85',
                     'name' => 'Receipts & Collections',
                     'role' => 'Cash Management',
                     'description' => 'Payment operators managing receipts, posted payments, reconciliations, and treasury visibility.'
