@@ -59,7 +59,6 @@
     <link rel="stylesheet" href="{{ asset('assets/plugins/select2/css/select2.min.css') }}">
 
     @if (file_exists(public_path('assets/plugins/fontawesome/css/all.min.css')))
-        <link rel="stylesheet" href="{{ asset('assets/plugins/fontawesome/css/fontawesome.min.css') }}">
         <link rel="stylesheet" href="{{ asset('assets/plugins/fontawesome/css/all.min.css') }}">
         @if (file_exists(public_path('assets/plugins/fontawesome/css/v4-shims.min.css')))
             <link rel="stylesheet" href="{{ asset('assets/plugins/fontawesome/css/v4-shims.min.css') }}">

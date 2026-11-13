@@ -32,6 +32,8 @@ class PlatformDashboardRecoveryTest extends TestCase
             ->assertSee('Platform Module Catalogue')
             ->assertSee('<title>SmartProbook Dashboard</title>', false)
             ->assertSee('response-feedback.js')
+            ->assertSee('assets/plugins/fontawesome/css/all.min.css')
+            ->assertDontSee('assets/plugins/fontawesome/css/fontawesome.min.css')
             ->assertDontSee('Livewire.navigate(destination.href)')
             ->assertDontSee('Please complete setup and select a branch')
             ->assertDontSee('Foreign Cached Branding');

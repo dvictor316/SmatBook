@@ -107,10 +107,22 @@ class LoginIdentifierTest extends TestCase
             ->assertSee('Email or Phone Number')
             ->assertSee('response-feedback.js')
             ->assertSee('pos-offline-auth.js')
+            ->assertSee('assets/plugins/fontawesome/css/all.min.css')
+            ->assertDontSee('assets/plugins/fontawesome/css/fontawesome.min.css')
             ->assertDontSee('jquery-3.7.1.min.js')
             ->assertDontSee('livewire/livewire.js')
             ->assertDontSee('enableInternalNavigation')
             ->assertDontSee('wire:navigate');
+    }
+
+    public function test_combined_icon_stylesheet_contains_the_core_styles(): void
+    {
+        $core = file_get_contents(public_path('assets/plugins/fontawesome/css/fontawesome.min.css'));
+        $combined = file_get_contents(public_path('assets/plugins/fontawesome/css/all.min.css'));
+
+        $this->assertIsString($core);
+        $this->assertIsString($combined);
+        $this->assertStringContainsString(trim($core), $combined);
     }
 
     public function test_login_csrf_refresh_does_not_rotate_tokens_for_other_open_login_pages(): void
