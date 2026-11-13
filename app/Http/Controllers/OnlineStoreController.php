@@ -305,7 +305,7 @@ class OnlineStoreController extends Controller
         $products = $productQuery
             ->orderByDesc('created_at')
             ->orderByDesc('id')
-            ->paginate(\App\Support\PageSize::resolve())->withQueryString();
+            ->paginate(min(4, \App\Support\PageSize::resolve()))->withQueryString();
         $variantGroupIds = $products->getCollection()
             ->pluck('variant_group_id')
             ->filter()

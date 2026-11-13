@@ -43,7 +43,8 @@
         .catalogue-count{color:#77766f;font-size:.83rem;white-space:nowrap}
         .product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;max-width:none;align-items:stretch}
         .product-grid--single{grid-template-columns:minmax(0,760px);max-width:760px;margin-inline:auto;justify-content:center}
-        .product{display:flex;min-width:0;min-height:100%;flex-direction:column;border:1px solid #dfe6f0;border-radius:16px;background:#fff;box-shadow:0 5px 18px rgba(10,30,66,.045);transition:transform .2s ease,box-shadow .2s ease;animation:storefront-rise .55s both}
+        .product{display:flex;min-width:0;min-height:100%;flex-direction:column;border:1px solid #dfe6f0;border-radius:16px;background:#fff;box-shadow:0 5px 18px rgba(10,30,66,.045);transition:transform .2s ease,box-shadow .2s ease;animation:catalogue-slide-in .42s both}
+        .product:nth-child(2){animation-delay:.06s}.product:nth-child(3){animation-delay:.12s}.product:nth-child(4){animation-delay:.18s}
         .product:hover{transform:translateY(-3px);box-shadow:0 18px 38px rgba(6,35,84,.11)}
         .product-media{width:100%;aspect-ratio:4/3;min-height:0;height:auto;background:#fff;border-bottom:1px solid #edf1f6}
         .product-media img{padding:16px;object-fit:contain;transition:transform .45s ease}
@@ -68,11 +69,17 @@
         .stock{margin-top:7px;color:#536984}
         .stock.in-stock{color:#147a45}
         .stock.out-of-stock{color:#b4233b}
+        .availability-link{display:inline-flex;margin-top:7px;color:var(--theme-primary,var(--blue));font-size:.8rem;font-weight:750;text-decoration:underline;text-underline-offset:3px}
         .quantity{justify-content:flex-end;gap:9px;margin:0;padding:0;border:0;flex-wrap:wrap}
         .quantity label{color:#52627a}
         .quantity input{width:76px;min-height:44px;border-color:#dbe4f0;border-radius:10px}
         .add-to-cart{min-height:44px;padding-inline:15px;border:1px solid var(--theme-primary,var(--blue));border-radius:10px;background:var(--theme-primary,var(--blue));color:#fff;font-weight:750;white-space:nowrap}
         .add-to-cart:hover{border-color:var(--theme-deep,var(--navy));background:var(--theme-deep,var(--navy));color:#fff}
+        .catalogue-pagination{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:28px auto 0;padding:14px 16px;border:1px solid #e1e8f1;border-radius:14px;background:#fff;box-shadow:0 6px 20px rgba(10,30,66,.04)}
+        .catalogue-page-link{display:inline-flex;min-height:42px;align-items:center;justify-content:center;gap:8px;padding:9px 15px;border:1px solid var(--theme-line,#dbe4f0);border-radius:10px;background:#fff;color:var(--theme-primary,var(--navy));font-size:.88rem;font-weight:800;text-decoration:none;transition:background .18s ease,color .18s ease,transform .18s ease}
+        .catalogue-page-link:hover{transform:translateY(-1px);border-color:var(--theme-primary,var(--navy));background:var(--theme-primary,var(--navy));color:#fff}
+        .catalogue-page-link.is-disabled{cursor:not-allowed;opacity:.45}
+        .catalogue-page-status{color:#64748b;font-size:.86rem;font-weight:650;text-align:center}
         .checkout{max-width:1060px;margin:42px auto 0;padding:0;overflow:hidden;border:1px solid var(--theme-line,#dbe4f0);border-radius:20px;background:#fff;box-shadow:0 24px 70px rgba(10,30,66,.13);animation:storefront-rise .65s .12s both}
         .checkout-heading{padding:clamp(30px,5vw,54px) 24px 30px;text-align:center;background:radial-gradient(ellipse at 50% 0,var(--theme-wash,rgba(20,99,214,.12)),transparent 68%),linear-gradient(180deg,#fff,#fbfcff);border-bottom:1px solid #e8edf5}
         .checkout-kicker{display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px;padding:7px 13px;border:1px solid var(--theme-line,#dbe4f0);border-radius:999px;background:#fff;color:var(--theme-primary,var(--blue));font-size:.7rem;font-weight:850;letter-spacing:.14em;text-transform:uppercase}
@@ -109,8 +116,9 @@
         .store-footer-inner strong{color:#fff}
         .alert{border-radius:3px}
         @keyframes storefront-rise{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes catalogue-slide-in{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
         @media(max-width:900px){.product-grid{grid-template-columns:1fr;max-width:720px;margin-inline:auto}.product-media{aspect-ratio:16/9}.product-body{padding:clamp(18px,4vw,26px)}}
-        @media(max-width:576px){.store-nav-inner{align-items:center;flex-direction:row;flex-wrap:wrap;gap:10px}.brand{max-width:43%;min-width:0;font-size:.98rem}.brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brand img{width:36px;height:36px}.gallery-nav-links{gap:7px;margin-left:auto}.gallery-nav-links a{font-size:.7rem}.gallery-nav-links a[aria-current=page],.gallery-nav-about{padding:7px}.store-search{width:100%;order:3}.store-search input{min-width:0}.store-search button{padding-inline:.8rem}.store-head{padding:54px 18px}.store-main{padding:34px 16px 52px}.product-grid{gap:16px}.product-media{aspect-ratio:16/10}.product-body{gap:12px;padding:18px}.product-purchase{align-items:stretch;flex-direction:column}.quantity{justify-content:space-between}.quantity .add-to-cart{flex:1}.catalogue-heading{align-items:flex-start;flex-direction:column;gap:8px}.catalogue-count{white-space:normal}.store-category-nav{align-items:stretch;flex-direction:column}.store-category-nav select{width:100%}}
+        @media(max-width:576px){.store-nav-inner{align-items:center;flex-direction:row;flex-wrap:wrap;gap:10px}.brand{max-width:43%;min-width:0;font-size:.98rem}.brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brand img{width:36px;height:36px}.gallery-nav-links{gap:7px;margin-left:auto}.gallery-nav-links a{font-size:.7rem}.gallery-nav-links a[aria-current=page],.gallery-nav-about{padding:7px}.store-search{width:100%;order:3}.store-search input{min-width:0}.store-search button{padding-inline:.8rem}.store-head{padding:54px 18px}.store-main{padding:34px 16px 52px}.product-grid{gap:16px}.product-media{aspect-ratio:16/10}.product-body{gap:12px;padding:18px}.product-purchase{align-items:stretch;flex-direction:column}.quantity{justify-content:space-between}.quantity .add-to-cart{flex:1}.catalogue-heading{align-items:flex-start;flex-direction:column;gap:8px}.catalogue-count{white-space:normal}.catalogue-pagination{gap:8px;padding:10px}.catalogue-page-link{gap:5px;padding:8px 10px;font-size:.78rem}.catalogue-page-status{font-size:.72rem}.store-category-nav{align-items:stretch;flex-direction:column}.store-category-nav select{width:100%}}
         @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
     </style>
     <link rel="stylesheet" href="{{ asset('css/storefront-theme.css') }}?v={{ filemtime(public_path('css/storefront-theme.css')) }}">
@@ -239,6 +247,9 @@
                             <div class="product-price-label">Price</div>
                             <div class="price product-price">{{ \App\Support\GeoCurrency::format((float)$product->price, $company->currency_code ?: 'NGN', $company->currency_code ?: 'NGN') }}</div>
                             <div class="stock product-stock {{ $available > 0 ? 'in-stock' : 'out-of-stock' }}">{{ $available > 0 ? $product->formatStockQuantity($available) . ' available' : 'Unavailable online' }}</div>
+                            @if($available <= 0 && $orderContact['whatsapp'])
+                                <a class="availability-link" href="https://wa.me/{{ $orderContact['whatsapp'] }}?text={{ urlencode('Hello ' . $store->store_name . ', please confirm if ' . $displayName . ' is available.') }}" target="_blank" rel="noopener">Ask about availability</a>
+                            @endif
                         </div>
                         <div class="quantity">
                             <label for="qty{{ $product->id }}" class="small fw-bold">Quantity</label>
@@ -252,6 +263,21 @@
             <div class="alert alert-info grid-column-all">No products are currently available.</div>
         @endforelse
     </div>
+    @if($products->lastPage() > 1)
+        <nav class="catalogue-pagination" aria-label="Product pages">
+            @if($products->onFirstPage())
+                <span class="catalogue-page-link is-disabled" aria-disabled="true"><i class="fas fa-arrow-left" aria-hidden="true"></i> Previous</span>
+            @else
+                <a class="catalogue-page-link" href="{{ $products->previousPageUrl() }}" rel="prev"><i class="fas fa-arrow-left" aria-hidden="true"></i> Previous</a>
+            @endif
+            <span class="catalogue-page-status">Showing {{ $products->firstItem() }}–{{ $products->lastItem() }} of {{ $products->total() }} products <span class="d-block">Page {{ $products->currentPage() }} of {{ $products->lastPage() }}</span></span>
+            @if($products->hasMorePages())
+                <a class="catalogue-page-link" href="{{ $products->nextPageUrl() }}" rel="next">Next <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+            @else
+                <span class="catalogue-page-link is-disabled" aria-disabled="true">Next <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+            @endif
+        </nav>
+    @endif
         <form method="POST" action="{{ $orderAction }}" id="store-order-form">
             @csrf
             <input type="hidden" name="order_token" value="{{ $orderToken }}">
@@ -297,7 +323,6 @@
                 </div>
             </section>
         </form>
-    <div class="mt-4">{{ $products->links() }}</div>
 </main>
 @include('storefront.partials.footer')
 <script>
