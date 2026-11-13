@@ -1,6 +1,7 @@
 @extends('layout.landing_nav')
 
 @section('title', $seoTitle)
+@section('body_class', 'blog-public')
 @section('meta_description', $seoDescription)
 @section('meta_keywords', $seoKeywords)
 @section('style')

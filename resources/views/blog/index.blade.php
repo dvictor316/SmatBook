@@ -1,6 +1,7 @@
 @extends('layout.landing_nav')
 
 @section('title', 'SmartProbook Blog')
+@section('body_class', 'blog-public')
 @section('meta_description', 'Practical business insights, product guidance, and SmartProbook updates for growing teams.')
 @section('style')
     <link rel="stylesheet" href="{{ asset('assets/css/blog.css') }}?v={{ filemtime(public_path('assets/css/blog.css')) }}">

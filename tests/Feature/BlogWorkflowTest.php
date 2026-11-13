@@ -364,9 +364,11 @@ class BlogWorkflowTest extends TestCase
         ]);
 
         $this->get(route('blog.index'))->assertOk()
+            ->assertSee('<body class="blog-public">', false)
             ->assertSee('Featured guide')->assertSee('Editorial Author')
             ->assertSee('2 min read')->assertSee('Latest articles');
         $this->get(route('blog.show', $featured->slug))->assertOk()
+            ->assertSee('<body class="blog-public">', false)
             ->assertSee('Editorial Author')->assertSee('2 min read')
             ->assertSee('Related guide one')->assertSee('Related guide two')->assertSee('Related guide three')
             ->assertDontSee('Unrelated guide')

@@ -1296,7 +1296,7 @@
     @yield('style')
 
 </head>
-<body>
+<body class="@yield('body_class')">
 
 <a class="skip-link" href="#main-content">Skip to main content</a>
 
