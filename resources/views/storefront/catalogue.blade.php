@@ -41,35 +41,38 @@
         .catalogue-heading h2{margin:0;color:var(--navy);font-family:Georgia,"Times New Roman",serif;font-size:clamp(1.8rem,3vw,2.5rem);font-weight:500}
         .catalogue-heading p{margin:7px 0 0;color:#77766f}
         .catalogue-count{color:#77766f;font-size:.83rem;white-space:nowrap}
-        .product-grid{grid-template-columns:minmax(0,1fr);gap:18px;max-width:1120px}
-        .product{display:grid;grid-template-columns:minmax(260px,38%) minmax(0,1fr);border:1px solid #e3eaf3;border-radius:12px;background:#fff;transition:transform .2s ease,box-shadow .2s ease;animation:storefront-rise .55s both}
-        .product:hover{transform:translateY(-3px);box-shadow:0 18px 42px rgba(6,35,84,.1)}
-        .product-media{aspect-ratio:auto;min-height:320px;height:100%;background:linear-gradient(145deg,#edf3fb,#f9fbfe)}
-        .product-media img{transition:transform .45s ease}
+        .product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;max-width:none;align-items:stretch}
+        .product-grid--single{grid-template-columns:minmax(0,760px);max-width:760px;margin-inline:auto;justify-content:center}
+        .product{display:flex;min-width:0;min-height:100%;flex-direction:column;border:1px solid #dfe6f0;border-radius:16px;background:#fff;box-shadow:0 5px 18px rgba(10,30,66,.045);transition:transform .2s ease,box-shadow .2s ease;animation:storefront-rise .55s both}
+        .product:hover{transform:translateY(-3px);box-shadow:0 18px 38px rgba(6,35,84,.11)}
+        .product-media{width:100%;aspect-ratio:4/3;min-height:0;height:auto;background:#fff;border-bottom:1px solid #edf1f6}
+        .product-media img{padding:16px;object-fit:contain;transition:transform .45s ease}
         .product:hover .product-media img{transform:scale(1.035)}
         .product-media i{color:var(--blue)}
-        .product-body{min-width:0;gap:14px;padding:clamp(22px,3vw,38px)}
-        .product-eyebrow{color:#8a6a17;font-size:.72rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
-        .product h2{font-family:Georgia,"Times New Roman",serif;font-size:clamp(1.55rem,2.4vw,2.1rem);font-weight:500;line-height:1.15}
+        .product-body{min-width:0;gap:12px;padding:clamp(18px,2vw,26px)}
+        .product-eyebrow{align-self:flex-start;padding:6px 10px;border:1px solid #f0e5c8;border-radius:999px;background:#fffaf0;color:#80621a;font-size:.68rem;font-weight:850;letter-spacing:.12em;text-transform:uppercase}
+        .product h2{min-height:1.25em;margin:0;color:var(--navy);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:clamp(1.2rem,1.65vw,1.55rem);font-weight:800;line-height:1.25}
         .product-options-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;min-width:0;max-width:100%;padding-bottom:4px}
         .product-size-picker{display:grid;flex:0 1 190px;grid-template-columns:1fr;gap:7px;width:190px;max-width:100%}
         .product-size-picker label{color:var(--navy);font-size:.82rem;font-weight:800}
         .product-size-picker select{width:100%;min-width:0;min-height:44px;border:1px solid var(--gold);border-radius:8px;background:var(--paper);font-weight:700}
-        .product-description{margin:0;color:#64748b;font-size:.95rem;line-height:1.7;white-space:pre-line}
+        .product-description{margin:0;color:#64748b;font-size:.9rem;line-height:1.6;white-space:pre-line}
         .product-meta{display:flex;flex:1 1 180px;flex-wrap:wrap;gap:8px;min-width:0;max-width:100%;padding-bottom:0}
         .product-meta span{display:inline-flex;max-width:100%;align-items:center;gap:6px;padding:7px 10px;border:1px solid #e7edf5;border-radius:999px;background:#f8fafc;color:#52627a;font-size:.78rem;overflow-wrap:anywhere}
         .product-available-sizes{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
         .product-available-sizes-label{color:#64748b;font-size:.78rem;font-weight:800}
         .product-available-sizes span[data-available-size]{padding:5px 9px;border:1px solid var(--theme-line,#dbe4f0);border-radius:999px;background:var(--theme-wash,rgba(20,99,214,.12));color:var(--theme-primary,var(--blue));font-size:.76rem;font-weight:800}
-        .product-purchase{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-top:auto;padding-top:18px;border-top:1px solid #edf0f5}
+        .product-purchase{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:auto;padding-top:18px;border-top:1px solid #edf0f5}
         .product-price-label{margin-bottom:4px;color:#75849a;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
-        .price{color:var(--red);font-size:clamp(1.35rem,2vw,1.8rem);line-height:1.15}
+        .price{color:var(--navy);font-size:clamp(1.3rem,1.8vw,1.65rem);font-weight:850;line-height:1.15}
         .stock{margin-top:7px;color:#536984}
-        .stock.in-stock{color:#16834b}
+        .stock.in-stock{color:#147a45}
         .stock.out-of-stock{color:#b4233b}
-        .quantity{justify-content:flex-end;gap:10px;margin:0;padding:0;border:0}
-        .quantity input{width:88px;min-height:44px;border-color:#dbe4f0}
-        .add-to-cart{min-height:44px;padding-inline:18px;border-radius:5px;font-weight:750}
+        .quantity{justify-content:flex-end;gap:9px;margin:0;padding:0;border:0;flex-wrap:wrap}
+        .quantity label{color:#52627a}
+        .quantity input{width:76px;min-height:44px;border-color:#dbe4f0;border-radius:10px}
+        .add-to-cart{min-height:44px;padding-inline:15px;border:1px solid var(--theme-primary,var(--blue));border-radius:10px;background:var(--theme-primary,var(--blue));color:#fff;font-weight:750;white-space:nowrap}
+        .add-to-cart:hover{border-color:var(--theme-deep,var(--navy));background:var(--theme-deep,var(--navy));color:#fff}
         .checkout{max-width:1060px;margin:42px auto 0;padding:0;overflow:hidden;border:1px solid var(--theme-line,#dbe4f0);border-radius:20px;background:#fff;box-shadow:0 24px 70px rgba(10,30,66,.13);animation:storefront-rise .65s .12s both}
         .checkout-heading{padding:clamp(30px,5vw,54px) 24px 30px;text-align:center;background:radial-gradient(ellipse at 50% 0,var(--theme-wash,rgba(20,99,214,.12)),transparent 68%),linear-gradient(180deg,#fff,#fbfcff);border-bottom:1px solid #e8edf5}
         .checkout-kicker{display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px;padding:7px 13px;border:1px solid var(--theme-line,#dbe4f0);border-radius:999px;background:#fff;color:var(--theme-primary,var(--blue));font-size:.7rem;font-weight:850;letter-spacing:.14em;text-transform:uppercase}
@@ -106,8 +109,8 @@
         .store-footer-inner strong{color:#fff}
         .alert{border-radius:3px}
         @keyframes storefront-rise{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
-        @media(max-width:760px){.product{grid-template-columns:minmax(220px,36%) minmax(0,1fr)}.product-media{min-height:280px}.product-purchase{align-items:flex-start;flex-direction:column}.quantity{width:100%;justify-content:flex-start}}
-        @media(max-width:576px){.store-nav-inner{align-items:center;flex-direction:row;flex-wrap:wrap;gap:10px}.brand{max-width:43%;min-width:0;font-size:.98rem}.brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brand img{width:36px;height:36px}.gallery-nav-links{gap:7px;margin-left:auto}.gallery-nav-links a{font-size:.7rem}.gallery-nav-links a[aria-current=page],.gallery-nav-about{padding:7px}.store-search{width:100%;order:3}.store-search input{min-width:0}.store-search button{padding-inline:.8rem}.store-head{padding:54px 18px}.store-main{padding:34px 16px 52px}.product-grid{grid-template-columns:1fr;gap:16px}.product{grid-template-columns:1fr}.product-media{min-height:0;aspect-ratio:16/10}.product-body{gap:12px;padding:20px}.product-purchase{align-items:stretch}.quantity{justify-content:space-between}.quantity .add-to-cart{flex:1}.catalogue-heading{align-items:flex-start;flex-direction:column;gap:8px}.catalogue-count{white-space:normal}.store-category-nav{align-items:stretch;flex-direction:column}.store-category-nav select{width:100%}}
+        @media(max-width:900px){.product-grid{grid-template-columns:1fr;max-width:720px;margin-inline:auto}.product-media{aspect-ratio:16/9}.product-body{padding:clamp(18px,4vw,26px)}}
+        @media(max-width:576px){.store-nav-inner{align-items:center;flex-direction:row;flex-wrap:wrap;gap:10px}.brand{max-width:43%;min-width:0;font-size:.98rem}.brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brand img{width:36px;height:36px}.gallery-nav-links{gap:7px;margin-left:auto}.gallery-nav-links a{font-size:.7rem}.gallery-nav-links a[aria-current=page],.gallery-nav-about{padding:7px}.store-search{width:100%;order:3}.store-search input{min-width:0}.store-search button{padding-inline:.8rem}.store-head{padding:54px 18px}.store-main{padding:34px 16px 52px}.product-grid{gap:16px}.product-media{aspect-ratio:16/10}.product-body{gap:12px;padding:18px}.product-purchase{align-items:stretch;flex-direction:column}.quantity{justify-content:space-between}.quantity .add-to-cart{flex:1}.catalogue-heading{align-items:flex-start;flex-direction:column;gap:8px}.catalogue-count{white-space:normal}.store-category-nav{align-items:stretch;flex-direction:column}.store-category-nav select{width:100%}}
         @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
     </style>
     <link rel="stylesheet" href="{{ asset('css/storefront-theme.css') }}?v={{ filemtime(public_path('css/storefront-theme.css')) }}">
@@ -164,7 +167,7 @@
         </div>
     @endif
     <div class="catalogue-heading"><div><h2>{{ $selectedCategory ? $selectedCategory->name : 'Our collection' }}</h2><p>{{ $store->show_unavailable_products ? 'Browse the collection. Unavailable products cannot be ordered online.' : 'Add products to your cart, review quantities and total, then submit your order. Only available products are shown.' }}</p></div><span class="catalogue-count">{{ $products->total() }} {{ \Illuminate\Support\Str::plural('product', $products->total()) }}</span></div>
-    <div class="product-grid">
+    <div class="product-grid{{ $products->count() === 1 ? ' product-grid--single' : '' }}">
         @forelse($products as $product)
             @php
                 $available = (float) ($product->storefront_available_stock ?? max((float) ($product->stock ?? 0), (float) ($product->stock_quantity ?? 0)));
