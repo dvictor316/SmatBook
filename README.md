@@ -57,14 +57,49 @@ orderable. The setting affects only that business's store.
 
 ## Public page photos
 
-The locally hosted market photos on the home, About and Contact pages are from
-Pexels and used under the [Pexels License](https://www.pexels.com/license/):
+The locally hosted market photos below are from Pexels and used under the
+[Pexels License](https://www.pexels.com/license/):
 
 - [Lagos market vendor](https://www.pexels.com/photo/woman-selling-vegetables-on-a-market-on-a-street-14881680/)
 - [Jos fruit stall](https://www.pexels.com/photo/colorful-fruit-stall-in-jos-nigeria-market-37126238/)
 - [Nigerian market street](https://www.pexels.com/photo/vibrant-street-market-scene-in-nigeria-35855576/)
 
 The street photo is resized for the site. These are illustrative photos, not endorsements.
+
+The public business and office photos below are locally hosted, resized for the
+site, and used under the [Unsplash License](https://unsplash.com/license). They
+are illustrative and do not identify SmartProbook staff or customers.
+
+| File in `public/images/landing/` | Source |
+|---|---|
+| `project-property.jpg` | [Ninthgrid](https://unsplash.com/photos/a-group-of-people-standing-around-a-table-wCfWNod54JU) |
+| `project-education.jpg` | [wocintechchat](https://unsplash.com/photos/photography-of-three-women-sits-beside-table-inside-room-during-daytime-UcZcsHSp8o4) |
+| `project-payments.jpg` | [Ninthgrid](https://unsplash.com/photos/a-group-of-people-standing-around-a-laptop-computer-m12E3OrpoGA) |
+| `feature-office.jpg` | [Office team](https://unsplash.com/photos/people-working-at-desks-in-open-office-kN_kViDchA0) |
+| `feature-collaboration.jpg` | [wocintechchat](https://unsplash.com/photos/photography-of-people-inside-room-during-daytime-rg1y72eKw6o) |
+| `feature-trader.jpg` | [Ibadan street vendor](https://unsplash.com/photos/a-woman-is-selling-bananas-on-the-street-Tb9D4Ix9oYo) |
+| `feature-finance.jpg` | [Professional with laptop](https://unsplash.com/photos/man-using-macbook-Lks7vei-eAg) |
+| `feature-governance.jpg` | [Office meeting](https://unsplash.com/photos/man-standing-in-front-of-people-sitting-beside-table-with-laptop-computers-gMsnXqILjp4) |
+| `about-overview.jpg` | [Ninthgrid](https://unsplash.com/photos/a-group-of-people-sitting-around-a-table--f8T1PHM0L4) |
+| `about-global.jpg` | [Meeting table](https://unsplash.com/photos/people-sitting-on-chair-in-front-of-table-while-holding-pens-during-daytime-KdeqA3aTnBY) |
+| `about-values.jpg` | [wocintechchat](https://unsplash.com/photos/woman-sits-of-sofa-while-using-tablet-computer-eZ8g_7Sh0J0) |
+| `contact-support.jpg` | [Professional on the phone](https://unsplash.com/photos/young-woman-talking-on-phone-at-desk-with-laptop-n1yI8oExVns) |
+| `subscription-workspace.jpg` | [Professional with laptop](https://unsplash.com/photos/man-in-black-dress-shirt-using-laptop-computer-MSX3O-Sqa8U) |
+| `property-detail.jpg` | [Office meeting](https://unsplash.com/photos/people-sitting-on-chair-5U_28ojjgms) |
+| `education-detail.jpg` | [Team with laptops](https://unsplash.com/photos/group-of-people-using-laptop-computer-QckxruozjRg) |
+| `payments-detail.jpg` | [Ninthgrid](https://unsplash.com/photos/a-man-and-a-woman-are-looking-at-a-laptop-KljeL88lgkk) |
+| `module-operations.jpg` | [Ninthgrid](https://unsplash.com/photos/a-man-and-a-woman-standing-next-to-each-other-dwcG-pB9FJg) |
+| `module-analytics.jpg` | [Business owner in Enugu](https://unsplash.com/photos/a-man-standing-in-front-of-a-store-with-his-arms-crossed-gsw3AP6I-EY) |
+| `module-deployment.jpg` | [Ninthgrid](https://unsplash.com/photos/a-man-and-a-woman-looking-at-a-laptop-GOItLaf-gxY) |
+| `module-audit.jpg` | [Team hands](https://unsplash.com/photos/team-members-gripping-wrists-in-unity-gesture-Y5bvRlcCx8k) |
+| `module-invoices.jpg` | [Ninthgrid](https://unsplash.com/photos/a-couple-of-women-standing-next-to-a-table-EV-BORM-_ow) |
+| `module-receipts.jpg` | [Ninthgrid](https://unsplash.com/photos/a-woman-standing-in-front-of-a-laptop-computer-D8Xxi_I77w4) |
+| `gallery-operations.jpg` | [Office team](https://unsplash.com/photos/diverse-team-celebrating-success-at-office-desk-jPLvaZ06uy0) |
+| `gallery-analytics.jpg` | [Office workspace](https://unsplash.com/photos/people-sitting-on-chair-in-front-of-computer-YI_9SivVt_s) |
+| `gallery-deployment.jpg` | [Team at a computer](https://unsplash.com/photos/diverse-team-collaborating-around-a-computer-screen-Y32qbykD69g) |
+| `gallery-audit.jpg` | [Team around a laptop](https://unsplash.com/photos/diverse-team-collaborating-around-a-laptop-in-office-yd_RKGH_RH4) |
+| `gallery-invoices.jpg` | [Office collaboration](https://unsplash.com/photos/people-sitting-on-chair-in-front-of-laptop-computers-rMILC1PIwM0) |
+| `gallery-receipts.jpg` | [Business meeting](https://unsplash.com/photos/group-of-people-having-a-meeting-VBLHICVh-lI) |
 
 ## SmartProbook blog
 

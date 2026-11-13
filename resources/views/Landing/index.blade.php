@@ -19,24 +19,24 @@
         [
             'name' => 'Property234.com',
             'role' => 'Real Estate Platform',
-            'img' => 'https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=1200&q=85',
-            'alt' => 'Business professionals meeting in a Lagos office',
+            'img' => asset('images/landing/project-property.jpg'),
+            'alt' => 'Business colleagues talking around a table',
             'bio' => 'A global real estate listing ecosystem for owners, surveyors, legal advisers, agents, and every key stakeholder in the property market.',
             'link' => route('landing.projects.lahome'),
         ],
         [
             'name' => 'Master JAMB',
             'role' => 'CBT Examination Platform',
-            'img' => 'https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=1200&q=85',
-            'alt' => 'Nigerian colleagues collaborating around a laptop in their office',
+            'img' => asset('images/landing/project-education.jpg'),
+            'alt' => 'Three colleagues working together at a table',
             'bio' => 'An online CBT platform for schools and institutions, built for exam readiness, timed assessments, and performance tracking.',
             'link' => route('landing.projects.master-jamb'),
         ],
         [
             'name' => 'PayPlus',
             'role' => 'Payment Gateway',
-            'img' => 'https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=1200&q=85',
-            'alt' => 'Nigerian business professionals reviewing payment plans in an office',
+            'img' => asset('images/landing/project-payments.jpg'),
+            'alt' => 'Business colleagues looking at a laptop together',
             'bio' => 'A global payment gateway designed for secure processing of everyday transactions across web, mobile, and enterprise channels.',
             'link' => route('landing.projects.payplus'),
         ],
@@ -1546,7 +1546,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     min-height: 350px;
     background:
         linear-gradient(rgba(3, 18, 45, 0.58), rgba(3, 18, 45, 0.58)),
-        url('https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=1200&q=85') center/cover;
+        url('{{ asset('images/landing/feature-office.jpg') }}') center/cover;
     flex: 1;
 }
 .product-video-window video {
@@ -2770,7 +2770,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <div class="impact-story-grid">
                 <div class="impact-story-media">
                     <div class="impact-story-image-wrap">
-                        <img src="https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=1200&q=85" alt="Nigerian colleagues collaborating around a laptop in their office" loading="lazy">
+                        <img src="{{ asset('images/landing/feature-collaboration.jpg') }}" alt="Colleagues working together in a bright office" loading="lazy">
                     </div>
                     <div class="impact-story-badge">
                         <i class="fas fa-bolt"></i>
@@ -2973,7 +2973,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                 </div>
                 <div class="impact-story-media">
                     <div class="impact-story-image-wrap">
-                        <img src="https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=1200&q=85" alt="Nigerian business professionals coordinating work in a Lagos office" width="1200" height="801" loading="lazy">
+                        <img src="{{ asset('images/landing/feature-trader.jpg') }}" alt="A street vendor preparing plantains in Ibadan, Nigeria" width="1200" height="1600" loading="lazy">
                     </div>
                     <div class="impact-story-badge">
                         <i class="fas fa-warehouse"></i>
@@ -3155,7 +3155,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <div class="col-lg-4 col-md-6">
                 <div class="project-card" role="link" tabindex="0" data-project-url="{{ $m['link'] }}" onclick="if (!event.target.closest('a')) window.location.href=this.dataset.projectUrl;" onkeydown="if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a')) { event.preventDefault(); window.location.href=this.dataset.projectUrl; }">
                     <a href="{{ $m['link'] }}" class="project-card-link" aria-label="View {{ $m['name'] }} project">
-                        <div class="project-img"><img src="{{ $m['img'] }}" alt="{{ $m['alt'] ?? $m['name'] }}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=1200&q=85';"></div>
+                        <div class="project-img"><img src="{{ $m['img'] }}" alt="{{ $m['alt'] ?? $m['name'] }}" loading="lazy" onerror="this.onerror=null;this.src='{{ asset('assets/img/logo-placeholder.svg') }}';"></div>
                     </a>
                     <div class="p-4 text-center">
                         <a href="{{ $m['link'] }}" class="project-card-link">
@@ -3206,7 +3206,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 <section class="sb-section" id="capabilities">
     <div class="container">
         <div class="row align-items-center g-5 mb-5 pb-5">
-            <div class="col-lg-6"><div class="cap-img"><img src="https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=800&q=85" alt="Nigerian colleagues reviewing finance figures together in their office" class="img-fluid" loading="lazy"></div></div>
+            <div class="col-lg-6"><div class="cap-img"><img src="{{ asset('images/landing/feature-finance.jpg') }}" alt="A professional working on a laptop" class="img-fluid" loading="lazy"></div></div>
             <div class="col-lg-6">
                 <span class="sb-eyebrow">01 — Engine Depth</span>
                 <h2 class="sb-h1">Strategic <span class="accent">Liquidity</span> Ecosystem</h2>
@@ -3215,7 +3215,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             </div>
         </div>
         <div class="row align-items-center g-5 pt-5">
-            <div class="col-lg-6 order-lg-2"><div class="cap-img"><img src="https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=800&q=85" alt="Nigerian business leaders discussing governance in a modern office" class="img-fluid" loading="lazy"></div></div>
+            <div class="col-lg-6 order-lg-2"><div class="cap-img"><img src="{{ asset('images/landing/feature-governance.jpg') }}" alt="Colleagues meeting around a table with laptops" class="img-fluid" loading="lazy"></div></div>
             <div class="col-lg-6 order-lg-1">
                 <span class="sb-eyebrow">02 — Governance</span>
                 <h2 class="sb-h1">Institutional <span class="accent">Sovereignty</span> Protocols</h2>

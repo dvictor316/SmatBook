@@ -53,7 +53,7 @@
                 </div>
             </div>
             <div class="col-lg-6">
-                <img src="https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=1200&q=85" alt="Nigerian colleagues learning and collaborating in an office" class="img-fluid rounded-4 shadow" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=1200&q=85';">
+                <img src="{{ asset('images/landing/education-detail.jpg') }}" alt="A group collaborating around laptops" class="img-fluid rounded-4 shadow" loading="lazy">
             </div>
         </div>
     </div>

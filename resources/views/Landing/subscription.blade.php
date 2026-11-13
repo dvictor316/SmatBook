@@ -111,7 +111,7 @@
 <div id="subCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel">
     <div class="carousel-inner">
         <div class="carousel-item active">
-            <img src="https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=2011&q=85" alt="Nigerian colleagues reviewing subscription and business account options in their office">
+            <img src="{{ asset('images/landing/subscription-workspace.jpg') }}" alt="A professional working on a laptop">
             <div class="carousel-caption">
                 <h6 class="text-gold fw-bold text-uppercase mb-3" style="letter-spacing: 5px;">Enterprise Access</h6>
                 <h1>Secure <span class="text-gold">Client Portal.</span></h1>

@@ -43,9 +43,9 @@ class PublicLandingPagesTest extends TestCase
     public function test_public_pages_show_local_market_photos_and_keep_the_contact_form(): void
     {
         foreach ([
-            'landing.index' => 'lagos-market-vendor.jpg',
+            'landing.index' => 'feature-trader.jpg',
             'landing.about' => 'jos-fruit-stall.jpg',
-            'landing.contact' => 'nigerian-market-street.jpg',
+            'landing.contact' => 'contact-support.jpg',
         ] as $routeName => $image) {
             $this->assertFileExists(public_path('images/landing/'.$image));
             $this->get(route($routeName))
@@ -59,6 +59,33 @@ class PublicLandingPagesTest extends TestCase
             ->assertSee('name="fullname"', false)
             ->assertSee('name="email"', false)
             ->assertSee('name="message"', false);
+    }
+
+    public function test_public_pages_use_distinct_existing_business_photos(): void
+    {
+        $pages = [
+            'landing.index', 'landing.about', 'landing.contact', 'landing.team',
+            'landing.projects.lahome', 'landing.projects.master-jamb', 'landing.projects.payplus',
+        ];
+        $markup = '';
+        foreach ($pages as $routeName) {
+            $markup .= $this->get(route($routeName))->assertOk()->getContent();
+        }
+        $markup .= view('Landing.subscription')->render();
+
+        preg_match_all('~/images/landing/([a-z0-9-]+\.jpg)~', $markup, $matches);
+        $photos = $matches[1];
+        $this->assertCount(29, $photos);
+        $this->assertCount(count($photos), array_unique($photos), 'Public business photos should not repeat.');
+
+        $hashes = [];
+        foreach ($photos as $photo) {
+            $path = public_path('images/landing/'.$photo);
+            $this->assertFileExists($path);
+            $this->assertNotFalse(getimagesize($path), $photo.' must be a readable image.');
+            $hashes[] = hash_file('sha256', $path);
+        }
+        $this->assertCount(count($hashes), array_unique($hashes), 'Different filenames must not contain the same photo.');
     }
 
     public function test_public_and_pricing_pages_include_the_branded_footer(): void
