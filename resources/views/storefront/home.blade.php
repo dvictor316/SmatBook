@@ -92,6 +92,7 @@
         @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{animation:none!important}*,*:before,*:after{transition:none!important}}
     </style>
     <link rel="stylesheet" href="{{ asset('css/storefront-theme.css') }}?v={{ filemtime(public_path('css/storefront-theme.css')) }}">
+    @include('layout.partials.footer-styles')
     @include('layout.partials.contrast-adaptation')
 </head>
 <body data-store-theme="{{ $store->store_theme ?: 'classic' }}">
@@ -366,13 +367,7 @@
     @endif
 </main>
 
-<footer class="footer">
-    <div class="footer-inner">
-        <strong>{{ $store->store_name }}</strong>
-        <span>{{ $store->contact_phone }}{{ $store->contact_phone && $store->contact_email ? ' | ' : '' }}{{ $store->contact_email }}</span>
-        <span>Powered by SmartProbook</span>
-    </div>
-</footer>
+@include('storefront.partials.footer')
 <script>
     (function () {
         const preview = document.getElementById('featured-product-preview');

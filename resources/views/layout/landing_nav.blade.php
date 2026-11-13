@@ -1291,6 +1291,7 @@
         }
     </style>
     @include('layout.partials.responsive-guardrails')
+    @include('layout.partials.footer-styles')
     <script src="{{ asset('assets/js/public-navigation.js') }}?v={{ filemtime(public_path('assets/js/public-navigation.js')) }}" defer></script>
     @include('layout.partials.contrast-adaptation')
     @yield('style')

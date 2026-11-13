@@ -39,6 +39,33 @@ class OnlineStoreWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_store_footers_keep_merchant_details_and_smartprobook_branding(): void
+    {
+        [, $company] = $this->workspace('Footer Market');
+        StorefrontSetting::create([
+            'company_id' => $company->id,
+            'slug' => 'footer-market',
+            'store_name' => 'Footer Market',
+            'contact_phone' => '08012345678',
+            'contact_email' => 'market@example.test',
+            'is_enabled' => true,
+        ]);
+
+        foreach (['storefront.catalogue', 'storefront.products', 'storefront.about'] as $routeName) {
+            $html = $this->get(route($routeName, 'footer-market'))
+                ->assertOk()
+                ->assertSee(asset('css/public-footer.css'), false)
+                ->getContent();
+
+            $this->assertSame(1, preg_match('/<footer\b[^>]*>.*?<\/footer>/s', $html, $footer));
+            $this->assertStringContainsString('Footer Market', $footer[0]);
+            $this->assertStringContainsString('08012345678', $footer[0]);
+            $this->assertStringContainsString('market@example.test', $footer[0]);
+            $this->assertStringContainsString('Powered by SmartProbook', $footer[0]);
+            $this->assertStringContainsString(asset('assets/pwa/icon-192.png'), $footer[0]);
+        }
+    }
+
     public function test_public_store_lists_only_its_company_products_and_reserves_stock(): void
     {
         [$user, $company] = $this->workspace('Fresh Market');

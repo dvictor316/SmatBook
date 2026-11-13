@@ -87,6 +87,7 @@
             }
         }
     </style>
+    @include('layout.partials.footer-styles')
 </head>
 <body>
 
@@ -153,7 +154,9 @@
     <div class="container">
         <div class="row g-5">
             <div class="col-lg-4">
-                <a href="{{ url('/') }}" class="footer-logo">SmartPro<span>book</span></a>
+                <a href="{{ url('/') }}" class="spb-footer-brand">
+                    @include('layout.partials.footer-brand', ['footerBrandCaption' => 'Business intelligence'])
+                </a>
                 <p>Engineered for excellence. The premier financial intelligence ecosystem for modern African enterprises.</p>
             </div>
             <div class="col-lg-3 offset-lg-1">
@@ -172,7 +175,7 @@
             </div>
         </div>
         <hr style="border-color: rgba(255,255,255,0.1); margin: 60px 0 30px;">
-        <p class="small text-center mb-0">&copy; 2026 SmartProbook Global Infrastructure Inc. All Rights Reserved.</p>
+        <p class="small text-center mb-0">&copy; {{ now()->year }} SmartProbook Global Infrastructure Inc. All Rights Reserved.</p>
     </div>
 </footer>
 

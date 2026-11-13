@@ -529,6 +529,7 @@
             .custom-grid { grid-template-columns: 1fr; }
         }
     </style>
+    @include('layout.partials.footer-styles')
 </head>
 <body>
 
@@ -713,11 +714,13 @@
         Extra branches are available only on Pro Engine and Institutional plans.
     </section>
 
-    <footer style="padding: 60px 0; border-top: 1px solid var(--muji-border); text-align: center; background: var(--muji-blue-light);">
+    <footer class="spb-plan-footer">
         <div class="container">
-            <p style="font-weight: 700; color: var(--muji-blue-deep); margin-bottom: 10px;">SmartProbook INTELLIGENCE</p>
-            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 20px;">Secure, AES-256 standard encrypted accounting deployment.</p>
-            <p style="font-size: 0.8rem; color: #94a3b8;">© 2026 SmartProbook Enterprise. All rights reserved.</p>
+            <a href="{{ url('/') }}" class="spb-footer-brand">
+                @include('layout.partials.footer-brand', ['footerBrandCaption' => 'Intelligence'])
+            </a>
+            <p>Secure, AES-256 standard encrypted accounting deployment.</p>
+            <p class="spb-plan-copyright">© {{ now()->year }} SmartProbook Enterprise. All rights reserved.</p>
         </div>
     </footer>
 

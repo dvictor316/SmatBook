@@ -2,7 +2,9 @@
     <div class="footer-content">
         <div class="footer-grid">
             <div class="footer-col">
-                <a href="{{ url('/') }}" class="footer-logo">SMARTPRO<span>BOOK</span></a>
+                <a href="{{ url('/') }}" class="spb-footer-brand">
+                    @include('layout.partials.footer-brand', ['footerBrandCaption' => 'Business intelligence'])
+                </a>
                 <p>Accounting, sales, inventory, payroll, tax, and operational tools built for growing businesses and institutions.</p>
             </div>
 

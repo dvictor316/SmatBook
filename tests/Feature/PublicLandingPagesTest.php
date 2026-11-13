@@ -40,6 +40,21 @@ class PublicLandingPagesTest extends TestCase
         $this->assertSame(0, substr_count($html, 'class="sb-footer"'));
     }
 
+    public function test_public_and_pricing_pages_include_the_branded_footer(): void
+    {
+        foreach (['landing.index', 'landing.about', 'blog.index', 'membership-plans'] as $routeName) {
+            $html = $this->get(route($routeName))
+                ->assertOk()
+                ->assertSee(asset('css/public-footer.css'), false)
+                ->getContent();
+
+            $this->assertSame(1, preg_match('/<footer\b[^>]*>.*?<\/footer>/s', $html, $footer));
+            $this->assertStringContainsString(asset('assets/pwa/icon-192.png'), $footer[0]);
+            $this->assertStringContainsString('SmartProbook', $footer[0]);
+            $this->assertStringContainsString((string) now()->year, $footer[0]);
+        }
+    }
+
     public function test_contact_page_reports_validation_errors_without_sending_mail(): void
     {
         $this->from(route('landing.contact'))
