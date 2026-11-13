@@ -151,6 +151,114 @@ body[data-store-theme] .store-nav {
     border-color: var(--theme-line) !important;
 }
 
+.store-menu-toggle {
+    display: none;
+}
+
+#store-cart {
+    scroll-margin-top: 160px;
+}
+
+#cart-storage-warning {
+    color: #fff;
+    line-height: 1.5;
+}
+
+.store-menu-toggle:focus-visible {
+    outline: 3px solid var(--theme-accent);
+    outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+    body.store-nav-enhanced .store-nav .nav-inner,
+    body.store-nav-enhanced .store-nav .store-nav-inner {
+        position: relative;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+    }
+
+    body.store-nav-enhanced .store-nav .brand {
+        flex: 1 1 0;
+        min-width: 0;
+        max-width: none;
+    }
+
+    body.store-nav-enhanced .store-nav .brand span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    body.store-nav-enhanced .store-menu-toggle {
+        display: inline-flex;
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        margin-left: auto;
+        padding: 0;
+        border: 1px solid var(--theme-line);
+        border-radius: 6px;
+        background: #fff;
+        color: var(--theme-primary);
+        cursor: pointer;
+    }
+
+    .store-menu-toggle span {
+        width: 20px;
+        height: 2px;
+        background: currentColor;
+    }
+
+    body.store-nav-enhanced .store-nav #store-navigation {
+        position: absolute;
+        top: 100%;
+        right: 12px;
+        z-index: 25;
+        display: none;
+        width: min(260px, calc(100vw - 24px));
+        margin: 0;
+        padding: 8px;
+        border: 1px solid var(--theme-line);
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 12px 30px rgba(6, 35, 84, .16);
+    }
+
+    body.store-nav-enhanced .store-nav #store-navigation.is-open {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+    }
+
+    body.store-nav-enhanced .store-nav #store-navigation a {
+        display: flex;
+        min-height: 44px;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 12px;
+        font-size: .9rem;
+    }
+
+    body.store-nav-enhanced .store-nav .store-search {
+        order: 3;
+        width: 100%;
+    }
+}
+
+@media (min-width: 768px) {
+    .store-menu-toggle {
+        display: none !important;
+    }
+}
+
 body[data-store-theme] .hero,
 body[data-store-theme] .store-head {
     background:

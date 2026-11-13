@@ -377,6 +377,32 @@ class OnlineStoreWorkflowTest extends TestCase
             ->assertSee('smartprobook-cart-gallery-store');
     }
 
+    public function test_store_navigation_and_empty_cart_are_available_on_each_public_page(): void
+    {
+        [, $company] = $this->workspace('Mobile Store');
+        StorefrontSetting::create([
+            'company_id' => $company->id,
+            'slug' => 'mobile-store',
+            'store_name' => 'Mobile Store',
+            'is_enabled' => true,
+        ]);
+
+        foreach (['storefront.catalogue', 'storefront.products', 'storefront.about'] as $route) {
+            $this->get(route($route, 'mobile-store'))
+                ->assertOk()
+                ->assertSee('aria-controls="store-navigation"', false)
+                ->assertSee('id="store-navigation"', false)
+                ->assertSee('js/storefront-navigation.js');
+        }
+
+        $this->get(route('storefront.products', 'mobile-store'))
+            ->assertOk()
+            ->assertSee('href="#store-cart"', false)
+            ->assertSee('id="store-cart"', false)
+            ->assertSee('Your cart is empty.')
+            ->assertSee('id="place-store-order" type="submit" disabled', false);
+    }
+
     public function test_business_owner_can_choose_one_of_ten_storefront_color_themes(): void
     {
         [$user, $company] = $this->workspace('Theme Store');

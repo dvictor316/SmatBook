@@ -112,7 +112,8 @@
             <img src="{{ $company->logo ? asset($company->logo) : asset('assets/img/logos.png') }}" alt="">
             <span>{{ $store->store_name }}</span>
         </a>
-        <div class="nav-links">
+        @include('storefront.partials.mobile-menu-button')
+        <div class="nav-links" id="store-navigation">
             <a class="nav-home" href="{{ $homeUrl }}" aria-current="page">Home</a>
             @if($categories->isNotEmpty())<a href="#store-categories">Categories</a>@endif
             <a class="nav-gallery" href="{{ $galleryUrl }}">Product Gallery</a>
@@ -120,6 +121,7 @@
         </div>
     </div>
 </nav>
+@include('storefront.partials.mobile-menu-script')
 
 <header class="hero">
     <div class="hero-inner">

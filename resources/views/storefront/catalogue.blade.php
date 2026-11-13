@@ -119,7 +119,8 @@
     $galleryUrl = $customDomain ? route('storefront.custom-domain.products') : route('storefront.products', $store->slug);
     $aboutUrl = $customDomain ? route('storefront.custom-domain.about') : route('storefront.about', $store->slug);
 @endphp
-<nav class="store-nav"><div class="store-nav-inner"><a class="brand" href="{{ $homeUrl }}"><img src="{{ $company->logo ? asset($company->logo) : asset('assets/img/logos.png') }}" alt=""><span>{{ $store->store_name }}</span></a><div class="gallery-nav-links"><a href="{{ $homeUrl }}">Home</a><a href="{{ $galleryUrl }}" aria-current="page">Product Gallery</a><a class="gallery-nav-about" href="{{ $aboutUrl }}">About Us</a><a href="#store-cart" class="btn btn-sm btn-outline-primary">Cart <span class="badge bg-primary" id="cart-count">0</span></a></div><form class="store-search" method="GET">@if($selectedCategoryId)<input type="hidden" name="category_id" value="{{ $selectedCategoryId }}">@endif<input class="form-control" name="q" value="{{ $search }}" placeholder="Search products"><button class="btn btn-primary" title="Search" aria-label="Search"><i class="fas fa-search"></i></button></form></div></nav>
+<nav class="store-nav"><div class="store-nav-inner"><a class="brand" href="{{ $homeUrl }}"><img src="{{ $company->logo ? asset($company->logo) : asset('assets/img/logos.png') }}" alt=""><span>{{ $store->store_name }}</span></a>@include('storefront.partials.mobile-menu-button')<div class="gallery-nav-links" id="store-navigation"><a href="{{ $homeUrl }}">Home</a><a href="{{ $galleryUrl }}" aria-current="page">Product Gallery</a><a class="gallery-nav-about" href="{{ $aboutUrl }}">About Us</a><a href="#store-cart" class="btn btn-sm btn-outline-primary">Cart <span class="badge bg-primary" id="cart-count">0</span></a></div><form class="store-search" method="GET">@if($selectedCategoryId)<input type="hidden" name="category_id" value="{{ $selectedCategoryId }}">@endif<input class="form-control" name="q" value="{{ $search }}" placeholder="Search products"><button class="btn btn-primary" title="Search" aria-label="Search"><i class="fas fa-search"></i></button></form></div></nav>
+@include('storefront.partials.mobile-menu-script')
 <header class="store-head"><div class="store-head-inner"><span class="store-eyebrow">The official online store</span><h1>{{ $store->store_name }}</h1><p>{{ $store->description ?: 'Explore our available collection and send an order request directly to our team.' }}</p></div></header>
 <main class="store-main">
     @if(session('store_order_success'))
@@ -246,7 +247,6 @@
             <div class="alert alert-info grid-column-all">No products are currently available.</div>
         @endforelse
     </div>
-    @if($products->count())
         <form method="POST" action="{{ $orderAction }}" id="store-order-form">
             @csrf
             <input type="hidden" name="order_token" value="{{ $orderToken }}">
@@ -259,6 +259,7 @@
                 <div class="checkout-content">
                     <div class="checkout-cart-box">
                         <div id="cart-empty" class="text-muted py-2">Your cart is empty. Add products from the collection above.</div>
+                        <p id="cart-storage-warning" role="status" hidden></p>
                         <div class="table-responsive"><table class="table align-middle" id="cart-table" hidden><thead><tr><th>Product</th><th>Unit price</th><th style="width:130px">Quantity</th><th>Subtotal</th><th></th></tr></thead><tbody id="cart-items"></tbody><tfoot><tr><th colspan="3" class="text-end">Estimated total</th><th id="cart-total"></th><th></th></tr></tfoot></table></div>
                     </div>
                     <div id="cart-hidden-items"></div>
@@ -291,7 +292,6 @@
                 </div>
             </section>
         </form>
-    @endif
     <div class="mt-4">{{ $products->links() }}</div>
 </main>
 <footer class="store-footer"><div class="store-footer-inner"><strong>{{ $store->store_name }}</strong><span>{{ $store->contact_phone }}{{ $store->contact_phone && $store->contact_email ? ' | ' : '' }}{{ $store->contact_email }}</span><span>Powered by SmartProbook</span></div></footer>
@@ -309,6 +309,12 @@
         const currency = @json($company->currency_code ?: 'NGN');
         const whatsappNumber = @json($orderContact['whatsapp']);
         const storeName = @json($store->store_name);
+        const storageWarning = document.getElementById('cart-storage-warning');
+        function warnStorage(error) {
+            console.warn('Store cart could not access browser storage.', error);
+            storageWarning.textContent = 'Your cart works on this page, but cannot be saved on this device. It may be lost if you leave or refresh.';
+            storageWarning.hidden = false;
+        }
         orderForm?.addEventListener('submit', () => {
             submit.disabled = true;
             submit.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting order...';
@@ -406,7 +412,7 @@
                 }
             });
         } catch (error) {
-            localStorage.removeItem(key);
+            warnStorage(error);
         }
 
         function renderCart() {
@@ -455,7 +461,11 @@
         }
 
         function persistAndRender() {
-            localStorage.setItem(key, JSON.stringify(Array.from(cart.values())));
+            try {
+                localStorage.setItem(key, JSON.stringify(Array.from(cart.values())));
+            } catch (error) {
+                warnStorage(error);
+            }
             renderCart();
         }
 
@@ -502,7 +512,11 @@
         }
 
         @if(session('store_order_success'))
-            localStorage.removeItem(key);
+            try {
+                localStorage.removeItem(key);
+            } catch (error) {
+                warnStorage(error);
+            }
             cart.clear();
         @endif
         renderCart();

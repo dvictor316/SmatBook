@@ -65,13 +65,15 @@
 <nav class="store-nav">
     <div class="nav-inner">
         <a class="brand" href="{{ $homeUrl }}"><img src="{{ $company->logo ? asset($company->logo) : asset('assets/img/logos.png') }}" alt=""><span>{{ $store->store_name }}</span></a>
-        <div class="nav-links">
+        @include('storefront.partials.mobile-menu-button')
+        <div class="nav-links" id="store-navigation">
             <a href="{{ $homeUrl }}">Home</a>
             <a href="{{ $galleryUrl }}">Product Gallery</a>
             <a class="active" href="{{ request()->fullUrl() }}" aria-current="page">About Us</a>
         </div>
     </div>
 </nav>
+@include('storefront.partials.mobile-menu-script')
 <header class="hero">
     <div class="hero-inner">
         <div class="hero-copy">
