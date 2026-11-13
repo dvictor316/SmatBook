@@ -24,7 +24,14 @@
                 setOpen(!open);
             });
             menu.addEventListener('click', (event) => {
-                if (event.target.closest('a[href]')) setOpen(false);
+                const link = event.target.closest('a[href]');
+                if (!link) return;
+                const navigatingToPortal = link.classList.contains('btn-portal')
+                    && !event.defaultPrevented && event.button === 0
+                    && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey
+                    && (!link.target || link.target.toLowerCase() === '_self')
+                    && !link.hasAttribute('download');
+                if (!navigatingToPortal) setOpen(false);
             });
             document.addEventListener('click', (event) => {
                 if (open && !menu.contains(event.target) && !button.contains(event.target)) setOpen(false);
