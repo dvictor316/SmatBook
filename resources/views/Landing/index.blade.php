@@ -19,24 +19,24 @@
         [
             'name' => 'Property234.com',
             'role' => 'Real Estate Platform',
-            'img' => 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1200&auto=format&fit=crop',
-            'alt' => 'Beautiful modern architectural property exterior for Property234.com',
+            'img' => 'https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=1200&q=85',
+            'alt' => 'Business professionals meeting in a Lagos office',
             'bio' => 'A global real estate listing ecosystem for owners, surveyors, legal advisers, agents, and every key stakeholder in the property market.',
             'link' => route('landing.projects.lahome'),
         ],
         [
             'name' => 'Master JAMB',
             'role' => 'CBT Examination Platform',
-            'img' => 'https://images.pexels.com/photos/5940841/pexels-photo-5940841.jpeg?auto=compress&cs=tinysrgb&w=1200',
-            'alt' => 'Mature students studying together with laptops for CBT preparation',
+            'img' => 'https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=1200&q=85',
+            'alt' => 'Nigerian colleagues collaborating around a laptop in their office',
             'bio' => 'An online CBT platform for schools and institutions, built for exam readiness, timed assessments, and performance tracking.',
             'link' => route('landing.projects.master-jamb'),
         ],
         [
             'name' => 'PayPlus',
             'role' => 'Payment Gateway',
-            'img' => 'https://images.pexels.com/photos/4968634/pexels-photo-4968634.jpeg?auto=compress&cs=tinysrgb&w=1200',
-            'alt' => 'African finance professional managing digital payments on a laptop',
+            'img' => 'https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=1200&q=85',
+            'alt' => 'Nigerian business professionals reviewing payment plans in an office',
             'bio' => 'A global payment gateway designed for secure processing of everyday transactions across web, mobile, and enterprise channels.',
             'link' => route('landing.projects.payplus'),
         ],
@@ -63,37 +63,31 @@
             'name' => 'Chinedu Okafor',
             'role' => 'CFO, Meridian Trade Group, Lagos',
             'quote' => 'Our Lagos and Port Harcourt branches now submit consistent daily figures, giving management one reliable report before the next morning.',
-            'img' => asset('assets/img/testimonials/chinedu-okafor.jpg'),
         ],
         [
             'name' => 'Amina Bello',
             'role' => 'Finance Director, Arewa Distribution, Abuja',
             'quote' => 'Expense approvals and audit trails are finally easy to follow. We close our monthly books with far fewer corrections and calls.',
-            'img' => asset('assets/img/testimonials/amina-bello.jpg'),
         ],
         [
             'name' => 'Ama Serwaa Mensah',
             'role' => 'Operations Lead, Akwaaba Retail, Accra',
             'quote' => 'The connection between POS sales and inventory shows us what is moving, what is low, and what each shop should reorder.',
-            'img' => asset('assets/img/testimonials/ama-mensah.jpg'),
         ],
         [
             'name' => 'Wanjiku Njoroge',
             'role' => 'COO, Jirani Merchants, Nairobi',
             'quote' => 'Invoices, customer balances, and payment reminders now sit in one workflow, so our team follows up faster without losing context.',
-            'img' => asset('assets/img/testimonials/wanjiku-njoroge.jpg'),
         ],
         [
             'name' => 'Thabo Mokoena',
             'role' => 'Group Accountant, Ubuntu Supply Network, Johannesburg',
             'quote' => 'Role permissions give every branch the tools it needs while our finance office keeps clear control of sensitive accounting records.',
-            'img' => asset('assets/img/testimonials/thabo-mokoena.jpg'),
         ],
         [
             'name' => 'Fatou Ndiaye',
             'role' => 'Finance Controller, Teranga Commerce, Dakar',
             'quote' => 'Multi-currency reporting has simplified reconciliation across our suppliers and made cash positions much clearer for weekly planning.',
-            'img' => asset('assets/img/testimonials/fatou-ndiaye.jpg'),
         ],
     ];
     $tests = $tests ?? $landingTestimonials;
@@ -1377,7 +1371,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 @keyframes scrollInfinite { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
 .testi-card { width: 340px; flex-shrink: 0; background: rgba(255,255,255,0.05); border: 1px solid rgba(197,160,89,0.35); padding: 32px; border-radius: var(--radius-md); backdrop-filter: blur(10px); transition: all 0.3s; }
 .testi-card:hover { background: rgba(255,255,255,0.08); border-color: var(--gold); transform: translateY(-5px); }
-.testi-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold); }
+.testi-avatar { width: 44px; height: 44px; flex: 0 0 44px; border-radius: 50%; border: 2px solid var(--gold); }
 
 /* Product video */
 .product-video-section {
@@ -1552,7 +1546,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     min-height: 350px;
     background:
         linear-gradient(rgba(3, 18, 45, 0.58), rgba(3, 18, 45, 0.58)),
-        url('https://images.pexels.com/photos/6801648/pexels-photo-6801648.jpeg?auto=compress&cs=tinysrgb&w=1200') center/cover;
+        url('https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=1200&q=85') center/cover;
     flex: 1;
 }
 .product-video-window video {
@@ -2776,7 +2770,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <div class="impact-story-grid">
                 <div class="impact-story-media">
                     <div class="impact-story-image-wrap">
-                        <img src="https://images.pexels.com/photos/30690402/pexels-photo-30690402.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Young Nigerian business women using laptops" loading="lazy">
+                        <img src="https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=1200&q=85" alt="Nigerian colleagues collaborating around a laptop in their office" loading="lazy">
                     </div>
                     <div class="impact-story-badge">
                         <i class="fas fa-bolt"></i>
@@ -2979,7 +2973,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                 </div>
                 <div class="impact-story-media">
                     <div class="impact-story-image-wrap">
-                        <img src="{{ asset('images/landing/lagos-market-vendor.jpg') }}" alt="A vendor selling produce at a Lagos market" width="1200" height="801" loading="lazy">
+                        <img src="https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=1200&q=85" alt="Nigerian business professionals coordinating work in a Lagos office" width="1200" height="801" loading="lazy">
                     </div>
                     <div class="impact-story-badge">
                         <i class="fas fa-warehouse"></i>
@@ -3161,7 +3155,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <div class="col-lg-4 col-md-6">
                 <div class="project-card" role="link" tabindex="0" data-project-url="{{ $m['link'] }}" onclick="if (!event.target.closest('a')) window.location.href=this.dataset.projectUrl;" onkeydown="if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a')) { event.preventDefault(); window.location.href=this.dataset.projectUrl; }">
                     <a href="{{ $m['link'] }}" class="project-card-link" aria-label="View {{ $m['name'] }} project">
-                        <div class="project-img"><img src="{{ $m['img'] }}" alt="{{ $m['alt'] ?? $m['name'] }}" loading="lazy" onerror="this.onerror=null;this.src='{{ asset('assets/img/demo-two.png') }}';"></div>
+                        <div class="project-img"><img src="{{ $m['img'] }}" alt="{{ $m['alt'] ?? $m['name'] }}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=1200&q=85';"></div>
                     </a>
                     <div class="p-4 text-center">
                         <a href="{{ $m['link'] }}" class="project-card-link">
@@ -3212,7 +3206,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 <section class="sb-section" id="capabilities">
     <div class="container">
         <div class="row align-items-center g-5 mb-5 pb-5">
-            <div class="col-lg-6"><div class="cap-img"><img src="https://images.pexels.com/photos/8867434/pexels-photo-8867434.jpeg?auto=compress&cs=tinysrgb&w=800" alt="African business team analysing live financial data and analytics" class="img-fluid" loading="lazy"></div></div>
+            <div class="col-lg-6"><div class="cap-img"><img src="https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=800&q=85" alt="Lagos finance team reviewing business figures together" class="img-fluid" loading="lazy"></div></div>
             <div class="col-lg-6">
                 <span class="sb-eyebrow">01 — Engine Depth</span>
                 <h2 class="sb-h1">Strategic <span class="accent">Liquidity</span> Ecosystem</h2>
@@ -3221,7 +3215,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             </div>
         </div>
         <div class="row align-items-center g-5 pt-5">
-            <div class="col-lg-6 order-lg-2"><div class="cap-img"><img src="https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Professional Nigerian business leaders in a governance and strategy meeting" class="img-fluid" loading="lazy"></div></div>
+            <div class="col-lg-6 order-lg-2"><div class="cap-img"><img src="https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=800&q=85" alt="Nigerian business leaders discussing governance in a modern office" class="img-fluid" loading="lazy"></div></div>
             <div class="col-lg-6 order-lg-1">
                 <span class="sb-eyebrow">02 — Governance</span>
                 <h2 class="sb-h1">Institutional <span class="accent">Sovereignty</span> Protocols</h2>
@@ -3242,7 +3236,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <div class="testi-card">
                 <p style="font-size:0.88rem;color:rgba(255,255,255,0.88);font-style:italic;line-height:1.7;margin-bottom:22px;">"{{ $t['quote'] }}"</p>
                 <div class="d-flex align-items-center gap-3">
-                    <img src="{{ $t['img'] }}" class="testi-avatar" alt="{{ $t['name'] }}" loading="lazy" width="44" height="44">
+                    <span class="testi-avatar" aria-hidden="true" style="display:grid;place-items:center;border-radius:50%;background:rgba(255,255,255,.14);color:var(--gold-light);font-weight:800;">{{ collect(explode(' ', $t['name']))->map(fn ($part) => mb_substr($part, 0, 1))->take(2)->implode('') }}</span>
                     <div>
                         <div style="font-weight:700;color:#fff;font-size:0.83rem;font-family:var(--font-display);">{{ $t['name'] }}</div>
                         <div style="color:var(--gold);font-size:0.68rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;">{{ $t['role'] }}</div>

@@ -483,37 +483,37 @@
         <div class="swiper-wrapper">
             @foreach([
                 [
-                    'img' => 'https://images.pexels.com/photos/3184325/pexels-photo-3184325.jpeg?auto=compress&cs=tinysrgb&w=1200',
+                    'img' => 'https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=1200&q=85',
                     'name' => 'Operations Dashboard',
                     'role' => 'Control Center',
                     'description' => 'Business operators coordinating daily KPIs, account position tracking, and rapid operational decisions.'
                 ],
                 [
-                    'img' => 'https://images.pexels.com/photos/3184296/pexels-photo-3184296.jpeg?auto=compress&cs=tinysrgb&w=1200',
+                    'img' => 'https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=1200&q=85',
                     'name' => 'Analytics Reports',
                     'role' => 'Reporting Suite',
                     'description' => 'Finance teams reviewing profitability, tax exposure, cashflow, and trend forecasting from modern devices.'
                 ],
                 [
-                    'img' => 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1200&auto=format&fit=crop',
+                    'img' => 'https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=1200&q=85',
                     'name' => 'Deployment Overview',
                     'role' => 'Infrastructure Ops',
                     'description' => 'Implementation teams coordinating provisioned clients, lifecycle milestones, and infrastructure state.'
                 ],
                 [
-                    'img' => 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?q=80&w=1200&auto=format&fit=crop',
+                    'img' => 'https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=1200&q=85',
                     'name' => 'Audit & Compliance',
                     'role' => 'Governance Panel',
                     'description' => 'Governance teams reviewing controls, documents, and policy-driven approval checkpoints.'
                 ],
                 [
-                    'img' => 'https://images.unsplash.com/photo-1556761175-b413da4baf72?q=80&w=1200&auto=format&fit=crop',
+                    'img' => 'https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=1200&q=85',
                     'name' => 'Invoice Workspace',
                     'role' => 'Billing Engine',
                     'description' => 'Sales and billing teams managing invoices, approvals, and payment-state tracking with traceable references.'
                 ],
                 [
-                    'img' => 'https://images.pexels.com/photos/3184639/pexels-photo-3184639.jpeg?auto=compress&cs=tinysrgb&w=1200',
+                    'img' => 'https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=1200&q=85',
                     'name' => 'Receipts & Collections',
                     'role' => 'Cash Management',
                     'description' => 'Collections teams handling receipts, settlements, mobile payments, and account reconciliation.'
@@ -551,37 +551,37 @@
         <div class="team-grid">
             @foreach([
                 [
-                    'img' => 'https://images.pexels.com/photos/3183197/pexels-photo-3183197.jpeg?auto=compress&cs=tinysrgb&w=1200',
+                    'img' => 'https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=1200&q=85',
                     'name' => 'Operations Dashboard',
                     'role' => 'Control Center',
                     'description' => 'Human-led operations workspace for transactions, performance snapshots, and global operational control.'
                 ],
                 [
-                    'img' => 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?q=80&w=1200&auto=format&fit=crop',
+                    'img' => 'https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=1200&q=85',
                     'name' => 'Analytics Reports',
                     'role' => 'Reporting Suite',
                     'description' => 'Performance intelligence workspace where teams review trends, margins, and executive reports on shared screens.'
                 ],
                 [
-                    'img' => 'https://images.pexels.com/photos/3184339/pexels-photo-3184339.jpeg?auto=compress&cs=tinysrgb&w=1200',
+                    'img' => 'https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=1200&q=85',
                     'name' => 'Deployment Overview',
                     'role' => 'Infrastructure Ops',
                     'description' => 'Deployment teams planning provisioning status, role workflows, and regional infrastructure readiness.'
                 ],
                 [
-                    'img' => 'https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop',
+                    'img' => 'https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=1200&q=85',
                     'name' => 'Audit & Compliance',
                     'role' => 'Governance Panel',
                     'description' => 'Audit-centric teams working through traceability, policy alignment, and structured approval checkpoints.'
                 ],
                 [
-                    'img' => 'https://images.pexels.com/photos/3182773/pexels-photo-3182773.jpeg?auto=compress&cs=tinysrgb&w=1200',
+                    'img' => 'https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=1200&q=85',
                     'name' => 'Invoice Workspace',
                     'role' => 'Billing Engine',
                     'description' => 'Sales professionals using laptops and tablets to manage invoices, approvals, and customer payments.'
                 ],
                 [
-                    'img' => 'https://images.unsplash.com/photo-1563986768609-322da13575f3?q=80&w=1200&auto=format&fit=crop',
+                    'img' => 'https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=1200&q=85',
                     'name' => 'Receipts & Collections',
                     'role' => 'Cash Management',
                     'description' => 'Payment operators managing receipts, posted payments, reconciliations, and treasury visibility.'

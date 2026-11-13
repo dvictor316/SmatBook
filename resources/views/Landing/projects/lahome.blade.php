@@ -53,7 +53,7 @@
                 </div>
             </div>
             <div class="col-lg-6">
-                <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200&auto=format&fit=crop" alt="Beautiful modern architectural property exterior for Property234.com" class="img-fluid rounded-4 shadow">
+                <img src="https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=1200&q=85" alt="Nigerian business professionals meeting in a modern office" class="img-fluid rounded-4 shadow">
             </div>
         </div>
     </div>

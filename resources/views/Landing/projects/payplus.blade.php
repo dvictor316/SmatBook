@@ -53,7 +53,7 @@
                 </div>
             </div>
             <div class="col-lg-6">
-                <img src="https://images.pexels.com/photos/6863183/pexels-photo-6863183.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="African finance professional managing digital payments on a laptop" class="img-fluid rounded-4 shadow">
+                <img src="https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=1200&q=85" alt="Nigerian finance professionals reviewing payments in their office" class="img-fluid rounded-4 shadow">
             </div>
         </div>
     </div>

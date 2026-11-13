@@ -53,7 +53,7 @@
                 </div>
             </div>
             <div class="col-lg-6">
-                <img src="https://images.pexels.com/photos/5940831/pexels-photo-5940831.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Mature students using laptops for CBT practice and online learning" class="img-fluid rounded-4 shadow" onerror="this.onerror=null;this.src='{{ asset('assets/img/user-5.jpg') }}';">
+                <img src="https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=1200&q=85" alt="Nigerian colleagues learning and collaborating in an office" class="img-fluid rounded-4 shadow" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=1200&q=85';">
             </div>
         </div>
     </div>

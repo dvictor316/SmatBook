@@ -6,7 +6,7 @@
 <div id="intelligenceCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel">
     <div class="carousel-inner">
         <div class="carousel-item active">
-            <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070" alt="Corporate Intelligence">
+            <img src="https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=2070&q=85" alt="Business professionals meeting in a Lagos office">
             <div class="carousel-caption">
                 <h6 class="text-uppercase mb-3">SmartProbook Overview</h6>
                 <h1>Defining <span class="text-accent">Financial Clarity.</span></h1>
@@ -14,7 +14,7 @@
             </div>
         </div>
         <div class="carousel-item">
-            <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072" alt="Future Governance">
+            <img src="https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=2072&q=85" alt="Nigerian colleagues reviewing plans in their office">
             <div class="carousel-caption">
                 <h6 class="text-uppercase mb-3">Global Infrastructure</h6>
                 <h1>The Future of <span class="text-accent">Governance.</span></h1>
@@ -46,7 +46,7 @@
     <div class="container">
         <div class="row align-items-center g-5">
             <div class="col-lg-6">
-                <img src="{{ asset('images/landing/jos-fruit-stall.jpg') }}" class="about-image" alt="A fruit stall at a market in Jos, Nigeria" width="1000" height="668" loading="lazy">
+                <img src="https://images.unsplash.com/photo-1739287088753-73a9b8b771bc?auto=format&fit=crop&w=1000&q=85" class="about-image" alt="A Nigerian team collaborating around a laptop in their office" width="1000" height="668" loading="lazy">
             </div>
             <div class="col-lg-6">
                 <div class="about-label">01. Our Mission</div>
@@ -88,7 +88,7 @@
     <div class="container">
         <div class="row align-items-center g-5">
             <div class="col-lg-6">
-                <img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=1000" class="about-image" alt="Values">
+                <img src="https://images.unsplash.com/photo-1739298061740-5ed03045b280?auto=format&fit=crop&w=1000&q=85" class="about-image" alt="Nigerian business professionals working together in an office">
             </div>
             <div class="col-lg-6">
                 <div class="about-label">03. Our Values</div>

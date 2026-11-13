@@ -46,7 +46,7 @@
                     </div>
                 </div>
 
-                <img class="contact-market-image" src="{{ asset('images/landing/nigerian-market-street.jpg') }}" alt="A market street in Nigeria" width="800" height="1067" loading="lazy">
+                <img class="contact-office-image" src="https://images.unsplash.com/photo-1739298061707-cefee19941b7?auto=format&fit=crop&w=1000&h=700&q=85" alt="A Lagos office team meeting in a modern Nigerian workspace" width="1000" height="700" loading="lazy">
 
                 <div class="support-status">
                     <h6>Technical Support Status</h6>
@@ -315,7 +315,7 @@
         color: var(--accent-gold);
     }
 
-    .contact-market-image {
+    .contact-office-image {
         display: block;
         width: 100%;
         height: 180px;
