@@ -7,6 +7,11 @@ use Illuminate\Support\Facades\Schema;
 
 class SchemaColumnCache
 {
+    public function hasTable(string $table): bool
+    {
+        return $this->columns($table) !== null;
+    }
+
     public function columns(string $table): ?array
     {
         $request = app(Request::class);

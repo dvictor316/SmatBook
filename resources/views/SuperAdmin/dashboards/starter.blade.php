@@ -3,7 +3,7 @@
 @section('dashboard_variant', 'starter')
 
 @section('content')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ asset('assets/plugins/chartjs/chart.min.js') }}"></script>
 <style>
     .starter-dashboard {
         margin-left: var(--sb-sidebar-w, 270px);

@@ -8,13 +8,16 @@
     <script src="{{ URL::asset('/assets/js/jspdf.min.js') }}"></script>
 @endif
 
-@if (!Route::is(['saas-login', 'saas-register', 'forgot-password', 'password.reset']))
+@if (Route::is(['add-products', 'edit-products', 'inbox', 'purchases.*', 'add-purchases', 'purchase-add.legacy', 'add-purchases-order', 'add-quotations', 'edit-quotations', 'add-invoice', 'edit-invoice', 'create-invoices', 'sales.showPos', 'form-select2']) || request()->is('pos*'))
     <script src="{{ URL::asset('/assets/plugins/select2/js/select2.min.js') }}"></script>
+@endif
+
+@if (!Route::is(['index-two', 'saas-login', 'saas-register', 'forgot-password', 'password.reset']))
     <script src="{{ URL::asset('/assets/plugins/moment/moment.min.js') }}"></script>
     <script src="{{ URL::asset('/assets/js/bootstrap-datetimepicker.min.js') }}"></script>
 @endif
 
-@if (!Route::is(['companies', 'saas-login', 'saas-register', 'forgot-password', 'password.reset']))
+@if (Route::is(['inventory.Products.index', 'product-list', 'purchases.*', 'credit-notes']))
     <script src="{{ URL::asset('/assets/plugins/datatables/datatables.min.js') }}"></script>
 @endif
 

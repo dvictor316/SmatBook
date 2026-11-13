@@ -89,14 +89,8 @@ class AppServiceProvider extends ServiceProvider
             Livewire::component('inbox-component', InboxComponent::class);
         }
 
-        // 4. Model Observers
-        try {
-            if (Schema::hasTable('users')) {
-                User::observe(UserObserver::class);
-            }
-        } catch (Throwable) {
-            // Artisan commands and tests should still boot when the DB is temporarily unavailable.
-        }
+        // Observer registration is local and does not need a database schema check.
+        User::observe(UserObserver::class);
 
         // 5. Global View Composers
         $this->registerViewComposers();
@@ -107,16 +101,17 @@ class AppServiceProvider extends ServiceProvider
      */
     private function registerViewComposers(): void
     {
-        if (!$this->databaseConnectionIsReady()) {
-            return;
-        }
-
         // COMPOSER 1: Global Categories (Only if table exists)
         View::composer('*', function ($view) {
             static $categoriesLoaded = [];
             static $categoriesCache = [];
 
             if (array_key_exists('categories', $view->getData())) {
+                return;
+            }
+
+            if (request()->is('custom-login', 'login', 'forgot-password', 'reset-password*', 'saas-login', 'saas-register')) {
+                $view->with('categories', collect());
                 return;
             }
 
@@ -196,12 +191,20 @@ class AppServiceProvider extends ServiceProvider
         // COMPOSER 2: Company Dashboard Stats (Only for company-related views)
         View::composer('companies.*', function ($view) {
             if (Schema::hasTable('companies')) {
+                $counts = Company::query()
+                    ->selectRaw('COUNT(*) as total_companies')
+                    ->selectRaw("SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_companies")
+                    ->selectRaw("SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END) as inactive_companies")
+                    ->selectRaw('SUM(CASE WHEN address IS NOT NULL THEN 1 ELSE 0 END) as companies_with_address')
+                    ->selectRaw('SUM(CASE WHEN DATE(created_at) = ? THEN 1 ELSE 0 END) as new_companies_subscribed', [Carbon::today()->toDateString()])
+                    ->first();
+
                 $view->with([
-                    'totalCompanies'         => Company::count(),
-                    'activeCompanies'        => Company::where('status', 'active')->count(),
-                    'inactiveCompanies'      => Company::where('status', 'inactive')->count(),
-                    'companiesWithAddress'   => Company::whereNotNull('address')->count(),
-                    'newCompaniesSubscribed' => Company::whereDate('created_at', Carbon::today())->count(),
+                    'totalCompanies' => (int) ($counts->total_companies ?? 0),
+                    'activeCompanies' => (int) ($counts->active_companies ?? 0),
+                    'inactiveCompanies' => (int) ($counts->inactive_companies ?? 0),
+                    'companiesWithAddress' => (int) ($counts->companies_with_address ?? 0),
+                    'newCompaniesSubscribed' => (int) ($counts->new_companies_subscribed ?? 0),
                 ]);
             }
         });
@@ -242,13 +245,4 @@ class AppServiceProvider extends ServiceProvider
         });
     }
 
-    private function databaseConnectionIsReady(): bool
-    {
-        try {
-            DB::connection()->getPdo();
-            return true;
-        } catch (Throwable) {
-            return false;
-        }
-    }
 }

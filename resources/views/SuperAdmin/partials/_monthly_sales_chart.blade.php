@@ -25,7 +25,7 @@
     }
 </style>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ asset('assets/plugins/chartjs/chart.min.js') }}"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const ctx = document.getElementById('monthlySalesChart').getContext('2d');

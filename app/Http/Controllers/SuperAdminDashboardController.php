@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Schema;
 use App\Support\SuperAdminBusinessWorkspace;
 use App\Support\SystemEventMailer;
 use App\Support\InventoryQuantity;
@@ -48,13 +47,13 @@ class SuperAdminDashboardController extends Controller
 
     private function applyFinalizedSalesFilter($query, string $table = 'sales')
     {
-        if (Schema::hasColumn($table, 'deleted_at')) {
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn($table, 'deleted_at')) {
             $query->whereNull($table . '.deleted_at');
         }
 
-        $hasPaymentStatus = Schema::hasColumn($table, 'payment_status');
-        $hasOrderStatus = Schema::hasColumn($table, 'order_status');
-        $hasStatus = Schema::hasColumn($table, 'status');
+        $hasPaymentStatus = app(\App\Support\SchemaColumnCache::class)->hasColumn($table, 'payment_status');
+        $hasOrderStatus = app(\App\Support\SchemaColumnCache::class)->hasColumn($table, 'order_status');
+        $hasStatus = app(\App\Support\SchemaColumnCache::class)->hasColumn($table, 'status');
 
         if (!$hasPaymentStatus && !$hasOrderStatus && !$hasStatus) {
             return $query;
@@ -94,7 +93,7 @@ class SuperAdminDashboardController extends Controller
     {
         $query = User::query();
 
-        if (Schema::hasColumn('users', 'role')) {
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'role')) {
             $query->whereNotIn(
                 DB::raw("LOWER(COALESCE(role, ''))"),
                 ['super_admin', 'superadmin', 'state_manager', 'deployment_manager']
@@ -106,7 +105,7 @@ class SuperAdminDashboardController extends Controller
 
     private function bucketOverrideUserIds(string $bucket): array
     {
-        if (!Schema::hasTable('super_admin_user_bucket_overrides')) {
+        if (!app(\App\Support\SchemaColumnCache::class)->hasTable('super_admin_user_bucket_overrides')) {
             return [];
         }
 
@@ -131,7 +130,7 @@ class SuperAdminDashboardController extends Controller
 
         $ids = collect($overrideIds)->merge($configuredIds)->filter()->map(fn ($id) => (int) $id);
 
-        if (Schema::hasColumn('users', 'role')) {
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'role')) {
             $ids = $ids->merge(
                 User::query()
                     ->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), $this->stateManagerRoles)
@@ -139,7 +138,7 @@ class SuperAdminDashboardController extends Controller
             );
         }
 
-        if (!Schema::hasTable('deployment_managers') || !Schema::hasColumn('deployment_managers', 'user_id')) {
+        if (!app(\App\Support\SchemaColumnCache::class)->hasTable('deployment_managers') || !app(\App\Support\SchemaColumnCache::class)->hasColumn('deployment_managers', 'user_id')) {
             return $ids->unique()->values()->all();
         }
 
@@ -160,7 +159,7 @@ class SuperAdminDashboardController extends Controller
     private function registeredBusinessUserIds(): array
     {
         $userIds = collect();
-        if (Schema::hasTable('companies')) {
+        if (app(\App\Support\SchemaColumnCache::class)->hasTable('companies')) {
             $userIds = $this->registeredBusinessesQuery()
                 ->select(DB::raw($this->companyOwnerExpression() . ' as owner_user_id'))
                 ->get()
@@ -222,7 +221,7 @@ class SuperAdminDashboardController extends Controller
         $stateManagerIds = $this->stateManagerUserIds();
         $registeredBusinessIds = $this->registeredBusinessUserIds();
 
-        if (Schema::hasColumn('users', 'role')) {
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'role')) {
             $query->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), $this->agentRoles);
         }
 
@@ -243,7 +242,7 @@ class SuperAdminDashboardController extends Controller
         $stateManagerIds = $this->stateManagerUserIds();
         $registeredBusinessIds = $this->registeredBusinessUserIds();
 
-        if (Schema::hasColumn('users', 'role')) {
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'role')) {
             $query->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), ['admin', 'administrator', 'accountant', 'cashier', 'store_manager', 'staff', 'user']);
         } else {
             $query->whereRaw('1 = 0');
@@ -263,7 +262,7 @@ class SuperAdminDashboardController extends Controller
     private function companyNameExpression(string $table = 'companies'): string
     {
         $columns = collect(['name', 'company_name'])
-            ->filter(fn (string $column) => Schema::hasColumn($table, $column))
+            ->filter(fn (string $column) => app(\App\Support\SchemaColumnCache::class)->hasColumn($table, $column))
             ->map(fn (string $column) => "{$table}.{$column}")
             ->push("''")
             ->implode(', ');
@@ -274,7 +273,7 @@ class SuperAdminDashboardController extends Controller
     private function companyOwnerExpression(): string
     {
         $columns = collect(['user_id', 'owner_id'])
-            ->filter(fn (string $column) => Schema::hasColumn('companies', $column))
+            ->filter(fn (string $column) => app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', $column))
             ->map(fn (string $column) => "companies.{$column}")
             ->push('NULL');
 
@@ -284,10 +283,10 @@ class SuperAdminDashboardController extends Controller
     private function registeredBusinessesQuery()
     {
         $ownerColumn = $this->companyOwnerExpression();
-        $domainPrefix = Schema::hasColumn('companies', 'domain_prefix') ? "COALESCE(companies.domain_prefix, '')" : "''";
-        $companyPlan = Schema::hasColumn('companies', 'plan') ? "COALESCE(companies.plan, '')" : "''";
-        $companyEmail = Schema::hasColumn('companies', 'email') ? 'companies.email' : "''";
-        $companyPhone = Schema::hasColumn('companies', 'phone') ? 'companies.phone' : "''";
+        $domainPrefix = app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'domain_prefix') ? "COALESCE(companies.domain_prefix, '')" : "''";
+        $companyPlan = app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'plan') ? "COALESCE(companies.plan, '')" : "''";
+        $companyEmail = app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'email') ? 'companies.email' : "''";
+        $companyPhone = app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'phone') ? 'companies.phone' : "''";
 
         $query = Company::withoutGlobalScope('tenant')
             ->leftJoin('users as owners', 'owners.id', '=', DB::raw($ownerColumn))
@@ -318,26 +317,26 @@ class SuperAdminDashboardController extends Controller
                     ->whereIn(DB::raw("LOWER(COALESCE(platform_users.role, ''))"), ['super_admin', 'superadmin']);
             });
 
-        if (Schema::hasColumn('companies', 'deleted_at')) {
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'deleted_at')) {
             $query->whereNull('companies.deleted_at');
         }
 
-        if (Schema::hasColumn('companies', 'is_demo')) {
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'is_demo')) {
             $query->where(function ($demos) {
                 $demos->whereNull('companies.is_demo')->orWhere('companies.is_demo', false);
             });
         }
 
-        if (Schema::hasTable('subscriptions')) {
+        if (app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')) {
             $revenue = $this->subscriptionRevenueExpression('subscriptions');
             $paid = $this->subscriptionPaidCondition('subscriptions');
             $paidAt = $this->subscriptionPaidAtExpression('subscriptions');
             $matches = [];
-            if (Schema::hasColumn('subscriptions', 'company_id')) {
+            if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'company_id')) {
                 $matches[] = 'subscriptions.company_id = companies.id';
             }
-            if (Schema::hasColumn('subscriptions', 'user_id') && Schema::hasColumn('users', 'company_id')) {
-                $unassigned = Schema::hasColumn('subscriptions', 'company_id') ? 'subscriptions.company_id IS NULL AND ' : '';
+            if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'user_id') && app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'company_id')) {
+                $unassigned = app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'company_id') ? 'subscriptions.company_id IS NULL AND ' : '';
                 $matches[] = "({$unassigned}subscriptions.user_id = owners.id AND owners.company_id = companies.id)";
             }
             $match = implode(' OR ', $matches ?: ['1 = 0']);
@@ -372,7 +371,7 @@ class SuperAdminDashboardController extends Controller
         $metrics = ['total' => 0, 'revenue' => 0.0];
 
         try {
-            if (!Schema::hasTable('subscriptions')) {
+            if (!app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')) {
                 return $metrics;
             }
 
@@ -381,7 +380,7 @@ class SuperAdminDashboardController extends Controller
             $registeredBusinessIds = $this->registeredBusinessUserIds();
             $companyIds = collect();
 
-            if ($registeredBusinessIds !== [] && Schema::hasColumn('users', 'company_id')) {
+            if ($registeredBusinessIds !== [] && app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'company_id')) {
                 $companyIds = DB::table('users')
                     ->whereIn('id', $registeredBusinessIds)
                     ->whereNotNull('company_id')
@@ -394,12 +393,12 @@ class SuperAdminDashboardController extends Controller
 
             if ($registeredBusinessIds !== []) {
                 $paidSubscriptions->where(function ($query) use ($registeredBusinessIds, $companyIds) {
-                    if (Schema::hasColumn('subscriptions', 'user_id')) {
+                    if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'user_id')) {
                         $query->whereIn('subscriptions.user_id', $registeredBusinessIds);
                     }
 
-                    if (Schema::hasColumn('subscriptions', 'company_id') && $companyIds->isNotEmpty()) {
-                        $method = Schema::hasColumn('subscriptions', 'user_id') ? 'orWhereIn' : 'whereIn';
+                    if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'company_id') && $companyIds->isNotEmpty()) {
+                        $method = app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'user_id') ? 'orWhereIn' : 'whereIn';
                         $query->{$method}('subscriptions.company_id', $companyIds->all());
                     }
                 });
@@ -411,12 +410,12 @@ class SuperAdminDashboardController extends Controller
 
             if ($registeredBusinessIds !== []) {
                 $metrics['total'] = count($registeredBusinessIds);
-            } elseif (Schema::hasColumn('subscriptions', 'company_id')) {
+            } elseif (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'company_id')) {
                 $metrics['total'] = (int) ((clone $paidSubscriptions)
                     ->whereNotNull('subscriptions.company_id')
                     ->distinct()
                     ->count('subscriptions.company_id') ?? 0);
-            } elseif (Schema::hasColumn('subscriptions', 'user_id')) {
+            } elseif (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'user_id')) {
                 $metrics['total'] = (int) ((clone $paidSubscriptions)
                     ->whereNotNull('subscriptions.user_id')
                     ->distinct()
@@ -431,7 +430,7 @@ class SuperAdminDashboardController extends Controller
 
     private function applyPlanUserScope($query)
     {
-        if (Schema::hasTable('deployment_managers') && Schema::hasColumn('deployment_managers', 'user_id')) {
+        if (app(\App\Support\SchemaColumnCache::class)->hasTable('deployment_managers') && app(\App\Support\SchemaColumnCache::class)->hasColumn('deployment_managers', 'user_id')) {
             $query->whereNotExists(function ($subQuery) {
                 $subQuery->select(DB::raw(1))
                     ->from('deployment_managers')
@@ -439,17 +438,17 @@ class SuperAdminDashboardController extends Controller
             });
         }
 
-        $hasSubscriptions = Schema::hasTable('subscriptions');
-        $hasCompanyPlan = Schema::hasTable('companies')
-            && Schema::hasColumn('users', 'company_id')
-            && Schema::hasColumn('companies', 'plan');
+        $hasSubscriptions = app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions');
+        $hasCompanyPlan = app(\App\Support\SchemaColumnCache::class)->hasTable('companies')
+            && app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'company_id')
+            && app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'plan');
 
         if (!$hasSubscriptions && !$hasCompanyPlan) {
             return $query;
         }
 
         $query->where(function ($planQuery) use ($hasSubscriptions, $hasCompanyPlan) {
-            if ($hasSubscriptions && Schema::hasColumn('subscriptions', 'user_id')) {
+            if ($hasSubscriptions && app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'user_id')) {
                 $planQuery->whereExists(function ($subQuery) {
                     $subQuery->select(DB::raw(1))
                         ->from('subscriptions')
@@ -457,7 +456,7 @@ class SuperAdminDashboardController extends Controller
                 });
             }
 
-            if ($hasSubscriptions && Schema::hasColumn('users', 'company_id') && Schema::hasColumn('subscriptions', 'company_id')) {
+            if ($hasSubscriptions && app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'company_id') && app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'company_id')) {
                 $planQuery->orWhereExists(function ($subQuery) {
                     $subQuery->select(DB::raw(1))
                         ->from('subscriptions')
@@ -486,14 +485,14 @@ class SuperAdminDashboardController extends Controller
 
     private function subscriptionRevenueExpression(string $table = 'subscriptions'): string
     {
-        $amountExpr = Schema::hasColumn('subscriptions', 'amount') ? "NULLIF({$table}.amount, 0)" : 'NULL';
-        $planIdExpr = Schema::hasColumn('subscriptions', 'plan_id') && Schema::hasTable('plans')
+        $amountExpr = app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'amount') ? "NULLIF({$table}.amount, 0)" : 'NULL';
+        $planIdExpr = app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'plan_id') && app(\App\Support\SchemaColumnCache::class)->hasTable('plans')
             ? "(SELECT plans.price FROM plans WHERE plans.id = {$table}.plan_id LIMIT 1)"
             : 'NULL';
-        $planNameExpr = Schema::hasColumn('subscriptions', 'plan') && Schema::hasTable('plans')
+        $planNameExpr = app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'plan') && app(\App\Support\SchemaColumnCache::class)->hasTable('plans')
             ? "(SELECT plans.price FROM plans WHERE LOWER(plans.name) = LOWER({$table}.plan) LIMIT 1)"
             : 'NULL';
-        $packageIdExpr = Schema::hasColumn('subscriptions', 'package_id') && Schema::hasTable('packages')
+        $packageIdExpr = app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'package_id') && app(\App\Support\SchemaColumnCache::class)->hasTable('packages')
             ? "(SELECT packages.price FROM packages WHERE packages.id = {$table}.package_id LIMIT 1)"
             : 'NULL';
 
@@ -505,7 +504,7 @@ class SuperAdminDashboardController extends Controller
         $columns = [];
 
         foreach (['company_id', 'user_id', 'id'] as $column) {
-            if (Schema::hasColumn('subscriptions', $column)) {
+            if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', $column)) {
                 $columns[] = "{$table}.{$column}";
             }
         }
@@ -518,7 +517,7 @@ class SuperAdminDashboardController extends Controller
         $columns = [];
 
         foreach (['plan_name', 'plan'] as $column) {
-            if (Schema::hasColumn('subscriptions', $column)) {
+            if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', $column)) {
                 $columns[] = "NULLIF({$table}.{$column}, '')";
             }
         }
@@ -532,19 +531,19 @@ class SuperAdminDashboardController extends Controller
     {
         $conditions = [];
 
-        if (Schema::hasColumn('subscriptions', 'payment_status')) {
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'payment_status')) {
             return "LOWER(COALESCE({$table}.payment_status, '')) IN ('paid','completed','success','successful','verified')";
         }
 
-        if (Schema::hasColumn('subscriptions', 'status')) {
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'status')) {
             $conditions[] = "LOWER(COALESCE({$table}.status, '')) IN ('paid','completed','success','successful','verified','active')";
         }
 
-        if (Schema::hasColumn('subscriptions', 'paid_at')) {
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'paid_at')) {
             $conditions[] = "{$table}.paid_at IS NOT NULL";
         }
 
-        if (Schema::hasColumn('subscriptions', 'payment_date')) {
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'payment_date')) {
             $conditions[] = "{$table}.payment_date IS NOT NULL";
         }
 
@@ -556,7 +555,7 @@ class SuperAdminDashboardController extends Controller
         $columns = [];
 
         foreach (['paid_at', 'payment_date', 'created_at'] as $column) {
-            if (Schema::hasColumn('subscriptions', $column)) {
+            if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', $column)) {
                 $columns[] = "{$table}.{$column}";
             }
         }
@@ -575,7 +574,7 @@ class SuperAdminDashboardController extends Controller
     {
         $baseColumns = ['id', 'name', 'email', 'role'];
         foreach (['status', 'company_id', 'state_region', 'country'] as $column) {
-            if (Schema::hasColumn('users', $column)) {
+            if (app(\App\Support\SchemaColumnCache::class)->hasColumn('users', $column)) {
                 $baseColumns[] = $column;
             }
         }
@@ -684,21 +683,21 @@ class SuperAdminDashboardController extends Controller
             $createdAtMonthName = $this->monthNameExpression('created_at');
             $createdAtMonthNumber = $this->monthNumberExpression('created_at');
 
-            $paidSubscriptionsQuery = Schema::hasTable('subscriptions')
+            $paidSubscriptionsQuery = app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')
                 ? $this->platformSubscriptionsQuery()->whereRaw($this->subscriptionPaidCondition('subscriptions'))
                 : null;
 
             $salesBranchScope = function ($query, string $table = 'sales') use ($activeBranch) {
-                if (Schema::hasColumn($table, 'branch_id') && !empty($activeBranch['id'])) {
+                if (app(\App\Support\SchemaColumnCache::class)->hasColumn($table, 'branch_id') && !empty($activeBranch['id'])) {
                     return $query->where($table . '.branch_id', (string) $activeBranch['id']);
                 }
-                if (Schema::hasColumn($table, 'branch_name') && !empty($activeBranch['name'])) {
+                if (app(\App\Support\SchemaColumnCache::class)->hasColumn($table, 'branch_name') && !empty($activeBranch['name'])) {
                     return $query->where($table . '.branch_name', (string) $activeBranch['name']);
                 }
                 return $query;
             };
 
-            $salesRevenue = Schema::hasTable('sales')
+            $salesRevenue = app(\App\Support\SchemaColumnCache::class)->hasTable('sales')
                 ? ((float) ($this->applyFinalizedSalesFilter($salesBranchScope(DB::table('sales')))->sum('total') ?? 0))
                 : 0.0;
             $subscriptionRevenue = $paidSubscriptionsQuery
@@ -718,7 +717,7 @@ class SuperAdminDashboardController extends Controller
             $itemSalesTodayRevenue = 0.0;
             $itemSalesOrders = 0;
             $itemSalesUnits = 0.0;
-            if (Schema::hasTable('sales')) {
+            if (app(\App\Support\SchemaColumnCache::class)->hasTable('sales')) {
                 $itemSalesTodayRevenueQuery = $salesBranchScope(DB::table('sales'));
                 $this->applyFinalizedSalesFilter($itemSalesTodayRevenueQuery);
                 $itemSalesTodayRevenue = (float) ($itemSalesTodayRevenueQuery
@@ -729,7 +728,7 @@ class SuperAdminDashboardController extends Controller
                 $this->applyFinalizedSalesFilter($itemSalesOrdersQuery);
                 $itemSalesOrders = (int) ($itemSalesOrdersQuery->count() ?? 0);
             }
-            if (Schema::hasTable('sale_items') && Schema::hasTable('products') && Schema::hasTable('sales')) {
+            if (app(\App\Support\SchemaColumnCache::class)->hasTable('sale_items') && app(\App\Support\SchemaColumnCache::class)->hasTable('products') && app(\App\Support\SchemaColumnCache::class)->hasTable('sales')) {
                 $itemSalesUnitsQuery = DB::table('sale_items')
                     ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
                     ->join('products as sale_products', 'sale_items.product_id', '=', 'sale_products.id')
@@ -740,7 +739,7 @@ class SuperAdminDashboardController extends Controller
                 $itemSalesUnits = (float) ($itemSalesUnitsQuery->value('total_units') ?? 0);
             }
 
-            $activeSubs = Schema::hasTable('subscriptions')
+            $activeSubs = app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')
                 ? $this->platformSubscriptionsQuery()
                     ->where(function ($query) use ($activeSubscriptionStatuses, $paidPaymentStatuses) {
                         $query->whereIn(DB::raw("LOWER(COALESCE(subscriptions.status, ''))"), $activeSubscriptionStatuses)
@@ -766,9 +765,9 @@ class SuperAdminDashboardController extends Controller
 
             $deploymentCustomerUsers = 0;
             if (
-                Schema::hasTable('companies')
-                && Schema::hasColumn('users', 'company_id')
-                && Schema::hasColumn('companies', 'deployed_by')
+                app(\App\Support\SchemaColumnCache::class)->hasTable('companies')
+                && app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'company_id')
+                && app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'deployed_by')
             ) {
                 $deploymentCustomerUsers = (clone $customerUsersBaseQuery)
                     ->leftJoin('companies as customer_companies', 'users.company_id', '=', 'customer_companies.id')
@@ -792,13 +791,13 @@ class SuperAdminDashboardController extends Controller
                     ->where(function ($query) {
                         $hasSource = false;
 
-                        if (Schema::hasColumn('subscriptions', 'deployed_by')) {
+                        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'deployed_by')) {
                             $query->whereNotNull('subscriptions.deployed_by')
                                 ->where('subscriptions.deployed_by', '!=', 0);
                             $hasSource = true;
                         }
 
-                        if (Schema::hasColumn('companies', 'deployed_by')) {
+                        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'deployed_by')) {
                             $method = $hasSource ? 'orWhere' : 'where';
                             $query->{$method}(function ($subQuery) {
                                 $subQuery->whereNotNull('source_companies.deployed_by')
@@ -826,12 +825,12 @@ class SuperAdminDashboardController extends Controller
 
             $stockValue = 0;
             $lowStockItems = 0;
-            if (Schema::hasTable('products')) {
-                $hasProductPrice = Schema::hasColumn('products', 'product_price');
-                $hasPrice = Schema::hasColumn('products', 'price');
+            if (app(\App\Support\SchemaColumnCache::class)->hasTable('products')) {
+                $hasProductPrice = app(\App\Support\SchemaColumnCache::class)->hasColumn('products', 'product_price');
+                $hasPrice = app(\App\Support\SchemaColumnCache::class)->hasColumn('products', 'price');
                 $priceExpr = $hasProductPrice ? 'product_price' : ($hasPrice ? 'price' : '0');
 
-                if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+                if (!empty($activeBranch['id']) && app(\App\Support\SchemaColumnCache::class)->hasTable('product_branch_stocks')) {
                     $stockValue = (float) (DB::table('product_branch_stocks')
                         ->join('products', 'products.id', '=', 'product_branch_stocks.product_id')
                         ->where('product_branch_stocks.branch_id', (string) $activeBranch['id'])
@@ -846,7 +845,7 @@ class SuperAdminDashboardController extends Controller
                     $stockValue = (float) (DB::table('products')
                         ->selectRaw("SUM(COALESCE({$priceExpr}, 0) * COALESCE(stock, 0)) as total_stock_value")
                         ->value('total_stock_value') ?? 0);
-                    if (Schema::hasColumn('products', 'stock')) {
+                    if (app(\App\Support\SchemaColumnCache::class)->hasColumn('products', 'stock')) {
                         $lowStockItems = (int) (DB::table('products')
                             ->whereNotNull('stock')
                             ->where('stock', '<=', 10)
@@ -869,7 +868,7 @@ class SuperAdminDashboardController extends Controller
                 'total_tenants'    => $activeCompanies > 0 ? $activeCompanies : $totalCompanies,
                 'total_users'      => $totalCustomerUsers,
                 'registered_user_revenue' => $registeredBusinessRevenue,
-                'verified_users'   => Schema::hasColumn('users', 'is_verified')
+                'verified_users'   => app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'is_verified')
                                       ? (clone $customerUsersBaseQuery)->where('is_verified', 1)->count()
                                       : 0,
                 'state_managers_total' => (clone $this->stateManagersQuery())->count(),
@@ -880,25 +879,25 @@ class SuperAdminDashboardController extends Controller
                 'paid_subs'        => $dashboardPaidBusinesses,
                 'direct_paid_subs' => $directPaidSubs,
                 'deployment_paid_subs' => $deploymentPaidSubs,
-                'total_subs'       => Schema::hasTable('subscriptions')
+                'total_subs'       => app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')
                                       ? $this->platformSubscriptionsQuery()->count()
                                       : 0,
                 'platform_revenue' => $dashboardSubscriptionRevenue > 0 ? $dashboardSubscriptionRevenue : $platformRevenue,
                 'owner_subscription_revenue' => $dashboardSubscriptionRevenue,
                 'direct_subscription_revenue' => $directSubscriptionRevenue,
                 'deployment_subscription_revenue' => $deploymentSubscriptionRevenue,
-                'pending_setups'   => Schema::hasTable('subscriptions')
+                'pending_setups'   => app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')
                                       ? $this->platformSubscriptionsQuery()->whereIn(DB::raw("LOWER(COALESCE(subscriptions.status, ''))"), $pendingSubscriptionStatuses)->count()
                                       : 0,
-                'pending_managers' => Schema::hasColumn('users', 'status')
+                'pending_managers' => app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'status')
                                       ? (clone $managerStatusBaseQuery)->whereIn(DB::raw("LOWER(COALESCE(users.status, ''))"), ['pending', 'pending_info'])->count()
                                       : 0,
                 'active_managers'  => $stateManagerIds !== []
-                                      ? (Schema::hasColumn('users', 'status')
+                                      ? (app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'status')
                                           ? (clone $managerStatusBaseQuery)->whereIn(DB::raw("LOWER(COALESCE(users.status, 'active'))"), ['active'])->count()
                                           : count($stateManagerIds))
                                       : 0,
-                'suspended_managers'  => Schema::hasColumn('users', 'status')
+                'suspended_managers'  => app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'status')
                                       ? (clone $managerStatusBaseQuery)->whereRaw("LOWER(COALESCE(users.status, '')) = ?", ['suspended'])->count()
                                       : 0,
                 'total_stock_val'  => $stockValue,
@@ -914,16 +913,16 @@ class SuperAdminDashboardController extends Controller
                 'item_sales_today_revenue' => $itemSalesTodayRevenue,
                 'item_sales_orders' => $itemSalesOrders,
                 'item_sales_units' => $itemSalesUnits,
-                'expiring_soon_subs' => Schema::hasTable('subscriptions')
+                'expiring_soon_subs' => app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')
                                       ? $this->platformSubscriptionsQuery()->expiringSoon(7)->count()
                                       : 0,
-                'expired_subs'       => Schema::hasTable('subscriptions')
+                'expired_subs'       => app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')
                                       ? $this->platformSubscriptionsQuery()->whereRaw("LOWER(COALESCE(subscriptions.status, '')) = 'expired'")->count()
                                       : 0,
-                'total_payouts'      => Schema::hasTable('platform_payouts')
+                'total_payouts'      => app(\App\Support\SchemaColumnCache::class)->hasTable('platform_payouts')
                                       ? (float) PlatformPayout::sum('amount')
                                       : 0,
-                'net_platform_balance' => $subscriptionRevenue - (Schema::hasTable('platform_payouts')
+                'net_platform_balance' => $subscriptionRevenue - (app(\App\Support\SchemaColumnCache::class)->hasTable('platform_payouts')
                                       ? (float) PlatformPayout::sum('amount')
                                       : 0),
             ];
@@ -945,7 +944,7 @@ class SuperAdminDashboardController extends Controller
                     ->orderBy('month_num', 'asc')
                     ->get();
             }
-            if ($revenueTrends->isEmpty() && Schema::hasTable('sales')) {
+            if ($revenueTrends->isEmpty() && app(\App\Support\SchemaColumnCache::class)->hasTable('sales')) {
                 $salesRevenueTrendsQuery = $salesBranchScope(DB::table('sales'));
                 $this->applyFinalizedSalesFilter($salesRevenueTrendsQuery);
                 $revenueTrends = $salesRevenueTrendsQuery
@@ -963,7 +962,7 @@ class SuperAdminDashboardController extends Controller
 
             // TENANT GROWTH
             $tenantGrowth = collect();
-            if (Schema::hasTable('companies')) {
+            if (app(\App\Support\SchemaColumnCache::class)->hasTable('companies')) {
                 $tenantGrowth = Company::query()
                     ->select(
                         DB::raw("{$createdAtMonthName} as month"),
@@ -978,7 +977,7 @@ class SuperAdminDashboardController extends Controller
 
             // PLAN DISTRIBUTION
             $planStats = [];
-            if (Schema::hasTable('subscriptions')) {
+            if (app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')) {
                 $planExpr = $this->subscriptionPlanExpression();
                 $planStats = $this->platformSubscriptionsQuery()->selectRaw("{$planExpr} as plan_label, COUNT(*) as total")
                     ->groupByRaw($planExpr)
@@ -1025,7 +1024,7 @@ class SuperAdminDashboardController extends Controller
 
             // DEPLOYMENTS
             $deployments = collect();
-            if (Schema::hasTable('deployment_managers') && $stateManagerIds !== []) {
+            if (app(\App\Support\SchemaColumnCache::class)->hasTable('deployment_managers') && $stateManagerIds !== []) {
                 $deployments = DB::table('deployment_managers')
                     ->join('users', 'deployment_managers.user_id', '=', 'users.id')
                     ->select('deployment_managers.*', 'users.email', 'users.name as manager_name', 'users.is_verified')
@@ -1051,12 +1050,12 @@ class SuperAdminDashboardController extends Controller
                             ->where(function ($query) use ($manager) {
                                 $hasSource = false;
 
-                                if (Schema::hasColumn('subscriptions', 'deployed_by')) {
+                                if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'deployed_by')) {
                                     $query->where('subscriptions.deployed_by', $manager->id);
                                     $hasSource = true;
                                 }
 
-                                if (Schema::hasColumn('companies', 'deployed_by')) {
+                                if (app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'deployed_by')) {
                                     $method = $hasSource ? 'orWhere' : 'where';
                                     $query->{$method}('manager_companies.deployed_by', $manager->id);
                                     $hasSource = true;
@@ -1072,8 +1071,8 @@ class SuperAdminDashboardController extends Controller
                     }
 
                     $deployments = (
-                        Schema::hasTable('companies')
-                        && Schema::hasColumn('companies', 'deployed_by')
+                        app(\App\Support\SchemaColumnCache::class)->hasTable('companies')
+                        && app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'deployed_by')
                     )
                         ? (int) Company::query()->where('deployed_by', $manager->id)->count()
                         : 0;
@@ -1196,9 +1195,9 @@ class SuperAdminDashboardController extends Controller
                 'decisionCards' => [],
             ];
 
-            $activityAvailable = Schema::hasTable('activity_logs') && Schema::hasColumn('activity_logs', 'created_at');
-            $activityHasIp = $activityAvailable && Schema::hasColumn('activity_logs', 'ip_address');
-            $activityHasUser = $activityAvailable && Schema::hasColumn('activity_logs', 'user_id');
+            $activityAvailable = app(\App\Support\SchemaColumnCache::class)->hasTable('activity_logs') && app(\App\Support\SchemaColumnCache::class)->hasColumn('activity_logs', 'created_at');
+            $activityHasIp = $activityAvailable && app(\App\Support\SchemaColumnCache::class)->hasColumn('activity_logs', 'ip_address');
+            $activityHasUser = $activityAvailable && app(\App\Support\SchemaColumnCache::class)->hasColumn('activity_logs', 'user_id');
             $visitorColumn = $activityHasIp ? 'ip_address' : ($activityHasUser ? 'user_id' : null);
             $todayStart = now()->startOfDay();
             $weekStart = now()->subDays(6)->startOfDay();
@@ -1236,8 +1235,8 @@ class SuperAdminDashboardController extends Controller
                     ->keyBy('visit_date');
 
                 $moduleRows = (clone $activityBase)
-                    ->when(Schema::hasColumn('activity_logs', 'module'), fn ($query) => $query->whereNotNull('module'))
-                    ->selectRaw((Schema::hasColumn('activity_logs', 'module') ? 'module' : "'Activity'") . ' as module_name, COUNT(*) as total')
+                    ->when(app(\App\Support\SchemaColumnCache::class)->hasColumn('activity_logs', 'module'), fn ($query) => $query->whereNotNull('module'))
+                    ->selectRaw((app(\App\Support\SchemaColumnCache::class)->hasColumn('activity_logs', 'module') ? 'module' : "'Activity'") . ' as module_name, COUNT(*) as total')
                     ->where('created_at', '>=', $monthStart)
                     ->groupBy('module_name')
                     ->orderByDesc('total')
@@ -1326,7 +1325,7 @@ class SuperAdminDashboardController extends Controller
 
             $activityHeatmap = [];
             $forceBranchHeatmap = !empty($activeBranch['id']) || !empty($activeBranch['name']);
-            if (!$forceBranchHeatmap && Schema::hasTable('subscriptions')) {
+            if (!$forceBranchHeatmap && app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')) {
                 $createdAtDayOfWeek = $this->dayOfWeekExpression('created_at');
                 $createdAtHour = $this->hourExpression('created_at');
                 $heatRows = $this->platformSubscriptionsQuery()->select(
@@ -1347,7 +1346,7 @@ class SuperAdminDashboardController extends Controller
                     $activityHeatmap[$dayKey][(int) $row->hr] = (int) $row->total;
                 }
             }
-            if (empty($activityHeatmap) && Schema::hasTable('sales')) {
+            if (empty($activityHeatmap) && app(\App\Support\SchemaColumnCache::class)->hasTable('sales')) {
                 $createdAtDayOfWeek = $this->dayOfWeekExpression('created_at');
                 $createdAtHour = $this->hourExpression('created_at');
                 $salesHeatRowsQuery = $salesBranchScope(DB::table('sales'));
@@ -1382,7 +1381,7 @@ class SuperAdminDashboardController extends Controller
 
             // COUNTRY DATA
             $countryData = [];
-            if (Schema::hasTable('companies')) {
+            if (app(\App\Support\SchemaColumnCache::class)->hasTable('companies')) {
                 $countryData = Company::whereNotNull('country')
                     ->selectRaw('country, COUNT(*) as count')
                     ->groupBy('country')
@@ -1407,7 +1406,7 @@ class SuperAdminDashboardController extends Controller
             }
 
             $expiringSubscriptions = collect();
-            if (Schema::hasTable('subscriptions')) {
+            if (app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')) {
                 $expiringSubscriptions = $this->platformSubscriptionsQuery()->with(['company', 'user'])
                     ->expiringSoon(7)
                     ->orderBy('end_date', 'asc')
@@ -1466,48 +1465,48 @@ class SuperAdminDashboardController extends Controller
                 }
             };
 
-            $fallbackPaidCondition = Schema::hasTable('subscriptions') ? $this->subscriptionPaidCondition('subscriptions') : '1 = 0';
-            $fallbackRevenueExpr = Schema::hasTable('subscriptions') ? $this->subscriptionRevenueExpression('subscriptions') : '0';
-            $fallbackBuyerExpr = Schema::hasTable('subscriptions') ? $this->subscriptionBuyerKeyExpression('subscriptions') : 'subscriptions.id';
+            $fallbackPaidCondition = app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions') ? $this->subscriptionPaidCondition('subscriptions') : '1 = 0';
+            $fallbackRevenueExpr = app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions') ? $this->subscriptionRevenueExpression('subscriptions') : '0';
+            $fallbackBuyerExpr = app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions') ? $this->subscriptionBuyerKeyExpression('subscriptions') : 'subscriptions.id';
             $fallbackPaidSubscriptions = fn () => $this->platformSubscriptionsQuery()
                 ->whereRaw($fallbackPaidCondition)
                 ->whereRaw("{$fallbackRevenueExpr} > 0");
-            $fallbackTotalCompanies = $safeCount(fn () => Schema::hasTable('companies') ? Company::count() : 0);
-            $fallbackActiveCompanies = $safeCount(fn () => Schema::hasTable('companies')
+            $fallbackTotalCompanies = $safeCount(fn () => app(\App\Support\SchemaColumnCache::class)->hasTable('companies') ? Company::count() : 0);
+            $fallbackActiveCompanies = $safeCount(fn () => app(\App\Support\SchemaColumnCache::class)->hasTable('companies')
                 ? Company::query()->where(function ($query) {
                     $query->whereNull('companies.status')
                         ->orWhereIn(DB::raw("LOWER(COALESCE(companies.status, ''))"), ['active', 'trial', 'enabled']);
                 })->count()
                 : 0);
-            $fallbackTotalUsers = $safeCount(fn () => Schema::hasTable('users') ? (clone $this->customerUsersQuery())->count() : 0);
-            $fallbackVerifiedUsers = $safeCount(fn () => Schema::hasColumn('users', 'is_verified')
+            $fallbackTotalUsers = $safeCount(fn () => app(\App\Support\SchemaColumnCache::class)->hasTable('users') ? (clone $this->customerUsersQuery())->count() : 0);
+            $fallbackVerifiedUsers = $safeCount(fn () => app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'is_verified')
                 ? (clone $this->customerUsersQuery())->where('is_verified', 1)->count()
                 : 0);
-            $fallbackRecentSignups = $safeCount(fn () => Schema::hasTable('users')
+            $fallbackRecentSignups = $safeCount(fn () => app(\App\Support\SchemaColumnCache::class)->hasTable('users')
                 ? (clone $this->customerUsersQuery())->where('created_at', '>=', now()->subDays(30))->count()
                 : 0);
-            $fallbackPaidBusinesses = $safeCount(fn () => Schema::hasTable('subscriptions')
+            $fallbackPaidBusinesses = $safeCount(fn () => app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')
                     ? (clone $fallbackPaidSubscriptions())->selectRaw("COUNT(DISTINCT {$fallbackBuyerExpr}) as buyer_count")->value('buyer_count')
                     : 0);
             $fallbackSubscriptionRevenue = $registeredBusinessRevenue > 0
                 ? $registeredBusinessRevenue
-                : $safeFloat(fn () => Schema::hasTable('subscriptions')
+                : $safeFloat(fn () => app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')
                     ? (clone $fallbackPaidSubscriptions())->selectRaw("SUM({$fallbackRevenueExpr}) as total_revenue")->value('total_revenue')
                     : 0);
-            $fallbackMonthlyPlanRevenue = $safeFloat(fn () => Schema::hasTable('subscriptions')
+            $fallbackMonthlyPlanRevenue = $safeFloat(fn () => app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')
                 ? (clone $fallbackPaidSubscriptions())
                     ->whereMonth('subscriptions.created_at', now()->month)
                     ->whereYear('subscriptions.created_at', now()->year)
                     ->selectRaw("SUM({$fallbackRevenueExpr}) as total_revenue")
                     ->value('total_revenue')
                 : 0);
-            $fallbackPlanSalesToday = $safeCount(fn () => Schema::hasTable('subscriptions')
+            $fallbackPlanSalesToday = $safeCount(fn () => app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')
                 ? (clone $fallbackPaidSubscriptions())
                     ->whereDate('subscriptions.created_at', today())
                     ->selectRaw("COUNT(DISTINCT {$fallbackBuyerExpr}) as buyer_count")
                     ->value('buyer_count')
                 : 0);
-            $fallbackPlanSalesMonth = $safeCount(fn () => Schema::hasTable('subscriptions')
+            $fallbackPlanSalesMonth = $safeCount(fn () => app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')
                 ? (clone $fallbackPaidSubscriptions())
                     ->whereMonth('subscriptions.created_at', now()->month)
                     ->whereYear('subscriptions.created_at', now()->year)
@@ -1517,17 +1516,17 @@ class SuperAdminDashboardController extends Controller
             $fallbackAveragePlanSale = $fallbackPaidBusinesses > 0
                 ? $fallbackSubscriptionRevenue / $fallbackPaidBusinesses
                 : $registeredBusinessAverage;
-            $fallbackSalesRevenue = $safeFloat(fn () => Schema::hasTable('sales')
+            $fallbackSalesRevenue = $safeFloat(fn () => app(\App\Support\SchemaColumnCache::class)->hasTable('sales')
                 ? $this->applyFinalizedSalesFilter(DB::table('sales'))->sum('total')
                 : 0);
-            $fallbackPayouts = $safeFloat(fn () => Schema::hasTable('platform_payouts') ? PlatformPayout::sum('amount') : 0);
-            $fallbackTotalSubscriptions = $safeCount(fn () => Schema::hasTable('subscriptions') ? $this->platformSubscriptionsQuery()->count() : 0);
+            $fallbackPayouts = $safeFloat(fn () => app(\App\Support\SchemaColumnCache::class)->hasTable('platform_payouts') ? PlatformPayout::sum('amount') : 0);
+            $fallbackTotalSubscriptions = $safeCount(fn () => app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions') ? $this->platformSubscriptionsQuery()->count() : 0);
 
             $emptyMetrics = [
                 'total_companies' => $fallbackTotalCompanies, 'total_tenants' => $fallbackActiveCompanies > 0 ? $fallbackActiveCompanies : $fallbackTotalCompanies, 'active_subs' => $fallbackActiveCompanies,
                 'platform_revenue' => $fallbackSubscriptionRevenue > 0 ? $fallbackSubscriptionRevenue : $fallbackSalesRevenue, 'owner_subscription_revenue' => $fallbackSubscriptionRevenue, 'total_users' => $fallbackTotalUsers, 'pending_setups' => 0,
-                'pending_managers' => $safeCount(fn () => Schema::hasColumn('users', 'status') ? (clone $this->stateManagersQuery())->whereIn(DB::raw("LOWER(COALESCE(users.status, ''))"), ['pending', 'pending_info'])->count() : 0),
-                'active_managers' => $safeCount(fn () => Schema::hasColumn('users', 'status') ? (clone $this->stateManagersQuery())->whereIn(DB::raw("LOWER(COALESCE(users.status, 'active'))"), ['active'])->count() : 0),
+                'pending_managers' => $safeCount(fn () => app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'status') ? (clone $this->stateManagersQuery())->whereIn(DB::raw("LOWER(COALESCE(users.status, ''))"), ['pending', 'pending_info'])->count() : 0),
+                'active_managers' => $safeCount(fn () => app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'status') ? (clone $this->stateManagersQuery())->whereIn(DB::raw("LOWER(COALESCE(users.status, 'active'))"), ['active'])->count() : 0),
                 'total_stock_val' => 0,
                 'state_managers_total' => $safeCount(fn () => (clone $this->stateManagersQuery())->count()),
                 'agents_total' => $safeCount(fn () => (clone $this->agentsQuery())->count()),
@@ -2100,13 +2099,13 @@ public function pendingManagers()
                     $q->where('owners.name', 'like', $search)
                         ->orWhere('owners.email', 'like', $search);
 
-                    if (Schema::hasColumn('companies', 'name')) {
+                    if (app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'name')) {
                         $q->orWhere('companies.name', 'like', $search);
                     }
-                    if (Schema::hasColumn('companies', 'company_name')) {
+                    if (app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'company_name')) {
                         $q->orWhere('companies.company_name', 'like', $search);
                     }
-                    if (Schema::hasColumn('companies', 'domain_prefix')) {
+                    if (app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'domain_prefix')) {
                         $q->orWhere('companies.domain_prefix', 'like', $search);
                     }
                 });
@@ -2128,7 +2127,7 @@ public function pendingManagers()
                         ->orWhereRaw("LOWER(COALESCE(companies.status, '')) IN ('active', 'trial', 'enabled')");
                 })->count(),
                 'inactive' => (clone $baseBusinesses)->whereRaw("LOWER(COALESCE(companies.status, '')) IN ('inactive', 'suspended', 'disabled', 'expired')")->count(),
-                'with_domains' => Schema::hasColumn('companies', 'domain_prefix')
+                'with_domains' => app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'domain_prefix')
                     ? (clone $baseBusinesses)->whereNotNull('companies.domain_prefix')->where('companies.domain_prefix', '!=', '')->count()
                     : 0,
                 'revenue' => (float) $registeredBusinessMetrics['revenue'],
@@ -2163,11 +2162,11 @@ public function pendingManagers()
             });
         }
 
-        if ($request->filled('status') && Schema::hasColumn('users', 'status')) {
+        if ($request->filled('status') && app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'status')) {
             $query->where('status', $request->status);
         }
 
-        if ($request->filled('role') && Schema::hasColumn('users', 'role')) {
+        if ($request->filled('role') && app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'role')) {
             $query->where('role', $request->role);
         }
 
@@ -2181,16 +2180,16 @@ public function pendingManagers()
 
         $metrics = [
             'total' => (clone $base)->count(),
-            'active' => Schema::hasColumn('users', 'status')
+            'active' => app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'status')
                 ? (clone $base)->where('status', 'active')->count()
                 : (clone $base)->where('is_verified', 1)->count(),
-            'suspended' => Schema::hasColumn('users', 'status')
+            'suspended' => app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'status')
                 ? (clone $base)->where('status', 'suspended')->count()
                 : 0,
-            'admins' => Schema::hasColumn('users', 'role')
+            'admins' => app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'role')
                 ? (clone $base)->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), ['admin', 'administrator'])->count()
                 : 0,
-            'users' => Schema::hasColumn('users', 'role')
+            'users' => app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'role')
                 ? (clone $base)->whereIn(DB::raw("LOWER(COALESCE(role, ''))"), ['user', 'staff', 'manager'])->count()
                 : (clone $base)->count(),
         ];
@@ -2268,7 +2267,7 @@ public function pendingManagers()
             'deleted_at' => now(),
         ]);
         $updates = ['status' => 'inactive'];
-        if (Schema::hasColumn('users', 'allow_login')) {
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'allow_login')) {
             $updates['allow_login'] = false;
         }
         User::withoutGlobalScopes()->where('company_id', $id)->update($updates);
@@ -2288,10 +2287,10 @@ public function pendingManagers()
     public function suspendUser($id)
     {
         $user = User::findOrFail($id);
-        if (Schema::hasColumn('users', 'status')) {
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'status')) {
             $user->update(['status' => 'suspended']);
         }
-        if (Schema::hasColumn('users', 'is_verified')) {
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'is_verified')) {
             $user->update(['is_verified' => 0]);
         }
 
@@ -2315,15 +2314,15 @@ public function pendingManagers()
     public function activateUser($id)
     {
         $user = User::findOrFail($id);
-        if (Schema::hasColumn('users', 'status')) {
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'status')) {
             $user->update(['status' => 'active']);
         }
-        if (Schema::hasColumn('users', 'is_verified')) {
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'is_verified')) {
             $user->update(['is_verified' => 1]);
         }
 
         if (strtolower((string) ($user->role ?? '')) === 'agent'
-            && Schema::hasColumn('users', 'state_manager_id')
+            && app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'state_manager_id')
             && empty($user->state_manager_id)) {
             $manager = $this->findStateManagerForLocation($user->country ?? null, $user->state_region ?? null);
             if ($manager?->user_id) {
@@ -2336,8 +2335,8 @@ public function pendingManagers()
 
     private function managerHasStateConflict(DeploymentManager $manager): bool
     {
-        if (!Schema::hasColumn('deployment_managers', 'country')
-            || !Schema::hasColumn('deployment_managers', 'state_region')) {
+        if (!app(\App\Support\SchemaColumnCache::class)->hasColumn('deployment_managers', 'country')
+            || !app(\App\Support\SchemaColumnCache::class)->hasColumn('deployment_managers', 'state_region')) {
             return false;
         }
 
@@ -2358,8 +2357,8 @@ public function pendingManagers()
 
     private function findStateManagerForLocation(?string $country, ?string $stateRegion): ?DeploymentManager
     {
-        if (!Schema::hasColumn('deployment_managers', 'country')
-            || !Schema::hasColumn('deployment_managers', 'state_region')) {
+        if (!app(\App\Support\SchemaColumnCache::class)->hasColumn('deployment_managers', 'country')
+            || !app(\App\Support\SchemaColumnCache::class)->hasColumn('deployment_managers', 'state_region')) {
             return null;
         }
 
@@ -2526,7 +2525,7 @@ public function pendingManagers()
 
     public function storePayout(Request $request)
     {
-        if (!Schema::hasTable('platform_payouts')) {
+        if (!app(\App\Support\SchemaColumnCache::class)->hasTable('platform_payouts')) {
             return redirect()->back()->with('payout_error', 'Platform payouts table not found. Please run: php artisan migrate --force on the server.');
         }
 
@@ -2558,11 +2557,11 @@ public function pendingManagers()
                 'paid_at'        => $validated['paid_at'] ?? now(),
             ];
 
-            if (Schema::hasColumn('platform_payouts', 'recipient_type')) {
+            if (app(\App\Support\SchemaColumnCache::class)->hasColumn('platform_payouts', 'recipient_type')) {
                 $payload['recipient_type'] = $validated['recipient_type'];
             }
 
-            if (Schema::hasColumn('platform_payouts', 'recipient_user_id')) {
+            if (app(\App\Support\SchemaColumnCache::class)->hasColumn('platform_payouts', 'recipient_user_id')) {
                 $payload['recipient_user_id'] = $recipient['user_id'];
             }
 
@@ -2589,7 +2588,7 @@ public function pendingManagers()
             ->when($from,      fn ($q) => $q->where('paid_at', '>=', $from))
             ->when($to,        fn ($q) => $q->where('paid_at', '<=', $to))
             ->when($type,      fn ($q) => $q->where('payout_type', $type))
-            ->when($recipientType && Schema::hasColumn('platform_payouts', 'recipient_type'), fn ($q) => $q->where('recipient_type', $recipientType))
+            ->when($recipientType && app(\App\Support\SchemaColumnCache::class)->hasColumn('platform_payouts', 'recipient_type'), fn ($q) => $q->where('recipient_type', $recipientType))
             ->when($recipient, fn ($q) => $q->where('recipient_name', 'like', '%' . $recipient . '%'))
             ->latest();
 

@@ -24,16 +24,18 @@
     <link rel="stylesheet" href="{{ asset('assets/plugins/material/materialdesignicons.css') }}">
 @endif
 
-<link rel="stylesheet" href="{{ asset('assets/plugins/select2/css/select2.min.css') }}">
+@if (Route::is(['add-products', 'edit-products', 'inbox', 'purchases.*', 'add-purchases', 'purchase-add.legacy', 'add-purchases-order', 'add-quotations', 'edit-quotations', 'add-invoice', 'edit-invoice', 'create-invoices', 'sales.showPos', 'form-select2']) || request()->is('pos*'))
+    <link rel="stylesheet" href="{{ asset('assets/plugins/select2/css/select2.min.css') }}">
+@endif
 
 @unless(Route::is(['index-two', 'saas-login', 'saas-register', 'forgot-password', 'password.reset']))
     <link rel="stylesheet" href="{{ asset('assets/css/bootstrap-datetimepicker.min.css') }}">
     <script src="{{ asset('assets/js/layout.js') }}?v=20261019"></script>
 @endunless
 
-@unless(Route::is(['index-two', 'companies', 'saas-login', 'saas-register', 'forgot-password', 'password.reset']))
+@if (Route::is(['inventory.Products.index', 'product-list', 'purchases.*', 'credit-notes']))
     <link rel="stylesheet" href="{{ asset('assets/plugins/datatables/datatables.min.css') }}">
-@endunless
+@endif
 
 @if (Route::is('companies'))
     <link rel="stylesheet" href="{{ asset('assets/css/dataTables.bootstrap5.min.css') }}">
