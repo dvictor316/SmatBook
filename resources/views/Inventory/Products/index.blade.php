@@ -254,7 +254,7 @@
         max-height: none;
         min-height: 0;
         overflow: visible;
-        overscroll-behavior: contain;
+        overscroll-behavior: auto;
     }
 
     .inventory-table-shell thead th {
@@ -857,7 +857,7 @@
                         <i class="far fa-trash-alt me-1"></i> Delete Selected
                     </button>
                 </form>
-                <div class="table-responsive inventory-table-shell">
+                <div class="inventory-table-shell">
                     <table class="table table-hover table-striped" id="products-table">
                         <thead class="thead-light">
                             <tr>
