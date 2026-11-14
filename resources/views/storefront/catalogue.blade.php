@@ -114,6 +114,7 @@
         .checkout-actions-copy small{color:#d0d4e4;line-height:1.55}
         .checkout-buttons{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
         .checkout-buttons .btn{min-height:48px;padding:12px 17px;border-radius:10px;font-weight:750}
+        #order-feedback{min-height:1.35em;margin-top:10px;color:#ffe6a1;font-size:.88rem;line-height:1.45}
         .btn-order{background:var(--theme-primary,var(--red));border:1px solid var(--theme-primary,var(--red));border-radius:10px;padding:13px 20px;color:#fff;font-weight:700;letter-spacing:0;box-shadow:0 8px 18px var(--theme-wash,rgba(20,99,214,.16));cursor:pointer;touch-action:manipulation}
         .btn-order:disabled{opacity:.62;cursor:not-allowed;box-shadow:none}
         .btn-order:hover{background:var(--theme-deep,var(--navy));border-color:var(--theme-deep,var(--navy));color:#fff}
@@ -308,7 +309,7 @@
             @endif
         </nav>
     @endif
-        <form method="POST" action="{{ $orderAction }}" id="store-order-form">
+        <form method="POST" action="{{ $orderAction }}" id="store-order-form" novalidate>
             @csrf
             <input type="hidden" name="order_token" value="{{ $orderToken }}">
             <section class="checkout" id="store-cart">
@@ -340,9 +341,10 @@
                         <div class="checkout-actions-copy">
                             <small>{{ $store->fulfilment_note ?: 'Phone number is the only required detail. The business will confirm availability, payment, and delivery.' }}</small>
                             <small>Placing your order reserves the selected stock. After your order is received, you can send its reference to the store on WhatsApp.</small>
+                            <p id="order-feedback" role="status" aria-live="polite"></p>
                         </div>
                         <div class="checkout-buttons">
-                            <button class="btn-order" id="place-store-order" type="submit" disabled><i class="fas fa-paper-plane me-2"></i>Place Order &amp; Reserve Stock</button>
+                            <button class="btn-order" id="place-store-order" type="submit"><i class="fas fa-paper-plane me-2"></i>Place Order &amp; Reserve Stock</button>
                         </div>
                     </div>
                 </div>
@@ -360,6 +362,7 @@
         const empty = document.getElementById('cart-empty');
         const submit = document.getElementById('place-store-order');
         const orderForm = document.getElementById('store-order-form');
+        const orderFeedback = document.getElementById('order-feedback');
         const currency = @json($company->currency_code ?: 'NGN');
         const storageWarning = document.getElementById('cart-storage-warning');
         function warnStorage(error) {
@@ -367,7 +370,21 @@
             storageWarning.textContent = 'Your cart works on this page, but cannot be saved on this device. It may be lost if you leave or refresh.';
             storageWarning.hidden = false;
         }
-        orderForm?.addEventListener('submit', () => {
+        orderForm?.addEventListener('submit', (event) => {
+            const phone = orderForm.querySelector('[name="customer_phone"]');
+            if (cart.size === 0) {
+                event.preventDefault();
+                orderFeedback.textContent = 'Add at least one available product to your cart before placing an order.';
+                orderFeedback.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+            if (!phone.value.trim()) {
+                event.preventDefault();
+                orderFeedback.textContent = 'Enter your phone number so the store can confirm your order.';
+                phone.focus();
+                return;
+            }
+            orderFeedback.textContent = 'Submitting your order…';
             submit.disabled = true;
             submit.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting order...';
         });
@@ -507,7 +524,6 @@
             });
             table.hidden = cart.size === 0;
             empty.hidden = cart.size > 0;
-            submit.disabled = cart.size === 0;
             document.getElementById('cart-total').textContent = formatMoney(total);
             document.getElementById('cart-count').textContent = String(count);
         }

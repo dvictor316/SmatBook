@@ -424,7 +424,7 @@
 
     #products-table td:nth-child(3) .fw-bold {
         font-size: 0.82rem;
-        font-weight: 600 !important;
+        font-weight: 500 !important;
         line-height: 1.3;
         color: #1e293b !important;
     }
@@ -433,6 +433,19 @@
         font-size: 0.7rem;
         font-weight: 400;
         line-height: 1.35;
+    }
+
+    #products-table thead th,
+    #products-table tbody td {
+        text-align: left !important;
+        font-weight: 400;
+    }
+
+    #products-table thead th {
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0;
+        color: #475569;
     }
 
     #products-table td:nth-child(6) small {

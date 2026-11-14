@@ -991,11 +991,24 @@
 
             .nav-container {
                 padding: 0 18px;
+                justify-content: flex-start;
+                gap: 12px;
             }
 
             .hamburger { 
                 display: flex; 
                 order: 0;
+                width: 44px;
+                height: 44px;
+                align-items: center;
+                justify-content: center;
+                gap: 5px;
+                flex: 0 0 44px;
+            }
+
+            .hamburger span {
+                width: 20px;
+                height: 2px;
             }
 
             .logo-container {
