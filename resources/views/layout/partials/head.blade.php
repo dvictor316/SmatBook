@@ -20,7 +20,7 @@
 
 <link rel="stylesheet" href="{{ asset('assets/plugins/feather/feather.css') }}">
 
-@if (file_exists(public_path('assets/plugins/material/materialdesignicons.css')))
+@if (file_exists(public_path('assets/plugins/material/materialdesignicons.css')) && Route::is(['super_admin.dashboard', 'accordions', 'badges', 'icon-material']))
     <link rel="stylesheet" href="{{ asset('assets/plugins/material/materialdesignicons.css') }}">
 @endif
 
@@ -95,7 +95,6 @@
 @endif
 
 @if (Route::is('icon-ionic'))       <link rel="stylesheet" href="{{ asset('assets/plugins/icons/ionic/ionicons.css') }}"> @endif
-@if (Route::is('icon-material'))    <link rel="stylesheet" href="{{ asset('assets/plugins/material/materialdesignicons.css') }}"> @endif
 @if (Route::is('icon-pe7'))         <link rel="stylesheet" href="{{ asset('assets/plugins/icons/pe7/pe-icon-7.css') }}"> @endif
 @if (Route::is('icon-simpleline'))  <link rel="stylesheet" href="{{ asset('assets/plugins/simpleline/simple-line-icons.css') }}"> @endif
 @if (Route::is('icon-themify'))     <link rel="stylesheet" href="{{ asset('assets/plugins/icons/themify/themify.css') }}"> @endif

@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
 class Subscription extends Model
@@ -367,6 +368,12 @@ class Subscription extends Model
 
         $workspaceResolver = app(\App\Support\BusinessWorkspaceResolver::class);
         $activeCompanyId = $workspaceResolver->activeCompanyId($user);
+        $request = app('request');
+        $requestCacheKey = self::class.'.current_for_user.'.$user->id.'.'.$activeCompanyId;
+
+        if (! app()->runningInConsole() && $request instanceof Request && $request->attributes->has($requestCacheKey)) {
+            return $request->attributes->get($requestCacheKey);
+        }
 
         $subscription = static::withoutGlobalScope('tenant')
             ->with('plan_relationship')
@@ -392,6 +399,10 @@ class Subscription extends Model
 
         if ($subscription && in_array(strtolower((string) $subscription->status), ['active', 'trial'], true)) {
             $subscription->isExpired();
+        }
+
+        if (! app()->runningInConsole() && $request instanceof Request) {
+            $request->attributes->set($requestCacheKey, $subscription);
         }
 
         return $subscription;
