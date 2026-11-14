@@ -84,6 +84,13 @@
         color: white;
         border: none;
     }
+    .deployment-metric-ribbon { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); background:#fff; border:1px solid #e2e8f0; border-radius:14px; overflow:hidden; margin-bottom:1.25rem; }
+    .deployment-metric-ribbon > div { min-width:0; padding:12px 16px; }
+    .deployment-metric-ribbon > div + div { border-left:1px solid #e8edf4; }
+    .deployment-metric-ribbon span,.deployment-metric-ribbon strong { display:block; }
+    .deployment-metric-ribbon span { color:#64748b; font-size:.7rem; font-weight:700; letter-spacing:.03em; text-transform:uppercase; }
+    .deployment-metric-ribbon strong { margin-top:4px; color:#16345f; font-size:.98rem; line-height:1.25; overflow-wrap:anywhere; }
+    @media(max-width:767.98px){.deployment-metric-ribbon{grid-template-columns:repeat(2,minmax(0,1fr))}.deployment-metric-ribbon>div:nth-child(odd){border-left:0}.deployment-metric-ribbon>div:nth-child(n+3){border-top:1px solid #e8edf4}}
 
     .revenue-card {
         background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
@@ -219,51 +226,11 @@
         </div>
     </div>
 
-    <div class="row g-3 mb-4">
-
-        <div class="col-lg-3 col-md-6">
-            <div class="glass-card p-3" style="background:linear-gradient(135deg,#fff7ed,#ffedd5);">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span style="font-size:10px;font-weight:700;letter-spacing:.6px;color:#92400e;">AVAILABLE COMMISSION</span>
-                    <span class="badge bg-warning text-dark" style="font-size:9px;">{{ $commissionPending > 0 ? 'YES' : 'NO' }}</span>
-                </div>
-                <div class="fw-bold text-warning" style="font-size:1.2rem;line-height:1.2;">₦{{ number_format($commissionPending, 0) }}</div>
-                <div class="text-muted" style="font-size:11px;">Ready for payout cycle</div>
-            </div>
-        </div>
-
-        <div class="col-lg-3 col-md-6">
-            <div class="glass-card p-3" style="background:linear-gradient(135deg,#ecfeff,#cffafe);">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span style="font-size:10px;font-weight:700;letter-spacing:.6px;color:#155e75;">TRIAL ACCOUNTS</span>
-                    <span class="badge bg-info" style="font-size:9px;">{{ $metrics['trialCount'] ?? 0 }}</span>
-                </div>
-                <div class="fw-bold text-info" style="font-size:1.2rem;line-height:1.2;">{{ $metrics['trialCount'] ?? 0 }}</div>
-                <div class="text-muted" style="font-size:11px;">Convert to paid</div>
-            </div>
-        </div>
-
-        <div class="col-lg-3 col-md-6">
-            <div class="glass-card p-3" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span style="font-size:10px;font-weight:700;letter-spacing:.6px;color:#1e40af;">PROCESSING PAYOUTS</span>
-                    <i class="fas fa-spinner text-primary" style="font-size:12px;"></i>
-                </div>
-                <div class="fw-bold text-primary" style="font-size:1.2rem;line-height:1.2;">₦{{ number_format($commissionProcessing, 0) }}</div>
-                <div class="text-muted" style="font-size:11px;">Awaiting settlement</div>
-            </div>
-        </div>
-
-        <div class="col-lg-3 col-md-6">
-            <div class="glass-card p-3" style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span style="font-size:10px;font-weight:700;letter-spacing:.6px;color:#065f46;">PAYOUT READINESS</span>
-                    <i class="fas fa-university text-success" style="font-size:12px;"></i>
-                </div>
-                <div class="fw-bold text-success text-uppercase" style="font-size:1rem;line-height:1.2;">{{ str_replace('_', ' ', $payoutStatus) }}</div>
-                <div class="text-muted" style="font-size:11px;">{{ $autoPayoutEnabled ? 'Auto payout on' : 'Manual mode' }} · Min ₦{{ number_format($minimumPayoutAmount, 0) }}</div>
-            </div>
-        </div>
+    <div class="deployment-metric-ribbon" aria-label="Subscription and payout metrics">
+        <div><span>Available commission</span><strong>₦{{ number_format($commissionPending, 0) }}</strong></div>
+        <div><span>Trial accounts</span><strong>{{ number_format($metrics['trialCount'] ?? 0) }}</strong></div>
+        <div><span>Processing payouts</span><strong>₦{{ number_format($commissionProcessing, 0) }}</strong></div>
+        <div><span>Payout readiness</span><strong>{{ str_replace('_', ' ', $payoutStatus) }} · {{ $autoPayoutEnabled ? 'Auto' : 'Manual' }}</strong></div>
     </div>
 
     @php

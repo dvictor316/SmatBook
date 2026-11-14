@@ -162,6 +162,23 @@
     }
     .mini-metric .label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
     .mini-metric .value { font-size: 0.88rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+    .pro-metric-ribbon {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        border: 1px solid #dce5f1;
+        border-radius: 14px;
+        background: #fff;
+        overflow: hidden;
+    }
+    .pro-metric-ribbon > div { min-width: 0; padding: 13px 16px; }
+    .pro-metric-ribbon > div + div { border-left: 1px solid #e7edf5; }
+    .pro-metric-ribbon span { display: block; color: #64748b; font-size: .72rem; margin-bottom: 4px; }
+    .pro-metric-ribbon strong { display: block; color: #102b57; font-size: .95rem; overflow-wrap: anywhere; }
+    @media (max-width: 575.98px) {
+        .pro-metric-ribbon { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .pro-metric-ribbon > div:nth-child(odd) { border-left: 0; }
+        .pro-metric-ribbon > div:nth-child(n+3) { border-top: 1px solid #e7edf5; }
+    }
     .glass-card-pro h3 { font-size: 0.96rem; line-height: 1.1; letter-spacing: -0.02em; }
     .pro-dashboard-actions {
         align-items: center;
@@ -572,23 +589,11 @@
         </div>
     </div>
 
-    <div class="row g-3 mb-4">
-        @foreach([
-            ['label' => 'Profit Margin', 'value' => number_format($metrics['profitMargin'] ?? 0, 1) . '%'],
-            ['label' => 'Avg Order Value', 'value' => '₦' . number_format($metrics['avgOrderValue'] ?? 0, 0)],
-            ['label' => 'Expense Ratio', 'value' => number_format($metrics['expenseRatio'] ?? 0, 1) . '%'],
-            ['label' => 'Month Revenue', 'value' => '₦' . number_format($currentMonthSales, 0)],
-        ] as $m)
-            <div class="col-sm-6 col-xl-3">
-                <div class="mini-metric">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="label">{{ $m['label'] }}</div>
-                        <span class="live-chip">Live</span>
-                    </div>
-                    <div class="value">{{ $m['value'] }}</div>
-                </div>
-            </div>
-        @endforeach
+    <div class="pro-metric-ribbon mb-4" aria-label="Additional financial metrics">
+        <div><span>Profit margin</span><strong>{{ number_format($metrics['profitMargin'] ?? 0, 1) }}%</strong></div>
+        <div><span>Average order</span><strong>₦{{ \App\Support\CompactNumber::format($metrics['avgOrderValue'] ?? 0, 2) }}</strong></div>
+        <div><span>Expense ratio</span><strong>{{ number_format($metrics['expenseRatio'] ?? 0, 1) }}%</strong></div>
+        <div><span>Month revenue</span><strong>₦{{ \App\Support\CompactNumber::format($currentMonthSales, 2) }}</strong></div>
     </div>
 
     <div class="row g-4 mb-5">

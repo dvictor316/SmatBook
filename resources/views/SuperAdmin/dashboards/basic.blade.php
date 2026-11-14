@@ -268,6 +268,29 @@
         letter-spacing: 0.02em;
     }
 
+    .basic-metric-ribbon {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        background: #fff;
+        border: 1px solid #dce5f1;
+        border-radius: 14px;
+        overflow: hidden;
+    }
+    .basic-metric-ribbon > div { padding: 14px 16px; min-width: 0; }
+    .basic-metric-ribbon > div + div { border-left: 1px solid #e7edf5; }
+    .basic-metric-ribbon span { display: block; color: #64748b; font-size: .72rem; margin-bottom: 4px; }
+    .basic-metric-ribbon strong { display: block; color: #102b57; font-size: .95rem; overflow-wrap: anywhere; }
+    @media (max-width: 991.98px) {
+        .basic-metric-ribbon { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .basic-metric-ribbon > div:nth-child(4) { border-left: 0; border-top: 1px solid #e7edf5; }
+        .basic-metric-ribbon > div:nth-child(n+4) { border-top: 1px solid #e7edf5; }
+    }
+    @media (max-width: 575.98px) {
+        .basic-metric-ribbon { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .basic-metric-ribbon > div:nth-child(odd) { border-left: 0; }
+        .basic-metric-ribbon > div:nth-child(n+3) { border-top: 1px solid #e7edf5; }
+    }
+
     /* Override btn-outline-primary to use theme blue */
     .pos-content-area .btn-outline-primary {
         border-color: #0f3a8a;
@@ -360,7 +383,7 @@
     </div>
 
     <div class="row g-4 mb-4">
-        <div class="col-lg-8">
+        <div class="col-lg-6">
             <div class="card metric-card-basic p-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="fw-bold mb-0" style="color: var(--deep-sapphire);">Monthly Revenue Trend</h5>
@@ -371,12 +394,22 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-4">
+        <div class="col-lg-3">
             <div class="card metric-card-basic p-4">
                 <h5 class="fw-bold mb-3" style="color: var(--deep-sapphire);">Top Products by Quantity</h5>
                 <div style="height: 280px;">
                     <canvas id="basicTopProductsChart"></canvas>
                 </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="card metric-card-basic p-4 h-100">
+                <h5 class="fw-bold mb-1" style="color: var(--deep-sapphire);">Invoice Status</h5>
+                <p class="text-muted small mb-2">Paid, partial and unpaid invoices</p>
+                <div style="height: 250px;">
+                    <canvas id="basicInvoiceStatusChart" aria-label="Invoice status doughnut chart"></canvas>
+                </div>
+                <div class="small text-muted text-center mt-2">{{ number_format($metrics['totalInvoices'] ?? 0) }} invoices in this period</div>
             </div>
         </div>
     </div>
@@ -385,20 +418,6 @@
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
             <h5 class="fw-bold mb-0" style="color: var(--deep-sapphire);">Node Insight Strip</h5>
             <span class="live-chip">Live</span>
-        </div>
-        <div class="spark-row mb-3">
-            <div class="spark-box">
-                <div class="label text-muted small fw-bold text-uppercase mb-2">Revenue Wave</div>
-                <canvas id="basicRevenueWave"></canvas>
-            </div>
-            <div class="spark-box">
-                <div class="label text-muted small fw-bold text-uppercase mb-2">Invoice Wave</div>
-                <canvas id="basicInvoiceWave"></canvas>
-            </div>
-            <div class="spark-box">
-                <div class="label text-muted small fw-bold text-uppercase mb-2">Items Wave</div>
-                <canvas id="basicItemsWave"></canvas>
-            </div>
         </div>
         <div class="row g-3">
             <div class="col-sm-6 col-xl-3">
@@ -428,42 +447,13 @@
         </div>
     </div>
 
-    <div class="row g-3 mb-4">
-        @foreach([
-            ['label' => 'Avg Order Value', 'value' => '₦' . number_format($metrics['avgOrderValue'] ?? 0, 0)],
-            ['label' => 'Low Stock Alerts', 'value' => number_format($metrics['lowStockCount'] ?? 0)],
-            ['label' => 'Profit Margin', 'value' => number_format($metrics['profitMargin'] ?? 0, 1) . '%'],
-            ['label' => 'Month Revenue', 'value' => '₦' . number_format($currentMonthSales, 0)],
-        ] as $m)
-            <div class="col-sm-6 col-xl-3">
-                <div class="mini-metric">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="label">{{ $m['label'] }}</div>
-                        <span class="live-chip">Live</span>
-                    </div>
-                    <div class="value">{{ $m['value'] }}</div>
-                </div>
-            </div>
-        @endforeach
-    </div>
-
-    <div class="row g-3 mb-4">
-        @foreach([
-            ['label' => 'Paid Invoices', 'value' => number_format($metrics['paidInvoices'] ?? 0)],
-            ['label' => 'Partial Invoices', 'value' => number_format($metrics['partialInvoices'] ?? 0)],
-            ['label' => 'Unpaid Invoices', 'value' => number_format($metrics['unpaidInvoices'] ?? 0)],
-            ['label' => 'Margin Health', 'value' => $dashboardHealth['margin'] ?? 'Stable'],
-        ] as $m)
-            <div class="col-sm-6 col-xl-3">
-                <div class="mini-metric">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="label">{{ $m['label'] }}</div>
-                        <span class="live-chip">Live</span>
-                    </div>
-                    <div class="value">{{ $m['value'] }}</div>
-                </div>
-            </div>
-        @endforeach
+    <div class="basic-metric-ribbon mb-4" aria-label="Additional business metrics">
+        <div><span>Avg. order value</span><strong>₦{{ \App\Support\CompactNumber::format($metrics['avgOrderValue'] ?? 0, 2) }}</strong></div>
+        <div><span>Low stock</span><strong>{{ number_format($metrics['lowStockCount'] ?? 0) }}</strong></div>
+        <div><span>Profit margin</span><strong>{{ number_format($metrics['profitMargin'] ?? 0, 1) }}%</strong></div>
+        <div><span>Month revenue</span><strong>₦{{ \App\Support\CompactNumber::format($currentMonthSales, 2) }}</strong></div>
+        <div><span>Paid / partial / unpaid</span><strong>{{ number_format($metrics['paidInvoices'] ?? 0) }} / {{ number_format($metrics['partialInvoices'] ?? 0) }} / {{ number_format($metrics['unpaidInvoices'] ?? 0) }}</strong></div>
+        <div><span>Margin signal</span><strong>{{ $dashboardHealth['margin'] ?? 'Stable' }}</strong></div>
     </div>
 
     <div class="row g-4 mb-4">
@@ -700,74 +690,6 @@
             });
         }
 
-        const sparkBase = {
-            type: 'line',
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                elements: { point: { radius: 0 } },
-                scales: {
-                    x: { display: false },
-                    y: { display: false, beginAtZero: true }
-                }
-            }
-        };
-
-        const revenueWaveCtx = document.getElementById('basicRevenueWave');
-        if (revenueWaveCtx) {
-            new Chart(revenueWaveCtx.getContext('2d'), {
-                ...sparkBase,
-                data: {
-                    labels,
-                    datasets: [{
-                        data: totals,
-                        borderColor: '#0d6efd',
-                        backgroundColor: 'rgba(15,58,138,0.12)',
-                        fill: true,
-                        tension: 0.35,
-                        borderWidth: 2
-                    }]
-                }
-            });
-        }
-
-        const invoiceWaveCtx = document.getElementById('basicInvoiceWave');
-        if (invoiceWaveCtx) {
-            new Chart(invoiceWaveCtx.getContext('2d'), {
-                ...sparkBase,
-                data: {
-                    labels,
-                    datasets: [{
-                        data: totals.map(value => Math.max(1, Math.round(value / 5000))),
-                        borderColor: '#d7a928',
-                        backgroundColor: 'rgba(215,169,40,0.12)',
-                        fill: true,
-                        tension: 0.35,
-                        borderWidth: 2
-                    }]
-                }
-            });
-        }
-
-        const itemsWaveCtx = document.getElementById('basicItemsWave');
-        if (itemsWaveCtx) {
-            new Chart(itemsWaveCtx.getContext('2d'), {
-                ...sparkBase,
-                data: {
-                    labels,
-                    datasets: [{
-                        data: totals.map(value => Math.max(1, Math.round(value / 2500))),
-                        borderColor: '#198754',
-                        backgroundColor: 'rgba(25,135,84,0.12)',
-                        fill: true,
-                        tension: 0.35,
-                        borderWidth: 2
-                    }]
-                }
-            });
-        }
-
         const topCtx = document.getElementById('basicTopProductsChart');
         if (topCtx) {
             new Chart(topCtx.getContext('2d'), {
@@ -793,6 +715,36 @@
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        const invoiceStatusCtx = document.getElementById('basicInvoiceStatusChart');
+        if (invoiceStatusCtx) {
+            new Chart(invoiceStatusCtx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Paid', 'Partially paid', 'Unpaid'],
+                    datasets: [{
+                        data: [
+                            Number(@json($metrics['paidInvoices'] ?? 0)),
+                            Number(@json($metrics['partialInvoices'] ?? 0)),
+                            Number(@json($metrics['unpaidInvoices'] ?? 0))
+                        ],
+                        backgroundColor: ['#14946c', '#e9ad25', '#d84b58'],
+                        borderColor: '#ffffff',
+                        borderWidth: 4,
+                        hoverOffset: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '68%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16, boxWidth: 8 } },
+                        tooltip: { callbacks: { label: (context) => `${context.label}: ${Number(context.parsed || 0).toLocaleString()}` } }
+                    }
                 }
             });
         }

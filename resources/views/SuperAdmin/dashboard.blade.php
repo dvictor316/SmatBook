@@ -1409,6 +1409,44 @@
             font-size: 0.75rem !important;
         }
     }
+    .platform-metrics-details {
+        border: 1px solid #dbe4ef;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 6px 18px rgba(15, 35, 68, .04);
+        overflow: hidden;
+    }
+    .platform-metrics-details > summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 15px 18px;
+        color: #102b57;
+        cursor: pointer;
+        font-weight: 700;
+        list-style: none;
+    }
+    .platform-metrics-details > summary::-webkit-details-marker { display: none; }
+    .platform-metrics-details > summary::after {
+        content: '+';
+        display: grid;
+        place-items: center;
+        width: 26px;
+        height: 26px;
+        flex: 0 0 26px;
+        border-radius: 50%;
+        color: #164eb0;
+        background: #edf4ff;
+        font-size: 1.15rem;
+    }
+    .platform-metrics-details[open] > summary::after { content: '−'; }
+    .platform-metrics-details > summary span { margin-left: auto; color: #718096; font-size: .8rem; font-weight: 500; }
+    .platform-metrics-content { padding: 0 16px 14px; border-top: 1px solid #edf1f6; }
+    @media (max-width: 575.98px) {
+        .platform-metrics-details > summary { align-items: flex-start; flex-wrap: wrap; }
+        .platform-metrics-details > summary span { order: 3; width: 100%; margin-left: 0; }
+    }
 </style>
 
 <div id="main-content-wrapper" class="container-fluid px-4 pb-4">
@@ -1717,6 +1755,9 @@
                             </div>
                         </div>
 
+                        <details class="platform-metrics-details mt-2">
+                            <summary>Platform and business metrics <span>Open detailed counts and commerce metrics</span></summary>
+                            <div class="platform-metrics-content">
                         <div class="row mt-2">
                             <div class="col-12 grid-margin stretch-card">
                                 <div class="card card-rounded shadow-sm border-0">
@@ -1825,6 +1866,12 @@
                             </div>
                         </div>
 
+                            </div>
+                        </details>
+
+                        <details class="platform-metrics-details mt-2">
+                            <summary>Subscription and team health <span>Open status, queue and licence metrics</span></summary>
+                            <div class="platform-metrics-content">
                         <div class="row mt-2">
                             <div class="col-md-3 grid-margin stretch-card">
                                 <div class="card card-rounded tone-card tone-rose shadow-sm">
@@ -1934,6 +1981,9 @@
                                 </div>
                             </div>
                         </div>
+
+                            </div>
+                        </details>
 
                         @if(($metrics['expiring_soon_subs'] ?? 0) > 0 || ($metrics['expired_subs'] ?? 0) > 0)
                         <div class="row mt-2">
@@ -2091,49 +2141,11 @@
 
                         <div class="row mt-2">
                             <div class="col-12 grid-margin stretch-card">
-                                <div class="kpi-grid-dense">
-                                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                                        <div>
-                                            <h5 class="mb-0 fw-bold text-dark">Live Operations Strip</h5>
-                                            <small class="text-muted">Additional command-center density under analytics</small>
-                                        </div>
-                                        <span class="live-badge-soft animate-pulse">Live</span>
-                                    </div>
-                                    <div class="row g-2">
-                                        @foreach([
-                                            ['label' => 'Registered Revenue', 'value' => '₦' . number_format($metrics['registered_user_revenue'] ?? 0, 0)],
-                                            ['label' => 'Deployed Paid', 'value' => number_format($metrics['paid_subs'] ?? 0)],
-                                            ['label' => 'Deployed Today', 'value' => number_format($metrics['plan_sales_today'] ?? 0)],
-                                            ['label' => 'Deployed Month', 'value' => number_format($metrics['plan_sales_month'] ?? 0)],
-                                            ['label' => 'Deployed Monthly Value', 'value' => '₦' . number_format($metrics['plan_sales_value_month'] ?? 0, 0)],
-                                            ['label' => 'Average Deployed Sale', 'value' => '₦' . number_format($metrics['avg_plan_sale'] ?? 0, 0)],
-                                            ['label' => 'Expiring Soon', 'value' => number_format($metrics['expiring_soon_subs'] ?? 0)],
-                                            ['label' => 'Expired', 'value' => number_format($metrics['expired_subs'] ?? 0)],
-                                            ['label' => 'Verified Users', 'value' => number_format($metrics['verified_users'] ?? 0)],
-                                            ['label' => 'Low Stock', 'value' => number_format($metrics['low_stock_items'] ?? 0)],
-                                            ['label' => 'New Signups (30d)', 'value' => number_format($metrics['recent_signups'] ?? 0)],
-                                            ['label' => 'Users', 'value' => number_format($metrics['total_users'] ?? 0)],
-                                            ['label' => 'Active Managers', 'value' => number_format($metrics['active_managers'] ?? 0)],
-                                        ] as $denseKpi)
-                                            <div class="col-sm-6 col-xl-3">
-                                                <div class="kpi-dense-item">
-                                                    <div class="label">{{ $denseKpi['label'] }}</div>
-                                                    <div class="value">{{ $denseKpi['value'] }}</div>
-                                                </div>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row mt-2">
-                            <div class="col-12 grid-margin stretch-card">
                                 <div class="metric-wall">
                                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                                         <div>
-                                            <h5 class="mb-0 fw-bold text-dark">Heavy Metrics Wall</h5>
-                                            <small class="text-muted">Live platform depth, plan mix, and approval pressure</small>
+                                            <h5 class="mb-0 fw-bold text-dark">Platform health at a glance</h5>
+                                            <small class="text-muted">Coverage, verification, plan mix and approval pressure</small>
                                         </div>
                                         <span class="live-badge-soft animate-pulse">Live</span>
                                     </div>
