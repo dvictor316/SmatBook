@@ -400,6 +400,12 @@
         text-align: center;
     }
 
+    #products-table td:nth-child(4),
+    #products-table td:nth-child(5),
+    #products-table td:nth-child(5) .badge {
+        font-size: 0.74rem;
+    }
+
     #products-table td:nth-child(3) > .d-flex {
         min-width: 0;
         align-items: center;
@@ -424,7 +430,7 @@
 
     #products-table td:nth-child(3) .product-identity { min-width: 0; flex: 1 1 auto; }
     #products-table td:nth-child(3) .product-name {
-        font-size: 0.72rem;
+        font-size: 0.82rem;
         font-weight: 400 !important;
         line-height: 1.3;
         color: #1e293b !important;
