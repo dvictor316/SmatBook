@@ -6284,12 +6284,13 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                                         {{ $cashDepositAccount->name }}
                                     @else
                                         <strong>Cash account not configured</strong>
-                                        <span>Call your administrator to set it up.</span>
+                                        <span>Bank Settings accounts are for transfers. Create cash under Chart of Accounts.</span>
                                     @endif
                                 </div>
                                 @unless($cashDepositAccount ?? null)
                                     <small class="text-danger d-block mt-1">
-                                        Cash payments are unavailable until an administrator configures the cash account in Chart of Accounts.
+                                        Cash payments need an active Asset account with subtype Cash for this branch.
+                                        <a href="{{ $posChartAccountsUrl }}" class="fw-semibold text-danger text-decoration-underline">Open Chart of Accounts</a>
                                     </small>
                                 @endunless
                         </div>

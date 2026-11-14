@@ -116,7 +116,11 @@
                                     </a>
                                 </div>
                             </div>
-                            <p class="text-muted mb-4">Use this page for bank accounts and settlement channels like Moniepoint, Opay, transfer wallets, or other collection accounts that should feed your books and balance sheet.</p>
+                            <p class="text-muted mb-2">Use this page for bank accounts and settlement channels like Moniepoint, Opay, transfer wallets, or other collection accounts that should feed your books and balance sheet. These are transfer/bank accounts, not the POS cash till.</p>
+                            <div class="alert alert-info d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+                                <span>To enable cash sales, add an account in Chart of Accounts with Type <strong>Asset</strong> and Sub Type <strong>Cash</strong>. Create it while the correct branch is active.</span>
+                                <a class="btn btn-sm btn-primary" href="{{ route('chart-of-accounts') }}">Open Chart of Accounts</a>
+                            </div>
 
                             <div class="row">
                                 <div class="col-sm-12">
