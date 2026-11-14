@@ -270,7 +270,7 @@
 
     #products-table {
         width: 100% !important;
-        min-width: 1180px;
+        min-width: 940px;
         table-layout: fixed;
         font-size: 0.77rem;
     }
@@ -340,15 +340,15 @@
         color: #cbd5e1;
     }
 
-    #products-table th:nth-child(1), #products-table td:nth-child(1) { width: 3%; }
+    #products-table th:nth-child(1), #products-table td:nth-child(1) { width: 4%; }
     #products-table th:nth-child(2), #products-table td:nth-child(2) { width: 4%; }
-    #products-table th:nth-child(3), #products-table td:nth-child(3) { width: 31%; }
-    #products-table th:nth-child(4), #products-table td:nth-child(4) { width: 9%; }
+    #products-table th:nth-child(3), #products-table td:nth-child(3) { width: 25%; }
+    #products-table th:nth-child(4), #products-table td:nth-child(4) { width: 10%; }
     #products-table th:nth-child(5), #products-table td:nth-child(5) { width: 8%; }
-    #products-table th:nth-child(6), #products-table td:nth-child(6) { width: 15%; }
+    #products-table th:nth-child(6), #products-table td:nth-child(6) { width: 16%; }
     #products-table th:nth-child(7), #products-table td:nth-child(7) { width: 8%; }
-    #products-table th:nth-child(8), #products-table td:nth-child(8) { width: 8%; }
-    #products-table th:nth-child(9), #products-table td:nth-child(9) { width: 7%; }
+    #products-table th:nth-child(8), #products-table td:nth-child(8) { width: 9%; }
+    #products-table th:nth-child(9), #products-table td:nth-child(9) { width: 8%; }
     #products-table th:nth-child(10),
     #products-table td:nth-child(10) {
         width: 7%;
@@ -432,7 +432,7 @@
         color: #1e293b !important;
     }
     #products-table td:nth-child(3) .product-thumb-img,
-    #products-table td:nth-child(3) .product-thumb-empty { width: 42px; height: 42px; flex: 0 0 42px; }
+    #products-table td:nth-child(3) .product-thumb-empty { width: 34px; height: 34px; flex: 0 0 34px; }
     #products-table td:nth-child(3) .product-variant {
         display: inline-block;
         width: fit-content;
@@ -529,7 +529,7 @@
 
     @media (max-width: 991.98px) {
         #products-table {
-            min-width: 980px;
+        min-width: 900px;
         }
     }
 
