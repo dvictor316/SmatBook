@@ -536,7 +536,7 @@
     </div>
 
     <div class="row g-4 mb-4">
-        <div class="col-xl-6">
+        <div class="col-xl-4">
             <div class="card enterprise-card p-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h5 class="fw-bold mb-0" style="color: var(--deep-sapphire);">
@@ -563,7 +563,7 @@
     </div>
 
     <div class="row g-4 mb-4">
-        <div class="col-xl-6">
+        <div class="col-xl-4">
             <div class="card enterprise-card p-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h5 class="fw-bold mb-0" style="color: var(--deep-sapphire);">
@@ -576,7 +576,16 @@
                 </div>
             </div>
         </div>
-        <div class="col-xl-6">
+        <div class="col-xl-4">
+            <div class="card enterprise-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0" style="color: var(--deep-sapphire);">Invoice Status</h5>
+                    <span class="text-muted small">{{ number_format($metrics['totalInvoices'] ?? 0) }} total</span>
+                </div>
+                <div style="height: 300px;"><canvas id="enterpriseInvoiceStatusChart" aria-label="Invoice status doughnut chart"></canvas></div>
+            </div>
+        </div>
+        <div class="col-xl-4">
             <div class="card enterprise-card p-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h5 class="fw-bold mb-0" style="color: var(--deep-sapphire);">
@@ -732,37 +741,59 @@
     document.addEventListener('DOMContentLoaded', function () {
         const topProducts = @json($topProducts ?? []);
         const canvas = document.getElementById('enterpriseTopProductsChart');
-        if (!canvas) return;
+        if (canvas) {
+            const enterpriseBarGradient = canvas.getContext('2d').createLinearGradient(0, 0, 0, 300);
+            enterpriseBarGradient.addColorStop(0, '#f8d66d');
+            enterpriseBarGradient.addColorStop(0.5, '#d7a928');
+            enterpriseBarGradient.addColorStop(1, '#8b5e18');
 
-        const enterpriseBarGradient = canvas.getContext('2d').createLinearGradient(0, 0, 0, 300);
-        enterpriseBarGradient.addColorStop(0, '#f8d66d');
-        enterpriseBarGradient.addColorStop(0.5, '#d7a928');
-        enterpriseBarGradient.addColorStop(1, '#8b5e18');
-
-        new Chart(canvas.getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: topProducts.map(p => p.name),
-                datasets: [{
-                    label: 'Qty Sold',
-                    data: topProducts.map(p => Number(p.total_qty || 0)),
-                    backgroundColor: enterpriseBarGradient,
-                    borderRadius: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(148, 163, 184, 0.18)' }
-                    },
-                    x: { grid: { display: false } }
+            new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: topProducts.map(p => p.name),
+                    datasets: [{
+                        label: 'Qty Sold',
+                        data: topProducts.map(p => Number(p.total_qty || 0)),
+                        backgroundColor: enterpriseBarGradient,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(148, 163, 184, 0.18)' }
+                        },
+                        x: { grid: { display: false } }
+                    }
                 }
-            }
-        });
+            });
+        }
+
+        const invoiceCanvas = document.getElementById('enterpriseInvoiceStatusChart');
+        if (invoiceCanvas) {
+            new Chart(invoiceCanvas.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Paid', 'Partially paid', 'Unpaid'],
+                    datasets: [{
+                        data: [Number(@json($metrics['paidInvoices'] ?? 0)), Number(@json($metrics['partialInvoices'] ?? 0)), Number(@json($metrics['unpaidInvoices'] ?? 0))],
+                        backgroundColor: ['#14946c', '#e9ad25', '#d84b58'],
+                        borderColor: '#ffffff',
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '68%',
+                    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 14, boxWidth: 8 } } }
+                }
+            });
+        }
     });
 </script>
 

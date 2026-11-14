@@ -325,6 +325,65 @@
         line-height: 1.35;
         margin-top: 0.14rem;
     }
+    .visit-metric-strip,
+    .visit-decision-strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        background: #f7f9fc;
+        border: 1px solid #e2e9f2;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .visit-metric-item,
+    .visit-decision-item { min-width: 0; padding: 12px 14px; }
+    .visit-metric-item + .visit-metric-item,
+    .visit-decision-item + .visit-decision-item { border-left: 1px solid #e2e9f2; }
+    .visit-metric-item .visit-label,
+    .visit-decision-item .label { color: #65758b; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .035em; }
+    .visit-metric-item .visit-value,
+    .visit-decision-item .value { margin-top: 3px; color: #132d52; font-size: 1.05rem; font-weight: 750; }
+    .visit-metric-item .visit-note,
+    .visit-decision-item .note { margin-top: 2px; color: #7b8ba0; font-size: .7rem; }
+    .visit-metric-item .visitor-count-badge { margin-top: 6px; padding: 0; background: transparent; color: #315d9c; font-size: .68rem; box-shadow: none; }
+    .compact-money-panel .row > div + div { border-left: 1px solid #e6ebf2; }
+    .compact-money-panel .money-mini-card { padding: 12px; background: transparent !important; border-radius: 0 !important; box-shadow: none !important; }
+    .compact-money-panel .money-mini-card .money-label,
+    .compact-money-panel .money-mini-card .money-note { color: #718096 !important; }
+    .compact-money-panel .money-mini-card .money-value { color: #17365e !important; }
+    .compact-money-panel .money-mini-card.bg-success .money-value { color: #087b58 !important; }
+    .compact-money-panel .money-mini-card.bg-danger .money-value { color: #be3845 !important; }
+    .metric-wall { padding: 0; border: 0; border-radius: 0; background: transparent; }
+    .metric-wall > .row {
+        margin-inline: 0;
+        --bs-gutter-x: 0;
+        --bs-gutter-y: 0;
+        overflow: hidden;
+        border: 1px solid #e2e9f2;
+        border-radius: 12px;
+        background: #f7f9fc;
+    }
+    .metric-wall > .row > [class*="col-"] { padding: 0; }
+    .metric-wall-item { padding: 11px 13px; border: 0; border-radius: 0; background: transparent; }
+    .metric-wall > .row > [class*="col-"]:nth-child(4n+2) .metric-wall-item,
+    .metric-wall > .row > [class*="col-"]:nth-child(4n+3) .metric-wall-item,
+    .metric-wall > .row > [class*="col-"]:nth-child(4n+4) .metric-wall-item { border-left: 1px solid #e2e9f2; }
+    .metric-wall > .row > [class*="col-"]:nth-child(n+5) .metric-wall-item { border-top: 1px solid #e2e9f2; }
+    @media (max-width: 1199.98px) {
+        .metric-wall > .row > [class*="col-"]:nth-child(odd) .metric-wall-item { border-left: 0; }
+        .metric-wall > .row > [class*="col-"]:nth-child(n+3) .metric-wall-item { border-top: 1px solid #e2e9f2; }
+    }
+    @media (max-width: 767.98px) {
+        .visit-metric-strip,
+        .visit-decision-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .visit-metric-item:nth-child(odd),
+        .visit-decision-item:nth-child(odd) { border-left: 0; }
+        .visit-metric-item:nth-child(n+3),
+        .visit-decision-item:nth-child(n+3) { border-top: 1px solid #e2e9f2; }
+        .compact-money-panel .row > div + div { border-left: 0; }
+        .compact-money-panel .row > div:nth-child(n+2) { border-top: 1px solid #e6ebf2; }
+        .metric-wall > .row > [class*="col-"]:nth-child(odd) .metric-wall-item { border-left: 0; }
+        .metric-wall > .row > [class*="col-"]:nth-child(n+3) .metric-wall-item { border-top: 1px solid #e2e9f2; }
+    }
 
     /* Pulse animation for live indicators */
     @keyframes pulse {
@@ -1572,28 +1631,13 @@
                         </div>
 
                         <div class="visit-analytics-board">
-                            <div class="row g-2">
+                            <div class="visit-metric-strip">
                                 @foreach($visitorAnalytics['cards'] ?? [] as $visitCard)
-                                    <div class="col-6 col-lg-3">
-                                        <div class="visit-mini-card {{ $visitCard['tone'] ?? 'visit-blue' }}">
-                                            <div class="d-flex justify-content-between align-items-start gap-2">
-                                                <div>
-                                                    <div class="visit-label">{{ $visitCard['label'] ?? 'Visits' }}</div>
-                                                    <div class="visit-value">{{ number_format((int) ($visitCard['value'] ?? 0)) }}</div>
-                                                    <div class="visit-note">{{ $visitCard['note'] ?? 'Visit signal' }}</div>
-                                                    <div class="visitor-count-badge">
-                                                        <i class="mdi mdi-account-eye-outline"></i>
-                                                        {{ number_format((int) ($visitCard['visitors'] ?? 0)) }} visitors
-                                                    </div>
-                                                </div>
-                                                <div class="visit-icon">
-                                                    @php
-                                                        $visitIcon = (string) ($visitCard['icon'] ?? 'mdi-eye-outline');
-                                                    @endphp
-                                                    <i class="{{ str_starts_with($visitIcon, 'fa') ? $visitIcon : 'mdi ' . $visitIcon }}"></i>
-                                                </div>
-                                            </div>
-                                        </div>
+                                    <div class="visit-metric-item">
+                                        <div class="visit-label">{{ $visitCard['label'] ?? 'Visits' }}</div>
+                                        <div class="visit-value">{{ number_format((int) ($visitCard['value'] ?? 0)) }}</div>
+                                        <div class="visit-note">{{ $visitCard['note'] ?? 'Visit signal' }}</div>
+                                        <div class="visitor-count-badge">{{ number_format((int) ($visitCard['visitors'] ?? 0)) }} visitors</div>
                                     </div>
                                 @endforeach
                             </div>
@@ -1682,14 +1726,12 @@
                                             <div class="chart-container chart-container-md">
                                                 <canvas id="dailyComparisonWaveChart"></canvas>
                                             </div>
-                                            <div class="row g-2 mt-2">
+                                            <div class="visit-decision-strip mt-2">
                                                 @foreach($visitorAnalytics['decisionCards'] ?? [] as $decisionCard)
-                                                    <div class="col-6 col-lg-3">
-                                                        <div class="visit-decision-card">
-                                                            <div class="label">{{ $decisionCard['label'] ?? 'Signal' }}</div>
-                                                            <div class="value">{{ $decisionCard['value'] ?? '0' }}</div>
-                                                            <div class="note">{{ $decisionCard['note'] ?? 'Management decision signal' }}</div>
-                                                        </div>
+                                                    <div class="visit-decision-item">
+                                                        <div class="label">{{ $decisionCard['label'] ?? 'Signal' }}</div>
+                                                        <div class="value">{{ $decisionCard['value'] ?? '0' }}</div>
+                                                        <div class="note">{{ $decisionCard['note'] ?? 'Management decision signal' }}</div>
                                                     </div>
                                                 @endforeach
                                             </div>

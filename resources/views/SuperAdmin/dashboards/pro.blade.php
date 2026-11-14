@@ -610,7 +610,9 @@
         </div>
         <div class="col-xl-4">
             <div class="glass-card-pro p-4 h-100">
-                <h5 class="fw-bold mb-3" style="color: var(--deep-sapphire);">Top Customers</h5>
+                <h5 class="fw-bold mb-2" style="color: var(--deep-sapphire);">Invoice Status</h5>
+                <div style="height: 165px; margin-bottom: 12px;"><canvas id="proInvoiceStatusChart" aria-label="Invoice status doughnut chart"></canvas></div>
+                <h6 class="fw-bold mb-2" style="color: var(--deep-sapphire);">Top Customers</h6>
                 <div class="table-responsive">
                     <table class="table table-sm align-middle mb-0">
                         <thead>
@@ -798,12 +800,8 @@
         const proFinanceCtx = document.getElementById('proFinanceChart');
         if (!proFinanceCtx) return;
 
-        const proFinanceGradient = proFinanceCtx.getContext('2d').createLinearGradient(0, 0, 0, 320);
-        proFinanceGradient.addColorStop(0, 'rgba(15, 58, 138, 0.22)');
-        proFinanceGradient.addColorStop(1, 'rgba(15, 58, 138, 0.02)');
-
         new Chart(proFinanceCtx.getContext('2d'), {
-            type: 'line',
+            type: 'bar',
             data: {
                 labels,
                 datasets: [
@@ -811,35 +809,25 @@
                         label: 'Revenue',
                         data: salesSeries,
                         borderColor: '#16a34a',
-                        backgroundColor: 'rgba(22,163,74,0.14)',
-                        fill: true,
-                        tension: 0.3,
-                        borderWidth: 3,
-                        pointRadius: 3
+                        backgroundColor: 'rgba(22,163,74,0.78)',
+                        borderRadius: 6,
+                        borderWidth: 0
                     },
                     {
                         label: 'Expenses',
                         data: expenseSeries,
                         borderColor: '#dc2626',
-                        backgroundColor: 'rgba(220,38,38,0.14)',
-                        fill: true,
-                        tension: 0.3,
-                        borderWidth: 3,
-                        pointRadius: 3
+                        backgroundColor: 'rgba(220,38,38,0.74)',
+                        borderRadius: 6,
+                        borderWidth: 0
                     },
                     {
                         label: 'Profit',
                         data: profitSeries,
                         borderColor: '#0f3a8a',
-                        backgroundColor: proFinanceGradient,
-                        fill: false,
-                        tension: 0.3,
-                        borderWidth: 3,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#0f3a8a',
-                        pointBorderWidth: 2
+                        backgroundColor: 'rgba(36,88,189,0.78)',
+                        borderRadius: 6,
+                        borderWidth: 0
                     }
                 ]
             },
@@ -867,6 +855,28 @@
                 }
             }
         });
+
+        const proInvoiceCtx = document.getElementById('proInvoiceStatusChart');
+        if (proInvoiceCtx) {
+            new Chart(proInvoiceCtx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Paid', 'Partially paid', 'Unpaid'],
+                    datasets: [{
+                        data: [Number(@json($metrics['paidInvoices'] ?? 0)), Number(@json($metrics['partialInvoices'] ?? 0)), Number(@json($metrics['unpaidInvoices'] ?? 0))],
+                        backgroundColor: ['#14946c', '#e9ad25', '#d84b58'],
+                        borderColor: '#ffffff',
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '66%',
+                    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 8, boxWidth: 8, font: { size: 10 } } } }
+                }
+            });
+        }
 
         const sparkBase = {
             type: 'line',
