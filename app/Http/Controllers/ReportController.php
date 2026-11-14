@@ -574,7 +574,6 @@ class ReportController extends Controller
             'failed',
             'cancelled',
             'canceled',
-            'pending',
             'pending approval',
             'rejected',
             'refunded',
@@ -2326,9 +2325,9 @@ class ReportController extends Controller
             ->findOrFail($id);
 
         $salesQuery = Sale::query()
+            ->withoutGlobalScope('company_id')
             ->where('customer_id', $customer->id);
         $this->applyTenantScope($salesQuery, 'sales');
-        $this->applySaleBranchFilter($salesQuery, 'sales');
 
         $sales = $salesQuery->orderBy('created_at')->orderBy('id')->get();
         $salesIds = $sales->pluck('id')->all();
@@ -2340,10 +2339,14 @@ class ReportController extends Controller
         })->values();
 
         $payments = collect();
-        if (Schema::hasTable('payments') && ! empty($salesIds)) {
-            $paymentQuery = Payment::query()->whereIn('sale_id', $salesIds);
+        if (Schema::hasTable('payments')) {
+            $paymentQuery = Payment::query()->withoutGlobalScope('tenant')->where(function ($query) use ($customer, $salesIds) {
+                $query->where('customer_id', $customer->id);
+                if (! empty($salesIds)) {
+                    $query->orWhereIn('sale_id', $salesIds);
+                }
+            });
             $this->applyTenantScope($paymentQuery, 'payments');
-            $this->applyPaymentBranchFilter($paymentQuery, 'payments');
             $payments = $paymentQuery->orderBy('created_at')->get();
         }
 
@@ -2487,29 +2490,6 @@ class ReportController extends Controller
             })
             ->values();
 
-        $typeFilter = strtolower(trim((string) $request->input('type', 'all')));
-        if ($typeFilter !== '' && $typeFilter !== 'all') {
-            $entries = $entries->filter(function ($entry) use ($typeFilter) {
-                return strtolower((string) $entry['type']) === $typeFilter;
-            })->values();
-        }
-
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-        if ($startDate || $endDate) {
-            $entries = $entries->filter(function ($entry) use ($startDate, $endDate) {
-                $entryDate = \Carbon\Carbon::parse($entry['sort_at'] ?? $entry['date']);
-                if ($startDate && $entryDate->lt(\Carbon\Carbon::parse($startDate)->startOfDay())) {
-                    return false;
-                }
-                if ($endDate && $entryDate->gt(\Carbon\Carbon::parse($endDate)->endOfDay())) {
-                    return false;
-                }
-
-                return true;
-            })->values();
-        }
-
         $runningBalance = 0.0;
         $entries = $entries->map(function ($entry) use (&$runningBalance) {
             $runningBalance += (float) $entry['debit'] - (float) $entry['credit'];
@@ -2522,6 +2502,23 @@ class ReportController extends Controller
         $totalInvoiced = (float) $entries->sum(fn ($entry) => (float) ($entry['debit'] ?? 0));
         $totalPaid = (float) $entries->sum(fn ($entry) => (float) ($entry['credit'] ?? 0));
         $balanceDue = (float) round($totalInvoiced - $totalPaid, 2);
+
+        // Filters affect the displayed rows only. Keep the lifetime totals and
+        // each row's running balance based on the complete customer ledger.
+        $typeFilter = strtolower(trim((string) $request->input('type', 'all')));
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        if ($typeFilter !== '' && $typeFilter !== 'all') {
+            $entries = $entries->filter(fn ($entry) => strtolower((string) $entry['type']) === $typeFilter)->values();
+        }
+        if ($startDate || $endDate) {
+            $entries = $entries->filter(function ($entry) use ($startDate, $endDate) {
+                $entryDate = \Carbon\Carbon::parse($entry['entry_at'] ?? $entry['date']);
+                if ($startDate && $entryDate->lt(\Carbon\Carbon::parse($startDate)->startOfDay())) return false;
+                if ($endDate && $entryDate->gt(\Carbon\Carbon::parse($endDate)->endOfDay())) return false;
+                return true;
+            })->values();
+        }
 
         return view('Reports.Reports.customer-statement', [
             'customer' => $customer,

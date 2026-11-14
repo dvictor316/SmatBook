@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\Bank;
 use App\Models\Customer;
+use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Sale;
 use App\Models\Transaction;
@@ -198,8 +199,38 @@ class CustomerController extends Controller
      */
     public function show($id)
     {
-        $customer = $this->applyTenantScope(Customer::with(['sales', 'invoices']))->findOrFail($id);
-        $invoices = $customer->invoices;
+        $customer = $this->applyTenantScope(Customer::query())->findOrFail($id);
+        $salesQuery = Sale::query()->withoutGlobalScope('company_id')->where('customer_id', $customer->id);
+        $this->applySaleTenantScope($salesQuery);
+        $sales = $salesQuery->get();
+        $customer->setRelation('sales', $sales);
+
+        $paidQuery = Payment::query()->withoutGlobalScope('tenant')->where(function ($query) use ($customer, $sales) {
+            $query->where('customer_id', $customer->id);
+            if ($sales->isNotEmpty()) {
+                $query->orWhereIn('sale_id', $sales->pluck('id'));
+            }
+        });
+        $this->applyCustomerPaymentTenantScope($paidQuery, $customer);
+        $ignoredStatuses = ['failed', 'cancelled', 'canceled', 'pending approval', 'rejected', 'refunded', 'void'];
+        $recordedPayments = $paidQuery->get()->reject(fn ($payment) => in_array(strtolower(trim((string) ($payment->status ?? ''))), $ignoredStatuses, true));
+        $totalCustomerPaid = max((float) $sales->sum(fn ($sale) => (float) ($sale->paid ?? $sale->amount_paid ?? 0)), (float) $recordedPayments->sum('amount'));
+
+        $invoicesQuery = Invoice::query()->withoutGlobalScope('tenant')->where('customer_id', $customer->id);
+        $companyId = (int) ($customer->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
+        $userId = (int) (auth()->id() ?? 0);
+        if ($companyId > 0 && Schema::hasColumn('invoices', 'company_id')) {
+            $invoicesQuery->where(function ($tenant) use ($companyId, $userId) {
+                $tenant->where('company_id', $companyId);
+                if ($userId > 0 && Schema::hasColumn('invoices', 'user_id')) {
+                    $tenant->orWhere(fn ($legacy) => $legacy->whereNull('company_id')->where('user_id', $userId));
+                }
+            });
+        } elseif ($userId > 0 && Schema::hasColumn('invoices', 'user_id')) {
+            $invoicesQuery->where('user_id', $userId);
+        }
+        $invoices = $invoicesQuery->get();
+        $customer->setRelation('invoices', $invoices);
         $salesBalance = $this->calculateCustomerSalesBalance($customer->id);
         $customer->computed_balance = (float) ($customer->balance ?? 0) + $salesBalance;
 
@@ -224,7 +255,7 @@ class CustomerController extends Controller
             ],
             [
                 'title'  => 'Total Paid',
-                'amount' => '₦' . \App\Support\CompactNumber::format($customer->sales->sum('amount_paid'), 2),
+                'amount' => '₦' . \App\Support\CompactNumber::format($totalCustomerPaid, 2),
                 'icon'   => 'check-circle',
                 'class'  => 'bg-emerald-light',
             ]
@@ -622,10 +653,10 @@ class CustomerController extends Controller
 
         if (Schema::hasColumn('sales', 'balance')) {
             $query->withSum(['sales as sales_balance_sum' => function ($saleQuery) {
+                $saleQuery->withoutGlobalScope('company_id');
                 $saleQuery->where('balance', '>', 0);
                 $this->excludeOpeningBalanceSales($saleQuery, 'sales');
                 $this->applySaleTenantScope($saleQuery);
-                $this->applySaleBranchFilter($saleQuery, 'sales');
             }], 'balance');
         }
     }
@@ -636,10 +667,9 @@ class CustomerController extends Controller
             return 0.0;
         }
 
-        $query = Sale::query()->where('customer_id', $customerId)->where('balance', '>', 0);
+        $query = Sale::query()->withoutGlobalScope('company_id')->where('customer_id', $customerId)->where('balance', '>', 0);
         $this->excludeOpeningBalanceSales($query, 'sales');
         $this->applySaleTenantScope($query);
-        $this->applySaleBranchFilter($query, 'sales');
 
         return (float) $query->sum('balance');
     }
@@ -656,10 +686,9 @@ class CustomerController extends Controller
         }
 
         if (Schema::hasTable('sales') && Schema::hasColumn('sales', 'balance')) {
-            $salesQuery = Sale::query()->where('balance', '>', 0);
+            $salesQuery = Sale::query()->withoutGlobalScope('company_id')->where('balance', '>', 0);
             $this->excludeOpeningBalanceSales($salesQuery, 'sales');
             $this->applySaleTenantScope($salesQuery);
-            $this->applySaleBranchFilter($salesQuery, 'sales');
             $salesBalances = (float) $salesQuery->sum('balance');
         }
 
@@ -696,24 +725,13 @@ class CustomerController extends Controller
         $openingPaymentsQuery = Payment::query()
             ->withoutGlobalScope('tenant')
             ->where('customer_id', $customer->id);
-        $paymentCompanyId = (int) ($customer->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
-        $paymentUserId = (int) (auth()->id() ?? 0);
-        if ($paymentCompanyId > 0 && Schema::hasColumn('payments', 'company_id')) {
-            $openingPaymentsQuery->where(function ($tenant) use ($paymentCompanyId, $paymentUserId) {
-                $tenant->where('payments.company_id', $paymentCompanyId);
-                if ($paymentUserId > 0 && Schema::hasColumn('payments', 'user_id')) {
-                    $tenant->orWhere(function ($legacy) use ($paymentUserId) {
-                        $legacy->whereNull('payments.company_id')->where('payments.user_id', $paymentUserId);
-                    });
-                }
-            });
-        } elseif ($paymentUserId > 0 && Schema::hasColumn('payments', 'user_id')) {
-            $openingPaymentsQuery->where('payments.user_id', $paymentUserId);
-        }
+        $this->applyCustomerPaymentTenantScope($openingPaymentsQuery, $customer);
 
         $openingPayments = $openingSale
             ? (clone $openingPaymentsQuery)->where('sale_id', $openingSale->id)->get()
             : collect();
+        $ignoredStatuses = ['failed', 'cancelled', 'canceled', 'pending approval', 'rejected', 'refunded', 'void'];
+        $openingPayments = $openingPayments->reject(fn ($payment) => in_array(strtolower(trim((string) ($payment->status ?? ''))), $ignoredStatuses, true))->values();
         $openingPaid = round((float) $openingPayments->sum('amount'), 2);
 
         $openingOriginal = $openingSale
@@ -731,6 +749,25 @@ class CustomerController extends Controller
             'paid' => $openingPaid,
             'due' => round(max(0, $openingOriginal - $openingPaid), 2),
         ];
+    }
+
+    private function applyCustomerPaymentTenantScope($query, Customer $customer)
+    {
+        $companyId = (int) ($customer->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
+        $userId = (int) (auth()->id() ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn('payments', 'company_id')) {
+            $query->where(function ($tenant) use ($companyId, $userId) {
+                $tenant->where('payments.company_id', $companyId);
+                if ($userId > 0 && Schema::hasColumn('payments', 'user_id')) {
+                    $tenant->orWhere(fn ($legacy) => $legacy->whereNull('payments.company_id')->where('payments.user_id', $userId));
+                }
+            });
+        } elseif ($userId > 0 && Schema::hasColumn('payments', 'user_id')) {
+            $query->where('payments.user_id', $userId);
+        }
+
+        return $query;
     }
 
     private function resolveReceivePaymentAccountId(?string $paymentTarget): ?int
@@ -791,8 +828,8 @@ class CustomerController extends Controller
         $customer = $this->applyTenantScope(Customer::query())->findOrFail($id);
 
         $outstandingSalesQuery = Sale::query()
+            ->withoutGlobalScope('company_id')
             ->where('customer_id', $customer->id)
-            ->where('balance', '>', 0)
             ->where(function ($query) {
                 $query->whereNull('invoice_no')
                     ->orWhere('invoice_no', 'not like', 'OPENING-BAL-%');
@@ -800,8 +837,8 @@ class CustomerController extends Controller
             ->orderBy('order_date')
             ->orderBy('id');
         $this->applySaleTenantScope($outstandingSalesQuery);
-        $this->applySaleBranchFilter($outstandingSalesQuery, 'sales');
-        $outstandingSales = $outstandingSalesQuery->get();
+        $customerSales = $outstandingSalesQuery->get();
+        $outstandingSales = $customerSales->filter(fn ($sale) => (float) ($sale->balance ?? 0) > 0)->values();
 
         $paymentDestinations = collect();
         if (Schema::hasTable('accounts')) {
@@ -870,10 +907,21 @@ class CustomerController extends Controller
         $outstandingInvoicesTotal = (float) $outstandingSales->sum('balance');
         $supportsStandalonePayments = !$this->paymentsRequireSaleId();
         $activeBranch = $this->getActiveBranchContext();
-        $paymentHistory = Payment::with(['account', 'sale', 'creator'])
-            ->where('customer_id', $customer->id)
+        $paymentHistoryQuery = Payment::query()->withoutGlobalScope('tenant')->with([
+            'account',
+            'sale' => fn ($saleQuery) => $saleQuery->withoutGlobalScope('company_id'),
+            'creator',
+        ])
+            ->where(function ($query) use ($customer, $customerSales) {
+                $query->where('customer_id', $customer->id);
+                if ($customerSales->isNotEmpty()) {
+                    $query->orWhereIn('sale_id', $customerSales->pluck('id'));
+                }
+            })
             ->orderBy('created_at')
-            ->get();
+            ->orderBy('id');
+        $this->applyCustomerPaymentTenantScope($paymentHistoryQuery, $customer);
+        $paymentHistory = $paymentHistoryQuery->get();
 
         $paymentTimeline = collect();
         $runningOpeningBalance = (float) ($openingSnapshot['original'] ?? 0);
@@ -903,6 +951,55 @@ class CustomerController extends Controller
                 'running_balance' => $runningOpeningBalance,
                 'created_by' => 'System',
             ]);
+        }
+
+        foreach ($customerSales as $sale) {
+            $paymentTimeline->push([
+                'date' => $sale->order_date ?: $sale->created_at,
+                'reference' => $sale->invoice_no ?: ('SALE-' . $sale->id),
+                'payment_id' => $sale->invoice_no ?: ('SALE-' . $sale->id),
+                'type' => 'Invoice',
+                'entry_icon' => 'fa-file-invoice',
+                'method' => 'Invoice',
+                'status' => (float) ($sale->balance ?? 0) <= 0 ? 'Paid' : ((float) ($sale->balance ?? 0) < (float) ($sale->total ?? 0) ? 'Partial' : 'Outstanding'),
+                'status_class' => (float) ($sale->balance ?? 0) <= 0 ? 'success' : 'warning',
+                'account' => 'Accounts Receivable',
+                'branch' => $sale->branch_name ?: ($activeBranch['name'] ?? 'Workspace Default'),
+                'note' => 'Credit invoice issued.',
+                'source_label' => 'Invoice',
+                'invoice_amount' => (float) ($sale->total ?? 0),
+                'payment_amount' => 0.0,
+                'amount' => (float) ($sale->total ?? 0),
+                'running_balance' => null,
+                'created_by' => 'System',
+            ]);
+
+            $salePayments = $paymentHistory->where('sale_id', $sale->id)
+                ->reject(fn ($payment) => in_array(strtolower(trim((string) ($payment->status ?? ''))), ['failed', 'cancelled', 'canceled', 'pending approval', 'rejected', 'refunded', 'void'], true));
+            $recordedPaid = (float) $salePayments->sum('amount');
+            $storedPaid = (float) ($sale->paid ?? $sale->amount_paid ?? 0);
+            $untrackedPaid = max(0, round($storedPaid - $recordedPaid, 2));
+            if ($untrackedPaid > 0) {
+                $paymentTimeline->push([
+                    'date' => $sale->updated_at ?: $sale->created_at,
+                    'reference' => ($sale->invoice_no ?: ('SALE-' . $sale->id)) . '-APPLIED',
+                    'payment_id' => ($sale->invoice_no ?: ('SALE-' . $sale->id)) . '-APPLIED',
+                    'type' => 'Payment',
+                    'entry_icon' => 'fa-money-bill-wave',
+                    'method' => 'Invoice allocation',
+                    'status' => 'Completed',
+                    'status_class' => 'success',
+                    'account' => 'Not assigned',
+                    'branch' => $sale->branch_name ?: ($activeBranch['name'] ?? 'Workspace Default'),
+                    'note' => 'Payment recorded on invoice.',
+                    'source_label' => $sale->invoice_no ?: 'Invoice payment',
+                    'invoice_amount' => 0.0,
+                    'payment_amount' => $untrackedPaid,
+                    'amount' => $untrackedPaid,
+                    'running_balance' => null,
+                    'created_by' => 'System',
+                ]);
+            }
         }
 
         foreach ($paymentHistory as $payment) {
@@ -937,16 +1034,27 @@ class CustomerController extends Controller
             ]);
         }
 
-        $timelineDates = collect([
-            $paymentTimeline->first()['date'] ?? null,
-            $paymentTimeline->last()['date'] ?? null,
-        ])->filter();
+        $paymentTimeline = $paymentTimeline->sortBy(function ($entry) {
+            $type = (string) ($entry['type'] ?? '');
+            $rank = $type === 'Opening Balance' ? '0' : ($type === 'Invoice' ? '1' : '2');
+            return \Illuminate\Support\Carbon::parse($entry['date'] ?? now())->format('Y-m-d H:i:s.u') . '|' . $rank;
+        })->values();
+        $timelineBalance = 0.0;
+        $paymentTimeline = $paymentTimeline->map(function ($entry) use (&$timelineBalance) {
+            $status = strtolower((string) ($entry['status'] ?? 'completed'));
+            if (in_array($status, ['completed', 'paid', 'success', 'outstanding', 'partial', 'pending'], true)) {
+                $timelineBalance += (float) ($entry['invoice_amount'] ?? 0) - (float) ($entry['payment_amount'] ?? 0);
+            }
+            $entry['running_balance'] = round($timelineBalance, 2);
+            return $entry;
+        });
+        $timelineDates = $paymentTimeline->pluck('date')->filter();
 
         $reportMeta = [
             'generated_at' => now(),
             'period_from' => $timelineDates->isNotEmpty() ? \Illuminate\Support\Carbon::parse($paymentTimeline->min('date'))->copy() : now(),
             'period_to' => $timelineDates->isNotEmpty() ? \Illuminate\Support\Carbon::parse($paymentTimeline->max('date'))->copy() : now(),
-            'branch_name' => $activeBranch['name'] ?? 'Workspace Default',
+            'branch_name' => 'All branches',
             'customer_code' => 'CL-' . str_pad((string) $customer->id, 4, '0', STR_PAD_LEFT),
             'open_invoice_count' => $outstandingSales->count(),
             'history_count' => $paymentTimeline->count(),
@@ -1002,6 +1110,7 @@ class CustomerController extends Controller
 
                 // Get outstanding sales ordered by date
                 $outstandingSalesQuery = Sale::query()
+                    ->withoutGlobalScope('company_id')
                     ->where('customer_id', $customer->id)
                     ->where('balance', '>', 0)
                     ->where(function ($query) use ($customer) {
@@ -1011,7 +1120,6 @@ class CustomerController extends Controller
                     ->orderBy('order_date')
                     ->orderBy('id');
                 $this->applySaleTenantScope($outstandingSalesQuery);
-                $this->applySaleBranchFilter($outstandingSalesQuery, 'sales');
                 $outstandingSales = $outstandingSalesQuery->lockForUpdate()->get();
 
                 $remainingAmount = $receivedAmount;
@@ -1034,7 +1142,7 @@ class CustomerController extends Controller
                         'amount' => $amount,
                         'receipt_no' => $this->generatePaymentReceiptNo(),
                         'method' => $request->input('method') ?: 'Bank Transfer',
-                        'status' => $remaining <= $amount ? 'Completed' : 'Pending',
+                        'status' => 'Completed',
                         'note' => $request->input('note') ?: 'Customer payment received.',
                         'created_by' => auth()->id(),
                     ];
