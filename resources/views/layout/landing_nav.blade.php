@@ -995,6 +995,11 @@
 
             .hamburger { 
                 display: flex; 
+                order: 0;
+            }
+
+            .logo-container {
+                order: 1;
             }
 
             .nav-links { 

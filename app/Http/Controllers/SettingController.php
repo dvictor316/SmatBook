@@ -95,8 +95,26 @@ class SettingController extends Controller
      */
     private function getSettings()
     {
-        // Never send other businesses' suffixed settings to a settings view.
-        $settings = Setting::pluck('value', 'key')->reject(fn ($value, $key) => preg_match('/_company_\d+$/', $key))->all();
+        // Personal profile fields belong to the signed-in user, never the shared settings table.
+        $personalFields = ['first_name', 'last_name', 'email', 'mobile_number', 'gender', 'dob', 'address', 'country', 'state', 'city', 'postal_code'];
+        $settings = Setting::whereNotIn('key', $personalFields)->pluck('value', 'key')->reject(
+            fn ($value, $key) => preg_match('/_company_\d+$/', $key) || in_array($key, $personalFields, true)
+        )->all();
+        $user = Auth::user();
+        $nameParts = preg_split('/\s+/', trim((string) ($user?->name ?? '')), 2) ?: [];
+        $settings = array_replace($settings, [
+            'first_name' => $nameParts[0] ?? '',
+            'last_name' => $nameParts[1] ?? '',
+            'email' => $user?->email ?? '',
+            'mobile_number' => $user?->phone ?? '',
+            'gender' => $user?->gender ?? '',
+            'dob' => $user?->dob ?? '',
+            'address' => $user?->address ?? '',
+            'country' => $user?->country ?? '',
+            'state' => $user?->state_region ?? '',
+            'city' => $user?->city ?? '',
+            'postal_code' => $user?->postal_code ?? '',
+        ]);
         $settings = array_replace($settings, Setting::businessProfile());
 
         return new \ArrayObject(
@@ -245,11 +263,20 @@ class SettingController extends Controller
         return view('Settings.settings', compact('settings', 'emailLogs'));
     }
 
+    public function accountSettings()
+    {
+        return $this->index();
+    }
+
     /**
      * Unified Update Method
      */
     public function update(Request $request)
     {
+        $personalProfileFields = [
+            'first_name', 'last_name', 'email', 'mobile_number', 'gender', 'dob',
+            'address', 'country', 'state', 'city', 'postal_code',
+        ];
         $mailSettingKeys = array_filter(
             array_keys($request->except(['_token'])),
             fn ($key) => str_starts_with((string) $key, 'mail_')
@@ -268,6 +295,17 @@ class SettingController extends Controller
 
         // 1. Validation
         $request->validate([
+            'first_name' => 'nullable|string|max:100',
+            'last_name' => 'nullable|string|max:100',
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore(Auth::id())],
+            'mobile_number' => 'nullable|string|max:60',
+            'gender' => 'nullable|in:Male,Female',
+            'dob' => 'nullable|string|max:40',
+            'address' => 'nullable|string|max:255',
+            'country' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'city' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:30',
             'site_logo'    => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
             'favicon'      => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:1024',
             'company_icon' => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:1024',
@@ -287,6 +325,30 @@ class SettingController extends Controller
             'mail_admin_inbox' => 'nullable|email',
             'expiry_notification_months' => 'nullable|in:1,2,6',
         ]);
+
+        if (array_intersect(array_keys($request->all()), $personalProfileFields) !== []) {
+            $user = Auth::user();
+            $existingName = preg_split('/\s+/', trim((string) ($user->name ?? '')), 2) ?: [];
+            $firstName = trim((string) $request->input('first_name', $existingName[0] ?? ''));
+            $lastName = trim((string) $request->input('last_name', $existingName[1] ?? ''));
+            if ($request->exists('first_name') || $request->exists('last_name')) {
+                $user->name = trim($firstName.' '.$lastName);
+            }
+
+            if ($request->filled('email') && $request->input('email') !== $user->email) {
+                $user->email = $request->input('email');
+                $user->email_verified_at = null;
+            }
+            if ($request->exists('mobile_number')) $user->phone = $request->input('mobile_number');
+            if ($request->exists('gender')) $user->gender = $request->input('gender') ?: null;
+            if ($request->exists('dob')) $user->dob = $request->input('dob') ?: null;
+            if ($request->exists('address')) $user->address = $request->input('address') ?: null;
+            if ($request->exists('country')) $user->country = $request->input('country') ?: null;
+            if ($request->exists('state')) $user->state_region = $request->input('state') ?: null;
+            if ($request->exists('city')) $user->city = $request->input('city') ?: null;
+            if ($request->exists('postal_code')) $user->postal_code = $request->input('postal_code') ?: null;
+            $user->save();
+        }
 
         // 2. Dynamic File Upload Handler
         $fileFields = ['site_logo', 'favicon', 'company_icon', 'invoice_logo', 'digital_signature', 'seo_meta_image'];
@@ -367,6 +429,9 @@ class SettingController extends Controller
 
         // 4. Dynamic Text Field Handler
         $inputs = $request->except(array_merge(['_token'], $fileFields));
+        foreach ($personalProfileFields as $field) {
+            unset($inputs[$field]);
+        }
         foreach ($sensitiveFields as $sensitiveField) {
             unset($inputs[$sensitiveField]);
         }
@@ -384,6 +449,11 @@ class SettingController extends Controller
         }
 
         return redirect()->back()->with('success', 'Settings updated successfully.');
+    }
+
+    public function updateAccountSettings(Request $request)
+    {
+        return $this->update($request);
     }
 
     // --- Sub-page View Methods ---

@@ -532,8 +532,19 @@ class OnlineStoreController extends Controller
         }
 
         $orderContact = $store->orderContact();
-        $this->notifyBusinessOwnerInApp($store, $order);
-        $this->notifyOwner($store, $order, $orderContact);
+        // Keep the customer response fast; WhatsApp can take up to 15 seconds to respond.
+        app()->terminating(function () use ($store, $order, $orderContact): void {
+            try {
+                $this->notifyBusinessOwnerInApp($store, $order);
+                $this->notifyOwner($store, $order, $orderContact);
+            } catch (\Throwable $exception) {
+                Log::warning('Online store order notifications failed after the order was saved.', [
+                    'order_id' => $order->id,
+                    'company_id' => $order->company_id,
+                    'error' => $exception->getMessage(),
+                ]);
+            }
+        });
         $order->loadMissing('items');
         $orderMessage = "Hello {$store->store_name}, I placed an online order.\n"
             . "Order: {$order->order_number}\n"

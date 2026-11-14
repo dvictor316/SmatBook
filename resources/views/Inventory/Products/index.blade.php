@@ -422,6 +422,19 @@
         white-space: nowrap;
     }
 
+    #products-table td:nth-child(3) .fw-bold {
+        font-size: 0.82rem;
+        font-weight: 600 !important;
+        line-height: 1.3;
+        color: #1e293b !important;
+    }
+
+    #products-table td:nth-child(3) small {
+        font-size: 0.7rem;
+        font-weight: 400;
+        line-height: 1.35;
+    }
+
     #products-table td:nth-child(6) small {
         white-space: normal !important;
         line-height: 1.15;

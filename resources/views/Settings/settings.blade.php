@@ -82,7 +82,7 @@
                             <div class="col-lg-6 col-12">
                                 <div class="input-block mb-3">
                                     <label>Email</label>
-                                    <input type="text" class="form-control" name="email" value="{{ $settings->email ?? '' }}">
+                                    <input type="email" class="form-control" name="email" value="{{ $settings->email ?? '' }}">
                                 </div>
                             </div>
                             <div class="col-lg-6 col-12">
@@ -95,9 +95,9 @@
                                 <div class="input-block mb-0">
                                     <label>Gender</label>
                                     <select class="select" name="gender">
-                                        <option>Select Gender</option>
-                                        <option {{ ($settings->gender ?? '') == 'Male' ? 'selected' : '' }}>Male</option>
-                                        <option {{ ($settings->gender ?? '') == 'Female' ? 'selected' : '' }}>Female</option>
+                                        <option value="" @selected(empty($settings->gender))>Select Gender</option>
+                                        <option value="Male" @selected(($settings->gender ?? '') == 'Male')>Male</option>
+                                        <option value="Female" @selected(($settings->gender ?? '') == 'Female')>Female</option>
                                     </select>
                                 </div>
                             </div>
