@@ -425,6 +425,12 @@
     }
 
     #products-table td:nth-child(3) .product-identity { min-width: 0; flex: 1 1 auto; }
+    #products-table td:nth-child(3) .product-name {
+        font-size: 0.86rem;
+        font-weight: 400 !important;
+        line-height: 1.3;
+        color: #1e293b !important;
+    }
     #products-table td:nth-child(3) .product-thumb-img,
     #products-table td:nth-child(3) .product-thumb-empty { width: 42px; height: 42px; flex: 0 0 42px; }
     #products-table td:nth-child(3) .product-variant {
