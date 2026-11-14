@@ -1044,6 +1044,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/products/export/{format?}', 'exportStock')->name('inventory.Products.export');
         Route::get('/edit-products/{id}', 'edit')->name('inventory.Products.edit');
         Route::put('/products/update/{id}', 'update')->name('inventory.Products.update');
+        Route::post('/products/bulk-update', 'bulkUpdate')->name('inventory.Products.bulk-update');
         Route::delete('/products/delete-selected', 'bulkDestroy')->name('inventory.Products.bulk-destroy');
         Route::delete('/products/delete/{id}', 'destroy')->name('inventory.Products.destroy');
         Route::get('/inventory-history/{id}', 'inventory_history')->name('inventory.history');

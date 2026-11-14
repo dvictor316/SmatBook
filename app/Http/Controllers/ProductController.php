@@ -45,7 +45,7 @@ class ProductController extends Controller
             'exportTransferDocuments',
         ]);
         $this->middleware('permission:inventory.products.create')->only(['create', 'store', 'import', 'updateFashionSettings']);
-        $this->middleware('permission:inventory.products.edit')->only(['edit', 'update']);
+        $this->middleware('permission:inventory.products.edit')->only(['edit', 'update', 'bulkUpdate']);
         $this->middleware('permission:inventory.products.delete')->only(['destroy', 'bulkDestroy', 'removeFromBranch', 'undoLastImport']);
         $this->middleware('permission:inventory.stock.edit')->only([
             'adjust_stock',
@@ -3946,6 +3946,87 @@ public function inventory(Request $request)
         return redirect()
             ->route('product-list')
             ->with('success', "{$deleted} stock item(s) deleted successfully.");
+    }
+
+    public function bulkUpdate(Request $request)
+    {
+        $validated = $request->validate([
+            'target_scope' => 'required|in:selected,all',
+            'product_ids' => 'required_if:target_scope,selected|array|min:1',
+            'product_ids.*' => 'integer|min:1',
+            'search' => 'nullable|string|max:200',
+            'price' => 'nullable|numeric|min:0',
+            'purchase_price' => 'nullable|numeric|min:0',
+            'wholesale_price' => 'nullable|numeric|min:0',
+            'special_price' => 'nullable|numeric|min:0',
+            'category_id' => 'nullable|integer|min:1',
+            'status' => 'nullable|in:active,inactive',
+            'reorder_level' => 'nullable|integer|min:0',
+        ]);
+
+        $changes = [];
+        foreach (['price', 'purchase_price', 'wholesale_price', 'special_price', 'category_id', 'status', 'reorder_level'] as $field) {
+            if (array_key_exists($field, $validated) && $validated[$field] !== null && $validated[$field] !== '') {
+                $changes[$field] = $validated[$field];
+            }
+        }
+        if (isset($changes['price']) && Schema::hasColumn('products', 'retail_price')) {
+            $changes['retail_price'] = $changes['price'];
+        }
+        if (isset($changes['category_id'])) {
+            $categoryQuery = Category::query()->withoutGlobalScope('company_id');
+            $this->applyTenantScope($categoryQuery, 'categories');
+            abort_unless($categoryQuery->whereKey($changes['category_id'])->exists(), 422, 'The selected category is not available in this business.');
+        }
+        $changes = array_filter($changes, fn ($value, $field) => Schema::hasColumn('products', $field), ARRAY_FILTER_USE_BOTH);
+        if ($changes === []) {
+            throw ValidationException::withMessages(['bulk_edit' => 'Enter at least one value to update.']);
+        }
+
+        $ids = collect($validated['product_ids'] ?? [])->map(fn ($id) => (int) $id)->unique()->values();
+        $search = trim((string) ($validated['search'] ?? ''));
+        $updated = 0;
+
+        DB::transaction(function () use ($validated, $ids, $search, $changes, &$updated) {
+            $query = Product::query()->withoutGlobalScope('company_id');
+            $this->applyTenantScope($query, 'products');
+
+            if ($validated['target_scope'] === 'selected') {
+                $query->whereIn('products.id', $ids);
+            } elseif ($search !== '') {
+                $hasName = Schema::hasColumn('products', 'name');
+                $hasSku = Schema::hasColumn('products', 'sku');
+                $hasVariants = Schema::hasColumn('products', 'brand')
+                    && Schema::hasColumn('products', 'fashion_size')
+                    && Schema::hasColumn('products', 'fashion_color');
+                $query->where(function ($matches) use ($search, $hasName, $hasSku, $hasVariants) {
+                    $started = false;
+                    foreach (array_filter([
+                        $hasName ? 'name' : null,
+                        $hasSku ? 'sku' : null,
+                        $hasVariants ? 'brand' : null,
+                        $hasVariants ? 'fashion_size' : null,
+                        $hasVariants ? 'fashion_color' : null,
+                    ]) as $column) {
+                        $method = $started ? 'orWhere' : 'where';
+                        $matches->{$method}('products.' . $column, 'like', "%{$search}%");
+                        $started = true;
+                    }
+                });
+            }
+
+            $query->chunkById(200, function ($products) use ($changes, &$updated) {
+                foreach ($products as $product) {
+                    $product->fill($changes)->save();
+                    $updated++;
+                }
+            });
+        });
+
+        $this->clearDashboardMetricsCache();
+
+        return redirect()->route('product-list', $search !== '' ? ['search' => $search] : [])
+            ->with('success', "{$updated} inventory item(s) updated. On-hand stock was not changed.");
     }
 
     public function removeFromBranch(int $id)

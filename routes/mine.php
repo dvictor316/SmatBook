@@ -654,6 +654,7 @@ Route::get('/purchases/{id}/excel', [PurchaseController::class, 'exportExcel'])-
         Route::put('/products/update/{id}', 'update')->name('inventory.Products.update');
         
         // Delete Product
+        Route::post('/products/bulk-update', 'bulkUpdate')->name('inventory.Products.bulk-update');
         Route::delete('/products/delete-selected', 'bulkDestroy')->name('inventory.Products.bulk-destroy');
         Route::delete('/products/delete/{id}', 'destroy')->name('inventory.Products.destroy');
         Route::get('/inventory-damages', 'damageReport')->name('inventory.damages');
@@ -715,6 +716,7 @@ Route::prefix('super-admin')->name('SuperAdmin.')->group(function () {
 
         // Add these to make the Save/Delete buttons work in your view
         Route::post('/products/store', [ProductController::class, 'store'])->name('inventory.Products.store');
+        Route::post('/products/bulk-update', [ProductController::class, 'bulkUpdate'])->name('inventory.Products.bulk-update');
         Route::delete('/products/delete-selected', [ProductController::class, 'bulkDestroy'])->name('inventory.Products.bulk-destroy');
         Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('inventory.Products.destroy');
         Route::post('/categories/store', [CategoryController::class, 'store']);

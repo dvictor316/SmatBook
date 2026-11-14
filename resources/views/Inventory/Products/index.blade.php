@@ -81,8 +81,8 @@
     }
 
     .product-thumb-empty {
-        width: 28px;
-        height: 28px;
+        width: 42px;
+        height: 42px;
         border-radius: 8px;
         background: #eef2ff;
         color: #4f46e5;
@@ -94,8 +94,8 @@
     }
 
     .product-thumb-img {
-        width: 28px;
-        height: 28px;
+        width: 42px;
+        height: 42px;
         object-fit: cover;
         background: #eef2ff;
     }
@@ -198,6 +198,11 @@
         grid-row: 3;
     }
 
+    .inventory-toolbar-bulk-edit {
+        grid-column: 2 / 4;
+        grid-row: 3;
+    }
+
     .inventory-toolbar-damages {
         grid-column: 1 / 2;
         grid-row: 2;
@@ -265,6 +270,7 @@
 
     #products-table {
         width: 100% !important;
+        min-width: 1180px;
         table-layout: fixed;
         font-size: 0.77rem;
     }
@@ -334,24 +340,15 @@
         color: #cbd5e1;
     }
 
-    #products-table th:nth-child(1),
-    #products-table td:nth-child(1) { width: 4%; }
-    #products-table th:nth-child(2),
-    #products-table td:nth-child(2) { width: 4%; }
-    #products-table th:nth-child(3),
-    #products-table td:nth-child(3) { width: 23%; }
-    #products-table th:nth-child(4),
-    #products-table td:nth-child(4) { width: 10%; }
-    #products-table th:nth-child(5),
-    #products-table td:nth-child(5) { width: 9%; }
-    #products-table th:nth-child(6),
-    #products-table td:nth-child(6) { width: 17%; }
-    #products-table th:nth-child(7),
-    #products-table td:nth-child(7) { width: 9%; }
-    #products-table th:nth-child(8),
-    #products-table td:nth-child(8) { width: 9%; }
-    #products-table th:nth-child(9),
-    #products-table td:nth-child(9) { width: 8%; }
+    #products-table th:nth-child(1), #products-table td:nth-child(1) { width: 3%; }
+    #products-table th:nth-child(2), #products-table td:nth-child(2) { width: 4%; }
+    #products-table th:nth-child(3), #products-table td:nth-child(3) { width: 31%; }
+    #products-table th:nth-child(4), #products-table td:nth-child(4) { width: 9%; }
+    #products-table th:nth-child(5), #products-table td:nth-child(5) { width: 8%; }
+    #products-table th:nth-child(6), #products-table td:nth-child(6) { width: 15%; }
+    #products-table th:nth-child(7), #products-table td:nth-child(7) { width: 8%; }
+    #products-table th:nth-child(8), #products-table td:nth-child(8) { width: 8%; }
+    #products-table th:nth-child(9), #products-table td:nth-child(9) { width: 7%; }
     #products-table th:nth-child(10),
     #products-table td:nth-child(10) {
         width: 7%;
@@ -417,22 +414,48 @@
     #products-table td:nth-child(3) .fw-bold,
     #products-table td:nth-child(3) small {
         display: block;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        overflow-wrap: anywhere;
     }
 
     #products-table td:nth-child(3) .fw-bold {
-        font-size: 0.82rem;
-        font-weight: 500 !important;
-        line-height: 1.3;
+        font-size: 0.88rem;
+        font-weight: 700 !important;
+        line-height: 1.25;
         color: #1e293b !important;
     }
 
-    #products-table td:nth-child(3) small {
-        font-size: 0.7rem;
+    #products-table td:nth-child(3) .product-identity { min-width: 0; flex: 1 1 auto; }
+    #products-table td:nth-child(3) .product-thumb-img,
+    #products-table td:nth-child(3) .product-thumb-empty { width: 42px; height: 42px; flex: 0 0 42px; }
+    #products-table td:nth-child(3) .product-variant {
+        display: inline-block;
+        width: fit-content;
+        margin-top: 3px;
+        padding: 2px 6px;
+        border-radius: 5px;
+        background: #eef4ff;
+        color: #2456a6;
+        font-size: .68rem;
+        font-weight: 650;
+    }
+    #products-table td:nth-child(3) .product-sku {
+        display: inline-block;
+        width: fit-content;
+        margin-top: 3px;
+        padding: 2px 6px;
+        border-radius: 5px;
+        background: #f1f5f9;
+        color: #475569;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: .68rem;
+        font-weight: 650;
+        letter-spacing: .015em;
+    }
+    #products-table td:nth-child(3) .product-description {
+        color: #64748b;
+        font-size: .69rem;
         font-weight: 400;
-        line-height: 1.35;
+        line-height: 1.3;
     }
 
     #products-table thead th,
@@ -677,6 +700,7 @@
         .inventory-toolbar-print,
         .inventory-toolbar-export,
         .inventory-toolbar-import,
+        .inventory-toolbar-bulk-edit,
         .inventory-toolbar-add,
         .inventory-toolbar-clear,
         .inventory-toolbar-transfer,
@@ -690,6 +714,8 @@
         .inventory-toolbar .dropdown > .btn {
             width: 100%;
         }
+
+        .inventory-toolbar-bulk-edit { grid-column: 1 / -1; }
 
         .desktop-add-product-trigger {
             display: none !important;
@@ -778,6 +804,12 @@
                         </ul>
                     </div>
 
+                    <?php if (auth()->user()?->can('inventory.products.edit')) { ?>
+                        <button type="button" class="btn btn-outline-primary inventory-tool-btn inventory-toolbar-bulk-edit" data-bs-toggle="modal" data-bs-target="#bulkEditProductsModal">
+                            <i class="fas fa-pen-to-square me-1"></i> Bulk Edit Inventory
+                        </button>
+                    <?php } ?>
+
                     <a href="<?php echo e(route('add-products')); ?>" class="btn btn-success desktop-add-product-trigger inventory-tool-btn inventory-toolbar-add">
                         <i class="fa fa-plus"></i> Add Product
                     </a>
@@ -804,7 +836,12 @@
                     <?php echo csrf_field(); ?>
                     <?php echo method_field('DELETE'); ?>
                     <strong><span id="bulk-selected-count">0</span> selected</strong>
-                    <span class="text-muted">Delete selected stock items from inventory.</span>
+                    <span class="text-muted">Edit or remove selected stock items.</span>
+                    <?php if (auth()->user()?->can('inventory.products.edit')) { ?>
+                        <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#bulkEditProductsModal" data-bulk-edit-scope="selected">
+                            <i class="fas fa-pen-to-square me-1"></i> Edit Selected
+                        </button>
+                    <?php } ?>
                     <button type="submit" class="btn btn-danger btn-sm ms-auto">
                         <i class="far fa-trash-alt me-1"></i> Delete Selected
                     </button>
@@ -838,17 +875,18 @@
                                         </td>
                                         <td><?php echo e($productIndex); ?></td>
                                         <td>
-                                            <div class="d-flex align-items-center">
+                                            <div class="d-flex align-items-center product-identity-wrap">
                                                 <?php if (!empty($product->image_url)) { ?>
                                                     <img src="<?php echo e($product->image_url); ?>" class="rounded me-2 product-thumb-img" alt="<?php echo e($product->name); ?>" loading="lazy" onerror="this.classList.add('d-none'); if (this.nextElementSibling) this.nextElementSibling.classList.remove('d-none');">
                                                     <span class="product-thumb-empty d-none"><i class="fas fa-box-open"></i></span>
                                                 <?php } else { ?>
                                                     <span class="product-thumb-empty"><i class="fas fa-box-open"></i></span>
                                                 <?php } ?>
-                                                <div>
-                                                    <div class="fw-bold text-dark"><?php echo e($product->name); ?></div>
-                                                    <?php if ($product->variantLabel() !== '') { ?><small class="text-primary"><?php echo e($product->variantLabel()); ?></small><?php } ?>
-                                                    <small class="text-muted"><?php echo e($product->sku); ?></small>
+                                                <div class="product-identity">
+                                                    <div class="fw-semibold text-dark product-name"><?php echo e($product->name); ?></div>
+                                                    <?php if ($product->variantLabel() !== '') { ?><span class="product-variant"><?php echo e($product->variantLabel()); ?></span><?php } ?>
+                                                    <span class="product-sku">SKU: <?php echo e($product->sku); ?></span>
+                                                    <?php if (filled($product->description)) { ?><small class="product-description"><?php echo e(\Illuminate\Support\Str::limit(strip_tags((string) $product->description), 76)); ?></small><?php } ?>
                                                 </div>
                                             </div>
                                         </td>
@@ -949,6 +987,56 @@
 </a>
 
 <?php if ($showStockTransferModal) { ?>
+<?php if (auth()->user()?->can('inventory.products.edit')) { ?>
+<div class="modal fade" id="bulkEditProductsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="bulk-edit-products-form" method="POST" action="<?php echo e(route('inventory.Products.bulk-update')); ?>">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="search" value="<?php echo e($search ?? ''); ?>">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title">Bulk edit inventory</h5>
+                        <small class="text-muted">Catalog details only. On-hand stock remains unchanged.</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <div class="form-label fw-semibold">Items to update</div>
+                        <div class="d-flex flex-column gap-2">
+                            <label class="form-check">
+                                <input class="form-check-input" type="radio" name="target_scope" value="selected" id="bulk-edit-scope-selected" disabled>
+                                <span class="form-check-label">Selected items (<span id="bulk-edit-selected-count">0</span>)</span>
+                            </label>
+                            <label class="form-check">
+                                <input class="form-check-input" type="radio" name="target_scope" value="all" id="bulk-edit-scope-all" checked>
+                                <span class="form-check-label">All inventory items<?php if (filled($search ?? '')) { ?> matching “<?php echo e($search); ?>”<?php } ?> in this business</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="alert alert-info py-2">Leave a field blank to keep its current value. Prices and reorder settings apply to every chosen item.</div>
+                    <div class="row g-3">
+                        <div class="col-md-6"><label class="form-label" for="bulk-edit-price">Selling price</label><input class="form-control" id="bulk-edit-price" name="price" type="number" min="0" step="0.01" placeholder="No change"></div>
+                        <div class="col-md-6"><label class="form-label" for="bulk-edit-purchase-price">Purchase price</label><input class="form-control" id="bulk-edit-purchase-price" name="purchase_price" type="number" min="0" step="0.01" placeholder="No change"></div>
+                        <div class="col-md-6"><label class="form-label" for="bulk-edit-wholesale-price">Wholesale price</label><input class="form-control" id="bulk-edit-wholesale-price" name="wholesale_price" type="number" min="0" step="0.01" placeholder="No change"></div>
+                        <div class="col-md-6"><label class="form-label" for="bulk-edit-special-price">Special price</label><input class="form-control" id="bulk-edit-special-price" name="special_price" type="number" min="0" step="0.01" placeholder="No change"></div>
+                        <div class="col-md-6"><label class="form-label" for="bulk-edit-category">Category</label><select class="form-select" id="bulk-edit-category" name="category_id"><option value="">No change</option><?php foreach ($categories as $category) { ?><option value="<?php echo e($category->id); ?>"><?php echo e($category->name); ?></option><?php } ?></select></div>
+                        <div class="col-md-6"><label class="form-label" for="bulk-edit-status">Status</label><select class="form-select" id="bulk-edit-status" name="status"><option value="">No change</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+                        <div class="col-md-6"><label class="form-label" for="bulk-edit-reorder-level">Reorder level</label><input class="form-control" id="bulk-edit-reorder-level" name="reorder_level" type="number" min="0" step="1" placeholder="No change"></div>
+                    </div>
+                    <div class="small text-danger mt-3" id="bulk-edit-confirmation-note" hidden>All matching items will be updated. Review the selected fields before continuing.</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-check me-1"></i> Apply changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php } ?>
+
 <div class="modal fade" id="transferStockModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
@@ -1238,22 +1326,65 @@
     $(document).ready(function() {
         var selectedProductIds = new Set();
         var bulkForm = $('#bulk-delete-products-form');
+        var bulkEditForm = $('#bulk-edit-products-form');
         var bulkCount = $('#bulk-selected-count');
         var selectAllProducts = $('#select-all-products');
         var toolbarSearchInput = $('#inventory-toolbar-search-input');
 
         function syncBulkDeleteForm() {
             bulkForm.find('input[name="product_ids[]"]').remove();
+            bulkEditForm.find('input[name="product_ids[]"]').remove();
             selectedProductIds.forEach(function(id) {
-                $('<input>', {
+                var hiddenId = $('<input>', {
                     type: 'hidden',
                     name: 'product_ids[]',
                     value: id
-                }).appendTo(bulkForm);
+                });
+                hiddenId.clone().appendTo(bulkForm);
+                hiddenId.appendTo(bulkEditForm);
             });
 
             bulkCount.text(selectedProductIds.size);
             bulkForm.toggleClass('is-visible', selectedProductIds.size > 0);
+            $('#bulk-edit-selected-count').text(selectedProductIds.size);
+            $('#bulk-edit-scope-selected').prop('disabled', selectedProductIds.size === 0);
+        }
+
+        var bulkEditModal = document.getElementById('bulkEditProductsModal');
+        if (bulkEditModal) {
+            bulkEditModal.addEventListener('show.bs.modal', function(event) {
+                var selectedScope = event.relatedTarget && event.relatedTarget.getAttribute('data-bulk-edit-scope') === 'selected';
+                var selectedRadio = document.getElementById('bulk-edit-scope-selected');
+                var allRadio = document.getElementById('bulk-edit-scope-all');
+                selectedRadio.checked = selectedScope && selectedProductIds.size > 0;
+                allRadio.checked = !selectedRadio.checked;
+            });
+            bulkEditModal.addEventListener('change', function(event) {
+                if (event.target && event.target.name === 'target_scope') {
+                    document.getElementById('bulk-edit-confirmation-note').hidden = event.target.value !== 'all';
+                }
+            });
+        }
+        if (bulkEditForm.length) {
+            bulkEditForm.on('submit', function(event) {
+                var scope = bulkEditForm.find('[name="target_scope"]:checked').val();
+                if (scope === 'selected' && selectedProductIds.size === 0) {
+                    event.preventDefault();
+                    window.alert('Select at least one inventory item first.');
+                    return;
+                }
+                var hasChanges = bulkEditForm.find('input[name], select[name]')
+                    .filter('[name="price"], [name="purchase_price"], [name="wholesale_price"], [name="special_price"], [name="category_id"], [name="status"], [name="reorder_level"]')
+                    .filter(function() { return String($(this).val() || '') !== ''; }).length > 0;
+                if (!hasChanges) {
+                    event.preventDefault();
+                    window.alert('Enter or select at least one value to apply.');
+                    return;
+                }
+                if (scope === 'all' && !window.confirm('Apply these changes to all matching inventory items in this business?')) {
+                    event.preventDefault();
+                }
+            });
         }
 
         function currentPageProductChecks() {
