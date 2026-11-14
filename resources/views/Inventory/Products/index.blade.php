@@ -777,45 +777,35 @@
 
         .inventory-toolbar-bulk-edit { grid-column: 1 / -1; }
 
-        .inventory-table-shell,
-        #products-table_wrapper,
-        #products-table_wrapper .dataTables_scroll,
-        #products-table_wrapper .dataTables_scrollHead,
-        #products-table_wrapper .dataTables_scrollBody {
+        .inventory-table-shell {
             width: 100% !important;
             max-width: 100%;
-            overflow-x: hidden !important;
+            overflow-x: auto !important;
+            overflow-y: visible !important;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-x: contain;
         }
 
         .inventory-table-card-body {
             padding-bottom: 5.5rem !important;
         }
 
+        #products-table_wrapper {
+            width: max-content !important;
+            min-width: 100%;
+        }
+
         #products-table {
-            width: 100% !important;
-            min-width: 100% !important;
+            width: 840px !important;
+            min-width: 840px !important;
             table-layout: fixed !important;
             font-size: 0.7rem;
         }
 
-        #products-table th:nth-child(1), #products-table td:nth-child(1) { width: 4% !important; }
-        #products-table th:nth-child(2), #products-table td:nth-child(2) { width: 4% !important; }
-        #products-table th:nth-child(3), #products-table td:nth-child(3) { width: 27% !important; }
-        #products-table th:nth-child(4), #products-table td:nth-child(4) { width: 11% !important; }
-        #products-table th:nth-child(5), #products-table td:nth-child(5) { width: 8% !important; }
-        #products-table th:nth-child(6), #products-table td:nth-child(6) { width: 15% !important; }
-        #products-table th:nth-child(7), #products-table td:nth-child(7) { width: 8% !important; }
-        #products-table th:nth-child(8), #products-table td:nth-child(8) { width: 8% !important; }
-        #products-table th:nth-child(9), #products-table td:nth-child(9) { width: 7% !important; }
-        #products-table th:nth-child(10), #products-table td:nth-child(10) {
-            width: 5% !important;
-            min-width: 30px;
-        }
-
         #products-table thead th {
             padding: 0.35rem 0.2rem;
-            white-space: normal;
-            overflow-wrap: anywhere;
+            white-space: nowrap;
+            overflow-wrap: normal;
             word-break: normal;
             font-size: 0.58rem;
             text-align: center !important;
@@ -823,7 +813,7 @@
 
         #products-table td {
             padding: 0.35rem 0.2rem;
-            overflow-wrap: anywhere;
+            overflow-wrap: break-word;
             word-break: normal;
         }
 
@@ -837,11 +827,6 @@
             height: 24px;
             flex-basis: 24px;
             margin-right: 0.15rem !important;
-        }
-
-        #products-table td:nth-child(3) .product-name {
-            font-size: 0.74rem;
-            -webkit-line-clamp: 3;
         }
 
         #products-table td:nth-child(6) .text-nowrap {
