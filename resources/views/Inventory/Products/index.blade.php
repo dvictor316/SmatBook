@@ -703,13 +703,19 @@
     }
 
     @media (max-width: 767.98px) {
+        .content.container-fluid {
+            padding-left: 0.55rem;
+            padding-right: 0.55rem;
+        }
+
         .inventory-page-title {
             margin-bottom: 0.85rem;
         }
 
         .inventory-toolbar {
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             width: 100%;
+            gap: 0.5rem;
         }
 
         .inventory-toolbar > * {
@@ -718,7 +724,8 @@
 
         .inventory-search-form {
             grid-column: 1 / -1;
-            min-width: 100%;
+            min-width: 0;
+            width: 100%;
         }
 
         .inventory-toolbar-print,
@@ -739,7 +746,119 @@
             width: 100%;
         }
 
+        .inventory-toolbar .inventory-tool-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            min-width: 0;
+            min-height: 46px;
+            height: auto;
+            padding: 0.45rem 0.4rem;
+            white-space: normal;
+            text-align: center;
+            line-height: 1.2;
+            overflow-wrap: anywhere;
+            word-break: normal;
+        }
+
+        .inventory-toolbar .inventory-tool-btn i {
+            flex: 0 0 auto;
+        }
+
+        .inventory-toolbar .dropdown-toggle.inventory-tool-btn {
+            padding-right: 0.4rem;
+        }
+
+        .inventory-toolbar .dropdown-menu {
+            max-width: calc(100vw - 2rem);
+            white-space: normal;
+        }
+
         .inventory-toolbar-bulk-edit { grid-column: 1 / -1; }
+
+        .inventory-table-shell,
+        #products-table_wrapper,
+        #products-table_wrapper .dataTables_scroll,
+        #products-table_wrapper .dataTables_scrollHead,
+        #products-table_wrapper .dataTables_scrollBody {
+            width: 100% !important;
+            max-width: 100%;
+            overflow-x: hidden !important;
+        }
+
+        .inventory-table-card-body {
+            padding-bottom: 5.5rem !important;
+        }
+
+        #products-table {
+            width: 100% !important;
+            min-width: 100% !important;
+            table-layout: fixed !important;
+            font-size: 0.7rem;
+        }
+
+        #products-table th:nth-child(1), #products-table td:nth-child(1) { width: 4% !important; }
+        #products-table th:nth-child(2), #products-table td:nth-child(2) { width: 4% !important; }
+        #products-table th:nth-child(3), #products-table td:nth-child(3) { width: 27% !important; }
+        #products-table th:nth-child(4), #products-table td:nth-child(4) { width: 11% !important; }
+        #products-table th:nth-child(5), #products-table td:nth-child(5) { width: 8% !important; }
+        #products-table th:nth-child(6), #products-table td:nth-child(6) { width: 15% !important; }
+        #products-table th:nth-child(7), #products-table td:nth-child(7) { width: 8% !important; }
+        #products-table th:nth-child(8), #products-table td:nth-child(8) { width: 8% !important; }
+        #products-table th:nth-child(9), #products-table td:nth-child(9) { width: 7% !important; }
+        #products-table th:nth-child(10), #products-table td:nth-child(10) {
+            width: 5% !important;
+            min-width: 30px;
+        }
+
+        #products-table thead th {
+            padding: 0.35rem 0.2rem;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: normal;
+            font-size: 0.58rem;
+            text-align: center !important;
+        }
+
+        #products-table td {
+            padding: 0.35rem 0.2rem;
+            overflow-wrap: anywhere;
+            word-break: normal;
+        }
+
+        #products-table td:nth-child(3) > .d-flex {
+            gap: 0.2rem;
+        }
+
+        #products-table td:nth-child(3) .product-thumb-img,
+        #products-table td:nth-child(3) .product-thumb-empty {
+            width: 24px;
+            height: 24px;
+            flex-basis: 24px;
+            margin-right: 0.15rem !important;
+        }
+
+        #products-table td:nth-child(3) .product-name {
+            font-size: 0.74rem;
+            -webkit-line-clamp: 3;
+        }
+
+        #products-table td:nth-child(6) .text-nowrap {
+            white-space: normal !important;
+        }
+
+        #products-table td:nth-child(6) small {
+            display: block;
+            line-height: 1.15;
+            overflow-wrap: anywhere;
+        }
+
+        #products-table .product-action-trigger {
+            width: 26px;
+            height: 26px;
+            min-height: 26px;
+        }
 
         .desktop-add-product-trigger {
             display: none !important;
