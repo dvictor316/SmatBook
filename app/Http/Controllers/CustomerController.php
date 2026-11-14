@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -575,11 +576,18 @@ class CustomerController extends Controller
 
     private function applySaleTenantScope($query)
     {
-        $companyId = (int) (auth()->user()?->company_id ?? 0);
+        $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $userId = (int) (auth()->id() ?? 0);
 
         if ($companyId > 0 && Schema::hasColumn('sales', 'company_id')) {
-            $query->where('company_id', $companyId);
+            $query->where(function ($tenant) use ($companyId, $userId) {
+                $tenant->where('sales.company_id', $companyId);
+                if ($userId > 0 && Schema::hasColumn('sales', 'user_id')) {
+                    $tenant->orWhere(function ($legacy) use ($userId) {
+                        $legacy->whereNull('sales.company_id')->where('sales.user_id', $userId);
+                    });
+                }
+            });
         } elseif ($userId > 0 && Schema::hasColumn('sales', 'user_id')) {
             $query->where('user_id', $userId);
         }
@@ -678,29 +686,29 @@ class CustomerController extends Controller
 
     private function resolveCustomerOpeningBalanceSnapshot(Customer $customer): array
     {
-        $openingReference = 'OPENING-BAL-' . $customer->id;
         $openingSaleQuery = Sale::query()
+            ->withoutGlobalScope('company_id')
             ->where('customer_id', $customer->id)
-            ->where('invoice_no', $openingReference);
+            ->where('invoice_no', 'like', 'OPENING-BAL-%');
         $this->applySaleTenantScope($openingSaleQuery);
-        $this->applySaleBranchFilter($openingSaleQuery, 'sales');
         $openingSale = $openingSaleQuery->latest('id')->first();
 
-        $openingPaymentsQuery = Payment::query()->where('customer_id', $customer->id);
-        $this->applyTenantScope($openingPaymentsQuery);
-        if (Schema::hasTable('payments')) {
-            $branchId = trim((string) ($this->getActiveBranchContext()['id'] ?? ''));
-            $branchName = trim((string) ($this->getActiveBranchContext()['name'] ?? ''));
-            if ($branchId !== '' || $branchName !== '') {
-                $openingPaymentsQuery->where(function ($sub) use ($branchId, $branchName) {
-                    if ($branchId !== '' && Schema::hasColumn('payments', 'branch_id')) {
-                        $sub->where('branch_id', $branchId);
-                    }
-                    if ($branchName !== '' && Schema::hasColumn('payments', 'branch_name')) {
-                        $sub->orWhere('branch_name', $branchName);
-                    }
-                });
-            }
+        $openingPaymentsQuery = Payment::query()
+            ->withoutGlobalScope('tenant')
+            ->where('customer_id', $customer->id);
+        $paymentCompanyId = (int) ($customer->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
+        $paymentUserId = (int) (auth()->id() ?? 0);
+        if ($paymentCompanyId > 0 && Schema::hasColumn('payments', 'company_id')) {
+            $openingPaymentsQuery->where(function ($tenant) use ($paymentCompanyId, $paymentUserId) {
+                $tenant->where('payments.company_id', $paymentCompanyId);
+                if ($paymentUserId > 0 && Schema::hasColumn('payments', 'user_id')) {
+                    $tenant->orWhere(function ($legacy) use ($paymentUserId) {
+                        $legacy->whereNull('payments.company_id')->where('payments.user_id', $paymentUserId);
+                    });
+                }
+            });
+        } elseif ($paymentUserId > 0 && Schema::hasColumn('payments', 'user_id')) {
+            $openingPaymentsQuery->where('payments.user_id', $paymentUserId);
         }
 
         $openingPayments = $openingSale
@@ -781,14 +789,13 @@ class CustomerController extends Controller
     public function receivePayment($id)
     {
         $customer = $this->applyTenantScope(Customer::query())->findOrFail($id);
-        $openingReference = 'OPENING-BAL-' . $customer->id;
 
         $outstandingSalesQuery = Sale::query()
             ->where('customer_id', $customer->id)
             ->where('balance', '>', 0)
-            ->where(function ($query) use ($openingReference) {
+            ->where(function ($query) {
                 $query->whereNull('invoice_no')
-                    ->orWhere('invoice_no', '!=', $openingReference);
+                    ->orWhere('invoice_no', 'not like', 'OPENING-BAL-%');
             })
             ->orderBy('order_date')
             ->orderBy('id');
@@ -998,9 +1005,8 @@ class CustomerController extends Controller
                     ->where('customer_id', $customer->id)
                     ->where('balance', '>', 0)
                     ->where(function ($query) use ($customer) {
-                        $openingReference = 'OPENING-BAL-' . $customer->id;
                         $query->whereNull('invoice_no')
-                            ->orWhere('invoice_no', '!=', $openingReference);
+                            ->orWhere('invoice_no', 'not like', 'OPENING-BAL-%');
                     })
                     ->orderBy('order_date')
                     ->orderBy('id');
@@ -1205,7 +1211,12 @@ class CustomerController extends Controller
 
 	            });
         } catch (\Throwable $exception) {
-            return back()->withInput()->with('error', 'Customer payment could not be saved. ' . $exception->getMessage());
+            Log::error('Customer payment could not be saved.', [
+                'customer_id' => $customer->id,
+                'user_id' => auth()->id(),
+                'exception' => $exception,
+            ]);
+            return back()->withInput()->with('error', 'Customer payment could not be saved. Please retry. If the problem continues, contact your administrator.');
         }
 
         return redirect()
@@ -1219,14 +1230,23 @@ class CustomerController extends Controller
             return null;
         }
 
-        $openingReference = 'OPENING-BAL-' . $customer->id;
-        $query = method_exists(Sale::class, 'withTrashed')
-            ? Sale::withTrashed()
-            : Sale::query();
-
-        $query->where('invoice_no', $openingReference);
+        $companyId = (int) ($customer->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
+        $legacyOpeningReference = 'OPENING-BAL-' . $customer->id;
+        $companyOpeningReference = 'OPENING-BAL-' . $companyId . '-' . $customer->id;
+        $openingReference = $legacyOpeningReference;
+        $query = Sale::withTrashed()
+            ->withoutGlobalScope('company_id')
+            ->where('customer_id', $customer->id)
+            ->whereIn('invoice_no', [$legacyOpeningReference, $companyOpeningReference]);
         $this->applySaleTenantScope($query);
-        $existing = $query->latest('id')->first();
+        $existing = $query->orderByRaw('CASE WHEN invoice_no = ? THEN 0 ELSE 1 END', [$companyOpeningReference])
+            ->latest('id')
+            ->first();
+        if (!$existing) {
+            $openingReference = $companyOpeningReference;
+        } else {
+            $openingReference = (string) $existing->invoice_no;
+        }
 
         if ($existing && method_exists($existing, 'trashed') && $existing->trashed()) {
             $existing->restore();
@@ -1239,13 +1259,13 @@ class CustomerController extends Controller
 
         $payload = [];
         if (Schema::hasColumn('sales', 'company_id')) {
-            $payload['company_id'] = session('current_tenant_id') ?? auth()->user()?->company_id;
+            $payload['company_id'] = $customer->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id;
         }
         if (Schema::hasColumn('sales', 'branch_id')) {
-            $payload['branch_id'] = $activeBranch['id'];
+            $payload['branch_id'] = $existing?->branch_id ?? $activeBranch['id'];
         }
         if (Schema::hasColumn('sales', 'branch_name')) {
-            $payload['branch_name'] = $activeBranch['name'];
+            $payload['branch_name'] = $existing?->branch_name ?? $activeBranch['name'];
         }
         if (Schema::hasColumn('sales', 'customer_id')) {
             $payload['customer_id'] = $customer->id;

@@ -2161,14 +2161,10 @@ class ReportController extends Controller
             ->get()
             ->keyBy('id');
 
-        $openingReferenceMap = [];
-        foreach ($openingCustomers as $customer) {
-            $openingReferenceMap[$customer->id] = 'OPENING-BAL-'.$customer->id;
-        }
-
+        $openingCustomerIds = $openingCustomers->keys()->all();
         $openingSales = Sale::query()
-            ->whereIn('customer_id', array_keys($openingReferenceMap))
-            ->whereIn('invoice_no', array_values($openingReferenceMap));
+            ->whereIn('customer_id', $openingCustomerIds)
+            ->where('invoice_no', 'like', 'OPENING-BAL-%');
         $this->applyTenantScope($openingSales, 'sales');
         $this->applySaleBranchFilter($openingSales, 'sales');
         $openingSales = $openingSales->get()->keyBy('customer_id');
@@ -2336,12 +2332,11 @@ class ReportController extends Controller
 
         $sales = $salesQuery->orderBy('created_at')->orderBy('id')->get();
         $salesIds = $sales->pluck('id')->all();
-        $openingReference = 'OPENING-BAL-'.$customer->id;
-        $openingSale = $sales->first(function ($sale) use ($openingReference) {
-            return (string) ($sale->invoice_no ?? '') === $openingReference;
+        $openingSale = $sales->first(function ($sale) {
+            return str_starts_with((string) ($sale->invoice_no ?? ''), 'OPENING-BAL-');
         });
-        $regularSales = $sales->reject(function ($sale) use ($openingReference) {
-            return (string) ($sale->invoice_no ?? '') === $openingReference;
+        $regularSales = $sales->reject(function ($sale) {
+            return str_starts_with((string) ($sale->invoice_no ?? ''), 'OPENING-BAL-');
         })->values();
 
         $payments = collect();

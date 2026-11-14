@@ -68,9 +68,8 @@ class CustomerReceivables
 
         $openingSalesByCustomer = collect();
         if (Schema::hasColumn('sales', 'invoice_no')) {
-            $openingReferences = $customerIds->map(fn ($customerId) => 'OPENING-BAL-' . $customerId);
             $openingSalesQuery = (clone $customerSales)
-                ->whereIn('invoice_no', $openingReferences)
+                ->where('invoice_no', 'like', 'OPENING-BAL-%')
                 ->orderBy('id');
             if ($lockForUpdate) {
                 $openingSalesQuery->lockForUpdate();
