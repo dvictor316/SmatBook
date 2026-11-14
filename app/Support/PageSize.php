@@ -5,7 +5,7 @@ namespace App\Support;
 class PageSize
 {
     public const OPTIONS = [25, 50, 100, 250, 500];
-    public const DEFAULT = 500;
+    public const DEFAULT = 50;
 
     public static function resolve(): int
     {

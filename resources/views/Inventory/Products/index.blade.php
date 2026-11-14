@@ -251,16 +251,15 @@
     }
 
     .inventory-table-shell {
-        max-height: calc(100vh - 13rem);
-        min-height: 16rem;
-        overflow: auto;
+        max-height: none;
+        min-height: 0;
+        overflow: visible;
         overscroll-behavior: contain;
     }
 
     .inventory-table-shell thead th {
-        position: sticky;
-        top: 0;
-        z-index: 5;
+        position: static;
+        z-index: auto;
         background: #f8fafc;
         box-shadow: inset 0 -1px 0 #e5e7eb;
         vertical-align: middle;
@@ -982,6 +981,9 @@
                         </tbody>
                     </table>
                 </div>
+                <?php if ($products instanceof \Illuminate\Pagination\AbstractPaginator) { ?>
+                    <?php echo $products->links(); ?>
+                <?php } ?>
             </div>
         </div>
     </div>
@@ -1330,7 +1332,16 @@
 
 <script>
     $(document).ready(function() {
+        var selectionStorageKey = <?php echo json_encode('inventory-product-selection:' . (auth()->id() ?? 'guest') . ':' . (auth()->user()?->company_id ?? '')); ?>;
         var selectedProductIds = new Set();
+        try {
+            var storedProductIds = JSON.parse(window.sessionStorage.getItem(selectionStorageKey) || '[]');
+            if (Array.isArray(storedProductIds)) {
+                storedProductIds.forEach(function(id) {
+                    if (/^[1-9]\d*$/.test(String(id))) selectedProductIds.add(String(id));
+                });
+            }
+        } catch (storageError) {}
         var bulkForm = $('#bulk-delete-products-form');
         var bulkEditForm = $('#bulk-edit-products-form');
         var bulkCount = $('#bulk-selected-count');
@@ -1354,6 +1365,9 @@
             bulkForm.toggleClass('is-visible', selectedProductIds.size > 0);
             $('#bulk-edit-selected-count').text(selectedProductIds.size);
             $('#bulk-edit-scope-selected').prop('disabled', selectedProductIds.size === 0);
+            try {
+                window.sessionStorage.setItem(selectionStorageKey, JSON.stringify(Array.from(selectedProductIds)));
+            } catch (storageError) {}
         }
 
         var bulkEditModal = document.getElementById('bulkEditProductsModal');
@@ -1534,16 +1548,15 @@
         }
 
         var table = $('#products-table').DataTable({
-            dom: 'Brtip',
+            dom: 'Bt',
             buttons: [
                 { extend: 'excelHtml5', className: 'dt-excel d-none', title: 'Product_Inventory_List', exportOptions: { columns: ':not(.no-print)', modifier: { page: 'all', search: 'applied' } } },
                 { extend: 'csvHtml5', className: 'dt-csv d-none', title: 'Product_Inventory_List', exportOptions: { columns: ':not(.no-print)', modifier: { page: 'all', search: 'applied' } } },
                 { extend: 'pdfHtml5', className: 'dt-pdf d-none', title: 'Product Inventory List', orientation: 'landscape', pageSize: 'A4', exportOptions: { columns: ':not(.no-print)', modifier: { page: 'all', search: 'applied' } } }
             ],
-            pageLength: 500,
-            displayLength: 500,
-            iDisplayLength: 500,
-            lengthChange: false,
+            paging: false,
+            info: false,
+            searching: false,
             stateSave: false,
             stateLoadCallback: function() { return null; },
             deferRender: true,
@@ -1551,8 +1564,6 @@
             columnDefs: [
                 { targets: [0, 9], orderable: false }
             ],
-            paging: true,
-            lengthMenu: [[25, 50, 100, 250, 500], [25, 50, 100, 250, 500]],
             language: {
                 search: "",
                 searchPlaceholder: "Search...",
@@ -1776,8 +1787,8 @@
             }
         <?php } ?>
 
-        if (!document.querySelector('[data-server-pagination]')) table.page.len(500).draw(false);
         table.on('draw', syncVisibleProductChecks);
+        syncBulkDeleteForm();
         syncVisibleProductChecks();
 
         var searchDebounce;
