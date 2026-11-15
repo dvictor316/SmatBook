@@ -57,10 +57,7 @@ class CustomerController extends Controller
         $customers = $customerQuery
             ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
-        $customers->getCollection()->transform(function ($customer) {
-            $customer->computed_balance = (float) ($customer->balance ?? 0) + (float) ($customer->sales_balance_sum ?? 0);
-            return $customer;
-        });
+        $this->applyCustomerListBalances($customers->getCollection());
 
         $summary = $this->buildCustomerListSummary($summaryCustomers);
         $reportMeta = $this->buildCustomerListReportMeta($request, $summaryCustomers);
@@ -378,10 +375,7 @@ class CustomerController extends Controller
         $customers = $customerQuery
             ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
-        $customers->getCollection()->transform(function ($customer) {
-            $customer->computed_balance = (float) ($customer->balance ?? 0) + (float) ($customer->sales_balance_sum ?? 0);
-            return $customer;
-        });
+        $this->applyCustomerListBalances($customers->getCollection());
 
         $summary = $this->buildCustomerListSummary($summaryCustomers);
         $reportMeta = $this->buildCustomerListReportMeta($request, $summaryCustomers, 'Active Customers');
@@ -397,10 +391,7 @@ class CustomerController extends Controller
         $customers = $customerQuery
             ->paginate(\App\Support\PageSize::resolve())->withQueryString();
 
-        $customers->getCollection()->transform(function ($customer) {
-            $customer->computed_balance = (float) ($customer->balance ?? 0) + (float) ($customer->sales_balance_sum ?? 0);
-            return $customer;
-        });
+        $this->applyCustomerListBalances($customers->getCollection());
 
         $summary = $this->buildCustomerListSummary($summaryCustomers);
         $reportMeta = $this->buildCustomerListReportMeta($request, $summaryCustomers, 'Inactive Customers');
@@ -478,8 +469,7 @@ class CustomerController extends Controller
     private function buildCustomerListSummary($customers): array
     {
         $normalized = collect($customers)->map(function ($customer) {
-            $computedBalance = (float) ($customer->balance ?? 0) + (float) ($customer->sales_balance_sum ?? 0);
-            $customer->computed_balance = $computedBalance;
+            $this->applyCustomerListBalance($customer);
 
             return $customer;
         });
@@ -488,10 +478,31 @@ class CustomerController extends Controller
             'total_customers' => $normalized->count(),
             'active_customers' => $normalized->filter(fn ($customer) => strtolower((string) ($customer->status ?? '')) === 'active')->count(),
             'contacts_on_file' => $normalized->filter(fn ($customer) => filled($customer->phone) || filled($customer->email))->count(),
-            'total_opening_balance' => (float) $normalized->sum(fn ($customer) => (float) ($customer->balance ?? 0)),
+            'total_opening_balance' => (float) $normalized->sum(fn ($customer) => (float) ($customer->opening_balance_original_display ?? 0)),
             'total_invoice_due' => (float) $normalized->sum(fn ($customer) => (float) ($customer->sales_balance_sum ?? 0)),
             'total_receivables' => (float) $normalized->sum(fn ($customer) => (float) ($customer->computed_balance ?? 0)),
         ];
+    }
+
+    private function applyCustomerListBalances($customers): void
+    {
+        collect($customers)->each(fn ($customer) => $this->applyCustomerListBalance($customer));
+    }
+
+    private function applyCustomerListBalance(Customer $customer): void
+    {
+        $openingOriginal = $customer->opening_balance_original;
+        $openingPaid = max(0, (float) ($customer->opening_balance_paid ?? 0));
+        $recordedPaid = max(0, (float) ($customer->opening_balance_recorded_paid ?? 0));
+        $recordedDue = max(0, (float) ($customer->opening_balance_recorded_due ?? 0));
+        $openingOriginal = $openingOriginal !== null
+            ? max((float) $openingOriginal, $recordedPaid + $recordedDue, (float) ($customer->balance ?? 0) + $openingPaid)
+            : max(0, (float) ($customer->balance ?? 0) + $openingPaid);
+        $openingDue = max(0, round($openingOriginal - $openingPaid, 2));
+
+        $customer->opening_balance_original_display = $openingOriginal;
+        $customer->opening_balance_due = $openingDue;
+        $customer->computed_balance = $openingDue + (float) ($customer->sales_balance_sum ?? 0);
     }
 
     private function buildCustomerListReportMeta(Request $request, $customers, string $title = 'Customers'): array
@@ -651,6 +662,41 @@ class CustomerController extends Controller
             return;
         }
 
+        if (Schema::hasColumn('sales', 'invoice_no') && Schema::hasColumn('sales', 'total')) {
+            $openingSaleFinancials = function ($saleQuery) {
+                $saleQuery->withoutGlobalScope('company_id')
+                    ->where('invoice_no', 'like', 'OPENING-BAL-%');
+                $this->applySaleTenantScope($saleQuery);
+            };
+            $query->withMax(['sales as opening_balance_original' => $openingSaleFinancials], 'total');
+
+            if (Schema::hasColumn('sales', 'balance')) {
+                $query->withMax(['sales as opening_balance_recorded_due' => $openingSaleFinancials], 'balance');
+            }
+            $openingPaidColumn = Schema::hasColumn('sales', 'paid') ? 'paid' : (Schema::hasColumn('sales', 'amount_paid') ? 'amount_paid' : null);
+            if ($openingPaidColumn) {
+                $query->withMax(['sales as opening_balance_recorded_paid' => $openingSaleFinancials], $openingPaidColumn);
+            }
+        }
+
+        if (Schema::hasTable('payments') && Schema::hasColumn('payments', 'amount') && Schema::hasColumn('sales', 'invoice_no')) {
+            $query->withSum(['payments as opening_balance_paid' => function ($paymentQuery) {
+                $paymentQuery->withoutGlobalScope('tenant');
+                $this->applyCustomerPaymentTenantScope($paymentQuery);
+                $paymentQuery->whereHas('sale', function ($saleQuery) {
+                    $saleQuery->withoutGlobalScope('company_id')
+                        ->where('invoice_no', 'like', 'OPENING-BAL-%');
+                    $this->applySaleTenantScope($saleQuery);
+                });
+
+                if (Schema::hasColumn('payments', 'status')) {
+                    $paymentQuery->whereNotIn(DB::raw("LOWER(COALESCE(payments.status, ''))"), [
+                        'failed', 'cancelled', 'canceled', 'pending approval', 'rejected', 'refunded', 'void',
+                    ]);
+                }
+            }], 'amount');
+        }
+
         if (Schema::hasColumn('sales', 'balance')) {
             $query->withSum(['sales as sales_balance_sum' => function ($saleQuery) {
                 $saleQuery->withoutGlobalScope('company_id');
@@ -751,9 +797,9 @@ class CustomerController extends Controller
         ];
     }
 
-    private function applyCustomerPaymentTenantScope($query, Customer $customer)
+    private function applyCustomerPaymentTenantScope($query, ?Customer $customer = null)
     {
-        $companyId = (int) ($customer->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
+        $companyId = (int) ($customer?->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
         $userId = (int) (auth()->id() ?? 0);
 
         if ($companyId > 0 && Schema::hasColumn('payments', 'company_id')) {

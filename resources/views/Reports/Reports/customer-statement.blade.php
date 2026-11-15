@@ -90,16 +90,6 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-3 col-sm-6 col-12">
-                    <div class="card statement-summary-card bg-info-light">
-                        <div class="card-body">
-                            <div class="inform-item">
-                                <h6 class="text-info">Balance Adjustments</h6>
-                                <h5>{{ ($balanceAdjustments ?? 0) < 0 ? '−' : '+' }}{{ $currencySymbol }}{{ \App\Support\CompactNumber::format(abs($balanceAdjustments ?? 0), 2) }}</h5>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <div class="row">
@@ -114,7 +104,6 @@
                                         <option value="invoice" {{ ($filters['type'] ?? '') === 'invoice' ? 'selected' : '' }}>Invoices Only</option>
                                         <option value="payment" {{ ($filters['type'] ?? '') === 'payment' ? 'selected' : '' }}>Payments Only</option>
                                         <option value="opening balance" {{ ($filters['type'] ?? '') === 'opening balance' ? 'selected' : '' }}>Opening Balances Only</option>
-                                        <option value="adjustment" {{ ($filters['type'] ?? '') === 'adjustment' ? 'selected' : '' }}>Balance Adjustments Only</option>
                                     </select>
                                 </div>
                                 <div class="col-md-3">

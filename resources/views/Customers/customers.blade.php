@@ -253,7 +253,7 @@
                                                     <div>{{ \Illuminate\Support\Str::limit($customer->address ?? $customer->billing_address_line1 ?? $customer->billing_city ?? 'No address saved', 40) }}</div>
                                                     <small class="text-muted">{{ $customer->billing_city ?? $customer->shipping_city ?? 'No city' }}</small>
                                                 </td>
-                                                <td class="text-end fw-semibold">₦{{ \App\Support\CompactNumber::format((float) ($customer->balance ?? 0), 2) }}</td>
+                                                <td class="text-end fw-semibold">₦{{ \App\Support\CompactNumber::format((float) ($customer->opening_balance_original_display ?? $customer->balance ?? 0), 2) }}</td>
                                                 <td class="text-end fw-semibold">₦{{ \App\Support\CompactNumber::format((float) ($customer->sales_balance_sum ?? 0), 2) }}</td>
                                                 <td class="text-end fw-bold text-danger">₦{{ \App\Support\CompactNumber::format((float) ($customer->computed_balance ?? $customer->balance), 2) }}</td>
                                                 <td class="text-end">₦{{ \App\Support\CompactNumber::format((float) ($customer->credit_limit ?? 0), 2) }}</td>
