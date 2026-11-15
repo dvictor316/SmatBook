@@ -2368,13 +2368,18 @@ class ReportController extends Controller
                 (float) ($customer->balance ?? 0) + $openingPaid
             )
             : max(0, (float) ($customer->balance ?? 0) + $openingPaid);
+        $openingLedgerDue = max(0, round($openingOriginal - $openingPaid, 2));
+        $customerOpeningDue = max(0, round((float) ($customer->balance ?? 0), 2));
+        $openingAdjustment = round($customerOpeningDue - $openingLedgerDue, 2);
+        $openingBusinessDate = $customer->opening_balance_date
+            ?: (optional($openingSale)->order_date ?: optional($openingSale)->created_at ?: $customer->created_at ?: now());
+        $openingSortAt = Carbon::parse($openingBusinessDate)->startOfDay();
 
         $entries = collect();
         if ($openingOriginal > 0) {
-            $openingEventAt = $this->statementEntryTime(
-                optional($openingSale)->created_at,
-                $customer->opening_balance_date ?: optional($openingSale)->order_date
-            ) ?: ($customer->created_at ? $customer->created_at->copy()->subSecond() : now()->copy()->subSecond());
+            // Opening balance is the first ledger event even when an imported
+            // payment has an earlier or malformed timestamp.
+            $openingEventAt = $openingSortAt->copy();
 
             $entries->push([
                 'date' => $customer->opening_balance_date
@@ -2412,6 +2417,27 @@ class ReportController extends Controller
                     'credit' => (float) ($payment->amount ?? 0),
                 ]);
             });
+
+        if (abs($openingAdjustment) >= 0.01) {
+            $lastOpeningPaymentAt = $openingPayments->max('created_at');
+            $adjustmentBaseAt = $openingSortAt->copy();
+            if ($lastOpeningPaymentAt && Carbon::parse($lastOpeningPaymentAt)->greaterThan($adjustmentBaseAt)) {
+                $adjustmentBaseAt = Carbon::parse($lastOpeningPaymentAt);
+            }
+            $adjustmentAt = $adjustmentBaseAt->copy()->addMicrosecond();
+            $entries->push([
+                'date' => $adjustmentAt,
+                'sort_at' => $adjustmentAt,
+                'sort_id' => 0,
+                'sort_type' => 3,
+                'visible' => true,
+                'reference' => 'OPENING-ADJUSTMENT',
+                'type' => 'Adjustment',
+                'description' => 'Opening balance reconciled to the current customer balance.',
+                'debit' => $openingAdjustment > 0 ? $openingAdjustment : 0.0,
+                'credit' => $openingAdjustment < 0 ? abs($openingAdjustment) : 0.0,
+            ]);
+        }
 
         foreach ($regularSales as $sale) {
             $salePayments = $payments->where('sale_id', $sale->id)->values();
@@ -2499,9 +2525,10 @@ class ReportController extends Controller
 
             return $entry;
         });
-        $totalInvoiced = (float) $entries->sum(fn ($entry) => (float) ($entry['debit'] ?? 0));
-        $totalPaid = (float) $entries->sum(fn ($entry) => (float) ($entry['credit'] ?? 0));
-        $balanceDue = (float) round($totalInvoiced - $totalPaid, 2);
+        $totalInvoiced = (float) $entries->sum(fn ($entry) => in_array($entry['type'], ['Opening Balance', 'Invoice'], true) ? (float) ($entry['debit'] ?? 0) : 0.0);
+        $totalPaid = (float) $entries->sum(fn ($entry) => $entry['type'] === 'Payment' ? (float) ($entry['credit'] ?? 0) : 0.0);
+        $balanceAdjustments = (float) $entries->sum(fn ($entry) => $entry['type'] === 'Adjustment' ? (float) ($entry['debit'] ?? 0) - (float) ($entry['credit'] ?? 0) : 0.0);
+        $balanceDue = (float) round($runningBalance, 2);
 
         // Filters affect the displayed rows only. Keep the lifetime totals and
         // each row's running balance based on the complete customer ledger.
@@ -2525,6 +2552,7 @@ class ReportController extends Controller
             'entries' => $entries,
             'totalInvoiced' => $totalInvoiced,
             'totalPaid' => $totalPaid,
+            'balanceAdjustments' => $balanceAdjustments,
             'balanceDue' => $balanceDue,
             'activeBranch' => $this->getActiveBranchContext(),
             'filters' => [
