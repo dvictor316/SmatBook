@@ -196,7 +196,10 @@ class CustomerController extends Controller
      */
     public function show($id)
     {
-        $customer = $this->applyTenantScope(Customer::query())->findOrFail($id);
+        $customerQuery = $this->applyTenantScope(Customer::query());
+        $this->withSalesBalances($customerQuery);
+        $customer = $customerQuery->findOrFail($id);
+        $this->applyCustomerListBalance($customer);
         $salesQuery = Sale::query()->withoutGlobalScope('company_id')->where('customer_id', $customer->id);
         $this->applySaleTenantScope($salesQuery);
         $sales = $salesQuery->get();
@@ -228,8 +231,6 @@ class CustomerController extends Controller
         }
         $invoices = $invoicesQuery->get();
         $customer->setRelation('invoices', $invoices);
-        $salesBalance = $this->calculateCustomerSalesBalance($customer->id);
-        $customer->computed_balance = (float) ($customer->balance ?? 0) + $salesBalance;
 
         $invoicescards = [
             [
@@ -680,21 +681,46 @@ class CustomerController extends Controller
         }
 
         if (Schema::hasTable('payments') && Schema::hasColumn('payments', 'amount') && Schema::hasColumn('sales', 'invoice_no')) {
-            $query->withSum(['payments as opening_balance_paid' => function ($paymentQuery) {
-                $paymentQuery->withoutGlobalScope('tenant');
-                $this->applyCustomerPaymentTenantScope($paymentQuery);
-                $paymentQuery->whereHas('sale', function ($saleQuery) {
-                    $saleQuery->withoutGlobalScope('company_id')
-                        ->where('invoice_no', 'like', 'OPENING-BAL-%');
-                    $this->applySaleTenantScope($saleQuery);
-                });
+            $openingPaymentsQuery = DB::table('payments')
+                ->join('sales', 'sales.id', '=', 'payments.sale_id')
+                ->selectRaw('COALESCE(SUM(payments.amount), 0)')
+                ->whereColumn('sales.customer_id', 'customers.id')
+                ->where('sales.invoice_no', 'like', 'OPENING-BAL-%');
 
-                if (Schema::hasColumn('payments', 'status')) {
-                    $paymentQuery->whereNotIn(DB::raw("LOWER(COALESCE(payments.status, ''))"), [
-                        'failed', 'cancelled', 'canceled', 'pending approval', 'rejected', 'refunded', 'void',
-                    ]);
+            $companyId = (int) (session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
+            $userId = (int) (auth()->id() ?? 0);
+            if ($companyId > 0 && Schema::hasColumn('sales', 'company_id')) {
+                $openingPaymentsQuery->where(function ($tenant) use ($companyId, $userId) {
+                    $tenant->where('sales.company_id', $companyId);
+                    if ($userId > 0 && Schema::hasColumn('sales', 'user_id')) {
+                        $tenant->orWhere(fn ($legacy) => $legacy->whereNull('sales.company_id')->where('sales.user_id', $userId));
+                    }
+                });
+            } elseif ($userId > 0 && Schema::hasColumn('sales', 'user_id')) {
+                $openingPaymentsQuery->where('sales.user_id', $userId);
+            }
+            if ($companyId > 0 && Schema::hasColumn('payments', 'company_id')) {
+                $openingPaymentsQuery->where(function ($tenant) use ($companyId, $userId) {
+                    $tenant->where('payments.company_id', $companyId);
+                    if ($userId > 0 && Schema::hasColumn('payments', 'user_id')) {
+                        $tenant->orWhere(fn ($legacy) => $legacy->whereNull('payments.company_id')->where('payments.user_id', $userId));
+                    }
+                });
+            } elseif ($userId > 0 && Schema::hasColumn('payments', 'user_id')) {
+                $openingPaymentsQuery->where('payments.user_id', $userId);
+            }
+            if (auth()->user()?->isDemoUser()) {
+                $previewCustomerId = (int) session('demo_customer_preview_id', 0);
+                if ($previewCustomerId > 0) {
+                    $openingPaymentsQuery->where('sales.customer_id', $previewCustomerId);
                 }
-            }], 'amount');
+            }
+            if (Schema::hasColumn('payments', 'status')) {
+                $openingPaymentsQuery->whereNotIn(DB::raw("LOWER(COALESCE(payments.status, ''))"), [
+                    'failed', 'cancelled', 'canceled', 'pending approval', 'rejected', 'refunded', 'void',
+                ]);
+            }
+            $query->selectSub($openingPaymentsQuery, 'opening_balance_paid');
         }
 
         if (Schema::hasColumn('sales', 'balance')) {
@@ -871,7 +897,10 @@ class CustomerController extends Controller
 
     public function receivePayment($id)
     {
-        $customer = $this->applyTenantScope(Customer::query())->findOrFail($id);
+        $customerQuery = $this->applyTenantScope(Customer::query());
+        $this->withSalesBalances($customerQuery);
+        $customer = $customerQuery->findOrFail($id);
+        $this->applyCustomerListBalance($customer);
 
         $outstandingSalesQuery = Sale::query()
             ->withoutGlobalScope('company_id')
@@ -947,10 +976,10 @@ class CustomerController extends Controller
             );
         }
 
-        $customer->computed_balance = (float) ($customer->balance ?? 0) + (float) $outstandingSales->sum('balance');
         $openingSnapshot = $this->resolveCustomerOpeningBalanceSnapshot($customer);
         $outstandingOpeningBalance = (float) ($openingSnapshot['due'] ?? 0);
         $outstandingInvoicesTotal = (float) $outstandingSales->sum('balance');
+        $customer->computed_balance = $outstandingOpeningBalance + $outstandingInvoicesTotal;
         $supportsStandalonePayments = !$this->paymentsRequireSaleId();
         $activeBranch = $this->getActiveBranchContext();
         $paymentHistoryQuery = Payment::query()->withoutGlobalScope('tenant')->with([
