@@ -144,7 +144,7 @@
                                     <tbody>
                                         @php $runningTotal = 0; @endphp
                                         @forelse ($receivables as $row)
-                                            @php $runningTotal += (float) ($row->total_due + $row->opening_balance); @endphp
+                                            @php $runningTotal += (float) ($row->total_due + $row->opening_due); @endphp
                                             <tr>
                                                 <td>{{ $loop->iteration }}</td>
                                                 <td class="fw-semibold">{{ $row->customer_name }}</td>
@@ -156,7 +156,7 @@
                                                 <td class="text-end">{{ \App\Support\GeoCurrency::format($row->total_invoiced, 'NGN', $currencyCode, $currencyLocale) }}</td>
                                                 <td class="text-end">{{ \App\Support\GeoCurrency::format($row->total_paid, 'NGN', $currencyCode, $currencyLocale) }}</td>
                                                 <td class="text-end">{{ \App\Support\GeoCurrency::format($row->opening_balance, 'NGN', $currencyCode, $currencyLocale) }}</td>
-                                                <td class="text-end fw-bold text-danger">{{ \App\Support\GeoCurrency::format($row->total_due + $row->opening_balance, 'NGN', $currencyCode, $currencyLocale) }}</td>
+                                                <td class="text-end fw-bold text-danger">{{ \App\Support\GeoCurrency::format($row->total_due + $row->opening_due, 'NGN', $currencyCode, $currencyLocale) }}</td>
                                                 <td class="text-end fw-bold text-primary">{{ \App\Support\GeoCurrency::format($runningTotal, 'NGN', $currencyCode, $currencyLocale) }}</td>
                                                 <td class="text-end">
                                                     <div class="d-inline-flex gap-2">

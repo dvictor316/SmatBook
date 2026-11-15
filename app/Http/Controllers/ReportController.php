@@ -2125,6 +2125,7 @@ class ReportController extends Controller
         }
 
         $salesQuery = Sale::query()
+            ->withoutGlobalScope('company_id')
             ->whereNotNull('customer_id')
             ->where('balance', '>', 0)
             ->where(function ($query) {
@@ -2140,7 +2141,6 @@ class ReportController extends Controller
         }
 
         $this->applyTenantScope($salesQuery, 'sales');
-        $this->applySaleBranchFilter($salesQuery, 'sales');
 
         $salesSummary = $salesQuery
             ->selectRaw('customer_id, SUM(total) as total_invoiced, SUM(amount_paid) as total_paid, SUM(balance) as total_due, COUNT(*) as invoice_count, MIN(COALESCE(created_at, order_date)) as first_activity_at')
@@ -2160,21 +2160,34 @@ class ReportController extends Controller
             ->get()
             ->keyBy('id');
 
-        $openingCustomerIds = $openingCustomers->keys()->all();
+        $openingCustomerIds = $salesSummary->pluck('customer_id')
+            ->filter()
+            ->merge($openingCustomers->keys())
+            ->unique()
+            ->values()
+            ->all();
         $openingSales = Sale::query()
+            ->withoutGlobalScope('company_id')
             ->whereIn('customer_id', $openingCustomerIds)
             ->where('invoice_no', 'like', 'OPENING-BAL-%');
         $this->applyTenantScope($openingSales, 'sales');
-        $this->applySaleBranchFilter($openingSales, 'sales');
         $openingSales = $openingSales->get()->keyBy('customer_id');
-        // Opening invoices keep the original debt; only surviving applied payments reduce it.
+        // Keep the original opening amount separate from the remaining due.
         foreach ($openingSales as $openingSale) {
-            $paidQuery = Payment::query()->where('sale_id', $openingSale->id);
+            $paidQuery = Payment::query()->withoutGlobalScope('tenant')->where('sale_id', $openingSale->id);
             $this->applyTenantScope($paidQuery, 'payments');
             foreach ($this->ignoredAppliedPaymentStatuses() as $status) {
                 $paidQuery->whereRaw("LOWER(COALESCE(status, '')) <> ?", [$status]);
             }
-            $openingSale->balance = max(0, round((float) $openingSale->total - (float) $paidQuery->sum('amount'), 2));
+            $openingPaid = (float) $paidQuery->sum('amount');
+            $customer = $customerMap->get($openingSale->customer_id) ?? $openingCustomers->get($openingSale->customer_id);
+            $openingOriginal = max(
+                (float) ($openingSale->total ?? 0),
+                (float) ($openingSale->paid ?? $openingSale->amount_paid ?? 0) + (float) ($openingSale->balance ?? 0),
+                (float) ($customer->balance ?? 0) + $openingPaid
+            );
+            $openingSale->opening_original_amount = $openingOriginal;
+            $openingSale->balance = max(0, round($openingOriginal - $openingPaid, 2));
         }
 
 
@@ -2183,13 +2196,13 @@ class ReportController extends Controller
         $actualPaidPerCustomer = [];
         if (Schema::hasTable('payments') && ! empty($arCustomerIds)) {
             $arSaleIdMap = Sale::query()
+                ->withoutGlobalScope('company_id')
                 ->whereIn('customer_id', $arCustomerIds)
                 ->where(function ($q) {
                     $q->whereNull('invoice_no')
                         ->orWhere('invoice_no', 'not like', 'OPENING-BAL-%');
                 })
                 ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'))
-                ->tap(fn ($q) => $this->applySaleBranchFilter($q, 'sales'))
                 ->select('id', 'customer_id')
                 ->get()
                 ->pluck('customer_id', 'id') // [sale_id => customer_id]
@@ -2220,7 +2233,8 @@ class ReportController extends Controller
         foreach ($salesSummary as $row) {
             $customer = $customerMap->get($row->customer_id);
             $openingSale = $openingSales->get($row->customer_id);
-            $openingBal = $openingSale ? (float) ($openingSale->balance ?? 0) : (float) (optional($customer)->balance ?? 0);
+            $openingDue = $openingSale ? (float) ($openingSale->balance ?? 0) : (float) (optional($customer)->balance ?? 0);
+            $openingOriginal = $openingSale ? (float) ($openingSale->opening_original_amount ?? 0) : $openingDue;
 
             // Use max(stored amount_paid, actual payments-table total) so untracked payments
             // are never under-counted and the balance matches the customer statement.
@@ -2231,7 +2245,7 @@ class ReportController extends Controller
             $totalDue = max(0.0, round((float) $row->total_invoiced - $actualPaid, 2));
 
             // Skip customers fully settled (balance+opening both zero)
-            if ($totalDue < 0.01 && $openingBal < 0.01) {
+            if ($totalDue < 0.01 && $openingDue < 0.01) {
                 continue;
             }
 
@@ -2244,7 +2258,8 @@ class ReportController extends Controller
                 'total_paid' => $actualPaid,
                 'total_due' => $totalDue,
                 'invoice_count' => (int) $row->invoice_count,
-                'opening_balance' => $openingBal,
+                'opening_balance' => $openingOriginal,
+                'opening_due' => $openingDue,
                 'sort_at' => $row->first_activity_at ?: optional($customer)->created_at,
                 'sort_id' => (int) (optional($customer)->id ?? $row->customer_id ?? 0),
             ];
@@ -2253,9 +2268,12 @@ class ReportController extends Controller
         foreach ($openingCustomers as $customer) {
             if (! isset($receivableMap[$customer->id])) {
                 $openingSaleForThis = $openingSales->get($customer->id);
-                $openingBal = $openingSaleForThis
+                $openingDue = $openingSaleForThis
                     ? (float) ($openingSaleForThis->balance ?? 0)
                     : (float) ($customer->balance ?? 0);
+                $openingOriginal = $openingSaleForThis
+                    ? (float) ($openingSaleForThis->opening_original_amount ?? 0)
+                    : $openingDue;
                 $receivableMap[$customer->id] = [
                     'customer_id' => $customer->id,
                     'customer_name' => $customer->customer_name ?? $customer->name ?? 'Walk-in Customer',
@@ -2265,7 +2283,8 @@ class ReportController extends Controller
                     'total_paid' => 0.0,
                     'total_due' => 0.0,
                     'invoice_count' => 0,
-                    'opening_balance' => $openingBal,
+                    'opening_balance' => $openingOriginal,
+                    'opening_due' => $openingDue,
                     'sort_at' => $customer->created_at,
                     'sort_id' => (int) $customer->id,
                 ];
@@ -2300,7 +2319,7 @@ class ReportController extends Controller
             )->values();
         }
 
-        $totalDue = (float) $receivables->sum('total_due') + (float) $receivables->sum('opening_balance');
+        $totalDue = (float) $receivables->sum('total_due') + (float) $receivables->sum('opening_due');
 
         return view('Reports.Reports.accounts-receivable', [
             'receivables' => $receivables,
