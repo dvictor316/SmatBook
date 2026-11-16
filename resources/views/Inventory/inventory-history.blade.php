@@ -6,7 +6,6 @@
         $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
         $stockUnitLabel = $stockUnitLabel ?? ($product->base_unit_name ?? $product->unit_type ?? 'pcs');
         $currentStock = (float) ($currentStock ?? 0);
-        $openingBalance = (float) ($openingBalance ?? 0);
         $totalIn = (float) ($totalIn ?? 0);
         $totalOut = (float) ($totalOut ?? 0);
         $totalDamaged = (float) ($totalDamaged ?? 0);
@@ -102,9 +101,14 @@
                 <div class="card-body p-4">
                     <div class="row align-items-center g-3">
                         <div class="col-lg-7">
-                            <h6 class="fw-bold mb-1">Opening balance used for this timeline</h6>
-                            <div class="fs-5 fw-semibold">{{ \App\Support\CompactNumber::format($openingBalance, 2) }} {{ $stockUnitLabel }}</div>
-                            <p class="small text-muted mb-0">Calculated from live stock less the recorded movements, so the final running balance reconciles to current stock.</p>
+                            @if($historyReconciles)
+                                <h6 class="fw-bold mb-1">Inferred opening balance for this timeline</h6>
+                                <div class="fs-5 fw-semibold">{{ \App\Support\CompactNumber::format($openingBalance, 2) }} {{ $stockUnitLabel }}</div>
+                                <p class="small text-muted mb-0">Calculated from current stock and the movements shown; it may differ from the original opening entry.</p>
+                            @else
+                                <h6 class="fw-bold mb-1">Historical balances need review</h6>
+                                <p class="small mb-0">The recorded movements do not reconcile with current stock without a negative balance. Historical balances and values are unavailable until the records are reviewed. Current stock is unchanged.</p>
+                            @endif
                         </div>
                         <div class="col-lg-5 text-lg-end">
                             <div class="small text-muted">Estimated current cost value</div>
@@ -177,10 +181,18 @@
                                             @endif
                                         </td>
                                         <td class="text-end fw-semibold {{ $currentStock >= 0 ? 'text-primary' : 'text-danger' }}">
-                                            {{ \App\Support\CompactNumber::format((float) ($history->running_balance ?? 0), 2) }} {{ $stockUnitLabel }}
+                                            @if($history->running_balance !== null)
+                                                {{ \App\Support\CompactNumber::format((float) $history->running_balance, 2) }} {{ $stockUnitLabel }}
+                                            @else
+                                                <span class="text-muted">Unavailable</span>
+                                            @endif
                                         </td>
                                         <td class="text-end">
-                                            {{ \App\Support\GeoCurrency::format((float) ($history->stock_value ?? 0), 'NGN', $currencyCode, $currencyLocale) }}
+                                            @if($history->stock_value !== null)
+                                                {{ \App\Support\GeoCurrency::format((float) $history->stock_value, 'NGN', $currencyCode, $currencyLocale) }}
+                                            @else
+                                                <span class="text-muted">Unavailable</span>
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty

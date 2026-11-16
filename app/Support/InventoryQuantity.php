@@ -108,24 +108,15 @@ class InventoryQuantity
             ? "{$purchaseItemsTable}.unit_type"
             : (Schema::hasColumn($purchaseItemsTable, 'unit')
                 ? "{$purchaseItemsTable}.unit"
-                : "{$productsTable}.unit_type");
-        $unitType = "LOWER(COALESCE({$unitColumn}, {$productsTable}.unit_type, 'unit'))";
+                : 'NULL');
+        $unitType = "LOWER(COALESCE(NULLIF({$unitColumn}, ''), 'unit'))";
         $unitsPerCarton = static::productUnitsPerCartonExpression($productsTable);
         $unitsPerRoll = static::productUnitsPerRollExpression($productsTable);
-        $purchaseUnitConversion = Schema::hasColumn($productsTable, 'purchase_unit_id')
-            && Schema::hasColumn($productsTable, 'conversion_rate')
-            ? "({$productsTable}.purchase_unit_id IS NOT NULL AND COALESCE({$productsTable}.conversion_rate, 0) > 0)"
-            : '0 = 1';
-        $purchaseUnitRate = Schema::hasColumn($productsTable, 'conversion_rate')
-            ? "COALESCE({$productsTable}.conversion_rate, 1)"
-            : '1';
-
         return "CASE
             WHEN {$stockUnits} > 0 THEN {$stockUnits}
             WHEN {$conversionFactor} > 0 AND {$conversionFactor} <> 1 THEN {$quantity} * {$conversionFactor}
             WHEN {$unitType} = 'carton' AND {$unitsPerCarton} > 1 THEN {$quantity} * {$unitsPerCarton}
             WHEN {$unitType} = 'roll' AND {$unitsPerRoll} > 1 THEN {$quantity} * {$unitsPerRoll}
-            WHEN {$purchaseUnitConversion} THEN {$quantity} * {$purchaseUnitRate}
             WHEN {$conversionFactor} > 0 THEN {$quantity} * {$conversionFactor}
             ELSE {$quantity}
         END";

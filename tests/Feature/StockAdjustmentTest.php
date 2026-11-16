@@ -170,8 +170,9 @@ class StockAdjustmentTest extends TestCase
                     && (float) $purchaseMovements->first()->quantity === 2000.0
                     && (float) $purchaseMovements->first()->display_quantity === 2.0
                     && strtolower((string) $purchaseMovements->first()->display_unit_label) === 'carton'
-                    && (float) $histories->first()->running_balance === 2000.0;
+                    && $histories->first()->running_balance === null;
             });
+        $historyResponse->assertSee('Historical balances need review');
 
         $this->withMiddleware();
         $reportResponse = $this->actingAs($user)->withSession(['current_tenant_id' => $company->id])
@@ -200,6 +201,95 @@ class StockAdjustmentTest extends TestCase
             ->assertOk()
             ->assertSee('Live snapshot as at')
             ->assertSee('Stock Movements');
+    }
+
+    public function test_history_uses_recorded_purchase_units_and_excludes_pending_orders_without_changing_stock(): void
+    {
+        $user = User::factory()->create(['role' => 'admin']);
+        $company = Company::withoutGlobalScope('tenant')->create([
+            'user_id' => $user->id, 'owner_id' => $user->id,
+            'name' => 'History Reconciliation', 'status' => 'active',
+        ]);
+        $user->forceFill(['company_id' => $company->id])->save();
+        $categoryId = DB::table('categories')->insertGetId([
+            'name' => 'History Reconciliation', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $product = Product::create([
+            'user_id' => $user->id, 'company_id' => $company->id,
+            'name' => 'Test Stock', 'sku' => 'HISTORY-RECONCILE', 'category_id' => $categoryId,
+            'price' => 20, 'purchase_price' => 10, 'stock' => 0, 'stock_quantity' => 0,
+            'base_unit_name' => 'pcs', 'unit_type' => 'unit', 'status' => 'active',
+            'branch_id' => 'hq', 'branch_name' => 'Headquarters',
+        ]);
+        DB::table('products')->where('id', $product->id)->update([
+            'stock' => 67, 'stock_quantity' => 67, 'purchase_unit_id' => 1, 'conversion_rate' => 125,
+            'unit_type' => 'carton', 'units_per_carton' => 125,
+        ]);
+        foreach ([
+            ['PUR-RECEIVED', 'received', 50, 'pcs', 1, null],
+            ['PUR-LEGACY', 'received', 3, null, 1, null],
+            ['PUR-FACTOR', 'received', 2, null, 4, null],
+            ['PUR-SAVED', 'received', 2, null, 3, 6],
+            ['PO-PENDING', 'pending', 20, 'pcs', 1, null],
+        ] as [$number, $status, $quantity, $unit, $factor, $stockUnits]) {
+            $purchaseId = DB::table('purchases')->insertGetId(array_intersect_key([
+                'purchase_no' => $number, 'status' => $status, 'total_amount' => 100,
+                'company_id' => $company->id, 'user_id' => $user->id,
+                'branch_id' => 'hq', 'branch_name' => 'Headquarters',
+                'created_at' => now(), 'updated_at' => now(),
+            ], array_flip(Schema::getColumnListing('purchases'))));
+            DB::table('purchase_items')->insert(array_intersect_key([
+                'purchase_id' => $purchaseId, 'product_id' => $product->id, 'qty' => $quantity,
+                'unit_price' => 10, 'unit_type' => $unit, 'conversion_factor' => $factor,
+                'stock_units' => $stockUnits, 'company_id' => $company->id,
+                'created_at' => now(), 'updated_at' => now(),
+            ], array_flip(Schema::getColumnListing('purchase_items'))));
+        }
+
+        $response = $this->actingAs($user)->withoutMiddleware()
+            ->withSession(['current_tenant_id' => $company->id, 'active_branch_id' => 'hq', 'active_branch_name' => 'Headquarters'])
+            ->get(route('inventory.history', $product->id))->assertOk()
+            ->assertSee('PUR-RECEIVED')->assertDontSee('PO-PENDING')
+            ->assertViewHas('historyReconciles', true)->assertViewHas('openingBalance', 0.0);
+        $response->assertViewHas('inventoryHistories', function ($rows) {
+            $purchase = $rows->firstWhere('reference', 'PUR-RECEIVED');
+            $legacy = $rows->firstWhere('reference', 'PUR-LEGACY');
+            $factor = $rows->firstWhere('reference', 'PUR-FACTOR');
+            $saved = $rows->firstWhere('reference', 'PUR-SAVED');
+            return $purchase && (float) $purchase->quantity === 50.0
+                && $legacy && (float) $legacy->quantity === 3.0
+                && $factor && (float) $factor->quantity === 8.0 && $factor->display_unit_label === 'unknown unit'
+                && $saved && (float) $saved->quantity === 6.0 && $saved->display_unit_label === 'unknown unit'
+                && (float) $rows->first()->running_balance === 67.0;
+        });
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 67, 'stock_quantity' => 67]);
+
+        DB::table('products')->where('id', $product->id)->update(['stock' => 20, 'stock_quantity' => 20]);
+        $this->withSession(['current_tenant_id' => $company->id, 'active_branch_id' => 'hq', 'active_branch_name' => 'Headquarters'])
+            ->get(route('inventory.history', $product->id))->assertOk()
+            ->assertSee('Historical balances need review')->assertSee('Current stock is unchanged.')
+            ->assertSee('Unavailable')
+            ->assertViewHas('historyReconciles', false)->assertViewHas('openingBalance', null)
+            ->assertViewHas('inventoryHistories', fn ($rows) => $rows->every(
+                fn ($row) => $row->running_balance === null && $row->stock_value === null
+            ));
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 20, 'stock_quantity' => 20]);
+
+        $historyId = DB::table('inventory_history')->insertGetId(array_intersect_key([
+            'user_id' => $user->id, 'company_id' => $company->id, 'product_id' => $product->id,
+            'quantity' => 60, 'type' => 'out', 'reference' => 'Earlier stock out',
+            'branch_id' => 'hq', 'branch_name' => 'Headquarters',
+            'created_at' => now()->subDay(), 'updated_at' => now()->subDay(),
+        ], array_flip(Schema::getColumnListing('inventory_history'))));
+        $this->withSession(['current_tenant_id' => $company->id, 'active_branch_id' => 'hq', 'active_branch_name' => 'Headquarters'])
+            ->get(route('inventory.history', $product->id))->assertOk()
+            ->assertSee('Historical balances need review')
+            ->assertViewHas('historyReconciles', false)
+            ->assertViewHas('inventoryHistories', fn ($rows) => $rows->every(
+                fn ($row) => $row->running_balance === null && $row->stock_value === null
+            ));
+        $this->assertDatabaseHas('inventory_history', ['id' => $historyId, 'quantity' => 60]);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 20, 'stock_quantity' => 20]);
     }
 
     public function test_manual_stock_in_saves_stock_and_inventory_history(): void

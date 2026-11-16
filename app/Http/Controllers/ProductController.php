@@ -4186,7 +4186,7 @@ public function inventory(Request $request)
                     ? 'purchase_items.unit_type'
                     : (Schema::hasColumn('purchase_items', 'unit')
                         ? 'purchase_items.unit'
-                        : 'products.base_unit_name');
+                        : 'NULL');
                 $purchaseHistoryQuery = DB::table('purchase_items')
                     ->join('purchases', 'purchase_items.purchase_id', '=', 'purchases.id')
                     ->join('products', 'purchase_items.product_id', '=', 'products.id')
@@ -4202,7 +4202,12 @@ public function inventory(Request $request)
                                 THEN COALESCE(purchase_items.stock_units, 0) / purchase_items.conversion_factor
                             ELSE COALESCE(purchase_items.{$purchaseQtyColumn}, 0)
                         END as display_quantity,
-                        COALESCE(NULLIF({$purchaseUnitColumn}, ''), products.base_unit_name, products.unit_type, 'pcs') as display_unit_label,
+                        COALESCE(NULLIF({$purchaseUnitColumn}, ''), CASE
+                            WHEN COALESCE(purchase_items.conversion_factor, 0) > 0
+                                AND COALESCE(purchase_items.conversion_factor, 0) <> 1
+                                THEN 'unknown unit'
+                            ELSE COALESCE(products.base_unit_name, 'pcs')
+                        END) as display_unit_label,
                         products.name as name,
                         products.sku as sku,
                         products.purchase_price as purchase_price,
@@ -4220,6 +4225,13 @@ public function inventory(Request $request)
                                     ->where('purchases.purchase_no', 'not like', 'AUTO-STK-%')
                                     ->where('purchases.purchase_no', 'not like', 'HIST-INV-%');
                             });
+                    });
+                }
+
+                if (Schema::hasColumn('purchases', 'status')) {
+                    $purchaseHistoryQuery->where(function ($query) {
+                        $query->whereNull('purchases.status')
+                            ->orWhereNotIn(DB::raw('LOWER(TRIM(purchases.status))'), ['pending', 'draft', 'cancelled', 'canceled']);
                     });
                 }
 
@@ -4610,9 +4622,10 @@ public function inventory(Request $request)
 
             return 0;
         });
-        $openingBalance = round($currentStock - $netMovement, 6);
-        $runningBalance = $openingBalance;
-        $inventoryHistories = $orderedHistories->map(function ($row) use (&$runningBalance) {
+        $inferredOpeningBalance = round($currentStock - $netMovement, 6);
+        $runningBalance = $inferredOpeningBalance;
+        $historyReconciles = $runningBalance >= -0.000001;
+        $orderedHistories->each(function ($row) use (&$runningBalance, &$historyReconciles) {
             $type = strtolower((string) ($row->type ?? ''));
             $quantity = (float) ($row->quantity ?? 0);
             if (in_array($type, ['in', 'stock in'], true)) {
@@ -4620,8 +4633,18 @@ public function inventory(Request $request)
             } elseif (in_array($type, ['out', 'stock out', 'damage', 'damaged', 'waste', 'spoilage', 'write_off'], true)) {
                 $runningBalance -= $quantity;
             }
+            if ($runningBalance < -0.000001) {
+                $historyReconciles = false;
+            }
             $row->running_balance = round($runningBalance, 6);
             $row->stock_value = $runningBalance * (float) ($row->purchase_price ?? 0);
+        });
+        $openingBalance = $historyReconciles ? $inferredOpeningBalance : null;
+        $inventoryHistories = $orderedHistories->map(function ($row) use ($historyReconciles) {
+            if (! $historyReconciles) {
+                $row->running_balance = null;
+                $row->stock_value = null;
+            }
 
             return $row;
         })->reverse()->values();
@@ -4632,6 +4655,7 @@ public function inventory(Request $request)
             'product',
             'currentStock',
             'openingBalance',
+            'historyReconciles',
             'totalIn',
             'totalOut',
             'totalDamaged',
