@@ -151,6 +151,46 @@ class ProductBulkImportTest extends TestCase
         $this->assertDatabaseMissing('products', ['name' => 'Incomplete']);
     }
 
+    public function test_imported_packaging_matches_a_product_added_in_the_app(): void
+    {
+        $company = $this->workspace();
+        $file = $this->workbook([
+            ['Imported sachets', 'Food', 'pcs', 2, 10, 12, null, 3, 4, 250, 180],
+        ]);
+        $this->post(route('inventory.Products.import'), ['import_file' => $file, 'branch_id' => 'hq'])
+            ->assertSessionHas('success', fn ($message) => str_contains($message, 'Created: 1'));
+        $imported = Product::withoutGlobalScopes()->where('company_id', $company->id)->where('name', 'Imported sachets')->firstOrFail();
+
+        $this->post(route('inventory.Products.store'), [
+            'name' => 'Manual sachets',
+            'category_id' => $imported->category_id,
+            'measurement_mode' => 'pieces_carton',
+            'base_unit_name' => 'pcs',
+            'unit_id' => $imported->unit_id,
+            'base_unit_id' => $imported->base_unit_id,
+            'unit_type' => 'carton',
+            'units_per_carton' => 120,
+            'units_per_roll' => 12,
+            'stock_cartons' => 2,
+            'stock_rolls' => 3,
+            'stock_units' => 4,
+            'price' => 250,
+            'purchase_price' => 180,
+            'branch_id' => 'hq',
+        ])->assertSessionHasNoErrors()->assertSessionHas('success');
+        $manual = Product::withoutGlobalScopes()->where('company_id', $company->id)->where('name', 'Manual sachets')->firstOrFail();
+
+        foreach (['stock', 'units_per_carton', 'units_per_roll', 'price', 'purchase_price'] as $field) {
+            $this->assertEquals($manual->$field, $imported->$field, $field);
+        }
+        $this->assertSame($manual->stockUnitSymbol(), $imported->stockUnitSymbol());
+        $this->assertEqualsCanonicalizing($manual->salesUnitConfiguration()['options'], $imported->salesUnitConfiguration()['options']);
+        foreach ([$manual, $imported] as $product) {
+            $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $product->id, 'company_id' => $company->id, 'branch_id' => 'hq', 'quantity' => 280]);
+        }
+        $this->get(route('product-list'))->assertOk()->assertSee('Imported sachets');
+    }
+
     public function test_previous_simple_workbook_keeps_its_original_stock_calculation(): void
     {
         $this->workspace();

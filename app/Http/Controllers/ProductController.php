@@ -4819,7 +4819,7 @@ public function inventory(Request $request)
         $guide->fromArray([
             ['How to fill in the Products sheet'],
             ['1. Enter one product per row. Product Name is required; the other fields are optional.'],
-            ['2. Stock Unit is the unit you count and price: pcs, kg, litre, roll, carton, etc. Choose or type a unit.'],
+            ['2. Stock Unit is how the app counts and prices the product: choose pcs for individual pieces, kg for kilograms, or roll or carton for whole rolls or cartons.'],
             ['3. For cartons containing rolls, enter Number of Cartons, Rolls per Carton and Pcs / Units per Roll.'],
             ['4. Extra Rolls are whole rolls outside the cartons. Extra Pieces / Stock Units are individual pieces, kg, litres, etc. outside the cartons and rolls.'],
             ['5. For cartons without rolls, use Units per Carton (no rolls) instead. Leave the roll columns empty.'],

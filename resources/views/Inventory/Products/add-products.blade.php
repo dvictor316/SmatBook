@@ -486,7 +486,7 @@ body:not(.login-body):not(.landing-page-body) #add-product-page > .content.conta
                                 </div>
                                 <div class="row g-3 packaging-custom-row">
                                     <div class="col-md-4 custom-packaging-field">
-                                        <label class="form-label" id="quick_rolls_per_carton_label">Rolls Per Ctn</label>
+                                        <label class="form-label" id="quick_rolls_per_carton_label">Rolls per Carton</label>
                                         <input type="number" id="quick_rolls_per_carton_helper" min="0" step="0.01" class="form-control" value="{{ $oldRollsPerCarton }}">
                                         <small class="field-hint">Leave 0 if not used.</small>
                                     </div>
@@ -538,12 +538,12 @@ body:not(.login-body):not(.landing-page-body) #add-product-page > .content.conta
                                 <p class="product-form-muted">Leave at 0 if stock will be added later.</p>
                                 <div class="row g-3 opening-stock-fields">
                                     <div class="col-md-4 opening-carton-field">
-                                        <label class="form-label">Opening Full Cartons</label>
+                                        <label class="form-label">Number of Cartons</label>
                                         <input type="number" step="0.01" name="stock_cartons" class="form-control @error('stock_cartons') is-invalid @enderror" value="{{ old('stock_cartons', 0) }}">
                                         @error('stock_cartons')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-4 opening-roll-field">
-                                        <label class="form-label">Opening Full Rolls</label>
+                                        <label class="form-label">Extra Rolls (outside cartons)</label>
                                         <input type="number" step="0.01" name="stock_rolls" class="form-control @error('stock_rolls') is-invalid @enderror" value="{{ old('stock_rolls', 0) }}">
                                         @error('stock_rolls')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
@@ -1038,7 +1038,7 @@ $(document).ready(function () {
         $('#quick_total_opening_stock_display').val(formatQuickQty(total) + ' ' + displayUnit);
         var stockMix = standaloneCarton ? formatQuickQty(total) + ' cartons'
             : $('#measurement_mode_input').val() === 'pieces' ? formatQuickQty(pieces) + ' pcs'
-            : $('#measurement_mode_input').val() === 'pieces_carton' ? formatQuickQty(cartons) + ' cartons + ' + formatQuickQty(rolls) + ' rolls + ' + formatQuickQty(pieces) + ' loose pcs'
+            : $('#measurement_mode_input').val() === 'pieces_carton' ? formatQuickQty(cartons) + ' cartons + ' + formatQuickQty(rolls) + ' extra rolls + ' + formatQuickQty(pieces) + ' extra pcs'
             : $('#measurement_mode_input').val() === 'kg_carton'
             ? formatQuickQty(cartons) + ' ctn + ' + formatQuickQty(pieces) + ' kg'
             : formatQuickQty(cartons) + ' ctn + ' + formatQuickQty(rolls) + ' roll + ' + formatQuickQty(pieces) + ' ' + unitLabel;
@@ -1059,8 +1059,8 @@ $(document).ready(function () {
         $('#quick_pcs_per_carton_help').text('Enter the total ' + unitLabel + ' in one carton. Use this directly when selling ' + unitLabel + ' by carton.');
         $('#quick_units_per_carton_summary_label').text(titleUnit + ' Per Carton');
         $('#quick_opening_unit_label').text(standaloneCarton
-            ? 'Opening Loose Cartons (ctn)'
-            : 'Opening Loose ' + (unitLabel === 'pcs' ? 'Pieces (pcs)' : unitLabel));
+            ? 'Extra Cartons (ctn)'
+            : ($('#measurement_mode_input').val() === 'pieces' ? 'Number of ' : 'Extra ') + (unitLabel === 'pcs' ? 'Pieces (pcs)' : unitLabel));
         $('#total_opening_stock_label').text('Total Opening Stock (' + displayUnit + ')');
         $('.product-base-unit-label').text(unitLabel);
         $('#purchase_unit_cost_hint').text(standaloneCarton
@@ -1418,7 +1418,7 @@ $(document).ready(function () {
         if (mixPreview) {
             mixPreview.textContent = standaloneCarton ? formatQty(total) + ' cartons'
                 : textValue('#measurement_mode_input', 'custom') === 'pieces' ? formatQty(pieces) + ' pcs'
-                : textValue('#measurement_mode_input', 'custom') === 'pieces_carton' ? formatQty(cartons) + ' cartons + ' + formatQty(rolls) + ' rolls + ' + formatQty(pieces) + ' loose pcs'
+                : textValue('#measurement_mode_input', 'custom') === 'pieces_carton' ? formatQty(cartons) + ' cartons + ' + formatQty(rolls) + ' extra rolls + ' + formatQty(pieces) + ' extra pcs'
                 : textValue('#measurement_mode_input', 'custom') === 'kg_carton'
                 ? formatQty(cartons) + ' ctn + ' + formatQty(pieces) + ' kg'
                 : formatQty(cartons) + ' ctn + ' + formatQty(rolls) + ' roll + ' + formatQty(pieces) + ' ' + unitLabel;

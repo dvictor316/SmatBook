@@ -1326,7 +1326,7 @@
                     <div class="import-guide-panel">
                         <h6><i class="fas fa-sliders text-primary me-2"></i>Optional Columns</h6>
                         <ul class="import-guide-list">
-                            <li>Choose a Stock Unit such as pcs, kg, litre, roll or carton.</li>
+                            <li><strong>Stock Unit</strong> is how the app counts and prices the product: choose pcs for individual pieces, kg for kilograms, or roll or carton if you count only whole rolls or cartons.</li>
                             <li>Enter the number of cartons. For cartons containing rolls, enter rolls per carton and pieces per roll.</li>
                             <li>Enter any extra rolls and individual pieces outside the cartons. For kg, litres or other units, enter the extra amount in Extra Pieces / Stock Units.</li>
                             <li>If the stock unit is roll, enter Rolls per Carton and Extra Rolls; leave Pcs / Units per Roll blank.</li>
@@ -1430,8 +1430,10 @@
                         <strong>Simple steps:</strong>
                         <ul class="mb-0 ps-3">
                             <li>Download the Excel template and enter one product per row.</li>
-                            <li>Choose a stock unit. For cartons of smaller units, enter the carton size, number of cartons and any loose stock.</li>
-                            <li>Prices are per stock unit; carton prices are calculated from the carton size. Product Name is required.</li>
+                            <li>Choose how the product is counted: pcs for individual pieces, kg for kilograms, or roll or carton for whole rolls or cartons.</li>
+                            <li>Enter the number of cartons, the packaging size and any extra rolls or pieces outside the cartons.</li>
+                            <li>Prices are for one stock unit: for pcs, enter the price of one piece, not one carton. Product Name is required.</li>
+                            <li>The workbook creates new products and opening stock in the selected branch, using the same packaging conversions as the product form.</li>
                             <li>Leave SKU blank to generate one automatically.</li>
                             <li>The new template creates products and skips duplicates. Older CSV or Excel files are still accepted.</li>
                         </ul>
