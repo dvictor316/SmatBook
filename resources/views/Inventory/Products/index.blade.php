@@ -1320,15 +1320,15 @@
                     <div class="import-guide-panel">
                         <h6><i class="fas fa-circle-check text-success me-2"></i>Required Column</h6>
                         <ul class="import-guide-list">
-                            <li><strong>name</strong> - product or stock item name.</li>
+                            <li><strong>Product Name</strong> - enter one product per row.</li>
                         </ul>
                     </div>
                     <div class="import-guide-panel">
                         <h6><i class="fas fa-sliders text-primary me-2"></i>Optional Columns</h6>
                         <ul class="import-guide-list">
-                            <li>sku, barcode, category, unit, unit_type, description.</li>
-                            <li>retail_price, wholesale_price, special_price, purchase_price.</li>
-                            <li>stock, stock_units, stock_cartons, stock_rolls, units_per_carton, units_per_roll.</li>
+                            <li>Choose a Stock Unit such as pcs, kg, litre, roll or carton.</li>
+                            <li>Enter the carton size, cartons in stock and any loose stock if applicable.</li>
+                            <li>Prices are per Stock Unit; carton prices are calculated from the carton size. SKU and barcode are optional.</li>
                         </ul>
                     </div>
                 </div>
@@ -1338,43 +1338,43 @@
                         <table class="table table-sm import-example-table">
                             <thead>
                                 <tr>
-                                    <th>name</th>
-                                    <th>unit</th>
-                                    <th>unit_type</th>
-                                    <th>stock_units</th>
-                                    <th>stock</th>
-                                    <th>retail_price</th>
+                                    <th>Product Name</th>
+                                    <th>Stock Unit</th>
+                                    <th>Units per Carton</th>
+                                    <th>Cartons in Stock</th>
+                                    <th>Loose Stock</th>
+                                    <th>Total stock</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td>Rice 50kg</td>
+                                    <td>Rice</td>
                                     <td>kg</td>
-                                    <td>unit</td>
                                     <td>25</td>
-                                    <td></td>
-                                    <td>75000</td>
+                                    <td>2</td>
+                                    <td>1.5</td>
+                                    <td>51.5 kg</td>
                                 </tr>
                                 <tr>
-                                    <td>Groundnut Oil</td>
-                                    <td>litre</td>
-                                    <td>unit</td>
-                                    <td>30</td>
-                                    <td></td>
-                                    <td></td>
-                                </tr>
-                                <tr>
-                                    <td>Indomie Chicken Carton</td>
+                                    <td>Noodles</td>
                                     <td>pcs</td>
+                                    <td>40</td>
+                                    <td>10</td>
+                                    <td>5</td>
+                                    <td>405 pcs</td>
+                                </tr>
+                                <tr>
+                                    <td>Sealed boxes</td>
                                     <td>carton</td>
-                                    <td>0</td>
-                                    <td>400</td>
-                                    <td>250</td>
+                                    <td>—</td>
+                                    <td>—</td>
+                                    <td>10</td>
+                                    <td>10 cartons</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
-                    <p class="small text-muted mb-0 mt-2">For KG and LITRE products, SmartProbook uses <strong>stock_units</strong> as opening stock. Blank or text values in number fields are safely treated as 0.</p>
+                    <p class="small text-muted mb-0 mt-2">For stock counted only in cartons, choose carton and put the count in Loose Stock. The workbook includes more instructions; old templates are still supported.</p>
                 </div>
             </div>
             <div class="modal-footer">
@@ -1401,18 +1401,18 @@
                 <div class="modal-body">
                     <p class="text-muted mb-3">Use the stock spreadsheet template to import many products, prices, packaging, and opening stock quantities at once. Missing SKU values will be generated automatically.</p>
                     <div class="alert alert-info small mb-3">
-                        <strong>SmartProbook import guide:</strong>
+                        <strong>Simple steps:</strong>
                         <ul class="mb-0 ps-3">
-                            <li>Only the product name is required. Other columns can be left blank and will default safely.</li>
-                            <li>Use existing column names where possible: name, sku, barcode, category, unit, unit_type, stock, retail_price, wholesale_price, special_price, purchase_price.</li>
-                            <li>For measured products, put KG or LITRE in unit_type or unit. The importer will map them to kg or litre units.</li>
-                            <li>Packaging fields such as units_per_carton, units_per_roll, stock_cartons, stock_rolls, and stock_units must be numbers. Text values are treated as 0.</li>
-                            <li>Leave SKU blank if you want the system to generate one automatically.</li>
+                            <li>Download the Excel template and enter one product per row.</li>
+                            <li>Choose a stock unit. For cartons of smaller units, enter the carton size, number of cartons and any loose stock.</li>
+                            <li>Prices are per stock unit; carton prices are calculated from the carton size. Product Name is required.</li>
+                            <li>Leave SKU blank to generate one automatically.</li>
+                            <li>The new template creates products and skips duplicates. Older CSV or Excel files are still accepted.</li>
                         </ul>
                     </div>
                     <div class="mb-3">
                         <a href="<?php echo e(route('inventory.Products.import.template')); ?>" class="btn btn-light border w-100">
-                            <i class="far fa-file-lines me-2"></i>Download Stock CSV Template
+                            <i class="far fa-file-excel me-2"></i>Download Simple Excel Template
                         </a>
                     </div>
                     <div>
@@ -1424,7 +1424,7 @@
                             <input type="checkbox" name="update_existing" value="1">
                             <span>Update existing products when duplicates are found</span>
                         </label>
-                        <small class="text-muted">When enabled, imports will update matching items instead of skipping them.</small>
+                        <small class="text-muted">For older spreadsheets only. The simple template cannot update existing products.</small>
                     </div>
                     <div>
                         <label class="form-label">Apply Opening Stock To Branch</label>

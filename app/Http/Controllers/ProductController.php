@@ -27,6 +27,9 @@ use App\Support\InventoryQuantity;
 use App\Support\PriceListUsage;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use PhpOffice\PhpSpreadsheet\Style\Style;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -361,13 +364,13 @@ class ProductController extends Controller
         return in_array($value, ['unit', 'single', 'loose', 'each', 'sachet', 'satchet', 'roll', 'carton', 'ctn', 'box', 'case'], true);
     }
 
-    private function resolveImportUnit(string $baseUnitName, string $unitTypeValue = ''): array
+    private function resolveImportUnit(string $baseUnitName, string $unitTypeValue = '', bool $allowPackagingUnit = false): array
     {
         $source = trim($baseUnitName);
         if ($source === '' || Str::lower($source) === 'unit') {
             $source = trim($unitTypeValue);
         }
-        if ($source === '' || $this->isPackagingUnitType($source)) {
+        if ($source === '' || (!$allowPackagingUnit && $this->isPackagingUnitType($source))) {
             $source = 'pcs';
         }
 
@@ -901,7 +904,9 @@ class ProductController extends Controller
         $spreadsheet = $reader->load($file->getRealPath());
 
         try {
-            $sheet = $spreadsheet->getActiveSheet();
+            $sheet = $spreadsheet->getSheetByName('Products') && $spreadsheet->getSheetByName('How to use')
+                ? $spreadsheet->getSheetByName('Products')
+                : $spreadsheet->getActiveSheet();
             foreach ($sheet->getRowIterator() as $row) {
                 $cells = [];
                 $cellIterator = $row->getCellIterator();
@@ -1021,6 +1026,7 @@ class ProductController extends Controller
             'base_unit' => 'unit',
             'base_unit_name' => 'unit',
             'unit_measure' => 'unit',
+            'stock_unit' => 'unit',
             'packaging' => 'unit_type',
             'packaging_type' => 'unit_type',
             'type' => 'unit_type',
@@ -1038,6 +1044,7 @@ class ProductController extends Controller
             'opening_qty' => 'stock',
             'cartons' => 'stock_cartons',
             'opening_cartons' => 'stock_cartons',
+            'cartons_in_stock' => 'stock_cartons',
             'rolls' => 'stock_rolls',
             'opening_rolls' => 'stock_rolls',
             'pieces' => 'stock_units',
@@ -4773,43 +4780,72 @@ public function inventory(Request $request)
     }
     public function downloadImportTemplate()
     {
-        $headers = [
-            'name',
-            'sku',
-            'barcode',
-            'category',
-            'unit',
-            'unit_type',
-            'units_per_carton',
-            'units_per_roll',
-            'stock_cartons',
-            'stock_rolls',
-            'stock_units',
-            'retail_price',
-            'wholesale_price',
-            'special_price',
-            'purchase_price',
-            'stock',
-            'description',
-        ];
-
-        $rows = [
-            ['Rice 50kg', '', '1234567890123', 'Foodstuff', 'kg', 'unit', '0', '0', '0', '0', '25', '75000', '73500', '72000', '70000', '25', 'Measured directly in kilogram'],
-            ['Indomie Chicken Carton', '', '2234567890123', 'Noodles', 'pcs', 'carton', '40', '0', '10', '0', '0', '250', '230', '220', '180', '400', 'Fast moving carton item'],
-            ['Tissue Roll Premium', '', '8800112233445', 'Toiletries', 'roll', 'roll', '12', '1', '5', '12', '0', '1500', '1400', '1350', '1100', '120', 'Can be sold as roll or carton'],
-        ];
-
-        $content = implode(',', $headers) . "\n";
-        foreach ($rows as $row) {
-            $content .= implode(',', array_map(function ($value) {
-                $escaped = str_replace('"', '""', (string) $value);
-                return '"' . $escaped . '"';
-            }, $row)) . "\n";
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet()->setTitle('Products');
+        $sheet->fromArray([[
+            'Product Name', 'Category', 'Stock Unit', 'Units per Carton', 'Cartons in Stock',
+            'Loose Stock', 'Selling Price', 'Cost Price', 'Wholesale Price', 'Special Price',
+            'SKU', 'Barcode', 'Description',
+        ]]);
+        $sheet->freezePane('A2');
+        $sheet->getStyle('A1:M1')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+        $sheet->getStyle('A1:M1')->getFill()->setFillType('solid')->getStartColor()->setRGB('15304F');
+        $sheet->setAutoFilter('A1:M1');
+        foreach (range('A', 'M') as $column) {
+            $sheet->getColumnDimension($column)->setWidth(in_array($column, ['A', 'M'], true) ? 26 : 20);
         }
+        $textStyle = new Style();
+        $textStyle->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_TEXT);
+        $spreadsheet->addCellXf($textStyle);
+        $sheet->getColumnDimension('K')->setXfIndex($textStyle->getIndex());
+        $sheet->getColumnDimension('L')->setXfIndex($textStyle->getIndex());
+        $validation = $sheet->getCell('C2')->getDataValidation();
+        $validation->setType(DataValidation::TYPE_LIST);
+        $validation->setFormula1('"pcs,kg,litre,roll,carton,pack,bag,bottle,sachet,g,metre"');
+        $validation->setShowDropDown(true);
+        $validation->setShowInputMessage(true);
+        $validation->setPromptTitle('Stock unit');
+        $validation->setPrompt('Choose a unit or type another unit.');
+        $validation->setShowErrorMessage(false);
+        $validation->setSqref('C2:C10001');
 
-        return response($content, 200, [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="product-import-template.csv"',
+        $guide = $spreadsheet->createSheet()->setTitle('How to use');
+        $guide->fromArray([
+            ['How to fill in the Products sheet'],
+            ['1. Enter one product per row. Product Name is required; the other fields are optional.'],
+            ['2. Stock Unit is the unit you count and price: pcs, kg, litre, roll, carton, etc. Choose or type a unit.'],
+            ['3. For cartons containing smaller units, enter Units per Carton (greater than 1) and Cartons in Stock.'],
+            ['4. Loose Stock is the extra quantity in the Stock Unit, outside those cartons.'],
+            ['5. Prices are per Stock Unit. Carton prices are calculated from the carton size and can be edited later.'],
+            ['6. For products counted only in cartons, choose carton and enter the count in Loose Stock.'],
+            ['7. Leave SKU blank to generate it automatically. Format barcodes as text to preserve leading zeroes.'],
+            ['8. Save the workbook and upload it. This template creates new products and skips duplicates.'],
+            [],
+            ['Product Name', 'Category', 'Stock Unit', 'Units per Carton', 'Cartons in Stock', 'Loose Stock', 'Selling Price', 'Cost Price'],
+            ['Noodles', 'Food', 'pcs', 40, 10, 5, 250, 180],
+            ['Rice', 'Food', 'kg', 25, 2, 1.5, 1500, 1200],
+            ['Tissue', 'Household', 'roll', 12, 5, 2, 500, 400],
+            ['Sealed boxes', 'Food', 'carton', '', '', 10, 5000, 4000],
+            [],
+            ['Noodles: 10 x 40 + 5 = 405 pcs. Rice: 2 x 25 + 1.5 = 51.5 kg.'],
+            ['Examples are for guidance only; enter your own products on the Products sheet.'],
+        ]);
+        $guide->getColumnDimension('A')->setWidth(95);
+        foreach (range('B', 'H') as $column) {
+            $guide->getColumnDimension($column)->setWidth(20);
+        }
+        $guide->getStyle('A1:A1')->getFont()->setBold(true)->setSize(14);
+        $guide->getStyle('A11:H11')->getFont()->setBold(true);
+        $spreadsheet->setActiveSheetIndex(0);
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            try {
+                (new Xlsx($spreadsheet))->save('php://output');
+            } finally {
+                $spreadsheet->disconnectWorksheets();
+            }
+        }, 'product-import-template.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ]);
     }
 
@@ -4837,12 +4873,17 @@ public function inventory(Request $request)
             $file = $request->file('import_file');
             $header = null;
             $headerRowNumber = null;
+            $simpleTemplate = false;
 
             foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
                 $candidateHeader = array_map(fn ($value) => $this->normalizeImportHeaderCell($value), $row);
                 if ($this->isImportHeaderRow($candidateHeader)) {
                     $header = $candidateHeader;
                     $headerRowNumber = $rowNumber;
+                    $rawHeader = array_map(fn ($value) => Str::lower(trim((string) $value)), $row);
+                    $simpleTemplate = in_array('loose_stock', $header, true)
+                        || in_array('stock unit', $rawHeader, true)
+                        || in_array('cartons in stock', $rawHeader, true);
                     break;
                 }
             }
@@ -4871,6 +4912,13 @@ public function inventory(Request $request)
                     return redirect()->back()->with('error', 'Missing required import column: ' . $column);
                 }
             }
+            if ($simpleTemplate) {
+                $missingColumns = array_diff(['unit', 'units_per_carton', 'stock_cartons', 'loose_stock'], $header);
+                $nonEmptyHeader = array_filter($header, fn ($column) => $column !== '');
+                if ($missingColumns || count($nonEmptyHeader) !== count(array_unique($nonEmptyHeader))) {
+                    return redirect()->back()->with('error', 'The simple template has missing or repeated columns. Download a fresh template and keep all column headings unchanged.');
+                }
+            }
 
             $created = 0;
             $updated = 0;
@@ -4881,9 +4929,12 @@ public function inventory(Request $request)
             $openingStockAdded = 0.0;
             $rowErrors = [];
             $updateExisting = $request->boolean('update_existing');
+            if ($simpleTemplate && $updateExisting) {
+                return redirect()->back()->with('error', 'The simple template is for new products only. Uncheck "Update existing products" and upload again.');
+            }
             $createdIds = [];
 
-            DB::transaction(function () use ($file, $header, $headerRowNumber, &$created, &$updated, &$updatedExisting, &$skipped, &$duplicates, &$missingRequired, &$openingStockAdded, &$rowErrors, &$createdIds, $updateExisting, $request) {
+            DB::transaction(function () use ($file, $header, $headerRowNumber, &$created, &$updated, &$updatedExisting, &$skipped, &$duplicates, &$missingRequired, &$openingStockAdded, &$rowErrors, &$createdIds, $updateExisting, $simpleTemplate, $request) {
                 $activeBranch = $this->resolveBranchContext($request->input('branch_id'));
 
                 foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
@@ -4894,6 +4945,10 @@ public function inventory(Request $request)
                     $rowData = [];
                     foreach ($header as $index => $column) {
                         $rowData[$column] = trim((string) ($row[$index] ?? ''));
+                    }
+
+                    if ($simpleTemplate && collect($rowData)->every(fn ($value) => $value === '')) {
+                        continue;
                     }
 
                     $requiredFields = ['name'];
@@ -4912,7 +4967,49 @@ public function inventory(Request $request)
                         continue;
                     }
 
+                    $rowTransactionStarted = false;
                     try {
+                        if ($simpleTemplate) {
+                            $numberFields = [
+                                'units_per_carton' => 'Units per Carton',
+                                'stock_cartons' => 'Cartons in Stock',
+                                'loose_stock' => 'Loose Stock',
+                                'retail_price' => 'Selling Price',
+                                'purchase_price' => 'Cost Price',
+                                'wholesale_price' => 'Wholesale Price',
+                                'special_price' => 'Special Price',
+                            ];
+                            $error = null;
+                            foreach ($numberFields as $field => $label) {
+                                $value = str_replace(',', '', $rowData[$field] ?? '');
+                                if ($value !== '' && (!is_numeric($value) || (float) $value < 0)) {
+                                    $error = $label . ' must be a non-negative number';
+                                    break;
+                                }
+                            }
+                            $cartons = $this->importNumericValue($rowData['stock_cartons'] ?? '');
+                            $perCarton = $this->importNumericValue($rowData['units_per_carton'] ?? '');
+                            $unit = Str::lower(trim($rowData['unit'] ?? ''));
+                            if (!$error && $cartons > 0 && $perCarton <= 0) {
+                                $error = 'enter Units per Carton when Cartons in Stock is entered';
+                            } elseif (!$error && in_array($unit, ['carton', 'cartons', 'ctn'], true) && ($cartons > 0 || $perCarton > 0)) {
+                                $error = 'for stock counted as cartons, put the carton count in Loose Stock and leave the carton columns blank';
+                            } elseif (!$error && $perCarton > 0 && $perCarton <= 1) {
+                                $error = 'Units per Carton must be greater than 1; use a smaller stock unit or count cartons directly';
+                            }
+                            if ($error) {
+                                $skipped++;
+                                if (count($rowErrors) < 10) {
+                                    $rowErrors[] = 'Row ' . ($rowNumber + 1) . ': ' . $error;
+                                }
+                                continue;
+                            }
+                        }
+
+                        if ($simpleTemplate) {
+                            DB::beginTransaction();
+                            $rowTransactionStarted = true;
+                        }
                         $categoryName = trim((string) ($rowData['category'] ?? 'General'));
                         $category = $this->firstOrCreateImportCategory($categoryName !== '' ? $categoryName : 'General');
 
@@ -4924,7 +5021,7 @@ public function inventory(Request $request)
                             ?? $rowData['measurement_unit']
                             ?? $rowData['base_unit_name']
                             ?? '';
-                        $importUnit = $this->resolveImportUnit($importUnitValue, $rawUnitType);
+                        $importUnit = $this->resolveImportUnit($importUnitValue, $rawUnitType, $simpleTemplate);
 
                         $providedSku = $rowData['sku'] ?? null;
                         $barcode = $rowData['barcode'] ?? null;
@@ -4936,6 +5033,10 @@ public function inventory(Request $request)
                             ->limit(1);
                         $existing = $productQuery->first();
                         if ($existing && !$updateExisting) {
+                            if ($rowTransactionStarted) {
+                                DB::rollBack();
+                                $rowTransactionStarted = false;
+                            }
                             $skipped++;
                             $duplicates++;
                             if (count($rowErrors) < 10) {
@@ -4955,14 +5056,16 @@ public function inventory(Request $request)
                         $packagingValues = [
                             'stock_cartons' => $this->importNumericValue($rowData['stock_cartons'] ?? 0),
                             'stock_rolls' => $this->importNumericValue($rowData['stock_rolls'] ?? 0),
-                            'stock_units' => $this->importNumericValue($rowData['stock_units'] ?? 0),
-                            'units_per_carton' => max(0, (int) $this->importNumericValue($rowData['units_per_carton'] ?? 0)),
+                            'stock_units' => $this->importNumericValue($simpleTemplate ? ($rowData['loose_stock'] ?? 0) : ($rowData['stock_units'] ?? 0)),
+                            'units_per_carton' => max(0, $simpleTemplate ? $this->importNumericValue($rowData['units_per_carton'] ?? 0) : (int) $this->importNumericValue($rowData['units_per_carton'] ?? 0)),
                             'units_per_roll' => max(0, (int) $this->importNumericValue($rowData['units_per_roll'] ?? 0)),
                         ];
 
                         $isMeasuredUnit = $this->isMeasuredImportUnit((string) $importUnitValue, $rawUnitType)
                             || $this->isMeasuredImportUnit((string) ($importUnit['symbol'] ?? ''), $rawUnitType);
-                        $stock = $isMeasuredUnit
+                        $stock = $simpleTemplate
+                            ? round($packagingValues['stock_cartons'] * $packagingValues['units_per_carton'] + $packagingValues['stock_units'], 6)
+                            : ($isMeasuredUnit
                             ? $packagingValues['stock_units']
                             : (is_numeric(str_replace(',', '', (string) ($rowData['stock'] ?? '')))
                             ? (int) $this->importNumericValue($rowData['stock'])
@@ -4972,7 +5075,13 @@ public function inventory(Request $request)
                                 'stock_units' => $packagingValues['stock_units'],
                                 'units_per_carton' => $packagingValues['units_per_carton'],
                                 'units_per_roll' => $packagingValues['units_per_roll'],
-                            ]));
+                            ])));
+                        if ($simpleTemplate) {
+                            $unitType = $packagingValues['units_per_carton'] > 0
+                                || in_array(Str::lower(trim((string) $importUnitValue)), ['carton', 'cartons', 'ctn'], true)
+                                ? 'carton'
+                                : (Str::lower(trim((string) $importUnitValue)) === 'roll' ? 'roll' : 'unit');
+                        }
 
                         $retailPrice = ($rowData['retail_price'] ?? '') !== '' ? $rowData['retail_price'] : ($rowData['price'] ?? '');
                         $payload = $this->sanitizeForProductColumns([
@@ -5011,6 +5120,11 @@ public function inventory(Request $request)
                             $activeBranch,
                             (int) ($product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0)
                         );
+                        if ($simpleTemplate) {
+                            $this->syncProductUnitRows($product->fresh(['unit', 'baseUnit', 'purchaseUnit']));
+                            DB::commit();
+                            $rowTransactionStarted = false;
+                        }
                         $openingStockAdded += max(0.0, (float) $stock);
 
                         if ($isNew) {
@@ -5023,7 +5137,13 @@ public function inventory(Request $request)
                             }
                         }
                     } catch (\Throwable $rowException) {
+                        if ($rowTransactionStarted) {
+                            DB::rollBack();
+                        }
                         $skipped++;
+                        if ($simpleTemplate && count($rowErrors) < 10) {
+                            $rowErrors[] = 'Row ' . ($rowNumber + 1) . ': could not be imported; check the product details';
+                        }
                         Log::warning('Product import row skipped.', [
                             'row' => $rowNumber + 1,
                             'name' => $rowData['name'] ?? null,
