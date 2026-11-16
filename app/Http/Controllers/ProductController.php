@@ -4783,16 +4783,21 @@ public function inventory(Request $request)
             'Content-Type' => $contentType,
         ]);
     }
-    public function downloadImportTemplate()
+    private function productImportTemplateHeaders(): array
     {
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet()->setTitle('Products');
-        $sheet->fromArray([[
+        return [
             'Product Name', 'Category', 'Stock Unit', 'Rolls per Carton',
             'Pcs / Units per Roll', 'Units per Carton (no rolls)', 'Number of Cartons', 'Extra Rolls', 'Extra Pieces / Stock Units',
             'Selling Price', 'Cost Price', 'Wholesale Price', 'Special Price',
             'SKU', 'Barcode', 'Description',
-        ]], null, 'A2');
+        ];
+    }
+
+    public function downloadImportTemplate()
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet()->setTitle('Products');
+        $sheet->fromArray([$this->productImportTemplateHeaders()], null, 'A2');
         foreach ([
             'A1:B1' => ['Product details', '15304F'],
             'C1:F1' => ['Packaging / measurements', '245879'],
@@ -4899,6 +4904,17 @@ public function inventory(Request $request)
 
             foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
                 $candidateHeader = array_map(fn ($value) => $this->normalizeImportHeaderCell($value), $row);
+                if (!$this->isImportHeaderRow($candidateHeader)) {
+                    // Recover only the complete template affected by replacing "c" with "Carton".
+                    $templateHeaders = $this->productImportTemplateHeaders();
+                    $restoredRow = array_map(fn ($value) => str_ireplace('carton', 'c', (string) $value), $row);
+                    $normalize = fn ($value) => Str::lower(trim((string) $value));
+                    if (array_map($normalize, array_slice($restoredRow, 0, count($templateHeaders))) === array_map($normalize, $templateHeaders)
+                        && count(array_filter(array_slice($row, count($templateHeaders)), fn ($value) => trim((string) $value) !== '')) === 0) {
+                        $row = $restoredRow;
+                        $candidateHeader = array_map(fn ($value) => $this->normalizeImportHeaderCell($value), $row);
+                    }
+                }
                 if ($this->isImportHeaderRow($candidateHeader)) {
                     $header = $candidateHeader;
                     $headerRowNumber = $rowNumber;

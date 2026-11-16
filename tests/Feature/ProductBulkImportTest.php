@@ -190,6 +190,55 @@ class ProductBulkImportTest extends TestCase
         $this->assertEquals(4, $previous->stock);
     }
 
+    public function test_import_recognizes_the_template_when_c_was_replaced_in_every_heading(): void
+    {
+        $company = $this->workspace();
+        $file = $this->workbook([
+            ['Carton product', 'Food', 'c', '', '', '', 10, '', '', 5000, 4000, 4500, 4200, 'BOX-1', '001234', 'Sample'],
+            ['Piece product', 'Food', 'pcs', '', '', 40, 2, '', 5, 250, 180],
+        ]);
+        $spreadsheet = IOFactory::load($file->getRealPath());
+        $sheet = $spreadsheet->getSheetByName('Products');
+        foreach (range('A', 'P') as $column) {
+            $cell = $sheet->getCell($column.'2');
+            $cell->setValue(str_ireplace('c', 'Carton', $cell->getValue()));
+        }
+        $this->assertSame('ProduCartont Name', $sheet->getCell('A2')->getValue());
+        $this->assertSame('StoCartonk Unit', $sheet->getCell('C2')->getValue());
+        (new Xlsx($spreadsheet))->save($file->getRealPath());
+        $spreadsheet->disconnectWorksheets();
+
+        $this->post(route('inventory.Products.import'), ['import_file' => $file])
+            ->assertSessionHas('success', fn ($message) => str_contains($message, 'Created: 2'));
+        $carton = Product::withoutGlobalScopes()->where('company_id', $company->id)->where('name', 'Carton product')->firstOrFail();
+        $this->assertSame('ctn', $carton->stockUnitSymbol());
+        $this->assertDatabaseHas('products', [
+            'id' => $carton->id, 'stock' => 10, 'price' => 5000, 'purchase_price' => 4000,
+            'wholesale_price' => 4500, 'special_price' => 4200, 'sku' => 'BOX-1', 'barcode' => '001234', 'description' => 'Sample',
+        ]);
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $carton->id, 'branch_id' => 'hq', 'quantity' => 10]);
+        $this->assertDatabaseHas('products', ['company_id' => $company->id, 'name' => 'Piece product', 'stock' => 85, 'price' => 250]);
+    }
+
+    public function test_corrupted_template_with_an_unknown_heading_is_not_imported(): void
+    {
+        $this->workspace();
+        $file = $this->workbook([['Must not import', '', 'c', '', '', '', 5, '', '', 10, 5]]);
+        $spreadsheet = IOFactory::load($file->getRealPath());
+        $sheet = $spreadsheet->getSheetByName('Products');
+        foreach (range('A', 'P') as $column) {
+            $cell = $sheet->getCell($column.'2');
+            $cell->setValue(str_ireplace('c', 'Carton', $cell->getValue()));
+        }
+        $sheet->setCellValue('G2', 'Unknown stock column');
+        (new Xlsx($spreadsheet))->save($file->getRealPath());
+        $spreadsheet->disconnectWorksheets();
+
+        $this->post(route('inventory.Products.import'), ['import_file' => $file])
+            ->assertSessionHas('error', fn ($message) => str_contains($message, 'No valid product header'));
+        $this->assertDatabaseMissing('products', ['name' => 'Must not import']);
+    }
+
     public function test_imported_packaging_matches_a_product_added_in_the_app(): void
     {
         $company = $this->workspace();
