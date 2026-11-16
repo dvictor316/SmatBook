@@ -100,6 +100,32 @@
         background: #eef2ff;
     }
 
+    #importProductsModal .modal-content > form {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    #importProductsModal .modal-body {
+        min-height: 0;
+        scrollbar-width: thin;
+        scrollbar-color: #54749d #edf2f7;
+    }
+
+    #importProductsModal .modal-body::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    #importProductsModal .modal-body::-webkit-scrollbar-track {
+        background: #edf2f7;
+    }
+
+    #importProductsModal .modal-body::-webkit-scrollbar-thumb {
+        background: #54749d;
+        border-radius: 6px;
+    }
+
     .inventory-toolbar {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1424,7 +1450,7 @@
 </div>
 
 <div class="modal fade" id="importProductsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <form method="POST" action="<?php echo e(route('inventory.Products.import')); ?>" enctype="multipart/form-data">
                 <?php echo csrf_field(); ?>
@@ -1432,7 +1458,7 @@
                     <h5 class="modal-title">Bulk Stock Import</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" tabindex="0">
                     <p class="text-muted mb-3">Use the stock spreadsheet template to import many products, prices, packaging, and opening stock quantities at once. Missing SKU values will be generated automatically.</p>
                     <div class="alert alert-info small mb-3">
                         <strong>Simple steps:</strong>
