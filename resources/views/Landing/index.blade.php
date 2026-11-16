@@ -199,7 +199,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .sb-brand-logo { height: 58px; }
 }
 
-@media (max-width: 1199.98px) {
+@media (max-width: 1023.98px) {
     #mujiNav {
         position: fixed;
         top: var(--nav-h);
@@ -226,6 +226,18 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     #mujiNav .sb-nav-link:hover { background: rgba(28,102,232,0.06) !important; color: #1c66e8 !important; }
     #mujiNav .btn-portal { width: 100%; justify-content: center; margin-top: 12px; }
     #mujiNav .ms-lg-3 { margin-left: 0 !important; margin-top: 4px; }
+}
+
+@media (min-width: 1024px) and (max-width: 1199.98px) {
+    nav.sb-nav .container { flex-wrap: nowrap; gap: 8px; }
+    .sb-brand { flex: 0 0 auto; gap: 5px; }
+    .sb-brand img { height: 42px; }
+    .spb-nav-wordmark { font-size: .9rem; }
+    nav.sb-nav .navbar-toggler { display: none; }
+    nav.sb-nav #mujiNav { display: flex !important; flex-basis: auto; flex-grow: 1; }
+    #mujiNav .navbar-nav { flex-direction: row; align-items: center; gap: 0 !important; }
+    #mujiNav .sb-nav-link { padding: 6px 6px; font-size: .66rem; letter-spacing: .2px; }
+    #mujiNav .btn-portal { padding: 8px 12px; font-size: .65rem; letter-spacing: .2px; white-space: nowrap; }
 }
 
 /* ── BUTTONS ── */

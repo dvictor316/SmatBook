@@ -6,7 +6,7 @@
             const menu = document.getElementById(button.getAttribute('aria-controls'));
             if (!menu || button.dataset.navigationBound) return;
             button.dataset.navigationBound = 'true';
-            const compact = window.matchMedia('(max-width: 1199.98px)');
+            const compact = window.matchMedia('(max-width: 1023.98px)');
             const openClass = button.dataset.menuOpenClass || 'active';
             let open = false;
             const setOpen = (next, restoreFocus = false) => {

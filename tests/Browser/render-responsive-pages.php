@@ -24,6 +24,17 @@ foreach (['home' => '/', 'about' => '/about-us', 'pricing' => '/membership-plans
 }
 // Render an authenticated agent dashboard through the same Blade layouts without touching a live database.
 $company = App\Models\Company::create(['name' => 'Responsive Test', 'plan' => 'Enterprise']);
+App\Models\StorefrontSetting::create(['company_id' => $company->id, 'slug' => 'responsive-store', 'store_name' => 'Responsive Store', 'is_enabled' => true]);
+foreach (['store-home' => '/shop/responsive-store', 'store-gallery' => '/shop/responsive-store/products', 'store-about' => '/shop/responsive-store/about'] as $file => $path) {
+    $request = Illuminate\Http\Request::create('http://localhost'.$path);
+    $response = $kernel->handle($request);
+    if ($response->getStatusCode() !== 200) {
+        throw new RuntimeException($file.': unexpected status '.$response->getStatusCode());
+    }
+    file_put_contents($output.'/'.$file.'.html', $response->getContent());
+    echo $file.': '.$response->getStatusCode().PHP_EOL;
+    $kernel->terminate($request, $response);
+}
 $user = App\Models\User::factory()->create(['role' => 'agent', 'company_id' => $company->id]);
 Illuminate\Support\Facades\Auth::login($user);
 session(['current_tenant_id' => $company->id]);

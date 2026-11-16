@@ -974,7 +974,7 @@
         }
 
         /* ===== TABLET LAYOUT ===== */
-        @media (max-width: 1199.98px) {
+        @media (max-width: 1023.98px) {
             :root {
                 --landing-nav-height: 64px;
             }
@@ -997,7 +997,7 @@
 
             .hamburger { 
                 display: flex; 
-                order: 0;
+                order: 1;
                 width: 44px;
                 height: 44px;
                 align-items: center;
@@ -1012,7 +1012,8 @@
             }
 
             .logo-container {
-                order: 1;
+                order: 0;
+                margin-right: auto;
             }
 
             .nav-links { 
@@ -1112,7 +1113,9 @@
                 width: 100%;
                 min-width: 0;
             }
+        }
 
+        @media (max-width: 1199.98px) {
             .pricing-grid, 
             .footer-grid { 
                 grid-template-columns: 1fr; 

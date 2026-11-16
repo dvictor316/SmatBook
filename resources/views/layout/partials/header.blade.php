@@ -1017,7 +1017,7 @@
         }
     }
 
-    @media (min-width: 1200px) {
+    @media (min-width: 1024px) {
         .header {
             padding-left: clamp(8px, 1.2vw, 20px);
             padding-right: clamp(8px, 1.2vw, 20px);
@@ -1115,18 +1115,18 @@
     #sidebar-overlay.active { display: block; }
 
     /* On mobile: sidebar starts off-screen left, slides in when .mobile-open */
-    @media (max-width: 1199.98px) {
+    @media (max-width: 1023.98px) {
 
         /* ── Header layout ── */
         .header {
             --header-item-gap: 10px;
             --header-action-gap: 6px;
         }
-        .header-logo    { width: auto; margin-right: 0; max-width: 196px; order: 1; }
+        .header-logo    { width: auto; margin-right: 0; max-width: 196px; order: 0; }
         .header-toggle,
         #toggle_btn.header-toggle,
         #toggle_btn     { display: none !important; }
-        #mobile_btn     { display: inline-flex !important; order: 0; }
+        #mobile_btn     { display: inline-flex !important; order: 1; }
         .dm-hamburger { display: none !important; }
         .header-search-container { display: none; }
         .mobile-search-btn       { display: flex; }
@@ -1247,7 +1247,7 @@
 
 
 
-    @media (min-width: 768px) and (max-width: 1199.98px) {
+    @media (min-width: 768px) and (max-width: 1023.98px) {
         .header {
             --header-item-gap: 14px;
             --header-action-gap: 10px;
@@ -1323,7 +1323,7 @@
     body.sidebar-collapsed .spb-wordmark,
     body.mini-sidebar .spb-wordmark { display: none; }
 
-    @media (max-width: 1199.98px) {
+    @media (max-width: 1023.98px) {
         :root {
             --spb-header-offset: 70px;
         }
@@ -1339,7 +1339,7 @@
             overflow: visible;
         }
         .header-logo {
-            order: 1;
+            order: 0;
             justify-content: flex-start;
             gap: 0;
             min-width: 0;
@@ -1358,7 +1358,7 @@
             pointer-events: none;
         }
         #mobile_btn {
-            order: 0;
+            order: 1;
             top: 0;
         }
 
@@ -1589,7 +1589,7 @@
         }
     }
 
-    @media (max-width: 1199.98px) {
+    @media (max-width: 1023.98px) {
         :root { --spb-header-offset: 70px; }
 
         .header {
@@ -1606,7 +1606,7 @@
             position: relative !important;
             top: 0 !important;
             left: auto !important;
-            order: 0;
+            order: 1;
             flex: 0 0 44px;
             width: 44px;
             height: 44px;
@@ -1615,7 +1615,7 @@
         .header-logo {
             position: static;
             display: flex;
-            order: 1;
+            order: 0;
             flex: 0 0 auto;
             align-items: center;
             gap: 5px;
@@ -1725,7 +1725,7 @@
         }
     }
 
-    @media (min-width: 768px) and (max-width: 1199.98px) {
+    @media (min-width: 768px) and (max-width: 1023.98px) {
         .header {
             padding: 0 clamp(14px, 2.5vw, 28px);
             gap: clamp(8px, 1.2vw, 14px);
@@ -2230,7 +2230,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const compactSidebar = window.matchMedia('(max-width: 1199.98px)');
+    const compactSidebar = window.matchMedia('(max-width: 1023.98px)');
     const readPreference = (key) => { try { return localStorage.getItem(key); } catch (_) { return null; } };
     const writePreference = (key, value) => { try { localStorage.setItem(key, value); } catch (_) {} };
 

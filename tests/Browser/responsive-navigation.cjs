@@ -8,13 +8,13 @@ const publicDir = path.resolve(__dirname, '../../public');
 (async () => {
  const browser = await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE || undefined, headless:true});
  const checks=[]; const failures=[];
- for (const [name,url,fixture,blocked] of [['home','/','home'],['about','/about-us','about'],['pricing','/membership-plans','pricing'],['blog','/blog','blog'],['blog-article','/blog/inventory-insights','blog-article'],['dashboard','/agent/dashboard','dashboard'],['manager','/agent/dashboard','manager'],['dashboard-storage','/agent/dashboard','dashboard',true]]) {
-  const context=await browser.newContext({viewport:{width:800,height:1024},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
+ for (const [name,url,fixture,blocked] of [['home','/','home'],['about','/about-us','about'],['pricing','/membership-plans','pricing'],['blog','/blog','blog'],['blog-article','/blog/inventory-insights','blog-article'],['dashboard','/agent/dashboard','dashboard'],['manager','/agent/dashboard','manager'],['dashboard-storage','/agent/dashboard','dashboard',true],['store-home','/shop/responsive-store','store-home'],['store-gallery','/shop/responsive-store/products','store-gallery'],['store-about','/shop/responsive-store/about','store-about']]) {
+  const context=await browser.newContext({viewport:{width:name.startsWith('store-')?390:800,height:1024},hasTouch:true,isMobile:true,reducedMotion:'reduce'});
   await context.route('**/*',async route=>{
    const u=new URL(route.request().url());
    if(u.hostname!=='localhost') return route.abort();
    if(u.pathname===url) return route.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(fixtureDir, `${fixture}.html`))});
-   if(u.pathname.startsWith('/assets/')) {
+   if(['/assets/', '/css/', '/js/'].some(prefix => u.pathname.startsWith(prefix))) {
     const file=path.join(publicDir,u.pathname);
     if(fs.existsSync(file)) {
      const ext=path.extname(file); const contentType={'.js':'application/javascript','.css':'text/css','.png':'image/png','.svg':'image/svg+xml','.woff2':'font/woff2','.jpg':'image/jpeg','.woff':'font/woff','.ttf':'font/ttf'}[ext]||'application/octet-stream';
@@ -27,12 +27,15 @@ const publicDir = path.resolve(__dirname, '../../public');
   const page=await context.newPage(); page.setDefaultTimeout(4000); page.setDefaultNavigationTimeout(30000);
   const errors=[]; page.on('pageerror', e=>errors.push(e.message));
   await page.goto('http://localhost'+url,{waitUntil:'load'});
-  for(const width of [320,360,390,599,600,750,768,800,820,862,991,992,1024,1180,1199,1200,1280,1440,1920]) {
+  for(const width of [320,360,390,599,600,750,768,800,820,862,991,992,1023,1024,1180,1199,1200,1280,1440,1920]) {
    try {
     await page.setViewportSize({width,height:1024});
+    if (name.startsWith('store-')) await page.reload({waitUntil:'load'});
     await page.waitForTimeout(80); await page.keyboard.press('Escape');
     const geometry=await page.evaluate(()=>({viewport:innerWidth,scroll:document.documentElement.scrollWidth}));
-    assert(geometry.scroll <= width+1,`${name} ${width}: horizontal overflow ${geometry.scroll}`);
+    if (!name.startsWith('store-') || width < 768 || width >= 1024) {
+     assert(geometry.scroll <= width+1,`${name} ${width}: horizontal overflow ${geometry.scroll}`);
+    }
     if (name === 'home' && width < 992) {
      assert(!(await page.locator('.spb-support-floating').isVisible()), `home ${width}: support prompt covers page content`);
     }
@@ -88,9 +91,31 @@ const publicDir = path.resolve(__dirname, '../../public');
      await page.setViewportSize({width:862,height:1024});
      await page.locator('#mobile_btn').evaluate(button => button.replaceWith(button.cloneNode(true)));
     }
-    if(name!=='pricing') {
+    if (name.startsWith('store-')) {
+     const toggle = page.locator('.store-menu-toggle');
+     if (width < 768) {
+      const brandRect = await page.locator('.store-nav .brand').boundingBox();
+      const toggleRect = await toggle.boundingBox();
+      assert(brandRect.x + brandRect.width <= toggleRect.x + 1, `${name} ${width}: brand is not left of menu`);
+      await toggle.tap();
+      assert.equal(await toggle.getAttribute('aria-expanded'), 'true', `${name} ${width}: menu did not open`);
+      assert(await page.locator('#store-navigation').isVisible(), `${name} ${width}: menu invisible`);
+      if (name === 'store-gallery') {
+       assert(await page.locator('.store-search input').isVisible(), `${name} ${width}: search is missing`);
+       assert(await page.locator('#store-navigation a[href="#store-cart"]').isVisible(), `${name} ${width}: cart link is missing`);
+      }
+      await page.keyboard.press('Escape');
+      assert.equal(await toggle.getAttribute('aria-expanded'), 'false', `${name} ${width}: Escape failed`);
+     } else {
+      assert(!(await toggle.isVisible()), `${name} ${width}: compact toggle visible on tablet or desktop`);
+     }
+    } else if(name!=='pricing') {
      const toggle=page.locator(['dashboard','manager','dashboard-storage'].includes(name)?'#mobile_btn':'[data-public-menu-toggle]');
-     if(width<1200) {
+     if(width<1024) {
+      const brand=page.locator(['dashboard','manager','dashboard-storage'].includes(name)?'.header-logo':name==='home'?'.sb-brand':'.logo-container').first();
+      const brandRect=await brand.boundingBox();
+      const toggleRect=await toggle.boundingBox();
+      assert(brandRect.x + brandRect.width <= toggleRect.x + 1,`${name} ${width}: brand is not left of menu`);
       await toggle.tap();
       await page.waitForTimeout(360);
       assert.equal(await toggle.getAttribute('aria-expanded'),'true',`${name} ${width}: tap did not open`);
