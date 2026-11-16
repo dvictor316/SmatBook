@@ -1112,7 +1112,8 @@ public function store(Request $request)
     // ── Run DB work inside transaction ──────────────────────
     // session() is NOT called inside — that was causing the bug
     try {
-        $result = DB::transaction(function () use ($validated, $manager, $isFreeUnlimited, $isTrialRegistration, $trialPayload, $customUserLimit, $licenseUnitAmount, $retryableRegistration) {
+        $result = DB::transaction(function () use ($validated, $manager, $request, $isFreeUnlimited, $isTrialRegistration, $trialPayload, $customUserLimit, $licenseUnitAmount, $retryableRegistration) {
+            app(\App\Services\RegistrationEmailApproval::class)->consume($request, $validated['email'], 'assisted');
 
             // 1. Create customer user
             $customer = $retryableRegistration
@@ -1134,7 +1135,7 @@ public function store(Request $request)
                 'is_verified'       => 1,
                 'status'            => 'active',
                 'phone'             => $validated['customer_phone'] ?? null,
-                'email_verified_at' => $retryableRegistration['user']->email_verified_at ?? null,
+                'email_verified_at' => now(),
             ]));
             $customer->save();
 
@@ -1251,7 +1252,7 @@ public function store(Request $request)
         });
 
     } catch (\Illuminate\Validation\ValidationException $e) {
-        return back()->withErrors($e->errors())->withInput();
+        return back()->withErrors($e->errors())->withInput($request->except(['password', 'password_confirmation']));
     } catch (\Illuminate\Database\QueryException $e) {
         $message = strtolower($e->getMessage());
         $friendly = (str_contains($message, 'duplicate') || str_contains($message, 'unique'))

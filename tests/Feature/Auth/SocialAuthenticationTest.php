@@ -3,6 +3,7 @@
 namespace Tests\Feature\Auth;
 
 use App\Mail\EmailVerificationCodeMail;
+use App\Mail\RegistrationEmailApprovalMail;
 use App\Models\Company;
 use App\Models\Subscription;
 use App\Models\Setting;
@@ -39,6 +40,15 @@ class SocialAuthenticationTest extends TestCase
         return [['google', 'google'], ['facebook', 'facebook'], ['linkedin', 'linkedin-openid']];
     }
 
+    private function approveOwnerEmail(string $email): void
+    {
+        $this->postJson(route('registration-verification.send'), ['email' => $email, 'purpose' => 'self'])->assertOk();
+        $mail = Mail::sent(RegistrationEmailApprovalMail::class)->last();
+        $this->post(route('registration-verification.verify', basename(parse_url($mail->verificationUrl, PHP_URL_PATH))), [
+            'code' => $mail->code,
+        ])->assertOk();
+    }
+
     /** @dataProvider providers */
     public function test_new_social_signup_collects_business_details_and_verifies_email(string $provider, string $driver): void
     {
@@ -51,23 +61,21 @@ class SocialAuthenticationTest extends TestCase
         $this->get(route('saas-register', ['plan' => 'pro']))
             ->assertOk()->assertSee('no SmartProbook password is required')
             ->assertDontSee('name="password"', false);
-        $this->post(route('saas-register.post'), [
+        $this->approveOwnerEmail('new-'.$provider.'@example.test');
+        $response = $this->post(route('saas-register.post'), [
             'name' => 'Social Owner',
             'email' => 'tampered@example.test',
             'role' => 'admin',
             'plan' => 'pro',
             'billing_cycle' => 'yearly',
             'field_of_operation' => 'general',
-        ])->assertRedirect(route('email-verification.notice'));
+        ]);
         $user = User::where('email', 'new-'.$provider.'@example.test')->firstOrFail();
         $this->assertSame('new-'.$provider, $user->{$provider.'_id'});
-        $this->assertGuest();
         $trial = Subscription::where('user_id', $user->id)->firstOrFail();
         $this->assertTrue($trial->isTrial());
-        $mail = Mail::sent(EmailVerificationCodeMail::class)->first();
-        $this->assertNotNull($mail);
-        $this->post(route('email-verification.verify'), ['code' => $mail->code])
-            ->assertRedirect(route('saas.setup', $trial->id));
+        $response->assertRedirect(route('saas.setup', $trial->id));
+        $this->assertNotNull($user->email_verified_at);
         $this->assertAuthenticatedAs($user);
     }
 
@@ -126,9 +134,8 @@ class SocialAuthenticationTest extends TestCase
             'plan' => 'pro',
             'billing_cycle' => 'yearly',
             'field_of_operation' => 'general',
-        ])->assertRedirect(route('email-verification.notice'));
-        $this->get(route('social.login', 'google'))->assertRedirect();
-        $this->get(route('social.callback', 'google'))->assertRedirect(route('email-verification.notice'));
+        ])->assertSessionHasErrors('email');
+        $this->assertDatabaseMissing('users', ['email' => 'pending-registration@example.test']);
         $this->assertGuest();
     }
 

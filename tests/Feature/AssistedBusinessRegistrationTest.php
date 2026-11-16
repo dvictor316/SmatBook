@@ -2,12 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Mail\EmailVerificationCodeMail;
+use App\Mail\RegistrationEmailApprovalMail;
 use App\Models\DeploymentManager;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use Laravel\Socialite\Facades\Socialite;
@@ -25,6 +26,116 @@ class AssistedBusinessRegistrationTest extends TestCase
             ['key' => 'saas_email_verification'],
             ['value' => '1']
         );
+    }
+
+    private function approveRegistrationEmail(string $email, string $purpose): void
+    {
+        $this->postJson(route('registration-verification.send'), compact('email', 'purpose'))->assertOk();
+        $mail = Mail::sent(RegistrationEmailApprovalMail::class)->last();
+        $this->assertNotNull($mail);
+        $token = basename(parse_url($mail->verificationUrl, PHP_URL_PATH));
+        $this->post(route('registration-verification.verify', $token), ['code' => $mail->code])
+            ->assertOk()->assertSee('Email confirmed');
+    }
+
+    public function test_payment_gateway_receives_the_email_of_the_person_initiating_checkout(): void
+    {
+        config(['services.paystack.secretKey' => 'sk_test_12345678901234567890']);
+        Http::fake([
+            'api.paystack.co/*' => Http::response([
+                'status' => true,
+                'data' => ['authorization_url' => 'https://paystack.test/checkout'],
+            ]),
+        ]);
+
+        $partner = User::factory()->create(['role' => 'agent', 'is_verified' => 1, 'status' => 'active']);
+        $owner = User::factory()->create(['role' => 'admin', 'is_verified' => 1, 'status' => 'active']);
+        $subscription = Subscription::create([
+            'user_id' => $owner->id,
+            'deployed_by' => $partner->id,
+            'plan' => 'Starter',
+            'amount' => 20000,
+            'billing_cycle' => 'Yearly',
+            'status' => 'pending',
+            'payment_status' => 'unpaid',
+        ]);
+
+        $this->withoutMiddleware()->actingAs($partner)
+            ->post(route('saas.payment.process.checkout', $subscription->id), ['gateway' => 'paystack'])
+            ->assertRedirect('https://paystack.test/checkout');
+        Http::assertSent(fn ($request) => $request->url() === 'https://api.paystack.co/transaction/initialize'
+            && $request['email'] === $partner->email);
+
+        Http::fake([
+            'api.paystack.co/*' => Http::response([
+                'status' => true,
+                'data' => ['authorization_url' => 'https://paystack.test/checkout'],
+            ]),
+        ]);
+        $this->actingAs($owner)
+            ->post(route('saas.payment.process.checkout', $subscription->id), ['gateway' => 'paystack'])
+            ->assertRedirect('https://paystack.test/checkout');
+        Http::assertSent(fn ($request) => $request->url() === 'https://api.paystack.co/transaction/initialize'
+            && $request['email'] === $owner->email);
+    }
+
+    public function test_partner_checkout_with_invalid_email_does_not_contact_gateway(): void
+    {
+        config(['services.paystack.secretKey' => 'sk_test_12345678901234567890']);
+        Http::fake();
+
+        $partner = User::factory()->create(['role' => 'agent', 'email' => 'invalid-email']);
+        $owner = User::factory()->create();
+        $subscription = Subscription::create([
+            'user_id' => $owner->id,
+            'deployed_by' => $partner->id,
+            'plan' => 'Starter',
+            'amount' => 20000,
+            'billing_cycle' => 'Yearly',
+            'status' => 'pending',
+            'payment_status' => 'unpaid',
+        ]);
+
+        $this->withoutMiddleware()->actingAs($partner)
+            ->post(route('saas.payment.process.checkout', $subscription->id), ['gateway' => 'paystack'])
+            ->assertRedirect(route('saas.checkout', $subscription->id))
+            ->assertSessionHas('error');
+        Http::assertNothingSent();
+    }
+
+    public function test_stripe_and_flutterwave_receive_the_partner_email(): void
+    {
+        config([
+            'services.stripe.secret' => 'sk_test_12345678901234567890',
+            'services.stripe.key' => 'pk_test_12345678901234567890',
+            'services.flutterwave.secret_key' => 'FLWSECK_12345678901234567890',
+        ]);
+        $partner = User::factory()->create(['role' => 'agent', 'is_verified' => 1, 'status' => 'active']);
+        $owner = User::factory()->create();
+        $subscription = Subscription::create([
+            'user_id' => $owner->id,
+            'deployed_by' => $partner->id,
+            'plan' => 'Starter',
+            'amount' => 20000,
+            'billing_cycle' => 'Yearly',
+            'status' => 'pending',
+            'payment_status' => 'unpaid',
+        ]);
+        $this->withoutMiddleware()->actingAs($partner);
+
+        Http::fake(['api.stripe.com/*' => Http::response(['url' => 'https://stripe.test/checkout'])]);
+        $this->post(route('saas.payment.process.checkout', $subscription->id), ['gateway' => 'stripe'])
+            ->assertRedirect('https://stripe.test/checkout');
+        Http::assertSent(fn ($request) => $request->url() === 'https://api.stripe.com/v1/checkout/sessions'
+            && $request['customer_email'] === $partner->email);
+
+        Http::fake(['api.flutterwave.com/*' => Http::response([
+            'status' => 'success', 'data' => ['link' => 'https://flutterwave.test/checkout'],
+        ])]);
+        $this->post(route('saas.payment.process.checkout', $subscription->id), ['gateway' => 'flutterwave'])
+            ->assertRedirect('https://flutterwave.test/checkout');
+        Http::assertSent(fn ($request) => $request->url() === 'https://api.flutterwave.com/v3/payments'
+            && $request['customer']['email'] === $partner->email);
     }
 
     public function test_agent_state_manager_and_super_admin_can_activate_a_one_month_trial(): void
@@ -81,7 +192,9 @@ class AssistedBusinessRegistrationTest extends TestCase
                 'customer_phone' => $customerPhone,
             ];
 
-            $response = $this->actingAs($registrar)->post(route($registration['route']), $registrationPayload);
+            $this->actingAs($registrar);
+            $this->approveRegistrationEmail($email, 'assisted');
+            $response = $this->post(route($registration['route']), $registrationPayload);
 
             $subscription = \DB::table('subscriptions')->where('deployed_by', $registrar->id)->first();
             $customer = User::where('email', $email)->first();
@@ -99,7 +212,7 @@ class AssistedBusinessRegistrationTest extends TestCase
             $this->assertSame((int) $company->id, (int) $customer->company_id);
             $this->assertSame('active', strtolower((string) $customer->status));
             $this->assertSame(1, (int) $customer->is_verified);
-            $this->assertNull($customer->email_verified_at);
+            $this->assertNotNull($customer->email_verified_at);
             $this->assertSame('active', strtolower((string) $company->status));
             $this->assertSame('trial', strtolower((string) $subscription->status));
             $this->assertSame('free', strtolower((string) $subscription->payment_status));
@@ -125,21 +238,13 @@ class AssistedBusinessRegistrationTest extends TestCase
             $this->assertSame(1, \DB::table('subscriptions')->where('deployed_by', $registrar->id)->count());
 
             $trial = Subscription::findOrFail($subscription->id);
-            $verificationMail = Mail::sent(EmailVerificationCodeMail::class)
-                ->first(fn ($mail) => $mail->hasTo($email));
-            $this->assertNotNull($verificationMail);
-
             $this->actingAs($customer)
                 ->withSession([
                     'current_tenant_id' => $company->id,
                     'workspace_context' => 'business',
                 ])
                 ->get(route('user.dashboard'))
-                ->assertRedirect(route('email-verification.notice'));
-
-            $this->post(route('email-verification.verify'), ['code' => $verificationMail->code])
-                ->assertRedirect(route('home'));
-            $this->assertNotNull($customer->fresh()->email_verified_at);
+                ->assertOk();
             $trial->update(['end_date' => now()->subDay()]);
 
             $this->get(route('subscription.expired'))
@@ -210,6 +315,7 @@ class AssistedBusinessRegistrationTest extends TestCase
                 ->assertSee('name="registration_type"', false)
                 ->assertSee('Standard registration', false);
 
+            $this->approveRegistrationEmail($email, 'assisted');
             $response = $this->post(route($routes['store_route']), [
                 'company_name' => ucfirst($slug).' Limited',
                 'subdomain' => $slug,
@@ -255,6 +361,7 @@ class AssistedBusinessRegistrationTest extends TestCase
 
     public function test_public_registration_starts_trial_and_activates_workspace_before_payment(): void
     {
+        $this->approveRegistrationEmail('public-owner@example.test', 'self');
         $response = $this->from(route('saas-register'))->post(route('saas-register.post'), [
             'role' => 'admin',
             'name' => 'Public Business Owner',
@@ -266,15 +373,10 @@ class AssistedBusinessRegistrationTest extends TestCase
             'field_of_operation' => 'general',
         ]);
 
-        $response->assertRedirect(route('email-verification.notice'));
-
         $owner = User::where('email', 'public-owner@example.test')->firstOrFail();
         $subscription = \DB::table('subscriptions')->where('user_id', $owner->id)->first();
         $this->assertNotNull($subscription);
-        $verificationMail = Mail::sent(EmailVerificationCodeMail::class)->first();
-        $this->assertNotNull($verificationMail);
-        $this->post(route('email-verification.verify'), ['code' => $verificationMail->code])
-            ->assertRedirect(route('saas.setup', $subscription->id));
+        $response->assertRedirect(route('saas.setup', $subscription->id));
 
         $this->assertSame('active', strtolower((string) $owner->status));
         $this->assertNotNull($owner->fresh()->email_verified_at);
@@ -339,16 +441,13 @@ class AssistedBusinessRegistrationTest extends TestCase
             ->assertRedirect(route('saas-register', ['plan' => 'pro']));
 
         $this->get(route('saas-register', ['plan' => 'pro']))->assertOk();
+        $this->approveRegistrationEmail('google-trial@example.test', 'self');
         $this->post(route('saas-register.post'), [
             'name' => 'Google Trial User',
             'plan' => 'pro',
             'billing_cycle' => 'yearly',
             'field_of_operation' => 'general',
-        ])->assertRedirect(route('email-verification.notice'));
-
-        $verificationMail = Mail::sent(EmailVerificationCodeMail::class)->first();
-        $this->assertNotNull($verificationMail);
-        $this->post(route('email-verification.verify'), ['code' => $verificationMail->code])
+        ])
             ->assertRedirect(route('saas.setup', \DB::table('subscriptions')->value('id')));
 
         $customer = User::where('email', 'google-trial@example.test')->firstOrFail();

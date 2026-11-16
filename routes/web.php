@@ -21,6 +21,7 @@ use App\Http\Controllers\{
 use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\SuperAdmin\DeploymentManagerController;
 use App\Http\Controllers\EmailVerificationController;
+use App\Http\Controllers\RegistrationEmailApprovalController;
 use App\Http\Controllers\FinancialResetController;
 use App\Http\Controllers\DatabaseResetController;
 use App\Http\Controllers\DemoRequestController;
@@ -148,6 +149,14 @@ Route::middleware(['auth'])->group(function () {
 
 Route::get('/locations/states', [AuthController::class, 'registrationStates'])->name('locations.states');
 Route::get('/locations/councils', [AuthController::class, 'registrationCouncils'])->name('locations.councils');
+Route::post('/registration/email/send', [RegistrationEmailApprovalController::class, 'send'])
+    ->middleware('throttle:registration-email')->name('registration-verification.send');
+Route::post('/registration/email/status', [RegistrationEmailApprovalController::class, 'status'])
+    ->middleware('throttle:registration-email')->name('registration-verification.status');
+Route::get('/registration/email/{token}', [RegistrationEmailApprovalController::class, 'show'])
+    ->where('token', '[A-Za-z0-9]{64}')->middleware('throttle:registration-email')->name('registration-verification.show');
+Route::post('/registration/email/{token}', [RegistrationEmailApprovalController::class, 'verify'])
+    ->where('token', '[A-Za-z0-9]{64}')->middleware('throttle:registration-email')->name('registration-verification.verify');
 Route::get('/email/verify', [EmailVerificationController::class, 'show'])->name('email-verification.notice');
 Route::get('/email/verify/{user}/continue', [EmailVerificationController::class, 'continueFromEmail'])
     ->middleware('throttle:10,1')

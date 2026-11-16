@@ -937,6 +937,9 @@
                     <p class="text-muted mb-4">You will sign in with {{ ucfirst($socialRegistration['provider']) }}; no SmartProbook password is required.</p>
                 @endunless
 
+                @unless($isManager)
+                    @include('Pages.Authentication.registration-email-control', ['purpose' => 'self'])
+                @endunless
                 <button type="submit" class="btn-smat-red">
                     {{ $isManager ? 'Submit Partner Profile' : 'Create Account' }} <i class="fas fa-shield-check ms-1"></i>
                 </button>

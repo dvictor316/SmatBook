@@ -25,7 +25,7 @@ class RequireRegistrationEmailVerification
             return $next($request);
         }
 
-        if ($request->routeIs('email-verification.*', 'logout')) {
+        if ($request->routeIs('email-verification.*', 'registration-verification.show', 'registration-verification.verify', 'logout')) {
             return $next($request);
         }
 

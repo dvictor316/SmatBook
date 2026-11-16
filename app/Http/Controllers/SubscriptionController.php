@@ -882,6 +882,15 @@ class SubscriptionController extends Controller
             403
         );
 
+        if ((int) $subscription->user_id !== (int) $currentUser->id
+            && ! filter_var(trim((string) $currentUser->email), FILTER_VALIDATE_EMAIL)) {
+            $message = 'Add a valid email address to your account before paying for this subscription.';
+
+            return $request->expectsJson()
+                ? response()->json(['message' => $message], 422)
+                : redirect()->route('saas.checkout', $subscription->id)->with('error', $message);
+        }
+
         if (
             in_array(strtolower((string) $subscription->payment_status), ['paid', 'free'], true)
             || in_array(strtolower((string) $subscription->status), ['active', 'trial'], true)
@@ -1985,6 +1994,11 @@ class SubscriptionController extends Controller
 
     private function checkoutCustomerEmail(Subscription $subscription): string
     {
+        $payer = auth()->user();
+        if ($payer && (int) $payer->id !== (int) $subscription->user_id) {
+            return trim((string) $payer->email);
+        }
+
         return (string) (
             $subscription->user?->email
             ?: $subscription->company?->email

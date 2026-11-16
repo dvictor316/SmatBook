@@ -979,8 +979,10 @@
                                 @error('email')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <small class="text-muted">Used for login and payment notifications</small>
+                                <small class="text-muted">Used for the business owner's login and email verification.</small>
                             </div>
+
+                            @include('Pages.Authentication.registration-email-control', ['purpose' => 'assisted'])
 
                             <div class="mb-3">
                                 <label class="form-label">Password <span class="text-danger">*</span></label>

@@ -14,6 +14,8 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('subscriptions:expire-due')->hourly();
         $schedule->command('fixed-assets:depreciate-due')->dailyAt('01:15')->withoutOverlapping();
+        $schedule->call(fn () => DB::table('registration_email_approvals')
+            ->where('expires_at', '<', now()->subDay())->delete())->daily();
 
         // Recurring invoice engine – runs every morning at 07:00
         $schedule->job(new \App\Jobs\ProcessRecurringInvoicesJob)

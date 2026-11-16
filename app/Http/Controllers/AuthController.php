@@ -102,6 +102,7 @@ class AuthController extends Controller
             (string) $request->input('phone', '')
         );
         $isPartnerAgent = strtolower((string) $requestedRole) === 'agent';
+        $isBusinessOwnerRegistration = ! $isPartnerAgent && ! $this->isManagerRoleName($requestedRole);
 
         $rules = [
             'name' => 'required|string|max:255',
@@ -222,7 +223,10 @@ class AuthController extends Controller
         }
 
         try {
-            $registrationResult = DB::transaction(function () use ($validated, $request, $resolvedEmail, $normalizedPhone, $retryableUser, $socialRegistration) {
+            $registrationResult = DB::transaction(function () use ($validated, $request, $resolvedEmail, $normalizedPhone, $retryableUser, $socialRegistration, $isBusinessOwnerRegistration) {
+                if ($isBusinessOwnerRegistration) {
+                    app(\App\Services\RegistrationEmailApproval::class)->consume($request, $resolvedEmail, 'self');
+                }
                 $role = $request->role ?? session('reg_role', 'admin');
                 if ($this->isManagerRoleName($role) && !Auth::check()) {
                     $role = 'agent';
@@ -249,7 +253,7 @@ class AuthController extends Controller
                     'role' => $role,
                     'is_verified' => ($isAgentRegistration || $isApprovedRetry || $isCustomerRegistration) ? 1 : 0,
                     'status' => 'active',
-                    'email_verified_at' => $retryableUser?->email_verified_at,
+                    'email_verified_at' => $isBusinessOwnerRegistration ? now() : $retryableUser?->email_verified_at,
                     'country' => $validated['country'] ?? null,
                     'state_region' => $validated['state_region'] ?? null,
                     'local_council' => $validated['local_council'] ?? null,
@@ -468,6 +472,8 @@ class AuthController extends Controller
             return redirect()->route('registration.pending.notice')
                 ->with('success', 'Registration submitted successfully. A super admin must approve your account before workspace access opens.');
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->errors())->withInput($request->except(['password', 'password_confirmation']));
         } catch (\Throwable $e) {
             Log::error('Registration failed', [
                 'email' => $resolvedEmail,

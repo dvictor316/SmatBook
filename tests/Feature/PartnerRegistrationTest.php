@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Mail\EmailVerificationCodeMail;
+use App\Mail\RegistrationEmailApprovalMail;
 use App\Http\Middleware\RequireRegistrationEmailVerification;
 use App\Models\User;
 use App\Services\EmailVerificationService;
@@ -65,6 +66,7 @@ class PartnerRegistrationTest extends TestCase
             $table->unsignedTinyInteger('attempts')->default(0);
             $table->timestamps();
         });
+        (require database_path('migrations/2026_11_16_000001_create_registration_email_approvals_table.php'))->up();
 
         Schema::create('settings', function (Blueprint $table) {
             $table->id();
@@ -105,6 +107,15 @@ class PartnerRegistrationTest extends TestCase
             $table->dateTime('initialized_at')->nullable();
             $table->timestamps();
         });
+    }
+
+    private function approveOwnerEmail(string $email): void
+    {
+        $this->postJson(route('registration-verification.send'), ['email' => $email, 'purpose' => 'self'])->assertOk();
+        $mail = Mail::sent(RegistrationEmailApprovalMail::class)->last();
+        $this->post(route('registration-verification.verify', basename(parse_url($mail->verificationUrl, PHP_URL_PATH))), [
+            'code' => $mail->code,
+        ])->assertOk();
     }
 
     public function test_email_verification_setting_is_loaded_once_per_request(): void
@@ -189,6 +200,7 @@ class PartnerRegistrationTest extends TestCase
 
     public function test_regular_registration_starts_a_one_month_trial_immediately(): void
     {
+        $this->approveOwnerEmail('pending-admin@example.com');
         $response = $this->from(route('saas-register'))->post(route('saas-register.post'), [
             'role' => 'admin',
             'name' => 'Pending Admin',
@@ -203,13 +215,13 @@ class PartnerRegistrationTest extends TestCase
 
         $subscription = \DB::table('subscriptions')->first();
         $this->assertNotNull($subscription);
-        $response->assertRedirect(route('email-verification.notice'));
+        $response->assertRedirect(route('saas.setup', $subscription->id));
         $response->assertSessionDoesntHaveErrors();
 
         $user = User::firstOrFail();
 
-        $this->assertGuest();
-        $this->assertNull($user->email_verified_at);
+        $this->assertAuthenticatedAs($user);
+        $this->assertNotNull($user->email_verified_at);
         $this->assertSame('active', $user->status);
         $this->assertSame(1, (int) $user->is_verified);
         $this->assertDatabaseHas('subscriptions', [
@@ -219,41 +231,10 @@ class PartnerRegistrationTest extends TestCase
         ]);
         $this->assertTrue(\Illuminate\Support\Carbon::parse($subscription->end_date)->isSameDay(now()->addMonth()));
 
-        $mail = Mail::sent(EmailVerificationCodeMail::class)->first();
-        $this->assertNotNull($mail);
-        $this->assertStringContainsString('signature=', $mail->verificationUrl);
-        $challenge = \DB::table('email_verification_challenges')->where('user_id', $user->id)->first();
-        $this->assertSame(
-            300,
-            \Illuminate\Support\Carbon::parse($challenge->expires_at)->timestamp
-                - \Illuminate\Support\Carbon::parse($challenge->sent_at)->timestamp
-        );
-        $this->withSession([
-            'email_verification_pending_user_id' => 0,
-            'email_verification_redirect' => '',
-        ])->get($mail->verificationUrl)
-            ->assertOk()
-            ->assertSee('Six-digit email code')
-            ->assertSee('this page will not redirect automatically')
-            ->assertDontSee('GLOBAL SESSION EXPIRY HANDLER');
-
-        $incorrectCode = $mail->code === '000000' ? '000001' : '000000';
-        $this->from(route('email-verification.notice'))
-            ->post(route('email-verification.verify'), ['code' => $incorrectCode])
-            ->assertRedirect(route('email-verification.notice'))
-            ->assertSessionHasErrors('code');
-        $this->assertGuest();
-        $this->assertSame(1, (int) \DB::table('email_verification_challenges')->where('user_id', $user->id)->value('attempts'));
-
-        $this->withSession(['email_verification_redirect' => '']);
-        $this->post(route('email-verification.verify'), ['code' => $mail->code])
-            ->assertRedirect(route('saas.setup', $subscription->id));
-        $this->assertAuthenticatedAs($user->fresh());
-        $this->assertNotNull($user->fresh()->email_verified_at);
-        $this->assertDatabaseMissing('email_verification_challenges', ['user_id' => $user->id]);
+        $this->assertDatabaseMissing('registration_email_approvals', ['email' => $user->email]);
     }
 
-    public function test_disabling_email_verification_allows_new_registrations_to_continue_without_a_code(): void
+    public function test_new_business_registration_still_requires_a_code_when_optional_verification_is_disabled(): void
     {
         DB::table('settings')->where('key', 'saas_email_verification')->update(['value' => '0']);
 
@@ -269,6 +250,14 @@ class PartnerRegistrationTest extends TestCase
             'field_of_operation' => 'general',
         ]);
 
+        $response->assertSessionHasErrors('email');
+        $this->assertDatabaseMissing('users', ['email' => 'no-code-admin@example.com']);
+        $this->approveOwnerEmail('no-code-admin@example.com');
+        $response = $this->post(route('saas-register.post'), [
+            'role' => 'admin', 'name' => 'No Code Admin', 'email' => 'no-code-admin@example.com',
+            'password' => 'Secure123', 'password_confirmation' => 'Secure123',
+            'plan' => 'pro', 'billing_cycle' => 'monthly', 'field_of_operation' => 'general',
+        ]);
         $user = User::where('email', 'no-code-admin@example.com')->firstOrFail();
         $subscriptionId = DB::table('subscriptions')->where('user_id', $user->id)->value('id');
 
@@ -333,6 +322,7 @@ class PartnerRegistrationTest extends TestCase
         ]);
         $deletedUser->delete();
 
+        $this->approveOwnerEmail('reused-email@example.com');
         $response = $this->post(route('saas-register.post'), [
             'role' => 'admin',
             'name' => 'New Account',
@@ -345,7 +335,7 @@ class PartnerRegistrationTest extends TestCase
             'field_of_operation' => 'general',
         ]);
 
-        $response->assertRedirect(route('email-verification.notice'));
+        $response->assertRedirect(route('saas.setup', DB::table('subscriptions')->where('user_id', User::query()->where('email', 'reused-email@example.com')->value('id'))->value('id')));
         $this->assertSame(2, User::withTrashed()->where('email', 'reused-email@example.com')->count());
         $this->assertSame(1, User::query()->where('email', 'reused-email@example.com')->count());
         $this->assertNotSame($deletedUser->id, User::query()->where('email', 'reused-email@example.com')->value('id'));
@@ -376,8 +366,9 @@ class PartnerRegistrationTest extends TestCase
             'field_of_operation' => 'general',
         ];
 
+        $this->approveOwnerEmail($payload['email']);
         $this->from(route('saas-register'))->post(route('saas-register.post'), $payload)
-            ->assertRedirect(route('email-verification.notice'));
+            ->assertRedirect();
 
         $user = User::where('email', 'retry-owner@example.com')->firstOrFail();
         $originalEndDate = \DB::table('subscriptions')->where('user_id', $user->id)->value('end_date');
@@ -391,7 +382,7 @@ class PartnerRegistrationTest extends TestCase
         $this->assertSame($user->id, User::where('email', 'retry-owner@example.com')->value('id'));
         $this->assertSame(1, \DB::table('subscriptions')->where('user_id', $user->id)->count());
         $this->assertSame($originalEndDate, \DB::table('subscriptions')->where('user_id', $user->id)->value('end_date'));
-        Mail::assertSent(EmailVerificationCodeMail::class, 1);
+        Mail::assertSent(RegistrationEmailApprovalMail::class, 1);
     }
 
     public function test_duplicate_phone_registration_cannot_restart_a_trial(): void
@@ -408,8 +399,9 @@ class PartnerRegistrationTest extends TestCase
             'field_of_operation' => 'general',
         ];
 
+        $this->approveOwnerEmail($payload['email']);
         $this->from(route('saas-register'))->post(route('saas-register.post'), $payload)
-            ->assertRedirect(route('email-verification.notice'));
+            ->assertRedirect();
 
         $user = User::where('phone', '+2348012345678')->firstOrFail();
         $originalEmail = $user->email;
@@ -425,7 +417,7 @@ class PartnerRegistrationTest extends TestCase
         $this->assertSame(1, \DB::table('subscriptions')->where('user_id', $user->id)->count());
     }
 
-    public function test_approved_owner_can_retry_an_unpaid_registration_without_repeating_approval(): void
+    public function test_approved_owner_can_retry_an_unpaid_registration_after_email_confirmation(): void
     {
         $user = User::create([
             'name' => 'Approved Owner',
@@ -448,6 +440,7 @@ class PartnerRegistrationTest extends TestCase
             'updated_at' => now(),
         ]);
 
+        $this->approveOwnerEmail('approved-retry@example.com');
         $response = $this->post(route('saas-register.post'), [
             'role' => 'admin',
             'name' => 'Approved Owner Updated',
@@ -461,7 +454,7 @@ class PartnerRegistrationTest extends TestCase
         ]);
 
         $subscription = \DB::table('subscriptions')->where('user_id', $user->id)->first();
-        $response->assertRedirect(route('email-verification.notice'));
+        $response->assertRedirect(route('saas.setup', $subscription->id));
         $this->assertSame('active', $user->fresh()->status);
         $this->assertSame(1, (int) $user->fresh()->is_verified);
         $this->assertSame('Approved Owner Updated', $user->fresh()->name);

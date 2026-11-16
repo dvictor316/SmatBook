@@ -47,6 +47,21 @@ apply. A functioning email configuration is required for these verification code
 Social-only users can set an optional password through “Forgot Password” if they
 need to manage two-factor settings, which currently require a password.
 
+## Business registration email confirmation
+
+Before creating a business owner account or starting its trial, the owner must
+confirm a six-digit email code. In assisted registration, the partner sends the
+code from the form and the owner opens the email link on their own device; the
+partner then completes the form. Codes and approvals expire after five minutes,
+and a new code can be requested after one minute. This confirms control of the
+email address; it is separate from authenticator-based two-factor authentication.
+
+Production requires a working mail transport and the canonical HTTPS `APP_URL`.
+Run database migrations when deploying. The application scheduler removes expired
+registration approval records. For online checkout, the gateway receives the
+email of the signed-in person initiating payment; provider receipt settings still
+control actual receipt delivery.
+
 ## Online store product visibility
 
 By default, the online store hides products without available stock in its

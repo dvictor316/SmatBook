@@ -169,6 +169,7 @@
                     </div>
                 </div>
 
+                @include('Pages.Authentication.registration-email-control', ['purpose' => 'self'])
                 <button type="submit" class="btn btn-primary w-100 mb-4 shadow-sm">Sign Up</button>
             </form>
 
