@@ -32,6 +32,17 @@ class SchemaColumnCache
         return in_array($column, $this->columns($table) ?? [], true);
     }
 
+    public function columnType(string $table, string $column): string
+    {
+        $request = app(Request::class);
+        $cacheKey = self::class.'.type.'.$table.'.'.$column;
+        if (!$request->attributes->has($cacheKey)) {
+            $request->attributes->set($cacheKey, Schema::getColumnType($table, $column));
+        }
+
+        return $request->attributes->get($cacheKey);
+    }
+
     public function filterPayload(string $table, array $payload): array
     {
         $columns = $this->columns($table);

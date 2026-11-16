@@ -3,6 +3,7 @@
 namespace App\Models\Traits;
 
 use App\Support\ActiveBranchResolver;
+use App\Support\SchemaColumnCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -43,8 +44,12 @@ trait TenantScoped
                 return;
             }
 
-            $hasCompany = Schema::hasColumn($table, 'company_id');
-            $hasUser = Schema::hasColumn($table, 'user_id');
+            $schema = request()->attributes->get('product_import_cache_schema') ? app(SchemaColumnCache::class) : null;
+            $hasColumn = fn (string $column) => $schema
+                ? $schema->hasColumn($table, $column)
+                : Schema::hasColumn($table, $column);
+            $hasCompany = $hasColumn('company_id');
+            $hasUser = $hasColumn('user_id');
 
             if ($hasCompany && $companyId > 0) {
                 $builder->where(function ($q) use ($table, $companyId, $hasUser, $userId) {
@@ -80,7 +85,7 @@ trait TenantScoped
                     $activeBranchName = $requestBranch['name'];
                 }
             }
-            if ($activeBranchId === '' && $activeBranchName === '' && $companyId > 0 && Schema::hasTable('settings')) {
+            if ($activeBranchId === '' && $activeBranchName === '' && $companyId > 0 && ($schema ? $schema->hasTable('settings') : Schema::hasTable('settings'))) {
                 $branchKey = 'branches_json_company_'.$companyId;
                 $rawBranches = (string) (DB::table('settings')->where('key', $branchKey)->value('value') ?? '');
                 $branches = json_decode($rawBranches, true) ?: [];
@@ -93,12 +98,14 @@ trait TenantScoped
                 }
             }
             if ($activeBranchId !== '' || $activeBranchName !== '') {
-                $hasBranchId = Schema::hasColumn($table, 'branch_id');
-                $hasBranchName = Schema::hasColumn($table, 'branch_name');
+                $hasBranchId = $hasColumn('branch_id');
+                $hasBranchName = $hasColumn('branch_name');
 
                 if ($hasBranchId && $activeBranchId !== '' && ! ctype_digit($activeBranchId)) {
                     try {
-                        $branchColumnType = strtolower((string) Schema::getColumnType($table, 'branch_id'));
+                        $branchColumnType = strtolower((string) ($schema
+                            ? $schema->columnType($table, 'branch_id')
+                            : Schema::getColumnType($table, 'branch_id')));
                         if (! in_array($branchColumnType, ['string', 'text', 'char', 'varchar'], true)) {
                             $hasBranchId = false;
                         }
@@ -151,7 +158,8 @@ trait TenantScoped
             }
 
             $table = $model->getTable();
-            if (! Schema::hasColumn($table, 'company_id')) {
+            $schema = request()->attributes->get('product_import_cache_schema') ? app(SchemaColumnCache::class) : null;
+            if (! ($schema ? $schema->hasColumn($table, 'company_id') : Schema::hasColumn($table, 'company_id'))) {
                 return;
             }
 

@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use App\Support\ActiveBranchResolver;
+use App\Support\SchemaColumnCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
@@ -30,8 +31,12 @@ trait Multitenantable {
 
             $table = $builder->getModel()->getTable();
             $userId = (int) ($user->id ?? 0);
-            $hasCompany = Schema::hasColumn($table, 'company_id');
-            $hasUser = Schema::hasColumn($table, 'user_id');
+            $schema = request()->attributes->get('product_import_cache_schema') ? app(SchemaColumnCache::class) : null;
+            $hasColumn = fn (string $column) => $schema
+                ? $schema->hasColumn($table, $column)
+                : Schema::hasColumn($table, $column);
+            $hasCompany = $hasColumn('company_id');
+            $hasUser = $hasColumn('user_id');
 
             if ($hasCompany && $companyId > 0) {
                 $builder->where(function ($query) use ($table, $companyId, $hasUser, $userId) {
@@ -68,7 +73,7 @@ trait Multitenantable {
                 }
             }
 
-            if ($activeBranchId === '' && $activeBranchName === '' && $companyId && Schema::hasTable('settings')) {
+            if ($activeBranchId === '' && $activeBranchName === '' && $companyId && ($schema ? $schema->hasTable('settings') : Schema::hasTable('settings'))) {
                 $branchKey = 'branches_json_company_' . $companyId;
                 $rawBranches = (string) (DB::table('settings')->where('key', $branchKey)->value('value') ?? '');
                 $branches = json_decode($rawBranches, true) ?: [];
@@ -80,12 +85,14 @@ trait Multitenantable {
             }
 
             if ($activeBranchId !== '' || $activeBranchName !== '') {
-                $hasBranchId = Schema::hasColumn($table, 'branch_id');
-                $hasBranchName = Schema::hasColumn($table, 'branch_name');
+                $hasBranchId = $hasColumn('branch_id');
+                $hasBranchName = $hasColumn('branch_name');
 
                 if ($hasBranchId && $activeBranchId !== '' && !ctype_digit($activeBranchId)) {
                     try {
-                        $branchColumnType = strtolower((string) Schema::getColumnType($table, 'branch_id'));
+                        $branchColumnType = strtolower((string) ($schema
+                            ? $schema->columnType($table, 'branch_id')
+                            : Schema::getColumnType($table, 'branch_id')));
                         if (!in_array($branchColumnType, ['string', 'text', 'char', 'varchar'], true)) {
                             $hasBranchId = false;
                         }
@@ -124,7 +131,11 @@ trait Multitenantable {
 
             $table = $model->getTable();
             $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
-            if (Schema::hasColumn($table, 'company_id') && $companyId > 0) {
+            $schema = request()->attributes->get('product_import_cache_schema') ? app(SchemaColumnCache::class) : null;
+            $hasColumn = fn (string $column) => $schema
+                ? $schema->hasColumn($table, $column)
+                : Schema::hasColumn($table, $column);
+            if ($hasColumn('company_id') && $companyId > 0) {
                 $model->company_id = $companyId;
             }
 
@@ -134,7 +145,7 @@ trait Multitenantable {
 
             // Auto-stamp branch from session so every new record is always
             // isolated to the correct branch (mirrors company_id stamping above).
-            if (Schema::hasColumn($table, 'branch_id') && empty($model->branch_id)) {
+            if ($hasColumn('branch_id') && empty($model->branch_id)) {
                 $branch = app(ActiveBranchResolver::class)->resolveBranchById(
                     trim((string) session('active_branch_id', '')),
                     Auth::user()
@@ -143,7 +154,7 @@ trait Multitenantable {
                     $model->branch_id = $branch['id'];
                 }
             }
-            if (Schema::hasColumn($table, 'branch_name') && empty($model->branch_name)) {
+            if ($hasColumn('branch_name') && empty($model->branch_name)) {
                 $branch = app(ActiveBranchResolver::class)->resolveBranchById(
                     trim((string) session('active_branch_id', '')),
                     Auth::user()

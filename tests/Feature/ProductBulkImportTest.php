@@ -346,4 +346,53 @@ class ProductBulkImportTest extends TestCase
         $this->assertDatabaseMissing('categories', ['name' => 'Rollback category']);
         $this->assertDatabaseHas('products', ['name' => 'Good item', 'stock' => 3]);
     }
+
+    public function test_failed_row_does_not_cache_rolled_back_category_or_unit(): void
+    {
+        $this->workspace();
+        $file = $this->workbook([
+            ['Failed item', 'Shared category', 'widget', '', '', 40, 2, '', 1, 10, 5],
+            ['Good item', 'Shared category', 'widget', '', '', '', '', '', 3, 10, 5],
+        ]);
+        DB::statement("CREATE TRIGGER fail_carton_unit BEFORE INSERT ON product_units
+            WHEN NEW.unit_name = 'carton' BEGIN SELECT RAISE(ABORT, 'test failure'); END");
+
+        $this->post(route('inventory.Products.import'), ['import_file' => $file])
+            ->assertSessionHas('success', fn ($message) => str_contains($message, 'Created: 1'));
+        $this->assertDatabaseMissing('products', ['name' => 'Failed item']);
+        $good = Product::withoutGlobalScopes()->where('name', 'Good item')->firstOrFail();
+        $this->assertDatabaseHas('categories', ['id' => $good->category_id, 'name' => 'Shared category']);
+        $this->assertDatabaseHas('units', ['id' => $good->unit_id, 'symbol' => 'widget']);
+        $this->assertDatabaseHas('product_branch_stocks', ['product_id' => $good->id, 'branch_id' => 'hq', 'quantity' => 3]);
+    }
+
+    public function test_import_reuses_schema_information_across_rows(): void
+    {
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            $this->markTestSkipped('Schema query counting uses SQLite metadata queries.');
+        }
+
+        $this->workspace();
+        $file = $this->workbook([
+            ['First item', 'Food', 'c', '', '', '', 1, '', '', 10, 5],
+            ['Second item', 'Food', 'c', '', '', '', 2, '', '', 10, 5],
+            ['Third item', 'Food', 'c', '', '', '', 3, '', '', 10, 5],
+        ]);
+        config(['tenancy.enforce_scopes_in_console' => true]);
+        $schemaQueries = [];
+        DB::listen(function ($query) use (&$schemaQueries) {
+            foreach (['products', 'inventory_history', 'product_branch_stocks'] as $table) {
+                if (str_contains($query->sql, "pragma_table_info('$table')")) {
+                    $schemaQueries[$table] = ($schemaQueries[$table] ?? 0) + 1;
+                }
+            }
+        });
+
+        $this->post(route('inventory.Products.import'), ['import_file' => $file])
+            ->assertSessionHas('success', fn ($message) => str_contains($message, 'Created: 3'));
+        foreach (['products', 'inventory_history', 'product_branch_stocks'] as $table) {
+            $this->assertLessThanOrEqual(2, $schemaQueries[$table] ?? 0, $table);
+        }
+        $this->assertDatabaseHas('products', ['name' => 'Third item', 'stock' => 3]);
+    }
 }

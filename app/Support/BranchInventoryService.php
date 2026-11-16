@@ -340,8 +340,9 @@ class BranchInventoryService
     public function adjustBranchStock(Product|int $product, float $delta, ?array $branch = null, ?int $companyId = null, bool $seedFromProductStock = true): ?ProductBranchStock
     {
         $branch = $branch ?: $this->getActiveBranchContext();
+        $schema = app(SchemaColumnCache::class);
 
-        if (!Schema::hasTable('product_branch_stocks') || empty($branch['id'])) {
+        if (!$schema->hasTable('product_branch_stocks') || empty($branch['id'])) {
             return null;
         }
 
@@ -374,7 +375,7 @@ class BranchInventoryService
 
         $branchStock->company_id = $resolvedCompanyId > 0 ? $resolvedCompanyId : null;
         $branchStock->branch_name = $branch['name'];
-        if (Schema::hasColumn('product_branch_stocks', 'is_available')) {
+        if ($schema->hasColumn('product_branch_stocks', 'is_available')) {
             $branchStock->is_available = true;
         }
         $proposedQuantity = !$seededFromCurrentProductStock
@@ -436,7 +437,7 @@ class BranchInventoryService
             ->where('branch_id', (string) $branch['id']);
         $companyId ??= (int) ($product->company_id ?? auth()->user()?->company_id ?? 0);
 
-        if ($companyId > 0 && Schema::hasColumn('product_branch_stocks', 'company_id')) {
+        if ($companyId > 0 && app(SchemaColumnCache::class)->hasColumn('product_branch_stocks', 'company_id')) {
             $query->where(function (Builder $tenant) use ($companyId) {
                 $tenant->where('company_id', $companyId)
                     ->orWhereNull('company_id');
@@ -450,7 +451,7 @@ class BranchInventoryService
     {
         $branch = $branch ?: $this->getActiveBranchContext();
 
-        if (empty($branch['id']) || !Schema::hasTable('product_branch_stocks')) {
+        if (empty($branch['id']) || !app(SchemaColumnCache::class)->hasTable('product_branch_stocks')) {
             return null;
         }
 

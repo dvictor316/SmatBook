@@ -114,6 +114,35 @@ class TenantDataIsolationTest extends TestCase
         $this->assertDatabaseMissing('legacy_tenant_records', ['company_id' => 20]);
     }
 
+    public function test_import_schema_cache_preserves_tenant_and_branch_scopes(): void
+    {
+        $user = $this->tenantUser(10);
+        $this->actingAs($user);
+        session([
+            'current_tenant_id' => 10,
+            'active_branch_id' => 'branch-a',
+            'active_branch_name' => 'Branch A',
+            'active_branch_scope' => 'branch',
+        ]);
+        request()->attributes->set('product_import_cache_schema', true);
+        foreach (['modern_tenant_records', 'legacy_tenant_records'] as $tableName) {
+            DB::table($tableName)->insert([
+                ['company_id' => 10, 'user_id' => $user->id, 'branch_id' => 'branch-a', 'branch_name' => 'Branch A', 'name' => 'Visible'],
+                ['company_id' => 10, 'user_id' => $user->id, 'branch_id' => 'branch-b', 'branch_name' => 'Branch B', 'name' => 'Other branch'],
+                ['company_id' => 20, 'user_id' => 999, 'branch_id' => 'branch-a', 'branch_name' => 'Branch A', 'name' => 'Other company'],
+            ]);
+        }
+
+        foreach ([ModernTenantRecord::class, LegacyTenantRecord::class] as $model) {
+            $this->assertSame(['Visible'], $model::query()->pluck('name')->all());
+            $created = $model::query()->create([
+                'company_id' => 20, 'user_id' => $user->id,
+                'branch_id' => 'branch-a', 'branch_name' => 'Branch A', 'name' => 'Created',
+            ]);
+            $this->assertSame(10, (int) $created->company_id);
+        }
+    }
+
     private function tenantUser(int $companyId): User
     {
         return User::query()->create([

@@ -25,6 +25,7 @@ use Illuminate\Validation\ValidationException;
 use App\Support\BranchInventoryService;
 use App\Support\InventoryQuantity;
 use App\Support\PriceListUsage;
+use App\Support\SchemaColumnCache;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
@@ -186,12 +187,13 @@ class ProductController extends Controller
     {
         $companyId = $this->tenantCompanyId();
         $userId = (int) (auth()->id() ?? 0);
+        $schema = app(SchemaColumnCache::class);
 
-        if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
-            return $query->where(function ($sub) use ($table, $companyId, $userId) {
+        if ($companyId > 0 && $schema->hasColumn($table, 'company_id')) {
+            return $query->where(function ($sub) use ($table, $companyId, $userId, $schema) {
                 $sub->where("{$table}.company_id", $companyId);
 
-                if ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
+                if ($userId > 0 && $schema->hasColumn($table, 'user_id')) {
                     $sub->orWhere(function ($fallback) use ($table, $userId) {
                         $fallback->whereNull("{$table}.company_id")
                             ->where("{$table}.user_id", $userId);
@@ -200,7 +202,7 @@ class ProductController extends Controller
             });
         }
 
-        if ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
+        if ($userId > 0 && $schema->hasColumn($table, 'user_id')) {
             return $query->where("{$table}.user_id", $userId);
         }
 
@@ -299,7 +301,7 @@ class ProductController extends Controller
 
     private function unitRows(bool $activeOnly = true)
     {
-        if (!Schema::hasTable('units')) {
+        if (!app(SchemaColumnCache::class)->hasTable('units')) {
             return $this->normalizeUnitRows($this->fallbackUnits());
         }
 
@@ -471,7 +473,7 @@ class ProductController extends Controller
         $fallback = trim((string) $fallback);
         $descriptor = ['id' => $unitId, 'name' => $fallback ?: 'Piece', 'symbol' => $fallback ?: 'pcs'];
 
-        if ($unitId && Schema::hasTable('units')) {
+        if ($unitId && app(SchemaColumnCache::class)->hasTable('units')) {
             $unit = DB::table('units')->where('id', $unitId)->first();
             if ($unit) {
                 $descriptor['name'] = trim((string) ($unit->name ?? $descriptor['name'])) ?: $descriptor['name'];
@@ -490,7 +492,7 @@ class ProductController extends Controller
 
     private function syncProductUnitRows(Product $product, ?array $salesUnitNames = null): void
     {
-        if (!Schema::hasTable('product_units')) {
+        if (!app(SchemaColumnCache::class)->hasTable('product_units')) {
             return;
         }
 
@@ -650,7 +652,7 @@ class ProductController extends Controller
 
     private function sanitizeForProductColumns(array $data): array
     {
-        $allowed = array_flip(Schema::getColumnListing('products'));
+        $allowed = array_flip(app(SchemaColumnCache::class)->columns('products') ?? []);
 
         return array_intersect_key($data, $allowed);
     }
@@ -4877,6 +4879,7 @@ public function inventory(Request $request)
 
     public function import(Request $request)
     {
+        $request->attributes->set('product_import_cache_schema', true);
         Log::info('Product import request received.', [
             'user_id' => auth()->id(),
             'has_file' => $request->hasFile('import_file'),
@@ -4982,6 +4985,8 @@ public function inventory(Request $request)
 
             DB::transaction(function () use ($file, $header, $headerRowNumber, &$created, &$updated, &$updatedExisting, &$skipped, &$duplicates, &$missingRequired, &$openingStockAdded, &$rowErrors, &$createdIds, $updateExisting, $simpleTemplate, $rollTemplate, $request) {
                 $activeBranch = $this->resolveBranchContext($request->input('branch_id'));
+                $importCategories = [];
+                $importUnits = [];
 
                 foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
                     if ($headerRowNumber !== null && $rowNumber <= $headerRowNumber) {
@@ -5088,7 +5093,10 @@ public function inventory(Request $request)
                             $rowTransactionStarted = true;
                         }
                         $categoryName = trim((string) ($rowData['category'] ?? 'General'));
-                        $category = $this->firstOrCreateImportCategory($categoryName !== '' ? $categoryName : 'General');
+                        $categoryName = $categoryName !== '' ? $categoryName : 'General';
+                        $category = $simpleTemplate && isset($importCategories[$categoryName])
+                            ? $importCategories[$categoryName]
+                            : $this->firstOrCreateImportCategory($categoryName);
 
                         $rawUnitType = trim((string) ($rowData['unit_type'] ?? ''));
                         $unitType = $this->normalizeImportUnitType($rawUnitType);
@@ -5098,7 +5106,10 @@ public function inventory(Request $request)
                             ?? $rowData['measurement_unit']
                             ?? $rowData['base_unit_name']
                             ?? '';
-                        $importUnit = $this->resolveImportUnit($importUnitValue, $rawUnitType, $simpleTemplate);
+                        $unitCacheKey = serialize([$importUnitValue, $rawUnitType]);
+                        $importUnit = $simpleTemplate && isset($importUnits[$unitCacheKey])
+                            ? $importUnits[$unitCacheKey]
+                            : $this->resolveImportUnit($importUnitValue, $rawUnitType, $simpleTemplate);
 
                         $providedSku = $rowData['sku'] ?? null;
                         $barcode = $rowData['barcode'] ?? null;
@@ -5207,6 +5218,10 @@ public function inventory(Request $request)
                             $this->syncProductUnitRows($product->fresh(['unit', 'baseUnit', 'purchaseUnit']));
                             DB::commit();
                             $rowTransactionStarted = false;
+                            $importCategories[$categoryName] = $category;
+                            if ($importUnit['id'] !== null) {
+                                $importUnits[$unitCacheKey] = $importUnit;
+                            }
                         }
                         $openingStockAdded += max(0.0, (float) $stock);
 

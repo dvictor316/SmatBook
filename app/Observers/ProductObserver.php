@@ -5,8 +5,8 @@ namespace App\Observers;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Product;
+use App\Support\SchemaColumnCache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 class ProductObserver
 {
@@ -21,19 +21,20 @@ class ProductObserver
             'updated_at' => now(),
         ];
 
-        if (Schema::hasColumn('inventory_history', 'reference')) {
+        $schema = app(SchemaColumnCache::class);
+        if ($schema->hasColumn('inventory_history', 'reference')) {
             $payload['reference'] = 'Initial Stock';
         }
-        if (Schema::hasColumn('inventory_history', 'user_id')) {
+        if ($schema->hasColumn('inventory_history', 'user_id')) {
             $payload['user_id'] = auth()->id() ?? (int) DB::table('users')->min('id');
         }
-        if (Schema::hasColumn('inventory_history', 'company_id')) {
+        if ($schema->hasColumn('inventory_history', 'company_id')) {
             $payload['company_id'] = $product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id;
         }
-        if (Schema::hasColumn('inventory_history', 'branch_id')) {
+        if ($schema->hasColumn('inventory_history', 'branch_id')) {
             $payload['branch_id'] = $product->branch_id ?? session('active_branch_id');
         }
-        if (Schema::hasColumn('inventory_history', 'branch_name')) {
+        if ($schema->hasColumn('inventory_history', 'branch_name')) {
             $payload['branch_name'] = $product->branch_name ?? session('active_branch_name');
         }
 
@@ -61,19 +62,20 @@ class ProductObserver
                 'updated_at' => now(),
             ];
 
-            if (Schema::hasColumn('inventory_history', 'reference')) {
+            $schema = app(SchemaColumnCache::class);
+            if ($schema->hasColumn('inventory_history', 'reference')) {
                 $payload['reference'] = $contextLabel ?? ($diff > 0 ? 'Stock In' : 'Stock Out');
             }
-            if (Schema::hasColumn('inventory_history', 'user_id')) {
+            if ($schema->hasColumn('inventory_history', 'user_id')) {
                 $payload['user_id'] = auth()->id() ?? (int) DB::table('users')->min('id');
             }
-            if (Schema::hasColumn('inventory_history', 'company_id')) {
+            if ($schema->hasColumn('inventory_history', 'company_id')) {
                 $payload['company_id'] = $product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id;
             }
-            if (Schema::hasColumn('inventory_history', 'branch_id')) {
+            if ($schema->hasColumn('inventory_history', 'branch_id')) {
                 $payload['branch_id'] = $product->branch_id ?? session('active_branch_id');
             }
-            if (Schema::hasColumn('inventory_history', 'branch_name')) {
+            if ($schema->hasColumn('inventory_history', 'branch_name')) {
                 $payload['branch_name'] = $product->branch_name ?? session('active_branch_name');
             }
 
@@ -99,7 +101,8 @@ class ProductObserver
 
     private function mirrorStockInToPurchase(Product $product, float $quantity, int $historyId): void
     {
-        if (!Schema::hasTable('purchases') || !Schema::hasTable('purchase_items') || $quantity <= 0) {
+        $schema = app(SchemaColumnCache::class);
+        if (!$schema->hasTable('purchases') || !$schema->hasTable('purchase_items') || $quantity <= 0) {
             return;
         }
 
