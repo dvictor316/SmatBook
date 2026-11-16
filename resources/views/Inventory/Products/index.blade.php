@@ -1327,7 +1327,10 @@
                         <h6><i class="fas fa-sliders text-primary me-2"></i>Optional Columns</h6>
                         <ul class="import-guide-list">
                             <li>Choose a Stock Unit such as pcs, kg, litre, roll or carton.</li>
-                            <li>Enter the carton size, cartons in stock and any loose stock if applicable.</li>
+                            <li>Enter the number of cartons. For cartons containing rolls, enter rolls per carton and pieces per roll.</li>
+                            <li>Enter any extra rolls and individual pieces outside the cartons. For kg, litres or other units, enter the extra amount in Extra Pieces / Stock Units.</li>
+                            <li>If the stock unit is roll, enter Rolls per Carton and Extra Rolls; leave Pcs / Units per Roll blank.</li>
+                            <li>For cartons without rolls, use Units per Carton (no rolls) instead of the roll columns.</li>
                             <li>Prices are per Stock Unit; carton prices are calculated from the carton size. SKU and barcode are optional.</li>
                         </ul>
                     </div>
@@ -1340,41 +1343,64 @@
                                 <tr>
                                     <th>Product Name</th>
                                     <th>Stock Unit</th>
-                                    <th>Units per Carton</th>
-                                    <th>Cartons in Stock</th>
-                                    <th>Loose Stock</th>
+                                    <th>Number of Cartons</th>
+                                    <th>Rolls per Carton</th>
+                                    <th>Pcs / Units per Roll</th>
+                                    <th>Units per Carton (no rolls)</th>
+                                    <th>Extra Rolls</th>
+                                    <th>Extra Pieces / Stock Units</th>
                                     <th>Total stock</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td>Rice</td>
-                                    <td>kg</td>
-                                    <td>25</td>
+                                    <td>Sachets</td>
+                                    <td>pcs</td>
                                     <td>2</td>
-                                    <td>1.5</td>
-                                    <td>51.5 kg</td>
+                                    <td>10</td>
+                                    <td>12</td>
+                                    <td>—</td>
+                                    <td>3</td>
+                                    <td>4</td>
+                                    <td>280 pcs</td>
                                 </tr>
                                 <tr>
                                     <td>Noodles</td>
                                     <td>pcs</td>
-                                    <td>40</td>
                                     <td>10</td>
+                                    <td>—</td>
+                                    <td>—</td>
+                                    <td>40</td>
+                                    <td>—</td>
                                     <td>5</td>
                                     <td>405 pcs</td>
                                 </tr>
                                 <tr>
+                                    <td>Rice</td>
+                                    <td>kg</td>
+                                    <td>2</td>
+                                    <td>—</td>
+                                    <td>—</td>
+                                    <td>25</td>
+                                    <td>—</td>
+                                    <td>1.5</td>
+                                    <td>51.5 kg</td>
+                                </tr>
+                                <tr>
                                     <td>Sealed boxes</td>
                                     <td>carton</td>
-                                    <td>—</td>
-                                    <td>—</td>
                                     <td>10</td>
+                                    <td>—</td>
+                                    <td>—</td>
+                                    <td>—</td>
+                                    <td>—</td>
+                                    <td>—</td>
                                     <td>10 cartons</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
-                    <p class="small text-muted mb-0 mt-2">For stock counted only in cartons, choose carton and put the count in Loose Stock. The workbook includes more instructions; old templates are still supported.</p>
+                    <p class="small text-muted mb-0 mt-2">For stock counted only in cartons, choose carton and enter the Number of Cartons. The workbook includes more instructions; old templates are still supported.</p>
                 </div>
             </div>
             <div class="modal-footer">
